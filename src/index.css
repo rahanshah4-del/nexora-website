@@ -39,10 +39,10 @@ body {
 
 @layer components {
   .glass-card {
-    @apply rounded-[2rem] border border-slate-200/70 bg-white/90 shadow-soft backdrop-blur-xl;
+    @apply rounded-[2rem] border border-slate-200/70 bg-white/90 shadow-soft backdrop-blur-xl transition-transform duration-200 hover:-translate-y-0.5;
   }
   .glass-panel {
-    @apply rounded-[1.75rem] border border-slate-200/80 bg-white/80 p-6 shadow-[0_28px_60px_-28px_rgba(15,23,42,0.2)];
+    @apply rounded-[1.75rem] border border-slate-200/80 bg-white/80 p-6 shadow-[0_28px_60px_-28px_rgba(15,23,42,0.2)] transition-transform duration-200 hover:-translate-y-0.5;
   }
   .section-heading {
     @apply font-display text-slate-950 text-2xl font-semibold tracking-tight sm:text-4xl;
@@ -60,9 +60,65 @@ body {
     box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.18), 0 24px 80px rgba(56, 189, 248, 0.14);
   }
 
+  .page-enter {
+    animation: pageEnter 700ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+
+  .hero-enter {
+    animation: heroEnter 800ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    animation-delay: var(--delay, 0ms);
+  }
+
+  [data-reveal] {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0);
+    transition:
+      opacity 700ms cubic-bezier(0.2, 0.8, 0.2, 1),
+      transform 700ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    will-change: transform, opacity;
+  }
+
+  [data-reveal].is-revealed {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+
+  .glow-blob {
+    animation: glowDrift 9s ease-in-out infinite;
+    will-change: transform, opacity;
+  }
+
+  .logo-shell {
+    box-shadow:
+      inset 0 0 0 1px rgba(148, 163, 184, 0.28),
+      0 20px 50px -35px rgba(56, 189, 248, 0.4);
+  }
+
   .hero-float {
     animation: heroFloat 7s ease-in-out infinite;
     will-change: transform;
+  }
+
+  @keyframes pageEnter {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 10px, 0);
+    }
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+  }
+
+  @keyframes heroEnter {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 16px, 0);
+    }
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
   }
 
   @keyframes heroFloat {
@@ -75,9 +131,30 @@ body {
     }
   }
 
+  @keyframes glowDrift {
+    0%,
+    100% {
+      opacity: 0.75;
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+    50% {
+      opacity: 0.95;
+      transform: translate3d(0, -14px, 0) scale(1.06);
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
+    .page-enter,
+    .hero-enter,
+    .glow-blob,
     .hero-float {
       animation: none;
+    }
+
+    [data-reveal] {
+      opacity: 1;
+      transform: none;
+      transition: none;
     }
   }
 }

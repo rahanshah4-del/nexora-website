@@ -135,6 +135,8 @@ const branchOffices = [
 
 function App() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [useImageLogo, setUseImageLogo] = useState(true)
+  const logoSrc = '/nexora-logo.png'
 
   useEffect(() => {
     const handleResize = () => {
@@ -145,6 +147,31 @@ function App() {
 
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  useEffect(() => {
+    const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches
+    const elements = Array.from(document.querySelectorAll('[data-reveal]'))
+
+    if (prefersReducedMotion || elements.length === 0) {
+      elements.forEach((element) => element.classList.add('is-revealed'))
+      return undefined
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-revealed')
+            observer.unobserve(entry.target)
+          }
+        })
+      },
+      { threshold: 0.18, rootMargin: '0px 0px -10% 0px' },
+    )
+
+    elements.forEach((element) => observer.observe(element))
+    return () => observer.disconnect()
   }, [])
 
   const handleDemoSubmit = (event) => {
@@ -181,27 +208,40 @@ function App() {
   }
 
   return (
-    <div className="relative overflow-x-hidden bg-slate-50 text-slate-950">
+    <div className="page-enter relative overflow-x-hidden bg-slate-50 text-slate-950">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-[radial-gradient(circle_at_20%_20%,_rgba(56,189,248,0.18),_transparent_28%),radial-gradient(circle_at_80%_10%,_rgba(168,85,247,0.16),_transparent_26%)] opacity-90" />
 
       <header className="sticky top-0 z-50 border-b border-slate-200/60 bg-white/70 shadow-[0_12px_40px_-28px_rgba(15,23,42,0.35)] backdrop-blur-2xl">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-sky-400/50 to-transparent" />
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-4 py-3 sm:gap-4 sm:px-6 sm:py-4 lg:px-8">
           <a href="#hero" className="group flex items-center gap-2.5 text-slate-950 sm:gap-3">
-            <div className="relative inline-flex h-9 w-9 items-center justify-center overflow-hidden rounded-2xl bg-slate-950 text-white shadow-sm transition group-hover:shadow-md sm:h-11 sm:w-11">
-              <div className="absolute inset-0 bg-gradient-to-br from-sky-500 via-cyan-400 to-violet-500 opacity-95" />
-              <svg
-                className="relative h-5 w-5 sm:h-[1.3rem] sm:w-[1.3rem]"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                aria-hidden="true"
-              >
-                <path
-                  d="M6 18V6h2.7l6.6 8.4V6H18v12h-2.7L8.7 9.6V18H6Z"
-                  fill="currentColor"
+            <div className="logo-shell relative inline-flex items-center justify-center rounded-2xl bg-slate-950/95 p-1.5 shadow-sm ring-1 ring-slate-200/60 backdrop-blur transition group-hover:shadow-md">
+              {useImageLogo ? (
+                <img
+                  src={logoSrc}
+                  alt="Nexora logo"
+                  className="h-9 w-auto rounded-xl object-contain sm:h-12"
+                  loading="eager"
+                  decoding="async"
+                  onError={() => setUseImageLogo(false)}
                 />
-              </svg>
+              ) : (
+                <div className="relative inline-flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl bg-slate-950 text-white sm:h-12 sm:w-12">
+                  <div className="absolute inset-0 bg-gradient-to-br from-sky-500 via-cyan-400 to-violet-500 opacity-95" />
+                  <svg
+                    className="relative h-5 w-5 sm:h-[1.3rem] sm:w-[1.3rem]"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M6 18V6h2.7l6.6 8.4V6H18v12h-2.7L8.7 9.6V18H6Z"
+                      fill="currentColor"
+                    />
+                  </svg>
+                </div>
+              )}
             </div>
             <div>
               <p className="text-[0.7rem] font-semibold uppercase tracking-[0.34em] text-sky-700 sm:text-xs">
@@ -297,15 +337,15 @@ function App() {
       </header>
 
       <main>
-        <section id="hero" className="relative overflow-hidden pb-12 pt-10 sm:py-20 lg:py-24">
+        <section id="hero" className="relative overflow-hidden pb-12 pt-10 sm:py-20 lg:py-24" data-reveal>
           <div className="pointer-events-none absolute inset-0">
             <div className="absolute inset-0 bg-sparkle-grid opacity-90" />
-            <div className="absolute -top-28 left-1/2 h-72 w-[34rem] -translate-x-1/2 rounded-full bg-gradient-to-r from-sky-400/25 via-cyan-300/20 to-violet-400/25 blur-3xl" />
-            <div className="absolute -bottom-40 right-[-8rem] h-72 w-72 rounded-full bg-sky-400/15 blur-3xl" />
+            <div className="glow-blob absolute -top-28 left-1/2 h-72 w-[34rem] -translate-x-1/2 rounded-full bg-gradient-to-r from-sky-400/25 via-cyan-300/20 to-violet-400/25 blur-3xl" />
+            <div className="glow-blob absolute -bottom-40 right-[-8rem] h-72 w-72 rounded-full bg-sky-400/15 blur-3xl [animation-delay:1.2s]" />
           </div>
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="relative grid items-center gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:gap-12">
-              <div className="relative space-y-6 sm:space-y-8">
+              <div className="relative hero-enter [--delay:0ms] space-y-6 sm:space-y-8">
                 <div className="inline-flex items-center gap-2 rounded-full border border-sky-200/80 bg-white/80 px-3 py-1.5 text-xs font-semibold text-sky-700 shadow-sm backdrop-blur sm:px-4 sm:py-2 sm:text-sm">
                   <span className="h-1.5 w-1.5 rounded-full bg-gradient-to-r from-sky-500 to-indigo-500" />
                   Premium software & dashboards
@@ -379,7 +419,7 @@ function App() {
                 </div>
               </div>
 
-              <div className="relative">
+              <div className="relative hero-enter [--delay:120ms]">
                 <div className="absolute inset-0 rounded-[2rem] bg-gradient-to-br from-sky-100/80 via-cyan-100/70 to-violet-100 blur-3xl" />
                 <div className="glass-card relative overflow-hidden p-4 sm:p-6 hero-float">
                   <div className="flex items-center justify-between gap-4">
@@ -431,7 +471,7 @@ function App() {
           </div>
         </section>
 
-        <section id="about" className="bg-slate-50 py-16 sm:py-20 lg:py-24">
+        <section id="about" className="bg-slate-50 py-16 sm:py-20 lg:py-24" data-reveal>
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
               <div className="space-y-6">
@@ -463,7 +503,7 @@ function App() {
           </div>
         </section>
 
-        <section id="services" className="py-16 sm:py-20 lg:py-24">
+        <section id="services" className="py-16 sm:py-20 lg:py-24" data-reveal>
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mb-10 max-w-2xl">
               <p className="feature-pill">Our service coverage</p>
@@ -483,7 +523,7 @@ function App() {
           </div>
         </section>
 
-        <section id="products" className="bg-slate-50 py-16 sm:py-20 lg:py-24">
+        <section id="products" className="bg-slate-50 py-16 sm:py-20 lg:py-24" data-reveal>
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mb-10 max-w-2xl">
               <p className="feature-pill">Portfolio</p>
@@ -503,7 +543,7 @@ function App() {
           </div>
         </section>
 
-        <section id="dashboards" className="py-16 sm:py-20 lg:py-24">
+        <section id="dashboards" className="py-16 sm:py-20 lg:py-24" data-reveal>
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mb-10 max-w-2xl">
               <p className="feature-pill">Insights</p>
@@ -574,7 +614,7 @@ function App() {
           </div>
         </section>
 
-        <section id="pricing" className="bg-slate-50 py-16 sm:py-20 lg:py-24">
+        <section id="pricing" className="bg-slate-50 py-16 sm:py-20 lg:py-24" data-reveal>
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mb-10 max-w-2xl">
               <p className="feature-pill">Pricing packages</p>
@@ -629,7 +669,7 @@ function App() {
           </div>
         </section>
 
-        <section id="contact" className="py-16 sm:py-20 lg:py-24">
+        <section id="contact" className="py-16 sm:py-20 lg:py-24" data-reveal>
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
               <div className="space-y-6">
@@ -720,7 +760,7 @@ function App() {
           </div>
         </section>
 
-        <section id="branches" className="bg-slate-50 py-16 sm:py-20 lg:py-24">
+        <section id="branches" className="bg-slate-50 py-16 sm:py-20 lg:py-24" data-reveal>
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mb-10 max-w-2xl">
               <p className="feature-pill">Locations</p>
@@ -754,12 +794,44 @@ function App() {
         </section>
       </main>
 
-      <footer className="border-t border-slate-200/70 bg-white/90 py-12">
+      <footer className="border-t border-slate-200/70 bg-white/90 py-12" data-reveal>
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid gap-10 lg:grid-cols-[1.4fr_1fr_1fr]">
             <div className="space-y-4">
-              <p className="text-sm uppercase tracking-[0.28em] text-sky-700">NEXORA</p>
-              <h2 className="text-2xl font-semibold text-slate-950">Nexora POS Solutions</h2>
+              <div className="flex items-center gap-3">
+                <div className="logo-shell inline-flex items-center justify-center rounded-2xl bg-slate-950/95 p-1.5 shadow-sm ring-1 ring-slate-200/60 backdrop-blur">
+                  {useImageLogo ? (
+                    <img
+                      src={logoSrc}
+                      alt="Nexora logo"
+                      className="h-10 w-auto rounded-xl object-contain"
+                      loading="lazy"
+                      decoding="async"
+                      onError={() => setUseImageLogo(false)}
+                    />
+                  ) : (
+                    <div className="relative inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-slate-950 text-white">
+                      <div className="absolute inset-0 bg-gradient-to-br from-sky-500 via-cyan-400 to-violet-500 opacity-95" />
+                      <svg
+                        className="relative h-5 w-5"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                        aria-hidden="true"
+                      >
+                        <path
+                          d="M6 18V6h2.7l6.6 8.4V6H18v12h-2.7L8.7 9.6V18H6Z"
+                          fill="currentColor"
+                        />
+                      </svg>
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <p className="text-sm uppercase tracking-[0.28em] text-sky-700">NEXORA</p>
+                  <h2 className="text-2xl font-semibold text-slate-950">Nexora POS Solutions</h2>
+                </div>
+              </div>
               <p className="max-w-xl text-sm leading-7 text-slate-600">
                 Premium business software for POS, hospitals, medical stores, transport operations, and live dashboards.
               </p>
@@ -782,8 +854,14 @@ function App() {
               </ul>
             </div>
           </div>
-          <div className="mt-10 border-t border-slate-200/70 pt-6 text-sm text-slate-500">
-            © 2026 Nexora POS Solutions. All rights reserved.
+          <div className="mt-10 flex flex-col gap-3 border-t border-slate-200/70 pt-6 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+            <div>© 2026 Nexora POS Solutions. All rights reserved.</div>
+            <div className="inline-flex items-center gap-2 text-slate-500">
+              <span className="inline-flex h-7 items-center gap-2 rounded-full border border-slate-200/70 bg-white/70 px-3 backdrop-blur">
+                <span className="h-1.5 w-1.5 rounded-full bg-gradient-to-r from-sky-500 to-indigo-500" />
+                Powered by Nexora Solutions
+              </span>
+            </div>
           </div>
         </div>
       </footer>
