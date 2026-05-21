@@ -184,13 +184,14 @@ function App() {
     <div className="relative overflow-x-hidden bg-slate-50 text-slate-950">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-[radial-gradient(circle_at_20%_20%,_rgba(56,189,248,0.18),_transparent_28%),radial-gradient(circle_at_80%_10%,_rgba(168,85,247,0.16),_transparent_26%)] opacity-90" />
 
-      <header className="sticky top-0 z-50 border-b border-slate-200/70 bg-white/95 backdrop-blur-xl shadow-sm">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:gap-4 sm:px-6 sm:py-4 lg:px-8">
-          <a href="#hero" className="flex items-center gap-3 text-slate-950">
-            <div className="relative inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-3xl bg-slate-950 text-white shadow-sm sm:h-12 sm:w-12">
+      <header className="sticky top-0 z-50 border-b border-slate-200/60 bg-white/70 shadow-[0_12px_40px_-28px_rgba(15,23,42,0.35)] backdrop-blur-2xl">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-sky-400/50 to-transparent" />
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-4 py-3 sm:gap-4 sm:px-6 sm:py-4 lg:px-8">
+          <a href="#hero" className="group flex items-center gap-2.5 text-slate-950 sm:gap-3">
+            <div className="relative inline-flex h-9 w-9 items-center justify-center overflow-hidden rounded-2xl bg-slate-950 text-white shadow-sm transition group-hover:shadow-md sm:h-11 sm:w-11">
               <div className="absolute inset-0 bg-gradient-to-br from-sky-500 via-cyan-400 to-violet-500 opacity-95" />
               <svg
-                className="relative h-5 w-5 sm:h-6 sm:w-6"
+                className="relative h-5 w-5 sm:h-[1.3rem] sm:w-[1.3rem]"
                 viewBox="0 0 24 24"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
@@ -203,47 +204,70 @@ function App() {
               </svg>
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.32em] text-sky-700">NEXORA</p>
-              <p className="hidden text-[0.78rem] text-slate-500 sm:block">Software & dashboard solutions</p>
+              <p className="text-[0.7rem] font-semibold uppercase tracking-[0.34em] text-sky-700 sm:text-xs">
+                NEXORA
+              </p>
+              <p className="hidden text-[0.78rem] text-slate-500 sm:block">Premium software solutions</p>
             </div>
           </a>
 
           <nav className="hidden items-center gap-8 text-sm font-semibold text-slate-600 lg:flex">
             {navLinks.map((link) => (
-              <a key={link.id} href={`#${link.id}`} className="transition hover:text-slate-900">
+              <a
+                key={link.id}
+                href={`#${link.id}`}
+                className="relative text-slate-600 transition hover:text-slate-950 after:absolute after:-bottom-2 after:left-0 after:h-0.5 after:w-full after:origin-left after:scale-x-0 after:rounded-full after:bg-gradient-to-r after:from-sky-500 after:to-indigo-500 after:transition-transform hover:after:scale-x-100"
+              >
                 {link.label}
               </a>
             ))}
           </nav>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <a
               href="#contact"
-              className="inline-flex items-center justify-center rounded-full bg-sky-700 px-4 py-2.5 text-[0.8125rem] font-semibold text-white shadow-lg shadow-sky-700/20 transition hover:bg-sky-800 sm:px-5 sm:text-sm"
+              className="inline-flex items-center justify-center rounded-full bg-sky-700 px-3.5 py-2 text-[0.78rem] font-semibold text-white shadow-lg shadow-sky-700/20 transition hover:bg-sky-800 active:scale-[0.99] sm:px-5 sm:py-2.5 sm:text-sm"
             >
-              Book Demo
+              <span className="sm:hidden">Demo</span>
+              <span className="hidden sm:inline">Book Demo</span>
             </a>
             <button
               type="button"
               onClick={() => setMobileMenuOpen((prev) => !prev)}
-              className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm lg:hidden"
-              aria-label="Open navigation menu"
+              className="relative inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200/80 bg-white/70 text-slate-700 shadow-sm backdrop-blur transition hover:bg-white active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 lg:hidden sm:h-11 sm:w-11"
+              aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
               aria-expanded={mobileMenuOpen}
             >
-              <span className="block h-0.5 w-5 rounded-full bg-slate-700"></span>
-              <span className="mt-1 block h-0.5 w-5 rounded-full bg-slate-700"></span>
+              <span className="sr-only">Menu</span>
+              <span className="pointer-events-none relative h-5 w-5">
+                <span
+                  className={`absolute left-0 top-1 block h-0.5 w-5 rounded-full bg-slate-700 transition duration-200 ${
+                    mobileMenuOpen ? 'translate-y-1.5 rotate-45' : ''
+                  }`}
+                />
+                <span
+                  className={`absolute left-0 top-2.5 block h-0.5 w-5 rounded-full bg-slate-700 transition duration-200 ${
+                    mobileMenuOpen ? 'opacity-0' : ''
+                  }`}
+                />
+                <span
+                  className={`absolute left-0 top-4 block h-0.5 w-5 rounded-full bg-slate-700 transition duration-200 ${
+                    mobileMenuOpen ? '-translate-y-1.5 -rotate-45' : ''
+                  }`}
+                />
+              </span>
             </button>
           </div>
         </div>
 
         {mobileMenuOpen && (
-          <div className="border-t border-slate-200/70 bg-white/95 lg:hidden">
+          <div className="border-t border-slate-200/60 bg-white/70 backdrop-blur-2xl lg:hidden">
             <div className="mx-auto max-w-7xl space-y-2 px-4 py-4 sm:px-6 lg:px-8">
               {navLinks.map((link) => (
                 <a
                   key={link.id}
                   href={`#${link.id}`}
-                  className="block rounded-2xl border border-slate-200/80 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                  className="block rounded-2xl border border-slate-200/70 bg-white/70 px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm backdrop-blur transition hover:bg-white active:scale-[0.99]"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   {link.label}
@@ -252,7 +276,7 @@ function App() {
               <div className="grid gap-2 pt-2">
                 <a
                   href="#services"
-                  className="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 shadow-sm"
+                  className="inline-flex items-center justify-center rounded-2xl border border-slate-200/70 bg-white/70 px-4 py-3 text-sm font-semibold text-slate-900 shadow-sm backdrop-blur transition hover:bg-white active:scale-[0.99]"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   View Services
@@ -261,7 +285,7 @@ function App() {
                   href={whatsappLeadLink}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center justify-center rounded-2xl bg-sky-700 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-sky-700/20"
+                  className="inline-flex items-center justify-center rounded-2xl bg-sky-700 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-sky-700/20 transition hover:bg-sky-800 active:scale-[0.99]"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   WhatsApp Demo Request
