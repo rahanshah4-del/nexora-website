@@ -216,36 +216,38 @@ function App() {
         <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-sky-400/50 to-transparent" />
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-4 py-3 sm:gap-4 sm:px-6 sm:py-4 lg:px-8">
           <a href="#hero" className="group flex items-center gap-2.5 text-slate-950 sm:gap-3">
-            <div className="logo-shell relative inline-flex items-center justify-center overflow-hidden rounded-2xl bg-slate-950/95 p-1.5 shadow-sm ring-1 ring-slate-200/60 backdrop-blur transition group-hover:-translate-y-0.5 group-hover:shadow-md">
-              {useImageLogo ? (
-                <img
-                  src={logoSrc}
-                  alt="Nexora logo"
-                  className="h-9 w-9 rounded-full object-cover object-left shadow-sm sm:h-12 sm:w-12"
-                  loading="eager"
-                  decoding="async"
-                  onError={() => setUseImageLogo(false)}
-                />
-              ) : (
-                <div className="relative inline-flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl bg-slate-950 text-white sm:h-12 sm:w-12">
-                  <div className="absolute inset-0 bg-gradient-to-br from-sky-500 via-cyan-400 to-violet-500 opacity-95" />
-                  <svg
-                    className="relative h-5 w-5 sm:h-[1.3rem] sm:w-[1.3rem]"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                    aria-hidden="true"
-                  >
-                    <path
-                      d="M6 18V6h2.7l6.6 8.4V6H18v12h-2.7L8.7 9.6V18H6Z"
-                      fill="currentColor"
-                    />
-                  </svg>
-                </div>
-              )}
+            <div className="relative rounded-full bg-gradient-to-br from-sky-400/50 via-cyan-300/40 to-violet-400/50 p-[1px] transition group-hover:-translate-y-0.5 group-hover:shadow-md">
+              <div className="inline-flex items-center justify-center rounded-full border border-white/60 bg-white/70 p-1 shadow-sm backdrop-blur">
+                {useImageLogo ? (
+                  <img
+                    src={logoSrc}
+                    alt="Nexora logo"
+                    className="h-9 w-9 rounded-full object-cover object-left sm:h-12 sm:w-12"
+                    loading="eager"
+                    decoding="async"
+                    onError={() => setUseImageLogo(false)}
+                  />
+                ) : (
+                  <div className="relative inline-flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-slate-950 text-white sm:h-12 sm:w-12">
+                    <div className="absolute inset-0 bg-gradient-to-br from-sky-500 via-cyan-400 to-violet-500 opacity-95" />
+                    <svg
+                      className="relative h-5 w-5 sm:h-[1.3rem] sm:w-[1.3rem]"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                      aria-hidden="true"
+                    >
+                      <path
+                        d="M6 18V6h2.7l6.6 8.4V6H18v12h-2.7L8.7 9.6V18H6Z"
+                        fill="currentColor"
+                      />
+                    </svg>
+                  </div>
+                )}
+              </div>
             </div>
-            <div>
-              <p className="text-[0.7rem] font-semibold uppercase tracking-[0.34em] text-sky-700 sm:text-xs">
+            <div className="leading-tight">
+              <p className="font-display text-[0.82rem] font-semibold uppercase tracking-[0.26em] text-slate-950 sm:text-sm">
                 NEXORA
               </p>
               <p className="hidden text-[0.78rem] text-slate-500 sm:block">Nexora Solutions</p>
