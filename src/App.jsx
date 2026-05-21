@@ -746,7 +746,7 @@ function App() {
               </p>
             </div>
 
-            <div className="grid gap-4 sm:gap-6 md:grid-cols-2 xl:grid-cols-4">
+            <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-4">
               {[
                 {
                   title: 'Restaurant POS Dashboard',
@@ -775,20 +775,17 @@ function App() {
               ].map((project) => (
                 <div
                   key={project.title}
-                  className="group relative overflow-hidden rounded-[1.75rem] border border-slate-200/80 bg-white/75 p-5 shadow-[0_22px_60px_-40px_rgba(15,23,42,0.24)] backdrop-blur transition duration-200 hover:-translate-y-0.5 hover:bg-white sm:p-6"
+                  className="group relative flex h-full flex-col overflow-hidden rounded-[1.75rem] border border-slate-200/80 bg-white/80 p-5 shadow-[0_22px_60px_-40px_rgba(15,23,42,0.22)] backdrop-blur transition duration-200 hover:-translate-y-0.5 hover:bg-white sm:p-6"
                 >
                   <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-sky-500/70 via-cyan-400/60 to-violet-500/60 opacity-80" />
-                  <div className="flex items-start justify-between gap-3">
+                  <div className="inline-flex">
                     <span className="inline-flex items-center gap-2 rounded-full border border-slate-200/70 bg-white/70 px-3 py-1 text-[0.72rem] font-semibold text-slate-700 shadow-sm backdrop-blur">
                       <span className="h-1.5 w-1.5 rounded-full bg-gradient-to-r from-sky-500 to-indigo-500" />
                       {project.badge}
                     </span>
-                    <span className="inline-flex rounded-full bg-slate-950/5 px-3 py-1 text-[0.72rem] font-semibold text-slate-600">
-                      UI + workflow
-                    </span>
                   </div>
 
-                  <h3 className="mt-4 text-base font-semibold leading-6 text-slate-950 sm:text-lg sm:leading-7">
+                  <h3 className="mt-3 text-base font-semibold leading-6 text-slate-950 sm:text-lg sm:leading-7">
                     {project.title}
                   </h3>
                   <p className="mt-2 text-sm leading-7 text-slate-600">{project.description}</p>
@@ -807,7 +804,8 @@ function App() {
                     </ul>
                   </div>
 
-                  <div className="mt-4 flex flex-wrap gap-2">
+                  <div className="mt-auto pt-4">
+                    <div className="flex flex-wrap gap-2">
                     {['Custom Build', 'Responsive UI', 'Clean Reporting'].map((tag) => (
                       <span
                         key={tag}
@@ -816,6 +814,7 @@ function App() {
                         {tag}
                       </span>
                     ))}
+                    </div>
                   </div>
                 </div>
               ))}
