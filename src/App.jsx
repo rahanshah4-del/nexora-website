@@ -137,7 +137,7 @@ const branchOffices = [
 function App() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [useImageLogo, setUseImageLogo] = useState(true)
-  const logoSrc = '/nexora-logo.png'
+  const logoSrc = '/nexora-logo.jpg'
 
   useEffect(() => {
     const handleResize = () => {
@@ -216,7 +216,7 @@ function App() {
         <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-sky-400/50 to-transparent" />
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-4 py-3 sm:gap-4 sm:px-6 sm:py-4 lg:px-8">
           <a href="#hero" className="group flex items-center gap-2.5 text-slate-950 sm:gap-3">
-            <div className="logo-shell relative inline-flex items-center justify-center rounded-2xl bg-slate-950/95 p-1.5 shadow-sm ring-1 ring-slate-200/60 backdrop-blur transition group-hover:shadow-md">
+            <div className="logo-shell relative inline-flex items-center justify-center rounded-2xl bg-slate-950/95 p-1.5 shadow-sm ring-1 ring-slate-200/60 backdrop-blur transition group-hover:-translate-y-0.5 group-hover:shadow-md">
               {useImageLogo ? (
                 <img
                   src={logoSrc}
@@ -338,7 +338,7 @@ function App() {
       </header>
 
       <main>
-        <section id="hero" className="relative overflow-hidden pb-12 pt-10 sm:py-20 lg:py-24" data-reveal>
+        <section id="hero" className="relative overflow-hidden pb-10 pt-8 sm:py-20 lg:py-24" data-reveal>
           <div className="pointer-events-none absolute inset-0">
             <div className="absolute inset-0 bg-sparkle-grid opacity-90" />
             <div className="glow-blob absolute -top-28 left-1/2 h-72 w-[34rem] -translate-x-1/2 rounded-full bg-gradient-to-r from-sky-400/25 via-cyan-300/20 to-violet-400/25 blur-3xl" />
@@ -423,6 +423,16 @@ function App() {
               <div className="relative hero-enter [--delay:120ms]">
                 <div className="absolute inset-0 rounded-[2rem] bg-gradient-to-br from-sky-100/80 via-cyan-100/70 to-violet-100 blur-3xl" />
                 <div className="glass-card relative overflow-hidden p-4 sm:p-6 hero-float">
+                  <div className="pointer-events-none absolute inset-x-4 top-4 h-10 rounded-2xl border border-white/70 bg-white/60 backdrop-blur">
+                    <div className="flex h-full items-center gap-2 px-4">
+                      <span className="h-2 w-2 rounded-full bg-rose-400/90" />
+                      <span className="h-2 w-2 rounded-full bg-amber-400/90" />
+                      <span className="h-2 w-2 rounded-full bg-emerald-400/90" />
+                      <span className="ml-2 text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-slate-500">
+                        Dashboard
+                      </span>
+                    </div>
+                  </div>
                   <div className="flex items-center justify-between gap-4">
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500 sm:text-sm">Live dashboard</p>
@@ -433,7 +443,7 @@ function App() {
                     </span>
                   </div>
 
-                  <div className="mt-5 grid gap-3 sm:mt-8 sm:grid-cols-2 sm:gap-4">
+                  <div className="mt-12 grid gap-3 sm:mt-10 sm:grid-cols-2 sm:gap-4">
                     <div className="rounded-3xl bg-slate-950/5 p-3 sm:p-4">
                       <p className="text-[0.7rem] uppercase tracking-[0.24em] text-slate-500 sm:text-xs">Revenue</p>
                       <p className="mt-2 text-xl font-semibold text-slate-950 sm:mt-3 sm:text-2xl">Rs 458,200</p>
@@ -530,6 +540,7 @@ function App() {
               <div className="space-y-6">
                 <p className="feature-pill">Restaurant POS</p>
                 <h2 className="section-heading">Restaurant POS Dashboard System</h2>
+                <p className="text-sm font-semibold text-sky-700">Smart POS Software for Restaurants</p>
                 <p className="section-copy">
                   Smart POS Software for Restaurants with table flow, KOT screens, cashier billing, inventory tracking, and
                   daily reporting — all in one premium dashboard.
@@ -565,6 +576,16 @@ function App() {
               <div className="relative">
                 <div className="absolute inset-0 rounded-[2.25rem] bg-gradient-to-br from-sky-200/60 via-cyan-100/60 to-violet-200/60 blur-3xl" />
                 <div className="glass-card relative overflow-hidden p-4 sm:p-6 hero-float">
+                  <div className="pointer-events-none absolute inset-x-4 top-4 h-10 rounded-2xl border border-white/70 bg-white/60 backdrop-blur">
+                    <div className="flex h-full items-center gap-2 px-4">
+                      <span className="h-2 w-2 rounded-full bg-rose-400/90" />
+                      <span className="h-2 w-2 rounded-full bg-amber-400/90" />
+                      <span className="h-2 w-2 rounded-full bg-emerald-400/90" />
+                      <span className="ml-2 text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-slate-500">
+                        POS Screen
+                      </span>
+                    </div>
+                  </div>
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Live POS screen</p>
@@ -575,7 +596,7 @@ function App() {
                     </span>
                   </div>
 
-                  <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                  <div className="mt-12 grid gap-3 sm:mt-10 sm:grid-cols-3">
                     {[
                       { label: 'Today Sales', value: 'Rs 214,900' },
                       { label: 'Open Tables', value: '12' },
