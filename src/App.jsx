@@ -136,6 +136,29 @@ const branchOffices = [
   },
 ]
 
+function FiverrIcon({ className = 'h-4 w-4' }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      <path
+        d="M12 1.8C6.37 1.8 1.8 6.37 1.8 12S6.37 22.2 12 22.2 22.2 17.63 22.2 12 17.63 1.8 12 1.8Z"
+        fill="currentColor"
+        opacity="0.95"
+      />
+      <path
+        d="M10.06 16.9V10.3H8.7V8.7h1.36V8.1c0-2.01 1.17-3.2 3.3-3.2.78 0 1.43.12 1.92.3v1.6c-.44-.14-.9-.2-1.4-.2-1.11 0-1.56.57-1.56 1.64v.46h2.78v1.6h-2.78v6.6h-2.9Z"
+        fill="white"
+      />
+      <path d="M15.82 16.9a1.65 1.65 0 1 0 0-3.3 1.65 1.65 0 0 0 0 3.3Z" fill="white" />
+    </svg>
+  )
+}
+
 function App() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [useImageLogo, setUseImageLogo] = useState(true)
@@ -401,9 +424,11 @@ function App() {
                     href={fiverrLink}
                     target="_blank"
                     rel="noreferrer"
-                    className="sm:col-span-2 inline-flex items-center justify-center rounded-full border border-emerald-200 bg-white/70 px-5 py-3 text-sm font-semibold text-slate-800 shadow-sm backdrop-blur transition hover:bg-white"
+                    className="sm:col-span-2 inline-flex items-center justify-center gap-2 rounded-full border border-emerald-200 bg-white/70 px-5 py-3 text-sm font-semibold text-slate-800 shadow-sm backdrop-blur transition hover:bg-white hover:shadow-md hover:shadow-emerald-600/10"
                   >
-                    <span className="mr-2 inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+                    <span className="text-emerald-600">
+                      <FiverrIcon className="h-4 w-4" />
+                    </span>
                     Hire on Fiverr
                   </a>
                   <a
@@ -698,6 +723,12 @@ function App() {
                 <p className="section-copy">
                   Custom Software &amp; Dashboard Development delivered with premium UI, responsive screens, and clean business workflows.
                 </p>
+                <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white/70 px-3 py-1.5 text-xs font-semibold text-emerald-800 shadow-sm backdrop-blur">
+                  <span className="text-emerald-600">
+                    <FiverrIcon className="h-4 w-4" />
+                  </span>
+                  Available on Fiverr
+                </div>
                 <div className="grid gap-3 sm:grid-cols-2">
                   {['SaaS Development', 'Restaurant POS Systems', 'CRM & ERP Dashboards', 'Admin Panels', 'Custom Business Software'].map(
                     (item) => (
@@ -717,9 +748,9 @@ function App() {
                   href={fiverrLink}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center justify-center rounded-full bg-emerald-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-600/20 transition hover:bg-emerald-700"
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-emerald-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-600/20 transition hover:bg-emerald-700 hover:shadow-emerald-600/25"
                 >
-                  <span className="mr-2 inline-flex h-2 w-2 rounded-full bg-white/90" />
+                  <FiverrIcon className="h-4 w-4 text-white" />
                   Hire Me on Fiverr
                 </a>
               </div>
@@ -752,8 +783,11 @@ function App() {
                     href={fiverrLink}
                     target="_blank"
                     rel="noreferrer"
-                    className="mt-4 inline-flex items-center justify-center rounded-full border border-emerald-200 bg-white px-5 py-2.5 text-sm font-semibold text-emerald-800 shadow-sm transition hover:bg-emerald-50"
+                    className="mt-4 inline-flex items-center justify-center gap-2 rounded-full border border-emerald-200 bg-white px-5 py-2.5 text-sm font-semibold text-emerald-800 shadow-sm transition hover:bg-emerald-50 hover:shadow-md hover:shadow-emerald-600/10"
                   >
+                    <span className="text-emerald-600">
+                      <FiverrIcon className="h-4 w-4" />
+                    </span>
                     Start Your Project
                   </a>
                 </div>
@@ -942,9 +976,11 @@ function App() {
                     href={fiverrLink}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center justify-center rounded-full border border-emerald-200 bg-emerald-50/60 px-4 py-2 text-sm font-semibold text-emerald-800 shadow-sm backdrop-blur transition hover:bg-emerald-50"
+                    className="inline-flex items-center justify-center gap-2 rounded-full border border-emerald-200 bg-emerald-50/60 px-4 py-2 text-sm font-semibold text-emerald-800 shadow-sm backdrop-blur transition hover:bg-emerald-50 hover:shadow-md hover:shadow-emerald-600/10"
                   >
-                    <span className="mr-2 inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+                    <span className="text-emerald-600">
+                      <FiverrIcon className="h-4 w-4" />
+                    </span>
                     Contact on Fiverr
                   </a>
                 </div>
@@ -1090,8 +1126,9 @@ function App() {
                   href={fiverrLink}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center justify-center rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-600/20 transition hover:bg-emerald-700"
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-600/20 transition hover:bg-emerald-700 hover:shadow-emerald-600/25"
                 >
+                  <FiverrIcon className="h-4 w-4 text-white" />
                   Hire on Fiverr
                 </a>
                 <a
