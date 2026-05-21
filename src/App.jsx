@@ -15,6 +15,7 @@ const whatsappLeadLink = `${whatsappLink}?text=${encodeURIComponent(defaultLeadM
 const navLinks = [
   { id: 'about', label: 'About' },
   { id: 'services', label: 'Services' },
+  { id: 'restaurant-pos', label: 'Restaurant POS' },
   { id: 'products', label: 'Projects' },
   { id: 'dashboards', label: 'Insights' },
   { id: 'pricing', label: 'Pricing' },
@@ -247,7 +248,7 @@ function App() {
               <p className="text-[0.7rem] font-semibold uppercase tracking-[0.34em] text-sky-700 sm:text-xs">
                 NEXORA
               </p>
-              <p className="hidden text-[0.78rem] text-slate-500 sm:block">Premium software solutions</p>
+              <p className="hidden text-[0.78rem] text-slate-500 sm:block">Nexora Solutions</p>
             </div>
           </a>
 
@@ -519,6 +520,137 @@ function App() {
                   <p className="mt-3 text-sm leading-7 text-slate-600">{service.text}</p>
                 </div>
               ))}
+            </div>
+          </div>
+        </section>
+
+        <section id="restaurant-pos" className="bg-slate-50 py-16 sm:py-20 lg:py-24" data-reveal>
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="grid gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
+              <div className="space-y-6">
+                <p className="feature-pill">Restaurant POS</p>
+                <h2 className="section-heading">Restaurant POS Dashboard System</h2>
+                <p className="section-copy">
+                  Smart POS Software for Restaurants with table flow, KOT screens, cashier billing, inventory tracking, and
+                  daily reporting — all in one premium dashboard.
+                </p>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {[
+                    { title: 'Order management dashboard', text: 'Track dine-in, takeaway, delivery, and pending bills in real time.' },
+                    { title: 'Table management', text: 'Live table status, split bills, and fast table turnover.' },
+                    { title: 'Kitchen order screen (KOT)', text: 'Auto-send tickets to kitchen with clear queue priority.' },
+                    { title: 'Cashier billing dashboard', text: 'Speed billing with discounts, returns, and receipt print flow.' },
+                    { title: 'Sales analytics', text: 'Daily/weekly trends, top items, and peak-hours insights.' },
+                    { title: 'Inventory + menu management', text: 'Stock sync, low-stock alerts, recipe costs, and menu updates.' },
+                    { title: 'Daily reports', text: 'Sales, expenses, profit, and cashier closing summaries.' },
+                    { title: 'Staff/user roles', text: 'Role-based access for cashier, manager, and owner dashboards.' },
+                  ].map((item) => (
+                    <div key={item.title} className="rounded-[1.5rem] border border-slate-200/70 bg-white/80 p-4 shadow-sm backdrop-blur">
+                      <p className="text-sm font-semibold text-slate-950">{item.title}</p>
+                      <p className="mt-2 text-sm leading-7 text-slate-600">{item.text}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="rounded-[1.75rem] border border-sky-200/80 bg-white/80 p-5 shadow-sm backdrop-blur">
+                  <p className="text-sm font-semibold text-slate-950">Complete Restaurant Management Dashboard</p>
+                  <p className="mt-2 text-sm leading-7 text-slate-600">
+                    Automate daily restaurant operations: order flow, kitchen workflow, inventory, and owner reports — with
+                    a modern SaaS-style experience.
+                  </p>
+                </div>
+              </div>
+
+              <div className="relative">
+                <div className="absolute inset-0 rounded-[2.25rem] bg-gradient-to-br from-sky-200/60 via-cyan-100/60 to-violet-200/60 blur-3xl" />
+                <div className="glass-card relative overflow-hidden p-4 sm:p-6 hero-float">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Live POS screen</p>
+                      <h3 className="mt-2 text-lg font-semibold text-slate-950 sm:text-xl">Restaurant POS Dashboard</h3>
+                    </div>
+                    <span className="rounded-full bg-sky-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-sky-700">
+                      Active
+                    </span>
+                  </div>
+
+                  <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                    {[
+                      { label: 'Today Sales', value: 'Rs 214,900' },
+                      { label: 'Open Tables', value: '12' },
+                      { label: 'KOT Queue', value: '7' },
+                    ].map((stat) => (
+                      <div key={stat.label} className="rounded-3xl bg-slate-950/5 p-4">
+                        <p className="text-[0.72rem] uppercase tracking-[0.24em] text-slate-500">{stat.label}</p>
+                        <p className="mt-2 text-lg font-semibold text-slate-950">{stat.value}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_0.9fr]">
+                    <div className="rounded-3xl border border-slate-200/70 bg-white/80 p-4 shadow-sm backdrop-blur">
+                      <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
+                        <span>Tables</span>
+                        <span className="text-sky-700">Live</span>
+                      </div>
+                      <div className="mt-4 grid grid-cols-3 gap-2">
+                        {[
+                          { name: 'T1', state: 'busy' },
+                          { name: 'T2', state: 'free' },
+                          { name: 'T3', state: 'busy' },
+                          { name: 'T4', state: 'reserved' },
+                          { name: 'T5', state: 'free' },
+                          { name: 'T6', state: 'busy' },
+                        ].map((table) => (
+                          <div
+                            key={table.name}
+                            className={`rounded-2xl border px-3 py-3 text-center text-xs font-semibold ${
+                              table.state === 'free'
+                                ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                                : table.state === 'reserved'
+                                  ? 'border-amber-200 bg-amber-50 text-amber-700'
+                                  : 'border-sky-200 bg-sky-50 text-sky-700'
+                            }`}
+                          >
+                            <div className="text-[0.7rem]">{table.name}</div>
+                            <div className="mt-1 text-[0.68rem] font-medium opacity-80">{table.state}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="rounded-3xl border border-slate-200/70 bg-white/80 p-4 shadow-sm backdrop-blur">
+                      <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
+                        <span>Kitchen (KOT)</span>
+                        <span className="text-sky-700">Queue</span>
+                      </div>
+                      <div className="mt-4 grid gap-2">
+                        {[
+                          { item: 'Zinger Burger', table: 'T3', time: '03m' },
+                          { item: 'Chicken Karahi', table: 'T1', time: '06m' },
+                          { item: 'Club Sandwich', table: 'T6', time: '09m' },
+                        ].map((row) => (
+                          <div key={row.item} className="rounded-2xl border border-slate-200/70 bg-white p-3">
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <p className="text-sm font-semibold text-slate-950">{row.item}</p>
+                                <p className="mt-1 text-xs text-slate-600">Table {row.table}</p>
+                              </div>
+                              <span className="rounded-full bg-slate-950/5 px-3 py-1 text-xs font-semibold text-slate-700">
+                                {row.time}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-3 rounded-2xl bg-slate-950/5 p-3 text-xs text-slate-600">
+                        Restaurant business automation: auto KOT, bill print, and daily close reports.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -829,7 +961,7 @@ function App() {
                 </div>
                 <div>
                   <p className="text-sm uppercase tracking-[0.28em] text-sky-700">NEXORA</p>
-                  <h2 className="text-2xl font-semibold text-slate-950">Nexora POS Solutions</h2>
+                  <h2 className="text-2xl font-semibold text-slate-950">Nexora Solutions</h2>
                 </div>
               </div>
               <p className="max-w-xl text-sm leading-7 text-slate-600">
@@ -855,9 +987,14 @@ function App() {
             </div>
           </div>
           <div className="mt-10 flex flex-col gap-3 border-t border-slate-200/70 pt-6 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between">
-            <div>© 2026 Nexora POS Solutions. All rights reserved.</div>
+            <div>© 2026 Nexora Solutions. All rights reserved.</div>
             <div className="inline-flex items-center gap-2 text-slate-500">
               <span className="inline-flex h-7 items-center gap-2 rounded-full border border-slate-200/70 bg-white/70 px-3 backdrop-blur">
+                {useImageLogo && (
+                  <span className="inline-flex items-center justify-center rounded-full bg-slate-950/95 p-1 ring-1 ring-slate-200/60">
+                    <img src={logoSrc} alt="" className="h-3.5 w-auto object-contain" loading="lazy" decoding="async" />
+                  </span>
+                )}
                 <span className="h-1.5 w-1.5 rounded-full bg-gradient-to-r from-sky-500 to-indigo-500" />
                 Powered by Nexora Solutions
               </span>
