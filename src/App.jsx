@@ -158,7 +158,6 @@ function FiverrIcon({ className = 'h-4 w-4' }) {
 }
 
 function App() {
-  const [bannerOpen, setBannerOpen] = useState(true)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [useImageLogo, setUseImageLogo] = useState(true)
   const logoSrc = '/nexora-logo.jpg'
@@ -235,38 +234,6 @@ function App() {
   return (
     <div className="page-enter relative overflow-x-hidden bg-slate-50 text-slate-950">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-[radial-gradient(circle_at_20%_20%,_rgba(56,189,248,0.18),_transparent_28%),radial-gradient(circle_at_80%_10%,_rgba(168,85,247,0.16),_transparent_26%)] opacity-90" />
-
-      {bannerOpen && (
-        <div className="banner-enter relative z-[60] border-b border-slate-200/60 bg-white/70 backdrop-blur-2xl">
-          <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-2 sm:px-6 lg:px-8">
-            <div className="flex min-w-0 items-center gap-2.5 text-slate-900">
-              <div className="relative inline-flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white shadow-sm ring-1 ring-slate-200/70">
-                {useImageLogo ? (
-                  <img
-                    src={logoSrc}
-                    alt=""
-                    className="h-7 w-7 rounded-full object-contain object-center"
-                    loading="eager"
-                    decoding="async"
-                    onError={() => setUseImageLogo(false)}
-                  />
-                ) : (
-                  <div className="h-7 w-7 rounded-full bg-gradient-to-br from-sky-500 via-cyan-400 to-violet-500" />
-                )}
-              </div>
-              <p className="truncate text-sm font-semibold text-slate-950">Nexora POS Solutions</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setBannerOpen(false)}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200/70 bg-white/70 text-slate-700 shadow-sm backdrop-blur transition hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300"
-              aria-label="Close banner"
-            >
-              <span className="text-lg leading-none">×</span>
-            </button>
-          </div>
-        </div>
-      )}
 
       <header className="sticky top-0 z-50 border-b border-slate-200/60 bg-white/70 shadow-[0_14px_44px_-30px_rgba(15,23,42,0.35)] backdrop-blur-2xl">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-sky-400/60 to-transparent" />
