@@ -1270,20 +1270,38 @@ function App() {
           </div>
           <div className="mt-10 flex flex-col gap-3 border-t border-slate-200/70 pt-6 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between">
             <div>© 2026 Nexora Solutions. All rights reserved.</div>
-            <div className="inline-flex items-center gap-2 text-slate-500">
+            <div className="flex w-full justify-center sm:w-auto sm:justify-end">
               <a
                 href={fiverrLink}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex h-7 items-center gap-2 rounded-full border border-slate-200/70 bg-white/70 px-3 backdrop-blur transition hover:bg-white"
+                className="group inline-flex w-full max-w-[36rem] items-center justify-center gap-2.5 rounded-2xl border border-slate-200/70 bg-white/70 px-3 py-2 text-xs font-medium text-slate-600 shadow-sm backdrop-blur transition hover:bg-white hover:shadow-md sm:w-auto sm:justify-start sm:text-sm"
               >
-                {useImageLogo && (
-                  <span className="inline-flex items-center justify-center rounded-full bg-slate-950/95 p-1 ring-1 ring-slate-200/60">
-                    <img src={logoSrc} alt="" className="h-3.5 w-auto object-contain" loading="lazy" decoding="async" />
-                  </span>
-                )}
-                <span className="h-1.5 w-1.5 rounded-full bg-gradient-to-r from-sky-500 to-indigo-500" />
-                Powered by Nexora Solutions • Available on Fiverr
+                <span className="inline-flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-white ring-1 ring-slate-200/70 shadow-sm sm:h-8 sm:w-8">
+                  {useImageLogo ? (
+                    <img
+                      src={logoSrc}
+                      alt=""
+                      className="h-full w-full object-contain"
+                      loading="lazy"
+                      decoding="async"
+                      onError={() => setUseImageLogo(false)}
+                    />
+                  ) : (
+                    <span className="h-full w-full rounded-full bg-gradient-to-br from-sky-500 via-cyan-400 to-violet-500" />
+                  )}
+                </span>
+
+                <span className="text-slate-500">
+                  Powered by <span className="font-semibold text-sky-700">Nexora Solutions</span>
+                </span>
+
+                <span className="hidden h-1 w-1 rounded-full bg-slate-300 sm:inline-block" />
+
+                <span className="inline-flex items-center gap-1.5 font-semibold text-emerald-700">
+                  <FiverrIcon className="h-4 w-4 text-emerald-600" />
+                  Available on Fiverr
+                </span>
               </a>
             </div>
           </div>
