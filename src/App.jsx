@@ -14,13 +14,11 @@ Details:`
 const whatsappLeadLink = `${whatsappLink}?text=${encodeURIComponent(defaultLeadMessage)}`
 
 const navLinks = [
-  { id: 'about', label: 'About' },
+  { id: 'hero', label: 'Home' },
   { id: 'services', label: 'Services' },
   { id: 'restaurant-pos', label: 'Restaurant POS' },
-  { id: 'fiverr', label: 'Fiverr' },
-  { id: 'products', label: 'Projects' },
-  { id: 'dashboards', label: 'Insights' },
-  { id: 'pricing', label: 'Pricing' },
+  { id: 'dashboards', label: 'Dashboards' },
+  { id: 'case-studies', label: 'Projects' },
   { id: 'contact', label: 'Contact' },
 ]
 
@@ -237,9 +235,10 @@ function App() {
     <div className="page-enter relative overflow-x-hidden bg-slate-50 text-slate-950">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-[radial-gradient(circle_at_20%_20%,_rgba(56,189,248,0.18),_transparent_28%),radial-gradient(circle_at_80%_10%,_rgba(168,85,247,0.16),_transparent_26%)] opacity-90" />
 
-      <header className="sticky top-0 z-50 border-b border-slate-200/60 bg-white/70 shadow-[0_12px_40px_-28px_rgba(15,23,42,0.35)] backdrop-blur-2xl">
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-sky-400/50 to-transparent" />
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-4 py-3 sm:gap-4 sm:px-6 sm:py-4 lg:px-8">
+      <header className="sticky top-0 z-50 border-b border-slate-200/60 bg-white/70 shadow-[0_14px_44px_-30px_rgba(15,23,42,0.35)] backdrop-blur-2xl">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-sky-400/60 to-transparent" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_10%_20%,_rgba(56,189,248,0.12),_transparent_38%),radial-gradient(circle_at_90%_10%,_rgba(168,85,247,0.10),_transparent_34%)]" />
+        <div className="relative mx-auto flex max-w-7xl items-center justify-between gap-2 px-4 py-2.5 sm:gap-4 sm:px-6 sm:py-3.5 lg:px-8">
           <a href="#hero" className="group flex items-center gap-2.5 text-slate-950 sm:gap-3">
             <div className="relative rounded-full bg-gradient-to-br from-sky-400/50 via-cyan-300/40 to-violet-400/50 p-[1px] transition group-hover:-translate-y-0.5 group-hover:shadow-md">
               <div className="inline-flex items-center justify-center rounded-full border border-white/60 bg-white/70 p-1.5 shadow-sm backdrop-blur sm:p-2">
@@ -272,19 +271,19 @@ function App() {
               </div>
             </div>
             <div className="leading-tight">
-              <p className="font-display text-[0.82rem] font-semibold uppercase tracking-[0.26em] text-slate-950 sm:text-sm">
+              <p className="font-display text-[0.84rem] font-semibold uppercase tracking-[0.28em] text-slate-950 sm:text-sm">
                 NEXORA
               </p>
-              <p className="hidden text-[0.78rem] text-slate-500 sm:block">Nexora Solutions</p>
+              <p className="hidden text-[0.78rem] text-slate-500 sm:block">Software &amp; systems studio</p>
             </div>
           </a>
 
-          <nav className="hidden items-center gap-8 text-sm font-semibold text-slate-600 lg:flex">
+          <nav className="hidden items-center gap-2 text-sm font-semibold text-slate-700 lg:flex">
             {navLinks.map((link) => (
               <a
                 key={link.id}
                 href={`#${link.id}`}
-                className="relative text-slate-600 transition hover:text-slate-950 after:absolute after:-bottom-2 after:left-0 after:h-0.5 after:w-full after:origin-left after:scale-x-0 after:rounded-full after:bg-gradient-to-r after:from-sky-500 after:to-indigo-500 after:transition-transform hover:after:scale-x-100"
+                className="rounded-full px-4 py-2 transition hover:bg-white/70 hover:text-slate-950 hover:shadow-sm"
               >
                 {link.label}
               </a>
@@ -292,6 +291,17 @@ function App() {
           </nav>
 
           <div className="flex items-center gap-2 sm:gap-3">
+            <a
+              href={fiverrLink}
+              target="_blank"
+              rel="noreferrer"
+              className="hidden items-center justify-center gap-2 rounded-full border border-emerald-200 bg-white/70 px-4 py-2.5 text-sm font-semibold text-slate-900 shadow-sm backdrop-blur transition hover:bg-white hover:shadow-md hover:shadow-emerald-600/10 lg:inline-flex"
+            >
+              <span className="text-emerald-600">
+                <FiverrIcon className="h-4 w-4" />
+              </span>
+              Hire on Fiverr
+            </a>
             <a
               href="#contact"
               className="inline-flex items-center justify-center rounded-full bg-sky-700 px-3.5 py-2 text-[0.78rem] font-semibold text-white shadow-lg shadow-sky-700/20 transition hover:bg-sky-800 active:scale-[0.99] sm:px-5 sm:py-2.5 sm:text-sm"
@@ -331,6 +341,27 @@ function App() {
         {mobileMenuOpen && (
           <div className="border-t border-slate-200/60 bg-white/70 backdrop-blur-2xl lg:hidden">
             <div className="mx-auto max-w-7xl space-y-2 px-4 py-4 sm:px-6 lg:px-8">
+              <div className="grid gap-2 pb-2">
+                <a
+                  href={fiverrLink}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-emerald-200 bg-white/80 px-4 py-3 text-sm font-semibold text-slate-900 shadow-sm backdrop-blur transition hover:bg-white active:scale-[0.99]"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <span className="text-emerald-600">
+                    <FiverrIcon className="h-4 w-4" />
+                  </span>
+                  Hire on Fiverr
+                </a>
+                <a
+                  href="#contact"
+                  className="inline-flex items-center justify-center rounded-2xl bg-sky-700 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-sky-700/20 transition hover:bg-sky-800 active:scale-[0.99]"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Book Demo
+                </a>
+              </div>
               {navLinks.map((link) => (
                 <a
                   key={link.id}
@@ -341,24 +372,15 @@ function App() {
                   {link.label}
                 </a>
               ))}
-              <div className="grid gap-2 pt-2">
-                <a
-                  href="#services"
-                  className="inline-flex items-center justify-center rounded-2xl border border-slate-200/70 bg-white/70 px-4 py-3 text-sm font-semibold text-slate-900 shadow-sm backdrop-blur transition hover:bg-white active:scale-[0.99]"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  View Services
-                </a>
-                <a
-                  href={whatsappLeadLink}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center justify-center rounded-2xl bg-sky-700 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-sky-700/20 transition hover:bg-sky-800 active:scale-[0.99]"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  WhatsApp Demo Request
-                </a>
-              </div>
+              <a
+                href={whatsappLeadLink}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-3 inline-flex items-center justify-center rounded-2xl border border-slate-200/70 bg-white/80 px-4 py-3 text-sm font-semibold text-slate-900 shadow-sm backdrop-blur transition hover:bg-white active:scale-[0.99]"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                WhatsApp demo request
+              </a>
             </div>
           </div>
         )}
@@ -714,6 +736,76 @@ function App() {
           </div>
         </section>
 
+        <section id="case-studies" className="py-14 sm:py-20 lg:py-24" data-reveal>
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="mb-10 max-w-2xl">
+              <p className="feature-pill">Demo case studies</p>
+              <h2 className="section-heading mt-6">Demo Projects / Case Studies</h2>
+              <p className="section-copy">
+                Sample project breakdowns based on real business workflows. Available for custom client projects and tailored implementations.
+              </p>
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+              {[
+                {
+                  title: 'Restaurant POS Dashboard',
+                  label: 'Sample project',
+                  points: ['Order management', 'Kitchen screen (KOT)', 'Billing', 'Inventory', 'Reports'],
+                },
+                {
+                  title: 'CRM & Admin Dashboard',
+                  label: 'Demo case study',
+                  points: ['Leads', 'Customers', 'Analytics', 'Staff roles'],
+                },
+                {
+                  title: 'ERP Business Panel',
+                  label: 'Built for business use cases',
+                  points: ['Finance', 'Inventory', 'Reports', 'Operations'],
+                },
+                {
+                  title: 'SaaS Landing Website',
+                  label: 'Demo case study',
+                  points: ['Modern UI', 'Responsive design', 'Contact form', 'Fast deployment'],
+                },
+              ].map((project) => (
+                <div key={project.title} className="glass-panel">
+                  <div className="flex items-start justify-between gap-3">
+                    <h3 className="text-lg font-semibold text-slate-950">{project.title}</h3>
+                    <span className="rounded-full bg-slate-950/5 px-3 py-1 text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-slate-600">
+                      {project.label}
+                    </span>
+                  </div>
+                  <div className="mt-5 rounded-3xl border border-slate-200/70 bg-white/70 p-4 shadow-sm backdrop-blur">
+                    <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
+                      <span>Scope</span>
+                      <span className="text-sky-700">UI + Workflow</span>
+                    </div>
+                    <ul className="mt-4 space-y-2 text-sm text-slate-700">
+                      {project.points.map((point) => (
+                        <li key={point} className="flex items-start gap-2">
+                          <span className="mt-1 inline-flex h-1.5 w-1.5 rounded-full bg-gradient-to-r from-sky-500 to-indigo-500" />
+                          <span>{point}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="mt-5 flex flex-wrap gap-2">
+                    {['Custom build', 'Responsive UI', 'Clean reporting'].map((tag) => (
+                      <span
+                        key={tag}
+                        className="inline-flex items-center rounded-full border border-slate-200/70 bg-white/70 px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm backdrop-blur"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
         <section id="fiverr" className="py-14 sm:py-20 lg:py-24" data-reveal>
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
@@ -722,6 +814,9 @@ function App() {
                 <h2 className="section-heading">Available for Freelance Projects</h2>
                 <p className="section-copy">
                   Custom Software &amp; Dashboard Development delivered with premium UI, responsive screens, and clean business workflows.
+                </p>
+                <p className="text-sm leading-7 text-slate-600">
+                  Hire me for custom POS, CRM, ERP, SaaS and dashboard development — scoped to your exact requirements.
                 </p>
                 <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white/70 px-3 py-1.5 text-xs font-semibold text-emerald-800 shadow-sm backdrop-blur">
                   <span className="text-emerald-600">
