@@ -1,7 +1,5 @@
 import { useEffect, useState } from 'react'
 
-const company = 'Nexora POS Solutions'
-const tagline = 'Smart Business Management Solutions'
 const whatsappNumberDisplay = '03194329754'
 const whatsappLink = 'https://wa.me/923194329754'
 const contactEmail = 'rahanshah4@gmail.com'
@@ -79,23 +77,6 @@ const services = [
     title: 'Business Automation',
     text: 'Automated summaries and role-based dashboards for management and operational teams.',
   },
-]
-
-const restaurantFeatures = [
-  'Fast order billing',
-  'Dine-in, takeaway and delivery orders',
-  'Table management',
-  'Kitchen order ticket',
-  'Receipt printing',
-  'Daily sales report',
-  'Expense tracking',
-  'Inventory and stock control',
-  'Staff login and role control',
-  'Customer ledger',
-  'Profit dashboard',
-  'WhatsApp daily report',
-  'Owner dashboard',
-  'Mobile + desktop support',
 ]
 
 const pricingPlans = [
@@ -204,12 +185,26 @@ function App() {
       <div className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-[radial-gradient(circle_at_20%_20%,_rgba(56,189,248,0.18),_transparent_28%),radial-gradient(circle_at_80%_10%,_rgba(168,85,247,0.16),_transparent_26%)] opacity-90" />
 
       <header className="sticky top-0 z-50 border-b border-slate-200/70 bg-white/95 backdrop-blur-xl shadow-sm">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:gap-4 sm:px-6 sm:py-4 lg:px-8">
           <a href="#hero" className="flex items-center gap-3 text-slate-950">
-            <div className="inline-flex h-12 w-12 items-center justify-center rounded-3xl bg-sky-100 text-sky-700 shadow-sm">N</div>
+            <div className="relative inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-3xl bg-slate-950 text-white shadow-sm sm:h-12 sm:w-12">
+              <div className="absolute inset-0 bg-gradient-to-br from-sky-500 via-cyan-400 to-violet-500 opacity-95" />
+              <svg
+                className="relative h-5 w-5 sm:h-6 sm:w-6"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
+              >
+                <path
+                  d="M6 18V6h2.7l6.6 8.4V6H18v12h-2.7L8.7 9.6V18H6Z"
+                  fill="currentColor"
+                />
+              </svg>
+            </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.32em] text-sky-700">NEXORA</p>
-              <p className="text-[0.78rem] text-slate-500">Software & dashboard solutions</p>
+              <p className="hidden text-[0.78rem] text-slate-500 sm:block">Software & dashboard solutions</p>
             </div>
           </a>
 
@@ -224,7 +219,7 @@ function App() {
           <div className="flex items-center gap-3">
             <a
               href="#contact"
-              className="inline-flex items-center justify-center rounded-full bg-sky-700 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-sky-700/20 transition hover:bg-sky-800"
+              className="inline-flex items-center justify-center rounded-full bg-sky-700 px-4 py-2.5 text-[0.8125rem] font-semibold text-white shadow-lg shadow-sky-700/20 transition hover:bg-sky-800 sm:px-5 sm:text-sm"
             >
               Book Demo
             </a>
@@ -233,6 +228,7 @@ function App() {
               onClick={() => setMobileMenuOpen((prev) => !prev)}
               className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm lg:hidden"
               aria-label="Open navigation menu"
+              aria-expanded={mobileMenuOpen}
             >
               <span className="block h-0.5 w-5 rounded-full bg-slate-700"></span>
               <span className="mt-1 block h-0.5 w-5 rounded-full bg-slate-700"></span>
@@ -253,48 +249,107 @@ function App() {
                   {link.label}
                 </a>
               ))}
+              <div className="grid gap-2 pt-2">
+                <a
+                  href="#services"
+                  className="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 shadow-sm"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  View Services
+                </a>
+                <a
+                  href={whatsappLeadLink}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center justify-center rounded-2xl bg-sky-700 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-sky-700/20"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  WhatsApp Demo Request
+                </a>
+              </div>
             </div>
           </div>
         )}
       </header>
 
       <main>
-        <section id="hero" className="relative overflow-hidden py-16 sm:py-20 lg:py-24">
+        <section id="hero" className="relative overflow-hidden pb-12 pt-10 sm:py-20 lg:py-24">
+          <div className="pointer-events-none absolute inset-0">
+            <div className="absolute inset-0 bg-sparkle-grid opacity-90" />
+            <div className="absolute -top-28 left-1/2 h-72 w-[34rem] -translate-x-1/2 rounded-full bg-gradient-to-r from-sky-400/25 via-cyan-300/20 to-violet-400/25 blur-3xl" />
+            <div className="absolute -bottom-40 right-[-8rem] h-72 w-72 rounded-full bg-sky-400/15 blur-3xl" />
+          </div>
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="grid items-center gap-12 lg:grid-cols-[1.1fr_0.9fr]">
-              <div className="space-y-8">
-                <div className="feature-pill">Premium software & dashboard systems</div>
-                <div className="space-y-5">
-                  <p className="text-sm uppercase tracking-[0.28em] text-sky-700">NEXORA Solutions</p>
-                  <h1 className="max-w-3xl text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
-                    Modern SaaS, ERP, CRM, POS and dashboard software for growing businesses
+            <div className="relative grid items-center gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:gap-12">
+              <div className="relative space-y-6 sm:space-y-8">
+                <div className="inline-flex items-center gap-2 rounded-full border border-sky-200/80 bg-white/80 px-3 py-1.5 text-xs font-semibold text-sky-700 shadow-sm backdrop-blur sm:px-4 sm:py-2 sm:text-sm">
+                  <span className="h-1.5 w-1.5 rounded-full bg-gradient-to-r from-sky-500 to-indigo-500" />
+                  Premium software & dashboards
+                </div>
+
+                <div className="space-y-4 sm:space-y-5">
+                  <p className="text-xs uppercase tracking-[0.28em] text-sky-700 sm:text-sm">NEXORA Solutions</p>
+                  <h1 className="max-w-2xl font-semibold tracking-tight text-slate-950">
+                    <span className="block text-[1.85rem] leading-[1.12] sm:hidden">
+                      Premium Software, POS &amp; Dashboard Systems
+                    </span>
+                    <span className="hidden text-4xl sm:block sm:text-5xl">
+                      Modern SaaS, ERP, CRM, POS and dashboard software for growing businesses
+                    </span>
                   </h1>
-                  <p className="section-copy">
-                    Nexora builds websites, powerful software, and performance dashboards that help retail,
-                    healthcare, logistics and business teams control operations faster.
+                  <p className="max-w-xl text-sm leading-7 text-slate-600 sm:text-base sm:leading-8">
+                    Nexora builds custom software, POS systems, and real-time dashboards so teams run operations faster and
+                    make confident decisions.
                   </p>
                 </div>
-                <div className="grid max-w-md gap-4 sm:grid-cols-2">
+
+                <div className="flex flex-wrap gap-2">
+                  {['POS Systems', 'ERP', 'CRM', 'Dashboards'].map((item) => (
+                    <span
+                      key={item}
+                      className="inline-flex items-center gap-2 rounded-full border border-slate-200/80 bg-white/80 px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm backdrop-blur"
+                    >
+                      <span className="h-1.5 w-1.5 rounded-full bg-gradient-to-r from-sky-500 to-indigo-500" />
+                      {item}
+                    </span>
+                  ))}
+                </div>
+
+                <div className="grid gap-3 sm:max-w-md sm:grid-cols-2">
                   <a
                     href="#contact"
                     className="inline-flex items-center justify-center rounded-full bg-sky-700 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-sky-700/20 transition hover:bg-sky-800"
                   >
-                    Book free demo
+                    Book Demo
+                  </a>
+                  <a
+                    href="#services"
+                    className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-900 shadow-sm transition hover:bg-slate-100"
+                  >
+                    View Services
                   </a>
                   <a
                     href={whatsappLeadLink}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
+                    className="sm:col-span-2 inline-flex items-center justify-center rounded-full border border-slate-200 bg-white/70 px-5 py-3 text-sm font-semibold text-slate-700 shadow-sm backdrop-blur transition hover:bg-white"
                   >
-                    Talk on WhatsApp
+                    WhatsApp demo request
                   </a>
                 </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {['POS', 'ERP', 'CRM', 'Dashboards'].map((item) => (
-                    <div key={item} className="rounded-3xl border border-slate-200/80 bg-white/90 p-4 shadow-sm">
-                      <p className="text-sm font-semibold text-slate-950">{item}</p>
-                      <p className="mt-2 text-sm text-slate-600">Scalable systems for fast decisions and daily operations.</p>
+
+                <div className="grid grid-cols-3 gap-2 sm:max-w-lg sm:gap-3">
+                  {[
+                    { title: 'Fast Delivery', subtitle: 'Clear timelines' },
+                    { title: 'Custom Software', subtitle: 'Built for you' },
+                    { title: 'Automation', subtitle: 'Save hours/day' },
+                  ].map((stat) => (
+                    <div
+                      key={stat.title}
+                      className="rounded-[1.25rem] border border-slate-200/70 bg-white/70 p-3 shadow-sm backdrop-blur"
+                    >
+                      <p className="text-xs font-semibold text-slate-950">{stat.title}</p>
+                      <p className="mt-1 text-[0.72rem] leading-5 text-slate-600">{stat.subtitle}</p>
                     </div>
                   ))}
                 </div>
@@ -302,42 +357,45 @@ function App() {
 
               <div className="relative">
                 <div className="absolute inset-0 rounded-[2rem] bg-gradient-to-br from-sky-100/80 via-cyan-100/70 to-violet-100 blur-3xl" />
-                <div className="glass-card relative overflow-hidden p-6">
+                <div className="glass-card relative overflow-hidden p-4 sm:p-6 hero-float">
                   <div className="flex items-center justify-between gap-4">
                     <div>
-                      <p className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500">Live dashboard</p>
-                      <h2 className="mt-3 text-2xl font-semibold text-slate-950">Nexora Business Cloud</h2>
+                      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500 sm:text-sm">Live dashboard</p>
+                      <h2 className="mt-2 text-lg font-semibold text-slate-950 sm:mt-3 sm:text-2xl">Nexora Business Cloud</h2>
                     </div>
                     <span className="rounded-full bg-sky-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-sky-700">
                       Active
                     </span>
                   </div>
 
-                  <div className="mt-8 grid gap-4 md:grid-cols-2">
-                    <div className="rounded-3xl bg-slate-950/5 p-4">
-                      <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Revenue</p>
-                      <p className="mt-3 text-2xl font-semibold text-slate-950">Rs 458,200</p>
+                  <div className="mt-5 grid gap-3 sm:mt-8 sm:grid-cols-2 sm:gap-4">
+                    <div className="rounded-3xl bg-slate-950/5 p-3 sm:p-4">
+                      <p className="text-[0.7rem] uppercase tracking-[0.24em] text-slate-500 sm:text-xs">Revenue</p>
+                      <p className="mt-2 text-xl font-semibold text-slate-950 sm:mt-3 sm:text-2xl">Rs 458,200</p>
                     </div>
-                    <div className="rounded-3xl bg-white p-4 shadow-sm">
-                      <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Orders</p>
-                      <p className="mt-3 text-2xl font-semibold text-slate-950">128</p>
+                    <div className="rounded-3xl bg-white p-3 shadow-sm sm:p-4">
+                      <p className="text-[0.7rem] uppercase tracking-[0.24em] text-slate-500 sm:text-xs">Orders</p>
+                      <p className="mt-2 text-xl font-semibold text-slate-950 sm:mt-3 sm:text-2xl">128</p>
                     </div>
                   </div>
 
-                  <div className="mt-6 rounded-3xl border border-slate-200/80 bg-white p-4 shadow-sm">
-                    <div className="flex items-center justify-between text-sm text-slate-500">
+                  <div className="mt-4 rounded-3xl border border-slate-200/80 bg-white p-4 shadow-sm sm:mt-6">
+                    <div className="flex items-center justify-between text-xs text-slate-500 sm:text-sm">
                       <span>Sales overview</span>
                       <span>Updated now</span>
                     </div>
-                    <div className="mt-5 grid gap-3">
-                      {[76, 92, 68, 84].map((value, index) => (
+                    <div className="mt-4 grid gap-3 sm:mt-5">
+                      {[82, 68, 91].map((value, index) => (
                         <div key={index} className="grid gap-2">
-                          <div className="flex items-center justify-between text-sm text-slate-600">
-                            <span>Metric {index + 1}</span>
+                          <div className="flex items-center justify-between text-xs text-slate-600 sm:text-sm">
+                            <span>{['Billing', 'Inventory', 'Reports'][index]}</span>
                             <span>{value}%</span>
                           </div>
                           <div className="h-2 overflow-hidden rounded-full bg-slate-200">
-                            <div className="h-full rounded-full bg-gradient-to-r from-sky-500 to-indigo-500" style={{ width: `${value}%` }} />
+                            <div
+                              className="h-full rounded-full bg-gradient-to-r from-sky-500 to-indigo-500"
+                              style={{ width: `${value}%` }}
+                            />
                           </div>
                         </div>
                       ))}
