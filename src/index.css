@@ -71,10 +71,10 @@ body {
 
   [data-reveal] {
     opacity: 0;
-    transform: translate3d(0, 14px, 0);
+    transform: translate3d(0, 10px, 0);
     transition:
-      opacity 700ms cubic-bezier(0.2, 0.8, 0.2, 1),
-      transform 700ms cubic-bezier(0.2, 0.8, 0.2, 1);
+      opacity 650ms cubic-bezier(0.2, 0.8, 0.2, 1),
+      transform 650ms cubic-bezier(0.2, 0.8, 0.2, 1);
     will-change: transform, opacity;
   }
 
@@ -84,7 +84,7 @@ body {
   }
 
   .glow-blob {
-    animation: glowDrift 9s ease-in-out infinite;
+    animation: glowDrift 12s ease-in-out infinite;
     will-change: transform, opacity;
   }
 
@@ -127,7 +127,7 @@ body {
       transform: translate3d(0, 0, 0);
     }
     50% {
-      transform: translate3d(0, -10px, 0);
+      transform: translate3d(0, -6px, 0);
     }
   }
 
@@ -139,7 +139,7 @@ body {
     }
     50% {
       opacity: 0.95;
-      transform: translate3d(0, -14px, 0) scale(1.06);
+      transform: translate3d(0, -8px, 0) scale(1.05);
     }
   }
 

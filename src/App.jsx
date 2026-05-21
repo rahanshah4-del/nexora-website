@@ -216,12 +216,12 @@ function App() {
         <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-sky-400/50 to-transparent" />
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-4 py-3 sm:gap-4 sm:px-6 sm:py-4 lg:px-8">
           <a href="#hero" className="group flex items-center gap-2.5 text-slate-950 sm:gap-3">
-            <div className="logo-shell relative inline-flex items-center justify-center rounded-2xl bg-slate-950/95 p-1.5 shadow-sm ring-1 ring-slate-200/60 backdrop-blur transition group-hover:-translate-y-0.5 group-hover:shadow-md">
+            <div className="logo-shell relative inline-flex items-center justify-center overflow-hidden rounded-2xl bg-slate-950/95 p-1.5 shadow-sm ring-1 ring-slate-200/60 backdrop-blur transition group-hover:-translate-y-0.5 group-hover:shadow-md">
               {useImageLogo ? (
                 <img
                   src={logoSrc}
                   alt="Nexora logo"
-                  className="h-9 w-auto rounded-xl object-contain sm:h-12"
+                  className="h-9 w-9 rounded-full object-cover object-left shadow-sm sm:h-12 sm:w-12"
                   loading="eager"
                   decoding="async"
                   onError={() => setUseImageLogo(false)}
@@ -422,7 +422,7 @@ function App() {
 
               <div className="relative hero-enter [--delay:120ms]">
                 <div className="absolute inset-0 rounded-[2rem] bg-gradient-to-br from-sky-100/80 via-cyan-100/70 to-violet-100 blur-3xl" />
-                <div className="glass-card relative overflow-hidden p-4 sm:p-6 hero-float">
+                <div className="glass-card relative overflow-hidden px-4 pb-4 pt-14 sm:px-6 sm:pb-6 sm:pt-16 hero-float">
                   <div className="pointer-events-none absolute inset-x-4 top-4 h-10 rounded-2xl border border-white/70 bg-white/60 backdrop-blur">
                     <div className="flex h-full items-center gap-2 px-4">
                       <span className="h-2 w-2 rounded-full bg-rose-400/90" />
@@ -443,7 +443,7 @@ function App() {
                     </span>
                   </div>
 
-                  <div className="mt-12 grid gap-3 sm:mt-10 sm:grid-cols-2 sm:gap-4">
+                  <div className="mt-6 grid gap-3 sm:mt-8 sm:grid-cols-2 sm:gap-4">
                     <div className="rounded-3xl bg-slate-950/5 p-3 sm:p-4">
                       <p className="text-[0.7rem] uppercase tracking-[0.24em] text-slate-500 sm:text-xs">Revenue</p>
                       <p className="mt-2 text-xl font-semibold text-slate-950 sm:mt-3 sm:text-2xl">Rs 458,200</p>
@@ -482,7 +482,7 @@ function App() {
           </div>
         </section>
 
-        <section id="about" className="bg-slate-50 py-16 sm:py-20 lg:py-24" data-reveal>
+        <section id="about" className="bg-slate-50 py-14 sm:py-20 lg:py-24" data-reveal>
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
               <div className="space-y-6">
@@ -514,7 +514,7 @@ function App() {
           </div>
         </section>
 
-        <section id="services" className="py-16 sm:py-20 lg:py-24" data-reveal>
+        <section id="services" className="py-14 sm:py-20 lg:py-24" data-reveal>
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mb-10 max-w-2xl">
               <p className="feature-pill">Our service coverage</p>
@@ -534,7 +534,7 @@ function App() {
           </div>
         </section>
 
-        <section id="restaurant-pos" className="bg-slate-50 py-16 sm:py-20 lg:py-24" data-reveal>
+        <section id="restaurant-pos" className="bg-slate-50 py-14 sm:py-20 lg:py-24" data-reveal>
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="grid gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
               <div className="space-y-6">
@@ -575,7 +575,7 @@ function App() {
 
               <div className="relative">
                 <div className="absolute inset-0 rounded-[2.25rem] bg-gradient-to-br from-sky-200/60 via-cyan-100/60 to-violet-200/60 blur-3xl" />
-                <div className="glass-card relative overflow-hidden p-4 sm:p-6 hero-float">
+                <div className="glass-card relative overflow-hidden px-4 pb-4 pt-14 sm:px-6 sm:pb-6 sm:pt-16 hero-float">
                   <div className="pointer-events-none absolute inset-x-4 top-4 h-10 rounded-2xl border border-white/70 bg-white/60 backdrop-blur">
                     <div className="flex h-full items-center gap-2 px-4">
                       <span className="h-2 w-2 rounded-full bg-rose-400/90" />
@@ -596,7 +596,7 @@ function App() {
                     </span>
                   </div>
 
-                  <div className="mt-12 grid gap-3 sm:mt-10 sm:grid-cols-3">
+                  <div className="mt-6 grid gap-3 sm:mt-8 sm:grid-cols-3">
                     {[
                       { label: 'Today Sales', value: 'Rs 214,900' },
                       { label: 'Open Tables', value: '12' },
@@ -676,7 +676,7 @@ function App() {
           </div>
         </section>
 
-        <section id="products" className="bg-slate-50 py-16 sm:py-20 lg:py-24" data-reveal>
+        <section id="products" className="bg-slate-50 py-14 sm:py-20 lg:py-24" data-reveal>
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mb-10 max-w-2xl">
               <p className="feature-pill">Portfolio</p>
@@ -696,7 +696,7 @@ function App() {
           </div>
         </section>
 
-        <section id="dashboards" className="py-16 sm:py-20 lg:py-24" data-reveal>
+        <section id="dashboards" className="py-14 sm:py-20 lg:py-24" data-reveal>
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mb-10 max-w-2xl">
               <p className="feature-pill">Insights</p>
@@ -767,7 +767,7 @@ function App() {
           </div>
         </section>
 
-        <section id="pricing" className="bg-slate-50 py-16 sm:py-20 lg:py-24" data-reveal>
+        <section id="pricing" className="bg-slate-50 py-14 sm:py-20 lg:py-24" data-reveal>
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mb-10 max-w-2xl">
               <p className="feature-pill">Pricing packages</p>
@@ -822,7 +822,7 @@ function App() {
           </div>
         </section>
 
-        <section id="contact" className="py-16 sm:py-20 lg:py-24" data-reveal>
+        <section id="contact" className="py-14 sm:py-20 lg:py-24" data-reveal>
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
               <div className="space-y-6">
@@ -849,31 +849,31 @@ function App() {
                 </div>
               </div>
 
-              <div className="rounded-[2rem] border border-slate-200/80 bg-white p-8 shadow-soft">
+              <div className="rounded-[2rem] border border-slate-200/80 bg-white p-6 shadow-soft sm:p-8">
                 <h3 className="text-xl font-semibold text-slate-950">Requirement Form</h3>
                 <p className="mt-3 text-sm leading-7 text-slate-600">
                   Tell us your business type and required software. Our team will guide you with the best POS, accounting or dashboard solution.
                 </p>
-                <form className="mt-8 grid gap-4" onSubmit={handleDemoSubmit}>
+                <form className="mt-6 grid gap-3 sm:mt-8 sm:gap-4" onSubmit={handleDemoSubmit}>
                   <label className="space-y-2 text-sm font-medium text-slate-900" htmlFor="fullName">
                     <span>Full Name</span>
-                    <input id="fullName" name="fullName" type="text" placeholder="Your full name" required className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100" />
+                    <input id="fullName" name="fullName" type="text" placeholder="Your full name" required className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100" />
                   </label>
                   <label className="space-y-2 text-sm font-medium text-slate-900" htmlFor="phoneNumber">
                     <span>Phone Number</span>
-                    <input id="phoneNumber" name="phoneNumber" type="tel" placeholder="03XXXXXXXXX" required className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100" />
+                    <input id="phoneNumber" name="phoneNumber" type="tel" placeholder="03XXXXXXXXX" required className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100" />
                   </label>
                   <label className="space-y-2 text-sm font-medium text-slate-900" htmlFor="emailAddress">
                     <span>Email Address</span>
-                    <input id="emailAddress" name="emailAddress" type="email" placeholder="you@example.com" required className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100" />
+                    <input id="emailAddress" name="emailAddress" type="email" placeholder="you@example.com" required className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100" />
                   </label>
                   <label className="space-y-2 text-sm font-medium text-slate-900" htmlFor="city">
                     <span>City</span>
-                    <input id="city" name="city" type="text" placeholder="Your city" required className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100" />
+                    <input id="city" name="city" type="text" placeholder="Your city" required className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100" />
                   </label>
                   <label className="space-y-2 text-sm font-medium text-slate-900" htmlFor="businessType">
                     <span>Business Type</span>
-                    <select id="businessType" name="businessType" defaultValue="" required className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100 appearance-none">
+                    <select id="businessType" name="businessType" defaultValue="" required className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100 appearance-none">
                       <option value="" disabled>Select business type</option>
                       <option value="Restaurant">Restaurant</option>
                       <option value="Canteen">Canteen</option>
@@ -888,7 +888,7 @@ function App() {
                   </label>
                   <label className="space-y-2 text-sm font-medium text-slate-900" htmlFor="softwareRequiredFor">
                     <span>Software Required For</span>
-                    <select id="softwareRequiredFor" name="softwareRequiredFor" defaultValue="" required className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100 appearance-none">
+                    <select id="softwareRequiredFor" name="softwareRequiredFor" defaultValue="" required className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100 appearance-none">
                       <option value="" disabled>Select required software</option>
                       <option value="POS Billing">POS Billing</option>
                       <option value="Accounting Dashboard">Accounting Dashboard</option>
@@ -902,9 +902,9 @@ function App() {
                   </label>
                   <label className="space-y-2 text-sm font-medium text-slate-900" htmlFor="message">
                     <span>Message / Requirements</span>
-                    <textarea id="message" name="message" placeholder="Describe your requirements, branches, and expected timeline." className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100 min-h-[130px] resize-vertical" />
+                    <textarea id="message" name="message" placeholder="Describe your requirements, branches, and expected timeline." className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100 min-h-[110px] resize-vertical" />
                   </label>
-                  <button type="submit" className="mt-1 inline-flex w-full items-center justify-center rounded-full bg-sky-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-sky-800">
+                  <button type="submit" className="mt-1 inline-flex w-full items-center justify-center rounded-full bg-sky-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-sky-800">
                     Send Requirement on WhatsApp
                   </button>
                 </form>
@@ -913,7 +913,7 @@ function App() {
           </div>
         </section>
 
-        <section id="branches" className="bg-slate-50 py-16 sm:py-20 lg:py-24" data-reveal>
+        <section id="branches" className="bg-slate-50 py-14 sm:py-20 lg:py-24" data-reveal>
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mb-10 max-w-2xl">
               <p className="feature-pill">Locations</p>
