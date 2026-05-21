@@ -217,18 +217,18 @@ function App() {
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-4 py-3 sm:gap-4 sm:px-6 sm:py-4 lg:px-8">
           <a href="#hero" className="group flex items-center gap-2.5 text-slate-950 sm:gap-3">
             <div className="relative rounded-full bg-gradient-to-br from-sky-400/50 via-cyan-300/40 to-violet-400/50 p-[1px] transition group-hover:-translate-y-0.5 group-hover:shadow-md">
-              <div className="inline-flex items-center justify-center rounded-full border border-white/60 bg-white/70 p-1 shadow-sm backdrop-blur">
+              <div className="inline-flex items-center justify-center rounded-full border border-white/60 bg-white/70 p-1.5 shadow-sm backdrop-blur sm:p-2">
                 {useImageLogo ? (
                   <img
                     src={logoSrc}
                     alt="Nexora logo"
-                    className="h-9 w-9 rounded-full object-cover object-left sm:h-12 sm:w-12"
+                    className="h-10 w-10 rounded-full object-contain object-center sm:h-[3.1rem] sm:w-[3.1rem]"
                     loading="eager"
                     decoding="async"
                     onError={() => setUseImageLogo(false)}
                   />
                 ) : (
-                  <div className="relative inline-flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-slate-950 text-white sm:h-12 sm:w-12">
+                  <div className="relative inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-slate-950 text-white sm:h-[3.1rem] sm:w-[3.1rem]">
                     <div className="absolute inset-0 bg-gradient-to-br from-sky-500 via-cyan-400 to-violet-500 opacity-95" />
                     <svg
                       className="relative h-5 w-5 sm:h-[1.3rem] sm:w-[1.3rem]"
