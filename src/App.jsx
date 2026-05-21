@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 
 const whatsappNumberDisplay = '03194329754'
 const whatsappLink = 'https://wa.me/923194329754'
+const fiverrLink = 'https://pro.fiverr.com/s/o85L4R4'
 const contactEmail = 'rahanshah4@gmail.com'
 const defaultLeadMessage = `Assalam o Alaikum, mujhe Nexora POS Solutions ka software demo chahiye.
 
@@ -16,6 +17,7 @@ const navLinks = [
   { id: 'about', label: 'About' },
   { id: 'services', label: 'Services' },
   { id: 'restaurant-pos', label: 'Restaurant POS' },
+  { id: 'fiverr', label: 'Fiverr' },
   { id: 'products', label: 'Projects' },
   { id: 'dashboards', label: 'Insights' },
   { id: 'pricing', label: 'Pricing' },
@@ -396,6 +398,15 @@ function App() {
                     View Services
                   </a>
                   <a
+                    href={fiverrLink}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="sm:col-span-2 inline-flex items-center justify-center rounded-full border border-emerald-200 bg-white/70 px-5 py-3 text-sm font-semibold text-slate-800 shadow-sm backdrop-blur transition hover:bg-white"
+                  >
+                    <span className="mr-2 inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+                    Hire on Fiverr
+                  </a>
+                  <a
                     href={whatsappLeadLink}
                     target="_blank"
                     rel="noreferrer"
@@ -678,6 +689,79 @@ function App() {
           </div>
         </section>
 
+        <section id="fiverr" className="py-14 sm:py-20 lg:py-24" data-reveal>
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+              <div className="space-y-6">
+                <p className="feature-pill">Available on Fiverr</p>
+                <h2 className="section-heading">Available for Freelance Projects</h2>
+                <p className="section-copy">
+                  Custom Software &amp; Dashboard Development delivered with premium UI, responsive screens, and clean business workflows.
+                </p>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {['SaaS Development', 'Restaurant POS Systems', 'CRM & ERP Dashboards', 'Admin Panels', 'Custom Business Software'].map(
+                    (item) => (
+                      <div
+                        key={item}
+                        className="rounded-[1.5rem] border border-slate-200/70 bg-white/70 p-4 shadow-sm backdrop-blur"
+                      >
+                        <p className="text-sm font-semibold text-slate-950">{item}</p>
+                        <p className="mt-2 text-sm leading-7 text-slate-600">
+                          Premium delivery with scalable structure and clean reporting.
+                        </p>
+                      </div>
+                    ),
+                  )}
+                </div>
+                <a
+                  href={fiverrLink}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center justify-center rounded-full bg-emerald-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-600/20 transition hover:bg-emerald-700"
+                >
+                  <span className="mr-2 inline-flex h-2 w-2 rounded-full bg-white/90" />
+                  Hire Me on Fiverr
+                </a>
+              </div>
+
+              <div className="glass-panel">
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="text-lg font-semibold text-slate-950">Fiverr availability</h3>
+                  <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-emerald-700">
+                    Online
+                  </span>
+                </div>
+                <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                  {[
+                    { title: 'Fast Delivery', subtitle: 'Clear milestones' },
+                    { title: 'Custom Development', subtitle: 'Built for your flow' },
+                    { title: 'Responsive Design', subtitle: 'Mobile-first UI' },
+                    { title: 'Business Automation', subtitle: 'Save time daily' },
+                  ].map((badge) => (
+                    <div key={badge.title} className="rounded-3xl bg-slate-950/5 p-4">
+                      <p className="text-sm font-semibold text-slate-950">{badge.title}</p>
+                      <p className="mt-2 text-sm text-slate-600">{badge.subtitle}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-5 rounded-3xl border border-slate-200/70 bg-white/70 p-4 shadow-sm backdrop-blur">
+                  <p className="text-sm text-slate-600">
+                    Prefer Fiverr? Start your project there — keep everything tracked with milestones, requirements, and delivery notes.
+                  </p>
+                  <a
+                    href={fiverrLink}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-4 inline-flex items-center justify-center rounded-full border border-emerald-200 bg-white px-5 py-2.5 text-sm font-semibold text-emerald-800 shadow-sm transition hover:bg-emerald-50"
+                  >
+                    Start Your Project
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <section id="products" className="bg-slate-50 py-14 sm:py-20 lg:py-24" data-reveal>
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mb-10 max-w-2xl">
@@ -852,7 +936,18 @@ function App() {
               </div>
 
               <div className="rounded-[2rem] border border-slate-200/80 bg-white p-6 shadow-soft sm:p-8">
-                <h3 className="text-xl font-semibold text-slate-950">Requirement Form</h3>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <h3 className="text-xl font-semibold text-slate-950">Requirement Form</h3>
+                  <a
+                    href={fiverrLink}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center justify-center rounded-full border border-emerald-200 bg-emerald-50/60 px-4 py-2 text-sm font-semibold text-emerald-800 shadow-sm backdrop-blur transition hover:bg-emerald-50"
+                  >
+                    <span className="mr-2 inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+                    Contact on Fiverr
+                  </a>
+                </div>
                 <p className="mt-3 text-sm leading-7 text-slate-600">
                   Tell us your business type and required software. Our team will guide you with the best POS, accounting or dashboard solution.
                 </p>
@@ -990,6 +1085,22 @@ function App() {
               <p className="max-w-xl text-sm leading-7 text-slate-600">
                 Premium business software for POS, hospitals, medical stores, transport operations, and live dashboards.
               </p>
+              <div className="flex flex-wrap gap-3 pt-2">
+                <a
+                  href={fiverrLink}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center justify-center rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-600/20 transition hover:bg-emerald-700"
+                >
+                  Hire on Fiverr
+                </a>
+                <a
+                  href="#contact"
+                  className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-950 shadow-sm transition hover:bg-slate-50"
+                >
+                  Book Demo
+                </a>
+              </div>
             </div>
             <div>
               <h3 className="text-base font-semibold text-slate-950">Services</h3>
@@ -1012,15 +1123,20 @@ function App() {
           <div className="mt-10 flex flex-col gap-3 border-t border-slate-200/70 pt-6 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between">
             <div>© 2026 Nexora Solutions. All rights reserved.</div>
             <div className="inline-flex items-center gap-2 text-slate-500">
-              <span className="inline-flex h-7 items-center gap-2 rounded-full border border-slate-200/70 bg-white/70 px-3 backdrop-blur">
+              <a
+                href={fiverrLink}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex h-7 items-center gap-2 rounded-full border border-slate-200/70 bg-white/70 px-3 backdrop-blur transition hover:bg-white"
+              >
                 {useImageLogo && (
                   <span className="inline-flex items-center justify-center rounded-full bg-slate-950/95 p-1 ring-1 ring-slate-200/60">
                     <img src={logoSrc} alt="" className="h-3.5 w-auto object-contain" loading="lazy" decoding="async" />
                   </span>
                 )}
                 <span className="h-1.5 w-1.5 rounded-full bg-gradient-to-r from-sky-500 to-indigo-500" />
-                Powered by Nexora Solutions
-              </span>
+                Powered by Nexora Solutions • Available on Fiverr
+              </a>
             </div>
           </div>
         </div>
