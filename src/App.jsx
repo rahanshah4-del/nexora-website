@@ -738,7 +738,7 @@ function App() {
 
         <section id="case-studies" className="py-14 sm:py-20 lg:py-24" data-reveal>
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="mb-10 max-w-2xl">
+            <div className="mb-8 max-w-2xl sm:mb-10">
               <p className="feature-pill">Demo case studies</p>
               <h2 className="section-heading mt-6">Demo Projects / Case Studies</h2>
               <p className="section-copy">
@@ -746,52 +746,69 @@ function App() {
               </p>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+            <div className="grid gap-4 sm:gap-6 md:grid-cols-2 xl:grid-cols-4">
               {[
                 {
                   title: 'Restaurant POS Dashboard',
-                  label: 'Sample project',
-                  points: ['Order management', 'Kitchen screen (KOT)', 'Billing', 'Inventory', 'Reports'],
+                  badge: 'Demo case study',
+                  description: 'Order management, kitchen screen, billing, inventory, and reporting dashboard for restaurants.',
+                  features: ['Order management', 'Kitchen screen (KOT)', 'Billing', 'Inventory', 'Reports'],
                 },
                 {
                   title: 'CRM & Admin Dashboard',
-                  label: 'Demo case study',
-                  points: ['Leads', 'Customers', 'Analytics', 'Staff roles'],
+                  badge: 'Sample project',
+                  description: 'Leads, customers, analytics, and role-based access for internal teams.',
+                  features: ['Leads', 'Customers', 'Analytics', 'Staff roles'],
                 },
                 {
                   title: 'ERP Business Panel',
-                  label: 'Built for business use cases',
-                  points: ['Finance', 'Inventory', 'Reports', 'Operations'],
+                  badge: 'Demo case study',
+                  description: 'Finance, inventory and reporting dashboard for business operations.',
+                  features: ['Finance', 'Inventory', 'Reports', 'Operations'],
                 },
                 {
                   title: 'SaaS Landing Website',
-                  label: 'Demo case study',
-                  points: ['Modern UI', 'Responsive design', 'Contact form', 'Fast deployment'],
+                  badge: 'Sample project',
+                  description: 'Modern UI, responsive layout, contact flow, and fast deployment-ready landing pages.',
+                  features: ['Modern UI', 'Responsive design', 'Contact form', 'Fast deployment'],
                 },
               ].map((project) => (
-                <div key={project.title} className="glass-panel">
+                <div
+                  key={project.title}
+                  className="group relative overflow-hidden rounded-[1.75rem] border border-slate-200/80 bg-white/75 p-5 shadow-[0_22px_60px_-40px_rgba(15,23,42,0.24)] backdrop-blur transition duration-200 hover:-translate-y-0.5 hover:bg-white sm:p-6"
+                >
+                  <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-sky-500/70 via-cyan-400/60 to-violet-500/60 opacity-80" />
                   <div className="flex items-start justify-between gap-3">
-                    <h3 className="text-lg font-semibold text-slate-950">{project.title}</h3>
-                    <span className="rounded-full bg-slate-950/5 px-3 py-1 text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-slate-600">
-                      {project.label}
+                    <span className="inline-flex items-center gap-2 rounded-full border border-slate-200/70 bg-white/70 px-3 py-1 text-[0.72rem] font-semibold text-slate-700 shadow-sm backdrop-blur">
+                      <span className="h-1.5 w-1.5 rounded-full bg-gradient-to-r from-sky-500 to-indigo-500" />
+                      {project.badge}
+                    </span>
+                    <span className="inline-flex rounded-full bg-slate-950/5 px-3 py-1 text-[0.72rem] font-semibold text-slate-600">
+                      UI + workflow
                     </span>
                   </div>
-                  <div className="mt-5 rounded-3xl border border-slate-200/70 bg-white/70 p-4 shadow-sm backdrop-blur">
-                    <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
-                      <span>Scope</span>
-                      <span className="text-sky-700">UI + Workflow</span>
-                    </div>
-                    <ul className="mt-4 space-y-2 text-sm text-slate-700">
-                      {project.points.map((point) => (
-                        <li key={point} className="flex items-start gap-2">
-                          <span className="mt-1 inline-flex h-1.5 w-1.5 rounded-full bg-gradient-to-r from-sky-500 to-indigo-500" />
-                          <span>{point}</span>
+
+                  <h3 className="mt-4 text-base font-semibold leading-6 text-slate-950 sm:text-lg sm:leading-7">
+                    {project.title}
+                  </h3>
+                  <p className="mt-2 text-sm leading-7 text-slate-600">{project.description}</p>
+
+                  <div className="mt-4 rounded-3xl border border-slate-200/70 bg-white/70 p-4 shadow-sm backdrop-blur">
+                    <p className="text-xs font-semibold text-slate-500">Features</p>
+                    <ul className="mt-3 grid gap-2 text-sm text-slate-700">
+                      {project.features.map((feature) => (
+                        <li key={feature} className="flex items-start gap-2">
+                          <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-sky-50 text-sky-700">
+                            ✓
+                          </span>
+                          <span className="leading-6">{feature}</span>
                         </li>
                       ))}
                     </ul>
                   </div>
-                  <div className="mt-5 flex flex-wrap gap-2">
-                    {['Custom build', 'Responsive UI', 'Clean reporting'].map((tag) => (
+
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {['Custom Build', 'Responsive UI', 'Clean Reporting'].map((tag) => (
                       <span
                         key={tag}
                         className="inline-flex items-center rounded-full border border-slate-200/70 bg-white/70 px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm backdrop-blur"
