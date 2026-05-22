@@ -20,7 +20,7 @@ export default function StatCard({ icon: Icon, label, value, delta, tone = 'indi
           </div>
           <div
             className={cn(
-              'grid h-11 w-11 place-items-center rounded-2xl border border-white/20 bg-gradient-to-br backdrop-blur-xl dark:border-white/10',
+              'grid h-11 w-11 place-items-center rounded-2xl border border-slate-200 bg-slate-100 text-slate-900 dark:border-slate-700 dark:bg-slate-900/80 dark:text-white',
               toneMap[tone],
             )}
           >

@@ -58,8 +58,8 @@ export default function Sidebar({ mobile = false, onNavigate }) {
                 cn(
                   'focus-ring group flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition',
                   isActive
-                    ? 'bg-gradient-to-r from-indigo-500 via-violet-500 to-sky-500 text-white shadow-glow'
-                    : 'text-slate-800 hover:bg-indigo-100 hover:text-slate-950',
+                    ? 'bg-slate-900 text-white shadow-soft'
+                    : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950',
                 )
               }
             >
@@ -95,7 +95,7 @@ export default function Sidebar({ mobile = false, onNavigate }) {
             Unlock advanced reports and team permissions.
           </p>
           <button
-            className="focus-ring mt-3 w-full rounded-xl bg-nexora-gradient px-3 py-2 text-xs font-semibold text-white shadow-glow disabled:opacity-70"
+            className="focus-ring mt-3 w-full rounded-xl bg-gradient-to-r from-sky-600 to-indigo-600 px-3 py-2 text-xs font-semibold text-white shadow-soft disabled:opacity-70 hover:brightness-105"
             onClick={() => navigate('/upgrade-business')}
             disabled={isBusiness}
             type="button"
@@ -117,7 +117,7 @@ export default function Sidebar({ mobile = false, onNavigate }) {
   if (!mobile) {
     return (
       <>
-        <aside className="glass hidden h-full w-72 shrink-0 rounded-3xl p-2 lg:block">{content}</aside>
+        <aside className="glass hidden h-full w-72 shrink-0 rounded-3xl border border-slate-200 bg-white/95 p-2 shadow-soft lg:block">{content}</aside>
         <PricingModal open={pricingOpen} onClose={() => setPricingOpen(false)} />
       </>
     )
@@ -130,7 +130,7 @@ export default function Sidebar({ mobile = false, onNavigate }) {
         animate={{ x: 0, opacity: 1 }}
         exit={{ x: -40, opacity: 0 }}
         transition={{ duration: 0.2 }}
-        className="glass h-full w-[18rem] rounded-3xl p-2"
+        className="glass h-full w-[18rem] rounded-3xl border border-slate-200 bg-white/95 p-2 shadow-soft"
       >
         {content}
       </motion.aside>

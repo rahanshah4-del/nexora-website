@@ -7,7 +7,9 @@
     @apply h-full scroll-smooth;
   }
   body {
-    @apply min-h-full bg-slate-50 text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100;
+    @apply min-h-full bg-slate-100 text-slate-900 antialiased;
+    background-image: radial-gradient(circle at top left, rgba(148, 163, 184, 0.08), transparent 24%),
+      radial-gradient(circle at 80% 20%, rgba(59, 130, 246, 0.08), transparent 18%);
   }
   #root {
     @apply min-h-screen;
@@ -16,25 +18,33 @@
 
 @layer components {
   .nexora-bg {
-    @apply relative min-h-screen overflow-hidden;
+    @apply relative min-h-screen overflow-hidden bg-slate-100;
   }
   .nexora-bg::before {
     content: '';
-    @apply pointer-events-none absolute -top-40 left-1/2 h-[38rem] w-[38rem] -translate-x-1/2 rounded-full bg-gradient-to-br from-indigo-500/25 via-fuchsia-500/20 to-sky-500/20 blur-3xl;
+    @apply pointer-events-none absolute -top-40 left-1/2 h-[38rem] w-[38rem] -translate-x-1/2 rounded-full bg-gradient-to-br from-slate-300/40 via-slate-200/25 to-slate-300/10 blur-3xl;
   }
   .nexora-bg::after {
     content: '';
-    @apply pointer-events-none absolute -bottom-48 right-[-10rem] h-[34rem] w-[34rem] rounded-full bg-gradient-to-tr from-sky-500/20 via-indigo-500/15 to-fuchsia-500/20 blur-3xl;
+    @apply pointer-events-none absolute -bottom-48 right-[-10rem] h-[34rem] w-[34rem] rounded-full bg-gradient-to-tr from-slate-300/30 via-slate-200/20 to-slate-300/10 blur-3xl;
   }
 
   .glass {
-    @apply border border-white/30 bg-white/60 shadow-soft backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/55;
+    @apply rounded-3xl border border-slate-200 bg-white shadow-soft backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/90 dark:text-white;
   }
   .glass-muted {
-    @apply border border-white/25 bg-white/40 backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/35;
+    @apply rounded-3xl border border-slate-200/60 bg-slate-50 shadow-sm backdrop-blur-xl dark:border-slate-700 dark:bg-slate-900/80;
   }
 
   .focus-ring {
     @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/70 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent;
+  }
+
+  .shadow-glow {
+    box-shadow: 0 24px 80px rgba(59, 130, 246, 0.16);
+  }
+
+  .bg-nexora-gradient {
+    background-image: linear-gradient(135deg, #2563eb 0%, #8b5cf6 100%);
   }
 }
