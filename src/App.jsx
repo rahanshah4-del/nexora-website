@@ -149,6 +149,36 @@ function FiverrIcon({ className = 'h-4 w-4' }) {
   )
 }
 
+function NexoraMark({ className = 'h-16 w-16' }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 64 64"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      <defs>
+        <linearGradient id="nexora_grad" x1="10" y1="10" x2="54" y2="54" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#22C1FF" />
+          <stop offset="0.55" stopColor="#2563EB" />
+          <stop offset="1" stopColor="#8B5CF6" />
+        </linearGradient>
+      </defs>
+      <path
+        d="M18 50V14h6.2l21.8 26.6V14H52v36h-6.2L24 23.4V50H18Z"
+        fill="url(#nexora_grad)"
+      />
+      <path
+        d="M11 8.5A6.5 6.5 0 0 1 17.5 2h29A6.5 6.5 0 0 1 53 8.5v47A6.5 6.5 0 0 1 46.5 62h-29A6.5 6.5 0 0 1 11 55.5v-47Z"
+        stroke="url(#nexora_grad)"
+        strokeWidth="2"
+        opacity="0.35"
+      />
+    </svg>
+  )
+}
+
 function ChevronDownIcon({ className = 'h-4 w-4' }) {
   return (
     <svg className={className} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -334,10 +364,10 @@ function App({ initialSectionId = '' }) {
 
       <header className="sticky top-0 z-50">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-sky-500 via-indigo-600 to-violet-600" />
-        <div className="relative mx-auto w-full max-w-[1600px] px-6 pb-3 pt-5 lg:px-8 lg:pb-4">
-          <div className="relative overflow-hidden rounded-[2rem] border border-white/60 bg-white/70 shadow-[0_30px_90px_-60px_rgba(2,6,23,0.38)] backdrop-blur-2xl">
+        <div className="relative mx-auto w-full max-w-[1600px] px-8 py-6">
+          <div className="relative overflow-hidden rounded-[2.25rem] border border-white/70 bg-white/75 shadow-[0_30px_90px_-60px_rgba(2,6,23,0.33)] backdrop-blur-2xl">
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_20%,_rgba(56,189,248,0.22),_transparent_45%),radial-gradient(circle_at_88%_15%,_rgba(168,85,247,0.18),_transparent_44%)]" />
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-white/75 via-sky-50/55 to-white/70" />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-white/80 via-sky-50/60 to-white/75" />
 
             <div
               className={[
@@ -348,40 +378,13 @@ function App({ initialSectionId = '' }) {
               ].join(' ')}
             >
               <a href="#hero" className="group flex w-[360px] shrink-0 items-center gap-5 text-slate-950 xl:w-[300px]">
-                <div className="relative rounded-3xl bg-gradient-to-br from-sky-500/40 via-indigo-500/25 to-violet-500/35 p-[1px]">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-3xl bg-white/80 shadow-sm backdrop-blur">
-                {useImageLogo ? (
-                  <img
-                    src={logoSrc}
-                    alt="Nexora logo"
-                    className="h-12 w-12 rounded-2xl object-contain object-center"
-                    loading="eager"
-                    decoding="async"
-                    onError={() => setUseImageLogo(false)}
-                  />
-                ) : (
-                  <div className="relative inline-flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl bg-slate-950 text-white">
-                    <div className="absolute inset-0 bg-gradient-to-br from-sky-500 via-cyan-400 to-violet-500 opacity-95" />
-                    <svg
-                      className="relative h-6 w-6"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                      aria-hidden="true"
-                    >
-                      <path
-                        d="M6 18V6h2.7l6.6 8.4V6H18v12h-2.7L8.7 9.6V18H6Z"
-                        fill="currentColor"
-                      />
-                    </svg>
-                  </div>
-                )}
-                  </div>
+                <div className="flex h-16 w-16 items-center justify-center">
+                  <NexoraMark className="h-16 w-16" />
                 </div>
                 <div className="hidden h-12 w-px bg-slate-200/80 sm:block" aria-hidden="true" />
                 <div className="min-w-0 leading-tight">
-                  <p className="text-2xl font-semibold tracking-tight text-slate-950">NEXORA</p>
-                  <p className="mt-1 text-[0.78rem] font-medium uppercase tracking-[0.18em] text-slate-600">
+                  <p className="text-3xl font-semibold tracking-tight text-slate-950">NEXORA</p>
+                  <p className="mt-1 text-[0.78rem] font-medium uppercase tracking-[0.18em] text-slate-600/90">
                     SOFTWARE &amp; SYSTEMS STUDIO
                   </p>
                 </div>
