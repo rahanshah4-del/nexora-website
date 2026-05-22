@@ -6,15 +6,18 @@ import TopNav from '../components/navbar/TopNav.jsx'
 
 export default function DashboardLayout() {
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [collapsed, setCollapsed] = useState(false)
+
+  const toggleCollapse = () => setCollapsed((c) => !c)
 
   return (
     <div className="nexora-bg min-h-screen overflow-x-hidden">
-      <Sidebar />
+      <Sidebar collapsed={collapsed} onToggleCollapse={toggleCollapse} />
 
-      <div className="min-h-screen lg:ml-[300px] lg:w-[calc(100%-300px)]">
-        <TopNav onOpenSidebar={() => setMobileOpen(true)} />
+      <div className={`min-h-screen transition-all duration-300 ${collapsed ? 'lg:ml-[88px]' : 'lg:ml-[280px]'}`}>
+        <TopNav collapsed={collapsed} onOpenSidebar={() => setMobileOpen(true)} />
 
-        <main className="w-full pt-6 pb-8 px-4 sm:px-6 lg:px-8">
+        <main className="w-full pt-6 pb-8 px-4 sm:px-6 lg:px-8 overflow-x-hidden transition-all duration-300">
           <div className="w-full">
             <Outlet />
           </div>

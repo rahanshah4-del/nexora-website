@@ -40,7 +40,7 @@ export default function TopNav({ onOpenSidebar }) {
   return (
     <>
       {toast ? <Toast message={toast} onClose={() => setToast(null)} /> : null}
-      <header className="glass sticky top-0 z-40 min-h-[72px] rounded-3xl border border-slate-200 bg-white/95 shadow-soft px-4 py-3 dark:border-slate-800 dark:bg-slate-950/90 sm:px-6 lg:px-8">
+      <header className="glass sticky top-0 z-40 w-full min-h-[72px] rounded-3xl border border-slate-200 bg-white/95 shadow-soft px-4 py-3 dark:border-slate-800 dark:bg-slate-950/90 sm:px-6 lg:px-8 transition-all duration-300">
         <div className="flex flex-wrap items-center gap-3">
         <button
           type="button"
@@ -55,7 +55,7 @@ export default function TopNav({ onOpenSidebar }) {
           </span>
         </button>
 
-        <div className="relative hidden flex-1 min-w-0 md:block">
+        <div className="relative hidden md:flex md:flex-1 md:min-w-0 md:items-center md:justify-start md:max-w-[540px]">
           <GlobalSearch />
         </div>
 
