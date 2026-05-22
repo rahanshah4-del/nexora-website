@@ -106,22 +106,6 @@ function RocketIcon({ className = 'h-4 w-4' }) {
   )
 }
 
-function CalendarIcon({ className = 'h-4 w-4' }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <path
-        d="M8 2v3M16 2v3M4 8h16M6 4h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path d="M8 12h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-      <path d="M8 16h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  )
-}
-
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const fiverrLink = 'https://pro.fiverr.com/s/o85L4R4'
@@ -135,13 +119,6 @@ export default function Header() {
     { href: '#contact', label: 'Contact' },
   ]
 
-  const ctaButtons = [
-    { to: '/login', label: 'Login', icon: UserIcon, variant: 'secondary' },
-    { to: '/login?mode=signup', label: 'Start Free Trial', icon: RocketIcon, variant: 'primary' },
-    { href: fiverrLink, label: 'Hire on Fiverr', icon: FiverrIcon, variant: 'fiverr', external: true },
-    { href: '#contact', label: 'Book Demo', icon: CalendarIcon, variant: 'primary' },
-  ]
-
   return (
     <header className="sticky top-0 z-50">
       {/* Gradient line at top */}
@@ -149,24 +126,24 @@ export default function Header() {
 
       {/* Main header container */}
       <div className="relative bg-white/75 backdrop-blur-2xl">
-        <div className="mx-auto w-full max-w-[1440px] px-7 py-5">
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
           {/* Desktop layout */}
-          <div className="flex items-center justify-between gap-6 lg:gap-8">
-            {/* Logo section - 280px fixed width */}
-            <a href="#hero" className="group flex shrink-0 items-center gap-4" style={{ width: '280px' }}>
-              <div className="flex h-12 w-12 items-center justify-center">
-                <NexoraMark className="h-12 w-12" />
+          <div className="flex items-center justify-between gap-4 py-4 sm:gap-6">
+            {/* Logo section - compact */}
+            <a href="#hero" className="group flex shrink-0 items-center gap-3 min-w-fit">
+              <div className="flex h-10 w-10 items-center justify-center">
+                <NexoraMark className="h-10 w-10" />
               </div>
-              <div className="hidden border-l border-slate-200/60 pl-4 sm:block">
-                <p className="text-lg font-bold tracking-tight text-slate-950">NEXORA</p>
-                <p className="text-[0.7rem] font-medium uppercase tracking-[0.15em] text-slate-600">
-                  Software &amp; Systems Studio
+              <div className="hidden border-l border-slate-200/60 pl-3 md:block">
+                <p className="text-sm font-bold tracking-tight text-slate-950">NEXORA</p>
+                <p className="text-[0.65rem] font-medium uppercase tracking-[0.12em] text-slate-600">
+                  Software &amp; Systems
                 </p>
               </div>
             </a>
 
-            {/* Center navigation - hidden on mobile */}
-            <nav className="hidden flex-1 items-center justify-center gap-7 whitespace-nowrap text-sm font-medium text-slate-700 lg:flex">
+            {/* Center navigation - hidden on tablet and mobile */}
+            <nav className="hidden flex-1 items-center justify-center gap-5 whitespace-nowrap text-xs font-medium text-slate-700 xl:flex">
               {navLinks.map((link) => (
                 <a
                   key={link.href}
@@ -177,10 +154,10 @@ export default function Header() {
                 >
                   {link.label}
                   {link.label === 'Services' || link.label === 'Dashboards' ? (
-                    <ChevronDownIcon className="h-4 w-4 text-slate-400" />
+                    <ChevronDownIcon className="h-3 w-3 text-slate-400" />
                   ) : null}
                   {link.label === 'Restaurant POS' ? (
-                    <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[0.65rem] font-bold text-sky-700">
+                    <span className="rounded-full bg-sky-100 px-1.5 py-0.5 text-[0.6rem] font-bold text-sky-700">
                       New
                     </span>
                   ) : null}
@@ -188,57 +165,51 @@ export default function Header() {
               ))}
             </nav>
 
-            {/* Right buttons - hidden on mobile */}
-            <div className="hidden flex-shrink-0 items-center gap-3 lg:flex">
-              {ctaButtons.map((btn) => {
-                const Icon = btn.icon
-                const baseClasses =
-                  'inline-flex h-11 items-center justify-center gap-2 rounded-full text-sm font-semibold transition shrink-0'
+            {/* Right buttons - compact on larger screens */}
+            <div className="hidden flex-shrink-0 items-center gap-2 xl:flex">
+              {/* Login button - icon only on XL */}
+              <Link
+                to="/login"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/70 bg-white/80 text-slate-700 shadow-sm transition hover:bg-white"
+                title="Login"
+              >
+                <UserIcon className="h-4 w-4" />
+              </Link>
 
-                const variants = {
-                  primary:
-                    'bg-gradient-to-r from-sky-600 via-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-600/20 hover:brightness-110',
-                  secondary:
-                    'border border-white/70 bg-white/80 text-slate-950 shadow-sm hover:bg-white',
-                  fiverr:
-                    'border border-white/70 bg-white/80 text-slate-950 shadow-sm hover:bg-white',
-                }
+              {/* Primary CTA - Start Free Trial */}
+              <Link
+                to="/login?mode=signup"
+                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-full bg-gradient-to-r from-sky-600 via-indigo-600 to-violet-600 px-4 text-xs font-semibold text-white shadow-lg shadow-indigo-600/20 transition hover:brightness-110"
+              >
+                <RocketIcon className="h-3.5 w-3.5" />
+                Free Trial
+              </Link>
 
-                if (btn.external) {
-                  return (
-                    <a key={btn.label} href={btn.href} target="_blank" rel="noreferrer" className={baseClasses + ' ' + variants[btn.variant]}>
-                      {btn.variant === 'fiverr' ? (
-                        <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
-                          <Icon className="h-3.5 w-3.5" />
-                        </span>
-                      ) : (
-                        <Icon className="h-4 w-4" />
-                      )}
-                      {btn.label}
-                    </a>
-                  )
-                }
-
-                return (
-                  <Link key={btn.label} to={btn.to} className={baseClasses + ' ' + variants[btn.variant]}>
-                    <Icon className="h-4 w-4" />
-                    {btn.label}
-                  </Link>
-                )
-              })}
+              {/* Secondary CTA - Hire on Fiverr */}
+              <a
+                href={fiverrLink}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-full border border-white/70 bg-white/80 px-4 text-xs font-semibold text-slate-950 shadow-sm transition hover:bg-white"
+              >
+                <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                  <FiverrIcon className="h-3 w-3" />
+                </span>
+                Fiverr
+              </a>
             </div>
 
-            {/* Mobile menu button */}
+            {/* Tablet menu button - shown on lg and hidden on xl */}
             <button
               type="button"
               onClick={() => setMobileMenuOpen((prev) => !prev)}
-              className="relative inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/70 bg-white/80 text-slate-700 shadow-sm backdrop-blur transition hover:bg-white active:scale-[0.99] lg:hidden"
+              className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/70 bg-white/80 text-slate-700 shadow-sm transition hover:bg-white active:scale-[0.98] xl:hidden"
               aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
               aria-expanded={mobileMenuOpen}
             >
               <span className="pointer-events-none relative h-5 w-5">
                 <span
-                  className={`absolute left-0 top-1 block h-0.5 w-5 rounded-full bg-slate-700 transition duration-200 ${
+                  className={`absolute left-0 top-1.5 block h-0.5 w-5 rounded-full bg-slate-700 transition duration-200 ${
                     mobileMenuOpen ? 'translate-y-1.5 rotate-45' : ''
                   }`}
                 />
@@ -248,7 +219,7 @@ export default function Header() {
                   }`}
                 />
                 <span
-                  className={`absolute left-0 top-4 block h-0.5 w-5 rounded-full bg-slate-700 transition duration-200 ${
+                  className={`absolute left-0 top-3.5 block h-0.5 w-5 rounded-full bg-slate-700 transition duration-200 ${
                     mobileMenuOpen ? '-translate-y-1.5 -rotate-45' : ''
                   }`}
                 />
@@ -256,74 +227,58 @@ export default function Header() {
             </button>
           </div>
 
-          {/* Mobile menu */}
+          {/* Mobile/Tablet menu */}
           {mobileMenuOpen && (
-            <div className="border-t border-white/60 bg-white/75 backdrop-blur-2xl lg:hidden">
-              <div className="space-y-3 px-4 py-5">
-                {/* Mobile buttons section */}
+            <div className="border-t border-white/60 bg-white/75 backdrop-blur-2xl xl:hidden">
+              <div className="space-y-3 px-2 py-4 sm:px-4">
+                {/* Navigation links */}
                 <div className="grid gap-2">
-                  {ctaButtons.map((btn) => {
-                    const Icon = btn.icon
-                    const baseClasses =
-                      'inline-flex h-11 items-center justify-center gap-2 rounded-full text-sm font-semibold transition w-full'
-
-                    const variants = {
-                      primary:
-                        'bg-gradient-to-r from-sky-600 via-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-600/20 hover:brightness-110',
-                      secondary:
-                        'border border-white/70 bg-white/80 text-slate-950 shadow-sm hover:bg-white',
-                      fiverr:
-                        'border border-white/70 bg-white/80 text-slate-950 shadow-sm hover:bg-white',
-                    }
-
-                    if (btn.external) {
-                      return (
-                        <a
-                          key={btn.label}
-                          href={btn.href}
-                          target="_blank"
-                          rel="noreferrer"
-                          onClick={() => setMobileMenuOpen(false)}
-                          className={baseClasses + ' ' + variants[btn.variant]}
-                        >
-                          {btn.variant === 'fiverr' ? (
-                            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
-                              <Icon className="h-3.5 w-3.5" />
-                            </span>
-                          ) : (
-                            <Icon className="h-4 w-4" />
-                          )}
-                          {btn.label}
-                        </a>
-                      )
-                    }
-
-                    return (
-                      <Link
-                        key={btn.label}
-                        to={btn.to}
-                        onClick={() => setMobileMenuOpen(false)}
-                        className={baseClasses + ' ' + variants[btn.variant]}
-                      >
-                        <Icon className="h-4 w-4" />
-                        {btn.label}
-                      </Link>
-                    )
-                  })}
-                </div>
-
-                {/* Mobile nav links */}
-                <div className="grid gap-2 border-t border-white/60 pt-3">
                   {navLinks.map((link) => (
                     <a
                       key={link.href}
                       href={link.href}
                       onClick={() => setMobileMenuOpen(false)}
-                      className="rounded-2xl border border-slate-200/70 bg-white/80 px-4 py-3 text-sm font-semibold text-slate-800 shadow-sm transition hover:bg-white"
+                      className="rounded-xl border border-slate-200/70 bg-white/80 px-3 py-2.5 text-xs font-semibold text-slate-800 shadow-sm transition hover:bg-white"
                     >
                       {link.label}
                     </a>
                   ))}
+                </div>
+
+                {/* CTA buttons section */}
+                <div className="border-t border-white/60 pt-3">
+                  <div className="grid gap-2">
+                    <Link
+                      to="/login"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-white/70 bg-white/80 text-xs font-semibold text-slate-950 shadow-sm transition hover:bg-white"
+                    >
+                      <UserIcon className="h-4 w-4" />
+                      Login
+                    </Link>
+
+                    <Link
+                      to="/login?mode=signup"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-600 via-indigo-600 to-violet-600 text-xs font-semibold text-white shadow-lg shadow-indigo-600/20 transition hover:brightness-110"
+                    >
+                      <RocketIcon className="h-4 w-4" />
+                      Start Free Trial
+                    </Link>
+
+                    <a
+                      href={fiverrLink}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-white/70 bg-white/80 text-xs font-semibold text-slate-950 shadow-sm transition hover:bg-white"
+                    >
+                      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                        <FiverrIcon className="h-3.5 w-3.5" />
+                      </span>
+                      Hire on Fiverr
+                    </a>
+                  </div>
                 </div>
               </div>
             </div>
