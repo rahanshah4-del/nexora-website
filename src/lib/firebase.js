@@ -50,6 +50,7 @@ if (app) {
 }
 
 export const firebaseEnabled = Boolean(app && auth && db && storage)
+console.log('[firebase] enabled', firebaseEnabled)
 
 export function assertFirebaseReady() {
   if (!firebaseEnabled) {
