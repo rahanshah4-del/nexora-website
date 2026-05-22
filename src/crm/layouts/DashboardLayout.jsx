@@ -11,13 +11,11 @@ export default function DashboardLayout() {
     <div className="nexora-bg min-h-screen overflow-x-hidden">
       <Sidebar />
 
-      <div className="min-h-screen lg:ml-[280px] lg:w-[calc(100%-280px)]">
-        <div className="sticky top-0 z-30 w-full bg-transparent">
-          <TopNav onOpenSidebar={() => setMobileOpen(true)} />
-        </div>
+      <div className="min-h-screen lg:ml-[300px] lg:w-[calc(100%-300px)]">
+        <TopNav onOpenSidebar={() => setMobileOpen(true)} />
 
-        <main className="w-full min-h-screen pt-[110px] pb-8 px-4 sm:px-6 lg:px-8">
-          <div className="mx-auto w-full max-w-[1440px]">
+        <main className="w-full min-h-screen pt-6 pb-8 px-4 sm:px-6 lg:px-8">
+          <div className="w-full">
             <Outlet />
           </div>
         </main>

@@ -112,7 +112,7 @@ export default function DashboardHomePage() {
         subtitle="CRM overview, revenue performance, and recent activity."
       />
 
-      <div className="grid gap-4 lg:grid-cols-4">
+      <div className="grid gap-6 lg:grid-cols-4">
         <StatCard
           icon={HiOutlineCurrencyDollar}
           label="Total Revenue"
@@ -143,7 +143,7 @@ export default function DashboardHomePage() {
         />
       </div>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-2">
+      <div className="mt-6 grid gap-6 lg:grid-cols-2">
         <Card className="p-5">
           <div className="flex items-center justify-between">
             <div>
@@ -175,7 +175,7 @@ export default function DashboardHomePage() {
         </Card>
       </div>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-3">
+      <div className="mt-6 grid gap-6 lg:grid-cols-3">
         <Card className="p-5 lg:col-span-2">
           <div className="flex items-center justify-between">
             <div>

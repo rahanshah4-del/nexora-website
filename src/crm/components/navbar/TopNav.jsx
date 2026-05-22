@@ -40,7 +40,7 @@ export default function TopNav({ onOpenSidebar }) {
   return (
     <>
       {toast ? <Toast message={toast} onClose={() => setToast(null)} /> : null}
-      <header className="glass sticky top-0 z-30 min-h-[88px] rounded-3xl border border-slate-200 bg-white/95 shadow-soft px-3 py-3 dark:border-slate-800 dark:bg-slate-950/90">
+      <header className="glass sticky top-0 z-40 min-h-[72px] rounded-3xl border border-slate-200 bg-white/95 shadow-soft px-4 py-3 dark:border-slate-800 dark:bg-slate-950/90 sm:px-6 lg:px-8">
         <div className="flex flex-wrap items-center gap-3">
         <button
           type="button"

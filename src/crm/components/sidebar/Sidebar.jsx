@@ -105,7 +105,7 @@ export default function Sidebar({ mobile = false, onNavigate }) {
   if (!mobile) {
     return (
       <>
-        <aside className="glass hidden lg:fixed lg:inset-y-0 lg:left-0 lg:w-[280px] lg:block lg:overflow-y-auto lg:rounded-r-[2rem] lg:border-r lg:border-slate-200 lg:bg-white/95 lg:p-4 lg:shadow-soft lg:z-20">
+        <aside className="glass hidden lg:fixed lg:inset-y-0 lg:left-0 lg:w-[300px] lg:block lg:overflow-y-auto lg:rounded-r-[2rem] lg:border-r lg:border-slate-200 lg:bg-white/95 lg:p-4 lg:shadow-soft lg:z-20">
           {content}
         </aside>
         <PricingModal open={pricingOpen} onClose={() => setPricingOpen(false)} />
