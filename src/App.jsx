@@ -1,6 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import useAuth from './context/useAuth.js'
 
 const whatsappNumberDisplay = '03194329754'
 const whatsappLink = 'https://wa.me/923194329754'
@@ -14,15 +13,6 @@ City:
 Contact Name:
 Details:`
 const whatsappLeadLink = `${whatsappLink}?text=${encodeURIComponent(defaultLeadMessage)}`
-
-const navLinks = [
-  { id: 'hero', label: 'Home' },
-  { id: 'services', label: 'Services' },
-  { id: 'restaurant-pos', label: 'Restaurant POS' },
-  { id: 'dashboards', label: 'Dashboards' },
-  { id: 'case-studies', label: 'Projects' },
-  { id: 'contact', label: 'Contact' },
-]
 
 const products = [
   {
@@ -159,14 +149,104 @@ function FiverrIcon({ className = 'h-4 w-4' }) {
   )
 }
 
+function ChevronDownIcon({ className = 'h-4 w-4' }) {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M6 8l4 4 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function HeadsetIcon({ className = 'h-4 w-4' }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path
+        d="M4 12a8 8 0 0 1 16 0v7a2 2 0 0 1-2 2h-2"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+      <path
+        d="M4 12v5a2 2 0 0 0 2 2h2"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+      <path
+        d="M8 21h8"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+function UserIcon({ className = 'h-4 w-4' }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path
+        d="M20 21a8 8 0 0 0-16 0"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M12 13a5 5 0 1 0 0-10 5 5 0 0 0 0 10Z"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+function RocketIcon({ className = 'h-4 w-4' }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path
+        d="M14 4c3.2 0 6 2.8 6 6 0 4.2-4.6 9.2-9.6 9.2H8.8l-4.1 1.6 1.6-4.1V13.6C6.3 8.6 11.3 4 14 4Z"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M10.5 13.5l-3-3"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+      <path
+        d="M15.5 8.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Z"
+        fill="currentColor"
+      />
+    </svg>
+  )
+}
+
+function CalendarIcon({ className = 'h-4 w-4' }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path
+        d="M8 2v3M16 2v3M4 8h16M6 4h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path d="M8 12h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <path d="M8 16h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  )
+}
+
 function App({ initialSectionId = '' }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [useImageLogo, setUseImageLogo] = useState(true)
   const logoSrc = '/nexora-logo.jpg'
-  const { user } = useAuth()
-  const isLoggedIn = Boolean(user)
-
-  const openDashboardTo = useMemo(() => (isLoggedIn ? '/app/dashboard' : '/login'), [isLoggedIn])
 
   useEffect(() => {
     const handleResize = () => {
@@ -252,28 +332,31 @@ function App({ initialSectionId = '' }) {
     <div className="page-enter relative overflow-x-hidden bg-slate-50 text-slate-950">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-[radial-gradient(circle_at_20%_20%,_rgba(56,189,248,0.18),_transparent_28%),radial-gradient(circle_at_80%_10%,_rgba(168,85,247,0.16),_transparent_26%)] opacity-90" />
 
-      <header className="sticky top-0 z-50 border-b border-slate-200/60 bg-white/65 shadow-[0_18px_60px_-35px_rgba(2,6,23,0.45)] backdrop-blur-2xl">
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-sky-500/60 to-transparent" />
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_20%,_rgba(56,189,248,0.16),_transparent_42%),radial-gradient(circle_at_85%_10%,_rgba(168,85,247,0.14),_transparent_40%)]" />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-white/65 via-sky-50/50 to-white/55" />
-        <div className="relative mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:h-[4.4rem] sm:gap-4 sm:px-6 lg:px-8">
-          <a href="#hero" className="group flex items-center gap-3 text-slate-950">
-            <div className="relative rounded-full bg-gradient-to-br from-sky-500/55 via-cyan-300/45 to-violet-500/55 p-[1px] transition group-hover:-translate-y-0.5 group-hover:shadow-md">
-              <div className="inline-flex items-center justify-center rounded-full border border-white/70 bg-white/70 p-1.5 shadow-sm backdrop-blur sm:p-2">
+      <header className="sticky top-0 z-50">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-sky-500 via-indigo-600 to-violet-600" />
+        <div className="relative mx-auto max-w-[92rem] px-4 pb-3 pt-5 sm:px-6 sm:pb-4 lg:px-8">
+          <div className="relative overflow-hidden rounded-[2rem] border border-white/60 bg-white/70 shadow-[0_30px_90px_-60px_rgba(2,6,23,0.38)] backdrop-blur-2xl">
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_20%,_rgba(56,189,248,0.22),_transparent_45%),radial-gradient(circle_at_88%_15%,_rgba(168,85,247,0.18),_transparent_44%)]" />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-white/75 via-sky-50/55 to-white/70" />
+
+            <div className="relative flex h-[7.2rem] items-center justify-between gap-6 px-6 lg:px-10">
+              <a href="#hero" className="group flex shrink-0 items-center gap-5 text-slate-950">
+                <div className="relative rounded-3xl bg-gradient-to-br from-sky-500/40 via-indigo-500/25 to-violet-500/35 p-[1px]">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-3xl bg-white/80 shadow-sm backdrop-blur">
                 {useImageLogo ? (
                   <img
                     src={logoSrc}
                     alt="Nexora logo"
-                    className="h-10 w-10 rounded-full object-contain object-center sm:h-[3.1rem] sm:w-[3.1rem]"
+                    className="h-12 w-12 rounded-2xl object-contain object-center"
                     loading="eager"
                     decoding="async"
                     onError={() => setUseImageLogo(false)}
                   />
                 ) : (
-                  <div className="relative inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-slate-950 text-white sm:h-[3.1rem] sm:w-[3.1rem]">
+                  <div className="relative inline-flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl bg-slate-950 text-white">
                     <div className="absolute inset-0 bg-gradient-to-br from-sky-500 via-cyan-400 to-violet-500 opacity-95" />
                     <svg
-                      className="relative h-5 w-5 sm:h-[1.3rem] sm:w-[1.3rem]"
+                      className="relative h-6 w-6"
                       viewBox="0 0 24 24"
                       fill="none"
                       xmlns="http://www.w3.org/2000/svg"
@@ -286,191 +369,223 @@ function App({ initialSectionId = '' }) {
                     </svg>
                   </div>
                 )}
-              </div>
-            </div>
-            <div className="leading-tight">
-              <p className="font-display text-[0.86rem] font-semibold uppercase tracking-[0.28em] text-slate-950 sm:text-sm">
-                NEXORA
-              </p>
-              <p className="hidden text-[0.72rem] font-medium tracking-wide text-slate-600/90 sm:block">
-                Software &amp; systems studio
-              </p>
-            </div>
-          </a>
-
-          <nav className="hidden items-center gap-1.5 text-sm font-semibold text-slate-700 lg:flex">
-            {navLinks.map((link) => (
-              <a
-                key={link.id}
-                href={`#${link.id}`}
-                className="rounded-full px-4 py-2 transition hover:bg-white/80 hover:text-slate-950 hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/70"
-              >
-                {link.label}
+                  </div>
+                </div>
+                <div className="hidden h-12 w-px bg-slate-200/80 sm:block" aria-hidden="true" />
+                <div className="leading-tight">
+                  <p className="text-2xl font-semibold tracking-tight text-slate-950">NEXORA</p>
+                  <p className="mt-1 text-[0.78rem] font-medium uppercase tracking-[0.18em] text-slate-600">
+                    SOFTWARE &amp; SYSTEMS STUDIO
+                  </p>
+                </div>
               </a>
-            ))}
-          </nav>
 
-          <div className="flex items-center gap-2 sm:gap-3">
-            {!isLoggedIn ? (
-              <>
-                <Link
-                  to="/login"
-                  className="hidden h-11 items-center justify-center rounded-full border border-white/70 bg-white/75 px-5 text-sm font-semibold text-slate-950 shadow-sm backdrop-blur transition hover:bg-white hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/70 lg:inline-flex"
-                >
-                  Login
-                </Link>
-                <Link
-                  to="/login?mode=signup"
-                  className="hidden h-11 items-center justify-center rounded-full bg-gradient-to-r from-sky-600 via-indigo-600 to-violet-600 px-5 text-sm font-semibold text-white shadow-[0_16px_40px_-24px_rgba(37,99,235,0.65)] transition hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300/70 lg:inline-flex"
-                >
-                  Start Free Trial
-                </Link>
-              </>
-            ) : null}
-            {isLoggedIn ? (
-              <Link
-                to={openDashboardTo}
-                className="hidden h-11 items-center justify-center rounded-full bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 px-5 text-sm font-semibold text-white shadow-[0_16px_40px_-28px_rgba(2,6,23,0.65)] transition hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-300/70 lg:inline-flex"
-              >
-                Open Dashboard
-              </Link>
-            ) : (
-              <button
-                type="button"
-                disabled
-                className="hidden h-11 items-center justify-center rounded-full border border-slate-200/80 bg-slate-100/70 px-5 text-sm font-semibold text-slate-600 shadow-sm backdrop-blur lg:inline-flex"
-              >
-                Open Dashboard
-              </button>
-            )}
-            <a
-              href={fiverrLink}
-              target="_blank"
-              rel="noreferrer"
-              className="hidden h-11 items-center justify-center gap-2 rounded-full border border-emerald-200/80 bg-white/75 px-5 text-sm font-semibold text-slate-950 shadow-sm backdrop-blur transition hover:bg-white hover:shadow-md hover:shadow-emerald-600/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/70 lg:inline-flex"
-            >
-              <span className="text-emerald-600">
-                <FiverrIcon className="h-3.5 w-3.5" />
-              </span>
-              Hire on Fiverr
-            </a>
-            <a
-              href="#contact"
-              className="inline-flex h-11 items-center justify-center rounded-full bg-sky-700 px-5 text-sm font-semibold text-white shadow-[0_16px_40px_-28px_rgba(14,116,144,0.65)] transition hover:bg-sky-800 active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/70 sm:px-6"
-            >
-              <span className="sm:hidden">Demo</span>
-              <span className="hidden sm:inline">Book Demo</span>
-            </a>
-            <button
-              type="button"
-              onClick={() => setMobileMenuOpen((prev) => !prev)}
-              className="relative inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/70 bg-white/75 text-slate-700 shadow-sm backdrop-blur transition hover:bg-white active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/70 lg:hidden"
-              aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
-              aria-expanded={mobileMenuOpen}
-            >
-              <span className="sr-only">Menu</span>
-              <span className="pointer-events-none relative h-5 w-5">
-                <span
-                  className={`absolute left-0 top-1 block h-0.5 w-5 rounded-full bg-slate-700 transition duration-200 ${
-                    mobileMenuOpen ? 'translate-y-1.5 rotate-45' : ''
-                  }`}
-                />
-                <span
-                  className={`absolute left-0 top-2.5 block h-0.5 w-5 rounded-full bg-slate-700 transition duration-200 ${
-                    mobileMenuOpen ? 'opacity-0' : ''
-                  }`}
-                />
-                <span
-                  className={`absolute left-0 top-4 block h-0.5 w-5 rounded-full bg-slate-700 transition duration-200 ${
-                    mobileMenuOpen ? '-translate-y-1.5 -rotate-45' : ''
-                  }`}
-                />
-              </span>
-            </button>
-          </div>
-        </div>
+              <nav className="hidden flex-1 items-center justify-center gap-8 text-[0.95rem] font-medium text-slate-700 lg:flex">
+                <a href="#hero" className="relative font-semibold text-sky-600">
+                  Home
+                  <span className="absolute -bottom-3 left-1/2 h-0.5 w-7 -translate-x-1/2 rounded-full bg-sky-500" />
+                </a>
+                <a href="#services" className="inline-flex items-center gap-1.5 hover:text-slate-950">
+                  Services <ChevronDownIcon className="h-4 w-4 text-slate-500" />
+                </a>
+                <a href="#restaurant-pos" className="inline-flex items-center gap-2 hover:text-slate-950">
+                  Restaurant POS
+                  <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[0.7rem] font-semibold text-sky-700">New</span>
+                </a>
+                <a href="#dashboards" className="inline-flex items-center gap-1.5 hover:text-slate-950">
+                  Dashboards <ChevronDownIcon className="h-4 w-4 text-slate-500" />
+                </a>
+                <a href="#case-studies" className="hover:text-slate-950">
+                  Projects
+                </a>
+                <a href="#contact" className="hover:text-slate-950">
+                  Contact
+                </a>
+              </nav>
 
-        {mobileMenuOpen && (
-          <div className="border-t border-slate-200/60 bg-white/75 shadow-[0_30px_90px_-70px_rgba(2,6,23,0.65)] backdrop-blur-2xl lg:hidden">
-            <div className="mx-auto max-w-7xl space-y-3 px-4 py-4 sm:px-6 lg:px-8">
-              <div className="grid gap-2 pb-1">
-                {isLoggedIn ? (
-                  <Link
-                    to={openDashboardTo}
-                    className="inline-flex h-12 items-center justify-center rounded-2xl bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 px-5 text-sm font-semibold text-white shadow-sm transition hover:brightness-110 active:scale-[0.99]"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Open Dashboard
-                  </Link>
-                ) : (
-                  <button
-                    type="button"
-                    disabled
-                    className="inline-flex h-12 items-center justify-center rounded-2xl border border-slate-200/80 bg-slate-100/80 px-5 text-sm font-semibold text-slate-600 shadow-sm"
-                  >
-                    Open Dashboard
-                  </button>
-                )}
-                {!isLoggedIn ? (
-                  <>
+              <div className="flex shrink-0 items-center gap-3">
+                <div className="hidden flex-col items-end gap-2 lg:flex">
+                  <div className="inline-flex h-10 items-center gap-3 rounded-2xl border border-white/70 bg-white/75 px-4 text-sm font-semibold text-slate-800 shadow-sm">
+                    <span className="inline-flex items-center gap-2">
+                      <span className="text-sky-600">
+                        <HeadsetIcon className="h-4 w-4" />
+                      </span>
+                      Support
+                    </span>
+                    <span className="h-5 w-px bg-slate-200/80" aria-hidden="true" />
+                    <span className="inline-flex items-center gap-2">
+                      Live Chat <span className="h-2 w-2 rounded-full bg-emerald-500" aria-hidden="true" />
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-3">
                     <Link
                       to="/login"
-                      className="inline-flex h-12 items-center justify-center rounded-2xl border border-white/70 bg-white/80 px-5 text-sm font-semibold text-slate-950 shadow-sm transition hover:bg-white active:scale-[0.99]"
-                      onClick={() => setMobileMenuOpen(false)}
+                      className="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-white/70 bg-white/80 px-6 text-sm font-semibold text-slate-950 shadow-sm transition hover:bg-white"
                     >
+                      <UserIcon className="h-4 w-4 text-slate-700" />
                       Login
                     </Link>
                     <Link
                       to="/login?mode=signup"
-                      className="inline-flex h-12 items-center justify-center rounded-2xl bg-gradient-to-r from-sky-600 via-indigo-600 to-violet-600 px-5 text-sm font-semibold text-white shadow-sm transition hover:brightness-110 active:scale-[0.99]"
-                      onClick={() => setMobileMenuOpen(false)}
+                      className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-gradient-to-r from-sky-600 via-indigo-600 to-violet-600 px-6 text-sm font-semibold text-white shadow-[0_18px_50px_-30px_rgba(79,70,229,0.75)] transition hover:brightness-110"
                     >
+                      <RocketIcon className="h-4 w-4" />
                       Start Free Trial
                     </Link>
-                  </>
-                ) : null}
-                <a
-                  href={fiverrLink}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-emerald-200/80 bg-white/85 px-5 text-sm font-semibold text-slate-950 shadow-sm transition hover:bg-white active:scale-[0.99]"
-                  onClick={() => setMobileMenuOpen(false)}
+                    <a
+                      href={fiverrLink}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-white/70 bg-white/80 px-6 text-sm font-semibold text-slate-950 shadow-sm transition hover:bg-white"
+                    >
+                      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                        <FiverrIcon className="h-3.5 w-3.5" />
+                      </span>
+                      Hire on Fiverr
+                    </a>
+                    <a
+                      href="#contact"
+                      className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-gradient-to-r from-sky-600 via-indigo-600 to-violet-600 px-6 text-sm font-semibold text-white shadow-[0_18px_50px_-30px_rgba(79,70,229,0.75)] transition hover:brightness-110"
+                    >
+                      <CalendarIcon className="h-4 w-4" />
+                      Book Demo
+                    </a>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setMobileMenuOpen((prev) => !prev)}
+                  className="relative inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-white/70 bg-white/80 text-slate-700 shadow-sm backdrop-blur transition hover:bg-white active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/70 lg:hidden"
+                  aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+                  aria-expanded={mobileMenuOpen}
                 >
-                  <span className="text-emerald-600">
-                    <FiverrIcon className="h-3.5 w-3.5" />
+                  <span className="sr-only">Menu</span>
+                  <span className="pointer-events-none relative h-5 w-5">
+                    <span
+                      className={`absolute left-0 top-1 block h-0.5 w-5 rounded-full bg-slate-700 transition duration-200 ${
+                        mobileMenuOpen ? 'translate-y-1.5 rotate-45' : ''
+                      }`}
+                    />
+                    <span
+                      className={`absolute left-0 top-2.5 block h-0.5 w-5 rounded-full bg-slate-700 transition duration-200 ${
+                        mobileMenuOpen ? 'opacity-0' : ''
+                      }`}
+                    />
+                    <span
+                      className={`absolute left-0 top-4 block h-0.5 w-5 rounded-full bg-slate-700 transition duration-200 ${
+                        mobileMenuOpen ? '-translate-y-1.5 -rotate-45' : ''
+                      }`}
+                    />
                   </span>
-                  Hire on Fiverr
-                </a>
-                <a
-                  href="#contact"
-                  className="inline-flex h-12 items-center justify-center rounded-2xl bg-sky-700 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-800 active:scale-[0.99]"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Book Demo
-                </a>
+                </button>
               </div>
-              {navLinks.map((link) => (
-                <a
-                  key={link.id}
-                  href={`#${link.id}`}
-                  className="block rounded-2xl border border-slate-200/70 bg-white/75 px-4 py-3 text-sm font-semibold text-slate-800 shadow-sm backdrop-blur transition hover:bg-white active:scale-[0.99]"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  {link.label}
-                </a>
-              ))}
-              <a
-                href={whatsappLeadLink}
-                target="_blank"
-                rel="noreferrer"
-                className="mt-3 inline-flex items-center justify-center rounded-2xl border border-slate-200/70 bg-white/80 px-4 py-3 text-sm font-semibold text-slate-900 shadow-sm backdrop-blur transition hover:bg-white active:scale-[0.99]"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                WhatsApp demo request
-              </a>
             </div>
           </div>
-        )}
+
+          {mobileMenuOpen && (
+            <div className="border-t border-white/60 bg-white/75 backdrop-blur-2xl lg:hidden">
+              <div className="space-y-3 px-6 py-5">
+                <div className="grid gap-2">
+                  <div className="inline-flex h-11 items-center justify-center gap-3 rounded-2xl border border-white/70 bg-white/80 px-4 text-sm font-semibold text-slate-800 shadow-sm">
+                    <span className="inline-flex items-center gap-2">
+                      <span className="text-sky-600">
+                        <HeadsetIcon className="h-4 w-4" />
+                      </span>
+                      Support
+                    </span>
+                    <span className="h-5 w-px bg-slate-200/80" aria-hidden="true" />
+                    <span className="inline-flex items-center gap-2">
+                      Live Chat <span className="h-2 w-2 rounded-full bg-emerald-500" aria-hidden="true" />
+                    </span>
+                  </div>
+                  <Link
+                    to="/login"
+                    className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-white/70 bg-white/80 px-5 text-sm font-semibold text-slate-950 shadow-sm transition hover:bg-white"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <UserIcon className="h-4 w-4 text-slate-700" />
+                    Login
+                  </Link>
+                  <Link
+                    to="/login?mode=signup"
+                    className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-sky-600 via-indigo-600 to-violet-600 px-5 text-sm font-semibold text-white shadow-sm transition hover:brightness-110"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <RocketIcon className="h-4 w-4" />
+                    Start Free Trial
+                  </Link>
+                  <a
+                    href={fiverrLink}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-white/70 bg-white/80 px-5 text-sm font-semibold text-slate-950 shadow-sm transition hover:bg-white"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                      <FiverrIcon className="h-3.5 w-3.5" />
+                    </span>
+                    Hire on Fiverr
+                  </a>
+                  <a
+                    href="#contact"
+                    className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-sky-600 via-indigo-600 to-violet-600 px-5 text-sm font-semibold text-white shadow-sm transition hover:brightness-110"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <CalendarIcon className="h-4 w-4" />
+                    Book Demo
+                  </a>
+                </div>
+
+                <div className="grid gap-2 pt-1">
+                  <a
+                    href="#hero"
+                    className="rounded-2xl border border-slate-200/70 bg-white/80 px-4 py-3 text-sm font-semibold text-sky-700 shadow-sm"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Home
+                  </a>
+                  <a
+                    href="#services"
+                    className="rounded-2xl border border-slate-200/70 bg-white/80 px-4 py-3 text-sm font-semibold text-slate-800 shadow-sm"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Services
+                  </a>
+                  <a
+                    href="#restaurant-pos"
+                    className="rounded-2xl border border-slate-200/70 bg-white/80 px-4 py-3 text-sm font-semibold text-slate-800 shadow-sm"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Restaurant POS
+                  </a>
+                  <a
+                    href="#dashboards"
+                    className="rounded-2xl border border-slate-200/70 bg-white/80 px-4 py-3 text-sm font-semibold text-slate-800 shadow-sm"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Dashboards
+                  </a>
+                  <a
+                    href="#case-studies"
+                    className="rounded-2xl border border-slate-200/70 bg-white/80 px-4 py-3 text-sm font-semibold text-slate-800 shadow-sm"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Projects
+                  </a>
+                  <a
+                    href="#contact"
+                    className="rounded-2xl border border-slate-200/70 bg-white/80 px-4 py-3 text-sm font-semibold text-slate-800 shadow-sm"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Contact
+                  </a>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </header>
 
       <main>
