@@ -18,13 +18,13 @@ export default function GlobalSearch() {
   }, [query])
 
   return (
-    <div className="relative hidden flex-1 md:block">
+    <div className="relative hidden flex-1 min-w-0 md:block">
       <HiOutlineMagnifyingGlass className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400" />
       <Dropdown
         align="left"
         trigger={() => (
           <Input
-            className="pl-10"
+            className="pl-10 w-full"
             placeholder="Search customers, leads, reports..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}

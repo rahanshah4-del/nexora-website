@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import NexoraLogo from './brand/NexoraLogo.jsx'
 
 function FiverrIcon({ className = 'h-4 w-4' }) {
   return (
@@ -20,36 +21,6 @@ function FiverrIcon({ className = 'h-4 w-4' }) {
         fill="white"
       />
       <path d="M15.82 16.9a1.65 1.65 0 1 0 0-3.3 1.65 1.65 0 0 0 0 3.3Z" fill="white" />
-    </svg>
-  )
-}
-
-function NexoraMark({ className = 'h-16 w-16' }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 64 64"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden="true"
-    >
-      <defs>
-        <linearGradient id="nexora_grad" x1="10" y1="10" x2="54" y2="54" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#22C1FF" />
-          <stop offset="0.55" stopColor="#2563EB" />
-          <stop offset="1" stopColor="#8B5CF6" />
-        </linearGradient>
-      </defs>
-      <path
-        d="M18 50V14h6.2l21.8 26.6V14H52v36h-6.2L24 23.4V50H18Z"
-        fill="url(#nexora_grad)"
-      />
-      <path
-        d="M11 8.5A6.5 6.5 0 0 1 17.5 2h29A6.5 6.5 0 0 1 53 8.5v47A6.5 6.5 0 0 1 46.5 62h-29A6.5 6.5 0 0 1 11 55.5v-47Z"
-        stroke="url(#nexora_grad)"
-        strokeWidth="2"
-        opacity="0.35"
-      />
     </svg>
   )
 }
@@ -131,15 +102,7 @@ export default function Header() {
           <div className="flex items-center justify-between gap-4 py-4 sm:gap-6">
             {/* Logo section - compact */}
             <a href="#hero" className="group flex shrink-0 items-center gap-3 min-w-fit">
-              <div className="flex h-10 w-10 items-center justify-center">
-                <NexoraMark className="h-10 w-10" />
-              </div>
-              <div className="hidden border-l border-slate-200/60 pl-3 md:block">
-                <p className="text-sm font-bold tracking-tight text-slate-950">NEXORA</p>
-                <p className="text-[0.65rem] font-medium uppercase tracking-[0.12em] text-slate-600">
-                  Software &amp; Systems
-                </p>
-              </div>
+              <NexoraLogo compact />
             </a>
 
             {/* Center navigation - hidden on tablet and mobile */}
@@ -178,7 +141,7 @@ export default function Header() {
 
               {/* Primary CTA - Start Free Trial */}
               <Link
-                to="/login?mode=signup"
+                to="/signup"
                 className="inline-flex h-9 items-center justify-center gap-1.5 rounded-full bg-gradient-to-r from-sky-600 via-indigo-600 to-violet-600 px-4 text-xs font-semibold text-white shadow-lg shadow-indigo-600/20 transition hover:brightness-110"
               >
                 <RocketIcon className="h-3.5 w-3.5" />
@@ -258,7 +221,7 @@ export default function Header() {
                     </Link>
 
                     <Link
-                      to="/login?mode=signup"
+                      to="/signup"
                       onClick={() => setMobileMenuOpen(false)}
                       className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-600 via-indigo-600 to-violet-600 text-xs font-semibold text-white shadow-lg shadow-indigo-600/20 transition hover:brightness-110"
                     >

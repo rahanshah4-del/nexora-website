@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import Header from './components/Header'
+import NexoraLogo from './components/brand/NexoraLogo.jsx'
 import PwaInstallCard from './components/PwaInstallCard.jsx'
 
 const whatsappNumberDisplay = '03194329754'
@@ -151,9 +152,6 @@ function FiverrIcon({ className = 'h-4 w-4' }) {
 }
 
 function App({ initialSectionId = '' }) {
-  const [useImageLogo, setUseImageLogo] = useState(true)
-  const logoSrc = '/nexora-logo.jpg'
-
   useEffect(() => {
     const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches
     const elements = Array.from(document.querySelectorAll('[data-reveal]'))
@@ -1043,39 +1041,12 @@ function App({ initialSectionId = '' }) {
           <div className="grid gap-10 lg:grid-cols-[1.4fr_1fr_1fr]">
             <div className="space-y-4">
               <div className="flex items-center gap-3">
-                <div className="logo-shell inline-flex items-center justify-center rounded-2xl bg-slate-950/95 p-1.5 shadow-sm ring-1 ring-slate-200/60 backdrop-blur">
-                  {useImageLogo ? (
-                    <img
-                      src={logoSrc}
-                      alt="Nexora logo"
-                      className="h-10 w-auto rounded-xl object-contain"
-                      loading="lazy"
-                      decoding="async"
-                      onError={() => setUseImageLogo(false)}
-                    />
-                  ) : (
-                    <div className="relative inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-slate-950 text-white">
-                      <div className="absolute inset-0 bg-gradient-to-br from-sky-500 via-cyan-400 to-violet-500 opacity-95" />
-                      <svg
-                        className="relative h-5 w-5"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                        aria-hidden="true"
-                      >
-                        <path
-                          d="M6 18V6h2.7l6.6 8.4V6H18v12h-2.7L8.7 9.6V18H6Z"
-                          fill="currentColor"
-                        />
-                      </svg>
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <p className="text-sm uppercase tracking-[0.28em] text-sky-700">NEXORA</p>
-                  <h2 className="text-2xl font-semibold text-slate-950">Nexora Solutions</h2>
-                </div>
-              </div>
+            <NexoraLogo compact />
+            <div>
+              <p className="text-sm uppercase tracking-[0.28em] text-sky-700">NEXORA</p>
+              <h2 className="text-2xl font-semibold text-slate-950">Nexora Solutions</h2>
+            </div>
+          </div>
               <p className="max-w-xl text-sm leading-7 text-slate-600">
                 Premium business software for POS, hospitals, medical stores, transport operations, and live dashboards.
               </p>
@@ -1125,18 +1096,7 @@ function App({ initialSectionId = '' }) {
                 className="group inline-flex w-full max-w-[36rem] items-center justify-center gap-2.5 rounded-2xl border border-slate-200/70 bg-white/70 px-3 py-2 text-xs font-medium text-slate-600 shadow-sm backdrop-blur transition hover:bg-white hover:shadow-md sm:w-auto sm:justify-start sm:text-sm"
               >
                 <span className="inline-flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-white ring-1 ring-slate-200/70 shadow-sm sm:h-8 sm:w-8">
-                  {useImageLogo ? (
-                    <img
-                      src={logoSrc}
-                      alt=""
-                      className="h-full w-full object-contain"
-                      loading="lazy"
-                      decoding="async"
-                      onError={() => setUseImageLogo(false)}
-                    />
-                  ) : (
-                    <span className="h-full w-full rounded-full bg-gradient-to-br from-sky-500 via-cyan-400 to-violet-500" />
-                  )}
+                  <img src="/favicon.svg" alt="Nexora" className="h-full w-full object-contain" />
                 </span>
 
                 <span className="text-slate-500">

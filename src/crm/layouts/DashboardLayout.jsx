@@ -8,15 +8,17 @@ export default function DashboardLayout() {
   const [mobileOpen, setMobileOpen] = useState(false)
 
   return (
-    <div className="nexora-bg">
-      <div className="relative mx-auto flex min-h-screen max-w-[1440px] gap-4 p-4 lg:p-6">
+    <div className="nexora-bg overflow-x-hidden">
+      <div className="relative mx-auto flex min-h-screen max-w-[1440px] w-full gap-4 p-4 lg:p-6">
         <Sidebar />
 
         <div className="flex min-w-0 flex-1 flex-col gap-4">
           <TopNav onOpenSidebar={() => setMobileOpen(true)} />
 
-          <main className="min-w-0 flex-1 px-1 pb-4 sm:px-2">
-            <Outlet />
+          <main className="min-w-0 flex-1 overflow-hidden px-1 pb-4 sm:px-2">
+            <div className="mx-auto w-full max-w-full">
+              <Outlet />
+            </div>
           </main>
 
           <footer className="px-2 pb-2 text-xs text-slate-500 dark:text-slate-400">

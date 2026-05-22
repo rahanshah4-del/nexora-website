@@ -29,8 +29,8 @@ export default function ClientPortalPage() {
         </div>
       ) : null}
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <div className="lg:col-span-2 space-y-4">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <div className="lg:col-span-2 space-y-4 min-w-0">
           <ClientDashboard
             subscription={portal.subscription}
             invoicesCount={portal.invoices.length}
@@ -40,7 +40,7 @@ export default function ClientPortalPage() {
           <ClientInvoices invoices={portal.invoices} />
           <ClientPayments payments={portal.payments} />
         </div>
-        <div className="space-y-4">
+        <div className="space-y-4 min-w-0">
           <ClientSubscriptionCard subscription={portal.subscription} />
           <ProjectStatus project={portal.project} />
         </div>

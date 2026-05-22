@@ -1,19 +1,21 @@
 import { useMemo, useState } from 'react'
-import { Link, Navigate, useLocation, useSearchParams } from 'react-router-dom'
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth'
-import { auth } from '../../lib/firebase.js'
+import { AiOutlineGoogle } from 'react-icons/ai'
+import { Link, Navigate, useLocation } from 'react-router-dom'
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
+import { auth, firebaseEnabled } from '../../lib/firebase.js'
 import useAuth from '../../context/useAuth.js'
+import NexoraLogo from '../../components/brand/NexoraLogo.jsx'
+import { motion } from 'framer-motion'
 
 export default function Login() {
   const location = useLocation()
-  const { user, loading, firebaseEnabled } = useAuth()
-  const [searchParams, setSearchParams] = useSearchParams()
-  const mode = searchParams.get('mode') === 'signup' ? 'signup' : 'login'
-
+  const { user, loading } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
   const [error, setError] = useState('')
+  const [info, setInfo] = useState('')
 
   const from = useMemo(() => location.state?.from || '/app/dashboard', [location.state])
 
@@ -21,94 +23,191 @@ export default function Login() {
     return <Navigate to={from} replace />
   }
 
-  const switchMode = () => {
-    const next = mode === 'login' ? 'signup' : 'login'
-    setSearchParams((prev) => {
-      const p = new URLSearchParams(prev)
-      p.set('mode', next)
-      return p
-    })
-    setError('')
-  }
-
   const onSubmit = async (event) => {
     event.preventDefault()
     setError('')
+    setInfo('')
 
     if (!firebaseEnabled || !auth) {
-      setError('Firebase auth is not configured. Set VITE_FIREBASE_* env vars and redeploy.')
+      setError('Authentication is not configured. Please check your setup and try again.')
       return
     }
 
     setSubmitting(true)
     try {
-      if (mode === 'signup') {
-        await createUserWithEmailAndPassword(auth, email.trim(), password)
-      } else {
-        await signInWithEmailAndPassword(auth, email.trim(), password)
-      }
-    } catch (e) {
-      setError(e?.message || 'Authentication failed. Please try again.')
+      await signInWithEmailAndPassword(auth, email.trim(), password)
+    } catch (err) {
+      setError(err?.message || 'Unable to sign in. Please verify your credentials.')
     } finally {
       setSubmitting(false)
     }
   }
 
+  const handleGoogleSignIn = async () => {
+    setError('')
+    setInfo('')
+
+    if (!firebaseEnabled || !auth) {
+      setError('Google sign-in is not available. Please try email sign in.')
+      return
+    }
+
+    setGoogleLoading(true)
+    try {
+      const provider = new GoogleAuthProvider()
+      await signInWithPopup(auth, provider)
+    } catch (err) {
+      setError(err?.message || 'Google sign-in failed. Please try again.')
+    } finally {
+      setGoogleLoading(false)
+    }
+  }
+
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
-      <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6 py-12">
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-[0_30px_80px_-60px_rgba(0,0,0,0.8)]">
-          <p className="text-xs font-semibold uppercase tracking-[0.32em] text-slate-300">NEXORA BUSINESS SUITE</p>
-          <h1 className="mt-2 text-2xl font-semibold tracking-tight">{mode === 'signup' ? 'Start Free Trial' : 'Login'}</h1>
-          <p className="mt-2 text-sm text-slate-200/80">
-            {mode === 'signup' ? 'Create an account to access the CRM dashboard.' : 'Sign in to open your dashboard.'}
-          </p>
+    <div className="min-h-screen bg-slate-50 text-slate-900">
+      <div className="relative overflow-hidden py-10">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-80 bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.18),_transparent_26%),radial-gradient(circle_at_70%_18%,_rgba(129,140,248,0.16),_transparent_24%)]" />
+        <div className="pointer-events-none absolute right-[-8rem] top-20 h-72 w-72 rounded-full bg-gradient-to-br from-sky-400/20 to-violet-400/15 blur-3xl" />
+        <div className="pointer-events-none absolute left-0 bottom-0 h-72 w-72 rounded-full bg-gradient-to-tr from-cyan-300/15 to-slate-200/10 blur-3xl" />
 
-          <form className="mt-6 space-y-4" onSubmit={onSubmit}>
-            <div>
-              <label className="text-xs font-semibold text-slate-200">Email</label>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="mt-2 w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-sm text-white outline-none ring-0 placeholder:text-slate-500 focus:border-sky-500/60"
-                placeholder="you@company.com"
-                autoComplete="email"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-slate-200">Password</label>
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="mt-2 w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-sm text-white outline-none ring-0 placeholder:text-slate-500 focus:border-sky-500/60"
-                placeholder="••••••••"
-                autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
-                minLength={6}
-              />
-            </div>
-
-            {error ? <div className="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-100">{error}</div> : null}
-
-            <button
-              type="submit"
-              disabled={submitting}
-              className="w-full rounded-2xl bg-sky-700 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-sky-700/20 transition hover:bg-sky-800 disabled:cursor-not-allowed disabled:opacity-60"
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="grid gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
+            <motion.div
+              initial={{ opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.55, ease: 'easeOut' }}
+              className="space-y-8"
             >
-              {submitting ? 'Please wait…' : mode === 'signup' ? 'Create account' : 'Login'}
-            </button>
-          </form>
+              <div className="inline-flex items-center gap-3 rounded-full border border-sky-200/70 bg-sky-50/80 px-4 py-2 text-sm font-semibold text-sky-700 shadow-sm backdrop-blur">
+                <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-r from-sky-500 to-indigo-500" />
+                Nexora secure access
+              </div>
 
-          <div className="mt-4 flex items-center justify-between gap-3 text-xs text-slate-300">
-            <button type="button" onClick={switchMode} className="font-semibold text-slate-100 hover:underline">
-              {mode === 'signup' ? 'Already have an account?' : 'Need an account?'}
-            </button>
-            <Link to="/" className="font-semibold text-slate-100 hover:underline">
-              Back to website
-            </Link>
+              <div className="space-y-4">
+                <p className="text-sm uppercase tracking-[0.22em] text-slate-600">Nexora Solutions</p>
+                <h1 className="max-w-xl text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
+                  Sign in to your Nexora Suite account.
+                </h1>
+                <p className="max-w-2xl text-base leading-8 text-slate-600">
+                  Access CRM, sales pipelines, reporting, and customer workflows from one premium business portal.
+                </p>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm">
+                  <h2 className="text-sm font-semibold text-slate-950">Fast access</h2>
+                  <p className="mt-3 text-sm text-slate-600">Login quickly with email and password or Google.</p>
+                </div>
+                <div className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm">
+                  <h2 className="text-sm font-semibold text-slate-950">Secure sessions</h2>
+                  <p className="mt-3 text-sm text-slate-600">Encrypted authentication and safe app access for your team.</p>
+                </div>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.55, delay: 0.08, ease: 'easeOut' }}
+              className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white/95 p-8 shadow-[0_35px_80px_-35px_rgba(15,23,42,0.18)] backdrop-blur-xl"
+            >
+              <div className="absolute -right-16 top-8 h-24 w-24 rounded-full bg-gradient-to-br from-sky-200 to-indigo-200 opacity-70 blur-3xl" />
+              <div className="absolute -left-10 bottom-4 h-28 w-28 rounded-full bg-gradient-to-br from-cyan-200 to-slate-200 opacity-80 blur-3xl" />
+              <div className="relative space-y-7">
+                <div className="flex items-center justify-between gap-4 pb-4">
+                  <NexoraLogo compact />
+                  <p className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">
+                    CRM sign in
+                  </p>
+                </div>
+
+                {error ? (
+                  <div className="rounded-3xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+                    {error}
+                  </div>
+                ) : null}
+                {info ? (
+                  <div className="rounded-3xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-700">
+                    {info}
+                  </div>
+                ) : null}
+
+                <button
+                  type="button"
+                  onClick={handleGoogleSignIn}
+                  disabled={googleLoading}
+                  className="flex w-full items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <AiOutlineGoogle className="h-5 w-5 text-slate-700" />
+                  {googleLoading ? 'Connecting with Google…' : 'Continue with Google'}
+                </button>
+
+                <div className="flex items-center gap-2 text-xs text-slate-400">
+                  <span className="h-px flex-1 bg-slate-200" />
+                  <span>or continue with email</span>
+                  <span className="h-px flex-1 bg-slate-200" />
+                </div>
+
+                <form className="space-y-4" onSubmit={onSubmit}>
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-slate-700">Email address</label>
+                    <input
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition duration-200 ease-out focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+                      placeholder="you@example.com"
+                      autoComplete="email"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-4">
+                      <label className="text-sm font-semibold text-slate-700">Password</label>
+                      <button
+                        type="button"
+                        onClick={() => setInfo('Password reset is not available. Contact support for help.')}
+                        className="text-sm font-semibold text-sky-700 transition hover:text-sky-900"
+                      >
+                        Forgot password?
+                      </button>
+                    </div>
+                    <input
+                      type="password"
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition duration-200 ease-out focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+                      placeholder="Enter your password"
+                      autoComplete="current-password"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="flex w-full items-center justify-center rounded-3xl bg-gradient-to-r from-sky-600 to-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-sky-600/20 transition duration-200 hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {submitting ? 'Signing in…' : 'Sign in'}
+                  </button>
+                </form>
+
+                <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+                  <p className="font-semibold text-slate-900">Not registered yet?</p>
+                  <p className="mt-2 leading-6">
+                    Create a Nexora account to manage your customers, invoices, and reports from any device.
+                  </p>
+                </div>
+
+                <div className="text-center text-sm text-slate-500">
+                  New to Nexora?{' '}
+                  <Link to="/signup" className="font-semibold text-slate-900 hover:text-slate-700">
+                    Create account
+                  </Link>
+                </div>
+              </div>
+            </motion.div>
           </div>
         </div>
       </div>

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-labelledby="nexoraLogoTitle">
+  <title id="nexoraLogoTitle">Nexora logo</title>
+  <defs>
+    <linearGradient id="nexoraLogoGradient" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#22C1FF" />
+      <stop offset="50%" stop-color="#6366F1" />
+      <stop offset="100%" stop-color="#8B5CF6" />
+    </linearGradient>
+  </defs>
+  <rect width="120" height="120" rx="32" fill="#0F172A" />
+  <path d="M32 28h20l20 32 20-32h16v64H72L52 60 32 92H16V28h16Z" fill="url(#nexoraLogoGradient)" />
+  <path d="M32 28L52 60 72 28" fill="rgba(255,255,255,0.12)" />
+</svg>

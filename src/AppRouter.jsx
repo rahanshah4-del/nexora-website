@@ -2,6 +2,7 @@ import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import UpgradeBusiness from './pages/UpgradeBusiness.jsx'
 import MarketingRoute from './pages/public/MarketingRoute.jsx'
 import Login from './pages/auth/Login.jsx'
+import Signup from './pages/auth/Signup.jsx'
 import RequireAuth from './crm/components/auth/RequireAuth.jsx'
 import RequireAdmin from './layouts/RequireAdmin.jsx'
 import DashboardLayout from './crm/layouts/DashboardLayout.jsx'
@@ -42,6 +43,7 @@ export default function AppRouter() {
       <Route path="/industries" element={<MarketingRoute sectionId="products" />} />
 
       <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<Signup />} />
       <Route path="/upgrade-business" element={<UpgradeRouteGuard />} />
 
       <Route

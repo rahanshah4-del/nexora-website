@@ -55,9 +55,11 @@ export default function TopNav({ onOpenSidebar }) {
           </span>
         </button>
 
-        <GlobalSearch />
+        <div className="relative hidden flex-1 min-w-0 md:block">
+          <GlobalSearch />
+        </div>
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex min-w-0 items-center gap-2">
           <div className="hidden items-center gap-2 lg:flex">
             <OfflineStatus />
             <BranchSwitcher />

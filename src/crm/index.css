@@ -30,10 +30,10 @@
   }
 
   .glass {
-    @apply rounded-3xl border border-slate-200 bg-white shadow-soft backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/90 dark:text-white;
+    @apply rounded-3xl border border-slate-200 bg-white shadow-soft backdrop-blur-xl transition-all duration-300 ease-out dark:border-slate-800 dark:bg-slate-950/90 dark:text-white;
   }
   .glass-muted {
-    @apply rounded-3xl border border-slate-200/60 bg-slate-50 shadow-sm backdrop-blur-xl dark:border-slate-700 dark:bg-slate-900/80;
+    @apply rounded-3xl border border-slate-200/60 bg-slate-50 shadow-sm backdrop-blur-xl transition-all duration-300 ease-out dark:border-slate-700 dark:bg-slate-900/80;
   }
 
   .focus-ring {
