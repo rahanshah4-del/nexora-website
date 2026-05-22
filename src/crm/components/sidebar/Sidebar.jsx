@@ -9,14 +9,25 @@ import { useNavigate } from 'react-router-dom'
 import { useUser } from '../../hooks/useUser.js'
 
 function Brand() {
+  const [logoError, setLogoError] = useState(false)
+
   return (
     <div className="flex items-center gap-3 px-3 py-2">
-      <div className="grid h-10 w-10 place-items-center rounded-2xl bg-nexora-gradient text-white shadow-glow">
-        <span className="text-sm font-bold tracking-tight">N</span>
+      <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white shadow-sm">
+        {!logoError ? (
+          <img
+            src="/nexora-logo.png"
+            alt="Nexora Solutions"
+            className="h-10 w-10 rounded-2xl object-cover"
+            onError={() => setLogoError(true)}
+          />
+        ) : (
+          <span className="text-sm font-bold uppercase tracking-tight text-slate-900">N</span>
+        )}
       </div>
       <div className="leading-tight">
-        <p className="text-sm font-semibold text-slate-900 dark:text-white">NEXORA</p>
-        <p className="text-[11px] text-slate-600 dark:text-slate-300">SOLUTIONS</p>
+        <p className="text-sm font-semibold text-slate-900">NEXORA SOLUTIONS</p>
+        <p className="text-[11px] text-slate-500">CRM Admin</p>
       </div>
     </div>
   )
@@ -47,13 +58,22 @@ export default function Sidebar({ mobile = false, onNavigate }) {
                 cn(
                   'focus-ring group flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition',
                   isActive
-                    ? 'bg-nexora-gradient text-white shadow-glow'
-                    : 'text-slate-700 hover:bg-slate-900/5 dark:text-slate-200 dark:hover:bg-white/10',
+                    ? 'bg-gradient-to-r from-indigo-500 via-violet-500 to-sky-500 text-white shadow-glow'
+                    : 'text-slate-800 hover:bg-indigo-100 hover:text-slate-950',
                 )
               }
             >
-              <Icon className="text-lg opacity-90" />
-              <span className="truncate">{item.label}</span>
+              {({ isActive }) => (
+                <>
+                  <Icon
+                    className={cn(
+                      'text-lg transition',
+                      isActive ? 'text-white' : 'text-slate-600 group-hover:text-slate-950',
+                    )}
+                  />
+                  <span className="truncate">{item.label}</span>
+                </>
+              )}
             </NavLink>
           )
         })}
