@@ -334,13 +334,20 @@ function App({ initialSectionId = '' }) {
 
       <header className="sticky top-0 z-50">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-sky-500 via-indigo-600 to-violet-600" />
-        <div className="relative mx-auto max-w-screen-2xl px-6 pb-3 pt-5 lg:px-8 lg:pb-4">
+        <div className="relative mx-auto w-full max-w-[1600px] px-6 pb-3 pt-5 lg:px-8 lg:pb-4">
           <div className="relative overflow-hidden rounded-[2rem] border border-white/60 bg-white/70 shadow-[0_30px_90px_-60px_rgba(2,6,23,0.38)] backdrop-blur-2xl">
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_20%,_rgba(56,189,248,0.22),_transparent_45%),radial-gradient(circle_at_88%_15%,_rgba(168,85,247,0.18),_transparent_44%)]" />
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-white/75 via-sky-50/55 to-white/70" />
 
-            <div className="relative flex h-[7.2rem] items-center justify-between gap-6 px-6 lg:px-10">
-              <a href="#hero" className="group flex w-auto shrink-0 items-center gap-5 text-slate-950 sm:w-[360px]">
+            <div
+              className={[
+                'relative grid min-h-[120px] items-center gap-8 px-8 py-6',
+                'grid-cols-[360px_1fr_600px]',
+                'xl:grid-cols-[300px_1fr_500px] xl:gap-6',
+                'lg:px-10',
+              ].join(' ')}
+            >
+              <a href="#hero" className="group flex w-[360px] shrink-0 items-center gap-5 text-slate-950 xl:w-[300px]">
                 <div className="relative rounded-3xl bg-gradient-to-br from-sky-500/40 via-indigo-500/25 to-violet-500/35 p-[1px]">
                   <div className="flex h-14 w-14 items-center justify-center rounded-3xl bg-white/80 shadow-sm backdrop-blur">
                 {useImageLogo ? (
@@ -380,7 +387,7 @@ function App({ initialSectionId = '' }) {
                 </div>
               </a>
 
-              <nav className="hidden min-w-0 flex-1 items-center justify-center gap-6 text-[0.95rem] font-medium text-slate-700 lg:flex xl:gap-8">
+              <nav className="hidden min-w-0 items-center justify-center gap-7 whitespace-nowrap text-[0.95rem] font-medium text-slate-700 lg:flex">
                 <a href="#hero" className="relative font-semibold text-sky-600">
                   Home
                   <span className="absolute -bottom-3 left-1/2 h-0.5 w-7 -translate-x-1/2 rounded-full bg-sky-500" />
@@ -403,9 +410,8 @@ function App({ initialSectionId = '' }) {
                 </a>
               </nav>
 
-              <div className="flex shrink-0 items-center gap-3">
-                <div className="hidden flex-col items-end gap-2 lg:flex">
-                  <div className="hidden h-10 items-center gap-3 rounded-2xl border border-white/70 bg-white/75 px-4 text-sm font-semibold text-slate-800 shadow-sm xl:inline-flex">
+              <div className="hidden flex-col items-end gap-3 lg:flex">
+                <div className="inline-flex h-10 items-center gap-3 rounded-2xl border border-white/70 bg-white/75 px-4 text-sm font-semibold text-slate-800 shadow-sm">
                     <span className="inline-flex items-center gap-2">
                       <span className="text-sky-600">
                         <HeadsetIcon className="h-4 w-4" />
@@ -418,17 +424,17 @@ function App({ initialSectionId = '' }) {
                     </span>
                   </div>
 
-                  <div className="flex flex-wrap items-center justify-end gap-3">
+                <div className="flex flex-nowrap items-center justify-end gap-3">
                     <Link
                       to="/login"
-                      className="inline-flex h-11 items-center justify-center gap-2 rounded-full border border-white/70 bg-white/80 px-5 text-sm font-semibold text-slate-950 shadow-sm transition hover:bg-white"
+                      className="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-white/70 bg-white/80 px-[22px] text-sm font-semibold text-slate-950 shadow-sm transition hover:bg-white"
                     >
                       <UserIcon className="h-4 w-4 text-slate-700" />
                       Login
                     </Link>
                     <Link
                       to="/login?mode=signup"
-                      className="hidden h-11 items-center justify-center gap-2 rounded-full bg-gradient-to-r from-sky-600 via-indigo-600 to-violet-600 px-5 text-sm font-semibold text-white shadow-[0_18px_50px_-30px_rgba(79,70,229,0.75)] transition hover:brightness-110 xl:inline-flex"
+                      className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-gradient-to-r from-sky-600 via-indigo-600 to-violet-600 px-[22px] text-sm font-semibold text-white shadow-[0_18px_50px_-30px_rgba(79,70,229,0.75)] transition hover:brightness-110"
                     >
                       <RocketIcon className="h-4 w-4" />
                       Start Free Trial
@@ -437,7 +443,7 @@ function App({ initialSectionId = '' }) {
                       href={fiverrLink}
                       target="_blank"
                       rel="noreferrer"
-                      className="hidden h-11 items-center justify-center gap-2 rounded-full border border-white/70 bg-white/80 px-5 text-sm font-semibold text-slate-950 shadow-sm transition hover:bg-white xl:inline-flex"
+                      className="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-white/70 bg-white/80 px-[22px] text-sm font-semibold text-slate-950 shadow-sm transition hover:bg-white"
                     >
                       <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
                         <FiverrIcon className="h-3.5 w-3.5" />
@@ -446,18 +452,19 @@ function App({ initialSectionId = '' }) {
                     </a>
                     <a
                       href="#contact"
-                      className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-gradient-to-r from-sky-600 via-indigo-600 to-violet-600 px-5 text-sm font-semibold text-white shadow-[0_18px_50px_-30px_rgba(79,70,229,0.75)] transition hover:brightness-110"
+                      className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-gradient-to-r from-sky-600 via-indigo-600 to-violet-600 px-[22px] text-sm font-semibold text-white shadow-[0_18px_50px_-30px_rgba(79,70,229,0.75)] transition hover:brightness-110"
                     >
                       <CalendarIcon className="h-4 w-4" />
                       Book Demo
                     </a>
                   </div>
-                </div>
+              </div>
 
+              <div className="flex items-center justify-end lg:hidden">
                 <button
                   type="button"
                   onClick={() => setMobileMenuOpen((prev) => !prev)}
-                  className="relative inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-white/70 bg-white/80 text-slate-700 shadow-sm backdrop-blur transition hover:bg-white active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/70 lg:hidden"
+                  className="relative inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-white/70 bg-white/80 text-slate-700 shadow-sm backdrop-blur transition hover:bg-white active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/70"
                   aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
                   aria-expanded={mobileMenuOpen}
                 >
