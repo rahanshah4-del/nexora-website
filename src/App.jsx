@@ -252,13 +252,14 @@ function App({ initialSectionId = '' }) {
     <div className="page-enter relative overflow-x-hidden bg-slate-50 text-slate-950">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-[radial-gradient(circle_at_20%_20%,_rgba(56,189,248,0.18),_transparent_28%),radial-gradient(circle_at_80%_10%,_rgba(168,85,247,0.16),_transparent_26%)] opacity-90" />
 
-      <header className="sticky top-0 z-50 border-b border-slate-200/60 bg-white/70 shadow-[0_14px_44px_-30px_rgba(15,23,42,0.35)] backdrop-blur-2xl">
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-sky-400/60 to-transparent" />
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_10%_20%,_rgba(56,189,248,0.12),_transparent_38%),radial-gradient(circle_at_90%_10%,_rgba(168,85,247,0.10),_transparent_34%)]" />
-        <div className="relative mx-auto flex max-w-7xl items-center justify-between gap-2 px-4 py-2.5 sm:gap-4 sm:px-6 sm:py-3.5 lg:px-8">
-          <a href="#hero" className="group flex items-center gap-2.5 text-slate-950 sm:gap-3">
-            <div className="relative rounded-full bg-gradient-to-br from-sky-400/50 via-cyan-300/40 to-violet-400/50 p-[1px] transition group-hover:-translate-y-0.5 group-hover:shadow-md">
-              <div className="inline-flex items-center justify-center rounded-full border border-white/60 bg-white/70 p-1.5 shadow-sm backdrop-blur sm:p-2">
+      <header className="sticky top-0 z-50 border-b border-slate-200/60 bg-white/65 shadow-[0_18px_60px_-35px_rgba(2,6,23,0.45)] backdrop-blur-2xl">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-sky-500/60 to-transparent" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_20%,_rgba(56,189,248,0.16),_transparent_42%),radial-gradient(circle_at_85%_10%,_rgba(168,85,247,0.14),_transparent_40%)]" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-white/65 via-sky-50/50 to-white/55" />
+        <div className="relative mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:h-[4.4rem] sm:gap-4 sm:px-6 lg:px-8">
+          <a href="#hero" className="group flex items-center gap-3 text-slate-950">
+            <div className="relative rounded-full bg-gradient-to-br from-sky-500/55 via-cyan-300/45 to-violet-500/55 p-[1px] transition group-hover:-translate-y-0.5 group-hover:shadow-md">
+              <div className="inline-flex items-center justify-center rounded-full border border-white/70 bg-white/70 p-1.5 shadow-sm backdrop-blur sm:p-2">
                 {useImageLogo ? (
                   <img
                     src={logoSrc}
@@ -288,19 +289,21 @@ function App({ initialSectionId = '' }) {
               </div>
             </div>
             <div className="leading-tight">
-              <p className="font-display text-[0.84rem] font-semibold uppercase tracking-[0.28em] text-slate-950 sm:text-sm">
+              <p className="font-display text-[0.86rem] font-semibold uppercase tracking-[0.28em] text-slate-950 sm:text-sm">
                 NEXORA
               </p>
-              <p className="hidden text-[0.78rem] text-slate-500 sm:block">Software &amp; systems studio</p>
+              <p className="hidden text-[0.72rem] font-medium tracking-wide text-slate-600/90 sm:block">
+                Software &amp; systems studio
+              </p>
             </div>
           </a>
 
-          <nav className="hidden items-center gap-2 text-sm font-semibold text-slate-700 lg:flex">
+          <nav className="hidden items-center gap-1.5 text-sm font-semibold text-slate-700 lg:flex">
             {navLinks.map((link) => (
               <a
                 key={link.id}
                 href={`#${link.id}`}
-                className="rounded-full px-4 py-2 transition hover:bg-white/70 hover:text-slate-950 hover:shadow-sm"
+                className="rounded-full px-4 py-2 transition hover:bg-white/80 hover:text-slate-950 hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/70"
               >
                 {link.label}
               </a>
@@ -312,38 +315,48 @@ function App({ initialSectionId = '' }) {
               <>
                 <Link
                   to="/login"
-                  className="hidden items-center justify-center rounded-full border border-slate-200/80 bg-white/70 px-4 py-2.5 text-sm font-semibold text-slate-900 shadow-sm backdrop-blur transition hover:bg-white hover:shadow-md lg:inline-flex"
+                  className="hidden h-11 items-center justify-center rounded-full border border-white/70 bg-white/75 px-5 text-sm font-semibold text-slate-950 shadow-sm backdrop-blur transition hover:bg-white hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/70 lg:inline-flex"
                 >
                   Login
                 </Link>
                 <Link
                   to="/login?mode=signup"
-                  className="hidden items-center justify-center rounded-full bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-900 lg:inline-flex"
+                  className="hidden h-11 items-center justify-center rounded-full bg-gradient-to-r from-sky-600 via-indigo-600 to-violet-600 px-5 text-sm font-semibold text-white shadow-[0_16px_40px_-24px_rgba(37,99,235,0.65)] transition hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300/70 lg:inline-flex"
                 >
                   Start Free Trial
                 </Link>
               </>
             ) : null}
-            <Link
-              to={openDashboardTo}
-              className="hidden items-center justify-center rounded-full border border-white/10 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white shadow-sm backdrop-blur transition hover:bg-white/15 lg:inline-flex"
-            >
-              Open Dashboard
-            </Link>
+            {isLoggedIn ? (
+              <Link
+                to={openDashboardTo}
+                className="hidden h-11 items-center justify-center rounded-full bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 px-5 text-sm font-semibold text-white shadow-[0_16px_40px_-28px_rgba(2,6,23,0.65)] transition hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-300/70 lg:inline-flex"
+              >
+                Open Dashboard
+              </Link>
+            ) : (
+              <button
+                type="button"
+                disabled
+                className="hidden h-11 items-center justify-center rounded-full border border-slate-200/80 bg-slate-100/70 px-5 text-sm font-semibold text-slate-600 shadow-sm backdrop-blur lg:inline-flex"
+              >
+                Open Dashboard
+              </button>
+            )}
             <a
               href={fiverrLink}
               target="_blank"
               rel="noreferrer"
-              className="hidden items-center justify-center gap-2 rounded-full border border-emerald-200 bg-white/70 px-4 py-2.5 text-sm font-semibold text-slate-900 shadow-sm backdrop-blur transition hover:bg-white hover:shadow-md hover:shadow-emerald-600/10 lg:inline-flex"
+              className="hidden h-11 items-center justify-center gap-2 rounded-full border border-emerald-200/80 bg-white/75 px-5 text-sm font-semibold text-slate-950 shadow-sm backdrop-blur transition hover:bg-white hover:shadow-md hover:shadow-emerald-600/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/70 lg:inline-flex"
             >
               <span className="text-emerald-600">
-                <FiverrIcon className="h-4 w-4" />
+                <FiverrIcon className="h-3.5 w-3.5" />
               </span>
               Hire on Fiverr
             </a>
             <a
               href="#contact"
-              className="inline-flex items-center justify-center rounded-full bg-sky-700 px-3.5 py-2 text-[0.78rem] font-semibold text-white shadow-lg shadow-sky-700/20 transition hover:bg-sky-800 active:scale-[0.99] sm:px-5 sm:py-2.5 sm:text-sm"
+              className="inline-flex h-11 items-center justify-center rounded-full bg-sky-700 px-5 text-sm font-semibold text-white shadow-[0_16px_40px_-28px_rgba(14,116,144,0.65)] transition hover:bg-sky-800 active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/70 sm:px-6"
             >
               <span className="sm:hidden">Demo</span>
               <span className="hidden sm:inline">Book Demo</span>
@@ -351,7 +364,7 @@ function App({ initialSectionId = '' }) {
             <button
               type="button"
               onClick={() => setMobileMenuOpen((prev) => !prev)}
-              className="relative inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200/80 bg-white/70 text-slate-700 shadow-sm backdrop-blur transition hover:bg-white active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 lg:hidden sm:h-11 sm:w-11"
+              className="relative inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/70 bg-white/75 text-slate-700 shadow-sm backdrop-blur transition hover:bg-white active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/70 lg:hidden"
               aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
               aria-expanded={mobileMenuOpen}
             >
@@ -378,28 +391,38 @@ function App({ initialSectionId = '' }) {
         </div>
 
         {mobileMenuOpen && (
-          <div className="border-t border-slate-200/60 bg-white/70 backdrop-blur-2xl lg:hidden">
-            <div className="mx-auto max-w-7xl space-y-2 px-4 py-4 sm:px-6 lg:px-8">
-              <div className="grid gap-2 pb-2">
-                <Link
-                  to={openDashboardTo}
-                  className="inline-flex items-center justify-center rounded-2xl border border-slate-200/70 bg-white/70 px-4 py-3 text-sm font-semibold text-slate-900 shadow-sm backdrop-blur transition hover:bg-white active:scale-[0.99]"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Open Dashboard
-                </Link>
+          <div className="border-t border-slate-200/60 bg-white/75 shadow-[0_30px_90px_-70px_rgba(2,6,23,0.65)] backdrop-blur-2xl lg:hidden">
+            <div className="mx-auto max-w-7xl space-y-3 px-4 py-4 sm:px-6 lg:px-8">
+              <div className="grid gap-2 pb-1">
+                {isLoggedIn ? (
+                  <Link
+                    to={openDashboardTo}
+                    className="inline-flex h-12 items-center justify-center rounded-2xl bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 px-5 text-sm font-semibold text-white shadow-sm transition hover:brightness-110 active:scale-[0.99]"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Open Dashboard
+                  </Link>
+                ) : (
+                  <button
+                    type="button"
+                    disabled
+                    className="inline-flex h-12 items-center justify-center rounded-2xl border border-slate-200/80 bg-slate-100/80 px-5 text-sm font-semibold text-slate-600 shadow-sm"
+                  >
+                    Open Dashboard
+                  </button>
+                )}
                 {!isLoggedIn ? (
                   <>
                     <Link
                       to="/login"
-                      className="inline-flex items-center justify-center rounded-2xl border border-slate-200/70 bg-white/70 px-4 py-3 text-sm font-semibold text-slate-900 shadow-sm backdrop-blur transition hover:bg-white active:scale-[0.99]"
+                      className="inline-flex h-12 items-center justify-center rounded-2xl border border-white/70 bg-white/80 px-5 text-sm font-semibold text-slate-950 shadow-sm transition hover:bg-white active:scale-[0.99]"
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       Login
                     </Link>
                     <Link
                       to="/login?mode=signup"
-                      className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-900 active:scale-[0.99]"
+                      className="inline-flex h-12 items-center justify-center rounded-2xl bg-gradient-to-r from-sky-600 via-indigo-600 to-violet-600 px-5 text-sm font-semibold text-white shadow-sm transition hover:brightness-110 active:scale-[0.99]"
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       Start Free Trial
@@ -410,17 +433,17 @@ function App({ initialSectionId = '' }) {
                   href={fiverrLink}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-emerald-200 bg-white/80 px-4 py-3 text-sm font-semibold text-slate-900 shadow-sm backdrop-blur transition hover:bg-white active:scale-[0.99]"
+                  className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-emerald-200/80 bg-white/85 px-5 text-sm font-semibold text-slate-950 shadow-sm transition hover:bg-white active:scale-[0.99]"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   <span className="text-emerald-600">
-                    <FiverrIcon className="h-4 w-4" />
+                    <FiverrIcon className="h-3.5 w-3.5" />
                   </span>
                   Hire on Fiverr
                 </a>
                 <a
                   href="#contact"
-                  className="inline-flex items-center justify-center rounded-2xl bg-sky-700 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-sky-700/20 transition hover:bg-sky-800 active:scale-[0.99]"
+                  className="inline-flex h-12 items-center justify-center rounded-2xl bg-sky-700 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-800 active:scale-[0.99]"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Book Demo
@@ -430,7 +453,7 @@ function App({ initialSectionId = '' }) {
                 <a
                   key={link.id}
                   href={`#${link.id}`}
-                  className="block rounded-2xl border border-slate-200/70 bg-white/70 px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm backdrop-blur transition hover:bg-white active:scale-[0.99]"
+                  className="block rounded-2xl border border-slate-200/70 bg-white/75 px-4 py-3 text-sm font-semibold text-slate-800 shadow-sm backdrop-blur transition hover:bg-white active:scale-[0.99]"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   {link.label}
