@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    @apply h-full scroll-smooth;
+  }
+  body {
+    @apply min-h-full bg-slate-50 text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100;
+  }
+  #root {
+    @apply min-h-screen;
+  }
+}
+
+@layer components {
+  .nexora-bg {
+    @apply relative min-h-screen overflow-hidden;
+  }
+  .nexora-bg::before {
+    content: '';
+    @apply pointer-events-none absolute -top-40 left-1/2 h-[38rem] w-[38rem] -translate-x-1/2 rounded-full bg-gradient-to-br from-indigo-500/25 via-fuchsia-500/20 to-sky-500/20 blur-3xl;
+  }
+  .nexora-bg::after {
+    content: '';
+    @apply pointer-events-none absolute -bottom-48 right-[-10rem] h-[34rem] w-[34rem] rounded-full bg-gradient-to-tr from-sky-500/20 via-indigo-500/15 to-fuchsia-500/20 blur-3xl;
+  }
+
+  .glass {
+    @apply border border-white/30 bg-white/60 shadow-soft backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/55;
+  }
+  .glass-muted {
+    @apply border border-white/25 bg-white/40 backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/35;
+  }
+
+  .focus-ring {
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/70 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent;
+  }
+}

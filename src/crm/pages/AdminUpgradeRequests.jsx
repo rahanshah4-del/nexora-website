@@ -1,0 +1,300 @@
+import { motion } from 'framer-motion'
+import {
+  collection,
+  doc,
+  onSnapshot,
+  orderBy,
+  query,
+  serverTimestamp,
+  writeBatch,
+} from 'firebase/firestore'
+import { AnimatePresence } from 'framer-motion'
+import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import Badge from '../components/ui/Badge.jsx'
+import Button from '../components/ui/Button.jsx'
+import Card from '../components/ui/Card.jsx'
+import PageHeader from '../components/ui/PageHeader.jsx'
+import Table from '../components/ui/Table.jsx'
+import Spinner from '../components/ui/Spinner.jsx'
+import { db } from '../lib/firebase.js'
+import { useUser } from '../hooks/useUser.js'
+
+function Toast({ tone = 'success', message, onClose }) {
+  const toneClass =
+    tone === 'success'
+      ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-800 dark:text-emerald-200'
+      : 'border-rose-500/20 bg-rose-500/10 text-rose-800 dark:text-rose-200'
+  return (
+    <div className={`glass fixed right-4 top-4 z-[60] w-[22rem] max-w-[calc(100vw-2rem)] rounded-2xl border p-3 ${toneClass}`}>
+      <div className="flex items-start justify-between gap-3">
+        <p className="text-sm font-semibold">{message}</p>
+        <button
+          type="button"
+          className="focus-ring rounded-xl px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-white/40 dark:text-slate-100 dark:hover:bg-white/10"
+          onClick={onClose}
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function ConfirmModal({ open, title, description, confirmLabel, tone = 'primary', onCancel, onConfirm, busy }) {
+  return (
+    <AnimatePresence>
+      {open ? (
+        <motion.div
+          className="fixed inset-0 z-50 grid place-items-center bg-slate-950/45 p-4 backdrop-blur-sm"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={onCancel}
+          role="dialog"
+          aria-modal="true"
+        >
+          <motion.div
+            initial={{ opacity: 0, y: 14, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 14, scale: 0.98 }}
+            transition={{ duration: 0.18 }}
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md"
+          >
+            <Card className="p-5">
+              <p className="text-base font-semibold text-slate-900 dark:text-white">{title}</p>
+              <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{description}</p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Button variant="subtle" className="rounded-2xl" onClick={onCancel} type="button" disabled={busy}>
+                  Cancel
+                </Button>
+                <Button className="rounded-2xl" onClick={onConfirm} type="button" disabled={busy}>
+                  {busy ? 'Working...' : confirmLabel}
+                </Button>
+              </div>
+              {tone === 'danger' ? (
+                <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+                  Rejected requests keep the user plan unchanged.
+                </p>
+              ) : null}
+            </Card>
+          </motion.div>
+        </motion.div>
+      ) : null}
+    </AnimatePresence>
+  )
+}
+
+function formatCreatedDate(v) {
+  const d = v?.toDate?.()
+  if (!d) return '—'
+  return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(d)
+}
+
+export default function AdminUpgradeRequestsPage() {
+  const { isAdmin } = useUser()
+  const navigate = useNavigate()
+  const [rows, setRows] = useState([])
+  const [busyId, setBusyId] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [toast, setToast] = useState(null)
+  const [confirm, setConfirm] = useState({ open: false, action: null, row: null })
+
+  useEffect(() => {
+    if (!isAdmin) return
+    if (!db) {
+      Promise.resolve().then(() => {
+        setLoading(false)
+        setRows([])
+      })
+      return
+    }
+    const q = query(collection(db, 'upgradeRequests'), orderBy('createdAt', 'desc'))
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        setRows(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
+        setLoading(false)
+      },
+      () => setRows([]),
+    )
+    return () => unsub()
+  }, [isAdmin])
+
+  useEffect(() => {
+    if (isAdmin) return
+    navigate('/app/dashboard', { replace: true })
+  }, [isAdmin, navigate])
+
+  const columns = useMemo(
+    () => [
+      { key: 'userName', header: 'Customer Name', cell: (r) => <span className="font-semibold">{r.userName}</span> },
+      { key: 'userEmail', header: 'Email' },
+      { key: 'userPhone', header: 'Phone', cell: (r) => <span className="text-xs font-semibold">{r.userPhone || '—'}</span> },
+      {
+        key: 'selectedPlan',
+        header: 'Selected Plan',
+        cell: (r) => <Badge variant="purple">{r.selectedPlan || r.requestedPlan || '—'}</Badge>,
+      },
+      { key: 'billingCycle', header: 'Billing Cycle', cell: (r) => <Badge variant="default">{r.billingCycle || '—'}</Badge> },
+      { key: 'planPrice', header: 'Plan Price', cell: (r) => <span className="text-xs font-semibold">{r.planPrice ?? '—'}</span> },
+      { key: 'amountPaid', header: 'Amount Paid', cell: (r) => <span className="text-xs font-semibold">{r.amountPaid ?? '—'}</span> },
+      { key: 'currency', header: 'Currency', cell: (r) => <Badge variant="info">{r.currency || '—'}</Badge> },
+      { key: 'paymentMethod', header: 'Payment Method', cell: (r) => <Badge variant="info">{r.paymentMethod || '—'}</Badge> },
+      { key: 'paidToAccount', header: 'Paid To Account', cell: (r) => <span className="text-xs font-semibold">{r.paidToAccount || '—'}</span> },
+      { key: 'transactionId', header: 'Transaction ID', cell: (r) => <span className="text-xs font-semibold">{r.transactionId || '—'}</span> },
+      { key: 'paymentReference', header: 'Payment Reference', cell: (r) => <span className="text-xs font-semibold">{r.paymentReference || '—'}</span> },
+      {
+        key: 'approvalStatus',
+        header: 'Approval',
+        cell: (r) => {
+          const v = r.approvalStatus === 'approved' ? 'success' : r.approvalStatus === 'rejected' ? 'danger' : 'warning'
+          return <Badge variant={v}>{r.approvalStatus}</Badge>
+        },
+      },
+      {
+        key: 'paymentStatus',
+        header: 'Payment',
+        cell: (r) => {
+          const v = r.paymentStatus === 'paid' ? 'success' : r.paymentStatus === 'rejected' ? 'danger' : 'warning'
+          return <Badge variant={v}>{r.paymentStatus}</Badge>
+        },
+      },
+      { key: 'createdAt', header: 'Created Date', cell: (r) => <span className="text-xs">{formatCreatedDate(r.createdAt)}</span> },
+      {
+        key: 'actions',
+        header: 'Actions',
+        cell: (r) => (
+          <div className="flex items-center gap-2">
+            <Button
+              className="rounded-xl px-3 py-2 text-xs"
+              onClick={() => setConfirm({ open: true, action: 'approve', row: r })}
+              disabled={busyId === r.id || r.approvalStatus !== 'pending'}
+              type="button"
+            >
+              Approve
+            </Button>
+            <Button
+              variant="subtle"
+              className="rounded-xl px-3 py-2 text-xs"
+              onClick={() => setConfirm({ open: true, action: 'reject', row: r })}
+              disabled={busyId === r.id || r.approvalStatus !== 'pending'}
+              type="button"
+            >
+              Reject
+            </Button>
+          </div>
+        ),
+      },
+    ],
+    [busyId],
+  )
+
+  async function approve(r) {
+    setBusyId(r.id)
+    try {
+      const batch = writeBatch(db)
+      const reqRef = doc(db, 'upgradeRequests', r.id)
+      const userRef = doc(db, 'users', r.userId)
+
+      batch.update(reqRef, {
+        approvalStatus: 'approved',
+        paymentStatus: 'paid',
+        approvedAt: serverTimestamp(),
+      })
+
+      batch.set(
+        userRef,
+        {
+          plan: r.selectedPlan || r.requestedPlan || 'Free',
+          planStatus: 'active',
+          billingCycle: r.billingCycle || 'monthly',
+          upgradedAt: serverTimestamp(),
+        },
+        { merge: true },
+      )
+
+      await batch.commit()
+      setToast({ tone: 'success', message: 'Approved. User plan updated.' })
+    } finally {
+      setBusyId('')
+    }
+  }
+
+  async function reject(r) {
+    setBusyId(r.id)
+    try {
+      const batch = writeBatch(db)
+      const reqRef = doc(db, 'upgradeRequests', r.id)
+      batch.update(reqRef, {
+        approvalStatus: 'rejected',
+        paymentStatus: 'rejected',
+        rejectedAt: serverTimestamp(),
+      })
+      await batch.commit()
+      setToast({ tone: 'success', message: 'Request rejected. User plan unchanged.' })
+    } finally {
+      setBusyId('')
+    }
+  }
+
+  if (!isAdmin) {
+    return null
+  }
+
+  return (
+    <>
+      {toast ? <Toast tone={toast.tone} message={toast.message} onClose={() => setToast(null)} /> : null}
+      <ConfirmModal
+        open={confirm.open}
+        title={confirm.action === 'approve' ? 'Approve upgrade request?' : 'Reject upgrade request?'}
+        description={
+          confirm.row
+            ? `${confirm.row.userName} (${confirm.row.userEmail}) requested Business.`
+            : 'Confirm action.'
+        }
+        confirmLabel={confirm.action === 'approve' ? 'Approve' : 'Reject'}
+        tone={confirm.action === 'reject' ? 'danger' : 'primary'}
+        busy={!!busyId}
+        onCancel={() => setConfirm({ open: false, action: null, row: null })}
+        onConfirm={async () => {
+          const r = confirm.row
+          if (!r) return
+          setConfirm({ open: false, action: null, row: null })
+          try {
+            if (confirm.action === 'approve') await approve(r)
+            if (confirm.action === 'reject') await reject(r)
+          } catch {
+            setToast({ tone: 'error', message: 'Action failed. Check permissions and network.' })
+          }
+        }}
+      />
+
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
+        <PageHeader title="Admin Upgrade Requests" subtitle="Approve or reject Business plan upgrade requests." />
+        <Card className="p-5">
+          {loading ? (
+            <div className="grid min-h-[40vh] place-items-center">
+              <div className="flex items-center gap-3 text-sm text-slate-700 dark:text-slate-200">
+                <Spinner />
+                <span className="font-medium">Loading requests…</span>
+              </div>
+            </div>
+          ) : rows.length === 0 ? (
+            <div className="grid min-h-[40vh] place-items-center text-center">
+              <div>
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">No upgrade requests</p>
+                <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+                  When users submit payment proof, requests will appear here.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <Table columns={columns} rows={rows} />
+          )}
+        </Card>
+      </motion.div>
+    </>
+  )
+}

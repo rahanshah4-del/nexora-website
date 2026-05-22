@@ -1,0 +1,79 @@
+import { useMemo, useState } from 'react'
+import Badge from '../ui/Badge.jsx'
+import Button from '../ui/Button.jsx'
+import Table from '../ui/Table.jsx'
+import TeamMemberModal from './TeamMemberModal.jsx'
+
+export default function TeamMembersTable({ members, permissionKeys, onAdd, onUpdate }) {
+  const [open, setOpen] = useState(false)
+  const [mode, setMode] = useState('add')
+  const [active, setActive] = useState(null)
+
+  const columns = useMemo(
+    () => [
+      { key: 'name', header: 'Name', cell: (r) => <span className="font-semibold">{r.name}</span> },
+      { key: 'email', header: 'Email' },
+      { key: 'phone', header: 'Phone' },
+      { key: 'role', header: 'Role', cell: (r) => <Badge variant="purple">{r.role}</Badge> },
+      { key: 'status', header: 'Status', cell: (r) => <Badge variant={r.status === 'Active' ? 'success' : 'warning'}>{r.status}</Badge> },
+      { key: 'lastActive', header: 'Last Active', cell: (r) => <span className="text-xs">{r.lastActive || '—'}</span> },
+      {
+        key: 'actions',
+        header: 'Actions',
+        cell: (r) => (
+          <Button
+            variant="subtle"
+            className="rounded-xl px-3 py-2 text-xs"
+            type="button"
+            onClick={() => {
+              setActive(r)
+              setMode('edit')
+              setOpen(true)
+            }}
+          >
+            Edit
+          </Button>
+        ),
+      },
+    ],
+    [],
+  )
+
+  return (
+    <div>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <p className="text-sm font-semibold text-slate-900 dark:text-white">Team members</p>
+          <Badge variant="info">{members.length}</Badge>
+        </div>
+        <Button
+          className="rounded-2xl"
+          type="button"
+          onClick={() => {
+            setActive(null)
+            setMode('add')
+            setOpen(true)
+          }}
+        >
+          Add member
+        </Button>
+      </div>
+
+      <Table columns={columns} rows={members} />
+
+      <TeamMemberModal
+        open={open}
+        mode={mode}
+        member={active}
+        permissionKeys={permissionKeys}
+        onClose={() => setOpen(false)}
+        onSave={(draft) => {
+          if (mode === 'add') onAdd?.(draft)
+          else if (active?.id) onUpdate?.(active.id, draft)
+          setOpen(false)
+        }}
+      />
+    </div>
+  )
+}
+

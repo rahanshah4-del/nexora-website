@@ -1,0 +1,83 @@
+import { useEffect, useMemo, useState } from 'react'
+import { db } from '../lib/firebase.js'
+import { patchDoc, removeDoc, subscribeCollection } from '../lib/firestore.js'
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
+import { useUser } from './useUser.js'
+
+export function usePipelineDeals() {
+  const { userId } = useUser()
+  const [deals, setDeals] = useState([])
+  const [source, setSource] = useState(db ? 'firestore' : 'none')
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (!db) {
+      Promise.resolve().then(() => {
+        setDeals([])
+        setSource('none')
+        setError('Firestore is not configured.')
+        setLoading(false)
+      })
+      return
+    }
+    Promise.resolve().then(() => setLoading(true))
+    const unsub = subscribeCollection(
+      'pipelines',
+      (rows) => {
+        setDeals(Array.isArray(rows) ? rows : [])
+        setSource('firestore')
+        setLoading(false)
+      },
+      (err) => {
+        setError(err?.message || 'Failed to load deals')
+        setDeals([])
+        setSource('firestore')
+        setLoading(false)
+      },
+    )
+    return () => unsub()
+  }, [])
+
+  const api = useMemo(
+    () => ({
+      deals,
+      source,
+      loading,
+      error,
+      async moveDeal(id, stage) {
+        setDeals((arr) => arr.map((d) => (d.id === id ? { ...d, stage } : d)))
+        if (!db) return
+        await patchDoc('pipelines', id, { stage })
+      },
+      async saveDeal(deal) {
+        setDeals((arr) => arr.map((d) => (d.id === deal.id ? deal : d)))
+        if (!db) return
+        await patchDoc('pipelines', deal.id, deal)
+      },
+      async deleteDeal(deal) {
+        setDeals((arr) => arr.filter((d) => d.id !== deal.id))
+        if (!db) return
+        await removeDoc('pipelines', deal.id)
+      },
+      async createDeal(payload) {
+        if (!userId) return { ok: false, error: 'Please login first' }
+        if (!db) return { ok: false, error: 'Firestore is not configured' }
+        const title = String(payload.title || '').trim()
+        const customerName = String(payload.customerName || '').trim()
+        if (!title) return { ok: false, error: 'Deal title is required' }
+        if (!customerName) return { ok: false, error: 'Customer name is required' }
+        try {
+          await addDoc(collection(db, 'pipelines'), { ...payload, title, customerName, createdAt: serverTimestamp(), createdBy: userId })
+          return { ok: true }
+        } catch (e) {
+          console.error('[pipelines] add failed:', e)
+          return { ok: false, error: e?.message || 'Failed to create deal' }
+        }
+      },
+    }),
+    [deals, source, loading, error, userId],
+  )
+
+  return api
+}

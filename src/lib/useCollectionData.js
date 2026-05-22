@@ -5,13 +5,11 @@ import { db } from './firebase.js'
 export function useCollectionData(collectionName, options = {}) {
   const { orderByField = '', direction = 'desc', limitCount = 20 } = options
   const [items, setItems] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(Boolean(db && collectionName))
   const [error, setError] = useState(null)
 
   useEffect(() => {
     if (!db || !collectionName) {
-      setItems([])
-      setLoading(false)
       return undefined
     }
 
