@@ -14,7 +14,7 @@ export default function DashboardLayout() {
       <div className="min-h-screen lg:ml-[300px] lg:w-[calc(100%-300px)]">
         <TopNav onOpenSidebar={() => setMobileOpen(true)} />
 
-        <main className="w-full min-h-screen pt-6 pb-8 px-4 sm:px-6 lg:px-8">
+        <main className="w-full pt-6 pb-8 px-4 sm:px-6 lg:px-8">
           <div className="w-full">
             <Outlet />
           </div>
@@ -28,7 +28,7 @@ export default function DashboardLayout() {
       <AnimatePresence>
         {mobileOpen ? (
           <motion.div
-            className="fixed inset-0 z-40 bg-slate-950/40 backdrop-blur-sm lg:hidden"
+            className="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-sm lg:hidden"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
