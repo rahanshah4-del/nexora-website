@@ -5,7 +5,8 @@ import Button from '../components/ui/Button.jsx'
 import Card from '../components/ui/Card.jsx'
 import Input from '../components/ui/Input.jsx'
 import { useTheme } from '../hooks/useTheme.js'
-import { HiOutlineMoon, HiOutlineSun } from 'react-icons/hi2'
+import { HiOutlineMoon, HiOutlineSun, HiOutlineArrowLeft } from 'react-icons/hi2'
+import { FaWindows } from 'react-icons/fa'
 import { useAuth } from '../hooks/useAuth.js'
 import Badge from '../components/ui/Badge.jsx'
 
@@ -46,6 +47,33 @@ export default function LoginPage() {
           >
             {theme === 'dark' ? <HiOutlineSun className="text-xl" /> : <HiOutlineMoon className="text-xl" />}
           </button>
+        </div>
+
+        {/* CTA buttons: Back to Website + Download Windows App */}
+        <div className="mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-start gap-3">
+            <Link
+              to="/"
+              className="focus-ring glass inline-flex items-center gap-2 rounded-2xl px-3 py-2 text-sm font-semibold hover:brightness-105 transition-transform transform hover:scale-105"
+            >
+              <HiOutlineArrowLeft className="text-lg" />
+              <span>Back to Website</span>
+            </Link>
+
+            <div className="flex flex-col">
+              <a
+                href="#"
+                className="focus-ring inline-flex items-center gap-3 rounded-2xl px-3 py-2 bg-gradient-to-r from-sky-600 to-violet-600 text-white shadow-soft transition-transform transform hover:scale-105"
+              >
+                <FaWindows className="text-xl" />
+                <div className="text-left leading-tight">
+                  <span className="text-sm font-semibold">Download Windows EXE</span>
+                  <span className="block text-xs opacity-90">Free Trial Available</span>
+                </div>
+              </a>
+              <p className="mt-2 text-xs text-slate-600 dark:text-slate-300">Use Nexora Suite on your desktop with the same account.</p>
+            </div>
+          </div>
         </div>
 
         <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
