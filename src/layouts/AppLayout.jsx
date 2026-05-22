@@ -5,9 +5,20 @@ import useAuth from '../context/useAuth.js'
 
 const appNav = [
   { to: '/app/dashboard', label: 'Dashboard' },
+  { to: '/app/client-portal', label: 'Client Portal' },
   { to: '/app/customers', label: 'Customers' },
   { to: '/app/leads', label: 'Leads' },
-  { to: '/app/pipeline', label: 'Pipeline' },
+  { to: '/app/leads/scoring', label: 'AI Lead Scoring' },
+  { to: '/app/ai-assistant', label: 'AI Assistant' },
+  { to: '/app/pipeline', label: 'Sales Pipeline' },
+  { to: '/app/follow-ups', label: 'Follow-Up Automation' },
+  { to: '/app/team', label: 'Team Management' },
+  { to: '/app/invoices', label: 'Invoices & Payments' },
+  { to: '/app/subscriptions', label: 'Subscriptions' },
+  { to: '/app/support', label: 'Support Tickets' },
+  { to: '/app/activity-logs', label: 'Activity Logs' },
+  { to: '/app/analytics', label: 'Enterprise Analytics' },
+  { to: '/app/notifications', label: 'Notifications' },
   { to: '/app/reports', label: 'Reports' },
   { to: '/app/settings', label: 'Settings' },
 ]
