@@ -1,4 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
+import useAuth from './context/useAuth.js'
 
 const whatsappNumberDisplay = '03194329754'
 const whatsappLink = 'https://wa.me/923194329754'
@@ -157,10 +159,14 @@ function FiverrIcon({ className = 'h-4 w-4' }) {
   )
 }
 
-function App() {
+function App({ initialSectionId = '' }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [useImageLogo, setUseImageLogo] = useState(true)
   const logoSrc = '/nexora-logo.jpg'
+  const { user } = useAuth()
+  const isLoggedIn = Boolean(user)
+
+  const openDashboardTo = useMemo(() => (isLoggedIn ? '/app/dashboard' : '/login'), [isLoggedIn])
 
   useEffect(() => {
     const handleResize = () => {
@@ -197,6 +203,17 @@ function App() {
     elements.forEach((element) => observer.observe(element))
     return () => observer.disconnect()
   }, [])
+
+  useEffect(() => {
+    if (!initialSectionId) return
+    const handle = window.requestAnimationFrame(() => {
+      const el = document.getElementById(initialSectionId)
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+    })
+    return () => window.cancelAnimationFrame(handle)
+  }, [initialSectionId])
 
   const handleDemoSubmit = (event) => {
     event.preventDefault()
@@ -291,6 +308,28 @@ function App() {
           </nav>
 
           <div className="flex items-center gap-2 sm:gap-3">
+            {!isLoggedIn ? (
+              <>
+                <Link
+                  to="/login"
+                  className="hidden items-center justify-center rounded-full border border-slate-200/80 bg-white/70 px-4 py-2.5 text-sm font-semibold text-slate-900 shadow-sm backdrop-blur transition hover:bg-white hover:shadow-md lg:inline-flex"
+                >
+                  Login
+                </Link>
+                <Link
+                  to="/login?mode=signup"
+                  className="hidden items-center justify-center rounded-full bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-900 lg:inline-flex"
+                >
+                  Start Free Trial
+                </Link>
+              </>
+            ) : null}
+            <Link
+              to={openDashboardTo}
+              className="hidden items-center justify-center rounded-full border border-white/10 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white shadow-sm backdrop-blur transition hover:bg-white/15 lg:inline-flex"
+            >
+              Open Dashboard
+            </Link>
             <a
               href={fiverrLink}
               target="_blank"
@@ -342,6 +381,31 @@ function App() {
           <div className="border-t border-slate-200/60 bg-white/70 backdrop-blur-2xl lg:hidden">
             <div className="mx-auto max-w-7xl space-y-2 px-4 py-4 sm:px-6 lg:px-8">
               <div className="grid gap-2 pb-2">
+                <Link
+                  to={openDashboardTo}
+                  className="inline-flex items-center justify-center rounded-2xl border border-slate-200/70 bg-white/70 px-4 py-3 text-sm font-semibold text-slate-900 shadow-sm backdrop-blur transition hover:bg-white active:scale-[0.99]"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Open Dashboard
+                </Link>
+                {!isLoggedIn ? (
+                  <>
+                    <Link
+                      to="/login"
+                      className="inline-flex items-center justify-center rounded-2xl border border-slate-200/70 bg-white/70 px-4 py-3 text-sm font-semibold text-slate-900 shadow-sm backdrop-blur transition hover:bg-white active:scale-[0.99]"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Login
+                    </Link>
+                    <Link
+                      to="/login?mode=signup"
+                      className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-900 active:scale-[0.99]"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Start Free Trial
+                    </Link>
+                  </>
+                ) : null}
                 <a
                   href={fiverrLink}
                   target="_blank"
