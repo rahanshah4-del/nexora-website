@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import Header from './components/Header'
+import PwaInstallCard from './components/PwaInstallCard.jsx'
 
 const whatsappNumberDisplay = '03194329754'
 const whatsappLink = 'https://wa.me/923194329754'
@@ -303,6 +304,10 @@ function App({ initialSectionId = '' }) {
                   >
                     WhatsApp demo request
                   </a>
+                </div>
+
+                <div className="mt-6 sm:mt-8">
+                  <PwaInstallCard />
                 </div>
 
                 <div className="grid grid-cols-3 gap-2 sm:max-w-lg sm:gap-3">
