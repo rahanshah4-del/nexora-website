@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { db } from '../lib/firebase.js'
-import { patchDoc, subscribeCollection } from '../lib/firestore.js'
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
+import { createUserDoc, patchUserDoc, subscribeUserCollection } from '../lib/firestore.js'
 import { useUser } from './useUser.js'
 
 function normalizeTicket(t) {
@@ -38,11 +37,21 @@ export function useSupportTickets() {
       })
       return
     }
+    if (!userId) {
+      Promise.resolve().then(() => {
+        setTickets([])
+        setSource('firestore')
+        setError('')
+        setLoading(false)
+      })
+      return
+    }
 
     Promise.resolve().then(() => setLoading(true))
     Promise.resolve().then(() => setError(''))
 
-    const unsub = subscribeCollection(
+    const unsub = subscribeUserCollection(
+      userId,
       'supportTickets',
       (rows) => {
         setTickets((Array.isArray(rows) ? rows : []).map(normalizeTicket))
@@ -58,7 +67,7 @@ export function useSupportTickets() {
     )
 
     return () => unsub?.()
-  }, [])
+  }, [userId])
 
   const stats = useMemo(() => {
     const byStatus = tickets.reduce((acc, t) => {
@@ -98,7 +107,7 @@ export function useSupportTickets() {
           return { ok: false, error: 'Firestore is not configured' }
         }
         try {
-          await addDoc(collection(db, 'supportTickets'), {
+          await createUserDoc(userId, 'supportTickets', {
             ticketNumber: tno,
             customerName: name,
             customerEmail: email,
@@ -108,9 +117,6 @@ export function useSupportTickets() {
             priority: ticket.priority || 'Medium',
             assignedTo: ticket.assignedTo || 'Unassigned',
             comments: ticket.comments || [],
-            userId,
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
           })
           return { ok: true }
         } catch (e) {
@@ -119,8 +125,8 @@ export function useSupportTickets() {
       },
       async updateTicket(id, patch) {
         setTickets((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch, updatedAt: new Date().toISOString().slice(0, 10) } : t)))
-        if (!db || source !== 'firestore') return
-        await patchDoc('supportTickets', id, patch)
+        if (!db || !userId || source !== 'firestore') return
+        await patchUserDoc(userId, 'supportTickets', id, patch)
       },
       async addComment(id, comment) {
         const createdAt = new Date().toISOString().slice(0, 10)
@@ -131,10 +137,10 @@ export function useSupportTickets() {
               : t,
           ),
         )
-        if (!db || source !== 'firestore') return
+        if (!db || !userId || source !== 'firestore') return
         const current = tickets.find((t) => t.id === id)
         const next = [...(current?.comments || []), { id: `c_${Date.now()}`, ...comment, createdAt }]
-        await patchDoc('supportTickets', id, { comments: next })
+        await patchUserDoc(userId, 'supportTickets', id, { comments: next })
       },
     }),
     [tickets, loading, source, error, stats, userId],

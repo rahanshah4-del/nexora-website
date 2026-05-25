@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { db } from '../lib/firebase.js'
-import { subscribeCollection } from '../lib/firestore.js'
+import { subscribeUserCollection } from '../lib/firestore.js'
+import { useUser } from './useUser.js'
 
 function daysSince(dateStr) {
   if (!dateStr) return 999
@@ -73,6 +74,7 @@ export function computeLeadScore(lead) {
 }
 
 export function useLeadScoring() {
+  const { userId } = useUser()
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
   const [source, setSource] = useState(db ? 'firestore' : 'none')
@@ -88,9 +90,19 @@ export function useLeadScoring() {
       })
       return
     }
+    if (!userId) {
+      Promise.resolve().then(() => {
+        setRows([])
+        setSource('firestore')
+        setError('')
+        setLoading(false)
+      })
+      return
+    }
 
     Promise.resolve().then(() => setLoading(true))
-    const unsub = subscribeCollection(
+    const unsub = subscribeUserCollection(
+      userId,
       'leads',
       (data) => {
         setRows(Array.isArray(data) ? data : [])
@@ -105,7 +117,7 @@ export function useLeadScoring() {
       },
     )
     return () => unsub()
-  }, [])
+  }, [userId])
 
   const scored = useMemo(
     () =>

@@ -291,6 +291,8 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
 
       await addDoc(collection(db, 'upgradeRequests'), {
         userId,
+        ownerId: userId,
+        workspaceId: userId,
         userName: readableName,
         email: readableEmail,
         selectedPlan,

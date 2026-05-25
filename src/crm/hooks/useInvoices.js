@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { db } from '../lib/firebase.js'
-import { patchDoc, subscribeCollection } from '../lib/firestore.js'
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
+import { createUserDoc, patchUserDoc, subscribeUserCollection } from '../lib/firestore.js'
 import { useUser } from './useUser.js'
 
 function normalizeInvoice(inv) {
@@ -32,9 +31,20 @@ export function useInvoices() {
       })
       return
     }
+    if (!userId) {
+      Promise.resolve().then(() => {
+        setInvoices([])
+        setPayments([])
+        setSource('firestore')
+        setError('')
+        setLoading(false)
+      })
+      return
+    }
 
     Promise.resolve().then(() => setLoading(true))
-    const unsubInv = subscribeCollection(
+    const unsubInv = subscribeUserCollection(
+      userId,
       'invoices',
       (rows) => {
         setInvoices((Array.isArray(rows) ? rows : []).map(normalizeInvoice))
@@ -48,7 +58,8 @@ export function useInvoices() {
         setLoading(false)
       },
     )
-    const unsubPay = subscribeCollection(
+    const unsubPay = subscribeUserCollection(
+      userId,
       'payments',
       (rows) => setPayments(Array.isArray(rows) ? rows : []),
       () => setPayments([]),
@@ -57,7 +68,7 @@ export function useInvoices() {
       unsubInv?.()
       unsubPay?.()
     }
-  }, [])
+  }, [userId])
 
   const stats = useMemo(() => {
     const paid = invoices.filter((i) => i.status === 'Paid').length
@@ -103,10 +114,8 @@ export function useInvoices() {
             subtotalUsd: invoice.subtotalUsd ?? invoice.subtotal ?? 0,
             taxAmountUsd: invoice.taxAmountUsd ?? invoice.taxAmount ?? 0,
             totalUsd: invoice.totalUsd ?? invoice.total ?? 0,
-            userId,
-            createdAt: serverTimestamp(),
           }
-          await addDoc(collection(db, 'invoices'), docPayload)
+          await createUserDoc(userId, 'invoices', docPayload)
           return { ok: true }
         } catch (e) {
           return { ok: false, error: e?.message || 'Failed to create invoice' }
@@ -114,8 +123,8 @@ export function useInvoices() {
       },
       async updateInvoice(id, patch) {
         setInvoices((prev) => prev.map((i) => (i.id === id ? { ...i, ...patch } : i)))
-        if (!db || source !== 'firestore') return
-        await patchDoc('invoices', id, patch)
+        if (!db || !userId || source !== 'firestore') return
+        await patchUserDoc(userId, 'invoices', id, patch)
       },
     }),
     [invoices, payments, loading, source, error, stats, userId],

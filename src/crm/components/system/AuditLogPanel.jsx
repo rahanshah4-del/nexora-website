@@ -3,7 +3,8 @@ import Badge from '../ui/Badge.jsx'
 import Card from '../ui/Card.jsx'
 import AdvancedTable from './AdvancedTable.jsx'
 import { db } from '../../lib/firebase.js'
-import { subscribeCollection } from '../../lib/firestore.js'
+import { subscribeUserCollection } from '../../lib/firestore.js'
+import { useUser } from '../../hooks/useUser.js'
 
 function normalizeRow(r) {
   const at = r.createdAt?.toDate?.()?.toISOString?.().slice(0, 10) || r.at || '—'
@@ -18,6 +19,7 @@ function normalizeRow(r) {
 }
 
 export default function AuditLogPanel() {
+  const { userId } = useUser()
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
   const [source, setSource] = useState(db ? 'firestore' : 'none')
@@ -33,8 +35,18 @@ export default function AuditLogPanel() {
       })
       return
     }
+    if (!userId) {
+      Promise.resolve().then(() => {
+        setRows([])
+        setSource('firestore')
+        setError('')
+        setLoading(false)
+      })
+      return
+    }
     Promise.resolve().then(() => setLoading(true))
-    const unsub = subscribeCollection(
+    const unsub = subscribeUserCollection(
+      userId,
       'auditLogs',
       (list) => {
         const normalized = (Array.isArray(list) ? list : []).map(normalizeRow)
@@ -51,7 +63,7 @@ export default function AuditLogPanel() {
       },
     )
     return () => unsub?.()
-  }, [])
+  }, [userId])
 
   const columns = useMemo(
     () => [

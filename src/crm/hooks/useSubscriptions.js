@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { db } from '../lib/firebase.js'
-import { subscribeCollection } from '../lib/firestore.js'
+import { subscribeOwnedCollection, subscribeUserCollection } from '../lib/firestore.js'
 import { plansDemo } from '../data/subscriptionsDemo.js'
 import { useUser } from './useUser.js'
 
@@ -89,10 +89,11 @@ export function useSubscriptions() {
     Promise.resolve().then(() => setLoading(true))
     Promise.resolve().then(() => setError(''))
 
-    const unsub = subscribeCollection(
+    const unsub = subscribeUserCollection(
+      userId,
       'subscriptions',
       (rows) => {
-        const raw = rows.find((r) => r.userId === userId) || null
+        const raw = rows[0] || null
         const sub = normalizeSub(raw || { id: 'sub', userId })
         setSubscription({
           ...sub,
@@ -121,11 +122,11 @@ export function useSubscriptions() {
       },
     )
 
-    const unsubUpgrades = subscribeCollection(
+    const unsubUpgrades = subscribeOwnedCollection(
       'upgradeRequests',
+      userId,
       (rows) => {
         const approved = rows
-          .filter((r) => r.userId === userId)
           .filter((r) => r.approvalStatus === 'approved')
           .slice(0, 20)
           .map((r) => ({

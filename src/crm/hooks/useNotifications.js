@@ -52,6 +52,7 @@ export function useNotifications() {
 
   useEffect(() => {
     if (!db || !userId) {
+      lastSeenTopIdRef.current = null
       Promise.resolve().then(() => {
         setItems([])
         setSource(db ? 'firestore' : 'none')

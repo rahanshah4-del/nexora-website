@@ -1,15 +1,19 @@
 import { useEffect, useState } from 'react'
-import { collection, getDocs, limit, orderBy, query } from 'firebase/firestore'
+import { collection, getDocs, limit, orderBy, query, where } from 'firebase/firestore'
 import { db } from './firebase.js'
 
 export function useCollectionData(collectionName, options = {}) {
-  const { orderByField = '', direction = 'desc', limitCount = 20 } = options
+  const { orderByField = '', direction = 'desc', limitCount = 20, userId = '', admin = false, workspaceScoped = true } = options
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(Boolean(db && collectionName))
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    if (!db || !collectionName) {
+    if (!db || !collectionName || (!admin && !userId)) {
+      Promise.resolve().then(() => {
+        setItems([])
+        setLoading(false)
+      })
       return undefined
     }
 
@@ -19,8 +23,12 @@ export function useCollectionData(collectionName, options = {}) {
       setError(null)
 
       try {
-        const collectionRef = collection(db, collectionName)
+        const collectionRef =
+          workspaceScoped && userId ? collection(db, 'workspaces', userId, collectionName) : collection(db, collectionName)
         const queryConstraints = []
+        if (!workspaceScoped && userId) {
+          queryConstraints.push(where('userId', '==', userId))
+        }
         if (orderByField) {
           queryConstraints.push(orderBy(orderByField, direction))
         }
@@ -46,7 +54,7 @@ export function useCollectionData(collectionName, options = {}) {
     return () => {
       canceled = true
     }
-  }, [collectionName, direction, limitCount, orderByField])
+  }, [admin, collectionName, direction, limitCount, orderByField, userId, workspaceScoped])
 
   return { items, loading, error }
 }

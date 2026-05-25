@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
 import { db } from '../lib/firebase.js'
-import { subscribeCollection } from '../lib/firestore.js'
+import { createUserDoc, subscribeUserCollection } from '../lib/firestore.js'
 import { useUser } from './useUser.js'
 
 function normalizeCustomer(c) {
@@ -34,12 +33,22 @@ export function useCustomers() {
       })
       return
     }
+    if (!userId) {
+      Promise.resolve().then(() => {
+        setRows([])
+        setSource('firestore')
+        setError('')
+        setLoading(false)
+      })
+      return
+    }
     Promise.resolve().then(() => {
       setLoading(true)
       setSource('firestore')
       setError('')
     })
-    const unsub = subscribeCollection(
+    const unsub = subscribeUserCollection(
+      userId,
       'customers',
       (data) => {
         setRows((Array.isArray(data) ? data : []).map(normalizeCustomer))
@@ -52,7 +61,7 @@ export function useCustomers() {
       },
     )
     return () => unsub?.()
-  }, [])
+  }, [userId])
 
   const api = useMemo(
     () => ({
@@ -70,15 +79,13 @@ export function useCustomers() {
         if (!email) return { ok: false, error: 'Email is required' }
         if (!company) return { ok: false, error: 'Company is required' }
         try {
-          await addDoc(collection(db, 'customers'), {
+          await createUserDoc(userId, 'customers', {
             name,
             email,
             company,
             plan: payload.plan || 'Free',
             status: payload.status || 'Active',
             spendUsd: Number(payload.spendUsd || 0),
-            createdAt: serverTimestamp(),
-            createdBy: userId,
           })
           return { ok: true }
         } catch (e) {
@@ -92,4 +99,3 @@ export function useCustomers() {
 
   return api
 }
-

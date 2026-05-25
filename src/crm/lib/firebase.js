@@ -1,4 +1,4 @@
-import { initializeApp } from 'firebase/app'
+import { getApps, initializeApp } from 'firebase/app'
 import { getAuth } from 'firebase/auth'
 import { getFirestore } from 'firebase/firestore'
 import { getStorage } from 'firebase/storage'
@@ -42,7 +42,7 @@ export function getFirebaseEnvHint() {
   return `Missing Firebase env vars: ${missing.join(', ')}`
 }
 
-export const app = firebaseEnabled ? initializeApp(firebaseConfig) : null
+export const app = firebaseEnabled ? (getApps()[0] ?? initializeApp(firebaseConfig)) : null
 export const auth = app ? getAuth(app) : null
 export const db = app ? getFirestore(app) : null
 export const storage = app ? getStorage(app) : null

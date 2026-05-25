@@ -184,6 +184,8 @@ export default function UpgradeBusinessPage() {
     try {
       const payload = {
         userId,
+        ownerId: userId,
+        workspaceId: userId,
         userName: customerName.trim(),
         userEmail: customerEmail.trim(),
         userPhone: customerPhone.trim(),

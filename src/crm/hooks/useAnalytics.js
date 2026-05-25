@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { db } from '../lib/firebase.js'
-import { subscribeCollection } from '../lib/firestore.js'
+import { subscribeUserCollection } from '../lib/firestore.js'
+import { useUser } from './useUser.js'
 
 function num(n) {
   const v = Number(n)
@@ -73,6 +74,7 @@ function isConvertedLead(lead) {
 }
 
 export function useAnalytics({ dateRange = '30d' } = {}) {
+  const { userId } = useUser()
   const [loading, setLoading] = useState(true)
   const [source, setSource] = useState(db ? 'firestore' : 'none')
   const [error, setError] = useState('')
@@ -91,15 +93,27 @@ export function useAnalytics({ dateRange = '30d' } = {}) {
       })
       return
     }
+    if (!userId) {
+      Promise.resolve().then(() => {
+        setInvoices([])
+        setPayments([])
+        setLeads([])
+        setTeam([])
+        setLoading(false)
+        setSource('firestore')
+        setError('')
+      })
+      return
+    }
 
     Promise.resolve().then(() => setLoading(true))
     const unsubs = []
     unsubs.push(
-      subscribeCollection('invoices', (d) => setInvoices(d), (e) => setError(e?.message || 'Failed to load invoices')),
+      subscribeUserCollection(userId, 'invoices', (d) => setInvoices(d), (e) => setError(e?.message || 'Failed to load invoices')),
     )
-    unsubs.push(subscribeCollection('payments', (d) => setPayments(d)))
-    unsubs.push(subscribeCollection('leads', (d) => setLeads(d)))
-    unsubs.push(subscribeCollection('teamMembers', (d) => setTeam(d)))
+    unsubs.push(subscribeUserCollection(userId, 'payments', (d) => setPayments(d)))
+    unsubs.push(subscribeUserCollection(userId, 'leads', (d) => setLeads(d)))
+    unsubs.push(subscribeUserCollection(userId, 'teamMembers', (d) => setTeam(d)))
 
     // Note: this is a UI dashboard; dateRange filtering is a placeholder until full backend constraints are added.
     Promise.resolve().then(() => {
@@ -107,7 +121,7 @@ export function useAnalytics({ dateRange = '30d' } = {}) {
       setSource('firestore')
     })
     return () => unsubs.forEach((u) => u?.())
-  }, [])
+  }, [userId])
 
   const computed = useMemo(() => {
     const pendingInvoices = invoices.filter((i) => (i.status || '') === 'Pending').length

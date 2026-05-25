@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { db } from '../lib/firebase.js'
-import { subscribeCollection } from '../lib/firestore.js'
+import { subscribeOwnedCollection, subscribeUserCollection } from '../lib/firestore.js'
+import { useUser } from './useUser.js'
 
-const COLLECTIONS = [
+const WORKSPACE_COLLECTIONS = [
   'leads',
   'pipelines',
   'customers',
@@ -12,10 +13,11 @@ const COLLECTIONS = [
   'teamMembers',
   'supportTickets',
   'subscriptions',
-  'notifications',
   'activityLogs',
-  'upgradeRequests',
 ]
+
+const OWNED_COLLECTIONS = ['notifications', 'upgradeRequests']
+const COLLECTIONS = [...WORKSPACE_COLLECTIONS, ...OWNED_COLLECTIONS]
 
 function toDateValue(value) {
   if (!value) return null
@@ -60,6 +62,7 @@ function isActiveSub(s) {
 }
 
 export function useReports() {
+  const { userId } = useUser()
   const [data, setData] = useState(() =>
     Object.fromEntries(COLLECTIONS.map((k) => [k, []])),
   )
@@ -77,6 +80,15 @@ export function useReports() {
       })
       return
     }
+    if (!userId) {
+      Promise.resolve().then(() => {
+        setData(Object.fromEntries(COLLECTIONS.map((k) => [k, []])))
+        setLoading(false)
+        setSource('firestore')
+        setError('')
+      })
+      return
+    }
 
     Promise.resolve().then(() => {
       setLoading(true)
@@ -85,8 +97,9 @@ export function useReports() {
     })
 
     const loaded = new Set()
-    const unsubs = COLLECTIONS.map((path) =>
-      subscribeCollection(
+    const workspaceUnsubs = WORKSPACE_COLLECTIONS.map((path) =>
+      subscribeUserCollection(
+        userId,
         path,
         (rows) => {
           setData((prev) => ({ ...prev, [path]: Array.isArray(rows) ? rows : [] }))
@@ -101,11 +114,29 @@ export function useReports() {
         },
       ),
     )
+    const ownedUnsubs = OWNED_COLLECTIONS.map((path) =>
+      subscribeOwnedCollection(
+        path,
+        userId,
+        (rows) => {
+          setData((prev) => ({ ...prev, [path]: Array.isArray(rows) ? rows : [] }))
+          loaded.add(path)
+          if (loaded.size === COLLECTIONS.length) setLoading(false)
+        },
+        (err) => {
+          setError(err?.message || 'Failed to load reports data')
+          setData((prev) => ({ ...prev, [path]: [] }))
+          loaded.add(path)
+          if (loaded.size === COLLECTIONS.length) setLoading(false)
+        },
+      ),
+    )
+    const unsubs = [...workspaceUnsubs, ...ownedUnsubs]
 
     return () => {
       unsubs.forEach((u) => u?.())
     }
-  }, [])
+  }, [userId])
 
   const computed = useMemo(() => {
     const leads = data.leads
@@ -186,4 +217,3 @@ export function useReports() {
     [data, computed, loading, source, error],
   )
 }
-

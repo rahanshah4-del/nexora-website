@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { db } from '../lib/firebase.js'
-import { subscribeCollection } from '../lib/firestore.js'
+import { subscribeUserCollection } from '../lib/firestore.js'
+import { useUser } from './useUser.js'
 
 function toDateValue(value) {
   if (!value) return null
@@ -29,6 +30,7 @@ function normalizeLog(l) {
 }
 
 export function useActivityLogs() {
+  const { userId } = useUser()
   const [logs, setLogs] = useState([])
   const [loading, setLoading] = useState(true)
   const [source, setSource] = useState(db ? 'firestore' : 'none')
@@ -44,11 +46,21 @@ export function useActivityLogs() {
       })
       return
     }
+    if (!userId) {
+      Promise.resolve().then(() => {
+        setLogs([])
+        setSource('firestore')
+        setError('')
+        setLoading(false)
+      })
+      return
+    }
 
     Promise.resolve().then(() => setLoading(true))
     Promise.resolve().then(() => setError(''))
 
-    const unsub = subscribeCollection(
+    const unsub = subscribeUserCollection(
+      userId,
       'activityLogs',
       (rows) => {
         const list = (Array.isArray(rows) ? rows : []).map(normalizeLog).sort((a, b) => {
@@ -69,7 +81,7 @@ export function useActivityLogs() {
     )
 
     return () => unsub?.()
-  }, [])
+  }, [userId])
 
   const api = useMemo(
     () => ({

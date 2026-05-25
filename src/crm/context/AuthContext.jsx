@@ -6,6 +6,7 @@ import {
   signOut,
 } from 'firebase/auth'
 import { auth, firebaseEnabled, getFirebaseEnvHint } from '../lib/firebase.js'
+import { ensureUserWorkspace } from '../../lib/accountProvisioning.js'
 
 const AuthContext = createContext(null)
 
@@ -35,7 +36,8 @@ export function AuthProvider({ children }) {
     }
     setBusy(true)
     try {
-      await signInWithEmailAndPassword(auth, email, password)
+      const credentials = await signInWithEmailAndPassword(auth, email, password)
+      await ensureUserWorkspace(credentials.user, { email, provider: 'password' })
       return true
     } catch (e) {
       setError(e?.message || 'Login failed.')
@@ -53,7 +55,8 @@ export function AuthProvider({ children }) {
     }
     setBusy(true)
     try {
-      await createUserWithEmailAndPassword(auth, email, password)
+      const credentials = await createUserWithEmailAndPassword(auth, email, password)
+      await ensureUserWorkspace(credentials.user, { email, provider: 'password' })
       return true
     } catch (e) {
       setError(e?.message || 'Signup failed.')

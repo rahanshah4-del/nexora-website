@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react'
 import { AiOutlineGoogle } from 'react-icons/ai'
+import { HiOutlineArrowLeft } from 'react-icons/hi2'
 import { Link, Navigate, useLocation } from 'react-router-dom'
 import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
 import { auth, firebaseEnabled } from '../../lib/firebase.js'
+import { ensureUserWorkspace } from '../../lib/accountProvisioning.js'
 import useAuth from '../../context/useAuth.js'
 import NexoraLogo from '../../components/brand/NexoraLogo.jsx'
 import { motion } from 'framer-motion'
@@ -35,7 +37,8 @@ export default function Login() {
 
     setSubmitting(true)
     try {
-      await signInWithEmailAndPassword(auth, email.trim(), password)
+      const credentials = await signInWithEmailAndPassword(auth, email.trim(), password)
+      await ensureUserWorkspace(credentials.user, { provider: 'password' })
     } catch (err) {
       setError(err?.message || 'Unable to sign in. Please verify your credentials.')
     } finally {
@@ -55,7 +58,8 @@ export default function Login() {
     setGoogleLoading(true)
     try {
       const provider = new GoogleAuthProvider()
-      await signInWithPopup(auth, provider)
+      const result = await signInWithPopup(auth, provider)
+      await ensureUserWorkspace(result.user, { provider: 'google' })
     } catch (err) {
       setError(err?.message || 'Google sign-in failed. Please try again.')
     } finally {
@@ -71,6 +75,13 @@ export default function Login() {
         <div className="pointer-events-none absolute left-0 bottom-0 h-72 w-72 rounded-full bg-gradient-to-tr from-cyan-300/15 to-slate-200/10 blur-3xl" />
 
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <Link
+            to="/"
+            className="mb-6 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/85 px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm backdrop-blur transition duration-200 hover:-translate-y-0.5 hover:border-sky-200 hover:text-sky-700 hover:shadow-md"
+          >
+            <HiOutlineArrowLeft className="h-4 w-4" />
+            Back to Website
+          </Link>
           <div className="grid gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
             <motion.div
               initial={{ opacity: 0, y: 18 }}

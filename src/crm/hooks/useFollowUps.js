@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { db } from '../lib/firebase.js'
-import { subscribeCollection } from '../lib/firestore.js'
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
+import { createUserDoc, subscribeUserCollection } from '../lib/firestore.js'
 import { useUser } from './useUser.js'
 
 export function useFollowUps() {
@@ -21,9 +20,19 @@ export function useFollowUps() {
       })
       return
     }
+    if (!userId) {
+      Promise.resolve().then(() => {
+        setRows([])
+        setSource('firestore')
+        setError('')
+        setLoading(false)
+      })
+      return
+    }
 
     Promise.resolve().then(() => setLoading(true))
-    const unsub = subscribeCollection(
+    const unsub = subscribeUserCollection(
+      userId,
       'tasks',
       (data) => {
         setRows(Array.isArray(data) ? data : [])
@@ -38,7 +47,7 @@ export function useFollowUps() {
       },
     )
     return () => unsub()
-  }, [])
+  }, [userId])
 
   const grouped = useMemo(() => {
     const buckets = { Today: [], Upcoming: [], Overdue: [], Completed: [] }
@@ -68,14 +77,12 @@ export function useFollowUps() {
           type: payload.type || 'WhatsApp',
           priority: payload.priority || 'Medium',
           status: payload.status || 'Upcoming',
-          userId,
-          createdAt: serverTimestamp(),
         }
         if (!clean.customerName) return { ok: false, error: 'Customer name is required' }
         if (!clean.dueDate) return { ok: false, error: 'Due date is required' }
 
         try {
-          await addDoc(collection(db, 'tasks'), clean)
+          await createUserDoc(userId, 'tasks', clean)
           return { ok: true }
         } catch (e) {
           return { ok: false, error: e?.message || 'Failed to create task' }

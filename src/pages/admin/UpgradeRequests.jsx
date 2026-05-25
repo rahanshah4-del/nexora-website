@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { collection, doc, onSnapshot, orderBy, query, updateDoc } from 'firebase/firestore'
+import { collection, doc, onSnapshot, orderBy, query, serverTimestamp, updateDoc, writeBatch } from 'firebase/firestore'
 import { db } from '../../lib/firebase.js'
 
 function StatusPill({ value }) {
@@ -45,11 +45,42 @@ export default function UpgradeRequests() {
     return { total, pending, approved }
   }, [items])
 
-  const updateApproval = async (id, approvalStatus) => {
+  const updateApproval = async (item, approvalStatus) => {
     if (!db) return
+    const id = item?.id
+    if (!id) return
     setUpdatingId(id)
     try {
-      await updateDoc(doc(db, 'upgradeRequests', id), { approvalStatus })
+      if (approvalStatus !== 'approved' || !item.userId) {
+        await updateDoc(doc(db, 'upgradeRequests', id), { approvalStatus })
+        return
+      }
+
+      const batch = writeBatch(db)
+      const planUpdate = {
+        plan: item.selectedPlan || item.requestedPlan || 'Business',
+        planStatus: 'active',
+        billingCycle: item.billingCycle || 'monthly',
+        upgradedAt: serverTimestamp(),
+      }
+      batch.update(doc(db, 'upgradeRequests', id), {
+        approvalStatus: 'approved',
+        paymentStatus: 'paid',
+        approvedAt: serverTimestamp(),
+      })
+      batch.set(doc(db, 'users', item.userId), planUpdate, { merge: true })
+      batch.set(
+        doc(db, 'workspaces', item.userId),
+        {
+          ...planUpdate,
+          ownerId: item.userId,
+          userId: item.userId,
+          workspaceId: item.userId,
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true },
+      )
+      await batch.commit()
     } finally {
       setUpdatingId('')
     }
@@ -126,7 +157,7 @@ export default function UpgradeRequests() {
                   <button
                     type="button"
                     disabled={updatingId === item.id}
-                    onClick={() => updateApproval(item.id, 'approved')}
+                    onClick={() => updateApproval(item, 'approved')}
                     className="rounded-full bg-emerald-600/20 px-3 py-1.5 text-xs font-semibold text-emerald-100 hover:bg-emerald-600/30 disabled:opacity-50"
                   >
                     Approve
@@ -134,7 +165,7 @@ export default function UpgradeRequests() {
                   <button
                     type="button"
                     disabled={updatingId === item.id}
-                    onClick={() => updateApproval(item.id, 'rejected')}
+                    onClick={() => updateApproval(item, 'rejected')}
                     className="rounded-full bg-rose-600/20 px-3 py-1.5 text-xs font-semibold text-rose-100 hover:bg-rose-600/30 disabled:opacity-50"
                   >
                     Reject

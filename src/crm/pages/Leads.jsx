@@ -11,8 +11,8 @@ import { useLeadScoring } from '../hooks/useLeadScoring.js'
 import LeadModal from '../components/leads/LeadModal.jsx'
 import { useState } from 'react'
 import Toast from '../components/ui/Toast.jsx'
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
 import { db } from '../lib/firebase.js'
+import { createUserDoc } from '../lib/firestore.js'
 import { useUser } from '../hooks/useUser.js'
 
 export default function LeadsPage() {
@@ -103,7 +103,7 @@ export default function LeadsPage() {
           }
 
           try {
-            await addDoc(collection(db, 'leads'), {
+            await createUserDoc(userId, 'leads', {
               name,
               email,
               phone: payload.phone || '',
@@ -112,14 +112,12 @@ export default function LeadsPage() {
               status: payload.status || 'New',
               priority: payload.priority || 'Medium',
               source: payload.source || 'Website',
-              userId,
               // Optional signals used by AI scoring (safe defaults)
               replySpeed: 50,
               meetings: 0,
               paymentHistory: 0,
               activityFrequency: 50,
               lastContactDate: new Date().toISOString().slice(0, 10),
-              createdAt: serverTimestamp(),
             })
             setToast({ tone: 'success', message: 'Lead created successfully' })
             window.setTimeout(() => setToast(null), 1600)

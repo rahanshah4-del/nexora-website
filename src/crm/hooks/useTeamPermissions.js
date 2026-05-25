@@ -45,8 +45,18 @@ export function useTeamPermissions({ permissionKeys }) {
       })
       return
     }
+    if (!userId) {
+      Promise.resolve().then(() => {
+        setMatrix(emptyMatrix(permissionKeys))
+        setExists(false)
+        setLoading(false)
+        setSource('firestore')
+        setError('')
+      })
+      return
+    }
 
-    const ref = doc(db, 'teamPermissions', 'default')
+    const ref = doc(db, 'workspaces', userId, 'teamPermissions', 'default')
     const unsub = onSnapshot(
       ref,
       (snap) => {
@@ -70,7 +80,7 @@ export function useTeamPermissions({ permissionKeys }) {
       },
     )
     return () => unsub()
-  }, [permissionKeys])
+  }, [permissionKeys, userId])
 
   const api = useMemo(
     () => ({
@@ -92,8 +102,16 @@ export function useTeamPermissions({ permissionKeys }) {
         const template = defaultTemplate(permissionKeys)
         try {
           await setDoc(
-            doc(db, 'teamPermissions', 'default'),
-            { matrix: template, createdAt: serverTimestamp(), createdBy: userId, updatedAt: serverTimestamp() },
+            doc(db, 'workspaces', userId, 'teamPermissions', 'default'),
+            {
+              matrix: template,
+              ownerId: userId,
+              userId,
+              workspaceId: userId,
+              createdAt: serverTimestamp(),
+              createdBy: userId,
+              updatedAt: serverTimestamp(),
+            },
             { merge: true },
           )
           return { ok: true }
@@ -107,8 +125,8 @@ export function useTeamPermissions({ permissionKeys }) {
         if (!db) return { ok: false, error: 'Firestore is not configured' }
         try {
           await setDoc(
-            doc(db, 'teamPermissions', 'default'),
-            { matrix, updatedAt: serverTimestamp(), updatedBy: userId },
+            doc(db, 'workspaces', userId, 'teamPermissions', 'default'),
+            { matrix, ownerId: userId, userId, workspaceId: userId, updatedAt: serverTimestamp(), updatedBy: userId },
             { merge: true },
           )
           return { ok: true }
@@ -123,4 +141,3 @@ export function useTeamPermissions({ permissionKeys }) {
 
   return api
 }
-

@@ -197,6 +197,13 @@ export default function AdminUpgradeRequestsPage() {
       const batch = writeBatch(db)
       const reqRef = doc(db, 'upgradeRequests', r.id)
       const userRef = doc(db, 'users', r.userId)
+      const workspaceRef = doc(db, 'workspaces', r.userId)
+      const planUpdate = {
+        plan: r.selectedPlan || r.requestedPlan || 'Free',
+        planStatus: 'active',
+        billingCycle: r.billingCycle || 'monthly',
+        upgradedAt: serverTimestamp(),
+      }
 
       batch.update(reqRef, {
         approvalStatus: 'approved',
@@ -206,11 +213,18 @@ export default function AdminUpgradeRequestsPage() {
 
       batch.set(
         userRef,
+        planUpdate,
+        { merge: true },
+      )
+
+      batch.set(
+        workspaceRef,
         {
-          plan: r.selectedPlan || r.requestedPlan || 'Free',
-          planStatus: 'active',
-          billingCycle: r.billingCycle || 'monthly',
-          upgradedAt: serverTimestamp(),
+          ...planUpdate,
+          ownerId: r.userId,
+          userId: r.userId,
+          workspaceId: r.userId,
+          updatedAt: serverTimestamp(),
         },
         { merge: true },
       )

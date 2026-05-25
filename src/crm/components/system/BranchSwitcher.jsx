@@ -3,7 +3,8 @@ import Dropdown from '../ui/Dropdown.jsx'
 import Button from '../ui/Button.jsx'
 import Badge from '../ui/Badge.jsx'
 import { db } from '../../lib/firebase.js'
-import { subscribeCollection } from '../../lib/firestore.js'
+import { subscribeUserCollection } from '../../lib/firestore.js'
+import { useUser } from '../../hooks/useUser.js'
 
 const STORAGE_KEY = 'nexora_active_branch_v1'
 
@@ -14,6 +15,7 @@ const demoBranches = [
 ]
 
 export default function BranchSwitcher() {
+  const { userId } = useUser()
   const [branches, setBranches] = useState(demoBranches)
   const [activeId, setActiveId] = useState(() => localStorage.getItem(STORAGE_KEY) || 'main')
 
@@ -22,14 +24,18 @@ export default function BranchSwitcher() {
   }, [activeId])
 
   useEffect(() => {
-    if (!db) return
-    const unsub = subscribeCollection(
+    if (!db || !userId) {
+      Promise.resolve().then(() => setBranches(demoBranches))
+      return
+    }
+    const unsub = subscribeUserCollection(
+      userId,
       'branches',
       (rows) => setBranches(rows.length ? rows : demoBranches),
       () => setBranches(demoBranches),
     )
     return () => unsub?.()
-  }, [])
+  }, [userId])
 
   const active = useMemo(() => branches.find((b) => b.id === activeId) || branches[0], [branches, activeId])
 

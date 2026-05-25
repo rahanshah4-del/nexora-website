@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { db } from '../lib/firebase.js'
-import { patchDoc, removeDoc, subscribeCollection } from '../lib/firestore.js'
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
+import { createUserDoc, patchUserDoc, removeUserDoc, subscribeUserCollection } from '../lib/firestore.js'
 import { useUser } from './useUser.js'
 
 export function usePipelineDeals() {
@@ -21,8 +20,18 @@ export function usePipelineDeals() {
       })
       return
     }
+    if (!userId) {
+      Promise.resolve().then(() => {
+        setDeals([])
+        setSource('firestore')
+        setError('')
+        setLoading(false)
+      })
+      return
+    }
     Promise.resolve().then(() => setLoading(true))
-    const unsub = subscribeCollection(
+    const unsub = subscribeUserCollection(
+      userId,
       'pipelines',
       (rows) => {
         setDeals(Array.isArray(rows) ? rows : [])
@@ -37,7 +46,7 @@ export function usePipelineDeals() {
       },
     )
     return () => unsub()
-  }, [])
+  }, [userId])
 
   const api = useMemo(
     () => ({
@@ -47,18 +56,18 @@ export function usePipelineDeals() {
       error,
       async moveDeal(id, stage) {
         setDeals((arr) => arr.map((d) => (d.id === id ? { ...d, stage } : d)))
-        if (!db) return
-        await patchDoc('pipelines', id, { stage })
+        if (!db || !userId) return
+        await patchUserDoc(userId, 'pipelines', id, { stage })
       },
       async saveDeal(deal) {
         setDeals((arr) => arr.map((d) => (d.id === deal.id ? deal : d)))
-        if (!db) return
-        await patchDoc('pipelines', deal.id, deal)
+        if (!db || !userId) return
+        await patchUserDoc(userId, 'pipelines', deal.id, deal)
       },
       async deleteDeal(deal) {
         setDeals((arr) => arr.filter((d) => d.id !== deal.id))
-        if (!db) return
-        await removeDoc('pipelines', deal.id)
+        if (!db || !userId) return
+        await removeUserDoc(userId, 'pipelines', deal.id)
       },
       async createDeal(payload) {
         if (!userId) return { ok: false, error: 'Please login first' }
@@ -68,7 +77,7 @@ export function usePipelineDeals() {
         if (!title) return { ok: false, error: 'Deal title is required' }
         if (!customerName) return { ok: false, error: 'Customer name is required' }
         try {
-          await addDoc(collection(db, 'pipelines'), { ...payload, title, customerName, createdAt: serverTimestamp(), createdBy: userId })
+          await createUserDoc(userId, 'pipelines', { ...payload, title, customerName })
           return { ok: true }
         } catch (e) {
           console.error('[pipelines] add failed:', e)

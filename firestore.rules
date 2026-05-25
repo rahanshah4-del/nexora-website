@@ -1,0 +1,93 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isSelf(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return signedIn()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function hasOwnScope(userId) {
+      return request.resource.data.userId == userId
+        && request.resource.data.ownerId == userId
+        && request.resource.data.workspaceId == userId;
+    }
+
+    function hasSafeTrialPlan() {
+      return (!request.resource.data.keys().hasAny(['plan']) || request.resource.data.plan in ['Free', 'Basic'])
+        && (!request.resource.data.keys().hasAny(['planStatus']) || request.resource.data.planStatus in ['trial', 'Free Plan', 'inactive'])
+        && (!request.resource.data.keys().hasAny(['role']) || request.resource.data.role == 'user')
+        && (!request.resource.data.keys().hasAny(['isAdmin']) || request.resource.data.isAdmin == false);
+    }
+
+    function protectedAccountFieldsUnchanged() {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+        'plan',
+        'planStatus',
+        'billingCycle',
+        'role',
+        'isAdmin',
+        'upgradedAt',
+        'trialStartedAt',
+      ]);
+    }
+
+    match /users/{userId} {
+      allow create: if isAdmin()
+        || (isSelf(userId)
+          && request.resource.data.uid == userId
+          && hasOwnScope(userId)
+          && hasSafeTrialPlan());
+      allow read: if isSelf(userId) || isAdmin();
+      allow update: if isAdmin() || (isSelf(userId) && protectedAccountFieldsUnchanged());
+      allow delete: if isAdmin();
+    }
+
+    match /workspaces/{workspaceId} {
+      allow create: if isAdmin()
+        || (isSelf(workspaceId)
+          && hasOwnScope(workspaceId)
+          && hasSafeTrialPlan());
+      allow read: if isSelf(workspaceId) || isAdmin();
+      allow update: if isAdmin() || (isSelf(workspaceId) && protectedAccountFieldsUnchanged());
+      allow delete: if isAdmin();
+
+      match /{document=**} {
+        allow read, write: if isSelf(workspaceId) || isAdmin();
+      }
+    }
+
+    match /upgradeRequests/{requestId} {
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.workspaceId == request.auth.uid
+        && request.resource.data.approvalStatus == 'pending'
+        && request.resource.data.paymentStatus == 'pending';
+      allow read: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
+      allow update, delete: if isAdmin();
+    }
+
+    match /notifications/{notificationId} {
+      allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
+      allow read: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
+      allow update: if isAdmin()
+        || (signedIn()
+          && resource.data.userId == request.auth.uid
+          && request.resource.data.userId == resource.data.userId);
+      allow delete: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

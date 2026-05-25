@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { AiOutlineGoogle } from 'react-icons/ai'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
-import { doc, serverTimestamp, setDoc } from 'firebase/firestore'
 import { auth, db, firebaseEnabled } from '../../lib/firebase.js'
+import { ensureUserWorkspace } from '../../lib/accountProvisioning.js'
 import useAuth from '../../context/useAuth.js'
 import NexoraLogo from '../../components/brand/NexoraLogo.jsx'
 import { motion } from 'framer-motion'
@@ -56,14 +56,13 @@ export default function Signup() {
       const credentials = await createUserWithEmailAndPassword(auth, email.trim(), password)
       const userRecord = credentials.user
 
-      await setDoc(doc(db, 'users', userRecord.uid), {
+      await ensureUserWorkspace(userRecord, {
         fullName: fullName.trim(),
         company: company.trim(),
         email: email.trim().toLowerCase(),
         phone: phone.trim(),
         businessType,
         provider: 'password',
-        createdAt: serverTimestamp(),
       })
 
       navigate('/app/dashboard', { replace: true })
@@ -90,18 +89,14 @@ export default function Signup() {
       const signedUser = result.user
 
       if (signedUser?.uid) {
-        await setDoc(
-          doc(db, 'users', signedUser.uid),
-          {
-            fullName: signedUser.displayName || fullName.trim(),
-            email: signedUser.email || email.trim().toLowerCase(),
-            phone: phone.trim(),
-            businessType,
-            provider: 'google',
-            createdAt: serverTimestamp(),
-          },
-          { merge: true },
-        )
+        await ensureUserWorkspace(signedUser, {
+          fullName: signedUser.displayName || fullName.trim(),
+          company: company.trim(),
+          email: signedUser.email || email.trim().toLowerCase(),
+          phone: phone.trim(),
+          businessType,
+          provider: 'google',
+        })
       }
 
       navigate('/app/dashboard', { replace: true })

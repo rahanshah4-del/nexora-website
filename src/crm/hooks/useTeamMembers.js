@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { db } from '../lib/firebase.js'
-import { patchDoc, subscribeCollection } from '../lib/firestore.js'
+import { createUserDoc, patchUserDoc, subscribeUserCollection } from '../lib/firestore.js'
 import { permissionKeys } from '../data/teamDemo.js'
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
 import { useUser } from './useUser.js'
 
 function normalizeMember(m) {
@@ -28,9 +27,19 @@ export function useTeamMembers() {
       })
       return
     }
+    if (!userId) {
+      Promise.resolve().then(() => {
+        setRows([])
+        setSource('firestore')
+        setError('')
+        setLoading(false)
+      })
+      return
+    }
 
     Promise.resolve().then(() => setLoading(true))
-    const unsub = subscribeCollection(
+    const unsub = subscribeUserCollection(
+      userId,
       'teamMembers',
       (data) => {
         const list = data.map(normalizeMember)
@@ -46,7 +55,7 @@ export function useTeamMembers() {
       },
     )
     return () => unsub()
-  }, [])
+  }, [userId])
 
   const api = useMemo(
     () => ({
@@ -73,7 +82,7 @@ export function useTeamMembers() {
           return { ok: false, error: 'Firestore is not configured' }
         }
         try {
-          await addDoc(collection(db, 'teamMembers'), {
+          await createUserDoc(userId, 'teamMembers', {
             name,
             email,
             phone: docPayload.phone || '',
@@ -81,8 +90,6 @@ export function useTeamMembers() {
             status: docPayload.status || 'Invited',
             permissions: Array.isArray(docPayload.permissions) ? docPayload.permissions : [],
             joinedAt: docPayload.joinedAt,
-            createdAt: serverTimestamp(),
-            createdBy: userId,
           })
           return { ok: true }
         } catch (e) {
@@ -92,8 +99,8 @@ export function useTeamMembers() {
       },
       async updateMember(id, patch) {
         setRows((prev) => prev.map((m) => (m.id === id ? { ...m, ...patch } : m)))
-        if (!db || source !== 'firestore') return
-        await patchDoc('teamMembers', id, patch)
+        if (!db || !userId || source !== 'firestore') return
+        await patchUserDoc(userId, 'teamMembers', id, patch)
       },
     }),
     [rows, loading, source, error, userId],

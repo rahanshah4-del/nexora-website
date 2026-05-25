@@ -3,6 +3,7 @@ import { onAuthStateChanged } from 'firebase/auth'
 import { doc, getDoc } from 'firebase/firestore'
 import { AuthContext } from './auth-context.js'
 import { auth, db } from '../lib/firebase.js'
+import { ensureUserWorkspace } from '../lib/accountProvisioning.js'
 
 async function fetchUserRole(userId) {
   if (!db || !userId) return { role: 'user', isAdmin: false }
@@ -34,6 +35,7 @@ export default function AuthProvider({ children }) {
 
       setLoading(true)
       try {
+        await ensureUserWorkspace(nextUser)
         const nextRole = await fetchUserRole(nextUser.uid)
         setRole(nextRole.role)
         setIsAdmin(nextRole.isAdmin)
@@ -55,4 +57,3 @@ export default function AuthProvider({ children }) {
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
-

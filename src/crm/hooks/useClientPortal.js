@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { db } from '../lib/firebase.js'
-import { subscribeCollection } from '../lib/firestore.js'
+import { subscribeUserCollection } from '../lib/firestore.js'
 import { useUser } from './useUser.js'
 
 function normalizeInvoice(inv) {
@@ -87,12 +87,11 @@ export function useClientPortal() {
     Promise.resolve().then(() => setLoading(true))
     Promise.resolve().then(() => setError(''))
 
-    const email = userDoc?.email || ''
-
-    const unsubInv = subscribeCollection(
+    const unsubInv = subscribeUserCollection(
+      userId,
       'invoices',
       (rows) => {
-        const list = (Array.isArray(rows) ? rows : []).map(normalizeInvoice).filter((r) => (email ? r.customerEmail === email : true))
+        const list = (Array.isArray(rows) ? rows : []).map(normalizeInvoice)
         setInvoices(list)
         setSource('firestore')
         setLoading(false)
@@ -105,7 +104,8 @@ export function useClientPortal() {
       },
     )
 
-    const unsubPay = subscribeCollection(
+    const unsubPay = subscribeUserCollection(
+      userId,
       'payments',
       (rows) => {
         setPayments((Array.isArray(rows) ? rows : []).map(normalizePayment))
@@ -113,10 +113,11 @@ export function useClientPortal() {
       () => setPayments([]),
     )
 
-    const unsubSubs = subscribeCollection(
+    const unsubSubs = subscribeUserCollection(
+      userId,
       'subscriptions',
       (rows) => {
-        const sub = rows.find((s) => s.userId === userId) || rows.find((s) => s.email === email) || null
+        const sub = rows[0] || null
         setSubscription({
           plan: userDoc?.plan || sub?.plan || 'Free',
           planStatus: userDoc?.planStatus || sub?.planStatus || 'inactive',
@@ -135,11 +136,11 @@ export function useClientPortal() {
         }),
     )
 
-    const unsubActivity = subscribeCollection(
+    const unsubActivity = subscribeUserCollection(
+      userId,
       'activityLogs',
       (rows) => {
         const list = (Array.isArray(rows) ? rows : [])
-          .filter((r) => (r.userId ? r.userId === userId : true))
           .slice(0, 12)
           .map((r) => ({
             id: r.id,

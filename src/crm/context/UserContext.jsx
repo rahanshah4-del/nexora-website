@@ -3,6 +3,7 @@ import { doc, serverTimestamp, setDoc, onSnapshot } from 'firebase/firestore'
 import { db } from '../lib/firebase.js'
 import { useAuth } from '../hooks/useAuth.js'
 import { usePreferences } from '../hooks/usePreferences.js'
+import { ensureUserWorkspace } from '../../lib/accountProvisioning.js'
 
 const UserContext = createContext(null)
 
@@ -11,7 +12,7 @@ const defaultUserDoc = {
   email: 'demo@nexora.solutions',
   plan: 'Free',
   role: 'user', // user | admin
-  planStatus: 'Free Plan',
+  planStatus: 'trial',
   upgradedAt: null,
 }
 
@@ -39,6 +40,11 @@ export function UserProvider({ children }) {
     }
 
     const ref = doc(db, 'users', user.uid)
+    ensureUserWorkspace(user, {
+      fullName: profile.ownerName,
+      email: profile.email || user.email || '',
+      provider: user.providerData?.[0]?.providerId || 'password',
+    }).catch(() => {})
 
     const unsub = onSnapshot(
       ref,
@@ -48,11 +54,16 @@ export function UserProvider({ children }) {
             ref,
             {
               ...defaultUserDoc,
-              name: profile.ownerName || defaultUserDoc.name,
-              email: profile.email || defaultUserDoc.email,
-              plan: 'Free',
-              planStatus: 'Free Plan',
+              uid: user.uid,
+              ownerId: user.uid,
+              userId: user.uid,
+              workspaceId: user.uid,
+              name: profile.ownerName || user.displayName || user.email?.split('@')?.[0] || defaultUserDoc.name,
+              fullName: profile.ownerName || user.displayName || '',
+              email: profile.email || user.email || defaultUserDoc.email,
+              provider: user.providerData?.[0]?.providerId || 'password',
               createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp(),
             },
             { merge: true },
           ).catch(() => {})
