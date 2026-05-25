@@ -7,6 +7,71 @@ function num(n) {
   return Number.isFinite(v) ? v : 0
 }
 
+function toDate(value) {
+  if (!value) return null
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value
+  if (typeof value.toDate === 'function') {
+    const date = value.toDate()
+    return Number.isNaN(date.getTime()) ? null : date
+  }
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? null : date
+}
+
+function monthLabel(value) {
+  const date = toDate(value)
+  return date ? date.toLocaleDateString('en-US', { month: 'short' }) : ''
+}
+
+function buildMonthlyRevenue(invoices, payments) {
+  const paidPayments = payments.filter((p) => (p.paymentStatus || p.status || '') === 'Paid')
+  const sourceRows = paidPayments.length
+    ? paidPayments.map((p) => ({
+        date: p.paidAt || p.createdAt,
+        amountUsd: p.amountUsd ?? p.amount ?? 0,
+      }))
+    : invoices
+        .filter((i) => (i.status || '') === 'Paid')
+        .map((i) => ({
+          date: i.paidAt || i.createdAt || i.dueDate,
+          amountUsd: i.totalUsd ?? i.total ?? 0,
+        }))
+
+  const grouped = new Map()
+  sourceRows.forEach((row) => {
+    const label = monthLabel(row.date)
+    if (!label) return
+    grouped.set(label, num(grouped.get(label)) + num(row.amountUsd))
+  })
+
+  return Array.from(grouped.entries()).map(([month, revenueUsd]) => ({ month, revenueUsd }))
+}
+
+function buildSalesGrowth(monthlyRevenue) {
+  if (monthlyRevenue.length < 2) return []
+  return monthlyRevenue.map((row, index) => {
+    if (index === 0) return { month: row.month, growthPct: 0 }
+    const previous = num(monthlyRevenue[index - 1]?.revenueUsd)
+    const current = num(row.revenueUsd)
+    const growthPct = previous > 0 ? ((current - previous) / previous) * 100 : 0
+    return { month: row.month, growthPct }
+  })
+}
+
+function buildLeadSources(leads) {
+  const grouped = new Map()
+  leads.forEach((lead) => {
+    const source = lead.source || lead.leadSource || 'Unknown'
+    grouped.set(source, num(grouped.get(source)) + 1)
+  })
+  return Array.from(grouped.entries()).map(([source, count]) => ({ source, leads: count }))
+}
+
+function isConvertedLead(lead) {
+  const value = String(lead.status || lead.stage || '').toLowerCase()
+  return ['converted', 'customer', 'won', 'paid', 'completed'].some((term) => value.includes(term))
+}
+
 export function useAnalytics({ dateRange = '30d' } = {}) {
   const [loading, setLoading] = useState(true)
   const [source, setSource] = useState(db ? 'firestore' : 'none')
@@ -47,36 +112,47 @@ export function useAnalytics({ dateRange = '30d' } = {}) {
   const computed = useMemo(() => {
     const pendingInvoices = invoices.filter((i) => (i.status || '') === 'Pending').length
     const overdueInvoices = invoices.filter((i) => (i.status || '') === 'Overdue').length
+    const monthlyRevenue = buildMonthlyRevenue(invoices, payments)
+    const salesGrowth = buildSalesGrowth(monthlyRevenue)
+    const leadSources = buildLeadSources(leads)
 
     const topStaff = [...team]
       .map((m) => ({
         id: m.id,
-        name: m.name,
-        role: m.role,
-        performanceScore: m.performanceScore ?? 0,
+        name: m.name || 'No data yet',
+        role: m.role || '—',
+        performanceScore: num(m.performanceScore),
         lastActive: m.lastActive ?? '—',
       }))
       .sort((a, b) => (b.performanceScore ?? 0) - (a.performanceScore ?? 0))
       .slice(0, 6)
 
-    const totalRevenueUsd = invoices.filter((i) => (i.status || '') === 'Paid').reduce((s, i) => s + num(i.totalUsd ?? i.total ?? 0), 0)
+    const totalRevenueUsd = invoices
+      .filter((i) => (i.status || '') === 'Paid')
+      .reduce((s, i) => s + num(i.totalUsd ?? i.total ?? 0), 0)
     const totalCustomers = 0
     const activeLeads = leads.length
     const monthlySales = payments.filter((p) => (p.paymentStatus || '') === 'Paid').length
+    const convertedLeads = leads.filter(isConvertedLead).length
+    const conversionRatePct = activeLeads > 0 ? (convertedLeads / activeLeads) * 100 : 0
+    const latestGrowthPct = num(salesGrowth.at(-1)?.growthPct)
 
     return {
       kpis: {
+        monthlyRevenueUsd: totalRevenueUsd,
+        salesGrowthPct: latestGrowthPct,
+        conversionRatePct,
+        pendingInvoices,
         totalRevenue: totalRevenueUsd,
         totalCustomers,
         activeLeads,
         monthlySales,
-        pendingInvoices,
         overdueInvoices,
       },
-      monthlyRevenue: [],
-      salesGrowth: [],
-      conversion: [],
-      leadSources: [],
+      monthlyRevenue,
+      salesGrowth,
+      conversion: conversionRatePct ? [{ week: 'Now', conversionPct: conversionRatePct }] : [],
+      leadSources,
       retention: [],
       topStaff,
       pendingInvoices,

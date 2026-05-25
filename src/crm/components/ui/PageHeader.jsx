@@ -1,16 +1,15 @@
 export default function PageHeader({ title, subtitle, right }) {
   return (
-    <div className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-end sm:justify-between">
-      <div>
+    <div className="mb-5 flex min-w-0 flex-col gap-3 sm:mb-6 lg:flex-row lg:items-end lg:justify-between">
+      <div className="min-w-0">
         <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white sm:text-3xl">
           {title}
         </h1>
         {subtitle ? (
-          <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{subtitle}</p>
+          <p className="mt-1 max-w-3xl text-sm text-slate-600 dark:text-slate-300">{subtitle}</p>
         ) : null}
       </div>
-      {right ? <div className="flex items-center gap-2">{right}</div> : null}
+      {right ? <div className="flex w-full min-w-0 flex-wrap items-center gap-2 lg:w-auto lg:justify-end">{right}</div> : null}
     </div>
   )
 }
-

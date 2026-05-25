@@ -36,9 +36,10 @@ export default function BranchSwitcher() {
   return (
     <Dropdown
       align="right"
+      panelClassName="w-64"
       trigger={() => (
-        <Button variant="ghost" className="h-10 rounded-2xl px-3">
-          <span className="text-xs font-semibold">{active?.name || 'Branch'}</span>
+        <Button variant="ghost" className="h-10 max-w-[12rem] min-w-0 rounded-2xl px-3">
+          <span className="truncate text-xs font-semibold">{active?.name || 'Branch'}</span>
         </Button>
       )}
     >
@@ -74,4 +75,3 @@ export default function BranchSwitcher() {
     </Dropdown>
   )
 }
-

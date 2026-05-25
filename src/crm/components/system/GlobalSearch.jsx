@@ -18,10 +18,12 @@ export default function GlobalSearch() {
   }, [query])
 
   return (
-    <div className="relative hidden md:flex md:flex-1 md:min-w-0 md:max-w-[540px]">
+    <div className="relative flex w-full min-w-0 max-w-[38rem]">
       <HiOutlineMagnifyingGlass className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400" />
       <Dropdown
         align="left"
+        className="w-full min-w-0"
+        panelClassName="w-[22rem]"
         trigger={() => (
           <Input
             className="pl-10 w-full"
@@ -70,4 +72,3 @@ export default function GlobalSearch() {
     </div>
   )
 }
-

@@ -11,16 +11,23 @@ export default function StatCard({ icon: Icon, label, value, delta, tone = 'indi
   }
 
   return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
-      <Card className="p-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs font-medium text-slate-600 dark:text-slate-300">{label}</p>
-            <p className="mt-1 text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">{value}</p>
+    <motion.div
+      className="min-w-0"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35 }}
+    >
+      <Card className="h-full p-4">
+        <div className="flex min-w-0 items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="truncate text-xs font-medium text-slate-600 dark:text-slate-300">{label}</p>
+            <p className="mt-1 break-words text-[1.35rem] font-semibold leading-tight tracking-tight text-slate-900 dark:text-white sm:text-2xl">
+              {value}
+            </p>
           </div>
           <div
             className={cn(
-              'grid h-11 w-11 place-items-center rounded-2xl border border-slate-200 bg-slate-100 text-slate-900 dark:border-slate-700 dark:bg-slate-900/80 dark:text-white',
+              'grid h-10 w-10 shrink-0 place-items-center rounded-2xl border border-slate-200 bg-slate-100 text-slate-900 dark:border-slate-700 dark:bg-slate-900/80 dark:text-white sm:h-11 sm:w-11',
               toneMap[tone],
             )}
           >
@@ -28,7 +35,7 @@ export default function StatCard({ icon: Icon, label, value, delta, tone = 'indi
           </div>
         </div>
         {delta ? (
-          <p className="mt-3 text-xs text-slate-600 dark:text-slate-300">
+          <p className="mt-3 truncate text-xs text-slate-600 dark:text-slate-300">
             <span className="font-semibold text-emerald-600 dark:text-emerald-400">{delta}</span> vs last month
           </p>
         ) : null}
@@ -36,4 +43,3 @@ export default function StatCard({ icon: Icon, label, value, delta, tone = 'indi
     </motion.div>
   )
 }
-

@@ -1,6 +1,12 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import NexoraLogo from './brand/NexoraLogo.jsx'
+import {
+  HiOutlineArrowRight,
+  HiOutlineBars3,
+  HiOutlineSparkles,
+  HiOutlineUserCircle,
+  HiOutlineXMark,
+} from 'react-icons/hi2'
 
 function FiverrIcon({ className = 'h-4 w-4' }) {
   return (
@@ -25,227 +31,156 @@ function FiverrIcon({ className = 'h-4 w-4' }) {
   )
 }
 
-function ChevronDownIcon({ className = 'h-4 w-4' }) {
-  return (
-    <svg className={className} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <path d="M6 8l4 4 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
-}
-
-function UserIcon({ className = 'h-4 w-4' }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <path
-        d="M20 21a8 8 0 0 0-16 0"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M12 13a5 5 0 1 0 0-10 5 5 0 0 0 0 10Z"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  )
-}
-
-function RocketIcon({ className = 'h-4 w-4' }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <path
-        d="M14 4c3.2 0 6 2.8 6 6 0 4.2-4.6 9.2-9.6 9.2H8.8l-4.1 1.6 1.6-4.1V13.6C6.3 8.6 11.3 4 14 4Z"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M10.5 13.5l-3-3"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-      <path
-        d="M15.5 8.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Z"
-        fill="currentColor"
-      />
-    </svg>
-  )
-}
+const navLinks = [
+  { href: '#services', label: 'Services' },
+  { href: '#restaurant-pos', label: 'POS' },
+  { href: '#dashboards', label: 'Dashboards' },
+  { href: '#case-studies', label: 'Projects' },
+  { href: '#pricing', label: 'Pricing' },
+  { href: '#contact', label: 'Contact' },
+]
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const fiverrLink = 'https://pro.fiverr.com/s/o85L4R4'
 
-  const navLinks = [
-    { href: '#hero', label: 'Home' },
-    { href: '#services', label: 'Services' },
-    { href: '#restaurant-pos', label: 'Restaurant POS' },
-    { href: '#dashboards', label: 'Dashboards' },
-    { href: '#case-studies', label: 'Projects' },
-    { href: '#contact', label: 'Contact' },
-  ]
+  useEffect(() => {
+    if (!mobileMenuOpen) return undefined
+
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') setMobileMenuOpen(false)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [mobileMenuOpen])
+
+  const closeMenu = () => setMobileMenuOpen(false)
 
   return (
-    <header className="sticky top-0 z-50">
-      {/* Gradient line at top */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-sky-500 via-indigo-600 to-violet-600" />
+    <header className="sticky top-0 z-50 px-3 pt-3 sm:px-4">
+      <div className="mx-auto w-full max-w-7xl">
+        <div className="relative overflow-hidden rounded-[1.4rem] border border-white/80 bg-white/90 shadow-[0_18px_60px_-36px_rgba(15,23,42,0.45)] backdrop-blur-2xl">
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-sky-400/0 via-sky-500/70 to-indigo-500/0" />
 
-      {/* Main header container */}
-      <div className="relative bg-white/75 backdrop-blur-2xl">
-        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-          {/* Desktop layout */}
-          <div className="flex items-center justify-between gap-4 py-4 sm:gap-6">
-            {/* Logo section - compact */}
-            <a href="#hero" className="group flex shrink-0 items-center gap-3 min-w-fit">
-              <NexoraLogo compact />
+          <div className="flex min-h-[4rem] min-w-0 items-center gap-3 px-3 py-2.5 sm:px-4 lg:px-5">
+            <a href="#hero" className="group flex min-w-0 shrink-0 items-center gap-3" onClick={closeMenu}>
+              <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 p-1.5 shadow-sm transition duration-300 group-hover:scale-[1.03]">
+                <img src="/nexora-logo.jpg" alt="Nexora logo" className="h-full w-full rounded-xl object-cover" />
+              </span>
+              <span className="min-w-0 leading-tight">
+                <span className="block truncate text-sm font-semibold uppercase tracking-[0.18em] text-slate-950">
+                  Nexora
+                </span>
+                <span className="hidden truncate text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-slate-500 min-[390px]:block">
+                  Software Studio
+                </span>
+              </span>
             </a>
 
-            {/* Center navigation - hidden on tablet and mobile */}
-            <nav className="hidden flex-1 items-center justify-center gap-5 whitespace-nowrap text-xs font-medium text-slate-700 xl:flex">
+            <nav className="mx-auto hidden min-w-0 items-center justify-center rounded-full border border-slate-200/70 bg-slate-50/80 p-1 text-sm font-semibold text-slate-600 lg:flex">
               {navLinks.map((link) => (
                 <a
                   key={link.href}
                   href={link.href}
-                  className={`inline-flex items-center gap-1.5 transition hover:text-slate-950 ${
-                    link.href === '#hero' ? 'font-bold text-sky-600' : ''
-                  }`}
+                  className="rounded-full px-3 py-2 transition duration-300 hover:bg-white hover:text-slate-950 hover:shadow-sm xl:px-4"
                 >
                   {link.label}
-                  {link.label === 'Services' || link.label === 'Dashboards' ? (
-                    <ChevronDownIcon className="h-3 w-3 text-slate-400" />
-                  ) : null}
-                  {link.label === 'Restaurant POS' ? (
-                    <span className="rounded-full bg-sky-100 px-1.5 py-0.5 text-[0.6rem] font-bold text-sky-700">
-                      New
-                    </span>
-                  ) : null}
                 </a>
               ))}
             </nav>
 
-            {/* Right buttons - compact on larger screens */}
-            <div className="hidden flex-shrink-0 items-center gap-2 xl:flex">
-              {/* Login button - icon only on XL */}
+            <div className="ml-auto hidden shrink-0 items-center gap-2 sm:flex">
               <Link
                 to="/login"
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/70 bg-white/80 text-slate-700 shadow-sm transition hover:bg-white"
-                title="Login"
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 shadow-sm transition duration-300 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
               >
-                <UserIcon className="h-4 w-4" />
+                <HiOutlineUserCircle className="text-lg" />
+                <span className="hidden md:inline">Sign In</span>
               </Link>
-
-              {/* Primary CTA - Start Free Trial */}
               <Link
                 to="/signup"
-                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-full bg-gradient-to-r from-sky-600 via-indigo-600 to-violet-600 px-4 text-xs font-semibold text-white shadow-lg shadow-indigo-600/20 transition hover:brightness-110"
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-slate-950 px-4 text-sm font-semibold text-white shadow-[0_16px_40px_-22px_rgba(15,23,42,0.9)] transition duration-300 hover:-translate-y-0.5 hover:bg-sky-700 hover:shadow-[0_18px_46px_-20px_rgba(14,165,233,0.75)]"
               >
-                <RocketIcon className="h-3.5 w-3.5" />
-                Free Trial
+                <HiOutlineSparkles className="text-lg" />
+                <span className="hidden md:inline">Free Trial</span>
+                <span className="md:hidden">Sign Up</span>
               </Link>
-
-              {/* Secondary CTA - Hire on Fiverr */}
-              <a
-                href={fiverrLink}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-full border border-white/70 bg-white/80 px-4 text-xs font-semibold text-slate-950 shadow-sm transition hover:bg-white"
-              >
-                <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
-                  <FiverrIcon className="h-3 w-3" />
-                </span>
-                Fiverr
-              </a>
             </div>
 
-            {/* Tablet menu button - shown on lg and hidden on xl */}
             <button
               type="button"
               onClick={() => setMobileMenuOpen((prev) => !prev)}
-              className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/70 bg-white/80 text-slate-700 shadow-sm transition hover:bg-white active:scale-[0.98] xl:hidden"
+              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-800 shadow-sm transition duration-300 hover:bg-slate-50 sm:hidden lg:hidden"
               aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
               aria-expanded={mobileMenuOpen}
             >
-              <span className="pointer-events-none relative h-5 w-5">
-                <span
-                  className={`absolute left-0 top-1.5 block h-0.5 w-5 rounded-full bg-slate-700 transition duration-200 ${
-                    mobileMenuOpen ? 'translate-y-1.5 rotate-45' : ''
-                  }`}
-                />
-                <span
-                  className={`absolute left-0 top-2.5 block h-0.5 w-5 rounded-full bg-slate-700 transition duration-200 ${
-                    mobileMenuOpen ? 'opacity-0' : ''
-                  }`}
-                />
-                <span
-                  className={`absolute left-0 top-3.5 block h-0.5 w-5 rounded-full bg-slate-700 transition duration-200 ${
-                    mobileMenuOpen ? '-translate-y-1.5 -rotate-45' : ''
-                  }`}
-                />
-              </span>
+              {mobileMenuOpen ? <HiOutlineXMark className="text-xl" /> : <HiOutlineBars3 className="text-xl" />}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen((prev) => !prev)}
+              className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-800 shadow-sm transition duration-300 hover:bg-slate-50 sm:inline-flex lg:hidden"
+              aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+              aria-expanded={mobileMenuOpen}
+            >
+              {mobileMenuOpen ? <HiOutlineXMark className="text-xl" /> : <HiOutlineBars3 className="text-xl" />}
             </button>
           </div>
 
-          {/* Mobile/Tablet menu */}
-          {mobileMenuOpen && (
-            <div className="border-t border-white/60 bg-white/75 backdrop-blur-2xl xl:hidden">
-              <div className="space-y-3 px-2 py-4 sm:px-4">
-                {/* Navigation links */}
-                <div className="grid gap-2">
+          <div
+            className={`grid border-t border-slate-200/70 bg-white/95 transition-[grid-template-rows] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] lg:hidden ${
+              mobileMenuOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+            }`}
+          >
+            <div className="overflow-hidden">
+              <div className="space-y-4 px-3 pb-4 pt-3 sm:px-4">
+                <div className="grid gap-1.5">
                   {navLinks.map((link) => (
                     <a
                       key={link.href}
                       href={link.href}
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="rounded-xl border border-slate-200/70 bg-white/80 px-3 py-2.5 text-xs font-semibold text-slate-800 shadow-sm transition hover:bg-white"
+                      onClick={closeMenu}
+                      className="flex items-center justify-between rounded-2xl px-3 py-2.5 text-sm font-semibold text-slate-700 transition duration-300 hover:bg-slate-50 hover:text-slate-950"
                     >
                       {link.label}
+                      <HiOutlineArrowRight className="text-slate-400" />
                     </a>
                   ))}
                 </div>
 
-                {/* CTA buttons section */}
-                <div className="border-t border-white/60 pt-3">
-                  <div className="grid gap-2">
-                    <Link
-                      to="/login"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-white/70 bg-white/80 text-xs font-semibold text-slate-950 shadow-sm transition hover:bg-white"
-                    >
-                      <UserIcon className="h-4 w-4" />
-                      Login
-                    </Link>
-
-                    <Link
-                      to="/signup"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-600 via-indigo-600 to-violet-600 text-xs font-semibold text-white shadow-lg shadow-indigo-600/20 transition hover:brightness-110"
-                    >
-                      <RocketIcon className="h-4 w-4" />
-                      Start Free Trial
-                    </Link>
-
-                    <a
-                      href={fiverrLink}
-                      target="_blank"
-                      rel="noreferrer"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-white/70 bg-white/80 text-xs font-semibold text-slate-950 shadow-sm transition hover:bg-white"
-                    >
-                      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
-                        <FiverrIcon className="h-3.5 w-3.5" />
-                      </span>
-                      Hire on Fiverr
-                    </a>
-                  </div>
+                <div className="grid gap-2 border-t border-slate-200/70 pt-4 min-[390px]:grid-cols-2">
+                  <Link
+                    to="/login"
+                    onClick={closeMenu}
+                    className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 shadow-sm"
+                  >
+                    <HiOutlineUserCircle className="text-lg" />
+                    Sign In
+                  </Link>
+                  <Link
+                    to="/signup"
+                    onClick={closeMenu}
+                    className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-slate-950 px-4 text-sm font-semibold text-white shadow-lg shadow-slate-950/15"
+                  >
+                    <HiOutlineSparkles className="text-lg" />
+                    Sign Up
+                  </Link>
                 </div>
+
+                <a
+                  href={fiverrLink}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={closeMenu}
+                  className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 text-sm font-semibold text-emerald-800"
+                >
+                  <FiverrIcon className="h-4 w-4 text-emerald-600" />
+                  Hire on Fiverr
+                </a>
               </div>
             </div>
-          )}
+          </div>
         </div>
       </div>
     </header>

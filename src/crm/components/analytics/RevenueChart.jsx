@@ -3,14 +3,20 @@ import Badge from '../ui/Badge.jsx'
 import RevenueAreaChart from '../charts/RevenueAreaChart.jsx'
 import { usePreferences } from '../../hooks/usePreferences.js'
 import { convertFromUsd } from '../../utils/currency.js'
+import { toFiniteNumber } from '../../utils/format.js'
+import ChartEmptyState from './ChartEmptyState.jsx'
 
-export default function RevenueChart({ data }) {
+export default function RevenueChart({ data = [] }) {
   const { currency } = usePreferences()
-  const chartData = data.map((d) => ({
-    ...d,
-    revenue: convertFromUsd(d.revenueUsd, currency),
-    _currency: currency,
-  }))
+  const displayCurrency = currency || 'PKR'
+  const chartData = (Array.isArray(data) ? data : [])
+    .map((d) => ({
+      ...d,
+      month: d.month || '—',
+      revenue: convertFromUsd(toFiniteNumber(d.revenueUsd), displayCurrency),
+      _currency: displayCurrency,
+    }))
+    .filter((d) => d.revenue > 0)
 
   return (
     <Card className="p-5">
@@ -22,9 +28,12 @@ export default function RevenueChart({ data }) {
         <Badge variant="purple">Revenue</Badge>
       </div>
       <div className="mt-4">
-        <RevenueAreaChart data={chartData} currency={currency} />
+        {chartData.length ? (
+          <RevenueAreaChart data={chartData} currency={displayCurrency} />
+        ) : (
+          <ChartEmptyState />
+        )}
       </div>
     </Card>
   )
 }
-

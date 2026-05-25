@@ -3,7 +3,7 @@ import { useRef, useState } from 'react'
 import { useOnClickOutside } from '../../hooks/useOnClickOutside.js'
 import { cn } from '../../utils/cn.js'
 
-export default function Dropdown({ align = 'right', trigger, children, onOpenChange }) {
+export default function Dropdown({ align = 'right', trigger, children, onOpenChange, className, panelClassName }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
 
@@ -13,7 +13,7 @@ export default function Dropdown({ align = 'right', trigger, children, onOpenCha
   })
 
   return (
-    <div className="relative" ref={ref}>
+    <div className={cn('relative', className)} ref={ref}>
       <div
         onClick={() =>
           setOpen((o) => {
@@ -33,8 +33,9 @@ export default function Dropdown({ align = 'right', trigger, children, onOpenCha
             exit={{ opacity: 0, y: 6, scale: 0.98 }}
             transition={{ duration: 0.16 }}
             className={cn(
-              'glass absolute z-50 mt-2 w-56 overflow-hidden rounded-2xl p-1',
+              'glass absolute z-50 mt-2 w-56 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl p-1',
               align === 'right' ? 'right-0' : 'left-0',
+              panelClassName,
             )}
           >
             {children({

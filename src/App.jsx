@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import Header from './components/Header'
-import NexoraLogo from './components/brand/NexoraLogo.jsx'
 import PwaInstallCard from './components/PwaInstallCard.jsx'
 
 const whatsappNumberDisplay = '03194329754'
@@ -173,7 +173,10 @@ function App({ initialSectionId = '' }) {
       { threshold: 0.18, rootMargin: '0px 0px -10% 0px' },
     )
 
-    elements.forEach((element) => observer.observe(element))
+    elements.forEach((element, index) => {
+      element.style.setProperty('--reveal-delay', `${Math.min(index * 35, 180)}ms`)
+      observer.observe(element)
+    })
     return () => observer.disconnect()
   }, [])
 
@@ -1036,80 +1039,119 @@ function App({ initialSectionId = '' }) {
         </section>
       </main>
 
-      <footer className="border-t border-slate-200/70 bg-white/90 py-12" data-reveal>
+      <footer className="relative overflow-hidden bg-slate-950 py-10 text-white sm:py-12" data-reveal>
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-sky-400/0 via-sky-400/80 to-emerald-400/0" />
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid gap-10 lg:grid-cols-[1.4fr_1fr_1fr]">
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-            <NexoraLogo compact />
-            <div>
-              <p className="text-sm uppercase tracking-[0.28em] text-sky-700">NEXORA</p>
-              <h2 className="text-2xl font-semibold text-slate-950">Nexora Solutions</h2>
-            </div>
-          </div>
-              <p className="max-w-xl text-sm leading-7 text-slate-600">
-                Premium business software for POS, hospitals, medical stores, transport operations, and live dashboards.
+          <div className="grid gap-8 lg:grid-cols-[1.25fr_0.75fr_0.85fr_1fr]">
+            <div className="max-w-md space-y-4">
+              <div className="flex min-w-0 items-center gap-3">
+                <span className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-2xl border border-white/10 bg-white p-1.5 shadow-lg shadow-sky-950/30">
+                  <img src="/nexora-logo.jpg" alt="Nexora logo" className="h-full w-full rounded-xl object-cover" />
+                </span>
+                <div className="min-w-0">
+                  <p className="truncate text-xs font-semibold uppercase tracking-[0.24em] text-sky-300">Nexora</p>
+                  <h2 className="truncate text-xl font-semibold text-white">Nexora Solutions</h2>
+                </div>
+              </div>
+              <p className="text-sm leading-7 text-slate-300">
+                Premium software company building POS, CRM, ERP, dashboards, automation, and custom business systems for growing teams.
               </p>
-              <div className="flex flex-wrap gap-3 pt-2">
-                <a
-                  href={fiverrLink}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center justify-center gap-2 rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-600/20 transition hover:bg-emerald-700 hover:shadow-emerald-600/25"
-                >
-                  <FiverrIcon className="h-4 w-4 text-white" />
-                  Hire on Fiverr
-                </a>
-                <a
-                  href="#contact"
-                  className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-950 shadow-sm transition hover:bg-slate-50"
-                >
-                  Book Demo
-                </a>
+              <div className="flex flex-wrap gap-2">
+                {['POS', 'CRM', 'ERP', 'Dashboards'].map((item) => (
+                  <span
+                    key={item}
+                    className="rounded-full border border-white/10 bg-white/[0.06] px-3 py-1 text-xs font-semibold text-slate-200"
+                  >
+                    {item}
+                  </span>
+                ))}
               </div>
             </div>
+
             <div>
-              <h3 className="text-base font-semibold text-slate-950">Services</h3>
-              <ul className="mt-5 space-y-3 text-sm text-slate-600">
-                <li>POS software</li>
-                <li>ERP & CRM</li>
-                <li>Healthcare dashboards</li>
-                <li>Inventory & accounting</li>
+              <h3 className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-400">Quick Links</h3>
+              <ul className="mt-4 grid gap-2 text-sm text-slate-300">
+                {[
+                  ['Home', '#hero'],
+                  ['Services', '#services'],
+                  ['Projects', '#case-studies'],
+                  ['Pricing', '#pricing'],
+                  ['Contact', '#contact'],
+                ].map(([label, href]) => (
+                  <li key={label}>
+                    <a href={href} className="inline-flex rounded-lg py-1 transition duration-300 hover:text-white">
+                      {label}
+                    </a>
+                  </li>
+                ))}
               </ul>
             </div>
+
             <div>
-              <h3 className="text-base font-semibold text-slate-950">Contact</h3>
-              <ul className="mt-5 space-y-3 text-sm text-slate-600">
-                <li>Phone: {whatsappNumberDisplay}</li>
-                <li>Email: {contactEmail}</li>
-                <li>Address: 08 Jade Park View City Lahore</li>
+              <h3 className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-400">Services</h3>
+              <ul className="mt-4 grid gap-2 text-sm text-slate-300">
+                {[
+                  'Restaurant POS',
+                  'Custom SaaS',
+                  'CRM dashboards',
+                  'Inventory systems',
+                  'Hospital software',
+                ].map((item) => (
+                  <li key={item} className="py-1">
+                    {item}
+                  </li>
+                ))}
               </ul>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-400">Contact</h3>
+                <ul className="mt-4 grid gap-2 text-sm text-slate-300">
+                  <li>
+                    <a href={whatsappLink} className="transition duration-300 hover:text-white">
+                      {whatsappNumberDisplay}
+                    </a>
+                  </li>
+                  <li>
+                    <a href={`mailto:${contactEmail}`} className="break-words transition duration-300 hover:text-white">
+                      {contactEmail}
+                    </a>
+                  </li>
+                  <li className="leading-6">08 Jade Park View City, Lahore</li>
+                </ul>
+              </div>
+
+              <div className="rounded-3xl border border-white/10 bg-white/[0.06] p-4 shadow-[0_20px_70px_-42px_rgba(14,165,233,0.9)]">
+                <p className="text-sm font-semibold text-white">Need a custom dashboard?</p>
+                <p className="mt-1 text-xs leading-5 text-slate-400">Start with a clear scope and premium implementation.</p>
+                <div className="mt-3 grid gap-2 min-[420px]:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                  <a
+                    href={fiverrLink}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex h-10 items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-3 text-sm font-semibold text-slate-950 transition duration-300 hover:-translate-y-0.5 hover:bg-emerald-400"
+                  >
+                    <FiverrIcon className="h-4 w-4" />
+                    Fiverr
+                  </a>
+                  <a
+                    href="#contact"
+                    className="inline-flex h-10 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.07] px-3 text-sm font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:bg-white/10"
+                  >
+                    Book Demo
+                  </a>
+                </div>
+              </div>
             </div>
           </div>
-          <div className="mt-10 flex flex-col gap-3 border-t border-slate-200/70 pt-6 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+
+          <div className="mt-8 flex flex-col gap-3 border-t border-white/10 pt-5 text-xs text-slate-400 sm:flex-row sm:items-center sm:justify-between">
             <div>© 2026 Nexora Solutions. All rights reserved.</div>
-            <div className="flex w-full justify-center sm:w-auto sm:justify-end">
-              <a
-                href={fiverrLink}
-                target="_blank"
-                rel="noreferrer"
-                className="group inline-flex w-full max-w-[36rem] items-center justify-center gap-2.5 rounded-2xl border border-slate-200/70 bg-white/70 px-3 py-2 text-xs font-medium text-slate-600 shadow-sm backdrop-blur transition hover:bg-white hover:shadow-md sm:w-auto sm:justify-start sm:text-sm"
-              >
-                <span className="inline-flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-white ring-1 ring-slate-200/70 shadow-sm sm:h-8 sm:w-8">
-                  <img src="/favicon.svg" alt="Nexora" className="h-full w-full object-contain" />
-                </span>
-
-                <span className="text-slate-500">
-                  Powered by <span className="font-semibold text-sky-700">Nexora Solutions</span>
-                </span>
-
-                <span className="hidden h-1 w-1 rounded-full bg-slate-300 sm:inline-block" />
-
-                <span className="inline-flex items-center gap-1.5 font-semibold text-emerald-700">
-                  <FiverrIcon className="h-4 w-4 text-emerald-600" />
-                  Available on Fiverr
-                </span>
-              </a>
+            <div className="flex flex-wrap gap-x-4 gap-y-2">
+              <Link to="/login" className="transition duration-300 hover:text-white">Sign In</Link>
+              <Link to="/signup" className="transition duration-300 hover:text-white">Sign Up</Link>
+              <a href="#branches" className="transition duration-300 hover:text-white">Branches</a>
             </div>
           </div>
         </div>

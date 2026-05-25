@@ -14,17 +14,23 @@ export default function DashboardLayout() {
     <div className="nexora-bg min-h-screen overflow-x-hidden">
       <Sidebar collapsed={collapsed} onToggleCollapse={toggleCollapse} />
 
-      <div className={`min-h-screen transition-all duration-300 ${collapsed ? 'lg:ml-[88px]' : 'lg:ml-[280px]'}`}>
+      <div
+        className={`relative z-10 flex min-h-screen min-w-0 flex-col transition-all duration-300 ${
+          collapsed ? 'lg:ml-[88px]' : 'lg:ml-[280px]'
+        }`}
+      >
         <TopNav collapsed={collapsed} onOpenSidebar={() => setMobileOpen(true)} />
 
-        <main className="w-full pt-6 pb-8 px-4 sm:px-6 lg:px-8 overflow-x-hidden transition-all duration-300">
-          <div className="w-full">
+        <main className="min-w-0 flex-1 overflow-x-hidden px-4 py-5 transition-all duration-300 sm:px-6 lg:px-8 lg:py-6">
+          <div className="mx-auto w-full max-w-[1500px] min-w-0">
             <Outlet />
           </div>
         </main>
 
-        <footer className="px-4 pb-4 text-xs text-slate-500 dark:text-slate-400 sm:px-6 lg:px-8">
-          © {new Date().getFullYear()} NEXORA SOLUTIONS — CRM Admin Dashboard
+        <footer className="min-w-0 px-4 pb-4 text-xs text-slate-500 dark:text-slate-400 sm:px-6 lg:px-8">
+          <div className="mx-auto w-full max-w-[1500px]">
+            © {new Date().getFullYear()} NEXORA SOLUTIONS — CRM Admin Dashboard
+          </div>
         </footer>
       </div>
 

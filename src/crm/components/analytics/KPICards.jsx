@@ -2,41 +2,46 @@ import { HiOutlineArrowTrendingUp, HiOutlineChartBarSquare, HiOutlineCurrencyDol
 import StatCard from '../dashboard/StatCard.jsx'
 import { usePreferences } from '../../hooks/usePreferences.js'
 import { convertFromUsd } from '../../utils/currency.js'
-import { formatCurrency } from '../../utils/format.js'
+import { formatCurrency, formatPercentValue, toFiniteNumber } from '../../utils/format.js'
 
-export default function KPICards({ kpis }) {
+export default function KPICards({ kpis = {} }) {
   const { currency } = usePreferences()
+  const displayCurrency = currency || 'PKR'
+  const monthlyRevenue = convertFromUsd(toFiniteNumber(kpis.monthlyRevenueUsd), displayCurrency)
+  const salesGrowth = toFiniteNumber(kpis.salesGrowthPct)
+  const conversionRate = toFiniteNumber(kpis.conversionRatePct)
+  const pendingInvoices = toFiniteNumber(kpis.pendingInvoices)
+
   return (
-    <div className="grid gap-4 lg:grid-cols-4">
+    <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
       <StatCard
         icon={HiOutlineCurrencyDollar}
         label="Monthly Revenue"
-        value={formatCurrency(convertFromUsd(kpis.monthlyRevenueUsd, currency), currency)}
-        delta={`+${kpis.salesGrowthPct}%`}
+        value={formatCurrency(monthlyRevenue, displayCurrency)}
+        delta={formatPercentValue(salesGrowth, { signDisplay: 'exceptZero' })}
         tone="indigo"
       />
       <StatCard
         icon={HiOutlineArrowTrendingUp}
         label="Sales Growth"
-        value={`${kpis.salesGrowthPct}%`}
-        delta="+0.6%"
+        value={formatPercentValue(salesGrowth)}
+        delta={formatPercentValue(salesGrowth, { signDisplay: 'exceptZero' })}
         tone="emerald"
       />
       <StatCard
         icon={HiOutlineChartBarSquare}
         label="Conversion Rate"
-        value={`${kpis.conversionRatePct}%`}
-        delta="+0.3%"
+        value={formatPercentValue(conversionRate)}
+        delta={formatPercentValue(conversionRate, { signDisplay: 'exceptZero' })}
         tone="sky"
       />
       <StatCard
         icon={HiOutlineDocumentText}
         label="Pending Invoices"
-        value={`${kpis.pendingInvoices}`}
-        delta="+2"
+        value={String(pendingInvoices)}
+        delta={null}
         tone="amber"
       />
     </div>
   )
 }
-

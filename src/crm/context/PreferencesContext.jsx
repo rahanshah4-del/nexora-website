@@ -5,7 +5,7 @@ const PreferencesContext = createContext(null)
 const STORAGE_KEY = 'nexora_preferences_v1'
 
 const defaultState = {
-  currency: 'USD',
+  currency: 'PKR',
   plan: 'Free', // Free | Starter | Business
   profile: {
     companyName: 'NEXORA SOLUTIONS',

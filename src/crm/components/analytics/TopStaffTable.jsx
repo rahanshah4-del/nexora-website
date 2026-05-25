@@ -2,7 +2,8 @@ import Card from '../ui/Card.jsx'
 import Badge from '../ui/Badge.jsx'
 import Table from '../ui/Table.jsx'
 
-export default function TopStaffTable({ staff }) {
+export default function TopStaffTable({ staff = [] }) {
+  const rows = Array.isArray(staff) && staff.length ? staff : [{ id: 'empty', name: 'No data yet', role: '—', performanceScore: 0, lastActive: '—' }]
   const columns = [
     { key: 'name', header: 'Staff', cell: (r) => <span className="font-semibold">{r.name}</span> },
     { key: 'role', header: 'Role', cell: (r) => <Badge variant="purple">{r.role}</Badge> },
@@ -13,16 +14,15 @@ export default function TopStaffTable({ staff }) {
   return (
     <Card className="p-5">
       <div className="flex items-start justify-between gap-3">
-        <div>
+        <div className="min-w-0">
           <p className="text-sm font-semibold text-slate-900 dark:text-white">Top Performing Staff</p>
           <p className="text-xs text-slate-600 dark:text-slate-300">Performance tracking (demo)</p>
         </div>
         <Badge variant="purple">Team</Badge>
       </div>
       <div className="mt-4">
-        <Table columns={columns} rows={staff} />
+        <Table columns={columns} rows={rows} />
       </div>
     </Card>
   )
 }
-
