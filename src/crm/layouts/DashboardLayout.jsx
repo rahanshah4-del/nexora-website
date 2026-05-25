@@ -87,7 +87,7 @@ export default function DashboardLayout() {
 
       <div
         className={`relative z-10 flex min-h-screen min-w-0 flex-col transition-all duration-300 ${
-          collapsed ? 'lg:ml-[76px]' : 'lg:ml-[248px]'
+          collapsed ? 'lg:ml-[72px]' : 'lg:ml-[236px]'
         }`}
       >
         <TopNav collapsed={collapsed} onOpenSidebar={() => setMobileOpen(true)} />
