@@ -18,15 +18,15 @@ export default function GlobalSearch() {
   }, [query])
 
   return (
-    <div className="relative flex w-full min-w-0 max-w-[38rem]">
-      <HiOutlineMagnifyingGlass className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400" />
+    <div className="relative flex w-full min-w-0 max-w-[34rem]">
+      <HiOutlineMagnifyingGlass className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-400" />
       <Dropdown
         align="left"
         className="w-full min-w-0"
         panelClassName="w-[22rem]"
         trigger={() => (
           <Input
-            className="pl-10 w-full"
+            className="h-10 w-full rounded-2xl border-slate-200 bg-slate-50/80 pl-10 shadow-none"
             placeholder="Search customers, leads, reports..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}

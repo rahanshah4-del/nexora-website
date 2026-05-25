@@ -32,7 +32,7 @@ function Toast({ message, onClose }) {
 
 export default function TopNav({ onOpenSidebar }) {
   const { theme, toggleTheme } = useTheme()
-  const { notifications } = usePreferences()
+  const { notifications, profile } = usePreferences()
   const { logout, busy } = useAuth()
   const navigate = useNavigate()
   const [toast, setToast] = useState(null)
@@ -40,11 +40,11 @@ export default function TopNav({ onOpenSidebar }) {
   return (
     <>
       {toast ? <Toast message={toast} onClose={() => setToast(null)} /> : null}
-      <header className="sticky top-0 z-40 w-full border-b border-slate-200/80 bg-slate-100/90 backdrop-blur-xl transition-all duration-300 dark:border-slate-800 dark:bg-slate-950/90">
-        <div className="mx-auto flex min-h-[72px] w-full max-w-[1500px] min-w-0 items-center gap-3 px-4 py-3 sm:px-6 lg:px-8">
+      <header className="sticky top-0 z-40 w-full px-3 pt-3 sm:px-5 lg:px-6">
+        <div className="mx-auto flex min-h-[64px] w-full max-w-[1440px] min-w-0 items-center gap-3 rounded-[1.35rem] border border-white/70 bg-white/[0.86] px-3 py-2.5 shadow-[0_20px_70px_-52px_rgba(15,23,42,0.52)] backdrop-blur-2xl transition-all duration-300 dark:border-slate-800 dark:bg-slate-950/90 sm:px-4">
           <button
             type="button"
-            className="focus-ring inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-slate-700 hover:bg-slate-900/5 dark:text-slate-200 dark:hover:bg-white/10 lg:hidden"
+            className="focus-ring inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-white/10 lg:hidden"
             onClick={onOpenSidebar}
             aria-label="Open sidebar"
           >
@@ -60,7 +60,7 @@ export default function TopNav({ onOpenSidebar }) {
           </div>
 
           <div className="ml-auto flex shrink-0 items-center justify-end gap-1.5 sm:gap-2">
-            <div className="hidden shrink-0 items-center gap-2 xl:flex">
+            <div className="hidden shrink-0 items-center gap-2 2xl:flex">
               <OfflineStatus />
               <BranchSwitcher />
             </div>
@@ -78,17 +78,34 @@ export default function TopNav({ onOpenSidebar }) {
 
             <Dropdown
               trigger={() => (
-                <button className="focus-ring inline-flex min-w-0 items-center gap-2 rounded-2xl px-1.5 py-1.5 hover:bg-slate-900/5 dark:hover:bg-white/10 sm:px-2">
-                  <Avatar name="Admin User" className="shrink-0" />
-                  <div className="hidden max-w-[9.5rem] min-w-0 text-left xl:block">
-                    <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">Admin</p>
-                    <p className="truncate text-xs text-slate-600 dark:text-slate-300">nexora.solutions</p>
+                <button className="focus-ring inline-flex min-w-0 items-center gap-2 rounded-2xl border border-transparent px-1.5 py-1.5 transition hover:border-slate-200 hover:bg-white hover:shadow-sm dark:hover:bg-white/10 sm:px-2">
+                  {profile.avatarDataUrl ? (
+                    <img src={profile.avatarDataUrl} alt="" className="h-9 w-9 shrink-0 rounded-2xl object-cover shadow-sm" />
+                  ) : (
+                    <Avatar name={profile.ownerName || 'Admin User'} className="h-9 w-9 shrink-0 rounded-2xl" />
+                  )}
+                  <div className="hidden max-w-[10rem] min-w-0 text-left xl:block">
+                    <p className="truncate text-sm font-semibold text-slate-950 dark:text-white">
+                      {profile.ownerName || 'Admin'}
+                    </p>
+                    <p className="truncate text-xs font-medium text-slate-500 dark:text-slate-300">
+                      {profile.companyName || 'nexora.solutions'}
+                    </p>
                   </div>
                 </button>
               )}
             >
               {({ close }) => (
                 <div className="py-1">
+                  <div className="px-3 py-2">
+                    <p className="truncate text-sm font-semibold text-slate-950 dark:text-white">
+                      {profile.ownerName || 'Admin User'}
+                    </p>
+                    <p className="truncate text-xs text-slate-500 dark:text-slate-300">
+                      {profile.email || 'admin@nexora.solutions'}
+                    </p>
+                  </div>
+                  <div className="my-1 h-px bg-slate-200/70 dark:bg-white/10" />
                   <button
                     className="focus-ring w-full rounded-xl px-3 py-2 text-left text-sm text-slate-800 hover:bg-white/40 dark:text-slate-100 dark:hover:bg-white/10"
                     onClick={close}
@@ -124,10 +141,10 @@ export default function TopNav({ onOpenSidebar }) {
           </div>
         </div>
 
-        <div className="mx-auto w-full max-w-[1500px] px-4 pb-3 sm:px-6 md:hidden lg:px-8">
+        <div className="mx-auto w-full max-w-[1440px] px-0 pb-3 pt-2 md:hidden">
           <div className="relative">
             <HiOutlineMagnifyingGlass className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400" />
-            <Input className="pl-10" placeholder="Search..." />
+            <Input className="h-11 rounded-2xl pl-10" placeholder="Search..." />
           </div>
         </div>
       </header>
