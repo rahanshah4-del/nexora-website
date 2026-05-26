@@ -60,6 +60,9 @@ export function useWorkspaceAccess() {
   return useMemo(
     () => ({
       role,
+      userId,
+      workspaceId,
+      staffId,
       isOwner,
       isAdmin,
       isStaff,
@@ -73,6 +76,6 @@ export function useWorkspaceAccess() {
         return isAdmin || Boolean(permissions[key])
       },
     }),
-    [isAdmin, isOwner, isStaff, loading, permissions, role],
+    [isAdmin, isOwner, isStaff, loading, permissions, role, staffId, userId, workspaceId],
   )
 }

@@ -174,7 +174,7 @@ export default function Sidebar({ mobile = false, onNavigate, collapsed = false,
   if (!mobile) {
     return (
       <>
-        <aside className={`hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-20 lg:block lg:border-r lg:border-slate-200/80 lg:bg-white/[0.9] lg:shadow-[18px_0_70px_-58px_rgba(15,23,42,0.55)] lg:backdrop-blur-2xl lg:transition-all lg:duration-300 ${collapsed ? 'lg:w-[72px] lg:p-2' : 'lg:w-[236px] lg:p-2.5'}`}>
+        <aside className={`hidden print:hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-20 lg:block lg:border-r lg:border-slate-200/80 lg:bg-white/[0.9] lg:shadow-[18px_0_70px_-58px_rgba(15,23,42,0.55)] lg:backdrop-blur-2xl lg:transition-all lg:duration-300 ${collapsed ? 'lg:w-[72px] lg:p-2' : 'lg:w-[236px] lg:p-2.5'}`}>
           {content}
           {onToggleCollapse ? (
             <button
@@ -199,7 +199,7 @@ export default function Sidebar({ mobile = false, onNavigate, collapsed = false,
         animate={{ x: 0, opacity: 1 }}
         exit={{ x: -40, opacity: 0 }}
         transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
-        className="h-full w-[17rem] rounded-[1.5rem] border border-slate-200 bg-white/95 p-2 shadow-[0_24px_80px_-42px_rgba(15,23,42,0.55)] backdrop-blur-2xl"
+        className="h-full w-[17rem] rounded-[1.5rem] border border-slate-200 bg-white/95 p-2 shadow-[0_24px_80px_-42px_rgba(15,23,42,0.55)] backdrop-blur-2xl print:hidden"
       >
         {content}
       </motion.aside>

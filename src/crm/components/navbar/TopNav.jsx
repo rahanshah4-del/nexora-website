@@ -1,12 +1,17 @@
-import { HiOutlineMagnifyingGlass, HiOutlineMoon, HiOutlineSquares2X2, HiOutlineSun } from 'react-icons/hi2'
+import {
+  HiOutlineArrowRightOnRectangle,
+  HiOutlineCog6Tooth,
+  HiOutlineMagnifyingGlass,
+  HiOutlineSquares2X2,
+} from 'react-icons/hi2'
 import Avatar from '../ui/Avatar.jsx'
 import Dropdown from '../ui/Dropdown.jsx'
 import Input from '../ui/Input.jsx'
-import { useTheme } from '../../hooks/useTheme.js'
 import Button from '../ui/Button.jsx'
 import { useState } from 'react'
 import { usePreferences } from '../../hooks/usePreferences.js'
 import { useAuth } from '../../hooks/useAuth.js'
+import { useUser } from '../../hooks/useUser.js'
 import { useNavigate } from 'react-router-dom'
 import NotificationBell from '../notifications/NotificationBell.jsx'
 import BranchSwitcher from '../system/BranchSwitcher.jsx'
@@ -31,16 +36,20 @@ function Toast({ message, onClose }) {
 }
 
 export default function TopNav({ onOpenSidebar, onSwitchProduct }) {
-  const { theme, toggleTheme } = useTheme()
   const { notifications, profile } = usePreferences()
   const { logout, busy } = useAuth()
+  const { firebaseUser, userDoc, plan, role } = useUser()
   const navigate = useNavigate()
   const [toast, setToast] = useState(null)
+  const displayName = userDoc?.fullName || userDoc?.name || profile.ownerName || firebaseUser?.displayName || 'Nexora User'
+  const displayEmail = userDoc?.email || profile.email || firebaseUser?.email || 'No email'
+  const workspaceName = userDoc?.workspaceName || userDoc?.company || profile.companyName || 'Nexora Workspace'
+  const planStatus = userDoc?.planStatus || 'trial'
 
   return (
     <>
       {toast ? <Toast message={toast} onClose={() => setToast(null)} /> : null}
-      <header className="sticky top-0 z-40 w-full px-3 pt-3 sm:px-5 lg:px-6">
+      <header className="sticky top-0 z-40 w-full px-3 pt-3 print:hidden sm:px-5 lg:px-6">
         <div className="mx-auto flex min-h-[64px] w-full max-w-[1440px] min-w-0 items-center gap-3 rounded-[1.35rem] border border-white/70 bg-white/[0.86] px-3 py-2.5 shadow-[0_20px_70px_-52px_rgba(15,23,42,0.52)] backdrop-blur-2xl transition-all duration-300 dark:border-slate-800 dark:bg-slate-950/90 sm:px-4">
           <button
             type="button"
@@ -73,72 +82,77 @@ export default function TopNav({ onOpenSidebar, onSwitchProduct }) {
               <HiOutlineSquares2X2 className="h-4 w-4" />
               Switch Product
             </Button>
-            <Button
-              variant="ghost"
-              className="h-10 w-10 shrink-0 rounded-2xl p-0"
-              onClick={toggleTheme}
-              aria-label="Toggle theme"
-              title="Toggle theme"
-            >
-              {theme === 'dark' ? <HiOutlineSun className="text-xl" /> : <HiOutlineMoon className="text-xl" />}
-            </Button>
-
             <NotificationBell enabled={notifications.enabled} />
 
             <Dropdown
+              panelClassName="w-80 p-2"
               trigger={() => (
-                <button className="focus-ring inline-flex min-w-0 items-center gap-2 rounded-2xl border border-transparent px-1.5 py-1.5 transition hover:border-slate-200 hover:bg-white hover:shadow-sm dark:hover:bg-white/10 sm:px-2">
+                <button
+                  className="focus-ring inline-flex min-w-0 items-center gap-2 rounded-2xl border border-transparent px-1.5 py-1.5 transition hover:border-slate-200 hover:bg-white hover:shadow-sm dark:hover:bg-white/10 sm:px-2"
+                  type="button"
+                  aria-label="Open profile menu"
+                >
                   {profile.avatarDataUrl ? (
                     <img src={profile.avatarDataUrl} alt="" className="h-9 w-9 shrink-0 rounded-2xl object-cover shadow-sm" />
                   ) : (
-                    <Avatar name={profile.ownerName || 'Admin User'} className="h-9 w-9 shrink-0 rounded-2xl" />
+                    <Avatar name={displayName} className="h-9 w-9 shrink-0 rounded-2xl" />
                   )}
                   <div className="hidden max-w-[10rem] min-w-0 text-left xl:block">
                     <p className="truncate text-sm font-semibold text-slate-950 dark:text-white">
-                      {profile.ownerName || 'Admin'}
+                      {displayName}
                     </p>
                     <p className="truncate text-xs font-medium text-slate-500 dark:text-slate-300">
-                      {profile.companyName || 'nexora.solutions'}
+                      {workspaceName}
                     </p>
                   </div>
                 </button>
               )}
             >
               {({ close }) => (
-                <div className="py-1">
-                  <div className="px-3 py-2">
-                    <p className="truncate text-sm font-semibold text-slate-950 dark:text-white">
-                      {profile.ownerName || 'Admin User'}
-                    </p>
-                    <p className="truncate text-xs text-slate-500 dark:text-slate-300">
-                      {profile.email || 'admin@nexora.solutions'}
-                    </p>
+                <div>
+                  <div className="rounded-[1.15rem] border border-slate-200/80 bg-white/80 p-3 shadow-sm">
+                    <div className="flex min-w-0 items-center gap-3">
+                      {profile.avatarDataUrl ? (
+                        <img src={profile.avatarDataUrl} alt="" className="h-12 w-12 shrink-0 rounded-2xl object-cover shadow-sm" />
+                      ) : (
+                        <Avatar name={displayName} className="h-12 w-12 shrink-0 rounded-2xl" />
+                      )}
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-slate-950">{displayName}</p>
+                        <p className="truncate text-xs text-slate-500">{displayEmail}</p>
+                      </div>
+                    </div>
+                    <div className="mt-3 grid gap-2 text-xs">
+                      <div className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2">
+                        <span className="text-slate-500">Plan status</span>
+                        <span className="truncate font-semibold text-slate-900">{plan || 'Free'} · {planStatus}</span>
+                      </div>
+                      <div className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2">
+                        <span className="text-slate-500">Workspace</span>
+                        <span className="truncate font-semibold text-slate-900">{workspaceName}</span>
+                      </div>
+                      <div className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2">
+                        <span className="text-slate-500">Role</span>
+                        <span className="truncate font-semibold capitalize text-slate-900">{role || 'owner'}</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="my-1 h-px bg-slate-200/70 dark:bg-white/10" />
+
+                  <div className="my-2 h-px bg-slate-200/70 dark:bg-white/10" />
                   <button
-                    className="focus-ring w-full rounded-xl px-3 py-2 text-left text-sm text-slate-800 hover:bg-white/40 dark:text-slate-100 dark:hover:bg-white/10"
-                    onClick={close}
-                  >
-                    Profile
-                  </button>
-                  <button
-                    className="focus-ring w-full rounded-xl px-3 py-2 text-left text-sm text-slate-800 hover:bg-white/40 dark:text-slate-100 dark:hover:bg-white/10"
+                    className="focus-ring flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-semibold text-slate-800 hover:bg-white/70 dark:text-slate-100 dark:hover:bg-white/10"
                     onClick={() => {
                       close()
-                      onSwitchProduct?.()
+                      navigate('/app/settings#profile-settings')
                     }}
+                    type="button"
                   >
-                    Switch Product
-                  </button>
-                  <button
-                    className="focus-ring w-full rounded-xl px-3 py-2 text-left text-sm text-slate-800 hover:bg-white/40 dark:text-slate-100 dark:hover:bg-white/10"
-                    onClick={close}
-                  >
-                    Team Settings
+                    <HiOutlineCog6Tooth className="h-4 w-4" />
+                    Profile Settings
                   </button>
                   <div className="my-1 h-px bg-white/30 dark:bg-white/10" />
                   <button
-                    className="focus-ring w-full rounded-xl px-3 py-2 text-left text-sm text-rose-600 hover:bg-rose-500/10 dark:text-rose-300"
+                    className="focus-ring flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-semibold text-rose-600 hover:bg-rose-500/10 dark:text-rose-300"
                     onClick={async () => {
                       if (busy) return
                       const ok = await logout()
@@ -150,8 +164,10 @@ export default function TopNav({ onOpenSidebar, onSwitchProduct }) {
                       }
                     }}
                     disabled={busy}
+                    type="button"
                   >
-                    Sign out
+                    <HiOutlineArrowRightOnRectangle className="h-4 w-4" />
+                    {busy ? 'Logging out…' : 'Logout'}
                   </button>
                 </div>
               )}

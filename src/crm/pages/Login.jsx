@@ -4,15 +4,13 @@ import { useMemo, useState } from 'react'
 import Button from '../components/ui/Button.jsx'
 import Card from '../components/ui/Card.jsx'
 import Input from '../components/ui/Input.jsx'
-import { useTheme } from '../hooks/useTheme.js'
-import { HiOutlineMoon, HiOutlineSun, HiOutlineArrowLeft } from 'react-icons/hi2'
+import { HiOutlineArrowLeft } from 'react-icons/hi2'
 import { FaWindows } from 'react-icons/fa'
 import { useAuth } from '../hooks/useAuth.js'
 import Badge from '../components/ui/Badge.jsx'
 
 export default function LoginPage() {
   const navigate = useNavigate()
-  const { theme, toggleTheme } = useTheme()
   const { login, signup, busy, error, setError } = useAuth()
   const [mode, setMode] = useState('login') // login | signup
   const [email, setEmail] = useState('admin@nexora.solutions')
@@ -39,14 +37,6 @@ export default function LoginPage() {
               <p className="text-xs text-slate-600 dark:text-slate-300">CRM + Analytics Admin Panel</p>
             </div>
           </div>
-          <button
-            className="focus-ring inline-flex h-10 w-10 items-center justify-center rounded-2xl text-slate-700 hover:bg-slate-900/5 dark:text-slate-200 dark:hover:bg-white/10"
-            onClick={toggleTheme}
-            aria-label="Toggle theme"
-            title="Toggle theme"
-          >
-            {theme === 'dark' ? <HiOutlineSun className="text-xl" /> : <HiOutlineMoon className="text-xl" />}
-          </button>
         </div>
 
         {/* CTA buttons: Back to Website + Download Windows App */}

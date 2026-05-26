@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { db } from '../lib/firebase.js'
 import { subscribeOwnedCollection, subscribeUserCollection } from '../lib/firestore.js'
-import { useUser } from './useUser.js'
+import { useWorkspaceAccess } from './useWorkspaceAccess.js'
 
 const WORKSPACE_COLLECTIONS = [
   'leads',
@@ -14,6 +14,7 @@ const WORKSPACE_COLLECTIONS = [
   'supportTickets',
   'subscriptions',
   'activityLogs',
+  'staff',
 ]
 
 const OWNED_COLLECTIONS = ['notifications', 'upgradeRequests']
@@ -62,7 +63,9 @@ function isActiveSub(s) {
 }
 
 export function useReports() {
-  const { userId } = useUser()
+  const access = useWorkspaceAccess()
+  const { userId, workspaceId } = access
+  const canReadReports = access.isAdmin || access.hasPermission('reports')
   const [data, setData] = useState(() =>
     Object.fromEntries(COLLECTIONS.map((k) => [k, []])),
   )
@@ -80,12 +83,31 @@ export function useReports() {
       })
       return
     }
-    if (!userId) {
+    if (!userId || !workspaceId) {
       Promise.resolve().then(() => {
         setData(Object.fromEntries(COLLECTIONS.map((k) => [k, []])))
         setLoading(false)
         setSource('firestore')
         setError('')
+      })
+      return
+    }
+
+    if (access.loading) {
+      Promise.resolve().then(() => {
+        setLoading(true)
+        setSource('firestore')
+        setError('')
+      })
+      return
+    }
+
+    if (!canReadReports) {
+      Promise.resolve().then(() => {
+        setData(Object.fromEntries(COLLECTIONS.map((k) => [k, []])))
+        setLoading(false)
+        setSource('firestore')
+        setError('Reports permission is not enabled for this staff account.')
       })
       return
     }
@@ -99,7 +121,7 @@ export function useReports() {
     const loaded = new Set()
     const workspaceUnsubs = WORKSPACE_COLLECTIONS.map((path) =>
       subscribeUserCollection(
-        userId,
+        workspaceId,
         path,
         (rows) => {
           setData((prev) => ({ ...prev, [path]: Array.isArray(rows) ? rows : [] }))
@@ -136,7 +158,7 @@ export function useReports() {
     return () => {
       unsubs.forEach((u) => u?.())
     }
-  }, [userId])
+  }, [access.loading, canReadReports, userId, workspaceId])
 
   const computed = useMemo(() => {
     const leads = data.leads
@@ -146,6 +168,7 @@ export function useReports() {
     const payments = data.payments
     const tasks = data.tasks
     const teamMembers = data.teamMembers
+    const staff = data.staff
     const tickets = data.supportTickets
     const subscriptions = data.subscriptions
     const notifications = data.notifications
@@ -157,7 +180,7 @@ export function useReports() {
     const openTickets = tickets.filter((t) => t.status === 'Open').length
     const completedTasks = tasks.filter((t) => t.status === 'Completed').length
     const activeSubs = subscriptions.filter(isActiveSub).length
-    const teamCount = teamMembers.length
+    const teamCount = teamMembers.length || staff.length
     const upgradeCount = upgradeRequests.length
 
     const paidPaymentsUsd = payments.filter((p) => (p.paymentStatus || '') === 'Paid').reduce((sum, p) => sum + num(p.amountUsd ?? p.amount ?? 0), 0)
@@ -174,6 +197,7 @@ export function useReports() {
         ...payments,
         ...tasks,
         ...teamMembers,
+        ...staff,
         ...tickets,
         ...subscriptions,
         ...notifications,

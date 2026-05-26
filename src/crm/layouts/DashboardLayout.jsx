@@ -172,27 +172,21 @@ export default function DashboardLayout() {
   }
 
   return (
-    <div className="nexora-bg min-h-screen overflow-x-hidden">
+    <div className="nexora-bg min-h-dvh overflow-x-hidden">
       <Sidebar collapsed={collapsed} onToggleCollapse={toggleCollapse} onSwitchProduct={openProductSwitcher} />
 
       <div
-        className={`relative z-10 flex min-h-screen min-w-0 flex-col transition-all duration-300 ${
+        className={`relative z-10 min-h-dvh min-w-0 transition-all duration-300 print:ml-0 ${
           collapsed ? 'lg:ml-[72px]' : 'lg:ml-[236px]'
         }`}
       >
         <TopNav collapsed={collapsed} onOpenSidebar={() => setMobileOpen(true)} onSwitchProduct={openProductSwitcher} />
 
-        <main className="min-w-0 flex-1 overflow-x-hidden px-3 py-4 transition-all duration-300 sm:px-5 lg:px-6 lg:py-5">
-          <div className="mx-auto w-full max-w-[1440px] min-w-0">
+        <main className="min-w-0 overflow-x-hidden px-3 pb-5 pt-4 transition-all duration-300 print:p-0 sm:px-5 lg:px-6 lg:pb-6 lg:pt-5">
+          <div className="mx-auto w-full max-w-[1440px] min-w-0 print:max-w-none">
             <Outlet />
           </div>
         </main>
-
-        <footer className="min-w-0 px-3 pb-4 text-xs text-slate-500 dark:text-slate-400 sm:px-5 lg:px-6">
-          <div className="mx-auto w-full max-w-[1440px]">
-            © {new Date().getFullYear()} NEXORA SOLUTIONS — CRM Admin Dashboard
-          </div>
-        </footer>
       </div>
 
       <ProductSelectionModal

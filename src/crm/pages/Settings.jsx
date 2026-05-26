@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import {
   HiOutlineBell,
   HiOutlineBuildingOffice2,
@@ -187,6 +188,15 @@ export default function SettingsPage() {
   const [draft, setDraft] = useState(profile)
   const [saved, setSaved] = useState(false)
   const fileRef = useRef(null)
+  const location = useLocation()
+
+  useEffect(() => {
+    if (!location.hash) return
+    const target = document.querySelector(location.hash)
+    if (target) {
+      window.setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80)
+    }
+  }, [location.hash])
 
   function onSaveProfile() {
     setProfile(draft)
@@ -226,7 +236,7 @@ export default function SettingsPage() {
 
       <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(340px,0.85fr)]">
         <div className="min-w-0 space-y-5">
-          <Card className="p-5 sm:p-6">
+          <Card id="profile-settings" className="scroll-mt-28 p-5 sm:p-6">
             <div className="flex flex-col gap-4 border-b border-slate-200/80 pb-5 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex min-w-0 items-center gap-3">
                 {draft.avatarDataUrl ? (
@@ -291,7 +301,7 @@ export default function SettingsPage() {
             </div>
           </Card>
 
-          <Card className="p-5 sm:p-6">
+          <Card id="business-profile" className="scroll-mt-28 p-5 sm:p-6">
             <div className="flex items-start justify-between gap-3 border-b border-slate-200/80 pb-5">
               <div className="flex items-center gap-3">
                 <span className="grid h-10 w-10 place-items-center rounded-2xl bg-sky-50 text-sky-700">
@@ -329,6 +339,13 @@ export default function SettingsPage() {
                   ))}
                 </Select>
               </Field>
+              <Field label="Address" className="sm:col-span-2">
+                <Input
+                  value={draft.address || ''}
+                  onChange={(event) => setDraft((current) => ({ ...current, address: event.target.value }))}
+                  placeholder="Business address for printable reports"
+                />
+              </Field>
               <Field label="Country">
                 <Input
                   value={draft.country}
@@ -346,11 +363,13 @@ export default function SettingsPage() {
             </div>
           </Card>
 
-          <TeamPermissionsPanel />
+          <div id="team-permissions" className="scroll-mt-28">
+            <TeamPermissionsPanel />
+          </div>
         </div>
 
         <div className="min-w-0 space-y-5">
-          <Card className="p-5">
+          <Card id="security" className="scroll-mt-28 p-5">
             <div className="flex items-center gap-3">
               <span className="grid h-10 w-10 place-items-center rounded-2xl bg-violet-50 text-violet-700">
                 <HiOutlineLockClosed className="text-xl" />

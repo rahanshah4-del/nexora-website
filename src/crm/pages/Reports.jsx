@@ -1,299 +1,643 @@
 import { motion } from 'framer-motion'
-import Card from '../components/ui/Card.jsx'
-import ReportsHeader from '../components/reports/ReportsHeader.jsx'
-import ReportsKPIs from '../components/reports/ReportsKPIs.jsx'
-import ReportsFilters from '../components/reports/ReportsFilters.jsx'
-import ReportCategoryTabs from '../components/reports/ReportCategoryTabs.jsx'
-import ReportsCharts from '../components/reports/ReportsCharts.jsx'
-import RecentReportActivity from '../components/reports/RecentReportActivity.jsx'
-import ReportCard from '../components/reports/ReportCard.jsx'
-import Badge from '../components/ui/Badge.jsx'
-import EmptyState from '../components/system/EmptyState.jsx'
 import { useMemo, useState } from 'react'
-import { useReports } from '../hooks/useReports.js'
+import {
+  HiOutlineArrowDownTray,
+  HiOutlineBuildingOffice2,
+  HiOutlineCalendarDays,
+  HiOutlineChartBar,
+  HiOutlineCurrencyDollar,
+  HiOutlineDocumentText,
+  HiOutlinePrinter,
+  HiOutlineUserGroup,
+} from 'react-icons/hi2'
+import Badge from '../components/ui/Badge.jsx'
+import Button from '../components/ui/Button.jsx'
+import Card from '../components/ui/Card.jsx'
+import Input from '../components/ui/Input.jsx'
+import Select from '../components/ui/Select.jsx'
+import { supportedCurrencies } from '../data/currency.js'
 import { usePreferences } from '../hooks/usePreferences.js'
-import { useNavigate } from 'react-router-dom'
+import { useReports } from '../hooks/useReports.js'
+import { useUser } from '../hooks/useUser.js'
 import { convertFromUsd } from '../utils/currency.js'
 import { formatCurrency } from '../utils/format.js'
 
-function toDateValue(value) {
-  if (!value) return null
-  if (typeof value === 'string' || typeof value === 'number') {
-    const d = new Date(value)
-    return Number.isNaN(d.getTime()) ? null : d
-  }
-  if (typeof value?.toDate === 'function') return value.toDate()
-  return null
+const NEXORA_LOGO = '/nexora-logo.jpg'
+
+const rangeOptions = [
+  { value: 'today', label: 'Today' },
+  { value: 'week', label: 'This week' },
+  { value: 'month', label: 'This month' },
+  { value: 'custom', label: 'Custom date range' },
+]
+
+function safeNumber(value) {
+  const amount = Number(value)
+  return Number.isFinite(amount) ? amount : 0
 }
 
-function latestLabel(list) {
-  let best = null
-  for (const it of list || []) {
-    const d = toDateValue(it.updatedAt) || toDateValue(it.createdAt)
-    if (!d) continue
-    if (!best || d.getTime() > best.getTime()) best = d
+function safeText(value, fallback = 'No data yet') {
+  const text = typeof value === 'string' ? value.trim() : value == null ? '' : String(value)
+  return text || fallback
+}
+
+function toDateValue(value) {
+  if (!value) return null
+  if (typeof value?.toDate === 'function') return value.toDate()
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? null : date
+}
+
+function itemDate(item) {
+  return (
+    toDateValue(item?.createdAt) ||
+    toDateValue(item?.updatedAt) ||
+    toDateValue(item?.date) ||
+    toDateValue(item?.dueDate) ||
+    toDateValue(item?.invoiceDate) ||
+    toDateValue(item?.lastContactDate)
+  )
+}
+
+function startOfDay(date) {
+  const copy = new Date(date)
+  copy.setHours(0, 0, 0, 0)
+  return copy
+}
+
+function endOfDay(date) {
+  const copy = new Date(date)
+  copy.setHours(23, 59, 59, 999)
+  return copy
+}
+
+function dateWindow(filters) {
+  const now = new Date()
+  if (filters.range === 'today') return { start: startOfDay(now), end: endOfDay(now) }
+  if (filters.range === 'week') {
+    const start = startOfDay(now)
+    const day = start.getDay() || 7
+    start.setDate(start.getDate() - day + 1)
+    return { start, end: endOfDay(now) }
   }
-  return best ? best.toISOString().slice(0, 10) : '—'
+  if (filters.range === 'custom') {
+    return {
+      start: filters.startDate ? startOfDay(new Date(filters.startDate)) : null,
+      end: filters.endDate ? endOfDay(new Date(filters.endDate)) : null,
+    }
+  }
+  const start = startOfDay(now)
+  start.setDate(1)
+  return { start, end: endOfDay(now) }
+}
+
+function withinDateWindow(item, rangeWindow) {
+  const date = itemDate(item)
+  if (!date) return true
+  if (rangeWindow.start && date < rangeWindow.start) return false
+  if (rangeWindow.end && date > rangeWindow.end) return false
+  return true
+}
+
+function formatDate(value) {
+  const date = toDateValue(value)
+  if (!date) return 'No data yet'
+  return new Intl.DateTimeFormat('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).format(date)
+}
+
+function formatMoney(usdValue, currency) {
+  return formatCurrency(convertFromUsd(safeNumber(usdValue), currency), currency)
+}
+
+function percent(part, total) {
+  const denominator = safeNumber(total)
+  if (!denominator) return '0%'
+  return `${Math.round((safeNumber(part) / denominator) * 100)}%`
+}
+
+function invoiceValue(invoice) {
+  return safeNumber(invoice.totalUsd ?? invoice.total ?? invoice.amountUsd ?? invoice.amount)
+}
+
+function paymentValue(payment) {
+  return safeNumber(payment.amountUsd ?? payment.amount)
+}
+
+function dealValue(deal) {
+  return safeNumber(deal.dealValueUsd ?? deal.dealValue ?? deal.valueUsd ?? deal.value)
+}
+
+function downloadCsv(rows, filename) {
+  const csv = rows
+    .map((row) =>
+      row
+        .map((cell) => {
+          const value = safeText(cell, '')
+          return `"${value.replaceAll('"', '""')}"`
+        })
+        .join(','),
+    )
+    .join('\n')
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  link.click()
+  URL.revokeObjectURL(url)
+}
+
+function MetricCard({ icon: Icon, label, value, helper, tone = 'sky' }) {
+  const toneClass = {
+    sky: 'bg-sky-50 text-sky-700',
+    violet: 'bg-violet-50 text-violet-700',
+    emerald: 'bg-emerald-50 text-emerald-700',
+    amber: 'bg-amber-50 text-amber-700',
+  }[tone]
+
+  return (
+    <Card className="print-break-inside-avoid p-4 sm:p-5">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">{label}</p>
+          <p className="mt-2 truncate text-2xl font-semibold tracking-tight text-slate-950">{value}</p>
+          <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-500">{helper}</p>
+        </div>
+        <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-2xl ${toneClass}`}>
+          <Icon className="h-5 w-5" />
+        </span>
+      </div>
+    </Card>
+  )
+}
+
+function ReportSection({ title, badge, children }) {
+  return (
+    <Card className="print-break-inside-avoid p-5">
+      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-200/80 pb-4">
+        <div>
+          <p className="text-sm font-semibold text-slate-950">{title}</p>
+          <p className="mt-1 text-xs text-slate-500">Workspace-scoped report data</p>
+        </div>
+        <Badge variant="purple">{badge}</Badge>
+      </div>
+      <div className="mt-4">{children}</div>
+    </Card>
+  )
+}
+
+function SummaryRow({ label, value }) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200/80 bg-white/70 px-3 py-2">
+      <span className="min-w-0 truncate text-xs font-medium text-slate-500">{label}</span>
+      <span className="shrink-0 text-sm font-semibold text-slate-950">{value}</span>
+    </div>
+  )
+}
+
+function DataTable({ columns, rows, empty }) {
+  if (!rows.length) {
+    return (
+      <div className="grid min-h-[10rem] place-items-center rounded-[1.1rem] border border-dashed border-slate-200 bg-slate-50/80 p-5 text-center">
+        <div>
+          <p className="text-sm font-semibold text-slate-950">No report data yet</p>
+          <p className="mt-1 text-sm text-slate-500">{empty}</p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="overflow-x-auto rounded-[1.1rem] border border-slate-200 bg-white">
+      <table className="min-w-full text-left text-sm">
+        <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+          <tr>
+            {columns.map((column) => (
+              <th key={column.key} className="whitespace-nowrap px-4 py-3">
+                {column.label}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-100">
+          {rows.map((row, index) => (
+            <tr key={row.id || `${columns[0]?.key || 'row'}-${index}`}>
+              {columns.map((column) => (
+                <td key={column.key} className="whitespace-nowrap px-4 py-3 text-slate-700">
+                  {column.render ? column.render(row) : safeText(row[column.key])}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
 }
 
 export default function ReportsPage() {
-  const navigate = useNavigate()
   const reports = useReports()
-  const { currency: preferredCurrency } = usePreferences()
+  const { profile, currency: preferredCurrency } = usePreferences()
+  const { userDoc, firebaseUser, workspaceId, plan } = useUser()
   const [filters, setFilters] = useState({
-    dateRange: '30d',
-    reportType: 'All',
-    status: 'All',
+    range: 'month',
+    startDate: '',
+    endDate: '',
     currency: preferredCurrency,
-    query: '',
   })
-  const [category, setCategory] = useState('All')
+  const [notice, setNotice] = useState('')
 
-  const reportCards = useMemo(() => {
-    const c = filters.currency
+  const activeWindow = useMemo(() => dateWindow(filters), [filters])
 
-    const leads = reports.data.leads
-    const deals = reports.data.pipelines
-    const invoices = reports.data.invoices
-    const payments = reports.data.payments
-    const tasks = reports.data.tasks
-    const teamMembers = reports.data.teamMembers
-    const tickets = reports.data.supportTickets
-    const subscriptions = reports.data.subscriptions
-    const notifications = reports.data.notifications
-    const activityLogs = reports.data.activityLogs
-    const upgradeRequests = reports.data.upgradeRequests
-    const customers = reports.data.customers
+  const reportData = useMemo(() => {
+    const filtered = (list) => (Array.isArray(list) ? list.filter((item) => withinDateWindow(item, activeWindow)) : [])
+    const invoices = filtered(reports.data.invoices)
+    const payments = filtered(reports.data.payments)
+    const customers = filtered(reports.data.customers)
+    const leads = filtered(reports.data.leads)
+    const deals = filtered(reports.data.pipelines)
+    const tasks = filtered(reports.data.tasks)
+    const tickets = filtered(reports.data.supportTickets)
+    const activityLogs = filtered(reports.data.activityLogs)
+    const staff = filtered([...(reports.data.teamMembers || []), ...(reports.data.staff || [])])
 
-    const pipelineValueUsd = deals.reduce((sum, d) => sum + Number(d.dealValueUsd ?? d.dealValue ?? 0), 0)
-    const paidRevenueUsd = invoices.filter((i) => i.status === 'Paid').reduce((sum, i) => sum + Number(i.totalUsd ?? i.total ?? 0), 0)
-    const paidPaymentsUsd = payments.filter((p) => (p.paymentStatus || '') === 'Paid').reduce((sum, p) => sum + Number(p.amountUsd ?? p.amount ?? 0), 0)
-    const overdueTasks = tasks.filter((t) => t.status === 'Overdue').length
-    const openTickets = tickets.filter((t) => t.status === 'Open').length
-    const activeSubs = subscriptions.filter((s) => (s.planStatus || s.status || '').toLowerCase() === 'active').length
+    const paidInvoices = invoices.filter((invoice) => String(invoice.status || '').toLowerCase() === 'paid')
+    const paidPayments = payments.filter((payment) => String(payment.paymentStatus || payment.status || '').toLowerCase() === 'paid')
+    const pendingInvoices = invoices.filter((invoice) => String(invoice.status || '').toLowerCase() === 'pending')
+    const overdueInvoices = invoices.filter((invoice) => String(invoice.status || '').toLowerCase() === 'overdue')
+    const activeCustomers = customers.filter((customer) => String(customer.status || '').toLowerCase() === 'active')
+    const hotLeads = leads.filter((lead) => safeNumber(lead.score) >= 80 || String(lead.scoreType || '').toLowerCase().includes('hot'))
+    const openTickets = tickets.filter((ticket) => String(ticket.status || '').toLowerCase() === 'open')
+    const completedTasks = tasks.filter((task) => String(task.status || '').toLowerCase() === 'completed')
+    const totalRevenueUsd = paidInvoices.reduce((sum, invoice) => sum + invoiceValue(invoice), 0)
+    const paymentRevenueUsd = paidPayments.reduce((sum, payment) => sum + paymentValue(payment), 0)
+    const pipelineUsd = deals.reduce((sum, deal) => sum + dealValue(deal), 0)
+    const customerSpendUsd = customers.reduce((sum, customer) => sum + safeNumber(customer.spendUsd ?? customer.spend ?? customer.totalSpendUsd), 0)
 
-    const list = [
-      {
-        id: 'pipeline',
-        title: 'Sales Pipeline Reports',
-        category: 'Sales',
-        description: 'Pipeline value, stage performance, risky deals, and forecast.',
-        summary: `${deals.length} deals • ${formatCurrency(convertFromUsd(pipelineValueUsd, c), c)}`,
-        status: deals.length ? 'Live' : 'Empty',
-        lastUpdated: latestLabel(deals),
-        to: '/app/pipeline',
-        type: 'Sales Pipeline',
-      },
-      {
-        id: 'lead-scoring',
-        title: 'AI Lead Scoring Reports',
-        category: 'Customers',
-        description: 'Hot/Warm/Cold distribution, conversion probability, and lead quality.',
-        summary: `${leads.length} leads`,
-        status: leads.length ? 'Live' : 'Empty',
-        lastUpdated: latestLabel(leads),
-        to: '/app/leads/scoring',
-        type: 'AI Lead Scoring',
-      },
-      {
-        id: 'followups',
-        title: 'Follow-Up Reports',
-        category: 'Sales',
-        description: 'Overdue tasks, upcoming follow-ups, and completion rate.',
-        summary: `${tasks.length} tasks • ${overdueTasks} overdue`,
-        status: tasks.length ? 'Live' : 'Empty',
-        lastUpdated: latestLabel(tasks),
-        to: '/app/follow-ups',
-        type: 'Follow-Ups',
-      },
-      {
-        id: 'team-performance',
-        title: 'Team Performance Reports',
-        category: 'Team',
-        description: 'Performance score summary and role distribution.',
-        summary: `${teamMembers.length} members`,
-        status: teamMembers.length ? 'Live' : 'Empty',
-        lastUpdated: latestLabel(teamMembers),
-        to: '/app/team',
-        type: 'Team',
-      },
-      {
-        id: 'finance',
-        title: 'Invoice & Payment Reports',
-        category: 'Finance',
-        description: 'Invoice statuses, paid revenue, and payment history.',
-        summary: `${invoices.length} invoices • ${formatCurrency(convertFromUsd(paidRevenueUsd, c), c)}`,
-        status: invoices.length || payments.length ? 'Live' : 'Empty',
-        lastUpdated: latestLabel([...invoices, ...payments]),
-        to: '/app/invoices',
-        type: 'Invoices',
-      },
-      {
-        id: 'analytics',
-        title: 'Analytics Reports',
-        category: 'System',
-        description: 'Enterprise analytics overview and KPI exports.',
-        summary: 'Interactive charts',
-        status: 'Live',
-        lastUpdated: reports.lastUpdatedLabel,
-        to: '/app/analytics',
-        type: 'Analytics',
-      },
-      {
-        id: 'notifications',
-        title: 'Notification Reports',
-        category: 'System',
-        description: 'Alert volume, unread ratio, and priority distribution.',
-        summary: `${notifications.length} notifications`,
-        status: notifications.length ? 'Live' : 'Empty',
-        lastUpdated: latestLabel(notifications),
-        to: '/app/notifications',
-        type: 'Notifications',
-      },
-      {
-        id: 'client-portal',
-        title: 'Client Portal Reports',
-        category: 'Customers',
-        description: 'Client billing view summary (invoices, payments, subscription status).',
-        summary: `${customers.length} customers • ${formatCurrency(convertFromUsd(paidPaymentsUsd, c), c)}`,
-        status: customers.length || invoices.length ? 'Live' : 'Empty',
-        lastUpdated: latestLabel([...customers, ...invoices, ...payments]),
-        to: '/app/client-portal',
-        type: 'Client Portal',
-      },
-      {
-        id: 'support',
-        title: 'Support Ticket Reports',
-        category: 'Support',
-        description: 'Ticket queue health, SLA risk, and assignment summary.',
-        summary: `${tickets.length} tickets • ${openTickets} open`,
-        status: tickets.length ? 'Live' : 'Empty',
-        lastUpdated: latestLabel(tickets),
-        to: '/app/support',
-        type: 'Support',
-      },
-      {
-        id: 'subscriptions',
-        title: 'Subscription Reports',
-        category: 'Subscriptions',
-        description: 'Plan distribution, active subscriptions, and renewal reminders.',
-        summary: `${activeSubs} active subscriptions`,
-        status: subscriptions.length ? 'Live' : 'Empty',
-        lastUpdated: latestLabel(subscriptions),
-        to: '/app/subscriptions',
-        type: 'Subscriptions',
-      },
-      {
-        id: 'activity',
-        title: 'Activity Logs Reports',
-        category: 'Activity',
-        description: 'User/system actions, module activity, and exportable logs.',
-        summary: `${activityLogs.length} events`,
-        status: activityLogs.length ? 'Live' : 'Empty',
-        lastUpdated: latestLabel(activityLogs),
-        to: '/app/activity-logs',
-        type: 'Activity Logs',
-      },
-      {
-        id: 'upgrades',
-        title: 'Upgrade Requests Reports',
-        category: 'System',
-        description: 'Pending approvals, paid confirmations, and plan upgrades.',
-        summary: `${upgradeRequests.length} requests`,
-        status: upgradeRequests.length ? 'Live' : 'Empty',
-        lastUpdated: latestLabel(upgradeRequests),
-        to: '/admin/upgrade-requests',
-        type: 'Upgrade Requests',
-      },
-    ]
+    return {
+      invoices,
+      payments,
+      customers,
+      leads,
+      deals,
+      tasks,
+      tickets,
+      activityLogs,
+      staff,
+      paidInvoices,
+      pendingInvoices,
+      overdueInvoices,
+      activeCustomers,
+      hotLeads,
+      openTickets,
+      completedTasks,
+      totalRevenueUsd,
+      paymentRevenueUsd,
+      pipelineUsd,
+      customerSpendUsd,
+      hasData:
+        invoices.length ||
+        payments.length ||
+        customers.length ||
+        leads.length ||
+        deals.length ||
+        tasks.length ||
+        tickets.length ||
+        activityLogs.length ||
+        staff.length,
+    }
+  }, [reports.data, activeWindow])
 
-    const q = filters.query.trim().toLowerCase()
-    const filtered = list.filter((r) => {
-      const categoryOk = category === 'All' ? true : r.category === category
-      const typeOk = filters.reportType === 'All' ? true : r.type === filters.reportType
-      const statusOk = filters.status === 'All' ? true : r.status === filters.status
-      const queryOk =
-        !q ||
-        r.title.toLowerCase().includes(q) ||
-        r.description.toLowerCase().includes(q) ||
-        r.category.toLowerCase().includes(q)
-      return categoryOk && typeOk && statusOk && queryOk
-    })
+  const branding = useMemo(
+    () => ({
+      companyName: safeText(profile.companyName || userDoc?.company || userDoc?.workspaceName, 'Nexora Workspace'),
+      ownerName: safeText(profile.ownerName || userDoc?.fullName || userDoc?.name || firebaseUser?.displayName, 'Workspace Owner'),
+      email: safeText(profile.email || userDoc?.email || firebaseUser?.email, 'No email yet'),
+      phone: safeText(profile.phone, 'No phone yet'),
+      address: safeText(profile.address || [profile.city, profile.country].filter(Boolean).join(', '), 'No address yet'),
+      logo: profile.avatarDataUrl || NEXORA_LOGO,
+    }),
+    [firebaseUser?.displayName, firebaseUser?.email, profile, userDoc],
+  )
 
-    return filtered
-  }, [reports.data, reports.lastUpdatedLabel, filters, category])
+  const reportDate = useMemo(
+    () =>
+      new Intl.DateTimeFormat('en-US', {
+        month: 'long',
+        day: '2-digit',
+        year: 'numeric',
+      }).format(new Date()),
+    [],
+  )
 
-  const reportTypes = useMemo(() => Array.from(new Set(reportCards.map((r) => r.type))).sort(), [reportCards])
+  const csvRows = useMemo(
+    () => [
+      ['Company', branding.companyName],
+      ['Owner', branding.ownerName],
+      ['Email', branding.email],
+      ['Workspace ID', workspaceId || 'No data yet'],
+      ['Report date', reportDate],
+      [],
+      ['Report', 'Metric', 'Value'],
+      ['Revenue report', 'Paid invoice revenue', formatMoney(reportData.totalRevenueUsd, filters.currency)],
+      ['Revenue report', 'Paid payment total', formatMoney(reportData.paymentRevenueUsd, filters.currency)],
+      ['Sales report', 'Pipeline value', formatMoney(reportData.pipelineUsd, filters.currency)],
+      ['Sales report', 'Deals', reportData.deals.length],
+      ['Customer report', 'Customers', reportData.customers.length],
+      ['Leads report', 'Leads', reportData.leads.length],
+      ['Invoices report', 'Invoices', reportData.invoices.length],
+      ['Activity report', 'Activity events', reportData.activityLogs.length],
+      ['Staff report', 'Team members', reportData.staff.length],
+    ],
+    [branding, filters.currency, reportData, reportDate, workspaceId],
+  )
+
+  const invoiceRows = reportData.invoices.slice(0, 8)
+  const leadRows = reportData.leads.slice(0, 8)
+  const customerRows = reportData.customers.slice(0, 8)
+  const activityRows = reportData.activityLogs.slice(0, 8)
+  const staffRows = reportData.staff.slice(0, 8)
+
+  function showNotice(message) {
+    setNotice(message)
+    window.setTimeout(() => setNotice(''), 2200)
+  }
 
   return (
-    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
-      <ReportsHeader
-        loading={reports.loading}
-        source={reports.source}
-        lastUpdated={reports.lastUpdatedLabel}
-        onExport={() => {}}
-      />
-
-      {reports.error ? (
-        <div className="mb-4">
-          <Badge variant="danger">{reports.error}</Badge>
+    <motion.div
+      className="min-w-0 space-y-5"
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25 }}
+    >
+      {notice ? (
+        <div className="no-print fixed right-4 top-4 z-[70] max-w-[calc(100vw-2rem)] rounded-2xl border border-sky-200 bg-white px-4 py-3 text-sm font-semibold text-sky-800 shadow-[0_24px_70px_-38px_rgba(14,165,233,0.55)]">
+          {notice}
         </div>
       ) : null}
 
-      <ReportsKPIs kpis={reports.kpis} currency={filters.currency} />
-
-      <Card className="mt-4 p-5">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <p className="text-sm font-semibold text-slate-900 dark:text-white">Filters</p>
-            <p className="text-xs text-slate-600 dark:text-slate-300">Date range, report type, status, currency and search</p>
+      <div className="no-print flex flex-col gap-4 rounded-[1.6rem] border border-slate-200/80 bg-white/85 p-5 shadow-[0_24px_80px_-50px_rgba(15,23,42,0.35)] backdrop-blur-xl lg:flex-row lg:items-end lg:justify-between">
+        <div className="min-w-0">
+          <div className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-700">
+            <HiOutlineDocumentText className="h-4 w-4" />
+            Workspace reports
           </div>
-          <Badge variant="purple">Filters</Badge>
+          <h1 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">Reports Center</h1>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+            Revenue, sales, customers, leads, invoices, activity, and team reports using your current workspace data.
+          </p>
         </div>
-        <div className="mt-4">
-          <ReportsFilters value={filters} onChange={setFilters} reportTypes={reportTypes} />
+        <div className="flex flex-wrap gap-2">
+          <Badge variant={reports.loading ? 'warning' : 'success'}>{reports.loading ? 'Loading' : 'Live data'}</Badge>
+          <Badge variant="default">Plan: {plan || 'Free'}</Badge>
+          <Badge variant="purple">Updated: {reports.lastUpdatedLabel}</Badge>
         </div>
-        <div className="mt-4">
-          <ReportCategoryTabs value={category} onChange={setCategory} />
+      </div>
+
+      <Card className="no-print p-4 sm:p-5">
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[1fr_1fr_1fr_auto_auto_auto] xl:items-end">
+          <div>
+            <label className="text-xs font-semibold text-slate-600">Date filter</label>
+            <Select className="mt-1.5" value={filters.range} onChange={(event) => setFilters((current) => ({ ...current, range: event.target.value }))}>
+              {rangeOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-slate-600">Start date</label>
+            <Input
+              className="mt-1.5"
+              type="date"
+              disabled={filters.range !== 'custom'}
+              value={filters.startDate}
+              onChange={(event) => setFilters((current) => ({ ...current, startDate: event.target.value }))}
+            />
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-slate-600">End date</label>
+            <Input
+              className="mt-1.5"
+              type="date"
+              disabled={filters.range !== 'custom'}
+              value={filters.endDate}
+              onChange={(event) => setFilters((current) => ({ ...current, endDate: event.target.value }))}
+            />
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-slate-600">Currency</label>
+            <Select className="mt-1.5 xl:w-40" value={filters.currency} onChange={(event) => setFilters((current) => ({ ...current, currency: event.target.value }))}>
+              {supportedCurrencies.map((item) => (
+                <option key={item.code} value={item.code}>
+                  {item.code}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <Button variant="subtle" className="h-10 rounded-2xl" type="button" onClick={() => window.print()}>
+            <HiOutlinePrinter className="h-4 w-4" />
+            Print Report
+          </Button>
+          <Button
+            variant="subtle"
+            className="h-10 rounded-2xl"
+            type="button"
+            onClick={() => showNotice('PDF download is ready for backend/library integration. Use Print Report for now.')}
+          >
+            <HiOutlineDocumentText className="h-4 w-4" />
+            PDF
+          </Button>
+          <Button
+            className="h-10 rounded-2xl xl:col-start-6"
+            type="button"
+            onClick={() => downloadCsv(csvRows, `nexora-report-${new Date().toISOString().slice(0, 10)}.csv`)}
+          >
+            <HiOutlineArrowDownTray className="h-4 w-4" />
+            Export CSV
+          </Button>
         </div>
       </Card>
 
-      <div className="mt-4">
-        <ReportsCharts
-          invoices={reports.data.invoices}
-          leads={reports.data.leads}
-          teamMembers={reports.data.teamMembers}
-          tickets={reports.data.supportTickets}
-          subscriptions={reports.data.subscriptions}
-          currency={filters.currency}
-        />
-      </div>
-
-      <div className="mt-4 grid gap-4 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <Card className="p-5">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-sm font-semibold text-slate-900 dark:text-white">All Reports</p>
-                <p className="text-xs text-slate-600 dark:text-slate-300">Cards summarize modules (no demo data)</p>
+      <section className="printable-report space-y-5">
+        <Card className="p-5 sm:p-6">
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex min-w-0 items-center gap-4">
+              <img
+                src={branding.logo}
+                alt="Company logo"
+                className="h-16 w-16 shrink-0 rounded-3xl border border-slate-200 bg-white object-cover shadow-sm"
+                onError={(event) => {
+                  event.currentTarget.src = NEXORA_LOGO
+                }}
+              />
+              <div className="min-w-0">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Client report</p>
+                <h2 className="mt-1 truncate text-2xl font-semibold tracking-tight text-slate-950">{branding.companyName}</h2>
+                <p className="mt-1 text-sm text-slate-500">{branding.ownerName} - {branding.email}</p>
               </div>
-              <Badge variant="purple">{reportCards.length} reports</Badge>
             </div>
+            <div className="grid gap-2 text-sm text-slate-600 sm:text-right">
+              <p><span className="font-semibold text-slate-950">Report date:</span> {reportDate}</p>
+              <p><span className="font-semibold text-slate-950">Phone:</span> {branding.phone}</p>
+              <p><span className="font-semibold text-slate-950">Address:</span> {branding.address}</p>
+            </div>
+          </div>
+        </Card>
 
-            <div className="mt-4 grid gap-4 lg:grid-cols-2">
-              {reportCards.length ? (
-                reportCards.map((r) => (
-                  <ReportCard key={r.id} report={r} onView={() => navigate(r.to)} />
-                ))
-              ) : (
-                <EmptyState title="No reports match filters" description="Try adjusting category/status/search filters." />
-              )}
+        {reports.error ? (
+          <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-rose-700">
+            {reports.error}
+          </div>
+        ) : null}
+
+        {!reports.loading && !reportData.hasData ? (
+          <Card className="p-8 text-center">
+            <div className="mx-auto grid h-14 w-14 place-items-center rounded-3xl bg-slate-100 text-slate-600">
+              <HiOutlineDocumentText className="h-7 w-7" />
             </div>
+            <p className="mt-4 text-lg font-semibold text-slate-950">No report data yet</p>
+            <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">
+              Start by adding customers, leads, invoices, follow-ups, or team activity. Your printable reports will populate automatically.
+            </p>
           </Card>
+        ) : null}
+
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <MetricCard
+            icon={HiOutlineCurrencyDollar}
+            label="Revenue report"
+            value={formatMoney(reportData.totalRevenueUsd || reportData.paymentRevenueUsd, filters.currency)}
+            helper={`${reportData.paidInvoices.length} paid invoices - ${reportData.pendingInvoices.length} pending`}
+            tone="sky"
+          />
+          <MetricCard
+            icon={HiOutlineChartBar}
+            label="Sales report"
+            value={formatMoney(reportData.pipelineUsd, filters.currency)}
+            helper={`${reportData.deals.length} pipeline deals in this period`}
+            tone="violet"
+          />
+          <MetricCard
+            icon={HiOutlineUserGroup}
+            label="Customer report"
+            value={String(reportData.customers.length)}
+            helper={`${reportData.activeCustomers.length} active customers - ${formatMoney(reportData.customerSpendUsd, filters.currency)} spend`}
+            tone="emerald"
+          />
+          <MetricCard
+            icon={HiOutlineDocumentText}
+            label="Invoices report"
+            value={String(reportData.invoices.length)}
+            helper={`${percent(reportData.paidInvoices.length, reportData.invoices.length)} paid - ${reportData.overdueInvoices.length} overdue`}
+            tone="amber"
+          />
         </div>
 
-        <RecentReportActivity activityLogs={reports.data.activityLogs} />
-      </div>
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
+          <ReportSection title="Executive summary" badge="Summary">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <SummaryRow label="Lead pipeline" value={`${reportData.leads.length} leads / ${reportData.hotLeads.length} hot`} />
+              <SummaryRow label="Support tickets" value={`${reportData.tickets.length} total / ${reportData.openTickets.length} open`} />
+              <SummaryRow label="Follow-up completion" value={`${reportData.completedTasks.length} completed / ${reportData.tasks.length} tasks`} />
+              <SummaryRow label="Activity events" value={String(reportData.activityLogs.length)} />
+              <SummaryRow label="Team members" value={String(reportData.staff.length)} />
+              <SummaryRow label="Workspace source" value={reports.source === 'firestore' ? 'Firestore scoped' : 'No data source'} />
+            </div>
+          </ReportSection>
+
+          <ReportSection title="Revenue and invoices" badge="Finance">
+            <DataTable
+              rows={invoiceRows}
+              empty="Create invoices to generate finance reports."
+              columns={[
+                { key: 'invoiceNumber', label: 'Invoice', render: (row) => safeText(row.invoiceNumber || row.id) },
+                { key: 'customerName', label: 'Customer', render: (row) => safeText(row.customerName) },
+                { key: 'status', label: 'Status', render: (row) => <Badge variant={String(row.status).toLowerCase() === 'paid' ? 'success' : 'warning'}>{safeText(row.status, 'Pending')}</Badge> },
+                { key: 'total', label: 'Total', render: (row) => formatMoney(invoiceValue(row), filters.currency) },
+                { key: 'dueDate', label: 'Due', render: (row) => safeText(row.dueDate, 'No date') },
+              ]}
+            />
+          </ReportSection>
+        </div>
+
+        <div className="grid gap-5 xl:grid-cols-2">
+          <ReportSection title="Leads report" badge="Leads">
+            <DataTable
+              rows={leadRows}
+              empty="Add leads to see score and pipeline quality."
+              columns={[
+                { key: 'name', label: 'Lead', render: (row) => safeText(row.name || row.customerName || row.company) },
+                { key: 'priority', label: 'Priority', render: (row) => safeText(row.priority || row.scoreType, 'No score yet') },
+                { key: 'score', label: 'Score', render: (row) => `${safeNumber(row.score)}%` },
+                { key: 'dealValue', label: 'Value', render: (row) => formatMoney(dealValue(row), filters.currency) },
+              ]}
+            />
+          </ReportSection>
+
+          <ReportSection title="Customer report" badge="Customers">
+            <DataTable
+              rows={customerRows}
+              empty="Add customers to build a customer report."
+              columns={[
+                { key: 'name', label: 'Customer', render: (row) => safeText(row.name) },
+                { key: 'company', label: 'Company', render: (row) => safeText(row.company) },
+                { key: 'status', label: 'Status', render: (row) => safeText(row.status, 'Active') },
+                { key: 'spendUsd', label: 'Spend', render: (row) => formatMoney(row.spendUsd ?? row.spend, filters.currency) },
+              ]}
+            />
+          </ReportSection>
+        </div>
+
+        <div className="grid gap-5 xl:grid-cols-2">
+          <ReportSection title="Activity report" badge="Activity">
+            <DataTable
+              rows={activityRows}
+              empty="Activity will appear after users perform workspace actions."
+              columns={[
+                { key: 'module', label: 'Module', render: (row) => safeText(row.module, 'System') },
+                { key: 'action', label: 'Action', render: (row) => safeText(row.action) },
+                { key: 'userName', label: 'User', render: (row) => safeText(row.userName || row.userEmail, 'Workspace user') },
+                { key: 'createdAt', label: 'Date', render: (row) => formatDate(row.createdAt || row.updatedAt) },
+              ]}
+            />
+          </ReportSection>
+
+          <ReportSection title="Staff/team report" badge="Team">
+            <DataTable
+              rows={staffRows}
+              empty="Create staff members in Team & Permissions to see team reporting."
+              columns={[
+                { key: 'name', label: 'Name', render: (row) => safeText(row.name) },
+                { key: 'email', label: 'Email', render: (row) => safeText(row.email, 'No email yet') },
+                { key: 'role', label: 'Role', render: (row) => safeText(row.role, 'staff') },
+                { key: 'status', label: 'Status', render: (row) => safeText(row.status, 'Active') },
+              ]}
+            />
+          </ReportSection>
+        </div>
+
+        <Card className="print-break-inside-avoid p-5">
+          <div className="grid gap-5 md:grid-cols-[1fr_260px] md:items-end">
+            <div>
+              <p className="text-sm font-semibold text-slate-950">Report notes</p>
+              <p className="mt-2 text-sm leading-6 text-slate-500">
+                This report is generated from workspace-scoped CRM data for the authenticated client only. Missing values are shown as zero or "No data yet".
+              </p>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-center">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Signature</p>
+              <div className="mt-8 border-t border-slate-300 pt-2 text-sm font-semibold text-slate-700">{branding.ownerName}</div>
+            </div>
+          </div>
+          <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-4 text-xs text-slate-500">
+            <span>Powered by Nexora Solutions</span>
+            <span><HiOutlineCalendarDays className="mr-1 inline h-4 w-4" />{reportDate}</span>
+            <span><HiOutlineBuildingOffice2 className="mr-1 inline h-4 w-4" />{branding.companyName}</span>
+          </div>
+        </Card>
+      </section>
     </motion.div>
   )
 }

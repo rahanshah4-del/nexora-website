@@ -12,6 +12,7 @@ const defaultState = {
     ownerName: 'Admin User',
     email: 'admin@nexora.solutions',
     phone: '+92 300 0000000',
+    address: '',
     country: 'Pakistan',
     city: 'Karachi',
     businessType: 'SaaS',

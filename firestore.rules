@@ -116,6 +116,7 @@ service cloud.firestore {
 
       match /staff/{staffId} {
         allow read: if isWorkspaceManager(workspaceId)
+          || staffPermission(workspaceId, 'reports')
           || (isWorkspaceMember(workspaceId)
             && (resource.data.userId == request.auth.uid || resource.data.staffId == permissionDocId()));
         allow create, update, delete: if staffPermission(workspaceId, 'settingsAccess');
@@ -127,19 +128,48 @@ service cloud.firestore {
       }
 
       match /customers/{customerId} {
-        allow read, write: if staffPermission(workspaceId, 'customerManagement');
+        allow read: if staffPermission(workspaceId, 'customerManagement') || staffPermission(workspaceId, 'reports');
+        allow write: if staffPermission(workspaceId, 'customerManagement');
       }
 
       match /leads/{leadId} {
-        allow read, write: if staffPermission(workspaceId, 'leadsManagement');
+        allow read: if staffPermission(workspaceId, 'leadsManagement') || staffPermission(workspaceId, 'reports');
+        allow write: if staffPermission(workspaceId, 'leadsManagement');
       }
 
       match /invoices/{invoiceId} {
-        allow read, write: if staffPermission(workspaceId, 'invoices');
+        allow read: if staffPermission(workspaceId, 'invoices') || staffPermission(workspaceId, 'reports');
+        allow write: if staffPermission(workspaceId, 'invoices');
       }
 
       match /payments/{paymentId} {
-        allow read, write: if staffPermission(workspaceId, 'invoices');
+        allow read: if staffPermission(workspaceId, 'invoices') || staffPermission(workspaceId, 'reports');
+        allow write: if staffPermission(workspaceId, 'invoices');
+      }
+
+      match /pipelines/{dealId} {
+        allow read: if staffPermission(workspaceId, 'reports') || staffPermission(workspaceId, 'leadsManagement');
+        allow write: if isWorkspaceManager(workspaceId);
+      }
+
+      match /supportTickets/{ticketId} {
+        allow read: if staffPermission(workspaceId, 'reports');
+        allow write: if isWorkspaceManager(workspaceId);
+      }
+
+      match /subscriptions/{subscriptionId} {
+        allow read: if staffPermission(workspaceId, 'reports');
+        allow write: if isWorkspaceManager(workspaceId);
+      }
+
+      match /activityLogs/{logId} {
+        allow read: if staffPermission(workspaceId, 'reports');
+        allow write: if isWorkspaceManager(workspaceId);
+      }
+
+      match /teamMembers/{memberId} {
+        allow read: if staffPermission(workspaceId, 'reports') || staffPermission(workspaceId, 'settingsAccess');
+        allow write: if staffPermission(workspaceId, 'settingsAccess');
       }
 
       match /hr/{employeeId} {
