@@ -93,7 +93,6 @@ export function useTeamMembers() {
           })
           return { ok: true }
         } catch (e) {
-          console.error('[teamMembers] add failed:', e)
           return { ok: false, error: e?.message || 'Failed to add team member' }
         }
       },

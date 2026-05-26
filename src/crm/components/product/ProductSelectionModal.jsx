@@ -75,10 +75,10 @@ function ProductCard({ product, onSelect }) {
       }}
       disabled={disabled}
       className={cn(
-        'focus-ring group relative min-w-0 overflow-hidden rounded-[1.5rem] border border-white/70 bg-white/[0.9] p-4 text-left shadow-[0_22px_70px_-52px_rgba(15,23,42,0.55)] transition duration-300 dark:border-white/10 dark:bg-slate-950/85 sm:p-5',
+        'focus-ring group relative min-w-0 overflow-hidden rounded-[1.5rem] border border-white/70 bg-white/[0.94] p-4 text-left shadow-[0_16px_48px_-42px_rgba(15,23,42,0.45)] transition-colors duration-200 dark:border-white/10 dark:bg-slate-950/85 sm:p-5',
         disabled
           ? 'cursor-not-allowed opacity-85'
-          : 'hover:-translate-y-1 hover:border-sky-200 hover:bg-white hover:shadow-[0_28px_90px_-52px_rgba(14,165,233,0.55)] dark:hover:bg-slate-950',
+          : 'hover:border-sky-200 hover:bg-white dark:hover:bg-slate-950',
       )}
     >
       <div className={cn('absolute inset-x-0 top-0 h-1 bg-gradient-to-r', product.accent)} />
@@ -131,24 +131,24 @@ export default function ProductSelectionModal({ open, session, selectedWorkspace
     <AnimatePresence>
       {open ? (
         <motion.div
-          className="fixed inset-0 z-[80] grid place-items-center overflow-y-auto bg-slate-950/45 px-3 py-6 backdrop-blur-xl sm:px-6"
+          className="fixed inset-0 z-[80] grid place-items-center overflow-y-auto bg-slate-950/40 px-3 py-6 sm:px-6 sm:backdrop-blur-sm"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.24 }}
         >
           <motion.div
-            className="relative w-full max-w-5xl overflow-hidden rounded-[1.85rem] border border-white/75 bg-white/[0.93] p-4 shadow-[0_34px_120px_-56px_rgba(15,23,42,0.72)] backdrop-blur-2xl dark:border-white/10 dark:bg-slate-950/[0.94] sm:p-6"
-            initial={{ opacity: 0, y: 18, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 14, scale: 0.98 }}
-            transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+            className="relative w-full max-w-5xl overflow-hidden rounded-[1.85rem] border border-white/75 bg-white/[0.96] p-4 shadow-[0_26px_84px_-52px_rgba(15,23,42,0.62)] dark:border-white/10 dark:bg-slate-950/[0.94] sm:p-6 sm:backdrop-blur-sm"
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            transition={{ duration: 0.22, ease: 'easeOut' }}
             role="dialog"
             aria-modal="true"
             aria-labelledby="workspace-selection-title"
           >
-            <div className="pointer-events-none absolute -left-24 -top-24 h-60 w-60 rounded-full bg-cyan-300/25 blur-3xl" />
-            <div className="pointer-events-none absolute -right-24 top-4 h-64 w-64 rounded-full bg-violet-300/25 blur-3xl" />
+            <div className="pointer-events-none absolute -left-24 -top-24 hidden h-52 w-52 rounded-full bg-cyan-200/25 blur-2xl sm:block" />
+            <div className="pointer-events-none absolute -right-24 top-4 hidden h-56 w-56 rounded-full bg-violet-200/25 blur-2xl sm:block" />
 
             <div className="relative flex items-start justify-between gap-4">
               <div className="flex min-w-0 items-center gap-3">
@@ -195,7 +195,7 @@ export default function ProductSelectionModal({ open, session, selectedWorkspace
                 <button
                   type="button"
                   onClick={onContinueLast}
-                  className="focus-ring inline-flex shrink-0 items-center justify-center gap-2 rounded-2xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white shadow-[0_18px_42px_-24px_rgba(15,23,42,0.9)] transition hover:-translate-y-0.5 hover:bg-sky-700"
+                  className="focus-ring inline-flex shrink-0 items-center justify-center gap-2 rounded-2xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors duration-150 hover:bg-sky-700"
                 >
                   Continue
                   <HiOutlineArrowRight className="h-4 w-4" />

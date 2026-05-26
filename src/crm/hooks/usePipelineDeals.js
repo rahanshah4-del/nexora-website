@@ -80,7 +80,6 @@ export function usePipelineDeals() {
           await createUserDoc(userId, 'pipelines', { ...payload, title, customerName })
           return { ok: true }
         } catch (e) {
-          console.error('[pipelines] add failed:', e)
           return { ok: false, error: e?.message || 'Failed to create deal' }
         }
       },

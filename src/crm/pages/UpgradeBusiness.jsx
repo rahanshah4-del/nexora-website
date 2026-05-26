@@ -208,19 +208,11 @@ export default function UpgradeBusinessPage() {
         rejectedAt: null,
       }
 
-      console.log('[upgradeRequests] uid:', userId)
-      console.log('[upgradeRequests] selectedPlan:', selectedPlan)
-      console.log('[upgradeRequests] amountPaid:', amountPaid)
-      console.log('[upgradeRequests] paymentMethod:', paymentMethod)
-      console.log('[upgradeRequests] payload:', payload)
-
-      const docRef = await addDoc(collection(db, 'upgradeRequests'), payload)
-      console.log('[upgradeRequests] created id:', docRef.id)
+      await addDoc(collection(db, 'upgradeRequests'), payload)
       setToast({ tone: 'success', message: 'Upgrade request submitted successfully' })
 
       setSubmitted(true)
     } catch (err) {
-      console.error('Failed to submit upgrade request:', err)
       const msg = err?.message || 'Failed to submit request.'
       setToast({ tone: 'error', message: msg })
       setError(msg)

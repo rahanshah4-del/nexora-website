@@ -133,7 +133,7 @@ function MiniBars({ data, color = 'bg-sky-500' }) {
         <div key={item.label} className="flex min-w-0 flex-1 flex-col items-center gap-2">
           <div className="flex h-32 w-full items-end">
             <div
-              className={cn('w-full rounded-t-xl shadow-sm transition-all duration-500 ease-out', color)}
+              className={cn('w-full rounded-t-xl shadow-sm', color)}
               style={{ height: `${Math.max(12, (safeCount(item.value) / max) * 100)}%` }}
             />
           </div>
@@ -154,7 +154,7 @@ function ProgressRow({ label, value, max, tone = 'bg-sky-500' }) {
         <span className="shrink-0 font-semibold text-slate-950 dark:text-white">{formatCompact(value)}</span>
       </div>
       <div className="h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-white/10">
-        <div className={cn('h-full rounded-full transition-all duration-500 ease-out', tone)} style={{ width: `${pct}%` }} />
+        <div className={cn('h-full rounded-full', tone)} style={{ width: `${pct}%` }} />
       </div>
     </div>
   )
@@ -164,7 +164,7 @@ function QuickAction({ to, icon: Icon, title, detail }) {
   return (
     <Link
       to={to}
-      className="group flex min-w-0 items-center gap-3 rounded-[1.15rem] border border-slate-100 bg-white/70 p-3 transition duration-200 hover:-translate-y-0.5 hover:border-sky-100 hover:bg-white hover:shadow-[0_18px_44px_-32px_rgba(14,165,233,0.55)] dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
+      className="group flex min-w-0 items-center gap-3 rounded-[1.15rem] border border-slate-100 bg-white/70 p-3 transition-colors duration-150 hover:border-sky-100 hover:bg-white dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
     >
       <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-slate-950 text-white transition group-hover:bg-sky-700">
         <Icon className="h-5 w-5" />
@@ -387,13 +387,13 @@ export default function DashboardHomePage() {
                 <div className="flex flex-wrap gap-2">
                   <Link
                     to="/app/customers"
-                    className="focus-ring inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white shadow-[0_18px_42px_-24px_rgba(15,23,42,0.9)] transition hover:-translate-y-0.5 hover:bg-sky-700"
+                    className="focus-ring inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors duration-150 hover:bg-sky-700"
                   >
                     <HiOutlinePlus className="h-4 w-4" /> Add customer
                   </Link>
                   <Link
                     to="/app/invoices"
-                    className="focus-ring inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:border-sky-200"
+                    className="focus-ring inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-colors duration-150 hover:border-sky-200"
                   >
                     Create invoice
                   </Link>

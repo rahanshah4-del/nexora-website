@@ -37,7 +37,7 @@ export default function FollowUpTaskCard({ task, canEdit = false, canDelete = fa
             {canEdit ? (
               <button
                 type="button"
-                className="focus-ring inline-flex h-8 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2.5 text-[11px] font-semibold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:border-sky-200 hover:text-sky-700 dark:border-white/10 dark:bg-white/10 dark:text-slate-100"
+                className="focus-ring inline-flex h-8 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2.5 text-[11px] font-semibold text-slate-700 shadow-sm transition-colors duration-150 hover:border-sky-200 hover:text-sky-700 dark:border-white/10 dark:bg-white/10 dark:text-slate-100"
                 onClick={() => onEdit?.(task)}
               >
                 <HiOutlinePencilSquare className="h-4 w-4" />
@@ -47,7 +47,7 @@ export default function FollowUpTaskCard({ task, canEdit = false, canDelete = fa
             {canDelete ? (
               <button
                 type="button"
-                className="focus-ring inline-flex h-8 items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-2.5 text-[11px] font-semibold text-rose-700 shadow-sm transition hover:-translate-y-0.5 hover:bg-rose-100"
+                className="focus-ring inline-flex h-8 items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-2.5 text-[11px] font-semibold text-rose-700 shadow-sm transition-colors duration-150 hover:bg-rose-100"
                 onClick={() => onDelete?.(task)}
               >
                 <HiOutlineTrash className="h-4 w-4" />

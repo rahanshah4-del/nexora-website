@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { useEffect, useRef, useState } from 'react'
-import { Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { Outlet, useNavigate } from 'react-router-dom'
 import Sidebar from '../components/sidebar/Sidebar.jsx'
 import TopNav from '../components/navbar/TopNav.jsx'
 import ProductSelectionModal from '../components/product/ProductSelectionModal.jsx'
@@ -39,7 +39,7 @@ function MobileDashboardNotice() {
     <AnimatePresence>
       {show ? (
         <motion.div
-          className="fixed inset-0 z-[70] grid place-items-center bg-slate-950/35 px-4 backdrop-blur-md md:hidden"
+          className="fixed inset-0 z-[70] grid place-items-center bg-slate-950/30 px-4 md:hidden"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -47,11 +47,11 @@ function MobileDashboardNotice() {
           onClick={dismiss}
         >
           <motion.div
-            className="w-full max-w-sm overflow-hidden rounded-[1.6rem] border border-white/80 bg-white/[0.92] p-5 shadow-[0_28px_90px_-42px_rgba(15,23,42,0.65)] backdrop-blur-2xl"
-            initial={{ opacity: 0, y: 18, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 12, scale: 0.98 }}
-            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+            className="w-full max-w-sm overflow-hidden rounded-[1.6rem] border border-white/80 bg-white p-5 shadow-[0_20px_64px_-38px_rgba(15,23,42,0.55)]"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
             onClick={(event) => event.stopPropagation()}
           >
             <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-slate-950 text-white shadow-lg shadow-slate-950/15">
@@ -94,11 +94,10 @@ export default function DashboardLayout() {
   const [sessionInfo, setSessionInfo] = useState(null)
   const { user, ready } = useAuth()
   const { userDoc, loading: userLoading } = useUser()
-  const location = useLocation()
   const navigate = useNavigate()
   const persistedKeyRef = useRef('')
 
-  const toggleCollapse = () => setCollapsed((c) => !c)
+  const toggleCollapse = useCallback(() => setCollapsed((c) => !c), [])
   const userId = user?.uid ?? null
 
   useEffect(() => {
@@ -110,7 +109,7 @@ export default function DashboardLayout() {
     const modalSeen = sessionStorage.getItem(modalSeenKey) === 'true'
 
     Promise.resolve().then(() => {
-      setSelectedWorkspace(selected)
+      setSelectedWorkspace((current) => (current === selected ? current : selected))
       setSessionInfo(nextSession)
     })
 
@@ -136,17 +135,14 @@ export default function DashboardLayout() {
     }
 
     Promise.resolve().then(() => setProductModalOpen(false))
-    if ((location.pathname === '/app' || location.pathname === '/app/dashboard') && selected === 'restaurant-pos') {
-      navigate(workspaceRoute(selected), { replace: true })
-    }
-  }, [location.pathname, navigate, ready, user, userDoc, userId, userLoading])
+  }, [ready, user, userDoc, userId, userLoading])
 
-  function markModalSeen() {
+  const markModalSeen = useCallback(() => {
     if (!sessionInfo?.sessionId || !userId) return
     sessionStorage.setItem(`nexoraWorkspaceModalSeen:${userId}:${sessionInfo.sessionId}`, 'true')
-  }
+  }, [sessionInfo, userId])
 
-  function selectWorkspace(workspace) {
+  const selectWorkspace = useCallback((workspace) => {
     if (!userId || !isValidWorkspace(workspace)) return
     if (workspace === 'restaurant-pos') return
     saveSelectedWorkspace(userId, workspace)
@@ -160,29 +156,29 @@ export default function DashboardLayout() {
     persistWorkspaceSession(nextSession).catch(() => {})
 
     navigate(workspaceRoute(workspace), { replace: true })
-  }
+  }, [markModalSeen, navigate, user, userDoc, userId])
 
-  function continueLastWorkspace() {
+  const continueLastWorkspace = useCallback(() => {
     const workspace = selectedWorkspace || readSelectedWorkspace(userId) || 'crm'
     selectWorkspace(workspace === 'restaurant-pos' ? 'crm' : workspace)
-  }
+  }, [selectWorkspace, selectedWorkspace, userId])
 
-  function openProductSwitcher() {
+  const openProductSwitcher = useCallback(() => {
     setProductModalOpen(true)
-  }
+  }, [])
 
   return (
     <div className="nexora-bg min-h-dvh overflow-x-hidden">
       <Sidebar collapsed={collapsed} onToggleCollapse={toggleCollapse} onSwitchProduct={openProductSwitcher} />
 
       <div
-        className={`relative z-10 min-h-dvh min-w-0 transition-all duration-300 print:ml-0 ${
+        className={`relative z-10 min-h-dvh min-w-0 print:ml-0 ${
           collapsed ? 'lg:ml-[72px]' : 'lg:ml-[236px]'
         }`}
       >
         <TopNav collapsed={collapsed} onOpenSidebar={() => setMobileOpen(true)} onSwitchProduct={openProductSwitcher} />
 
-        <main className="min-w-0 overflow-x-hidden px-3 pb-5 pt-4 transition-all duration-300 print:p-0 sm:px-5 lg:px-6 lg:pb-6 lg:pt-5">
+        <main className="min-w-0 overflow-x-hidden px-3 pb-5 pt-4 print:p-0 sm:px-5 lg:px-6 lg:pb-6 lg:pt-5">
           <div className="mx-auto w-full max-w-[1440px] min-w-0 print:max-w-none">
             <Outlet />
           </div>
@@ -203,7 +199,7 @@ export default function DashboardLayout() {
       <AnimatePresence>
         {mobileOpen ? (
           <motion.div
-            className="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-sm lg:hidden"
+            className="fixed inset-0 z-50 bg-slate-950/35 lg:hidden"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}

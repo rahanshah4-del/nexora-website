@@ -14,20 +14,6 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 }
 
-const requiredEnvVars = [
-  'VITE_FIREBASE_API_KEY',
-  'VITE_FIREBASE_AUTH_DOMAIN',
-  'VITE_FIREBASE_PROJECT_ID',
-  'VITE_FIREBASE_STORAGE_BUCKET',
-  'VITE_FIREBASE_MESSAGING_SENDER_ID',
-  'VITE_FIREBASE_APP_ID',
-]
-
-function getFirebaseEnvHint() {
-  const missing = requiredEnvVars.filter((key) => !import.meta.env[key])
-  return missing.length ? `Missing Firebase env vars: ${missing.join(', ')}` : 'Firebase is not configured.'
-}
-
 const hasFirebaseConfig = Boolean(
   firebaseConfig.apiKey &&
     firebaseConfig.authDomain &&
@@ -64,20 +50,6 @@ if (app) {
 }
 
 export const firebaseEnabled = Boolean(app && auth && db && storage)
-
-if (app) {
-  console.info('[firebase] active projectId:', app.options.projectId)
-  console.info('[firebase] auth domain:', app.options.authDomain)
-  if (typeof window !== 'undefined') {
-    console.info('[firebase] current auth host:', window.location.hostname)
-  }
-  const expectedAuthDomain = app.options.projectId ? `${app.options.projectId}.firebaseapp.com` : ''
-  if (expectedAuthDomain && app.options.authDomain !== expectedAuthDomain) {
-    console.warn('[firebase] authDomain does not match the default domain for projectId:', expectedAuthDomain)
-  }
-} else if (import.meta.env.DEV) {
-  console.info('[firebase] enabled:', firebaseEnabled, `(${getFirebaseEnvHint()})`)
-}
 
 export function assertFirebaseReady() {
   if (!firebaseEnabled) {

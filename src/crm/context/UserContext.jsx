@@ -1,4 +1,4 @@
-import { createContext, useEffect, useMemo, useState } from 'react'
+import { createContext, useEffect, useMemo, useRef, useState } from 'react'
 import { doc, serverTimestamp, setDoc, onSnapshot } from 'firebase/firestore'
 import { db } from '../lib/firebase.js'
 import { useAuth } from '../hooks/useAuth.js'
@@ -28,6 +28,12 @@ export function UserProvider({ children }) {
   const { profile, plan: localPlan } = usePreferences()
   const [userDoc, setUserDoc] = useState(null)
   const [loading, setLoading] = useState(true)
+  const provisionedUserRef = useRef('')
+  const profileRef = useRef(profile)
+
+  useEffect(() => {
+    profileRef.current = profile
+  }, [profile])
 
   useEffect(() => {
     if (!ready) return
@@ -40,6 +46,7 @@ export function UserProvider({ children }) {
     }
     if (!user) {
       Promise.resolve().then(() => {
+        provisionedUserRef.current = ''
         setUserDoc(null)
         setLoading(false)
       })
@@ -47,16 +54,21 @@ export function UserProvider({ children }) {
     }
 
     const ref = doc(db, 'users', user.uid)
-    ensureUserWorkspace(user, {
-      fullName: profile.ownerName,
-      email: profile.email || user.email || '',
-      provider: user.providerData?.[0]?.providerId || 'password',
-    }).catch(() => {})
+    if (provisionedUserRef.current !== user.uid) {
+      provisionedUserRef.current = user.uid
+      const currentProfile = profileRef.current
+      ensureUserWorkspace(user, {
+        fullName: currentProfile.ownerName,
+        email: currentProfile.email || user.email || '',
+        provider: user.providerData?.[0]?.providerId || 'password',
+      }).catch(() => {})
+    }
 
     const unsub = onSnapshot(
       ref,
       (snap) => {
         if (!snap.exists()) {
+          const currentProfile = profileRef.current
           setDoc(
             ref,
             {
@@ -65,9 +77,9 @@ export function UserProvider({ children }) {
               ownerId: user.uid,
               userId: user.uid,
               workspaceId: user.uid,
-              name: profile.ownerName || user.displayName || user.email?.split('@')?.[0] || defaultUserDoc.name,
-              fullName: profile.ownerName || user.displayName || '',
-              email: profile.email || user.email || defaultUserDoc.email,
+              name: currentProfile.ownerName || user.displayName || user.email?.split('@')?.[0] || defaultUserDoc.name,
+              fullName: currentProfile.ownerName || user.displayName || '',
+              email: currentProfile.email || user.email || defaultUserDoc.email,
               provider: user.providerData?.[0]?.providerId || 'password',
               role: 'owner',
               createdAt: serverTimestamp(),
@@ -88,7 +100,7 @@ export function UserProvider({ children }) {
     )
 
     return () => unsub()
-  }, [ready, user, profile.ownerName, profile.email])
+  }, [ready, user])
 
   const effectivePlan = userDoc?.plan ?? (db ? 'Free' : localPlan ?? 'Free')
   const role = normalizeRole(userDoc?.role)

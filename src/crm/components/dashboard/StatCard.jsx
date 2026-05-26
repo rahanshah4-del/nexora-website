@@ -1,8 +1,8 @@
-import { motion } from 'framer-motion'
+import { memo } from 'react'
 import Card from '../ui/Card.jsx'
 import { cn } from '../../utils/cn.js'
 
-export default function StatCard({ icon: Icon, label, value, delta, tone = 'indigo' }) {
+function StatCard({ icon: Icon, label, value, delta, tone = 'indigo' }) {
   const toneMap = {
     indigo: 'from-indigo-500/20 via-fuchsia-500/10 to-sky-500/10',
     emerald: 'from-emerald-500/20 via-sky-500/10 to-indigo-500/10',
@@ -11,12 +11,7 @@ export default function StatCard({ icon: Icon, label, value, delta, tone = 'indi
   }
 
   return (
-    <motion.div
-      className="min-w-0"
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35 }}
-    >
+    <div className="min-w-0">
       <Card className="h-full p-4">
         <div className="flex min-w-0 items-start justify-between gap-3">
           <div className="min-w-0">
@@ -40,6 +35,8 @@ export default function StatCard({ icon: Icon, label, value, delta, tone = 'indi
           </p>
         ) : null}
       </Card>
-    </motion.div>
+    </div>
   )
 }
+
+export default memo(StatCard)

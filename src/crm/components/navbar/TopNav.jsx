@@ -8,7 +8,7 @@ import Avatar from '../ui/Avatar.jsx'
 import Dropdown from '../ui/Dropdown.jsx'
 import Input from '../ui/Input.jsx'
 import Button from '../ui/Button.jsx'
-import { useState } from 'react'
+import { memo, useCallback, useMemo, useState } from 'react'
 import { usePreferences } from '../../hooks/usePreferences.js'
 import { useAuth } from '../../hooks/useAuth.js'
 import { useUser } from '../../hooks/useUser.js'
@@ -35,22 +35,41 @@ function Toast({ message, onClose }) {
   )
 }
 
-export default function TopNav({ onOpenSidebar, onSwitchProduct }) {
+function TopNav({ onOpenSidebar, onSwitchProduct }) {
   const { notifications, profile } = usePreferences()
   const { logout, busy } = useAuth()
   const { firebaseUser, userDoc, plan, role } = useUser()
   const navigate = useNavigate()
   const [toast, setToast] = useState(null)
-  const displayName = userDoc?.fullName || userDoc?.name || profile.ownerName || firebaseUser?.displayName || 'Nexora User'
-  const displayEmail = userDoc?.email || profile.email || firebaseUser?.email || 'No email'
-  const workspaceName = userDoc?.workspaceName || userDoc?.company || profile.companyName || 'Nexora Workspace'
-  const planStatus = userDoc?.planStatus || 'trial'
+  const profileSummary = useMemo(
+    () => ({
+      displayName: userDoc?.fullName || userDoc?.name || profile.ownerName || firebaseUser?.displayName || 'Nexora User',
+      displayEmail: userDoc?.email || profile.email || firebaseUser?.email || 'No email',
+      workspaceName: userDoc?.workspaceName || userDoc?.company || profile.companyName || 'Nexora Workspace',
+      planStatus: userDoc?.planStatus || 'trial',
+    }),
+    [firebaseUser?.displayName, firebaseUser?.email, profile.companyName, profile.email, profile.ownerName, userDoc],
+  )
+
+  const handleLogout = useCallback(
+    async (close) => {
+      if (busy) return
+      const ok = await logout()
+      close()
+      if (ok) {
+        setToast('Logged out successfully')
+        window.setTimeout(() => setToast(null), 1800)
+        navigate('/login', { replace: true })
+      }
+    },
+    [busy, logout, navigate],
+  )
 
   return (
     <>
       {toast ? <Toast message={toast} onClose={() => setToast(null)} /> : null}
       <header className="sticky top-0 z-40 w-full px-3 pt-3 print:hidden sm:px-5 lg:px-6">
-        <div className="mx-auto flex min-h-[64px] w-full max-w-[1440px] min-w-0 items-center gap-3 rounded-[1.35rem] border border-white/70 bg-white/[0.86] px-3 py-2.5 shadow-[0_20px_70px_-52px_rgba(15,23,42,0.52)] backdrop-blur-2xl transition-all duration-300 dark:border-slate-800 dark:bg-slate-950/90 sm:px-4">
+        <div className="mx-auto flex min-h-[64px] w-full max-w-[1440px] min-w-0 items-center gap-3 rounded-[1.35rem] border border-white/70 bg-white/[0.94] px-3 py-2.5 shadow-[0_16px_48px_-40px_rgba(15,23,42,0.45)] backdrop-blur-sm transition-colors duration-200 dark:border-slate-800 dark:bg-slate-950/90 sm:px-4">
           <button
             type="button"
             className="focus-ring inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-white/10 lg:hidden"
@@ -95,14 +114,14 @@ export default function TopNav({ onOpenSidebar, onSwitchProduct }) {
                   {profile.avatarDataUrl ? (
                     <img src={profile.avatarDataUrl} alt="" className="h-9 w-9 shrink-0 rounded-2xl object-cover shadow-sm" />
                   ) : (
-                    <Avatar name={displayName} className="h-9 w-9 shrink-0 rounded-2xl" />
+                    <Avatar name={profileSummary.displayName} className="h-9 w-9 shrink-0 rounded-2xl" />
                   )}
                   <div className="hidden max-w-[10rem] min-w-0 text-left xl:block">
                     <p className="truncate text-sm font-semibold text-slate-950 dark:text-white">
-                      {displayName}
+                      {profileSummary.displayName}
                     </p>
                     <p className="truncate text-xs font-medium text-slate-500 dark:text-slate-300">
-                      {workspaceName}
+                      {profileSummary.workspaceName}
                     </p>
                   </div>
                 </button>
@@ -115,21 +134,21 @@ export default function TopNav({ onOpenSidebar, onSwitchProduct }) {
                       {profile.avatarDataUrl ? (
                         <img src={profile.avatarDataUrl} alt="" className="h-12 w-12 shrink-0 rounded-2xl object-cover shadow-sm" />
                       ) : (
-                        <Avatar name={displayName} className="h-12 w-12 shrink-0 rounded-2xl" />
+                        <Avatar name={profileSummary.displayName} className="h-12 w-12 shrink-0 rounded-2xl" />
                       )}
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-slate-950">{displayName}</p>
-                        <p className="truncate text-xs text-slate-500">{displayEmail}</p>
+                        <p className="truncate text-sm font-semibold text-slate-950">{profileSummary.displayName}</p>
+                        <p className="truncate text-xs text-slate-500">{profileSummary.displayEmail}</p>
                       </div>
                     </div>
                     <div className="mt-3 grid gap-2 text-xs">
                       <div className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2">
                         <span className="text-slate-500">Plan status</span>
-                        <span className="truncate font-semibold text-slate-900">{plan || 'Free'} · {planStatus}</span>
+                        <span className="truncate font-semibold text-slate-900">{plan || 'Free'} · {profileSummary.planStatus}</span>
                       </div>
                       <div className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2">
                         <span className="text-slate-500">Workspace</span>
-                        <span className="truncate font-semibold text-slate-900">{workspaceName}</span>
+                        <span className="truncate font-semibold text-slate-900">{profileSummary.workspaceName}</span>
                       </div>
                       <div className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2">
                         <span className="text-slate-500">Role</span>
@@ -153,16 +172,7 @@ export default function TopNav({ onOpenSidebar, onSwitchProduct }) {
                   <div className="my-1 h-px bg-white/30 dark:bg-white/10" />
                   <button
                     className="focus-ring flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-semibold text-rose-600 hover:bg-rose-500/10 dark:text-rose-300"
-                    onClick={async () => {
-                      if (busy) return
-                      const ok = await logout()
-                      close()
-                      if (ok) {
-                        setToast('Logged out successfully')
-                        window.setTimeout(() => setToast(null), 1800)
-                        navigate('/login', { replace: true })
-                      }
-                    }}
+                    onClick={() => handleLogout(close)}
                     disabled={busy}
                     type="button"
                   >
@@ -185,3 +195,5 @@ export default function TopNav({ onOpenSidebar, onSwitchProduct }) {
     </>
   )
 }
+
+export default memo(TopNav)

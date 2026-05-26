@@ -371,12 +371,12 @@ export default function ReportsPage() {
       transition={{ duration: 0.25 }}
     >
       {notice ? (
-        <div className="no-print fixed right-4 top-4 z-[70] max-w-[calc(100vw-2rem)] rounded-2xl border border-sky-200 bg-white px-4 py-3 text-sm font-semibold text-sky-800 shadow-[0_24px_70px_-38px_rgba(14,165,233,0.55)]">
+        <div className="no-print fixed right-4 top-4 z-[70] max-w-[calc(100vw-2rem)] rounded-2xl border border-sky-200 bg-white px-4 py-3 text-sm font-semibold text-sky-800 shadow-sm">
           {notice}
         </div>
       ) : null}
 
-      <div className="no-print flex flex-col gap-4 rounded-[1.6rem] border border-slate-200/80 bg-white/85 p-5 shadow-[0_24px_80px_-50px_rgba(15,23,42,0.35)] backdrop-blur-xl lg:flex-row lg:items-end lg:justify-between">
+      <div className="no-print flex flex-col gap-4 rounded-[1.6rem] border border-slate-200/80 bg-white/95 p-5 shadow-sm lg:flex-row lg:items-end lg:justify-between">
         <div className="min-w-0">
           <div className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-700">
             <HiOutlineDocumentText className="h-4 w-4" />

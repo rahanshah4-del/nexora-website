@@ -4,7 +4,7 @@ import { navItems } from '../../data/navigation.js'
 import { cn } from '../../utils/cn.js'
 import Badge from '../ui/Badge.jsx'
 import PricingModal from '../billing/PricingModal.jsx'
-import { useState } from 'react'
+import { memo, useCallback, useMemo, useState } from 'react'
 import { useUser } from '../../hooks/useUser.js'
 import logoUrl from '../../../assets/logo/nexora-logo.svg'
 
@@ -92,17 +92,17 @@ function UpgradeCard({ plan, isBusiness, onViewPlans }) {
   )
 }
 
-export default function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollapse, onSwitchProduct }) {
+function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollapse, onSwitchProduct }) {
   const [pricingOpen, setPricingOpen] = useState(false)
   const { plan } = useUser()
   const isBusiness = plan === 'Business'
 
-  function handleSwitchProduct() {
+  const handleSwitchProduct = useCallback(() => {
     onNavigate?.()
     onSwitchProduct?.()
-  }
+  }, [onNavigate, onSwitchProduct])
 
-  const content = (
+  const content = useMemo(() => (
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
       <Brand collapsed={collapsed} />
       <div className={`mt-1 px-2 ${collapsed ? 'hidden' : ''}`}>
@@ -123,11 +123,11 @@ export default function Sidebar({ mobile = false, onNavigate, collapsed = false,
               onClick={onNavigate}
               className={({ isActive }) =>
                 cn(
-                  'focus-ring group relative flex items-center rounded-xl text-[13px] font-semibold transition duration-200 ease-out',
+                  'focus-ring group relative flex items-center rounded-xl text-[13px] font-semibold transition-colors duration-150 ease-out',
                   collapsed ? 'justify-center px-0 py-2' : 'gap-2.5 px-2.5 py-1.5',
                   isActive
                     ? 'border border-sky-100 bg-gradient-to-r from-sky-50 via-white to-indigo-50 text-slate-950 shadow-sm'
-                    : 'border border-transparent text-slate-600 hover:-translate-y-0.5 hover:border-slate-200/80 hover:bg-white hover:text-slate-950 hover:shadow-sm',
+                    : 'border border-transparent text-slate-600 hover:border-slate-200/80 hover:bg-white hover:text-slate-950',
                 )
               }
             >
@@ -155,7 +155,7 @@ export default function Sidebar({ mobile = false, onNavigate, collapsed = false,
           <div className="px-2">
             <button
               type="button"
-              className="focus-ring flex h-8 w-full items-center justify-center rounded-xl border border-slate-200/80 bg-white/80 px-3 text-[11px] font-semibold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:border-sky-200 hover:text-sky-700 hover:shadow-md"
+              className="focus-ring flex h-8 w-full items-center justify-center rounded-xl border border-slate-200/80 bg-white/80 px-3 text-[11px] font-semibold text-slate-700 shadow-sm transition-colors duration-150 hover:border-sky-200 hover:text-sky-700"
               onClick={handleSwitchProduct}
             >
               Switch Product
@@ -169,17 +169,17 @@ export default function Sidebar({ mobile = false, onNavigate, collapsed = false,
         </div>
       )}
     </div>
-  )
+  ), [collapsed, handleSwitchProduct, isBusiness, onNavigate, plan])
 
   if (!mobile) {
     return (
       <>
-        <aside className={`hidden print:hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-20 lg:block lg:border-r lg:border-slate-200/80 lg:bg-white/[0.9] lg:shadow-[18px_0_70px_-58px_rgba(15,23,42,0.55)] lg:backdrop-blur-2xl lg:transition-all lg:duration-300 ${collapsed ? 'lg:w-[72px] lg:p-2' : 'lg:w-[236px] lg:p-2.5'}`}>
+        <aside className={`hidden print:hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-20 lg:block lg:border-r lg:border-slate-200/80 lg:bg-white/[0.95] lg:shadow-[12px_0_44px_-38px_rgba(15,23,42,0.45)] lg:backdrop-blur-sm ${collapsed ? 'lg:w-[72px] lg:p-2' : 'lg:w-[236px] lg:p-2.5'}`}>
           {content}
           {onToggleCollapse ? (
             <button
               type="button"
-              className="focus-ring absolute -right-3 bottom-7 grid h-7 w-7 place-items-center rounded-full border border-slate-200 bg-white text-sm font-semibold text-slate-600 shadow-[0_14px_35px_-20px_rgba(15,23,42,0.7)] transition duration-200 hover:-translate-y-0.5 hover:border-sky-200 hover:text-sky-700 hover:shadow-md"
+              className="focus-ring absolute -right-3 bottom-7 grid h-7 w-7 place-items-center rounded-full border border-slate-200 bg-white text-sm font-semibold text-slate-600 shadow-sm transition-colors duration-150 hover:border-sky-200 hover:text-sky-700"
               onClick={onToggleCollapse}
               aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             >
@@ -198,8 +198,8 @@ export default function Sidebar({ mobile = false, onNavigate, collapsed = false,
         initial={{ x: -40, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         exit={{ x: -40, opacity: 0 }}
-        transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
-        className="h-full w-[17rem] rounded-[1.5rem] border border-slate-200 bg-white/95 p-2 shadow-[0_24px_80px_-42px_rgba(15,23,42,0.55)] backdrop-blur-2xl print:hidden"
+        transition={{ duration: 0.18, ease: 'easeOut' }}
+        className="h-full w-[17rem] rounded-[1.5rem] border border-slate-200 bg-white/95 p-2 shadow-[0_18px_60px_-40px_rgba(15,23,42,0.45)] print:hidden"
       >
         {content}
       </motion.aside>
@@ -207,3 +207,5 @@ export default function Sidebar({ mobile = false, onNavigate, collapsed = false,
     </>
   )
 }
+
+export default memo(Sidebar)

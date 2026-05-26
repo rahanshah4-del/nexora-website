@@ -116,7 +116,6 @@ export function useTeamPermissions({ permissionKeys }) {
           )
           return { ok: true }
         } catch (e) {
-          console.error('[teamPermissions] init failed:', e)
           return { ok: false, error: e?.message || 'Failed to initialize permissions' }
         }
       },
@@ -131,7 +130,6 @@ export function useTeamPermissions({ permissionKeys }) {
           )
           return { ok: true }
         } catch (e) {
-          console.error('[teamPermissions] save failed:', e)
           return { ok: false, error: e?.message || 'Failed to save permissions' }
         }
       },

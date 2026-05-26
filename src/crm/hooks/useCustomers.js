@@ -89,7 +89,6 @@ export function useCustomers() {
           })
           return { ok: true }
         } catch (e) {
-          console.error('[customers] add failed:', e)
           return { ok: false, error: e?.message || 'Failed to create customer' }
         }
       },
