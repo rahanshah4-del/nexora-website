@@ -9,6 +9,7 @@ import DashboardLayout from './crm/layouts/DashboardLayout.jsx'
 import CRMProviders from './crm/CRMProviders.jsx'
 import AdminLayout from './layouts/AdminLayout.jsx'
 import DashboardHomePage from './crm/pages/DashboardHome.jsx'
+import RestaurantPOSPage from './crm/pages/RestaurantPOS.jsx'
 import ClientPortalPage from './crm/pages/ClientPortal.jsx'
 import CustomersPage from './crm/pages/Customers.jsx'
 import LeadsPage from './crm/pages/Leads.jsx'
@@ -58,6 +59,7 @@ export default function AppRouter() {
       >
         <Route index element={<Navigate to="/app/dashboard" replace />} />
         <Route path="dashboard" element={<DashboardHomePage />} />
+        <Route path="restaurant-pos" element={<RestaurantPOSPage />} />
         <Route path="client-portal" element={<ClientPortalPage />} />
         <Route path="customers" element={<CustomersPage />} />
         <Route path="leads" element={<LeadsPage />} />

@@ -5,7 +5,6 @@ import { cn } from '../../utils/cn.js'
 import Badge from '../ui/Badge.jsx'
 import PricingModal from '../billing/PricingModal.jsx'
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useUser } from '../../hooks/useUser.js'
 import logoUrl from '../../../assets/logo/nexora-logo.svg'
 
@@ -57,38 +56,33 @@ function Brand({ collapsed }) {
   )
 }
 
-function UpgradeCard({ plan, isBusiness, onUpgrade, onViewPlans }) {
+function UpgradeCard({ plan, isBusiness, onViewPlans }) {
+  const badgeLabel = isBusiness ? 'Active' : plan === 'Starter' ? 'Starter' : 'Free'
+  const badgeVariant = isBusiness ? 'success' : plan === 'Starter' ? 'info' : 'default'
+
   return (
     <div className="px-2 pt-2">
-      <div className="rounded-[1rem] border border-sky-100 bg-gradient-to-br from-sky-50 via-white to-violet-50 p-2.5 shadow-[0_16px_42px_-36px_rgba(14,165,233,0.5)]">
+      <div className="relative overflow-hidden rounded-[1.05rem] border border-sky-100/90 bg-gradient-to-br from-white via-sky-50/90 to-violet-50/80 p-2.5 shadow-[0_18px_50px_-36px_rgba(14,165,233,0.7)]">
+        <div className="pointer-events-none absolute right-0 top-0 h-12 w-12 rounded-full bg-sky-300/20 blur-2xl" />
         <div className="flex items-center justify-between gap-2">
-          <p className="truncate text-[11px] font-semibold text-slate-950">Upgrade to Business</p>
-          {isBusiness ? (
-            <Badge variant="success" className="px-2 py-0.5 text-[10px]">Business</Badge>
-          ) : plan === 'Starter' ? (
-            <Badge variant="info" className="px-2 py-0.5 text-[10px]">Starter</Badge>
-          ) : (
-            <Badge variant="default" className="px-2 py-0.5 text-[10px]">Free</Badge>
-          )}
+          <p className="min-w-0 text-[12px] font-semibold leading-4 text-slate-950">Business Plan</p>
+          <Badge variant={badgeVariant} className="shrink-0 px-2 py-0.5 text-[10px]">
+            {badgeLabel}
+          </Badge>
         </div>
-        <p className="mt-1 max-h-8 overflow-hidden text-[11px] leading-4 text-slate-500">
-          Advanced reports and team permissions.
+        <p className="mt-1 text-[11px] leading-4 text-slate-500">
+          Advanced reports & team tools
         </p>
-        <div className="mt-2 grid grid-cols-[1fr_auto] gap-1.5">
-          <button
-            className="focus-ring h-8 rounded-xl bg-slate-950 px-2 text-[11px] font-semibold text-white shadow-sm transition hover:bg-sky-700 disabled:opacity-70"
-            onClick={onUpgrade}
-            disabled={isBusiness}
-            type="button"
-          >
-            {isBusiness ? 'Active' : 'Upgrade'}
-          </button>
+        <div className="mt-2 flex items-center justify-between gap-2 border-t border-sky-100/80 pt-2">
+          <span className="truncate text-[10px] font-medium uppercase tracking-[0.14em] text-slate-400">
+            Nexora
+          </span>
           <button
             type="button"
-            className="focus-ring h-8 rounded-xl px-2 text-[11px] font-semibold text-sky-700 transition hover:bg-sky-500/10"
+            className="focus-ring shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold text-sky-700 transition hover:bg-sky-500/10 hover:text-sky-900"
             onClick={onViewPlans}
           >
-            Plans
+            View Plans
           </button>
         </div>
       </div>
@@ -96,13 +90,18 @@ function UpgradeCard({ plan, isBusiness, onUpgrade, onViewPlans }) {
   )
 }
 
-export default function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollapse }) {
+export default function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollapse, onSwitchProduct }) {
   const [pricingOpen, setPricingOpen] = useState(false)
-  const navigate = useNavigate()
   const { plan } = useUser()
   const isBusiness = plan === 'Business'
+
+  function handleSwitchProduct() {
+    onNavigate?.()
+    onSwitchProduct?.()
+  }
+
   const content = (
-    <div className="flex h-full min-h-0 flex-col">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden">
       <Brand collapsed={collapsed} />
       <div className={`mt-1 px-2 ${collapsed ? 'hidden' : ''}`}>
         <div className="rounded-[0.95rem] border border-slate-200/70 bg-slate-50/80 px-2.5 py-1.5">
@@ -110,15 +109,6 @@ export default function Sidebar({ mobile = false, onNavigate, collapsed = false,
           <p className="mt-0.5 truncate text-[11px] font-semibold text-slate-700">Operations Console</p>
         </div>
       </div>
-
-      {!collapsed && (
-        <UpgradeCard
-          plan={plan}
-          isBusiness={isBusiness}
-          onUpgrade={() => navigate('/upgrade-business')}
-          onViewPlans={() => setPricingOpen(true)}
-        />
-      )}
 
       <nav className={`mt-2 min-h-0 flex-1 overflow-y-auto px-2 pb-2 pr-1.5 ${collapsed ? 'space-y-1.5' : 'space-y-0.5'}`}>
         {sidebarItems.map((item) => {
@@ -157,6 +147,25 @@ export default function Sidebar({ mobile = false, onNavigate, collapsed = false,
           )
         })}
       </nav>
+
+      {!collapsed && (
+        <div className="shrink-0 space-y-2 pb-1">
+          <div className="px-2">
+            <button
+              type="button"
+              className="focus-ring flex h-8 w-full items-center justify-center rounded-xl border border-slate-200/80 bg-white/80 px-3 text-[11px] font-semibold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:border-sky-200 hover:text-sky-700 hover:shadow-md"
+              onClick={handleSwitchProduct}
+            >
+              Switch Product
+            </button>
+          </div>
+          <UpgradeCard
+            plan={plan}
+            isBusiness={isBusiness}
+            onViewPlans={() => setPricingOpen(true)}
+          />
+        </div>
+      )}
     </div>
   )
 

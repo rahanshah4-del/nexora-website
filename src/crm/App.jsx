@@ -6,6 +6,7 @@ import RequireAuth from './components/auth/RequireAuth.jsx'
 
 const LoginPage = lazy(() => import('./pages/Login.jsx'))
 const DashboardHomePage = lazy(() => import('./pages/DashboardHome.jsx'))
+const RestaurantPOSPage = lazy(() => import('./pages/RestaurantPOS.jsx'))
 const CustomersPage = lazy(() => import('./pages/Customers.jsx'))
 const LeadsPage = lazy(() => import('./pages/Leads.jsx'))
 const PipelinePage = lazy(() => import('./pages/SalesPipeline.jsx'))
@@ -50,6 +51,7 @@ export default function App() {
           >
             <Route path="/app" element={<Navigate to="/app/dashboard" replace />} />
             <Route path="/app/dashboard" element={<DashboardHomePage />} />
+            <Route path="/app/restaurant-pos" element={<RestaurantPOSPage />} />
             <Route path="/app/customers" element={<CustomersPage />} />
             <Route path="/app/leads" element={<LeadsPage />} />
             <Route path="/app/leads/scoring" element={<LeadScoringPage />} />

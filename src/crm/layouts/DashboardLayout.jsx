@@ -1,10 +1,42 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
-import { Outlet } from 'react-router-dom'
+import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import Sidebar from '../components/sidebar/Sidebar.jsx'
 import TopNav from '../components/navbar/TopNav.jsx'
+import ProductSelectionModal from '../components/product/ProductSelectionModal.jsx'
+import { useAuth } from '../hooks/useAuth.js'
 
 const MOBILE_NOTICE_KEY = 'nexora_crm_mobile_dashboard_notice_dismissed_v1'
+const PRODUCT_KEY = 'selectedProduct'
+const PRODUCT_USER_KEY = 'selectedProductUserId'
+
+function isValidProduct(product) {
+  return product === 'restaurant-pos' || product === 'crm'
+}
+
+function productStorageKey(userId) {
+  return `selectedProduct:${userId}`
+}
+
+function readSelectedProduct(userId) {
+  if (!userId) return null
+  const scoped = localStorage.getItem(productStorageKey(userId))
+  if (isValidProduct(scoped)) return scoped
+  const sharedUser = localStorage.getItem(PRODUCT_USER_KEY)
+  const shared = localStorage.getItem(PRODUCT_KEY)
+  return sharedUser === userId && isValidProduct(shared) ? shared : null
+}
+
+function saveSelectedProduct(userId, product) {
+  if (!userId || !isValidProduct(product)) return
+  localStorage.setItem(PRODUCT_KEY, product)
+  localStorage.setItem(PRODUCT_USER_KEY, userId)
+  localStorage.setItem(productStorageKey(userId), product)
+}
+
+function productRoute(product) {
+  return product === 'restaurant-pos' ? '/app/restaurant-pos' : '/app/dashboard'
+}
 
 function MobileDashboardNotice() {
   const [show, setShow] = useState(false)
@@ -78,19 +110,54 @@ function MobileDashboardNotice() {
 export default function DashboardLayout() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
+  const [productModalOpen, setProductModalOpen] = useState(false)
+  const { user, ready } = useAuth()
+  const location = useLocation()
+  const navigate = useNavigate()
 
   const toggleCollapse = () => setCollapsed((c) => !c)
+  const userId = user?.uid ?? null
+
+  useEffect(() => {
+    if (!ready || !userId) return
+
+    const selected = readSelectedProduct(userId)
+    if (!selected) {
+      Promise.resolve().then(() => setProductModalOpen(true))
+      return
+    }
+
+    Promise.resolve().then(() => setProductModalOpen(false))
+    if ((location.pathname === '/app' || location.pathname === '/app/dashboard') && selected === 'restaurant-pos') {
+      navigate(productRoute(selected), { replace: true })
+    }
+  }, [location.pathname, navigate, ready, userId])
+
+  function selectProduct(product) {
+    if (!userId) return
+    saveSelectedProduct(userId, product)
+    setProductModalOpen(false)
+    navigate(productRoute(product), { replace: true })
+  }
+
+  function continueToDashboard() {
+    selectProduct('crm')
+  }
+
+  function openProductSwitcher() {
+    setProductModalOpen(true)
+  }
 
   return (
     <div className="nexora-bg min-h-screen overflow-x-hidden">
-      <Sidebar collapsed={collapsed} onToggleCollapse={toggleCollapse} />
+      <Sidebar collapsed={collapsed} onToggleCollapse={toggleCollapse} onSwitchProduct={openProductSwitcher} />
 
       <div
         className={`relative z-10 flex min-h-screen min-w-0 flex-col transition-all duration-300 ${
           collapsed ? 'lg:ml-[72px]' : 'lg:ml-[236px]'
         }`}
       >
-        <TopNav collapsed={collapsed} onOpenSidebar={() => setMobileOpen(true)} />
+        <TopNav collapsed={collapsed} onOpenSidebar={() => setMobileOpen(true)} onSwitchProduct={openProductSwitcher} />
 
         <main className="min-w-0 flex-1 overflow-x-hidden px-3 py-4 transition-all duration-300 sm:px-5 lg:px-6 lg:py-5">
           <div className="mx-auto w-full max-w-[1440px] min-w-0">
@@ -105,6 +172,12 @@ export default function DashboardLayout() {
         </footer>
       </div>
 
+      <ProductSelectionModal
+        open={productModalOpen}
+        onSelect={selectProduct}
+        onClose={continueToDashboard}
+      />
+
       <MobileDashboardNotice />
 
       <AnimatePresence>
@@ -117,7 +190,7 @@ export default function DashboardLayout() {
             onClick={() => setMobileOpen(false)}
           >
             <div className="h-full p-4" onClick={(e) => e.stopPropagation()}>
-              <Sidebar mobile onNavigate={() => setMobileOpen(false)} />
+              <Sidebar mobile onNavigate={() => setMobileOpen(false)} onSwitchProduct={openProductSwitcher} />
             </div>
           </motion.div>
         ) : null}

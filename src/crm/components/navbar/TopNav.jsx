@@ -1,4 +1,4 @@
-import { HiOutlineMagnifyingGlass, HiOutlineMoon, HiOutlineSun } from 'react-icons/hi2'
+import { HiOutlineMagnifyingGlass, HiOutlineMoon, HiOutlineSquares2X2, HiOutlineSun } from 'react-icons/hi2'
 import Avatar from '../ui/Avatar.jsx'
 import Dropdown from '../ui/Dropdown.jsx'
 import Input from '../ui/Input.jsx'
@@ -30,7 +30,7 @@ function Toast({ message, onClose }) {
   )
 }
 
-export default function TopNav({ onOpenSidebar }) {
+export default function TopNav({ onOpenSidebar, onSwitchProduct }) {
   const { theme, toggleTheme } = useTheme()
   const { notifications, profile } = usePreferences()
   const { logout, busy } = useAuth()
@@ -64,6 +64,15 @@ export default function TopNav({ onOpenSidebar }) {
               <OfflineStatus />
               <BranchSwitcher />
             </div>
+            <Button
+              variant="subtle"
+              className="hidden h-10 shrink-0 rounded-2xl px-3 text-xs xl:inline-flex"
+              onClick={onSwitchProduct}
+              type="button"
+            >
+              <HiOutlineSquares2X2 className="h-4 w-4" />
+              Switch Product
+            </Button>
             <Button
               variant="ghost"
               className="h-10 w-10 shrink-0 rounded-2xl p-0"
@@ -111,6 +120,15 @@ export default function TopNav({ onOpenSidebar }) {
                     onClick={close}
                   >
                     Profile
+                  </button>
+                  <button
+                    className="focus-ring w-full rounded-xl px-3 py-2 text-left text-sm text-slate-800 hover:bg-white/40 dark:text-slate-100 dark:hover:bg-white/10"
+                    onClick={() => {
+                      close()
+                      onSwitchProduct?.()
+                    }}
+                  >
+                    Switch Product
                   </button>
                   <button
                     className="focus-ring w-full rounded-xl px-3 py-2 text-left text-sm text-slate-800 hover:bg-white/40 dark:text-slate-100 dark:hover:bg-white/10"
