@@ -1,42 +1,21 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import Sidebar from '../components/sidebar/Sidebar.jsx'
 import TopNav from '../components/navbar/TopNav.jsx'
 import ProductSelectionModal from '../components/product/ProductSelectionModal.jsx'
 import { useAuth } from '../hooks/useAuth.js'
+import { useUser } from '../hooks/useUser.js'
+import {
+  buildWorkspaceSession,
+  isValidWorkspace,
+  persistWorkspaceSession,
+  readSelectedWorkspace,
+  saveSelectedWorkspace,
+  workspaceRoute,
+} from '../lib/workspaceSession.js'
 
 const MOBILE_NOTICE_KEY = 'nexora_crm_mobile_dashboard_notice_dismissed_v1'
-const PRODUCT_KEY = 'selectedProduct'
-const PRODUCT_USER_KEY = 'selectedProductUserId'
-
-function isValidProduct(product) {
-  return product === 'restaurant-pos' || product === 'crm'
-}
-
-function productStorageKey(userId) {
-  return `selectedProduct:${userId}`
-}
-
-function readSelectedProduct(userId) {
-  if (!userId) return null
-  const scoped = localStorage.getItem(productStorageKey(userId))
-  if (isValidProduct(scoped)) return scoped
-  const sharedUser = localStorage.getItem(PRODUCT_USER_KEY)
-  const shared = localStorage.getItem(PRODUCT_KEY)
-  return sharedUser === userId && isValidProduct(shared) ? shared : null
-}
-
-function saveSelectedProduct(userId, product) {
-  if (!userId || !isValidProduct(product)) return
-  localStorage.setItem(PRODUCT_KEY, product)
-  localStorage.setItem(PRODUCT_USER_KEY, userId)
-  localStorage.setItem(productStorageKey(userId), product)
-}
-
-function productRoute(product) {
-  return product === 'restaurant-pos' ? '/app/restaurant-pos' : '/app/dashboard'
-}
 
 function MobileDashboardNotice() {
   const [show, setShow] = useState(false)
@@ -111,17 +90,41 @@ export default function DashboardLayout() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
   const [productModalOpen, setProductModalOpen] = useState(false)
+  const [selectedWorkspace, setSelectedWorkspace] = useState(null)
+  const [sessionInfo, setSessionInfo] = useState(null)
   const { user, ready } = useAuth()
+  const { userDoc, loading: userLoading } = useUser()
   const location = useLocation()
   const navigate = useNavigate()
+  const persistedKeyRef = useRef('')
 
   const toggleCollapse = () => setCollapsed((c) => !c)
   const userId = user?.uid ?? null
 
   useEffect(() => {
-    if (!ready || !userId) return
+    if (!ready || !userId || userLoading) return
 
-    const selected = readSelectedProduct(userId)
+    const selected = readSelectedWorkspace(userId)
+    const nextSession = buildWorkspaceSession({ user, userDoc, selectedWorkspace: selected })
+    const modalSeenKey = `nexoraWorkspaceModalSeen:${userId}:${nextSession.sessionId}`
+    const modalSeen = sessionStorage.getItem(modalSeenKey) === 'true'
+
+    Promise.resolve().then(() => {
+      setSelectedWorkspace(selected)
+      setSessionInfo(nextSession)
+    })
+
+    const persistKey = `${nextSession.sessionId}:${nextSession.selectedWorkspace}:${nextSession.planType}:${nextSession.trialStatus}`
+    if (persistedKeyRef.current !== persistKey) {
+      persistedKeyRef.current = persistKey
+      persistWorkspaceSession(nextSession).catch(() => {})
+    }
+
+    if (!modalSeen) {
+      Promise.resolve().then(() => setProductModalOpen(true))
+      return
+    }
+
     if (!selected) {
       Promise.resolve().then(() => setProductModalOpen(true))
       return
@@ -129,19 +132,32 @@ export default function DashboardLayout() {
 
     Promise.resolve().then(() => setProductModalOpen(false))
     if ((location.pathname === '/app' || location.pathname === '/app/dashboard') && selected === 'restaurant-pos') {
-      navigate(productRoute(selected), { replace: true })
+      navigate(workspaceRoute(selected), { replace: true })
     }
-  }, [location.pathname, navigate, ready, userId])
+  }, [location.pathname, navigate, ready, user, userDoc, userId, userLoading])
 
-  function selectProduct(product) {
-    if (!userId) return
-    saveSelectedProduct(userId, product)
-    setProductModalOpen(false)
-    navigate(productRoute(product), { replace: true })
+  function markModalSeen() {
+    if (!sessionInfo?.sessionId || !userId) return
+    sessionStorage.setItem(`nexoraWorkspaceModalSeen:${userId}:${sessionInfo.sessionId}`, 'true')
   }
 
-  function continueToDashboard() {
-    selectProduct('crm')
+  function selectWorkspace(workspace) {
+    if (!userId || !isValidWorkspace(workspace)) return
+    saveSelectedWorkspace(userId, workspace)
+    setSelectedWorkspace(workspace)
+    setProductModalOpen(false)
+    markModalSeen()
+
+    const nextSession = buildWorkspaceSession({ user, userDoc, selectedWorkspace: workspace })
+    setSessionInfo(nextSession)
+    persistedKeyRef.current = `${nextSession.sessionId}:${nextSession.selectedWorkspace}:${nextSession.planType}:${nextSession.trialStatus}`
+    persistWorkspaceSession(nextSession).catch(() => {})
+
+    navigate(workspaceRoute(workspace), { replace: true })
+  }
+
+  function continueLastWorkspace() {
+    selectWorkspace(selectedWorkspace || readSelectedWorkspace(userId) || 'crm')
   }
 
   function openProductSwitcher() {
@@ -174,8 +190,11 @@ export default function DashboardLayout() {
 
       <ProductSelectionModal
         open={productModalOpen}
-        onSelect={selectProduct}
-        onClose={continueToDashboard}
+        session={sessionInfo}
+        selectedWorkspace={selectedWorkspace}
+        onSelect={selectWorkspace}
+        onContinueLast={continueLastWorkspace}
+        onClose={continueLastWorkspace}
       />
 
       <MobileDashboardNotice />

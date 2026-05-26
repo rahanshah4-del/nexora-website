@@ -49,6 +49,21 @@ service cloud.firestore {
       allow read: if isSelf(userId) || isAdmin();
       allow update: if isAdmin() || (isSelf(userId) && protectedAccountFieldsUnchanged());
       allow delete: if isAdmin();
+
+      match /sessions/{sessionId} {
+        allow create: if isSelf(userId)
+          && request.resource.data.userId == userId
+          && request.resource.data.ownerId == userId
+          && request.resource.data.workspaceId == userId;
+        allow read: if isSelf(userId) || isAdmin();
+        allow update: if isAdmin()
+          || (isSelf(userId)
+            && resource.data.userId == userId
+            && request.resource.data.userId == userId
+            && request.resource.data.ownerId == userId
+            && request.resource.data.workspaceId == userId);
+        allow delete: if isAdmin();
+      }
     }
 
     match /workspaces/{workspaceId} {
