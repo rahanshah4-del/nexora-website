@@ -58,7 +58,16 @@ if (app) {
     })
 }
 
-if (import.meta.env.DEV) {
-  // Debug env detection without leaking secrets.
-  console.info('[firebase] enabled:', firebaseEnabled, firebaseEnabled ? '' : `(${getFirebaseEnvHint()})`)
+if (app) {
+  console.info('[crm firebase] active projectId:', app.options.projectId)
+  console.info('[crm firebase] auth domain:', app.options.authDomain)
+  if (typeof window !== 'undefined') {
+    console.info('[crm firebase] current auth host:', window.location.hostname)
+  }
+  const expectedAuthDomain = app.options.projectId ? `${app.options.projectId}.firebaseapp.com` : ''
+  if (expectedAuthDomain && app.options.authDomain !== expectedAuthDomain) {
+    console.warn('[crm firebase] authDomain does not match the default domain for projectId:', expectedAuthDomain)
+  }
+} else if (import.meta.env.DEV) {
+  console.info('[crm firebase] enabled:', firebaseEnabled, `(${getFirebaseEnvHint()})`)
 }
