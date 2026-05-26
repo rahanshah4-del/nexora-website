@@ -230,6 +230,7 @@ export default function DashboardHomePage() {
     ticketsApi.loading
 
   const paidInvoices = useMemo(() => invoicesApi.invoices.filter(isPaid), [invoicesApi.invoices])
+  const paidPayments = useMemo(() => invoicesApi.payments.filter(isPaid), [invoicesApi.payments])
   const pendingInvoices = useMemo(
     () => invoicesApi.invoices.filter((invoice) => String(invoice.status || '').toLowerCase() === 'pending'),
     [invoicesApi.invoices],
@@ -238,8 +239,11 @@ export default function DashboardHomePage() {
   const hotLeads = useMemo(() => leadsApi.leads.filter((lead) => safeCount(lead.score) >= 80), [leadsApi.leads])
 
   const totalRevenueUsd = useMemo(
-    () => paidInvoices.reduce((sum, invoice) => sum + toFiniteNumber(invoice.totalUsd ?? invoice.total), 0),
-    [paidInvoices],
+    () => {
+      const sourceRows = paidPayments.length ? paidPayments : paidInvoices
+      return sourceRows.reduce((sum, item) => sum + toFiniteNumber(item.amountUsd ?? item.amount ?? item.totalUsd ?? item.total), 0)
+    },
+    [paidInvoices, paidPayments],
   )
   const pendingRevenueUsd = useMemo(
     () => pendingInvoices.reduce((sum, invoice) => sum + toFiniteNumber(invoice.totalUsd ?? invoice.total), 0),
@@ -260,18 +264,19 @@ export default function DashboardHomePage() {
 
   const revenueSeries = useMemo(() => {
     const grouped = new Map()
-    invoicesApi.invoices.forEach((invoice) => {
+    const sourceRows = paidPayments.length ? paidPayments : paidInvoices
+    sourceRows.forEach((invoice) => {
       const date = dateFromValue(invoice.paidAt || invoice.createdAt || invoice.dueDate)
       if (!date) return
       const label = date.toLocaleDateString('en-US', { month: 'short' })
-      grouped.set(label, toFiniteNumber(grouped.get(label)) + toFiniteNumber(invoice.totalUsd ?? invoice.total))
+      grouped.set(label, toFiniteNumber(grouped.get(label)) + toFiniteNumber(invoice.amountUsd ?? invoice.amount ?? invoice.totalUsd ?? invoice.total))
     })
 
     const rows = Array.from(grouped.entries()).slice(-6)
     return rows.length
       ? rows.map(([label, value]) => ({ label, value: convertFromUsd(value, currency) }))
       : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'].map((label) => ({ label, value: 0 }))
-  }, [currency, invoicesApi.invoices])
+  }, [currency, paidInvoices, paidPayments])
 
   const salesSeries = useMemo(() => {
     const total = paidInvoices.length

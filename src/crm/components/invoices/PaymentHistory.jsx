@@ -3,6 +3,28 @@ import Badge from '../ui/Badge.jsx'
 import Table from '../ui/Table.jsx'
 import { formatCurrency } from '../../utils/format.js'
 
+function statusVariant(status) {
+  const value = String(status || '').toLowerCase()
+  if (value === 'paid') return 'success'
+  if (value === 'partial') return 'info'
+  if (value === 'rejected') return 'danger'
+  return 'warning'
+}
+
+function statusLabel(status) {
+  const value = String(status || '').toLowerCase()
+  if (value === 'paid') return 'Paid'
+  if (value === 'partial') return 'Partial'
+  if (value === 'rejected') return 'Rejected'
+  return 'Pending'
+}
+
+function dateLabel(value) {
+  if (!value) return '—'
+  const date = value?.toDate?.() || new Date(value)
+  return Number.isNaN(date.getTime()) ? '—' : date.toLocaleString()
+}
+
 export default function PaymentHistory({ payments, currency }) {
   const columns = [
     { key: 'id', header: 'Payment' },
@@ -17,9 +39,9 @@ export default function PaymentHistory({ payments, currency }) {
     {
       key: 'paymentStatus',
       header: 'Status',
-      cell: (r) => <Badge variant={r.paymentStatus === 'Paid' ? 'success' : 'warning'}>{r.paymentStatus}</Badge>,
+      cell: (r) => <Badge variant={statusVariant(r.paymentStatus)}>{statusLabel(r.paymentStatus)}</Badge>,
     },
-    { key: 'paidAt', header: 'Paid At' },
+    { key: 'paidAt', header: 'Paid At', cell: (r) => dateLabel(r.paidAt) },
     { key: 'reference', header: 'Reference' },
   ]
 

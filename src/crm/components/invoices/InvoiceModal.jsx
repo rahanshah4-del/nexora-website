@@ -31,7 +31,27 @@ function createBlankInvoice() {
   }
 }
 
-export default function InvoiceModal({ open, mode = 'detail', invoice, currency, products = [], onClose, onCreate }) {
+function paymentBadge(invoice) {
+  const value = String(invoice?.paymentStatus || invoice?.status || 'pending').toLowerCase()
+  if (value === 'paid') return { label: 'Paid', variant: 'success' }
+  if (value === 'partial') return { label: 'Partial Payment', variant: 'info' }
+  if (value === 'rejected' || value === 'cancelled') return { label: 'Payment Rejected', variant: 'danger' }
+  return { label: 'Payment Pending', variant: 'warning' }
+}
+
+export default function InvoiceModal({
+  open,
+  mode = 'detail',
+  invoice,
+  currency,
+  products = [],
+  canApprovePayments = false,
+  onClose,
+  onCreate,
+  onMarkPaid,
+  onRejectPayment,
+  onPartialPayment,
+}) {
   const [draft, setDraft] = useState(invoice || null)
   const [newInvoice, setNewInvoice] = useState(() => createBlankInvoice())
   const [submitting, setSubmitting] = useState(false)
@@ -122,7 +142,13 @@ export default function InvoiceModal({ open, mode = 'detail', invoice, currency,
                   </div>
                   <div className="glass-muted rounded-2xl p-4">
                     <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">Status</p>
-                    <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{draft.status}</p>
+                    <p className="mt-1 text-sm font-semibold capitalize text-slate-900 dark:text-white">{draft.status}</p>
+                  </div>
+                  <div className="glass-muted rounded-2xl p-4">
+                    <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">Payment</p>
+                    <div className="mt-2">
+                      <Badge variant={paymentBadge(draft).variant}>{paymentBadge(draft).label}</Badge>
+                    </div>
                   </div>
                   <div className="glass-muted rounded-2xl p-4 sm:col-span-2">
                     <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">Customer</p>
@@ -140,6 +166,12 @@ export default function InvoiceModal({ open, mode = 'detail', invoice, currency,
                     <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">Due</p>
                     <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{draft.dueDate}</p>
                   </div>
+                  <div className="glass-muted rounded-2xl p-4">
+                    <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">Amount Paid</p>
+                    <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">
+                      {formatCurrency(draft.amountPaid ?? draft.partialPaidAmount ?? 0, draft.currency || currency || 'PKR')}
+                    </p>
+                  </div>
                   <div className="sm:col-span-2">
                     <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">Items</p>
                     <div className="mt-2 space-y-2">
@@ -153,6 +185,39 @@ export default function InvoiceModal({ open, mode = 'detail', invoice, currency,
                       ))}
                     </div>
                   </div>
+                  {String(draft.paymentStatus || draft.status || '').toLowerCase() !== 'paid' &&
+                  !['rejected', 'cancelled'].includes(String(draft.paymentStatus || draft.status || '').toLowerCase()) ? (
+                    <div className="sm:col-span-2">
+                      <div className="flex flex-wrap gap-2 rounded-2xl border border-slate-200 bg-white/80 p-3">
+                        <Button
+                          className="rounded-xl px-3 py-2 text-xs"
+                          type="button"
+                          disabled={!canApprovePayments}
+                          onClick={() => onMarkPaid?.(draft)}
+                        >
+                          Mark as Paid
+                        </Button>
+                        <Button
+                          variant="subtle"
+                          className="rounded-xl px-3 py-2 text-xs"
+                          type="button"
+                          disabled={!canApprovePayments}
+                          onClick={() => onPartialPayment?.(draft)}
+                        >
+                          Record Partial Payment
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          className="rounded-xl px-3 py-2 text-xs text-rose-700 hover:bg-rose-50 hover:text-rose-800"
+                          type="button"
+                          disabled={!canApprovePayments}
+                          onClick={() => onRejectPayment?.(draft)}
+                        >
+                          Reject/Cancel Payment
+                        </Button>
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
               ) : mode === 'create' ? (
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">

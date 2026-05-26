@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import PageHeader from '../components/ui/PageHeader.jsx'
 import Button from '../components/ui/Button.jsx'
 import { usePreferences } from '../hooks/usePreferences.js'
@@ -8,18 +8,170 @@ import InvoiceTable from '../components/invoices/InvoiceTable.jsx'
 import PaymentHistory from '../components/invoices/PaymentHistory.jsx'
 import Card from '../components/ui/Card.jsx'
 import Badge from '../components/ui/Badge.jsx'
+import Input from '../components/ui/Input.jsx'
+import Select from '../components/ui/Select.jsx'
 import InvoiceModal from '../components/invoices/InvoiceModal.jsx'
 import { useState } from 'react'
 import Toast from '../components/ui/Toast.jsx'
 import { useProducts } from '../hooks/useProducts.js'
+import { formatCurrency } from '../utils/format.js'
+
+function PaymentActionModal({ action, invoice, busy, onClose, onConfirm }) {
+  const [draft, setDraft] = useState({ amount: '', paymentMethod: 'Manual Approval' })
+  const open = Boolean(action && invoice)
+  const total = Number(invoice?.total ?? invoice?.totalUsd ?? 0) || 0
+  const paid = Number(invoice?.amountPaid ?? invoice?.partialPaidAmount ?? 0) || 0
+  const balance = Math.max(total - paid, 0)
+
+  const title =
+    action === 'paid'
+      ? 'Approve full payment?'
+      : action === 'partial'
+        ? 'Record partial payment'
+        : 'Reject or cancel payment?'
+
+  return (
+    <AnimatePresence>
+      {open ? (
+        <motion.div
+          className="fixed inset-0 z-[60] grid place-items-center bg-slate-950/45 p-4 backdrop-blur-sm"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={onClose}
+          role="dialog"
+          aria-modal="true"
+        >
+          <motion.div
+            className="w-full max-w-lg"
+            initial={{ opacity: 0, y: 14, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 14, scale: 0.98 }}
+            transition={{ duration: 0.18 }}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <Card className="p-5">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-base font-semibold text-slate-950 dark:text-white">{title}</p>
+                  <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-300">
+                    Invoice {invoice?.invoiceNumber || invoice?.id} · {formatCurrency(balance || total, invoice?.currency || 'PKR')} remaining
+                  </p>
+                </div>
+                <Badge variant={action === 'reject' ? 'danger' : 'success'}>{action === 'reject' ? 'Review' : 'Approval'}</Badge>
+              </div>
+
+              {action !== 'reject' ? (
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Payment Method</label>
+                    <Select
+                      className="mt-1"
+                      value={draft.paymentMethod}
+                      onChange={(event) => setDraft((current) => ({ ...current, paymentMethod: event.target.value }))}
+                    >
+                      <option>Manual Approval</option>
+                      <option>Bank Transfer</option>
+                      <option>Cash</option>
+                      <option>Card</option>
+                      <option>Wallet</option>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">
+                      {action === 'partial' ? 'Partial Amount' : 'Amount'}
+                    </label>
+                    <Input
+                      className="mt-1"
+                      inputMode="decimal"
+                      value={action === 'partial' ? draft.amount : total}
+                      disabled={action !== 'partial'}
+                      onChange={(event) => setDraft((current) => ({ ...current, amount: event.target.value }))}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <p className="mt-4 rounded-2xl border border-rose-100 bg-rose-50 p-4 text-sm leading-6 text-rose-800">
+                  This will cancel the invoice payment state and mark the payment as rejected for this workspace.
+                </p>
+              )}
+
+              <div className="mt-5 flex flex-wrap gap-2">
+                <Button
+                  className={action === 'reject' ? 'rounded-2xl bg-rose-600 hover:bg-rose-700' : 'rounded-2xl'}
+                  type="button"
+                  disabled={busy}
+                  onClick={() => onConfirm?.({ ...draft, amount: action === 'partial' ? Number(draft.amount || 0) : total })}
+                >
+                  {busy ? 'Saving…' : action === 'reject' ? 'Reject Payment' : action === 'partial' ? 'Record Partial Payment' : 'Mark as Paid'}
+                </Button>
+                <Button variant="subtle" className="rounded-2xl" type="button" disabled={busy} onClick={onClose}>
+                  Cancel
+                </Button>
+              </div>
+            </Card>
+          </motion.div>
+        </motion.div>
+      ) : null}
+    </AnimatePresence>
+  )
+}
 
 export default function InvoicesPage() {
   const { currency } = usePreferences()
-  const { invoices, payments, stats, loading, source, error, createInvoice } = useInvoices()
+  const {
+    invoices,
+    payments,
+    stats,
+    loading,
+    source,
+    error,
+    canApprovePayments,
+    createInvoice,
+    markInvoicePaid,
+    rejectInvoicePayment,
+    recordPartialPayment,
+  } = useInvoices()
   const { products } = useProducts()
   const [openInvoice, setOpenInvoice] = useState(null)
   const [createOpen, setCreateOpen] = useState(false)
   const [toast, setToast] = useState(null)
+  const [paymentAction, setPaymentAction] = useState({ action: null, invoice: null })
+  const [paymentBusy, setPaymentBusy] = useState(false)
+
+  function requestPaymentAction(action, invoice) {
+    if (!canApprovePayments) {
+      setToast({ tone: 'error', message: 'Only owner, admin, or accountant can approve payments' })
+      window.setTimeout(() => setToast(null), 2400)
+      return
+    }
+    setPaymentAction({ action, invoice })
+  }
+
+  async function confirmPaymentAction(payload) {
+    const invoice = paymentAction.invoice
+    const action = paymentAction.action
+    if (!invoice || !action) return
+    setPaymentBusy(true)
+    const res =
+      action === 'paid'
+        ? await markInvoicePaid(invoice.id, payload)
+        : action === 'partial'
+          ? await recordPartialPayment(invoice.id, payload)
+          : await rejectInvoicePayment(invoice.id)
+    setPaymentBusy(false)
+    if (res?.ok) {
+      setToast({
+        tone: 'success',
+        message: action === 'paid' ? 'Invoice marked as paid' : action === 'partial' ? 'Partial payment recorded' : 'Payment rejected',
+      })
+      setPaymentAction({ action: null, invoice: null })
+      window.setTimeout(() => setToast(null), 1800)
+    } else {
+      setToast({ tone: 'error', message: res?.error || 'Payment action failed' })
+      window.setTimeout(() => setToast(null), 2600)
+    }
+  }
 
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
@@ -65,7 +217,15 @@ export default function InvoicesPage() {
                 No invoices found.
               </div>
             ) : (
-              <InvoiceTable invoices={invoices} currency={currency} onOpen={(inv) => setOpenInvoice(inv)} />
+              <InvoiceTable
+                invoices={invoices}
+                currency={currency}
+                canApprovePayments={canApprovePayments}
+                onOpen={(inv) => setOpenInvoice(inv)}
+                onMarkPaid={(inv) => requestPaymentAction('paid', inv)}
+                onRejectPayment={(inv) => requestPaymentAction('reject', inv)}
+                onPartialPayment={(inv) => requestPaymentAction('partial', inv)}
+              />
             )}
           </div>
         </Card>
@@ -93,7 +253,17 @@ export default function InvoicesPage() {
         <PaymentHistory payments={payments} currency={currency} />
       </div>
 
-      <InvoiceModal open={!!openInvoice} mode="detail" invoice={openInvoice} currency={currency} onClose={() => setOpenInvoice(null)} />
+      <InvoiceModal
+        open={!!openInvoice}
+        mode="detail"
+        invoice={openInvoice}
+        currency={currency}
+        canApprovePayments={canApprovePayments}
+        onClose={() => setOpenInvoice(null)}
+        onMarkPaid={(inv) => requestPaymentAction('paid', inv)}
+        onRejectPayment={(inv) => requestPaymentAction('reject', inv)}
+        onPartialPayment={(inv) => requestPaymentAction('partial', inv)}
+      />
       <InvoiceModal
         open={createOpen}
         mode="create"
@@ -112,6 +282,13 @@ export default function InvoicesPage() {
           }
           return res
         }}
+      />
+      <PaymentActionModal
+        action={paymentAction.action}
+        invoice={paymentAction.invoice}
+        busy={paymentBusy}
+        onClose={() => setPaymentAction({ action: null, invoice: null })}
+        onConfirm={confirmPaymentAction}
       />
     </motion.div>
   )

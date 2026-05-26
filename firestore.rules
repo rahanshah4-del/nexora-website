@@ -41,6 +41,29 @@ service cloud.firestore {
         || (isWorkspaceMember(workspaceId) && memberRole() in ['owner', 'admin']);
     }
 
+    function isPaymentApprover(workspaceId) {
+      return isSelf(workspaceId)
+        || isAdmin()
+        || (isWorkspaceMember(workspaceId) && memberRole() in ['owner', 'admin', 'accountant']);
+    }
+
+    function paymentApprovalFieldsTouched() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasAny([
+        'paymentStatus',
+        'status',
+        'paidAt',
+        'approvedBy',
+        'amountPaid',
+        'partialPaidAmount',
+        'balanceDue',
+        'lastPaymentAt',
+        'lastPaymentBy',
+        'rejectedAt',
+        'rejectedBy',
+        'cancelledAt',
+      ]);
+    }
+
     function staffPermission(workspaceId, key) {
       return isWorkspaceManager(workspaceId)
         || (isWorkspaceMember(workspaceId)
@@ -147,13 +170,17 @@ service cloud.firestore {
       }
 
       match /invoices/{invoiceId} {
-        allow read: if staffPermission(workspaceId, 'invoices') || staffPermission(workspaceId, 'reports');
-        allow write: if staffPermission(workspaceId, 'invoices');
+        allow read: if staffPermission(workspaceId, 'invoices') || staffPermission(workspaceId, 'reports') || isPaymentApprover(workspaceId);
+        allow create: if staffPermission(workspaceId, 'invoices');
+        allow update: if (staffPermission(workspaceId, 'invoices') && !paymentApprovalFieldsTouched())
+          || (isPaymentApprover(workspaceId) && paymentApprovalFieldsTouched());
+        allow delete: if staffPermission(workspaceId, 'invoices');
       }
 
       match /payments/{paymentId} {
-        allow read: if staffPermission(workspaceId, 'invoices') || staffPermission(workspaceId, 'reports');
-        allow write: if staffPermission(workspaceId, 'invoices');
+        allow read: if staffPermission(workspaceId, 'invoices') || staffPermission(workspaceId, 'reports') || isPaymentApprover(workspaceId);
+        allow create: if isPaymentApprover(workspaceId);
+        allow update, delete: if isWorkspaceManager(workspaceId);
       }
 
       match /pipelines/{dealId} {
