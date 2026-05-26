@@ -20,6 +20,7 @@ const products = [
     button: 'Open Restaurant POS',
     icon: HiOutlineSquares2X2,
     accent: 'from-cyan-500 to-sky-600',
+    comingSoon: true,
     features: [
       'Billing & cashier system',
       'Table management',
@@ -64,12 +65,21 @@ function SessionPill({ icon: Icon, label, value }) {
 
 function ProductCard({ product, onSelect }) {
   const Icon = product.icon
+  const disabled = Boolean(product.comingSoon)
 
   return (
     <button
       type="button"
-      onClick={() => onSelect(product.id)}
-      className="focus-ring group relative min-w-0 overflow-hidden rounded-[1.5rem] border border-white/70 bg-white/[0.9] p-4 text-left shadow-[0_22px_70px_-52px_rgba(15,23,42,0.55)] transition duration-300 hover:-translate-y-1 hover:border-sky-200 hover:bg-white hover:shadow-[0_28px_90px_-52px_rgba(14,165,233,0.55)] dark:border-white/10 dark:bg-slate-950/85 dark:hover:bg-slate-950 sm:p-5"
+      onClick={() => {
+        if (!disabled) onSelect(product.id)
+      }}
+      disabled={disabled}
+      className={cn(
+        'focus-ring group relative min-w-0 overflow-hidden rounded-[1.5rem] border border-white/70 bg-white/[0.9] p-4 text-left shadow-[0_22px_70px_-52px_rgba(15,23,42,0.55)] transition duration-300 dark:border-white/10 dark:bg-slate-950/85 sm:p-5',
+        disabled
+          ? 'cursor-not-allowed opacity-85'
+          : 'hover:-translate-y-1 hover:border-sky-200 hover:bg-white hover:shadow-[0_28px_90px_-52px_rgba(14,165,233,0.55)] dark:hover:bg-slate-950',
+      )}
     >
       <div className={cn('absolute inset-x-0 top-0 h-1 bg-gradient-to-r', product.accent)} />
       <div className="flex min-w-0 items-start gap-3">
@@ -81,9 +91,14 @@ function ProductCard({ product, onSelect }) {
             {product.title}
           </span>
           <span className="mt-1 block text-xs font-medium text-slate-500 dark:text-slate-300">
-            Choose your workspace
+            {disabled ? 'Restaurant POS module is coming soon.' : 'Choose your workspace'}
           </span>
         </span>
+        {disabled ? (
+          <span className="shrink-0 rounded-full border border-cyan-200 bg-cyan-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-cyan-700">
+            Coming Soon
+          </span>
+        ) : null}
       </div>
 
       <div className="mt-5 grid gap-2 sm:grid-cols-2">
@@ -95,16 +110,21 @@ function ProductCard({ product, onSelect }) {
         ))}
       </div>
 
-      <span className="mt-5 inline-flex items-center gap-2 rounded-full bg-slate-950 px-3 py-2 text-xs font-semibold text-white shadow-[0_16px_38px_-22px_rgba(15,23,42,0.8)] transition group-hover:bg-sky-700">
-        {product.button}
-        <HiOutlineArrowRight className="h-4 w-4" />
+      <span
+        className={cn(
+          'mt-5 inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-semibold shadow-[0_16px_38px_-22px_rgba(15,23,42,0.8)] transition',
+          disabled ? 'bg-slate-100 text-slate-500' : 'bg-slate-950 text-white group-hover:bg-sky-700',
+        )}
+      >
+        {disabled ? 'Coming Soon' : product.button}
+        {!disabled ? <HiOutlineArrowRight className="h-4 w-4" /> : null}
       </span>
     </button>
   )
 }
 
 export default function ProductSelectionModal({ open, session, selectedWorkspace, onSelect, onContinueLast, onClose }) {
-  const hasLastWorkspace = isValidWorkspace(selectedWorkspace)
+  const hasLastWorkspace = isValidWorkspace(selectedWorkspace) && selectedWorkspace !== 'restaurant-pos'
   const selectedStatus = hasLastWorkspace ? workspaceLabel(selectedWorkspace) : 'Not selected'
 
   return (

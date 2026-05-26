@@ -15,6 +15,38 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
+    function profile() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function memberWorkspaceId() {
+      return profile().workspaceId;
+    }
+
+    function memberRole() {
+      return profile().role;
+    }
+
+    function permissionDocId() {
+      return profile().staffId is string ? profile().staffId : request.auth.uid;
+    }
+
+    function isWorkspaceMember(workspaceId) {
+      return signedIn() && memberWorkspaceId() == workspaceId;
+    }
+
+    function isWorkspaceManager(workspaceId) {
+      return isSelf(workspaceId)
+        || isAdmin()
+        || (isWorkspaceMember(workspaceId) && memberRole() in ['owner', 'admin']);
+    }
+
+    function staffPermission(workspaceId, key) {
+      return isWorkspaceManager(workspaceId)
+        || (isWorkspaceMember(workspaceId)
+          && get(/databases/$(database)/documents/workspaces/$(workspaceId)/permissions/$(permissionDocId())).data[key] == true);
+    }
+
     function hasOwnScope(userId) {
       return request.resource.data.userId == userId
         && request.resource.data.ownerId == userId
@@ -24,7 +56,7 @@ service cloud.firestore {
     function hasSafeTrialPlan() {
       return (!request.resource.data.keys().hasAny(['plan']) || request.resource.data.plan in ['Free', 'Basic'])
         && (!request.resource.data.keys().hasAny(['planStatus']) || request.resource.data.planStatus in ['trial', 'Free Plan', 'inactive'])
-        && (!request.resource.data.keys().hasAny(['role']) || request.resource.data.role == 'user')
+        && (!request.resource.data.keys().hasAny(['role']) || request.resource.data.role in ['owner', 'user'])
         && (!request.resource.data.keys().hasAny(['isAdmin']) || request.resource.data.isAdmin == false);
     }
 
@@ -74,6 +106,49 @@ service cloud.firestore {
       allow read: if isSelf(workspaceId) || isAdmin();
       allow update: if isAdmin() || (isSelf(workspaceId) && protectedAccountFieldsUnchanged());
       allow delete: if isAdmin();
+
+      match /tasks/{taskId} {
+        allow read: if isWorkspaceMember(workspaceId) || isWorkspaceManager(workspaceId);
+        allow create: if staffPermission(workspaceId, 'followUpEdit');
+        allow update: if staffPermission(workspaceId, 'followUpEdit');
+        allow delete: if staffPermission(workspaceId, 'followUpDelete');
+      }
+
+      match /staff/{staffId} {
+        allow read: if isWorkspaceManager(workspaceId)
+          || (isWorkspaceMember(workspaceId)
+            && (resource.data.userId == request.auth.uid || resource.data.staffId == permissionDocId()));
+        allow create, update, delete: if staffPermission(workspaceId, 'settingsAccess');
+      }
+
+      match /permissions/{staffId} {
+        allow read: if isWorkspaceManager(workspaceId) || (isWorkspaceMember(workspaceId) && staffId == permissionDocId());
+        allow create, update, delete: if staffPermission(workspaceId, 'settingsAccess');
+      }
+
+      match /customers/{customerId} {
+        allow read, write: if staffPermission(workspaceId, 'customerManagement');
+      }
+
+      match /leads/{leadId} {
+        allow read, write: if staffPermission(workspaceId, 'leadsManagement');
+      }
+
+      match /invoices/{invoiceId} {
+        allow read, write: if staffPermission(workspaceId, 'invoices');
+      }
+
+      match /payments/{paymentId} {
+        allow read, write: if staffPermission(workspaceId, 'invoices');
+      }
+
+      match /hr/{employeeId} {
+        allow read, write: if staffPermission(workspaceId, 'hrDashboard');
+      }
+
+      match /teamPermissions/{permissionId} {
+        allow read, write: if staffPermission(workspaceId, 'settingsAccess');
+      }
 
       match /{document=**} {
         allow read, write: if isSelf(workspaceId) || isAdmin();

@@ -18,6 +18,7 @@ import AIAssistantPage from './crm/pages/AIAssistant.jsx'
 import PipelinePage from './crm/pages/SalesPipeline.jsx'
 import FollowUpsPage from './crm/pages/FollowUps.jsx'
 import TeamPage from './crm/pages/Team.jsx'
+import HRDashboardPage from './crm/pages/HRDashboard.jsx'
 import InvoicesPage from './crm/pages/Invoices.jsx'
 import SubscriptionsPage from './crm/pages/Subscriptions.jsx'
 import SupportPage from './crm/pages/Support.jsx'
@@ -68,6 +69,7 @@ export default function AppRouter() {
         <Route path="pipeline" element={<PipelinePage />} />
         <Route path="follow-ups" element={<FollowUpsPage />} />
         <Route path="team" element={<TeamPage />} />
+        <Route path="hr" element={<HRDashboardPage />} />
         <Route path="invoices" element={<InvoicesPage />} />
         <Route path="subscriptions" element={<SubscriptionsPage />} />
         <Route path="support" element={<SupportPage />} />

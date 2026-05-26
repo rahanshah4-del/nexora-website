@@ -22,6 +22,7 @@ const SupportPage = lazy(() => import('./pages/Support.jsx'))
 const ActivityLogsPage = lazy(() => import('./pages/ActivityLogs.jsx'))
 const LeadScoringPage = lazy(() => import('./pages/LeadScoring.jsx'))
 const FollowUpsPage = lazy(() => import('./pages/FollowUps.jsx'))
+const HRDashboardPage = lazy(() => import('./pages/HRDashboard.jsx'))
 const NotificationsPage = lazy(() => import('./pages/Notifications.jsx'))
 const ClientPortalPage = lazy(() => import('./pages/ClientPortal.jsx'))
 const AIAssistantPage = lazy(() => import('./pages/AIAssistant.jsx'))
@@ -58,6 +59,7 @@ export default function App() {
             <Route path="/app/pipeline" element={<PipelinePage />} />
             <Route path="/app/tasks" element={<Navigate to="/app/follow-ups" replace />} />
             <Route path="/app/follow-ups" element={<FollowUpsPage />} />
+            <Route path="/app/hr" element={<HRDashboardPage />} />
             <Route path="/app/team" element={<TeamPage />} />
             <Route path="/app/invoices" element={<InvoicesPage />} />
             <Route path="/app/subscriptions" element={<SubscriptionsPage />} />

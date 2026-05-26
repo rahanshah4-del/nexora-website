@@ -40,7 +40,7 @@ export async function ensureUserWorkspace(user, overrides = {}) {
       businessType: cleanString(overrides.businessType),
       photoURL: cleanString(overrides.photoURL) || cleanString(user.photoURL),
       provider,
-      role: 'user',
+      role: 'owner',
       isAdmin: false,
       plan: FREE_TRIAL_PLAN,
       planStatus: FREE_TRIAL_STATUS,

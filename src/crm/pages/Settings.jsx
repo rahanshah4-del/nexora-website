@@ -17,6 +17,7 @@ import { supportedCurrencies } from '../data/currency.js'
 import { usePreferences } from '../hooks/usePreferences.js'
 import { useUser } from '../hooks/useUser.js'
 import AuditLogPanel from '../components/system/AuditLogPanel.jsx'
+import { useStaffPermissions } from '../hooks/useStaffPermissions.js'
 
 function Field({ label, children, className = '' }) {
   return (
@@ -42,6 +43,141 @@ function SettingToggle({ label, description, checked, disabled, onChange }) {
         className="h-4 w-4 shrink-0 rounded border-slate-300 bg-white text-sky-600 disabled:opacity-50"
       />
     </label>
+  )
+}
+
+function PermissionSwitch({ label, checked, disabled, onChange }) {
+  return (
+    <label className="flex items-center justify-between gap-3 rounded-xl border border-slate-200/75 bg-white/75 px-3 py-2 shadow-sm">
+      <span className="truncate text-xs font-semibold text-slate-700">{label}</span>
+      <input
+        type="checkbox"
+        checked={checked}
+        disabled={disabled}
+        onChange={(event) => onChange(event.target.checked)}
+        className="h-4 w-4 shrink-0 rounded border-slate-300 text-sky-600 disabled:opacity-50"
+      />
+    </label>
+  )
+}
+
+function TeamPermissionsPanel() {
+  const staffApi = useStaffPermissions()
+  const [draft, setDraft] = useState({ name: '', email: '', role: 'staff' })
+  const [status, setStatus] = useState(null)
+
+  function showStatus(tone, message) {
+    setStatus({ tone, message })
+    window.setTimeout(() => setStatus(null), 1800)
+  }
+
+  return (
+    <Card className="p-5 sm:p-6">
+      <div className="flex flex-col gap-3 border-b border-slate-200/80 pb-5 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-slate-950 dark:text-white">Team & Permissions</p>
+          <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-300">
+            Create staff IDs and control workspace permissions per staff user.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {status ? <Badge variant={status.tone === 'success' ? 'success' : 'danger'}>{status.message}</Badge> : null}
+          <Badge variant={staffApi.canManage ? 'success' : 'warning'}>
+            {staffApi.canManage ? 'Owner/Admin Control' : 'Restricted'}
+          </Badge>
+        </div>
+      </div>
+
+      {!staffApi.canManage ? (
+        <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+          Settings Access permission is required to manage staff permissions.
+        </div>
+      ) : (
+        <div className="mt-5 grid gap-4 lg:grid-cols-[0.85fr_1.15fr]">
+          <div className="rounded-[1.25rem] border border-slate-200/80 bg-slate-50/80 p-4">
+            <p className="text-sm font-semibold text-slate-950">Create staff ID/account</p>
+            <div className="mt-4 grid gap-3">
+              <Field label="Staff name">
+                <Input value={draft.name} onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))} />
+              </Field>
+              <Field label="Staff email">
+                <Input type="email" value={draft.email} onChange={(event) => setDraft((current) => ({ ...current, email: event.target.value }))} />
+              </Field>
+              <Field label="Staff role">
+                <Select value={draft.role} onChange={(event) => setDraft((current) => ({ ...current, role: event.target.value }))}>
+                  <option value="staff">Staff</option>
+                  <option value="admin">Admin</option>
+                </Select>
+              </Field>
+              <Button
+                type="button"
+                className="rounded-2xl"
+                onClick={async () => {
+                  const res = await staffApi.createStaff(draft)
+                  if (res.ok) {
+                    setDraft({ name: '', email: '', role: 'staff' })
+                    showStatus('success', 'Staff saved')
+                  } else {
+                    showStatus('error', res.error || 'Failed')
+                  }
+                }}
+              >
+                Create Staff
+              </Button>
+              <p className="text-xs leading-5 text-slate-500">
+                Staff Firebase Auth accounts should be provisioned server-side before login. This panel stores the workspace staff ID and permissions.
+              </p>
+            </div>
+          </div>
+
+          <div className="min-w-0">
+            {staffApi.loading ? (
+              <div className="grid min-h-[14rem] place-items-center rounded-[1.25rem] border border-slate-200/80 bg-white/70 text-sm text-slate-500">
+                Loading staff permissions…
+              </div>
+            ) : staffApi.staff.length ? (
+              <div className="space-y-3">
+                {staffApi.staff.map((staff) => {
+                  const rowPermissions = staffApi.permissions[staff.id] || {}
+                  return (
+                    <div key={staff.id} className="rounded-[1.25rem] border border-slate-200/80 bg-white/75 p-4 shadow-sm">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-slate-950">{staff.name || 'Staff User'}</p>
+                          <p className="truncate text-xs text-slate-500">{staff.email || staff.id}</p>
+                        </div>
+                        <Badge variant={staff.role === 'admin' ? 'purple' : 'default'}>{staff.role || 'staff'}</Badge>
+                      </div>
+                      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                        {staffApi.permissionKeys.map((permission) => (
+                          <PermissionSwitch
+                            key={permission.key}
+                            label={permission.label}
+                            checked={Boolean(rowPermissions[permission.key])}
+                            disabled={!staffApi.canManage}
+                            onChange={async (checked) => {
+                              const res = await staffApi.setStaffPermission(staff.id, permission.key, checked)
+                              if (!res.ok) showStatus('error', res.error || 'Failed')
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="grid min-h-[14rem] place-items-center rounded-[1.25rem] border border-dashed border-slate-200 bg-white/70 p-5 text-center">
+                <div>
+                  <p className="text-sm font-semibold text-slate-950">No staff accounts yet</p>
+                  <p className="mt-1 text-sm text-slate-500">Create a staff ID to start assigning permissions.</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </Card>
   )
 }
 
@@ -209,6 +345,8 @@ export default function SettingsPage() {
               </Field>
             </div>
           </Card>
+
+          <TeamPermissionsPanel />
         </div>
 
         <div className="min-w-0 space-y-5">

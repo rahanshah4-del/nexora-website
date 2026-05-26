@@ -3,7 +3,7 @@ import FollowUpTaskCard from './FollowUpTaskCard.jsx'
 
 const columns = ['Today', 'Upcoming', 'Overdue', 'Completed']
 
-export default function FollowUpBoard({ grouped }) {
+export default function FollowUpBoard({ grouped, canEdit, canDelete, onEdit, onDelete }) {
   return (
     <div className="flex gap-4 overflow-x-auto pb-2">
       {columns.map((col) => (
@@ -16,7 +16,14 @@ export default function FollowUpBoard({ grouped }) {
           </div>
           <div className="space-y-3">
             {(grouped[col] ?? []).map((t) => (
-              <FollowUpTaskCard key={t.id} task={t} />
+              <FollowUpTaskCard
+                key={t.id}
+                task={t}
+                canEdit={canEdit}
+                canDelete={canDelete}
+                onEdit={onEdit}
+                onDelete={onDelete}
+              />
             ))}
           </div>
         </section>
@@ -24,4 +31,3 @@ export default function FollowUpBoard({ grouped }) {
     </div>
   )
 }
-

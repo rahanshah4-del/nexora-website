@@ -130,6 +130,11 @@ export default function DashboardLayout() {
       return
     }
 
+    if (selected === 'restaurant-pos') {
+      Promise.resolve().then(() => setProductModalOpen(true))
+      return
+    }
+
     Promise.resolve().then(() => setProductModalOpen(false))
     if ((location.pathname === '/app' || location.pathname === '/app/dashboard') && selected === 'restaurant-pos') {
       navigate(workspaceRoute(selected), { replace: true })
@@ -143,6 +148,7 @@ export default function DashboardLayout() {
 
   function selectWorkspace(workspace) {
     if (!userId || !isValidWorkspace(workspace)) return
+    if (workspace === 'restaurant-pos') return
     saveSelectedWorkspace(userId, workspace)
     setSelectedWorkspace(workspace)
     setProductModalOpen(false)
@@ -157,7 +163,8 @@ export default function DashboardLayout() {
   }
 
   function continueLastWorkspace() {
-    selectWorkspace(selectedWorkspace || readSelectedWorkspace(userId) || 'crm')
+    const workspace = selectedWorkspace || readSelectedWorkspace(userId) || 'crm'
+    selectWorkspace(workspace === 'restaurant-pos' ? 'crm' : workspace)
   }
 
   function openProductSwitcher() {

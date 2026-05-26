@@ -8,12 +8,29 @@ import Select from '../ui/Select.jsx'
 
 const types = ['Call', 'WhatsApp', 'Email', 'Meeting']
 
-export default function FollowUpModal({ open, onClose, onCreate }) {
+export default function FollowUpModal({ open, onClose, onCreate, onUpdate, initialTask = null, mode = 'create' }) {
   const [draft, setDraft] = useState(null)
 
   useEffect(() => {
     if (!open) return
     const due = new Date(Date.now() + 86400000).toISOString().slice(0, 10)
+    if (initialTask) {
+      Promise.resolve().then(() =>
+        setDraft({
+          customerName: initialTask.customerName || '',
+          phone: initialTask.phone || '',
+          email: initialTask.email || '',
+          assignedTo: initialTask.assignedTo || 'Sales Staff',
+          dueDate: initialTask.dueDate || due,
+          dueTime: initialTask.dueTime || '11:30',
+          type: initialTask.type || 'WhatsApp',
+          priority: initialTask.priority || 'Medium',
+          status: initialTask.status || 'Upcoming',
+          notes: initialTask.notes || '',
+        }),
+      )
+      return
+    }
     Promise.resolve().then(() =>
       setDraft({
         customerName: '',
@@ -28,7 +45,9 @@ export default function FollowUpModal({ open, onClose, onCreate }) {
         notes: '',
       }),
     )
-  }, [open])
+  }, [initialTask, open])
+
+  const isEdit = mode === 'edit'
 
   return (
     <AnimatePresence>
@@ -53,8 +72,12 @@ export default function FollowUpModal({ open, onClose, onCreate }) {
             <Card className="p-5">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-base font-semibold text-slate-900 dark:text-white">Create Follow-up</p>
-                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Creates a real Firestore task.</p>
+                  <p className="text-base font-semibold text-slate-900 dark:text-white">
+                    {isEdit ? 'Edit Follow-up' : 'Create Follow-up'}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+                    {isEdit ? 'Update this follow-up in your workspace.' : 'Creates a real Firestore task.'}
+                  </p>
                 </div>
                 <Badge variant="purple">Task</Badge>
               </div>
@@ -126,8 +149,16 @@ export default function FollowUpModal({ open, onClose, onCreate }) {
               ) : null}
 
               <div className="mt-5 flex flex-wrap gap-2">
-                <Button className="rounded-2xl" type="button" onClick={() => draft && onCreate?.(draft)}>
-                  Create
+                <Button
+                  className="rounded-2xl"
+                  type="button"
+                  onClick={() => {
+                    if (!draft) return
+                    if (isEdit) onUpdate?.(draft)
+                    else onCreate?.(draft)
+                  }}
+                >
+                  {isEdit ? 'Save changes' : 'Create'}
                 </Button>
                 <Button variant="subtle" className="rounded-2xl" type="button" onClick={onClose}>
                   Cancel
@@ -140,4 +171,3 @@ export default function FollowUpModal({ open, onClose, onCreate }) {
     </AnimatePresence>
   )
 }
-

@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { db } from '../lib/firebase.js'
-import { createUserDoc, subscribeUserCollection } from '../lib/firestore.js'
+import { createUserDoc, patchUserDoc, removeUserDoc, subscribeUserCollection } from '../lib/firestore.js'
 import { useUser } from './useUser.js'
 
 export function useFollowUps() {
-  const { userId } = useUser()
+  const { userId, workspaceId } = useUser()
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
   const [source, setSource] = useState(db ? 'firestore' : 'none')
@@ -20,7 +20,7 @@ export function useFollowUps() {
       })
       return
     }
-    if (!userId) {
+    if (!workspaceId) {
       Promise.resolve().then(() => {
         setRows([])
         setSource('firestore')
@@ -32,7 +32,7 @@ export function useFollowUps() {
 
     Promise.resolve().then(() => setLoading(true))
     const unsub = subscribeUserCollection(
-      userId,
+      workspaceId,
       'tasks',
       (data) => {
         setRows(Array.isArray(data) ? data : [])
@@ -47,7 +47,7 @@ export function useFollowUps() {
       },
     )
     return () => unsub()
-  }, [userId])
+  }, [workspaceId])
 
   const grouped = useMemo(() => {
     const buckets = { Today: [], Upcoming: [], Overdue: [], Completed: [] }
@@ -82,14 +82,49 @@ export function useFollowUps() {
         if (!clean.dueDate) return { ok: false, error: 'Due date is required' }
 
         try {
-          await createUserDoc(userId, 'tasks', clean)
+          await createUserDoc(workspaceId, 'tasks', { ...clean, createdBy: userId })
           return { ok: true }
         } catch (e) {
           return { ok: false, error: e?.message || 'Failed to create task' }
         }
       },
+      async updateTask(id, payload) {
+        if (!userId) return { ok: false, error: 'Please login first' }
+        if (!db) return { ok: false, error: 'Firestore is not configured' }
+        if (!id) return { ok: false, error: 'Follow-up ID is required' }
+
+        const clean = {
+          ...payload,
+          customerName: String(payload.customerName || '').trim(),
+          email: String(payload.email || '').trim(),
+          type: payload.type || 'WhatsApp',
+          priority: payload.priority || 'Medium',
+          status: payload.status || 'Upcoming',
+          updatedBy: userId,
+        }
+        if (!clean.customerName) return { ok: false, error: 'Customer name is required' }
+        if (!clean.dueDate) return { ok: false, error: 'Due date is required' }
+
+        try {
+          await patchUserDoc(workspaceId, 'tasks', id, clean)
+          return { ok: true }
+        } catch (e) {
+          return { ok: false, error: e?.message || 'Failed to update follow-up' }
+        }
+      },
+      async deleteTask(id) {
+        if (!userId) return { ok: false, error: 'Please login first' }
+        if (!db) return { ok: false, error: 'Firestore is not configured' }
+        if (!id) return { ok: false, error: 'Follow-up ID is required' }
+        try {
+          await removeUserDoc(workspaceId, 'tasks', id)
+          return { ok: true }
+        } catch (e) {
+          return { ok: false, error: e?.message || 'Failed to delete follow-up' }
+        }
+      },
     }),
-    [rows, grouped, loading, source, error, userId],
+    [rows, grouped, loading, source, error, userId, workspaceId],
   )
 
   return api
