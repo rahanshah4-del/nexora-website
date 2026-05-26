@@ -3,6 +3,7 @@ import { db } from '../lib/firebase.js'
 import { createUserDoc, subscribeUserCollection } from '../lib/firestore.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 import { useUser } from './useUser.js'
+import { clientSafeMessage } from '../utils/messages.js'
 
 function normalizeCustomer(c) {
   return {
@@ -31,7 +32,7 @@ export function useCustomers() {
       Promise.resolve().then(() => {
         setRows([])
         setSource('none')
-        setError('Firestore is not configured.')
+        setError('Secure Cloud Sync is not available right now.')
         setLoading(false)
       })
       return
@@ -58,7 +59,7 @@ export function useCustomers() {
         setLoading(false)
       },
       (err) => {
-        setError(err?.message || 'Failed to load customers')
+        setError(clientSafeMessage(err, 'Unable to load customers.'))
         setRows([])
         setLoading(false)
       },
@@ -74,7 +75,7 @@ export function useCustomers() {
       error,
       async createCustomer(payload) {
         if (!userId || !workspaceId) return { ok: false, error: 'Please login first' }
-        if (!db) return { ok: false, error: 'Firestore is not configured' }
+        if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now' }
         const name = String(payload.name || '').trim()
         const email = String(payload.email || '').trim()
         const phone = String(payload.phone || '').trim()
@@ -108,7 +109,7 @@ export function useCustomers() {
           })
           return { ok: true }
         } catch (e) {
-          return { ok: false, error: e?.message || 'Failed to create customer' }
+          return { ok: false, error: clientSafeMessage(e, 'Unable to create customer.') }
         }
       },
     }),

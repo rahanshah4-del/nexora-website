@@ -25,14 +25,13 @@ export default function LockedFeatureCard({
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <Button className="rounded-2xl" onClick={onUpgrade} type="button">
-            Upgrade to Business
+            Upgrade
           </Button>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Locked on Free/Starter plans
+            This feature is available in Business Plan.
           </p>
         </div>
       </div>
     </Card>
   )
 }
-

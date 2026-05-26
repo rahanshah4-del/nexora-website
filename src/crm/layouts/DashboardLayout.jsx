@@ -4,6 +4,7 @@ import { Outlet, useNavigate } from 'react-router-dom'
 import Sidebar from '../components/sidebar/Sidebar.jsx'
 import TopNav from '../components/navbar/TopNav.jsx'
 import ProductSelectionModal from '../components/product/ProductSelectionModal.jsx'
+import OnboardingWizard from '../components/onboarding/OnboardingWizard.jsx'
 import { useAuth } from '../hooks/useAuth.js'
 import { useUser } from '../hooks/useUser.js'
 import {
@@ -59,12 +60,13 @@ export default function DashboardLayout() {
   const [selectedWorkspace, setSelectedWorkspace] = useState(null)
   const [sessionInfo, setSessionInfo] = useState(null)
   const { user, ready } = useAuth()
-  const { userDoc, loading: userLoading } = useUser()
+  const { userDoc, loading: userLoading, isStaff } = useUser()
   const navigate = useNavigate()
   const persistedKeyRef = useRef('')
 
   const toggleCollapse = useCallback(() => setCollapsed((c) => !c), [])
   const userId = user?.uid ?? null
+  const onboardingOpen = Boolean(ready && userId && !userLoading && !isStaff && userDoc?.onboardingCompleted !== true)
 
   useEffect(() => {
     const media = window.matchMedia?.('(max-width: 767px)')
@@ -166,13 +168,15 @@ export default function DashboardLayout() {
       </div>
 
       <ProductSelectionModal
-        open={productModalOpen}
+        open={productModalOpen && !onboardingOpen}
         session={sessionInfo}
         selectedWorkspace={selectedWorkspace}
         onSelect={selectWorkspace}
         onContinueLast={continueLastWorkspace}
         onClose={continueLastWorkspace}
       />
+
+      <OnboardingWizard open={onboardingOpen} onComplete={() => setProductModalOpen(true)} />
 
       <AnimatePresence>
         {mobileOpen ? (

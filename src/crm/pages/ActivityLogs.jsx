@@ -42,17 +42,17 @@ export default function ActivityLogsPage() {
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
       <PageHeader
         title="Activity Logs"
-        subtitle="Workspace audit logs, user actions, filters, and timeline from Firestore."
+        subtitle="Workspace activity, user actions, filters, and timeline from Live Sync."
         right={
           <Button variant="subtle" className="rounded-2xl" type="button">
-            Export Logs (Placeholder)
+            Export Logs
           </Button>
         }
       />
 
       <div className="mb-4 flex items-center justify-between gap-3">
         <Badge variant={api.source === 'firestore' ? 'success' : 'default'}>
-          {api.loading ? 'Loading…' : api.source === 'firestore' ? 'Live' : 'Offline'}
+          {api.loading ? 'Loading…' : api.source === 'firestore' ? 'Live Sync' : 'No data yet'}
         </Badge>
         {api.error ? <Badge variant="danger">Error</Badge> : null}
       </div>

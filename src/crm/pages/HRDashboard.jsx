@@ -1,5 +1,4 @@
 import { motion } from 'framer-motion'
-import { useNavigate } from 'react-router-dom'
 import {
   HiOutlineBriefcase,
   HiOutlineCalendarDays,
@@ -10,7 +9,7 @@ import {
 } from 'react-icons/hi2'
 import Card from '../components/ui/Card.jsx'
 import Badge from '../components/ui/Badge.jsx'
-import Button from '../components/ui/Button.jsx'
+import FeatureLockedModal from '../components/billing/FeatureLockedModal.jsx'
 import { useUser } from '../hooks/useUser.js'
 import { useWorkspaceAccess } from '../hooks/useWorkspaceAccess.js'
 
@@ -22,7 +21,7 @@ const modules = [
   { label: 'Departments', detail: 'Organize staff by department.', icon: HiOutlineBriefcase },
   { label: 'Staff performance', detail: 'Performance scores and activity.', icon: HiOutlineUserGroup },
   { label: 'HR reports', detail: 'Export-ready HR summaries.', icon: HiOutlineDocumentText },
-  { label: 'Employee documents', detail: 'Documents placeholder for secure records.', icon: HiOutlineLockClosed },
+  { label: 'Employee documents', detail: 'Secure records for employee files.', icon: HiOutlineLockClosed },
 ]
 
 function isPaidPlan(plan) {
@@ -32,39 +31,10 @@ function isPaidPlan(plan) {
 export default function HRDashboardPage() {
   const { plan, role } = useUser()
   const access = useWorkspaceAccess()
-  const navigate = useNavigate()
   const allowed = isPaidPlan(plan) && access.canAccessHr
 
   if (!allowed) {
-    return (
-      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
-        <Card className="relative overflow-hidden rounded-[1.7rem] p-6 sm:p-8">
-          <div className="pointer-events-none absolute -right-20 -top-24 h-64 w-64 rounded-full bg-violet-300/25 blur-3xl" />
-          <div className="relative mx-auto max-w-2xl text-center">
-            <div className="mx-auto grid h-14 w-14 place-items-center rounded-3xl bg-slate-950 text-white shadow-lg shadow-slate-950/15">
-              <HiOutlineLockClosed className="h-7 w-7" />
-            </div>
-            <Badge variant="warning" className="mt-5">Premium Feature</Badge>
-            <h1 className="mt-4 text-2xl font-semibold tracking-tight text-slate-950 dark:text-white sm:text-3xl">
-              HR Management is available in Business Plan.
-            </h1>
-            <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
-              Current plan: {plan || 'Free'} · Role: {role || 'owner'}
-            </p>
-            {!access.canAccessHr ? (
-              <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-300">
-                Staff users also need the HR Dashboard permission enabled by the owner/admin.
-              </p>
-            ) : null}
-            <div className="mt-6 flex justify-center">
-              <Button className="rounded-2xl" type="button" onClick={() => navigate('/upgrade-business')}>
-                Upgrade Plan
-              </Button>
-            </div>
-          </div>
-        </Card>
-      </motion.div>
-    )
+    return <FeatureLockedModal title="HR Management" message="This feature is available in Business Plan." />
   }
 
   return (

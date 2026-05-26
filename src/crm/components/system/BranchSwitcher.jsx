@@ -8,7 +8,7 @@ import { useUser } from '../../hooks/useUser.js'
 
 const STORAGE_KEY = 'nexora_active_branch_v1'
 
-const demoBranches = [
+const branchSeed = [
   { id: 'main', name: 'Main Branch', region: 'PK', status: 'active' },
   { id: 'dubai', name: 'Dubai Branch', region: 'UAE', status: 'active' },
   { id: 'riyadh', name: 'Riyadh Branch', region: 'KSA', status: 'inactive' },
@@ -16,7 +16,7 @@ const demoBranches = [
 
 export default function BranchSwitcher() {
   const { userId } = useUser()
-  const [branches, setBranches] = useState(demoBranches)
+  const [branches, setBranches] = useState(branchSeed)
   const [activeId, setActiveId] = useState(() => localStorage.getItem(STORAGE_KEY) || 'main')
 
   useEffect(() => {
@@ -25,14 +25,14 @@ export default function BranchSwitcher() {
 
   useEffect(() => {
     if (!db || !userId) {
-      Promise.resolve().then(() => setBranches(demoBranches))
+      Promise.resolve().then(() => setBranches(branchSeed))
       return
     }
     const unsub = subscribeUserCollection(
       userId,
       'branches',
-      (rows) => setBranches(rows.length ? rows : demoBranches),
-      () => setBranches(demoBranches),
+      (rows) => setBranches(rows.length ? rows : branchSeed),
+      () => setBranches(branchSeed),
     )
     return () => unsub?.()
   }, [userId])
@@ -53,7 +53,7 @@ export default function BranchSwitcher() {
         <div className="p-1">
           <div className="px-2 py-2">
             <p className="text-sm font-semibold text-slate-900 dark:text-white">Branches</p>
-            <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">Multi-branch placeholder</p>
+            <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">Multi-branch access</p>
           </div>
           <div className="max-h-64 space-y-1 overflow-auto p-1">
             {branches.map((b) => (

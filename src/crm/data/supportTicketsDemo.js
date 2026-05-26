@@ -9,7 +9,7 @@ export const supportTicketsDemo = [
     customerName: 'Skyline Retail',
     customerEmail: 'support@skyline-retail.com',
     subject: 'Invoice export not showing totals',
-    message: 'When exporting an invoice (PDF placeholder), totals are missing from the preview.',
+    message: 'When exporting an invoice (PDF coming soon), totals are missing from the preview.',
     status: 'Open',
     priority: 'High',
     assignedTo: 'Support Agent',

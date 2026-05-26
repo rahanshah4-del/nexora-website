@@ -9,8 +9,8 @@ import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 const UserContext = createContext(null)
 
 const defaultUserDoc = {
-  name: 'Demo User',
-  email: 'demo@nexora.solutions',
+  name: 'Nexora User',
+  email: 'user@nexora.solutions',
   plan: 'Free',
   role: 'owner', // owner | admin | staff
   planStatus: 'trial',

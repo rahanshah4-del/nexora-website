@@ -4,16 +4,10 @@ import Badge from '../ui/Badge.jsx'
 import Button from '../ui/Button.jsx'
 import Card from '../ui/Card.jsx'
 import { usePreferences } from '../../hooks/usePreferences.js'
-import { convertFromUsd } from '../../utils/currency.js'
 import { formatCurrency } from '../../utils/format.js'
 import { useNavigate } from 'react-router-dom'
 import { useUser } from '../../hooks/useUser.js'
-
-const plans = [
-  { id: 'Free', priceUsd: 0, blurb: 'Try the CRM with basic access.' },
-  { id: 'Starter', priceUsd: 29, blurb: 'Essentials for solo operators.' },
-  { id: 'Business', priceUsd: 149, blurb: 'Advanced controls and reporting.' },
-]
+import { planCatalog } from '../../data/moduleAccess.js'
 
 const businessFeatures = [
   'Advanced Reports',
@@ -25,7 +19,7 @@ const businessFeatures = [
 ]
 
 export default function PricingModal({ open, onClose }) {
-  const { currency, plan: localPlan, setPlan } = usePreferences()
+  const { plan: localPlan, setPlan } = usePreferences()
   const { plan } = useUser()
   const navigate = useNavigate()
 
@@ -77,12 +71,10 @@ export default function PricingModal({ open, onClose }) {
               </div>
 
               <div className="mt-5 grid gap-4 lg:grid-cols-3">
-                {plans.map((p) => {
+                {planCatalog.filter((p) => p.id !== 'Enterprise').map((p) => {
                   const isCurrent = plan === p.id
                   const isFeatured = p.id === 'Business'
-                  const price = formatCurrency(convertFromUsd(p.priceUsd, currency), currency, {
-                    maximumFractionDigits: 0,
-                  })
+                  const price = p.monthlyPkr ? formatCurrency(p.monthlyPkr, 'PKR', { maximumFractionDigits: 0 }) : 'Free'
                   return (
                     <div
                       key={p.id}
@@ -94,16 +86,16 @@ export default function PricingModal({ open, onClose }) {
                       <div className="flex items-start justify-between gap-2">
                         <div>
                           <p className="text-sm font-semibold text-slate-900 dark:text-white">{p.id}</p>
-                          <p className="text-xs text-slate-600 dark:text-slate-300">{p.blurb}</p>
+                          <p className="text-xs text-slate-600 dark:text-slate-300">{p.description}</p>
                         </div>
                         {isCurrent ? <Badge variant="success">Current</Badge> : isFeatured ? <Badge variant="purple">Best</Badge> : null}
                       </div>
 
                       <p className="mt-4 text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">
-                        {p.priceUsd === 0 ? 'Free' : price}
-                        {p.priceUsd === 0 ? null : (
+                        {p.monthlyPkr ? price : 'Free'}
+                        {p.monthlyPkr ? (
                           <span className="ml-1 text-sm font-medium text-slate-600 dark:text-slate-300">/mo</span>
-                        )}
+                        ) : null}
                       </p>
 
                       <div className="mt-4 space-y-2 text-sm text-slate-700 dark:text-slate-200">
@@ -130,7 +122,7 @@ export default function PricingModal({ open, onClose }) {
                           variant="subtle"
                           className="mt-5 w-full rounded-2xl"
                           onClick={() => {
-                            setPlan(p.id) // demo fallback only; real plan comes from Firebase
+                            setPlan(p.id)
                             onClose?.()
                           }}
                         >

@@ -11,6 +11,7 @@ import {
 } from '../lib/firestore.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 import { useUser } from './useUser.js'
+import { clientSafeMessage } from '../utils/messages.js'
 
 function statusValue(value, fallback = 'pending') {
   return String(value || fallback).trim().toLowerCase()
@@ -105,7 +106,7 @@ export function useClientPortal() {
           seats: 1,
         })
         setSource('none')
-        setError('Firestore is not configured.')
+        setError('Secure Cloud Sync is not available right now.')
         setLoading(false)
       })
       return
@@ -142,7 +143,7 @@ export function useClientPortal() {
             setLoading(false)
           },
           (err) => {
-            setError(err?.message || 'Failed to load clients')
+            setError(clientSafeMessage(err, 'Unable to load clients.'))
             setClients([])
             setSource('firestore')
             setLoading(false)
@@ -169,7 +170,7 @@ export function useClientPortal() {
             setLoading(false)
           },
           (err) => {
-            setError(err?.message || 'Failed to load invoices')
+            setError(clientSafeMessage(err, 'Unable to load invoices.'))
             setInvoices([])
             setSource('firestore')
             setLoading(false)
@@ -267,7 +268,7 @@ export function useClientPortal() {
       canApprovePayments,
       async createClient(payload) {
         if (!userId || !workspaceId) return { ok: false, error: 'Please login first' }
-        if (!db) return { ok: false, error: 'Firestore is not configured' }
+        if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now' }
         const name = String(payload.name || '').trim()
         const email = String(payload.email || '').trim()
         const phone = String(payload.phone || '').trim()
@@ -298,12 +299,12 @@ export function useClientPortal() {
           })
           return { ok: true }
         } catch (e) {
-          return { ok: false, error: e?.message || 'Failed to create client' }
+          return { ok: false, error: clientSafeMessage(e, 'Unable to create client.') }
         }
       },
       async updateClient(clientId, payload) {
         if (!userId || !workspaceId) return { ok: false, error: 'Please login first' }
-        if (!db) return { ok: false, error: 'Firestore is not configured' }
+        if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now' }
         const client = clients.find((item) => item.id === clientId)
         if (!client) return { ok: false, error: 'Client not found' }
         const name = String(payload.name || '').trim()
@@ -336,12 +337,12 @@ export function useClientPortal() {
           })
           return { ok: true }
         } catch (e) {
-          return { ok: false, error: e?.message || 'Failed to update client' }
+          return { ok: false, error: clientSafeMessage(e, 'Unable to update client.') }
         }
       },
       async deleteClient(clientId) {
         if (!userId || !workspaceId) return { ok: false, error: 'Please login first' }
-        if (!db) return { ok: false, error: 'Firestore is not configured' }
+        if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now' }
         const client = clients.find((item) => item.id === clientId)
         if (!client) return { ok: false, error: 'Client not found' }
         try {
@@ -359,13 +360,13 @@ export function useClientPortal() {
           })
           return { ok: true }
         } catch (e) {
-          return { ok: false, error: e?.message || 'Failed to remove client' }
+          return { ok: false, error: clientSafeMessage(e, 'Unable to remove client.') }
         }
       },
       async markInvoicePaid(invoiceId, payload = {}) {
         if (!canRoleApprovePayments(userDoc)) return { ok: false, error: 'Only owner, admin, or accountant can approve payment' }
         if (!userId || !workspaceId) return { ok: false, error: 'Please login first' }
-        if (!db) return { ok: false, error: 'Firestore is not configured' }
+        if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now' }
         const invoice = invoices.find((item) => item.id === invoiceId)
         if (!invoice) return { ok: false, error: 'Invoice not found' }
         const amount = Number(payload.amount ?? invoice.total ?? 0)
@@ -416,12 +417,12 @@ export function useClientPortal() {
           })
           return { ok: true }
         } catch (e) {
-          return { ok: false, error: e?.message || 'Failed to approve payment' }
+          return { ok: false, error: clientSafeMessage(e, 'Unable to approve payment.') }
         }
       },
       async submitPaymentReference(invoiceId, payload = {}) {
         if (!userId || !workspaceId) return { ok: false, error: 'Please login first' }
-        if (!db) return { ok: false, error: 'Firestore is not configured' }
+        if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now' }
         const invoice = invoices.find((item) => item.id === invoiceId)
         if (!invoice) return { ok: false, error: 'Invoice not found' }
         const amount = Number(payload.amount ?? invoice.total ?? 0)
@@ -472,7 +473,7 @@ export function useClientPortal() {
           })
           return { ok: true }
         } catch (e) {
-          return { ok: false, error: e?.message || 'Failed to submit payment reference' }
+          return { ok: false, error: clientSafeMessage(e, 'Unable to submit payment reference.') }
         }
       },
     }),

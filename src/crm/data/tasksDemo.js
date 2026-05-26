@@ -28,12 +28,12 @@ export const tasksDemo = [
   },
   {
     id: 'TSK-004',
-    title: 'WhatsApp reminder (placeholder) to Nova Logistics',
+    title: 'WhatsApp reminder (coming soon) to Nova Logistics',
     assignee: 'Sales Staff',
     dueDate: '2026-05-23',
     status: 'Pending',
     channel: 'WhatsApp',
-    notes: 'Placeholder integration (no backend).',
+    notes: 'Coming Soon integration (no secure service).',
   },
 ]
 

@@ -13,7 +13,7 @@ function daysAgo(d) {
 export const activityLogsDemo = [
   {
     id: 'act_1',
-    userId: 'demo',
+    userId: 'Demo',
     userName: 'Admin User',
     module: 'Auth',
     action: 'Login',
@@ -24,7 +24,7 @@ export const activityLogsDemo = [
   },
   {
     id: 'act_2',
-    userId: 'demo',
+    userId: 'Demo',
     userName: 'Admin User',
     module: 'Invoices',
     action: 'Invoice Updated',
@@ -35,7 +35,7 @@ export const activityLogsDemo = [
   },
   {
     id: 'act_3',
-    userId: 'demo',
+    userId: 'Demo',
     userName: 'Manager',
     module: 'Team',
     action: 'Role Changed',
@@ -46,7 +46,7 @@ export const activityLogsDemo = [
   },
   {
     id: 'act_4',
-    userId: 'demo',
+    userId: 'Demo',
     userName: 'Accountant',
     module: 'Payments',
     action: 'Payment Approved',
@@ -57,7 +57,7 @@ export const activityLogsDemo = [
   },
   {
     id: 'act_5',
-    userId: 'demo',
+    userId: 'Demo',
     userName: 'Support Agent',
     module: 'Support',
     action: 'Ticket Updated',
@@ -68,7 +68,7 @@ export const activityLogsDemo = [
   },
   {
     id: 'act_6',
-    userId: 'demo',
+    userId: 'Demo',
     userName: 'Admin User',
     module: 'Subscriptions',
     action: 'Plan Changed',

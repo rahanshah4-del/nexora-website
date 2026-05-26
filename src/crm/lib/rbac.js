@@ -17,7 +17,7 @@ export const Permissions = {
   approveRequests: 'approve_requests',
 }
 
-// Demo permission map (adjust later with backend rules).
+// Default permission map for client workspaces.
 export const rolePermissions = {
   Owner: Object.values(Permissions),
   Admin: Object.values(Permissions),
@@ -34,4 +34,3 @@ export function hasPermission(userDoc, perm) {
   if (!labelRole) return false
   return rolePermissions[labelRole]?.includes(perm) ?? false
 }
-

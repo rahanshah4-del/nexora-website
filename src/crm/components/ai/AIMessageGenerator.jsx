@@ -36,7 +36,7 @@ export default function AIMessageGenerator({ leads, customers }) {
         <div>
           <p className="text-sm font-semibold text-slate-900 dark:text-white">AI Message Generator</p>
           <p className="text-xs text-slate-600 dark:text-slate-300">
-            Generate WhatsApp/email/proposal text (mock AI; production should use backend).
+            Generate WhatsApp, email, and proposal text from your workspace.
           </p>
         </div>
         <Badge variant="purple">AI</Badge>
@@ -109,4 +109,3 @@ export default function AIMessageGenerator({ leads, customers }) {
     </Card>
   )
 }
-

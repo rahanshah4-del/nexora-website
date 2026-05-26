@@ -13,6 +13,7 @@ import EmptyState from '../components/system/EmptyState.jsx'
 import { useTeamPermissions } from '../hooks/useTeamPermissions.js'
 import { useActivityLogs } from '../hooks/useActivityLogs.js'
 import ActivityTimeline from '../components/activity/ActivityTimeline.jsx'
+import { clientSafeMessage } from '../utils/messages.js'
 
 export default function TeamPage() {
   const { members, loading, source, error, permissionKeys, addMember, updateMember } = useTeamMembers()
@@ -103,7 +104,7 @@ export default function TeamPage() {
                     setToast({ tone: 'success', message: 'Team member updated' })
                     window.setTimeout(() => setToast(null), 1400)
                   } catch (e) {
-                    setToast({ tone: 'error', message: e?.message || 'Failed to update team member' })
+                    setToast({ tone: 'error', message: clientSafeMessage(e, 'Unable to update team member.') })
                     window.setTimeout(() => setToast(null), 2400)
                   }
                 }}
@@ -151,7 +152,7 @@ export default function TeamPage() {
               <Card className="p-5">
                 <p className="text-sm font-semibold text-slate-900 dark:text-white">Save changes</p>
                 <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
-                  Updates are stored in Firestore under <span className="font-semibold">teamPermissions</span>.
+                  Updates are stored in Workspace under <span className="font-semibold">teamPermissions</span>.
                 </p>
                 <div className="mt-4 grid gap-2">
                   <Button
@@ -206,7 +207,7 @@ export default function TeamPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-sm font-semibold text-slate-900 dark:text-white">Performance metrics</p>
-                    <p className="text-xs text-slate-600 dark:text-slate-300">Demo metrics derived from performance score</p>
+                    <p className="text-xs text-slate-600 dark:text-slate-300">Performance metrics derived from team activity scores</p>
                   </div>
                   <Badge variant="purple">Insights</Badge>
                 </div>

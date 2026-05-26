@@ -23,7 +23,7 @@ export default function SubscriptionHistory({ rows, loading }) {
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-sm font-semibold text-slate-900 dark:text-white">Subscription History</p>
-          <p className="text-xs text-slate-600 dark:text-slate-300">Approved upgrades and plan changes (demo fallback)</p>
+          <p className="text-xs text-slate-600 dark:text-slate-300">Approved upgrades and plan changes</p>
         </div>
         <Badge variant="purple">History</Badge>
       </div>
@@ -39,4 +39,3 @@ export default function SubscriptionHistory({ rows, loading }) {
     </Card>
   )
 }
-

@@ -50,7 +50,7 @@ export default function PaymentHistory({ payments, currency }) {
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-sm font-semibold text-slate-900 dark:text-white">Payment History</p>
-          <p className="text-xs text-slate-600 dark:text-slate-300">Manual payment approval placeholder</p>
+          <p className="text-xs text-slate-600 dark:text-slate-300">Manual payment approvals</p>
         </div>
         <Badge variant="info">Payments</Badge>
       </div>

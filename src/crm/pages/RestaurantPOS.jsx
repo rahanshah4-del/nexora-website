@@ -36,7 +36,7 @@ export default function RestaurantPOSPage() {
             Billing, orders, kitchen display, table management, inventory, and reports will live here.
           </p>
           <p className="mt-4 rounded-2xl border border-sky-100 bg-sky-50/80 px-4 py-3 text-sm font-medium text-sky-800 dark:border-sky-500/20 dark:bg-sky-500/10 dark:text-sky-200">
-            TODO: Connect the full Restaurant POS module and route this placeholder to the production POS dashboard.
+            Restaurant POS module is coming soon.
           </p>
         </div>
       </Card>
@@ -61,7 +61,7 @@ export default function RestaurantPOSPage() {
           <div className="min-w-0">
             <p className="text-sm font-semibold text-slate-950 dark:text-white">Product preview</p>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-300">
-              This page is intentionally isolated from CRM data and does not read customer workspace collections.
+              This module stays separate from CRM account data.
             </p>
           </div>
           <Badge variant="purple" className="self-start sm:self-auto">

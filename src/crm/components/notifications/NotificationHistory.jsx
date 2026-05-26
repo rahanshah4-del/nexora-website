@@ -18,13 +18,13 @@ export default function NotificationHistory({ enabled, api }) {
         <div>
           <p className="text-sm font-semibold text-slate-900 dark:text-white">Notification History</p>
           <p className="text-xs text-slate-600 dark:text-slate-300">
-            Real-time style alerts with read/unread tracking (demo fallback).
+            Live alerts with read and unread tracking.
           </p>
         </div>
         <div className="flex items-center gap-2">
           {!enabled ? <Badge variant="warning">Notifications Off</Badge> : null}
           <Badge variant={api.source === 'firestore' ? 'success' : 'default'}>
-            {api.loading ? 'Loading…' : api.source === 'firestore' ? 'Live' : 'Demo'}
+            {api.loading ? 'Loading…' : api.source === 'firestore' ? 'Live Sync' : 'No data yet'}
           </Badge>
         </div>
       </div>
@@ -92,4 +92,3 @@ export default function NotificationHistory({ enabled, api }) {
     </Card>
   )
 }
-

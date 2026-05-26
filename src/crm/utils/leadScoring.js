@@ -1,5 +1,5 @@
 export function computeLeadScore(lead) {
-  // Demo heuristic (no AI backend):
+  // Lightweight local scoring model:
   // replySpeed: 0..100 (higher is faster), meetingsAttended: 0..5, paymentHistory: 0..100, activityFrequency: 0..100
   const reply = lead.replySpeed ?? 50
   const meetings = Math.min(5, lead.meetingsAttended ?? 0) * 12
@@ -21,4 +21,3 @@ export function conversionPrediction(score) {
   if (score >= 55) return 'Possible'
   return 'Unlikely'
 }
-

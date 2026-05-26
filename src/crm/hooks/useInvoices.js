@@ -4,6 +4,7 @@ import { db } from '../lib/firebase.js'
 import { createUserDoc, patchUserDoc, subscribeUserCollection } from '../lib/firestore.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 import { useUser } from './useUser.js'
+import { clientSafeMessage } from '../utils/messages.js'
 
 function statusValue(value, fallback = 'pending') {
   return String(value || fallback).trim().toLowerCase()
@@ -71,7 +72,7 @@ export function useInvoices() {
         setInvoices([])
         setPayments([])
         setSource('none')
-        setError('Firestore is not configured.')
+        setError('Secure Cloud Sync is not available right now.')
         setLoading(false)
       })
       return
@@ -97,7 +98,7 @@ export function useInvoices() {
         setLoading(false)
       },
       (err) => {
-        setError(err?.message || 'Failed to load invoices')
+        setError(clientSafeMessage(err, 'Unable to load invoices.'))
         setInvoices([])
         setSource('firestore')
         setLoading(false)
@@ -144,7 +145,7 @@ export function useInvoices() {
         if (!name) return { ok: false, error: 'Customer name is required' }
         if (!email) return { ok: false, error: 'Customer email is required' }
         if (!invoice.items.length) return { ok: false, error: 'Add at least one invoice item' }
-        if (!db) return { ok: false, error: 'Firestore is not configured' }
+        if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now' }
         try {
           const docPayload = {
             invoiceNumber: invNo,
@@ -183,13 +184,13 @@ export function useInvoices() {
           })
           return { ok: true }
         } catch (e) {
-          return { ok: false, error: e?.message || 'Failed to create invoice' }
+          return { ok: false, error: clientSafeMessage(e, 'Unable to create invoice.') }
         }
       },
       async markInvoicePaid(id, options = {}) {
         if (!canApprovePayments) return { ok: false, error: 'Only owner, admin, or accountant can approve payments' }
         if (!userId || !workspaceId) return { ok: false, error: 'Please login first' }
-        if (!db) return { ok: false, error: 'Firestore is not configured' }
+        if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now' }
         const invoice = invoices.find((item) => item.id === id)
         if (!invoice) return { ok: false, error: 'Invoice not found' }
         try {
@@ -228,13 +229,13 @@ export function useInvoices() {
           })
           return { ok: true }
         } catch (e) {
-          return { ok: false, error: e?.message || 'Failed to mark invoice as paid' }
+          return { ok: false, error: clientSafeMessage(e, 'Unable to mark invoice as paid.') }
         }
       },
       async rejectInvoicePayment(id) {
         if (!canApprovePayments) return { ok: false, error: 'Only owner, admin, or accountant can reject payments' }
         if (!userId || !workspaceId) return { ok: false, error: 'Please login first' }
-        if (!db) return { ok: false, error: 'Firestore is not configured' }
+        if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now' }
         const invoice = invoices.find((item) => item.id === id)
         if (!invoice) return { ok: false, error: 'Invoice not found' }
         try {
@@ -258,13 +259,13 @@ export function useInvoices() {
           })
           return { ok: true }
         } catch (e) {
-          return { ok: false, error: e?.message || 'Failed to reject payment' }
+          return { ok: false, error: clientSafeMessage(e, 'Unable to reject payment.') }
         }
       },
       async recordPartialPayment(id, options = {}) {
         if (!canApprovePayments) return { ok: false, error: 'Only owner, admin, or accountant can record payments' }
         if (!userId || !workspaceId) return { ok: false, error: 'Please login first' }
-        if (!db) return { ok: false, error: 'Firestore is not configured' }
+        if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now' }
         const invoice = invoices.find((item) => item.id === id)
         if (!invoice) return { ok: false, error: 'Invoice not found' }
         const amount = Number(options.amount || 0)
@@ -310,7 +311,7 @@ export function useInvoices() {
           })
           return { ok: true }
         } catch (e) {
-          return { ok: false, error: e?.message || 'Failed to record partial payment' }
+          return { ok: false, error: clientSafeMessage(e, 'Unable to record partial payment.') }
         }
       },
       async updateInvoice(id, patch) {

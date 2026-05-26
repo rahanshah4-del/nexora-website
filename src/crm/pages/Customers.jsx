@@ -92,7 +92,7 @@ export default function CustomersPage() {
         <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
           <Input placeholder="Search customers..." value={search} onChange={(e) => setSearch(e.target.value)} />
           <Badge variant={customersApi.source === 'firestore' ? 'success' : 'default'}>
-            {customersApi.loading ? 'Loading…' : customersApi.source === 'firestore' ? 'Live Firestore' : 'Offline'}
+            {customersApi.loading ? 'Loading…' : customersApi.source === 'firestore' ? 'Live Sync' : 'No data yet'}
           </Badge>
         </div>
         {customersApi.error ? <p className="mt-3 text-sm font-semibold text-rose-700">{customersApi.error}</p> : null}
@@ -106,7 +106,7 @@ export default function CustomersPage() {
           ) : (
             <EmptyState
               title="No customers yet"
-              description="Firestore is empty for this workspace. Add a customer to begin."
+              description="No account data yet. Add a customer to begin."
               actionLabel="Add Customer"
               onAction={() => setCreateOpen(true)}
             />

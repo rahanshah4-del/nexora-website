@@ -76,7 +76,7 @@ export default function FollowUpModal({ open, onClose, onCreate, onUpdate, initi
                     {isEdit ? 'Edit Follow-up' : 'Create Follow-up'}
                   </p>
                   <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-                    {isEdit ? 'Update this follow-up in your workspace.' : 'Creates a real Firestore task.'}
+                    {isEdit ? 'Update this follow-up in your workspace.' : 'Creates a real Workspace task.'}
                   </p>
                 </div>
                 <Badge variant="purple">Task</Badge>

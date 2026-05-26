@@ -1,9 +1,9 @@
 /*
-  NEXORA BUSINESS SUITE — AI Client (Placeholder)
+  NEXORA BUSINESS SUITE — AI Client (Coming Soon)
 
   Security note:
   - Do NOT ship an OpenAI API key in the browser for production.
-  - For production, proxy requests through your backend (API route / Cloud Functions).
+  - For production, proxy requests through your secure service (API route / Cloud Functions).
   - This client uses mock responses by default. A direct browser call is only enabled when:
       VITE_OPENAI_BROWSER_DEMO === "true" AND VITE_OPENAI_API_KEY is set.
 */

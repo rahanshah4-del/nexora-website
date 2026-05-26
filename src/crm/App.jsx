@@ -3,6 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import DashboardLayout from './layouts/DashboardLayout.jsx'
 import PageLoader from './components/ui/PageLoader.jsx'
 import RequireAuth from './components/auth/RequireAuth.jsx'
+import FeatureGate from './components/auth/FeatureGate.jsx'
 
 const LoginPage = lazy(() => import('./pages/Login.jsx'))
 const DashboardHomePage = lazy(() => import('./pages/DashboardHome.jsx'))
@@ -28,6 +29,10 @@ const NotificationsPage = lazy(() => import('./pages/Notifications.jsx'))
 const ClientPortalPage = lazy(() => import('./pages/ClientPortal.jsx'))
 const AIAssistantPage = lazy(() => import('./pages/AIAssistant.jsx'))
 const ApprovalsPage = lazy(() => import('./pages/Approvals.jsx'))
+
+function gated(element) {
+  return <FeatureGate>{element}</FeatureGate>
+}
 
 export default function App() {
   return (
@@ -55,26 +60,26 @@ export default function App() {
             <Route path="/app" element={<Navigate to="/app/dashboard" replace />} />
             <Route path="/app/dashboard" element={<DashboardHomePage />} />
             <Route path="/app/restaurant-pos" element={<RestaurantPOSPage />} />
-            <Route path="/app/customers" element={<CustomersPage />} />
-            <Route path="/app/products" element={<ProductsPage />} />
-            <Route path="/app/leads" element={<LeadsPage />} />
-            <Route path="/app/leads/scoring" element={<LeadScoringPage />} />
-            <Route path="/app/pipeline" element={<PipelinePage />} />
+            <Route path="/app/customers" element={gated(<CustomersPage />)} />
+            <Route path="/app/products" element={gated(<ProductsPage />)} />
+            <Route path="/app/leads" element={gated(<LeadsPage />)} />
+            <Route path="/app/leads/scoring" element={gated(<LeadScoringPage />)} />
+            <Route path="/app/pipeline" element={gated(<PipelinePage />)} />
             <Route path="/app/tasks" element={<Navigate to="/app/follow-ups" replace />} />
-            <Route path="/app/follow-ups" element={<FollowUpsPage />} />
-            <Route path="/app/hr" element={<HRDashboardPage />} />
-            <Route path="/app/team" element={<TeamPage />} />
-            <Route path="/app/invoices" element={<InvoicesPage />} />
+            <Route path="/app/follow-ups" element={gated(<FollowUpsPage />)} />
+            <Route path="/app/hr" element={gated(<HRDashboardPage />)} />
+            <Route path="/app/team" element={gated(<TeamPage />)} />
+            <Route path="/app/invoices" element={gated(<InvoicesPage />)} />
             <Route path="/app/subscriptions" element={<SubscriptionsPage />} />
-            <Route path="/app/support" element={<SupportPage />} />
+            <Route path="/app/support" element={gated(<SupportPage />)} />
             <Route path="/app/activity" element={<Navigate to="/app/activity-logs" replace />} />
-            <Route path="/app/activity-logs" element={<ActivityLogsPage />} />
-            <Route path="/app/analytics" element={<AnalyticsPage />} />
-            <Route path="/app/notifications" element={<NotificationsPage />} />
-            <Route path="/app/approvals" element={<ApprovalsPage />} />
-            <Route path="/app/client-portal" element={<ClientPortalPage />} />
-            <Route path="/app/ai-assistant" element={<AIAssistantPage />} />
-            <Route path="/app/reports" element={<ReportsPage />} />
+            <Route path="/app/activity-logs" element={gated(<ActivityLogsPage />)} />
+            <Route path="/app/analytics" element={gated(<AnalyticsPage />)} />
+            <Route path="/app/notifications" element={gated(<NotificationsPage />)} />
+            <Route path="/app/approvals" element={gated(<ApprovalsPage />)} />
+            <Route path="/app/client-portal" element={gated(<ClientPortalPage />)} />
+            <Route path="/app/ai-assistant" element={gated(<AIAssistantPage />)} />
+            <Route path="/app/reports" element={gated(<ReportsPage />)} />
             <Route path="/app/settings" element={<SettingsPage />} />
             <Route path="/app/admin/upgrade-requests" element={<Navigate to="/admin/upgrade-requests" replace />} />
             <Route path="/admin/upgrade-requests" element={<AdminUpgradeRequestsPage />} />

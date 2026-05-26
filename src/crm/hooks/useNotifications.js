@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { collection, limit, onSnapshot, query, updateDoc, where, writeBatch, doc } from 'firebase/firestore'
 import { db } from '../lib/firebase.js'
 import { useUser } from './useUser.js'
+import { clientSafeMessage } from '../utils/messages.js'
 
 function toDateValue(value) {
   if (!value) return null
@@ -56,7 +57,7 @@ export function useNotifications() {
       Promise.resolve().then(() => {
         setItems([])
         setSource(db ? 'firestore' : 'none')
-        if (!db) setError('Firestore is not configured.')
+        if (!db) setError('Secure Cloud Sync is not available right now.')
         setLoading(false)
       })
       return
@@ -87,11 +88,11 @@ export function useNotifications() {
         if (lastSeenTopIdRef.current === null) lastSeenTopIdRef.current = topId
 
         setItems(list)
-        setSource(rows.length ? 'firestore' : 'demo')
+        setSource(rows.length ? 'firestore' : 'empty')
         setLoading(false)
       },
       (err) => {
-        setError(err?.message || 'Failed to load notifications')
+        setError(clientSafeMessage(err, 'Unable to load notifications.'))
         setItems([])
         setSource('firestore')
         setLoading(false)

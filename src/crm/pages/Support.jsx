@@ -46,11 +46,11 @@ export default function SupportPage() {
       {toast ? <Toast tone={toast.tone} message={toast.message} onClose={() => setToast(null)} /> : null}
       <PageHeader
         title="Support Tickets"
-        subtitle="Ticket list, assignment, comments, and customer replies (demo fallback + Firestore)."
+        subtitle="Ticket list, assignments, comments, and customer replies."
         right={
           <div className="flex items-center gap-2">
             <Badge variant={support.source === 'firestore' ? 'success' : 'default'}>
-              {support.loading ? 'Loading…' : support.source === 'firestore' ? 'Live' : 'Demo'}
+              {support.loading ? 'Loading…' : support.source === 'firestore' ? 'Live Sync' : 'No data yet'}
             </Badge>
             <Button className="rounded-2xl" onClick={() => setCreateOpen(true)} type="button">
               Create Ticket

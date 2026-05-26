@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { doc, onSnapshot, serverTimestamp, setDoc } from 'firebase/firestore'
 import { db } from '../lib/firebase.js'
 import { useUser } from './useUser.js'
+import { clientSafeMessage } from '../utils/messages.js'
 
 const ROLES = ['Owner', 'Admin', 'Manager', 'Sales Staff', 'Support Agent', 'Accountant']
 
@@ -41,7 +42,7 @@ export function useTeamPermissions({ permissionKeys }) {
         setExists(false)
         setLoading(false)
         setSource('none')
-        setError('Firestore is not configured.')
+        setError('Secure Cloud Sync is not available right now.')
       })
       return
     }
@@ -72,7 +73,7 @@ export function useTeamPermissions({ permissionKeys }) {
         setLoading(false)
       },
       (err) => {
-        setError(err?.message || 'Failed to load team permissions')
+        setError(clientSafeMessage(err, 'Unable to load team permissions.'))
         setMatrix(emptyMatrix(permissionKeys))
         setExists(false)
         setSource('firestore')
@@ -98,7 +99,7 @@ export function useTeamPermissions({ permissionKeys }) {
       },
       async initializeTemplate() {
         if (!userId) return { ok: false, error: 'Please login first' }
-        if (!db) return { ok: false, error: 'Firestore is not configured' }
+        if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now' }
         const template = defaultTemplate(permissionKeys)
         try {
           await setDoc(
@@ -116,12 +117,12 @@ export function useTeamPermissions({ permissionKeys }) {
           )
           return { ok: true }
         } catch (e) {
-          return { ok: false, error: e?.message || 'Failed to initialize permissions' }
+          return { ok: false, error: clientSafeMessage(e, 'Unable to initialize permissions.') }
         }
       },
       async save() {
         if (!userId) return { ok: false, error: 'Please login first' }
-        if (!db) return { ok: false, error: 'Firestore is not configured' }
+        if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now' }
         try {
           await setDoc(
             doc(db, 'workspaces', userId, 'teamPermissions', 'default'),
@@ -130,7 +131,7 @@ export function useTeamPermissions({ permissionKeys }) {
           )
           return { ok: true }
         } catch (e) {
-          return { ok: false, error: e?.message || 'Failed to save permissions' }
+          return { ok: false, error: clientSafeMessage(e, 'Unable to save permissions.') }
         }
       },
     }),

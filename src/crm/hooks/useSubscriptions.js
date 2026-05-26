@@ -3,6 +3,7 @@ import { db } from '../lib/firebase.js'
 import { subscribeOwnedCollection, subscribeUserCollection } from '../lib/firestore.js'
 import { plansDemo } from '../data/subscriptionsDemo.js'
 import { useUser } from './useUser.js'
+import { clientSafeMessage } from '../utils/messages.js'
 
 function normalizeSub(s) {
   return {
@@ -61,7 +62,7 @@ export function useSubscriptions() {
         )
         setHistory([])
         setSource('none')
-        setError('Firestore is not configured.')
+        setError('Secure Cloud Sync is not available right now.')
         setLoading(false)
       })
       return
@@ -105,7 +106,7 @@ export function useSubscriptions() {
         setLoading(false)
       },
       (err) => {
-        setError(err?.message || 'Failed to load subscriptions')
+        setError(clientSafeMessage(err, 'Unable to load subscriptions.'))
         setSubscription(
           normalizeSub({
             id: 'sub',

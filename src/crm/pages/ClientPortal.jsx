@@ -68,7 +68,7 @@ function ClientModal({ open, onClose, onSave, client }) {
                 <div>
                   <p className="text-base font-semibold text-slate-900 dark:text-white">{isEdit ? 'Edit Client' : 'Add Client'}</p>
                   <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-                    {isEdit ? 'Update this client record in Firestore.' : 'Create a client record in this workspace.'}
+                    {isEdit ? 'Update this client record in Workspace.' : 'Create a client record in this workspace.'}
                   </p>
                 </div>
                 <Badge variant="purple">Client</Badge>
@@ -209,7 +209,7 @@ function DeleteClientModal({ client, busy, onClose, onConfirm }) {
               <Badge variant="danger">Remove Client</Badge>
               <p className="mt-3 text-base font-semibold text-slate-900 dark:text-white">Remove {client.name}?</p>
               <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
-                This removes the client record from this workspace. Invoices and payments remain in their own collections.
+                This removes the client record from this workspace. Related invoices and payments remain saved.
               </p>
               <div className="mt-5 flex flex-wrap gap-2">
                 <Button className="rounded-2xl bg-rose-600 hover:bg-rose-700" type="button" disabled={busy} onClick={onConfirm}>
@@ -543,10 +543,10 @@ export default function ClientPortalPage() {
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <p className="text-sm font-semibold text-slate-900 dark:text-white">Client Records</p>
-                <p className="text-xs text-slate-600 dark:text-slate-300">Live clients saved under this authenticated workspace.</p>
+                <p className="text-xs text-slate-600 dark:text-slate-300">Client records are saved to your workspace.</p>
               </div>
               <Badge variant={portal.source === 'firestore' ? 'success' : 'default'}>
-                {portal.loading ? 'Loading…' : portal.source === 'firestore' ? 'Live Firestore' : 'Offline'}
+                {portal.loading ? 'Loading…' : portal.source === 'firestore' ? 'Live Sync' : 'No data yet'}
               </Badge>
             </div>
             <div className="mt-4">
@@ -559,7 +559,7 @@ export default function ClientPortalPage() {
               ) : (
                 <EmptyState
                   title="No clients yet"
-                  description="Firestore is empty for this workspace. Add a client to begin."
+                  description="No account data yet. Add a client to begin."
                   actionLabel="Add Client"
                   onAction={() => setCreateOpen(true)}
                 />

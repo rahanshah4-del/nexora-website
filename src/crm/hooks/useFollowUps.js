@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { db } from '../lib/firebase.js'
 import { createUserDoc, patchUserDoc, removeUserDoc, subscribeUserCollection } from '../lib/firestore.js'
 import { useUser } from './useUser.js'
+import { clientSafeMessage } from '../utils/messages.js'
 
 export function useFollowUps() {
   const { userId, workspaceId } = useUser()
@@ -15,7 +16,7 @@ export function useFollowUps() {
       Promise.resolve().then(() => {
         setRows([])
         setSource('none')
-        setError('Firestore is not configured.')
+        setError('Secure Cloud Sync is not available right now.')
         setLoading(false)
       })
       return
@@ -40,7 +41,7 @@ export function useFollowUps() {
         setLoading(false)
       },
       (err) => {
-        setError(err?.message || 'Failed to load tasks')
+        setError(clientSafeMessage(err, 'Unable to load follow-ups.'))
         setRows([])
         setSource('firestore')
         setLoading(false)
@@ -68,7 +69,7 @@ export function useFollowUps() {
       error,
       async createTask(payload) {
         if (!userId) return { ok: false, error: 'Please login first' }
-        if (!db) return { ok: false, error: 'Firestore is not configured' }
+        if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now' }
 
         const clean = {
           ...payload,
@@ -85,12 +86,12 @@ export function useFollowUps() {
           await createUserDoc(workspaceId, 'tasks', { ...clean, createdBy: userId })
           return { ok: true }
         } catch (e) {
-          return { ok: false, error: e?.message || 'Failed to create task' }
+          return { ok: false, error: clientSafeMessage(e, 'Unable to create follow-up.') }
         }
       },
       async updateTask(id, payload) {
         if (!userId) return { ok: false, error: 'Please login first' }
-        if (!db) return { ok: false, error: 'Firestore is not configured' }
+        if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now' }
         if (!id) return { ok: false, error: 'Follow-up ID is required' }
 
         const clean = {
@@ -109,18 +110,18 @@ export function useFollowUps() {
           await patchUserDoc(workspaceId, 'tasks', id, clean)
           return { ok: true }
         } catch (e) {
-          return { ok: false, error: e?.message || 'Failed to update follow-up' }
+          return { ok: false, error: clientSafeMessage(e, 'Unable to update follow-up.') }
         }
       },
       async deleteTask(id) {
         if (!userId) return { ok: false, error: 'Please login first' }
-        if (!db) return { ok: false, error: 'Firestore is not configured' }
+        if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now' }
         if (!id) return { ok: false, error: 'Follow-up ID is required' }
         try {
           await removeUserDoc(workspaceId, 'tasks', id)
           return { ok: true }
         } catch (e) {
-          return { ok: false, error: e?.message || 'Failed to delete follow-up' }
+          return { ok: false, error: clientSafeMessage(e, 'Unable to delete follow-up.') }
         }
       },
     }),

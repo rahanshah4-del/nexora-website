@@ -18,7 +18,7 @@ export default function ConversionChart({ data = [] }) {
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-sm font-semibold text-slate-900 dark:text-white">Conversion Rate</p>
-          <p className="text-xs text-slate-600 dark:text-slate-300">Weekly conversion (demo)</p>
+          <p className="text-xs text-slate-600 dark:text-slate-300">Weekly conversion</p>
         </div>
         <Badge variant="purple">Funnel</Badge>
       </div>

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { db } from '../lib/firebase.js'
 import { createUserDoc, patchUserDoc, removeUserDoc, subscribeUserCollection } from '../lib/firestore.js'
 import { useUser } from './useUser.js'
+import { clientSafeMessage } from '../utils/messages.js'
 
 export function usePipelineDeals() {
   const { userId } = useUser()
@@ -15,7 +16,7 @@ export function usePipelineDeals() {
       Promise.resolve().then(() => {
         setDeals([])
         setSource('none')
-        setError('Firestore is not configured.')
+        setError('Secure Cloud Sync is not available right now.')
         setLoading(false)
       })
       return
@@ -39,7 +40,7 @@ export function usePipelineDeals() {
         setLoading(false)
       },
       (err) => {
-        setError(err?.message || 'Failed to load deals')
+        setError(clientSafeMessage(err, 'Unable to load deals.'))
         setDeals([])
         setSource('firestore')
         setLoading(false)
@@ -71,7 +72,7 @@ export function usePipelineDeals() {
       },
       async createDeal(payload) {
         if (!userId) return { ok: false, error: 'Please login first' }
-        if (!db) return { ok: false, error: 'Firestore is not configured' }
+        if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now' }
         const title = String(payload.title || '').trim()
         const customerName = String(payload.customerName || '').trim()
         if (!title) return { ok: false, error: 'Deal title is required' }
@@ -80,7 +81,7 @@ export function usePipelineDeals() {
           await createUserDoc(userId, 'pipelines', { ...payload, title, customerName })
           return { ok: true }
         } catch (e) {
-          return { ok: false, error: e?.message || 'Failed to create deal' }
+          return { ok: false, error: clientSafeMessage(e, 'Unable to create deal.') }
         }
       },
     }),

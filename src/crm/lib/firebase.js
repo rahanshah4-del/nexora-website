@@ -38,8 +38,7 @@ export const firebaseEnabled = requiredEnvVars.every((k) => Boolean(env[k]))
 
 export function getFirebaseEnvHint() {
   if (firebaseEnabled) return null
-  const missing = requiredEnvVars.filter((k) => !env[k])
-  return `Missing Firebase env vars: ${missing.join(', ')}`
+  return 'Secure Cloud Sync is not available right now.'
 }
 
 export const app = firebaseEnabled ? (getApps()[0] ?? initializeApp(firebaseConfig)) : null

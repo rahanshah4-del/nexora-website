@@ -177,7 +177,7 @@ function ReportSection({ title, badge, children }) {
       <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-200/80 pb-4">
         <div>
           <p className="text-sm font-semibold text-slate-950">{title}</p>
-          <p className="mt-1 text-xs text-slate-500">Workspace-scoped report data</p>
+          <p className="mt-1 text-xs text-slate-500">Workspace report data</p>
         </div>
         <Badge variant="purple">{badge}</Badge>
       </div>
@@ -335,7 +335,7 @@ export default function ReportsPage() {
       ['Company', branding.companyName],
       ['Owner', branding.ownerName],
       ['Email', branding.email],
-      ['Workspace ID', workspaceId || 'No data yet'],
+      ['Workspace', workspaceId || 'No data yet'],
       ['Report date', reportDate],
       [],
       ['Report', 'Metric', 'Value'],
@@ -444,7 +444,7 @@ export default function ReportsPage() {
             variant="subtle"
             className="h-10 rounded-2xl"
             type="button"
-            onClick={() => showNotice('PDF download is ready for backend/library integration. Use Print Report for now.')}
+            onClick={() => showNotice('PDF download is coming soon. Use Print Report for now.')}
           >
             <HiOutlineDocumentText className="h-4 w-4" />
             PDF
@@ -543,7 +543,7 @@ export default function ReportsPage() {
               <SummaryRow label="Follow-up completion" value={`${reportData.completedTasks.length} completed / ${reportData.tasks.length} tasks`} />
               <SummaryRow label="Activity events" value={String(reportData.activityLogs.length)} />
               <SummaryRow label="Team members" value={String(reportData.staff.length)} />
-              <SummaryRow label="Workspace source" value={reports.source === 'firestore' ? 'Firestore scoped' : 'No data source'} />
+              <SummaryRow label="Sync status" value={reports.source === 'firestore' ? 'Live Sync' : 'No data yet'} />
             </div>
           </ReportSection>
 

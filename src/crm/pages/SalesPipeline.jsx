@@ -105,11 +105,11 @@ export default function PipelinePage() {
             <div>
               <p className="text-sm font-semibold text-slate-900 dark:text-white">Kanban Board</p>
               <p className="text-xs text-slate-600 dark:text-slate-300">
-                Drag & drop deals across stages. {source === 'firestore' ? 'Synced to Firestore.' : 'Demo mode.'}
+                Drag & drop deals across stages. {source === 'firestore' ? 'Live Sync enabled.' : 'No data yet.'}
               </p>
             </div>
             <Badge variant={source === 'firestore' ? 'success' : 'default'}>
-              {loading ? 'Loading…' : source === 'firestore' ? 'Live' : 'Demo'}
+              {loading ? 'Loading…' : source === 'firestore' ? 'Live Sync' : 'No data yet'}
             </Badge>
           </div>
 

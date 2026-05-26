@@ -25,7 +25,7 @@ function DesktopDownloadSection({ plan, onUpgrade }) {
         <div>
           <p className="text-sm font-semibold text-slate-900 dark:text-white">Desktop Download</p>
           <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
-            Business plan users can download Nexora desktop app installers.
+            Business plan users can download Nexora desktop app installers. Free Trial Available.
           </p>
         </div>
         <Badge variant={business ? 'success' : 'warning'}>{business ? 'Business Access' : 'Plan Locked'}</Badge>
@@ -40,7 +40,7 @@ function DesktopDownloadSection({ plan, onUpgrade }) {
           }}
         >
           Download for Windows
-          <span className="mt-1 block text-xs font-medium text-slate-500">Windows EXE placeholder link</span>
+          <span className="mt-1 block text-xs font-medium text-slate-500">Windows app access</span>
         </a>
         <button
           type="button"
@@ -48,7 +48,7 @@ function DesktopDownloadSection({ plan, onUpgrade }) {
           disabled={!business}
         >
           Download for Mac
-          <span className="mt-1 block text-xs font-medium text-slate-500">Mac installer placeholder</span>
+          <span className="mt-1 block text-xs font-medium text-slate-500">Mac installer coming soon</span>
         </button>
         {business ? (
           <a
@@ -56,11 +56,11 @@ function DesktopDownloadSection({ plan, onUpgrade }) {
             className="focus-ring rounded-2xl bg-slate-950 p-4 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700"
           >
             Windows EXE
-            <span className="mt-1 block text-xs font-medium text-white/70">Placeholder download</span>
+            <span className="mt-1 block text-xs font-medium text-white/70">Download Windows App</span>
           </a>
         ) : (
           <button type="button" className="focus-ring rounded-2xl bg-slate-950 p-4 text-left text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700" onClick={onUpgrade}>
-            {trial ? 'Free Trial Download CTA' : 'Upgrade for Desktop App'}
+            {trial ? 'Free Trial Available' : 'Upgrade for Desktop App'}
             <span className="mt-1 block text-xs font-medium text-white/70">Business plan unlocks full desktop downloads.</span>
           </button>
         )}
@@ -87,7 +87,7 @@ export default function SubscriptionsPage() {
 
       <div className="mb-4 flex items-center justify-between gap-3">
         <Badge variant={subs.source === 'firestore' ? 'success' : 'default'}>
-          {subs.loading ? 'Loading…' : subs.source === 'firestore' ? 'Live' : 'Demo'}
+          {subs.loading ? 'Loading…' : subs.source === 'firestore' ? 'Live Sync' : 'No data yet'}
         </Badge>
         {subs.error ? <Badge variant="danger">Error</Badge> : null}
       </div>

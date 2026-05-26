@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { db } from '../lib/firebase.js'
 import { createUserDoc, patchUserDoc, subscribeUserCollection } from '../lib/firestore.js'
 import { useUser } from './useUser.js'
+import { clientSafeMessage } from '../utils/messages.js'
 
 function normalizeTicket(t) {
   return {
@@ -32,7 +33,7 @@ export function useSupportTickets() {
       Promise.resolve().then(() => {
         setTickets([])
         setSource('none')
-        setError('Firestore is not configured.')
+        setError('Secure Cloud Sync is not available right now.')
         setLoading(false)
       })
       return
@@ -59,7 +60,7 @@ export function useSupportTickets() {
         setLoading(false)
       },
       (err) => {
-        setError(err?.message || 'Failed to load support tickets')
+        setError(clientSafeMessage(err, 'Unable to load support tickets.'))
         setTickets([])
         setSource('firestore')
         setLoading(false)
@@ -104,7 +105,7 @@ export function useSupportTickets() {
         if (!message) return { ok: false, error: 'Message is required' }
         if (!db) {
           setTickets((prev) => [{ ...ticket, id: tno }, ...prev])
-          return { ok: false, error: 'Firestore is not configured' }
+          return { ok: false, error: 'Secure Cloud Sync is not available right now' }
         }
         try {
           await createUserDoc(userId, 'supportTickets', {
@@ -120,7 +121,7 @@ export function useSupportTickets() {
           })
           return { ok: true }
         } catch (e) {
-          return { ok: false, error: e?.message || 'Failed to create ticket' }
+          return { ok: false, error: clientSafeMessage(e, 'Unable to create ticket.') }
         }
       },
       async updateTicket(id, patch) {

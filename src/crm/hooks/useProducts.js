@@ -3,6 +3,7 @@ import { db } from '../lib/firebase.js'
 import { createUserDoc, patchUserDoc, removeUserDoc, subscribeUserCollection } from '../lib/firestore.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 import { useUser } from './useUser.js'
+import { clientSafeMessage } from '../utils/messages.js'
 
 function normalizeProduct(product) {
   return {
@@ -43,7 +44,7 @@ export function useProducts() {
       Promise.resolve().then(() => {
         setProducts([])
         setSource('none')
-        setError('Firestore is not configured.')
+        setError('Secure Cloud Sync is not available right now.')
         setLoading(false)
       })
       return
@@ -73,7 +74,7 @@ export function useProducts() {
         setLoading(false)
       },
       (err) => {
-        setError(err?.message || 'Failed to load products')
+        setError(clientSafeMessage(err, 'Unable to load products.'))
         setProducts([])
         setLoading(false)
       },
@@ -90,7 +91,7 @@ export function useProducts() {
       error,
       async createProduct(payload) {
         if (!userId || !workspaceId) return { ok: false, error: 'Please login first' }
-        if (!db) return { ok: false, error: 'Firestore is not configured' }
+        if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now' }
         const product = sanitizeProduct(payload)
         if (!product.name) return { ok: false, error: 'Product name is required' }
         if (!product.sku) return { ok: false, error: 'SKU is required' }
@@ -112,13 +113,13 @@ export function useProducts() {
           })
           return { ok: true }
         } catch (e) {
-          return { ok: false, error: e?.message || 'Failed to create product' }
+          return { ok: false, error: clientSafeMessage(e, 'Unable to create product.') }
         }
       },
       async updateProduct(id, payload) {
         if (!id) return { ok: false, error: 'Product ID is required' }
         if (!userId || !workspaceId) return { ok: false, error: 'Please login first' }
-        if (!db) return { ok: false, error: 'Firestore is not configured' }
+        if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now' }
         const product = sanitizeProduct(payload)
         if (!product.name) return { ok: false, error: 'Product name is required' }
         if (!product.sku) return { ok: false, error: 'SKU is required' }
@@ -137,13 +138,13 @@ export function useProducts() {
           })
           return { ok: true }
         } catch (e) {
-          return { ok: false, error: e?.message || 'Failed to update product' }
+          return { ok: false, error: clientSafeMessage(e, 'Unable to update product.') }
         }
       },
       async deleteProduct(id) {
         if (!id) return { ok: false, error: 'Product ID is required' }
         if (!userId || !workspaceId) return { ok: false, error: 'Please login first' }
-        if (!db) return { ok: false, error: 'Firestore is not configured' }
+        if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now' }
         const product = products.find((item) => item.id === id)
         try {
           await removeUserDoc(workspaceId, 'products', id)
@@ -160,7 +161,7 @@ export function useProducts() {
           })
           return { ok: true }
         } catch (e) {
-          return { ok: false, error: e?.message || 'Failed to delete product' }
+          return { ok: false, error: clientSafeMessage(e, 'Unable to delete product.') }
         }
       },
     }),

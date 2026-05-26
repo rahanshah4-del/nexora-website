@@ -46,6 +46,10 @@ export default function PlanCards({ plans, currentPlan }) {
               <Button variant="subtle" className="w-full rounded-2xl" type="button" disabled>
                 Current Plan
               </Button>
+            ) : p.contactSales ? (
+              <Button className="w-full rounded-2xl" type="button" onClick={() => navigate('/upgrade-business')}>
+                Contact Sales
+              </Button>
             ) : (
               <Button className="w-full rounded-2xl" type="button" onClick={() => navigate('/upgrade-business')}>
                 Request Upgrade

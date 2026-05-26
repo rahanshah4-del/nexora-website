@@ -53,7 +53,7 @@ export default function TicketModal({ open, onClose, onCreate, initialCustomer }
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-base font-semibold text-slate-900 dark:text-white">Create Support Ticket</p>
-                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Assignment and replies are demo-first with Firestore support.</p>
+                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Assignments and replies are saved to your workspace.</p>
                 </div>
                 <Badge variant="purple">{draft.ticketNumber}</Badge>
               </div>

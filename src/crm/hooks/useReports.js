@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { db } from '../lib/firebase.js'
 import { subscribeOwnedCollection, subscribeUserCollection } from '../lib/firestore.js'
 import { useWorkspaceAccess } from './useWorkspaceAccess.js'
+import { clientSafeMessage } from '../utils/messages.js'
 
 const WORKSPACE_COLLECTIONS = [
   'leads',
@@ -79,7 +80,7 @@ export function useReports() {
         setData(Object.fromEntries(COLLECTIONS.map((k) => [k, []])))
         setLoading(false)
         setSource('none')
-        setError('Firestore is not configured.')
+        setError('Secure Cloud Sync is not available right now.')
       })
       return
     }
@@ -129,7 +130,7 @@ export function useReports() {
           if (loaded.size === COLLECTIONS.length) setLoading(false)
         },
         (err) => {
-          setError(err?.message || 'Failed to load reports data')
+          setError(clientSafeMessage(err, 'Unable to load reports data.'))
           setData((prev) => ({ ...prev, [path]: [] }))
           loaded.add(path)
           if (loaded.size === COLLECTIONS.length) setLoading(false)
@@ -146,7 +147,7 @@ export function useReports() {
           if (loaded.size === COLLECTIONS.length) setLoading(false)
         },
         (err) => {
-          setError(err?.message || 'Failed to load reports data')
+          setError(clientSafeMessage(err, 'Unable to load reports data.'))
           setData((prev) => ({ ...prev, [path]: [] }))
           loaded.add(path)
           if (loaded.size === COLLECTIONS.length) setLoading(false)

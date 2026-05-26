@@ -7,9 +7,9 @@ export default function FollowUpCalendar() {
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-sm font-semibold text-slate-900 dark:text-white">Follow-up Calendar</p>
-          <p className="text-xs text-slate-600 dark:text-slate-300">Calendar view placeholder (no backend)</p>
+          <p className="text-xs text-slate-600 dark:text-slate-300">Calendar view for scheduled follow-ups</p>
         </div>
-        <Badge variant="default">Placeholder</Badge>
+        <Badge variant="default">Coming Soon</Badge>
       </div>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -25,4 +25,3 @@ export default function FollowUpCalendar() {
     </Card>
   )
 }
-

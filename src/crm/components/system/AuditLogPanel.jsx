@@ -5,6 +5,7 @@ import AdvancedTable from './AdvancedTable.jsx'
 import { db } from '../../lib/firebase.js'
 import { subscribeUserCollection } from '../../lib/firestore.js'
 import { useUser } from '../../hooks/useUser.js'
+import { clientSafeMessage } from '../../utils/messages.js'
 
 function normalizeRow(r) {
   const at = r.createdAt?.toDate?.()?.toISOString?.().slice(0, 10) || r.at || '—'
@@ -30,7 +31,7 @@ export default function AuditLogPanel() {
       Promise.resolve().then(() => {
         setRows([])
         setSource('none')
-        setError('Firestore is not configured.')
+        setError('Secure Cloud Sync is not available right now.')
         setLoading(false)
       })
       return
@@ -58,7 +59,7 @@ export default function AuditLogPanel() {
       (err) => {
         setRows([])
         setSource('firestore')
-        setError(err?.message || 'Failed to load audit logs')
+        setError(clientSafeMessage(err, 'Unable to load audit logs.'))
         setLoading(false)
       },
     )

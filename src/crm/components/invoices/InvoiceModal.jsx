@@ -128,7 +128,7 @@ export default function InvoiceModal({
                     {mode === 'create' ? 'Create Invoice' : 'Invoice Detail'}
                   </p>
                   <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-                    PDF export and subscription billing are placeholders.
+                    PDF export and subscription billing are coming soon.
                   </p>
                 </div>
                 <Badge variant="purple">Invoice</Badge>
@@ -368,7 +368,7 @@ export default function InvoiceModal({
                   Close
                 </Button>
                 <Button variant="ghost" className="rounded-2xl" type="button">
-                  Export PDF (Placeholder)
+                  Export PDF
                 </Button>
               </div>
             </Card>

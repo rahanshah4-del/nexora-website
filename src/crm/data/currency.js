@@ -14,8 +14,8 @@ export const supportedCurrencies = [
   { code: 'OMR', label: 'OMR — Omani Rial' },
 ]
 
-// Demo FX rates relative to USD (not real-time, UI-only).
-export const demoFxRates = {
+// Static UI conversion rates relative to USD.
+export const fxRates = {
   USD: 1,
   PKR: 278.5,
   AED: 3.67,
@@ -30,4 +30,3 @@ export const demoFxRates = {
   BHD: 0.377,
   OMR: 0.385,
 }
-

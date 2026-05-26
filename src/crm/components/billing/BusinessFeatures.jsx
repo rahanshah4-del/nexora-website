@@ -31,7 +31,7 @@ const permissionRows = [
   { role: 'Viewer', perms: ['Read-only access'] },
 ]
 
-const demoMembersSeed = [
+const seedMembers = [
   { id: 'TM-01', name: 'Ayesha Khan', email: 'ayesha@skylineretail.com', role: 'Manager' },
   { id: 'TM-02', name: 'Omar Ali', email: 'omar@novalogistics.io', role: 'Staff' },
   { id: 'TM-03', name: 'Fatima Noor', email: 'fatima@brightlabs.ai', role: 'Viewer' },
@@ -59,7 +59,7 @@ export default function BusinessFeatures({ onUpgrade }) {
     Staff: true,
     Viewer: false,
   }))
-  const [members, setMembers] = useState(demoMembersSeed)
+  const [members, setMembers] = useState(seedMembers)
 
   const usageStats = useMemo(() => {
     const storagePct = (usage.storageUsedGb / usage.storageLimitGb) * 100
@@ -118,7 +118,7 @@ export default function BusinessFeatures({ onUpgrade }) {
           {['Revenue report', 'Sales report', 'Customer report'].map((t) => (
             <div key={t} className="glass-muted rounded-2xl p-4">
               <p className="text-sm font-semibold text-slate-900 dark:text-white">{t}</p>
-              <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">Updated today (demo)</p>
+              <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">Updated today</p>
               <Button className="mt-3 w-full rounded-2xl" type="button">
                 <HiOutlineArrowDownTray className="text-lg" /> Download
               </Button>
@@ -130,7 +130,7 @@ export default function BusinessFeatures({ onUpgrade }) {
       <Card className="p-5">
         <SectionHeader
           title="Team Permissions"
-          subtitle="Admin, Manager, Staff, Viewer — toggle access (demo)."
+          subtitle="Admin, Manager, Staff, Viewer - toggle access."
           badge={<Badge variant="purple">RBAC</Badge>}
         />
         <div className="space-y-3">
@@ -232,7 +232,7 @@ export default function BusinessFeatures({ onUpgrade }) {
       <Card className="p-5">
         <SectionHeader
           title="Export Reports"
-          subtitle="Export PDF, Excel, and CSV (demo)."
+          subtitle="Export PDF, Excel, and CSV."
           badge={<Badge variant="purple">Exports</Badge>}
         />
         <div className="grid gap-2 sm:grid-cols-3">
@@ -251,7 +251,7 @@ export default function BusinessFeatures({ onUpgrade }) {
       <Card className="p-5">
         <SectionHeader
           title="Priority Support"
-          subtitle="Create a priority ticket (demo)."
+          subtitle="Create a priority ticket."
           badge={<Badge variant="warning">Priority</Badge>}
         />
         <div className="space-y-3">

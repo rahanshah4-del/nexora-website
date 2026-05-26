@@ -192,7 +192,7 @@ export default function InvoicesPage() {
       />
 
       <div className="mb-4 flex items-center justify-between">
-        <Badge variant={source === 'firestore' ? 'success' : 'default'}>{loading ? 'Loading…' : source === 'firestore' ? 'Live Firestore' : 'Offline'}</Badge>
+        <Badge variant={source === 'firestore' ? 'success' : 'default'}>{loading ? 'Loading…' : source === 'firestore' ? 'Live Sync' : 'No data yet'}</Badge>
         {error ? <Badge variant="danger">Error</Badge> : null}
       </div>
 

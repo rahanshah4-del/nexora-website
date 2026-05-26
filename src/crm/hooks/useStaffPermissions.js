@@ -6,6 +6,7 @@ import { db, firebaseConfig, firebaseEnabled } from '../lib/firebase.js'
 import { useUser } from './useUser.js'
 import { useWorkspaceAccess, workspacePermissionKeys } from './useWorkspaceAccess.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
+import { clientSafeMessage } from '../utils/messages.js'
 
 function defaultPermissions() {
   return Object.fromEntries(workspacePermissionKeys.map((item) => [item.key, false]))
@@ -27,7 +28,7 @@ function normalizeStaffRole(role) {
 }
 
 async function createSecondaryAuthUser(email, password) {
-  if (!firebaseEnabled) return { ok: false, error: 'Firebase Auth is not configured.' }
+  if (!firebaseEnabled) return { ok: false, error: 'Secure account creation is not available right now.' }
   const secondaryApp = initializeApp(firebaseConfig, `staff-create-${Date.now()}-${Math.random().toString(36).slice(2)}`)
   const secondaryAuth = getAuth(secondaryApp)
 
@@ -36,7 +37,7 @@ async function createSecondaryAuthUser(email, password) {
     await signOut(secondaryAuth).catch(() => {})
     return { ok: true, uid: credentials.user.uid }
   } catch (error) {
-    return { ok: false, error: error?.message || 'Unable to create staff Auth user.' }
+    return { ok: false, error: clientSafeMessage(error, 'Unable to create staff account.') }
   } finally {
     await deleteApp(secondaryApp).catch(() => {})
   }
@@ -74,7 +75,7 @@ export function useStaffPermissions() {
         setLoading(false)
       },
       (err) => {
-        setError(err?.message || 'Failed to load staff')
+        setError(clientSafeMessage(err, 'Unable to load staff.'))
         setStaff([])
         setLoading(false)
       },
@@ -103,7 +104,7 @@ export function useStaffPermissions() {
       permissionKeys: workspacePermissionKeys,
       async createStaff(payload) {
         if (!access.isAdmin && !access.canManageSettings) return { ok: false, error: 'You do not have permission to create staff.' }
-        if (!db || !workspaceId || !userId) return { ok: false, error: 'Firestore is not configured.' }
+        if (!db || !workspaceId || !userId) return { ok: false, error: 'Secure Cloud Sync is not available right now.' }
 
         const name = String(payload.name || '').trim()
         const email = String(payload.email || '').trim().toLowerCase()
@@ -213,12 +214,12 @@ export function useStaffPermissions() {
           ok: true,
           message: authResult.ok
             ? 'Staff account created. Staff can log in with email and password.'
-            : 'Staff account saved. Use admin backend/cloud function for production user creation.',
+            : 'Staff account saved. Full login activation may require account approval.',
         }
       },
       async setStaffPermission(staffId, key, value) {
         if (!access.isAdmin && !access.canManageSettings) return { ok: false, error: 'You do not have permission to update staff permissions.' }
-        if (!db || !workspaceId || !userId) return { ok: false, error: 'Firestore is not configured.' }
+        if (!db || !workspaceId || !userId) return { ok: false, error: 'Secure Cloud Sync is not available right now.' }
         if (!workspacePermissionKeys.some((item) => item.key === key)) return { ok: false, error: 'Unknown permission.' }
         const staffRow = staff.find((item) => item.id === staffId)
         await setDoc(

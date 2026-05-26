@@ -48,7 +48,7 @@ export default function CustomerModal({ open, onClose, onCreate }) {
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-base font-semibold text-slate-900 dark:text-white">Add Customer</p>
-                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Creates a real Firestore customer record.</p>
+                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Creates a real Workspace customer record.</p>
                 </div>
                 <Badge variant="purple">Customer</Badge>
               </div>

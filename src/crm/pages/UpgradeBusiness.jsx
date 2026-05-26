@@ -19,12 +19,12 @@ import { db, getFirebaseEnvHint } from '../lib/firebase.js'
 import { useAuth } from '../hooks/useAuth.js'
 import { usePreferences } from '../hooks/usePreferences.js'
 import { useUser } from '../hooks/useUser.js'
-import { convertFromUsd } from '../utils/currency.js'
 import { formatCurrency } from '../utils/format.js'
+import { clientSafeMessage } from '../utils/messages.js'
 
-const planPricingUsd = {
-  Starter: { monthly: 29, yearly: 290 },
-  Business: { monthly: 149, yearly: 1490 },
+const planPricingPkr = {
+  Starter: { monthly: 2000, yearly: 24000 },
+  Business: { monthly: 5000, yearly: 60000 },
 }
 
 const nayapayAccounts = [
@@ -93,14 +93,15 @@ export default function UpgradeBusinessPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { userId, plan } = useUser()
-  const { profile, currency } = usePreferences()
+  const { profile } = usePreferences()
+  const currency = 'PKR'
 
   const [selectedPlan, setSelectedPlan] = useState('Business') // Starter | Business
   const [billingCycle, setBillingCycle] = useState('monthly') // monthly | yearly
   const [amountPaid, setAmountPaid] = useState('')
 
-  const [customerName, setCustomerName] = useState(profile.ownerName || 'Demo User')
-  const [customerEmail, setCustomerEmail] = useState(profile.email || user?.email || 'demo@nexora.solutions')
+  const [customerName, setCustomerName] = useState(profile.ownerName || 'Nexora User')
+  const [customerEmail, setCustomerEmail] = useState(profile.email || user?.email || 'user@nexora.solutions')
   const [customerPhone, setCustomerPhone] = useState(profile.phone || '')
 
   const [paymentMethod, setPaymentMethod] = useState('NayaPay')
@@ -115,9 +116,8 @@ export default function UpgradeBusinessPage() {
   const [pendingRequest, setPendingRequest] = useState(null)
   const firebaseHint = getFirebaseEnvHint()
   const planPrice = useMemo(() => {
-    const usd = planPricingUsd[selectedPlan]?.[billingCycle] ?? 0
-    return convertFromUsd(usd, currency)
-  }, [selectedPlan, billingCycle, currency])
+    return planPricingPkr[selectedPlan]?.[billingCycle] ?? 0
+  }, [selectedPlan, billingCycle])
 
   // Show pending approval status if a request already exists.
   // (Keeps UI stable even after reload.)
@@ -166,7 +166,7 @@ export default function UpgradeBusinessPage() {
     setError('')
     setToast(null)
     if (!db) {
-      setError(firebaseHint || 'Firebase is not configured.')
+      setError(firebaseHint || 'Secure Cloud Sync is not available right now.')
       return
     }
     if (!userId) {
@@ -213,7 +213,7 @@ export default function UpgradeBusinessPage() {
 
       setSubmitted(true)
     } catch (err) {
-      const msg = err?.message || 'Failed to submit request.'
+      const msg = clientSafeMessage(err, 'Unable to submit request.')
       setToast({ tone: 'error', message: msg })
       setError(msg)
     } finally {
@@ -237,7 +237,7 @@ export default function UpgradeBusinessPage() {
 
         <PageHeader
           title="Upgrade Plan"
-          subtitle="Submit a payment request for manual admin approval (Firestore-only)."
+          subtitle="Submit your payment details for secure plan approval."
           right={
             plan === 'Business' ? (
               <Button className="rounded-2xl" onClick={() => navigate('/app/dashboard')} type="button">
@@ -393,7 +393,7 @@ export default function UpgradeBusinessPage() {
                   className="focus-ring mt-1 h-24 w-full rounded-xl border border-white/30 bg-white/40 p-3 text-sm text-slate-900 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/40 dark:text-slate-100"
                   value={paymentNotes}
                   onChange={(e) => setPaymentNotes(e.target.value)}
-                  placeholder="Any extra notes for admin verification (optional)…"
+                  placeholder="Any extra notes for account verification (optional)…"
                 />
               </div>
               {error ? (
@@ -406,7 +406,7 @@ export default function UpgradeBusinessPage() {
                   {submitting ? 'Submitting...' : 'Submit upgrade request'}
                 </Button>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Plan updates happen only after admin approval.
+                  Plan updates happen only after account approval.
                 </p>
               </div>
             </div>

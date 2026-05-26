@@ -51,7 +51,7 @@ export default function LeadModal({ open, onClose, onCreate }) {
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-base font-semibold text-slate-900 dark:text-white">Add New Lead</p>
-                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Creates a real Firestore lead record.</p>
+                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Creates a real Workspace lead record.</p>
                 </div>
                 <Badge variant="purple">Lead</Badge>
               </div>

@@ -13,6 +13,7 @@ import { db } from '../lib/firebase.js'
 import { workspaceCollectionPath } from '../lib/firestore.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 import { useUser } from './useUser.js'
+import { clientSafeMessage } from '../utils/messages.js'
 
 const pendingPaymentStatuses = ['pending', 'pending_verification', 'pending_partial', 'partial_pending']
 const pendingRecordStatuses = ['pending', 'Pending', 'pending_approval', 'requested', 'Requested', 'invited', 'Invited']
@@ -90,7 +91,7 @@ function subscribeWorkspaceQuery(workspaceId, collectionName, filterField, statu
   return onSnapshot(
     q,
     (snap) => onData(snap.docs.map((item) => ({ id: item.id, ...item.data() }))),
-    (error) => onError?.(error),
+    (error) => onError?.(new Error(clientSafeMessage(error, 'Unable to load approvals.'))),
   )
 }
 
@@ -114,7 +115,7 @@ export function useApprovals() {
         setTeamMembers([])
         setClients([])
         setLoading(false)
-        setError(db ? '' : 'Firestore is not configured.')
+        setError(db ? '' : 'Secure Cloud Sync is not available right now.')
       })
       return
     }
@@ -130,7 +131,7 @@ export function useApprovals() {
       if (loaded >= 5) setLoading(false)
     }
     function onError(err) {
-      setError(err?.message || 'Failed to load approvals.')
+      setError(clientSafeMessage(err, 'Unable to load approvals.'))
       setLoading(false)
     }
 
@@ -231,7 +232,7 @@ export function useApprovals() {
   const approve = useCallback(
     async (approval) => {
       if (!canApprove) return { ok: false, error: 'You do not have permission to approve requests.' }
-      if (!db || !workspaceId || !userId) return { ok: false, error: 'Firestore is not configured.' }
+      if (!db || !workspaceId || !userId) return { ok: false, error: 'Secure Cloud Sync is not available right now.' }
 
       try {
         const batch = writeBatch(db)
@@ -361,7 +362,7 @@ export function useApprovals() {
         })
         return { ok: true }
       } catch (err) {
-        return { ok: false, error: err?.message || 'Failed to approve request.' }
+        return { ok: false, error: clientSafeMessage(err, 'Unable to approve request.') }
       }
     },
     [canApprove, firebaseUser, userDoc, userId, workspaceId],
@@ -370,7 +371,7 @@ export function useApprovals() {
   const reject = useCallback(
     async (approval) => {
       if (!canApprove) return { ok: false, error: 'You do not have permission to approve requests.' }
-      if (!db || !workspaceId || !userId) return { ok: false, error: 'Firestore is not configured.' }
+      if (!db || !workspaceId || !userId) return { ok: false, error: 'Secure Cloud Sync is not available right now.' }
 
       try {
         const batch = writeBatch(db)
@@ -453,7 +454,7 @@ export function useApprovals() {
         })
         return { ok: true }
       } catch (err) {
-        return { ok: false, error: err?.message || 'Failed to reject request.' }
+        return { ok: false, error: clientSafeMessage(err, 'Unable to reject request.') }
       }
     },
     [canApprove, firebaseUser, userDoc, userId, workspaceId],

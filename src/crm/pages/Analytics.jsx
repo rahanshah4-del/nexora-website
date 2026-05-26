@@ -26,7 +26,7 @@ export default function AnalyticsPage() {
     >
       <PageHeader
         title="Enterprise Analytics"
-        subtitle="Real-time style dashboards with interactive charts and date filtering (demo)."
+        subtitle="Live dashboards with interactive charts and date filtering."
         right={
           <div className="flex w-full min-w-0 flex-wrap items-center gap-2 lg:w-auto lg:justify-end">
             <DateRangeFilter value={range} onChange={setRange} />
@@ -39,7 +39,7 @@ export default function AnalyticsPage() {
 
       <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
         <Badge variant={analytics.source === 'firestore' ? 'success' : 'default'}>
-          {analytics.loading ? 'Loading…' : analytics.source === 'firestore' ? 'Live' : 'Demo'}
+          {analytics.loading ? 'Loading…' : analytics.source === 'firestore' ? 'Live Sync' : 'No data yet'}
         </Badge>
         {analytics.error ? <Badge variant="danger">Error</Badge> : null}
       </div>
@@ -57,12 +57,12 @@ export default function AnalyticsPage() {
       </div>
 
       <div className="grid min-w-0 grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,1.95fr)]">
-        <TopStaffTable staff={analytics.topStaff.length ? analytics.topStaff : [{ id: 'demo', name: '—', role: '—', performanceScore: 0, lastActive: '—' }]} />
+        <TopStaffTable staff={analytics.topStaff.length ? analytics.topStaff : [{ id: 'empty', name: '—', role: '—', performanceScore: 0, lastActive: '—' }]} />
         <Card className="p-5">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="text-sm font-semibold text-slate-900 dark:text-white">Business Overview</p>
-              <p className="text-xs text-slate-600 dark:text-slate-300">Goal tracking + revenue comparison (placeholder)</p>
+              <p className="text-xs text-slate-600 dark:text-slate-300">Goal tracking and revenue comparison</p>
             </div>
             <Badge variant="purple">Overview</Badge>
           </div>

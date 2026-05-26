@@ -10,18 +10,18 @@ export default function LeadScoringPanel({ leads, loading, source, error }) {
         <div>
           <p className="text-sm font-semibold text-slate-900 dark:text-white">AI Lead Scoring</p>
           <p className="text-xs text-slate-600 dark:text-slate-300">
-            Seriousness score, conversion prediction, and auto priority (demo).
+            Seriousness score, conversion prediction, and auto priority.
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Badge variant={source === 'firestore' ? 'success' : 'default'}>{source === 'firestore' ? 'Live' : 'Demo'}</Badge>
+          <Badge variant={source === 'firestore' ? 'success' : 'default'}>{source === 'firestore' ? 'Live Sync' : 'No data yet'}</Badge>
           <Badge variant="purple">AI Score</Badge>
         </div>
       </div>
 
       <div className="mt-4 grid gap-3 md:grid-cols-2">
-        <Input placeholder="Search leads (UI placeholder)..." />
-        <Input placeholder="Filter (Hot/Warm/Cold) placeholder..." />
+        <Input placeholder="Search leads..." />
+        <Input placeholder="Filter Hot, Warm, or Cold..." />
       </div>
 
       {error ? (
@@ -48,4 +48,3 @@ export default function LeadScoringPanel({ leads, loading, source, error }) {
     </Card>
   )
 }
-

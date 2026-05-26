@@ -1,5 +1,6 @@
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore'
 import { db } from './firebase.js'
+import { getRecommendedModules, moduleCatalog, normalizeBusinessType } from '../crm/data/moduleAccess.js'
 
 export const FREE_TRIAL_PLAN = 'Free'
 export const FREE_TRIAL_STATUS = 'trial'
@@ -20,6 +21,11 @@ export async function ensureUserWorkspace(user, overrides = {}) {
   const email = (cleanString(overrides.email) || cleanString(user.email)).toLowerCase()
   const fullName = userDisplayName(user, overrides.fullName || overrides.name)
   const company = cleanString(overrides.company)
+  const businessType = normalizeBusinessType(overrides.businessType)
+  const enabledModules = getRecommendedModules(businessType)
+  const selectedFeatures = enabledModules.map(
+    (key) => moduleCatalog.find((module) => module.key === key)?.label || key,
+  )
   const provider = cleanString(overrides.provider) || user?.providerData?.[0]?.providerId || 'password'
 
   const userRef = doc(db, 'users', uid)
@@ -40,7 +46,11 @@ export async function ensureUserWorkspace(user, overrides = {}) {
       company,
       email,
       phone: cleanString(overrides.phone),
-      businessType: cleanString(overrides.businessType),
+      businessType,
+      selectedFeatures,
+      enabledModules,
+      onboardingCompleted: false,
+      workspaceName: company || `${fullName}'s Workspace`,
       photoURL: cleanString(overrides.photoURL) || cleanString(user.photoURL),
       provider,
       role: 'owner',
@@ -71,7 +81,11 @@ export async function ensureUserWorkspace(user, overrides = {}) {
     }
     if (company) update.company = company
     if (cleanString(overrides.phone)) update.phone = cleanString(overrides.phone)
-    if (cleanString(overrides.businessType)) update.businessType = cleanString(overrides.businessType)
+    if (cleanString(overrides.businessType)) {
+      update.businessType = businessType
+      update.selectedFeatures = selectedFeatures
+      update.enabledModules = enabledModules
+    }
     await setDoc(userRef, update, { merge: true })
   }
 
@@ -85,7 +99,12 @@ export async function ensureUserWorkspace(user, overrides = {}) {
       userId: uid,
       workspaceId: uid,
       name: company || `${fullName}'s Workspace`,
+      workspaceName: company || `${fullName}'s Workspace`,
       email,
+      businessType,
+      selectedFeatures,
+      enabledModules,
+      onboardingCompleted: false,
       plan: FREE_TRIAL_PLAN,
       planStatus: FREE_TRIAL_STATUS,
       billingCycle: 'monthly',
@@ -109,7 +128,5 @@ export async function ensureUserWorkspace(user, overrides = {}) {
     )
   }
 
-  // TODO: Premium plan changes must be verified by an admin/backend payment webhook.
-  // The frontend may display plan state, but it must never be the source of truth for unlocking paid access.
   return { uid, workspaceId: effectiveWorkspaceId }
 }

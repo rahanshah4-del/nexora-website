@@ -14,6 +14,7 @@ import Toast from '../components/ui/Toast.jsx'
 import { db } from '../lib/firebase.js'
 import { createUserDoc } from '../lib/firestore.js'
 import { useUser } from '../hooks/useUser.js'
+import { clientSafeMessage } from '../utils/messages.js'
 
 export default function LeadsPage() {
   const scoring = useLeadScoring()
@@ -89,7 +90,7 @@ export default function LeadsPage() {
             return
           }
           if (!db) {
-            setToast({ tone: 'error', message: 'Firestore is not configured' })
+            setToast({ tone: 'error', message: 'Secure Cloud Sync is not available right now' })
             window.setTimeout(() => setToast(null), 2400)
             return
           }
@@ -123,7 +124,7 @@ export default function LeadsPage() {
             window.setTimeout(() => setToast(null), 1600)
             setCreateOpen(false)
           } catch (e) {
-            setToast({ tone: 'error', message: e?.message || 'Failed to create lead' })
+            setToast({ tone: 'error', message: clientSafeMessage(e, 'Unable to create lead.') })
             window.setTimeout(() => setToast(null), 2400)
           }
         }}

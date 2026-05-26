@@ -51,7 +51,7 @@ export default function DealModal({ open, onClose, onCreate }) {
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-base font-semibold text-slate-900 dark:text-white">Add Deal</p>
-                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Creates a real Firestore pipeline deal.</p>
+                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Creates a real Workspace pipeline deal.</p>
                 </div>
                 <Badge variant="purple">Pipeline</Badge>
               </div>

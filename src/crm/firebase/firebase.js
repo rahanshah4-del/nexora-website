@@ -39,6 +39,5 @@ export const storage = app ? getStorage(app) : null
 
 export function getFirebaseEnvHint() {
   if (firebaseEnabled) return null
-  const missing = requiredEnvVars.filter((k) => !import.meta.env[k])
-  return `Missing Firebase env vars: ${missing.join(', ')}`
+  return 'Secure Cloud Sync is not available right now.'
 }

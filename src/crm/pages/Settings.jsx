@@ -181,7 +181,7 @@ function TeamPermissionsPanel() {
                 Create Staff
               </Button>
               <p className="text-xs leading-5 text-slate-500">
-                Staff account saved. Use admin backend/cloud function for production user creation if Firebase blocks local secondary-user creation.
+                Staff account saved. Full login activation may require account approval.
               </p>
             </div>
           </div>

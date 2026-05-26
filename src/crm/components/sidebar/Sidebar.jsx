@@ -7,6 +7,7 @@ import PricingModal from '../billing/PricingModal.jsx'
 import { memo, useCallback, useMemo, useState } from 'react'
 import { useUser } from '../../hooks/useUser.js'
 import logoUrl from '../../../assets/logo/nexora-logo.svg'
+import { selectedModulesForSidebar } from '../../data/moduleAccess.js'
 
 const priorityRoutes = [
   '/app/dashboard',
@@ -41,7 +42,7 @@ const compactLabels = {
   '/app/approvals': 'Approvals',
 }
 
-const sidebarItems = [
+const orderedSidebarItems = [
   ...priorityRoutes.map((route) => navItems.find((item) => item.to === route)).filter(Boolean),
   ...navItems.filter((item) => !priorityRoutes.includes(item.to)),
 ]
@@ -91,7 +92,7 @@ function Brand({ collapsed }) {
       {!collapsed ? (
         <div className="min-w-0 leading-tight">
           <p className="truncate text-sm font-semibold tracking-tight text-slate-950">Nexora CRM</p>
-          <p className="truncate text-[10px] font-medium text-slate-500">Admin workspace</p>
+          <p className="truncate text-[10px] font-medium text-slate-500">Business workspace</p>
         </div>
       ) : null}
     </div>
@@ -134,8 +135,18 @@ function UpgradeCard({ plan, isBusiness, onViewPlans }) {
 
 function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollapse, onSwitchProduct }) {
   const [pricingOpen, setPricingOpen] = useState(false)
-  const { plan } = useUser()
+  const { plan, userDoc } = useUser()
   const isBusiness = plan === 'Business'
+  const sidebarItems = useMemo(() => {
+    const allowedRoutes = new Set(
+      selectedModulesForSidebar({
+        enabledModules: userDoc?.enabledModules,
+        onboardingCompleted: userDoc?.onboardingCompleted,
+        plan,
+      }).map((module) => module.route),
+    )
+    return orderedSidebarItems.filter((item) => allowedRoutes.has(item.to))
+  }, [plan, userDoc?.enabledModules, userDoc?.onboardingCompleted])
 
   const handleSwitchProduct = useCallback(() => {
     onNavigate?.()
@@ -177,7 +188,7 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
         </div>
       )}
     </div>
-  ), [collapsed, handleSwitchProduct, isBusiness, onNavigate, plan])
+  ), [collapsed, handleSwitchProduct, isBusiness, onNavigate, plan, sidebarItems])
 
   if (!mobile) {
     return (

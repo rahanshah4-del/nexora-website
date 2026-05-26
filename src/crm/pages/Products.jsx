@@ -116,10 +116,10 @@ export default function ProductsPage() {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <p className="text-sm font-semibold text-slate-900 dark:text-white">Product Catalog</p>
-            <p className="text-xs text-slate-600 dark:text-slate-300">Live products saved in Firestore for this workspace.</p>
+            <p className="text-xs text-slate-600 dark:text-slate-300">Products are saved to your workspace.</p>
           </div>
           <Badge variant={productsApi.source === 'firestore' ? 'success' : 'default'}>
-            {productsApi.loading ? 'Loading…' : productsApi.source === 'firestore' ? 'Live Firestore' : 'Offline'}
+            {productsApi.loading ? 'Loading…' : productsApi.source === 'firestore' ? 'Live Sync' : 'No data yet'}
           </Badge>
         </div>
         {productsApi.error ? <p className="mt-3 text-sm font-semibold text-rose-700">{productsApi.error}</p> : null}
@@ -133,7 +133,7 @@ export default function ProductsPage() {
           ) : (
             <EmptyState
               title="No products yet"
-              description="Firestore is empty for this workspace. Add a product to use it on invoices."
+              description="No account data yet. Add a product to use it on invoices."
               actionLabel="Add Product"
               onAction={() => { setEditingProduct(null); setModalOpen(true) }}
             />

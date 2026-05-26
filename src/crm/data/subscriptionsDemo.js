@@ -1,62 +1,11 @@
-export const plansDemo = [
-  {
-    id: 'Free',
-    name: 'Trial',
-    badge: 'Free',
-    description: 'Free trial workspace for getting started',
-    monthlyPkr: 0,
-    yearlyPkr: 0,
-    priceLabel: 'Free',
-    features: ['Dashboard', 'Customers limited', 'Leads limited', 'Basic invoices', 'Basic reports'],
-  },
-  {
-    id: 'Starter',
-    name: 'Starter',
-    badge: 'Starter',
-    description: 'For small teams ready to manage sales operations',
-    monthlyPkr: 2000,
-    yearlyPkr: 24000,
-    priceLabel: 'PKR 2000/month',
-    features: ['Everything in Trial', 'More customers/leads', 'Products', 'Invoices', 'Reports', 'Support tickets', 'Basic team access'],
-  },
-  {
-    id: 'Business',
-    name: 'Business',
-    badge: 'Best',
-    description: 'Full business management suite with advanced tools',
-    monthlyPkr: 5000,
-    yearlyPkr: 60000,
-    priceLabel: 'PKR 5000/month',
-    features: [
-      'Everything in Starter',
-      'HR Management',
-      'Team permissions',
-      'AI Assistant',
-      'AI Lead Scoring',
-      'Advanced analytics',
-      'Desktop app download',
-      'Windows EXE download',
-      'Full reports',
-      'Multi-user access',
-    ],
-  },
-  {
-    id: 'Enterprise',
-    name: 'Enterprise',
-    badge: 'Enterprise',
-    description: 'Future-ready custom solution for larger operations',
-    monthlyPkr: null,
-    yearlyPkr: null,
-    priceLabel: 'Contact for custom solution',
-    contactSales: true,
-    features: ['Contact sales', 'Future-ready custom modules', 'Multi-branch', 'Dedicated support', 'Custom integrations'],
-  },
-]
+import { planCatalog } from './moduleAccess.js'
+
+export const plansDemo = planCatalog
 
 export const subscriptionsDemo = [
   {
     id: 'SUB-001',
-    userId: 'demo',
+    userId: 'Demo',
     plan: 'Free',
     planStatus: 'active',
     billingCycle: 'monthly',
@@ -90,6 +39,6 @@ export const subscriptionHistoryDemo = [
     billingCycle: 'monthly',
     status: 'expired',
     changedAt: '2026-05-12',
-    note: 'Trial ended (demo)',
+    note: 'Trial ended',
   },
 ]

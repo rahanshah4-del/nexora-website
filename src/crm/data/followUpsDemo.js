@@ -49,7 +49,7 @@ export const followUpsDemo = [
     type: 'WhatsApp',
     priority: 'Low',
     status: 'Today',
-    notes: 'WhatsApp integration placeholder.',
+    notes: 'WhatsApp integration coming soon.',
   },
   {
     id: 'FU-005',

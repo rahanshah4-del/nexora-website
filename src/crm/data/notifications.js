@@ -1,4 +1,4 @@
-export const demoNotifications = [
+export const DemoNotifications = [
   {
     id: 'n1',
     title: 'New lead assigned',

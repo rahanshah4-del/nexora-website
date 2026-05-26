@@ -10,6 +10,7 @@ import { auth, firebaseEnabled, getFirebaseEnvHint } from '../lib/firebase.js'
 import { db } from '../lib/firebase.js'
 import { ensureUserWorkspace } from '../../lib/accountProvisioning.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
+import { clientSafeMessage } from '../utils/messages.js'
 
 const AuthContext = createContext(null)
 
@@ -34,7 +35,7 @@ export function AuthProvider({ children }) {
   const login = useCallback(async (email, password) => {
     setError('')
     if (!firebaseEnabled || !auth) {
-      setError(getFirebaseEnvHint() || 'Firebase is not configured.')
+      setError(getFirebaseEnvHint() || 'Secure Cloud Sync is not available right now.')
       return false
     }
     setBusy(true)
@@ -43,7 +44,7 @@ export function AuthProvider({ children }) {
       await ensureUserWorkspace(credentials.user, { email, provider: 'password' })
       return true
     } catch (e) {
-      setError(e?.message || 'Login failed.')
+      setError(clientSafeMessage(e, 'Login failed. Please check your email and password.'))
       return false
     } finally {
       setBusy(false)
@@ -53,7 +54,7 @@ export function AuthProvider({ children }) {
   const signup = useCallback(async (email, password) => {
     setError('')
     if (!firebaseEnabled || !auth) {
-      setError(getFirebaseEnvHint() || 'Firebase is not configured.')
+      setError(getFirebaseEnvHint() || 'Secure Cloud Sync is not available right now.')
       return false
     }
     setBusy(true)
@@ -62,7 +63,7 @@ export function AuthProvider({ children }) {
       await ensureUserWorkspace(credentials.user, { email, provider: 'password' })
       return true
     } catch (e) {
-      setError(e?.message || 'Signup failed.')
+      setError(clientSafeMessage(e, 'Signup failed. Please try again.'))
       return false
     } finally {
       setBusy(false)
@@ -100,7 +101,7 @@ export function AuthProvider({ children }) {
       // `onAuthStateChanged` will set `user` to null.
       return true
     } catch (e) {
-      setError(e?.message || 'Logout failed.')
+      setError(clientSafeMessage(e, 'Logout failed. Please try again.'))
       return false
     } finally {
       setBusy(false)

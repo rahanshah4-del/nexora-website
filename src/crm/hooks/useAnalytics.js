@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { db } from '../lib/firebase.js'
 import { subscribeUserCollection } from '../lib/firestore.js'
 import { useUser } from './useUser.js'
+import { clientSafeMessage } from '../utils/messages.js'
 
 function num(n) {
   const v = Number(n)
@@ -89,7 +90,7 @@ export function useAnalytics({ dateRange = '30d' } = {}) {
       Promise.resolve().then(() => {
         setLoading(false)
         setSource('none')
-        setError('Firestore is not configured.')
+        setError('Secure Cloud Sync is not available right now.')
       })
       return
     }
@@ -109,13 +110,13 @@ export function useAnalytics({ dateRange = '30d' } = {}) {
     Promise.resolve().then(() => setLoading(true))
     const unsubs = []
     unsubs.push(
-      subscribeUserCollection(userId, 'invoices', (d) => setInvoices(d), (e) => setError(e?.message || 'Failed to load invoices')),
+      subscribeUserCollection(userId, 'invoices', (d) => setInvoices(d), (e) => setError(clientSafeMessage(e, 'Unable to load invoices.'))),
     )
     unsubs.push(subscribeUserCollection(userId, 'payments', (d) => setPayments(d)))
     unsubs.push(subscribeUserCollection(userId, 'leads', (d) => setLeads(d)))
     unsubs.push(subscribeUserCollection(userId, 'teamMembers', (d) => setTeam(d)))
 
-    // Note: this is a UI dashboard; dateRange filtering is a placeholder until full backend constraints are added.
+    // Date-range filtering stays client-side for the current dashboard view.
     Promise.resolve().then(() => {
       setLoading(false)
       setSource('firestore')

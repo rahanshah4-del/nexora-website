@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { db } from '../lib/firebase.js'
 import { subscribeUserCollection } from '../lib/firestore.js'
 import { useUser } from './useUser.js'
+import { clientSafeMessage } from '../utils/messages.js'
 
 function daysSince(dateStr) {
   if (!dateStr) return 999
@@ -46,7 +47,7 @@ function prediction(score) {
 }
 
 export function computeLeadScore(lead) {
-  // Demo "AI" scoring: weighted model in 0..100 using supplied signals.
+  // Lightweight scoring model in 0..100 using supplied signals.
   const reply = clamp01((lead.replySpeed ?? 50) / 100)
   const activity = clamp01((lead.activityFrequency ?? 50) / 100)
   const payment = clamp01((lead.paymentHistory ?? 0) / 100)
@@ -85,7 +86,7 @@ export function useLeadScoring() {
       Promise.resolve().then(() => {
         setRows([])
         setSource('none')
-        setError('Firestore is not configured.')
+        setError('Secure Cloud Sync is not available right now.')
         setLoading(false)
       })
       return
@@ -110,7 +111,7 @@ export function useLeadScoring() {
         setLoading(false)
       },
       (err) => {
-        setError(err?.message || 'Failed to load leads')
+        setError(clientSafeMessage(err, 'Unable to load leads.'))
         setRows([])
         setSource('firestore')
         setLoading(false)

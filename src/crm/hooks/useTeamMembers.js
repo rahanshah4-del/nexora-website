@@ -4,6 +4,7 @@ import { createUserDoc, patchUserDoc, subscribeUserCollection } from '../lib/fir
 import { permissionKeys } from '../data/teamDemo.js'
 import { useUser } from './useUser.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
+import { clientSafeMessage } from '../utils/messages.js'
 
 function normalizeMember(m) {
   return {
@@ -49,7 +50,7 @@ export function useTeamMembers() {
         setLoading(false)
       },
       (err) => {
-        setError(err?.message || 'Failed to load team members')
+        setError(clientSafeMessage(err, 'Unable to load team members.'))
         setRows([])
         setSource('firestore')
         setLoading(false)
@@ -80,7 +81,7 @@ export function useTeamMembers() {
         if (!email) return { ok: false, error: 'Email is required' }
         if (!db) {
           setRows((prev) => [{ id: `TM-${String(prev.length + 1).padStart(3, '0')}`, ...docPayload }, ...prev])
-          return { ok: false, error: 'Firestore is not configured' }
+          return { ok: false, error: 'Secure Cloud Sync is not available right now' }
         }
         try {
           const ref = await createUserDoc(workspaceId, 'teamMembers', {
@@ -105,7 +106,7 @@ export function useTeamMembers() {
           })
           return { ok: true }
         } catch (e) {
-          return { ok: false, error: e?.message || 'Failed to add team member' }
+          return { ok: false, error: clientSafeMessage(e, 'Unable to add team member.') }
         }
       },
       async updateMember(id, patch) {

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { db } from '../lib/firebase.js'
 import { subscribeUserCollection } from '../lib/firestore.js'
 import { useUser } from './useUser.js'
+import { clientSafeMessage } from '../utils/messages.js'
 
 function toDateValue(value) {
   if (!value) return null
@@ -42,7 +43,7 @@ export function useActivityLogs() {
       Promise.resolve().then(() => {
         setLogs([])
         setSource('none')
-        setError('Firestore is not configured.')
+        setError('Secure Cloud Sync is not available right now.')
         setLoading(false)
       })
       return
@@ -74,7 +75,7 @@ export function useActivityLogs() {
         setLoading(false)
       },
       (err) => {
-        setError(err?.message || 'Failed to load activity logs')
+        setError(clientSafeMessage(err, 'Unable to load activity logs.'))
         setLogs([])
         setSource('firestore')
         setLoading(false)

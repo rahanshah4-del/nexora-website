@@ -1,5 +1,6 @@
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
 import { db } from './firebase.js'
+import { clientSafeMessage } from '../utils/messages.js'
 
 function cleanString(value, fallback = '') {
   return typeof value === 'string' && value.trim() ? value.trim() : fallback
@@ -36,7 +37,7 @@ export async function logActivity({
     })
     return { ok: true }
   } catch (error) {
-    return { ok: false, error: error?.message || 'Failed to log activity.' }
+    return { ok: false, error: clientSafeMessage(error, 'Unable to save activity.') }
   }
 }
 

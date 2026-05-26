@@ -12,7 +12,7 @@ export default function UsageTracker({ usage }) {
     { label: 'Storage', used: usage.storageUsedGb, limit: usage.storageLimitGb, tone: 'indigo', suffix: 'GB' },
     { label: 'Team Members', used: usage.teamMembersUsed, limit: usage.teamMembersLimit, tone: 'emerald', suffix: '' },
     { label: 'Reports', used: usage.reportsGenerated, limit: usage.reportsLimit, tone: 'amber', suffix: '' },
-    { label: 'API Requests', used: usage.apiRequests, limit: usage.apiRequestsLimit, tone: 'rose', suffix: '' },
+    { label: 'Sync Actions', used: usage.apiRequests, limit: usage.apiRequestsLimit, tone: 'rose', suffix: '' },
   ]
 
   const high = rows.some((r) => pct(r.used, r.limit) >= 85)
@@ -48,4 +48,3 @@ export default function UsageTracker({ usage }) {
     </Card>
   )
 }
-

@@ -4,6 +4,7 @@ import Button from '../ui/Button.jsx'
 import Card from '../ui/Card.jsx'
 import Input from '../ui/Input.jsx'
 import { aiAnswerCRM } from '../../lib/aiClient.js'
+import { clientSafeMessage } from '../../utils/messages.js'
 
 export default function AIAssistantChat({ data }) {
   const [messages, setMessages] = useState([
@@ -33,11 +34,11 @@ export default function AIAssistantChat({ data }) {
     setInput('')
     try {
       const res = await aiAnswerCRM({ question: q, data })
-      const botMsg = { id: `a_${Date.now()}`, role: 'assistant', text: res.text, meta: res.mode }
+      const botMsg = { id: `a_${Date.now()}`, role: 'assistant', text: res.text }
       setMessages((prev) => [...prev, botMsg])
       window.setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 60)
     } catch (e) {
-      setMessages((prev) => [...prev, { id: `e_${Date.now()}`, role: 'assistant', text: e?.message || 'AI error' }])
+      setMessages((prev) => [...prev, { id: `e_${Date.now()}`, role: 'assistant', text: clientSafeMessage(e, 'Unable to generate an answer right now.') }])
     } finally {
       setBusy(false)
     }
@@ -48,7 +49,7 @@ export default function AIAssistantChat({ data }) {
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-sm font-semibold text-slate-900 dark:text-white">AI CRM Assistant</p>
-          <p className="text-xs text-slate-600 dark:text-slate-300">Answers are generated from your CRM demo/Firestore data.</p>
+          <p className="text-xs text-slate-600 dark:text-slate-300">Answers are generated from your workspace data.</p>
         </div>
         <Badge variant="purple">AI Chat</Badge>
       </div>
@@ -73,7 +74,6 @@ export default function AIAssistantChat({ data }) {
                 }`}
               >
                 <pre className="whitespace-pre-wrap font-sans">{m.text}</pre>
-                {m.meta ? <span className="mt-1 block text-[11px] opacity-80">mode: {m.meta}</span> : null}
               </div>
             </div>
           ))}
@@ -98,4 +98,3 @@ export default function AIAssistantChat({ data }) {
     </Card>
   )
 }
-

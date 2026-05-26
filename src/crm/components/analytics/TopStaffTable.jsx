@@ -16,7 +16,7 @@ export default function TopStaffTable({ staff = [] }) {
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-sm font-semibold text-slate-900 dark:text-white">Top Performing Staff</p>
-          <p className="text-xs text-slate-600 dark:text-slate-300">Performance tracking (demo)</p>
+          <p className="text-xs text-slate-600 dark:text-slate-300">Performance tracking</p>
         </div>
         <Badge variant="purple">Team</Badge>
       </div>

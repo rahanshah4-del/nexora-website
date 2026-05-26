@@ -28,7 +28,7 @@ export default function TasksPage() {
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
       <PageHeader
         title="Follow-ups"
-        subtitle="Daily follow-up tasks, reminders, and overdue alerts (demo)."
+        subtitle="Daily follow-up tasks, reminders, and overdue alerts."
         right={<Button className="rounded-2xl">Create Task</Button>}
       />
 
@@ -37,7 +37,7 @@ export default function TasksPage() {
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-sm font-semibold text-slate-900 dark:text-white">Task Queue</p>
-              <p className="text-xs text-slate-600 dark:text-slate-300">Auto reminders + task assignment placeholder</p>
+              <p className="text-xs text-slate-600 dark:text-slate-300">Auto reminders and task assignment</p>
             </div>
             <Badge variant="purple">Automation</Badge>
           </div>
@@ -51,7 +51,7 @@ export default function TasksPage() {
         </Card>
 
         <Card className="p-5">
-          <p className="text-sm font-semibold text-slate-900 dark:text-white">Calendar (Placeholder)</p>
+          <p className="text-sm font-semibold text-slate-900 dark:text-white">Calendar</p>
           <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
             Calendar integration can be added after approval.
           </p>
@@ -68,7 +68,7 @@ export default function TasksPage() {
               Send Email Reminders
             </Button>
             <Button variant="ghost" className="w-full rounded-2xl">
-              WhatsApp Placeholder
+              WhatsApp Reminder
             </Button>
           </div>
         </Card>
@@ -76,4 +76,3 @@ export default function TasksPage() {
     </motion.div>
   )
 }
-

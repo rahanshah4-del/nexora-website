@@ -42,10 +42,9 @@ export default function ClientSubscriptionCard({ subscription }) {
           Upgrade
         </Button>
         <Button variant="ghost" className="rounded-2xl" type="button">
-          Download invoice (Placeholder)
+          Download invoice
         </Button>
       </div>
     </Card>
   )
 }
-

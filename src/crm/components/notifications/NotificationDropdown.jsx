@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import Badge from '../ui/Badge.jsx'
 import Button from '../ui/Button.jsx'
 import NotificationItem from './NotificationItem.jsx'
+import { clientSafeMessage } from '../../utils/messages.js'
 
 function Toast({ tone = 'success', message, onClose }) {
   const toneClasses =
@@ -58,7 +59,7 @@ export default function NotificationDropdown({ notificationsEnabled, api, onClos
                     api.markDropdownSeen()
                     onClose?.()
                   } catch (e) {
-                    setToast({ tone: 'error', message: e?.message || 'Failed to update notification' })
+                    setToast({ tone: 'error', message: clientSafeMessage(e, 'Unable to update notification.') })
                     window.setTimeout(() => setToast(null), 2200)
                   }
                 }}
@@ -82,7 +83,7 @@ export default function NotificationDropdown({ notificationsEnabled, api, onClos
                 setToast({ tone: 'success', message: 'All notifications marked as read' })
                 window.setTimeout(() => setToast(null), 1500)
               } catch (e) {
-                setToast({ tone: 'error', message: e?.message || 'Failed to mark all read' })
+                setToast({ tone: 'error', message: clientSafeMessage(e, 'Unable to update notifications.') })
                 window.setTimeout(() => setToast(null), 2200)
               }
             }}
@@ -113,7 +114,7 @@ export default function NotificationDropdown({ notificationsEnabled, api, onClos
                 window.setTimeout(() => setToast(null), 1500)
                 onClose?.()
               } catch (e) {
-                setToast({ tone: 'error', message: e?.message || 'Failed to clear notifications' })
+                setToast({ tone: 'error', message: clientSafeMessage(e, 'Unable to clear notifications.') })
                 window.setTimeout(() => setToast(null), 2200)
               }
             }}
@@ -127,4 +128,3 @@ export default function NotificationDropdown({ notificationsEnabled, api, onClos
     </>
   )
 }
-

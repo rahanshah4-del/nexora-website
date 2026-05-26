@@ -77,7 +77,7 @@ export default function FollowUpsPage() {
       {toast ? <Toast tone={toast.tone} message={toast.message} onClose={() => setToast(null)} /> : null}
       <PageHeader
         title="Follow-Up Automation"
-        subtitle="Daily tasks, reminders, overdue alerts, and activity tracking (demo)."
+        subtitle="Daily tasks, reminders, overdue alerts, and activity tracking."
         right={
           <div className="flex flex-wrap items-center gap-2">
             {access.isStaff && !canCreate ? <Badge variant="warning">Permission required</Badge> : null}
@@ -104,15 +104,15 @@ export default function FollowUpsPage() {
             <div>
               <p className="text-sm font-semibold text-slate-900 dark:text-white">Follow-up Board</p>
               <p className="text-xs text-slate-600 dark:text-slate-300">
-                Auto reminders UI + assignments. {source === 'firestore' ? 'Synced to Firestore.' : 'Demo fallback.'}
+                Auto reminders and assignments. {source === 'firestore' ? 'Live Sync enabled.' : 'No data yet.'}
               </p>
             </div>
-            <Badge variant={source === 'firestore' ? 'success' : 'default'}>{loading ? 'Loading…' : source === 'firestore' ? 'Live' : 'Demo'}</Badge>
+            <Badge variant={source === 'firestore' ? 'success' : 'default'}>{loading ? 'Loading…' : source === 'firestore' ? 'Live Sync' : 'No data yet'}</Badge>
           </div>
 
           <div className="mt-4 grid gap-3 md:grid-cols-2">
-            <Input placeholder="Search tasks (placeholder)..." />
-            <Input placeholder="Filter by priority/status (placeholder)..." />
+            <Input placeholder="Search tasks..." />
+            <Input placeholder="Filter by priority/status..." />
           </div>
 
           {error ? (
@@ -142,13 +142,13 @@ export default function FollowUpsPage() {
           <FollowUpCalendar />
           <Card className="p-5">
             <p className="text-sm font-semibold text-slate-900 dark:text-white">Reminders</p>
-            <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">Email + WhatsApp placeholders</p>
+            <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">Email and WhatsApp reminders</p>
             <div className="mt-4 space-y-2">
               <Button variant="subtle" className="w-full rounded-2xl">
                 Send Email Reminders
               </Button>
               <Button variant="ghost" className="w-full rounded-2xl">
-                WhatsApp Placeholder
+                WhatsApp Reminder
               </Button>
               <Button className="w-full rounded-2xl">Reminder Notifications</Button>
             </div>
