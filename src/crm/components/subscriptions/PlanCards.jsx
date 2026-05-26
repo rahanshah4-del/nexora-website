@@ -1,9 +1,6 @@
 import Badge from '../ui/Badge.jsx'
 import Button from '../ui/Button.jsx'
 import Card from '../ui/Card.jsx'
-import { convertFromUsd } from '../../utils/currency.js'
-import { formatCurrency } from '../../utils/format.js'
-import { usePreferences } from '../../hooks/usePreferences.js'
 import { useNavigate } from 'react-router-dom'
 
 function badgeVariant(name) {
@@ -14,7 +11,6 @@ function badgeVariant(name) {
 }
 
 export default function PlanCards({ plans, currentPlan }) {
-  const { currency } = usePreferences()
   const navigate = useNavigate()
 
   return (
@@ -32,19 +28,12 @@ export default function PlanCards({ plans, currentPlan }) {
           <div className="mt-4">
             <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">Starting at</p>
             <p className="mt-1 text-lg font-semibold text-slate-900 dark:text-white">
-              {p.monthlyUsd === 0 ? (
-                'Free'
-              ) : (
-                <>
-                  {formatCurrency(convertFromUsd(p.monthlyUsd, currency), currency)}
-                  <span className="text-sm font-semibold text-slate-600 dark:text-slate-300"> / mo</span>
-                </>
-              )}
+              {p.priceLabel || (p.monthlyPkr === 0 ? 'Free' : `PKR ${p.monthlyPkr}/month`)}
             </p>
           </div>
 
           <ul className="mt-4 space-y-2 text-sm text-slate-700 dark:text-slate-200">
-            {p.features.slice(0, 3).map((f) => (
+            {p.features.slice(0, 5).map((f) => (
               <li key={f} className="flex items-center gap-2">
                 <span className="h-2 w-2 rounded-full bg-gradient-to-br from-indigo-500 to-fuchsia-500 shadow-glow" />
                 <span className="truncate">{f}</span>
@@ -68,4 +57,3 @@ export default function PlanCards({ plans, currentPlan }) {
     </div>
   )
 }
-

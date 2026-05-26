@@ -132,6 +132,15 @@ service cloud.firestore {
         allow write: if staffPermission(workspaceId, 'customerManagement');
       }
 
+      match /clients/{clientId} {
+        allow read, write: if isWorkspaceManager(workspaceId);
+      }
+
+      match /products/{productId} {
+        allow read: if staffPermission(workspaceId, 'invoices') || staffPermission(workspaceId, 'reports');
+        allow write: if isWorkspaceManager(workspaceId);
+      }
+
       match /leads/{leadId} {
         allow read: if staffPermission(workspaceId, 'leadsManagement') || staffPermission(workspaceId, 'reports');
         allow write: if staffPermission(workspaceId, 'leadsManagement');

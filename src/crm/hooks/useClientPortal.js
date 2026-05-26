@@ -1,7 +1,21 @@
 import { useEffect, useMemo, useState } from 'react'
 import { db } from '../lib/firebase.js'
-import { subscribeUserCollection } from '../lib/firestore.js'
+import { createUserDoc, subscribeUserCollection } from '../lib/firestore.js'
 import { useUser } from './useUser.js'
+
+function normalizeClient(client) {
+  return {
+    id: client.id,
+    name: client.name || 'No name',
+    email: client.email || '',
+    phone: client.phone || '',
+    businessName: client.businessName || '',
+    plan: client.plan || 'Trial',
+    status: client.status || 'Active',
+    createdBy: client.createdBy || client.userId || '',
+    createdAt: client.createdAt || null,
+  }
+}
 
 function normalizeInvoice(inv) {
   return {
@@ -9,8 +23,9 @@ function normalizeInvoice(inv) {
     invoiceNumber: inv.invoiceNumber || inv.id || 'INV-—',
     customerName: inv.customerName || '—',
     customerEmail: inv.customerEmail || '',
-    totalUsd: Number(inv.totalUsd ?? inv.total ?? 0),
-    currency: inv.currency || 'USD',
+    totalUsd: Number(inv.totalUsd ?? inv.total ?? 0) || 0,
+    total: Number(inv.total ?? inv.totalUsd ?? 0) || 0,
+    currency: inv.currency || 'PKR',
     status: inv.status || 'Pending',
     dueDate: inv.dueDate || '—',
     createdAt: inv.createdAt || '—',
@@ -22,8 +37,9 @@ function normalizePayment(p) {
     id: p.id || p.reference || `PAY-${Date.now()}`,
     invoiceId: p.invoiceId || '—',
     customerName: p.customerName || '—',
-    amountUsd: Number(p.amountUsd ?? p.amount ?? 0),
-    currency: p.currency || 'USD',
+    amountUsd: Number(p.amountUsd ?? p.amount ?? 0) || 0,
+    amount: Number(p.amount ?? p.amountUsd ?? 0) || 0,
+    currency: p.currency || 'PKR',
     paymentMethod: p.paymentMethod || 'Manual',
     paymentStatus: p.paymentStatus || 'Pending',
     paidAt: p.paidAt || '—',
@@ -32,7 +48,8 @@ function normalizePayment(p) {
 }
 
 export function useClientPortal() {
-  const { userDoc, userId } = useUser()
+  const { userDoc, userId, workspaceId } = useUser()
+  const [clients, setClients] = useState([])
   const [invoices, setInvoices] = useState([])
   const [payments, setPayments] = useState([])
   const [activity, setActivity] = useState([])
@@ -53,6 +70,7 @@ export function useClientPortal() {
         setInvoices([])
         setPayments([])
         setActivity([])
+        setClients([])
         setSubscription({
           plan: userDoc?.plan || 'Free',
           planStatus: userDoc?.planStatus || 'inactive',
@@ -66,8 +84,9 @@ export function useClientPortal() {
       })
       return
     }
-    if (!userId) {
+    if (!workspaceId) {
       Promise.resolve().then(() => {
+        setClients([])
         setInvoices([])
         setPayments([])
         setActivity([])
@@ -87,8 +106,24 @@ export function useClientPortal() {
     Promise.resolve().then(() => setLoading(true))
     Promise.resolve().then(() => setError(''))
 
+    const unsubClients = subscribeUserCollection(
+      workspaceId,
+      'clients',
+      (rows) => {
+        setClients((Array.isArray(rows) ? rows : []).map(normalizeClient))
+        setSource('firestore')
+        setLoading(false)
+      },
+      (err) => {
+        setError(err?.message || 'Failed to load clients')
+        setClients([])
+        setSource('firestore')
+        setLoading(false)
+      },
+    )
+
     const unsubInv = subscribeUserCollection(
-      userId,
+      workspaceId,
       'invoices',
       (rows) => {
         const list = (Array.isArray(rows) ? rows : []).map(normalizeInvoice)
@@ -105,7 +140,7 @@ export function useClientPortal() {
     )
 
     const unsubPay = subscribeUserCollection(
-      userId,
+      workspaceId,
       'payments',
       (rows) => {
         setPayments((Array.isArray(rows) ? rows : []).map(normalizePayment))
@@ -114,7 +149,7 @@ export function useClientPortal() {
     )
 
     const unsubSubs = subscribeUserCollection(
-      userId,
+      workspaceId,
       'subscriptions',
       (rows) => {
         const sub = rows[0] || null
@@ -137,7 +172,7 @@ export function useClientPortal() {
     )
 
     const unsubActivity = subscribeUserCollection(
-      userId,
+      workspaceId,
       'activityLogs',
       (rows) => {
         const list = (Array.isArray(rows) ? rows : [])
@@ -155,12 +190,13 @@ export function useClientPortal() {
     )
 
     return () => {
+      unsubClients?.()
       unsubInv?.()
       unsubPay?.()
       unsubSubs?.()
       unsubActivity?.()
     }
-  }, [userId, userDoc?.email, userDoc?.plan, userDoc?.planStatus, userDoc?.billingCycle])
+  }, [workspaceId, userDoc?.email, userDoc?.plan, userDoc?.planStatus, userDoc?.billingCycle])
 
   const api = useMemo(
     () => ({
@@ -168,12 +204,39 @@ export function useClientPortal() {
       source,
       error,
       project: null,
+      clients,
       invoices,
       payments,
       subscription,
       activity,
+      async createClient(payload) {
+        if (!userId || !workspaceId) return { ok: false, error: 'Please login first' }
+        if (!db) return { ok: false, error: 'Firestore is not configured' }
+        const name = String(payload.name || '').trim()
+        const email = String(payload.email || '').trim()
+        const phone = String(payload.phone || '').trim()
+        const businessName = String(payload.businessName || '').trim()
+        const plan = String(payload.plan || 'Trial').trim()
+        const status = String(payload.status || 'Active').trim()
+        if (!name) return { ok: false, error: 'Client name is required' }
+        if (!email) return { ok: false, error: 'Client email is required' }
+        try {
+          await createUserDoc(workspaceId, 'clients', {
+            name,
+            email,
+            phone,
+            businessName,
+            plan: plan || 'Trial',
+            status: status || 'Active',
+            createdBy: userId,
+          })
+          return { ok: true }
+        } catch (e) {
+          return { ok: false, error: e?.message || 'Failed to create client' }
+        }
+      },
     }),
-    [loading, source, error, invoices, payments, subscription, activity],
+    [loading, source, error, clients, invoices, payments, subscription, activity, userId, workspaceId],
   )
 
   return api

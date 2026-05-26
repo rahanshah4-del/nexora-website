@@ -12,6 +12,7 @@ import DashboardHomePage from './crm/pages/DashboardHome.jsx'
 import RestaurantPOSPage from './crm/pages/RestaurantPOS.jsx'
 import ClientPortalPage from './crm/pages/ClientPortal.jsx'
 import CustomersPage from './crm/pages/Customers.jsx'
+import ProductsPage from './crm/pages/Products.jsx'
 import LeadsPage from './crm/pages/Leads.jsx'
 import LeadScoringPage from './crm/pages/LeadScoring.jsx'
 import AIAssistantPage from './crm/pages/AIAssistant.jsx'
@@ -63,6 +64,7 @@ export default function AppRouter() {
         <Route path="restaurant-pos" element={<RestaurantPOSPage />} />
         <Route path="client-portal" element={<ClientPortalPage />} />
         <Route path="customers" element={<CustomersPage />} />
+        <Route path="products" element={<ProductsPage />} />
         <Route path="leads" element={<LeadsPage />} />
         <Route path="leads/scoring" element={<LeadScoringPage />} />
         <Route path="ai-assistant" element={<AIAssistantPage />} />

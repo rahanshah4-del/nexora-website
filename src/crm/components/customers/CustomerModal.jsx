@@ -14,11 +14,12 @@ export default function CustomerModal({ open, onClose, onCreate }) {
     Promise.resolve().then(() =>
       setDraft({
         name: '',
-        company: '',
         email: '',
-        plan: 'Free',
+        phone: '',
+        company: '',
+        customerType: 'Retail',
         status: 'Active',
-        spendUsd: 0,
+        notes: '',
       }),
     )
   }, [open])
@@ -59,20 +60,25 @@ export default function CustomerModal({ open, onClose, onCreate }) {
                     <Input className="mt-1" value={draft.name} onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))} />
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Company *</label>
-                    <Input className="mt-1" value={draft.company} onChange={(e) => setDraft((d) => ({ ...d, company: e.target.value }))} />
-                  </div>
-                  <div className="sm:col-span-2">
                     <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Email *</label>
                     <Input className="mt-1" type="email" value={draft.email} onChange={(e) => setDraft((d) => ({ ...d, email: e.target.value }))} />
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Plan</label>
-                    <Select className="mt-1" value={draft.plan} onChange={(e) => setDraft((d) => ({ ...d, plan: e.target.value }))}>
-                      <option>Free</option>
-                      <option>Starter</option>
+                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Phone</label>
+                    <Input className="mt-1" value={draft.phone} onChange={(e) => setDraft((d) => ({ ...d, phone: e.target.value }))} />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Company</label>
+                    <Input className="mt-1" value={draft.company} onChange={(e) => setDraft((d) => ({ ...d, company: e.target.value }))} />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Customer Type</label>
+                    <Select className="mt-1" value={draft.customerType} onChange={(e) => setDraft((d) => ({ ...d, customerType: e.target.value }))}>
+                      <option>Retail</option>
                       <option>Business</option>
                       <option>Enterprise</option>
+                      <option>Partner</option>
+                      <option>General</option>
                     </Select>
                   </div>
                   <div>
@@ -85,12 +91,11 @@ export default function CustomerModal({ open, onClose, onCreate }) {
                     </Select>
                   </div>
                   <div className="sm:col-span-2">
-                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Spend (USD base)</label>
-                    <Input
-                      className="mt-1"
-                      inputMode="numeric"
-                      value={draft.spendUsd}
-                      onChange={(e) => setDraft((d) => ({ ...d, spendUsd: Number(e.target.value || 0) }))}
+                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Notes</label>
+                    <textarea
+                      className="focus-ring mt-1 min-h-24 w-full resize-none rounded-xl border border-slate-200 bg-white/90 px-3 py-2 text-sm text-slate-900 shadow-sm outline-none transition duration-200 placeholder:text-slate-400 hover:border-slate-300 focus:border-sky-300 focus:bg-white dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-100"
+                      value={draft.notes}
+                      onChange={(e) => setDraft((d) => ({ ...d, notes: e.target.value }))}
                     />
                   </div>
                 </div>
@@ -111,4 +116,3 @@ export default function CustomerModal({ open, onClose, onCreate }) {
     </AnimatePresence>
   )
 }
-

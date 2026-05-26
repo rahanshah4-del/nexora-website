@@ -27,7 +27,7 @@ function normalizeSub(s) {
 }
 
 export function useSubscriptions() {
-  const { userId, userDoc } = useUser()
+  const { userId, workspaceId, userDoc } = useUser()
   const [subscription, setSubscription] = useState(() =>
     normalizeSub({
       id: 'sub',
@@ -66,7 +66,7 @@ export function useSubscriptions() {
       })
       return
     }
-    if (!userId) {
+    if (!workspaceId) {
       Promise.resolve().then(() => {
         setSubscription(
           normalizeSub({
@@ -90,11 +90,11 @@ export function useSubscriptions() {
     Promise.resolve().then(() => setError(''))
 
     const unsub = subscribeUserCollection(
-      userId,
+      workspaceId,
       'subscriptions',
       (rows) => {
         const raw = rows[0] || null
-        const sub = normalizeSub(raw || { id: 'sub', userId })
+        const sub = normalizeSub(raw || { id: 'sub', userId: workspaceId })
         setSubscription({
           ...sub,
           plan: userDoc?.plan || sub.plan,
@@ -109,7 +109,7 @@ export function useSubscriptions() {
         setSubscription(
           normalizeSub({
             id: 'sub',
-            userId,
+            userId: workspaceId,
             plan: userDoc?.plan || 'Free',
             planStatus: userDoc?.planStatus || 'inactive',
             billingCycle: userDoc?.billingCycle || 'monthly',
@@ -146,7 +146,7 @@ export function useSubscriptions() {
       unsub?.()
       unsubUpgrades?.()
     }
-  }, [userId, userDoc?.plan, userDoc?.planStatus, userDoc?.billingCycle])
+  }, [userId, workspaceId, userDoc?.plan, userDoc?.planStatus, userDoc?.billingCycle])
 
   useEffect(() => {
     const exp = subscription?.expiresOn

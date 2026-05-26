@@ -6,18 +6,20 @@ import { useUser } from './useUser.js'
 function normalizeCustomer(c) {
   return {
     id: c.id,
-    name: c.name || '—',
-    company: c.company || '—',
+    name: c.name || 'No name',
     email: c.email || '',
-    plan: c.plan || 'Free',
+    phone: c.phone || '',
+    company: c.company || '',
+    customerType: c.customerType || 'General',
     status: c.status || 'Active',
-    spendUsd: Number(c.spendUsd ?? 0) || 0,
+    notes: c.notes || '',
+    createdBy: c.createdBy || c.userId || '',
     createdAt: c.createdAt || null,
   }
 }
 
 export function useCustomers() {
-  const { userId } = useUser()
+  const { userId, workspaceId } = useUser()
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
   const [source, setSource] = useState(db ? 'firestore' : 'none')
@@ -33,7 +35,7 @@ export function useCustomers() {
       })
       return
     }
-    if (!userId) {
+    if (!workspaceId) {
       Promise.resolve().then(() => {
         setRows([])
         setSource('firestore')
@@ -48,7 +50,7 @@ export function useCustomers() {
       setError('')
     })
     const unsub = subscribeUserCollection(
-      userId,
+      workspaceId,
       'customers',
       (data) => {
         setRows((Array.isArray(data) ? data : []).map(normalizeCustomer))
@@ -61,7 +63,7 @@ export function useCustomers() {
       },
     )
     return () => unsub?.()
-  }, [userId])
+  }, [workspaceId])
 
   const api = useMemo(
     () => ({
@@ -70,22 +72,27 @@ export function useCustomers() {
       source,
       error,
       async createCustomer(payload) {
-        if (!userId) return { ok: false, error: 'Please login first' }
+        if (!userId || !workspaceId) return { ok: false, error: 'Please login first' }
         if (!db) return { ok: false, error: 'Firestore is not configured' }
         const name = String(payload.name || '').trim()
         const email = String(payload.email || '').trim()
+        const phone = String(payload.phone || '').trim()
         const company = String(payload.company || '').trim()
+        const customerType = String(payload.customerType || 'General').trim()
+        const status = String(payload.status || 'Active').trim()
+        const notes = String(payload.notes || '').trim()
         if (!name) return { ok: false, error: 'Name is required' }
         if (!email) return { ok: false, error: 'Email is required' }
-        if (!company) return { ok: false, error: 'Company is required' }
         try {
-          await createUserDoc(userId, 'customers', {
+          await createUserDoc(workspaceId, 'customers', {
             name,
             email,
+            phone,
             company,
-            plan: payload.plan || 'Free',
-            status: payload.status || 'Active',
-            spendUsd: Number(payload.spendUsd || 0),
+            customerType: customerType || 'General',
+            status: status || 'Active',
+            notes,
+            createdBy: userId,
           })
           return { ok: true }
         } catch (e) {
@@ -93,7 +100,7 @@ export function useCustomers() {
         }
       },
     }),
-    [rows, loading, source, error, userId],
+    [rows, loading, source, error, userId, workspaceId],
   )
 
   return api

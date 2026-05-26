@@ -15,74 +15,39 @@ import {
   workspaceRoute,
 } from '../lib/workspaceSession.js'
 
-const MOBILE_NOTICE_KEY = 'nexora_crm_mobile_dashboard_notice_dismissed_v1'
-
-function MobileDashboardNotice() {
-  const [show, setShow] = useState(false)
-
-  useEffect(() => {
-    const dismissed = localStorage.getItem(MOBILE_NOTICE_KEY) === 'true'
-    const isMobile = window.matchMedia?.('(max-width: 767px)')?.matches
-    if (!dismissed && isMobile) {
-      const handle = window.setTimeout(() => setShow(true), 450)
-      return () => window.clearTimeout(handle)
-    }
-    return undefined
-  }, [])
-
-  function dismiss() {
-    localStorage.setItem(MOBILE_NOTICE_KEY, 'true')
-    setShow(false)
-  }
-
+function MobileAppAccessBlock() {
   return (
-    <AnimatePresence>
-      {show ? (
-        <motion.div
-          className="fixed inset-0 z-[70] grid place-items-center bg-slate-950/30 px-4 md:hidden"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.22 }}
-          onClick={dismiss}
-        >
-          <motion.div
-            className="w-full max-w-sm overflow-hidden rounded-[1.6rem] border border-white/80 bg-white p-5 shadow-[0_20px_64px_-38px_rgba(15,23,42,0.55)]"
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 8 }}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
-            onClick={(event) => event.stopPropagation()}
+    <div className="nexora-bg grid min-h-dvh place-items-center overflow-x-hidden px-4 py-8">
+      <motion.div
+        className="w-full max-w-md overflow-hidden rounded-[1.8rem] border border-white/85 bg-white/95 p-6 text-center shadow-[0_24px_80px_-48px_rgba(15,23,42,0.55)]"
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.22, ease: 'easeOut' }}
+      >
+        <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-slate-950 text-white shadow-lg shadow-slate-950/15">
+          <span className="text-lg font-semibold">N</span>
+        </div>
+        <p className="mt-4 text-sm font-semibold uppercase tracking-[0.18em] text-sky-700">NEXORA CRM</p>
+        <h1 className="mt-2 text-xl font-semibold tracking-tight text-slate-950">Desktop workspace required</h1>
+        <p className="mt-3 text-sm leading-7 text-slate-600">
+          NEXORA Business Suite is designed for desktop and tablet management. Please open on laptop/desktop for full CRM access.
+        </p>
+        <div className="mt-6 grid gap-2">
+          <a
+            href="/"
+            className="focus-ring inline-flex h-11 items-center justify-center rounded-2xl bg-slate-950 px-4 text-sm font-semibold text-white shadow-lg shadow-slate-950/15 transition hover:bg-sky-700"
           >
-            <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-slate-950 text-white shadow-lg shadow-slate-950/15">
-              <span className="text-lg font-semibold">N</span>
-            </div>
-            <div className="mt-4 text-center">
-              <p className="text-base font-semibold text-slate-950">Best on desktop or tablet</p>
-              <p className="mt-2 text-sm leading-6 text-slate-600">
-                For the best dashboard experience, please use a desktop or tablet device.
-              </p>
-            </div>
-            <div className="mt-5 grid gap-2">
-              <button
-                type="button"
-                className="focus-ring h-11 rounded-2xl bg-slate-950 px-4 text-sm font-semibold text-white shadow-lg shadow-slate-950/15 transition hover:bg-sky-700"
-                onClick={dismiss}
-              >
-                Continue Anyway
-              </button>
-              <button
-                type="button"
-                className="focus-ring h-11 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 shadow-sm transition hover:bg-slate-50"
-                onClick={dismiss}
-              >
-                Open on Desktop Later
-              </button>
-            </div>
-          </motion.div>
-        </motion.div>
-      ) : null}
-    </AnimatePresence>
+            Back to Website
+          </a>
+          <a
+            href="/downloads/nexora-business-suite-windows.exe"
+            className="focus-ring inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-sky-200 hover:text-sky-700"
+          >
+            Download Windows App
+          </a>
+        </div>
+      </motion.div>
+    </div>
   )
 }
 
@@ -90,6 +55,7 @@ export default function DashboardLayout() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
   const [productModalOpen, setProductModalOpen] = useState(false)
+  const [mobileBlocked, setMobileBlocked] = useState(false)
   const [selectedWorkspace, setSelectedWorkspace] = useState(null)
   const [sessionInfo, setSessionInfo] = useState(null)
   const { user, ready } = useAuth()
@@ -99,6 +65,16 @@ export default function DashboardLayout() {
 
   const toggleCollapse = useCallback(() => setCollapsed((c) => !c), [])
   const userId = user?.uid ?? null
+
+  useEffect(() => {
+    const media = window.matchMedia?.('(max-width: 767px)')
+    if (!media) return undefined
+
+    const update = () => setMobileBlocked(media.matches)
+    update()
+    media.addEventListener?.('change', update)
+    return () => media.removeEventListener?.('change', update)
+  }, [])
 
   useEffect(() => {
     if (!ready || !userId || userLoading) return
@@ -167,6 +143,10 @@ export default function DashboardLayout() {
     setProductModalOpen(true)
   }, [])
 
+  if (mobileBlocked) {
+    return <MobileAppAccessBlock />
+  }
+
   return (
     <div className="nexora-bg min-h-dvh overflow-x-hidden">
       <Sidebar collapsed={collapsed} onToggleCollapse={toggleCollapse} onSwitchProduct={openProductSwitcher} />
@@ -193,8 +173,6 @@ export default function DashboardLayout() {
         onContinueLast={continueLastWorkspace}
         onClose={continueLastWorkspace}
       />
-
-      <MobileDashboardNotice />
 
       <AnimatePresence>
         {mobileOpen ? (

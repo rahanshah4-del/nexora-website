@@ -12,6 +12,7 @@ const priorityRoutes = [
   '/app/dashboard',
   '/app/client-portal',
   '/app/customers',
+  '/app/products',
   '/app/leads',
   '/app/leads/scoring',
   '/app/ai-assistant',
@@ -35,6 +36,7 @@ const compactLabels = {
   '/app/support': 'Support Tickets',
   '/app/analytics': 'Analytics',
   '/app/activity-logs': 'Activity',
+  '/app/products': 'Products',
 }
 
 const sidebarItems = [

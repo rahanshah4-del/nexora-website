@@ -1,7 +1,6 @@
 import Badge from '../ui/Badge.jsx'
 import Button from '../ui/Button.jsx'
 import Table from '../ui/Table.jsx'
-import { convertFromUsd } from '../../utils/currency.js'
 import { formatCurrency } from '../../utils/format.js'
 
 export default function InvoiceTable({ invoices, currency, onOpen }) {
@@ -11,7 +10,7 @@ export default function InvoiceTable({ invoices, currency, onOpen }) {
     {
       key: 'totalUsd',
       header: 'Total',
-      cell: (r) => <span className="font-semibold">{formatCurrency(convertFromUsd(r.totalUsd, currency), currency)}</span>,
+      cell: (r) => <span className="font-semibold">{formatCurrency(r.total ?? r.totalUsd ?? 0, r.currency || currency || 'PKR')}</span>,
     },
     { key: 'dueDate', header: 'Due' },
     {
@@ -40,4 +39,3 @@ export default function InvoiceTable({ invoices, currency, onOpen }) {
 
   return <Table columns={columns} rows={invoices} />
 }
-

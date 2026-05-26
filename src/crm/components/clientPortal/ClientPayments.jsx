@@ -1,11 +1,8 @@
 import Badge from '../ui/Badge.jsx'
 import Card from '../ui/Card.jsx'
-import { convertFromUsd } from '../../utils/currency.js'
 import { formatCurrency } from '../../utils/format.js'
-import { usePreferences } from '../../hooks/usePreferences.js'
 
 export default function ClientPayments({ payments }) {
-  const { currency } = usePreferences()
   return (
     <Card className="p-5">
       <div className="flex items-start justify-between gap-3">
@@ -31,7 +28,7 @@ export default function ClientPayments({ payments }) {
               <div className="flex items-center gap-2">
                 <Badge variant={p.paymentStatus === 'Paid' ? 'success' : 'warning'}>{p.paymentStatus}</Badge>
                 <span className="text-sm font-semibold text-slate-900 dark:text-white">
-                  {formatCurrency(convertFromUsd(p.amountUsd, currency), currency)}
+                  {formatCurrency(p.amount ?? p.amountUsd ?? 0, p.currency || 'PKR')}
                 </span>
               </div>
             </div>
@@ -45,4 +42,3 @@ export default function ClientPayments({ payments }) {
     </Card>
   )
 }
-

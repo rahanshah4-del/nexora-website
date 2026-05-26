@@ -11,10 +11,12 @@ import Badge from '../components/ui/Badge.jsx'
 import InvoiceModal from '../components/invoices/InvoiceModal.jsx'
 import { useState } from 'react'
 import Toast from '../components/ui/Toast.jsx'
+import { useProducts } from '../hooks/useProducts.js'
 
 export default function InvoicesPage() {
   const { currency } = usePreferences()
   const { invoices, payments, stats, loading, source, error, createInvoice } = useInvoices()
+  const { products } = useProducts()
   const [openInvoice, setOpenInvoice] = useState(null)
   const [createOpen, setCreateOpen] = useState(false)
   const [toast, setToast] = useState(null)
@@ -24,7 +26,7 @@ export default function InvoicesPage() {
       {toast ? <Toast tone={toast.tone} message={toast.message} onClose={() => setToast(null)} /> : null}
       <PageHeader
         title="Invoices & Payments"
-        subtitle="Invoices, recurring billing placeholders, and manual payment approval (demo)."
+        subtitle="Create PKR-first invoices with products, tax, discounts, and workspace-safe billing records."
         right={
           <div className="flex items-center gap-2">
             <Button variant="subtle" className="rounded-2xl">
@@ -38,7 +40,7 @@ export default function InvoicesPage() {
       />
 
       <div className="mb-4 flex items-center justify-between">
-        <Badge variant={source === 'firestore' ? 'success' : 'default'}>{loading ? 'Loading…' : source === 'firestore' ? 'Live' : 'Demo'}</Badge>
+        <Badge variant={source === 'firestore' ? 'success' : 'default'}>{loading ? 'Loading…' : source === 'firestore' ? 'Live Firestore' : 'Offline'}</Badge>
         {error ? <Badge variant="danger">Error</Badge> : null}
       </div>
 
@@ -97,15 +99,10 @@ export default function InvoicesPage() {
         mode="create"
         invoice={null}
         currency={currency}
+        products={products}
         onClose={() => setCreateOpen(false)}
         onCreate={async (inv) => {
-          const res = await createInvoice({
-            id: inv.invoiceNumber,
-            ...inv,
-            subtotalUsd: inv.subtotalUsd,
-            taxAmountUsd: inv.taxAmountUsd,
-            totalUsd: inv.totalUsd,
-          })
+          const res = await createInvoice(inv)
           if (res?.ok) {
             setToast({ tone: 'success', message: 'Invoice created successfully' })
             window.setTimeout(() => setToast(null), 1600)
@@ -113,6 +110,7 @@ export default function InvoicesPage() {
             setToast({ tone: 'error', message: res.error })
             window.setTimeout(() => setToast(null), 2400)
           }
+          return res
         }}
       />
     </motion.div>

@@ -26,7 +26,7 @@ const modules = [
 ]
 
 function isPaidPlan(plan) {
-  return ['business', 'premium', 'enterprise'].includes(String(plan || '').toLowerCase())
+  return ['business', 'enterprise'].includes(String(plan || '').toLowerCase())
 }
 
 export default function HRDashboardPage() {
@@ -46,7 +46,7 @@ export default function HRDashboardPage() {
             </div>
             <Badge variant="warning" className="mt-5">Premium Feature</Badge>
             <h1 className="mt-4 text-2xl font-semibold tracking-tight text-slate-950 dark:text-white sm:text-3xl">
-              HR Dashboard is available in the Business/Premium plan.
+              HR Management is available in Business Plan.
             </h1>
             <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
               Current plan: {plan || 'Free'} · Role: {role || 'owner'}

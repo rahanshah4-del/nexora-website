@@ -6,26 +6,46 @@ import Input from '../components/ui/Input.jsx'
 import PageHeader from '../components/ui/PageHeader.jsx'
 import Table from '../components/ui/Table.jsx'
 import Badge from '../components/ui/Badge.jsx'
-import { formatCurrency } from '../utils/format.js'
-import { usePreferences } from '../hooks/usePreferences.js'
-import { convertFromUsd } from '../utils/currency.js'
 import { useCustomers } from '../hooks/useCustomers.js'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import Toast from '../components/ui/Toast.jsx'
 import EmptyState from '../components/system/EmptyState.jsx'
 import CustomerModal from '../components/customers/CustomerModal.jsx'
 
+function formatDate(value) {
+  if (!value) return '—'
+  const date = value?.toDate?.() || new Date(value)
+  return Number.isNaN(date.getTime()) ? '—' : date.toLocaleDateString()
+}
+
 export default function CustomersPage() {
-  const { currency } = usePreferences()
   const customersApi = useCustomers()
   const [createOpen, setCreateOpen] = useState(false)
   const [toast, setToast] = useState(null)
+  const [search, setSearch] = useState('')
+
+  const filteredCustomers = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return customersApi.customers
+    return customersApi.customers.filter((customer) =>
+      [customer.name, customer.email, customer.phone, customer.company, customer.customerType, customer.status]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(q)),
+    )
+  }, [customersApi.customers, search])
+
+  const stats = useMemo(() => {
+    const active = customersApi.customers.filter((customer) => customer.status === 'Active').length
+    const business = customersApi.customers.filter((customer) => customer.customerType === 'Business' || customer.customerType === 'Enterprise').length
+    return { total: customersApi.customers.length, active, business }
+  }, [customersApi.customers])
+
   const columns = [
-    { key: 'id', header: 'Customer ID' },
     { key: 'name', header: 'Name', cell: (r) => <span className="font-semibold">{r.name}</span> },
-    { key: 'company', header: 'Company' },
     { key: 'email', header: 'Email' },
-    { key: 'plan', header: 'Plan', cell: (r) => <Badge variant="info">{r.plan}</Badge> },
+    { key: 'phone', header: 'Phone', cell: (r) => r.phone || '—' },
+    { key: 'company', header: 'Company', cell: (r) => r.company || '—' },
+    { key: 'customerType', header: 'Type', cell: (r) => <Badge variant="info">{r.customerType}</Badge> },
     {
       key: 'status',
       header: 'Status',
@@ -34,13 +54,7 @@ export default function CustomersPage() {
         return <Badge variant={v}>{r.status}</Badge>
       },
     },
-    {
-      key: 'spendUsd',
-      header: 'Spend',
-      cell: (r) => (
-        <span className="font-semibold">{formatCurrency(convertFromUsd(r.spendUsd || 0, currency), currency)}</span>
-      ),
-    },
+    { key: 'createdAt', header: 'Created', cell: (r) => formatDate(r.createdAt) },
   ]
 
   return (
@@ -61,21 +75,41 @@ export default function CustomersPage() {
         }
       />
 
+      <div className="mb-4 grid gap-3 md:grid-cols-3">
+        {[
+          ['Total customers', stats.total],
+          ['Active records', stats.active],
+          ['Business accounts', stats.business],
+        ].map(([label, value]) => (
+          <Card key={label} className="p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">{label}</p>
+            <p className="mt-2 text-2xl font-semibold text-slate-950 dark:text-white">{value}</p>
+          </Card>
+        ))}
+      </div>
+
       <Card className="p-5">
-        <div className="grid gap-3 md:grid-cols-3">
-          <Input placeholder="Search customers..." />
-          <Input placeholder="Filter by plan (e.g. Pro)" />
-          <Input placeholder="Filter by status (e.g. Active)" />
+        <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+          <Input placeholder="Search customers..." value={search} onChange={(e) => setSearch(e.target.value)} />
+          <Badge variant={customersApi.source === 'firestore' ? 'success' : 'default'}>
+            {customersApi.loading ? 'Loading…' : customersApi.source === 'firestore' ? 'Live Firestore' : 'Offline'}
+          </Badge>
         </div>
+        {customersApi.error ? <p className="mt-3 text-sm font-semibold text-rose-700">{customersApi.error}</p> : null}
         <div className="mt-4">
           {customersApi.loading ? (
             <div className="grid min-h-[14rem] place-items-center text-sm text-slate-600 dark:text-slate-300">
               Loading customers…
             </div>
-          ) : customersApi.customers.length ? (
-            <Table columns={columns} rows={customersApi.customers} />
+          ) : filteredCustomers.length ? (
+            <Table columns={columns} rows={filteredCustomers} />
           ) : (
-            <EmptyState title="No customers yet" description="Create your first customer to see it here." />
+            <EmptyState
+              title="No customers yet"
+              description="Firestore is empty for this workspace. Add a customer to begin."
+              actionLabel="Add Customer"
+              onAction={() => setCreateOpen(true)}
+            />
           )}
         </div>
       </Card>

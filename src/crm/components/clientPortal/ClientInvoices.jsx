@@ -3,8 +3,6 @@ import Button from '../ui/Button.jsx'
 import Card from '../ui/Card.jsx'
 import Table from '../ui/Table.jsx'
 import { formatCurrency } from '../../utils/format.js'
-import { convertFromUsd } from '../../utils/currency.js'
-import { usePreferences } from '../../hooks/usePreferences.js'
 
 function statusVariant(status) {
   if (status === 'Paid') return 'success'
@@ -14,7 +12,6 @@ function statusVariant(status) {
 }
 
 export default function ClientInvoices({ invoices }) {
-  const { currency } = usePreferences()
   const columns = [
     { key: 'invoiceNumber', header: 'Invoice', cell: (r) => <span className="font-semibold">{r.invoiceNumber}</span> },
     { key: 'dueDate', header: 'Due' },
@@ -22,7 +19,7 @@ export default function ClientInvoices({ invoices }) {
     {
       key: 'totalUsd',
       header: 'Total',
-      cell: (r) => <span className="font-semibold">{formatCurrency(convertFromUsd(r.totalUsd, currency), currency)}</span>,
+      cell: (r) => <span className="font-semibold">{formatCurrency(r.total ?? r.totalUsd ?? 0, r.currency || 'PKR')}</span>,
     },
     {
       key: 'actions',
@@ -51,4 +48,3 @@ export default function ClientInvoices({ invoices }) {
     </Card>
   )
 }
-

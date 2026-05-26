@@ -23,6 +23,7 @@ export const navItems = [
   { label: 'Dashboard', to: '/app/dashboard', icon: HiOutlineHome },
   { label: 'Client Portal', to: '/app/client-portal', icon: HiOutlineSquares2X2 },
   { label: 'Customers', to: '/app/customers', icon: HiOutlineUsers },
+  { label: 'Products', to: '/app/products', icon: HiOutlineSquares2X2 },
   { label: 'Leads', to: '/app/leads', icon: HiOutlineUserGroup },
   { label: 'AI Lead Scoring', to: '/app/leads/scoring', icon: HiOutlineSparkles },
   { label: 'AI Assistant', to: '/app/ai-assistant', icon: HiOutlineChatBubbleLeftRight },
