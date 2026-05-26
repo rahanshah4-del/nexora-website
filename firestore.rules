@@ -53,6 +53,7 @@ service cloud.firestore {
         'status',
         'paidAt',
         'approvedBy',
+        'approvedAt',
         'amountPaid',
         'partialPaidAmount',
         'balanceDue',
@@ -140,6 +141,42 @@ service cloud.firestore {
       ]);
     }
 
+    function planApprovalFieldsTouched() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+        'plan',
+        'planStatus',
+        'billingCycle',
+        'upgradedAt',
+        'updatedAt',
+      ]);
+    }
+
+    function approvalStatusFieldsTouched() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+        'status',
+        'approvalStatus',
+        'approvedBy',
+        'approvedAt',
+        'rejectedBy',
+        'rejectedAt',
+        'ownerId',
+        'userId',
+        'workspaceId',
+        'updatedAt',
+      ]);
+    }
+
+    function upgradeApprovalFieldsTouched() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+        'approvalStatus',
+        'paymentStatus',
+        'approvedBy',
+        'approvedAt',
+        'rejectedBy',
+        'rejectedAt',
+      ]);
+    }
+
     function isCreatingStaffUser(userId) {
       return signedIn()
         && request.resource.data.uid == userId
@@ -159,7 +196,12 @@ service cloud.firestore {
           && hasOwnScope(userId)
           && hasSafeTrialPlan());
       allow read: if isSelf(userId) || isAdmin();
-      allow update: if isAdmin() || (isSelf(userId) && protectedAccountFieldsUnchanged());
+      allow update: if isAdmin()
+        || (isSelf(userId) && protectedAccountFieldsUnchanged())
+        || (signedIn()
+          && resource.data.workspaceId is string
+          && isPaymentApprover(resource.data.workspaceId)
+          && planApprovalFieldsTouched());
       allow delete: if isAdmin();
 
       match /sessions/{sessionId} {
@@ -213,7 +255,10 @@ service cloud.firestore {
       }
 
       match /clients/{clientId} {
-        allow read, write: if isWorkspaceManager(workspaceId);
+        allow read: if isWorkspaceManager(workspaceId) || isPaymentApprover(workspaceId);
+        allow create, delete: if isWorkspaceManager(workspaceId);
+        allow update: if isWorkspaceManager(workspaceId)
+          || (isPaymentApprover(workspaceId) && approvalStatusFieldsTouched());
       }
 
       match /products/{productId} {
@@ -244,7 +289,8 @@ service cloud.firestore {
           || isPaymentApprover(workspaceId)
           || canReadClientPortalPayment(workspaceId);
         allow create: if isPaymentApprover(workspaceId) || canSubmitPaymentReference(workspaceId);
-        allow update, delete: if isWorkspaceManager(workspaceId);
+        allow update: if isWorkspaceManager(workspaceId) || (isPaymentApprover(workspaceId) && paymentApprovalFieldsTouched());
+        allow delete: if isWorkspaceManager(workspaceId);
       }
 
       match /pipelines/{dealId} {
@@ -272,8 +318,12 @@ service cloud.firestore {
       }
 
       match /teamMembers/{memberId} {
-        allow read: if staffPermission(workspaceId, 'reports') || staffPermission(workspaceId, 'settingsAccess');
-        allow write: if staffPermission(workspaceId, 'settingsAccess');
+        allow read: if staffPermission(workspaceId, 'reports')
+          || staffPermission(workspaceId, 'settingsAccess')
+          || isPaymentApprover(workspaceId);
+        allow create, delete: if staffPermission(workspaceId, 'settingsAccess');
+        allow update: if staffPermission(workspaceId, 'settingsAccess')
+          || (isPaymentApprover(workspaceId) && approvalStatusFieldsTouched());
       }
 
       match /hr/{employeeId} {
@@ -296,8 +346,16 @@ service cloud.firestore {
         && request.resource.data.workspaceId == request.auth.uid
         && request.resource.data.approvalStatus == 'pending'
         && request.resource.data.paymentStatus == 'pending';
-      allow read: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
-      allow update, delete: if isAdmin();
+      allow read: if isAdmin()
+        || (signedIn()
+          && (resource.data.userId == request.auth.uid
+            || (resource.data.workspaceId is string && isPaymentApprover(resource.data.workspaceId))));
+      allow update: if isAdmin()
+        || (signedIn()
+          && resource.data.workspaceId is string
+          && isPaymentApprover(resource.data.workspaceId)
+          && upgradeApprovalFieldsTouched());
+      allow delete: if isAdmin();
     }
 
     match /notifications/{notificationId} {

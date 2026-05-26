@@ -1,3 +1,4 @@
+import { memo, useMemo } from 'react'
 import Badge from '../ui/Badge.jsx'
 import Button from '../ui/Button.jsx'
 import Table from '../ui/Table.jsx'
@@ -20,7 +21,7 @@ function invoiceStatusLabel(status) {
   return 'Pending'
 }
 
-export default function InvoiceTable({
+function InvoiceTable({
   invoices,
   currency,
   canApprovePayments = false,
@@ -29,7 +30,7 @@ export default function InvoiceTable({
   onRejectPayment,
   onPartialPayment,
 }) {
-  const columns = [
+  const columns = useMemo(() => [
     { key: 'invoiceNumber', header: 'Invoice' },
     { key: 'customerName', header: 'Customer', cell: (r) => <span className="font-semibold">{r.customerName}</span> },
     {
@@ -107,7 +108,9 @@ export default function InvoiceTable({
         )
       },
     },
-  ]
+  ], [canApprovePayments, currency, onMarkPaid, onOpen, onPartialPayment, onRejectPayment])
 
   return <Table columns={columns} rows={invoices} />
 }
+
+export default memo(InvoiceTable)

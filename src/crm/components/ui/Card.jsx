@@ -1,6 +1,7 @@
+import { memo } from 'react'
 import { cn } from '../../utils/cn.js'
 
-export default function Card({ className, ...props }) {
+function Card({ className, ...props }) {
   return (
     <div
       className={cn(
@@ -11,3 +12,5 @@ export default function Card({ className, ...props }) {
     />
   )
 }
+
+export default memo(Card)

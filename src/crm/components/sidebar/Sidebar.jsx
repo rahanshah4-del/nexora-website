@@ -21,6 +21,7 @@ const priorityRoutes = [
   '/app/team',
   '/app/hr',
   '/app/invoices',
+  '/app/approvals',
   '/app/subscriptions',
   '/app/support',
   '/app/analytics',
@@ -37,12 +38,49 @@ const compactLabels = {
   '/app/analytics': 'Analytics',
   '/app/activity-logs': 'Activity',
   '/app/products': 'Products',
+  '/app/approvals': 'Approvals',
 }
 
 const sidebarItems = [
   ...priorityRoutes.map((route) => navItems.find((item) => item.to === route)).filter(Boolean),
   ...navItems.filter((item) => !priorityRoutes.includes(item.to)),
 ]
+
+const SidebarNavItem = memo(function SidebarNavItem({ item, collapsed, onNavigate }) {
+  const Icon = item.icon
+  const label = compactLabels[item.to] || item.label
+
+  return (
+    <NavLink
+      to={item.to}
+      onClick={onNavigate}
+      className={({ isActive }) =>
+        cn(
+          'focus-ring group relative flex items-center rounded-xl text-[13px] font-semibold transition-colors duration-150 ease-out',
+          collapsed ? 'justify-center px-0 py-2' : 'gap-2.5 px-2.5 py-1.5',
+          isActive
+            ? 'border border-sky-100 bg-gradient-to-r from-sky-50 via-white to-indigo-50 text-slate-950 shadow-sm'
+            : 'border border-transparent text-slate-600 hover:border-slate-200/80 hover:bg-white hover:text-slate-950',
+        )
+      }
+    >
+      {({ isActive }) => (
+        <>
+          {isActive && !collapsed ? (
+            <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-gradient-to-b from-sky-400 to-indigo-500" />
+          ) : null}
+          <Icon
+            className={cn(
+              'h-[17px] w-[17px] shrink-0 transition',
+              isActive ? 'text-sky-700' : 'text-slate-500 group-hover:text-sky-700',
+            )}
+          />
+          {!collapsed ? <span className="truncate">{label}</span> : null}
+        </>
+      )}
+    </NavLink>
+  )
+})
 
 function Brand({ collapsed }) {
   return (
@@ -115,41 +153,9 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
       </div>
 
       <nav className={`mt-2 min-h-0 flex-1 overflow-y-auto px-2 pb-2 pr-1.5 ${collapsed ? 'space-y-1.5' : 'space-y-0.5'}`}>
-        {sidebarItems.map((item) => {
-          const Icon = item.icon
-          const label = compactLabels[item.to] || item.label
-          return (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              onClick={onNavigate}
-              className={({ isActive }) =>
-                cn(
-                  'focus-ring group relative flex items-center rounded-xl text-[13px] font-semibold transition-colors duration-150 ease-out',
-                  collapsed ? 'justify-center px-0 py-2' : 'gap-2.5 px-2.5 py-1.5',
-                  isActive
-                    ? 'border border-sky-100 bg-gradient-to-r from-sky-50 via-white to-indigo-50 text-slate-950 shadow-sm'
-                    : 'border border-transparent text-slate-600 hover:border-slate-200/80 hover:bg-white hover:text-slate-950',
-                )
-              }
-            >
-              {({ isActive }) => (
-                <>
-                  {isActive && !collapsed ? (
-                    <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-gradient-to-b from-sky-400 to-indigo-500" />
-                  ) : null}
-                  <Icon
-                    className={cn(
-                      'h-[17px] w-[17px] shrink-0 transition',
-                      isActive ? 'text-sky-700' : 'text-slate-500 group-hover:text-sky-700',
-                    )}
-                  />
-                  {!collapsed ? <span className="truncate">{label}</span> : null}
-                </>
-              )}
-            </NavLink>
-          )
-        })}
+        {sidebarItems.map((item) => (
+          <SidebarNavItem key={item.to} item={item} collapsed={collapsed} onNavigate={onNavigate} />
+        ))}
       </nav>
 
       {!collapsed && (

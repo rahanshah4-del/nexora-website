@@ -1,4 +1,17 @@
+import { memo } from 'react'
 import { cn } from '../../utils/cn.js'
+
+const TableRow = memo(function TableRow({ row, columns }) {
+  return (
+    <tr className="transition hover:bg-slate-50 dark:hover:bg-white/5">
+      {columns.map((c) => (
+        <td key={c.key} className="whitespace-nowrap px-4 py-3 text-slate-800 dark:text-slate-100">
+          {c.cell ? c.cell(row) : row[c.key]}
+        </td>
+      ))}
+    </tr>
+  )
+})
 
 export default function Table({ columns, rows, className }) {
   return (
@@ -16,13 +29,7 @@ export default function Table({ columns, rows, className }) {
           </thead>
           <tbody className="divide-y divide-slate-100 bg-white dark:divide-white/10 dark:bg-slate-900/25">
             {rows.map((row, idx) => (
-              <tr key={row.id ?? idx} className="transition hover:bg-slate-50 dark:hover:bg-white/5">
-                {columns.map((c) => (
-                  <td key={c.key} className="whitespace-nowrap px-4 py-3 text-slate-800 dark:text-slate-100">
-                    {c.cell ? c.cell(row) : row[c.key]}
-                  </td>
-                ))}
-              </tr>
+              <TableRow key={row.id ?? idx} row={row} columns={columns} />
             ))}
           </tbody>
         </table>

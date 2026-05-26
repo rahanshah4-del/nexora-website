@@ -1,3 +1,4 @@
+import { memo, useMemo } from 'react'
 import Badge from '../ui/Badge.jsx'
 import Button from '../ui/Button.jsx'
 import Card from '../ui/Card.jsx'
@@ -13,8 +14,8 @@ function paymentBadge(invoice) {
   return { label: 'Pending', variant: 'warning' }
 }
 
-export default function ClientInvoices({ invoices, canApprovePayments, onViewInvoice, onMarkPaid, onRecordPayment, onSubmitReference }) {
-  const columns = [
+function ClientInvoices({ invoices, canApprovePayments, onViewInvoice, onMarkPaid, onRecordPayment, onSubmitReference }) {
+  const columns = useMemo(() => [
     { key: 'invoiceNumber', header: 'Invoice', cell: (r) => <span className="font-semibold">{r.invoiceNumber}</span> },
     { key: 'dueDate', header: 'Due' },
     {
@@ -59,7 +60,7 @@ export default function ClientInvoices({ invoices, canApprovePayments, onViewInv
         )
       },
     },
-  ]
+  ], [canApprovePayments, onMarkPaid, onRecordPayment, onSubmitReference, onViewInvoice])
 
   return (
     <Card className="p-5">
@@ -77,3 +78,5 @@ export default function ClientInvoices({ invoices, canApprovePayments, onViewInv
     </Card>
   )
 }
+
+export default memo(ClientInvoices)

@@ -27,6 +27,7 @@ const HRDashboardPage = lazy(() => import('./pages/HRDashboard.jsx'))
 const NotificationsPage = lazy(() => import('./pages/Notifications.jsx'))
 const ClientPortalPage = lazy(() => import('./pages/ClientPortal.jsx'))
 const AIAssistantPage = lazy(() => import('./pages/AIAssistant.jsx'))
+const ApprovalsPage = lazy(() => import('./pages/Approvals.jsx'))
 
 export default function App() {
   return (
@@ -70,6 +71,7 @@ export default function App() {
             <Route path="/app/activity-logs" element={<ActivityLogsPage />} />
             <Route path="/app/analytics" element={<AnalyticsPage />} />
             <Route path="/app/notifications" element={<NotificationsPage />} />
+            <Route path="/app/approvals" element={<ApprovalsPage />} />
             <Route path="/app/client-portal" element={<ClientPortalPage />} />
             <Route path="/app/ai-assistant" element={<AIAssistantPage />} />
             <Route path="/app/reports" element={<ReportsPage />} />
