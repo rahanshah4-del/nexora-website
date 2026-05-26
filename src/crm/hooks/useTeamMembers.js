@@ -3,6 +3,7 @@ import { db } from '../lib/firebase.js'
 import { createUserDoc, patchUserDoc, subscribeUserCollection } from '../lib/firestore.js'
 import { permissionKeys } from '../data/teamDemo.js'
 import { useUser } from './useUser.js'
+import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 
 function normalizeMember(m) {
   return {
@@ -12,7 +13,7 @@ function normalizeMember(m) {
 }
 
 export function useTeamMembers() {
-  const { userId } = useUser()
+  const { userId, workspaceId, userDoc, firebaseUser } = useUser()
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
   const [source, setSource] = useState('firestore')
@@ -22,12 +23,12 @@ export function useTeamMembers() {
     if (!db) {
       Promise.resolve().then(() => {
         setRows([])
-        setSource('demo')
+        setSource('none')
         setLoading(false)
       })
       return
     }
-    if (!userId) {
+    if (!workspaceId) {
       Promise.resolve().then(() => {
         setRows([])
         setSource('firestore')
@@ -39,7 +40,7 @@ export function useTeamMembers() {
 
     Promise.resolve().then(() => setLoading(true))
     const unsub = subscribeUserCollection(
-      userId,
+      workspaceId,
       'teamMembers',
       (data) => {
         const list = data.map(normalizeMember)
@@ -55,7 +56,7 @@ export function useTeamMembers() {
       },
     )
     return () => unsub()
-  }, [userId])
+  }, [workspaceId])
 
   const api = useMemo(
     () => ({
@@ -65,7 +66,7 @@ export function useTeamMembers() {
       error,
       permissionKeys,
       async addMember(payload) {
-        if (!userId) return { ok: false, error: 'Please login first' }
+        if (!userId || !workspaceId) return { ok: false, error: 'Please login first' }
         const docPayload = {
           ...payload,
           status: payload.status || 'Invited',
@@ -82,7 +83,7 @@ export function useTeamMembers() {
           return { ok: false, error: 'Firestore is not configured' }
         }
         try {
-          await createUserDoc(userId, 'teamMembers', {
+          const ref = await createUserDoc(workspaceId, 'teamMembers', {
             name,
             email,
             phone: docPayload.phone || '',
@@ -91,6 +92,17 @@ export function useTeamMembers() {
             permissions: Array.isArray(docPayload.permissions) ? docPayload.permissions : [],
             joinedAt: docPayload.joinedAt,
           })
+          await logActivity({
+            workspaceId,
+            userId,
+            ...userActivityInfo(userDoc, firebaseUser),
+            action: 'Staff created',
+            module: 'Team',
+            description: `${name} was added to the team.`,
+            targetId: ref.id,
+            targetName: name,
+            metadata: { email, role: docPayload.role || 'Sales Staff' },
+          })
           return { ok: true }
         } catch (e) {
           return { ok: false, error: e?.message || 'Failed to add team member' }
@@ -98,11 +110,23 @@ export function useTeamMembers() {
       },
       async updateMember(id, patch) {
         setRows((prev) => prev.map((m) => (m.id === id ? { ...m, ...patch } : m)))
-        if (!db || !userId || source !== 'firestore') return
-        await patchUserDoc(userId, 'teamMembers', id, patch)
+        if (!db || !workspaceId || !userId || source !== 'firestore') return
+        await patchUserDoc(workspaceId, 'teamMembers', id, patch)
+        const member = rows.find((item) => item.id === id)
+        await logActivity({
+          workspaceId,
+          userId,
+          ...userActivityInfo(userDoc, firebaseUser),
+          action: 'Staff updated',
+          module: 'Team',
+          description: `${member?.name || 'Team member'} was updated.`,
+          targetId: id,
+          targetName: member?.name || id,
+          metadata: patch,
+        })
       },
     }),
-    [rows, loading, source, error, userId],
+    [rows, loading, source, error, firebaseUser, userDoc, userId, workspaceId],
   )
 
   return api

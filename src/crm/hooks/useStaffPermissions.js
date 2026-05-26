@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
+import { deleteApp, initializeApp } from 'firebase/app'
+import { createUserWithEmailAndPassword, getAuth, signOut } from 'firebase/auth'
 import { collection, doc, onSnapshot, serverTimestamp, setDoc } from 'firebase/firestore'
-import { db } from '../lib/firebase.js'
+import { db, firebaseConfig, firebaseEnabled } from '../lib/firebase.js'
 import { useUser } from './useUser.js'
 import { useWorkspaceAccess, workspacePermissionKeys } from './useWorkspaceAccess.js'
+import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 
 function defaultPermissions() {
   return Object.fromEntries(workspacePermissionKeys.map((item) => [item.key, false]))
@@ -16,8 +19,31 @@ function slug(value) {
     .replace(/(^-|-$)/g, '')
 }
 
+function normalizeStaffRole(role) {
+  const value = String(role || 'staff').trim().toLowerCase()
+  if (value === 'admin') return 'admin'
+  if (value === 'accountant') return 'accountant'
+  return 'staff'
+}
+
+async function createSecondaryAuthUser(email, password) {
+  if (!firebaseEnabled) return { ok: false, error: 'Firebase Auth is not configured.' }
+  const secondaryApp = initializeApp(firebaseConfig, `staff-create-${Date.now()}-${Math.random().toString(36).slice(2)}`)
+  const secondaryAuth = getAuth(secondaryApp)
+
+  try {
+    const credentials = await createUserWithEmailAndPassword(secondaryAuth, email, password)
+    await signOut(secondaryAuth).catch(() => {})
+    return { ok: true, uid: credentials.user.uid }
+  } catch (error) {
+    return { ok: false, error: error?.message || 'Unable to create staff Auth user.' }
+  } finally {
+    await deleteApp(secondaryApp).catch(() => {})
+  }
+}
+
 export function useStaffPermissions() {
-  const { userId, workspaceId } = useUser()
+  const { userId, workspaceId, userDoc, firebaseUser, plan } = useUser()
   const access = useWorkspaceAccess()
   const [staff, setStaff] = useState([])
   const [permissions, setPermissions] = useState({})
@@ -81,30 +107,46 @@ export function useStaffPermissions() {
 
         const name = String(payload.name || '').trim()
         const email = String(payload.email || '').trim().toLowerCase()
-        const role = String(payload.role || 'staff').trim().toLowerCase()
+        const username = String(payload.username || '').trim()
+        const usernameLower = username.toLowerCase()
+        const password = String(payload.password || '')
+        const confirmPassword = String(payload.confirmPassword || '')
+        const role = normalizeStaffRole(payload.role)
+        const status = String(payload.status || 'active').trim().toLowerCase() || 'active'
         if (!name) return { ok: false, error: 'Staff name is required.' }
         if (!email) return { ok: false, error: 'Staff email is required.' }
+        if (!password) return { ok: false, error: 'Password is required.' }
+        if (password !== confirmPassword) return { ok: false, error: 'Passwords do not match.' }
+        if (password.length < 6) return { ok: false, error: 'Password must be at least 6 characters.' }
 
-        const staffId = payload.staffId || `staff-${slug(email) || Date.now()}`
+        const authResult = await createSecondaryAuthUser(email, password)
+        const staffId = authResult.uid || payload.staffId || `staff-${slug(email) || Date.now()}`
         const basePermissions = { ...defaultPermissions(), ...(payload.permissions || {}) }
-        await Promise.all([
-          setDoc(
-            doc(db, 'workspaces', workspaceId, 'staff', staffId),
-            {
-              staffId,
-              name,
-              email,
-              role: role === 'admin' ? 'admin' : 'staff',
-              status: 'active',
-              ownerId: workspaceId,
-              workspaceId,
-              userId: staffId,
-              createdBy: userId,
-              createdAt: serverTimestamp(),
-              updatedAt: serverTimestamp(),
-            },
-            { merge: true },
-          ),
+        const now = serverTimestamp()
+        const baseStaff = {
+          uid: staffId,
+          staffId,
+          name,
+          email,
+          username,
+          usernameLower,
+          role,
+          status,
+          permissions: basePermissions,
+          ownerId: workspaceId,
+          companyId: workspaceId,
+          workspaceId,
+          userId: staffId,
+          createdBy: userId,
+          passwordSetPending: false,
+          authCreated: authResult.ok,
+          createdAt: now,
+          updatedAt: now,
+        }
+
+        const writes = [
+          setDoc(doc(db, 'workspaces', workspaceId, 'staff', staffId), baseStaff, { merge: true }),
+          setDoc(doc(db, 'workspaces', workspaceId, 'teamMembers', staffId), baseStaff, { merge: true }),
           setDoc(
             doc(db, 'workspaces', workspaceId, 'permissions', staffId),
             {
@@ -115,12 +157,64 @@ export function useStaffPermissions() {
               workspaceId,
               userId: staffId,
               updatedBy: userId,
-              updatedAt: serverTimestamp(),
+              updatedAt: now,
             },
             { merge: true },
           ),
+        ]
+
+        if (authResult.ok) {
+          writes.push(
+            setDoc(
+              doc(db, 'users', staffId),
+              {
+                uid: staffId,
+                name,
+                fullName: name,
+                email,
+                username,
+                usernameLower,
+                role,
+                status,
+                createdBy: userId,
+                ownerId: workspaceId,
+                companyId: workspaceId,
+                workspaceId,
+                userId: staffId,
+                staffId,
+                permissions: basePermissions,
+                plan: userDoc?.plan || plan || 'Free',
+                planStatus: userDoc?.planStatus || 'active',
+                billingCycle: userDoc?.billingCycle || 'monthly',
+                provider: 'password',
+                createdAt: now,
+                updatedAt: now,
+              },
+              { merge: true },
+            ),
+          )
+        }
+
+        await Promise.all([
+          ...writes,
+          logActivity({
+            workspaceId,
+            userId,
+            ...userActivityInfo(userDoc, firebaseUser),
+            action: 'Staff created',
+            module: 'Team',
+            description: `${name} was added as ${role}.`,
+            targetId: staffId,
+            targetName: name,
+            metadata: { email, username, role, authCreated: authResult.ok },
+          }),
         ])
-        return { ok: true }
+        return {
+          ok: true,
+          message: authResult.ok
+            ? 'Staff account created. Staff can log in with email and password.'
+            : 'Staff account saved. Use admin backend/cloud function for production user creation.',
+        }
       },
       async setStaffPermission(staffId, key, value) {
         if (!access.isAdmin && !access.canManageSettings) return { ok: false, error: 'You do not have permission to update staff permissions.' }
@@ -141,9 +235,20 @@ export function useStaffPermissions() {
           },
           { merge: true },
         )
+        await logActivity({
+          workspaceId,
+          userId,
+          ...userActivityInfo(userDoc, firebaseUser),
+          action: 'Staff permission updated',
+          module: 'Team',
+          description: `${key} permission ${value ? 'enabled' : 'disabled'} for ${staffRow?.name || staffId}.`,
+          targetId: staffId,
+          targetName: staffRow?.name || staffId,
+          metadata: { permission: key, enabled: Boolean(value) },
+        })
         return { ok: true }
       },
     }),
-    [access, error, loading, permissions, staff, userId, workspaceId],
+    [access, error, firebaseUser, loading, permissions, plan, staff, userDoc, userId, workspaceId],
   )
 }

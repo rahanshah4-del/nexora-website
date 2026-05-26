@@ -25,6 +25,9 @@ export async function ensureUserWorkspace(user, overrides = {}) {
   const userRef = doc(db, 'users', uid)
   const workspaceRef = doc(db, 'workspaces', uid)
   const [userSnap, workspaceSnap] = await Promise.all([getDoc(userRef), getDoc(workspaceRef)])
+  const existingUser = userSnap.exists() ? userSnap.data() : null
+  const effectiveWorkspaceId = cleanString(existingUser?.workspaceId) || uid
+  const effectiveOwnerId = cleanString(existingUser?.ownerId) || effectiveWorkspaceId
 
   if (!userSnap.exists()) {
     await setDoc(userRef, {
@@ -53,9 +56,9 @@ export async function ensureUserWorkspace(user, overrides = {}) {
   } else {
     const update = {
       uid,
-      ownerId: uid,
+      ownerId: effectiveOwnerId,
       userId: uid,
-      workspaceId: uid,
+      workspaceId: effectiveWorkspaceId,
       email,
       photoURL: cleanString(overrides.photoURL) || cleanString(user.photoURL),
       provider,
@@ -70,6 +73,10 @@ export async function ensureUserWorkspace(user, overrides = {}) {
     if (cleanString(overrides.phone)) update.phone = cleanString(overrides.phone)
     if (cleanString(overrides.businessType)) update.businessType = cleanString(overrides.businessType)
     await setDoc(userRef, update, { merge: true })
+  }
+
+  if (effectiveWorkspaceId !== uid) {
+    return { uid, workspaceId: effectiveWorkspaceId }
   }
 
   if (!workspaceSnap.exists()) {
@@ -104,5 +111,5 @@ export async function ensureUserWorkspace(user, overrides = {}) {
 
   // TODO: Premium plan changes must be verified by an admin/backend payment webhook.
   // The frontend may display plan state, but it must never be the source of truth for unlocking paid access.
-  return { uid, workspaceId: uid }
+  return { uid, workspaceId: effectiveWorkspaceId }
 }

@@ -11,10 +11,11 @@ import ActivityTimeline from '../components/activity/ActivityTimeline.jsx'
 
 export default function ActivityLogsPage() {
   const api = useActivityLogs()
-  const [filters, setFilters] = useState({ query: '', user: 'All', module: 'All', from: '', to: '' })
+  const [filters, setFilters] = useState({ query: '', user: 'All', module: 'All', action: 'All', from: '', to: '' })
 
   const users = useMemo(() => Array.from(new Set(api.logs.map((l) => l.userName).filter(Boolean))).sort(), [api.logs])
   const modules = useMemo(() => Array.from(new Set(api.logs.map((l) => l.module).filter(Boolean))).sort(), [api.logs])
+  const actions = useMemo(() => Array.from(new Set(api.logs.map((l) => l.action).filter(Boolean))).sort(), [api.logs])
 
   const filtered = useMemo(() => {
     const q = filters.query.trim().toLowerCase()
@@ -29,10 +30,11 @@ export default function ActivityLogsPage() {
         l.description.toLowerCase().includes(q)
       const userOk = filters.user === 'All' ? true : l.userName === filters.user
       const moduleOk = filters.module === 'All' ? true : l.module === filters.module
+      const actionOk = filters.action === 'All' ? true : l.action === filters.action
       const at = l.createdAt?.getTime?.() || 0
       const fromOk = from ? at >= from : true
       const toOk = to ? at <= to : true
-      return textOk && userOk && moduleOk && fromOk && toOk
+      return textOk && userOk && moduleOk && actionOk && fromOk && toOk
     })
   }, [api.logs, filters])
 
@@ -40,7 +42,7 @@ export default function ActivityLogsPage() {
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
       <PageHeader
         title="Activity Logs"
-        subtitle="Audit logs, system/user actions, filters, and timeline (demo fallback + Firestore)."
+        subtitle="Workspace audit logs, user actions, filters, and timeline from Firestore."
         right={
           <Button variant="subtle" className="rounded-2xl" type="button">
             Export Logs (Placeholder)
@@ -50,7 +52,7 @@ export default function ActivityLogsPage() {
 
       <div className="mb-4 flex items-center justify-between gap-3">
         <Badge variant={api.source === 'firestore' ? 'success' : 'default'}>
-          {api.loading ? 'Loading…' : api.source === 'firestore' ? 'Live' : 'Demo'}
+          {api.loading ? 'Loading…' : api.source === 'firestore' ? 'Live' : 'Offline'}
         </Badge>
         {api.error ? <Badge variant="danger">Error</Badge> : null}
       </div>
@@ -64,7 +66,13 @@ export default function ActivityLogsPage() {
           <Badge variant="purple">Filters</Badge>
         </div>
         <div className="mt-4">
-          <ActivityFilters value={filters} onChange={setFilters} userOptions={users} moduleOptions={modules} />
+          <ActivityFilters
+            value={filters}
+            onChange={setFilters}
+            userOptions={users}
+            moduleOptions={modules}
+            actionOptions={actions}
+          />
         </div>
       </Card>
 
@@ -84,7 +92,7 @@ export default function ActivityLogsPage() {
               <ActivityTimeline items={filtered.slice(0, 10)} />
             ) : (
               <div className="rounded-2xl px-3 py-10 text-center text-sm text-slate-600 dark:text-slate-300">
-                No activity found.
+                No activity logs yet
               </div>
             )}
           </div>

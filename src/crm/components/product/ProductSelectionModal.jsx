@@ -131,14 +131,14 @@ export default function ProductSelectionModal({ open, session, selectedWorkspace
     <AnimatePresence>
       {open ? (
         <motion.div
-          className="fixed inset-0 z-[80] grid place-items-center overflow-y-auto bg-slate-950/40 px-3 py-6 sm:px-6 sm:backdrop-blur-sm"
+          className="fixed inset-0 z-[80] grid place-items-center overflow-y-auto bg-slate-950/40 p-3 sm:p-4 sm:backdrop-blur-sm"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.24 }}
         >
           <motion.div
-            className="relative w-full max-w-5xl overflow-hidden rounded-[1.85rem] border border-white/75 bg-white/[0.96] p-4 shadow-[0_26px_84px_-52px_rgba(15,23,42,0.62)] dark:border-white/10 dark:bg-slate-950/[0.94] sm:p-6 sm:backdrop-blur-sm"
+            className="crm-modal-panel crm-modal-panel-wide relative border border-white/75 bg-white/[0.96] p-4 shadow-[0_26px_84px_-52px_rgba(15,23,42,0.62)] dark:border-white/10 dark:bg-slate-950/[0.94] sm:p-6 sm:backdrop-blur-sm"
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }}

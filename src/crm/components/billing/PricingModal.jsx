@@ -38,7 +38,7 @@ export default function PricingModal({ open, onClose }) {
     <AnimatePresence>
       {open ? (
         <motion.div
-          className="fixed inset-0 z-50 grid place-items-center bg-slate-950/45 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-slate-950/45 p-3 backdrop-blur-sm sm:p-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -52,9 +52,9 @@ export default function PricingModal({ open, onClose }) {
             exit={{ opacity: 0, y: 14, scale: 0.98 }}
             transition={{ duration: 0.18 }}
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-3xl"
+            className="crm-modal-panel"
           >
-            <Card className="p-5 sm:p-6">
+            <Card className="rounded-3xl p-4 sm:p-5">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <div className="flex items-center gap-2">

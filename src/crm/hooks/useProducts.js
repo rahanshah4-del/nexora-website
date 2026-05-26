@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { db } from '../lib/firebase.js'
 import { createUserDoc, patchUserDoc, removeUserDoc, subscribeUserCollection } from '../lib/firestore.js'
+import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 import { useUser } from './useUser.js'
 
 function normalizeProduct(product) {
@@ -31,7 +32,7 @@ function sanitizeProduct(payload) {
 }
 
 export function useProducts() {
-  const { userId, workspaceId } = useUser()
+  const { userId, workspaceId, userDoc, firebaseUser } = useUser()
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
   const [source, setSource] = useState(db ? 'firestore' : 'none')
@@ -94,9 +95,20 @@ export function useProducts() {
         if (!product.name) return { ok: false, error: 'Product name is required' }
         if (!product.sku) return { ok: false, error: 'SKU is required' }
         try {
-          await createUserDoc(workspaceId, 'products', {
+          const ref = await createUserDoc(workspaceId, 'products', {
             ...product,
             createdBy: userId,
+          })
+          await logActivity({
+            workspaceId,
+            userId,
+            ...userActivityInfo(userDoc, firebaseUser),
+            action: 'Product created',
+            module: 'Products',
+            description: `${product.name} was added to products.`,
+            targetId: ref.id,
+            targetName: product.name,
+            metadata: { sku: product.sku, category: product.category, price: product.price },
           })
           return { ok: true }
         } catch (e) {
@@ -112,6 +124,17 @@ export function useProducts() {
         if (!product.sku) return { ok: false, error: 'SKU is required' }
         try {
           await patchUserDoc(workspaceId, 'products', id, product)
+          await logActivity({
+            workspaceId,
+            userId,
+            ...userActivityInfo(userDoc, firebaseUser),
+            action: 'Product updated',
+            module: 'Products',
+            description: `${product.name} was updated.`,
+            targetId: id,
+            targetName: product.name,
+            metadata: { sku: product.sku, category: product.category, price: product.price },
+          })
           return { ok: true }
         } catch (e) {
           return { ok: false, error: e?.message || 'Failed to update product' }
@@ -121,14 +144,26 @@ export function useProducts() {
         if (!id) return { ok: false, error: 'Product ID is required' }
         if (!userId || !workspaceId) return { ok: false, error: 'Please login first' }
         if (!db) return { ok: false, error: 'Firestore is not configured' }
+        const product = products.find((item) => item.id === id)
         try {
           await removeUserDoc(workspaceId, 'products', id)
+          await logActivity({
+            workspaceId,
+            userId,
+            ...userActivityInfo(userDoc, firebaseUser),
+            action: 'Product deleted',
+            module: 'Products',
+            description: `${product?.name || id} was deleted.`,
+            targetId: id,
+            targetName: product?.name || id,
+            metadata: { sku: product?.sku || '' },
+          })
           return { ok: true }
         } catch (e) {
           return { ok: false, error: e?.message || 'Failed to delete product' }
         }
       },
     }),
-    [products, loading, source, error, userId, workspaceId],
+    [products, loading, source, error, firebaseUser, userDoc, userId, workspaceId],
   )
 }

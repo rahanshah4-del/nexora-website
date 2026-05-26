@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { db } from '../lib/firebase.js'
 import { createUserDoc, subscribeUserCollection } from '../lib/firestore.js'
+import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 import { useUser } from './useUser.js'
 
 function normalizeCustomer(c) {
@@ -19,7 +20,7 @@ function normalizeCustomer(c) {
 }
 
 export function useCustomers() {
-  const { userId, workspaceId } = useUser()
+  const { userId, workspaceId, userDoc, firebaseUser } = useUser()
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
   const [source, setSource] = useState(db ? 'firestore' : 'none')
@@ -84,7 +85,7 @@ export function useCustomers() {
         if (!name) return { ok: false, error: 'Name is required' }
         if (!email) return { ok: false, error: 'Email is required' }
         try {
-          await createUserDoc(workspaceId, 'customers', {
+          const ref = await createUserDoc(workspaceId, 'customers', {
             name,
             email,
             phone,
@@ -94,13 +95,24 @@ export function useCustomers() {
             notes,
             createdBy: userId,
           })
+          await logActivity({
+            workspaceId,
+            userId,
+            ...userActivityInfo(userDoc, firebaseUser),
+            action: 'Customer created',
+            module: 'Customers',
+            description: `${name} was added as a customer.`,
+            targetId: ref.id,
+            targetName: name,
+            metadata: { email, company, customerType },
+          })
           return { ok: true }
         } catch (e) {
           return { ok: false, error: e?.message || 'Failed to create customer' }
         }
       },
     }),
-    [rows, loading, source, error, userId, workspaceId],
+    [rows, loading, source, error, firebaseUser, userDoc, userId, workspaceId],
   )
 
   return api

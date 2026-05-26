@@ -26,9 +26,8 @@ export default function ActivityLogTable({ rows, loading }) {
       columns={columns}
       rows={rows}
       loading={loading}
-      emptyTitle="No activity logs"
+      emptyTitle="No activity logs yet"
       emptyDescription="Your system activity will appear here as users perform actions."
     />
   )
 }
-

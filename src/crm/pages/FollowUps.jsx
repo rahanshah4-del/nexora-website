@@ -18,7 +18,7 @@ function DeleteConfirmModal({ task, onClose, onConfirm }) {
     <AnimatePresence>
       {task ? (
         <motion.div
-          className="fixed inset-0 z-50 grid place-items-center bg-slate-950/45 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-slate-950/45 p-3 backdrop-blur-sm sm:p-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -27,7 +27,7 @@ function DeleteConfirmModal({ task, onClose, onConfirm }) {
           aria-modal="true"
         >
           <motion.div
-            className="w-full max-w-md"
+            className="crm-modal-panel max-w-md"
             initial={{ opacity: 0, y: 14, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 14, scale: 0.98 }}

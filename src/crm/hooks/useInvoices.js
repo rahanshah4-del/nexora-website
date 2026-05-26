@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { serverTimestamp } from 'firebase/firestore'
 import { db } from '../lib/firebase.js'
 import { createUserDoc, patchUserDoc, subscribeUserCollection } from '../lib/firestore.js'
+import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 import { useUser } from './useUser.js'
 
 function statusValue(value, fallback = 'pending') {
@@ -57,7 +58,7 @@ function canRoleApprovePayments(role, userDoc) {
 }
 
 export function useInvoices() {
-  const { userId, workspaceId, role, userDoc } = useUser()
+  const { userId, workspaceId, role, userDoc, firebaseUser } = useUser()
   const [invoices, setInvoices] = useState([])
   const [payments, setPayments] = useState([])
   const [loading, setLoading] = useState(true)
@@ -168,7 +169,18 @@ export function useInvoices() {
             taxAmountUsd: invoice.taxAmount,
             totalUsd: invoice.total,
           }
-          await createUserDoc(workspaceId, 'invoices', docPayload)
+          const ref = await createUserDoc(workspaceId, 'invoices', docPayload)
+          await logActivity({
+            workspaceId,
+            userId,
+            ...userActivityInfo(userDoc, firebaseUser),
+            action: 'Invoice created',
+            module: 'Invoices',
+            description: `${invNo} was created for ${name}.`,
+            targetId: ref.id,
+            targetName: invNo,
+            metadata: { customerName: name, total: invoice.total, currency: invoice.currency },
+          })
           return { ok: true }
         } catch (e) {
           return { ok: false, error: e?.message || 'Failed to create invoice' }
@@ -203,6 +215,17 @@ export function useInvoices() {
             approvedBy: userId,
             paidAt: serverTimestamp(),
           })
+          await logActivity({
+            workspaceId,
+            userId,
+            ...userActivityInfo(userDoc, firebaseUser),
+            action: 'Invoice paid',
+            module: 'Invoices',
+            description: `${invoice.invoiceNumber || id} was marked as paid.`,
+            targetId: id,
+            targetName: invoice.invoiceNumber || id,
+            metadata: { amount: invoice.total, currency: invoice.currency, paymentMethod },
+          })
           return { ok: true }
         } catch (e) {
           return { ok: false, error: e?.message || 'Failed to mark invoice as paid' }
@@ -221,6 +244,17 @@ export function useInvoices() {
             rejectedAt: serverTimestamp(),
             cancelledAt: serverTimestamp(),
             rejectedBy: userId,
+          })
+          await logActivity({
+            workspaceId,
+            userId,
+            ...userActivityInfo(userDoc, firebaseUser),
+            action: 'Payment rejected',
+            module: 'Invoices',
+            description: `${invoice.invoiceNumber || id} payment was rejected/cancelled.`,
+            targetId: id,
+            targetName: invoice.invoiceNumber || id,
+            metadata: { customerName: invoice.customerName },
           })
           return { ok: true }
         } catch (e) {
@@ -263,6 +297,17 @@ export function useInvoices() {
             approvedBy: userId,
             paidAt: serverTimestamp(),
           })
+          await logActivity({
+            workspaceId,
+            userId,
+            ...userActivityInfo(userDoc, firebaseUser),
+            action: fullyPaid ? 'Invoice paid' : 'Partial payment recorded',
+            module: 'Invoices',
+            description: `${amount} ${invoice.currency || 'PKR'} was recorded for ${invoice.invoiceNumber || id}.`,
+            targetId: id,
+            targetName: invoice.invoiceNumber || id,
+            metadata: { amount, currency: invoice.currency, paymentMethod, fullyPaid },
+          })
           return { ok: true }
         } catch (e) {
           return { ok: false, error: e?.message || 'Failed to record partial payment' }
@@ -274,7 +319,7 @@ export function useInvoices() {
         await patchUserDoc(workspaceId, 'invoices', id, patch)
       },
     }),
-    [invoices, payments, loading, source, error, stats, canApprovePayments, userId, workspaceId],
+    [invoices, payments, loading, source, error, stats, canApprovePayments, firebaseUser, userDoc, userId, workspaceId],
   )
 
   return api

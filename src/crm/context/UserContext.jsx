@@ -4,6 +4,7 @@ import { db } from '../lib/firebase.js'
 import { useAuth } from '../hooks/useAuth.js'
 import { usePreferences } from '../hooks/usePreferences.js'
 import { ensureUserWorkspace } from '../../lib/accountProvisioning.js'
+import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 
 const UserContext = createContext(null)
 
@@ -19,6 +20,7 @@ const defaultUserDoc = {
 function normalizeRole(role) {
   const value = String(role || '').toLowerCase()
   if (value === 'staff') return 'staff'
+  if (value === 'accountant') return 'accountant'
   if (value === 'admin') return 'admin'
   return 'owner'
 }
@@ -29,6 +31,7 @@ export function UserProvider({ children }) {
   const [userDoc, setUserDoc] = useState(null)
   const [loading, setLoading] = useState(true)
   const provisionedUserRef = useRef('')
+  const loggedLoginRef = useRef('')
   const profileRef = useRef(profile)
 
   useEffect(() => {
@@ -107,6 +110,24 @@ export function UserProvider({ children }) {
   const workspaceId = userDoc?.workspaceId || user?.uid || null
   const staffId = userDoc?.staffId || user?.uid || null
 
+  useEffect(() => {
+    if (!user?.uid || !workspaceId || loading || loggedLoginRef.current === user.uid) return
+    loggedLoginRef.current = user.uid
+    const { userName, userEmail } = userActivityInfo(userDoc, user)
+    logActivity({
+      workspaceId,
+      userId: user.uid,
+      userName,
+      userEmail,
+      action: 'Login',
+      module: 'Auth',
+      description: `${userEmail || userName} logged in.`,
+      targetId: user.uid,
+      targetName: userName,
+      metadata: { role },
+    }).catch(() => {})
+  }, [loading, role, user, userDoc, workspaceId])
+
   const value = useMemo(
     () => ({
       userId: user?.uid ?? null,
@@ -120,6 +141,7 @@ export function UserProvider({ children }) {
       isOwner: role === 'owner',
       isStaff: role === 'staff',
       isAdmin: role === 'admin' || role === 'owner',
+      isAccountant: role === 'accountant',
     }),
     [user, workspaceId, staffId, userDoc, loading, effectivePlan, role],
   )

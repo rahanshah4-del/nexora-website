@@ -18,6 +18,7 @@ function normalizeLog(l) {
   return {
     id: l.id,
     userId: l.userId || '',
+    userEmail: l.userEmail || '',
     userName: l.userName || '—',
     module: l.module || 'System',
     action: l.action || 'Action',
@@ -30,7 +31,7 @@ function normalizeLog(l) {
 }
 
 export function useActivityLogs() {
-  const { userId } = useUser()
+  const { workspaceId } = useUser()
   const [logs, setLogs] = useState([])
   const [loading, setLoading] = useState(true)
   const [source, setSource] = useState(db ? 'firestore' : 'none')
@@ -46,7 +47,7 @@ export function useActivityLogs() {
       })
       return
     }
-    if (!userId) {
+    if (!workspaceId) {
       Promise.resolve().then(() => {
         setLogs([])
         setSource('firestore')
@@ -60,7 +61,7 @@ export function useActivityLogs() {
     Promise.resolve().then(() => setError(''))
 
     const unsub = subscribeUserCollection(
-      userId,
+      workspaceId,
       'activityLogs',
       (rows) => {
         const list = (Array.isArray(rows) ? rows : []).map(normalizeLog).sort((a, b) => {
@@ -81,7 +82,7 @@ export function useActivityLogs() {
     )
 
     return () => unsub?.()
-  }, [userId])
+  }, [workspaceId])
 
   const api = useMemo(
     () => ({

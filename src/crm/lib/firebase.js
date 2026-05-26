@@ -15,7 +15,7 @@ import { getAnalytics, isSupported } from 'firebase/analytics'
 
 const env = import.meta.env
 
-const firebaseConfig = {
+export const firebaseConfig = {
   apiKey: env.VITE_FIREBASE_API_KEY,
   authDomain: env.VITE_FIREBASE_AUTH_DOMAIN,
   projectId: env.VITE_FIREBASE_PROJECT_ID,

@@ -1,9 +1,9 @@
 import Input from '../ui/Input.jsx'
 import Select from '../ui/Select.jsx'
 
-export default function ActivityFilters({ value, onChange, userOptions, moduleOptions }) {
+export default function ActivityFilters({ value, onChange, userOptions, moduleOptions, actionOptions }) {
   return (
-    <div className="grid gap-3 md:grid-cols-4">
+    <div className="grid gap-3 md:grid-cols-5">
       <Input
         placeholder="Search logs…"
         value={value.query}
@@ -25,6 +25,14 @@ export default function ActivityFilters({ value, onChange, userOptions, moduleOp
           </option>
         ))}
       </Select>
+      <Select value={value.action} onChange={(e) => onChange({ ...value, action: e.target.value })}>
+        <option value="All">All Actions</option>
+        {actionOptions.map((a) => (
+          <option key={a} value={a}>
+            {a}
+          </option>
+        ))}
+      </Select>
       <div className="grid grid-cols-2 gap-3">
         <Input
           type="date"
@@ -40,4 +48,3 @@ export default function ActivityFilters({ value, onChange, userOptions, moduleOp
     </div>
   )
 }
-

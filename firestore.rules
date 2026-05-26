@@ -64,6 +64,51 @@ service cloud.firestore {
       ]);
     }
 
+    function paymentReferenceFieldsTouched() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+        'paymentStatus',
+        'status',
+        'paymentSubmittedAt',
+        'paymentSubmittedBy',
+        'lastPaymentReference',
+        'ownerId',
+        'userId',
+        'workspaceId',
+        'updatedAt',
+      ])
+      && request.resource.data.paymentStatus == 'pending_verification'
+      && request.resource.data.paymentSubmittedBy == request.auth.uid;
+    }
+
+    function canReadClientPortalInvoice(workspaceId) {
+      return isWorkspaceMember(workspaceId)
+        && (
+          resource.data.customerEmail == profile().email
+          || resource.data.clientId == request.auth.uid
+          || resource.data.createdBy == request.auth.uid
+          || isSelf(workspaceId)
+        );
+    }
+
+    function canReadClientPortalPayment(workspaceId) {
+      return isWorkspaceMember(workspaceId)
+        && (
+          resource.data.submittedBy == request.auth.uid
+          || resource.data.approvedBy == request.auth.uid
+          || resource.data.clientId == request.auth.uid
+          || isSelf(workspaceId)
+        );
+    }
+
+    function canSubmitPaymentReference(workspaceId) {
+      return isWorkspaceMember(workspaceId)
+        && request.resource.data.paymentStatus == 'pending_verification'
+        && request.resource.data.submittedBy == request.auth.uid
+        && request.resource.data.ownerId == workspaceId
+        && request.resource.data.userId == workspaceId
+        && request.resource.data.workspaceId == workspaceId;
+    }
+
     function staffPermission(workspaceId, key) {
       return isWorkspaceManager(workspaceId)
         || (isWorkspaceMember(workspaceId)
@@ -95,8 +140,20 @@ service cloud.firestore {
       ]);
     }
 
+    function isCreatingStaffUser(userId) {
+      return signedIn()
+        && request.resource.data.uid == userId
+        && request.resource.data.userId == userId
+        && request.resource.data.workspaceId is string
+        && request.resource.data.ownerId == request.resource.data.workspaceId
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.role in ['staff', 'admin', 'accountant']
+        && isWorkspaceManager(request.resource.data.workspaceId);
+    }
+
     match /users/{userId} {
       allow create: if isAdmin()
+        || isCreatingStaffUser(userId)
         || (isSelf(userId)
           && request.resource.data.uid == userId
           && hasOwnScope(userId)
@@ -170,16 +227,23 @@ service cloud.firestore {
       }
 
       match /invoices/{invoiceId} {
-        allow read: if staffPermission(workspaceId, 'invoices') || staffPermission(workspaceId, 'reports') || isPaymentApprover(workspaceId);
+        allow read: if staffPermission(workspaceId, 'invoices')
+          || staffPermission(workspaceId, 'reports')
+          || isPaymentApprover(workspaceId)
+          || canReadClientPortalInvoice(workspaceId);
         allow create: if staffPermission(workspaceId, 'invoices');
         allow update: if (staffPermission(workspaceId, 'invoices') && !paymentApprovalFieldsTouched())
-          || (isPaymentApprover(workspaceId) && paymentApprovalFieldsTouched());
+          || (isPaymentApprover(workspaceId) && paymentApprovalFieldsTouched())
+          || (isWorkspaceMember(workspaceId) && paymentReferenceFieldsTouched());
         allow delete: if staffPermission(workspaceId, 'invoices');
       }
 
       match /payments/{paymentId} {
-        allow read: if staffPermission(workspaceId, 'invoices') || staffPermission(workspaceId, 'reports') || isPaymentApprover(workspaceId);
-        allow create: if isPaymentApprover(workspaceId);
+        allow read: if staffPermission(workspaceId, 'invoices')
+          || staffPermission(workspaceId, 'reports')
+          || isPaymentApprover(workspaceId)
+          || canReadClientPortalPayment(workspaceId);
+        allow create: if isPaymentApprover(workspaceId) || canSubmitPaymentReference(workspaceId);
         allow update, delete: if isWorkspaceManager(workspaceId);
       }
 
@@ -200,7 +264,11 @@ service cloud.firestore {
 
       match /activityLogs/{logId} {
         allow read: if staffPermission(workspaceId, 'reports');
-        allow write: if isWorkspaceManager(workspaceId);
+        allow create: if (isSelf(workspaceId) || isWorkspaceMember(workspaceId))
+          && request.resource.data.userId == request.auth.uid
+          && request.resource.data.ownerId == workspaceId
+          && request.resource.data.workspaceId == workspaceId;
+        allow update, delete: if isWorkspaceManager(workspaceId);
       }
 
       match /teamMembers/{memberId} {

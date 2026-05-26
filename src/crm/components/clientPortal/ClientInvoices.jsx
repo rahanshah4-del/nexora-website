@@ -4,18 +4,27 @@ import Card from '../ui/Card.jsx'
 import Table from '../ui/Table.jsx'
 import { formatCurrency } from '../../utils/format.js'
 
-function statusVariant(status) {
-  if (status === 'Paid') return 'success'
-  if (status === 'Overdue') return 'danger'
-  if (status === 'Cancelled') return 'default'
-  return 'warning'
+function paymentBadge(invoice) {
+  const paymentStatus = String(invoice.paymentStatus || '').toLowerCase()
+  const invoiceStatus = String(invoice.status || '').toLowerCase()
+  if (paymentStatus === 'paid' || invoiceStatus === 'paid') return { label: 'Paid', variant: 'success' }
+  if (paymentStatus === 'pending_verification') return { label: 'Pending Verification', variant: 'info' }
+  if (invoiceStatus === 'overdue') return { label: 'Overdue', variant: 'danger' }
+  return { label: 'Pending', variant: 'warning' }
 }
 
-export default function ClientInvoices({ invoices }) {
+export default function ClientInvoices({ invoices, canApprovePayments, onViewInvoice, onMarkPaid, onRecordPayment, onSubmitReference }) {
   const columns = [
     { key: 'invoiceNumber', header: 'Invoice', cell: (r) => <span className="font-semibold">{r.invoiceNumber}</span> },
     { key: 'dueDate', header: 'Due' },
-    { key: 'status', header: 'Status', cell: (r) => <Badge variant={statusVariant(r.status)}>{r.status}</Badge> },
+    {
+      key: 'status',
+      header: 'Status',
+      cell: (r) => {
+        const badge = paymentBadge(r)
+        return <Badge variant={badge.variant}>{badge.label}</Badge>
+      },
+    },
     {
       key: 'totalUsd',
       header: 'Total',
@@ -24,11 +33,31 @@ export default function ClientInvoices({ invoices }) {
     {
       key: 'actions',
       header: 'Actions',
-      cell: () => (
-        <Button variant="ghost" className="rounded-2xl" type="button">
-          Download (Placeholder)
-        </Button>
-      ),
+      cell: (row) => {
+        const paid = String(row.paymentStatus || row.status || '').toLowerCase() === 'paid'
+        return (
+          <div className="flex items-center gap-2">
+            <Button variant="subtle" className="rounded-xl px-3 py-2 text-xs" type="button" onClick={() => onViewInvoice?.(row)}>
+              View Invoice
+            </Button>
+            {!paid && canApprovePayments ? (
+              <>
+                <Button className="rounded-xl px-3 py-2 text-xs" type="button" onClick={() => onMarkPaid?.(row)}>
+                  Mark as Paid
+                </Button>
+                <Button variant="ghost" className="rounded-xl px-3 py-2 text-xs" type="button" onClick={() => onRecordPayment?.(row)}>
+                  Record Payment
+                </Button>
+              </>
+            ) : null}
+            {!paid && !canApprovePayments ? (
+              <Button variant="ghost" className="rounded-xl px-3 py-2 text-xs" type="button" onClick={() => onSubmitReference?.(row)}>
+                Submit Payment Reference
+              </Button>
+            ) : null}
+          </div>
+        )
+      },
     },
   ]
 
@@ -37,7 +66,7 @@ export default function ClientInvoices({ invoices }) {
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-sm font-semibold text-slate-900 dark:text-white">Invoices</p>
-          <p className="text-xs text-slate-600 dark:text-slate-300">View invoices and download placeholders</p>
+          <p className="text-xs text-slate-600 dark:text-slate-300">View invoices, approve payments, or submit payment references</p>
         </div>
         <Badge variant="purple">Billing</Badge>
       </div>

@@ -19,6 +19,7 @@ import { usePreferences } from '../hooks/usePreferences.js'
 import { useUser } from '../hooks/useUser.js'
 import AuditLogPanel from '../components/system/AuditLogPanel.jsx'
 import { useStaffPermissions } from '../hooks/useStaffPermissions.js'
+import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 
 function Field({ label, children, className = '' }) {
   return (
@@ -64,7 +65,16 @@ function PermissionSwitch({ label, checked, disabled, onChange }) {
 
 function TeamPermissionsPanel() {
   const staffApi = useStaffPermissions()
-  const [draft, setDraft] = useState({ name: '', email: '', role: 'staff' })
+  const [draft, setDraft] = useState({
+    name: '',
+    email: '',
+    username: '',
+    password: '',
+    confirmPassword: '',
+    role: 'staff',
+    status: 'active',
+    permissions: {},
+  })
   const [status, setStatus] = useState(null)
 
   function showStatus(tone, message) {
@@ -104,20 +114,65 @@ function TeamPermissionsPanel() {
               <Field label="Staff email">
                 <Input type="email" value={draft.email} onChange={(event) => setDraft((current) => ({ ...current, email: event.target.value }))} />
               </Field>
+              <Field label="Username optional">
+                <Input value={draft.username} onChange={(event) => setDraft((current) => ({ ...current, username: event.target.value }))} />
+              </Field>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Field label="Password">
+                  <Input type="password" value={draft.password} onChange={(event) => setDraft((current) => ({ ...current, password: event.target.value }))} />
+                </Field>
+                <Field label="Confirm Password">
+                  <Input type="password" value={draft.confirmPassword} onChange={(event) => setDraft((current) => ({ ...current, confirmPassword: event.target.value }))} />
+                </Field>
+              </div>
               <Field label="Staff role">
                 <Select value={draft.role} onChange={(event) => setDraft((current) => ({ ...current, role: event.target.value }))}>
                   <option value="staff">Staff</option>
                   <option value="admin">Admin</option>
+                  <option value="accountant">Accountant</option>
                 </Select>
               </Field>
+              <Field label="Status">
+                <Select value={draft.status} onChange={(event) => setDraft((current) => ({ ...current, status: event.target.value }))}>
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </Select>
+              </Field>
+              <div className="grid gap-2">
+                <p className="text-xs font-semibold text-slate-600">Permissions</p>
+                <div className="grid gap-2">
+                  {staffApi.permissionKeys.map((permission) => (
+                    <PermissionSwitch
+                      key={permission.key}
+                      label={permission.label}
+                      checked={Boolean(draft.permissions[permission.key])}
+                      onChange={(checked) =>
+                        setDraft((current) => ({
+                          ...current,
+                          permissions: { ...current.permissions, [permission.key]: checked },
+                        }))
+                      }
+                    />
+                  ))}
+                </div>
+              </div>
               <Button
                 type="button"
                 className="rounded-2xl"
                 onClick={async () => {
                   const res = await staffApi.createStaff(draft)
                   if (res.ok) {
-                    setDraft({ name: '', email: '', role: 'staff' })
-                    showStatus('success', 'Staff saved')
+                    setDraft({
+                      name: '',
+                      email: '',
+                      username: '',
+                      password: '',
+                      confirmPassword: '',
+                      role: 'staff',
+                      status: 'active',
+                      permissions: {},
+                    })
+                    showStatus('success', res.message || 'Staff saved')
                   } else {
                     showStatus('error', res.error || 'Failed')
                   }
@@ -126,7 +181,7 @@ function TeamPermissionsPanel() {
                 Create Staff
               </Button>
               <p className="text-xs leading-5 text-slate-500">
-                Staff Firebase Auth accounts should be provisioned server-side before login. This panel stores the workspace staff ID and permissions.
+                Staff account saved. Use admin backend/cloud function for production user creation if Firebase blocks local secondary-user creation.
               </p>
             </div>
           </div>
@@ -183,7 +238,7 @@ function TeamPermissionsPanel() {
 }
 
 export default function SettingsPage() {
-  const { plan } = useUser()
+  const { plan, userId, workspaceId, userDoc, firebaseUser } = useUser()
   const { currency, setCurrency, profile, setProfile, notifications, setNotifications } = usePreferences()
   const [draft, setDraft] = useState(profile)
   const [saved, setSaved] = useState(false)
@@ -200,6 +255,17 @@ export default function SettingsPage() {
 
   function onSaveProfile() {
     setProfile(draft)
+    logActivity({
+      workspaceId,
+      userId,
+      ...userActivityInfo(userDoc, firebaseUser),
+      action: 'Settings/profile updated',
+      module: 'Settings',
+      description: 'Profile and business settings were updated.',
+      targetId: userId || '',
+      targetName: draft.companyName || draft.ownerName || 'Profile',
+      metadata: { companyName: draft.companyName || '', ownerName: draft.ownerName || '', currency },
+    }).catch(() => {})
     setSaved(true)
     window.setTimeout(() => setSaved(false), 1400)
   }
