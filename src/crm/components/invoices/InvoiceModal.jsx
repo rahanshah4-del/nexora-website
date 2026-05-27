@@ -62,6 +62,17 @@ function InvoiceModal({
     if (mode === 'create') Promise.resolve().then(() => setNewInvoice(createBlankInvoice()))
   }, [open, invoice, mode])
 
+  useEffect(() => {
+    if (!open) return undefined
+
+    function handleEscape(event) {
+      if (event.key === 'Escape') onClose?.()
+    }
+
+    window.addEventListener('keydown', handleEscape)
+    return () => window.removeEventListener('keydown', handleEscape)
+  }, [open, onClose])
+
   const totals = useMemo(() => {
     const subtotal = calcSubtotal(newInvoice.items)
     const taxRate = Math.max(Number(newInvoice.taxRate) || 0, 0)
@@ -105,7 +116,7 @@ function InvoiceModal({
     <AnimatePresence>
       {open ? (
         <motion.div
-          className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-slate-950/45 p-3 backdrop-blur-sm sm:p-4"
+          className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-slate-950/45 p-2 backdrop-blur-sm sm:p-3"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -119,54 +130,53 @@ function InvoiceModal({
             exit={{ opacity: 0, y: 14 }}
             transition={{ duration: 0.18 }}
             onClick={(e) => e.stopPropagation()}
-            className="crm-modal-panel crm-modal-panel-wide"
+            className="w-[92vw] max-w-[960px] overflow-hidden rounded-3xl"
           >
-            <Card className="rounded-3xl p-4 sm:p-5">
-              <div className="flex items-start justify-between gap-3">
+            <Card className="flex max-h-[82vh] flex-col rounded-3xl p-0">
+              <div className="sticky top-0 z-10 flex items-start justify-between gap-3 border-b border-slate-200/70 bg-white/95 px-4 py-3 backdrop-blur-sm dark:border-slate-800/80 dark:bg-slate-950/95 sm:px-5">
                 <div>
                   <p className="text-base font-semibold text-slate-900 dark:text-white">
                     {mode === 'create' ? 'Create Invoice' : 'Invoice Detail'}
                   </p>
-                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-                    PDF export and subscription billing are coming soon.
-                  </p>
+                  <p className="mt-0.5 text-xs text-slate-600 dark:text-slate-300">Create, review, and manage invoice payments.</p>
                 </div>
                 <Badge variant="purple">Invoice</Badge>
               </div>
 
-              {mode === 'detail' && draft ? (
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  <div className="glass-muted rounded-2xl p-4">
+              <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3 sm:px-5">
+                {mode === 'detail' && draft ? (
+                <div className="grid gap-2.5 sm:grid-cols-2">
+                  <div className="glass-muted rounded-xl p-3">
                     <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">Invoice</p>
                     <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{draft.invoiceNumber}</p>
                   </div>
-                  <div className="glass-muted rounded-2xl p-4">
+                  <div className="glass-muted rounded-xl p-3">
                     <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">Status</p>
                     <p className="mt-1 text-sm font-semibold capitalize text-slate-900 dark:text-white">{draft.status}</p>
                   </div>
-                  <div className="glass-muted rounded-2xl p-4">
+                  <div className="glass-muted rounded-xl p-3">
                     <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">Payment</p>
-                    <div className="mt-2">
+                    <div className="mt-1.5">
                       <Badge variant={paymentBadge(draft).variant}>{paymentBadge(draft).label}</Badge>
                     </div>
                   </div>
-                  <div className="glass-muted rounded-2xl p-4 sm:col-span-2">
+                  <div className="glass-muted rounded-xl p-3 sm:col-span-2">
                     <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">Customer</p>
                     <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">
                       {draft.customerName} — {draft.customerEmail}
                     </p>
                   </div>
-                  <div className="glass-muted rounded-2xl p-4">
+                  <div className="glass-muted rounded-xl p-3">
                     <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">Total</p>
                     <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">
                       {formatCurrency(draft.total ?? draft.totalUsd ?? 0, draft.currency || currency || 'PKR')}
                     </p>
                   </div>
-                  <div className="glass-muted rounded-2xl p-4">
+                  <div className="glass-muted rounded-xl p-3">
                     <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">Due</p>
                     <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{draft.dueDate}</p>
                   </div>
-                  <div className="glass-muted rounded-2xl p-4">
+                  <div className="glass-muted rounded-xl p-3">
                     <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">Amount Paid</p>
                     <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">
                       {formatCurrency(draft.amountPaid ?? draft.partialPaidAmount ?? 0, draft.currency || currency || 'PKR')}
@@ -176,7 +186,7 @@ function InvoiceModal({
                     <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">Items</p>
                     <div className="mt-2 space-y-2">
                       {draft.items.map((it, idx) => (
-                        <div key={idx} className="glass-muted flex items-center justify-between gap-3 rounded-2xl p-3">
+                        <div key={idx} className="glass-muted flex items-center justify-between gap-3 rounded-xl p-2.5">
                           <span className="text-sm font-semibold text-slate-900 dark:text-white">{it.name}</span>
                           <span className="text-xs text-slate-600 dark:text-slate-300">
                             {it.quantity ?? it.qty} × {formatCurrency(it.price ?? it.priceUsd ?? 0, draft.currency || currency || 'PKR')}
@@ -188,9 +198,9 @@ function InvoiceModal({
                   {String(draft.paymentStatus || draft.status || '').toLowerCase() !== 'paid' &&
                   !['rejected', 'cancelled'].includes(String(draft.paymentStatus || draft.status || '').toLowerCase()) ? (
                     <div className="sm:col-span-2">
-                      <div className="flex flex-wrap gap-2 rounded-2xl border border-slate-200 bg-white/80 p-3">
+                      <div className="flex flex-wrap gap-2 rounded-xl border border-slate-200 bg-white/80 p-2.5">
                         <Button
-                          className="rounded-xl px-3 py-2 text-xs"
+                          className="h-9 rounded-xl px-3 text-xs"
                           type="button"
                           disabled={!canApprovePayments}
                           onClick={(event) => {
@@ -202,7 +212,7 @@ function InvoiceModal({
                         </Button>
                         <Button
                           variant="subtle"
-                          className="rounded-xl px-3 py-2 text-xs"
+                          className="h-9 rounded-xl px-3 text-xs"
                           type="button"
                           disabled={!canApprovePayments}
                           onClick={(event) => {
@@ -214,7 +224,7 @@ function InvoiceModal({
                         </Button>
                         <Button
                           variant="ghost"
-                          className="rounded-xl px-3 py-2 text-xs text-rose-700 hover:bg-rose-50 hover:text-rose-800"
+                          className="h-9 rounded-xl px-3 text-xs text-rose-700 hover:bg-rose-50 hover:text-rose-800"
                           type="button"
                           disabled={!canApprovePayments}
                           onClick={(event) => {
@@ -229,44 +239,44 @@ function InvoiceModal({
                   ) : null}
                 </div>
               ) : mode === 'create' ? (
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
                   <div>
-                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Invoice Number</label>
-                    <Input className="mt-1" value={newInvoice.invoiceNumber} onChange={(e) => setNewInvoice((s) => ({ ...s, invoiceNumber: e.target.value }))} />
+                    <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-200">Invoice Number</label>
+                    <Input className="mt-1 h-9 rounded-lg" value={newInvoice.invoiceNumber} onChange={(e) => setNewInvoice((s) => ({ ...s, invoiceNumber: e.target.value }))} />
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Currency</label>
+                    <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-200">Currency</label>
                     <div className="mt-1">
-                      <CurrencySelector value={newInvoice.currency} onChange={(v) => setNewInvoice((s) => ({ ...s, currency: v }))} />
+                      <CurrencySelector className="h-9 rounded-lg" value={newInvoice.currency} onChange={(v) => setNewInvoice((s) => ({ ...s, currency: v }))} />
                     </div>
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Customer Name</label>
-                    <Input className="mt-1" value={newInvoice.customerName} onChange={(e) => setNewInvoice((s) => ({ ...s, customerName: e.target.value }))} />
+                    <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-200">Customer Name</label>
+                    <Input className="mt-1 h-9 rounded-lg" value={newInvoice.customerName} onChange={(e) => setNewInvoice((s) => ({ ...s, customerName: e.target.value }))} />
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Customer Email</label>
-                    <Input className="mt-1" type="email" value={newInvoice.customerEmail} onChange={(e) => setNewInvoice((s) => ({ ...s, customerEmail: e.target.value }))} />
+                    <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-200">Customer Email</label>
+                    <Input className="mt-1 h-9 rounded-lg" type="email" value={newInvoice.customerEmail} onChange={(e) => setNewInvoice((s) => ({ ...s, customerEmail: e.target.value }))} />
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Due Date</label>
-                    <Input className="mt-1" type="date" value={newInvoice.dueDate} onChange={(e) => setNewInvoice((s) => ({ ...s, dueDate: e.target.value }))} />
+                    <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-200">Due Date</label>
+                    <Input className="mt-1 h-9 rounded-lg" type="date" value={newInvoice.dueDate} onChange={(e) => setNewInvoice((s) => ({ ...s, dueDate: e.target.value }))} />
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Tax Rate (%)</label>
-                    <Input className="mt-1" inputMode="decimal" value={newInvoice.taxRate} onChange={(e) => setNewInvoice((s) => ({ ...s, taxRate: Number(e.target.value || 0) }))} />
+                    <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-200">Tax Rate (%)</label>
+                    <Input className="mt-1 h-9 rounded-lg" inputMode="decimal" value={newInvoice.taxRate} onChange={(e) => setNewInvoice((s) => ({ ...s, taxRate: Number(e.target.value || 0) }))} />
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Discount</label>
-                    <Input className="mt-1" inputMode="decimal" value={newInvoice.discount} onChange={(e) => setNewInvoice((s) => ({ ...s, discount: Number(e.target.value || 0) }))} />
+                    <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-200">Discount</label>
+                    <Input className="mt-1 h-9 rounded-lg" inputMode="decimal" value={newInvoice.discount} onChange={(e) => setNewInvoice((s) => ({ ...s, discount: Number(e.target.value || 0) }))} />
                   </div>
 
-                  <div className="sm:col-span-2">
+                  <div className="sm:col-span-2 lg:col-span-4">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">Invoice Items</p>
                       <Button
                         variant="subtle"
-                        className="rounded-xl px-3 py-2 text-xs"
+                        className="h-9 rounded-xl px-3 text-xs"
                         type="button"
                         onClick={() =>
                           setNewInvoice((s) => ({
@@ -278,11 +288,11 @@ function InvoiceModal({
                         Add Item
                       </Button>
                     </div>
-                    <div className="mt-2 space-y-2">
+                    <div className="mt-2 space-y-1.5">
                       {newInvoice.items.map((item, index) => (
-                        <div key={index} className="rounded-2xl border border-slate-200/80 bg-white/80 p-3">
-                          <div className="grid gap-2 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)_80px_110px_auto]">
-                            <Select value={item.productId} onChange={(event) => selectProduct(index, event.target.value)}>
+                        <div key={index} className="rounded-xl border border-slate-200/80 bg-white/80 p-2">
+                          <div className="grid gap-2 lg:grid-cols-[minmax(9rem,1fr)_minmax(10rem,1.1fr)_72px_96px_auto]">
+                            <Select className="h-9 rounded-lg" value={item.productId} onChange={(event) => selectProduct(index, event.target.value)}>
                               <option value="">Manual item</option>
                               {products.map((product) => (
                                 <option key={product.id} value={product.id}>
@@ -291,11 +301,13 @@ function InvoiceModal({
                               ))}
                             </Select>
                             <Input
+                              className="h-9 rounded-lg"
                               value={item.name}
                               placeholder="Item name"
                               onChange={(event) => updateItem(index, { name: event.target.value })}
                             />
                             <Input
+                              className="h-9 rounded-lg"
                               inputMode="numeric"
                               value={item.quantity ?? item.qty}
                               onChange={(event) => {
@@ -304,13 +316,14 @@ function InvoiceModal({
                               }}
                             />
                             <Input
+                              className="h-9 rounded-lg"
                               inputMode="decimal"
                               value={item.price}
                               onChange={(event) => updateItem(index, { price: Number(event.target.value || 0) })}
                             />
                             <Button
                               variant="ghost"
-                              className="rounded-xl px-3 py-2 text-xs text-rose-700 hover:bg-rose-50 hover:text-rose-800"
+                              className="h-9 rounded-xl px-3 text-xs text-rose-700 hover:bg-rose-50 hover:text-rose-800"
                               type="button"
                               onClick={() =>
                                 setNewInvoice((s) => ({
@@ -327,34 +340,36 @@ function InvoiceModal({
                     </div>
                   </div>
 
-                  <div className="sm:col-span-2">
+                  <div className="sm:col-span-2 lg:col-span-4">
                     <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">Totals</p>
-                    <div className="mt-2 grid gap-2 sm:grid-cols-4">
-                      <div className="glass-muted rounded-2xl p-3">
+                    <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                      <div className="glass-muted rounded-xl p-2.5">
                         <p className="text-xs text-slate-600 dark:text-slate-300">Subtotal</p>
                         <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{formatCurrency(totals.subtotal, newInvoice.currency)}</p>
                       </div>
-                      <div className="glass-muted rounded-2xl p-3">
+                      <div className="glass-muted rounded-xl p-2.5">
                         <p className="text-xs text-slate-600 dark:text-slate-300">Discount</p>
                         <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{formatCurrency(totals.discount, newInvoice.currency)}</p>
                       </div>
-                      <div className="glass-muted rounded-2xl p-3">
+                      <div className="glass-muted rounded-xl p-2.5">
                         <p className="text-xs text-slate-600 dark:text-slate-300">Tax</p>
                         <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{formatCurrency(totals.taxAmount, newInvoice.currency)}</p>
                       </div>
-                      <div className="glass-muted rounded-2xl p-3">
+                      <div className="glass-muted rounded-xl border border-sky-200/70 bg-sky-50/70 p-2.5 dark:border-sky-500/20 dark:bg-sky-500/10">
                         <p className="text-xs text-slate-600 dark:text-slate-300">Total</p>
                         <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{formatCurrency(totals.total, newInvoice.currency)}</p>
                       </div>
                     </div>
                   </div>
                 </div>
-              ) : null}
+                ) : null}
 
-              <div className="mt-5 flex flex-wrap gap-2">
+              </div>
+
+              <div className="sticky bottom-0 z-10 flex flex-wrap justify-end gap-2 border-t border-slate-200/70 bg-white/95 px-4 py-3 backdrop-blur-sm dark:border-slate-800/80 dark:bg-slate-950/95 sm:px-5">
                 {mode === 'create' ? (
                   <Button
-                    className="rounded-2xl"
+                    className="h-9 rounded-xl px-4 text-sm"
                     type="button"
                     disabled={submitting}
                     onClick={async () => {
@@ -385,10 +400,10 @@ function InvoiceModal({
                     {submitting ? 'Creating…' : 'Create'}
                   </Button>
                 ) : null}
-                <Button variant="subtle" className="rounded-2xl" type="button" onClick={onClose}>
+                <Button variant="subtle" className="h-9 rounded-xl px-4 text-sm" type="button" onClick={onClose}>
                   Close
                 </Button>
-                <Button variant="ghost" className="rounded-2xl" type="button">
+                <Button variant="ghost" className="h-9 rounded-xl px-4 text-sm" type="button">
                   Export PDF
                 </Button>
               </div>
