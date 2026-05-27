@@ -19,13 +19,9 @@ import { db, getFirebaseEnvHint } from '../lib/firebase.js'
 import { useAuth } from '../hooks/useAuth.js'
 import { usePreferences } from '../hooks/usePreferences.js'
 import { useUser } from '../hooks/useUser.js'
+import { getBusinessPlanPrice } from '../data/moduleAccess.js'
 import { formatCurrency } from '../utils/format.js'
 import { clientSafeMessage } from '../utils/messages.js'
-
-const planPricingPkr = {
-  Starter: { monthly: 2000, yearly: 24000 },
-  Business: { monthly: 5000, yearly: 60000 },
-}
 
 const nayapayAccounts = [
   { key: 'NayaPay ID', value: 'mehranshah01@nayapay' },
@@ -92,12 +88,14 @@ function PaymentDetailRow({ label, value }) {
 export default function UpgradeBusinessPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const { userId, plan } = useUser()
+  const { userId, plan, accessPlan } = useUser()
   const { profile } = usePreferences()
-  const currency = 'PKR'
+  const businessPrice = useMemo(() => getBusinessPlanPrice(), [])
+  const currency = businessPrice.currency
+  const selectedPlan = 'Business'
+  const billingCycle = 'monthly'
+  const planPrice = businessPrice.amount
 
-  const [selectedPlan, setSelectedPlan] = useState('Business') // Starter | Business
-  const [billingCycle, setBillingCycle] = useState('monthly') // monthly | yearly
   const [amountPaid, setAmountPaid] = useState('')
 
   const [customerName, setCustomerName] = useState(profile.ownerName || 'Nexora User')
@@ -115,9 +113,6 @@ export default function UpgradeBusinessPage() {
   const [toast, setToast] = useState(null)
   const [pendingRequest, setPendingRequest] = useState(null)
   const firebaseHint = getFirebaseEnvHint()
-  const planPrice = useMemo(() => {
-    return planPricingPkr[selectedPlan]?.[billingCycle] ?? 0
-  }, [selectedPlan, billingCycle])
 
   // Show pending approval status if a request already exists.
   // (Keeps UI stable even after reload.)
@@ -196,6 +191,8 @@ export default function UpgradeBusinessPage() {
         planPrice,
         amountPaid: Number(amountPaid),
         currency,
+        billingCurrency: currency,
+        requestedDurationDays: 30,
         paymentMethod,
         paidToAccount,
         transactionId: transactionId.trim(),
@@ -230,8 +227,8 @@ export default function UpgradeBusinessPage() {
           <Link className="focus-ring rounded-xl px-3 py-2 text-sm font-semibold text-indigo-600 hover:bg-indigo-500/10 dark:text-indigo-300" to="/app/settings">
             Back to Settings
           </Link>
-          <Badge variant={plan === 'Business' ? 'success' : plan === 'Starter' ? 'info' : 'default'}>
-            {plan === 'Business' ? 'Business Active' : plan === 'Starter' ? 'Starter Plan' : 'Free Plan'}
+          <Badge variant={accessPlan === 'Business' ? 'success' : 'default'}>
+            {accessPlan === 'Business' ? 'Business Access' : 'Free Plan'}
           </Badge>
         </div>
 
@@ -239,7 +236,7 @@ export default function UpgradeBusinessPage() {
           title="Upgrade Plan"
           subtitle="Submit your payment details for secure plan approval."
           right={
-            plan === 'Business' ? (
+            accessPlan === 'Business' && plan === 'Business' ? (
               <Button className="rounded-2xl" onClick={() => navigate('/app/dashboard')} type="button">
                 Go to Dashboard
               </Button>
@@ -252,13 +249,13 @@ export default function UpgradeBusinessPage() {
             <div>
               <p className="text-sm font-semibold text-slate-900 dark:text-white">Manual Approval Flow</p>
               <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-                Select a plan, pay using NayaPay, then submit your transaction details. An admin will approve or reject it.
+                Pay for the Business plan, then submit your transaction details. Your workspace updates after account approval.
               </p>
             </div>
             <Badge variant="purple">NEXORA</Badge>
           </div>
 
-          {plan === 'Business' ? (
+          {accessPlan === 'Business' && plan === 'Business' ? (
             <div className="mt-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4">
               <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-200">Business is active</p>
               <p className="mt-1 text-sm text-emerald-800/90 dark:text-emerald-200/90">
@@ -281,10 +278,10 @@ export default function UpgradeBusinessPage() {
                 {pendingRequest?.selectedPlan ? (
                   <>
                     {' '}
-                    for <span className="font-semibold">{pendingRequest.selectedPlan} Plan</span>
+                    for <span className="font-semibold">Business Plan</span>
                   </>
                 ) : null}
-                . Your plan will update after admin approval.
+                . Your plan will update after account approval.
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
                 <Button className="rounded-2xl" onClick={() => navigate('/app/settings')} type="button">
@@ -311,17 +308,11 @@ export default function UpgradeBusinessPage() {
               </div>
               <div>
                 <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Selected Plan</label>
-                <Select className="mt-1" value={selectedPlan} onChange={(e) => setSelectedPlan(e.target.value)}>
-                  <option value="Starter">Starter Plan</option>
-                  <option value="Business">Business Plan</option>
-                </Select>
+                <Input className="mt-1" value="Business Plan" readOnly />
               </div>
               <div>
                 <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Billing Cycle</label>
-                <Select className="mt-1" value={billingCycle} onChange={(e) => setBillingCycle(e.target.value)}>
-                  <option value="monthly">Monthly</option>
-                  <option value="yearly">Yearly</option>
-                </Select>
+                <Input className="mt-1" value="Monthly" readOnly />
               </div>
               <div>
                 <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Plan Price</label>
@@ -348,7 +339,7 @@ export default function UpgradeBusinessPage() {
                   <option>NayaPay</option>
                 </Select>
                 <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-                  After payment, enter Transaction ID / Reference Number and submit for admin approval.
+                  After payment, enter Transaction ID / Reference Number and submit for account approval.
                 </p>
               </div>
 

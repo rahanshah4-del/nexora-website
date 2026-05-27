@@ -6,7 +6,7 @@ const STORAGE_KEY = 'nexora_preferences_v1'
 
 const defaultState = {
   currency: 'PKR',
-  plan: 'Free', // Free | Starter | Business
+  plan: 'Free', // Free | Business
   profile: {
     companyName: 'NEXORA SOLUTIONS',
     ownerName: 'Admin User',

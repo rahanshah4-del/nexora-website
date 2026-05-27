@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { db } from '../lib/firebase.js'
 import { subscribeOwnedCollection, subscribeUserCollection } from '../lib/firestore.js'
-import { planCatalog } from '../data/moduleAccess.js'
+import { accessPlanForUser, daysUntil, getPlanCatalog, isTrialActive, trialEndDate } from '../data/moduleAccess.js'
 import { useUser } from './useUser.js'
 import { clientSafeMessage } from '../utils/messages.js'
 
@@ -12,8 +12,12 @@ function normalizeSub(s) {
     plan: s.plan || 'Free',
     planStatus: s.planStatus || 'inactive',
     billingCycle: s.billingCycle || 'monthly',
-    expiresOn: s.expiresOn || s.renewsOn || '—',
-    renewsOn: s.renewsOn || '—',
+    billingCurrency: s.billingCurrency || s.currency || 'PKR',
+    nextBillingDate: s.nextBillingDate || s.renewsOn || '—',
+    subscriptionStartedAt: s.subscriptionStartedAt || s.startedAt || null,
+    subscriptionExpiresAt: s.subscriptionExpiresAt || s.expiresOn || s.renewsOn || null,
+    expiresOn: s.subscriptionExpiresAt || s.expiresOn || s.renewsOn || '—',
+    renewsOn: s.nextBillingDate || s.renewsOn || '—',
     usage: s.usage || {
       storageUsedGb: 0,
       storageLimitGb: 0,
@@ -28,16 +32,17 @@ function normalizeSub(s) {
 }
 
 export function useSubscriptions() {
-  const { userId, workspaceId, userDoc } = useUser()
+  const { userId, workspaceId, userDoc, accessPlan, isTrialActive: trialActive, trialEndsAt, trialDaysRemaining } = useUser()
   const [subscription, setSubscription] = useState(() =>
     normalizeSub({
       id: 'sub',
       userId: userId || '',
-      plan: userDoc?.plan || 'Free',
+      plan: accessPlanForUser(userDoc || {}, userDoc?.plan || 'Free'),
       planStatus: userDoc?.planStatus || 'inactive',
       billingCycle: userDoc?.billingCycle || 'monthly',
-      renewsOn: '—',
-      expiresOn: '—',
+      billingCurrency: userDoc?.billingCurrency || 'PKR',
+      nextBillingDate: userDoc?.nextBillingDate || '—',
+      subscriptionExpiresAt: userDoc?.subscriptionExpiresAt || null,
     }),
   )
   const [history, setHistory] = useState([])
@@ -53,11 +58,12 @@ export function useSubscriptions() {
           normalizeSub({
             id: 'sub',
             userId: userId || '',
-            plan: userDoc?.plan || 'Free',
+            plan: accessPlanForUser(userDoc || {}, userDoc?.plan || 'Free'),
             planStatus: userDoc?.planStatus || 'inactive',
             billingCycle: userDoc?.billingCycle || 'monthly',
-            renewsOn: '—',
-            expiresOn: '—',
+            billingCurrency: userDoc?.billingCurrency || 'PKR',
+            nextBillingDate: userDoc?.nextBillingDate || '—',
+            subscriptionExpiresAt: userDoc?.subscriptionExpiresAt || null,
           }),
         )
         setHistory([])
@@ -73,11 +79,12 @@ export function useSubscriptions() {
           normalizeSub({
             id: 'sub',
             userId: '',
-            plan: userDoc?.plan || 'Free',
+            plan: accessPlanForUser(userDoc || {}, userDoc?.plan || 'Free'),
             planStatus: userDoc?.planStatus || 'inactive',
             billingCycle: userDoc?.billingCycle || 'monthly',
-            renewsOn: '—',
-            expiresOn: '—',
+            billingCurrency: userDoc?.billingCurrency || 'PKR',
+            nextBillingDate: userDoc?.nextBillingDate || '—',
+            subscriptionExpiresAt: userDoc?.subscriptionExpiresAt || null,
           }),
         )
         setHistory([])
@@ -98,9 +105,15 @@ export function useSubscriptions() {
         const sub = normalizeSub(raw || { id: 'sub', userId: workspaceId })
         setSubscription({
           ...sub,
-          plan: userDoc?.plan || sub.plan,
+          plan: accessPlanForUser(userDoc || {}, userDoc?.plan || sub.plan),
           planStatus: userDoc?.planStatus || sub.planStatus,
           billingCycle: userDoc?.billingCycle || sub.billingCycle,
+          billingCurrency: userDoc?.billingCurrency || sub.billingCurrency,
+          nextBillingDate: userDoc?.nextBillingDate || sub.nextBillingDate,
+          subscriptionStartedAt: userDoc?.subscriptionStartedAt || sub.subscriptionStartedAt,
+          subscriptionExpiresAt: userDoc?.subscriptionExpiresAt || sub.subscriptionExpiresAt,
+          expiresOn: userDoc?.subscriptionExpiresAt || sub.expiresOn,
+          renewsOn: userDoc?.nextBillingDate || sub.renewsOn,
         })
         setSource('firestore')
         setLoading(false)
@@ -111,11 +124,12 @@ export function useSubscriptions() {
           normalizeSub({
             id: 'sub',
             userId: workspaceId,
-            plan: userDoc?.plan || 'Free',
+            plan: accessPlanForUser(userDoc || {}, userDoc?.plan || 'Free'),
             planStatus: userDoc?.planStatus || 'inactive',
             billingCycle: userDoc?.billingCycle || 'monthly',
-            renewsOn: '—',
-            expiresOn: '—',
+            billingCurrency: userDoc?.billingCurrency || 'PKR',
+            nextBillingDate: userDoc?.nextBillingDate || '—',
+            subscriptionExpiresAt: userDoc?.subscriptionExpiresAt || null,
           }),
         )
         setSource('firestore')
@@ -132,7 +146,7 @@ export function useSubscriptions() {
           .slice(0, 20)
           .map((r) => ({
             id: r.id,
-            plan: r.selectedPlan || r.requestedPlan || '—',
+            plan: r.selectedPlan || r.requestedPlan || 'Business',
             billingCycle: r.billingCycle || '—',
             status: 'approved',
             changedAt: r.approvedAt?.toDate?.()?.toISOString?.().slice(0, 10) || '—',
@@ -147,7 +161,7 @@ export function useSubscriptions() {
       unsub?.()
       unsubUpgrades?.()
     }
-  }, [userId, workspaceId, userDoc?.plan, userDoc?.planStatus, userDoc?.billingCycle])
+  }, [userId, workspaceId, userDoc])
 
   useEffect(() => {
     const exp = subscription?.expiresOn
@@ -156,7 +170,7 @@ export function useSubscriptions() {
         setRenewalReminder(null)
         return
       }
-      const d = new Date(exp)
+      const d = exp?.toDate?.() || new Date(exp)
       if (Number.isNaN(d.getTime())) {
         setRenewalReminder(null)
         return
@@ -172,14 +186,20 @@ export function useSubscriptions() {
 
   return useMemo(
     () => ({
-      plans: planCatalog,
+      plans: getPlanCatalog(),
       subscription,
+      currentPlan: accessPlan,
+      trial: {
+        active: trialActive || isTrialActive(userDoc || {}),
+        endsAt: trialEndsAt || trialEndDate(userDoc || {}),
+        daysRemaining: trialDaysRemaining || daysUntil(trialEndDate(userDoc || {})),
+      },
       history,
       renewalReminder,
       loading,
       source,
       error,
     }),
-    [subscription, history, renewalReminder, loading, source, error],
+    [accessPlan, subscription, trialActive, trialEndsAt, trialDaysRemaining, userDoc, history, renewalReminder, loading, source, error],
   )
 }

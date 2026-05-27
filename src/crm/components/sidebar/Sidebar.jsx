@@ -104,9 +104,9 @@ function Brand({ collapsed }) {
   )
 }
 
-function UpgradeCard({ plan, isBusiness, onViewPlans }) {
-  const badgeLabel = isBusiness ? 'Active' : plan === 'Starter' ? 'Starter' : 'Free'
-  const badgeVariant = isBusiness ? 'success' : plan === 'Starter' ? 'info' : 'default'
+function UpgradeCard({ isBusiness, isTrialActive, onViewPlans }) {
+  const badgeLabel = isBusiness ? (isTrialActive ? 'Trial' : 'Active') : 'Free'
+  const badgeVariant = isBusiness ? 'success' : 'default'
 
   return (
     <div className="px-2 pt-2">
@@ -140,18 +140,18 @@ function UpgradeCard({ plan, isBusiness, onViewPlans }) {
 
 function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollapse, onSwitchProduct }) {
   const [pricingOpen, setPricingOpen] = useState(false)
-  const { plan, userDoc } = useUser()
-  const isBusiness = plan === 'Business'
+  const { accessPlan, isTrialActive, userDoc } = useUser()
+  const isBusiness = accessPlan === 'Business' || accessPlan === 'Enterprise'
   const sidebarItems = useMemo(() => {
     const allowedRoutes = new Set(
       selectedModulesForSidebar({
         enabledModules: userDoc?.enabledModules,
         onboardingCompleted: userDoc?.onboardingCompleted,
-        plan,
+        plan: accessPlan,
       }).map((module) => module.route),
     )
     return orderedSidebarItems.filter((item) => allowedRoutes.has(item.to))
-  }, [plan, userDoc?.enabledModules, userDoc?.onboardingCompleted])
+  }, [accessPlan, userDoc?.enabledModules, userDoc?.onboardingCompleted])
 
   const handleSwitchProduct = useCallback(() => {
     onNavigate?.()
@@ -186,14 +186,14 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
             </button>
           </div>
           <UpgradeCard
-            plan={plan}
             isBusiness={isBusiness}
+            isTrialActive={isTrialActive}
             onViewPlans={() => setPricingOpen(true)}
           />
         </div>
       )}
     </div>
-  ), [collapsed, handleSwitchProduct, isBusiness, onNavigate, plan, sidebarItems])
+  ), [collapsed, handleSwitchProduct, isBusiness, isTrialActive, onNavigate, sidebarItems])
 
   if (!mobile) {
     return (

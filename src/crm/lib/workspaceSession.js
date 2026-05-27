@@ -1,5 +1,6 @@
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore'
 import { db } from './firebase.js'
+import { accessPlanForUser } from '../data/moduleAccess.js'
 
 export const SELECTED_WORKSPACE_KEY = 'selectedWorkspace'
 export const SELECTED_WORKSPACE_USER_KEY = 'selectedWorkspaceUserId'
@@ -88,7 +89,7 @@ export function buildWorkspaceSession({ user, userDoc, selectedWorkspace }) {
   const userId = user?.uid ?? ''
   const sessionStartTime = getSessionStartTime(userId)
   const email = user?.email || userDoc?.email || ''
-  const planType = userDoc?.plan || 'Free'
+  const planType = accessPlanForUser(userDoc || {}, userDoc?.plan || 'Free')
   const trialStatus = userDoc?.planStatus || 'trial'
 
   return {

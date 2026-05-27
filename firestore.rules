@@ -138,6 +138,12 @@ service cloud.firestore {
         'isAdmin',
         'upgradedAt',
         'trialStartedAt',
+        'trialEndsAt',
+        'isTrialActive',
+        'billingCurrency',
+        'nextBillingDate',
+        'subscriptionStartedAt',
+        'subscriptionExpiresAt',
       ]);
     }
 
@@ -146,6 +152,11 @@ service cloud.firestore {
         'plan',
         'planStatus',
         'billingCycle',
+        'billingCurrency',
+        'nextBillingDate',
+        'subscriptionStartedAt',
+        'subscriptionExpiresAt',
+        'isTrialActive',
         'upgradedAt',
         'updatedAt',
       ]);
@@ -250,7 +261,9 @@ service cloud.firestore {
           && hasOwnScope(workspaceId)
           && hasSafeTrialPlan());
       allow read: if isSelf(workspaceId) || isAdmin();
-      allow update: if isAdmin() || (isSelf(workspaceId) && protectedAccountFieldsUnchanged());
+      allow update: if isAdmin()
+        || (isSelf(workspaceId) && protectedAccountFieldsUnchanged())
+        || (isPaymentApprover(workspaceId) && planApprovalFieldsTouched());
       allow delete: if isAdmin();
 
       match /tasks/{taskId} {

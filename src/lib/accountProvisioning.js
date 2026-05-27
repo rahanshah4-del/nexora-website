@@ -1,6 +1,6 @@
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore'
 import { db } from './firebase.js'
-import { getRecommendedModules, moduleCatalog, normalizeBusinessType } from '../crm/data/moduleAccess.js'
+import { BUSINESS_TRIAL_DAYS, addDays, getRecommendedModules, moduleCatalog, normalizeBusinessType } from '../crm/data/moduleAccess.js'
 
 export const FREE_TRIAL_PLAN = 'Free'
 export const FREE_TRIAL_STATUS = 'trial'
@@ -18,6 +18,7 @@ export async function ensureUserWorkspace(user, overrides = {}) {
 
   const uid = user.uid
   const now = serverTimestamp()
+  const trialEndsAt = addDays(new Date(), BUSINESS_TRIAL_DAYS)
   const email = (cleanString(overrides.email) || cleanString(user.email)).toLowerCase()
   const fullName = userDisplayName(user, overrides.fullName || overrides.name)
   const company = cleanString(overrides.company)
@@ -59,6 +60,8 @@ export async function ensureUserWorkspace(user, overrides = {}) {
       planStatus: FREE_TRIAL_STATUS,
       billingCycle: 'monthly',
       trialStartedAt: now,
+      trialEndsAt,
+      isTrialActive: true,
       createdAt: now,
       updatedAt: now,
       lastLoginAt: now,
@@ -109,6 +112,8 @@ export async function ensureUserWorkspace(user, overrides = {}) {
       planStatus: FREE_TRIAL_STATUS,
       billingCycle: 'monthly',
       trialStartedAt: now,
+      trialEndsAt,
+      isTrialActive: true,
       createdAt: now,
       updatedAt: now,
       lastAccessedAt: now,

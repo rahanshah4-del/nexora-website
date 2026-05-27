@@ -31,6 +31,10 @@ function dateLabel(value) {
   return date.toLocaleDateString()
 }
 
+function subscriptionEndDate(days = 30) {
+  return new Date(Date.now() + days * 86400000)
+}
+
 function amountPaidValue(row) {
   return toNumber(row?.amountPaid ?? row?.partialPaidAmount, 0)
 }
@@ -433,8 +437,10 @@ export function useApprovals() {
         }
 
         if (approval.sourceCollection === 'upgradeRequests') {
-          const plan = row.requestedPlan || row.selectedPlan || 'Business'
-          const billingCycle = row.billingCycle || 'monthly'
+          const plan = 'Business'
+          const billingCycle = 'monthly'
+          const subscriptionStartedAt = new Date()
+          const subscriptionExpiresAt = subscriptionEndDate(Number(row.requestedDurationDays) || 30)
           batch.update(doc(db, 'upgradeRequests', approval.sourceId), {
             approvalStatus: 'approved',
             paymentStatus: 'paid',
@@ -442,17 +448,20 @@ export function useApprovals() {
             approvedAt: now,
           })
           if (row.userId) {
-            batch.set(
-              doc(db, 'users', row.userId),
-              {
-                plan,
-                planStatus: 'active',
-                billingCycle,
-                upgradedAt: now,
-                updatedAt: now,
-              },
-              { merge: true },
-            )
+            const planPatch = {
+              plan,
+              planStatus: 'active',
+              billingCycle,
+              billingCurrency: row.billingCurrency || row.currency || 'PKR',
+              nextBillingDate: subscriptionExpiresAt,
+              subscriptionStartedAt,
+              subscriptionExpiresAt,
+              isTrialActive: false,
+              upgradedAt: now,
+              updatedAt: now,
+            }
+            batch.set(doc(db, 'users', row.userId), planPatch, { merge: true })
+            batch.set(doc(db, 'workspaces', row.workspaceId || row.userId), planPatch, { merge: true })
           }
         }
 

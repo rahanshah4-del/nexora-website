@@ -5,10 +5,10 @@ import { useUser } from '../../hooks/useUser.js'
 
 export default function FeatureGate({ children }) {
   const { pathname } = useLocation()
-  const { plan } = useUser()
+  const { accessPlan } = useUser()
   const module = moduleByRoute(pathname)
 
-  if (!routeAllowedByPlan(pathname, plan)) {
+  if (!routeAllowedByPlan(pathname, accessPlan)) {
     return (
       <FeatureLockedModal
         title={module?.label || 'Business Plan Feature'}

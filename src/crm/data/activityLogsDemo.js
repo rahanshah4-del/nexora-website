@@ -75,7 +75,6 @@ export const activityLogsDemo = [
     description: 'Subscription upgraded to Business (approved).',
     priority: 'high',
     createdAt: daysAgo(7),
-    metadata: { from: 'Starter', to: 'Business', billingCycle: 'monthly' },
+    metadata: { from: 'Free', to: 'Business', billingCycle: 'monthly' },
   },
 ]
-

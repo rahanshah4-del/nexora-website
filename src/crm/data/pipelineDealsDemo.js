@@ -50,7 +50,7 @@ export const pipelineDealsDemo = [
   },
   {
     id: 'DL-1004',
-    title: 'Studio Atlas — Starter trial',
+    title: 'Studio Atlas — Free trial',
     customerName: 'Studio Atlas',
     dealValueUsd: 2400,
     winProbability: 35,
@@ -75,4 +75,3 @@ export const pipelineDealsDemo = [
     meetings: [{ date: '2026-05-15', note: 'Procurement requested discount.' }],
   },
 ]
-

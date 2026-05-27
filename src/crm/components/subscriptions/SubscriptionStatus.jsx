@@ -3,9 +3,14 @@ import Card from '../ui/Card.jsx'
 
 function planBadgeVariant(plan) {
   if (plan === 'Business') return 'success'
-  if (plan === 'Starter') return 'info'
   if (plan === 'Enterprise') return 'warning'
   return 'default'
+}
+
+function formatDate(value) {
+  const date = value?.toDate?.() || (value ? new Date(value) : null)
+  if (!date || Number.isNaN(date.getTime())) return '—'
+  return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' }).format(date)
 }
 
 export default function SubscriptionStatus({ subscription, reminder }) {
@@ -26,15 +31,15 @@ export default function SubscriptionStatus({ subscription, reminder }) {
         </div>
         <div className="glass-muted rounded-2xl p-4">
           <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">Billing Cycle</p>
-          <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{subscription.billingCycle}</p>
+          <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{subscription.billingCycle || 'monthly'}</p>
         </div>
         <div className="glass-muted rounded-2xl p-4">
-          <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">Renews On</p>
-          <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{subscription.renewsOn}</p>
+          <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">Next Billing</p>
+          <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{formatDate(subscription.nextBillingDate || subscription.renewsOn)}</p>
         </div>
         <div className="glass-muted rounded-2xl p-4">
           <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">Expires On</p>
-          <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{subscription.expiresOn}</p>
+          <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{formatDate(subscription.subscriptionExpiresAt || subscription.expiresOn)}</p>
         </div>
       </div>
 
@@ -46,4 +51,3 @@ export default function SubscriptionStatus({ subscription, reminder }) {
     </Card>
   )
 }
-

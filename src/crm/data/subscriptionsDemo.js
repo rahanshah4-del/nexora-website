@@ -35,10 +35,10 @@ export const subscriptionHistoryDemo = [
   },
   {
     id: 'hist_2',
-    plan: 'Starter',
+    plan: 'Business',
     billingCycle: 'monthly',
     status: 'expired',
     changedAt: '2026-05-12',
-    note: 'Trial ended',
+    note: 'Business plan activated',
   },
 ]

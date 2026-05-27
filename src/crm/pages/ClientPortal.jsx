@@ -95,7 +95,6 @@ function ClientModal({ open, onClose, onSave, client }) {
                   <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Plan</label>
                   <Select className="mt-1" value={draft.plan} onChange={(event) => update('plan', event.target.value)}>
                     <option>Trial</option>
-                    <option>Starter</option>
                     <option>Business</option>
                     <option>Enterprise</option>
                   </Select>

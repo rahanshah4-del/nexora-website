@@ -4,25 +4,24 @@ import { HiOutlineCheck, HiOutlineXMark } from 'react-icons/hi2'
 import Badge from '../ui/Badge.jsx'
 import Button from '../ui/Button.jsx'
 import Card from '../ui/Card.jsx'
-import { usePreferences } from '../../hooks/usePreferences.js'
-import { formatCurrency } from '../../utils/format.js'
 import { useNavigate } from 'react-router-dom'
 import { useUser } from '../../hooks/useUser.js'
-import { planCatalog } from '../../data/moduleAccess.js'
+import { getPlanCatalog } from '../../data/moduleAccess.js'
 
 const businessFeatures = [
-  'Advanced Reports',
+  'AI Assistant',
+  'Approval Center',
   'Team Permissions',
   'Multi-user Access',
   'Export Reports',
-  'Priority Support',
-  'Usage Analytics',
+  'HR Management',
+  'Desktop App Download',
 ]
 
 function PricingModal({ open, onClose }) {
-  const { plan: localPlan, setPlan } = usePreferences()
-  const { plan } = useUser()
+  const { plan, accessPlan, isTrialActive } = useUser()
   const navigate = useNavigate()
+  const plans = getPlanCatalog()
 
   function chooseBusiness() {
     onClose?.()
@@ -55,10 +54,10 @@ function PricingModal({ open, onClose }) {
                   <div className="flex items-center gap-2">
                     <p className="text-lg font-semibold text-slate-900 dark:text-white">Upgrade to Business</p>
                     <Badge variant="purple">Business</Badge>
-                    {plan === 'Business' ? <Badge variant="success">Active</Badge> : null}
+                    {accessPlan === 'Business' ? <Badge variant="success">{isTrialActive ? 'Trial Active' : 'Active'}</Badge> : null}
                   </div>
                   <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-                    Unlock advanced reports and team permissions.
+                    One smart plan unlocks every CRM feature after your free trial.
                   </p>
                 </div>
                 <button
@@ -71,11 +70,10 @@ function PricingModal({ open, onClose }) {
                 </button>
               </div>
 
-              <div className="mt-5 grid gap-4 lg:grid-cols-3">
-                {planCatalog.filter((p) => p.id !== 'Enterprise').map((p) => {
-                  const isCurrent = plan === p.id
+              <div className="mt-5 grid gap-4 lg:grid-cols-2">
+                {plans.filter((p) => p.id !== 'Free').map((p) => {
+                  const isCurrent = plan === p.id && accessPlan === p.id
                   const isFeatured = p.id === 'Business'
-                  const price = p.monthlyPkr ? formatCurrency(p.monthlyPkr, 'PKR', { maximumFractionDigits: 0 }) : 'Free'
                   return (
                     <div
                       key={p.id}
@@ -93,10 +91,7 @@ function PricingModal({ open, onClose }) {
                       </div>
 
                       <p className="mt-4 text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">
-                        {p.monthlyPkr ? price : 'Free'}
-                        {p.monthlyPkr ? (
-                          <span className="ml-1 text-sm font-medium text-slate-600 dark:text-slate-300">/mo</span>
-                        ) : null}
+                        {p.priceLabel}
                       </p>
 
                       <div className="mt-4 space-y-2 text-sm text-slate-700 dark:text-slate-200">
@@ -110,24 +105,24 @@ function PricingModal({ open, onClose }) {
                         ))}
                       </div>
 
-                      {p.id === 'Business' ? (
-                        <Button
-                          className="mt-5 w-full rounded-2xl"
-                          onClick={chooseBusiness}
-                          disabled={plan === 'Business'}
-                        >
-                          {plan === 'Business' ? 'Business Active' : 'Upgrade Now'}
-                        </Button>
-                      ) : (
+                      {p.contactSales ? (
                         <Button
                           variant="subtle"
                           className="mt-5 w-full rounded-2xl"
                           onClick={() => {
-                            setPlan(p.id)
                             onClose?.()
+                            navigate('/app/subscriptions')
                           }}
                         >
-                          Choose {p.id === localPlan ? `${p.id}` : p.id}
+                          Contact Sales
+                        </Button>
+                      ) : (
+                        <Button
+                          className="mt-5 w-full rounded-2xl"
+                          onClick={chooseBusiness}
+                          disabled={accessPlan === 'Business' && !isTrialActive}
+                        >
+                          {accessPlan === 'Business' && !isTrialActive ? 'Business Active' : 'Upgrade Now'}
                         </Button>
                       )}
                     </div>

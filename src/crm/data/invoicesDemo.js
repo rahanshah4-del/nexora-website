@@ -39,7 +39,7 @@ export const invoicesDemo = [
     invoiceNumber: 'INV-2403',
     customerName: 'BrightLabs',
     customerEmail: 'fatima@brightlabs.ai',
-    items: [{ name: 'Starter Plan (Monthly)', qty: 1, priceUsd: 860 }],
+    items: [{ name: 'Business Plan (Monthly)', qty: 1, priceUsd: 860 }],
     subtotalUsd: 860,
     taxRate: 0.05,
     taxAmountUsd: 43,
@@ -76,4 +76,3 @@ export const paymentsDemo = [
     reference: '—',
   },
 ]
-

@@ -378,7 +378,7 @@ export default function SettingsPage() {
                   <p className="mt-1 text-xs text-slate-500 dark:text-slate-300">Company details for invoices and reports.</p>
                 </div>
               </div>
-              <Badge variant={plan === 'Business' ? 'success' : plan === 'Starter' ? 'info' : 'default'}>{plan}</Badge>
+              <Badge variant={plan === 'Business' ? 'success' : 'default'}>{plan === 'Business' ? 'Business' : 'Free'}</Badge>
             </div>
 
             <div className="mt-5 grid gap-4 sm:grid-cols-2">

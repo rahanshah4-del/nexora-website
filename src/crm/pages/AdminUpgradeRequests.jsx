@@ -92,6 +92,10 @@ function formatCreatedDate(v) {
   return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(d)
 }
 
+function subscriptionEndDate(days = 30) {
+  return new Date(Date.now() + days * 86400000)
+}
+
 export default function AdminUpgradeRequestsPage() {
   const { isAdmin } = useUser()
   const navigate = useNavigate()
@@ -197,11 +201,17 @@ export default function AdminUpgradeRequestsPage() {
       const batch = writeBatch(db)
       const reqRef = doc(db, 'upgradeRequests', r.id)
       const userRef = doc(db, 'users', r.userId)
-      const workspaceRef = doc(db, 'workspaces', r.userId)
+      const workspaceRef = doc(db, 'workspaces', r.workspaceId || r.userId)
+      const subscriptionExpiresAt = subscriptionEndDate(Number(r.requestedDurationDays) || 30)
       const planUpdate = {
-        plan: r.selectedPlan || r.requestedPlan || 'Free',
+        plan: 'Business',
         planStatus: 'active',
-        billingCycle: r.billingCycle || 'monthly',
+        billingCycle: 'monthly',
+        billingCurrency: r.billingCurrency || r.currency || 'PKR',
+        nextBillingDate: subscriptionExpiresAt,
+        subscriptionStartedAt: serverTimestamp(),
+        subscriptionExpiresAt,
+        isTrialActive: false,
         upgradedAt: serverTimestamp(),
       }
 

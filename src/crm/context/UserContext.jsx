@@ -6,6 +6,7 @@ import { usePreferences } from '../hooks/usePreferences.js'
 import { ensureUserWorkspace } from '../../lib/accountProvisioning.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 import { normalizeFinanceRole } from '../lib/financeAccess.js'
+import { accessPlanForUser, daysUntil, isTrialActive, normalizePlan, trialEndDate } from '../data/moduleAccess.js'
 
 const UserContext = createContext(null)
 
@@ -103,7 +104,11 @@ export function UserProvider({ children }) {
     return () => unsub()
   }, [ready, user])
 
-  const effectivePlan = userDoc?.plan ?? (db ? 'Free' : localPlan ?? 'Free')
+  const effectivePlan = normalizePlan(userDoc?.plan ?? (db ? 'Free' : localPlan ?? 'Free'))
+  const accessPlan = accessPlanForUser(userDoc || {}, effectivePlan)
+  const trialActive = isTrialActive(userDoc || {})
+  const trialEndsAt = trialEndDate(userDoc || {})
+  const trialDaysRemaining = trialActive ? daysUntil(trialEndsAt) : 0
   const role = normalizeRole(userDoc?.role)
   const workspaceId = userDoc?.workspaceId || user?.uid || null
   const staffId = userDoc?.staffId || user?.uid || null
@@ -135,6 +140,10 @@ export function UserProvider({ children }) {
       userDoc,
       loading,
       plan: effectivePlan,
+      accessPlan,
+      isTrialActive: trialActive,
+      trialEndsAt,
+      trialDaysRemaining,
       role,
       isOwner: role === 'owner',
       isStaff: role === 'staff',
@@ -142,7 +151,7 @@ export function UserProvider({ children }) {
       isAccountant: role === 'accountant',
       isManager: role === 'manager',
     }),
-    [user, workspaceId, staffId, userDoc, loading, effectivePlan, role],
+    [user, workspaceId, staffId, userDoc, loading, effectivePlan, accessPlan, trialActive, trialEndsAt, trialDaysRemaining, role],
   )
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>

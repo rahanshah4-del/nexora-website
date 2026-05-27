@@ -50,9 +50,9 @@ function SectionHeader({ title, subtitle, badge }) {
 }
 
 export default function BusinessFeatures({ onUpgrade }) {
-  const { plan } = useUser()
+  const { accessPlan } = useUser()
   const { usage } = usePreferences()
-  const isBusiness = plan === 'Business'
+  const isBusiness = accessPlan === 'Business' || accessPlan === 'Enterprise'
   const [permissions, setPermissions] = useState(() => ({
     Admin: true,
     Manager: true,

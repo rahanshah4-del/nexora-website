@@ -6,8 +6,6 @@ import { useNavigate } from 'react-router-dom'
 import { useSubscriptions } from '../hooks/useSubscriptions.js'
 import PlanCards from '../components/subscriptions/PlanCards.jsx'
 import SubscriptionStatus from '../components/subscriptions/SubscriptionStatus.jsx'
-import UsageTracker from '../components/subscriptions/UsageTracker.jsx'
-import PlanComparison from '../components/subscriptions/PlanComparison.jsx'
 import SubscriptionHistory from '../components/subscriptions/SubscriptionHistory.jsx'
 import Card from '../components/ui/Card.jsx'
 
@@ -15,20 +13,82 @@ function isBusinessPlan(plan) {
   return ['business', 'enterprise'].includes(String(plan || '').toLowerCase())
 }
 
-function DesktopDownloadSection({ plan, onUpgrade }) {
-  const business = isBusinessPlan(plan)
-  const trial = ['trial', 'free'].includes(String(plan || '').toLowerCase())
+function formatDate(value) {
+  const date = value?.toDate?.() || (value ? new Date(value) : null)
+  if (!date || Number.isNaN(date.getTime())) return '—'
+  return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' }).format(date)
+}
+
+function TrialStatusCard({ trial }) {
+  const active = trial?.active
+  return (
+    <Card className="p-5">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-sm font-semibold text-slate-900 dark:text-white">Trial Status</p>
+          <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
+            Full Business access is included for the first 30 days.
+          </p>
+        </div>
+        <Badge variant={active ? 'success' : 'warning'}>{active ? 'Trial Active' : 'Trial Expired'}</Badge>
+      </div>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <div className="glass-muted rounded-2xl p-4">
+          <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">Days Remaining</p>
+          <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{active ? trial.daysRemaining : 0}</p>
+        </div>
+        <div className="glass-muted rounded-2xl p-4">
+          <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">Trial Ends</p>
+          <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{formatDate(trial?.endsAt)}</p>
+        </div>
+      </div>
+    </Card>
+  )
+}
+
+function CurrentPlanCard({ subscription, currentPlan, onUpgrade }) {
+  const business = isBusinessPlan(currentPlan)
+  return (
+    <Card className="p-5">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-sm font-semibold text-slate-900 dark:text-white">Current Plan</p>
+          <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
+            {business ? 'Business features are available in this workspace.' : 'Free mode keeps core CRM tools available.'}
+          </p>
+        </div>
+        <Badge variant={business ? 'success' : 'default'}>{business ? 'Business' : 'Free'}</Badge>
+      </div>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <div className="glass-muted rounded-2xl p-4">
+          <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">Billing Currency</p>
+          <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{subscription.billingCurrency || 'PKR'}</p>
+        </div>
+        <div className="glass-muted rounded-2xl p-4">
+          <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">Next Billing Date</p>
+          <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{formatDate(subscription.nextBillingDate)}</p>
+        </div>
+      </div>
+      {!business ? (
+        <Button className="mt-4 rounded-2xl" type="button" onClick={onUpgrade}>
+          Upgrade to Business
+        </Button>
+      ) : null}
+    </Card>
+  )
+}
+
+function DesktopDownloadSection({ accessPlan, onUpgrade }) {
+  const business = isBusinessPlan(accessPlan)
 
   return (
     <Card className="mt-4 p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-sm font-semibold text-slate-900 dark:text-white">Desktop Download</p>
-          <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
-            Business plan users can download Nexora desktop app installers. Free Trial Available.
-          </p>
+          <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">Desktop access is included with Business access.</p>
         </div>
-        <Badge variant={business ? 'success' : 'warning'}>{business ? 'Business Access' : 'Plan Locked'}</Badge>
+        <Badge variant={business ? 'success' : 'warning'}>{business ? 'Available' : 'Upgrade Required'}</Badge>
       </div>
 
       <div className="mt-4 grid gap-3 md:grid-cols-3">
@@ -60,7 +120,7 @@ function DesktopDownloadSection({ plan, onUpgrade }) {
           </a>
         ) : (
           <button type="button" className="focus-ring rounded-2xl bg-slate-950 p-4 text-left text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700" onClick={onUpgrade}>
-            {trial ? 'Free Trial Available' : 'Upgrade for Desktop App'}
+            Upgrade for Desktop App
             <span className="mt-1 block text-xs font-medium text-white/70">Business plan unlocks full desktop downloads.</span>
           </button>
         )}
@@ -76,33 +136,47 @@ export default function SubscriptionsPage() {
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
       <PageHeader
-        title="SaaS Subscriptions"
-        subtitle="Plan badges, feature locking, usage tracking, billing cycles, and manual upgrade approvals."
+        title="Subscriptions"
+        subtitle="Free trial, Business access, and Enterprise contact options."
         right={
           <Button className="rounded-2xl" onClick={() => navigate('/upgrade-business')}>
-            Upgrade / Request Approval
+            Upgrade to Business
           </Button>
         }
       />
 
       <div className="mb-4 flex items-center justify-between gap-3">
-        <Badge variant={subs.source === 'firestore' ? 'success' : 'default'}>
-          {subs.loading ? 'Loading…' : subs.source === 'firestore' ? 'Live Sync' : 'No data yet'}
-        </Badge>
+        <Badge variant={subs.loading ? 'default' : 'success'}>{subs.loading ? 'Loading…' : 'Live Sync'}</Badge>
         {subs.error ? <Badge variant="danger">Error</Badge> : null}
       </div>
 
-      <PlanCards plans={subs.plans} currentPlan={subs.subscription.plan} />
+      <div className="grid gap-4 lg:grid-cols-2">
+        <TrialStatusCard trial={subs.trial} />
+        <CurrentPlanCard subscription={subs.subscription} currentPlan={subs.currentPlan} onUpgrade={() => navigate('/upgrade-business')} />
+      </div>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
         <SubscriptionStatus subscription={subs.subscription} reminder={subs.renewalReminder} />
-        <UsageTracker usage={subs.subscription.usage} />
+        <Card className="p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-slate-900 dark:text-white">Enterprise</p>
+              <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
+                Multi-branch, custom integrations, dedicated support, white-label, and enterprise deployment.
+              </p>
+            </div>
+            <Badge variant="warning">Contact Sales</Badge>
+          </div>
+          <Button variant="subtle" className="mt-4 rounded-2xl" type="button" onClick={() => navigate('/app/settings')}>
+            Contact Sales
+          </Button>
+        </Card>
       </div>
 
-      <DesktopDownloadSection plan={subs.subscription.plan} onUpgrade={() => navigate('/upgrade-business')} />
+      <DesktopDownloadSection accessPlan={subs.currentPlan} onUpgrade={() => navigate('/upgrade-business')} />
 
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
-        <PlanComparison plans={subs.plans} />
+        <PlanCards plans={subs.plans} currentPlan={subs.subscription.plan} />
         <SubscriptionHistory rows={subs.history} loading={subs.loading && subs.source === 'firestore'} />
       </div>
     </motion.div>
