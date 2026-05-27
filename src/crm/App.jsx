@@ -21,6 +21,7 @@ const TeamPage = lazy(() => import('./pages/Team.jsx'))
 const InvoicesPage = lazy(() => import('./pages/Invoices.jsx'))
 const ExpensesPage = lazy(() => import('./pages/Expenses.jsx'))
 const AccountManagementPage = lazy(() => import('./pages/AccountManagement.jsx'))
+const AccountStatementsPage = lazy(() => import('./pages/AccountStatements.jsx'))
 const SubscriptionsPage = lazy(() => import('./pages/Subscriptions.jsx'))
 const SupportPage = lazy(() => import('./pages/Support.jsx'))
 const ActivityLogsPage = lazy(() => import('./pages/ActivityLogs.jsx'))
@@ -74,6 +75,7 @@ export default function App() {
             <Route path="/app/invoices" element={gated(<InvoicesPage />)} />
             <Route path="/app/expenses" element={gated(<ExpensesPage />)} />
             <Route path="/app/accounts" element={gated(<AccountManagementPage />)} />
+            <Route path="/app/accounts/statements" element={gated(<AccountStatementsPage />)} />
             <Route path="/app/subscriptions" element={<SubscriptionsPage />} />
             <Route path="/app/support" element={gated(<SupportPage />)} />
             <Route path="/app/activity" element={<Navigate to="/app/activity-logs" replace />} />

@@ -1,5 +1,6 @@
-import { motion } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import { useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import Badge from '../components/ui/Badge.jsx'
 import Button from '../components/ui/Button.jsx'
 import Card from '../components/ui/Card.jsx'
@@ -13,10 +14,13 @@ import { useAccountTransactions } from '../hooks/useAccountTransactions.js'
 import { useApprovals } from '../hooks/useApprovals.js'
 import { useExpenses } from '../hooks/useExpenses.js'
 import { useInvoices } from '../hooks/useInvoices.js'
+import { useUser } from '../hooks/useUser.js'
 import {
   calculateFinanceSummary,
   isPendingTransaction,
 } from '../lib/financeCalculations.js'
+import { financePermissions, outflowTransaction } from '../lib/financeAccess.js'
+import { getInvoiceStatus } from '../lib/calculations.js'
 import { formatCurrency, formatCompact, toFiniteNumber } from '../utils/format.js'
 
 const actionDefaults = {
@@ -65,7 +69,62 @@ function FieldLabel({ children }) {
   return <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">{children}</label>
 }
 
+function ConfirmationModal({ request, walletBalance, canAllowNegative, busy, onClose, onConfirm }) {
+  const open = Boolean(request)
+  const amount = toFiniteNumber(request?.payload?.amount)
+  const insufficient = outflowTransaction(request?.type) && amount > walletBalance
+
+  return (
+    <AnimatePresence>
+      {open ? (
+        <motion.div
+          className="fixed inset-0 z-[60] grid place-items-center overflow-y-auto bg-slate-950/45 p-3 backdrop-blur-sm sm:p-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={onClose}
+          role="dialog"
+          aria-modal="true"
+        >
+          <motion.div
+            className="crm-modal-panel max-w-md"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 12 }}
+            transition={{ duration: 0.16 }}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <Card className="rounded-3xl p-5">
+              <Badge variant={insufficient ? 'warning' : 'purple'}>{insufficient ? 'Balance Warning' : 'Confirm Transaction'}</Badge>
+              <p className="mt-3 text-base font-semibold text-slate-950 dark:text-white">{request?.payload?.title || 'Submit transaction?'}</p>
+              <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
+                This will submit {formatCurrency(amount, 'PKR')} for approval.
+              </p>
+              {insufficient ? (
+                <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-800">
+                  Wallet balance is {formatCurrency(walletBalance, 'PKR')}. This transaction would make the wallet negative.
+                  {canAllowNegative ? ' Owner override can continue.' : ' Add revenue or reduce the amount before continuing.'}
+                </div>
+              ) : null}
+              <div className="mt-5 flex flex-wrap gap-2">
+                <Button className="rounded-2xl" type="button" disabled={busy || (insufficient && !canAllowNegative)} onClick={onConfirm}>
+                  {busy ? 'Submitting...' : insufficient && canAllowNegative ? 'Allow and Submit' : 'Submit for Approval'}
+                </Button>
+                <Button variant="subtle" className="rounded-2xl" type="button" disabled={busy} onClick={onClose}>
+                  Cancel
+                </Button>
+              </div>
+            </Card>
+          </motion.div>
+        </motion.div>
+      ) : null}
+    </AnimatePresence>
+  )
+}
+
 export default function AccountManagementPage() {
+  const { role, userDoc } = useUser()
+  const permissions = useMemo(() => financePermissions(userDoc?.role || role), [role, userDoc?.role])
   const accounts = useAccountTransactions()
   const invoicesApi = useInvoices()
   const expensesApi = useExpenses()
@@ -74,6 +133,7 @@ export default function AccountManagementPage() {
   const [busy, setBusy] = useState('')
   const [filters, setFilters] = useState({ type: 'all', status: 'all', method: 'all', dateRange: 'all' })
   const [drafts, setDrafts] = useState(actionDefaults)
+  const [confirmRequest, setConfirmRequest] = useState(null)
 
   const summary = useMemo(
     () =>
@@ -89,6 +149,30 @@ export default function AccountManagementPage() {
   const loading = accounts.loading || invoicesApi.loading || expensesApi.loading
   const pendingApprovalCount = approvals.summary.total || summary.pendingApprovals
   const pendingTransactions = useMemo(() => accounts.transactions.filter(isPendingTransaction), [accounts.transactions])
+  const insights = useMemo(() => {
+    const customerTotals = new Map()
+    invoicesApi.invoices
+      .filter((invoice) => getInvoiceStatus(invoice) === 'paid')
+      .forEach((invoice) => {
+        const name = invoice.customerName || invoice.customerEmail || 'Customer'
+        customerTotals.set(name, (customerTotals.get(name) || 0) + toFiniteNumber(invoice.total ?? invoice.totalUsd))
+      })
+    const topCustomer = Array.from(customerTotals.entries()).sort((a, b) => b[1] - a[1])[0]
+
+    const categoryTotals = new Map()
+    expensesApi.expenses.forEach((expense) => {
+      const category = expense.category || 'Other'
+      categoryTotals.set(category, (categoryTotals.get(category) || 0) + toFiniteNumber(expense.amount))
+    })
+    const highestExpenseCategory = Array.from(categoryTotals.entries()).sort((a, b) => b[1] - a[1])[0]
+    const unpaidInvoices = invoicesApi.invoices.filter((invoice) => ['pending', 'partial', 'overdue'].includes(getInvoiceStatus(invoice))).length
+
+    return {
+      topCustomer: topCustomer ? `${topCustomer[0]} · ${formatCurrency(topCustomer[1], 'PKR')}` : 'No paid customers yet',
+      highestExpenseCategory: highestExpenseCategory ? `${highestExpenseCategory[0]} · ${formatCurrency(highestExpenseCategory[1], 'PKR')}` : 'No expenses yet',
+      unpaidInvoices,
+    }
+  }, [expensesApi.expenses, invoicesApi.invoices])
 
   const filteredTransactions = useMemo(() => {
     const now = new Date()
@@ -145,8 +229,29 @@ export default function AccountManagementPage() {
         },
       },
       { key: 'createdAt', header: 'Date', cell: (row) => formatDate(row.createdAt) },
+      {
+        key: 'actions',
+        header: 'Actions',
+        cell: (row) =>
+          permissions.canDeleteTransactions ? (
+            <Button
+              variant="subtle"
+              className="h-8 rounded-xl border-rose-200 px-3 text-xs text-rose-700 hover:border-rose-300"
+              type="button"
+              onClick={async () => {
+                if (!window.confirm('Delete this transaction?')) return
+                const res = await accounts.deleteTransaction(row)
+                showToast(res?.ok ? 'success' : 'error', res?.ok ? 'Transaction deleted' : res?.error || 'Unable to delete transaction')
+              }}
+            >
+              Delete
+            </Button>
+          ) : (
+            '—'
+          ),
+      },
     ],
-    [],
+    [accounts, permissions.canDeleteTransactions],
   )
 
   function showToast(tone, message, delay = 2200) {
@@ -158,12 +263,27 @@ export default function AccountManagementPage() {
     setDrafts((current) => ({ ...current, [type]: { ...current[type], ...patch } }))
   }
 
+  function requestTransaction(type, payload) {
+    if (!permissions.canManageAccounts) {
+      showToast('error', 'You do not have permission to manage account transactions.')
+      return
+    }
+    setConfirmRequest({ type, payload })
+  }
+
   async function createTransaction(type, payload) {
     setBusy(type)
-    const res = await accounts.createTransaction(payload)
+    const amount = toFiniteNumber(payload.amount)
+    const allowNegativeBalance = permissions.canAllowNegativeWallet && outflowTransaction(type) && amount > summary.walletBalance
+    const res = await accounts.createTransaction({
+      ...payload,
+      availableBalance: summary.walletBalance,
+      allowNegativeBalance,
+    })
     setBusy('')
     if (res?.ok) {
       setDrafts((current) => ({ ...current, [type]: actionDefaults[type] }))
+      setConfirmRequest(null)
       showToast('success', 'Transaction submitted for approval')
     } else {
       showToast('error', res?.error || 'Unable to submit transaction', 2600)
@@ -173,7 +293,7 @@ export default function AccountManagementPage() {
   async function submitBankTransfer(event) {
     event.preventDefault()
     const draft = drafts.bank_transfer
-    await createTransaction('bank_transfer', {
+    requestTransaction('bank_transfer', {
       type: 'bank_transfer',
       amount: draft.amount,
       method: 'Bank Transfer',
@@ -189,7 +309,7 @@ export default function AccountManagementPage() {
   async function submitCashWithdrawal(event) {
     event.preventDefault()
     const draft = drafts.cash_withdrawal
-    await createTransaction('cash_withdrawal', {
+    requestTransaction('cash_withdrawal', {
       type: 'cash_withdrawal',
       amount: draft.amount,
       method: 'Cash',
@@ -204,7 +324,7 @@ export default function AccountManagementPage() {
   async function submitCashPayment(event) {
     event.preventDefault()
     const draft = drafts.cash_payment
-    await createTransaction('cash_payment', {
+    requestTransaction('cash_payment', {
       type: 'cash_payment',
       amount: draft.amount,
       method: 'Cash',
@@ -220,7 +340,7 @@ export default function AccountManagementPage() {
     event.preventDefault()
     const draft = drafts.expense
     const expense = expensesApi.expenses.find((item) => item.id === draft.expenseId)
-    await createTransaction('expense', {
+    requestTransaction('expense', {
       type: 'expense',
       amount: draft.amount || expense?.amount || 0,
       method: draft.paymentMethod,
@@ -275,10 +395,33 @@ export default function AccountManagementPage() {
     },
   ]
 
+  if (!permissions.canViewWallet) {
+    return (
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.22 }}>
+        <PageHeader title="Account Management" subtitle="Control wallet balance, income, expenses, transfers, and approvals." />
+        <Card className="p-6 text-center">
+          <Badge variant="warning">Restricted</Badge>
+          <p className="mt-3 text-base font-semibold text-slate-950 dark:text-white">Wallet access is restricted for your role.</p>
+          <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-600 dark:text-slate-300">
+            Ask an owner, admin, or accountant to review finance controls.
+          </p>
+        </Card>
+      </motion.div>
+    )
+  }
+
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.22 }}>
       {toast ? <Toast tone={toast.tone} message={toast.message} onClose={() => setToast(null)} /> : null}
-      <PageHeader title="Account Management" subtitle="Control wallet balance, income, expenses, transfers, and approvals." />
+      <PageHeader
+        title="Account Management"
+        subtitle="Control wallet balance, income, expenses, transfers, and approvals."
+        right={
+          <Link to="/app/accounts/statements" className="focus-ring inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:border-sky-200">
+            Account Statements
+          </Link>
+        }
+      />
 
       <div className="mb-4 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
         {[
@@ -302,6 +445,25 @@ export default function AccountManagementPage() {
         ))}
       </div>
 
+      <div className="mb-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <Card className="p-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Top Customer</p>
+          <p className="mt-2 truncate text-sm font-semibold text-slate-950 dark:text-white">{insights.topCustomer}</p>
+        </Card>
+        <Card className="p-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Highest Expense Category</p>
+          <p className="mt-2 truncate text-sm font-semibold text-slate-950 dark:text-white">{insights.highestExpenseCategory}</p>
+        </Card>
+        <Card className="p-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Unpaid Invoices</p>
+          <p className="mt-2 text-sm font-semibold text-slate-950 dark:text-white">{formatCompact(insights.unpaidInvoices)}</p>
+        </Card>
+        <Card className="p-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Finance Health</p>
+          <p className="mt-2 text-sm font-semibold text-slate-950 dark:text-white">{summary.netProfit >= 0 ? 'Profitable' : 'Needs attention'}</p>
+        </Card>
+      </div>
+
       <div className="mb-4 grid gap-4 xl:grid-cols-4">
         <ActionCard title="Transfer to Bank" description="Move approved wallet funds to a bank account.">
           <form className="space-y-3" onSubmit={submitBankTransfer}>
@@ -310,7 +472,7 @@ export default function AccountManagementPage() {
             <Input placeholder="Account title" value={drafts.bank_transfer.accountTitle} onChange={(event) => setDraft('bank_transfer', { accountTitle: event.target.value })} />
             <Input placeholder="Account number" value={drafts.bank_transfer.accountNumber} onChange={(event) => setDraft('bank_transfer', { accountNumber: event.target.value })} />
             <Input placeholder="Notes" value={drafts.bank_transfer.notes} onChange={(event) => setDraft('bank_transfer', { notes: event.target.value })} />
-            <Button className="w-full rounded-2xl" type="submit" disabled={busy === 'bank_transfer'}>
+            <Button className="w-full rounded-2xl" type="submit" disabled={busy === 'bank_transfer' || !permissions.canTransferFunds}>
               {busy === 'bank_transfer' ? 'Submitting...' : 'Request Transfer'}
             </Button>
           </form>
@@ -322,7 +484,7 @@ export default function AccountManagementPage() {
             <Input placeholder="Receiver name" value={drafts.cash_withdrawal.receiverName} onChange={(event) => setDraft('cash_withdrawal', { receiverName: event.target.value })} />
             <Input placeholder="Reason" value={drafts.cash_withdrawal.reason} onChange={(event) => setDraft('cash_withdrawal', { reason: event.target.value })} />
             <Input placeholder="Notes" value={drafts.cash_withdrawal.notes} onChange={(event) => setDraft('cash_withdrawal', { notes: event.target.value })} />
-            <Button className="w-full rounded-2xl" type="submit" disabled={busy === 'cash_withdrawal'}>
+            <Button className="w-full rounded-2xl" type="submit" disabled={busy === 'cash_withdrawal' || !permissions.canTransferFunds}>
               {busy === 'cash_withdrawal' ? 'Submitting...' : 'Request Withdrawal'}
             </Button>
           </form>
@@ -334,7 +496,7 @@ export default function AccountManagementPage() {
             <Input placeholder="Paid to" value={drafts.cash_payment.paidTo} onChange={(event) => setDraft('cash_payment', { paidTo: event.target.value })} />
             <Input placeholder="Reason" value={drafts.cash_payment.reason} onChange={(event) => setDraft('cash_payment', { reason: event.target.value })} />
             <Input placeholder="Notes" value={drafts.cash_payment.notes} onChange={(event) => setDraft('cash_payment', { notes: event.target.value })} />
-            <Button className="w-full rounded-2xl" type="submit" disabled={busy === 'cash_payment'}>
+            <Button className="w-full rounded-2xl" type="submit" disabled={busy === 'cash_payment' || !permissions.canManageAccounts}>
               {busy === 'cash_payment' ? 'Submitting...' : 'Submit Payment'}
             </Button>
           </form>
@@ -361,7 +523,7 @@ export default function AccountManagementPage() {
               <option>Wallet</option>
             </Select>
             <Input placeholder="Notes" value={drafts.expense.notes} onChange={(event) => setDraft('expense', { notes: event.target.value })} />
-            <Button className="w-full rounded-2xl" type="submit" disabled={busy === 'expense'}>
+            <Button className="w-full rounded-2xl" type="submit" disabled={busy === 'expense' || !permissions.canManageExpenses}>
               {busy === 'expense' ? 'Submitting...' : 'Request Expense Payment'}
             </Button>
           </form>
@@ -471,6 +633,16 @@ export default function AccountManagementPage() {
           </Card>
         </div>
       </div>
+      <ConfirmationModal
+        request={confirmRequest}
+        walletBalance={summary.walletBalance}
+        canAllowNegative={permissions.canAllowNegativeWallet}
+        busy={Boolean(busy && confirmRequest)}
+        onClose={() => setConfirmRequest(null)}
+        onConfirm={() => {
+          if (confirmRequest) createTransaction(confirmRequest.type, confirmRequest.payload)
+        }}
+      />
     </motion.div>
   )
 }

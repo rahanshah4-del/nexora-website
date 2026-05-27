@@ -35,6 +35,7 @@ export const navItems = [
   { label: 'Invoices', to: '/app/invoices', icon: HiOutlineDocumentText },
   { label: 'Expenses', to: '/app/expenses', icon: HiOutlineDocumentText },
   { label: 'Account Management', to: '/app/accounts', icon: HiOutlineBanknotes },
+  { label: 'Account Statements', to: '/app/accounts/statements', icon: HiOutlineDocumentChartBar },
   { label: 'Approvals', to: '/app/approvals', icon: HiOutlineShieldCheck },
   { label: 'Subscriptions', to: '/app/subscriptions', icon: HiOutlineTag },
   { label: 'Support Tickets', to: '/app/support', icon: HiOutlineLifebuoy },

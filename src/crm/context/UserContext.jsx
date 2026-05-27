@@ -5,6 +5,7 @@ import { useAuth } from '../hooks/useAuth.js'
 import { usePreferences } from '../hooks/usePreferences.js'
 import { ensureUserWorkspace } from '../../lib/accountProvisioning.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
+import { normalizeFinanceRole } from '../lib/financeAccess.js'
 
 const UserContext = createContext(null)
 
@@ -18,11 +19,8 @@ const defaultUserDoc = {
 }
 
 function normalizeRole(role) {
-  const value = String(role || '').toLowerCase()
-  if (value === 'staff') return 'staff'
-  if (value === 'accountant') return 'accountant'
-  if (value === 'admin') return 'admin'
-  return 'owner'
+  const value = normalizeFinanceRole(role)
+  return value === 'staff' && !role ? 'owner' : value
 }
 
 export function UserProvider({ children }) {
@@ -142,6 +140,7 @@ export function UserProvider({ children }) {
       isStaff: role === 'staff',
       isAdmin: role === 'admin' || role === 'owner',
       isAccountant: role === 'accountant',
+      isManager: role === 'manager',
     }),
     [user, workspaceId, staffId, userDoc, loading, effectivePlan, role],
   )

@@ -11,6 +11,7 @@ import Toast from '../components/ui/Toast.jsx'
 import EmptyState from '../components/system/EmptyState.jsx'
 import { useExpenses } from '../hooks/useExpenses.js'
 import { formatCurrency, formatCompact, toFiniteNumber } from '../utils/format.js'
+import { exportCsv, exportExcel, exportPdf } from '../lib/exporters.js'
 
 const expenseCategories = ['Office', 'Salary', 'Fuel', 'Marketing', 'Software', 'Maintenance', 'Travel', 'Other']
 const paymentMethods = ['Cash', 'Bank Transfer', 'Card', 'Wallet', 'Cheque', 'Other']
@@ -228,6 +229,16 @@ export default function ExpensesPage() {
     ],
     [],
   )
+  const exportColumns = [
+    { key: 'title', label: 'Expense' },
+    { key: 'category', label: 'Category' },
+    { key: 'amount', label: 'Amount' },
+    { key: 'currency', label: 'Currency' },
+    { key: 'paymentMethod', label: 'Payment Method' },
+    { key: 'paidBy', label: 'Paid By' },
+    { key: 'approvalStatus', label: 'Approval Status' },
+    { key: 'status', label: 'Status' },
+  ]
 
   function showToast(tone, message, delay = 2000) {
     setToast({ tone, message })
@@ -264,7 +275,23 @@ export default function ExpensesPage() {
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.22 }}>
       {toast ? <Toast tone={toast.tone} message={toast.message} onClose={() => setToast(null)} /> : null}
-      <PageHeader title="Expenses" subtitle="Track, review, and approve workspace spending." />
+      <PageHeader
+        title="Expenses"
+        subtitle="Track, review, and approve workspace spending."
+        right={
+          <div className="flex flex-wrap gap-2">
+            <Button variant="subtle" className="rounded-2xl" type="button" onClick={() => exportPdf()}>
+              Export PDF
+            </Button>
+            <Button variant="subtle" className="rounded-2xl" type="button" onClick={() => exportExcel('nexora-expenses.xls', exportColumns, expensesApi.expenses)}>
+              Excel
+            </Button>
+            <Button className="rounded-2xl" type="button" onClick={() => exportCsv('nexora-expenses.csv', exportColumns, expensesApi.expenses)}>
+              CSV
+            </Button>
+          </div>
+        }
+      />
 
       <div className="mb-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         <Card className="p-4">

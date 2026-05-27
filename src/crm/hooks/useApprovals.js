@@ -15,6 +15,7 @@ import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 import { useUser } from './useUser.js'
 import { clientSafeMessage } from '../utils/messages.js'
 import { amountValue, calculateBalanceDue, invoiceValue, statusValue, toNumber } from '../lib/calculations.js'
+import { canApproveFinance } from '../lib/financeAccess.js'
 
 const pendingPaymentStatuses = ['pending', 'pending_verification', 'pending_partial', 'partial_pending']
 const pendingRecordStatuses = ['pending', 'pending_approval', 'requested', 'invited']
@@ -39,12 +40,14 @@ function balanceDueValue(row, amount) {
   return calculateBalanceDue(amount, amountPaidValue(row))
 }
 
-function isApproverRole(role) {
-  return ['owner', 'admin', 'accountant'].includes(String(role || '').toLowerCase())
-}
-
 function isClosedStatus(status) {
   return ['paid', 'rejected', 'cancelled', 'canceled'].includes(statusValue(status, ''))
+}
+
+function isReviewableApproval(approval = {}) {
+  const row = approval.row || {}
+  const status = statusValue(row.approvalStatus || row.paymentStatus || row.status || approval.status, 'pending')
+  return !['approved', 'paid', 'rejected', 'cancelled', 'canceled', 'active'].includes(status)
 }
 
 function isPendingInvoice(row) {
@@ -186,7 +189,7 @@ async function addInventoryAdjustments(batch, workspaceId, invoice, now) {
 
 export function useApprovals() {
   const { userId, workspaceId, role, userDoc, firebaseUser } = useUser()
-  const canApprove = isApproverRole(role)
+  const canApprove = canApproveFinance(userDoc?.role || role)
   const [invoices, setInvoices] = useState([])
   const [payments, setPayments] = useState([])
   const [upgradeRequests, setUpgradeRequests] = useState([])
@@ -344,6 +347,7 @@ export function useApprovals() {
     async (approval) => {
       if (!canApprove) return { ok: false, error: 'You do not have permission to approve requests.' }
       if (!db || !workspaceId || !userId) return { ok: false, error: 'Secure Cloud Sync is not available right now.' }
+      if (!isReviewableApproval(approval)) return { ok: false, error: 'This request has already been reviewed.' }
 
       try {
         const batch = writeBatch(db)
@@ -363,6 +367,7 @@ export function useApprovals() {
         if (approval.sourceCollection === 'payments') {
           const paymentRef = doc(db, workspaceCollectionPath(workspaceId, 'payments'), approval.sourceId)
           let walletAmount = amountValue(row)
+          if (isClosedStatus(row.paymentStatus || row.status)) return { ok: false, error: 'This payment has already been reviewed.' }
           batch.update(paymentRef, {
             status: 'paid',
             paymentStatus: 'paid',
@@ -396,7 +401,9 @@ export function useApprovals() {
             }
           }
           const transactionRef = doc(collection(db, workspaceCollectionPath(workspaceId, 'accountTransactions')))
+          const transactionId = `${workspaceId}-income-${approval.sourceId}-${Date.now()}`
           batch.set(transactionRef, {
+            transactionId,
             type: 'income',
             source: 'invoice',
             amount: walletAmount,
@@ -418,6 +425,10 @@ export function useApprovals() {
             workspaceId,
             createdAt: now,
             updatedAt: now,
+            metadata: {
+              oldValue: { status: row.status || '', paymentStatus: row.paymentStatus || '' },
+              newValue: { status: 'approved', paymentStatus: 'paid' },
+            },
           })
         }
 
@@ -477,6 +488,7 @@ export function useApprovals() {
         }
 
         if (approval.sourceCollection === 'accountTransactions') {
+          if (isClosedStatus(row.approvalStatus || row.status)) return { ok: false, error: 'This transaction has already been reviewed.' }
           batch.update(doc(db, workspaceCollectionPath(workspaceId, 'accountTransactions'), approval.sourceId), {
             approvalStatus: 'approved',
             status: 'approved',
@@ -522,7 +534,14 @@ export function useApprovals() {
           description: `${approval.type} for ${approval.customer} was approved.`,
           targetId: approval.sourceId,
           targetName: approval.customer,
-          metadata: { type: approval.type, sourceCollection: approval.sourceCollection, amount: approval.amount, currency: approval.currency },
+          metadata: {
+            type: approval.type,
+            sourceCollection: approval.sourceCollection,
+            amount: approval.amount,
+            currency: approval.currency,
+            oldValue: { status: row.status || '', paymentStatus: row.paymentStatus || '', approvalStatus: row.approvalStatus || '' },
+            newValue: { status: approval.sourceCollection === 'payments' ? 'paid' : 'approved', approvalStatus: 'approved' },
+          },
         })
         if (approval.sourceCollection === 'payments') {
           await logActivity({
@@ -534,7 +553,14 @@ export function useApprovals() {
             description: `${approval.customer} payment was added to wallet.`,
             targetId: approval.sourceId,
             targetName: approval.customer,
-            metadata: { type: approval.type, sourceCollection: approval.sourceCollection, amount: approval.amount, currency: approval.currency },
+            metadata: {
+              type: approval.type,
+              sourceCollection: approval.sourceCollection,
+              amount: approval.amount,
+              currency: approval.currency,
+              oldValue: { status: row.status || '', paymentStatus: row.paymentStatus || '' },
+              newValue: { status: 'paid', paymentStatus: 'paid' },
+            },
           })
         }
         return { ok: true }
@@ -550,12 +576,14 @@ export function useApprovals() {
       if (!canApprove) return { ok: false, error: 'You do not have permission to approve requests.' }
       if (!db || !workspaceId || !userId) return { ok: false, error: 'Secure Cloud Sync is not available right now.' }
       if (approval?.sourceCollection !== 'invoices') return { ok: false, error: 'Only invoices can be marked paid from here.' }
+      if (!isReviewableApproval(approval)) return { ok: false, error: 'This invoice has already been reviewed.' }
 
       try {
         const batch = writeBatch(db)
         const now = serverTimestamp()
         const row = approval.row || {}
         const invoiceTotal = invoiceValue(row)
+        if (isClosedStatus(row.paymentStatus || row.status)) return { ok: false, error: 'This invoice is already closed.' }
         const stockAdjusted = await addInventoryAdjustments(batch, workspaceId, row, now)
 
         const invoiceRef = doc(db, workspaceCollectionPath(workspaceId, 'invoices'), approval.sourceId)
@@ -599,7 +627,9 @@ export function useApprovals() {
         })
 
         const transactionRef = doc(collection(db, workspaceCollectionPath(workspaceId, 'accountTransactions')))
+        const transactionId = `${workspaceId}-income-${approval.sourceId}-${Date.now()}`
         batch.set(transactionRef, {
+          transactionId,
           type: 'income',
           source: 'invoice',
           amount: invoiceTotal,
@@ -621,6 +651,10 @@ export function useApprovals() {
           workspaceId,
           createdAt: now,
           updatedAt: now,
+          metadata: {
+            oldValue: { status: row.status || '', paymentStatus: row.paymentStatus || '' },
+            newValue: { status: 'paid', paymentStatus: 'paid' },
+          },
         })
 
         await batch.commit()
@@ -633,7 +667,13 @@ export function useApprovals() {
           description: `${row.invoiceNumber || approval.sourceId} was marked as paid.`,
           targetId: approval.sourceId,
           targetName: row.invoiceNumber || approval.customer,
-          metadata: { amount: invoiceTotal, currency: row.currency || 'PKR', sourceCollection: approval.sourceCollection },
+          metadata: {
+            amount: invoiceTotal,
+            currency: row.currency || 'PKR',
+            sourceCollection: approval.sourceCollection,
+            oldValue: { status: row.status || '', paymentStatus: row.paymentStatus || '', amountPaid: row.amountPaid || 0 },
+            newValue: { status: 'paid', paymentStatus: 'paid', amountPaid: invoiceTotal },
+          },
         })
         await logActivity({
           workspaceId,
@@ -644,7 +684,13 @@ export function useApprovals() {
           description: `${row.invoiceNumber || approval.sourceId} payment was added to wallet.`,
           targetId: approval.sourceId,
           targetName: row.invoiceNumber || approval.customer,
-          metadata: { amount: invoiceTotal, currency: row.currency || 'PKR', sourceCollection: approval.sourceCollection },
+          metadata: {
+            amount: invoiceTotal,
+            currency: row.currency || 'PKR',
+            sourceCollection: approval.sourceCollection,
+            oldValue: { status: row.status || '', paymentStatus: row.paymentStatus || '', amountPaid: row.amountPaid || 0 },
+            newValue: { status: 'paid', paymentStatus: 'paid', amountPaid: invoiceTotal },
+          },
         })
         return { ok: true }
       } catch (err) {
@@ -658,6 +704,7 @@ export function useApprovals() {
     async (approval) => {
       if (!canApprove) return { ok: false, error: 'You do not have permission to approve requests.' }
       if (!db || !workspaceId || !userId) return { ok: false, error: 'Secure Cloud Sync is not available right now.' }
+      if (!isReviewableApproval(approval)) return { ok: false, error: 'This request has already been reviewed.' }
 
       try {
         const batch = writeBatch(db)
@@ -766,7 +813,18 @@ export function useApprovals() {
           description: `${approval.type} for ${approval.customer} was rejected.`,
           targetId: approval.sourceId,
           targetName: approval.customer,
-          metadata: { type: approval.type, sourceCollection: approval.sourceCollection, amount: approval.amount, currency: approval.currency },
+          metadata: {
+            type: approval.type,
+            sourceCollection: approval.sourceCollection,
+            amount: approval.amount,
+            currency: approval.currency,
+            oldValue: {
+              status: approval.row?.status || '',
+              paymentStatus: approval.row?.paymentStatus || '',
+              approvalStatus: approval.row?.approvalStatus || '',
+            },
+            newValue: { status: 'rejected', approvalStatus: 'rejected' },
+          },
         })
         return { ok: true }
       } catch (err) {

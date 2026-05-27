@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { serverTimestamp } from 'firebase/firestore'
 import { db } from '../lib/firebase.js'
-import { createUserDoc, patchUserDoc, subscribeUserCollection } from '../lib/firestore.js'
+import { createUserDoc, patchUserDoc, removeUserDoc, subscribeUserCollection } from '../lib/firestore.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 import { useUser } from './useUser.js'
 import { clientSafeMessage } from '../utils/messages.js'
 import { normalizeCurrency, statusValue, toNumber } from '../lib/calculations.js'
-import { transactionAmount } from '../lib/financeCalculations.js'
+import { isPendingTransaction, transactionAmount } from '../lib/financeCalculations.js'
+import { financePermissions, outflowTransaction } from '../lib/financeAccess.js'
 
 function normalizeTransaction(transaction = {}) {
   return {
@@ -40,10 +41,6 @@ function normalizeTransaction(transaction = {}) {
   }
 }
 
-function approverRole(role) {
-  return ['owner', 'admin', 'accountant'].includes(String(role || '').toLowerCase())
-}
-
 function actionLabel(type, approved = false) {
   const value = statusValue(type, 'adjustment')
   if (value === 'bank_transfer') return approved ? 'Bank transfer approved' : 'Bank transfer requested'
@@ -56,7 +53,8 @@ function actionLabel(type, approved = false) {
 
 export function useAccountTransactions() {
   const { userId, workspaceId, role, userDoc, firebaseUser } = useUser()
-  const canApprove = approverRole(userDoc?.role || role)
+  const permissions = useMemo(() => financePermissions(userDoc?.role || role), [role, userDoc?.role])
+  const canApprove = permissions.canApproveStandard
   const [transactions, setTransactions] = useState([])
   const [loading, setLoading] = useState(true)
   const [source, setSource] = useState(db ? 'firestore' : 'none')
@@ -112,14 +110,31 @@ export function useAccountTransactions() {
 
   const createTransaction = useCallback(
     async (payload = {}) => {
+      if (!permissions.canManageAccounts) return { ok: false, error: 'You do not have permission to manage account transactions.' }
       if (!userId || !workspaceId) return { ok: false, error: 'Please login first' }
       if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now' }
       const amount = Math.max(toNumber(payload.amount, 0), 0)
       if (amount <= 0) return { ok: false, error: 'Amount is required' }
       const type = statusValue(payload.type, 'adjustment')
       const title = String(payload.title || actionLabel(type)).trim()
+      const availableBalance = toNumber(payload.availableBalance, 0)
+      const allowNegativeBalance = Boolean(payload.allowNegativeBalance && permissions.canAllowNegativeWallet)
+      if (outflowTransaction(type) && amount > availableBalance && !allowNegativeBalance) {
+        return { ok: false, error: 'Insufficient wallet balance for this transaction.' }
+      }
+      const duplicate = transactions.some((transaction) => {
+        if (!isPendingTransaction(transaction)) return false
+        if (transaction.type !== type) return false
+        if (transactionAmount(transaction) !== amount) return false
+        const existingTarget = transaction.relatedId || transaction.accountNumber || transaction.receiverName || transaction.paidTo || transaction.title
+        const nextTarget = payload.relatedId || payload.expenseId || payload.accountNumber || payload.receiverName || payload.paidTo || title
+        return String(existingTarget || '').trim().toLowerCase() === String(nextTarget || '').trim().toLowerCase()
+      })
+      if (duplicate) return { ok: false, error: 'A similar transaction is already pending approval.' }
+      const transactionId = `${workspaceId}-${type}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
       try {
         const ref = await createUserDoc(workspaceId, 'accountTransactions', {
+          transactionId,
           type,
           amount,
           currency: normalizeCurrency(payload.currency || 'PKR'),
@@ -140,7 +155,12 @@ export function useAccountTransactions() {
           paidTo: payload.paidTo || '',
           reason: payload.reason || '',
           notes: payload.notes || '',
-          metadata: payload.metadata || {},
+          metadata: {
+            ...(payload.metadata || {}),
+            oldValue: null,
+            newValue: { type, amount, status: payload.status || 'pending' },
+            createdByRole: permissions.role,
+          },
           createdBy: userId,
         })
         await logActivity({
@@ -152,20 +172,27 @@ export function useAccountTransactions() {
           description: `${title} for ${normalizeCurrency(payload.currency || 'PKR')} ${amount} was submitted.`,
           targetId: ref.id,
           targetName: title,
-          metadata: { type, amount, currency: normalizeCurrency(payload.currency || 'PKR') },
+          metadata: {
+            type,
+            amount,
+            currency: normalizeCurrency(payload.currency || 'PKR'),
+            oldValue: null,
+            newValue: { type, amount, status: payload.status || 'pending' },
+          },
         })
         return { ok: true }
       } catch (err) {
         return { ok: false, error: clientSafeMessage(err, 'Unable to save transaction.') }
       }
     },
-    [firebaseUser, userDoc, userId, workspaceId],
+    [firebaseUser, permissions, transactions, userDoc, userId, workspaceId],
   )
 
   const approveTransaction = useCallback(
     async (transaction) => {
       if (!canApprove) return { ok: false, error: 'You do not have permission to approve requests.' }
       if (!db || !workspaceId || !userId) return { ok: false, error: 'Secure Cloud Sync is not available right now.' }
+      if (!isPendingTransaction(transaction)) return { ok: false, error: 'This transaction has already been reviewed.' }
       try {
         await patchUserDoc(workspaceId, 'accountTransactions', transaction.id, {
           status: 'approved',
@@ -183,7 +210,13 @@ export function useAccountTransactions() {
           description: `${transaction.title} was approved.`,
           targetId: transaction.id,
           targetName: transaction.title,
-          metadata: { type: transaction.type, amount: transaction.amount, currency: transaction.currency },
+          metadata: {
+            type: transaction.type,
+            amount: transaction.amount,
+            currency: transaction.currency,
+            oldValue: { status: transaction.status, approvalStatus: transaction.approvalStatus },
+            newValue: { status: 'approved', approvalStatus: 'approved' },
+          },
         })
         return { ok: true }
       } catch (err) {
@@ -197,6 +230,7 @@ export function useAccountTransactions() {
     async (transaction) => {
       if (!canApprove) return { ok: false, error: 'You do not have permission to reject requests.' }
       if (!db || !workspaceId || !userId) return { ok: false, error: 'Secure Cloud Sync is not available right now.' }
+      if (!isPendingTransaction(transaction)) return { ok: false, error: 'This transaction has already been reviewed.' }
       try {
         await patchUserDoc(workspaceId, 'accountTransactions', transaction.id, {
           status: 'rejected',
@@ -214,7 +248,13 @@ export function useAccountTransactions() {
           description: `${transaction.title} was rejected.`,
           targetId: transaction.id,
           targetName: transaction.title,
-          metadata: { type: transaction.type, amount: transaction.amount, currency: transaction.currency },
+          metadata: {
+            type: transaction.type,
+            amount: transaction.amount,
+            currency: transaction.currency,
+            oldValue: { status: transaction.status, approvalStatus: transaction.approvalStatus },
+            newValue: { status: 'rejected', approvalStatus: 'rejected' },
+          },
         })
         return { ok: true }
       } catch (err) {
@@ -224,6 +264,37 @@ export function useAccountTransactions() {
     [canApprove, firebaseUser, userDoc, userId, workspaceId],
   )
 
+  const deleteTransaction = useCallback(
+    async (transaction) => {
+      if (!permissions.canDeleteTransactions) return { ok: false, error: 'Only the owner can delete account transactions.' }
+      if (!db || !workspaceId || !userId) return { ok: false, error: 'Secure Cloud Sync is not available right now.' }
+      try {
+        await removeUserDoc(workspaceId, 'accountTransactions', transaction.id)
+        await logActivity({
+          workspaceId,
+          userId,
+          ...userActivityInfo(userDoc, firebaseUser),
+          action: 'Wallet transaction deleted',
+          module: 'Account Management',
+          description: `${transaction.title} was deleted.`,
+          targetId: transaction.id,
+          targetName: transaction.title,
+          metadata: {
+            type: transaction.type,
+            amount: transaction.amount,
+            currency: transaction.currency,
+            oldValue: { status: transaction.status, approvalStatus: transaction.approvalStatus },
+            newValue: null,
+          },
+        })
+        return { ok: true }
+      } catch (err) {
+        return { ok: false, error: clientSafeMessage(err, 'Unable to delete transaction.') }
+      }
+    },
+    [firebaseUser, permissions.canDeleteTransactions, userDoc, userId, workspaceId],
+  )
+
   return useMemo(
     () => ({
       transactions,
@@ -231,10 +302,12 @@ export function useAccountTransactions() {
       source,
       error,
       canApprove,
+      permissions,
       createTransaction,
       approveTransaction,
       rejectTransaction,
+      deleteTransaction,
     }),
-    [approveTransaction, canApprove, createTransaction, error, loading, rejectTransaction, source, transactions],
+    [approveTransaction, canApprove, createTransaction, deleteTransaction, error, loading, permissions, rejectTransaction, source, transactions],
   )
 }

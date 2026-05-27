@@ -24,6 +24,7 @@ const priorityRoutes = [
   '/app/invoices',
   '/app/expenses',
   '/app/accounts',
+  '/app/accounts/statements',
   '/app/approvals',
   '/app/subscriptions',
   '/app/support',
@@ -42,6 +43,7 @@ const compactLabels = {
   '/app/activity-logs': 'Activity',
   '/app/products': 'Products',
   '/app/accounts': 'Accounts',
+  '/app/accounts/statements': 'Statements',
   '/app/approvals': 'Approvals',
 }
 

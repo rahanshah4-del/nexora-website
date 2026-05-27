@@ -321,8 +321,7 @@ service cloud.firestore {
         allow read: if staffPermission(workspaceId, 'reports') || isPaymentApprover(workspaceId);
         allow create: if (isWorkspaceManager(workspaceId) || isPaymentApprover(workspaceId))
           && accountTransactionCreateScope(workspaceId);
-        allow update: if isWorkspaceManager(workspaceId)
-          || (isPaymentApprover(workspaceId) && approvalStatusFieldsTouched());
+        allow update: if isWorkspaceManager(workspaceId) || isPaymentApprover(workspaceId);
         allow delete: if isWorkspaceManager(workspaceId);
       }
 
@@ -331,7 +330,7 @@ service cloud.firestore {
         allow create: if isPaymentApprover(workspaceId) && accountTransactionCreateScope(workspaceId);
         allow update: if isWorkspaceManager(workspaceId)
           || (isPaymentApprover(workspaceId) && accountTransactionApprovalFieldsTouched());
-        allow delete: if isWorkspaceManager(workspaceId);
+        allow delete: if isSelf(workspaceId);
       }
 
       match /pipelines/{dealId} {
@@ -355,7 +354,7 @@ service cloud.firestore {
           && request.resource.data.userId == request.auth.uid
           && request.resource.data.ownerId == workspaceId
           && request.resource.data.workspaceId == workspaceId;
-        allow update, delete: if isWorkspaceManager(workspaceId);
+        allow update, delete: if false;
       }
 
       match /teamMembers/{memberId} {

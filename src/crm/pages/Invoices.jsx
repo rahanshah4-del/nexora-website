@@ -15,6 +15,7 @@ import { useState } from 'react'
 import Toast from '../components/ui/Toast.jsx'
 import { useProducts } from '../hooks/useProducts.js'
 import { formatCurrency } from '../utils/format.js'
+import { exportCsv, exportExcel, exportPdf } from '../lib/exporters.js'
 
 function PaymentActionModal({ action, invoice, busy, onClose, onConfirm }) {
   const [draft, setDraft] = useState({ amount: '', paymentMethod: 'Manual Approval' })
@@ -141,6 +142,15 @@ export default function InvoicesPage() {
   const [toast, setToast] = useState(null)
   const [paymentAction, setPaymentAction] = useState({ action: null, invoice: null })
   const [paymentBusy, setPaymentBusy] = useState(false)
+  const exportColumns = [
+    { key: 'invoiceNumber', label: 'Invoice Number' },
+    { key: 'customerName', label: 'Customer' },
+    { key: 'customerEmail', label: 'Email' },
+    { key: 'total', label: 'Total' },
+    { key: 'currency', label: 'Currency' },
+    { key: 'status', label: 'Status' },
+    { key: 'paymentStatus', label: 'Payment Status' },
+  ]
 
   function requestPaymentAction(action, invoice) {
     if (!canApprovePayments) {
@@ -183,9 +193,15 @@ export default function InvoicesPage() {
         title="Invoices & Payments"
         subtitle="Create PKR-first invoices with products, tax, discounts, and workspace-safe billing records."
         right={
-          <div className="flex items-center gap-2">
-            <Button variant="subtle" className="rounded-2xl">
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="subtle" className="rounded-2xl" type="button" onClick={() => exportPdf()}>
               Export PDF
+            </Button>
+            <Button variant="subtle" className="rounded-2xl" type="button" onClick={() => exportExcel('nexora-invoices.xls', exportColumns, invoices)}>
+              Excel
+            </Button>
+            <Button variant="subtle" className="rounded-2xl" type="button" onClick={() => exportCsv('nexora-invoices.csv', exportColumns, invoices)}>
+              CSV
             </Button>
             <Button className="rounded-2xl" onClick={() => setCreateOpen(true)}>
               Create Invoice

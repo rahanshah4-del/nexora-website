@@ -217,6 +217,7 @@ export function useInvoices() {
         if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now' }
         const invoice = invoices.find((item) => item.id === id)
         if (!invoice) return { ok: false, error: 'Invoice not found' }
+        if (getInvoiceStatus(invoice) === 'paid') return { ok: false, error: 'This invoice is already paid.' }
         try {
           const paymentMethod = options.paymentMethod || 'Manual Approval'
           const now = serverTimestamp()
@@ -237,6 +238,7 @@ export function useInvoices() {
             ...(stockAdjusted ? { inventoryAdjustedAt: now } : {}),
           })
           const paymentRef = doc(collection(db, workspaceCollectionPath(workspaceId, 'payments')))
+          const transactionId = `${workspaceId}-income-${id}-${Date.now()}`
           batch.set(paymentRef, {
             invoiceId: id,
             invoiceNumber: invoice.invoiceNumber || id,
@@ -259,6 +261,7 @@ export function useInvoices() {
           })
           const transactionRef = doc(collection(db, workspaceCollectionPath(workspaceId, 'accountTransactions')))
           batch.set(transactionRef, {
+            transactionId,
             type: 'income',
             source: 'invoice',
             amount: invoice.total,
@@ -280,6 +283,10 @@ export function useInvoices() {
             workspaceId,
             createdAt: now,
             updatedAt: now,
+            metadata: {
+              oldValue: { status: invoice.status, paymentStatus: invoice.paymentStatus, amountPaid: invoice.amountPaid || 0 },
+              newValue: { status: 'paid', paymentStatus: 'paid', amountPaid: invoice.total },
+            },
           })
           await batch.commit()
           await logActivity({
@@ -291,7 +298,13 @@ export function useInvoices() {
             description: `${invoice.invoiceNumber || id} was marked as paid.`,
             targetId: id,
             targetName: invoice.invoiceNumber || id,
-            metadata: { amount: invoice.total, currency: invoice.currency, paymentMethod },
+            metadata: {
+              amount: invoice.total,
+              currency: invoice.currency,
+              paymentMethod,
+              oldValue: { status: invoice.status, paymentStatus: invoice.paymentStatus, amountPaid: invoice.amountPaid || 0 },
+              newValue: { status: 'paid', paymentStatus: 'paid', amountPaid: invoice.total },
+            },
           })
           await logActivity({
             workspaceId,
@@ -302,7 +315,13 @@ export function useInvoices() {
             description: `${invoice.invoiceNumber || id} payment was added to wallet.`,
             targetId: id,
             targetName: invoice.invoiceNumber || id,
-            metadata: { amount: invoice.total, currency: invoice.currency, paymentMethod },
+            metadata: {
+              amount: invoice.total,
+              currency: invoice.currency,
+              paymentMethod,
+              oldValue: { status: invoice.status, paymentStatus: invoice.paymentStatus, amountPaid: invoice.amountPaid || 0 },
+              newValue: { status: 'paid', paymentStatus: 'paid', amountPaid: invoice.total },
+            },
           })
           return { ok: true }
         } catch (e) {
@@ -333,7 +352,11 @@ export function useInvoices() {
             description: `${invoice.invoiceNumber || id} payment was rejected/cancelled.`,
             targetId: id,
             targetName: invoice.invoiceNumber || id,
-            metadata: { customerName: invoice.customerName },
+            metadata: {
+              customerName: invoice.customerName,
+              oldValue: { status: invoice.status, paymentStatus: invoice.paymentStatus },
+              newValue: { status: 'rejected', paymentStatus: 'rejected' },
+            },
           })
           return { ok: true }
         } catch (e) {
@@ -346,6 +369,7 @@ export function useInvoices() {
         if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now' }
         const invoice = invoices.find((item) => item.id === id)
         if (!invoice) return { ok: false, error: 'Invoice not found' }
+        if (getInvoiceStatus(invoice) === 'paid') return { ok: false, error: 'This invoice is already paid.' }
         const amount = Number(options.amount || 0)
         if (!Number.isFinite(amount) || amount <= 0) return { ok: false, error: 'Enter a valid partial payment amount' }
         try {
@@ -373,6 +397,7 @@ export function useInvoices() {
             ...(stockAdjusted ? { inventoryAdjustedAt: now } : {}),
           })
           const paymentRef = doc(collection(db, workspaceCollectionPath(workspaceId, 'payments')))
+          const transactionId = `${workspaceId}-income-${id}-${Date.now()}`
           batch.set(paymentRef, {
             invoiceId: id,
             invoiceNumber: invoice.invoiceNumber || id,
@@ -395,6 +420,7 @@ export function useInvoices() {
           if (fullyPaid) {
             const transactionRef = doc(collection(db, workspaceCollectionPath(workspaceId, 'accountTransactions')))
             batch.set(transactionRef, {
+              transactionId,
               type: 'income',
               source: 'invoice',
               amount: invoice.total,
@@ -416,6 +442,10 @@ export function useInvoices() {
               workspaceId,
               createdAt: now,
               updatedAt: now,
+              metadata: {
+                oldValue: { status: invoice.status, paymentStatus: invoice.paymentStatus, amountPaid: currentPaid },
+                newValue: { status: 'paid', paymentStatus: 'paid', amountPaid: invoice.total },
+              },
             })
           }
           await batch.commit()
@@ -428,7 +458,14 @@ export function useInvoices() {
             description: `${amount} ${invoice.currency || 'PKR'} was recorded for ${invoice.invoiceNumber || id}.`,
             targetId: id,
             targetName: invoice.invoiceNumber || id,
-            metadata: { amount, currency: invoice.currency, paymentMethod, fullyPaid },
+            metadata: {
+              amount,
+              currency: invoice.currency,
+              paymentMethod,
+              fullyPaid,
+              oldValue: { status: invoice.status, paymentStatus: invoice.paymentStatus, amountPaid: currentPaid },
+              newValue: { status: fullyPaid ? 'paid' : 'partial', paymentStatus: fullyPaid ? 'paid' : 'partial', amountPaid: nextPaid },
+            },
           })
           if (fullyPaid) {
             await logActivity({
@@ -440,7 +477,13 @@ export function useInvoices() {
               description: `${invoice.invoiceNumber || id} payment was added to wallet.`,
               targetId: id,
               targetName: invoice.invoiceNumber || id,
-              metadata: { amount: invoice.total, currency: invoice.currency, paymentMethod },
+              metadata: {
+                amount: invoice.total,
+                currency: invoice.currency,
+                paymentMethod,
+                oldValue: { status: invoice.status, paymentStatus: invoice.paymentStatus, amountPaid: currentPaid },
+                newValue: { status: 'paid', paymentStatus: 'paid', amountPaid: invoice.total },
+              },
             })
           }
           return { ok: true }

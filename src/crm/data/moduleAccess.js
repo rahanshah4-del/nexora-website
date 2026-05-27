@@ -74,6 +74,7 @@ export const moduleCatalog = [
   { key: 'payments', label: 'Payments', route: '/app/invoices', minPlan: 'Starter' },
   { key: 'expenses', label: 'Expenses', route: '/app/expenses', minPlan: 'Starter' },
   { key: 'accounts', label: 'Account Management', route: '/app/accounts', minPlan: 'Starter' },
+  { key: 'accountStatements', label: 'Account Statements', route: '/app/accounts/statements', minPlan: 'Starter' },
   { key: 'approvals', label: 'Approval Center', route: '/app/approvals', minPlan: 'Business' },
   { key: 'subscriptions', label: 'Subscriptions', route: '/app/subscriptions', alwaysEnabled: true },
   { key: 'support', label: 'Support Tickets', route: '/app/support', minPlan: 'Starter' },
@@ -93,11 +94,11 @@ export const businessTypes = [
 ]
 
 const recommendationMap = {
-  'Restaurant / POS': ['dashboard', 'customers', 'products', 'invoices', 'payments', 'expenses', 'accounts', 'reports', 'team', 'support'],
-  'Transport / Rental': ['dashboard', 'customers', 'leads', 'invoices', 'payments', 'expenses', 'accounts', 'reports', 'activity'],
-  'Software Agency': ['dashboard', 'clientPortal', 'customers', 'leads', 'salesPipeline', 'followUps', 'invoices', 'accounts', 'reports', 'support'],
-  'Retail / Inventory': ['dashboard', 'customers', 'products', 'invoices', 'expenses', 'accounts', 'reports', 'team'],
-  'General Business': ['dashboard', 'customers', 'leads', 'invoices', 'expenses', 'accounts', 'reports'],
+  'Restaurant / POS': ['dashboard', 'customers', 'products', 'invoices', 'payments', 'expenses', 'accounts', 'accountStatements', 'reports', 'team', 'support'],
+  'Transport / Rental': ['dashboard', 'customers', 'leads', 'invoices', 'payments', 'expenses', 'accounts', 'accountStatements', 'reports', 'activity'],
+  'Software Agency': ['dashboard', 'clientPortal', 'customers', 'leads', 'salesPipeline', 'followUps', 'invoices', 'accounts', 'accountStatements', 'reports', 'support'],
+  'Retail / Inventory': ['dashboard', 'customers', 'products', 'invoices', 'expenses', 'accounts', 'accountStatements', 'reports', 'team'],
+  'General Business': ['dashboard', 'customers', 'leads', 'invoices', 'expenses', 'accounts', 'accountStatements', 'reports'],
 }
 
 export const alwaysEnabledModules = ['dashboard', 'settings', 'subscriptions']
@@ -154,7 +155,7 @@ export function selectedModulesForSidebar({ enabledModules, onboardingCompleted,
   return moduleCatalog.filter((module) => {
     if (module.alwaysEnabled) return true
     if (!moduleAllowedByPlan(module.key, plan)) return false
-    if (module.key === 'accounts') return true
+    if (module.key === 'accounts' || module.key === 'accountStatements') return true
     if (!onboardingCompleted) return true
     return selected.has(module.key)
   })
