@@ -351,7 +351,10 @@ function PaymentPortalModal({ action, invoice, busy, onClose, onSubmit }) {
                   className="rounded-2xl"
                   type="button"
                   disabled={busy}
-                  onClick={() => onSubmit?.({ ...draft, amount: Number(draft.amount || 0) })}
+                  onClick={(event) => {
+                    event.preventDefault()
+                    onSubmit?.({ ...draft, amount: Number(draft.amount || 0) })
+                  }}
                 >
                   {busy ? 'Saving…' : title}
                 </Button>

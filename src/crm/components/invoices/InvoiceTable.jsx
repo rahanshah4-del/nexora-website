@@ -70,7 +70,15 @@ function InvoiceTable({
         const isCancelled = status === 'rejected' || status === 'cancelled'
         return (
           <div className="flex items-center gap-2">
-            <Button variant="subtle" className="rounded-xl px-3 py-2 text-xs" type="button" onClick={() => onOpen?.(r)}>
+            <Button
+              variant="subtle"
+              className="rounded-xl px-3 py-2 text-xs"
+              type="button"
+              onClick={(event) => {
+                event.preventDefault()
+                onOpen?.(r)
+              }}
+            >
               View
             </Button>
             {!isPaid && !isCancelled ? (
@@ -80,7 +88,10 @@ function InvoiceTable({
                   className="rounded-xl px-3 py-2 text-xs"
                   type="button"
                   disabled={!canApprovePayments}
-                  onClick={() => onMarkPaid?.(r)}
+                  onClick={(event) => {
+                    event.preventDefault()
+                    onMarkPaid?.(r)
+                  }}
                 >
                   Mark as Paid
                 </Button>
@@ -89,7 +100,10 @@ function InvoiceTable({
                   className="rounded-xl px-3 py-2 text-xs"
                   type="button"
                   disabled={!canApprovePayments}
-                  onClick={() => onPartialPayment?.(r)}
+                  onClick={(event) => {
+                    event.preventDefault()
+                    onPartialPayment?.(r)
+                  }}
                 >
                   Partial
                 </Button>
@@ -98,7 +112,10 @@ function InvoiceTable({
                   className="rounded-xl px-3 py-2 text-xs text-rose-700 hover:bg-rose-50 hover:text-rose-800"
                   type="button"
                   disabled={!canApprovePayments}
-                  onClick={() => onRejectPayment?.(r)}
+                  onClick={(event) => {
+                    event.preventDefault()
+                    onRejectPayment?.(r)
+                  }}
                 >
                   Reject
                 </Button>

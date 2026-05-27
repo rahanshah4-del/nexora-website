@@ -193,7 +193,10 @@ function InvoiceModal({
                           className="rounded-xl px-3 py-2 text-xs"
                           type="button"
                           disabled={!canApprovePayments}
-                          onClick={() => onMarkPaid?.(draft)}
+                          onClick={(event) => {
+                            event.preventDefault()
+                            onMarkPaid?.(draft)
+                          }}
                         >
                           Mark as Paid
                         </Button>
@@ -202,7 +205,10 @@ function InvoiceModal({
                           className="rounded-xl px-3 py-2 text-xs"
                           type="button"
                           disabled={!canApprovePayments}
-                          onClick={() => onPartialPayment?.(draft)}
+                          onClick={(event) => {
+                            event.preventDefault()
+                            onPartialPayment?.(draft)
+                          }}
                         >
                           Record Partial Payment
                         </Button>
@@ -211,7 +217,10 @@ function InvoiceModal({
                           className="rounded-xl px-3 py-2 text-xs text-rose-700 hover:bg-rose-50 hover:text-rose-800"
                           type="button"
                           disabled={!canApprovePayments}
-                          onClick={() => onRejectPayment?.(draft)}
+                          onClick={(event) => {
+                            event.preventDefault()
+                            onRejectPayment?.(draft)
+                          }}
                         >
                           Reject/Cancel Payment
                         </Button>

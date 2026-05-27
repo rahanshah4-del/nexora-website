@@ -200,6 +200,7 @@ export function useInvoices() {
             status: 'paid',
             paidAt: serverTimestamp(),
             approvedBy: userId,
+            approvedAt: serverTimestamp(),
             amountPaid: invoice.total,
             partialPaidAmount: invoice.total,
             balanceDue: 0,
@@ -214,6 +215,7 @@ export function useInvoices() {
             paymentMethod,
             paymentStatus: 'paid',
             approvedBy: userId,
+            approvedAt: serverTimestamp(),
             paidAt: serverTimestamp(),
           })
           await logActivity({
@@ -241,9 +243,8 @@ export function useInvoices() {
         try {
           await patchUserDoc(workspaceId, 'invoices', id, {
             paymentStatus: 'rejected',
-            status: 'cancelled',
+            status: 'rejected',
             rejectedAt: serverTimestamp(),
-            cancelledAt: serverTimestamp(),
             rejectedBy: userId,
           })
           await logActivity({
@@ -283,6 +284,7 @@ export function useInvoices() {
             balanceDue: Math.max(invoice.total - nextPaid, 0),
             paidAt: fullyPaid ? serverTimestamp() : invoice.paidAt || null,
             approvedBy: fullyPaid ? userId : invoice.approvedBy || null,
+            approvedAt: fullyPaid ? serverTimestamp() : invoice.approvedAt || null,
             lastPaymentAt: serverTimestamp(),
             lastPaymentBy: userId,
           })
@@ -296,6 +298,7 @@ export function useInvoices() {
             paymentMethod,
             paymentStatus: fullyPaid ? 'paid' : 'partial',
             approvedBy: userId,
+            approvedAt: serverTimestamp(),
             paidAt: serverTimestamp(),
           })
           await logActivity({

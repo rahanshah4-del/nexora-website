@@ -26,6 +26,7 @@ import SupportPage from './crm/pages/Support.jsx'
 import ActivityLogsPage from './crm/pages/ActivityLogs.jsx'
 import AnalyticsPage from './crm/pages/Analytics.jsx'
 import NotificationsPage from './crm/pages/Notifications.jsx'
+import ApprovalsPage from './crm/pages/Approvals.jsx'
 import ReportsPage from './crm/pages/Reports.jsx'
 import SettingsPage from './crm/pages/Settings.jsx'
 import UpgradeRequests from './pages/admin/UpgradeRequests.jsx'
@@ -78,6 +79,7 @@ export default function AppRouter() {
         <Route path="activity-logs" element={<ActivityLogsPage />} />
         <Route path="analytics" element={<AnalyticsPage />} />
         <Route path="notifications" element={<NotificationsPage />} />
+        <Route path="approvals" element={<ApprovalsPage />} />
         <Route path="reports" element={<ReportsPage />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>

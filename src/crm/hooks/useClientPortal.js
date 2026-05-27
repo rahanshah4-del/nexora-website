@@ -385,6 +385,7 @@ export function useClientPortal() {
             paymentStatus: 'paid',
             paidAt: serverTimestamp(),
             approvedBy: userId,
+            approvedAt: serverTimestamp(),
             amountPaid: amount,
             balanceDue: Math.max((invoice.total || 0) - amount, 0),
           })
@@ -402,6 +403,7 @@ export function useClientPortal() {
             notes,
             paymentStatus: 'paid',
             approvedBy: userId,
+            approvedAt: serverTimestamp(),
             paidAt: serverTimestamp(),
           })
           await logActivity({

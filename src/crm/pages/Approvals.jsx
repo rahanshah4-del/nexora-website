@@ -19,6 +19,13 @@ function statusBadge(status) {
   return { label: 'Pending', variant: 'warning' }
 }
 
+function checkApprovalRouteStillInCrm(actionLabel) {
+  if (typeof window === 'undefined') return
+  if (!window.location.pathname.startsWith('/app/')) {
+    console.error(`[CRM approval route check] ${actionLabel} moved outside CRM: ${window.location.pathname}`)
+  }
+}
+
 function DetailsModal({ approval, onClose }) {
   const details = approval?.row || {}
 
@@ -130,7 +137,10 @@ function ConfirmModal({ action, approval, busy, onClose, onConfirm }) {
                   className={isReject ? 'rounded-2xl bg-rose-600 hover:bg-rose-700' : 'rounded-2xl'}
                   type="button"
                   disabled={busy}
-                  onClick={onConfirm}
+                  onClick={(event) => {
+                    event.preventDefault()
+                    onConfirm?.(event)
+                  }}
                 >
                   {busy ? 'Working…' : isReject ? 'Reject' : 'Approve'}
                 </Button>
@@ -159,6 +169,7 @@ export default function ApprovalsPage() {
       ['Pending Invoices', approvals.summary.pendingInvoices],
       ['Upgrade Requests', approvals.summary.upgradeRequests],
       ['Staff Requests', approvals.summary.staffRequests],
+      ['Expense Requests', approvals.summary.expenseRequests],
     ],
     [approvals.summary],
   )
@@ -188,18 +199,36 @@ export default function ApprovalsPage() {
         header: 'Actions',
         cell: (row) => (
           <div className="flex flex-wrap gap-2">
-            <Button className="h-8 rounded-xl px-3 text-xs" type="button" onClick={() => setConfirm({ action: 'approve', approval: row })}>
+            <Button
+              className="h-8 rounded-xl px-3 text-xs"
+              type="button"
+              onClick={(event) => {
+                event.preventDefault()
+                setConfirm({ action: 'approve', approval: row })
+              }}
+            >
               Approve
             </Button>
             <Button
               variant="subtle"
               className="h-8 rounded-xl border-rose-200 px-3 text-xs text-rose-700 hover:border-rose-300"
               type="button"
-              onClick={() => setConfirm({ action: 'reject', approval: row })}
+              onClick={(event) => {
+                event.preventDefault()
+                setConfirm({ action: 'reject', approval: row })
+              }}
             >
               Reject
             </Button>
-            <Button variant="ghost" className="h-8 rounded-xl px-3 text-xs" type="button" onClick={() => setDetails(row)}>
+            <Button
+              variant="ghost"
+              className="h-8 rounded-xl px-3 text-xs"
+              type="button"
+              onClick={(event) => {
+                event.preventDefault()
+                setDetails(row)
+              }}
+            >
               View Details
             </Button>
           </div>
@@ -209,14 +238,18 @@ export default function ApprovalsPage() {
     [],
   )
 
-  async function runAction() {
+  async function runAction(event) {
+    event?.preventDefault?.()
     if (!confirm.action || !confirm.approval) return
+    const actionLabel = confirm.action === 'approve' ? 'Approve' : 'Reject'
+    checkApprovalRouteStillInCrm(`${actionLabel} started`)
     setBusy(true)
     const res =
       confirm.action === 'approve'
         ? await approvals.approve(confirm.approval)
         : await approvals.reject(confirm.approval)
     setBusy(false)
+    checkApprovalRouteStillInCrm(`${actionLabel} completed`)
 
     if (res?.ok) {
       setToast({
@@ -262,7 +295,7 @@ export default function ApprovalsPage() {
         </div>
       ) : null}
 
-      <div className="mb-4 grid gap-3 md:grid-cols-4">
+      <div className="mb-4 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
         {summaryCards.map(([label, value]) => (
           <Card key={label} className="p-4">
             <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">{label}</p>

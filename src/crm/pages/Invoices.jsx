@@ -101,7 +101,10 @@ function PaymentActionModal({ action, invoice, busy, onClose, onConfirm }) {
                   className={action === 'reject' ? 'rounded-2xl bg-rose-600 hover:bg-rose-700' : 'rounded-2xl'}
                   type="button"
                   disabled={busy}
-                  onClick={() => onConfirm?.({ ...draft, amount: action === 'partial' ? Number(draft.amount || 0) : total })}
+                  onClick={(event) => {
+                    event.preventDefault()
+                    onConfirm?.({ ...draft, amount: action === 'partial' ? Number(draft.amount || 0) : total })
+                  }}
                 >
                   {busy ? 'Saving…' : action === 'reject' ? 'Reject Payment' : action === 'partial' ? 'Record Partial Payment' : 'Mark as Paid'}
                 </Button>

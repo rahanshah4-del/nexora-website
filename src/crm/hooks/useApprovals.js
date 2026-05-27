@@ -103,6 +103,7 @@ export function useApprovals() {
   const [upgradeRequests, setUpgradeRequests] = useState([])
   const [teamMembers, setTeamMembers] = useState([])
   const [clients, setClients] = useState([])
+  const [expenses, setExpenses] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -114,6 +115,7 @@ export function useApprovals() {
         setUpgradeRequests([])
         setTeamMembers([])
         setClients([])
+        setExpenses([])
         setLoading(false)
         setError(db ? '' : 'Secure Cloud Sync is not available right now.')
       })
@@ -128,7 +130,7 @@ export function useApprovals() {
     let loaded = 0
     function markLoaded() {
       loaded += 1
-      if (loaded >= 5) setLoading(false)
+      if (loaded >= 6) setLoading(false)
     }
     function onError(err) {
       setError(clientSafeMessage(err, 'Unable to load approvals.'))
@@ -183,6 +185,18 @@ export function useApprovals() {
       onError,
     )
 
+    const unsubExpenses = subscribeWorkspaceQuery(
+      workspaceId,
+      'expenses',
+      'approvalStatus',
+      pendingRecordStatuses,
+      (rows) => {
+        setExpenses(rows)
+        markLoaded()
+      },
+      onError,
+    )
+
     const upgradeRef = collection(db, 'upgradeRequests')
     const upgradeQuery = query(upgradeRef, where('workspaceId', '==', workspaceId))
     const unsubUpgrades = onSnapshot(
@@ -203,6 +217,7 @@ export function useApprovals() {
       unsubPayments?.()
       unsubTeam?.()
       unsubClients?.()
+      unsubExpenses?.()
       unsubUpgrades?.()
     }
   }, [canApprove, userId, workspaceId])
@@ -214,9 +229,10 @@ export function useApprovals() {
       ...upgradeRequests.map((row) => createApproval('Subscription upgrade', 'upgradeRequests', row)),
       ...teamMembers.map((row) => createApproval('Staff access request', 'teamMembers', row)),
       ...clients.map((row) => createApproval('Client approval', 'clients', row)),
+      ...expenses.map((row) => createApproval('Expense approval', 'expenses', row)),
     ]
     return rows.sort((a, b) => b.sortAt - a.sortAt)
-  }, [clients, invoices, payments, teamMembers, upgradeRequests])
+  }, [clients, expenses, invoices, payments, teamMembers, upgradeRequests])
 
   const summary = useMemo(
     () => ({
@@ -224,9 +240,10 @@ export function useApprovals() {
       pendingInvoices: invoices.length,
       upgradeRequests: upgradeRequests.length,
       staffRequests: teamMembers.length,
+      expenseRequests: expenses.length,
       total: approvals.length,
     }),
-    [approvals.length, invoices.length, payments.length, teamMembers.length, upgradeRequests.length],
+    [approvals.length, expenses.length, invoices.length, payments.length, teamMembers.length, upgradeRequests.length],
   )
 
   const approve = useCallback(
@@ -348,6 +365,16 @@ export function useApprovals() {
           })
         }
 
+        if (approval.sourceCollection === 'expenses') {
+          batch.update(doc(db, workspaceCollectionPath(workspaceId, 'expenses'), approval.sourceId), {
+            approvalStatus: 'approved',
+            status: 'approved',
+            approvedBy: userId,
+            approvedAt: now,
+            updatedAt: now,
+          })
+        }
+
         await batch.commit()
         await logActivity({
           workspaceId,
@@ -434,6 +461,16 @@ export function useApprovals() {
           batch.update(doc(db, workspaceCollectionPath(workspaceId, 'clients'), approval.sourceId), {
             status: 'rejected',
             approvalStatus: 'rejected',
+            rejectedBy: userId,
+            rejectedAt: now,
+            updatedAt: now,
+          })
+        }
+
+        if (approval.sourceCollection === 'expenses') {
+          batch.update(doc(db, workspaceCollectionPath(workspaceId, 'expenses'), approval.sourceId), {
+            approvalStatus: 'rejected',
+            status: 'rejected',
             rejectedBy: userId,
             rejectedAt: now,
             updatedAt: now,

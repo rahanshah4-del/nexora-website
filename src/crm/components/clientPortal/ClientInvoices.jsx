@@ -38,21 +38,52 @@ function ClientInvoices({ invoices, canApprovePayments, onViewInvoice, onMarkPai
         const paid = String(row.paymentStatus || row.status || '').toLowerCase() === 'paid'
         return (
           <div className="flex items-center gap-2">
-            <Button variant="subtle" className="rounded-xl px-3 py-2 text-xs" type="button" onClick={() => onViewInvoice?.(row)}>
+            <Button
+              variant="subtle"
+              className="rounded-xl px-3 py-2 text-xs"
+              type="button"
+              onClick={(event) => {
+                event.preventDefault()
+                onViewInvoice?.(row)
+              }}
+            >
               View Invoice
             </Button>
             {!paid && canApprovePayments ? (
               <>
-                <Button className="rounded-xl px-3 py-2 text-xs" type="button" onClick={() => onMarkPaid?.(row)}>
+                <Button
+                  className="rounded-xl px-3 py-2 text-xs"
+                  type="button"
+                  onClick={(event) => {
+                    event.preventDefault()
+                    onMarkPaid?.(row)
+                  }}
+                >
                   Mark as Paid
                 </Button>
-                <Button variant="ghost" className="rounded-xl px-3 py-2 text-xs" type="button" onClick={() => onRecordPayment?.(row)}>
+                <Button
+                  variant="ghost"
+                  className="rounded-xl px-3 py-2 text-xs"
+                  type="button"
+                  onClick={(event) => {
+                    event.preventDefault()
+                    onRecordPayment?.(row)
+                  }}
+                >
                   Record Payment
                 </Button>
               </>
             ) : null}
             {!paid && !canApprovePayments ? (
-              <Button variant="ghost" className="rounded-xl px-3 py-2 text-xs" type="button" onClick={() => onSubmitReference?.(row)}>
+              <Button
+                variant="ghost"
+                className="rounded-xl px-3 py-2 text-xs"
+                type="button"
+                onClick={(event) => {
+                  event.preventDefault()
+                  onSubmitReference?.(row)
+                }}
+              >
                 Submit Payment Reference
               </Button>
             ) : null}
