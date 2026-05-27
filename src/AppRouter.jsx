@@ -22,6 +22,7 @@ import TeamPage from './crm/pages/Team.jsx'
 import HRDashboardPage from './crm/pages/HRDashboard.jsx'
 import InvoicesPage from './crm/pages/Invoices.jsx'
 import ExpensesPage from './crm/pages/Expenses.jsx'
+import AccountManagementPage from './crm/pages/AccountManagement.jsx'
 import SubscriptionsPage from './crm/pages/Subscriptions.jsx'
 import SupportPage from './crm/pages/Support.jsx'
 import ActivityLogsPage from './crm/pages/ActivityLogs.jsx'
@@ -76,6 +77,7 @@ export default function AppRouter() {
         <Route path="hr" element={<HRDashboardPage />} />
         <Route path="invoices" element={<InvoicesPage />} />
         <Route path="expenses" element={<ExpensesPage />} />
+        <Route path="accounts" element={<AccountManagementPage />} />
         <Route path="subscriptions" element={<SubscriptionsPage />} />
         <Route path="support" element={<SupportPage />} />
         <Route path="activity-logs" element={<ActivityLogsPage />} />

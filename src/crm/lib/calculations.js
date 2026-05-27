@@ -2,6 +2,8 @@ const paidStatuses = new Set(['paid', 'complete', 'completed', 'verified'])
 const rejectedStatuses = new Set(['rejected', 'cancelled', 'canceled'])
 const pendingStatuses = new Set(['pending', 'pending_verification', 'pending_partial', 'partial_pending', 'pending_approval'])
 const approvedStatuses = new Set(['approved', 'paid', 'complete', 'completed'])
+const inactivePipelineStatuses = new Set(['converted', 'customer', 'won', 'lost', 'closed', 'rejected', 'paid', 'completed', 'cancelled', 'canceled'])
+const inactivePipelineTerms = Array.from(inactivePipelineStatuses)
 
 export function statusValue(value, fallback = 'pending') {
   return String(value || fallback).trim().toLowerCase()
@@ -116,6 +118,45 @@ export function expenseValue(expense = {}) {
   return Math.max(toNumber(expense.amount ?? expense.total ?? expense.amountUsd ?? expense.totalUsd, 0), 0)
 }
 
+export function pipelineItemValue(item = {}) {
+  return Math.max(
+    toNumber(
+      item.expectedValue ??
+        item.expectedValuePkr ??
+        item.expectedValueUsd ??
+        item.dealValue ??
+        item.dealValueUsd ??
+        item.value ??
+        item.valueUsd ??
+        item.amount,
+      0,
+    ),
+    0,
+  )
+}
+
+export function isActivePipelineItem(item = {}) {
+  const status = statusValue(item.status || item.stage || item.pipelineStatus, 'active')
+  return !inactivePipelineTerms.some((term) => status === term || status.includes(term))
+}
+
+export function isConvertedLead(lead = {}) {
+  const status = statusValue(lead.status || lead.stage || lead.pipelineStatus, '')
+  return ['converted', 'customer', 'won', 'paid', 'completed'].some((term) => status.includes(term))
+}
+
+export function calculatePipelineValue({ leads = [], deals = [] } = {}) {
+  return [...leads, ...deals]
+    .filter(isActivePipelineItem)
+    .reduce((sum, item) => sum + pipelineItemValue(item), 0)
+}
+
+export function calculateConversionRate(leads = []) {
+  if (!leads.length) return 0
+  const convertedLeads = leads.filter(isConvertedLead).length
+  return (convertedLeads / leads.length) * 100
+}
+
 export function calculateRevenue({ invoices = [], payments = [] } = {}) {
   const paidPayments = payments.filter(isPaidRecord)
   const paymentInvoiceIds = new Set(paidPayments.map((payment) => payment.invoiceId).filter(Boolean))
@@ -158,8 +199,8 @@ export function getDashboardStats({ invoices = [], payments = [], customers = []
 
   return {
     totalRevenue,
-    totalCustomers: customers.length,
-    activeLeads: leads.filter((lead) => !['lost', 'closed', 'rejected'].includes(statusValue(lead.status || lead.stage, 'active'))).length,
+    totalCustomers: customers.filter((customer) => !['inactive', 'archived', 'deleted', 'rejected'].includes(statusValue(customer.status, 'active'))).length,
+    activeLeads: leads.filter(isActivePipelineItem).length,
     pendingInvoices: invoices.filter((invoice) => getInvoiceStatus(invoice) === 'pending').length,
     monthlySales,
     expenses: totalExpenses,

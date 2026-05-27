@@ -170,6 +170,7 @@ export default function ApprovalsPage() {
       ['Upgrade Requests', approvals.summary.upgradeRequests],
       ['Staff Requests', approvals.summary.staffRequests],
       ['Expense Requests', approvals.summary.expenseRequests],
+      ['Account Requests', approvals.summary.accountRequests],
     ],
     [approvals.summary],
   )
@@ -325,7 +326,7 @@ export default function ApprovalsPage() {
         </div>
       ) : null}
 
-      <div className="mb-4 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+      <div className="mb-4 grid gap-3 md:grid-cols-2 xl:grid-cols-6">
         {summaryCards.map(([label, value]) => (
           <Card key={label} className="p-4">
             <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">{label}</p>

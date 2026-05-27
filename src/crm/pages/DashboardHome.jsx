@@ -17,7 +17,6 @@ import {
 import Card from '../components/ui/Card.jsx'
 import Badge from '../components/ui/Badge.jsx'
 import SkeletonLoader from '../components/system/SkeletonLoader.jsx'
-import { usePreferences } from '../hooks/usePreferences.js'
 import { useInvoices } from '../hooks/useInvoices.js'
 import { useCustomers } from '../hooks/useCustomers.js'
 import { useLeadScoring } from '../hooks/useLeadScoring.js'
@@ -25,8 +24,15 @@ import { useActivityLogs } from '../hooks/useActivityLogs.js'
 import { usePipelineDeals } from '../hooks/usePipelineDeals.js'
 import { useSupportTickets } from '../hooks/useSupportTickets.js'
 import { useExpenses } from '../hooks/useExpenses.js'
-import { getDashboardStats, getInvoiceStatus } from '../lib/calculations.js'
-import { convertFromUsd } from '../utils/currency.js'
+import {
+  calculateConversionRate,
+  calculatePipelineValue,
+  getDashboardStats,
+  getInvoiceStatus,
+  isActivePipelineItem,
+  isPaidRecord,
+  paymentValue,
+} from '../lib/calculations.js'
 import { formatCompact, formatCurrency, formatPercentValue, toFiniteNumber } from '../utils/format.js'
 import { cn } from '../utils/cn.js'
 
@@ -37,7 +43,7 @@ function dateFromValue(value) {
   return Number.isNaN(date.getTime()) ? null : date
 }
 
-function safeText(value, fallback = 'No data yet') {
+function safeText(value, fallback = 'Not added yet') {
   const text = typeof value === 'string' ? value.trim() : ''
   return text || fallback
 }
@@ -49,6 +55,17 @@ function safeCount(value) {
 function isOpenTicket(ticket) {
   const status = String(ticket?.status || '').toLowerCase()
   return status === 'open' || status === 'in progress'
+}
+
+function activityType(log) {
+  const action = String(log?.action || '').toLowerCase()
+  const module = String(log?.module || '').toLowerCase()
+  if (action.includes('invoice created')) return 'Invoice created'
+  if (action.includes('payment approved') || action.includes('invoice paid') || action.includes('invoice marked paid')) return 'Payment approved'
+  if (action.includes('customer created') || action.includes('customer added')) return 'Customer added'
+  if (action.includes('lead updated') || action.includes('lead created') || module.includes('lead')) return 'Lead updated'
+  if (action.includes('expense approved')) return 'Expense approved'
+  return ''
 }
 
 const SectionTitle = memo(function SectionTitle({ eyebrow, title, action }) {
@@ -63,7 +80,7 @@ const SectionTitle = memo(function SectionTitle({ eyebrow, title, action }) {
   )
 })
 
-const InlineEmpty = memo(function InlineEmpty({ title = 'No data yet', description = 'Start by adding customers or creating invoices.' }) {
+const InlineEmpty = memo(function InlineEmpty({ title = 'Add your first record', description = 'Start by adding customers or creating invoices.' }) {
   return (
     <div className="grid min-h-[10rem] place-items-center rounded-[1.25rem] border border-dashed border-slate-200 bg-slate-50/70 px-4 py-6 text-center dark:border-white/10 dark:bg-white/5">
       <div className="max-w-xs">
@@ -117,7 +134,7 @@ const MiniBars = memo(function MiniBars({ data, color = 'bg-sky-500' }) {
   const hasData = data.some((item) => safeCount(item.value) > 0)
 
   if (!hasData) {
-    return <InlineEmpty title="No data yet" description="Create invoices or leads to activate this chart." />
+    return <InlineEmpty title="No chart activity yet" description="Create invoices or leads to activate this chart." />
   }
 
   return (
@@ -206,7 +223,7 @@ const DataRow = memo(function DataRow({ label, value, badge }) {
 })
 
 export default function DashboardHomePage() {
-  const { currency } = usePreferences()
+  const currency = 'PKR'
   const invoicesApi = useInvoices()
   const customersApi = useCustomers()
   const leadsApi = useLeadScoring()
@@ -225,13 +242,15 @@ export default function DashboardHomePage() {
     expensesApi.loading
 
   const paidInvoices = useMemo(() => invoicesApi.invoices.filter((invoice) => getInvoiceStatus(invoice) === 'paid'), [invoicesApi.invoices])
-  const paidPayments = useMemo(() => invoicesApi.payments.filter((payment) => String(payment?.paymentStatus || payment?.status || '').toLowerCase() === 'paid'), [invoicesApi.payments])
+  const paidPayments = useMemo(() => invoicesApi.payments.filter(isPaidRecord), [invoicesApi.payments])
   const pendingInvoices = useMemo(
     () => invoicesApi.invoices.filter((invoice) => getInvoiceStatus(invoice) === 'pending'),
     [invoicesApi.invoices],
   )
   const openTickets = useMemo(() => ticketsApi.tickets.filter(isOpenTicket), [ticketsApi.tickets])
   const hotLeads = useMemo(() => leadsApi.leads.filter((lead) => safeCount(lead.score) >= 80), [leadsApi.leads])
+  const activeLeads = useMemo(() => leadsApi.leads.filter(isActivePipelineItem), [leadsApi.leads])
+  const activePipelineDeals = useMemo(() => pipelineApi.deals.filter(isActivePipelineItem), [pipelineApi.deals])
 
   const dashboardStats = useMemo(
     () =>
@@ -249,18 +268,19 @@ export default function DashboardHomePage() {
     () => pendingInvoices.reduce((sum, invoice) => sum + toFiniteNumber(invoice.totalUsd ?? invoice.total), 0),
     [pendingInvoices],
   )
-  const pipelineValueUsd = useMemo(
-    () => pipelineApi.deals.reduce((sum, deal) => sum + toFiniteNumber(deal.dealValueUsd ?? deal.dealValue), 0),
-    [pipelineApi.deals],
+  const pipelineValuePkr = useMemo(
+    () => calculatePipelineValue({ leads: leadsApi.leads, deals: pipelineApi.deals }),
+    [leadsApi.leads, pipelineApi.deals],
   )
 
-  const conversionRate = leadsApi.leads.length ? (hotLeads.length / leadsApi.leads.length) * 100 : 0
+  const conversionRate = useMemo(() => calculateConversionRate(leadsApi.leads), [leadsApi.leads])
   const hasAnyData =
     customersApi.customers.length ||
     invoicesApi.invoices.length ||
     leadsApi.leads.length ||
     pipelineApi.deals.length ||
-    ticketsApi.tickets.length
+    ticketsApi.tickets.length ||
+    expensesApi.expenses.length
 
   const revenueSeries = useMemo(() => {
     const grouped = new Map()
@@ -269,14 +289,15 @@ export default function DashboardHomePage() {
       const date = dateFromValue(invoice.paidAt || invoice.createdAt || invoice.dueDate)
       if (!date) return
       const label = date.toLocaleDateString('en-US', { month: 'short' })
-      grouped.set(label, toFiniteNumber(grouped.get(label)) + toFiniteNumber(invoice.amountUsd ?? invoice.amount ?? invoice.totalUsd ?? invoice.total))
+      const amount = paymentValue(invoice) || toFiniteNumber(invoice.total ?? invoice.totalUsd)
+      grouped.set(label, toFiniteNumber(grouped.get(label)) + amount)
     })
 
     const rows = Array.from(grouped.entries()).slice(-6)
     return rows.length
-      ? rows.map(([label, value]) => ({ label, value: convertFromUsd(value, currency) }))
+      ? rows.map(([label, value]) => ({ label, value }))
       : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'].map((label) => ({ label, value: 0 }))
-  }, [currency, paidInvoices, paidPayments])
+  }, [paidInvoices, paidPayments])
 
   const salesSeries = useMemo(() => {
     const total = paidInvoices.length
@@ -290,12 +311,16 @@ export default function DashboardHomePage() {
 
   const activityItems = useMemo(
     () =>
-      activityApi.logs.slice(0, 5).map((log) => ({
-        id: log.id,
-        title: `${safeText(log.module, 'System')}: ${safeText(log.action, 'Activity')}`,
-        detail: safeText(log.description, 'Workspace activity recorded.'),
-        time: safeText(log.createdAtLabel, 'Recent'),
-      })),
+      activityApi.logs
+        .map((log) => ({ log, type: activityType(log) }))
+        .filter((item) => item.type)
+        .slice(0, 5)
+        .map(({ log, type }) => ({
+          id: log.id,
+          title: type,
+          detail: safeText(log.description, 'Workspace activity recorded.'),
+          time: safeText(log.createdAtLabel, 'Recent'),
+        })),
     [activityApi.logs],
   )
 
@@ -304,47 +329,48 @@ export default function DashboardHomePage() {
       {
         icon: HiOutlineCurrencyDollar,
         label: 'Revenue',
-        value: totalRevenueUsd > 0 ? formatCurrency(convertFromUsd(totalRevenueUsd, currency), currency) : 'No data yet',
-        helper: totalRevenueUsd > 0 ? 'Collected from paid invoices' : 'Start by creating invoices',
+        value: formatCurrency(totalRevenueUsd, currency),
+        helper: `${formatCompact(paidPayments.length || paidInvoices.length)} paid records`,
         tone: 'sky',
         loading: invoicesApi.loading,
       },
       {
         icon: HiOutlineUserGroup,
         label: 'Customers',
-        value: customersApi.customers.length ? formatCompact(customersApi.customers.length) : 'No data yet',
-        helper: customersApi.customers.length ? 'Active customer workspace' : 'Add your first customer',
+        value: formatCompact(dashboardStats.totalCustomers),
+        helper: 'Active customers',
         tone: 'cyan',
         loading: customersApi.loading,
       },
       {
         icon: HiOutlineBolt,
         label: 'Leads Pipeline',
-        value: leadsApi.leads.length ? formatCompact(leadsApi.leads.length) : 'No data yet',
-        helper: leadsApi.leads.length ? `${formatCompact(hotLeads.length)} high intent leads` : 'Capture leads to score them',
+        value: formatCompact(dashboardStats.activeLeads),
+        helper: `${formatCompact(hotLeads.length)} high intent leads`,
         tone: 'violet',
         loading: leadsApi.loading,
       },
       {
         icon: HiOutlineTicket,
         label: 'Support',
-        value: ticketsApi.tickets.length ? formatCompact(openTickets.length) : 'No data yet',
-        helper: ticketsApi.tickets.length ? 'Open or in-progress tickets' : 'Support tickets will appear here',
+        value: formatCompact(openTickets.length),
+        helper: 'Open or in-progress tickets',
         tone: 'emerald',
         loading: ticketsApi.loading,
       },
     ],
     [
       currency,
-      customersApi.customers.length,
       customersApi.loading,
+      dashboardStats.activeLeads,
+      dashboardStats.totalCustomers,
       hotLeads.length,
       invoicesApi.loading,
-      leadsApi.leads.length,
       leadsApi.loading,
       openTickets.length,
+      paidInvoices.length,
+      paidPayments.length,
       ticketsApi.loading,
-      ticketsApi.tickets.length,
       totalRevenueUsd,
     ],
   )
@@ -352,8 +378,8 @@ export default function DashboardHomePage() {
   const invoiceRows = useMemo(
     () => [
       ['Paid invoices', formatCompact(paidInvoices.length), 'Closed revenue'],
-      ['Pending invoices', formatCompact(dashboardStats.pendingInvoices), formatCurrency(convertFromUsd(pendingRevenueUsd, currency), currency)],
-      ['Total invoices', formatCompact(invoicesApi.invoices.length), invoicesApi.invoices.length ? 'Tracked in workspace' : 'No data yet'],
+      ['Pending invoices', formatCompact(dashboardStats.pendingInvoices), formatCurrency(pendingRevenueUsd, currency)],
+      ['Total invoices', formatCompact(invoicesApi.invoices.length), 'Tracked in workspace'],
     ],
     [currency, dashboardStats.pendingInvoices, invoicesApi.invoices.length, paidInvoices.length, pendingRevenueUsd],
   )
@@ -361,21 +387,21 @@ export default function DashboardHomePage() {
   const healthRows = useMemo(
     () => [
       { label: 'Customer coverage', value: customersApi.customers.length, max: Math.max(10, customersApi.customers.length), tone: 'bg-cyan-500' },
-      { label: 'Lead momentum', value: leadsApi.leads.length, max: Math.max(10, leadsApi.leads.length), tone: 'bg-violet-500' },
+      { label: 'Lead momentum', value: activeLeads.length, max: Math.max(10, activeLeads.length), tone: 'bg-violet-500' },
       { label: 'Resolved support', value: Math.max(0, ticketsApi.tickets.length - openTickets.length), max: Math.max(1, ticketsApi.tickets.length), tone: 'bg-emerald-500' },
     ],
-    [customersApi.customers.length, leadsApi.leads.length, openTickets.length, ticketsApi.tickets.length],
+    [activeLeads.length, customersApi.customers.length, openTickets.length, ticketsApi.tickets.length],
   )
 
   const summaryRows = useMemo(
     () => [
-      { icon: HiOutlineCheckCircle, label: 'Customers', value: customersApi.customers.length ? formatCompact(customersApi.customers.length) : 'No data yet' },
-      { icon: HiOutlineClock, label: 'Pending revenue', value: pendingRevenueUsd > 0 ? formatCurrency(convertFromUsd(pendingRevenueUsd, currency), currency) : 'No data yet' },
-      { icon: HiOutlineCurrencyDollar, label: 'Expenses', value: dashboardStats.expenses > 0 ? formatCurrency(convertFromUsd(dashboardStats.expenses, currency), currency) : 'No data yet' },
-      { icon: HiOutlineChartBar, label: 'Profit', value: dashboardStats.profit !== 0 ? formatCurrency(convertFromUsd(dashboardStats.profit, currency), currency) : 'No data yet' },
-      { icon: HiOutlineLifebuoy, label: 'Open support', value: ticketsApi.tickets.length ? formatCompact(openTickets.length) : 'No data yet' },
+      { icon: HiOutlineCheckCircle, label: 'Customers', value: formatCompact(dashboardStats.totalCustomers) },
+      { icon: HiOutlineClock, label: 'Pending revenue', value: formatCurrency(pendingRevenueUsd, currency) },
+      { icon: HiOutlineCurrencyDollar, label: 'Expenses', value: formatCurrency(dashboardStats.expenses, currency) },
+      { icon: HiOutlineChartBar, label: 'Profit', value: formatCurrency(dashboardStats.profit, currency) },
+      { icon: HiOutlineLifebuoy, label: 'Open support', value: formatCompact(openTickets.length) },
     ],
-    [currency, customersApi.customers.length, dashboardStats.expenses, dashboardStats.profit, openTickets.length, pendingRevenueUsd, ticketsApi.tickets.length],
+    [currency, dashboardStats.expenses, dashboardStats.profit, dashboardStats.totalCustomers, openTickets.length, pendingRevenueUsd],
   )
 
   return (
@@ -402,13 +428,13 @@ export default function DashboardHomePage() {
               <div className="rounded-[1.15rem] border border-slate-100 bg-slate-50/80 p-3 dark:border-white/10 dark:bg-white/5">
                 <p className="text-xs font-medium text-slate-500">Pipeline value</p>
                 <p className="mt-1 truncate text-lg font-semibold text-slate-950 dark:text-white">
-                  {pipelineValueUsd > 0 ? formatCurrency(convertFromUsd(pipelineValueUsd, currency), currency) : 'No data yet'}
+                  {formatCurrency(pipelineValuePkr, currency)}
                 </p>
               </div>
               <div className="rounded-[1.15rem] border border-slate-100 bg-slate-50/80 p-3 dark:border-white/10 dark:bg-white/5">
                 <p className="text-xs font-medium text-slate-500">Conversion rate</p>
                 <p className="mt-1 truncate text-lg font-semibold text-slate-950 dark:text-white">
-                  {leadsApi.leads.length ? formatPercentValue(conversionRate) : 'No data yet'}
+                  {formatPercentValue(conversionRate)}
                 </p>
               </div>
             </div>
@@ -418,7 +444,7 @@ export default function DashboardHomePage() {
             <div className="mt-5 rounded-[1.25rem] border border-sky-100 bg-gradient-to-r from-sky-50 via-white to-violet-50 p-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold text-slate-950">No data yet</p>
+                  <p className="text-sm font-semibold text-slate-950">Add your first record</p>
                   <p className="mt-1 text-sm text-slate-600">Start by adding customers or creating invoices.</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -469,7 +495,7 @@ export default function DashboardHomePage() {
           <SectionTitle
             eyebrow="Revenue Overview"
             title="Collected revenue trend"
-            action={<Badge variant="info">{totalRevenueUsd > 0 ? formatCurrency(convertFromUsd(totalRevenueUsd, currency), currency) : 'No data yet'}</Badge>}
+            action={<Badge variant="info">{formatCurrency(totalRevenueUsd, currency)}</Badge>}
           />
           <div className="mt-5">
             {invoicesApi.loading ? <LoadingBlock lines={5} className="min-h-44" /> : <MiniBars data={revenueSeries} color="bg-sky-500" />}
@@ -480,7 +506,7 @@ export default function DashboardHomePage() {
           <SectionTitle
             eyebrow="Sales Performance"
             title="Weekly paid invoices"
-            action={<Badge variant="purple">{paidInvoices.length ? `${formatCompact(paidInvoices.length)} paid` : 'No data yet'}</Badge>}
+            action={<Badge variant="purple">{`${formatCompact(paidInvoices.length)} paid`}</Badge>}
           />
           <div className="mt-5">
             {invoicesApi.loading ? <LoadingBlock lines={5} className="min-h-44" /> : <MiniBars data={salesSeries} color="bg-violet-500" />}
@@ -498,7 +524,7 @@ export default function DashboardHomePage() {
           <div className="mt-5 space-y-3">
             {customersApi.loading ? (
               <LoadingBlock lines={4} />
-            ) : customersApi.customers.length ? (
+            ) : dashboardStats.totalCustomers ? (
               customersApi.customers.slice(0, 4).map((customer) => (
                 <DataRow
                   key={customer.id}
@@ -508,7 +534,7 @@ export default function DashboardHomePage() {
                 />
               ))
             ) : (
-              <InlineEmpty title="No data yet" description="Start by adding customers to build your CRM view." />
+              <InlineEmpty title="No customers yet" description="Start by adding customers to build your CRM view." />
             )}
           </div>
         </Card>
@@ -522,18 +548,18 @@ export default function DashboardHomePage() {
           <div className="mt-5 space-y-4">
             {leadsApi.loading ? (
               <LoadingBlock lines={4} />
-            ) : leadsApi.leads.length ? (
+            ) : activeLeads.length || activePipelineDeals.length ? (
               <>
                 <ProgressRow label="Hot leads" value={hotLeads.length} max={leadsApi.leads.length} tone="bg-violet-500" />
-                <ProgressRow label="Pipeline deals" value={pipelineApi.deals.length} max={Math.max(10, pipelineApi.deals.length)} tone="bg-sky-500" />
+                <ProgressRow label="Pipeline deals" value={activePipelineDeals.length} max={Math.max(10, activePipelineDeals.length)} tone="bg-sky-500" />
                 <DataRow
                   label="Pipeline value"
-                  value={pipelineValueUsd > 0 ? formatCurrency(convertFromUsd(pipelineValueUsd, currency), currency) : 'No data yet'}
+                  value={formatCurrency(pipelineValuePkr, currency)}
                   badge="Open opportunity value"
                 />
               </>
             ) : (
-              <InlineEmpty title="No data yet" description="Capture leads to see scoring and pipeline movement." />
+              <InlineEmpty title="No leads yet" description="Capture leads to see scoring and pipeline movement." />
             )}
           </div>
         </Card>
@@ -550,7 +576,7 @@ export default function DashboardHomePage() {
             ) : invoicesApi.invoices.length ? (
               invoiceRows.map(([label, value, badge]) => <DataRow key={label} label={label} value={value} badge={badge} />)
             ) : (
-              <InlineEmpty title="No data yet" description="Create invoices to track paid and pending revenue." />
+              <InlineEmpty title="No invoices yet" description="Create invoices to track paid and pending revenue." />
             )}
           </div>
         </Card>
@@ -573,7 +599,7 @@ export default function DashboardHomePage() {
                 <DataRow label="Total tickets" value={formatCompact(ticketsApi.tickets.length)} badge="All support records" />
               </>
             ) : (
-              <InlineEmpty title="No data yet" description="Support tickets will appear here once customers need help." />
+              <InlineEmpty title="No support tickets yet" description="Support tickets will appear here once customers need help." />
             )}
           </div>
         </Card>
@@ -593,17 +619,17 @@ export default function DashboardHomePage() {
           <div className="mt-5 space-y-3">
             <DataRow
               label="Data setup"
-              value={hasAnyData ? 'Active' : 'No data yet'}
+              value={hasAnyData ? 'Active' : '0 records'}
               badge={hasAnyData ? 'Workspace has records' : 'Start with customers or invoices'}
             />
             <DataRow
               label="Revenue engine"
-              value={paidInvoices.length ? 'Live Sync' : 'No data yet'}
-              badge={paidInvoices.length ? 'Paid invoices found' : 'Create invoices to activate'}
+              value={formatCurrency(totalRevenueUsd, currency)}
+              badge={paidInvoices.length || paidPayments.length ? 'Paid records found' : 'Create invoices to activate'}
             />
             <DataRow
               label="Support loop"
-              value={ticketsApi.tickets.length ? 'Tracked' : 'No data yet'}
+              value={formatCompact(ticketsApi.tickets.length)}
               badge={ticketsApi.tickets.length ? 'Ticket history is live' : 'Support records are empty'}
             />
           </div>
@@ -615,7 +641,7 @@ export default function DashboardHomePage() {
           <SectionTitle
             eyebrow="Recent Activity"
             title="Workspace timeline"
-            action={<Badge variant="default">{activityItems.length ? `${formatCompact(activityItems.length)} updates` : 'No data yet'}</Badge>}
+            action={<Badge variant="default">{`${formatCompact(activityItems.length)} updates`}</Badge>}
           />
           <div className="mt-5">
             {activityApi.loading ? <LoadingBlock lines={5} /> : <ActivityList items={activityItems} />}

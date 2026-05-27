@@ -22,6 +22,8 @@ const priorityRoutes = [
   '/app/team',
   '/app/hr',
   '/app/invoices',
+  '/app/expenses',
+  '/app/accounts',
   '/app/approvals',
   '/app/subscriptions',
   '/app/support',
@@ -39,6 +41,7 @@ const compactLabels = {
   '/app/analytics': 'Analytics',
   '/app/activity-logs': 'Activity',
   '/app/products': 'Products',
+  '/app/accounts': 'Accounts',
   '/app/approvals': 'Approvals',
 }
 

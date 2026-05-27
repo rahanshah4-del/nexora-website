@@ -89,6 +89,7 @@ function createApproval(type, sourceCollection, row) {
   const customer =
     row.customerName ||
     row.clientName ||
+    row.title ||
     row.name ||
     row.userName ||
     row.businessName ||
@@ -127,6 +128,26 @@ function createApproval(type, sourceCollection, row) {
     userId: row.userId || '',
     row,
   }
+}
+
+function transactionApprovalType(row = {}) {
+  const type = statusValue(row.type, 'adjustment')
+  if (type === 'bank_transfer') return 'Bank transfer'
+  if (type === 'cash_withdrawal') return 'Cash withdrawal'
+  if (type === 'cash_payment') return 'Cash payment'
+  if (type === 'expense') return 'Expense payment'
+  if (type === 'income') return 'Income verification'
+  return 'Account transaction'
+}
+
+function accountActionLabel(row = {}, approved = true) {
+  const type = statusValue(row.type, 'adjustment')
+  if (type === 'bank_transfer') return approved ? 'Bank transfer approved' : 'Bank transfer rejected'
+  if (type === 'cash_withdrawal') return approved ? 'Cash withdrawal approved' : 'Cash withdrawal rejected'
+  if (type === 'cash_payment') return approved ? 'Cash payment approved' : 'Cash payment rejected'
+  if (type === 'expense') return approved ? 'Expense payment approved' : 'Expense payment rejected'
+  if (type === 'income') return approved ? 'Invoice payment added to wallet' : 'Income verification rejected'
+  return approved ? 'Wallet transaction approved' : 'Wallet transaction rejected'
 }
 
 function subscribeWorkspaceCollection(workspaceId, collectionName, onData, onError) {
@@ -172,6 +193,7 @@ export function useApprovals() {
   const [teamMembers, setTeamMembers] = useState([])
   const [clients, setClients] = useState([])
   const [expenses, setExpenses] = useState([])
+  const [accountTransactions, setAccountTransactions] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -184,6 +206,7 @@ export function useApprovals() {
         setTeamMembers([])
         setClients([])
         setExpenses([])
+        setAccountTransactions([])
         setLoading(false)
         setError(db ? '' : 'Secure Cloud Sync is not available right now.')
       })
@@ -198,7 +221,7 @@ export function useApprovals() {
     let loaded = 0
     function markLoaded() {
       loaded += 1
-      if (loaded >= 6) setLoading(false)
+      if (loaded >= 7) setLoading(false)
     }
     function onError(err) {
       setError(clientSafeMessage(err, 'Unable to load approvals.'))
@@ -255,6 +278,16 @@ export function useApprovals() {
       onError,
     )
 
+    const unsubAccountTransactions = subscribeWorkspaceCollection(
+      workspaceId,
+      'accountTransactions',
+      (rows) => {
+        setAccountTransactions(rows.filter(isPendingRecord))
+        markLoaded()
+      },
+      onError,
+    )
+
     const upgradeRef = collection(db, 'upgradeRequests')
     const upgradeQuery = query(upgradeRef, where('workspaceId', '==', workspaceId))
     const unsubUpgrades = onSnapshot(
@@ -276,6 +309,7 @@ export function useApprovals() {
       unsubTeam?.()
       unsubClients?.()
       unsubExpenses?.()
+      unsubAccountTransactions?.()
       unsubUpgrades?.()
     }
   }, [canApprove, userId, workspaceId])
@@ -288,9 +322,10 @@ export function useApprovals() {
       ...teamMembers.map((row) => createApproval('Staff access request', 'teamMembers', row)),
       ...clients.map((row) => createApproval('Client approval', 'clients', row)),
       ...expenses.map((row) => createApproval('Expense approval', 'expenses', row)),
+      ...accountTransactions.map((row) => createApproval(transactionApprovalType(row), 'accountTransactions', row)),
     ]
     return rows.sort((a, b) => b.sortAt - a.sortAt)
-  }, [clients, expenses, invoices, payments, teamMembers, upgradeRequests])
+  }, [accountTransactions, clients, expenses, invoices, payments, teamMembers, upgradeRequests])
 
   const summary = useMemo(
     () => ({
@@ -299,9 +334,10 @@ export function useApprovals() {
       upgradeRequests: upgradeRequests.length,
       staffRequests: teamMembers.length,
       expenseRequests: expenses.length,
+      accountRequests: accountTransactions.length,
       total: approvals.length,
     }),
-    [approvals.length, expenses.length, invoices.length, payments.length, teamMembers.length, upgradeRequests.length],
+    [accountTransactions.length, approvals.length, expenses.length, invoices.length, payments.length, teamMembers.length, upgradeRequests.length],
   )
 
   const approve = useCallback(
@@ -326,6 +362,7 @@ export function useApprovals() {
 
         if (approval.sourceCollection === 'payments') {
           const paymentRef = doc(db, workspaceCollectionPath(workspaceId, 'payments'), approval.sourceId)
+          let walletAmount = amountValue(row)
           batch.update(paymentRef, {
             status: 'paid',
             paymentStatus: 'paid',
@@ -341,6 +378,7 @@ export function useApprovals() {
             if (invoiceSnap.exists()) {
               const invoiceData = { id: approval.invoiceId, ...invoiceSnap.data() }
               const invoiceAmount = invoiceValue(invoiceData) || amountValue(row)
+              walletAmount = invoiceAmount
               const stockAdjusted = await addInventoryAdjustments(batch, workspaceId, invoiceData, now)
               batch.update(invoiceRef, {
                 status: 'paid',
@@ -357,6 +395,30 @@ export function useApprovals() {
               })
             }
           }
+          const transactionRef = doc(collection(db, workspaceCollectionPath(workspaceId, 'accountTransactions')))
+          batch.set(transactionRef, {
+            type: 'income',
+            source: 'invoice',
+            amount: walletAmount,
+            currency: row.currency || approval.currency || 'PKR',
+            method: row.paymentMethod || 'Manual Approval',
+            status: 'approved',
+            approvalStatus: 'approved',
+            title: `Invoice payment - ${row.invoiceNumber || approval.invoiceId || approval.sourceId}`,
+            description: `${approval.customer} payment approved.`,
+            relatedId: approval.invoiceId || row.invoiceId || approval.sourceId,
+            invoiceId: approval.invoiceId || row.invoiceId || '',
+            paymentId: approval.sourceId,
+            customerName: approval.customer,
+            createdBy: userId,
+            approvedBy: userId,
+            approvedAt: now,
+            ownerId: workspaceId,
+            userId: workspaceId,
+            workspaceId,
+            createdAt: now,
+            updatedAt: now,
+          })
         }
 
         if (approval.sourceCollection === 'upgradeRequests') {
@@ -414,6 +476,31 @@ export function useApprovals() {
           })
         }
 
+        if (approval.sourceCollection === 'accountTransactions') {
+          batch.update(doc(db, workspaceCollectionPath(workspaceId, 'accountTransactions'), approval.sourceId), {
+            approvalStatus: 'approved',
+            status: 'approved',
+            requiresApproval: false,
+            approvedBy: userId,
+            approvedAt: now,
+            updatedAt: now,
+          })
+          if (statusValue(row.type, '') === 'expense' && row.relatedId) {
+            batch.set(
+              doc(db, workspaceCollectionPath(workspaceId, 'expenses'), row.relatedId),
+              {
+                approvalStatus: 'approved',
+                status: 'paid',
+                approvedBy: userId,
+                approvedAt: now,
+                paidAt: now,
+                updatedAt: now,
+              },
+              { merge: true },
+            )
+          }
+        }
+
         await batch.commit()
         await logActivity({
           workspaceId,
@@ -426,13 +513,30 @@ export function useApprovals() {
                 ? 'Subscription upgraded'
                 : approval.sourceCollection === 'payments'
                   ? 'Payment approved'
-                  : 'Approval approved',
+                  : approval.sourceCollection === 'expenses'
+                    ? 'Expense approved'
+                    : approval.sourceCollection === 'accountTransactions'
+                      ? accountActionLabel(row, true)
+                      : 'Approval approved',
           module: 'Approvals',
           description: `${approval.type} for ${approval.customer} was approved.`,
           targetId: approval.sourceId,
           targetName: approval.customer,
           metadata: { type: approval.type, sourceCollection: approval.sourceCollection, amount: approval.amount, currency: approval.currency },
         })
+        if (approval.sourceCollection === 'payments') {
+          await logActivity({
+            workspaceId,
+            userId,
+            ...userActivityInfo(userDoc, firebaseUser),
+            action: 'Invoice payment added to wallet',
+            module: 'Account Management',
+            description: `${approval.customer} payment was added to wallet.`,
+            targetId: approval.sourceId,
+            targetName: approval.customer,
+            metadata: { type: approval.type, sourceCollection: approval.sourceCollection, amount: approval.amount, currency: approval.currency },
+          })
+        }
         return { ok: true }
       } catch (err) {
         return { ok: false, error: clientSafeMessage(err, 'Unable to approve request.') }
@@ -494,6 +598,31 @@ export function useApprovals() {
           updatedAt: now,
         })
 
+        const transactionRef = doc(collection(db, workspaceCollectionPath(workspaceId, 'accountTransactions')))
+        batch.set(transactionRef, {
+          type: 'income',
+          source: 'invoice',
+          amount: invoiceTotal,
+          currency: row.currency || 'PKR',
+          method: 'Approval Center',
+          status: 'approved',
+          approvalStatus: 'approved',
+          title: `Invoice payment - ${row.invoiceNumber || approval.sourceId}`,
+          description: `${approval.customer} invoice payment was added to wallet.`,
+          relatedId: approval.sourceId,
+          invoiceId: approval.sourceId,
+          paymentId: paymentRef.id,
+          customerName: row.customerName || approval.customer,
+          createdBy: userId,
+          approvedBy: userId,
+          approvedAt: now,
+          ownerId: workspaceId,
+          userId: workspaceId,
+          workspaceId,
+          createdAt: now,
+          updatedAt: now,
+        })
+
         await batch.commit()
         await logActivity({
           workspaceId,
@@ -502,6 +631,17 @@ export function useApprovals() {
           action: 'Invoice marked paid',
           module: 'Approvals',
           description: `${row.invoiceNumber || approval.sourceId} was marked as paid.`,
+          targetId: approval.sourceId,
+          targetName: row.invoiceNumber || approval.customer,
+          metadata: { amount: invoiceTotal, currency: row.currency || 'PKR', sourceCollection: approval.sourceCollection },
+        })
+        await logActivity({
+          workspaceId,
+          userId,
+          ...userActivityInfo(userDoc, firebaseUser),
+          action: 'Invoice payment added to wallet',
+          module: 'Account Management',
+          description: `${row.invoiceNumber || approval.sourceId} payment was added to wallet.`,
           targetId: approval.sourceId,
           targetName: row.invoiceNumber || approval.customer,
           metadata: { amount: invoiceTotal, currency: row.currency || 'PKR', sourceCollection: approval.sourceCollection },
@@ -600,12 +740,28 @@ export function useApprovals() {
           })
         }
 
+        if (approval.sourceCollection === 'accountTransactions') {
+          batch.update(doc(db, workspaceCollectionPath(workspaceId, 'accountTransactions'), approval.sourceId), {
+            approvalStatus: 'rejected',
+            status: 'rejected',
+            requiresApproval: false,
+            rejectedBy: userId,
+            rejectedAt: now,
+            updatedAt: now,
+          })
+        }
+
         await batch.commit()
         await logActivity({
           workspaceId,
           userId,
           ...userActivityInfo(userDoc, firebaseUser),
-          action: approval.sourceCollection === 'invoices' ? 'Invoice rejected' : 'Approval rejected',
+          action:
+            approval.sourceCollection === 'invoices'
+              ? 'Invoice rejected'
+              : approval.sourceCollection === 'accountTransactions'
+                ? accountActionLabel(approval.row, false)
+                : 'Approval rejected',
           module: 'Approvals',
           description: `${approval.type} for ${approval.customer} was rejected.`,
           targetId: approval.sourceId,

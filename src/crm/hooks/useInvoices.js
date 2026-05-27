@@ -257,6 +257,30 @@ export function useInvoices() {
             createdAt: now,
             updatedAt: now,
           })
+          const transactionRef = doc(collection(db, workspaceCollectionPath(workspaceId, 'accountTransactions')))
+          batch.set(transactionRef, {
+            type: 'income',
+            source: 'invoice',
+            amount: invoice.total,
+            currency: invoice.currency || 'PKR',
+            method: paymentMethod,
+            status: 'approved',
+            approvalStatus: 'approved',
+            title: `Invoice payment - ${invoice.invoiceNumber || id}`,
+            description: `${invoice.customerName || 'Customer'} invoice payment was added to wallet.`,
+            relatedId: id,
+            invoiceId: id,
+            paymentId: paymentRef.id,
+            customerName: invoice.customerName || '',
+            createdBy: userId,
+            approvedBy: userId,
+            approvedAt: now,
+            ownerId: workspaceId,
+            userId: workspaceId,
+            workspaceId,
+            createdAt: now,
+            updatedAt: now,
+          })
           await batch.commit()
           await logActivity({
             workspaceId,
@@ -265,6 +289,17 @@ export function useInvoices() {
             action: 'Invoice paid',
             module: 'Invoices',
             description: `${invoice.invoiceNumber || id} was marked as paid.`,
+            targetId: id,
+            targetName: invoice.invoiceNumber || id,
+            metadata: { amount: invoice.total, currency: invoice.currency, paymentMethod },
+          })
+          await logActivity({
+            workspaceId,
+            userId,
+            ...userActivityInfo(userDoc, firebaseUser),
+            action: 'Invoice payment added to wallet',
+            module: 'Account Management',
+            description: `${invoice.invoiceNumber || id} payment was added to wallet.`,
             targetId: id,
             targetName: invoice.invoiceNumber || id,
             metadata: { amount: invoice.total, currency: invoice.currency, paymentMethod },
@@ -357,6 +392,32 @@ export function useInvoices() {
             createdAt: now,
             updatedAt: now,
           })
+          if (fullyPaid) {
+            const transactionRef = doc(collection(db, workspaceCollectionPath(workspaceId, 'accountTransactions')))
+            batch.set(transactionRef, {
+              type: 'income',
+              source: 'invoice',
+              amount: invoice.total,
+              currency: invoice.currency || 'PKR',
+              method: paymentMethod,
+              status: 'approved',
+              approvalStatus: 'approved',
+              title: `Invoice payment - ${invoice.invoiceNumber || id}`,
+              description: `${invoice.customerName || 'Customer'} invoice payment was added to wallet.`,
+              relatedId: id,
+              invoiceId: id,
+              paymentId: paymentRef.id,
+              customerName: invoice.customerName || '',
+              createdBy: userId,
+              approvedBy: userId,
+              approvedAt: now,
+              ownerId: workspaceId,
+              userId: workspaceId,
+              workspaceId,
+              createdAt: now,
+              updatedAt: now,
+            })
+          }
           await batch.commit()
           await logActivity({
             workspaceId,
@@ -369,6 +430,19 @@ export function useInvoices() {
             targetName: invoice.invoiceNumber || id,
             metadata: { amount, currency: invoice.currency, paymentMethod, fullyPaid },
           })
+          if (fullyPaid) {
+            await logActivity({
+              workspaceId,
+              userId,
+              ...userActivityInfo(userDoc, firebaseUser),
+              action: 'Invoice payment added to wallet',
+              module: 'Account Management',
+              description: `${invoice.invoiceNumber || id} payment was added to wallet.`,
+              targetId: id,
+              targetName: invoice.invoiceNumber || id,
+              metadata: { amount: invoice.total, currency: invoice.currency, paymentMethod },
+            })
+          }
           return { ok: true }
         } catch (e) {
           return { ok: false, error: clientSafeMessage(e, 'Unable to record partial payment.') }

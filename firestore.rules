@@ -157,6 +157,7 @@ service cloud.firestore {
         'approvalStatus',
         'approvedBy',
         'approvedAt',
+        'paidAt',
         'rejectedBy',
         'rejectedAt',
         'ownerId',
@@ -174,6 +175,29 @@ service cloud.firestore {
         'approvedAt',
         'rejectedBy',
         'rejectedAt',
+      ]);
+    }
+
+    function accountTransactionCreateScope(workspaceId) {
+      return request.resource.data.ownerId == workspaceId
+        && request.resource.data.userId == workspaceId
+        && request.resource.data.workspaceId == workspaceId
+        && request.resource.data.createdBy == request.auth.uid;
+    }
+
+    function accountTransactionApprovalFieldsTouched() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+        'status',
+        'approvalStatus',
+        'requiresApproval',
+        'approvedBy',
+        'approvedAt',
+        'rejectedBy',
+        'rejectedAt',
+        'ownerId',
+        'userId',
+        'workspaceId',
+        'updatedAt',
       ]);
     }
 
@@ -290,6 +314,23 @@ service cloud.firestore {
           || canReadClientPortalPayment(workspaceId);
         allow create: if isPaymentApprover(workspaceId) || canSubmitPaymentReference(workspaceId);
         allow update: if isWorkspaceManager(workspaceId) || (isPaymentApprover(workspaceId) && paymentApprovalFieldsTouched());
+        allow delete: if isWorkspaceManager(workspaceId);
+      }
+
+      match /expenses/{expenseId} {
+        allow read: if staffPermission(workspaceId, 'reports') || isPaymentApprover(workspaceId);
+        allow create: if (isWorkspaceManager(workspaceId) || isPaymentApprover(workspaceId))
+          && accountTransactionCreateScope(workspaceId);
+        allow update: if isWorkspaceManager(workspaceId)
+          || (isPaymentApprover(workspaceId) && approvalStatusFieldsTouched());
+        allow delete: if isWorkspaceManager(workspaceId);
+      }
+
+      match /accountTransactions/{transactionId} {
+        allow read: if staffPermission(workspaceId, 'reports') || isPaymentApprover(workspaceId);
+        allow create: if isPaymentApprover(workspaceId) && accountTransactionCreateScope(workspaceId);
+        allow update: if isWorkspaceManager(workspaceId)
+          || (isPaymentApprover(workspaceId) && accountTransactionApprovalFieldsTouched());
         allow delete: if isWorkspaceManager(workspaceId);
       }
 

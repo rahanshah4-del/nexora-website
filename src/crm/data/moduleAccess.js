@@ -19,7 +19,7 @@ export const planCatalog = [
     monthlyPkr: 2000,
     yearlyPkr: 24000,
     priceLabel: 'PKR 2000/month',
-    features: ['Everything in Free', 'Products', 'More customers/leads', 'Payments', 'Expenses', 'Reports', 'Activity Logs', 'Basic Team Management', 'Support Tickets'],
+    features: ['Everything in Free', 'Products', 'More customers/leads', 'Payments', 'Expenses', 'Account Management', 'Reports', 'Activity Logs', 'Basic Team Management', 'Support Tickets'],
   },
   {
     id: 'Business',
@@ -42,6 +42,7 @@ export const planCatalog = [
       'Desktop App Download',
       'Multi-user access',
       'Approval Center',
+      'Finance approvals',
     ],
   },
   {
@@ -72,6 +73,7 @@ export const moduleCatalog = [
   { key: 'invoices', label: 'Invoices', route: '/app/invoices', minPlan: 'Free' },
   { key: 'payments', label: 'Payments', route: '/app/invoices', minPlan: 'Starter' },
   { key: 'expenses', label: 'Expenses', route: '/app/expenses', minPlan: 'Starter' },
+  { key: 'accounts', label: 'Account Management', route: '/app/accounts', minPlan: 'Starter' },
   { key: 'approvals', label: 'Approval Center', route: '/app/approvals', minPlan: 'Business' },
   { key: 'subscriptions', label: 'Subscriptions', route: '/app/subscriptions', alwaysEnabled: true },
   { key: 'support', label: 'Support Tickets', route: '/app/support', minPlan: 'Starter' },
@@ -91,11 +93,11 @@ export const businessTypes = [
 ]
 
 const recommendationMap = {
-  'Restaurant / POS': ['dashboard', 'customers', 'products', 'invoices', 'payments', 'expenses', 'reports', 'team', 'support'],
-  'Transport / Rental': ['dashboard', 'customers', 'leads', 'invoices', 'payments', 'expenses', 'reports', 'activity'],
-  'Software Agency': ['dashboard', 'clientPortal', 'customers', 'leads', 'salesPipeline', 'followUps', 'invoices', 'reports', 'support'],
-  'Retail / Inventory': ['dashboard', 'customers', 'products', 'invoices', 'expenses', 'reports', 'team'],
-  'General Business': ['dashboard', 'customers', 'leads', 'invoices', 'expenses', 'reports'],
+  'Restaurant / POS': ['dashboard', 'customers', 'products', 'invoices', 'payments', 'expenses', 'accounts', 'reports', 'team', 'support'],
+  'Transport / Rental': ['dashboard', 'customers', 'leads', 'invoices', 'payments', 'expenses', 'accounts', 'reports', 'activity'],
+  'Software Agency': ['dashboard', 'clientPortal', 'customers', 'leads', 'salesPipeline', 'followUps', 'invoices', 'accounts', 'reports', 'support'],
+  'Retail / Inventory': ['dashboard', 'customers', 'products', 'invoices', 'expenses', 'accounts', 'reports', 'team'],
+  'General Business': ['dashboard', 'customers', 'leads', 'invoices', 'expenses', 'accounts', 'reports'],
 }
 
 export const alwaysEnabledModules = ['dashboard', 'settings', 'subscriptions']
@@ -152,6 +154,7 @@ export function selectedModulesForSidebar({ enabledModules, onboardingCompleted,
   return moduleCatalog.filter((module) => {
     if (module.alwaysEnabled) return true
     if (!moduleAllowedByPlan(module.key, plan)) return false
+    if (module.key === 'accounts') return true
     if (!onboardingCompleted) return true
     return selected.has(module.key)
   })
