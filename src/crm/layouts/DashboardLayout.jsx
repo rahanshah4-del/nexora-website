@@ -56,7 +56,9 @@ export default function DashboardLayout() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
   const [productModalOpen, setProductModalOpen] = useState(false)
-  const [mobileBlocked, setMobileBlocked] = useState(false)
+  const [isMobileScreen, setIsMobileScreen] = useState(
+    () => window.matchMedia?.('(max-width: 767px)')?.matches === true,
+  )
   const [selectedWorkspace, setSelectedWorkspace] = useState(null)
   const [sessionInfo, setSessionInfo] = useState(null)
   const { user, ready } = useAuth()
@@ -66,14 +68,15 @@ export default function DashboardLayout() {
 
   const toggleCollapse = useCallback(() => setCollapsed((c) => !c), [])
   const userId = user?.uid ?? null
+  const isAuthenticated = Boolean(userId)
+  const mobileBlocked = ready && isAuthenticated && isMobileScreen
   const onboardingOpen = Boolean(ready && userId && !userLoading && !isStaff && userDoc?.onboardingCompleted !== true)
 
   useEffect(() => {
     const media = window.matchMedia?.('(max-width: 767px)')
     if (!media) return undefined
 
-    const update = () => setMobileBlocked(media.matches)
-    update()
+    const update = (event) => setIsMobileScreen(event.matches)
     media.addEventListener?.('change', update)
     return () => media.removeEventListener?.('change', update)
   }, [])
