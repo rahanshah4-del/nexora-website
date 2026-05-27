@@ -24,6 +24,8 @@ import { useLeadScoring } from '../hooks/useLeadScoring.js'
 import { useActivityLogs } from '../hooks/useActivityLogs.js'
 import { usePipelineDeals } from '../hooks/usePipelineDeals.js'
 import { useSupportTickets } from '../hooks/useSupportTickets.js'
+import { useExpenses } from '../hooks/useExpenses.js'
+import { getDashboardStats, getInvoiceStatus } from '../lib/calculations.js'
 import { convertFromUsd } from '../utils/currency.js'
 import { formatCompact, formatCurrency, formatPercentValue, toFiniteNumber } from '../utils/format.js'
 import { cn } from '../utils/cn.js'
@@ -42,10 +44,6 @@ function safeText(value, fallback = 'No data yet') {
 
 function safeCount(value) {
   return Math.max(0, toFiniteNumber(value))
-}
-
-function isPaid(item) {
-  return String(item?.status || item?.paymentStatus || '').toLowerCase() === 'paid'
 }
 
 function isOpenTicket(ticket) {
@@ -215,6 +213,7 @@ export default function DashboardHomePage() {
   const activityApi = useActivityLogs()
   const pipelineApi = usePipelineDeals()
   const ticketsApi = useSupportTickets()
+  const expensesApi = useExpenses()
 
   const loading =
     invoicesApi.loading ||
@@ -222,24 +221,30 @@ export default function DashboardHomePage() {
     leadsApi.loading ||
     activityApi.loading ||
     pipelineApi.loading ||
-    ticketsApi.loading
+    ticketsApi.loading ||
+    expensesApi.loading
 
-  const paidInvoices = useMemo(() => invoicesApi.invoices.filter(isPaid), [invoicesApi.invoices])
-  const paidPayments = useMemo(() => invoicesApi.payments.filter(isPaid), [invoicesApi.payments])
+  const paidInvoices = useMemo(() => invoicesApi.invoices.filter((invoice) => getInvoiceStatus(invoice) === 'paid'), [invoicesApi.invoices])
+  const paidPayments = useMemo(() => invoicesApi.payments.filter((payment) => String(payment?.paymentStatus || payment?.status || '').toLowerCase() === 'paid'), [invoicesApi.payments])
   const pendingInvoices = useMemo(
-    () => invoicesApi.invoices.filter((invoice) => String(invoice.status || '').toLowerCase() === 'pending'),
+    () => invoicesApi.invoices.filter((invoice) => getInvoiceStatus(invoice) === 'pending'),
     [invoicesApi.invoices],
   )
   const openTickets = useMemo(() => ticketsApi.tickets.filter(isOpenTicket), [ticketsApi.tickets])
   const hotLeads = useMemo(() => leadsApi.leads.filter((lead) => safeCount(lead.score) >= 80), [leadsApi.leads])
 
-  const totalRevenueUsd = useMemo(
-    () => {
-      const sourceRows = paidPayments.length ? paidPayments : paidInvoices
-      return sourceRows.reduce((sum, item) => sum + toFiniteNumber(item.amountUsd ?? item.amount ?? item.totalUsd ?? item.total), 0)
-    },
-    [paidInvoices, paidPayments],
+  const dashboardStats = useMemo(
+    () =>
+      getDashboardStats({
+        invoices: invoicesApi.invoices,
+        payments: invoicesApi.payments,
+        customers: customersApi.customers,
+        leads: leadsApi.leads,
+        expenses: expensesApi.expenses,
+      }),
+    [customersApi.customers, expensesApi.expenses, invoicesApi.invoices, invoicesApi.payments, leadsApi.leads],
   )
+  const totalRevenueUsd = dashboardStats.totalRevenue
   const pendingRevenueUsd = useMemo(
     () => pendingInvoices.reduce((sum, invoice) => sum + toFiniteNumber(invoice.totalUsd ?? invoice.total), 0),
     [pendingInvoices],
@@ -347,10 +352,10 @@ export default function DashboardHomePage() {
   const invoiceRows = useMemo(
     () => [
       ['Paid invoices', formatCompact(paidInvoices.length), 'Closed revenue'],
-      ['Pending invoices', formatCompact(pendingInvoices.length), formatCurrency(convertFromUsd(pendingRevenueUsd, currency), currency)],
+      ['Pending invoices', formatCompact(dashboardStats.pendingInvoices), formatCurrency(convertFromUsd(pendingRevenueUsd, currency), currency)],
       ['Total invoices', formatCompact(invoicesApi.invoices.length), invoicesApi.invoices.length ? 'Tracked in workspace' : 'No data yet'],
     ],
-    [currency, invoicesApi.invoices.length, paidInvoices.length, pendingInvoices.length, pendingRevenueUsd],
+    [currency, dashboardStats.pendingInvoices, invoicesApi.invoices.length, paidInvoices.length, pendingRevenueUsd],
   )
 
   const healthRows = useMemo(
@@ -366,9 +371,11 @@ export default function DashboardHomePage() {
     () => [
       { icon: HiOutlineCheckCircle, label: 'Customers', value: customersApi.customers.length ? formatCompact(customersApi.customers.length) : 'No data yet' },
       { icon: HiOutlineClock, label: 'Pending revenue', value: pendingRevenueUsd > 0 ? formatCurrency(convertFromUsd(pendingRevenueUsd, currency), currency) : 'No data yet' },
+      { icon: HiOutlineCurrencyDollar, label: 'Expenses', value: dashboardStats.expenses > 0 ? formatCurrency(convertFromUsd(dashboardStats.expenses, currency), currency) : 'No data yet' },
+      { icon: HiOutlineChartBar, label: 'Profit', value: dashboardStats.profit !== 0 ? formatCurrency(convertFromUsd(dashboardStats.profit, currency), currency) : 'No data yet' },
       { icon: HiOutlineLifebuoy, label: 'Open support', value: ticketsApi.tickets.length ? formatCompact(openTickets.length) : 'No data yet' },
     ],
-    [currency, customersApi.customers.length, openTickets.length, pendingRevenueUsd, ticketsApi.tickets.length],
+    [currency, customersApi.customers.length, dashboardStats.expenses, dashboardStats.profit, openTickets.length, pendingRevenueUsd, ticketsApi.tickets.length],
   )
 
   return (

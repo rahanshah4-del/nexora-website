@@ -19,6 +19,16 @@ import { supportedCurrencies } from '../data/currency.js'
 import { usePreferences } from '../hooks/usePreferences.js'
 import { useReports } from '../hooks/useReports.js'
 import { useUser } from '../hooks/useUser.js'
+import {
+  calculateApprovedExpenses,
+  calculateProfit,
+  calculateRevenue,
+  expenseValue,
+  getInvoiceStatus,
+  invoiceValue,
+  isPaidRecord,
+  paymentValue,
+} from '../lib/calculations.js'
 import { convertFromUsd } from '../utils/currency.js'
 import { formatCurrency } from '../utils/format.js'
 
@@ -113,14 +123,6 @@ function percent(part, total) {
   const denominator = safeNumber(total)
   if (!denominator) return '0%'
   return `${Math.round((safeNumber(part) / denominator) * 100)}%`
-}
-
-function invoiceValue(invoice) {
-  return safeNumber(invoice.totalUsd ?? invoice.total ?? invoice.amountUsd ?? invoice.amount)
-}
-
-function paymentValue(payment) {
-  return safeNumber(payment.amountUsd ?? payment.amount)
 }
 
 function dealValue(deal) {
@@ -253,6 +255,7 @@ export default function ReportsPage() {
     const filtered = (list) => (Array.isArray(list) ? list.filter((item) => withinDateWindow(item, activeWindow)) : [])
     const invoices = filtered(reports.data.invoices)
     const payments = filtered(reports.data.payments)
+    const expenses = filtered(reports.data.expenses)
     const customers = filtered(reports.data.customers)
     const leads = filtered(reports.data.leads)
     const deals = filtered(reports.data.pipelines)
@@ -261,22 +264,26 @@ export default function ReportsPage() {
     const activityLogs = filtered(reports.data.activityLogs)
     const staff = filtered([...(reports.data.teamMembers || []), ...(reports.data.staff || [])])
 
-    const paidInvoices = invoices.filter((invoice) => String(invoice.status || '').toLowerCase() === 'paid')
-    const paidPayments = payments.filter((payment) => String(payment.paymentStatus || payment.status || '').toLowerCase() === 'paid')
-    const pendingInvoices = invoices.filter((invoice) => String(invoice.status || '').toLowerCase() === 'pending')
-    const overdueInvoices = invoices.filter((invoice) => String(invoice.status || '').toLowerCase() === 'overdue')
+    const paidInvoices = invoices.filter((invoice) => getInvoiceStatus(invoice) === 'paid')
+    const paidPayments = payments.filter(isPaidRecord)
+    const approvedExpenses = expenses.filter((expense) => ['approved', 'paid', 'completed'].includes(String(expense.approvalStatus || expense.status || '').toLowerCase()))
+    const pendingInvoices = invoices.filter((invoice) => getInvoiceStatus(invoice) === 'pending')
+    const overdueInvoices = invoices.filter((invoice) => getInvoiceStatus(invoice) === 'overdue')
     const activeCustomers = customers.filter((customer) => String(customer.status || '').toLowerCase() === 'active')
     const hotLeads = leads.filter((lead) => safeNumber(lead.score) >= 80 || String(lead.scoreType || '').toLowerCase().includes('hot'))
     const openTickets = tickets.filter((ticket) => String(ticket.status || '').toLowerCase() === 'open')
     const completedTasks = tasks.filter((task) => String(task.status || '').toLowerCase() === 'completed')
-    const totalRevenueUsd = paidInvoices.reduce((sum, invoice) => sum + invoiceValue(invoice), 0)
+    const totalRevenueUsd = calculateRevenue({ invoices, payments })
     const paymentRevenueUsd = paidPayments.reduce((sum, payment) => sum + paymentValue(payment), 0)
+    const expensesUsd = calculateApprovedExpenses(expenses)
+    const profitUsd = calculateProfit({ revenue: totalRevenueUsd, expenses: expensesUsd })
     const pipelineUsd = deals.reduce((sum, deal) => sum + dealValue(deal), 0)
     const customerSpendUsd = customers.reduce((sum, customer) => sum + safeNumber(customer.spendUsd ?? customer.spend ?? customer.totalSpendUsd), 0)
 
     return {
       invoices,
       payments,
+      expenses,
       customers,
       leads,
       deals,
@@ -285,6 +292,8 @@ export default function ReportsPage() {
       activityLogs,
       staff,
       paidInvoices,
+      paidPayments,
+      approvedExpenses,
       pendingInvoices,
       overdueInvoices,
       activeCustomers,
@@ -293,11 +302,14 @@ export default function ReportsPage() {
       completedTasks,
       totalRevenueUsd,
       paymentRevenueUsd,
+      expensesUsd,
+      profitUsd,
       pipelineUsd,
       customerSpendUsd,
       hasData:
         invoices.length ||
         payments.length ||
+        expenses.length ||
         customers.length ||
         leads.length ||
         deals.length ||
@@ -339,8 +351,10 @@ export default function ReportsPage() {
       ['Report date', reportDate],
       [],
       ['Report', 'Metric', 'Value'],
-      ['Revenue report', 'Paid invoice revenue', formatMoney(reportData.totalRevenueUsd, filters.currency)],
+      ['Revenue report', 'Total revenue', formatMoney(reportData.totalRevenueUsd, filters.currency)],
       ['Revenue report', 'Paid payment total', formatMoney(reportData.paymentRevenueUsd, filters.currency)],
+      ['Expense report', 'Approved expenses', formatMoney(reportData.expensesUsd, filters.currency)],
+      ['Profit report', 'Profit', formatMoney(reportData.profitUsd, filters.currency)],
       ['Sales report', 'Pipeline value', formatMoney(reportData.pipelineUsd, filters.currency)],
       ['Sales report', 'Deals', reportData.deals.length],
       ['Customer report', 'Customers', reportData.customers.length],
@@ -353,6 +367,7 @@ export default function ReportsPage() {
   )
 
   const invoiceRows = reportData.invoices.slice(0, 8)
+  const expenseRows = reportData.expenses.slice(0, 8)
   const leadRows = reportData.leads.slice(0, 8)
   const customerRows = reportData.customers.slice(0, 8)
   const activityRows = reportData.activityLogs.slice(0, 8)
@@ -539,6 +554,9 @@ export default function ReportsPage() {
           <ReportSection title="Executive summary" badge="Summary">
             <div className="grid gap-3 sm:grid-cols-2">
               <SummaryRow label="Lead pipeline" value={`${reportData.leads.length} leads / ${reportData.hotLeads.length} hot`} />
+              <SummaryRow label="Revenue" value={formatMoney(reportData.totalRevenueUsd, filters.currency)} />
+              <SummaryRow label="Approved expenses" value={formatMoney(reportData.expensesUsd, filters.currency)} />
+              <SummaryRow label="Profit" value={formatMoney(reportData.profitUsd, filters.currency)} />
               <SummaryRow label="Support tickets" value={`${reportData.tickets.length} total / ${reportData.openTickets.length} open`} />
               <SummaryRow label="Follow-up completion" value={`${reportData.completedTasks.length} completed / ${reportData.tasks.length} tasks`} />
               <SummaryRow label="Activity events" value={String(reportData.activityLogs.length)} />
@@ -561,6 +579,24 @@ export default function ReportsPage() {
             />
           </ReportSection>
         </div>
+
+        <ReportSection title="Expenses and profit" badge="Profit">
+          <div className="mb-4 grid gap-3 sm:grid-cols-3">
+            <SummaryRow label="Revenue" value={formatMoney(reportData.totalRevenueUsd, filters.currency)} />
+            <SummaryRow label="Expenses" value={formatMoney(reportData.expensesUsd, filters.currency)} />
+            <SummaryRow label="Profit" value={formatMoney(reportData.profitUsd, filters.currency)} />
+          </div>
+          <DataTable
+            rows={expenseRows}
+            empty="Approved expenses will appear here once submitted and reviewed."
+            columns={[
+              { key: 'title', label: 'Expense', render: (row) => safeText(row.title || row.name || row.category, 'Expense') },
+              { key: 'category', label: 'Category', render: (row) => safeText(row.category, 'General') },
+              { key: 'approvalStatus', label: 'Status', render: (row) => safeText(row.approvalStatus || row.status, 'Pending') },
+              { key: 'amount', label: 'Amount', render: (row) => formatMoney(expenseValue(row), filters.currency) },
+            ]}
+          />
+        </ReportSection>
 
         <div className="grid gap-5 xl:grid-cols-2">
           <ReportSection title="Leads report" badge="Leads">

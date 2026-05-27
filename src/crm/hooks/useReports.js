@@ -3,6 +3,7 @@ import { db } from '../lib/firebase.js'
 import { subscribeOwnedCollection, subscribeUserCollection } from '../lib/firestore.js'
 import { useWorkspaceAccess } from './useWorkspaceAccess.js'
 import { clientSafeMessage } from '../utils/messages.js'
+import { calculateApprovedExpenses, calculateProfit, calculateRevenue, getInvoiceStatus, isPaidRecord, paymentValue } from '../lib/calculations.js'
 
 const WORKSPACE_COLLECTIONS = [
   'leads',
@@ -10,6 +11,7 @@ const WORKSPACE_COLLECTIONS = [
   'customers',
   'invoices',
   'payments',
+  'expenses',
   'tasks',
   'teamMembers',
   'supportTickets',
@@ -49,10 +51,6 @@ function fmtDate(d) {
 function num(n) {
   const v = Number(n)
   return Number.isFinite(v) ? v : 0
-}
-
-function invoiceTotalUsd(inv) {
-  return num(inv.totalUsd ?? inv.total ?? 0)
 }
 
 function dealValueUsd(d) {
@@ -167,6 +165,7 @@ export function useReports() {
     const customers = data.customers
     const invoices = data.invoices
     const payments = data.payments
+    const expenses = data.expenses
     const tasks = data.tasks
     const teamMembers = data.teamMembers
     const staff = data.staff
@@ -176,15 +175,17 @@ export function useReports() {
     const activityLogs = data.activityLogs
     const upgradeRequests = data.upgradeRequests
 
-    const totalRevenueUsd = invoices.filter((i) => i.status === 'Paid').reduce((sum, i) => sum + invoiceTotalUsd(i), 0)
-    const pendingInvoices = invoices.filter((i) => i.status === 'Pending').length
+    const totalRevenueUsd = calculateRevenue({ invoices, payments })
+    const pendingInvoices = invoices.filter((i) => getInvoiceStatus(i) === 'pending').length
     const openTickets = tickets.filter((t) => t.status === 'Open').length
     const completedTasks = tasks.filter((t) => t.status === 'Completed').length
     const activeSubs = subscriptions.filter(isActiveSub).length
     const teamCount = teamMembers.length || staff.length
     const upgradeCount = upgradeRequests.length
 
-    const paidPaymentsUsd = payments.filter((p) => (p.paymentStatus || '') === 'Paid').reduce((sum, p) => sum + num(p.amountUsd ?? p.amount ?? 0), 0)
+    const paidPaymentsUsd = payments.filter(isPaidRecord).reduce((sum, p) => sum + paymentValue(p), 0)
+    const expensesUsd = calculateApprovedExpenses(expenses)
+    const profitUsd = calculateProfit({ revenue: totalRevenueUsd, expenses: expensesUsd })
     const pipelineValueUsd = deals.reduce((sum, d) => sum + dealValueUsd(d), 0)
     const overdueTasks = tasks.filter((t) => t.status === 'Overdue').length
     const hotLeads = leads.filter((l) => (l.scoreType || '').includes('Hot') || num(l.score) >= 80).length
@@ -196,6 +197,7 @@ export function useReports() {
         ...customers,
         ...invoices,
         ...payments,
+        ...expenses,
         ...tasks,
         ...teamMembers,
         ...staff,
@@ -216,6 +218,8 @@ export function useReports() {
         completedTasks,
         upgradeCount,
         teamCount,
+        expensesUsd,
+        profitUsd,
       },
       aggregates: {
         pipelineDeals: deals.length,
@@ -223,6 +227,8 @@ export function useReports() {
         hotLeads,
         overdueTasks,
         paidPaymentsUsd,
+        expensesUsd,
+        profitUsd,
         customersCount: customers.length,
         notificationsCount: notifications.length,
         activityCount: activityLogs.length,

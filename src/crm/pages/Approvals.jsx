@@ -26,9 +26,17 @@ function checkApprovalRouteStillInCrm(actionLabel) {
   }
 }
 
-function DetailsModal({ approval, onClose }) {
-  const details = approval?.row || {}
+function isInvoiceRow(row) {
+  return row?.sourceCollection === 'invoices'
+}
 
+function isPaidRow(row) {
+  return ['paid', 'rejected', 'cancelled', 'canceled'].includes(
+    String(row?.row?.paymentStatus || row?.row?.status || row?.status || '').toLowerCase(),
+  )
+}
+
+function DetailsModal({ approval, onClose }) {
   return (
     <AnimatePresence>
       {approval ? (
@@ -63,28 +71,17 @@ function DetailsModal({ approval, onClose }) {
                   ['Status', approval.status],
                   ['Submitted By', approval.submittedBy],
                   ['Amount', formatCurrency(approval.amount, approval.currency)],
+                  ['Amount Paid', formatCurrency(approval.amountPaid || 0, approval.currency)],
+                  ['Balance Due', formatCurrency(approval.balanceDue || 0, approval.currency)],
                   ['Date', approval.dateLabel],
                   ['Invoice', approval.invoiceNumber || approval.invoiceId || '—'],
-                  ['Source', approval.sourceCollection],
+                  ['Record Type', approval.type],
                 ].map(([label, value]) => (
                   <div key={label} className="glass-muted rounded-2xl p-4">
                     <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">{label}</p>
                     <p className="mt-1 break-words text-sm font-semibold text-slate-900 dark:text-white">{value || '—'}</p>
                   </div>
                 ))}
-              </div>
-
-              <div className="mt-4 rounded-2xl border border-slate-200/80 bg-slate-50/80 p-4 dark:border-white/10 dark:bg-slate-900/30">
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Raw details</p>
-                <pre className="mt-3 max-h-52 overflow-auto whitespace-pre-wrap break-words text-xs leading-5 text-slate-600 dark:text-slate-300">
-                  {JSON.stringify(
-                    Object.fromEntries(
-                      Object.entries(details).filter(([, value]) => typeof value !== 'function'),
-                    ),
-                    null,
-                    2,
-                  )}
-                </pre>
               </div>
 
               <div className="mt-5 flex flex-wrap gap-2">
@@ -103,6 +100,8 @@ function DetailsModal({ approval, onClose }) {
 function ConfirmModal({ action, approval, busy, onClose, onConfirm }) {
   const open = Boolean(action && approval)
   const isReject = action === 'reject'
+  const isMarkPaid = action === 'mark_paid'
+  const label = isReject ? 'Reject' : isMarkPaid ? 'Mark as Paid' : 'Approve'
 
   return (
     <AnimatePresence>
@@ -125,12 +124,13 @@ function ConfirmModal({ action, approval, busy, onClose, onConfirm }) {
             onClick={(event) => event.stopPropagation()}
           >
             <Card className="rounded-3xl p-4 sm:p-5">
-              <Badge variant={isReject ? 'danger' : 'success'}>{isReject ? 'Reject' : 'Approve'}</Badge>
+              <Badge variant={isReject ? 'danger' : 'success'}>{label}</Badge>
               <p className="mt-3 text-base font-semibold text-slate-950 dark:text-white">
-                {isReject ? 'Reject this approval request?' : 'Approve this request?'}
+                {isReject ? 'Reject this approval request?' : isMarkPaid ? 'Mark this invoice as paid?' : 'Approve this request?'}
               </p>
               <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
-                {approval.type} for {approval.customer} will be {isReject ? 'marked rejected' : 'approved'}.
+                {approval.type} for {approval.customer} will be{' '}
+                {isReject ? 'marked rejected' : isMarkPaid ? 'marked paid and recorded in payments' : 'approved'}.
               </p>
               <div className="mt-5 flex flex-wrap gap-2">
                 <Button
@@ -142,7 +142,7 @@ function ConfirmModal({ action, approval, busy, onClose, onConfirm }) {
                     onConfirm?.(event)
                   }}
                 >
-                  {busy ? 'Working…' : isReject ? 'Reject' : 'Approve'}
+                  {busy ? 'Working…' : label}
                 </Button>
                 <Button variant="subtle" className="rounded-2xl" type="button" disabled={busy} onClick={onClose}>
                   Cancel
@@ -177,11 +177,22 @@ export default function ApprovalsPage() {
   const columns = useMemo(
     () => [
       { key: 'type', header: 'Type', cell: (row) => <span className="font-semibold">{row.type}</span> },
-      { key: 'customer', header: 'Customer/Client' },
+      { key: 'invoiceNumber', header: 'Invoice Number', cell: (row) => row.invoiceNumber || row.invoiceId || '—' },
+      { key: 'customer', header: 'Customer' },
       {
         key: 'amount',
         header: 'Amount',
         cell: (row) => <span className="font-semibold">{formatCurrency(row.amount, row.currency)}</span>,
+      },
+      {
+        key: 'amountPaid',
+        header: 'Amount Paid',
+        cell: (row) => <span className="font-semibold">{formatCurrency(row.amountPaid || 0, row.currency)}</span>,
+      },
+      {
+        key: 'balanceDue',
+        header: 'Balance Due',
+        cell: (row) => <span className="font-semibold">{formatCurrency(row.balanceDue || 0, row.currency)}</span>,
       },
       { key: 'currency', header: 'Currency', cell: (row) => <Badge variant="info">{row.currency}</Badge> },
       {
@@ -192,8 +203,7 @@ export default function ApprovalsPage() {
           return <Badge variant={badge.variant}>{badge.label}</Badge>
         },
       },
-      { key: 'submittedBy', header: 'Submitted By' },
-      { key: 'dateLabel', header: 'Date' },
+      { key: 'dateLabel', header: 'Created Date' },
       {
         key: 'actions',
         header: 'Actions',
@@ -209,6 +219,19 @@ export default function ApprovalsPage() {
             >
               Approve
             </Button>
+            {isInvoiceRow(row) && !isPaidRow(row) ? (
+              <Button
+                variant="subtle"
+                className="h-8 rounded-xl px-3 text-xs"
+                type="button"
+                onClick={(event) => {
+                  event.preventDefault()
+                  setConfirm({ action: 'mark_paid', approval: row })
+                }}
+              >
+                Mark as Paid
+              </Button>
+            ) : null}
             <Button
               variant="subtle"
               className="h-8 rounded-xl border-rose-200 px-3 text-xs text-rose-700 hover:border-rose-300"
@@ -241,20 +264,27 @@ export default function ApprovalsPage() {
   async function runAction(event) {
     event?.preventDefault?.()
     if (!confirm.action || !confirm.approval) return
-    const actionLabel = confirm.action === 'approve' ? 'Approve' : 'Reject'
+    const actionLabel = confirm.action === 'approve' ? 'Approve' : confirm.action === 'mark_paid' ? 'Mark as Paid' : 'Reject'
     checkApprovalRouteStillInCrm(`${actionLabel} started`)
     setBusy(true)
     const res =
       confirm.action === 'approve'
         ? await approvals.approve(confirm.approval)
-        : await approvals.reject(confirm.approval)
+        : confirm.action === 'mark_paid'
+          ? await approvals.markPaid(confirm.approval)
+          : await approvals.reject(confirm.approval)
     setBusy(false)
     checkApprovalRouteStillInCrm(`${actionLabel} completed`)
 
     if (res?.ok) {
       setToast({
         tone: 'success',
-        message: confirm.action === 'approve' ? 'Approval completed' : 'Approval rejected',
+        message:
+          confirm.action === 'approve'
+            ? 'Approval completed'
+            : confirm.action === 'mark_paid'
+              ? 'Invoice marked paid'
+              : 'Approval rejected',
       })
       setConfirm({ action: null, approval: null })
       window.setTimeout(() => setToast(null), 1800)

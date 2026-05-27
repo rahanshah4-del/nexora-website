@@ -32,6 +32,7 @@ export const navItems = [
   { label: 'Team Management', to: '/app/team', icon: HiOutlineShieldCheck },
   { label: 'HR Dashboard', to: '/app/hr', icon: HiOutlineBriefcase },
   { label: 'Invoices', to: '/app/invoices', icon: HiOutlineDocumentText },
+  { label: 'Expenses', to: '/app/expenses', icon: HiOutlineDocumentText },
   { label: 'Approvals', to: '/app/approvals', icon: HiOutlineShieldCheck },
   { label: 'Subscriptions', to: '/app/subscriptions', icon: HiOutlineTag },
   { label: 'Support Tickets', to: '/app/support', icon: HiOutlineLifebuoy },

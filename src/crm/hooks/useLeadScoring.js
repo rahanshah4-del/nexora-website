@@ -75,7 +75,7 @@ export function computeLeadScore(lead) {
 }
 
 export function useLeadScoring() {
-  const { userId } = useUser()
+  const { workspaceId } = useUser()
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
   const [source, setSource] = useState(db ? 'firestore' : 'none')
@@ -91,7 +91,7 @@ export function useLeadScoring() {
       })
       return
     }
-    if (!userId) {
+    if (!workspaceId) {
       Promise.resolve().then(() => {
         setRows([])
         setSource('firestore')
@@ -103,7 +103,7 @@ export function useLeadScoring() {
 
     Promise.resolve().then(() => setLoading(true))
     const unsub = subscribeUserCollection(
-      userId,
+      workspaceId,
       'leads',
       (data) => {
         setRows(Array.isArray(data) ? data : [])
@@ -118,7 +118,7 @@ export function useLeadScoring() {
       },
     )
     return () => unsub()
-  }, [userId])
+  }, [workspaceId])
 
   const scored = useMemo(
     () =>

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { onSnapshot, query, serverTimestamp, where } from 'firebase/firestore'
+import { collection, doc, getDoc, onSnapshot, query, serverTimestamp, where, writeBatch } from 'firebase/firestore'
 import { db } from '../lib/firebase.js'
 import {
   collectionRef,
@@ -12,10 +12,15 @@ import {
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 import { useUser } from './useUser.js'
 import { clientSafeMessage } from '../utils/messages.js'
-
-function statusValue(value, fallback = 'pending') {
-  return String(value || fallback).trim().toLowerCase()
-}
+import {
+  calculateBalanceDue,
+  calculateInvoiceTotals,
+  getInvoiceStatus,
+  normalizeCurrency,
+  paymentValue,
+  statusValue,
+  toNumber,
+} from '../lib/calculations.js'
 
 function canRoleApprovePayments(userDoc) {
   const role = String(userDoc?.role || '').toLowerCase()
@@ -37,18 +42,21 @@ function normalizeClient(client) {
 }
 
 function normalizeInvoice(inv) {
+  const totals = calculateInvoiceTotals(inv)
+  const normalized = {
+    ...inv,
+    ...totals,
+    currency: normalizeCurrency(inv.currency),
+    paymentStatus: statusValue(inv.paymentStatus || inv.status, 'pending'),
+  }
   return {
+    ...normalized,
     id: inv.id || inv.invoiceNumber,
     clientId: inv.clientId || inv.customerId || '',
     invoiceNumber: inv.invoiceNumber || inv.id || 'INV-—',
     customerName: inv.customerName || '—',
     customerEmail: inv.customerEmail || '',
-    totalUsd: Number(inv.totalUsd ?? inv.total ?? 0) || 0,
-    total: Number(inv.total ?? inv.totalUsd ?? 0) || 0,
-    currency: inv.currency || 'PKR',
-    status: statusValue(inv.status, 'pending'),
-    paymentStatus: statusValue(inv.paymentStatus || inv.status, 'pending'),
-    amountPaid: Number(inv.amountPaid ?? inv.partialPaidAmount ?? 0) || 0,
+    status: getInvoiceStatus(normalized),
     dueDate: inv.dueDate || '—',
     createdAt: inv.createdAt || '—',
     paidAt: inv.paidAt || null,
@@ -60,9 +68,9 @@ function normalizePayment(p) {
     id: p.id || p.reference || `PAY-${Date.now()}`,
     invoiceId: p.invoiceId || '—',
     customerName: p.customerName || '—',
-    amountUsd: Number(p.amountUsd ?? p.amount ?? 0) || 0,
-    amount: Number(p.amount ?? p.amountUsd ?? 0) || 0,
-    currency: p.currency || 'PKR',
+    amountUsd: paymentValue(p),
+    amount: paymentValue(p),
+    currency: normalizeCurrency(p.currency),
     paymentMethod: p.paymentMethod || 'Manual',
     transactionId: p.transactionId || '',
     paymentReference: p.paymentReference || p.reference || '',
@@ -71,6 +79,27 @@ function normalizePayment(p) {
     paidAt: p.paidAt || p.createdAt || null,
     reference: p.paymentReference || p.reference || p.transactionId || '—',
   }
+}
+
+async function addInventoryAdjustments(batch, workspaceId, invoice, now) {
+  if (!db || !workspaceId || invoice.inventoryAdjustedAt || invoice.stockAdjustedAt) return false
+  const productItems = (invoice.items || []).filter((item) => item.productId && toNumber(item.quantity ?? item.qty, 0) > 0)
+  if (!productItems.length) return false
+
+  await Promise.all(
+    productItems.map(async (item) => {
+      const productRef = doc(db, workspaceCollectionPath(workspaceId, 'products'), item.productId)
+      const productSnap = await getDoc(productRef)
+      if (!productSnap.exists()) return
+      const currentStock = toNumber(productSnap.data().stockQuantity ?? productSnap.data().stock, 0)
+      batch.update(productRef, {
+        stockQuantity: Math.max(0, currentStock - toNumber(item.quantity ?? item.qty, 0)),
+        updatedAt: now,
+      })
+    }),
+  )
+
+  return true
 }
 
 export function useClientPortal() {
@@ -369,7 +398,7 @@ export function useClientPortal() {
         if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now' }
         const invoice = invoices.find((item) => item.id === invoiceId)
         if (!invoice) return { ok: false, error: 'Invoice not found' }
-        const amount = Number(payload.amount ?? invoice.total ?? 0)
+        const amount = toNumber(payload.amount ?? invoice.total, 0)
         if (!Number.isFinite(amount) || amount <= 0) return { ok: false, error: 'Enter a valid amount paid' }
         const paymentMethod = String(payload.paymentMethod || 'Manual Approval').trim()
         const transactionId = String(payload.transactionId || '').trim()
@@ -380,16 +409,26 @@ export function useClientPortal() {
           clients.find((client) => client.email && client.email === invoice.customerEmail)?.id ||
           ''
         try {
-          await patchUserDoc(workspaceId, 'invoices', invoiceId, {
-            status: 'paid',
-            paymentStatus: 'paid',
-            paidAt: serverTimestamp(),
+          const currentPaid = toNumber(invoice.amountPaid ?? invoice.partialPaidAmount, 0)
+          const nextPaid = Math.min(invoice.total, currentPaid + amount)
+          const fullyPaid = calculateBalanceDue(invoice.total, nextPaid) <= 0
+          const now = serverTimestamp()
+          const batch = writeBatch(db)
+          const stockAdjusted = fullyPaid ? await addInventoryAdjustments(batch, workspaceId, invoice, now) : false
+          batch.update(doc(db, workspaceCollectionPath(workspaceId, 'invoices'), invoiceId), {
+            status: fullyPaid ? 'paid' : 'partial',
+            paymentStatus: fullyPaid ? 'paid' : 'partial',
+            approvalStatus: fullyPaid ? 'approved' : invoice.approvalStatus || 'pending',
+            requiresApproval: fullyPaid ? false : invoice.requiresApproval ?? true,
+            paidAt: fullyPaid ? now : invoice.paidAt || null,
             approvedBy: userId,
-            approvedAt: serverTimestamp(),
-            amountPaid: amount,
-            balanceDue: Math.max((invoice.total || 0) - amount, 0),
+            approvedAt: now,
+            amountPaid: nextPaid,
+            partialPaidAmount: nextPaid,
+            balanceDue: calculateBalanceDue(invoice.total, nextPaid),
+            ...(stockAdjusted ? { inventoryAdjustedAt: now } : {}),
           })
-          await createUserDoc(workspaceId, 'payments', {
+          batch.set(doc(collection(db, workspaceCollectionPath(workspaceId, 'payments'))), {
             invoiceId,
             clientId,
             customerName: invoice.customerName || '',
@@ -401,18 +440,27 @@ export function useClientPortal() {
             paymentReference,
             reference: paymentReference || transactionId || invoice.invoiceNumber || invoiceId,
             notes,
-            paymentStatus: 'paid',
+            paymentStatus: fullyPaid ? 'paid' : 'partial',
+            status: fullyPaid ? 'paid' : 'partial',
             approvedBy: userId,
-            approvedAt: serverTimestamp(),
-            paidAt: serverTimestamp(),
+            approvedAt: now,
+            paidAt: now,
+            ownerId: workspaceId,
+            userId: workspaceId,
+            workspaceId,
+            createdAt: now,
+            updatedAt: now,
           })
+          await batch.commit()
           await logActivity({
             workspaceId,
             userId,
             ...userActivityInfo(userDoc, firebaseUser),
-            action: 'Payment approved',
+            action: fullyPaid ? 'Payment approved' : 'Partial payment recorded',
             module: 'Client Portal',
-            description: `${invoice.invoiceNumber || invoiceId} was marked as paid.`,
+            description: fullyPaid
+              ? `${invoice.invoiceNumber || invoiceId} was marked as paid.`
+              : `${amount} ${payload.currency || invoice.currency || 'PKR'} was recorded for ${invoice.invoiceNumber || invoiceId}.`,
             targetId: invoiceId,
             targetName: invoice.invoiceNumber || invoiceId,
             metadata: { amount, currency: payload.currency || invoice.currency || 'PKR', paymentMethod, clientId },

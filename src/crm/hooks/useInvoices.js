@@ -1,39 +1,36 @@
 import { useEffect, useMemo, useState } from 'react'
-import { serverTimestamp } from 'firebase/firestore'
+import { collection, doc, getDoc, serverTimestamp, writeBatch } from 'firebase/firestore'
 import { db } from '../lib/firebase.js'
-import { createUserDoc, patchUserDoc, subscribeUserCollection } from '../lib/firestore.js'
+import { createUserDoc, patchUserDoc, subscribeUserCollection, workspaceCollectionPath } from '../lib/firestore.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 import { useUser } from './useUser.js'
 import { clientSafeMessage } from '../utils/messages.js'
-
-function statusValue(value, fallback = 'pending') {
-  return String(value || fallback).trim().toLowerCase()
-}
+import {
+  calculateBalanceDue,
+  calculateInvoiceTotals,
+  getInvoiceStatus,
+  normalizeCurrency,
+  paymentValue,
+  statusValue,
+  toNumber,
+} from '../lib/calculations.js'
 
 function normalizeInvoice(inv) {
-  const subtotal = Number(inv.subtotal ?? inv.subtotalUsd ?? 0) || 0
-  const discount = Number(inv.discount ?? 0) || 0
-  const taxableAmount = Number(inv.taxableAmount ?? Math.max(subtotal - discount, 0)) || 0
-  const taxAmount = Number(inv.taxAmount ?? inv.taxAmountUsd ?? 0) || 0
-  const total = Number(inv.total ?? inv.totalUsd ?? 0) || 0
-  const amountPaid = Number(inv.amountPaid ?? inv.partialPaidAmount ?? 0) || 0
-  return {
+  const calculated = calculateInvoiceTotals(inv)
+  const normalized = {
     ...inv,
-    items: Array.isArray(inv.items) ? inv.items : [],
-    status: statusValue(inv.status, 'pending'),
+    ...calculated,
+    currency: normalizeCurrency(inv.currency),
     paymentStatus: statusValue(inv.paymentStatus || inv.status, 'pending'),
-    currency: inv.currency || 'PKR',
-    subtotal,
-    discount,
-    taxableAmount,
-    taxAmount,
-    total,
-    subtotalUsd: subtotal,
-    taxAmountUsd: taxAmount,
-    totalUsd: total,
-    amountPaid,
-    partialPaidAmount: amountPaid,
-    balanceDue: Math.max(total - amountPaid, 0),
+    approvalStatus: statusValue(inv.approvalStatus, 'pending'),
+    requiresApproval: inv.requiresApproval ?? true,
+  }
+  return {
+    ...normalized,
+    status: getInvoiceStatus(normalized),
+    subtotalUsd: normalized.subtotal,
+    taxAmountUsd: normalized.taxAmount,
+    totalUsd: normalized.total,
   }
 }
 
@@ -43,14 +40,35 @@ function normalizePayment(payment) {
     id: payment.id,
     invoiceId: payment.invoiceId || payment.invoiceNumber || '—',
     customerName: payment.customerName || '—',
-    amount: Number(payment.amount ?? payment.amountUsd ?? 0) || 0,
-    amountUsd: Number(payment.amountUsd ?? payment.amount ?? 0) || 0,
-    currency: payment.currency || 'PKR',
+    amount: paymentValue(payment),
+    amountUsd: paymentValue(payment),
+    currency: normalizeCurrency(payment.currency),
     paymentMethod: payment.paymentMethod || 'Manual Approval',
     paymentStatus: statusValue(payment.paymentStatus || payment.status, 'pending'),
     paidAt: payment.paidAt || payment.createdAt || null,
     reference: payment.reference || payment.invoiceNumber || '—',
   }
+}
+
+async function addInventoryAdjustments(batch, workspaceId, invoice, now) {
+  if (!db || !workspaceId || invoice.inventoryAdjustedAt || invoice.stockAdjustedAt) return false
+  const productItems = (invoice.items || []).filter((item) => item.productId && toNumber(item.quantity ?? item.qty, 0) > 0)
+  if (!productItems.length) return false
+
+  await Promise.all(
+    productItems.map(async (item) => {
+      const productRef = doc(db, workspaceCollectionPath(workspaceId, 'products'), item.productId)
+      const productSnap = await getDoc(productRef)
+      if (!productSnap.exists()) return
+      const currentStock = toNumber(productSnap.data().stockQuantity ?? productSnap.data().stock, 0)
+      batch.update(productRef, {
+        stockQuantity: Math.max(0, currentStock - toNumber(item.quantity ?? item.qty, 0)),
+        updatedAt: now,
+      })
+    }),
+  )
+
+  return true
 }
 
 function canRoleApprovePayments(role, userDoc) {
@@ -162,10 +180,16 @@ export function useInvoices() {
             currency: invoice.currency || 'PKR',
             status: 'pending',
             paymentStatus: 'pending',
+            approvalStatus: 'pending',
+            requiresApproval: true,
+            amountPaid: 0,
+            partialPaidAmount: 0,
+            balanceDue: invoice.total,
             dueDate: invoice.dueDate || '—',
             recurring: Boolean(invoice.recurring),
             notes: invoice.notes || '',
             createdBy: userId,
+            createdAt: serverTimestamp(),
             subtotalUsd: invoice.subtotal,
             taxAmountUsd: invoice.taxAmount,
             totalUsd: invoice.total,
@@ -195,29 +219,45 @@ export function useInvoices() {
         if (!invoice) return { ok: false, error: 'Invoice not found' }
         try {
           const paymentMethod = options.paymentMethod || 'Manual Approval'
-          await patchUserDoc(workspaceId, 'invoices', id, {
+          const now = serverTimestamp()
+          const batch = writeBatch(db)
+          const invoiceRef = doc(db, workspaceCollectionPath(workspaceId, 'invoices'), id)
+          const stockAdjusted = await addInventoryAdjustments(batch, workspaceId, invoice, now)
+          batch.update(invoiceRef, {
             paymentStatus: 'paid',
             status: 'paid',
-            paidAt: serverTimestamp(),
+            approvalStatus: 'approved',
+            requiresApproval: false,
+            paidAt: now,
             approvedBy: userId,
-            approvedAt: serverTimestamp(),
+            approvedAt: now,
             amountPaid: invoice.total,
             partialPaidAmount: invoice.total,
             balanceDue: 0,
+            ...(stockAdjusted ? { inventoryAdjustedAt: now } : {}),
           })
-          await createUserDoc(workspaceId, 'payments', {
+          const paymentRef = doc(collection(db, workspaceCollectionPath(workspaceId, 'payments')))
+          batch.set(paymentRef, {
             invoiceId: id,
             invoiceNumber: invoice.invoiceNumber || id,
             customerName: invoice.customerName || '',
             amount: invoice.total,
+            amountPaid: invoice.total,
             amountUsd: invoice.total,
             currency: invoice.currency || 'PKR',
             paymentMethod,
             paymentStatus: 'paid',
+            status: 'paid',
             approvedBy: userId,
-            approvedAt: serverTimestamp(),
-            paidAt: serverTimestamp(),
+            approvedAt: now,
+            paidAt: now,
+            ownerId: workspaceId,
+            userId: workspaceId,
+            workspaceId,
+            createdAt: now,
+            updatedAt: now,
           })
+          await batch.commit()
           await logActivity({
             workspaceId,
             userId,
@@ -244,6 +284,8 @@ export function useInvoices() {
           await patchUserDoc(workspaceId, 'invoices', id, {
             paymentStatus: 'rejected',
             status: 'rejected',
+            approvalStatus: 'rejected',
+            requiresApproval: false,
             rejectedAt: serverTimestamp(),
             rejectedBy: userId,
           })
@@ -272,23 +314,31 @@ export function useInvoices() {
         const amount = Number(options.amount || 0)
         if (!Number.isFinite(amount) || amount <= 0) return { ok: false, error: 'Enter a valid partial payment amount' }
         try {
-          const currentPaid = Number(invoice.amountPaid ?? invoice.partialPaidAmount ?? 0) || 0
+          const currentPaid = toNumber(invoice.amountPaid ?? invoice.partialPaidAmount, 0)
           const nextPaid = Math.min(invoice.total, currentPaid + amount)
           const fullyPaid = nextPaid >= invoice.total
           const paymentMethod = options.paymentMethod || 'Manual Approval'
-          await patchUserDoc(workspaceId, 'invoices', id, {
+          const now = serverTimestamp()
+          const batch = writeBatch(db)
+          const invoiceRef = doc(db, workspaceCollectionPath(workspaceId, 'invoices'), id)
+          const stockAdjusted = fullyPaid ? await addInventoryAdjustments(batch, workspaceId, invoice, now) : false
+          batch.update(invoiceRef, {
             paymentStatus: fullyPaid ? 'paid' : 'partial',
             status: fullyPaid ? 'paid' : 'partial',
+            approvalStatus: fullyPaid ? 'approved' : invoice.approvalStatus || 'pending',
+            requiresApproval: fullyPaid ? false : invoice.requiresApproval ?? true,
             amountPaid: nextPaid,
             partialPaidAmount: nextPaid,
-            balanceDue: Math.max(invoice.total - nextPaid, 0),
-            paidAt: fullyPaid ? serverTimestamp() : invoice.paidAt || null,
+            balanceDue: calculateBalanceDue(invoice.total, nextPaid),
+            paidAt: fullyPaid ? now : invoice.paidAt || null,
             approvedBy: fullyPaid ? userId : invoice.approvedBy || null,
-            approvedAt: fullyPaid ? serverTimestamp() : invoice.approvedAt || null,
-            lastPaymentAt: serverTimestamp(),
+            approvedAt: fullyPaid ? now : invoice.approvedAt || null,
+            lastPaymentAt: now,
             lastPaymentBy: userId,
+            ...(stockAdjusted ? { inventoryAdjustedAt: now } : {}),
           })
-          await createUserDoc(workspaceId, 'payments', {
+          const paymentRef = doc(collection(db, workspaceCollectionPath(workspaceId, 'payments')))
+          batch.set(paymentRef, {
             invoiceId: id,
             invoiceNumber: invoice.invoiceNumber || id,
             customerName: invoice.customerName || '',
@@ -297,10 +347,17 @@ export function useInvoices() {
             currency: invoice.currency || 'PKR',
             paymentMethod,
             paymentStatus: fullyPaid ? 'paid' : 'partial',
+            status: fullyPaid ? 'paid' : 'partial',
             approvedBy: userId,
-            approvedAt: serverTimestamp(),
-            paidAt: serverTimestamp(),
+            approvedAt: now,
+            paidAt: now,
+            ownerId: workspaceId,
+            userId: workspaceId,
+            workspaceId,
+            createdAt: now,
+            updatedAt: now,
           })
+          await batch.commit()
           await logActivity({
             workspaceId,
             userId,

@@ -19,7 +19,7 @@ export const planCatalog = [
     monthlyPkr: 2000,
     yearlyPkr: 24000,
     priceLabel: 'PKR 2000/month',
-    features: ['Everything in Free', 'Products', 'More customers/leads', 'Payments', 'Reports', 'Activity Logs', 'Basic Team Management', 'Support Tickets'],
+    features: ['Everything in Free', 'Products', 'More customers/leads', 'Payments', 'Expenses', 'Reports', 'Activity Logs', 'Basic Team Management', 'Support Tickets'],
   },
   {
     id: 'Business',
@@ -71,6 +71,7 @@ export const moduleCatalog = [
   { key: 'hr', label: 'HR Dashboard', route: '/app/hr', minPlan: 'Business' },
   { key: 'invoices', label: 'Invoices', route: '/app/invoices', minPlan: 'Free' },
   { key: 'payments', label: 'Payments', route: '/app/invoices', minPlan: 'Starter' },
+  { key: 'expenses', label: 'Expenses', route: '/app/expenses', minPlan: 'Starter' },
   { key: 'approvals', label: 'Approval Center', route: '/app/approvals', minPlan: 'Business' },
   { key: 'subscriptions', label: 'Subscriptions', route: '/app/subscriptions', alwaysEnabled: true },
   { key: 'support', label: 'Support Tickets', route: '/app/support', minPlan: 'Starter' },
@@ -90,11 +91,11 @@ export const businessTypes = [
 ]
 
 const recommendationMap = {
-  'Restaurant / POS': ['dashboard', 'customers', 'products', 'invoices', 'payments', 'reports', 'team', 'support'],
-  'Transport / Rental': ['dashboard', 'customers', 'leads', 'invoices', 'payments', 'reports', 'activity'],
+  'Restaurant / POS': ['dashboard', 'customers', 'products', 'invoices', 'payments', 'expenses', 'reports', 'team', 'support'],
+  'Transport / Rental': ['dashboard', 'customers', 'leads', 'invoices', 'payments', 'expenses', 'reports', 'activity'],
   'Software Agency': ['dashboard', 'clientPortal', 'customers', 'leads', 'salesPipeline', 'followUps', 'invoices', 'reports', 'support'],
-  'Retail / Inventory': ['dashboard', 'customers', 'products', 'invoices', 'reports', 'team'],
-  'General Business': ['dashboard', 'customers', 'leads', 'invoices', 'reports'],
+  'Retail / Inventory': ['dashboard', 'customers', 'products', 'invoices', 'expenses', 'reports', 'team'],
+  'General Business': ['dashboard', 'customers', 'leads', 'invoices', 'expenses', 'reports'],
 }
 
 export const alwaysEnabledModules = ['dashboard', 'settings', 'subscriptions']

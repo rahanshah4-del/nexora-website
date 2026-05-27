@@ -18,7 +18,7 @@ import { clientSafeMessage } from '../utils/messages.js'
 
 export default function LeadsPage() {
   const scoring = useLeadScoring()
-  const { userId } = useUser()
+  const { userId, workspaceId } = useUser()
   const [createOpen, setCreateOpen] = useState(false)
   const [toast, setToast] = useState(null)
 
@@ -84,7 +84,7 @@ export default function LeadsPage() {
         open={createOpen}
         onClose={() => setCreateOpen(false)}
         onCreate={async (payload) => {
-          if (!userId) {
+          if (!userId || !workspaceId) {
             setToast({ tone: 'error', message: 'Please login first' })
             window.setTimeout(() => setToast(null), 2400)
             return
@@ -104,7 +104,7 @@ export default function LeadsPage() {
           }
 
           try {
-            await createUserDoc(userId, 'leads', {
+            await createUserDoc(workspaceId, 'leads', {
               name,
               email,
               phone: payload.phone || '',

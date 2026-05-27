@@ -3,6 +3,7 @@ import { db } from '../lib/firebase.js'
 import { subscribeUserCollection } from '../lib/firestore.js'
 import { useUser } from './useUser.js'
 import { clientSafeMessage } from '../utils/messages.js'
+import { getDashboardStats, getInvoiceStatus, invoiceValue, isPaidRecord, paymentValue } from '../lib/calculations.js'
 
 function num(n) {
   const v = Number(n)
@@ -26,17 +27,17 @@ function monthLabel(value) {
 }
 
 function buildMonthlyRevenue(invoices, payments) {
-  const paidPayments = payments.filter((p) => (p.paymentStatus || p.status || '') === 'Paid')
+  const paidPayments = payments.filter(isPaidRecord)
   const sourceRows = paidPayments.length
     ? paidPayments.map((p) => ({
         date: p.paidAt || p.createdAt,
-        amountUsd: p.amountUsd ?? p.amount ?? 0,
+        amountUsd: paymentValue(p),
       }))
     : invoices
-        .filter((i) => (i.status || '') === 'Paid')
+        .filter((i) => getInvoiceStatus(i) === 'paid')
         .map((i) => ({
           date: i.paidAt || i.createdAt || i.dueDate,
-          amountUsd: i.totalUsd ?? i.total ?? 0,
+          amountUsd: invoiceValue(i),
         }))
 
   const grouped = new Map()
@@ -75,13 +76,15 @@ function isConvertedLead(lead) {
 }
 
 export function useAnalytics({ dateRange = '30d' } = {}) {
-  const { userId } = useUser()
+  const { workspaceId } = useUser()
   const [loading, setLoading] = useState(true)
   const [source, setSource] = useState(db ? 'firestore' : 'none')
   const [error, setError] = useState('')
 
   const [invoices, setInvoices] = useState([])
   const [payments, setPayments] = useState([])
+  const [customers, setCustomers] = useState([])
+  const [expenses, setExpenses] = useState([])
   const [leads, setLeads] = useState([])
   const [team, setTeam] = useState([])
 
@@ -94,10 +97,12 @@ export function useAnalytics({ dateRange = '30d' } = {}) {
       })
       return
     }
-    if (!userId) {
+    if (!workspaceId) {
       Promise.resolve().then(() => {
         setInvoices([])
         setPayments([])
+        setCustomers([])
+        setExpenses([])
         setLeads([])
         setTeam([])
         setLoading(false)
@@ -110,11 +115,13 @@ export function useAnalytics({ dateRange = '30d' } = {}) {
     Promise.resolve().then(() => setLoading(true))
     const unsubs = []
     unsubs.push(
-      subscribeUserCollection(userId, 'invoices', (d) => setInvoices(d), (e) => setError(clientSafeMessage(e, 'Unable to load invoices.'))),
+      subscribeUserCollection(workspaceId, 'invoices', (d) => setInvoices(d), (e) => setError(clientSafeMessage(e, 'Unable to load invoices.'))),
     )
-    unsubs.push(subscribeUserCollection(userId, 'payments', (d) => setPayments(d)))
-    unsubs.push(subscribeUserCollection(userId, 'leads', (d) => setLeads(d)))
-    unsubs.push(subscribeUserCollection(userId, 'teamMembers', (d) => setTeam(d)))
+    unsubs.push(subscribeUserCollection(workspaceId, 'payments', (d) => setPayments(d)))
+    unsubs.push(subscribeUserCollection(workspaceId, 'customers', (d) => setCustomers(d)))
+    unsubs.push(subscribeUserCollection(workspaceId, 'expenses', (d) => setExpenses(d)))
+    unsubs.push(subscribeUserCollection(workspaceId, 'leads', (d) => setLeads(d)))
+    unsubs.push(subscribeUserCollection(workspaceId, 'teamMembers', (d) => setTeam(d)))
 
     // Date-range filtering stays client-side for the current dashboard view.
     Promise.resolve().then(() => {
@@ -122,11 +129,11 @@ export function useAnalytics({ dateRange = '30d' } = {}) {
       setSource('firestore')
     })
     return () => unsubs.forEach((u) => u?.())
-  }, [userId])
+  }, [workspaceId])
 
   const computed = useMemo(() => {
-    const pendingInvoices = invoices.filter((i) => (i.status || '') === 'Pending').length
-    const overdueInvoices = invoices.filter((i) => (i.status || '') === 'Overdue').length
+    const pendingInvoices = invoices.filter((i) => getInvoiceStatus(i) === 'pending').length
+    const overdueInvoices = invoices.filter((i) => getInvoiceStatus(i) === 'overdue').length
     const monthlyRevenue = buildMonthlyRevenue(invoices, payments)
     const salesGrowth = buildSalesGrowth(monthlyRevenue)
     const leadSources = buildLeadSources(leads)
@@ -142,12 +149,11 @@ export function useAnalytics({ dateRange = '30d' } = {}) {
       .sort((a, b) => (b.performanceScore ?? 0) - (a.performanceScore ?? 0))
       .slice(0, 6)
 
-    const totalRevenueUsd = invoices
-      .filter((i) => (i.status || '') === 'Paid')
-      .reduce((s, i) => s + num(i.totalUsd ?? i.total ?? 0), 0)
-    const totalCustomers = 0
-    const activeLeads = leads.length
-    const monthlySales = payments.filter((p) => (p.paymentStatus || '') === 'Paid').length
+    const dashboardStats = getDashboardStats({ invoices, payments, customers, leads, expenses })
+    const totalRevenueUsd = dashboardStats.totalRevenue
+    const totalCustomers = dashboardStats.totalCustomers
+    const activeLeads = dashboardStats.activeLeads
+    const monthlySales = dashboardStats.monthlySales
     const convertedLeads = leads.filter(isConvertedLead).length
     const conversionRatePct = activeLeads > 0 ? (convertedLeads / activeLeads) * 100 : 0
     const latestGrowthPct = num(salesGrowth.at(-1)?.growthPct)
@@ -172,7 +178,7 @@ export function useAnalytics({ dateRange = '30d' } = {}) {
       topStaff,
       pendingInvoices,
     }
-  }, [invoices, payments, leads, team])
+  }, [invoices, payments, customers, expenses, leads, team])
 
   return { ...computed, loading, source, error, dateRange }
 }

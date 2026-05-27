@@ -22,7 +22,7 @@ function normalizeTicket(t) {
 }
 
 export function useSupportTickets() {
-  const { userId } = useUser()
+  const { workspaceId } = useUser()
   const [tickets, setTickets] = useState([])
   const [loading, setLoading] = useState(true)
   const [source, setSource] = useState(db ? 'firestore' : 'none')
@@ -38,7 +38,7 @@ export function useSupportTickets() {
       })
       return
     }
-    if (!userId) {
+    if (!workspaceId) {
       Promise.resolve().then(() => {
         setTickets([])
         setSource('firestore')
@@ -52,7 +52,7 @@ export function useSupportTickets() {
     Promise.resolve().then(() => setError(''))
 
     const unsub = subscribeUserCollection(
-      userId,
+      workspaceId,
       'supportTickets',
       (rows) => {
         setTickets((Array.isArray(rows) ? rows : []).map(normalizeTicket))
@@ -68,7 +68,7 @@ export function useSupportTickets() {
     )
 
     return () => unsub?.()
-  }, [userId])
+  }, [workspaceId])
 
   const stats = useMemo(() => {
     const byStatus = tickets.reduce((acc, t) => {
@@ -92,7 +92,7 @@ export function useSupportTickets() {
       stats,
       async createTicket(payload) {
         const ticket = normalizeTicket(payload)
-        if (!userId) return { ok: false, error: 'Please login first' }
+        if (!workspaceId) return { ok: false, error: 'Please login first' }
         const tno = String(ticket.ticketNumber || '').trim()
         const name = String(ticket.customerName || '').trim()
         const email = String(ticket.customerEmail || '').trim()
@@ -108,7 +108,7 @@ export function useSupportTickets() {
           return { ok: false, error: 'Secure Cloud Sync is not available right now' }
         }
         try {
-          await createUserDoc(userId, 'supportTickets', {
+          await createUserDoc(workspaceId, 'supportTickets', {
             ticketNumber: tno,
             customerName: name,
             customerEmail: email,
@@ -126,8 +126,8 @@ export function useSupportTickets() {
       },
       async updateTicket(id, patch) {
         setTickets((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch, updatedAt: new Date().toISOString().slice(0, 10) } : t)))
-        if (!db || !userId || source !== 'firestore') return
-        await patchUserDoc(userId, 'supportTickets', id, patch)
+        if (!db || !workspaceId || source !== 'firestore') return
+        await patchUserDoc(workspaceId, 'supportTickets', id, patch)
       },
       async addComment(id, comment) {
         const createdAt = new Date().toISOString().slice(0, 10)
@@ -138,13 +138,13 @@ export function useSupportTickets() {
               : t,
           ),
         )
-        if (!db || !userId || source !== 'firestore') return
+        if (!db || !workspaceId || source !== 'firestore') return
         const current = tickets.find((t) => t.id === id)
         const next = [...(current?.comments || []), { id: `c_${Date.now()}`, ...comment, createdAt }]
-        await patchUserDoc(userId, 'supportTickets', id, { comments: next })
+        await patchUserDoc(workspaceId, 'supportTickets', id, { comments: next })
       },
     }),
-    [tickets, loading, source, error, stats, userId],
+    [tickets, loading, source, error, stats, workspaceId],
   )
 
   return api

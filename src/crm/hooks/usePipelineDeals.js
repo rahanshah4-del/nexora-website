@@ -5,7 +5,7 @@ import { useUser } from './useUser.js'
 import { clientSafeMessage } from '../utils/messages.js'
 
 export function usePipelineDeals() {
-  const { userId } = useUser()
+  const { workspaceId } = useUser()
   const [deals, setDeals] = useState([])
   const [source, setSource] = useState(db ? 'firestore' : 'none')
   const [loading, setLoading] = useState(true)
@@ -21,7 +21,7 @@ export function usePipelineDeals() {
       })
       return
     }
-    if (!userId) {
+    if (!workspaceId) {
       Promise.resolve().then(() => {
         setDeals([])
         setSource('firestore')
@@ -32,7 +32,7 @@ export function usePipelineDeals() {
     }
     Promise.resolve().then(() => setLoading(true))
     const unsub = subscribeUserCollection(
-      userId,
+      workspaceId,
       'pipelines',
       (rows) => {
         setDeals(Array.isArray(rows) ? rows : [])
@@ -47,7 +47,7 @@ export function usePipelineDeals() {
       },
     )
     return () => unsub()
-  }, [userId])
+  }, [workspaceId])
 
   const api = useMemo(
     () => ({
@@ -57,35 +57,35 @@ export function usePipelineDeals() {
       error,
       async moveDeal(id, stage) {
         setDeals((arr) => arr.map((d) => (d.id === id ? { ...d, stage } : d)))
-        if (!db || !userId) return
-        await patchUserDoc(userId, 'pipelines', id, { stage })
+        if (!db || !workspaceId) return
+        await patchUserDoc(workspaceId, 'pipelines', id, { stage })
       },
       async saveDeal(deal) {
         setDeals((arr) => arr.map((d) => (d.id === deal.id ? deal : d)))
-        if (!db || !userId) return
-        await patchUserDoc(userId, 'pipelines', deal.id, deal)
+        if (!db || !workspaceId) return
+        await patchUserDoc(workspaceId, 'pipelines', deal.id, deal)
       },
       async deleteDeal(deal) {
         setDeals((arr) => arr.filter((d) => d.id !== deal.id))
-        if (!db || !userId) return
-        await removeUserDoc(userId, 'pipelines', deal.id)
+        if (!db || !workspaceId) return
+        await removeUserDoc(workspaceId, 'pipelines', deal.id)
       },
       async createDeal(payload) {
-        if (!userId) return { ok: false, error: 'Please login first' }
+        if (!workspaceId) return { ok: false, error: 'Please login first' }
         if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now' }
         const title = String(payload.title || '').trim()
         const customerName = String(payload.customerName || '').trim()
         if (!title) return { ok: false, error: 'Deal title is required' }
         if (!customerName) return { ok: false, error: 'Customer name is required' }
         try {
-          await createUserDoc(userId, 'pipelines', { ...payload, title, customerName })
+          await createUserDoc(workspaceId, 'pipelines', { ...payload, title, customerName })
           return { ok: true }
         } catch (e) {
           return { ok: false, error: clientSafeMessage(e, 'Unable to create deal.') }
         }
       },
     }),
-    [deals, source, loading, error, userId],
+    [deals, source, loading, error, workspaceId],
   )
 
   return api

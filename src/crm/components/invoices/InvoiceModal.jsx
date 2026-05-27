@@ -9,7 +9,7 @@ import CurrencySelector from './CurrencySelector.jsx'
 import { formatCurrency } from '../../utils/format.js'
 
 function calcSubtotal(items) {
-  return items.reduce((sum, it) => sum + (Number(it.qty) || 0) * (Number(it.price) || 0), 0)
+  return items.reduce((sum, it) => sum + (Number(it.quantity ?? it.qty) || 0) * (Number(it.price) || 0), 0)
 }
 
 function createBlankInvoice() {
@@ -20,7 +20,7 @@ function createBlankInvoice() {
     customerName: '',
     customerEmail: '',
     customerPhone: '',
-    items: [{ productId: '', name: '', sku: '', qty: 1, price: 0 }],
+    items: [{ productId: '', name: '', sku: '', quantity: 1, qty: 1, price: 0 }],
     taxRate: 0,
     discount: 0,
     currency: 'PKR',
@@ -64,11 +64,11 @@ function InvoiceModal({
 
   const totals = useMemo(() => {
     const subtotal = calcSubtotal(newInvoice.items)
-    const discount = Math.min(Number(newInvoice.discount || 0), subtotal)
-    const taxableAmount = Math.max(subtotal - discount, 0)
-    const taxAmount = taxableAmount * ((Number(newInvoice.taxRate) || 0) / 100)
-    const total = taxableAmount + taxAmount
-    return { subtotal, discount, taxableAmount, taxAmount, total }
+    const taxRate = Math.max(Number(newInvoice.taxRate) || 0, 0)
+    const taxAmount = subtotal * (taxRate / 100)
+    const discount = Math.min(Math.max(Number(newInvoice.discount || 0), 0), subtotal + taxAmount)
+    const total = Math.max(subtotal + taxAmount - discount, 0)
+    return { subtotal, discount, taxableAmount: subtotal, taxRate, taxAmount, total, amountPaid: 0, balanceDue: total }
   }, [newInvoice])
 
   function updateItem(index, patch) {
@@ -179,7 +179,7 @@ function InvoiceModal({
                         <div key={idx} className="glass-muted flex items-center justify-between gap-3 rounded-2xl p-3">
                           <span className="text-sm font-semibold text-slate-900 dark:text-white">{it.name}</span>
                           <span className="text-xs text-slate-600 dark:text-slate-300">
-                            {it.qty} × {formatCurrency(it.price ?? it.priceUsd ?? 0, draft.currency || currency || 'PKR')}
+                            {it.quantity ?? it.qty} × {formatCurrency(it.price ?? it.priceUsd ?? 0, draft.currency || currency || 'PKR')}
                           </span>
                         </div>
                       ))}
@@ -268,7 +268,12 @@ function InvoiceModal({
                         variant="subtle"
                         className="rounded-xl px-3 py-2 text-xs"
                         type="button"
-                        onClick={() => setNewInvoice((s) => ({ ...s, items: [...s.items, { productId: '', name: '', sku: '', qty: 1, price: 0 }] }))}
+                        onClick={() =>
+                          setNewInvoice((s) => ({
+                            ...s,
+                            items: [...s.items, { productId: '', name: '', sku: '', quantity: 1, qty: 1, price: 0 }],
+                          }))
+                        }
                       >
                         Add Item
                       </Button>
@@ -292,8 +297,11 @@ function InvoiceModal({
                             />
                             <Input
                               inputMode="numeric"
-                              value={item.qty}
-                              onChange={(event) => updateItem(index, { qty: Number(event.target.value || 0) })}
+                              value={item.quantity ?? item.qty}
+                              onChange={(event) => {
+                                const quantity = Number(event.target.value || 0)
+                                updateItem(index, { quantity, qty: quantity })
+                              }}
                             />
                             <Input
                               inputMode="decimal"
@@ -359,12 +367,16 @@ function InvoiceModal({
                         taxableAmount: totals.taxableAmount,
                         taxAmount: totals.taxAmount,
                         total: totals.total,
+                        amountPaid: totals.amountPaid,
+                        balanceDue: totals.balanceDue,
                         subtotalUsd: totals.subtotal,
                         taxAmountUsd: totals.taxAmount,
                         totalUsd: totals.total,
                         currency: newInvoice.currency,
-                        status: 'Pending',
-                        createdAt: new Date().toISOString().slice(0, 10),
+                        status: 'pending',
+                        paymentStatus: 'pending',
+                        approvalStatus: 'pending',
+                        requiresApproval: true,
                       })
                       setSubmitting(false)
                       if (res?.ok) onClose?.()

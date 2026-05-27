@@ -14,9 +14,10 @@ import { workspaceCollectionPath } from '../lib/firestore.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 import { useUser } from './useUser.js'
 import { clientSafeMessage } from '../utils/messages.js'
+import { amountValue, calculateBalanceDue, invoiceValue, statusValue, toNumber } from '../lib/calculations.js'
 
 const pendingPaymentStatuses = ['pending', 'pending_verification', 'pending_partial', 'partial_pending']
-const pendingRecordStatuses = ['pending', 'Pending', 'pending_approval', 'requested', 'Requested', 'invited', 'Invited']
+const pendingRecordStatuses = ['pending', 'pending_approval', 'requested', 'invited']
 
 function toMillis(value) {
   const date = value?.toDate?.() || (value ? new Date(value) : null)
@@ -29,20 +30,62 @@ function dateLabel(value) {
   return date.toLocaleDateString()
 }
 
-function statusValue(value, fallback = 'pending') {
-  return String(value || fallback).trim().toLowerCase()
+function amountPaidValue(row) {
+  return toNumber(row?.amountPaid ?? row?.partialPaidAmount, 0)
 }
 
-function amountValue(row) {
-  return Number(row?.amount ?? row?.amountPaid ?? row?.total ?? row?.totalUsd ?? row?.planPrice ?? 0) || 0
+function balanceDueValue(row, amount) {
+  if (row?.balanceDue !== undefined && row?.balanceDue !== null) return Math.max(toNumber(row.balanceDue, 0), 0)
+  return calculateBalanceDue(amount, amountPaidValue(row))
 }
 
 function isApproverRole(role) {
   return ['owner', 'admin', 'accountant'].includes(String(role || '').toLowerCase())
 }
 
+function isClosedStatus(status) {
+  return ['paid', 'rejected', 'cancelled', 'canceled'].includes(statusValue(status, ''))
+}
+
+function isPendingInvoice(row) {
+  const status = statusValue(row?.status, '')
+  const paymentStatus = statusValue(row?.paymentStatus, '')
+  const approvalStatus = statusValue(row?.approvalStatus, '')
+  if ([status, paymentStatus, approvalStatus].some((value) => ['rejected', 'cancelled', 'canceled'].includes(value))) return false
+  if (status === 'paid' || paymentStatus === 'paid') return false
+  return (
+    row?.requiresApproval === true ||
+    status === 'pending' ||
+    paymentStatus === 'pending' ||
+    approvalStatus === 'pending'
+  )
+}
+
+function isPendingPayment(row) {
+  const status = statusValue(row?.status, '')
+  const paymentStatus = statusValue(row?.paymentStatus, '')
+  const approvalStatus = statusValue(row?.approvalStatus, '')
+  if ([status, paymentStatus, approvalStatus].some(isClosedStatus)) return false
+  return (
+    row?.requiresApproval === true ||
+    pendingPaymentStatuses.includes(status) ||
+    pendingPaymentStatuses.includes(paymentStatus) ||
+    approvalStatus === 'pending'
+  )
+}
+
+function isPendingRecord(row) {
+  const status = statusValue(row?.status, '')
+  const approvalStatus = statusValue(row?.approvalStatus, '')
+  if ([status, approvalStatus].some((value) => ['approved', 'active', 'rejected', 'cancelled', 'canceled'].includes(value))) {
+    return false
+  }
+  return row?.requiresApproval === true || pendingRecordStatuses.includes(status) || pendingRecordStatuses.includes(approvalStatus)
+}
+
 function createApproval(type, sourceCollection, row) {
-  const amount = amountValue(row)
+  const amount = sourceCollection === 'invoices' ? invoiceValue(row) : amountValue(row)
+  const amountPaid = amountPaidValue(row)
   const customer =
     row.customerName ||
     row.clientName ||
@@ -68,8 +111,13 @@ function createApproval(type, sourceCollection, row) {
     sourceCollection,
     customer,
     amount,
+    amountPaid,
+    balanceDue: balanceDueValue(row, amount),
     currency: row.currency || 'PKR',
-    status: statusValue(row.paymentStatus || row.approvalStatus || row.status, 'pending'),
+    status: statusValue(
+      sourceCollection === 'invoices' ? row.approvalStatus || row.paymentStatus || row.status : row.paymentStatus || row.approvalStatus || row.status,
+      'pending',
+    ),
     submittedBy,
     date: row.createdAt || row.paymentSubmittedAt || row.updatedAt || null,
     dateLabel: dateLabel(row.createdAt || row.paymentSubmittedAt || row.updatedAt),
@@ -81,18 +129,38 @@ function createApproval(type, sourceCollection, row) {
   }
 }
 
-function subscribeWorkspaceQuery(workspaceId, collectionName, filterField, statuses, onData, onError) {
+function subscribeWorkspaceCollection(workspaceId, collectionName, onData, onError) {
   if (!db || !workspaceId) {
     onData([])
     return () => {}
   }
   const ref = collection(db, workspaceCollectionPath(workspaceId, collectionName))
-  const q = query(ref, where(filterField, 'in', statuses))
   return onSnapshot(
-    q,
+    ref,
     (snap) => onData(snap.docs.map((item) => ({ id: item.id, ...item.data() }))),
     (error) => onError?.(new Error(clientSafeMessage(error, 'Unable to load approvals.'))),
   )
+}
+
+async function addInventoryAdjustments(batch, workspaceId, invoice, now) {
+  if (!db || !workspaceId || invoice?.inventoryAdjustedAt || invoice?.stockAdjustedAt) return false
+  const productItems = (invoice?.items || []).filter((item) => item.productId && toNumber(item.quantity ?? item.qty, 0) > 0)
+  if (!productItems.length) return false
+
+  await Promise.all(
+    productItems.map(async (item) => {
+      const productRef = doc(db, workspaceCollectionPath(workspaceId, 'products'), item.productId)
+      const productSnap = await getDoc(productRef)
+      if (!productSnap.exists()) return
+      const currentStock = toNumber(productSnap.data().stockQuantity ?? productSnap.data().stock, 0)
+      batch.update(productRef, {
+        stockQuantity: Math.max(0, currentStock - toNumber(item.quantity ?? item.qty, 0)),
+        updatedAt: now,
+      })
+    }),
+  )
+
+  return true
 }
 
 export function useApprovals() {
@@ -137,61 +205,51 @@ export function useApprovals() {
       setLoading(false)
     }
 
-    const unsubInvoices = subscribeWorkspaceQuery(
+    const unsubInvoices = subscribeWorkspaceCollection(
       workspaceId,
       'invoices',
-      'paymentStatus',
-      pendingPaymentStatuses,
       (rows) => {
-        setInvoices(rows)
+        setInvoices(rows.filter(isPendingInvoice))
         markLoaded()
       },
       onError,
     )
 
-    const unsubPayments = subscribeWorkspaceQuery(
+    const unsubPayments = subscribeWorkspaceCollection(
       workspaceId,
       'payments',
-      'paymentStatus',
-      pendingPaymentStatuses,
       (rows) => {
-        setPayments(rows)
+        setPayments(rows.filter(isPendingPayment))
         markLoaded()
       },
       onError,
     )
 
-    const unsubTeam = subscribeWorkspaceQuery(
+    const unsubTeam = subscribeWorkspaceCollection(
       workspaceId,
       'teamMembers',
-      'status',
-      pendingRecordStatuses,
       (rows) => {
-        setTeamMembers(rows)
+        setTeamMembers(rows.filter(isPendingRecord))
         markLoaded()
       },
       onError,
     )
 
-    const unsubClients = subscribeWorkspaceQuery(
+    const unsubClients = subscribeWorkspaceCollection(
       workspaceId,
       'clients',
-      'status',
-      pendingRecordStatuses,
       (rows) => {
-        setClients(rows)
+        setClients(rows.filter(isPendingRecord))
         markLoaded()
       },
       onError,
     )
 
-    const unsubExpenses = subscribeWorkspaceQuery(
+    const unsubExpenses = subscribeWorkspaceCollection(
       workspaceId,
       'expenses',
-      'approvalStatus',
-      pendingRecordStatuses,
       (rows) => {
-        setExpenses(rows)
+        setExpenses(rows.filter(isPendingRecord))
         markLoaded()
       },
       onError,
@@ -205,7 +263,7 @@ export function useApprovals() {
         setUpgradeRequests(
           snap.docs
             .map((item) => ({ id: item.id, ...item.data() }))
-            .filter((item) => statusValue(item.approvalStatus, 'pending') === 'pending'),
+            .filter((item) => isPendingRecord(item) || statusValue(item.paymentStatus, '') === 'pending'),
         )
         markLoaded()
       },
@@ -224,7 +282,7 @@ export function useApprovals() {
 
   const approvals = useMemo(() => {
     const rows = [
-      ...invoices.map((row) => createApproval('Invoice payment', 'invoices', row)),
+      ...invoices.map((row) => createApproval('Invoice', 'invoices', row)),
       ...payments.map((row) => createApproval('Client payment reference', 'payments', row)),
       ...upgradeRequests.map((row) => createApproval('Subscription upgrade', 'upgradeRequests', row)),
       ...teamMembers.map((row) => createApproval('Staff access request', 'teamMembers', row)),
@@ -259,33 +317,9 @@ export function useApprovals() {
         if (approval.sourceCollection === 'invoices') {
           const invoiceRef = doc(db, workspaceCollectionPath(workspaceId, 'invoices'), approval.sourceId)
           batch.update(invoiceRef, {
-            status: 'paid',
-            paymentStatus: 'paid',
+            approvalStatus: 'approved',
             approvedBy: userId,
             approvedAt: now,
-            paidAt: now,
-            amountPaid: amountValue(row),
-            balanceDue: 0,
-            updatedAt: now,
-          })
-
-          const paymentRef = doc(collection(db, workspaceCollectionPath(workspaceId, 'payments')))
-          batch.set(paymentRef, {
-            invoiceId: approval.sourceId,
-            invoiceNumber: row.invoiceNumber || approval.sourceId,
-            customerName: row.customerName || approval.customer,
-            amount: amountValue(row),
-            amountUsd: amountValue(row),
-            currency: row.currency || 'PKR',
-            paymentMethod: 'Approval Center',
-            paymentStatus: 'paid',
-            approvedBy: userId,
-            approvedAt: now,
-            paidAt: now,
-            ownerId: workspaceId,
-            userId: workspaceId,
-            workspaceId,
-            createdAt: now,
             updatedAt: now,
           })
         }
@@ -305,16 +339,21 @@ export function useApprovals() {
             const invoiceRef = doc(db, workspaceCollectionPath(workspaceId, 'invoices'), approval.invoiceId)
             const invoiceSnap = await getDoc(invoiceRef)
             if (invoiceSnap.exists()) {
-              const invoiceAmount = amountValue(invoiceSnap.data()) || amountValue(row)
+              const invoiceData = { id: approval.invoiceId, ...invoiceSnap.data() }
+              const invoiceAmount = invoiceValue(invoiceData) || amountValue(row)
+              const stockAdjusted = await addInventoryAdjustments(batch, workspaceId, invoiceData, now)
               batch.update(invoiceRef, {
                 status: 'paid',
                 paymentStatus: 'paid',
+                approvalStatus: 'approved',
+                requiresApproval: false,
                 approvedBy: userId,
                 approvedAt: now,
                 paidAt: now,
                 amountPaid: invoiceAmount,
                 balanceDue: 0,
                 updatedAt: now,
+                ...(stockAdjusted ? { inventoryAdjustedAt: now } : {}),
               })
             }
           }
@@ -380,7 +419,14 @@ export function useApprovals() {
           workspaceId,
           userId,
           ...userActivityInfo(userDoc, firebaseUser),
-          action: approval.sourceCollection === 'upgradeRequests' ? 'Upgrade approved' : 'Approval approved',
+          action:
+            approval.sourceCollection === 'invoices'
+              ? 'Invoice approved'
+              : approval.sourceCollection === 'upgradeRequests'
+                ? 'Subscription upgraded'
+                : approval.sourceCollection === 'payments'
+                  ? 'Payment approved'
+                  : 'Approval approved',
           module: 'Approvals',
           description: `${approval.type} for ${approval.customer} was approved.`,
           targetId: approval.sourceId,
@@ -390,6 +436,79 @@ export function useApprovals() {
         return { ok: true }
       } catch (err) {
         return { ok: false, error: clientSafeMessage(err, 'Unable to approve request.') }
+      }
+    },
+    [canApprove, firebaseUser, userDoc, userId, workspaceId],
+  )
+
+  const markPaid = useCallback(
+    async (approval) => {
+      if (!canApprove) return { ok: false, error: 'You do not have permission to approve requests.' }
+      if (!db || !workspaceId || !userId) return { ok: false, error: 'Secure Cloud Sync is not available right now.' }
+      if (approval?.sourceCollection !== 'invoices') return { ok: false, error: 'Only invoices can be marked paid from here.' }
+
+      try {
+        const batch = writeBatch(db)
+        const now = serverTimestamp()
+        const row = approval.row || {}
+        const invoiceTotal = invoiceValue(row)
+        const stockAdjusted = await addInventoryAdjustments(batch, workspaceId, row, now)
+
+        const invoiceRef = doc(db, workspaceCollectionPath(workspaceId, 'invoices'), approval.sourceId)
+        batch.update(invoiceRef, {
+          status: 'paid',
+          paymentStatus: 'paid',
+          approvalStatus: 'approved',
+          requiresApproval: false,
+          amountPaid: invoiceTotal,
+          partialPaidAmount: invoiceTotal,
+          balanceDue: 0,
+          paidAt: now,
+          approvedBy: userId,
+          approvedAt: now,
+          updatedAt: now,
+          ...(stockAdjusted ? { inventoryAdjustedAt: now } : {}),
+        })
+
+        const paymentRef = doc(collection(db, workspaceCollectionPath(workspaceId, 'payments')))
+        batch.set(paymentRef, {
+          invoiceId: approval.sourceId,
+          invoiceNumber: row.invoiceNumber || approval.sourceId,
+          customerName: row.customerName || approval.customer,
+          customerEmail: row.customerEmail || '',
+          clientId: row.clientId || '',
+          amount: invoiceTotal,
+          amountPaid: invoiceTotal,
+          amountUsd: invoiceTotal,
+          currency: row.currency || 'PKR',
+          paymentMethod: 'Approval Center',
+          paymentStatus: 'paid',
+          status: 'paid',
+          approvedBy: userId,
+          approvedAt: now,
+          paidAt: now,
+          ownerId: workspaceId,
+          userId: workspaceId,
+          workspaceId,
+          createdAt: now,
+          updatedAt: now,
+        })
+
+        await batch.commit()
+        await logActivity({
+          workspaceId,
+          userId,
+          ...userActivityInfo(userDoc, firebaseUser),
+          action: 'Invoice marked paid',
+          module: 'Approvals',
+          description: `${row.invoiceNumber || approval.sourceId} was marked as paid.`,
+          targetId: approval.sourceId,
+          targetName: row.invoiceNumber || approval.customer,
+          metadata: { amount: invoiceTotal, currency: row.currency || 'PKR', sourceCollection: approval.sourceCollection },
+        })
+        return { ok: true }
+      } catch (err) {
+        return { ok: false, error: clientSafeMessage(err, 'Unable to mark invoice as paid.') }
       }
     },
     [canApprove, firebaseUser, userDoc, userId, workspaceId],
@@ -406,8 +525,10 @@ export function useApprovals() {
 
         if (approval.sourceCollection === 'invoices') {
           batch.update(doc(db, workspaceCollectionPath(workspaceId, 'invoices'), approval.sourceId), {
+            approvalStatus: 'rejected',
             status: 'rejected',
             paymentStatus: 'rejected',
+            requiresApproval: false,
             rejectedBy: userId,
             rejectedAt: now,
             updatedAt: now,
@@ -429,6 +550,8 @@ export function useApprovals() {
               batch.update(invoiceRef, {
                 status: 'rejected',
                 paymentStatus: 'rejected',
+                approvalStatus: 'rejected',
+                requiresApproval: false,
                 rejectedBy: userId,
                 rejectedAt: now,
                 updatedAt: now,
@@ -482,7 +605,7 @@ export function useApprovals() {
           workspaceId,
           userId,
           ...userActivityInfo(userDoc, firebaseUser),
-          action: 'Approval rejected',
+          action: approval.sourceCollection === 'invoices' ? 'Invoice rejected' : 'Approval rejected',
           module: 'Approvals',
           description: `${approval.type} for ${approval.customer} was rejected.`,
           targetId: approval.sourceId,
@@ -505,8 +628,9 @@ export function useApprovals() {
       loading,
       summary,
       approve,
+      markPaid,
       reject,
     }),
-    [approvals, approve, canApprove, error, loading, reject, summary],
+    [approvals, approve, canApprove, error, loading, markPaid, reject, summary],
   )
 }
