@@ -1,17 +1,17 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { useEffect, useState } from 'react'
+import { memo, useEffect, useState } from 'react'
 import { HiOutlineXMark } from 'react-icons/hi2'
 import Badge from '../ui/Badge.jsx'
 import Button from '../ui/Button.jsx'
 import Card from '../ui/Card.jsx'
 import Input from '../ui/Input.jsx'
 import Select from '../ui/Select.jsx'
-import { pipelineStages } from '../../data/pipelineDealsDemo.js'
+import { pipelineStages } from '../../data/pipelineStages.js'
 import { convertFromUsd } from '../../utils/currency.js'
 import { formatCurrency } from '../../utils/format.js'
 import { usePreferences } from '../../hooks/usePreferences.js'
 
-export default function DealDrawer({ open, deal, onClose, onSave, onDelete }) {
+function DealDrawer({ open, deal, onClose, onSave, onDelete }) {
   const { currency } = usePreferences()
   const [draft, setDraft] = useState(deal)
 
@@ -163,3 +163,5 @@ export default function DealDrawer({ open, deal, onClose, onSave, onDelete }) {
     </AnimatePresence>
   )
 }
+
+export default memo(DealDrawer)

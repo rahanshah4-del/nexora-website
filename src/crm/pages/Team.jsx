@@ -40,7 +40,7 @@ export default function TeamPage() {
         subtitle="Manage members, roles, permissions, performance, and activity."
         right={
           <Badge variant={source === 'firestore' ? 'success' : 'default'}>
-            {loading ? 'Loading…' : source === 'firestore' ? 'Live' : 'Offline'}
+            {loading ? 'Loading…' : source === 'firestore' ? 'Live Sync' : 'No data yet'}
           </Badge>
         }
       />
@@ -256,7 +256,7 @@ export default function TeamPage() {
                 <p className="text-xs text-slate-600 dark:text-slate-300">Role changes, logins, and permission updates</p>
               </div>
               <Badge variant={activity.source === 'firestore' ? 'success' : 'default'}>
-                {activity.loading ? 'Loading…' : activity.source === 'firestore' ? 'Live' : 'Offline'}
+                {activity.loading ? 'Loading…' : activity.source === 'firestore' ? 'Live Sync' : 'No data yet'}
               </Badge>
             </div>
 

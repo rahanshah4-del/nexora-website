@@ -1,8 +1,9 @@
+import { memo } from 'react'
 import Table from '../ui/Table.jsx'
 import EmptyState from './EmptyState.jsx'
 import SkeletonLoader from './SkeletonLoader.jsx'
 
-export default function AdvancedTable({
+function AdvancedTable({
   columns,
   rows,
   loading,
@@ -23,3 +24,4 @@ export default function AdvancedTable({
   return <Table columns={columns} rows={rows} className={className} />
 }
 
+export default memo(AdvancedTable)

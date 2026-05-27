@@ -5,7 +5,6 @@ import Badge from '../components/ui/Badge.jsx'
 import Button from '../components/ui/Button.jsx'
 import Input from '../components/ui/Input.jsx'
 import Table from '../components/ui/Table.jsx'
-import { tasksDemo } from '../data/tasksDemo.js'
 
 export default function TasksPage() {
   const columns = [
@@ -46,7 +45,7 @@ export default function TasksPage() {
             <Input placeholder="Filter (Overdue / Pending)" />
           </div>
           <div className="mt-4">
-            <Table columns={columns} rows={tasksDemo} />
+            <Table columns={columns} rows={[]} emptyTitle="No activity recorded yet" emptyDescription="Add your first record to start tracking follow-ups." />
           </div>
         </Card>
 

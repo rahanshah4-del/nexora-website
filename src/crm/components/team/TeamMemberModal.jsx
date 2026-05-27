@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { useEffect, useState } from 'react'
+import { memo, useEffect, useState } from 'react'
 import Card from '../ui/Card.jsx'
 import Button from '../ui/Button.jsx'
 import Input from '../ui/Input.jsx'
@@ -8,7 +8,7 @@ import Badge from '../ui/Badge.jsx'
 
 const roles = ['Owner', 'Admin', 'Manager', 'Sales Staff', 'Support Agent', 'Accountant']
 
-export default function TeamMemberModal({ open, mode = 'add', member, permissionKeys, onClose, onSave }) {
+function TeamMemberModal({ open, mode = 'add', member, permissionKeys, onClose, onSave }) {
   const [draft, setDraft] = useState(member || null)
 
   useEffect(() => {
@@ -33,9 +33,9 @@ export default function TeamMemberModal({ open, mode = 'add', member, permission
           aria-modal="true"
         >
           <motion.div
-            initial={{ opacity: 0, y: 14, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 14, scale: 0.98 }}
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 14 }}
             transition={{ duration: 0.18 }}
             onClick={(e) => e.stopPropagation()}
             className="crm-modal-panel"
@@ -125,3 +125,5 @@ export default function TeamMemberModal({ open, mode = 'add', member, permission
     </AnimatePresence>
   )
 }
+
+export default memo(TeamMemberModal)

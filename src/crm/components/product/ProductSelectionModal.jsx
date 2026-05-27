@@ -1,4 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion'
+import { memo } from 'react'
 import {
   HiOutlineArrowPath,
   HiOutlineArrowRight,
@@ -123,7 +124,7 @@ function ProductCard({ product, onSelect }) {
   )
 }
 
-export default function ProductSelectionModal({ open, session, selectedWorkspace, onSelect, onContinueLast, onClose }) {
+function ProductSelectionModal({ open, session, selectedWorkspace, onSelect, onContinueLast, onClose }) {
   const hasLastWorkspace = isValidWorkspace(selectedWorkspace) && selectedWorkspace !== 'restaurant-pos'
   const selectedStatus = hasLastWorkspace ? workspaceLabel(selectedWorkspace) : 'Not selected'
 
@@ -228,3 +229,5 @@ export default function ProductSelectionModal({ open, session, selectedWorkspace
     </AnimatePresence>
   )
 }
+
+export default memo(ProductSelectionModal)

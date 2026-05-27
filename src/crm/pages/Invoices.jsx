@@ -44,9 +44,9 @@ function PaymentActionModal({ action, invoice, busy, onClose, onConfirm }) {
         >
           <motion.div
             className="crm-modal-panel"
-            initial={{ opacity: 0, y: 14, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 14, scale: 0.98 }}
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 14 }}
             transition={{ duration: 0.18 }}
             onClick={(event) => event.stopPropagation()}
           >
@@ -214,7 +214,7 @@ export default function InvoicesPage() {
               </div>
             ) : invoices.length === 0 ? (
               <div className="grid min-h-[14rem] place-items-center text-sm text-slate-600 dark:text-slate-300">
-                No invoices found.
+                No invoices yet. Add your first record.
               </div>
             ) : (
               <InvoiceTable

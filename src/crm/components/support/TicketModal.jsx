@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { useEffect, useState } from 'react'
+import { memo, useEffect, useState } from 'react'
 import Badge from '../ui/Badge.jsx'
 import Button from '../ui/Button.jsx'
 import Card from '../ui/Card.jsx'
@@ -21,7 +21,7 @@ function createDraft(initialCustomer) {
   }
 }
 
-export default function TicketModal({ open, onClose, onCreate, initialCustomer }) {
+function TicketModal({ open, onClose, onCreate, initialCustomer }) {
   const [draft, setDraft] = useState(() => createDraft(initialCustomer))
 
   useEffect(() => {
@@ -42,9 +42,9 @@ export default function TicketModal({ open, onClose, onCreate, initialCustomer }
           aria-modal="true"
         >
           <motion.div
-            initial={{ opacity: 0, y: 14, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 14, scale: 0.98 }}
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 14 }}
             transition={{ duration: 0.18 }}
             onClick={(e) => e.stopPropagation()}
             className="crm-modal-panel"
@@ -123,3 +123,5 @@ export default function TicketModal({ open, onClose, onCreate, initialCustomer }
     </AnimatePresence>
   )
 }
+
+export default memo(TicketModal)

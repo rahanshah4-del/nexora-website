@@ -1,12 +1,12 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { useEffect, useState } from 'react'
+import { memo, useEffect, useState } from 'react'
 import Badge from '../ui/Badge.jsx'
 import Button from '../ui/Button.jsx'
 import Card from '../ui/Card.jsx'
 import Input from '../ui/Input.jsx'
 import Select from '../ui/Select.jsx'
 
-export default function CustomerModal({ open, onClose, onCreate }) {
+function CustomerModal({ open, onClose, onCreate }) {
   const [draft, setDraft] = useState(null)
 
   useEffect(() => {
@@ -37,9 +37,9 @@ export default function CustomerModal({ open, onClose, onCreate }) {
           aria-modal="true"
         >
           <motion.div
-            initial={{ opacity: 0, y: 14, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 14, scale: 0.98 }}
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 14 }}
             transition={{ duration: 0.18 }}
             onClick={(e) => e.stopPropagation()}
             className="crm-modal-panel"
@@ -116,3 +116,5 @@ export default function CustomerModal({ open, onClose, onCreate }) {
     </AnimatePresence>
   )
 }
+
+export default memo(CustomerModal)

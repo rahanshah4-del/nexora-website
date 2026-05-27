@@ -288,7 +288,7 @@ export default function ApprovalsPage() {
           ) : approvals.approvals.length ? (
             <Table columns={columns} rows={approvals.approvals} />
           ) : (
-            <EmptyState title="No pending approvals" description="Payment, upgrade, staff, and client approvals will appear here." />
+            <EmptyState title="No approvals pending" description="Payment, upgrade, staff, and client approvals will appear here." />
           )}
         </div>
       </Card>

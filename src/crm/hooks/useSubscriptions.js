@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { db } from '../lib/firebase.js'
 import { subscribeOwnedCollection, subscribeUserCollection } from '../lib/firestore.js'
-import { plansDemo } from '../data/subscriptionsDemo.js'
+import { planCatalog } from '../data/moduleAccess.js'
 import { useUser } from './useUser.js'
 import { clientSafeMessage } from '../utils/messages.js'
 
@@ -172,7 +172,7 @@ export function useSubscriptions() {
 
   return useMemo(
     () => ({
-      plans: plansDemo,
+      plans: planCatalog,
       subscription,
       history,
       renewalReminder,

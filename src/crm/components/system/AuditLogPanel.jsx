@@ -82,10 +82,10 @@ export default function AuditLogPanel() {
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-sm font-semibold text-slate-900 dark:text-white">Audit Logs</p>
-          <p className="text-xs text-slate-600 dark:text-slate-300">Security and system audit trail</p>
+          <p className="text-xs text-slate-600 dark:text-slate-300">Security and account activity trail</p>
         </div>
         <Badge variant={source === 'firestore' ? 'success' : 'default'}>
-          {loading ? 'Loading…' : source === 'firestore' ? 'Live' : 'Offline'}
+          {loading ? 'Loading…' : source === 'firestore' ? 'Live Sync' : 'No data yet'}
         </Badge>
       </div>
       {error ? (
@@ -96,8 +96,8 @@ export default function AuditLogPanel() {
           columns={columns}
           rows={rows}
           loading={loading}
-          emptyTitle="No audit logs yet"
-          emptyDescription="Audit records will appear here once actions are recorded."
+          emptyTitle="No activity recorded yet"
+          emptyDescription="Account activity will appear here once actions are recorded."
         />
       </div>
     </Card>

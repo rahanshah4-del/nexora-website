@@ -9,9 +9,7 @@ import { useUser } from '../../hooks/useUser.js'
 const STORAGE_KEY = 'nexora_active_branch_v1'
 
 const branchSeed = [
-  { id: 'main', name: 'Main Branch', region: 'PK', status: 'active' },
-  { id: 'dubai', name: 'Dubai Branch', region: 'UAE', status: 'active' },
-  { id: 'riyadh', name: 'Riyadh Branch', region: 'KSA', status: 'inactive' },
+  { id: 'main', name: 'Main Workspace', region: '', status: 'active' },
 ]
 
 export default function BranchSwitcher() {

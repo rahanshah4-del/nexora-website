@@ -1,10 +1,10 @@
-import { useMemo, useState } from 'react'
+import { memo, useMemo, useState } from 'react'
 import Badge from '../ui/Badge.jsx'
 import DealCard from './DealCard.jsx'
 import DealDrawer from './DealDrawer.jsx'
-import { pipelineStages } from '../../data/pipelineDealsDemo.js'
+import { pipelineStages } from '../../data/pipelineStages.js'
 
-export default function KanbanBoard({ deals, onMove, onSave, onDelete }) {
+function KanbanBoard({ deals, onMove, onSave, onDelete }) {
   const [openDeal, setOpenDeal] = useState(null)
 
   const byStage = useMemo(() => {
@@ -58,3 +58,4 @@ export default function KanbanBoard({ deals, onMove, onSave, onDelete }) {
   )
 }
 
+export default memo(KanbanBoard)

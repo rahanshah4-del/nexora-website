@@ -13,7 +13,7 @@ const TableRow = memo(function TableRow({ row, columns }) {
   )
 })
 
-export default function Table({ columns, rows, className }) {
+function Table({ columns, rows, className }) {
   return (
     <div className={cn('overflow-hidden rounded-2xl border border-slate-200/80 bg-white/80 dark:border-white/10', className)}>
       <div className="overflow-x-auto">
@@ -37,3 +37,5 @@ export default function Table({ columns, rows, className }) {
     </div>
   )
 }
+
+export default memo(Table)

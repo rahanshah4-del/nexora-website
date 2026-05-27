@@ -6,10 +6,9 @@ export default function PageLoader() {
       <div className="glass rounded-2xl px-4 py-3 text-sm text-slate-700 dark:text-slate-200">
         <div className="flex items-center gap-3">
           <Spinner />
-          <span className="font-medium">Loading…</span>
+          <span className="font-medium">Loading workspace...</span>
         </div>
       </div>
     </div>
   )
 }
-

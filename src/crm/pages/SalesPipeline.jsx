@@ -61,7 +61,7 @@ export default function PipelinePage() {
               <p className="text-sm font-semibold text-slate-900 dark:text-white">Pipeline Breakdown</p>
               <p className="text-xs text-slate-600 dark:text-slate-300">Distribution by stage</p>
             </div>
-            <Badge variant={source === 'firestore' ? 'success' : 'default'}>{loading ? 'Loading…' : source === 'firestore' ? 'Live' : 'Offline'}</Badge>
+            <Badge variant={source === 'firestore' ? 'success' : 'default'}>{loading ? 'Loading…' : source === 'firestore' ? 'Live Sync' : 'No data yet'}</Badge>
           </div>
 
           <div className="mt-4 h-72">

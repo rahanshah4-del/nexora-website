@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { db } from '../lib/firebase.js'
 import { createUserDoc, patchUserDoc, subscribeUserCollection } from '../lib/firestore.js'
-import { permissionKeys } from '../data/teamDemo.js'
+import { permissionKeys } from '../data/permissions.js'
 import { useUser } from './useUser.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 import { clientSafeMessage } from '../utils/messages.js'

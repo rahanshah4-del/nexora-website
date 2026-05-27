@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
-import { useMemo } from 'react'
+import { memo, useMemo } from 'react'
 import {
   HiOutlineBolt,
   HiOutlineChartBar,
@@ -53,7 +53,7 @@ function isOpenTicket(ticket) {
   return status === 'open' || status === 'in progress'
 }
 
-function SectionTitle({ eyebrow, title, action }) {
+const SectionTitle = memo(function SectionTitle({ eyebrow, title, action }) {
   return (
     <div className="flex min-w-0 items-center justify-between gap-3">
       <div className="min-w-0">
@@ -63,9 +63,9 @@ function SectionTitle({ eyebrow, title, action }) {
       {action}
     </div>
   )
-}
+})
 
-function InlineEmpty({ title = 'No data yet', description = 'Start by adding customers or creating invoices.' }) {
+const InlineEmpty = memo(function InlineEmpty({ title = 'No data yet', description = 'Start by adding customers or creating invoices.' }) {
   return (
     <div className="grid min-h-[10rem] place-items-center rounded-[1.25rem] border border-dashed border-slate-200 bg-slate-50/70 px-4 py-6 text-center dark:border-white/10 dark:bg-white/5">
       <div className="max-w-xs">
@@ -74,17 +74,17 @@ function InlineEmpty({ title = 'No data yet', description = 'Start by adding cus
       </div>
     </div>
   )
-}
+})
 
-function LoadingBlock({ lines = 4, className = '' }) {
+const LoadingBlock = memo(function LoadingBlock({ lines = 4, className = '' }) {
   return (
     <div className={cn('rounded-[1.25rem] border border-slate-100 bg-white/70 p-4 dark:border-white/10 dark:bg-white/5', className)}>
       <SkeletonLoader lines={lines} />
     </div>
   )
-}
+})
 
-function MetricCard({ icon: Icon, label, value, helper, tone = 'sky', loading = false }) {
+const MetricCard = memo(function MetricCard({ icon: Icon, label, value, helper, tone = 'sky', loading = false }) {
   const toneMap = {
     sky: 'border-sky-200 bg-sky-50 text-sky-700',
     violet: 'border-violet-200 bg-violet-50 text-violet-700',
@@ -93,12 +93,7 @@ function MetricCard({ icon: Icon, label, value, helper, tone = 'sky', loading = 
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
-      className="min-w-0"
-    >
+    <div className="min-w-0">
       <Card className="h-full rounded-[1.5rem] p-4">
         {loading ? (
           <SkeletonLoader lines={3} />
@@ -115,11 +110,11 @@ function MetricCard({ icon: Icon, label, value, helper, tone = 'sky', loading = 
           </div>
         )}
       </Card>
-    </motion.div>
+    </div>
   )
-}
+})
 
-function MiniBars({ data, color = 'bg-sky-500' }) {
+const MiniBars = memo(function MiniBars({ data, color = 'bg-sky-500' }) {
   const max = Math.max(1, ...data.map((item) => safeCount(item.value)))
   const hasData = data.some((item) => safeCount(item.value) > 0)
 
@@ -142,9 +137,9 @@ function MiniBars({ data, color = 'bg-sky-500' }) {
       ))}
     </div>
   )
-}
+})
 
-function ProgressRow({ label, value, max, tone = 'bg-sky-500' }) {
+const ProgressRow = memo(function ProgressRow({ label, value, max, tone = 'bg-sky-500' }) {
   const safeMax = Math.max(1, safeCount(max))
   const pct = Math.max(0, Math.min(100, (safeCount(value) / safeMax) * 100))
   return (
@@ -158,9 +153,9 @@ function ProgressRow({ label, value, max, tone = 'bg-sky-500' }) {
       </div>
     </div>
   )
-}
+})
 
-function QuickAction({ to, icon: Icon, title, detail }) {
+const QuickAction = memo(function QuickAction({ to, icon: Icon, title, detail }) {
   return (
     <Link
       to={to}
@@ -175,11 +170,11 @@ function QuickAction({ to, icon: Icon, title, detail }) {
       </span>
     </Link>
   )
-}
+})
 
-function ActivityList({ items }) {
+const ActivityList = memo(function ActivityList({ items }) {
   if (!items.length) {
-    return <InlineEmpty title="No activity yet" description="Activity logs will appear here as workspace actions happen." />
+    return <InlineEmpty title="No activity recorded yet" description="Workspace activity will appear here as actions happen." />
   }
 
   return (
@@ -198,9 +193,9 @@ function ActivityList({ items }) {
       ))}
     </div>
   )
-}
+})
 
-function DataRow({ label, value, badge }) {
+const DataRow = memo(function DataRow({ label, value, badge }) {
   return (
     <div className="flex min-w-0 items-center justify-between gap-3 rounded-[1.15rem] border border-slate-100 bg-white/65 px-3 py-3 dark:border-white/10 dark:bg-white/5">
       <div className="min-w-0">
@@ -210,7 +205,7 @@ function DataRow({ label, value, badge }) {
       <span className="shrink-0 text-sm font-semibold text-slate-700 dark:text-slate-200">{value}</span>
     </div>
   )
-}
+})
 
 export default function DashboardHomePage() {
   const { currency } = usePreferences()
@@ -299,52 +294,82 @@ export default function DashboardHomePage() {
     [activityApi.logs],
   )
 
-  const kpis = [
-    {
-      icon: HiOutlineCurrencyDollar,
-      label: 'Revenue',
-      value: totalRevenueUsd > 0 ? formatCurrency(convertFromUsd(totalRevenueUsd, currency), currency) : 'No data yet',
-      helper: totalRevenueUsd > 0 ? 'Collected from paid invoices' : 'Start by creating invoices',
-      tone: 'sky',
-      loading: invoicesApi.loading,
-    },
-    {
-      icon: HiOutlineUserGroup,
-      label: 'Customers',
-      value: customersApi.customers.length ? formatCompact(customersApi.customers.length) : 'No data yet',
-      helper: customersApi.customers.length ? 'Active customer workspace' : 'Add your first customer',
-      tone: 'cyan',
-      loading: customersApi.loading,
-    },
-    {
-      icon: HiOutlineBolt,
-      label: 'Leads Pipeline',
-      value: leadsApi.leads.length ? formatCompact(leadsApi.leads.length) : 'No data yet',
-      helper: leadsApi.leads.length ? `${formatCompact(hotLeads.length)} high intent leads` : 'Capture leads to score them',
-      tone: 'violet',
-      loading: leadsApi.loading,
-    },
-    {
-      icon: HiOutlineTicket,
-      label: 'Support',
-      value: ticketsApi.tickets.length ? formatCompact(openTickets.length) : 'No data yet',
-      helper: ticketsApi.tickets.length ? 'Open or in-progress tickets' : 'Support tickets will appear here',
-      tone: 'emerald',
-      loading: ticketsApi.loading,
-    },
-  ]
+  const kpis = useMemo(
+    () => [
+      {
+        icon: HiOutlineCurrencyDollar,
+        label: 'Revenue',
+        value: totalRevenueUsd > 0 ? formatCurrency(convertFromUsd(totalRevenueUsd, currency), currency) : 'No data yet',
+        helper: totalRevenueUsd > 0 ? 'Collected from paid invoices' : 'Start by creating invoices',
+        tone: 'sky',
+        loading: invoicesApi.loading,
+      },
+      {
+        icon: HiOutlineUserGroup,
+        label: 'Customers',
+        value: customersApi.customers.length ? formatCompact(customersApi.customers.length) : 'No data yet',
+        helper: customersApi.customers.length ? 'Active customer workspace' : 'Add your first customer',
+        tone: 'cyan',
+        loading: customersApi.loading,
+      },
+      {
+        icon: HiOutlineBolt,
+        label: 'Leads Pipeline',
+        value: leadsApi.leads.length ? formatCompact(leadsApi.leads.length) : 'No data yet',
+        helper: leadsApi.leads.length ? `${formatCompact(hotLeads.length)} high intent leads` : 'Capture leads to score them',
+        tone: 'violet',
+        loading: leadsApi.loading,
+      },
+      {
+        icon: HiOutlineTicket,
+        label: 'Support',
+        value: ticketsApi.tickets.length ? formatCompact(openTickets.length) : 'No data yet',
+        helper: ticketsApi.tickets.length ? 'Open or in-progress tickets' : 'Support tickets will appear here',
+        tone: 'emerald',
+        loading: ticketsApi.loading,
+      },
+    ],
+    [
+      currency,
+      customersApi.customers.length,
+      customersApi.loading,
+      hotLeads.length,
+      invoicesApi.loading,
+      leadsApi.leads.length,
+      leadsApi.loading,
+      openTickets.length,
+      ticketsApi.loading,
+      ticketsApi.tickets.length,
+      totalRevenueUsd,
+    ],
+  )
 
-  const invoiceRows = [
-    ['Paid invoices', formatCompact(paidInvoices.length), 'Closed revenue'],
-    ['Pending invoices', formatCompact(pendingInvoices.length), formatCurrency(convertFromUsd(pendingRevenueUsd, currency), currency)],
-    ['Total invoices', formatCompact(invoicesApi.invoices.length), invoicesApi.invoices.length ? 'Tracked in workspace' : 'No data yet'],
-  ]
+  const invoiceRows = useMemo(
+    () => [
+      ['Paid invoices', formatCompact(paidInvoices.length), 'Closed revenue'],
+      ['Pending invoices', formatCompact(pendingInvoices.length), formatCurrency(convertFromUsd(pendingRevenueUsd, currency), currency)],
+      ['Total invoices', formatCompact(invoicesApi.invoices.length), invoicesApi.invoices.length ? 'Tracked in workspace' : 'No data yet'],
+    ],
+    [currency, invoicesApi.invoices.length, paidInvoices.length, pendingInvoices.length, pendingRevenueUsd],
+  )
 
-  const healthRows = [
-    { label: 'Customer coverage', value: customersApi.customers.length, max: Math.max(10, customersApi.customers.length), tone: 'bg-cyan-500' },
-    { label: 'Lead momentum', value: leadsApi.leads.length, max: Math.max(10, leadsApi.leads.length), tone: 'bg-violet-500' },
-    { label: 'Resolved support', value: Math.max(0, ticketsApi.tickets.length - openTickets.length), max: Math.max(1, ticketsApi.tickets.length), tone: 'bg-emerald-500' },
-  ]
+  const healthRows = useMemo(
+    () => [
+      { label: 'Customer coverage', value: customersApi.customers.length, max: Math.max(10, customersApi.customers.length), tone: 'bg-cyan-500' },
+      { label: 'Lead momentum', value: leadsApi.leads.length, max: Math.max(10, leadsApi.leads.length), tone: 'bg-violet-500' },
+      { label: 'Resolved support', value: Math.max(0, ticketsApi.tickets.length - openTickets.length), max: Math.max(1, ticketsApi.tickets.length), tone: 'bg-emerald-500' },
+    ],
+    [customersApi.customers.length, leadsApi.leads.length, openTickets.length, ticketsApi.tickets.length],
+  )
+
+  const summaryRows = useMemo(
+    () => [
+      { icon: HiOutlineCheckCircle, label: 'Customers', value: customersApi.customers.length ? formatCompact(customersApi.customers.length) : 'No data yet' },
+      { icon: HiOutlineClock, label: 'Pending revenue', value: pendingRevenueUsd > 0 ? formatCurrency(convertFromUsd(pendingRevenueUsd, currency), currency) : 'No data yet' },
+      { icon: HiOutlineLifebuoy, label: 'Open support', value: ticketsApi.tickets.length ? formatCompact(openTickets.length) : 'No data yet' },
+    ],
+    [currency, customersApi.customers.length, openTickets.length, pendingRevenueUsd, ticketsApi.tickets.length],
+  )
 
   return (
     <motion.div
@@ -412,7 +437,7 @@ export default function DashboardHomePage() {
           <SectionTitle
             eyebrow="Workspace Health"
             title="Operational pulse"
-            action={<Badge variant={loading ? 'default' : 'success'}>{loading ? 'Syncing' : 'Live'}</Badge>}
+            action={<Badge variant={loading ? 'default' : 'success'}>{loading ? 'Syncing' : 'Live Sync'}</Badge>}
           />
           <div className="mt-5 space-y-4">
             {loading ? (
@@ -566,7 +591,7 @@ export default function DashboardHomePage() {
             />
             <DataRow
               label="Revenue engine"
-              value={paidInvoices.length ? 'Online' : 'No data yet'}
+              value={paidInvoices.length ? 'Live Sync' : 'No data yet'}
               badge={paidInvoices.length ? 'Paid invoices found' : 'Create invoices to activate'}
             />
             <DataRow
@@ -593,11 +618,7 @@ export default function DashboardHomePage() {
         <Card className="rounded-[1.6rem] p-5 lg:col-span-4">
           <SectionTitle eyebrow="Executive Summary" title="Today at a glance" />
           <div className="mt-5 space-y-3">
-            {[
-              { icon: HiOutlineCheckCircle, label: 'Customers', value: customersApi.customers.length ? formatCompact(customersApi.customers.length) : 'No data yet' },
-              { icon: HiOutlineClock, label: 'Pending revenue', value: pendingRevenueUsd > 0 ? formatCurrency(convertFromUsd(pendingRevenueUsd, currency), currency) : 'No data yet' },
-              { icon: HiOutlineLifebuoy, label: 'Open support', value: ticketsApi.tickets.length ? formatCompact(openTickets.length) : 'No data yet' },
-            ].map((item) => (
+            {summaryRows.map((item) => (
               <div key={item.label} className="flex items-center gap-3 rounded-[1.15rem] border border-slate-100 bg-white/65 p-3 dark:border-white/10 dark:bg-white/5">
                 <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-slate-100">
                   <item.icon className="h-5 w-5" />

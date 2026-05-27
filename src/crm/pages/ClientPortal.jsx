@@ -57,9 +57,9 @@ function ClientModal({ open, onClose, onSave, client }) {
         >
           <motion.div
             className="crm-modal-panel"
-            initial={{ opacity: 0, y: 14, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 14, scale: 0.98 }}
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 14 }}
             transition={{ duration: 0.18 }}
             onClick={(event) => event.stopPropagation()}
           >
@@ -142,9 +142,9 @@ function ClientViewModal({ client, onClose }) {
         >
           <motion.div
             className="crm-modal-panel"
-            initial={{ opacity: 0, y: 14, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 14, scale: 0.98 }}
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 14 }}
             transition={{ duration: 0.18 }}
             onClick={(event) => event.stopPropagation()}
           >
@@ -199,9 +199,9 @@ function DeleteClientModal({ client, busy, onClose, onConfirm }) {
         >
           <motion.div
             className="crm-modal-panel max-w-md"
-            initial={{ opacity: 0, y: 14, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 14, scale: 0.98 }}
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 14 }}
             transition={{ duration: 0.18 }}
             onClick={(event) => event.stopPropagation()}
           >
@@ -287,9 +287,9 @@ function PaymentPortalModal({ action, invoice, busy, onClose, onSubmit }) {
         >
           <motion.div
             className="crm-modal-panel"
-            initial={{ opacity: 0, y: 14, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 14, scale: 0.98 }}
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 14 }}
             transition={{ duration: 0.18 }}
             onClick={(event) => event.stopPropagation()}
           >
@@ -383,9 +383,9 @@ function InvoiceViewModal({ invoice, onClose }) {
         >
           <motion.div
             className="crm-modal-panel"
-            initial={{ opacity: 0, y: 14, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 14, scale: 0.98 }}
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 14 }}
             transition={{ duration: 0.18 }}
             onClick={(event) => event.stopPropagation()}
           >

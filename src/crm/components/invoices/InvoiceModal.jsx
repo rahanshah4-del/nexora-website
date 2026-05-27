@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { useEffect, useMemo, useState } from 'react'
+import { memo, useEffect, useMemo, useState } from 'react'
 import Card from '../ui/Card.jsx'
 import Button from '../ui/Button.jsx'
 import Input from '../ui/Input.jsx'
@@ -39,7 +39,7 @@ function paymentBadge(invoice) {
   return { label: 'Payment Pending', variant: 'warning' }
 }
 
-export default function InvoiceModal({
+function InvoiceModal({
   open,
   mode = 'detail',
   invoice,
@@ -114,9 +114,9 @@ export default function InvoiceModal({
           aria-modal="true"
         >
           <motion.div
-            initial={{ opacity: 0, y: 14, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 14, scale: 0.98 }}
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 14 }}
             transition={{ duration: 0.18 }}
             onClick={(e) => e.stopPropagation()}
             className="crm-modal-panel crm-modal-panel-wide"
@@ -378,3 +378,5 @@ export default function InvoiceModal({
     </AnimatePresence>
   )
 }
+
+export default memo(InvoiceModal)

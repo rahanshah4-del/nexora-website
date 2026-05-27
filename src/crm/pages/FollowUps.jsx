@@ -28,9 +28,9 @@ function DeleteConfirmModal({ task, onClose, onConfirm }) {
         >
           <motion.div
             className="crm-modal-panel max-w-md"
-            initial={{ opacity: 0, y: 14, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 14, scale: 0.98 }}
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 14 }}
             transition={{ duration: 0.18 }}
             onClick={(event) => event.stopPropagation()}
           >

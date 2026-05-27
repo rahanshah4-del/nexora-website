@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { useEffect, useState } from 'react'
+import { memo, useEffect, useState } from 'react'
 import Badge from '../ui/Badge.jsx'
 import Button from '../ui/Button.jsx'
 import Card from '../ui/Card.jsx'
@@ -16,7 +16,7 @@ const blankProduct = {
   status: 'active',
 }
 
-export default function ProductModal({ open, product, onClose, onSave }) {
+function ProductModal({ open, product, onClose, onSave }) {
   const [draft, setDraft] = useState(blankProduct)
 
   useEffect(() => {
@@ -42,9 +42,9 @@ export default function ProductModal({ open, product, onClose, onSave }) {
         >
           <motion.div
             className="crm-modal-panel"
-            initial={{ opacity: 0, y: 14, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 14, scale: 0.98 }}
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 14 }}
             transition={{ duration: 0.18 }}
             onClick={(event) => event.stopPropagation()}
           >
@@ -126,3 +126,5 @@ export default function ProductModal({ open, product, onClose, onSave }) {
     </AnimatePresence>
   )
 }
+
+export default memo(ProductModal)

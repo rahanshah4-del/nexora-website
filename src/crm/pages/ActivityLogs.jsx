@@ -92,7 +92,7 @@ export default function ActivityLogsPage() {
               <ActivityTimeline items={filtered.slice(0, 10)} />
             ) : (
               <div className="rounded-2xl px-3 py-10 text-center text-sm text-slate-600 dark:text-slate-300">
-                No activity logs yet
+                No activity recorded yet
               </div>
             )}
           </div>

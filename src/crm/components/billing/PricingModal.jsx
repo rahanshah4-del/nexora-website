@@ -1,4 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion'
+import { memo } from 'react'
 import { HiOutlineCheck, HiOutlineXMark } from 'react-icons/hi2'
 import Badge from '../ui/Badge.jsx'
 import Button from '../ui/Button.jsx'
@@ -18,7 +19,7 @@ const businessFeatures = [
   'Usage Analytics',
 ]
 
-export default function PricingModal({ open, onClose }) {
+function PricingModal({ open, onClose }) {
   const { plan: localPlan, setPlan } = usePreferences()
   const { plan } = useUser()
   const navigate = useNavigate()
@@ -41,9 +42,9 @@ export default function PricingModal({ open, onClose }) {
           aria-modal="true"
         >
           <motion.div
-            initial={{ opacity: 0, y: 14, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 14, scale: 0.98 }}
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 14 }}
             transition={{ duration: 0.18 }}
             onClick={(e) => e.stopPropagation()}
             className="crm-modal-panel"
@@ -140,3 +141,5 @@ export default function PricingModal({ open, onClose }) {
     </AnimatePresence>
   )
 }
+
+export default memo(PricingModal)
