@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
+  arrayUnion,
   collection,
   doc,
   getDoc,
@@ -181,8 +182,19 @@ async function addInventoryAdjustments(batch, workspaceId, invoice, now) {
       const productSnap = await getDoc(productRef)
       if (!productSnap.exists()) return
       const currentStock = toNumber(productSnap.data().stockQuantity ?? productSnap.data().stock, 0)
+      const quantity = toNumber(item.quantity ?? item.qty, 0)
       batch.update(productRef, {
-        stockQuantity: Math.max(0, currentStock - toNumber(item.quantity ?? item.qty, 0)),
+        stockQuantity: Math.max(0, currentStock - quantity),
+        stockHistory: arrayUnion({
+          type: 'invoice_approved',
+          invoiceId: invoice.id || invoice.invoiceNumber || '',
+          invoiceNumber: invoice.invoiceNumber || '',
+          previousQuantity: currentStock,
+          quantity: Math.max(0, currentStock - quantity),
+          delta: -quantity,
+          note: 'Approval payment stock deduction',
+          createdAt: new Date().toISOString(),
+        }),
         updatedAt: now,
       })
     }),

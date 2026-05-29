@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { collection, doc, getDoc, serverTimestamp, writeBatch } from 'firebase/firestore'
+import { arrayUnion, collection, doc, getDoc, serverTimestamp, writeBatch } from 'firebase/firestore'
 import { db } from '../lib/firebase.js'
 import { createUserDoc, patchUserDoc, subscribeUserCollection, workspaceCollectionPath } from '../lib/firestore.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
@@ -61,8 +61,19 @@ async function addInventoryAdjustments(batch, workspaceId, invoice, now) {
       const productSnap = await getDoc(productRef)
       if (!productSnap.exists()) return
       const currentStock = toNumber(productSnap.data().stockQuantity ?? productSnap.data().stock, 0)
+      const quantity = toNumber(item.quantity ?? item.qty, 0)
       batch.update(productRef, {
-        stockQuantity: Math.max(0, currentStock - toNumber(item.quantity ?? item.qty, 0)),
+        stockQuantity: Math.max(0, currentStock - quantity),
+        stockHistory: arrayUnion({
+          type: 'invoice_paid',
+          invoiceId: invoice.id || invoice.invoiceNumber || '',
+          invoiceNumber: invoice.invoiceNumber || '',
+          previousQuantity: currentStock,
+          quantity: Math.max(0, currentStock - quantity),
+          delta: -quantity,
+          note: 'Invoice payment stock deduction',
+          createdAt: new Date().toISOString(),
+        }),
         updatedAt: now,
       })
     }),
