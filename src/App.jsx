@@ -112,13 +112,13 @@ const pricingPlans = [
     monthly: 5999,
     description: 'For growing businesses',
     features: ['All Basic Features', 'School OR Property ERP', 'Up to 5 Users', '20GB Storage', 'Priority Support'],
+    featured: true,
   },
   {
     name: 'Premium',
     monthly: 9999,
     description: 'For established businesses',
     features: ['All Standard Features', 'All Modules Access', 'Up to 10 Users', '50GB Storage', 'Priority Support'],
-    featured: true,
   },
   {
     name: 'Enterprise',
@@ -180,7 +180,7 @@ function DashboardPreview() {
 
   return (
     <div className="relative mx-auto w-full max-w-[43rem] lg:mx-0 lg:ml-auto">
-      <div className="absolute -left-9 top-16 hidden space-y-5 xl:block">
+      <div className="absolute -left-9 top-16 hidden space-y-5 2xl:block">
         {[
           ['bg-blue-50 text-blue-600', HiOutlineUserGroup],
           ['bg-emerald-50 text-emerald-600', HiOutlineAcademicCap],
@@ -188,7 +188,7 @@ function DashboardPreview() {
         ].map(([style, Icon], index) => (
           <div
             key={style}
-            className={`hero-float flex h-16 w-16 items-center justify-center rounded-2xl border border-white bg-white shadow-[0_16px_42px_-22px_rgba(15,23,42,0.35)] ${style}`}
+            className={`flex h-16 w-16 items-center justify-center rounded-2xl border border-white bg-white shadow-lg shadow-blue-950/10 ${style}`}
             style={{ animationDelay: `${index * 0.6}s` }}
           >
             <Icon className="text-3xl" />
@@ -196,7 +196,7 @@ function DashboardPreview() {
         ))}
       </div>
 
-      <div className="absolute -right-8 top-20 hidden space-y-5 xl:block">
+      <div className="absolute -right-8 top-20 hidden space-y-5 2xl:block">
         {[
           ['bg-orange-50 text-orange-500', HiOutlineShoppingCart],
           ['bg-green-50 text-green-600', HiOutlineChatBubbleLeftRight],
@@ -204,7 +204,7 @@ function DashboardPreview() {
         ].map(([style, Icon], index) => (
           <div
             key={style}
-            className={`hero-float flex h-16 w-16 items-center justify-center rounded-2xl border border-white bg-white shadow-[0_16px_42px_-22px_rgba(15,23,42,0.35)] ${style}`}
+            className={`flex h-16 w-16 items-center justify-center rounded-2xl border border-white bg-white shadow-lg shadow-blue-950/10 ${style}`}
             style={{ animationDelay: `${index * 0.7}s` }}
           >
             <Icon className="text-3xl" />
@@ -212,7 +212,7 @@ function DashboardPreview() {
         ))}
       </div>
 
-      <div className="overflow-hidden rounded-[1.4rem] border border-slate-200 bg-white shadow-[0_30px_80px_-42px_rgba(15,72,150,0.45)]">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl shadow-blue-950/10">
         <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 sm:px-5">
           <NexoraLogo compact iconClassName="rounded-xl" textClassName="[&>p:first-child]:text-[0.62rem] [&>p:last-child]:text-[0.45rem]" />
           <div className="hidden h-8 w-48 items-center rounded-lg border border-slate-100 bg-slate-50 px-3 text-[0.68rem] text-slate-400 sm:flex">
@@ -302,35 +302,6 @@ function App({ initialSectionId = '' }) {
   const [billingCycle, setBillingCycle] = useState('monthly')
 
   useEffect(() => {
-    const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches
-    const elements = Array.from(document.querySelectorAll('[data-reveal]'))
-
-    if (prefersReducedMotion || elements.length === 0) {
-      elements.forEach((element) => element.classList.add('is-revealed'))
-      return undefined
-    }
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('is-revealed')
-            observer.unobserve(entry.target)
-          }
-        })
-      },
-      { threshold: 0.12, rootMargin: '0px 0px -8% 0px' },
-    )
-
-    elements.forEach((element, index) => {
-      element.style.setProperty('--reveal-delay', `${Math.min(index * 35, 180)}ms`)
-      observer.observe(element)
-    })
-
-    return () => observer.disconnect()
-  }, [])
-
-  useEffect(() => {
     if (!initialSectionId) return undefined
     const handle = window.requestAnimationFrame(() => {
       document.getElementById(initialSectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -339,11 +310,11 @@ function App({ initialSectionId = '' }) {
   }, [initialSectionId])
 
   return (
-    <div className="page-enter min-h-screen overflow-x-hidden bg-white text-slate-950">
+    <div className="min-h-screen overflow-x-hidden bg-white text-slate-950">
       <Header />
 
       <main>
-        <section id="hero" className="relative overflow-hidden bg-[linear-gradient(180deg,#f8fbff_0%,#ffffff_92%)] pt-12 sm:pt-16 lg:pt-20" data-reveal>
+        <section id="hero" className="relative overflow-hidden bg-[linear-gradient(180deg,#f8fbff_0%,#ffffff_92%)] py-14 sm:py-16 lg:py-20">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_30%_12%,rgba(37,99,235,0.09),transparent_28%),radial-gradient(circle_at_78%_18%,rgba(14,165,233,0.11),transparent_30%)]" />
           <div className="pointer-events-none absolute left-[30%] top-6 hidden h-72 w-56 bg-[radial-gradient(circle,#dbeafe_1px,transparent_1px)] [background-size:18px_18px] opacity-75 lg:block" />
           <div className="pointer-events-none absolute bottom-6 right-0 hidden h-56 w-64 bg-[radial-gradient(circle,#bfdbfe_1px,transparent_1px)] [background-size:18px_18px] opacity-80 lg:block" />
@@ -354,7 +325,7 @@ function App({ initialSectionId = '' }) {
                 <h1 className="mx-auto max-w-2xl text-4xl font-extrabold leading-[1.08] tracking-tight text-slate-950 sm:text-5xl lg:mx-0 lg:text-[3.8rem]">
                   One Platform for <span className="text-blue-600">All Your Business</span> Management
                 </h1>
-                <p className="mx-auto mt-5 max-w-xl text-base leading-8 text-slate-650 sm:text-lg lg:mx-0">
+                <p className="mx-auto mt-5 max-w-xl text-base leading-8 text-slate-600 sm:text-lg lg:mx-0">
                   Nexora Business Suite helps you manage customers, students, tenants, sales, invoices, reports and team access from one secure dashboard.
                 </p>
 
@@ -380,8 +351,8 @@ function App({ initialSectionId = '' }) {
                     <div key={badge.title} className="flex min-w-0 items-start gap-2">
                       <badge.icon className="mt-0.5 shrink-0 text-xl text-blue-600" />
                       <div className="min-w-0">
-                        <p className="truncate text-xs font-extrabold text-slate-900">{badge.title}</p>
-                        <p className="truncate text-[0.68rem] text-slate-500">{badge.text}</p>
+                        <p className="text-xs font-extrabold leading-4 text-slate-900">{badge.title}</p>
+                        <p className="text-[0.68rem] leading-4 text-slate-500">{badge.text}</p>
                       </div>
                     </div>
                   ))}
@@ -393,7 +364,7 @@ function App({ initialSectionId = '' }) {
           </div>
         </section>
 
-        <section id="services" className="section-space bg-white" data-reveal>
+        <section id="services" className="bg-white py-16 sm:py-20 lg:py-24">
           <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-3xl text-center">
               <h2 className="text-2xl font-extrabold tracking-tight text-slate-950 sm:text-3xl lg:text-4xl">
@@ -405,11 +376,11 @@ function App({ initialSectionId = '' }) {
               </p>
             </div>
 
-            <div className="mt-10 grid items-stretch gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+            <div className="mt-12 grid items-stretch gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
               {moduleCards.map((card) => (
                 <article
                   key={card.title}
-                  className="group flex h-full min-h-[15rem] flex-col items-center rounded-lg border border-slate-200 bg-white p-5 text-center shadow-[0_18px_50px_-40px_rgba(15,23,42,0.45)] transition duration-200 hover:-translate-y-1 hover:border-blue-200 hover:shadow-[0_24px_60px_-40px_rgba(37,99,235,0.45)]"
+                  className="group flex h-full min-h-[16.5rem] flex-col items-center rounded-xl border border-slate-200 bg-white p-6 text-center shadow-lg shadow-slate-950/5 transition-colors duration-200 hover:border-blue-200 hover:shadow-blue-950/10"
                 >
                   <ModuleIcon icon={card.icon} tone={card.tone} />
                   <h3 className="mt-4 text-lg font-extrabold text-slate-950">{card.title}</h3>
@@ -423,9 +394,9 @@ function App({ initialSectionId = '' }) {
           </div>
         </section>
 
-        <section id="about" className="bg-white px-5 sm:px-6 lg:px-8" data-reveal>
-          <div className="mx-auto grid max-w-7xl overflow-hidden rounded-lg border border-blue-100 bg-white shadow-[0_18px_55px_-44px_rgba(37,99,235,0.42)] lg:grid-cols-[1.1fr_1fr]">
-            <div className="border-b border-blue-100 p-6 lg:border-b-0 lg:border-r">
+        <section id="about" className="bg-white px-5 pb-16 pt-2 sm:px-6 sm:pb-20 lg:px-8 lg:pb-24">
+          <div className="mx-auto grid max-w-7xl gap-6 rounded-2xl border border-blue-100 bg-blue-50/35 p-4 shadow-lg shadow-blue-950/5 lg:grid-cols-[1.1fr_1fr] lg:p-5">
+            <div className="rounded-xl border border-blue-100 bg-white p-6 shadow-sm">
               <p className="text-base font-extrabold text-slate-950">Trusted by 500+ Businesses</p>
               <p className="mt-2 text-sm text-slate-600">Across Pakistan</p>
               <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-5">
@@ -437,9 +408,9 @@ function App({ initialSectionId = '' }) {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 divide-x divide-y divide-blue-100 sm:grid-cols-4 sm:divide-y-0">
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
               {stats.map((stat) => (
-                <div key={stat.label} className="flex min-h-28 flex-col items-center justify-center p-4 text-center">
+                <div key={stat.label} className="flex min-h-32 flex-col items-center justify-center rounded-xl border border-blue-100 bg-white p-5 text-center shadow-sm">
                   <p className="text-2xl font-extrabold text-blue-600 sm:text-3xl">{stat.value}</p>
                   <p className="mt-2 text-sm font-medium text-slate-700">{stat.label}</p>
                 </div>
@@ -448,11 +419,11 @@ function App({ initialSectionId = '' }) {
           </div>
         </section>
 
-        <section id="products" className="section-space bg-[linear-gradient(180deg,#ffffff_0%,#f7fbff_100%)]" data-reveal>
-          <div className="mx-auto grid max-w-7xl items-center gap-12 px-5 sm:px-6 lg:grid-cols-2 lg:px-8">
-            <div className="relative mx-auto w-full max-w-xl">
-              <div className="absolute -left-2 bottom-0 hidden h-[82%] w-[32%] rounded-t-[2.2rem] border-8 border-slate-950 bg-white shadow-[0_28px_70px_-42px_rgba(15,23,42,0.45)] sm:block">
-                <div className="h-full rounded-t-[1.5rem] bg-[linear-gradient(180deg,#eef6ff,#ffffff)] p-3">
+        <section id="products" className="bg-[linear-gradient(180deg,#ffffff_0%,#f7fbff_100%)] py-16 sm:py-20 lg:py-24">
+          <div className="mx-auto grid max-w-7xl items-center gap-14 px-5 sm:px-6 lg:grid-cols-2 lg:px-8">
+            <div className="relative mx-auto grid w-full max-w-xl gap-5 sm:grid-cols-[0.38fr_0.62fr] sm:items-end">
+              <div className="hidden min-h-[19rem] rounded-[1.8rem] border-[7px] border-slate-950 bg-white shadow-xl shadow-slate-950/10 sm:block">
+                <div className="h-full rounded-[1.25rem] bg-[linear-gradient(180deg,#eef6ff,#ffffff)] p-4">
                   <div className="mx-auto mb-5 h-1.5 w-12 rounded-full bg-slate-800" />
                   <p className="text-[0.55rem] font-extrabold text-slate-500">Dashboard</p>
                   <p className="mt-2 text-sm font-extrabold text-slate-950">Welcome Back!</p>
@@ -466,7 +437,7 @@ function App({ initialSectionId = '' }) {
                 </div>
               </div>
 
-              <div className="ml-auto overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-[0_28px_70px_-48px_rgba(15,23,42,0.45)] sm:w-[82%] sm:p-5">
+              <div className="overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-xl shadow-slate-950/10 sm:p-5">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-extrabold text-slate-950">Students</h3>
                   <span className="rounded-md bg-emerald-500 px-3 py-2 text-xs font-bold text-white">+ Add Student</span>
@@ -511,7 +482,7 @@ function App({ initialSectionId = '' }) {
           </div>
         </section>
 
-        <section id="pricing" className="section-space bg-white" data-reveal>
+        <section id="pricing" className="bg-white py-16 sm:py-20 lg:py-24">
           <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-3xl text-center">
               <h2 className="text-2xl font-extrabold tracking-tight text-slate-950 sm:text-3xl lg:text-4xl">
@@ -538,15 +509,17 @@ function App({ initialSectionId = '' }) {
               {pricingPlans.map((plan) => (
                 <article
                   key={plan.name}
-                  className={`relative flex h-full min-h-[25rem] flex-col rounded-lg border bg-white p-6 shadow-[0_18px_55px_-44px_rgba(15,23,42,0.5)] ${
-                    plan.featured ? 'border-blue-300 ring-2 ring-blue-100' : 'border-slate-200'
+                  className={`relative flex h-full min-h-[25rem] flex-col rounded-xl border bg-white p-6 shadow-lg shadow-slate-950/5 ${
+                    plan.featured ? 'border-blue-300 bg-blue-50/35 ring-2 ring-blue-100' : 'border-slate-200'
                   }`}
                 >
-                  {plan.featured && (
-                    <span className="absolute right-4 top-4 rounded-full bg-blue-600 px-3 py-1 text-[0.68rem] font-extrabold text-white">
-                      Most Popular
-                    </span>
-                  )}
+                  <div className="mb-3 flex min-h-7 justify-center">
+                    {plan.featured && (
+                      <span className="rounded-full bg-blue-600 px-3 py-1 text-[0.68rem] font-extrabold text-white">
+                        Most Popular
+                      </span>
+                    )}
+                  </div>
                   <h3 className={`text-center text-xl font-extrabold ${plan.featured ? 'text-blue-600' : 'text-slate-950'}`}>{plan.name}</h3>
                   <p className="mt-2 text-center text-sm text-slate-500">{plan.description}</p>
                   <div className="mt-4 text-center">
@@ -579,8 +552,8 @@ function App({ initialSectionId = '' }) {
           </div>
         </section>
 
-        <section id="contact" className="bg-white px-5 pb-12 sm:px-6 lg:px-8" data-reveal>
-          <div className="mx-auto grid max-w-7xl items-center gap-6 rounded-lg border border-blue-100 bg-[linear-gradient(135deg,#eef6ff_0%,#ffffff_100%)] p-6 shadow-[0_20px_65px_-48px_rgba(37,99,235,0.45)] sm:p-8 lg:grid-cols-[1fr_auto]">
+        <section id="contact" className="bg-white px-5 pb-16 sm:px-6 sm:pb-20 lg:px-8">
+          <div className="mx-auto grid max-w-7xl items-center gap-6 rounded-2xl border border-blue-100 bg-[linear-gradient(135deg,#eef6ff_0%,#ffffff_100%)] p-6 shadow-lg shadow-blue-950/5 sm:p-8 lg:grid-cols-[1fr_auto]">
             <div className="flex items-center gap-5">
               <span className="hidden h-20 w-20 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600 ring-8 ring-white sm:flex">
                 <HiOutlineChatBubbleLeftRight className="text-5xl" />
@@ -605,7 +578,7 @@ function App({ initialSectionId = '' }) {
         </section>
       </main>
 
-      <footer className="bg-[linear-gradient(135deg,#071d35_0%,#062b52_100%)] text-white" data-reveal>
+      <footer className="bg-[linear-gradient(135deg,#071d35_0%,#062b52_100%)] text-white">
         <div className="mx-auto max-w-7xl px-5 py-12 sm:px-6 lg:px-8">
           <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-[1.25fr_0.7fr_0.7fr_0.8fr_1fr]">
             <div>
