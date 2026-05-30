@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { memo, useMemo } from 'react'
 import {
@@ -174,9 +173,9 @@ const QuickAction = memo(function QuickAction({ to, icon: Icon, title, detail })
   return (
     <Link
       to={to}
-      className="group flex min-w-0 items-center gap-3 rounded-[1.15rem] border border-slate-100 bg-white/70 p-3 transition-colors duration-150 hover:border-sky-100 hover:bg-white dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
+      className="group flex min-w-0 items-center gap-3 rounded-[1.15rem] border border-slate-100 bg-white/70 p-3 transition-colors duration-100 hover:border-sky-100 hover:bg-white dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
     >
-      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-slate-950 text-white transition group-hover:bg-sky-700">
+      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-slate-950 text-white transition-colors duration-100 group-hover:bg-sky-700">
         <Icon className="h-5 w-5" />
       </span>
       <span className="min-w-0">
@@ -405,12 +404,7 @@ export default function DashboardHomePage() {
   )
 
   return (
-    <motion.div
-      className="min-w-0 space-y-5"
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
-    >
+    <div className="crm-dashboard-page min-w-0 space-y-5">
       <section className="grid min-w-0 gap-4 lg:grid-cols-12">
         <Card className="relative rounded-[1.6rem] border-slate-200/80 bg-white/85 p-5 sm:p-6 lg:col-span-8">
           <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-sky-400 via-cyan-300 to-violet-400" />
@@ -450,13 +444,13 @@ export default function DashboardHomePage() {
                 <div className="flex flex-wrap gap-2">
                   <Link
                     to="/app/customers"
-                    className="focus-ring inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors duration-150 hover:bg-sky-700"
+                    className="focus-ring inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors duration-100 hover:bg-sky-700"
                   >
                     <HiOutlinePlus className="h-4 w-4" /> Add customer
                   </Link>
                   <Link
                     to="/app/invoices"
-                    className="focus-ring inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-colors duration-150 hover:border-sky-200"
+                    className="focus-ring inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-colors duration-100 hover:border-sky-200"
                   >
                     Create invoice
                   </Link>
@@ -665,6 +659,6 @@ export default function DashboardHomePage() {
           </div>
         </Card>
       </section>
-    </motion.div>
+    </div>
   )
 }

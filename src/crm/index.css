@@ -5,9 +5,11 @@
 @layer base {
   html {
     @apply h-full overflow-x-hidden scroll-smooth;
+    scroll-behavior: smooth;
   }
   body {
     @apply min-h-full overflow-x-hidden bg-slate-50 text-slate-900 antialiased;
+    overscroll-behavior-y: none;
     background-image:
       radial-gradient(circle at 18% 0%, rgba(14, 165, 233, 0.1), transparent 28%),
       radial-gradient(circle at 80% 12%, rgba(124, 58, 237, 0.08), transparent 24%),
@@ -15,6 +17,7 @@
   }
   #root {
     @apply min-h-screen overflow-x-hidden;
+    isolation: isolate;
   }
 }
 
@@ -49,6 +52,18 @@
 
   .crm-modal-panel-wide {
     @apply max-w-[850px];
+  }
+
+  .crm-dashboard-page {
+    content-visibility: auto;
+    contain-intrinsic-size: 1px 1400px;
+    overflow-x: clip;
+  }
+
+  .crm-dashboard-page *,
+  .crm-dashboard-page *::before,
+  .crm-dashboard-page *::after {
+    scroll-margin-top: 6rem;
   }
 
   .shadow-glow {
