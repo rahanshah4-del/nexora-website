@@ -1,157 +1,156 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import {
+  HiOutlineArrowRight,
+  HiOutlineCheckBadge,
+  HiOutlineChatBubbleLeftRight,
+  HiOutlineShieldCheck,
+} from 'react-icons/hi2'
 import Header from './components/Header'
-import PwaInstallCard from './components/PwaInstallCard.jsx'
+import NexoraLogo from './components/brand/NexoraLogo'
 
 const whatsappNumberDisplay = '03194329754'
 const whatsappLink = 'https://wa.me/923194329754'
-const fiverrLink = 'https://pro.fiverr.com/s/o85L4R4'
+const whatsappLeadLink = `${whatsappLink}?text=${encodeURIComponent(
+  'Assalam o Alaikum, I want a free demo of Nexora Business Suite.',
+)}`
 const contactEmail = 'rahanshah4@gmail.com'
-const defaultLeadMessage = `Assalam o Alaikum, mujhe Nexora POS Solutions ka software demo chahiye.
 
-Business Type:
-Software Required For:
-City:
-Contact Name:
-Details:`
-const whatsappLeadLink = `${whatsappLink}?text=${encodeURIComponent(defaultLeadMessage)}`
-
-const products = [
+const moduleCards = [
   {
-    title: 'Nexora POS',
-    text: 'Fast billing, stock sync, and business operations in one counter-ready platform.',
+    title: 'CRM',
+    text: 'Lead tracking, follow-ups, customer history, and activity visibility in one clean workspace.',
+    accent: 'from-sky-500 to-cyan-400',
   },
   {
-    title: 'Hospital Dashboard',
-    text: 'Live OPD, pharmacy, and department reporting for daily hospital decisions.',
+    title: 'School ERP',
+    text: 'Admissions, attendance, fees, timetables, staff management, and reporting for schools.',
+    accent: 'from-blue-500 to-indigo-500',
   },
   {
-    title: 'Medical Store System',
-    text: 'Batch tracking, expiry alerts, pharmacy billing, and medicine inventory control.',
+    title: 'Property ERP',
+    text: 'Units, tenants, collections, maintenance, and property operations without spreadsheet chaos.',
+    accent: 'from-cyan-500 to-sky-500',
   },
   {
-    title: 'Parking Stand System',
-    text: 'Ticketing, gate activity, and shift-wise collection tracking for parking operations.',
+    title: 'POS',
+    text: 'Billing, stock visibility, cashier flow, and daily sales summaries for retail and hospitality.',
+    accent: 'from-indigo-500 to-sky-500',
   },
   {
-    title: 'Canteen Management',
-    text: 'Meal billing, token flow, and category-wise sales reporting for canteen teams.',
+    title: 'WhatsApp CRM',
+    text: 'Chat-driven lead handling, follow-ups, and customer communication that keeps teams moving.',
+    accent: 'from-sky-500 to-blue-500',
   },
   {
-    title: 'Transport Accounting',
-    text: 'Trip income, fuel expense, and route-level profitability for transport operations.',
+    title: 'Reports',
+    text: 'Readable dashboards, performance snapshots, and business metrics built for faster decisions.',
+    accent: 'from-blue-600 to-cyan-500',
   },
 ]
 
-const services = [
+const trustStats = [
+  { value: '500+', label: 'Happy Clients' },
+  { value: '50,000+', label: 'Users' },
+  { value: '25+', label: 'Business Modules' },
+  { value: '99.9%', label: 'Uptime' },
+]
+
+const reasons = [
   {
-    title: 'Restaurant POS Software',
-    text: 'Fast billing, table orders, kitchen tickets, inventory, expenses, and owner dashboards for food businesses.',
+    title: 'All-in-One Solution',
+    text: 'Run sales, operations, communication, and reporting from a single modern platform.',
   },
   {
-    title: 'POS Billing and Receipts',
-    text: 'Barcode billing, receipt printing, return handling, and customer transaction history.',
+    title: 'Access Anywhere',
+    text: 'Open Nexora from desktop, tablet, or mobile with a responsive UI that stays fast.',
   },
   {
-    title: 'Accounting and Profit Control',
-    text: 'Centralized revenue, expense, and branch-wise profit visibility with clean reports.',
+    title: 'Secure & Reliable',
+    text: 'Built with structured access and a clean architecture that supports business stability.',
   },
   {
-    title: 'Inventory and Alerts',
-    text: 'Low stock, expiry, and reorder alerts to prevent stockouts and wastage.',
+    title: 'Easy to Use',
+    text: 'Designed for owners and staff who want clear screens, simple actions, and less training.',
   },
-  {
-    title: 'Hospital and Pharmacy Flow',
-    text: 'OPD collection, pharmacy sales, patient stats, and daily hospital financial tracking.',
-  },
-  {
-    title: 'Transport and Fleet Monitoring',
-    text: 'Trip income, fuel records, driver records, and daily profit snapshots in one system.',
-  },
-  {
-    title: 'Business Automation',
-    text: 'Automated summaries and role-based dashboards for management and operational teams.',
-  },
+]
+
+const industries = [
+  'Retail',
+  'Education',
+  'Property',
+  'Hospitality',
+  'Services',
+  'Trading',
 ]
 
 const pricingPlans = [
   {
-    name: 'Starter Package',
-    installationFee: 'Rs 15,000',
-    monthlyFee: 'Rs 3,000/month',
-    popular: true,
-    points: [
-      'POS Billing System',
-      'Expense Tracking',
-      'Daily Sales Reports',
-      'Receipt Printing',
-      'Staff Login',
-      'Basic Dashboard',
-      'Mobile + Desktop Support',
-      'WhatsApp Support',
-    ],
+    name: 'Basic',
+    monthly: 2999,
+    description: 'Essential business management for small teams and startups.',
+    features: ['Core modules', 'Responsive dashboard', 'Email support', 'Starter reports'],
   },
   {
-    name: 'Growth',
-    price: 'Rs 27,000',
-    period: '/month',
-    points: [
-      'Multi-branch dashboard',
-      'Hospital + Medical Store modules',
-      'Accounting + expense flow',
-      'Parking and canteen integration',
-      'Priority support',
-    ],
+    name: 'Standard',
+    monthly: 5999,
+    description: 'Best for growing businesses that need more visibility and control.',
+    features: ['Extended modules', 'Priority onboarding', 'Advanced reports', 'Team workflows'],
+    featured: true,
+  },
+  {
+    name: 'Premium',
+    monthly: 9999,
+    description: 'For businesses that want premium automation and deeper oversight.',
+    features: ['Premium modules', 'Custom dashboard views', 'WhatsApp support', 'Analytics'],
   },
   {
     name: 'Enterprise',
-    price: 'Custom',
-    period: '',
-    points: [
-      'Transport, parking, canteen integration',
-      'Advanced operational analytics',
-      'Custom reports and workflow',
-      'Owner dashboards and API options',
-      'Dedicated account manager',
-    ],
+    custom: true,
+    description: 'Custom pricing for multi-branch or specialized implementations.',
+    features: ['Tailored scope', 'Dedicated planning', 'Custom integrations', 'Deployment support'],
   },
 ]
 
-const branchOffices = [
-  {
-    name: 'Lahore Office',
-    address: '08 Jade Park View City, Lahore',
-  },
-  {
-    name: 'Multan Office',
-    address: 'T Chowk, Shahrukn-e-Alam Colony, Multan',
-  },
-]
+const footerGroups = {
+  quickLinks: [
+    ['Home', '#hero'],
+    ['Solutions', '#services'],
+    ['Pricing', '#pricing'],
+    ['Industries', '#products'],
+  ],
+  modules: ['CRM', 'School ERP', 'Property ERP', 'POS', 'WhatsApp CRM', 'Reports'],
+  resources: [
+    ['About Us', '#about'],
+    ['Book a Demo', '#contact'],
+    ['Login', '/login'],
+    ['Get Started Free', '/signup'],
+  ],
+}
 
-function FiverrIcon({ className = 'h-4 w-4' }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden="true"
-    >
-      <path
-        d="M12 1.8C6.37 1.8 1.8 6.37 1.8 12S6.37 22.2 12 22.2 22.2 17.63 22.2 12 17.63 1.8 12 1.8Z"
-        fill="currentColor"
-        opacity="0.95"
-      />
-      <path
-        d="M10.06 16.9V10.3H8.7V8.7h1.36V8.1c0-2.01 1.17-3.2 3.3-3.2.78 0 1.43.12 1.92.3v1.6c-.44-.14-.9-.2-1.4-.2-1.11 0-1.56.57-1.56 1.64v.46h2.78v1.6h-2.78v6.6h-2.9Z"
-        fill="white"
-      />
-      <path d="M15.82 16.9a1.65 1.65 0 1 0 0-3.3 1.65 1.65 0 0 0 0 3.3Z" fill="white" />
-    </svg>
-  )
+const yearlyDiscount = 0.85
+
+function formatPrice(amount) {
+  return new Intl.NumberFormat('en-PK').format(amount)
+}
+
+function getPricingLabel(plan, billingCycle) {
+  if (plan.custom) return 'Custom Pricing'
+  if (billingCycle === 'yearly') {
+    return `PKR ${formatPrice(Math.round(plan.monthly * 12 * yearlyDiscount))}/year`
+  }
+  return `PKR ${formatPrice(plan.monthly)}/month`
+}
+
+function getBillingNote(plan, billingCycle) {
+  if (plan.custom) return 'Tailored to your rollout'
+  if (billingCycle === 'yearly') return 'Billed yearly with savings'
+  return 'Billed monthly'
 }
 
 function App({ initialSectionId = '' }) {
+  const [billingCycle, setBillingCycle] = useState('monthly')
+
   useEffect(() => {
     const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches
     const elements = Array.from(document.querySelectorAll('[data-reveal]'))
@@ -174,894 +173,488 @@ function App({ initialSectionId = '' }) {
     )
 
     elements.forEach((element, index) => {
-      element.style.setProperty('--reveal-delay', `${Math.min(index * 35, 180)}ms`)
+      element.style.setProperty('--reveal-delay', `${Math.min(index * 40, 240)}ms`)
       observer.observe(element)
     })
+
     return () => observer.disconnect()
   }, [])
 
   useEffect(() => {
-    if (!initialSectionId) return
+    if (!initialSectionId) return undefined
     const handle = window.requestAnimationFrame(() => {
-      const el = document.getElementById(initialSectionId)
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-      }
+      const target = document.getElementById(initialSectionId)
+      target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     })
     return () => window.cancelAnimationFrame(handle)
   }, [initialSectionId])
 
-  const handleDemoSubmit = (event) => {
-    event.preventDefault()
-
-    const formData = new FormData(event.currentTarget)
-    const fullName = formData.get('fullName')?.toString().trim() || 'Not provided'
-    const phoneNumber = formData.get('phoneNumber')?.toString().trim() || 'Not provided'
-    const emailAddress = formData.get('emailAddress')?.toString().trim() || 'Not provided'
-    const city = formData.get('city')?.toString().trim() || 'Not provided'
-    const businessType = formData.get('businessType')?.toString().trim() || 'Not provided'
-    const softwareRequiredFor = formData.get('softwareRequiredFor')?.toString().trim() || 'Not provided'
-    const details = formData.get('message')?.toString().trim() || 'Not provided'
-
-    const whatsappMessage = `Assalam o Alaikum, mujhe Nexora POS Solutions ka software demo chahiye.\n\nBusiness Type: ${businessType}\nSoftware Required For: ${softwareRequiredFor}\nCity: ${city}\nContact Name: ${fullName}\nPhone Number: ${phoneNumber}\nEmail Address: ${emailAddress}\nDetails: ${details}`
-
-    const mailSubject = encodeURIComponent('Nexora POS Solutions - Software Requirement')
-    const mailBody = encodeURIComponent(
-      `Assalam o Alaikum,\n\nBusiness Type: ${businessType}\nSoftware Required For: ${softwareRequiredFor}\nCity: ${city}\nContact Name: ${fullName}\nPhone Number: ${phoneNumber}\nEmail Address: ${emailAddress}\nDetails: ${details}`,
-    )
-    const mailtoLink = `mailto:${contactEmail}?subject=${mailSubject}&body=${mailBody}`
-
-    const waWindow = window.open(
-      `${whatsappLink}?text=${encodeURIComponent(whatsappMessage)}`,
-      '_blank',
-      'noopener,noreferrer',
-    )
-
-    if (!waWindow || waWindow.closed || typeof waWindow.closed === 'undefined') {
-      window.location.href = mailtoLink
-    }
-
-    event.currentTarget.reset()
-  }
-
   return (
-    <div className="page-enter relative overflow-x-hidden bg-slate-50 text-slate-950">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-[radial-gradient(circle_at_20%_20%,_rgba(56,189,248,0.18),_transparent_28%),radial-gradient(circle_at_80%_10%,_rgba(168,85,247,0.16),_transparent_26%)] opacity-90" />
+    <div className="page-enter relative overflow-x-hidden bg-[#f6f9ff] text-slate-950">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute inset-x-0 top-0 h-[32rem] bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.22),_transparent_30%),radial-gradient(circle_at_80%_10%,_rgba(96,165,250,0.18),_transparent_24%),linear-gradient(180deg,_rgba(255,255,255,0.88),_rgba(246,249,255,0))]" />
+        <div className="absolute left-0 top-28 h-72 w-72 rounded-full bg-sky-300/20 blur-3xl" />
+        <div className="absolute right-0 top-80 h-80 w-80 rounded-full bg-blue-300/15 blur-3xl" />
+        <div className="absolute inset-x-0 bottom-0 h-40 bg-[linear-gradient(180deg,rgba(246,249,255,0),rgba(235,243,255,0.72))]" />
+      </div>
 
       <Header />
 
-      <main>
-        <section id="hero" className="relative overflow-hidden pb-10 pt-8 sm:py-20 lg:py-24" data-reveal>
-          <div className="pointer-events-none absolute inset-0">
-            <div className="absolute inset-0 bg-sparkle-grid opacity-90" />
-            <div className="glow-blob absolute -top-28 left-1/2 h-72 w-[34rem] -translate-x-1/2 rounded-full bg-gradient-to-r from-sky-400/25 via-cyan-300/20 to-violet-400/25 blur-3xl" />
-            <div className="glow-blob absolute -bottom-40 right-[-8rem] h-72 w-72 rounded-full bg-sky-400/15 blur-3xl [animation-delay:1.2s]" />
-          </div>
+      <main className="relative">
+        <section id="hero" className="relative pt-10 sm:pt-14 lg:pt-16" data-reveal>
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="relative grid items-center gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:gap-12">
-              <div className="relative hero-enter [--delay:0ms] space-y-6 sm:space-y-8">
-                <div className="inline-flex items-center gap-2 rounded-full border border-sky-200/80 bg-white/80 px-3 py-1.5 text-xs font-semibold text-sky-700 shadow-sm backdrop-blur sm:px-4 sm:py-2 sm:text-sm">
-                  <span className="h-1.5 w-1.5 rounded-full bg-gradient-to-r from-sky-500 to-indigo-500" />
-                  Premium software & dashboards
+            <div className="grid items-center gap-10 lg:grid-cols-[1.02fr_0.98fr] lg:gap-14">
+              <div className="relative space-y-7">
+                <div className="inline-flex items-center gap-2 rounded-full border border-sky-100 bg-white/85 px-4 py-2 text-xs font-semibold text-sky-700 shadow-[0_16px_40px_-26px_rgba(14,165,233,0.45)] backdrop-blur">
+                  <span className="h-2 w-2 rounded-full bg-sky-500" />
+                  Premium SaaS platform for modern businesses
                 </div>
 
-                <div className="space-y-4 sm:space-y-5">
-                  <p className="text-xs uppercase tracking-[0.28em] text-sky-700 sm:text-sm">NEXORA Solutions</p>
-                  <h1 className="max-w-2xl font-semibold tracking-tight text-slate-950">
-                    <span className="block text-[1.85rem] leading-[1.12] sm:hidden">
-                      Premium Software, POS &amp; Dashboard Systems
-                    </span>
-                    <span className="hidden text-4xl sm:block sm:text-5xl">
-                      Modern SaaS, ERP, CRM, POS and dashboard software for growing businesses
-                    </span>
+                <div className="space-y-5">
+                  <h1 className="max-w-3xl text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl lg:text-[4.4rem] lg:leading-[1.02]">
+                    One Platform for All Your Business Management
                   </h1>
-                  <p className="max-w-xl text-sm leading-7 text-slate-600 sm:text-base sm:leading-8">
-                    Nexora builds custom software, POS systems, and real-time dashboards so teams run operations faster and
-                    make confident decisions.
+                  <p className="max-w-2xl text-base leading-8 text-slate-600 sm:text-lg">
+                    Nexora Business Suite brings CRM, ERP, POS, reporting, and communication into one premium workspace
+                    so your team can move faster with less friction.
                   </p>
                 </div>
 
-                <div className="flex flex-wrap gap-2">
-                  {['POS Systems', 'ERP', 'CRM', 'Dashboards'].map((item) => (
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <Link
+                    to="/signup"
+                    className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-sky-600 to-blue-600 px-6 py-3.5 text-sm font-semibold text-white shadow-[0_24px_60px_-28px_rgba(37,99,235,0.7)] transition duration-300 hover:-translate-y-0.5 hover:from-sky-500 hover:to-blue-500"
+                  >
+                    Start Free Trial
+                    <HiOutlineArrowRight className="ml-2 text-lg" />
+                  </Link>
+                  <a
+                    href="#contact"
+                    className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white/90 px-6 py-3.5 text-sm font-semibold text-slate-800 shadow-[0_18px_42px_-28px_rgba(15,23,42,0.35)] backdrop-blur transition duration-300 hover:-translate-y-0.5 hover:border-sky-200 hover:text-sky-700"
+                  >
+                    Book a Demo
+                  </a>
+                </div>
+
+                <div className="flex flex-wrap gap-3">
+                  {['Blue-first UI', 'Fast deployment', 'Responsive screens', 'Business-ready modules'].map((item) => (
                     <span
                       key={item}
-                      className="inline-flex items-center gap-2 rounded-full border border-slate-200/80 bg-white/80 px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm backdrop-blur"
+                      className="inline-flex items-center rounded-full border border-sky-100 bg-white/80 px-4 py-2 text-xs font-semibold text-slate-600 shadow-[0_12px_30px_-20px_rgba(14,165,233,0.45)] backdrop-blur"
                     >
-                      <span className="h-1.5 w-1.5 rounded-full bg-gradient-to-r from-sky-500 to-indigo-500" />
+                      <span className="mr-2 h-1.5 w-1.5 rounded-full bg-sky-500" />
                       {item}
                     </span>
                   ))}
                 </div>
+              </div>
 
-                <div className="grid gap-3 sm:max-w-md sm:grid-cols-2">
-                  <a
-                    href="#contact"
-                    className="inline-flex items-center justify-center rounded-full bg-sky-700 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-sky-700/20 transition hover:bg-sky-800"
-                  >
-                    Book Demo
-                  </a>
-                  <a
-                    href="#services"
-                    className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-900 shadow-sm transition hover:bg-slate-100"
-                  >
-                    View Services
-                  </a>
-                  <a
-                    href={fiverrLink}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="sm:col-span-2 inline-flex items-center justify-center gap-2 rounded-full border border-emerald-200 bg-white/70 px-5 py-3 text-sm font-semibold text-slate-800 shadow-sm backdrop-blur transition hover:bg-white hover:shadow-md hover:shadow-emerald-600/10"
-                  >
-                    <span className="text-emerald-600">
-                      <FiverrIcon className="h-4 w-4" />
+              <div className="relative">
+                <div className="absolute inset-0 rounded-[2.4rem] bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.96),_rgba(224,242,254,0.7)_60%,_rgba(191,219,254,0.25))] blur-2xl" />
+
+                <div className="relative rounded-[2rem] border border-white/80 bg-white/90 p-4 shadow-[0_30px_100px_-44px_rgba(37,99,235,0.35)] backdrop-blur-xl sm:p-5">
+                  <div className="absolute left-4 right-4 top-4 rounded-[1.35rem] border border-slate-200/70 bg-white/85 px-4 py-3 shadow-sm backdrop-blur">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2.5 w-2.5 rounded-full bg-rose-400" />
+                        <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
+                        <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
+                      </div>
+                      <span className="text-[0.68rem] font-semibold uppercase tracking-[0.28em] text-slate-500">
+                        Live dashboard preview
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="hero-float relative overflow-hidden rounded-[1.7rem] border border-slate-200/70 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] p-4 pt-20 sm:p-6 sm:pt-20">
+                    <div className="pointer-events-none absolute -left-6 top-20 flex flex-col gap-3">
+                      {[
+                        ['CRM', 'bg-sky-500 text-white'],
+                        ['ERP', 'bg-blue-100 text-blue-700'],
+                        ['POS', 'bg-white text-slate-700'],
+                      ].map(([label, style]) => (
+                        <span
+                          key={label}
+                          className={`rounded-full px-3 py-2 text-[0.68rem] font-semibold uppercase tracking-[0.24em] shadow-[0_14px_30px_-20px_rgba(15,23,42,0.4)] ${style}`}
+                        >
+                          {label}
+                        </span>
+                      ))}
+                    </div>
+
+                    <div className="pointer-events-none absolute -right-4 top-24 flex flex-col gap-3">
+                      {[
+                        ['Reports', 'bg-white text-slate-700'],
+                        ['WhatsApp', 'bg-sky-50 text-sky-700'],
+                        ['School ERP', 'bg-blue-600 text-white'],
+                      ].map(([label, style]) => (
+                        <span
+                          key={label}
+                          className={`rounded-full px-3 py-2 text-[0.68rem] font-semibold uppercase tracking-[0.24em] shadow-[0_14px_30px_-20px_rgba(15,23,42,0.4)] ${style}`}
+                        >
+                          {label}
+                        </span>
+                      ))}
+                    </div>
+
+                    <div className="grid gap-4 lg:grid-cols-[0.92fr_1.08fr]">
+                      <div className="rounded-[1.4rem] border border-sky-100 bg-gradient-to-br from-sky-600 to-blue-600 p-4 text-white shadow-[0_24px_60px_-30px_rgba(37,99,235,0.65)]">
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <p className="text-[0.7rem] uppercase tracking-[0.28em] text-white/75">Business overview</p>
+                            <p className="mt-2 text-2xl font-semibold">Rs 1.28M</p>
+                          </div>
+                          <span className="rounded-full border border-white/20 bg-white/12 px-3 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.24em]">
+                            +14.8%
+                          </span>
+                        </div>
+
+                        <div className="mt-6 space-y-3">
+                          {[
+                            ['Sales', 84],
+                            ['Collections', 72],
+                            ['Growth', 91],
+                          ].map(([label, value]) => (
+                            <div key={label}>
+                              <div className="flex items-center justify-between text-xs font-medium text-white/75">
+                                <span>{label}</span>
+                                <span>{value}%</span>
+                              </div>
+                              <div className="mt-2 h-2 rounded-full bg-white/15">
+                                <div className="h-2 rounded-full bg-white" style={{ width: `${value}%` }} />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="mt-6 grid grid-cols-2 gap-3">
+                          {[
+                            ['Clients', '500+'],
+                            ['Users', '50K+'],
+                          ].map(([label, value]) => (
+                            <div key={label} className="rounded-[1.1rem] bg-white/10 p-3 backdrop-blur">
+                              <p className="text-[0.68rem] uppercase tracking-[0.24em] text-white/70">{label}</p>
+                              <p className="mt-2 text-lg font-semibold">{value}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="grid gap-4">
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          {[
+                            {
+                              label: 'Active modules',
+                              value: '25+',
+                              helper: 'CRM, ERP, POS, reports',
+                            },
+                            {
+                              label: 'Uptime',
+                              value: '99.9%',
+                              helper: 'Reliable and secure',
+                            },
+                          ].map((card) => (
+                            <div
+                              key={card.label}
+                              className="rounded-[1.4rem] border border-slate-200/70 bg-white p-4 shadow-[0_18px_50px_-34px_rgba(15,23,42,0.35)]"
+                            >
+                              <p className="text-[0.68rem] uppercase tracking-[0.24em] text-slate-500">{card.label}</p>
+                              <p className="mt-3 text-2xl font-semibold text-slate-950">{card.value}</p>
+                              <p className="mt-2 text-sm leading-6 text-slate-600">{card.helper}</p>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="rounded-[1.4rem] border border-slate-200/70 bg-white p-4 shadow-[0_18px_50px_-34px_rgba(15,23,42,0.35)]">
+                          <div className="flex items-center justify-between gap-3">
+                            <div>
+                              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+                                Operations snapshot
+                              </p>
+                              <p className="mt-2 text-lg font-semibold text-slate-950">Activity feed</p>
+                            </div>
+                            <span className="inline-flex items-center rounded-full bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-700">
+                              Live
+                            </span>
+                          </div>
+
+                          <div className="mt-4 space-y-3">
+                            {[
+                              ['Invoices processed', '128 today', 'bg-sky-50 text-sky-700'],
+                              ['WhatsApp replies', '34 pending', 'bg-blue-50 text-blue-700'],
+                              ['Reports generated', '18 ready', 'bg-slate-100 text-slate-700'],
+                            ].map(([title, value, style]) => (
+                              <div
+                                key={title}
+                                className="flex items-center justify-between rounded-[1rem] border border-slate-100 bg-slate-50/80 px-4 py-3"
+                              >
+                                <div>
+                                  <p className="text-sm font-semibold text-slate-900">{title}</p>
+                                  <p className="mt-1 text-xs text-slate-500">Updated a few minutes ago</p>
+                                </div>
+                                <span className={`rounded-full px-3 py-1 text-xs font-semibold ${style}`}>{value}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="services" className="pt-20 sm:pt-24 lg:pt-28" data-reveal>
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="mb-10 max-w-2xl">
+              <p className="inline-flex rounded-full border border-sky-100 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-sky-700 shadow-[0_16px_40px_-28px_rgba(14,165,233,0.45)]">
+                Solutions
+              </p>
+              <h2 className="mt-6 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+                Modular tools built into one polished platform
+              </h2>
+              <p className="mt-4 max-w-2xl text-base leading-8 text-slate-600">
+                Nexora keeps your core workflows in one place, from sales and communication to reporting and business
+                operations.
+              </p>
+            </div>
+
+            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+              {moduleCards.map((card) => (
+                <article
+                  key={card.title}
+                  className="group rounded-[1.75rem] border border-slate-200/70 bg-white/90 p-5 shadow-[0_24px_70px_-42px_rgba(15,23,42,0.3)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_32px_90px_-44px_rgba(37,99,235,0.32)]"
+                >
+                  <div className={`h-1.5 w-16 rounded-full bg-gradient-to-r ${card.accent}`} />
+                  <div className="mt-5 flex items-center gap-3">
+                    <span className={`inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br ${card.accent} text-sm font-semibold text-white shadow-[0_18px_36px_-24px_rgba(37,99,235,0.8)]`}>
+                      {card.title.slice(0, 2)}
                     </span>
-                    Hire on Fiverr
-                  </a>
+                    <h3 className="text-lg font-semibold text-slate-950">{card.title}</h3>
+                  </div>
+                  <p className="mt-4 text-sm leading-7 text-slate-600">{card.text}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section id="about" className="pt-20 sm:pt-24 lg:pt-28" data-reveal>
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="rounded-[1.8rem] border border-slate-200/70 bg-white p-5 shadow-[0_22px_70px_-44px_rgba(15,23,42,0.32)] sm:col-span-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-sky-700">Trusted by 500+ Businesses</p>
+                <h2 className="mt-4 max-w-xl text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+                  Premium software that feels calm, modern, and dependable.
+                </h2>
+                <p className="mt-4 max-w-2xl text-base leading-8 text-slate-600">
+                  Businesses choose Nexora when they want one platform for smoother operations, clearer reporting, and a
+                  better daily experience for the whole team.
+                </p>
+              </div>
+
+              {trustStats.map((stat) => (
+                <div
+                  key={stat.label}
+                  className="rounded-[1.8rem] border border-slate-200/70 bg-white p-5 shadow-[0_22px_70px_-44px_rgba(15,23,42,0.32)]"
+                >
+                  <p className="text-3xl font-semibold text-slate-950">{stat.value}</p>
+                  <p className="mt-3 text-sm font-medium uppercase tracking-[0.24em] text-slate-500">{stat.label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section id="products" className="pt-20 sm:pt-24 lg:pt-28" data-reveal>
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="mb-10 max-w-2xl">
+              <p className="inline-flex rounded-full border border-sky-100 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-sky-700 shadow-[0_16px_40px_-28px_rgba(14,165,233,0.45)]">
+                Industries
+              </p>
+              <h2 className="mt-6 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+                Built for industries that need clarity at scale
+              </h2>
+              <p className="mt-4 max-w-2xl text-base leading-8 text-slate-600">
+                Nexora adapts to different business models with the same premium interface and structured workflow.
+              </p>
+            </div>
+
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {industries.map((industry, index) => (
+                <div
+                  key={industry}
+                  className="rounded-[1.75rem] border border-slate-200/70 bg-white/90 p-5 shadow-[0_24px_70px_-44px_rgba(15,23,42,0.28)]"
+                >
+                  <div className="flex items-center justify-between">
+                    <p className="text-lg font-semibold text-slate-950">{industry}</p>
+                    <span className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-sky-50 text-sm font-semibold text-sky-700">
+                      0{index + 1}
+                    </span>
+                  </div>
+                  <p className="mt-4 text-sm leading-7 text-slate-600">
+                    Tailored workflows, dashboard views, and reporting can be aligned to this business category.
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section id="features" className="pt-20 sm:pt-24 lg:pt-28" data-reveal>
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="mb-10 max-w-2xl">
+              <p className="inline-flex rounded-full border border-sky-100 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-sky-700 shadow-[0_16px_40px_-28px_rgba(14,165,233,0.45)]">
+                Why Choose Nexora
+              </p>
+              <h2 className="mt-6 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+                Everything the team needs, without the clutter
+              </h2>
+            </div>
+
+            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+              {reasons.map((item) => (
+                <article
+                  key={item.title}
+                  className="rounded-[1.75rem] border border-slate-200/70 bg-white/90 p-5 shadow-[0_24px_70px_-44px_rgba(15,23,42,0.28)]"
+                >
+                  <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 to-blue-600 text-white shadow-[0_18px_40px_-24px_rgba(37,99,235,0.7)]">
+                    <HiOutlineCheckBadge className="text-xl" />
+                  </div>
+                  <h3 className="mt-5 text-lg font-semibold text-slate-950">{item.title}</h3>
+                  <p className="mt-3 text-sm leading-7 text-slate-600">{item.text}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section id="pricing" className="pt-20 sm:pt-24 lg:pt-28" data-reveal>
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+              <div className="max-w-2xl">
+                <p className="inline-flex rounded-full border border-sky-100 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-sky-700 shadow-[0_16px_40px_-28px_rgba(14,165,233,0.45)]">
+                  Pricing
+                </p>
+                <h2 className="mt-6 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+                  Flexible plans for every stage of growth
+                </h2>
+                <p className="mt-4 max-w-2xl text-base leading-8 text-slate-600">
+                  Switch between monthly and yearly billing to compare plans with a clean, premium UI.
+                </p>
+              </div>
+
+              <div className="inline-flex rounded-full border border-slate-200 bg-white p-1 shadow-[0_18px_42px_-28px_rgba(15,23,42,0.35)]">
+                {['monthly', 'yearly'].map((cycle) => (
+                  <button
+                    key={cycle}
+                    type="button"
+                    onClick={() => setBillingCycle(cycle)}
+                    className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                      billingCycle === cycle
+                        ? 'bg-gradient-to-r from-sky-600 to-blue-600 text-white shadow-[0_16px_36px_-24px_rgba(37,99,235,0.7)]'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    {cycle === 'monthly' ? 'Monthly' : 'Yearly'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-10 grid gap-5 xl:grid-cols-4">
+              {pricingPlans.map((plan) => (
+                <article
+                  key={plan.name}
+                  className={`rounded-[1.85rem] border p-5 shadow-[0_24px_70px_-44px_rgba(15,23,42,0.28)] ${
+                    plan.featured
+                      ? 'border-sky-200 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(239,246,255,0.92))]'
+                      : 'border-slate-200/70 bg-white/90'
+                  }`}
+                >
+                  {plan.featured && (
+                    <span className="inline-flex rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-sky-700">
+                      Most Popular
+                    </span>
+                  )}
+                  <h3 className="mt-4 text-xl font-semibold text-slate-950">{plan.name}</h3>
+                  <p className="mt-3 text-sm leading-7 text-slate-600">{plan.description}</p>
+
+                  <p className="mt-5 text-3xl font-semibold tracking-tight text-slate-950">
+                    {plan.custom ? 'Custom' : getPricingLabel(plan, billingCycle)}
+                  </p>
+                  <p className="mt-2 text-sm font-medium text-slate-500">{getBillingNote(plan, billingCycle)}</p>
+
+                  <div className="mt-6 space-y-3">
+                    {plan.features.map((feature) => (
+                      <div key={feature} className="flex items-start gap-3 text-sm text-slate-700">
+                        <span className="mt-1 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-sky-100 text-[0.7rem] font-bold text-sky-700">
+                          ✓
+                        </span>
+                        <span className="leading-6">{feature}</span>
+                      </div>
+                    ))}
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section id="contact" className="pt-20 sm:pt-24 lg:pt-28" data-reveal>
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="relative overflow-hidden rounded-[2rem] border border-sky-100 bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(239,246,255,0.94))] px-6 py-10 shadow-[0_30px_100px_-50px_rgba(37,99,235,0.4)] sm:px-8 sm:py-12">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(96,165,250,0.2),_transparent_28%),radial-gradient(circle_at_bottom_left,_rgba(14,165,233,0.14),_transparent_32%)]" />
+              <div className="relative grid gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
+                <div>
+                  <p className="inline-flex rounded-full border border-sky-100 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-sky-700 shadow-[0_16px_40px_-28px_rgba(14,165,233,0.45)]">
+                    CTA
+                  </p>
+                  <h2 className="mt-6 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+                    Want to See Nexora in Action?
+                  </h2>
+                  <p className="mt-4 max-w-2xl text-base leading-8 text-slate-600">
+                    Get a guided walkthrough of the platform and see how the modules fit your business workflow.
+                  </p>
+                </div>
+
+                <div className="flex flex-col gap-4 sm:flex-row lg:justify-end">
                   <a
                     href={whatsappLeadLink}
                     target="_blank"
                     rel="noreferrer"
-                    className="sm:col-span-2 inline-flex items-center justify-center rounded-full border border-slate-200 bg-white/70 px-5 py-3 text-sm font-semibold text-slate-700 shadow-sm backdrop-blur transition hover:bg-white"
+                    className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-sky-600 to-blue-600 px-6 py-3.5 text-sm font-semibold text-white shadow-[0_24px_60px_-28px_rgba(37,99,235,0.7)] transition duration-300 hover:-translate-y-0.5 hover:from-sky-500 hover:to-blue-500"
                   >
-                    WhatsApp demo request
+                    Book Free Demo
+                    <HiOutlineArrowRight className="ml-2 text-lg" />
                   </a>
-                </div>
-
-                <div className="mt-6 sm:mt-8">
-                  <PwaInstallCard />
-                </div>
-
-                <div className="grid grid-cols-3 gap-2 sm:max-w-lg sm:gap-3">
-                  {[
-                    { title: 'Fast Delivery', subtitle: 'Clear timelines' },
-                    { title: 'Custom Software', subtitle: 'Built for you' },
-                    { title: 'Automation', subtitle: 'Save hours/day' },
-                  ].map((stat) => (
-                    <div
-                      key={stat.title}
-                      className="rounded-[1.25rem] border border-slate-200/70 bg-white/70 p-3 shadow-sm backdrop-blur"
-                    >
-                      <p className="text-xs font-semibold text-slate-950">{stat.title}</p>
-                      <p className="mt-1 text-[0.72rem] leading-5 text-slate-600">{stat.subtitle}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="relative hero-enter [--delay:120ms]">
-                <div className="absolute inset-0 rounded-[2rem] bg-gradient-to-br from-sky-100/80 via-cyan-100/70 to-violet-100 blur-3xl" />
-                <div className="glass-card relative overflow-hidden px-4 pb-4 pt-14 sm:px-6 sm:pb-6 sm:pt-16 hero-float">
-                  <div className="pointer-events-none absolute inset-x-4 top-4 h-10 rounded-2xl border border-white/70 bg-white/60 backdrop-blur">
-                    <div className="flex h-full items-center gap-2 px-4">
-                      <span className="h-2 w-2 rounded-full bg-rose-400/90" />
-                      <span className="h-2 w-2 rounded-full bg-amber-400/90" />
-                      <span className="h-2 w-2 rounded-full bg-emerald-400/90" />
-                      <span className="ml-2 text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-slate-500">
-                        Dashboard
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500 sm:text-sm">Live dashboard</p>
-                      <h2 className="mt-2 text-lg font-semibold text-slate-950 sm:mt-3 sm:text-2xl">Nexora Business Cloud</h2>
-                    </div>
-                    <span className="rounded-full bg-sky-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-sky-700">
-                      Active
-                    </span>
-                  </div>
-
-                  <div className="mt-6 grid gap-3 sm:mt-8 sm:grid-cols-2 sm:gap-4">
-                    <div className="rounded-3xl bg-slate-950/5 p-3 sm:p-4">
-                      <p className="text-[0.7rem] uppercase tracking-[0.24em] text-slate-500 sm:text-xs">Revenue</p>
-                      <p className="mt-2 text-xl font-semibold text-slate-950 sm:mt-3 sm:text-2xl">Rs 458,200</p>
-                    </div>
-                    <div className="rounded-3xl bg-white p-3 shadow-sm sm:p-4">
-                      <p className="text-[0.7rem] uppercase tracking-[0.24em] text-slate-500 sm:text-xs">Orders</p>
-                      <p className="mt-2 text-xl font-semibold text-slate-950 sm:mt-3 sm:text-2xl">128</p>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 rounded-3xl border border-slate-200/80 bg-white p-4 shadow-sm sm:mt-6">
-                    <div className="flex items-center justify-between text-xs text-slate-500 sm:text-sm">
-                      <span>Sales overview</span>
-                      <span>Updated now</span>
-                    </div>
-                    <div className="mt-4 grid gap-3 sm:mt-5">
-                      {[82, 68, 91].map((value, index) => (
-                        <div key={index} className="grid gap-2">
-                          <div className="flex items-center justify-between text-xs text-slate-600 sm:text-sm">
-                            <span>{['Billing', 'Inventory', 'Reports'][index]}</span>
-                            <span>{value}%</span>
-                          </div>
-                          <div className="h-2 overflow-hidden rounded-full bg-slate-200">
-                            <div
-                              className="h-full rounded-full bg-gradient-to-r from-sky-500 to-indigo-500"
-                              style={{ width: `${value}%` }}
-                            />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section id="about" className="bg-slate-50 py-14 sm:py-20 lg:py-24" data-reveal>
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
-              <div className="space-y-6">
-                <p className="text-sm uppercase tracking-[0.28em] text-sky-700">About Nexora</p>
-                <h2 className="section-heading">A premium software partner for POS, healthcare, transport, and business operations</h2>
-                <p className="section-copy">
-                  Nexora provides practical software for billing, accounting, pharmacy, hospital, and transport workflows with clean dashboards and faster decision-making.
-                </p>
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="rounded-3xl bg-white p-6 shadow-sm">
-                  <p className="text-sm text-slate-500">Tailored software</p>
-                  <p className="mt-3 text-lg font-semibold text-slate-950">POS, ERP, CRM, and analytics in one place.</p>
-                </div>
-                <div className="rounded-3xl bg-white p-6 shadow-sm">
-                  <p className="text-sm text-slate-500">Reliable delivery</p>
-                  <p className="mt-3 text-lg font-semibold text-slate-950">Clear timelines, practical support, and fast onboarding.</p>
-                </div>
-                <div className="rounded-3xl bg-white p-6 shadow-sm">
-                  <p className="text-sm text-slate-500">Expert support</p>
-                  <p className="mt-3 text-lg font-semibold text-slate-950">WhatsApp and email support for every deployment.</p>
-                </div>
-                <div className="rounded-3xl bg-white p-6 shadow-sm">
-                  <p className="text-sm text-slate-500">Scalable teams</p>
-                  <p className="mt-3 text-lg font-semibold text-slate-950">From small shops to hospitals and transport hubs.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section id="services" className="py-14 sm:py-20 lg:py-24" data-reveal>
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="mb-10 max-w-2xl">
-              <p className="feature-pill">Our service coverage</p>
-              <h2 className="section-heading mt-6">Software services built for growing operations</h2>
-              <p className="section-copy">
-                From POS billing and inventory alerts to hospital workflows and transport dashboards, Nexora helps your team make decisions with clarity.
-              </p>
-            </div>
-            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-              {services.map((service) => (
-                <div key={service.title} className="glass-panel">
-                  <h3 className="text-lg font-semibold text-slate-950">{service.title}</h3>
-                  <p className="mt-3 text-sm leading-7 text-slate-600">{service.text}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section id="restaurant-pos" className="bg-slate-50 py-14 sm:py-20 lg:py-24" data-reveal>
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="grid gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
-              <div className="space-y-6">
-                <p className="feature-pill">Restaurant POS</p>
-                <h2 className="section-heading">Restaurant POS Dashboard System</h2>
-                <p className="text-sm font-semibold text-sky-700">Smart POS Software for Restaurants</p>
-                <p className="section-copy">
-                  Smart POS Software for Restaurants with table flow, KOT screens, cashier billing, inventory tracking, and
-                  daily reporting — all in one premium dashboard.
-                </p>
-
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {[
-                    { title: 'Order management dashboard', text: 'Track dine-in, takeaway, delivery, and pending bills in real time.' },
-                    { title: 'Table management', text: 'Live table status, split bills, and fast table turnover.' },
-                    { title: 'Kitchen order screen (KOT)', text: 'Auto-send tickets to kitchen with clear queue priority.' },
-                    { title: 'Cashier billing dashboard', text: 'Speed billing with discounts, returns, and receipt print flow.' },
-                    { title: 'Sales analytics', text: 'Daily/weekly trends, top items, and peak-hours insights.' },
-                    { title: 'Inventory + menu management', text: 'Stock sync, low-stock alerts, recipe costs, and menu updates.' },
-                    { title: 'Daily reports', text: 'Sales, expenses, profit, and cashier closing summaries.' },
-                    { title: 'Staff/user roles', text: 'Role-based access for cashier, manager, and owner dashboards.' },
-                  ].map((item) => (
-                    <div key={item.title} className="rounded-[1.5rem] border border-slate-200/70 bg-white/80 p-4 shadow-sm backdrop-blur">
-                      <p className="text-sm font-semibold text-slate-950">{item.title}</p>
-                      <p className="mt-2 text-sm leading-7 text-slate-600">{item.text}</p>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="rounded-[1.75rem] border border-sky-200/80 bg-white/80 p-5 shadow-sm backdrop-blur">
-                  <p className="text-sm font-semibold text-slate-950">Complete Restaurant Management Dashboard</p>
-                  <p className="mt-2 text-sm leading-7 text-slate-600">
-                    Automate daily restaurant operations: order flow, kitchen workflow, inventory, and owner reports — with
-                    a modern SaaS-style experience.
-                  </p>
-                </div>
-              </div>
-
-              <div className="relative">
-                <div className="absolute inset-0 rounded-[2.25rem] bg-gradient-to-br from-sky-200/60 via-cyan-100/60 to-violet-200/60 blur-3xl" />
-                <div className="glass-card relative overflow-hidden px-4 pb-4 pt-14 sm:px-6 sm:pb-6 sm:pt-16 hero-float">
-                  <div className="pointer-events-none absolute inset-x-4 top-4 h-10 rounded-2xl border border-white/70 bg-white/60 backdrop-blur">
-                    <div className="flex h-full items-center gap-2 px-4">
-                      <span className="h-2 w-2 rounded-full bg-rose-400/90" />
-                      <span className="h-2 w-2 rounded-full bg-amber-400/90" />
-                      <span className="h-2 w-2 rounded-full bg-emerald-400/90" />
-                      <span className="ml-2 text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-slate-500">
-                        POS Screen
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Live POS screen</p>
-                      <h3 className="mt-2 text-lg font-semibold text-slate-950 sm:text-xl">Restaurant POS Dashboard</h3>
-                    </div>
-                    <span className="rounded-full bg-sky-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-sky-700">
-                      Active
-                    </span>
-                  </div>
-
-                  <div className="mt-6 grid gap-3 sm:mt-8 sm:grid-cols-3">
-                    {[
-                      { label: 'Today Sales', value: 'Rs 214,900' },
-                      { label: 'Open Tables', value: '12' },
-                      { label: 'KOT Queue', value: '7' },
-                    ].map((stat) => (
-                      <div key={stat.label} className="rounded-3xl bg-slate-950/5 p-4">
-                        <p className="text-[0.72rem] uppercase tracking-[0.24em] text-slate-500">{stat.label}</p>
-                        <p className="mt-2 text-lg font-semibold text-slate-950">{stat.value}</p>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_0.9fr]">
-                    <div className="rounded-3xl border border-slate-200/70 bg-white/80 p-4 shadow-sm backdrop-blur">
-                      <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
-                        <span>Tables</span>
-                        <span className="text-sky-700">Live</span>
-                      </div>
-                      <div className="mt-4 grid grid-cols-3 gap-2">
-                        {[
-                          { name: 'T1', state: 'busy' },
-                          { name: 'T2', state: 'free' },
-                          { name: 'T3', state: 'busy' },
-                          { name: 'T4', state: 'reserved' },
-                          { name: 'T5', state: 'free' },
-                          { name: 'T6', state: 'busy' },
-                        ].map((table) => (
-                          <div
-                            key={table.name}
-                            className={`rounded-2xl border px-3 py-3 text-center text-xs font-semibold ${
-                              table.state === 'free'
-                                ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                                : table.state === 'reserved'
-                                  ? 'border-amber-200 bg-amber-50 text-amber-700'
-                                  : 'border-sky-200 bg-sky-50 text-sky-700'
-                            }`}
-                          >
-                            <div className="text-[0.7rem]">{table.name}</div>
-                            <div className="mt-1 text-[0.68rem] font-medium opacity-80">{table.state}</div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="rounded-3xl border border-slate-200/70 bg-white/80 p-4 shadow-sm backdrop-blur">
-                      <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
-                        <span>Kitchen (KOT)</span>
-                        <span className="text-sky-700">Queue</span>
-                      </div>
-                      <div className="mt-4 grid gap-2">
-                        {[
-                          { item: 'Zinger Burger', table: 'T3', time: '03m' },
-                          { item: 'Chicken Karahi', table: 'T1', time: '06m' },
-                          { item: 'Club Sandwich', table: 'T6', time: '09m' },
-                        ].map((row) => (
-                          <div key={row.item} className="rounded-2xl border border-slate-200/70 bg-white p-3">
-                            <div className="flex items-start justify-between gap-3">
-                              <div>
-                                <p className="text-sm font-semibold text-slate-950">{row.item}</p>
-                                <p className="mt-1 text-xs text-slate-600">Table {row.table}</p>
-                              </div>
-                              <span className="rounded-full bg-slate-950/5 px-3 py-1 text-xs font-semibold text-slate-700">
-                                {row.time}
-                              </span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="mt-3 rounded-2xl bg-slate-950/5 p-3 text-xs text-slate-600">
-                        Restaurant business automation: auto KOT, bill print, and daily close reports.
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section id="case-studies" className="py-14 sm:py-20 lg:py-24" data-reveal>
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="mb-8 max-w-2xl sm:mb-10">
-              <p className="feature-pill">Demo case studies</p>
-              <h2 className="section-heading mt-6">Demo Projects / Case Studies</h2>
-              <p className="section-copy">
-                Sample project breakdowns based on real business workflows. Available for custom client projects and tailored implementations.
-              </p>
-            </div>
-
-            <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-4">
-              {[
-                {
-                  title: 'Restaurant POS Dashboard',
-                  badge: 'Demo case study',
-                  description: 'Order management, kitchen screen, billing, inventory, and reporting dashboard for restaurants.',
-                  features: ['Order management', 'Kitchen screen (KOT)', 'Billing', 'Inventory', 'Reports'],
-                },
-                {
-                  title: 'CRM & Admin Dashboard',
-                  badge: 'Sample project',
-                  description: 'Leads, customers, analytics, and role-based access for internal teams.',
-                  features: ['Leads', 'Customers', 'Analytics', 'Staff roles'],
-                },
-                {
-                  title: 'ERP Business Panel',
-                  badge: 'Demo case study',
-                  description: 'Finance, inventory and reporting dashboard for business operations.',
-                  features: ['Finance', 'Inventory', 'Reports', 'Operations'],
-                },
-                {
-                  title: 'SaaS Landing Website',
-                  badge: 'Sample project',
-                  description: 'Modern UI, responsive layout, contact flow, and fast deployment-ready landing pages.',
-                  features: ['Modern UI', 'Responsive design', 'Contact form', 'Fast deployment'],
-                },
-              ].map((project) => (
-                <div
-                  key={project.title}
-                  className="group relative flex h-full flex-col overflow-hidden rounded-[1.75rem] border border-slate-200/80 bg-white/80 p-5 shadow-[0_22px_60px_-40px_rgba(15,23,42,0.22)] backdrop-blur transition duration-200 hover:-translate-y-0.5 hover:bg-white sm:p-6"
-                >
-                  <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-sky-500/70 via-cyan-400/60 to-violet-500/60 opacity-80" />
-                  <div className="inline-flex">
-                    <span className="inline-flex items-center gap-2 rounded-full border border-slate-200/70 bg-white/70 px-3 py-1 text-[0.72rem] font-semibold text-slate-700 shadow-sm backdrop-blur">
-                      <span className="h-1.5 w-1.5 rounded-full bg-gradient-to-r from-sky-500 to-indigo-500" />
-                      {project.badge}
-                    </span>
-                  </div>
-
-                  <h3 className="mt-3 text-base font-semibold leading-6 text-slate-950 sm:text-lg sm:leading-7">
-                    {project.title}
-                  </h3>
-                  <p className="mt-2 text-sm leading-7 text-slate-600">{project.description}</p>
-
-                  <div className="mt-4 rounded-3xl border border-slate-200/70 bg-white/70 p-4 shadow-sm backdrop-blur">
-                    <p className="text-xs font-semibold text-slate-500">Features</p>
-                    <ul className="mt-3 grid gap-2 text-sm text-slate-700">
-                      {project.features.map((feature) => (
-                        <li key={feature} className="flex items-start gap-2">
-                          <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-sky-50 text-sky-700">
-                            ✓
-                          </span>
-                          <span className="leading-6">{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <div className="mt-auto pt-4">
-                    <div className="flex flex-wrap gap-2">
-                    {['Custom Build', 'Responsive UI', 'Clean Reporting'].map((tag) => (
-                      <span
-                        key={tag}
-                        className="inline-flex items-center rounded-full border border-slate-200/70 bg-white/70 px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm backdrop-blur"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section id="fiverr" className="py-14 sm:py-20 lg:py-24" data-reveal>
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
-              <div className="space-y-6">
-                <p className="feature-pill">Available on Fiverr</p>
-                <h2 className="section-heading">Available for Freelance Projects</h2>
-                <p className="section-copy">
-                  Custom Software &amp; Dashboard Development delivered with premium UI, responsive screens, and clean business workflows.
-                </p>
-                <p className="text-sm leading-7 text-slate-600">
-                  Hire me for custom POS, CRM, ERP, SaaS and dashboard development — scoped to your exact requirements.
-                </p>
-                <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white/70 px-3 py-1.5 text-xs font-semibold text-emerald-800 shadow-sm backdrop-blur">
-                  <span className="text-emerald-600">
-                    <FiverrIcon className="h-4 w-4" />
-                  </span>
-                  Available on Fiverr
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {['SaaS Development', 'Restaurant POS Systems', 'CRM & ERP Dashboards', 'Admin Panels', 'Custom Business Software'].map(
-                    (item) => (
-                      <div
-                        key={item}
-                        className="rounded-[1.5rem] border border-slate-200/70 bg-white/70 p-4 shadow-sm backdrop-blur"
-                      >
-                        <p className="text-sm font-semibold text-slate-950">{item}</p>
-                        <p className="mt-2 text-sm leading-7 text-slate-600">
-                          Premium delivery with scalable structure and clean reporting.
-                        </p>
-                      </div>
-                    ),
-                  )}
-                </div>
-                <a
-                  href={fiverrLink}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center justify-center gap-2 rounded-full bg-emerald-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-600/20 transition hover:bg-emerald-700 hover:shadow-emerald-600/25"
-                >
-                  <FiverrIcon className="h-4 w-4 text-white" />
-                  Hire Me on Fiverr
-                </a>
-              </div>
-
-              <div className="glass-panel">
-                <div className="flex items-center justify-between gap-3">
-                  <h3 className="text-lg font-semibold text-slate-950">Fiverr availability</h3>
-                  <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-emerald-700">
-                    Online
-                  </span>
-                </div>
-                <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                  {[
-                    { title: 'Fast Delivery', subtitle: 'Clear milestones' },
-                    { title: 'Custom Development', subtitle: 'Built for your flow' },
-                    { title: 'Responsive Design', subtitle: 'Mobile-first UI' },
-                    { title: 'Business Automation', subtitle: 'Save time daily' },
-                  ].map((badge) => (
-                    <div key={badge.title} className="rounded-3xl bg-slate-950/5 p-4">
-                      <p className="text-sm font-semibold text-slate-950">{badge.title}</p>
-                      <p className="mt-2 text-sm text-slate-600">{badge.subtitle}</p>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-5 rounded-3xl border border-slate-200/70 bg-white/70 p-4 shadow-sm backdrop-blur">
-                  <p className="text-sm text-slate-600">
-                    Prefer Fiverr? Start your project there — keep everything tracked with milestones, requirements, and delivery notes.
-                  </p>
                   <a
-                    href={fiverrLink}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="mt-4 inline-flex items-center justify-center gap-2 rounded-full border border-emerald-200 bg-white px-5 py-2.5 text-sm font-semibold text-emerald-800 shadow-sm transition hover:bg-emerald-50 hover:shadow-md hover:shadow-emerald-600/10"
+                    href={`mailto:${contactEmail}`}
+                    className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white/90 px-6 py-3.5 text-sm font-semibold text-slate-800 shadow-[0_18px_42px_-28px_rgba(15,23,42,0.35)] backdrop-blur transition duration-300 hover:-translate-y-0.5 hover:border-sky-200 hover:text-sky-700"
                   >
-                    <span className="text-emerald-600">
-                      <FiverrIcon className="h-4 w-4" />
-                    </span>
-                    Start Your Project
+                    Email Us
                   </a>
                 </div>
               </div>
-            </div>
-          </div>
-        </section>
-
-        <section id="products" className="bg-slate-50 py-14 sm:py-20 lg:py-24" data-reveal>
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="mb-10 max-w-2xl">
-              <p className="feature-pill">Portfolio</p>
-              <h2 className="section-heading mt-6">Projects and product experiences</h2>
-              <p className="section-copy">
-                Highlighting the software systems and dashboards Nexora delivers for retail, healthcare, parking, canteens, and transport businesses.
-              </p>
-            </div>
-            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-              {products.map((product) => (
-                <div key={product.title} className="glass-panel">
-                  <h3 className="text-lg font-semibold text-slate-950">{product.title}</h3>
-                  <p className="mt-3 text-sm leading-7 text-slate-600">{product.text}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section id="dashboards" className="py-14 sm:py-20 lg:py-24" data-reveal>
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="mb-10 max-w-2xl">
-              <p className="feature-pill">Insights</p>
-              <h2 className="section-heading mt-6">Readable metrics, not empty placeholders</h2>
-              <p className="section-copy">
-                Real dashboards make action easier. Here are the key live metrics offered in Nexora insights and reporting.
-              </p>
-            </div>
-            <div className="grid gap-6 xl:grid-cols-3">
-              <div className="glass-panel">
-                <div className="flex items-center justify-between gap-3">
-                  <h3 className="text-lg font-semibold text-slate-950">Nexora POS Dashboard</h3>
-                  <span className="rounded-full bg-sky-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-sky-700">Retail</span>
-                </div>
-                <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-3xl bg-slate-100 p-4">
-                    <p className="text-sm text-slate-500">Revenue</p>
-                    <p className="mt-2 text-xl font-semibold text-slate-950">Rs 458,200</p>
-                  </div>
-                  <div className="rounded-3xl bg-slate-100 p-4">
-                    <p className="text-sm text-slate-500">Orders</p>
-                    <p className="mt-2 text-xl font-semibold text-slate-950">128</p>
-                  </div>
-                </div>
-                <div className="mt-5 rounded-3xl bg-slate-100 p-4">
-                  <p className="text-sm text-slate-500">Live updates</p>
-                </div>
-              </div>
-              <div className="glass-panel">
-                <div className="flex items-center justify-between gap-3">
-                  <h3 className="text-lg font-semibold text-slate-950">Nexora Hospital Dashboard</h3>
-                  <span className="rounded-full bg-sky-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-sky-700">Healthcare</span>
-                </div>
-                <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-3xl bg-slate-100 p-4">
-                    <p className="text-sm text-slate-500">Today Patients</p>
-                    <p className="mt-2 text-xl font-semibold text-slate-950">86</p>
-                  </div>
-                  <div className="rounded-3xl bg-slate-100 p-4">
-                    <p className="text-sm text-slate-500">OPD Collection</p>
-                    <p className="mt-2 text-xl font-semibold text-slate-950">Rs 92,500</p>
-                  </div>
-                </div>
-                <div className="mt-5 rounded-3xl bg-slate-100 p-4">
-                  <p className="text-sm text-slate-500">Pharmacy and inventory health at a glance.</p>
-                </div>
-              </div>
-              <div className="glass-panel">
-                <div className="flex items-center justify-between gap-3">
-                  <h3 className="text-lg font-semibold text-slate-950">Transport + Fleet Dashboard</h3>
-                  <span className="rounded-full bg-sky-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-sky-700">Logistics</span>
-                </div>
-                <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-3xl bg-slate-100 p-4">
-                    <p className="text-sm text-slate-500">Trips</p>
-                    <p className="mt-2 text-xl font-semibold text-slate-950">24</p>
-                  </div>
-                  <div className="rounded-3xl bg-slate-100 p-4">
-                    <p className="text-sm text-slate-500">Fuel Expense</p>
-                    <p className="mt-2 text-xl font-semibold text-slate-950">Rs 18,600</p>
-                  </div>
-                </div>
-                <div className="mt-5 rounded-3xl bg-slate-100 p-4">
-                  <p className="text-sm text-slate-500">Trip income and fleet profit tracking.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section id="pricing" className="bg-slate-50 py-14 sm:py-20 lg:py-24" data-reveal>
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="mb-10 max-w-2xl">
-              <p className="feature-pill">Pricing packages</p>
-              <h2 className="section-heading mt-6">Flexible plans for growing teams</h2>
-              <p className="section-copy">
-                Choose a package that fits your business size, operational needs, and need for automation and reporting.
-              </p>
-            </div>
-            <div className="grid gap-6 xl:grid-cols-3">
-              {pricingPlans.map((plan) => (
-                <div
-                  key={plan.name}
-                  className={`glass-panel ${plan.popular ? 'border-sky-300/90 bg-sky-50/80' : ''}`}
-                >
-                  {plan.popular && (
-                    <span className="mb-4 inline-flex rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-sky-700">
-                      Most Popular
-                    </span>
-                  )}
-                  <h3 className="text-xl font-semibold text-slate-950">{plan.name}</h3>
-                  {plan.installationFee ? (
-                    <div className="mt-4 grid gap-3">
-                      <div className="rounded-3xl bg-white p-4 shadow-sm">
-                        <p className="text-sm text-slate-500">Installation fee</p>
-                        <p className="mt-2 text-lg font-semibold text-slate-950">{plan.installationFee}</p>
-                      </div>
-                      <div className="rounded-3xl bg-white p-4 shadow-sm">
-                        <p className="text-sm text-slate-500">Monthly fee</p>
-                        <p className="mt-2 text-lg font-semibold text-slate-950">{plan.monthlyFee}</p>
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="mt-4 text-3xl font-semibold text-slate-950">{plan.price} <span className="text-base font-medium text-slate-600">{plan.period}</span></p>
-                  )}
-                  <ul className="mt-6 space-y-3 text-sm leading-7 text-slate-600">
-                    {plan.points.map((point) => (
-                      <li key={point} className="flex items-start gap-3">
-                        <span className="mt-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-sky-100 text-sky-700">✓</span>
-                        <span>{point}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <a
-                    href="#contact"
-                    className="mt-8 inline-flex w-full items-center justify-center rounded-full bg-sky-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-sky-800"
-                  >
-                    Start a conversation
-                  </a>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section id="contact" className="py-14 sm:py-20 lg:py-24" data-reveal>
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
-              <div className="space-y-6">
-                <p className="feature-pill">Contact</p>
-                <h2 className="section-heading">Tell us your requirement and get a guided setup plan</h2>
-                <p className="section-copy">
-                  Share your business type and required software. Our team will guide you with the best POS, accounting or dashboard solution.
-                </p>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="rounded-3xl bg-white p-6 shadow-sm">
-                    <h3 className="text-base font-semibold text-slate-950">WhatsApp Support</h3>
-                    <p className="mt-3 text-sm text-slate-600">Send your requirement and get quick demo consultation.</p>
-                    <a href={whatsappLeadLink} target="_blank" rel="noreferrer" className="mt-5 inline-flex items-center rounded-full bg-sky-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-800">
-                      Send Requirement
-                    </a>
-                  </div>
-                  <div className="rounded-3xl bg-white p-6 shadow-sm">
-                    <h3 className="text-base font-semibold text-slate-950">Email Support</h3>
-                    <p className="mt-3 text-sm text-slate-600">Share documents or requirements directly by email.</p>
-                    <a href={`mailto:${contactEmail}`} className="mt-5 inline-flex items-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-slate-50">
-                      Email Us
-                    </a>
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-[2rem] border border-slate-200/80 bg-white p-6 shadow-soft sm:p-8">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <h3 className="text-xl font-semibold text-slate-950">Requirement Form</h3>
-                  <a
-                    href={fiverrLink}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center justify-center gap-2 rounded-full border border-emerald-200 bg-emerald-50/60 px-4 py-2 text-sm font-semibold text-emerald-800 shadow-sm backdrop-blur transition hover:bg-emerald-50 hover:shadow-md hover:shadow-emerald-600/10"
-                  >
-                    <span className="text-emerald-600">
-                      <FiverrIcon className="h-4 w-4" />
-                    </span>
-                    Contact on Fiverr
-                  </a>
-                </div>
-                <p className="mt-3 text-sm leading-7 text-slate-600">
-                  Tell us your business type and required software. Our team will guide you with the best POS, accounting or dashboard solution.
-                </p>
-                <form className="mt-6 grid gap-3 sm:mt-8 sm:gap-4" onSubmit={handleDemoSubmit}>
-                  <label className="space-y-2 text-sm font-medium text-slate-900" htmlFor="fullName">
-                    <span>Full Name</span>
-                    <input id="fullName" name="fullName" type="text" placeholder="Your full name" required className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100" />
-                  </label>
-                  <label className="space-y-2 text-sm font-medium text-slate-900" htmlFor="phoneNumber">
-                    <span>Phone Number</span>
-                    <input id="phoneNumber" name="phoneNumber" type="tel" placeholder="03XXXXXXXXX" required className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100" />
-                  </label>
-                  <label className="space-y-2 text-sm font-medium text-slate-900" htmlFor="emailAddress">
-                    <span>Email Address</span>
-                    <input id="emailAddress" name="emailAddress" type="email" placeholder="you@example.com" required className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100" />
-                  </label>
-                  <label className="space-y-2 text-sm font-medium text-slate-900" htmlFor="city">
-                    <span>City</span>
-                    <input id="city" name="city" type="text" placeholder="Your city" required className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100" />
-                  </label>
-                  <label className="space-y-2 text-sm font-medium text-slate-900" htmlFor="businessType">
-                    <span>Business Type</span>
-                    <select id="businessType" name="businessType" defaultValue="" required className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100 appearance-none">
-                      <option value="" disabled>Select business type</option>
-                      <option value="Restaurant">Restaurant</option>
-                      <option value="Canteen">Canteen</option>
-                      <option value="Medical Store">Medical Store</option>
-                      <option value="Hospital">Hospital</option>
-                      <option value="Parking / Bike Stand">Parking / Bike Stand</option>
-                      <option value="Transport / Rent Car">Transport / Rent Car</option>
-                      <option value="Retail Shop">Retail Shop</option>
-                      <option value="Inventory / Warehouse">Inventory / Warehouse</option>
-                      <option value="Other Business">Other Business</option>
-                    </select>
-                  </label>
-                  <label className="space-y-2 text-sm font-medium text-slate-900" htmlFor="softwareRequiredFor">
-                    <span>Software Required For</span>
-                    <select id="softwareRequiredFor" name="softwareRequiredFor" defaultValue="" required className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100 appearance-none">
-                      <option value="" disabled>Select required software</option>
-                      <option value="POS Billing">POS Billing</option>
-                      <option value="Accounting Dashboard">Accounting Dashboard</option>
-                      <option value="Inventory Management">Inventory Management</option>
-                      <option value="Hospital Dashboard">Hospital Dashboard</option>
-                      <option value="Medical Store System">Medical Store System</option>
-                      <option value="Transport Accounting">Transport Accounting</option>
-                      <option value="Parking Stand System">Parking Stand System</option>
-                      <option value="Custom Software">Custom Software</option>
-                    </select>
-                  </label>
-                  <label className="space-y-2 text-sm font-medium text-slate-900" htmlFor="message">
-                    <span>Message / Requirements</span>
-                    <textarea id="message" name="message" placeholder="Describe your requirements, branches, and expected timeline." className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100 min-h-[110px] resize-vertical" />
-                  </label>
-                  <button type="submit" className="mt-1 inline-flex w-full items-center justify-center rounded-full bg-sky-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-sky-800">
-                    Send Requirement on WhatsApp
-                  </button>
-                </form>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section id="branches" className="bg-slate-50 py-14 sm:py-20 lg:py-24" data-reveal>
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="mb-10 max-w-2xl">
-              <p className="feature-pill">Locations</p>
-              <h2 className="section-heading mt-6">Our branch offices</h2>
-              <p className="section-copy">
-                Local offices and contact channels for Nexora support, demos and implementation guidance.
-              </p>
-            </div>
-            <div className="grid gap-6 lg:grid-cols-2">
-              {branchOffices.map((office) => (
-                <div key={office.name} className="glass-panel">
-                  <div className="flex items-start gap-4">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-3xl bg-sky-50 text-sky-700">
-                      <svg viewBox="0 0 24 24" className="h-6 w-6" fill="currentColor" aria-hidden="true">
-                        <path d="M12 2.8c-4.06 0-7.34 3.2-7.34 7.17 0 4.97 5.98 10.52 6.23 10.76a1.63 1.63 0 0 0 2.22 0c.26-.24 6.23-5.79 6.23-10.76 0-3.97-3.28-7.17-7.34-7.17Zm0 9.95a2.79 2.79 0 1 1 0-5.57 2.79 2.79 0 0 1 0 5.57Z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-slate-950">{office.name}</h3>
-                      <p className="mt-2 text-sm leading-7 text-slate-600">{office.address}</p>
-                      <div className="mt-4 space-y-2 text-sm text-slate-600">
-                        <a href={whatsappLink} className="inline-flex text-sky-700 hover:text-sky-900">Phone: {whatsappNumberDisplay}</a>
-                        <a href={`mailto:${contactEmail}`} className="inline-flex text-sky-700 hover:text-sky-900">Email: {contactEmail}</a>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
             </div>
           </div>
         </section>
       </main>
 
-      <footer className="relative overflow-hidden bg-slate-950 py-10 text-white sm:py-12" data-reveal>
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-sky-400/0 via-sky-400/80 to-emerald-400/0" />
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid gap-8 lg:grid-cols-[1.25fr_0.75fr_0.85fr_1fr]">
-            <div className="max-w-md space-y-4">
-              <div className="flex min-w-0 items-center gap-3">
-                <span className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-2xl border border-white/10 bg-white p-1.5 shadow-lg shadow-sky-950/30">
-                  <img src="/nexora-logo.jpg" alt="Nexora logo" className="h-full w-full rounded-xl object-cover" />
-                </span>
-                <div className="min-w-0">
-                  <p className="truncate text-xs font-semibold uppercase tracking-[0.24em] text-sky-300">Nexora</p>
-                  <h2 className="truncate text-xl font-semibold text-white">Nexora Solutions</h2>
-                </div>
-              </div>
-              <p className="text-sm leading-7 text-slate-300">
-                Premium software company building POS, CRM, ERP, dashboards, automation, and custom business systems for growing teams.
+      <footer id="footer" className="mt-20 border-t border-slate-200/70 bg-white/80 backdrop-blur" data-reveal>
+        <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+          <div className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr_0.8fr_1fr]">
+            <div className="space-y-5">
+              <NexoraLogo compact />
+              <p className="max-w-md text-sm leading-7 text-slate-600">
+                Nexora Business Suite delivers a premium SaaS experience for teams that want cleaner operations and
+                better control across every module.
               </p>
               <div className="flex flex-wrap gap-2">
-                {['POS', 'CRM', 'ERP', 'Dashboards'].map((item) => (
-                  <span
-                    key={item}
-                    className="rounded-full border border-white/10 bg-white/[0.06] px-3 py-1 text-xs font-semibold text-slate-200"
-                  >
+                {['Blue UI', 'Fast', 'Responsive'].map((item) => (
+                  <span key={item} className="rounded-full bg-sky-50 px-3 py-1.5 text-xs font-semibold text-sky-700">
                     {item}
                   </span>
                 ))}
@@ -1069,93 +662,71 @@ function App({ initialSectionId = '' }) {
             </div>
 
             <div>
-              <h3 className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-400">Quick Links</h3>
-              <ul className="mt-4 grid gap-2 text-sm text-slate-300">
-                {[
-                  ['Home', '#hero'],
-                  ['Services', '#services'],
-                  ['Projects', '#case-studies'],
-                  ['Pricing', '#pricing'],
-                  ['Contact', '#contact'],
-                ].map(([label, href]) => (
-                  <li key={label}>
-                    <a href={href} className="inline-flex rounded-lg py-1 transition duration-300 hover:text-white">
-                      {label}
-                    </a>
-                  </li>
+              <h3 className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500">Quick Links</h3>
+              <div className="mt-5 grid gap-3 text-sm">
+                {footerGroups.quickLinks.map(([label, href]) => (
+                  <a key={label} href={href} className="text-slate-600 transition hover:text-sky-700">
+                    {label}
+                  </a>
                 ))}
-              </ul>
+              </div>
             </div>
 
             <div>
-              <h3 className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-400">Services</h3>
-              <ul className="mt-4 grid gap-2 text-sm text-slate-300">
-                {[
-                  'Restaurant POS',
-                  'Custom SaaS',
-                  'CRM dashboards',
-                  'Inventory systems',
-                  'Hospital software',
-                ].map((item) => (
-                  <li key={item} className="py-1">
-                    {item}
-                  </li>
+              <h3 className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500">Modules</h3>
+              <div className="mt-5 grid gap-3 text-sm">
+                {footerGroups.modules.map((module) => (
+                  <span key={module} className="text-slate-600">
+                    {module}
+                  </span>
                 ))}
-              </ul>
+              </div>
             </div>
 
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-400">Contact</h3>
-                <ul className="mt-4 grid gap-2 text-sm text-slate-300">
-                  <li>
-                    <a href={whatsappLink} className="transition duration-300 hover:text-white">
-                      {whatsappNumberDisplay}
-                    </a>
-                  </li>
-                  <li>
-                    <a href={`mailto:${contactEmail}`} className="break-words transition duration-300 hover:text-white">
-                      {contactEmail}
-                    </a>
-                  </li>
-                  <li className="leading-6">08 Jade Park View City, Lahore</li>
-                </ul>
+            <div>
+              <h3 className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500">Resources</h3>
+              <div className="mt-5 grid gap-3 text-sm">
+                {footerGroups.resources.map(([label, href]) => (
+                  <a key={label} href={href} className="text-slate-600 transition hover:text-sky-700">
+                    {label}
+                  </a>
+                ))}
               </div>
 
-              <div className="rounded-3xl border border-white/10 bg-white/[0.06] p-4 shadow-[0_20px_70px_-42px_rgba(14,165,233,0.9)]">
-                <p className="text-sm font-semibold text-white">Need a custom dashboard?</p>
-                <p className="mt-1 text-xs leading-5 text-slate-400">Start with a clear scope and premium implementation.</p>
-                <div className="mt-3 grid gap-2 min-[420px]:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-                  <a
-                    href={fiverrLink}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex h-10 items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-3 text-sm font-semibold text-slate-950 transition duration-300 hover:-translate-y-0.5 hover:bg-emerald-400"
-                  >
-                    <FiverrIcon className="h-4 w-4" />
-                    Fiverr
+              <div className="mt-8 rounded-[1.5rem] border border-slate-200/70 bg-slate-50 p-4">
+                <h4 className="text-sm font-semibold text-slate-900">Contact Us</h4>
+                <div className="mt-3 space-y-2 text-sm text-slate-600">
+                  <a href={whatsappLink} target="_blank" rel="noreferrer" className="block transition hover:text-sky-700">
+                    WhatsApp: {whatsappNumberDisplay}
                   </a>
-                  <a
-                    href="#contact"
-                    className="inline-flex h-10 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.07] px-3 text-sm font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:bg-white/10"
-                  >
-                    Book Demo
+                  <a href={`mailto:${contactEmail}`} className="block transition hover:text-sky-700">
+                    {contactEmail}
                   </a>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="mt-8 flex flex-col gap-3 border-t border-white/10 pt-5 text-xs text-slate-400 sm:flex-row sm:items-center sm:justify-between">
-            <div>© 2026 Nexora Solutions. All rights reserved.</div>
-            <div className="flex flex-wrap gap-x-4 gap-y-2">
-              <Link to="/login" className="transition duration-300 hover:text-white">Sign In</Link>
-              <Link to="/signup" className="transition duration-300 hover:text-white">Sign Up</Link>
-              <a href="#branches" className="transition duration-300 hover:text-white">Branches</a>
+          <div className="mt-12 flex flex-col gap-4 border-t border-slate-200/70 pt-6 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+            <p>© {new Date().getFullYear()} Nexora Business Suite. All rights reserved.</p>
+            <div className="flex items-center gap-2">
+              <HiOutlineShieldCheck className="text-lg text-sky-600" />
+              <span>Premium SaaS experience</span>
             </div>
           </div>
         </div>
       </footer>
+
+      <a
+        href={whatsappLeadLink}
+        target="_blank"
+        rel="noreferrer"
+        aria-label="Chat with Nexora on WhatsApp"
+        className="fixed bottom-5 right-5 z-50 inline-flex items-center gap-3 rounded-full bg-[#25d366] px-4 py-3 text-sm font-semibold text-white shadow-[0_20px_50px_-28px_rgba(37,211,102,0.9)] transition duration-300 hover:-translate-y-0.5 hover:bg-[#1fbe5c] sm:px-5"
+      >
+        <HiOutlineChatBubbleLeftRight className="text-lg" />
+        <span className="hidden sm:inline">WhatsApp</span>
+      </a>
     </div>
   )
 }

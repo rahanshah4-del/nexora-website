@@ -3,46 +3,35 @@ import { Link } from 'react-router-dom'
 import {
   HiOutlineArrowRight,
   HiOutlineBars3,
+  HiOutlineChevronDown,
   HiOutlineSparkles,
   HiOutlineUserCircle,
   HiOutlineXMark,
 } from 'react-icons/hi2'
+import NexoraLogo from './brand/NexoraLogo'
 
-function FiverrIcon({ className = 'h-4 w-4' }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden="true"
-    >
-      <path
-        d="M12 1.8C6.37 1.8 1.8 6.37 1.8 12S6.37 22.2 12 22.2 22.2 17.63 22.2 12 17.63 1.8 12 1.8Z"
-        fill="currentColor"
-        opacity="0.95"
-      />
-      <path
-        d="M10.06 16.9V10.3H8.7V8.7h1.36V8.1c0-2.01 1.17-3.2 3.3-3.2.78 0 1.43.12 1.92.3v1.6c-.44-.14-.9-.2-1.4-.2-1.11 0-1.56.57-1.56 1.64v.46h2.78v1.6h-2.78v6.6h-2.9Z"
-        fill="white"
-      />
-      <path d="M15.82 16.9a1.65 1.65 0 1 0 0-3.3 1.65 1.65 0 0 0 0 3.3Z" fill="white" />
-    </svg>
-  )
-}
-
-const navLinks = [
-  { href: '#services', label: 'Services' },
-  { href: '#restaurant-pos', label: 'POS' },
-  { href: '#dashboards', label: 'Dashboards' },
-  { href: '#case-studies', label: 'Projects' },
-  { href: '#pricing', label: 'Pricing' },
-  { href: '#contact', label: 'Contact' },
+const mainLinks = [
+  { label: 'Home', href: '#hero' },
+  { label: 'Pricing', href: '#pricing' },
+  { label: 'Industries', href: '#products' },
+  { label: 'About Us', href: '#about' },
 ]
 
-export default function Header() {
+const solutionLinks = [
+  { label: 'Modules', href: '#services' },
+  { label: 'Why Choose Nexora', href: '#features' },
+  { label: 'Trusted By Businesses', href: '#about' },
+]
+
+const resourceLinks = [
+  { label: 'Book a Demo', href: '#contact' },
+  { label: 'Login', href: '/login' },
+  { label: 'Get Started Free', href: '/signup' },
+]
+
+function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const fiverrLink = 'https://pro.fiverr.com/s/o85L4R4'
+  const [activeDropdown, setActiveDropdown] = useState(null)
 
   useEffect(() => {
     if (!mobileMenuOpen) return undefined
@@ -50,120 +39,180 @@ export default function Header() {
     const onKeyDown = (event) => {
       if (event.key === 'Escape') setMobileMenuOpen(false)
     }
+
     const originalOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     window.addEventListener('keydown', onKeyDown)
+
     return () => {
       document.body.style.overflow = originalOverflow
       window.removeEventListener('keydown', onKeyDown)
     }
   }, [mobileMenuOpen])
 
-  const closeMenu = () => setMobileMenuOpen(false)
+  const closeAll = () => {
+    setMobileMenuOpen(false)
+    setActiveDropdown(null)
+  }
+
+  const toggleDropdown = (key) => {
+    setActiveDropdown((current) => (current === key ? null : key))
+  }
 
   return (
     <header className="sticky top-0 z-50 px-3 pt-3 sm:px-4">
       <div className="mx-auto w-full max-w-7xl">
-        <div className="relative overflow-hidden rounded-[1.4rem] border border-white/80 bg-white/90 shadow-[0_18px_60px_-36px_rgba(15,23,42,0.45)] backdrop-blur-2xl">
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-sky-400/0 via-sky-500/70 to-indigo-500/0" />
+        <div className="relative rounded-[1.65rem] border border-white/70 bg-white/88 shadow-[0_24px_70px_-42px_rgba(15,23,42,0.42)] backdrop-blur-2xl">
+          <div className="pointer-events-none absolute inset-x-4 top-0 h-px bg-gradient-to-r from-sky-400/0 via-sky-500/70 to-blue-500/0" />
 
-          <div className="flex min-h-[4rem] min-w-0 items-center justify-between gap-3 px-3 py-2.5 sm:px-4 lg:justify-normal lg:px-5">
-            <a href="#hero" className="group flex min-w-0 shrink-0 items-center gap-3" onClick={closeMenu}>
-              <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 p-1.5 shadow-sm transition duration-300 group-hover:scale-[1.03]">
-                <img src="/nexora-logo.jpg" alt="Nexora logo" className="h-full w-full rounded-xl object-cover" />
-              </span>
-              <span className="min-w-0 leading-tight">
-                <span className="block truncate text-sm font-semibold uppercase tracking-[0.18em] text-slate-950">
-                  NEXORA
-                </span>
-                <span className="hidden truncate text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-slate-500 min-[390px]:block">
-                  Software Studio
-                </span>
-              </span>
+          <div className="flex items-center gap-3 px-3 py-3 sm:px-4 lg:px-5">
+            <a href="#hero" className="shrink-0" onClick={closeAll}>
+              <NexoraLogo compact />
             </a>
 
-            <nav className="mx-auto hidden min-w-0 items-center justify-center rounded-full border border-slate-200/70 bg-slate-50/80 p-1 text-sm font-semibold text-slate-600 lg:flex">
-              {navLinks.map((link) => (
+            <nav className="ml-4 hidden flex-1 items-center justify-center gap-1 lg:flex">
+              {mainLinks.map((link) => (
                 <a
-                  key={link.href}
+                  key={link.label}
                   href={link.href}
-                  className="rounded-full px-3 py-2 transition duration-300 hover:bg-white hover:text-slate-950 hover:shadow-sm xl:px-4"
+                  className="rounded-full px-4 py-2 text-sm font-semibold text-slate-600 transition duration-300 hover:bg-slate-50 hover:text-sky-700"
                 >
                   {link.label}
                 </a>
               ))}
+
+              <div
+                className="relative"
+                onMouseEnter={() => setActiveDropdown('solutions')}
+                onMouseLeave={() => setActiveDropdown(null)}
+              >
+                <button
+                  type="button"
+                  onClick={() => toggleDropdown('solutions')}
+                  className="inline-flex items-center gap-1 rounded-full px-4 py-2 text-sm font-semibold text-slate-600 transition duration-300 hover:bg-slate-50 hover:text-sky-700"
+                  aria-expanded={activeDropdown === 'solutions'}
+                >
+                  Solutions
+                  <HiOutlineChevronDown className="text-base" />
+                </button>
+
+                <div
+                  className={`absolute left-0 top-[calc(100%+0.65rem)] w-64 rounded-[1.4rem] border border-slate-200/70 bg-white p-2 shadow-[0_24px_70px_-42px_rgba(15,23,42,0.25)] transition duration-200 ${
+                    activeDropdown === 'solutions' ? 'pointer-events-auto translate-y-0 opacity-100' : 'pointer-events-none -translate-y-1 opacity-0'
+                  }`}
+                >
+                  {solutionLinks.map((link) => (
+                    <a
+                      key={link.label}
+                      href={link.href}
+                      onClick={closeAll}
+                      className="flex items-center justify-between rounded-2xl px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-sky-700"
+                    >
+                      <span>{link.label}</span>
+                      <HiOutlineArrowRight className="text-slate-400" />
+                    </a>
+                  ))}
+                </div>
+              </div>
+
+              <div
+                className="relative"
+                onMouseEnter={() => setActiveDropdown('resources')}
+                onMouseLeave={() => setActiveDropdown(null)}
+              >
+                <button
+                  type="button"
+                  onClick={() => toggleDropdown('resources')}
+                  className="inline-flex items-center gap-1 rounded-full px-4 py-2 text-sm font-semibold text-slate-600 transition duration-300 hover:bg-slate-50 hover:text-sky-700"
+                  aria-expanded={activeDropdown === 'resources'}
+                >
+                  Resources
+                  <HiOutlineChevronDown className="text-base" />
+                </button>
+
+                <div
+                  className={`absolute left-0 top-[calc(100%+0.65rem)] w-64 rounded-[1.4rem] border border-slate-200/70 bg-white p-2 shadow-[0_24px_70px_-42px_rgba(15,23,42,0.25)] transition duration-200 ${
+                    activeDropdown === 'resources' ? 'pointer-events-auto translate-y-0 opacity-100' : 'pointer-events-none -translate-y-1 opacity-0'
+                  }`}
+                >
+                  {resourceLinks.map((link) =>
+                    link.href.startsWith('/') ? (
+                      <Link
+                        key={link.label}
+                        to={link.href}
+                        onClick={closeAll}
+                        className="flex items-center justify-between rounded-2xl px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-sky-700"
+                      >
+                        <span>{link.label}</span>
+                        <HiOutlineArrowRight className="text-slate-400" />
+                      </Link>
+                    ) : (
+                      <a
+                        key={link.label}
+                        href={link.href}
+                        onClick={closeAll}
+                        className="flex items-center justify-between rounded-2xl px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-sky-700"
+                      >
+                        <span>{link.label}</span>
+                        <HiOutlineArrowRight className="text-slate-400" />
+                      </a>
+                    ),
+                  )}
+                </div>
+              </div>
             </nav>
 
-            <div className="ml-auto hidden shrink-0 items-center gap-2 sm:flex">
+            <div className="ml-auto hidden items-center gap-2 lg:flex">
               <Link
                 to="/login"
-                className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 shadow-sm transition duration-300 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 shadow-[0_16px_40px_-28px_rgba(15,23,42,0.35)] transition duration-300 hover:-translate-y-0.5 hover:border-sky-200 hover:text-sky-700"
               >
                 <HiOutlineUserCircle className="text-lg" />
-                <span className="hidden md:inline">Sign In</span>
+                Login
               </Link>
               <Link
                 to="/signup"
-                className="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-slate-950 px-4 text-sm font-semibold text-white shadow-[0_16px_40px_-22px_rgba(15,23,42,0.9)] transition duration-300 hover:-translate-y-0.5 hover:bg-sky-700 hover:shadow-[0_18px_46px_-20px_rgba(14,165,233,0.75)]"
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-gradient-to-r from-sky-600 to-blue-600 px-4 text-sm font-semibold text-white shadow-[0_20px_50px_-28px_rgba(37,99,235,0.7)] transition duration-300 hover:-translate-y-0.5 hover:from-sky-500 hover:to-blue-500"
               >
                 <HiOutlineSparkles className="text-lg" />
-                <span className="hidden md:inline">Free Trial</span>
-                <span className="md:hidden">Sign Up</span>
+                Get Started Free
               </Link>
             </div>
 
             <button
               type="button"
-              onClick={() => setMobileMenuOpen((prev) => !prev)}
-              className="ml-auto inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-800 shadow-sm transition duration-300 hover:bg-slate-50 lg:hidden"
+              onClick={() => setMobileMenuOpen((current) => !current)}
+              className="ml-auto inline-flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-800 shadow-[0_16px_40px_-28px_rgba(15,23,42,0.35)] transition hover:bg-slate-50 lg:hidden"
               aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
               aria-expanded={mobileMenuOpen}
             >
               {mobileMenuOpen ? <HiOutlineXMark className="text-xl" /> : <HiOutlineBars3 className="text-xl" />}
             </button>
           </div>
-
         </div>
 
-        <div
-          className={`fixed inset-0 z-[60] lg:hidden ${
-            mobileMenuOpen ? 'pointer-events-auto' : 'pointer-events-none'
-          }`}
-          aria-hidden={!mobileMenuOpen}
-        >
+        <div className={`fixed inset-0 z-[60] lg:hidden ${mobileMenuOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}>
           <button
             type="button"
-            className={`absolute inset-0 bg-slate-950/35 transition-opacity duration-300 ${
+            className={`absolute inset-0 bg-slate-950/30 transition-opacity duration-300 ${
               mobileMenuOpen ? 'opacity-100' : 'opacity-0'
             }`}
-            onClick={closeMenu}
+            onClick={closeAll}
             aria-label="Close navigation menu"
             tabIndex={mobileMenuOpen ? 0 : -1}
           />
 
           <aside
-            className={`absolute right-3 top-3 flex h-[calc(100dvh-1.5rem)] w-[min(22rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-[1.7rem] border border-white/80 bg-white shadow-[0_28px_80px_-36px_rgba(15,23,42,0.55)] transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+            className={`absolute right-3 top-3 flex h-[calc(100dvh-1.5rem)] w-[min(23rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-[1.8rem] border border-white/80 bg-white shadow-[0_28px_80px_-36px_rgba(15,23,42,0.52)] transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
               mobileMenuOpen ? 'translate-x-0' : 'translate-x-[calc(100%+1rem)]'
             }`}
           >
-            <div className="flex items-center justify-between gap-3 border-b border-slate-200/70 px-4 py-4">
-              <a href="#hero" className="flex min-w-0 items-center gap-3" onClick={closeMenu}>
-                <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 p-1.5 shadow-sm">
-                  <img src="/nexora-logo.jpg" alt="Nexora logo" className="h-full w-full rounded-xl object-cover" />
-                </span>
-                <span className="min-w-0 leading-tight">
-                  <span className="block truncate text-sm font-semibold uppercase tracking-[0.18em] text-slate-950">
-                    NEXORA
-                  </span>
-                  <span className="block truncate text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-slate-500">
-                    Software Studio
-                  </span>
-                </span>
-              </a>
+            <div className="flex items-center justify-between border-b border-slate-200/70 px-4 py-4">
+              <NexoraLogo compact />
               <button
                 type="button"
-                onClick={closeMenu}
-                className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-800 shadow-sm transition duration-300 hover:bg-slate-50"
+                onClick={closeAll}
+                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-800 shadow-sm"
                 aria-label="Close navigation menu"
               >
                 <HiOutlineXMark className="text-xl" />
@@ -172,12 +221,12 @@ export default function Header() {
 
             <div className="flex-1 overflow-y-auto px-4 py-4">
               <div className="grid gap-1.5">
-                {navLinks.map((link) => (
+                {mainLinks.map((link) => (
                   <a
-                    key={link.href}
+                    key={link.label}
                     href={link.href}
-                    onClick={closeMenu}
-                    className="flex items-center justify-between rounded-2xl px-3 py-3 text-sm font-semibold text-slate-700 transition duration-300 hover:bg-slate-50 hover:text-slate-950"
+                    onClick={closeAll}
+                    className="flex items-center justify-between rounded-2xl px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-sky-700"
                   >
                     {link.label}
                     <HiOutlineArrowRight className="text-slate-400" />
@@ -185,35 +234,70 @@ export default function Header() {
                 ))}
               </div>
 
-              <div className="mt-4 grid gap-2 border-t border-slate-200/70 pt-4 min-[390px]:grid-cols-2">
+              <div className="mt-5 rounded-[1.5rem] border border-slate-200/70 bg-slate-50 p-3">
+                <p className="px-2 pb-2 text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Solutions</p>
+                <div className="grid gap-1">
+                  {solutionLinks.map((link) => (
+                    <a
+                      key={link.label}
+                      href={link.href}
+                      onClick={closeAll}
+                      className="flex items-center justify-between rounded-2xl px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-white hover:text-sky-700"
+                    >
+                      {link.label}
+                      <HiOutlineArrowRight className="text-slate-400" />
+                    </a>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-5 rounded-[1.5rem] border border-slate-200/70 bg-slate-50 p-3">
+                <p className="px-2 pb-2 text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Resources</p>
+                <div className="grid gap-1">
+                  {resourceLinks.map((link) =>
+                    link.href.startsWith('/') ? (
+                      <Link
+                        key={link.label}
+                        to={link.href}
+                        onClick={closeAll}
+                        className="flex items-center justify-between rounded-2xl px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-white hover:text-sky-700"
+                      >
+                        {link.label}
+                        <HiOutlineArrowRight className="text-slate-400" />
+                      </Link>
+                    ) : (
+                      <a
+                        key={link.label}
+                        href={link.href}
+                        onClick={closeAll}
+                        className="flex items-center justify-between rounded-2xl px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-white hover:text-sky-700"
+                      >
+                        {link.label}
+                        <HiOutlineArrowRight className="text-slate-400" />
+                      </a>
+                    ),
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-5 grid gap-2 min-[390px]:grid-cols-2">
                 <Link
                   to="/login"
-                  onClick={closeMenu}
-                  className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 shadow-sm"
+                  onClick={closeAll}
+                  className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 shadow-sm"
                 >
                   <HiOutlineUserCircle className="text-lg" />
-                  Sign In
+                  Login
                 </Link>
                 <Link
                   to="/signup"
-                  onClick={closeMenu}
-                  className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-slate-950 px-4 text-sm font-semibold text-white shadow-lg shadow-slate-950/15"
+                  onClick={closeAll}
+                  className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-sky-600 to-blue-600 px-4 text-sm font-semibold text-white shadow-lg shadow-sky-600/15"
                 >
                   <HiOutlineSparkles className="text-lg" />
-                  Sign Up
+                  Get Started Free
                 </Link>
               </div>
-
-              <a
-                href={fiverrLink}
-                target="_blank"
-                rel="noreferrer"
-                onClick={closeMenu}
-                className="mt-4 inline-flex h-11 w-full items-center justify-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 text-sm font-semibold text-emerald-800"
-              >
-                <FiverrIcon className="h-4 w-4 text-emerald-600" />
-                Hire on Fiverr
-              </a>
             </div>
           </aside>
         </div>
@@ -221,3 +305,5 @@ export default function Header() {
     </header>
   )
 }
+
+export default Header
