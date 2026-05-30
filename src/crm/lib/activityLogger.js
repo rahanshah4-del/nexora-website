@@ -25,6 +25,7 @@ export async function logActivity({
       userId,
       ownerId: workspaceId,
       workspaceId,
+      createdBy: userId,
       userName: cleanString(userName, 'Nexora User'),
       userEmail: cleanString(userEmail),
       action: cleanString(action, 'Action'),

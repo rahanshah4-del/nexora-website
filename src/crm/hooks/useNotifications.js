@@ -44,7 +44,7 @@ function normalizeNotification(n) {
 }
 
 export function useNotifications() {
-  const { userId } = useUser()
+  const { userId, workspaceId } = useUser()
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [source, setSource] = useState(db ? 'firestore' : 'none')
@@ -75,7 +75,9 @@ export function useNotifications() {
       q,
       (snap) => {
         const rows = snap.docs
-          .map((d) => normalizeNotification({ id: d.id, ...d.data() }))
+          .map((d) => ({ id: d.id, ...d.data() }))
+          .filter((row) => !row.workspaceId || row.workspaceId === workspaceId)
+          .map((row) => normalizeNotification(row))
           .sort((a, b) => {
             const at = a.createdAt?.getTime?.() || 0
             const bt = b.createdAt?.getTime?.() || 0
@@ -100,7 +102,7 @@ export function useNotifications() {
     )
 
     return () => unsub()
-  }, [userId])
+  }, [userId, workspaceId])
 
   const unreadCount = useMemo(() => items.filter((n) => !n.read).length, [items])
 

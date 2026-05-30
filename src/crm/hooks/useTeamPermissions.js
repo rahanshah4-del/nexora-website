@@ -28,7 +28,7 @@ function defaultTemplate(permissionKeys) {
 }
 
 export function useTeamPermissions({ permissionKeys }) {
-  const { userId } = useUser()
+  const { userId, workspaceId, isAdmin } = useUser()
   const [matrix, setMatrix] = useState(() => emptyMatrix(permissionKeys))
   const [exists, setExists] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -46,7 +46,7 @@ export function useTeamPermissions({ permissionKeys }) {
       })
       return
     }
-    if (!userId) {
+    if (!workspaceId) {
       Promise.resolve().then(() => {
         setMatrix(emptyMatrix(permissionKeys))
         setExists(false)
@@ -57,7 +57,7 @@ export function useTeamPermissions({ permissionKeys }) {
       return
     }
 
-    const ref = doc(db, 'workspaces', userId, 'teamPermissions', 'default')
+    const ref = doc(db, 'workspaces', workspaceId, 'teamPermissions', 'default')
     const unsub = onSnapshot(
       ref,
       (snap) => {
@@ -81,7 +81,7 @@ export function useTeamPermissions({ permissionKeys }) {
       },
     )
     return () => unsub()
-  }, [permissionKeys, userId])
+  }, [permissionKeys, workspaceId])
 
   const api = useMemo(
     () => ({
@@ -98,17 +98,18 @@ export function useTeamPermissions({ permissionKeys }) {
         }))
       },
       async initializeTemplate() {
-        if (!userId) return { ok: false, error: 'Please login first' }
+        if (!isAdmin) return { ok: false, error: 'Only an owner or admin can initialize permissions.' }
+        if (!userId || !workspaceId) return { ok: false, error: 'Please login first' }
         if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now' }
         const template = defaultTemplate(permissionKeys)
         try {
           await setDoc(
-            doc(db, 'workspaces', userId, 'teamPermissions', 'default'),
+            doc(db, 'workspaces', workspaceId, 'teamPermissions', 'default'),
             {
               matrix: template,
-              ownerId: userId,
-              userId,
-              workspaceId: userId,
+              ownerId: workspaceId,
+              userId: workspaceId,
+              workspaceId,
               createdAt: serverTimestamp(),
               createdBy: userId,
               updatedAt: serverTimestamp(),
@@ -121,12 +122,13 @@ export function useTeamPermissions({ permissionKeys }) {
         }
       },
       async save() {
-        if (!userId) return { ok: false, error: 'Please login first' }
+        if (!isAdmin) return { ok: false, error: 'Only an owner or admin can save permissions.' }
+        if (!userId || !workspaceId) return { ok: false, error: 'Please login first' }
         if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now' }
         try {
           await setDoc(
-            doc(db, 'workspaces', userId, 'teamPermissions', 'default'),
-            { matrix, ownerId: userId, userId, workspaceId: userId, updatedAt: serverTimestamp(), updatedBy: userId },
+            doc(db, 'workspaces', workspaceId, 'teamPermissions', 'default'),
+            { matrix, ownerId: workspaceId, userId: workspaceId, workspaceId, updatedAt: serverTimestamp(), updatedBy: userId },
             { merge: true },
           )
           return { ok: true }
@@ -135,7 +137,7 @@ export function useTeamPermissions({ permissionKeys }) {
         }
       },
     }),
-    [matrix, exists, loading, source, error, permissionKeys, userId],
+    [matrix, exists, loading, source, error, permissionKeys, userId, workspaceId, isAdmin],
   )
 
   return api

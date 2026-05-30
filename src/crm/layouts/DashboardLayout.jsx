@@ -62,7 +62,7 @@ export default function DashboardLayout() {
   const [selectedWorkspace, setSelectedWorkspace] = useState(null)
   const [sessionInfo, setSessionInfo] = useState(null)
   const { user, ready } = useAuth()
-  const { userDoc, loading: userLoading, isStaff } = useUser()
+  const { userDoc, loading: userLoading, isStaff, workspaceId } = useUser()
   const navigate = useNavigate()
   const persistedKeyRef = useRef('')
 
@@ -85,7 +85,7 @@ export default function DashboardLayout() {
     if (!ready || !userId || userLoading) return
 
     const selected = readSelectedWorkspace(userId)
-    const nextSession = buildWorkspaceSession({ user, userDoc, selectedWorkspace: selected })
+    const nextSession = buildWorkspaceSession({ user, userDoc, selectedWorkspace: selected, workspaceId })
     const modalSeenKey = `nexoraWorkspaceModalSeen:${userId}:${nextSession.sessionId}`
     const modalSeen = sessionStorage.getItem(modalSeenKey) === 'true'
 
@@ -116,7 +116,7 @@ export default function DashboardLayout() {
     }
 
     Promise.resolve().then(() => setProductModalOpen(false))
-  }, [ready, user, userDoc, userId, userLoading])
+  }, [ready, user, userDoc, userId, userLoading, workspaceId])
 
   const markModalSeen = useCallback(() => {
     if (!sessionInfo?.sessionId || !userId) return
@@ -131,13 +131,13 @@ export default function DashboardLayout() {
     setProductModalOpen(false)
     markModalSeen()
 
-    const nextSession = buildWorkspaceSession({ user, userDoc, selectedWorkspace: workspace })
+    const nextSession = buildWorkspaceSession({ user, userDoc, selectedWorkspace: workspace, workspaceId })
     setSessionInfo(nextSession)
     persistedKeyRef.current = `${nextSession.sessionId}:${nextSession.selectedWorkspace}:${nextSession.planType}:${nextSession.trialStatus}`
     persistWorkspaceSession(nextSession).catch(() => {})
 
     navigate(workspaceRoute(workspace), { replace: true })
-  }, [markModalSeen, navigate, user, userDoc, userId])
+  }, [markModalSeen, navigate, user, userDoc, userId, workspaceId])
 
   const continueLastWorkspace = useCallback(() => {
     const workspace = selectedWorkspace || readSelectedWorkspace(userId) || 'crm'

@@ -85,15 +85,19 @@ export function formatSessionTime(value) {
   }).format(date)
 }
 
-export function buildWorkspaceSession({ user, userDoc, selectedWorkspace }) {
+export function buildWorkspaceSession({ user, userDoc, selectedWorkspace, workspaceId: explicitWorkspaceId }) {
   const userId = user?.uid ?? ''
   const sessionStartTime = getSessionStartTime(userId)
   const email = user?.email || userDoc?.email || ''
   const planType = accessPlanForUser(userDoc || {}, userDoc?.plan || 'Free')
   const trialStatus = userDoc?.planStatus || 'trial'
+  const workspaceId = explicitWorkspaceId || userDoc?.workspaceId || userId
+  const ownerId = userDoc?.ownerId || workspaceId
 
   return {
     userId,
+    ownerId,
+    workspaceId,
     email,
     clientName: userDoc?.fullName || userDoc?.name || user?.displayName || email?.split('@')?.[0] || 'Nexora Client',
     loginTime: sessionStartTime,
@@ -113,10 +117,12 @@ export async function persistWorkspaceSession(session) {
   const uid = session.userId
   const sessionId = session.sessionId || getSessionId(uid)
   const selectedWorkspace = isValidWorkspace(session.selectedWorkspace) ? session.selectedWorkspace : 'not-selected'
+  const workspaceId = session.workspaceId || uid
+  const ownerId = session.ownerId || workspaceId
   const payload = {
     userId: uid,
-    ownerId: uid,
-    workspaceId: uid,
+    ownerId,
+    workspaceId,
     email: session.email || '',
     loginTime: session.loginTime || session.sessionStartTime,
     lastLogin: session.lastLogin || session.loginTime || session.sessionStartTime,
@@ -133,15 +139,16 @@ export async function persistWorkspaceSession(session) {
       {
         ...payload,
         createdAt: serverTimestamp(),
+        createdBy: uid,
       },
       { merge: true },
     ),
     setDoc(
-      doc(db, 'workspaces', uid),
+      doc(db, 'workspaces', workspaceId),
       {
-        ownerId: uid,
-        userId: uid,
-        workspaceId: uid,
+        ownerId,
+        userId: workspaceId,
+        workspaceId,
         selectedWorkspace,
         currentSessionId: sessionId,
         sessionStartTime: session.sessionStartTime,

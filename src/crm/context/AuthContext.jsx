@@ -2,6 +2,7 @@ import { createContext, useCallback, useEffect, useMemo, useState } from 'react'
 import {
   createUserWithEmailAndPassword,
   onAuthStateChanged,
+  sendEmailVerification,
   signInWithEmailAndPassword,
   signOut,
 } from 'firebase/auth'
@@ -61,6 +62,9 @@ export function AuthProvider({ children }) {
     try {
       const credentials = await createUserWithEmailAndPassword(auth, email, password)
       await ensureUserWorkspace(credentials.user, { email, provider: 'password' })
+      if (!credentials.user.emailVerified) {
+        await sendEmailVerification(credentials.user).catch(() => {})
+      }
       return true
     } catch (e) {
       setError(clientSafeMessage(e, 'Signup failed. Please try again.'))

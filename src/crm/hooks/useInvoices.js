@@ -248,7 +248,7 @@ export function useInvoices() {
             balanceDue: 0,
             ...(stockAdjusted ? { inventoryAdjustedAt: now } : {}),
           })
-          const paymentRef = doc(collection(db, workspaceCollectionPath(workspaceId, 'payments')))
+          const paymentRef = doc(db, workspaceCollectionPath(workspaceId, 'payments'), `invoice-${id}-paid`)
           const transactionId = `${workspaceId}-income-${id}-${Date.now()}`
           batch.set(paymentRef, {
             invoiceId: id,
@@ -267,10 +267,11 @@ export function useInvoices() {
             ownerId: workspaceId,
             userId: workspaceId,
             workspaceId,
+            createdBy: userId,
             createdAt: now,
             updatedAt: now,
           })
-          const transactionRef = doc(collection(db, workspaceCollectionPath(workspaceId, 'accountTransactions')))
+          const transactionRef = doc(db, workspaceCollectionPath(workspaceId, 'accountTransactions'), `income-invoice-${id}`)
           batch.set(transactionRef, {
             transactionId,
             type: 'income',
@@ -425,11 +426,12 @@ export function useInvoices() {
             ownerId: workspaceId,
             userId: workspaceId,
             workspaceId,
+            createdBy: userId,
             createdAt: now,
             updatedAt: now,
           })
           if (fullyPaid) {
-            const transactionRef = doc(collection(db, workspaceCollectionPath(workspaceId, 'accountTransactions')))
+            const transactionRef = doc(db, workspaceCollectionPath(workspaceId, 'accountTransactions'), `income-invoice-${id}`)
             batch.set(transactionRef, {
               transactionId,
               type: 'income',

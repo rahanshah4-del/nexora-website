@@ -97,7 +97,7 @@ function subscriptionEndDate(days = 30) {
 }
 
 export default function AdminUpgradeRequestsPage() {
-  const { isAdmin } = useUser()
+  const { isPlatformAdmin, loading: userLoading, userId } = useUser()
   const navigate = useNavigate()
   const [rows, setRows] = useState([])
   const [busyId, setBusyId] = useState('')
@@ -106,7 +106,7 @@ export default function AdminUpgradeRequestsPage() {
   const [confirm, setConfirm] = useState({ open: false, action: null, row: null })
 
   useEffect(() => {
-    if (!isAdmin) return
+    if (userLoading || !isPlatformAdmin) return
     if (!db) {
       Promise.resolve().then(() => {
         setLoading(false)
@@ -124,12 +124,13 @@ export default function AdminUpgradeRequestsPage() {
       () => setRows([]),
     )
     return () => unsub()
-  }, [isAdmin])
+  }, [isPlatformAdmin, userLoading])
 
   useEffect(() => {
-    if (isAdmin) return
+    if (userLoading) return
+    if (isPlatformAdmin) return
     navigate('/app/dashboard', { replace: true })
-  }, [isAdmin, navigate])
+  }, [isPlatformAdmin, navigate, userLoading])
 
   const columns = useMemo(
     () => [
@@ -218,6 +219,7 @@ export default function AdminUpgradeRequestsPage() {
       batch.update(reqRef, {
         approvalStatus: 'approved',
         paymentStatus: 'paid',
+        approvedBy: userId,
         approvedAt: serverTimestamp(),
       })
 
@@ -254,6 +256,7 @@ export default function AdminUpgradeRequestsPage() {
       batch.update(reqRef, {
         approvalStatus: 'rejected',
         paymentStatus: 'rejected',
+        rejectedBy: userId,
         rejectedAt: serverTimestamp(),
       })
       await batch.commit()
@@ -263,7 +266,7 @@ export default function AdminUpgradeRequestsPage() {
     }
   }
 
-  if (!isAdmin) {
+  if (userLoading || !isPlatformAdmin) {
     return null
   }
 

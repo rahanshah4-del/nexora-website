@@ -24,6 +24,7 @@ function normalizeStaffRole(role) {
   const value = String(role || 'staff').trim().toLowerCase()
   if (value === 'admin') return 'admin'
   if (value === 'accountant') return 'accountant'
+  if (value === 'manager') return 'manager'
   return 'staff'
 }
 
@@ -52,7 +53,7 @@ export function useStaffPermissions() {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    if (!db || !workspaceId || !userId) {
+    if (!db || !workspaceId || !userId || !access.isAdmin) {
       Promise.resolve().then(() => {
         setStaff([])
         setPermissions({})
@@ -92,7 +93,7 @@ export function useStaffPermissions() {
       unsubStaff()
       unsubPermissions()
     }
-  }, [userId, workspaceId])
+  }, [access.isAdmin, userId, workspaceId])
 
   return useMemo(
     () => ({
@@ -100,10 +101,10 @@ export function useStaffPermissions() {
       permissions,
       loading,
       error,
-      canManage: access.isAdmin || access.canManageSettings,
+      canManage: access.isAdmin,
       permissionKeys: workspacePermissionKeys,
       async createStaff(payload) {
-        if (!access.isAdmin && !access.canManageSettings) return { ok: false, error: 'You do not have permission to create staff.' }
+        if (!access.isAdmin) return { ok: false, error: 'Only an owner or admin can create staff.' }
         if (!db || !workspaceId || !userId) return { ok: false, error: 'Secure Cloud Sync is not available right now.' }
 
         const name = String(payload.name || '').trim()
@@ -218,7 +219,7 @@ export function useStaffPermissions() {
         }
       },
       async setStaffPermission(staffId, key, value) {
-        if (!access.isAdmin && !access.canManageSettings) return { ok: false, error: 'You do not have permission to update staff permissions.' }
+        if (!access.isAdmin) return { ok: false, error: 'Only an owner or admin can update staff permissions.' }
         if (!db || !workspaceId || !userId) return { ok: false, error: 'Secure Cloud Sync is not available right now.' }
         if (!workspacePermissionKeys.some((item) => item.key === key)) return { ok: false, error: 'Unknown permission.' }
         const staffRow = staff.find((item) => item.id === staffId)

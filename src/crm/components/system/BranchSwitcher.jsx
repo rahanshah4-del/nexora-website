@@ -13,7 +13,7 @@ const branchSeed = [
 ]
 
 export default function BranchSwitcher() {
-  const { userId } = useUser()
+  const { workspaceId } = useUser()
   const [branches, setBranches] = useState(branchSeed)
   const [activeId, setActiveId] = useState(() => localStorage.getItem(STORAGE_KEY) || 'main')
 
@@ -22,18 +22,18 @@ export default function BranchSwitcher() {
   }, [activeId])
 
   useEffect(() => {
-    if (!db || !userId) {
+    if (!db || !workspaceId) {
       Promise.resolve().then(() => setBranches(branchSeed))
       return
     }
     const unsub = subscribeUserCollection(
-      userId,
+      workspaceId,
       'branches',
       (rows) => setBranches(rows.length ? rows : branchSeed),
       () => setBranches(branchSeed),
     )
     return () => unsub?.()
-  }, [userId])
+  }, [workspaceId])
 
   const active = useMemo(() => branches.find((b) => b.id === activeId) || branches[0], [branches, activeId])
 

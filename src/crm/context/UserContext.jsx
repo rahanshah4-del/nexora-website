@@ -6,6 +6,7 @@ import { usePreferences } from '../hooks/usePreferences.js'
 import { ensureUserWorkspace } from '../../lib/accountProvisioning.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 import { normalizeFinanceRole } from '../lib/financeAccess.js'
+import { isPlatformAdminDoc } from '../../lib/roles.js'
 import { accessPlanForUser, daysUntil, isTrialActive, normalizePlan, trialEndDate } from '../data/moduleAccess.js'
 
 const UserContext = createContext(null)
@@ -112,6 +113,7 @@ export function UserProvider({ children }) {
   const role = normalizeRole(userDoc?.role)
   const workspaceId = userDoc?.workspaceId || user?.uid || null
   const staffId = userDoc?.staffId || user?.uid || null
+  const isPlatformAdmin = isPlatformAdminDoc(userDoc || {})
 
   useEffect(() => {
     if (!user?.uid || !workspaceId || loading || loggedLoginRef.current === user.uid) return
@@ -148,10 +150,11 @@ export function UserProvider({ children }) {
       isOwner: role === 'owner',
       isStaff: role === 'staff',
       isAdmin: role === 'admin' || role === 'owner',
+      isPlatformAdmin,
       isAccountant: role === 'accountant',
       isManager: role === 'manager',
     }),
-    [user, workspaceId, staffId, userDoc, loading, effectivePlan, accessPlan, trialActive, trialEndsAt, trialDaysRemaining, role],
+    [user, workspaceId, staffId, userDoc, loading, effectivePlan, accessPlan, trialActive, trialEndsAt, trialDaysRemaining, role, isPlatformAdmin],
   )
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>

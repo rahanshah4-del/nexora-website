@@ -293,6 +293,7 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
         userId,
         ownerId: userId,
         workspaceId: userId,
+        createdBy: userId,
         userName: readableName,
         email: readableEmail,
         selectedPlan,

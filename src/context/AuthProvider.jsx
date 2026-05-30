@@ -4,13 +4,14 @@ import { doc, getDoc } from 'firebase/firestore'
 import { AuthContext } from './auth-context.js'
 import { auth, db } from '../lib/firebase.js'
 import { ensureUserWorkspace } from '../lib/accountProvisioning.js'
+import { isPlatformAdminDoc } from '../lib/roles.js'
 
 async function fetchUserRole(userId) {
   if (!db || !userId) return { role: 'user', isAdmin: false }
   const snap = await getDoc(doc(db, 'users', userId))
   const data = snap.exists() ? snap.data() : null
   const role = typeof data?.role === 'string' ? data.role : 'user'
-  const isAdmin = role === 'admin' || data?.isAdmin === true
+  const isAdmin = isPlatformAdminDoc(data || {})
   return { role, isAdmin }
 }
 

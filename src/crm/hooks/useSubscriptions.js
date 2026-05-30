@@ -139,7 +139,7 @@ export function useSubscriptions() {
 
     const unsubUpgrades = subscribeOwnedCollection(
       'upgradeRequests',
-      userId,
+      workspaceId,
       (rows) => {
         const approved = rows
           .filter((r) => r.approvalStatus === 'approved')
@@ -155,6 +155,7 @@ export function useSubscriptions() {
         setHistory(approved)
       },
       () => setHistory([]),
+      'workspaceId',
     )
 
     return () => {

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { arrayUnion, collection, doc, getDoc, onSnapshot, query, serverTimestamp, where, writeBatch } from 'firebase/firestore'
+import { arrayUnion, doc, getDoc, onSnapshot, query, serverTimestamp, where, writeBatch } from 'firebase/firestore'
 import { db } from '../lib/firebase.js'
 import {
   collectionRef,
@@ -439,7 +439,7 @@ export function useClientPortal() {
             balanceDue: calculateBalanceDue(invoice.total, nextPaid),
             ...(stockAdjusted ? { inventoryAdjustedAt: now } : {}),
           })
-          batch.set(doc(collection(db, workspaceCollectionPath(workspaceId, 'payments'))), {
+          batch.set(doc(db, workspaceCollectionPath(workspaceId, 'payments'), `client-invoice-${invoiceId}-${Date.now()}`), {
             invoiceId,
             clientId,
             customerName: invoice.customerName || '',
@@ -459,6 +459,7 @@ export function useClientPortal() {
             ownerId: workspaceId,
             userId: workspaceId,
             workspaceId,
+            createdBy: userId,
             createdAt: now,
             updatedAt: now,
           })

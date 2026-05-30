@@ -181,6 +181,7 @@ export default function UpgradeBusinessPage() {
         userId,
         ownerId: userId,
         workspaceId: userId,
+        createdBy: userId,
         userName: customerName.trim(),
         userEmail: customerEmail.trim(),
         userPhone: customerPhone.trim(),

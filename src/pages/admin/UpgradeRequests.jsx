@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { collection, doc, onSnapshot, orderBy, query, serverTimestamp, updateDoc, writeBatch } from 'firebase/firestore'
 import { db } from '../../lib/firebase.js'
+import useAuth from '../../context/useAuth.js'
 
 function StatusPill({ value }) {
   const style =
@@ -13,6 +14,7 @@ function StatusPill({ value }) {
 }
 
 export default function UpgradeRequests() {
+  const { user } = useAuth()
   const firebaseEnabled = Boolean(db)
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(() => firebaseEnabled)
@@ -52,7 +54,11 @@ export default function UpgradeRequests() {
     setUpdatingId(id)
     try {
       if (approvalStatus !== 'approved' || !item.userId) {
-        await updateDoc(doc(db, 'upgradeRequests', id), { approvalStatus })
+        await updateDoc(doc(db, 'upgradeRequests', id), {
+          approvalStatus,
+          paymentStatus: approvalStatus === 'rejected' ? 'rejected' : item.paymentStatus || 'pending',
+          ...(approvalStatus === 'rejected' ? { rejectedBy: user?.uid || '', rejectedAt: serverTimestamp() } : {}),
+        })
         return
       }
 
@@ -66,6 +72,7 @@ export default function UpgradeRequests() {
       batch.update(doc(db, 'upgradeRequests', id), {
         approvalStatus: 'approved',
         paymentStatus: 'paid',
+        approvedBy: user?.uid || '',
         approvedAt: serverTimestamp(),
       })
       batch.set(doc(db, 'users', item.userId), planUpdate, { merge: true })
@@ -173,7 +180,7 @@ export default function UpgradeRequests() {
                   <button
                     type="button"
                     disabled={updatingId === item.id}
-                    onClick={() => updateApproval(item.id, 'pending')}
+                    onClick={() => updateApproval(item, 'pending')}
                     className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/15 disabled:opacity-50"
                   >
                     Pending

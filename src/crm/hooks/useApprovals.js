@@ -17,6 +17,7 @@ import { useUser } from './useUser.js'
 import { clientSafeMessage } from '../utils/messages.js'
 import { amountValue, calculateBalanceDue, invoiceValue, statusValue, toNumber } from '../lib/calculations.js'
 import { canApproveFinance } from '../lib/financeAccess.js'
+import { isPlatformAdminDoc } from '../../lib/roles.js'
 
 const pendingPaymentStatuses = ['pending', 'pending_verification', 'pending_partial', 'partial_pending']
 const pendingRecordStatuses = ['pending', 'pending_approval', 'requested', 'invited']
@@ -206,6 +207,7 @@ async function addInventoryAdjustments(batch, workspaceId, invoice, now) {
 export function useApprovals() {
   const { userId, workspaceId, role, userDoc, firebaseUser } = useUser()
   const canApprove = canApproveFinance(userDoc?.role || role)
+  const canApproveSubscription = isPlatformAdminDoc(userDoc || {})
   const [invoices, setInvoices] = useState([])
   const [payments, setPayments] = useState([])
   const [upgradeRequests, setUpgradeRequests] = useState([])
@@ -237,10 +239,11 @@ export function useApprovals() {
       setError('')
     })
 
+    const expectedLoads = canApproveSubscription ? 7 : 6
     let loaded = 0
     function markLoaded() {
       loaded += 1
-      if (loaded >= 7) setLoading(false)
+      if (loaded >= expectedLoads) setLoading(false)
     }
     function onError(err) {
       setError(clientSafeMessage(err, 'Unable to load approvals.'))
@@ -307,20 +310,23 @@ export function useApprovals() {
       onError,
     )
 
-    const upgradeRef = collection(db, 'upgradeRequests')
-    const upgradeQuery = query(upgradeRef, where('workspaceId', '==', workspaceId))
-    const unsubUpgrades = onSnapshot(
-      upgradeQuery,
-      (snap) => {
-        setUpgradeRequests(
-          snap.docs
-            .map((item) => ({ id: item.id, ...item.data() }))
-            .filter((item) => isPendingRecord(item) || statusValue(item.paymentStatus, '') === 'pending'),
+    const unsubUpgrades = canApproveSubscription
+      ? onSnapshot(
+          query(collection(db, 'upgradeRequests'), where('workspaceId', '==', workspaceId)),
+          (snap) => {
+            setUpgradeRequests(
+              snap.docs
+                .map((item) => ({ id: item.id, ...item.data() }))
+                .filter((item) => isPendingRecord(item) || statusValue(item.paymentStatus, '') === 'pending'),
+            )
+            markLoaded()
+          },
+          onError,
         )
-        markLoaded()
-      },
-      onError,
-    )
+      : (() => {
+          setUpgradeRequests([])
+          return () => {}
+        })()
 
     return () => {
       unsubInvoices?.()
@@ -331,7 +337,7 @@ export function useApprovals() {
       unsubAccountTransactions?.()
       unsubUpgrades?.()
     }
-  }, [canApprove, userId, workspaceId])
+  }, [canApprove, canApproveSubscription, userId, workspaceId])
 
   const approvals = useMemo(() => {
     const rows = [
@@ -364,6 +370,9 @@ export function useApprovals() {
       if (!canApprove) return { ok: false, error: 'You do not have permission to approve requests.' }
       if (!db || !workspaceId || !userId) return { ok: false, error: 'Secure Cloud Sync is not available right now.' }
       if (!isReviewableApproval(approval)) return { ok: false, error: 'This request has already been reviewed.' }
+      if (approval?.sourceCollection === 'upgradeRequests' && !canApproveSubscription) {
+        return { ok: false, error: 'Only a platform admin can approve subscription upgrades.' }
+      }
 
       try {
         const batch = writeBatch(db)
@@ -416,7 +425,7 @@ export function useApprovals() {
               })
             }
           }
-          const transactionRef = doc(collection(db, workspaceCollectionPath(workspaceId, 'accountTransactions')))
+          const transactionRef = doc(db, workspaceCollectionPath(workspaceId, 'accountTransactions'), `income-payment-${approval.sourceId}`)
           const transactionId = `${workspaceId}-income-${approval.sourceId}-${Date.now()}`
           batch.set(transactionRef, {
             transactionId,
@@ -589,7 +598,7 @@ export function useApprovals() {
         return { ok: false, error: clientSafeMessage(err, 'Unable to approve request.') }
       }
     },
-    [canApprove, firebaseUser, userDoc, userId, workspaceId],
+    [canApprove, canApproveSubscription, firebaseUser, userDoc, userId, workspaceId],
   )
 
   const markPaid = useCallback(
@@ -623,7 +632,7 @@ export function useApprovals() {
           ...(stockAdjusted ? { inventoryAdjustedAt: now } : {}),
         })
 
-        const paymentRef = doc(collection(db, workspaceCollectionPath(workspaceId, 'payments')))
+        const paymentRef = doc(db, workspaceCollectionPath(workspaceId, 'payments'), `invoice-${approval.sourceId}-approval-center`)
         batch.set(paymentRef, {
           invoiceId: approval.sourceId,
           invoiceNumber: row.invoiceNumber || approval.sourceId,
@@ -643,11 +652,12 @@ export function useApprovals() {
           ownerId: workspaceId,
           userId: workspaceId,
           workspaceId,
+          createdBy: userId,
           createdAt: now,
           updatedAt: now,
         })
 
-        const transactionRef = doc(collection(db, workspaceCollectionPath(workspaceId, 'accountTransactions')))
+        const transactionRef = doc(db, workspaceCollectionPath(workspaceId, 'accountTransactions'), `income-invoice-${approval.sourceId}`)
         const transactionId = `${workspaceId}-income-${approval.sourceId}-${Date.now()}`
         batch.set(transactionRef, {
           transactionId,
@@ -726,6 +736,9 @@ export function useApprovals() {
       if (!canApprove) return { ok: false, error: 'You do not have permission to approve requests.' }
       if (!db || !workspaceId || !userId) return { ok: false, error: 'Secure Cloud Sync is not available right now.' }
       if (!isReviewableApproval(approval)) return { ok: false, error: 'This request has already been reviewed.' }
+      if (approval?.sourceCollection === 'upgradeRequests' && !canApproveSubscription) {
+        return { ok: false, error: 'Only a platform admin can reject subscription upgrades.' }
+      }
 
       try {
         const batch = writeBatch(db)
@@ -852,13 +865,14 @@ export function useApprovals() {
         return { ok: false, error: clientSafeMessage(err, 'Unable to reject request.') }
       }
     },
-    [canApprove, firebaseUser, userDoc, userId, workspaceId],
+    [canApprove, canApproveSubscription, firebaseUser, userDoc, userId, workspaceId],
   )
 
   return useMemo(
     () => ({
       approvals,
       canApprove,
+      canApproveSubscription,
       error,
       loading,
       summary,
@@ -866,6 +880,6 @@ export function useApprovals() {
       markPaid,
       reject,
     }),
-    [approvals, approve, canApprove, error, loading, markPaid, reject, summary],
+    [approvals, approve, canApprove, canApproveSubscription, error, loading, markPaid, reject, summary],
   )
 }

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { AiOutlineGoogle } from 'react-icons/ai'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
-import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
+import { createUserWithEmailAndPassword, GoogleAuthProvider, sendEmailVerification, signInWithPopup } from 'firebase/auth'
 import { auth, db, firebaseEnabled } from '../../lib/firebase.js'
 import { ensureUserWorkspace } from '../../lib/accountProvisioning.js'
 import useAuth from '../../context/useAuth.js'
@@ -64,6 +64,9 @@ export default function Signup() {
         businessType,
         provider: 'password',
       })
+      if (!userRecord.emailVerified) {
+        await sendEmailVerification(userRecord).catch(() => {})
+      }
 
       navigate('/app/dashboard', { replace: true })
     } catch (err) {

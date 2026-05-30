@@ -6,6 +6,21 @@ function safeError(error, fallback) {
   return new Error(clientSafeMessage(error, fallback))
 }
 
+function belongsToWorkspace(data, workspaceId) {
+  return !data?.workspaceId || data.workspaceId === workspaceId
+}
+
+function withWorkspaceFallback(id, data, workspaceId) {
+  return {
+    id,
+    ...data,
+    workspaceId: data.workspaceId || workspaceId,
+    ownerId: data.ownerId || workspaceId,
+    createdBy: data.createdBy || data.submittedBy || data.userId || workspaceId,
+    createdAt: data.createdAt || null,
+  }
+}
+
 export function collectionRef(path) {
   if (!db) return null
   return collection(db, path)
@@ -42,7 +57,13 @@ export function subscribeUserCollection(userId, path, onData, onError) {
   }
   return onSnapshot(
     ref,
-    (snap) => onData(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
+    (snap) =>
+      onData(
+        snap.docs
+          .map((d) => ({ id: d.id, ...d.data() }))
+          .filter((row) => belongsToWorkspace(row, userId))
+          .map((row) => withWorkspaceFallback(row.id, row, userId)),
+      ),
     (err) => onError?.(safeError(err, 'Unable to load account data.')),
   )
 }
@@ -80,6 +101,7 @@ export async function createUserDoc(userId, path, payload) {
       ownerId: userId,
       userId,
       workspaceId: userId,
+      createdBy: payload.createdBy || payload.submittedBy || userId,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     })

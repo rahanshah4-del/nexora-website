@@ -54,6 +54,7 @@ export async function ensureUserWorkspace(user, overrides = {}) {
       workspaceName: company || `${fullName}'s Workspace`,
       photoURL: cleanString(overrides.photoURL) || cleanString(user.photoURL),
       provider,
+      emailVerified: Boolean(user.emailVerified),
       role: 'owner',
       isAdmin: false,
       plan: FREE_TRIAL_PLAN,
@@ -63,6 +64,7 @@ export async function ensureUserWorkspace(user, overrides = {}) {
       trialEndsAt,
       isTrialActive: true,
       createdAt: now,
+      createdBy: uid,
       updatedAt: now,
       lastLoginAt: now,
     })
@@ -73,6 +75,7 @@ export async function ensureUserWorkspace(user, overrides = {}) {
       userId: uid,
       workspaceId: effectiveWorkspaceId,
       email,
+      emailVerified: Boolean(user.emailVerified),
       photoURL: cleanString(overrides.photoURL) || cleanString(user.photoURL),
       provider,
       updatedAt: now,
@@ -115,6 +118,7 @@ export async function ensureUserWorkspace(user, overrides = {}) {
       trialEndsAt,
       isTrialActive: true,
       createdAt: now,
+      createdBy: uid,
       updatedAt: now,
       lastAccessedAt: now,
     })

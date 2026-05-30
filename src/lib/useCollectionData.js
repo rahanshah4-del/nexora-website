@@ -3,13 +3,13 @@ import { collection, getDocs, limit, orderBy, query, where } from 'firebase/fire
 import { db } from './firebase.js'
 
 export function useCollectionData(collectionName, options = {}) {
-  const { orderByField = '', direction = 'desc', limitCount = 20, userId = '', admin = false, workspaceScoped = true } = options
+  const { orderByField = '', direction = 'desc', limitCount = 20, userId = '', admin = false, workspaceScoped = true, allowGlobal = false } = options
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(Boolean(db && collectionName))
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    if (!db || !collectionName || (!admin && !userId)) {
+    if (!db || !collectionName || (!admin && !userId) || (workspaceScoped && !userId) || (!workspaceScoped && !userId && !allowGlobal)) {
       Promise.resolve().then(() => {
         setItems([])
         setLoading(false)
@@ -54,7 +54,7 @@ export function useCollectionData(collectionName, options = {}) {
     return () => {
       canceled = true
     }
-  }, [admin, collectionName, direction, limitCount, orderByField, userId, workspaceScoped])
+  }, [admin, allowGlobal, collectionName, direction, limitCount, orderByField, userId, workspaceScoped])
 
   return { items, loading, error }
 }

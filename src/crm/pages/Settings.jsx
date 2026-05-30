@@ -101,7 +101,7 @@ function TeamPermissionsPanel() {
 
       {!staffApi.canManage ? (
         <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-          Settings Access permission is required to manage staff permissions.
+          Only the workspace owner or an admin can manage staff permissions.
         </div>
       ) : (
         <div className="mt-5 grid gap-4 lg:grid-cols-[0.85fr_1.15fr]">
@@ -128,6 +128,7 @@ function TeamPermissionsPanel() {
               <Field label="Staff role">
                 <Select value={draft.role} onChange={(event) => setDraft((current) => ({ ...current, role: event.target.value }))}>
                   <option value="staff">Staff</option>
+                  <option value="manager">Manager</option>
                   <option value="admin">Admin</option>
                   <option value="accountant">Accountant</option>
                 </Select>

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { doc, onSnapshot } from 'firebase/firestore'
 import { db } from '../lib/firebase.js'
 import { useUser } from './useUser.js'
+import { workspacePermissionDefaults } from '../../lib/roles.js'
 
 export const workspacePermissionKeys = [
   { key: 'followUpEdit', label: 'Follow-Up Edit' },
@@ -19,7 +20,7 @@ function emptyPermissions() {
 }
 
 export function useWorkspaceAccess() {
-  const { userId, workspaceId, staffId, role, isAdmin, isOwner, isStaff } = useUser()
+  const { userId, workspaceId, staffId, role, isAdmin, isOwner, isStaff, isAccountant, isManager } = useUser()
   const [permissions, setPermissions] = useState(() => emptyPermissions())
   const [loading, setLoading] = useState(true)
 
@@ -34,7 +35,7 @@ export function useWorkspaceAccess() {
 
     if (!isStaff) {
       Promise.resolve().then(() => {
-        setPermissions(Object.fromEntries(workspacePermissionKeys.map((item) => [item.key, true])))
+        setPermissions({ ...emptyPermissions(), ...workspacePermissionDefaults(role) })
         setLoading(false)
       })
       return
@@ -55,7 +56,7 @@ export function useWorkspaceAccess() {
       },
     )
     return () => unsub()
-  }, [isStaff, staffId, userId, workspaceId])
+  }, [isStaff, role, staffId, userId, workspaceId])
 
   return useMemo(
     () => ({
@@ -66,6 +67,8 @@ export function useWorkspaceAccess() {
       isOwner,
       isAdmin,
       isStaff,
+      isAccountant,
+      isManager,
       loading,
       permissions,
       canManageSettings: isAdmin || Boolean(permissions.settingsAccess),
@@ -76,6 +79,6 @@ export function useWorkspaceAccess() {
         return isAdmin || Boolean(permissions[key])
       },
     }),
-    [isAdmin, isOwner, isStaff, loading, permissions, role, staffId, userId, workspaceId],
+    [isAccountant, isAdmin, isManager, isOwner, isStaff, loading, permissions, role, staffId, userId, workspaceId],
   )
 }

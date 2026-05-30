@@ -9,19 +9,27 @@ const WORKSPACE_COLLECTIONS = [
   'leads',
   'pipelines',
   'customers',
+  'clients',
+  'products',
   'invoices',
   'payments',
   'expenses',
+  'accountTransactions',
   'tasks',
   'teamMembers',
+  'branches',
+  'reports',
   'supportTickets',
   'subscriptions',
   'activityLogs',
   'staff',
 ]
 
-const OWNED_COLLECTIONS = ['notifications', 'upgradeRequests']
-const COLLECTIONS = [...WORKSPACE_COLLECTIONS, ...OWNED_COLLECTIONS]
+const OWNED_COLLECTIONS = [
+  { path: 'notifications', field: 'userId' },
+  { path: 'upgradeRequests', field: 'workspaceId' },
+]
+const COLLECTIONS = [...WORKSPACE_COLLECTIONS, ...OWNED_COLLECTIONS.map((item) => item.path)]
 
 function toDateValue(value) {
   if (!value) return null
@@ -135,10 +143,10 @@ export function useReports() {
         },
       ),
     )
-    const ownedUnsubs = OWNED_COLLECTIONS.map((path) =>
+    const ownedUnsubs = OWNED_COLLECTIONS.map(({ path, field }) =>
       subscribeOwnedCollection(
         path,
-        userId,
+        field === 'workspaceId' ? workspaceId : userId,
         (rows) => {
           setData((prev) => ({ ...prev, [path]: Array.isArray(rows) ? rows : [] }))
           loaded.add(path)
@@ -150,6 +158,7 @@ export function useReports() {
           loaded.add(path)
           if (loaded.size === COLLECTIONS.length) setLoading(false)
         },
+        field,
       ),
     )
     const unsubs = [...workspaceUnsubs, ...ownedUnsubs]
