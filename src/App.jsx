@@ -309,12 +309,37 @@ function App({ initialSectionId = '' }) {
     return () => window.cancelAnimationFrame(handle)
   }, [initialSectionId])
 
+  useEffect(() => {
+    const revealTargets = Array.from(document.querySelectorAll('.marketing-page [data-reveal]'))
+    if (!revealTargets.length) return undefined
+
+    if (!('IntersectionObserver' in window)) {
+      revealTargets.forEach((target) => target.classList.add('is-revealed'))
+      return undefined
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return
+          entry.target.classList.add('is-revealed')
+          observer.unobserve(entry.target)
+        })
+      },
+      { rootMargin: '0px 0px -8% 0px', threshold: 0.08 },
+    )
+
+    revealTargets.forEach((target) => observer.observe(target))
+
+    return () => observer.disconnect()
+  }, [])
+
   return (
-    <div className="min-h-screen overflow-x-hidden bg-white text-slate-950">
+    <div className="marketing-page page-enter min-h-screen overflow-x-hidden bg-white text-slate-950">
       <Header />
 
       <main>
-        <section id="hero" className="relative overflow-hidden bg-[linear-gradient(180deg,#f8fbff_0%,#ffffff_92%)] py-14 sm:py-16 lg:py-20">
+        <section id="hero" className="hero-enter relative overflow-hidden bg-[linear-gradient(180deg,#f8fbff_0%,#ffffff_92%)] py-14 sm:py-16 lg:py-20">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_30%_12%,rgba(37,99,235,0.09),transparent_28%),radial-gradient(circle_at_78%_18%,rgba(14,165,233,0.11),transparent_30%)]" />
           <div className="pointer-events-none absolute left-[30%] top-6 hidden h-72 w-56 bg-[radial-gradient(circle,#dbeafe_1px,transparent_1px)] [background-size:18px_18px] opacity-75 lg:block" />
           <div className="pointer-events-none absolute bottom-6 right-0 hidden h-56 w-64 bg-[radial-gradient(circle,#bfdbfe_1px,transparent_1px)] [background-size:18px_18px] opacity-80 lg:block" />
@@ -332,14 +357,14 @@ function App({ initialSectionId = '' }) {
                 <div className="mt-7 flex flex-col justify-center gap-3 min-[390px]:flex-row lg:justify-start">
                   <Link
                     to="/signup"
-                    className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-blue-600 px-6 text-sm font-bold text-white shadow-[0_18px_38px_-22px_rgba(37,99,235,0.9)] transition duration-200 hover:-translate-y-0.5 hover:bg-blue-700"
+                    className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-blue-600 px-6 text-sm font-bold text-white shadow-[0_18px_38px_-22px_rgba(37,99,235,0.9)] transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-blue-700"
                   >
                     Start Free Trial
                     <HiOutlineArrowRight className="text-lg" />
                   </Link>
                   <a
                     href="#contact"
-                    className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md border border-blue-200 bg-white px-6 text-sm font-bold text-slate-950 transition duration-200 hover:-translate-y-0.5 hover:border-blue-500 hover:text-blue-600"
+                    className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md border border-blue-200 bg-white px-6 text-sm font-bold text-slate-950 transition duration-200 ease-out hover:-translate-y-0.5 hover:border-blue-500 hover:text-blue-600"
                   >
                     Book a Demo
                     <HiOutlinePlayCircle className="text-xl text-blue-600" />
@@ -364,7 +389,7 @@ function App({ initialSectionId = '' }) {
           </div>
         </section>
 
-        <section id="services" className="bg-white py-16 sm:py-20 lg:py-24">
+        <section id="services" data-reveal className="bg-white py-16 sm:py-20 lg:py-24">
           <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-3xl text-center">
               <h2 className="text-2xl font-extrabold tracking-tight text-slate-950 sm:text-3xl lg:text-4xl">
@@ -380,7 +405,7 @@ function App({ initialSectionId = '' }) {
               {moduleCards.map((card) => (
                 <article
                   key={card.title}
-                  className="group flex h-full min-h-[16.5rem] flex-col items-center rounded-xl border border-slate-200 bg-white p-6 text-center shadow-lg shadow-slate-950/5 transition-colors duration-200 hover:border-blue-200 hover:shadow-blue-950/10"
+                  className="group flex h-full min-h-[16.5rem] flex-col items-center rounded-xl border border-slate-200 bg-white p-6 text-center shadow-lg shadow-slate-950/5 transition duration-200 ease-out hover:-translate-y-1 hover:border-blue-200 hover:shadow-blue-950/10"
                 >
                   <ModuleIcon icon={card.icon} tone={card.tone} />
                   <h3 className="mt-4 text-lg font-extrabold text-slate-950">{card.title}</h3>
@@ -394,7 +419,7 @@ function App({ initialSectionId = '' }) {
           </div>
         </section>
 
-        <section id="about" className="bg-white px-5 pb-16 pt-2 sm:px-6 sm:pb-20 lg:px-8 lg:pb-24">
+        <section id="about" data-reveal className="bg-white px-5 pb-16 pt-2 sm:px-6 sm:pb-20 lg:px-8 lg:pb-24">
           <div className="mx-auto grid max-w-7xl gap-6 rounded-2xl border border-blue-100 bg-blue-50/35 p-4 shadow-lg shadow-blue-950/5 lg:grid-cols-[1.1fr_1fr] lg:p-5">
             <div className="rounded-xl border border-blue-100 bg-white p-6 shadow-sm">
               <p className="text-base font-extrabold text-slate-950">Trusted by 500+ Businesses</p>
@@ -419,7 +444,7 @@ function App({ initialSectionId = '' }) {
           </div>
         </section>
 
-        <section id="products" className="bg-[linear-gradient(180deg,#ffffff_0%,#f7fbff_100%)] py-16 sm:py-20 lg:py-24">
+        <section id="products" data-reveal className="bg-[linear-gradient(180deg,#ffffff_0%,#f7fbff_100%)] py-16 sm:py-20 lg:py-24">
           <div className="mx-auto grid max-w-7xl items-center gap-14 px-5 sm:px-6 lg:grid-cols-2 lg:px-8">
             <div className="relative mx-auto grid w-full max-w-xl gap-5 sm:grid-cols-[0.38fr_0.62fr] sm:items-end">
               <div className="hidden min-h-[19rem] rounded-[1.8rem] border-[7px] border-slate-950 bg-white shadow-xl shadow-slate-950/10 sm:block">
@@ -482,7 +507,7 @@ function App({ initialSectionId = '' }) {
           </div>
         </section>
 
-        <section id="pricing" className="bg-white py-16 sm:py-20 lg:py-24">
+        <section id="pricing" data-reveal className="bg-white py-16 sm:py-20 lg:py-24">
           <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-3xl text-center">
               <h2 className="text-2xl font-extrabold tracking-tight text-slate-950 sm:text-3xl lg:text-4xl">
@@ -495,7 +520,7 @@ function App({ initialSectionId = '' }) {
                     key={cycle}
                     type="button"
                     onClick={() => setBillingCycle(cycle)}
-                    className={`min-h-9 rounded-md px-5 text-sm font-bold transition ${
+                    className={`min-h-9 rounded-md px-5 text-sm font-bold transition duration-200 ease-out ${
                       billingCycle === cycle ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:text-blue-600'
                     }`}
                   >
@@ -509,7 +534,7 @@ function App({ initialSectionId = '' }) {
               {pricingPlans.map((plan) => (
                 <article
                   key={plan.name}
-                  className={`relative flex h-full min-h-[25rem] flex-col rounded-xl border bg-white p-6 shadow-lg shadow-slate-950/5 ${
+                  className={`relative flex h-full min-h-[25rem] flex-col rounded-xl border bg-white p-6 shadow-lg shadow-slate-950/5 transition duration-200 ease-out hover:-translate-y-1 hover:shadow-blue-950/10 ${
                     plan.featured ? 'border-blue-300 bg-blue-50/35 ring-2 ring-blue-100' : 'border-slate-200'
                   }`}
                 >
@@ -538,7 +563,7 @@ function App({ initialSectionId = '' }) {
 
                   <Link
                     to={plan.custom ? '/contact' : '/signup'}
-                    className={`mt-7 inline-flex min-h-11 items-center justify-center rounded-md border px-4 text-sm font-extrabold transition ${
+                    className={`mt-7 inline-flex min-h-11 items-center justify-center rounded-md border px-4 text-sm font-extrabold transition duration-200 ease-out hover:-translate-y-0.5 ${
                       plan.featured
                         ? 'border-blue-600 bg-blue-600 text-white hover:bg-blue-700'
                         : 'border-slate-200 bg-white text-slate-950 hover:border-blue-300 hover:text-blue-600'
@@ -552,7 +577,7 @@ function App({ initialSectionId = '' }) {
           </div>
         </section>
 
-        <section id="contact" className="bg-white px-5 pb-16 sm:px-6 sm:pb-20 lg:px-8">
+        <section id="contact" data-reveal className="bg-white px-5 pb-16 sm:px-6 sm:pb-20 lg:px-8">
           <div className="mx-auto grid max-w-7xl items-center gap-6 rounded-2xl border border-blue-100 bg-[linear-gradient(135deg,#eef6ff_0%,#ffffff_100%)] p-6 shadow-lg shadow-blue-950/5 sm:p-8 lg:grid-cols-[1fr_auto]">
             <div className="flex items-center gap-5">
               <span className="hidden h-20 w-20 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600 ring-8 ring-white sm:flex">
@@ -569,7 +594,7 @@ function App({ initialSectionId = '' }) {
               href={whatsappLeadLink}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-blue-600 px-8 text-sm font-extrabold text-white shadow-[0_18px_38px_-22px_rgba(37,99,235,0.9)] transition hover:-translate-y-0.5 hover:bg-blue-700"
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-blue-600 px-8 text-sm font-extrabold text-white shadow-[0_18px_38px_-22px_rgba(37,99,235,0.9)] transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-blue-700"
             >
               Book Free Demo
               <HiOutlineArrowRight className="text-lg" />

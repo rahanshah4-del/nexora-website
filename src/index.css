@@ -64,24 +64,58 @@ body {
   }
 
   .page-enter {
-    animation: none;
+    animation: pageEnter 240ms ease-out both;
   }
 
   .hero-enter {
-    animation: none;
+    animation: heroEnter 280ms ease-out both;
   }
 
-  [data-reveal] {
-    opacity: 1;
-    transform: none;
-    transition: none;
-    filter: none;
+  .marketing-page [data-reveal] {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0);
+    transition:
+      opacity 240ms ease-out,
+      transform 240ms ease-out;
+    will-change: opacity, transform;
   }
 
-  [data-reveal].is-revealed {
+  .marketing-page [data-reveal].is-revealed {
     opacity: 1;
     transform: none;
-    filter: blur(0);
+    will-change: auto;
+  }
+
+  .marketing-page section[id] {
+    scroll-margin-top: 5.5rem;
+  }
+
+  .marketing-page .site-header .nav-link {
+    position: relative;
+  }
+
+  .marketing-page .site-header .nav-link::after {
+    position: absolute;
+    right: 0;
+    bottom: -0.45rem;
+    left: 0;
+    height: 2px;
+    border-radius: 999px;
+    background: currentColor;
+    content: '';
+    opacity: 0;
+    transform: scaleX(0.35);
+    transition:
+      opacity 200ms ease-out,
+      transform 200ms ease-out;
+    transform-origin: center;
+  }
+
+  .marketing-page .site-header .nav-link:hover::after,
+  .marketing-page .site-header .nav-link:focus-visible::after,
+  .marketing-page .site-header .nav-link.active::after {
+    opacity: 1;
+    transform: scaleX(1);
   }
 
   .glow-blob {
@@ -143,13 +177,26 @@ body {
   }
 
   @media (max-width: 640px) {
-    [data-reveal] {
+    .marketing-page [data-reveal] {
       transform: none;
-      filter: none;
     }
   }
 
   @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    .marketing-page,
+    .marketing-page *,
+    .marketing-page *::before,
+    .marketing-page *::after {
+      animation-duration: 1ms !important;
+      animation-iteration-count: 1 !important;
+      scroll-behavior: auto !important;
+      transition-duration: 1ms !important;
+    }
+
     .page-enter,
     .hero-enter,
     .glow-blob,
@@ -157,10 +204,9 @@ body {
       animation: none;
     }
 
-    [data-reveal] {
+    .marketing-page [data-reveal] {
       opacity: 1;
       transform: none;
-      filter: none;
       transition: none;
     }
   }

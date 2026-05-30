@@ -63,14 +63,14 @@ function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-50 border-b border-slate-100 bg-white/95 backdrop-blur-xl">
+    <header className="site-header sticky top-0 z-50 border-b border-slate-100 bg-white/95 backdrop-blur-xl">
       <div className="mx-auto flex h-20 max-w-7xl items-center gap-4 px-5 sm:px-6 lg:px-8">
         <a href="#hero" className="shrink-0" onClick={closeAll}>
           <NexoraLogo compact textClassName="[&>p:first-child]:text-lg [&>p:first-child]:tracking-[0.12em] [&>p:last-child]:text-[0.55rem]" />
         </a>
 
         <nav className="hidden flex-1 items-center justify-center gap-7 lg:flex">
-          <a href="#hero" className="text-sm font-bold text-blue-600 transition hover:text-blue-700">
+          <a href="#hero" className="nav-link active text-sm font-bold text-blue-600 transition duration-200 ease-out hover:text-blue-700">
             Home
           </a>
 
@@ -82,7 +82,7 @@ function Header() {
             <button
               type="button"
               onClick={() => toggleDropdown('solutions')}
-              className="inline-flex items-center gap-1 text-sm font-bold text-slate-900 transition hover:text-blue-600"
+              className="nav-link inline-flex items-center gap-1 text-sm font-bold text-slate-900 transition duration-200 ease-out hover:text-blue-600"
               aria-expanded={activeDropdown === 'solutions'}
             >
               Solutions
@@ -99,7 +99,7 @@ function Header() {
                   key={link.label}
                   href={link.href}
                   onClick={closeAll}
-                  className="flex items-center justify-between rounded-md px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-blue-50 hover:text-blue-600"
+                  className="flex items-center justify-between rounded-md px-4 py-3 text-sm font-semibold text-slate-700 transition duration-200 ease-out hover:bg-blue-50 hover:text-blue-600"
                 >
                   <span>{link.label}</span>
                   <HiOutlineArrowRight className="text-slate-400" />
@@ -109,7 +109,7 @@ function Header() {
           </div>
 
           {mainLinks.slice(1).map((link) => (
-            <a key={link.label} href={link.href} className="text-sm font-bold text-slate-900 transition hover:text-blue-600">
+            <a key={link.label} href={link.href} className="nav-link text-sm font-bold text-slate-900 transition duration-200 ease-out hover:text-blue-600">
               {link.label}
             </a>
           ))}
@@ -122,7 +122,7 @@ function Header() {
             <button
               type="button"
               onClick={() => toggleDropdown('resources')}
-              className="inline-flex items-center gap-1 text-sm font-bold text-slate-900 transition hover:text-blue-600"
+              className="nav-link inline-flex items-center gap-1 text-sm font-bold text-slate-900 transition duration-200 ease-out hover:text-blue-600"
               aria-expanded={activeDropdown === 'resources'}
             >
               Resources
@@ -139,7 +139,7 @@ function Header() {
                   key={link.label}
                   href={link.href}
                   onClick={closeAll}
-                  className="flex items-center justify-between rounded-md px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-blue-50 hover:text-blue-600"
+                  className="flex items-center justify-between rounded-md px-4 py-3 text-sm font-semibold text-slate-700 transition duration-200 ease-out hover:bg-blue-50 hover:text-blue-600"
                 >
                   <span>{link.label}</span>
                   <HiOutlineArrowRight className="text-slate-400" />
@@ -152,13 +152,13 @@ function Header() {
         <div className="ml-auto hidden items-center gap-3 lg:flex">
           <Link
             to="/login"
-            className="inline-flex h-11 items-center justify-center rounded-md border border-slate-200 bg-white px-5 text-sm font-bold text-slate-900 transition hover:border-blue-300 hover:text-blue-600"
+            className="inline-flex h-11 items-center justify-center rounded-md border border-slate-200 bg-white px-5 text-sm font-bold text-slate-900 transition duration-200 ease-out hover:-translate-y-0.5 hover:border-blue-300 hover:text-blue-600"
           >
             Login
           </Link>
           <Link
             to="/signup"
-            className="inline-flex h-11 items-center justify-center rounded-md bg-blue-600 px-5 text-sm font-bold text-white shadow-[0_18px_38px_-24px_rgba(37,99,235,0.9)] transition hover:-translate-y-0.5 hover:bg-blue-700"
+            className="inline-flex h-11 items-center justify-center rounded-md bg-blue-600 px-5 text-sm font-bold text-white shadow-[0_18px_38px_-24px_rgba(37,99,235,0.9)] transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-blue-700"
           >
             Get Started Free
           </Link>
@@ -167,7 +167,7 @@ function Header() {
         <button
           type="button"
           onClick={() => setMobileMenuOpen((current) => !current)}
-          className="ml-auto inline-flex h-11 w-11 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-900 transition hover:bg-slate-50 lg:hidden"
+          className="ml-auto inline-flex h-11 w-11 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-900 transition duration-200 ease-out hover:bg-slate-50 lg:hidden"
           aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
           aria-expanded={mobileMenuOpen}
         >
@@ -187,7 +187,7 @@ function Header() {
         />
 
         <aside
-          className={`absolute right-3 top-3 flex h-[calc(100dvh-1.5rem)] w-[min(23rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_28px_80px_-36px_rgba(15,23,42,0.55)] transition-transform duration-250 ${
+          className={`absolute right-3 top-3 flex h-[calc(100dvh-1.5rem)] w-[min(23rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_28px_80px_-36px_rgba(15,23,42,0.55)] transition-transform duration-200 ease-out ${
             mobileMenuOpen ? 'translate-x-0' : 'translate-x-[calc(100%+1rem)]'
           }`}
         >
@@ -210,7 +210,7 @@ function Header() {
                   key={link.label}
                   href={link.href}
                   onClick={closeAll}
-                  className="flex items-center justify-between rounded-lg px-4 py-3 text-sm font-bold text-slate-800 transition hover:bg-blue-50 hover:text-blue-600"
+                  className="flex items-center justify-between rounded-lg px-4 py-3 text-sm font-bold text-slate-800 transition duration-200 ease-out hover:bg-blue-50 hover:text-blue-600"
                 >
                   {link.label}
                   <HiOutlineArrowRight className="text-slate-400" />
@@ -226,7 +226,7 @@ function Header() {
                     key={link.label}
                     href={link.href}
                     onClick={closeAll}
-                    className="flex items-center justify-between rounded-md px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-white hover:text-blue-600"
+                    className="flex items-center justify-between rounded-md px-4 py-3 text-sm font-semibold text-slate-700 transition duration-200 ease-out hover:bg-white hover:text-blue-600"
                   >
                     {link.label}
                     <HiOutlineArrowRight className="text-slate-400" />
@@ -243,7 +243,7 @@ function Header() {
                     key={link.label}
                     href={link.href}
                     onClick={closeAll}
-                    className="flex items-center justify-between rounded-md px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-white hover:text-blue-600"
+                    className="flex items-center justify-between rounded-md px-4 py-3 text-sm font-semibold text-slate-700 transition duration-200 ease-out hover:bg-white hover:text-blue-600"
                   >
                     {link.label}
                     <HiOutlineArrowRight className="text-slate-400" />
