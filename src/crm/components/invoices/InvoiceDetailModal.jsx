@@ -95,14 +95,15 @@ function InvoiceDetailModal({
     })
   }, [open, invoice])
 
-  const status = statusBadge(invoice?.status || invoice?.paymentStatus)
   const invoicePayments = useMemo(() => matchingPayments(payments, invoice), [invoice, payments])
+
+  if (!invoice) return null
+
+  const status = statusBadge(invoice.status || invoice.paymentStatus)
   const total = invoiceTotal(invoice)
   const paid = invoicePaidAmount(invoice)
   const balance = Math.max(total - paid, 0)
   const closed = ['paid', 'cancelled', 'canceled', 'rejected'].includes(String(invoice?.status || invoice?.paymentStatus || '').toLowerCase())
-
-  if (!invoice) return null
 
   async function saveEdit() {
     if (!invoice?.id) return

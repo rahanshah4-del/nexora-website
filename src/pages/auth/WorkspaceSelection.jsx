@@ -291,6 +291,9 @@ function WorkspaceCard({ workspace, index }) {
                 </span>
               </p>
             ) : null}
+            {workspace.trialLabel ? (
+              <p className="mt-1 text-xs font-semibold text-blue-700">{workspace.trialLabel}</p>
+            ) : null}
           </div>
         </div>
         {workspace.active ? (
@@ -327,6 +330,15 @@ function WorkspaceCard({ workspace, index }) {
         {workspace.active ? 'Enter Workspace' : 'Coming Soon'}
         <HiOutlineArrowRight className="h-4 w-4" />
       </button>
+      {workspace.active ? (
+        <button
+          type="button"
+          onClick={() => navigate('/upgrade-business', { state: { fromUpgradeBusiness: true } })}
+          className="mt-2 flex h-10 w-full items-center justify-center rounded-lg bg-gradient-to-r from-blue-600 to-violet-600 text-[13px] font-bold text-white shadow-sm transition hover:from-blue-700 hover:to-violet-700"
+        >
+          Upgrade Plan
+        </button>
+      ) : null}
     </motion.article>
   )
 }
@@ -620,12 +632,18 @@ export default function WorkspaceSelection() {
       role: cleanString(accountData?.role) || 'owner',
       workspaceName,
       planLabel: `${packageName}${status ? ` · ${trialExpired ? 'expired' : status}` : ''}`,
+      trialShortLabel: trialExpired
+        ? 'Trial expired'
+        : isTrial
+          ? `Trial: ${remainingDays} days left`
+          : '',
       trialLabel: trialExpired
         ? `Expired on ${formatDate(trialEndsAt)}`
         : isTrial
           ? `${remainingDays} days left · ends ${formatDate(trialEndsAt)}`
           : `Ends ${formatDate(trialEndsAt)}`,
       trialExpired,
+      isTrial,
       workspaceId: cleanString(workspaceData?.workspaceId) || cleanString(accountData?.workspaceId) || user?.uid || '',
     }
   }, [accountData, user, workspaceData])
@@ -639,10 +657,13 @@ export default function WorkspaceSelection() {
               ...workspace,
               name: profile.workspaceName,
               id: profile.workspaceId || workspace.id,
+              plan: profile.planLabel,
+              trialLabel: profile.trialShortLabel,
+              trialExpired: profile.trialExpired,
             }
           : workspace,
       ),
-    [profile.workspaceId, profile.workspaceName],
+    [profile.planLabel, profile.trialExpired, profile.trialShortLabel, profile.workspaceId, profile.workspaceName],
   )
   const notificationCount = sampleNotifications.length
   const createDisabled = hasCrmWorkspace || creatingWorkspace
@@ -672,6 +693,11 @@ export default function WorkspaceSelection() {
       setLoggingOut(false)
     }
   }, [loggingOut, navigate])
+
+  const handleUpgradePlan = useCallback(() => {
+    setProfileOpen(false)
+    navigate('/upgrade-business', { state: { fromUpgradeBusiness: true } })
+  }, [navigate])
 
   const handleSaveWorkspaceName = useCallback(async () => {
     const cleanName = normalizeWorkspaceName(workspaceNameDraft, profile.workspaceName || 'Nexora CRM')
@@ -877,8 +903,17 @@ export default function WorkspaceSelection() {
                   <div className="mt-3 rounded-lg bg-slate-50 px-3 py-2">
                     <p className="truncate text-xs font-bold text-slate-700">{profile.workspaceName}</p>
                     <p className="text-xs font-bold text-slate-700">{profile.planLabel}</p>
-                    <p className="mt-0.5 text-xs text-slate-500">{profile.trialLabel}</p>
+                    {profile.trialShortLabel ? (
+                      <p className="mt-0.5 text-xs text-slate-500">{profile.trialShortLabel}</p>
+                    ) : null}
                   </div>
+                  <button
+                    type="button"
+                    onClick={handleUpgradePlan}
+                    className="mt-3 flex h-9 w-full items-center justify-center rounded-lg bg-gradient-to-r from-blue-600 to-violet-600 text-xs font-bold text-white shadow-sm transition hover:from-blue-700 hover:to-violet-700"
+                  >
+                    Upgrade Plan
+                  </button>
                   <button
                     type="button"
                     disabled={loggingOut}
@@ -890,6 +925,25 @@ export default function WorkspaceSelection() {
                   </button>
                 </div>
               ) : null}
+            </div>
+
+            <div className="mt-3 rounded-lg border border-white/10 bg-white/[0.04] p-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">Package</p>
+                  <p className="mt-1 truncate text-xs font-bold text-white">{profile.planLabel}</p>
+                  {profile.trialShortLabel ? (
+                    <p className="mt-1 text-[11px] font-semibold text-slate-300">{profile.trialShortLabel}</p>
+                  ) : null}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleUpgradePlan}
+                className="mt-3 flex h-9 w-full items-center justify-center rounded-lg bg-gradient-to-r from-blue-600 to-violet-600 text-xs font-bold text-white shadow-sm transition hover:from-blue-700 hover:to-violet-700"
+              >
+                Upgrade Plan
+              </button>
             </div>
 
             <nav className="mt-4 space-y-2">
@@ -1129,9 +1183,29 @@ export default function WorkspaceSelection() {
               </div>
             </motion.section>
 
-            {profile.trialExpired ? (
-              <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800">
-                Your 7-day workspace trial has expired. Upgrade your package to continue using paid workspace features.
+            {profile.trialShortLabel ? (
+              <div
+                className={`mt-4 flex flex-col gap-3 rounded-lg border px-4 py-3 sm:flex-row sm:items-center sm:justify-between ${
+                  profile.trialExpired
+                    ? 'border-amber-200 bg-amber-50 text-amber-800'
+                    : 'border-blue-100 bg-blue-50 text-blue-800'
+                }`}
+              >
+                <div className="min-w-0">
+                  <p className="text-sm font-extrabold">{profile.trialShortLabel}</p>
+                  <p className="mt-1 text-xs font-semibold">
+                    {profile.trialExpired
+                      ? 'Your 7-day workspace trial has expired. Upgrade your package to continue using paid workspace features.'
+                      : 'Upgrade any time to keep your CRM workspace active after the trial.'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleUpgradePlan}
+                  className="flex h-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-r from-blue-600 to-violet-600 px-4 text-sm font-bold text-white shadow-sm transition hover:from-blue-700 hover:to-violet-700"
+                >
+                  Upgrade Plan
+                </button>
               </div>
             ) : null}
 

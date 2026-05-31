@@ -1,3 +1,4 @@
+import { Component } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import UpgradeBusiness from './pages/UpgradeBusiness.jsx'
 import MarketingRoute from './pages/public/MarketingRoute.jsx'
@@ -35,6 +36,45 @@ import ApprovalsPage from './crm/pages/Approvals.jsx'
 import ReportsPage from './crm/pages/Reports.jsx'
 import SettingsPage from './crm/pages/Settings.jsx'
 import UpgradeRequests from './pages/admin/UpgradeRequests.jsx'
+
+class InvoiceRouteBoundary extends Component {
+  state = { hasError: false }
+
+  static getDerivedStateFromError() {
+    return { hasError: true }
+  }
+
+  componentDidCatch(error, info) {
+    console.error('[Nexora CRM] Invoice route failed to render', error, info)
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <section className="rounded-[1.35rem] border border-rose-200 bg-white p-5 shadow-sm">
+          <p className="text-lg font-black tracking-tight text-slate-950">Invoices could not load</p>
+          <p className="mt-2 text-sm leading-6 text-slate-600">
+            The invoice module hit a display error. Reload the invoice page or return to the CRM dashboard.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button
+              type="button"
+              className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-bold text-white"
+              onClick={() => window.location.reload()}
+            >
+              Reload Invoices
+            </button>
+            <a className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700" href="/app/dashboard">
+              Back to Dashboard
+            </a>
+          </div>
+        </section>
+      )
+    }
+
+    return this.props.children
+  }
+}
 
 function UpgradeRouteGuard() {
   const location = useLocation()
@@ -79,7 +119,7 @@ export default function AppRouter() {
         <Route path="follow-ups" element={<FollowUpsPage />} />
         <Route path="team" element={<TeamPage />} />
         <Route path="hr" element={<HRDashboardPage />} />
-        <Route path="invoices" element={<InvoicesPage />} />
+        <Route path="invoices" element={<InvoiceRouteBoundary><InvoicesPage /></InvoiceRouteBoundary>} />
         <Route path="invoices/create" element={<InvoiceCreatePage />} />
         <Route path="expenses" element={<ExpensesPage />} />
         <Route path="accounts" element={<AccountManagementPage />} />

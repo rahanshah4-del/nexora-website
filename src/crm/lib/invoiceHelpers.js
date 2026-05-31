@@ -215,9 +215,11 @@ export function invoiceIssueDate(invoice = {}) {
 }
 
 export function invoicePaidAmount(invoice = {}) {
-  return Math.max(money(invoice.amountPaid ?? invoice.partialPaidAmount), 0)
+  const record = invoice || {}
+  return Math.max(money(record.amountPaid ?? record.partialPaidAmount), 0)
 }
 
 export function invoiceTotal(invoice = {}) {
-  return Math.max(money(invoice.total ?? invoice.totalUsd ?? invoice.grandTotal), 0)
+  const record = invoice || {}
+  return Math.max(money(record.total ?? record.totalUsd ?? record.grandTotal), 0)
 }

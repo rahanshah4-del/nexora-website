@@ -10,6 +10,7 @@ import {
   HiOutlineUserCircle,
   HiOutlineUserGroup,
 } from 'react-icons/hi2'
+import { useNavigate } from 'react-router-dom'
 import logoUrl from '../../../assets/logo/nexora-logo.svg'
 import { cn } from '../../utils/cn.js'
 import { formatSessionTime, isValidWorkspace, workspaceLabel } from '../../lib/workspaceSession.js'
@@ -63,6 +64,16 @@ function SessionPill({ icon: Icon, label, value }) {
       <p className="mt-1 truncate text-sm font-semibold text-slate-950 dark:text-white">{value || 'No data yet'}</p>
     </div>
   )
+}
+
+function formatUpgradeTrialLabel(session) {
+  const status = String(session?.trialStatus || '').trim()
+  if (/expired/i.test(status)) return 'Trial expired'
+
+  const daysMatch = status.match(/(\d+)/)
+  if (daysMatch) return `Trial: ${daysMatch[1]} days left`
+
+  return status.toLowerCase().includes('trial') || !status ? 'Trial: active' : status
 }
 
 function ProductCard({ product, onSelect }) {
@@ -126,8 +137,10 @@ function ProductCard({ product, onSelect }) {
 }
 
 function ProductSelectionModal({ open, session, selectedWorkspace, onSelect, onContinueLast, onClose }) {
+  const navigate = useNavigate()
   const hasLastWorkspace = isValidWorkspace(selectedWorkspace) && selectedWorkspace !== 'restaurant-pos'
   const selectedStatus = hasLastWorkspace ? workspaceLabel(selectedWorkspace) : 'Not selected'
+  const upgradeTrialLabel = formatUpgradeTrialLabel(session)
 
   return (
     <AnimatePresence>
@@ -186,6 +199,23 @@ function ProductSelectionModal({ open, session, selectedWorkspace, onSelect, onC
               <SessionPill icon={HiOutlineClock} label="Current session" value={formatSessionTime(session?.sessionStartTime)} />
               <SessionPill icon={HiOutlineArrowPath} label="Workspace status" value={selectedStatus} />
               <SessionPill icon={HiOutlineSparkles} label="Package / Trial" value={`${packageNameForPlan(session?.planType)} / ${session?.trialStatus || 'trial'}`} />
+            </div>
+
+            <div className="relative mt-3 flex flex-col gap-3 rounded-[1.15rem] border border-indigo-100 bg-gradient-to-r from-indigo-50 via-white to-sky-50 p-3 dark:border-white/10 dark:from-indigo-500/10 dark:via-white/5 dark:to-sky-500/10 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-slate-950 dark:text-white">Upgrade your workspace plan</p>
+                <p className="mt-1 text-xs font-medium text-slate-600 dark:text-slate-300">{upgradeTrialLabel}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  onClose?.()
+                  navigate('/upgrade-business', { state: { fromUpgradeBusiness: true } })
+                }}
+                className="focus-ring inline-flex shrink-0 items-center justify-center rounded-2xl bg-gradient-to-r from-blue-600 to-violet-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:from-blue-700 hover:to-violet-700"
+              >
+                Upgrade Plan
+              </button>
             </div>
 
             {hasLastWorkspace ? (

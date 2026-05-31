@@ -202,6 +202,16 @@ function TopNav({ onOpenSidebar, onSwitchProduct }) {
                         <span className="text-slate-500">Package status</span>
                         <span className="truncate font-semibold text-slate-900">{profileSummary.accessLabel}</span>
                       </div>
+                      <button
+                        type="button"
+                        className="focus-ring flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-blue-600 to-violet-600 px-3 py-2 text-xs font-bold text-white shadow-sm transition hover:from-blue-700 hover:to-violet-700"
+                        onClick={() => {
+                          close()
+                          navigate('/upgrade-business', { state: { fromUpgradeBusiness: true } })
+                        }}
+                      >
+                        Upgrade Plan
+                      </button>
                       <div className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2">
                         <span className="text-slate-500">Workspace</span>
                         <span className="truncate font-semibold text-slate-900">{profileSummary.workspaceName}</span>
