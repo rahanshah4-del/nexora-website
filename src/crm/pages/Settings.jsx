@@ -20,6 +20,7 @@ import { useUser } from '../hooks/useUser.js'
 import AuditLogPanel from '../components/system/AuditLogPanel.jsx'
 import { useStaffPermissions } from '../hooks/useStaffPermissions.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
+import { packageNameForPlan } from '../data/moduleAccess.js'
 
 function Field({ label, children, className = '' }) {
   return (
@@ -245,6 +246,7 @@ export default function SettingsPage() {
   const [saved, setSaved] = useState(false)
   const fileRef = useRef(null)
   const location = useLocation()
+  const packageName = packageNameForPlan(plan)
 
   useEffect(() => {
     if (!location.hash) return
@@ -379,7 +381,7 @@ export default function SettingsPage() {
                   <p className="mt-1 text-xs text-slate-500 dark:text-slate-300">Company details for invoices and reports.</p>
                 </div>
               </div>
-              <Badge variant={plan === 'Business' ? 'success' : 'default'}>{plan === 'Business' ? 'Business' : 'Free'}</Badge>
+              <Badge variant={plan === 'Business' ? 'success' : 'default'}>{packageName}</Badge>
             </div>
 
             <div className="mt-5 grid gap-4 sm:grid-cols-2">

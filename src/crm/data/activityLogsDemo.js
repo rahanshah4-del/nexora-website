@@ -71,10 +71,10 @@ export const activityLogsDemo = [
     userId: 'Demo',
     userName: 'Admin User',
     module: 'Subscriptions',
-    action: 'Plan Changed',
-    description: 'Subscription upgraded to Business (approved).',
+    action: 'Package Changed',
+    description: 'Subscription upgraded to Standard (approved).',
     priority: 'high',
     createdAt: daysAgo(7),
-    metadata: { from: 'Free', to: 'Business', billingCycle: 'monthly' },
+    metadata: { from: 'Basic', to: 'Standard', billingCycle: 'monthly' },
   },
 ]

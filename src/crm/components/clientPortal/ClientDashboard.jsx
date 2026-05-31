@@ -4,9 +4,11 @@ import Button from '../ui/Button.jsx'
 import Card from '../ui/Card.jsx'
 import ActivityTimeline from '../dashboard/ActivityTimeline.jsx'
 import { useNavigate } from 'react-router-dom'
+import { packageNameForPlan } from '../../data/moduleAccess.js'
 
 export default function ClientDashboard({ subscription, invoicesCount, paymentsCount, activity }) {
   const navigate = useNavigate()
+  const packageName = packageNameForPlan(subscription?.plan)
 
   return (
     <Card className="p-5">
@@ -15,7 +17,7 @@ export default function ClientDashboard({ subscription, invoicesCount, paymentsC
           <p className="text-sm font-semibold text-slate-900 dark:text-white">Client Dashboard</p>
           <p className="text-xs text-slate-600 dark:text-slate-300">Invoices, payments, subscription status, and support shortcuts</p>
         </div>
-        <Badge variant="purple">{subscription?.plan || 'Free'} Plan</Badge>
+        <Badge variant="purple">{packageName} Package</Badge>
       </div>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-3">
@@ -60,4 +62,3 @@ export default function ClientDashboard({ subscription, invoicesCount, paymentsC
     </Card>
   )
 }
-

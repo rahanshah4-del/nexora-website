@@ -44,7 +44,7 @@ export const supportTicketsDemo = [
     status: 'Resolved',
     priority: 'Low',
     assignedTo: 'Manager',
-    comments: [{ id: 'c1', author: 'Manager', message: 'Approved. Please submit a Business plan request for more seats.', createdAt: daysAgo(12) }],
+    comments: [{ id: 'c1', author: 'Manager', message: 'Approved. Please submit a Standard package request for more seats.', createdAt: daysAgo(12) }],
     createdAt: daysAgo(14),
     updatedAt: daysAgo(12),
   },

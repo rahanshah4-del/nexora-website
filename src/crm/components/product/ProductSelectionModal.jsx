@@ -13,6 +13,7 @@ import {
 import logoUrl from '../../../assets/logo/nexora-logo.svg'
 import { cn } from '../../utils/cn.js'
 import { formatSessionTime, isValidWorkspace, workspaceLabel } from '../../lib/workspaceSession.js'
+import { packageNameForPlan } from '../../data/moduleAccess.js'
 
 const products = [
   {
@@ -184,7 +185,7 @@ function ProductSelectionModal({ open, session, selectedWorkspace, onSelect, onC
               <SessionPill icon={HiOutlineClock} label="Login time" value={formatSessionTime(session?.loginTime)} />
               <SessionPill icon={HiOutlineClock} label="Current session" value={formatSessionTime(session?.sessionStartTime)} />
               <SessionPill icon={HiOutlineArrowPath} label="Workspace status" value={selectedStatus} />
-              <SessionPill icon={HiOutlineSparkles} label="Plan / Trial" value={`${session?.planType || 'Free'} / ${session?.trialStatus || 'trial'}`} />
+              <SessionPill icon={HiOutlineSparkles} label="Package / Trial" value={`${packageNameForPlan(session?.planType)} / ${session?.trialStatus || 'trial'}`} />
             </div>
 
             {hasLastWorkspace ? (

@@ -2,10 +2,12 @@ import Badge from '../ui/Badge.jsx'
 import Button from '../ui/Button.jsx'
 import Card from '../ui/Card.jsx'
 import { useNavigate } from 'react-router-dom'
+import { packageNameForPlan } from '../../data/moduleAccess.js'
 
 export default function ClientSubscriptionCard({ subscription }) {
   const navigate = useNavigate()
   const plan = subscription?.plan || 'Free'
+  const packageName = packageNameForPlan(plan)
   const active = subscription?.planStatus === 'active' || plan !== 'Free'
 
   return (
@@ -13,15 +15,15 @@ export default function ClientSubscriptionCard({ subscription }) {
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-sm font-semibold text-slate-900 dark:text-white">Subscription</p>
-          <p className="text-xs text-slate-600 dark:text-slate-300">Plan status and billing cycle</p>
+          <p className="text-xs text-slate-600 dark:text-slate-300">Package status and billing cycle</p>
         </div>
         <Badge variant={active ? 'success' : 'default'}>{active ? 'Active' : 'Free'}</Badge>
       </div>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <div className="glass-muted rounded-2xl p-4">
-          <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">Plan</p>
-          <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{plan}</p>
+          <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">Package</p>
+          <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{packageName}</p>
         </div>
         <div className="glass-muted rounded-2xl p-4">
           <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">Billing</p>

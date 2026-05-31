@@ -5,11 +5,13 @@
 @layer base {
   html {
     @apply min-h-full overflow-x-hidden scroll-smooth;
+    height: auto;
     scroll-behavior: smooth;
     overflow-y: auto;
   }
   body {
     @apply min-h-full overflow-x-hidden bg-slate-50 text-slate-900 antialiased;
+    height: auto;
     overflow-y: auto;
     overscroll-behavior-y: auto;
     background-image:
@@ -20,7 +22,7 @@
   #root {
     @apply min-h-screen;
     isolation: isolate;
-    overflow-x: clip;
+    overflow-x: hidden;
     overflow-y: visible;
   }
 }
@@ -28,7 +30,7 @@
 @layer components {
   .nexora-bg {
     @apply relative isolate min-h-screen bg-slate-50;
-    overflow-x: clip;
+    overflow-x: hidden;
     overflow-y: visible;
   }
   .nexora-bg::before {
@@ -63,7 +65,7 @@
   .crm-dashboard-page {
     content-visibility: auto;
     contain-intrinsic-size: 1px 1400px;
-    overflow-x: clip;
+    overflow-x: hidden;
   }
 
   .crm-dashboard-page *,

@@ -18,7 +18,7 @@ import {
 
 function MobileAppAccessBlock() {
   return (
-    <div className="nexora-bg grid min-h-screen place-items-center overflow-x-clip px-4 py-8">
+    <div className="nexora-bg grid min-h-screen place-items-center overflow-x-hidden px-4 py-8">
       <motion.div
         className="w-full max-w-md overflow-hidden rounded-[1.8rem] border border-white/85 bg-white/95 p-6 text-center shadow-[0_24px_80px_-48px_rgba(15,23,42,0.55)]"
         initial={{ opacity: 0, y: 12 }}
@@ -153,17 +153,17 @@ export default function DashboardLayout() {
   }
 
   return (
-    <div className="nexora-bg min-h-screen overflow-x-clip">
+    <div className="nexora-bg min-h-dvh overflow-x-hidden">
       <Sidebar collapsed={collapsed} onToggleCollapse={toggleCollapse} onSwitchProduct={openProductSwitcher} />
 
       <div
-        className={`relative z-10 min-h-screen min-w-0 print:ml-0 ${
+        className={`relative z-10 min-h-dvh min-w-0 print:ml-0 ${
           collapsed ? 'lg:ml-[72px]' : 'lg:ml-[236px]'
         }`}
       >
         <TopNav collapsed={collapsed} onOpenSidebar={() => setMobileOpen(true)} onSwitchProduct={openProductSwitcher} />
 
-        <main className="min-w-0 overflow-x-clip overflow-y-visible px-3 pb-5 pt-4 print:p-0 sm:px-5 lg:px-6 lg:pb-6 lg:pt-5">
+        <main className="min-w-0 overflow-x-hidden px-3 pb-5 pt-4 print:p-0 sm:px-5 lg:px-6 lg:pb-6 lg:pt-5">
           <div className="mx-auto w-full max-w-[1440px] min-w-0 print:max-w-none">
             <Outlet />
           </div>

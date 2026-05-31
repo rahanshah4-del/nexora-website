@@ -93,6 +93,7 @@ export default function UpgradeBusinessPage() {
   const businessPrice = useMemo(() => getBusinessPlanPrice(), [])
   const currency = businessPrice.currency
   const selectedPlan = 'Business'
+  const selectedPlanLabel = businessPrice.planName || 'Standard'
   const billingCycle = 'monthly'
   const planPrice = businessPrice.amount
 
@@ -229,13 +230,13 @@ export default function UpgradeBusinessPage() {
             Back to Settings
           </Link>
           <Badge variant={accessPlan === 'Business' ? 'success' : 'default'}>
-            {accessPlan === 'Business' ? 'Business Access' : 'Free Plan'}
+            {accessPlan === 'Business' ? `${selectedPlanLabel} Access` : 'Basic Package'}
           </Badge>
         </div>
 
         <PageHeader
-          title="Upgrade Plan"
-          subtitle="Submit your payment details for secure plan approval."
+          title="Upgrade Package"
+          subtitle="Submit your payment details for secure package approval."
           right={
             accessPlan === 'Business' && plan === 'Business' ? (
               <Button className="rounded-2xl" onClick={() => navigate('/app/dashboard')} type="button">
@@ -248,9 +249,9 @@ export default function UpgradeBusinessPage() {
         <Card className="p-5">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-sm font-semibold text-slate-900 dark:text-white">Manual Approval Flow</p>
-              <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-                Pay for the Business plan, then submit your transaction details. Your workspace updates after account approval.
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">Manual Approval Flow</p>
+                <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+                Pay for the {selectedPlanLabel} package, then submit your transaction details. Your workspace updates after account approval.
               </p>
             </div>
             <Badge variant="purple">NEXORA</Badge>
@@ -258,9 +259,9 @@ export default function UpgradeBusinessPage() {
 
           {accessPlan === 'Business' && plan === 'Business' ? (
             <div className="mt-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4">
-              <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-200">Business is active</p>
+              <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-200">{selectedPlanLabel} is active</p>
               <p className="mt-1 text-sm text-emerald-800/90 dark:text-emerald-200/90">
-                Your account already has the Business plan. No action required.
+                Your account already has the {selectedPlanLabel} package. No action required.
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
                 <Button className="rounded-2xl" onClick={() => navigate('/app/dashboard')} type="button">
@@ -279,10 +280,10 @@ export default function UpgradeBusinessPage() {
                 {pendingRequest?.selectedPlan ? (
                   <>
                     {' '}
-                    for <span className="font-semibold">Business Plan</span>
+                    for <span className="font-semibold">{selectedPlanLabel} Package</span>
                   </>
                 ) : null}
-                . Your plan will update after account approval.
+                . Your package will update after account approval.
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
                 <Button className="rounded-2xl" onClick={() => navigate('/app/settings')} type="button">
@@ -308,16 +309,16 @@ export default function UpgradeBusinessPage() {
                 <Input className="mt-1" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} placeholder="e.g. +92..." />
               </div>
               <div>
-                <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Selected Plan</label>
-                <Input className="mt-1" value="Business Plan" readOnly />
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Selected Package</label>
+                <Input className="mt-1" value={`${selectedPlanLabel} Package`} readOnly />
               </div>
               <div>
                 <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Billing Cycle</label>
                 <Input className="mt-1" value="Monthly" readOnly />
               </div>
               <div>
-                <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Plan Price</label>
-                <Input className="mt-1" value={formatCurrency(planPrice, currency)} readOnly />
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Package Price</label>
+                <Input className="mt-1" value={businessPrice.priceLabel || formatCurrency(planPrice, currency)} readOnly />
               </div>
               <div>
                 <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Amount Paid</label>
@@ -398,7 +399,7 @@ export default function UpgradeBusinessPage() {
                   {submitting ? 'Submitting...' : 'Submit upgrade request'}
                 </Button>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Plan updates happen only after account approval.
+                  Package updates happen only after account approval.
                 </p>
               </div>
             </div>

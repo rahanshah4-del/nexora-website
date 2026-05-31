@@ -112,7 +112,7 @@ export default function BusinessFeatures({ onUpgrade }) {
         <SectionHeader
           title="Advanced Reports"
           subtitle="Revenue report, sales report, customer report."
-          badge={<Badge variant="success">Business Active</Badge>}
+          badge={<Badge variant="success">Standard Active</Badge>}
         />
         <div className="grid gap-3 sm:grid-cols-3">
           {['Revenue report', 'Sales report', 'Customer report'].map((t) => (
@@ -278,7 +278,7 @@ export default function BusinessFeatures({ onUpgrade }) {
         <SectionHeader
           title="Usage Analytics"
           subtitle="Storage usage, reports generated, team users, monthly usage."
-          badge={<Badge variant="success">Business Active</Badge>}
+          badge={<Badge variant="success">Standard Active</Badge>}
         />
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div className="glass-muted rounded-2xl p-4">

@@ -1,5 +1,7 @@
-export const BUSINESS_TRIAL_DAYS = 30
+export const BUSINESS_TRIAL_DAYS = 7
 export const PLAN_ORDER = ['Free', 'Business', 'Enterprise']
+export const PRIMARY_UPGRADE_PLAN_NAME = 'Standard'
+export const PRIMARY_UPGRADE_PLAN_PRICE = 'PKR 5,999/month'
 
 export const businessFeatures = [
   'AI Assistant',
@@ -50,9 +52,16 @@ export function daysUntil(date) {
 export function normalizePlan(plan) {
   const value = String(plan || '').trim().toLowerCase()
   if (value === 'trial' || value === 'basic' || value === 'free') return 'Free'
-  if (value === 'starter' || value === 'business' || value === 'premium') return 'Business'
+  if (value === 'starter' || value === 'business' || value === 'standard' || value === 'premium') return 'Business'
   if (value === 'enterprise') return 'Enterprise'
   return 'Free'
+}
+
+export function packageNameForPlan(plan) {
+  const normalized = normalizePlan(plan)
+  if (normalized === 'Enterprise') return 'Enterprise'
+  if (normalized === 'Business') return PRIMARY_UPGRADE_PLAN_NAME
+  return 'Basic'
 }
 
 export function isTrialActive(userDoc = {}) {
@@ -61,6 +70,14 @@ export function isTrialActive(userDoc = {}) {
   if (plan !== 'Free') return false
   if (!['trial', 'free trial'].includes(status)) return false
   return daysUntil(trialEndDate(userDoc)) > 0
+}
+
+export function isTrialExpired(userDoc = {}) {
+  const status = String(userDoc?.planStatus || '').toLowerCase()
+  const plan = normalizePlan(userDoc?.plan)
+  if (plan !== 'Free') return false
+  if (!['trial', 'free trial', 'expired', 'trial expired'].includes(status) && userDoc?.isTrialActive !== true) return false
+  return daysUntil(trialEndDate(userDoc)) <= 0
 }
 
 export function isBusinessSubscriptionActive(userDoc = {}) {
@@ -78,74 +95,66 @@ export function accessPlanForUser(userDoc = {}, fallbackPlan = 'Free') {
 }
 
 export function detectBillingMarket() {
-  const locale =
-    typeof navigator !== 'undefined'
-      ? [navigator.language, ...(navigator.languages || [])].filter(Boolean).join(' ')
-      : ''
-  const timeZone = typeof Intl !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone || '' : ''
-  const isPakistan = /(^|[-_\s])pk($|[-_\s])/i.test(locale) || /karachi|pakistan/i.test(timeZone)
-  return isPakistan
-    ? { country: 'Pakistan', currency: 'PKR', amount: 2000, priceLabel: 'PKR 2000/month' }
-    : { country: 'International', currency: 'USD', amount: 10, priceLabel: '$10/month' }
+  return { country: 'Pakistan', currency: 'PKR', amount: 5999, priceLabel: PRIMARY_UPGRADE_PLAN_PRICE }
 }
 
 export function getBusinessPlanPrice(market = detectBillingMarket()) {
   return {
-    currency: market.currency || 'USD',
-    amount: Number(market.amount) || 10,
-    priceLabel: market.priceLabel || '$10/month',
+    currency: market.currency || 'PKR',
+    amount: Number(market.amount) || 5999,
+    priceLabel: market.priceLabel || PRIMARY_UPGRADE_PLAN_PRICE,
     country: market.country || 'International',
+    planName: PRIMARY_UPGRADE_PLAN_NAME,
   }
 }
 
 export const planCatalog = [
   {
-    id: 'Free',
-    name: 'Free Trial',
-    badge: '30 Days',
-    description: 'New workspaces get full Business access for the first 30 days.',
-    monthlyPkr: 0,
-    monthlyUsd: 0,
-    priceLabel: 'Free for 30 days',
-    features: ['Full Business access during trial', 'Dashboard', 'Customers', 'Invoices', 'Reports', 'Settings'],
+    id: 'Basic',
+    name: 'Basic',
+    badge: 'CRM',
+    description: 'CRM package for small teams.',
+    monthlyPkr: 2999,
+    monthlyUsd: null,
+    priceLabel: 'PKR 2,999/month',
+    features: ['CRM Module', 'Up to 2 Users', '5GB Storage', 'Email Support'],
   },
   {
-    id: 'Business',
-    name: 'Business',
-    badge: 'All Access',
-    description: 'One complete CRM plan with every Nexora Business feature unlocked.',
-    monthlyPkr: 2000,
-    monthlyUsd: 10,
-    priceLabel: getBusinessPlanPrice().priceLabel,
-    features: businessFeatures,
+    id: 'Standard',
+    name: 'Standard',
+    badge: 'Popular',
+    description: 'For growing businesses.',
+    monthlyPkr: 5999,
+    monthlyUsd: null,
+    priceLabel: PRIMARY_UPGRADE_PLAN_PRICE,
+    features: ['All Basic Features', 'School OR Property ERP', 'Up to 5 Users', '20GB Storage', 'Priority Support'],
+    featured: true,
+  },
+  {
+    id: 'Premium',
+    name: 'Premium',
+    badge: 'All Modules',
+    description: 'For established businesses.',
+    monthlyPkr: 9999,
+    monthlyUsd: null,
+    priceLabel: 'PKR 9,999/month',
+    features: ['All Standard Features', 'All Modules Access', 'Up to 10 Users', '50GB Storage', 'Priority Support'],
   },
   {
     id: 'Enterprise',
     name: 'Enterprise',
     badge: 'Contact Sales',
-    description: 'Custom solution for multi-branch teams and future-ready modules.',
+    description: 'For large organizations.',
     monthlyPkr: null,
     monthlyUsd: null,
-    priceLabel: 'Contact Sales',
+    priceLabel: 'Custom Pricing',
     contactSales: true,
-    features: enterpriseFeatures,
+    features: ['All Premium Features', 'Unlimited Users', 'Custom Integrations', 'Dedicated Support', 'Custom Development'],
   },
 ]
 
-export function getPlanCatalog(market = detectBillingMarket()) {
-  const businessPrice = getBusinessPlanPrice(market)
-  return planCatalog.map((plan) =>
-    plan.id === 'Business'
-      ? {
-          ...plan,
-          monthlyPkr: businessPrice.currency === 'PKR' ? businessPrice.amount : null,
-          monthlyUsd: businessPrice.currency === 'USD' ? businessPrice.amount : null,
-          priceLabel: businessPrice.priceLabel,
-          billingCurrency: businessPrice.currency,
-          billingAmount: businessPrice.amount,
-        }
-      : plan,
-  )
+export function getPlanCatalog() {
+  return planCatalog
 }
 
 export const moduleCatalog = [

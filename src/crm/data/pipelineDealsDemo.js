@@ -37,7 +37,7 @@ export const pipelineDealsDemo = [
   },
   {
     id: 'DL-1003',
-    title: 'BrightLabs — Business plan',
+    title: 'BrightLabs — Standard package',
     customerName: 'BrightLabs',
     dealValueUsd: 12400,
     winProbability: 64,
@@ -50,7 +50,7 @@ export const pipelineDealsDemo = [
   },
   {
     id: 'DL-1004',
-    title: 'Studio Atlas — Free trial',
+    title: 'Studio Atlas — 7-day trial',
     customerName: 'Studio Atlas',
     dealValueUsd: 2400,
     winProbability: 35,

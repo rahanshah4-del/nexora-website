@@ -6,7 +6,7 @@ export const subscriptionsDemo = [
   {
     id: 'SUB-001',
     userId: 'Demo',
-    plan: 'Free',
+    plan: 'Basic',
     planStatus: 'active',
     billingCycle: 'monthly',
     expiresOn: '2026-06-21',
@@ -27,18 +27,18 @@ export const subscriptionsDemo = [
 export const subscriptionHistoryDemo = [
   {
     id: 'hist_1',
-    plan: 'Free',
+    plan: 'Basic',
     billingCycle: 'monthly',
     status: 'active',
     changedAt: '2026-05-01',
-    note: 'Initial plan',
+    note: 'Initial package',
   },
   {
     id: 'hist_2',
-    plan: 'Business',
+    plan: 'Standard',
     billingCycle: 'monthly',
     status: 'expired',
     changedAt: '2026-05-12',
-    note: 'Business plan activated',
+    note: 'Standard package activated',
   },
 ]

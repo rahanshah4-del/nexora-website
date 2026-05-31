@@ -34,14 +34,14 @@ export default function HRDashboardPage() {
   const allowed = isPaidPlan(accessPlan) && access.canAccessHr
 
   if (!allowed) {
-    return <FeatureLockedModal title="HR Management" message="This feature is available in Business Plan." />
+    return <FeatureLockedModal title="HR Management" message="This feature is available in Standard, Premium, or Enterprise packages." />
   }
 
   return (
     <motion.div className="min-w-0 space-y-5" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <Badge variant="success">Business Plan</Badge>
+          <Badge variant="success">Standard Package</Badge>
           <h1 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950 dark:text-white sm:text-3xl">HR Dashboard</h1>
           <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-300">
             Employees, attendance, payroll, departments, documents, and HR reports.

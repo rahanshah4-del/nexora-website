@@ -7,12 +7,14 @@ import {
   HiOutlineBuildingLibrary,
   HiOutlineBuildingOffice2,
   HiOutlineChartBarSquare,
+  HiOutlineCheckCircle,
   HiOutlineChatBubbleLeftRight,
   HiOutlineChevronDown,
   HiOutlineChevronRight,
   HiOutlineCog6Tooth,
   HiOutlineGlobeAlt,
   HiOutlineHomeModern,
+  HiOutlineInformationCircle,
   HiOutlineMagnifyingGlass,
   HiOutlineBars3,
   HiOutlinePlus,
@@ -28,6 +30,7 @@ import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore'
 import logoUrl from '../../assets/logo/nexora-logo.svg'
 import useAuth from '../../context/useAuth.js'
 import { auth, db } from '../../lib/firebase.js'
+import { packageNameForPlan } from '../../crm/data/moduleAccess.js'
 
 const moduleAccess = [
   { name: 'Nexora CRM', icon: HiOutlineUserGroup, color: 'bg-blue-600', active: true },
@@ -44,7 +47,7 @@ const workspaces = [
   {
     name: 'Nexora CRM',
     id: 'CRM-0001',
-    plan: 'Current Plan',
+    plan: 'Current Package',
     planTone: 'bg-blue-50 text-blue-700',
     status: 'Active',
     statusTone: 'bg-emerald-50 text-emerald-700',
@@ -138,6 +141,27 @@ const featureStrip = [
   },
 ]
 
+const sampleNotifications = [
+  {
+    title: 'CRM workspace active',
+    text: 'Nexora CRM Workspace is ready to use.',
+    tone: 'text-emerald-600 bg-emerald-50',
+    icon: HiOutlineCheckCircle,
+  },
+  {
+    title: 'Trial expires in 7 days',
+    text: 'Your workspace trial period is 7 days from activation.',
+    tone: 'text-amber-600 bg-amber-50',
+    icon: HiOutlineBell,
+  },
+  {
+    title: 'Other modules coming soon',
+    text: 'School ERP, Property ERP, POS, and more will be available soon.',
+    tone: 'text-blue-600 bg-blue-50',
+    icon: HiOutlineInformationCircle,
+  },
+]
+
 function cleanString(value) {
   return typeof value === 'string' ? value.trim() : ''
 }
@@ -196,6 +220,43 @@ function SidebarItem({ icon: Icon, label, active = false, muted = false, onClick
       </span>
       <HiOutlineChevronRight className="h-4 w-4 shrink-0 opacity-80" />
     </button>
+  )
+}
+
+function NotificationDropdown({ notifications, onClose }) {
+  return (
+    <div className="absolute right-0 top-full z-40 mt-2 w-[min(22rem,calc(100vw-2rem))] rounded-lg border border-slate-200 bg-white p-3 text-slate-900 shadow-xl shadow-slate-950/10">
+      <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-2">
+        <div>
+          <p className="text-sm font-bold text-slate-950">Notifications</p>
+          <p className="mt-0.5 text-xs text-slate-500">{notifications.length} workspace updates</p>
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
+          aria-label="Close notifications"
+        >
+          <HiOutlineXMark className="h-5 w-5" />
+        </button>
+      </div>
+      <div className="mt-2 space-y-1">
+        {notifications.map((notification) => {
+          const Icon = notification.icon
+          return (
+            <div key={notification.title} className="flex items-start gap-3 rounded-lg px-2 py-2 transition hover:bg-slate-50">
+              <span className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${notification.tone}`}>
+                <Icon className="h-5 w-5" />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-sm font-bold text-slate-900">{notification.title}</span>
+                <span className="mt-0.5 block text-xs leading-5 text-slate-500">{notification.text}</span>
+              </span>
+            </div>
+          )
+        })}
+      </div>
+    </div>
   )
 }
 
@@ -444,6 +505,7 @@ export default function WorkspaceSelection() {
   const [selectedLanguage, setSelectedLanguage] = useState('English')
   const [selectedRegion, setSelectedRegion] = useState('Pakistan')
   const [languageOpen, setLanguageOpen] = useState(false)
+  const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [createOpen, setCreateOpen] = useState(false)
@@ -502,20 +564,28 @@ export default function WorkspaceSelection() {
     const trialEndsAt = workspaceData?.trialEndsAt || accountData?.trialEndsAt || addDays(new Date(), CRM_TRIAL_DAYS)
     const remainingDays = daysUntil(trialEndsAt)
     const isTrial = status.toLowerCase().includes('trial') || Boolean(workspaceData?.isTrialActive || accountData?.isTrialActive)
+    const trialExpired = isTrial && remainingDays <= 0
+    const packageName = packageNameForPlan(plan)
 
     return {
       name,
       email,
       initials: initialsFor(name, email),
       role: cleanString(accountData?.role) || 'owner',
-      planLabel: `${plan}${status ? ` · ${status}` : ''}`,
-      trialLabel: isTrial ? `${remainingDays} days left · ends ${formatDate(trialEndsAt)}` : `Ends ${formatDate(trialEndsAt)}`,
+      planLabel: `${packageName}${status ? ` · ${trialExpired ? 'expired' : status}` : ''}`,
+      trialLabel: trialExpired
+        ? `Expired on ${formatDate(trialEndsAt)}`
+        : isTrial
+          ? `${remainingDays} days left · ends ${formatDate(trialEndsAt)}`
+          : `Ends ${formatDate(trialEndsAt)}`,
+      trialExpired,
       workspaceId: cleanString(workspaceData?.workspaceId) || cleanString(accountData?.workspaceId) || user?.uid || '',
     }
   }, [accountData, user, workspaceData])
 
   const hasCrmWorkspace = Boolean(workspaceData || accountData?.workspaceId)
   const visibleWorkspaces = workspaces
+  const notificationCount = sampleNotifications.length
   const createDisabled = hasCrmWorkspace || creatingWorkspace
   const createWorkspaceMessage = hasCrmWorkspace ? 'You already have a CRM workspace.' : createMessage
 
@@ -783,12 +853,23 @@ export default function WorkspaceSelection() {
             </div>
 
             <div className="flex items-center gap-2 sm:gap-4">
-              <button type="button" className="relative hidden h-10 w-10 items-center justify-center rounded-full text-slate-700 sm:flex">
-                <HiOutlineBell className="h-5 w-5" />
-                <span className="absolute right-1.5 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold leading-none text-white">
-                  5
-                </span>
-              </button>
+              <div className="relative hidden sm:block">
+                <button
+                  type="button"
+                  className="relative flex h-10 w-10 items-center justify-center rounded-full text-slate-700 transition hover:bg-slate-100"
+                  onClick={() => setNotificationsOpen((open) => !open)}
+                  aria-label="Open workspace notifications"
+                  aria-expanded={notificationsOpen}
+                >
+                  <HiOutlineBell className="h-5 w-5" />
+                  <span className="absolute right-1.5 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold leading-none text-white">
+                    {notificationCount}
+                  </span>
+                </button>
+                {notificationsOpen ? (
+                  <NotificationDropdown notifications={sampleNotifications} onClose={() => setNotificationsOpen(false)} />
+                ) : null}
+              </div>
               <span className="hidden h-8 w-px bg-slate-200 sm:block" />
               <div className="relative hidden md:block">
                 <button
@@ -902,6 +983,12 @@ export default function WorkspaceSelection() {
                 </div>
               </div>
             </motion.section>
+
+            {profile.trialExpired ? (
+              <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800">
+                Your 7-day workspace trial has expired. Upgrade your package to continue using paid workspace features.
+              </div>
+            ) : null}
 
             <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <h2 className="text-lg font-bold text-slate-950">

@@ -5,8 +5,8 @@ import Button from '../ui/Button.jsx'
 import Card from '../ui/Card.jsx'
 
 export default function FeatureLockedModal({
-  title = 'Business Plan Feature',
-  message = 'This feature is available in Business Plan.',
+  title = 'Paid Package Feature',
+  message = 'This feature is available in Standard, Premium, or Enterprise packages.',
 }) {
   const navigate = useNavigate()
 
@@ -26,7 +26,7 @@ export default function FeatureLockedModal({
             Upgrade
           </Button>
           <Button variant="subtle" className="rounded-2xl" type="button" onClick={() => navigate('/app/subscriptions')}>
-            Compare Plans
+            Compare Packages
           </Button>
         </div>
       </Card>

@@ -6,24 +6,15 @@ import Button from '../ui/Button.jsx'
 import Card from '../ui/Card.jsx'
 import { useNavigate } from 'react-router-dom'
 import { useUser } from '../../hooks/useUser.js'
-import { getPlanCatalog } from '../../data/moduleAccess.js'
-
-const businessFeatures = [
-  'AI Assistant',
-  'Approval Center',
-  'Team Permissions',
-  'Multi-user Access',
-  'Export Reports',
-  'HR Management',
-  'Desktop App Download',
-]
+import { getPlanCatalog, packageNameForPlan } from '../../data/moduleAccess.js'
 
 function PricingModal({ open, onClose }) {
   const { plan, accessPlan, isTrialActive } = useUser()
   const navigate = useNavigate()
   const plans = getPlanCatalog()
+  const currentPackage = packageNameForPlan(accessPlan || plan)
 
-  function chooseBusiness() {
+  function choosePackage() {
     onClose?.()
     navigate('/upgrade-business')
   }
@@ -52,12 +43,12 @@ function PricingModal({ open, onClose }) {
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <div className="flex items-center gap-2">
-                    <p className="text-lg font-semibold text-slate-900 dark:text-white">Upgrade to Business</p>
-                    <Badge variant="purple">Business</Badge>
+                    <p className="text-lg font-semibold text-slate-900 dark:text-white">Choose Package</p>
+                    <Badge variant="purple">Packages</Badge>
                     {accessPlan === 'Business' ? <Badge variant="success">{isTrialActive ? 'Trial Active' : 'Active'}</Badge> : null}
                   </div>
                   <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-                    One smart plan unlocks every CRM feature after your free trial.
+                    Compare Basic, Standard, Premium, and Enterprise package options.
                   </p>
                 </div>
                 <button
@@ -71,9 +62,9 @@ function PricingModal({ open, onClose }) {
               </div>
 
               <div className="mt-5 grid gap-4 lg:grid-cols-2">
-                {plans.filter((p) => p.id !== 'Free').map((p) => {
-                  const isCurrent = plan === p.id && accessPlan === p.id
-                  const isFeatured = p.id === 'Business'
+                {plans.map((p) => {
+                  const isCurrent = currentPackage === p.id
+                  const isFeatured = p.id === 'Standard'
                   return (
                     <div
                       key={p.id}
@@ -84,7 +75,7 @@ function PricingModal({ open, onClose }) {
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div>
-                          <p className="text-sm font-semibold text-slate-900 dark:text-white">{p.id}</p>
+                          <p className="text-sm font-semibold text-slate-900 dark:text-white">{p.name}</p>
                           <p className="text-xs text-slate-600 dark:text-slate-300">{p.description}</p>
                         </div>
                         {isCurrent ? <Badge variant="success">Current</Badge> : isFeatured ? <Badge variant="purple">Best</Badge> : null}
@@ -95,7 +86,7 @@ function PricingModal({ open, onClose }) {
                       </p>
 
                       <div className="mt-4 space-y-2 text-sm text-slate-700 dark:text-slate-200">
-                        {(p.id === 'Business' ? businessFeatures : businessFeatures.slice(0, 3)).map((f) => (
+                        {p.features.map((f) => (
                           <div key={f} className="flex items-center gap-2">
                             <span className="grid h-5 w-5 place-items-center rounded-full bg-indigo-500/10 text-indigo-700 dark:text-indigo-300">
                               <HiOutlineCheck className="text-sm" />
@@ -119,10 +110,10 @@ function PricingModal({ open, onClose }) {
                       ) : (
                         <Button
                           className="mt-5 w-full rounded-2xl"
-                          onClick={chooseBusiness}
-                          disabled={accessPlan === 'Business' && !isTrialActive}
+                          onClick={choosePackage}
+                          disabled={isCurrent && !isTrialActive}
                         >
-                          {accessPlan === 'Business' && !isTrialActive ? 'Business Active' : 'Upgrade Now'}
+                          {isCurrent && !isTrialActive ? `${p.name} Active` : 'View Package'}
                         </Button>
                       )}
                     </div>

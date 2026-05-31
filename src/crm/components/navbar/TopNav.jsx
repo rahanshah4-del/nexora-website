@@ -17,6 +17,7 @@ import NotificationBell from '../notifications/NotificationBell.jsx'
 import BranchSwitcher from '../system/BranchSwitcher.jsx'
 import OfflineStatus from '../system/OfflineStatus.jsx'
 import GlobalSearch from '../system/GlobalSearch.jsx'
+import { packageNameForPlan } from '../../data/moduleAccess.js'
 
 function Toast({ message, onClose }) {
   return (
@@ -38,7 +39,7 @@ function Toast({ message, onClose }) {
 function TopNav({ onOpenSidebar, onSwitchProduct }) {
   const { notifications, profile } = usePreferences()
   const { logout, busy } = useAuth()
-  const { firebaseUser, userDoc, plan, role } = useUser()
+  const { firebaseUser, userDoc, plan, role, isTrialExpired } = useUser()
   const navigate = useNavigate()
   const [toast, setToast] = useState(null)
   const profileSummary = useMemo(
@@ -46,9 +47,10 @@ function TopNav({ onOpenSidebar, onSwitchProduct }) {
       displayName: userDoc?.fullName || userDoc?.name || profile.ownerName || firebaseUser?.displayName || 'Nexora User',
       displayEmail: userDoc?.email || profile.email || firebaseUser?.email || 'No email',
       workspaceName: userDoc?.workspaceName || userDoc?.company || profile.companyName || 'Nexora Workspace',
-      planStatus: userDoc?.planStatus || 'trial',
+      planStatus: isTrialExpired ? 'expired' : userDoc?.planStatus || 'trial',
+      packageName: packageNameForPlan(plan),
     }),
-    [firebaseUser?.displayName, firebaseUser?.email, profile.companyName, profile.email, profile.ownerName, userDoc],
+    [firebaseUser?.displayName, firebaseUser?.email, isTrialExpired, plan, profile.companyName, profile.email, profile.ownerName, userDoc],
   )
 
   const handleLogout = useCallback(
@@ -143,8 +145,8 @@ function TopNav({ onOpenSidebar, onSwitchProduct }) {
                     </div>
                     <div className="mt-3 grid gap-2 text-xs">
                       <div className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2">
-                        <span className="text-slate-500">Plan status</span>
-                        <span className="truncate font-semibold text-slate-900">{plan || 'Free'} · {profileSummary.planStatus}</span>
+                        <span className="text-slate-500">Package status</span>
+                        <span className="truncate font-semibold text-slate-900">{profileSummary.packageName} · {profileSummary.planStatus}</span>
                       </div>
                       <div className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2">
                         <span className="text-slate-500">Workspace</span>

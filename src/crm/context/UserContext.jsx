@@ -7,7 +7,7 @@ import { ensureUserWorkspace } from '../../lib/accountProvisioning.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 import { normalizeFinanceRole } from '../lib/financeAccess.js'
 import { isPlatformAdminDoc } from '../../lib/roles.js'
-import { accessPlanForUser, daysUntil, isTrialActive, normalizePlan, trialEndDate } from '../data/moduleAccess.js'
+import { accessPlanForUser, daysUntil, isTrialActive, isTrialExpired, normalizePlan, trialEndDate } from '../data/moduleAccess.js'
 
 const UserContext = createContext(null)
 
@@ -110,6 +110,7 @@ export function UserProvider({ children }) {
   const trialActive = isTrialActive(userDoc || {})
   const trialEndsAt = trialEndDate(userDoc || {})
   const trialDaysRemaining = trialActive ? daysUntil(trialEndsAt) : 0
+  const trialExpired = isTrialExpired(userDoc || {})
   const role = normalizeRole(userDoc?.role)
   const workspaceId = userDoc?.workspaceId || user?.uid || null
   const staffId = userDoc?.staffId || user?.uid || null
@@ -144,6 +145,7 @@ export function UserProvider({ children }) {
       plan: effectivePlan,
       accessPlan,
       isTrialActive: trialActive,
+      isTrialExpired: trialExpired,
       trialEndsAt,
       trialDaysRemaining,
       role,
@@ -154,7 +156,7 @@ export function UserProvider({ children }) {
       isAccountant: role === 'accountant',
       isManager: role === 'manager',
     }),
-    [user, workspaceId, staffId, userDoc, loading, effectivePlan, accessPlan, trialActive, trialEndsAt, trialDaysRemaining, role, isPlatformAdmin],
+    [user, workspaceId, staffId, userDoc, loading, effectivePlan, accessPlan, trialActive, trialExpired, trialEndsAt, trialDaysRemaining, role, isPlatformAdmin],
   )
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>

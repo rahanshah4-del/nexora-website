@@ -4,7 +4,7 @@ import Card from '../ui/Card.jsx'
 import { useNavigate } from 'react-router-dom'
 
 function badgeVariant(name) {
-  if (name === 'Business') return 'purple'
+  if (name === 'Standard' || name === 'Premium') return 'purple'
   if (name === 'Enterprise') return 'warning'
   return 'default'
 }
@@ -13,7 +13,7 @@ export default function PlanCards({ plans, currentPlan }) {
   const navigate = useNavigate()
 
   return (
-    <div className="grid gap-4 md:grid-cols-3">
+    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
       {plans.map((p) => (
         <Card key={p.id} className="p-5">
           <div className="flex items-start justify-between gap-3">
@@ -43,7 +43,7 @@ export default function PlanCards({ plans, currentPlan }) {
           <div className="mt-5 flex gap-2">
             {currentPlan === p.id ? (
               <Button variant="subtle" className="w-full rounded-2xl" type="button" disabled>
-                Current Plan
+                Current Package
               </Button>
             ) : p.contactSales ? (
               <Button className="w-full rounded-2xl" type="button" onClick={() => navigate('/upgrade-business')}>
@@ -51,7 +51,7 @@ export default function PlanCards({ plans, currentPlan }) {
               </Button>
             ) : (
               <Button className="w-full rounded-2xl" type="button" onClick={() => navigate('/upgrade-business')}>
-                Upgrade to Business
+                View Package
               </Button>
             )}
           </div>

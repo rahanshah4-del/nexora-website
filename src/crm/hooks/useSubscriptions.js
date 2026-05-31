@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { db } from '../lib/firebase.js'
 import { subscribeOwnedCollection, subscribeUserCollection } from '../lib/firestore.js'
-import { accessPlanForUser, daysUntil, getPlanCatalog, isTrialActive, trialEndDate } from '../data/moduleAccess.js'
+import { accessPlanForUser, daysUntil, getPlanCatalog, isTrialActive, isTrialExpired, packageNameForPlan, trialEndDate } from '../data/moduleAccess.js'
 import { useUser } from './useUser.js'
 import { clientSafeMessage } from '../utils/messages.js'
 
@@ -32,7 +32,7 @@ function normalizeSub(s) {
 }
 
 export function useSubscriptions() {
-  const { userId, workspaceId, userDoc, accessPlan, isTrialActive: trialActive, trialEndsAt, trialDaysRemaining } = useUser()
+  const { userId, workspaceId, userDoc, accessPlan, isTrialActive: trialActive, isTrialExpired: trialExpired, trialEndsAt, trialDaysRemaining } = useUser()
   const [subscription, setSubscription] = useState(() =>
     normalizeSub({
       id: 'sub',
@@ -146,7 +146,7 @@ export function useSubscriptions() {
           .slice(0, 20)
           .map((r) => ({
             id: r.id,
-            plan: r.selectedPlan || r.requestedPlan || 'Business',
+            plan: packageNameForPlan(r.selectedPlan || r.requestedPlan || 'Business'),
             billingCycle: r.billingCycle || '—',
             status: 'approved',
             changedAt: r.approvedAt?.toDate?.()?.toISOString?.().slice(0, 10) || '—',
@@ -190,8 +190,10 @@ export function useSubscriptions() {
       plans: getPlanCatalog(),
       subscription,
       currentPlan: accessPlan,
+      currentPackage: packageNameForPlan(accessPlan),
       trial: {
         active: trialActive || isTrialActive(userDoc || {}),
+        expired: trialExpired || isTrialExpired(userDoc || {}),
         endsAt: trialEndsAt || trialEndDate(userDoc || {}),
         daysRemaining: trialDaysRemaining || daysUntil(trialEndDate(userDoc || {})),
       },
@@ -201,6 +203,6 @@ export function useSubscriptions() {
       source,
       error,
     }),
-    [accessPlan, subscription, trialActive, trialEndsAt, trialDaysRemaining, userDoc, history, renewalReminder, loading, source, error],
+    [accessPlan, subscription, trialActive, trialExpired, trialEndsAt, trialDaysRemaining, userDoc, history, renewalReminder, loading, source, error],
   )
 }

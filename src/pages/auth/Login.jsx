@@ -52,7 +52,8 @@ const footerBadges = [
 ]
 
 const languageOptions = ['English', 'Urdu', 'Arabic', 'Hindi']
-const workspaceOptions = ['Nexora CRM Workspace', 'Main Company', 'Demo Workspace']
+const workspaceOptions = ['Nexora CRM Workspace']
+const defaultWorkspace = workspaceOptions[0]
 
 function BrandLogo({ dark = false }) {
   return (
@@ -117,7 +118,7 @@ export default function Login() {
   const { user, loading } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [workspace, setWorkspace] = useState(workspaceOptions[0])
+  const [workspace, setWorkspace] = useState(defaultWorkspace)
   const [language, setLanguage] = useState(languageOptions[0])
   const [rememberMe, setRememberMe] = useState(false)
   const [showPassword, setShowPassword] = useState(false)

@@ -104,22 +104,22 @@ function Brand({ collapsed }) {
   )
 }
 
-function UpgradeCard({ isBusiness, isTrialActive, onViewPlans }) {
-  const badgeLabel = isBusiness ? (isTrialActive ? 'Trial' : 'Active') : 'Free'
-  const badgeVariant = isBusiness ? 'success' : 'default'
+function UpgradeCard({ isBusiness, isTrialActive, isTrialExpired, onViewPlans }) {
+  const badgeLabel = isBusiness ? (isTrialActive ? 'Trial' : 'Active') : isTrialExpired ? 'Expired' : 'Basic'
+  const badgeVariant = isBusiness ? 'success' : isTrialExpired ? 'warning' : 'default'
 
   return (
     <div className="px-2 pt-2">
       <div className="relative overflow-hidden rounded-[1.05rem] border border-sky-100/90 bg-gradient-to-br from-white via-sky-50/90 to-violet-50/80 p-2.5 shadow-[0_18px_50px_-36px_rgba(14,165,233,0.7)]">
         <div className="pointer-events-none absolute right-0 top-0 h-12 w-12 rounded-full bg-sky-300/20 blur-2xl" />
         <div className="flex items-center justify-between gap-2">
-          <p className="min-w-0 text-[12px] font-semibold leading-4 text-slate-950">Business Plan</p>
+          <p className="min-w-0 text-[12px] font-semibold leading-4 text-slate-950">Standard Package</p>
           <Badge variant={badgeVariant} className="shrink-0 px-2 py-0.5 text-[10px]">
             {badgeLabel}
           </Badge>
         </div>
         <p className="mt-1 text-[11px] leading-4 text-slate-500">
-          Advanced reports & team tools
+          PKR 5,999/month with priority support
         </p>
         <div className="mt-2 flex items-center justify-between gap-2 border-t border-sky-100/80 pt-2">
           <span className="truncate text-[10px] font-medium uppercase tracking-[0.14em] text-slate-400">
@@ -140,7 +140,7 @@ function UpgradeCard({ isBusiness, isTrialActive, onViewPlans }) {
 
 function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollapse, onSwitchProduct }) {
   const [pricingOpen, setPricingOpen] = useState(false)
-  const { accessPlan, isTrialActive, userDoc } = useUser()
+  const { accessPlan, isTrialActive, isTrialExpired, userDoc } = useUser()
   const isBusiness = accessPlan === 'Business' || accessPlan === 'Enterprise'
   const sidebarItems = useMemo(() => {
     const allowedRoutes = new Set(
@@ -188,12 +188,13 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
           <UpgradeCard
             isBusiness={isBusiness}
             isTrialActive={isTrialActive}
+            isTrialExpired={isTrialExpired}
             onViewPlans={() => setPricingOpen(true)}
           />
         </div>
       )}
     </div>
-  ), [collapsed, handleSwitchProduct, isBusiness, isTrialActive, onNavigate, sidebarItems])
+  ), [collapsed, handleSwitchProduct, isBusiness, isTrialActive, isTrialExpired, onNavigate, sidebarItems])
 
   if (!mobile) {
     return (

@@ -11,8 +11,8 @@ export default function FeatureGate({ children }) {
   if (!routeAllowedByPlan(pathname, accessPlan)) {
     return (
       <FeatureLockedModal
-        title={module?.label || 'Business Plan Feature'}
-        message="This feature is available in Business Plan."
+        title={module?.label || 'Paid Package Feature'}
+        message="This feature is available in Standard, Premium, or Enterprise packages."
       />
     )
   }
