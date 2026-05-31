@@ -4,26 +4,32 @@
 
 @layer base {
   html {
-    @apply h-full overflow-x-hidden scroll-smooth;
+    @apply min-h-full overflow-x-hidden scroll-smooth;
     scroll-behavior: smooth;
+    overflow-y: auto;
   }
   body {
     @apply min-h-full overflow-x-hidden bg-slate-50 text-slate-900 antialiased;
-    overscroll-behavior-y: none;
+    overflow-y: auto;
+    overscroll-behavior-y: auto;
     background-image:
       radial-gradient(circle at 18% 0%, rgba(14, 165, 233, 0.1), transparent 28%),
       radial-gradient(circle at 80% 12%, rgba(124, 58, 237, 0.08), transparent 24%),
       linear-gradient(180deg, #f8fafc 0%, #eef6ff 52%, #f8fafc 100%);
   }
   #root {
-    @apply min-h-screen overflow-x-hidden;
+    @apply min-h-screen;
     isolation: isolate;
+    overflow-x: clip;
+    overflow-y: visible;
   }
 }
 
 @layer components {
   .nexora-bg {
-    @apply relative isolate min-h-screen overflow-x-hidden bg-slate-50;
+    @apply relative isolate min-h-screen bg-slate-50;
+    overflow-x: clip;
+    overflow-y: visible;
   }
   .nexora-bg::before {
     content: '';

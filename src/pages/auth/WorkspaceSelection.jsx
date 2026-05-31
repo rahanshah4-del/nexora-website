@@ -254,8 +254,8 @@ export default function WorkspaceSelection() {
   }, [loggingOut, navigate])
 
   return (
-    <main className="min-h-dvh overflow-x-hidden bg-slate-50 text-slate-950">
-      <div className="flex min-h-dvh flex-col lg:flex-row">
+    <main className="min-h-screen overflow-x-clip bg-slate-50 text-slate-950">
+      <div className="flex min-h-screen flex-col lg:flex-row">
         <aside className="bg-[#061a35] text-white lg:fixed lg:inset-y-0 lg:left-0 lg:w-[250px] lg:overflow-y-auto">
           <div className="flex min-h-full flex-col px-4 py-5">
             <div className="flex items-center justify-center">
@@ -351,7 +351,7 @@ export default function WorkspaceSelection() {
           </div>
         </aside>
 
-        <section className="min-w-0 flex-1 overflow-x-hidden lg:ml-[250px]">
+        <section className="min-w-0 flex-1 overflow-x-clip lg:ml-[250px]">
           <header className="sticky top-0 z-20 flex h-[76px] items-center justify-between border-b border-slate-200 bg-white px-5 lg:px-6">
             <div className="flex min-w-0 items-center gap-5">
               <button type="button" className="text-slate-700">
