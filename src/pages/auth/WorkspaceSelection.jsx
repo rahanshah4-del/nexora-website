@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import {
   HiOutlineArrowRight,
@@ -19,20 +19,25 @@ import {
   HiOutlineSquares2X2,
   HiOutlineUserGroup,
   HiOutlineUsers,
+  HiOutlineXMark,
 } from 'react-icons/hi2'
 import { FiLogOut } from 'react-icons/fi'
 import { useNavigate } from 'react-router-dom'
 import { signOut } from 'firebase/auth'
+import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore'
 import logoUrl from '../../assets/logo/nexora-logo.svg'
-import { auth } from '../../lib/firebase.js'
+import useAuth from '../../context/useAuth.js'
+import { auth, db } from '../../lib/firebase.js'
 
 const moduleAccess = [
-  { name: 'CRM', icon: HiOutlineUserGroup, color: 'bg-blue-600', active: true },
+  { name: 'Nexora CRM', icon: HiOutlineUserGroup, color: 'bg-blue-600', active: true },
   { name: 'School ERP', icon: HiOutlineBuildingLibrary, color: 'bg-emerald-500', disabled: true },
   { name: 'Property ERP', icon: HiOutlineBuildingOffice2, color: 'bg-violet-600', disabled: true },
   { name: 'POS System', icon: HiOutlineBriefcase, color: 'bg-amber-500', disabled: true },
   { name: 'WhatsApp CRM', icon: HiOutlineChatBubbleLeftRight, color: 'bg-green-500', disabled: true },
   { name: 'Reports & Analytics', icon: HiOutlineChartBarSquare, color: 'bg-cyan-500', disabled: true },
+  { name: 'HRM', icon: HiOutlineUsers, color: 'bg-rose-500', disabled: true },
+  { name: 'Accounting', icon: HiOutlineChartBarSquare, color: 'bg-indigo-500', disabled: true },
 ]
 
 const workspaces = [
@@ -88,10 +93,27 @@ const workspaces = [
     icon: HiOutlineChartBarSquare,
     iconTone: 'bg-cyan-50 text-cyan-600',
   },
+  {
+    name: 'HRM',
+    id: 'HRM-0001',
+    status: 'Coming Soon',
+    statusTone: 'bg-slate-100 text-slate-600',
+    icon: HiOutlineUsers,
+    iconTone: 'bg-rose-50 text-rose-600',
+  },
+  {
+    name: 'Accounting',
+    id: 'ACCOUNTING-0001',
+    status: 'Coming Soon',
+    statusTone: 'bg-slate-100 text-slate-600',
+    icon: HiOutlineChartBarSquare,
+    iconTone: 'bg-indigo-50 text-indigo-600',
+  },
 ]
 
 const languageOptions = ['English', 'Urdu', 'Arabic', 'Hindi', 'Bengali']
 const regionOptions = ['Pakistan', 'India', 'Bangladesh', 'Middle East', 'Europe']
+const CRM_TRIAL_DAYS = 7
 
 const featureStrip = [
   {
@@ -116,10 +138,50 @@ const featureStrip = [
   },
 ]
 
-function SidebarItem({ icon: Icon, label, active = false, muted = false }) {
+function cleanString(value) {
+  return typeof value === 'string' ? value.trim() : ''
+}
+
+function timestampToDate(value) {
+  if (!value) return null
+  if (value instanceof Date) return value
+  if (typeof value?.toDate === 'function') return value.toDate()
+  const parsed = new Date(value)
+  return Number.isNaN(parsed.getTime()) ? null : parsed
+}
+
+function addDays(date, days) {
+  return new Date(date.getTime() + days * 86400000)
+}
+
+function formatDate(value) {
+  const date = timestampToDate(value)
+  if (!date) return 'Not set'
+  return new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', year: 'numeric' }).format(date)
+}
+
+function daysUntil(value) {
+  const date = timestampToDate(value)
+  if (!date) return 0
+  return Math.max(Math.ceil((date.getTime() - Date.now()) / 86400000), 0)
+}
+
+function initialsFor(name, email) {
+  const source = cleanString(name) || cleanString(email) || 'Nexora User'
+  const initials = source
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('')
+  return initials || 'NU'
+}
+
+function SidebarItem({ icon: Icon, label, active = false, muted = false, onClick }) {
   return (
     <button
       type="button"
+      onClick={onClick}
       className={`flex h-11 w-full items-center justify-between rounded-lg px-3 text-left text-[13px] font-semibold transition ${
         active
           ? 'bg-blue-600 text-white shadow-[0_10px_24px_-14px_rgba(37,99,235,0.85)]'
@@ -207,37 +269,255 @@ function WorkspaceCard({ workspace, index }) {
   )
 }
 
-function CreateWorkspaceCard() {
+function CreateWorkspaceCard({ disabled, message, onOpen }) {
   return (
-    <article className="rounded-lg border border-blue-100 bg-blue-50/35 p-4 shadow-[0_12px_32px_-26px_rgba(15,23,42,0.42)]">
+    <article
+      className={`rounded-lg border p-4 shadow-[0_12px_32px_-26px_rgba(15,23,42,0.42)] ${
+        disabled ? 'border-slate-200 bg-white' : 'border-blue-100 bg-blue-50/35'
+      }`}
+    >
       <div className="flex min-h-[110px] items-center gap-4">
-        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-600">
+        <span className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full ${disabled ? 'bg-slate-100 text-slate-400' : 'bg-blue-100 text-blue-600'}`}>
           <HiOutlinePlus className="h-7 w-7" />
         </span>
         <div>
           <h2 className="text-[15px] font-bold text-slate-950">Create New Workspace</h2>
-          <p className="mt-1.5 text-sm leading-5 text-slate-600">Create a new workspace for your business</p>
+          <p className="mt-1.5 text-sm leading-5 text-slate-600">
+            {disabled ? 'CRM workspace is already available on this account.' : 'Start a 7-day Nexora CRM trial workspace.'}
+          </p>
+          {message ? <p className="mt-2 text-xs font-bold text-amber-700">{message}</p> : null}
         </div>
       </div>
 
       <button
         type="button"
-        disabled
-        className="mt-4 flex h-10 w-full cursor-not-allowed items-center justify-center gap-3 rounded-lg border border-blue-300 bg-white text-[13px] font-bold text-blue-600 opacity-70"
+        disabled={disabled}
+        onClick={onOpen}
+        className={`mt-4 flex h-10 w-full items-center justify-center gap-3 rounded-lg border text-[13px] font-bold transition ${
+          disabled
+            ? 'cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400'
+            : 'border-blue-600 bg-white text-blue-600 hover:bg-blue-600 hover:text-white'
+        }`}
       >
-        Coming Soon
+        {disabled ? 'Workspace Exists' : 'Create Workspace'}
         <HiOutlineArrowRight className="h-4 w-4" />
       </button>
     </article>
   )
 }
 
+function DetailRow({ label, value }) {
+  return (
+    <div className="flex items-start justify-between gap-4 border-b border-slate-100 py-2 last:border-b-0">
+      <span className="text-xs font-bold uppercase tracking-[0.1em] text-slate-400">{label}</span>
+      <span className="max-w-[210px] text-right text-sm font-semibold text-slate-800">{value}</span>
+    </div>
+  )
+}
+
+function ModalShell({ title, onClose, children }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 px-4 py-6">
+      <motion.section
+        initial={{ opacity: 0, y: 12, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.18, ease: 'easeOut' }}
+        className="w-full max-w-md rounded-lg border border-slate-200 bg-white shadow-2xl shadow-slate-950/20"
+      >
+        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+          <h2 className="text-base font-bold text-slate-950">{title}</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
+            aria-label="Close"
+          >
+            <HiOutlineXMark className="h-5 w-5" />
+          </button>
+        </div>
+        {children}
+      </motion.section>
+    </div>
+  )
+}
+
+function CreateWorkspaceModal({ creating, hasWorkspace, message, profile, onCreate, onClose }) {
+  return (
+    <ModalShell title="Create New Workspace" onClose={onClose}>
+      <div className="px-5 py-4">
+        {hasWorkspace ? (
+          <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-bold text-amber-800">
+            You already have a CRM workspace.
+          </p>
+        ) : (
+          <>
+            <div className="rounded-lg border border-blue-100 bg-blue-50 px-4 py-3">
+              <p className="text-sm font-bold text-slate-950">Nexora CRM</p>
+              <p className="mt-1 text-sm leading-5 text-slate-600">
+                Creates one CRM workspace for {profile.name}. Trial access lasts 7 days.
+              </p>
+            </div>
+            {message ? <p className="mt-3 text-sm font-semibold text-amber-700">{message}</p> : null}
+            <button
+              type="button"
+              disabled={creating}
+              onClick={onCreate}
+              className="mt-4 flex h-10 w-full items-center justify-center rounded-lg bg-blue-600 text-sm font-bold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-65"
+            >
+              {creating ? 'Creating...' : 'Create Workspace'}
+            </button>
+          </>
+        )}
+      </div>
+    </ModalShell>
+  )
+}
+
+function SettingsModal({ profile, selectedLanguage, selectedRegion, onLanguageChange, onRegionChange, onLogout, loggingOut, onClose }) {
+  return (
+    <ModalShell title="Settings" onClose={onClose}>
+      <div className="px-5 py-4">
+        <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-extrabold text-white">
+            {profile.initials}
+          </span>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-bold text-slate-950">{profile.name}</p>
+            <p className="truncate text-xs text-slate-500">{profile.email}</p>
+          </div>
+        </div>
+
+        <div className="mt-4 rounded-lg border border-slate-200 px-3">
+          <DetailRow label="Plan" value={profile.planLabel} />
+          <DetailRow label="Trial" value={profile.trialLabel} />
+          <DetailRow label="Language" value={selectedLanguage} />
+        </div>
+
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <label className="block">
+            <span className="text-xs font-bold uppercase tracking-[0.1em] text-slate-400">Language</span>
+            <select
+              value={selectedLanguage}
+              onChange={(event) => onLanguageChange(event.target.value)}
+              className="mt-1 h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+            >
+              {languageOptions.map((language) => (
+                <option key={language} value={language}>
+                  {language}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="block">
+            <span className="text-xs font-bold uppercase tracking-[0.1em] text-slate-400">Region</span>
+            <select
+              value={selectedRegion}
+              onChange={(event) => onRegionChange(event.target.value)}
+              className="mt-1 h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+            >
+              {regionOptions.map((region) => (
+                <option key={region} value={region}>
+                  {region}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <button
+          type="button"
+          disabled={loggingOut}
+          onClick={onLogout}
+          className="mt-5 flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 text-sm font-bold text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-65"
+        >
+          <FiLogOut className="h-4 w-4" />
+          {loggingOut ? 'Logging out...' : 'Logout'}
+        </button>
+      </div>
+    </ModalShell>
+  )
+}
+
 export default function WorkspaceSelection() {
   const navigate = useNavigate()
+  const { user, loading: authLoading } = useAuth()
   const [selectedLanguage, setSelectedLanguage] = useState('English')
   const [selectedRegion, setSelectedRegion] = useState('Pakistan')
   const [languageOpen, setLanguageOpen] = useState(false)
+  const [profileOpen, setProfileOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [createOpen, setCreateOpen] = useState(false)
+  const [createMessage, setCreateMessage] = useState('')
+  const [creatingWorkspace, setCreatingWorkspace] = useState(false)
+  const [workspaceView, setWorkspaceView] = useState('enter')
+  const [accountData, setAccountData] = useState(null)
+  const [workspaceData, setWorkspaceData] = useState(null)
   const [loggingOut, setLoggingOut] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadAccount() {
+      if (!db || !user?.uid) {
+        if (!cancelled) {
+          setAccountData(null)
+          setWorkspaceData(null)
+        }
+        return
+      }
+
+      const userSnap = await getDoc(doc(db, 'users', user.uid))
+      const nextAccount = userSnap.exists() ? userSnap.data() : null
+      const workspaceId = cleanString(nextAccount?.workspaceId) || user.uid
+      const workspaceSnap = await getDoc(doc(db, 'workspaces', workspaceId))
+
+      if (!cancelled) {
+        setAccountData(nextAccount)
+        setWorkspaceData(workspaceSnap.exists() ? workspaceSnap.data() : null)
+      }
+    }
+
+    loadAccount().catch(() => {
+      if (!cancelled) {
+        setAccountData(null)
+        setWorkspaceData(null)
+      }
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [user?.uid])
+
+  const profile = useMemo(() => {
+    const email = cleanString(accountData?.email) || cleanString(user?.email) || 'No email available'
+    const name =
+      cleanString(accountData?.fullName) ||
+      cleanString(accountData?.name) ||
+      cleanString(user?.displayName) ||
+      cleanString(email.split('@')[0]) ||
+      'Nexora User'
+    const plan = cleanString(workspaceData?.plan) || cleanString(accountData?.plan) || 'Free'
+    const status = cleanString(workspaceData?.planStatus) || cleanString(accountData?.planStatus) || 'trial'
+    const trialEndsAt = workspaceData?.trialEndsAt || accountData?.trialEndsAt || addDays(new Date(), CRM_TRIAL_DAYS)
+    const remainingDays = daysUntil(trialEndsAt)
+    const isTrial = status.toLowerCase().includes('trial') || Boolean(workspaceData?.isTrialActive || accountData?.isTrialActive)
+
+    return {
+      name,
+      email,
+      initials: initialsFor(name, email),
+      role: cleanString(accountData?.role) || 'owner',
+      planLabel: `${plan}${status ? ` · ${status}` : ''}`,
+      trialLabel: isTrial ? `${remainingDays} days left · ends ${formatDate(trialEndsAt)}` : `Ends ${formatDate(trialEndsAt)}`,
+      workspaceId: cleanString(workspaceData?.workspaceId) || cleanString(accountData?.workspaceId) || user?.uid || '',
+    }
+  }, [accountData, user, workspaceData])
+
+  const hasCrmWorkspace = Boolean(workspaceData || accountData?.workspaceId)
+  const visibleWorkspaces = workspaces
+  const createDisabled = hasCrmWorkspace || creatingWorkspace
+  const createWorkspaceMessage = hasCrmWorkspace ? 'You already have a CRM workspace.' : createMessage
 
   const handleLogout = useCallback(async () => {
     if (loggingOut) return
@@ -252,6 +532,99 @@ export default function WorkspaceSelection() {
       setLoggingOut(false)
     }
   }, [loggingOut, navigate])
+
+  const handleOpenCreate = useCallback(() => {
+    if (hasCrmWorkspace) {
+      setCreateMessage('You already have a CRM workspace.')
+      return
+    }
+    setCreateMessage('')
+    setCreateOpen(true)
+  }, [hasCrmWorkspace])
+
+  const handleCreateWorkspace = useCallback(async () => {
+    if (!db || !user?.uid || creatingWorkspace) return
+    if (hasCrmWorkspace) {
+      setCreateMessage('You already have a CRM workspace.')
+      return
+    }
+
+    setCreatingWorkspace(true)
+    setCreateMessage('')
+    try {
+      const uid = user.uid
+      const email = cleanString(user.email).toLowerCase()
+      const name = cleanString(user.displayName) || cleanString(email.split('@')[0]) || 'Nexora User'
+      const now = serverTimestamp()
+      const trialEndsAt = addDays(new Date(), CRM_TRIAL_DAYS)
+      const userRef = doc(db, 'users', uid)
+      const workspaceRef = doc(db, 'workspaces', uid)
+      const [userSnap, workspaceSnap] = await Promise.all([getDoc(userRef), getDoc(workspaceRef)])
+
+      if (workspaceSnap.exists() || cleanString(userSnap.data()?.workspaceId)) {
+        const nextAccount = userSnap.exists() ? userSnap.data() : null
+        setAccountData(nextAccount)
+        setWorkspaceData(workspaceSnap.exists() ? workspaceSnap.data() : null)
+        setCreateMessage('You already have a CRM workspace.')
+        return
+      }
+
+      const userPayload = {
+        uid,
+        ownerId: uid,
+        userId: uid,
+        workspaceId: uid,
+        fullName: name,
+        name,
+        email,
+        role: 'owner',
+        plan: 'Free',
+        planStatus: 'trial',
+        billingCycle: 'monthly',
+        trialStartedAt: now,
+        trialEndsAt,
+        isTrialActive: true,
+        enabledModules: ['crm'],
+        selectedFeatures: ['Nexora CRM'],
+        workspaceName: 'Nexora CRM',
+        updatedAt: now,
+        lastLoginAt: now,
+      }
+      const workspacePayload = {
+        ownerId: uid,
+        userId: uid,
+        workspaceId: uid,
+        name: 'Nexora CRM',
+        workspaceName: 'Nexora CRM',
+        email,
+        plan: 'Free',
+        planStatus: 'trial',
+        billingCycle: 'monthly',
+        trialStartedAt: now,
+        trialEndsAt,
+        isTrialActive: true,
+        enabledModules: ['crm'],
+        selectedFeatures: ['Nexora CRM'],
+        createdAt: now,
+        createdBy: uid,
+        updatedAt: now,
+        lastAccessedAt: now,
+      }
+
+      await Promise.all([
+        setDoc(userRef, userPayload, { merge: true }),
+        setDoc(workspaceRef, workspacePayload, { merge: true }),
+      ])
+      setAccountData(userPayload)
+      setWorkspaceData(workspacePayload)
+      setCreateOpen(false)
+      setCreateMessage('You already have a CRM workspace.')
+    } catch {
+      setCreateMessage('Could not create workspace right now.')
+    } finally {
+      setCreatingWorkspace(false)
+    }
+  }, [creatingWorkspace, hasCrmWorkspace, user])
 
   return (
     <main className="min-h-screen overflow-x-clip bg-slate-50 text-slate-950">
@@ -270,26 +643,68 @@ export default function WorkspaceSelection() {
               </div>
             </div>
 
-            <div className="mt-6 rounded-lg border border-white/10 bg-white/[0.04] p-3">
-              <div className="flex items-center gap-3">
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-slate-100 text-lg">
-                  👨🏻‍💼
+            <div className="relative mt-6">
+              <button
+                type="button"
+                onClick={() => setProfileOpen((open) => !open)}
+                className="w-full rounded-lg border border-white/10 bg-white/[0.04] p-3 text-left transition hover:bg-white/[0.07]"
+                aria-expanded={profileOpen}
+              >
+                <span className="flex items-center gap-3">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-extrabold text-white">
+                    {profile.initials}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-bold text-white">{authLoading ? 'Loading...' : profile.name}</span>
+                    <span className="mt-0.5 block truncate text-xs capitalize text-slate-300">{profile.role}</span>
+                  </span>
+                  <HiOutlineChevronDown className="h-4 w-4 shrink-0 text-slate-300" />
                 </span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-bold text-white">Muhammad Usman</p>
-                  <p className="mt-0.5 truncate text-xs text-slate-300">Administrator</p>
+              </button>
+
+              {profileOpen ? (
+                <div className="absolute left-0 right-0 top-full z-40 mt-2 rounded-lg border border-white/10 bg-white p-3 text-slate-900 shadow-xl shadow-slate-950/25">
+                  <p className="truncate text-sm font-bold">{profile.name}</p>
+                  <p className="mt-0.5 truncate text-xs text-slate-500">{profile.email}</p>
+                  <div className="mt-3 rounded-lg bg-slate-50 px-3 py-2">
+                    <p className="text-xs font-bold text-slate-700">{profile.planLabel}</p>
+                    <p className="mt-0.5 text-xs text-slate-500">{profile.trialLabel}</p>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={loggingOut}
+                    onClick={handleLogout}
+                    className="mt-3 flex h-9 w-full items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 text-xs font-bold text-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    <FiLogOut className="h-4 w-4" />
+                    {loggingOut ? 'Logging out...' : 'Logout'}
+                  </button>
                 </div>
-                <HiOutlineChevronDown className="h-4 w-4 shrink-0 text-slate-300" />
-              </div>
+              ) : null}
             </div>
 
             <nav className="mt-4 space-y-2">
-              <SidebarItem icon={HiOutlineSquares2X2} label="Enter Workspace" active />
-              <SidebarItem icon={HiOutlineSquares2X2} label="All Workspaces" />
+              <SidebarItem
+                icon={HiOutlineSquares2X2}
+                label="Enter Workspace"
+                active={workspaceView === 'enter'}
+                onClick={() => setWorkspaceView('enter')}
+              />
+              <SidebarItem
+                icon={HiOutlineSquares2X2}
+                label="All Workspaces"
+                active={workspaceView === 'all'}
+                onClick={() => setWorkspaceView('all')}
+              />
               <button
                 type="button"
-                disabled
-                className="flex h-11 w-full cursor-not-allowed items-center gap-3 rounded-lg px-3 text-left text-[13px] font-semibold text-slate-200 opacity-80"
+                disabled={createDisabled}
+                onClick={handleOpenCreate}
+                className={`flex h-11 w-full items-center gap-3 rounded-lg px-3 text-left text-[13px] font-semibold transition ${
+                  createDisabled
+                    ? 'cursor-not-allowed text-slate-400 opacity-80'
+                    : 'text-slate-200 hover:bg-white/7 hover:text-white'
+                }`}
               >
                 <span className="flex h-5 w-5 items-center justify-center rounded bg-white/15">
                   <HiOutlinePlus className="h-4 w-4" />
@@ -329,7 +744,7 @@ export default function WorkspaceSelection() {
               </div>
             </div>
 
-            <SidebarItem icon={HiOutlineCog6Tooth} label="Settings" muted />
+            <SidebarItem icon={HiOutlineCog6Tooth} label="Settings" muted onClick={() => setSettingsOpen(true)} />
 
             <div className="mt-auto pt-6">
               <button
@@ -358,8 +773,12 @@ export default function WorkspaceSelection() {
                 <HiOutlineBars3 className="h-6 w-6" />
               </button>
               <div className="min-w-0">
-                <h1 className="truncate text-lg font-bold leading-6 text-slate-950">Enter Workspace</h1>
-                <p className="mt-0.5 truncate text-sm text-slate-500">Select a workspace to continue</p>
+                <h1 className="truncate text-lg font-bold leading-6 text-slate-950">
+                  {workspaceView === 'all' ? 'All Workspaces' : 'Enter Workspace'}
+                </h1>
+                <p className="mt-0.5 truncate text-sm text-slate-500">
+                  {workspaceView === 'all' ? 'All Nexora modules on one page' : 'Select a workspace to continue'}
+                </p>
               </div>
             </div>
 
@@ -445,7 +864,7 @@ export default function WorkspaceSelection() {
               className="relative min-h-[150px] rounded-lg border border-slate-200 bg-gradient-to-r from-blue-50 via-sky-50 to-blue-50 px-7 py-6 shadow-sm"
             >
               <div className="max-w-[520px]">
-                <h2 className="text-2xl font-extrabold tracking-tight text-slate-950">Welcome back, Muhammad! 👋</h2>
+                <h2 className="text-2xl font-extrabold tracking-tight text-slate-950">Welcome back, {profile.name.split(' ')[0]}.</h2>
                 <p className="mt-3 max-w-sm text-sm leading-6 text-slate-600">
                   Select a workspace to access your business data and modules.
                 </p>
@@ -485,7 +904,9 @@ export default function WorkspaceSelection() {
             </motion.section>
 
             <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <h2 className="text-lg font-bold text-slate-950">Your Workspaces</h2>
+              <h2 className="text-lg font-bold text-slate-950">
+                {workspaceView === 'all' ? 'All Workspaces' : 'Your Workspaces'}
+              </h2>
               <div className="flex items-center gap-3">
                 <label className="relative block w-full sm:w-[270px]">
                   <HiOutlineMagnifyingGlass className="pointer-events-none absolute left-3.5 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-slate-400" />
@@ -507,10 +928,10 @@ export default function WorkspaceSelection() {
             </div>
 
             <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {workspaces.map((workspace, index) => (
+              {visibleWorkspaces.map((workspace, index) => (
                 <WorkspaceCard key={workspace.id} workspace={workspace} index={index} />
               ))}
-              <CreateWorkspaceCard />
+              <CreateWorkspaceCard disabled={createDisabled} message={createWorkspaceMessage} onOpen={handleOpenCreate} />
             </div>
 
             <section className="mt-5 grid gap-4 rounded-lg border border-slate-200 bg-white px-5 py-4 shadow-sm sm:grid-cols-2 xl:grid-cols-4">
@@ -537,6 +958,28 @@ export default function WorkspaceSelection() {
           </div>
         </section>
       </div>
+      {createOpen ? (
+        <CreateWorkspaceModal
+          creating={creatingWorkspace}
+          hasWorkspace={hasCrmWorkspace}
+          message={createMessage}
+          profile={profile}
+          onCreate={handleCreateWorkspace}
+          onClose={() => setCreateOpen(false)}
+        />
+      ) : null}
+      {settingsOpen ? (
+        <SettingsModal
+          profile={profile}
+          selectedLanguage={selectedLanguage}
+          selectedRegion={selectedRegion}
+          onLanguageChange={setSelectedLanguage}
+          onRegionChange={setSelectedRegion}
+          onLogout={handleLogout}
+          loggingOut={loggingOut}
+          onClose={() => setSettingsOpen(false)}
+        />
+      ) : null}
     </main>
   )
 }
