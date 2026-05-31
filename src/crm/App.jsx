@@ -19,6 +19,7 @@ const UpgradeBusinessPage = lazy(() => import('./pages/UpgradeBusiness.jsx'))
 const AdminUpgradeRequestsPage = lazy(() => import('./pages/AdminUpgradeRequests.jsx'))
 const TeamPage = lazy(() => import('./pages/Team.jsx'))
 const InvoicesPage = lazy(() => import('./pages/Invoices.jsx'))
+const InvoiceCreatePage = lazy(() => import('./pages/InvoiceCreate.jsx'))
 const ExpensesPage = lazy(() => import('./pages/Expenses.jsx'))
 const AccountManagementPage = lazy(() => import('./pages/AccountManagement.jsx'))
 const AccountStatementsPage = lazy(() => import('./pages/AccountStatements.jsx'))
@@ -73,6 +74,7 @@ export default function App() {
             <Route path="/app/hr" element={gated(<HRDashboardPage />)} />
             <Route path="/app/team" element={gated(<TeamPage />)} />
             <Route path="/app/invoices" element={gated(<InvoicesPage />)} />
+            <Route path="/app/invoices/create" element={gated(<InvoiceCreatePage />)} />
             <Route path="/app/expenses" element={gated(<ExpensesPage />)} />
             <Route path="/app/accounts" element={gated(<AccountManagementPage />)} />
             <Route path="/app/accounts/statements" element={gated(<AccountStatementsPage />)} />

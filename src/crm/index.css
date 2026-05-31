@@ -4,10 +4,10 @@
 
 @layer base {
   html {
-    @apply min-h-full overflow-x-hidden scroll-smooth;
+    @apply min-h-full overflow-x-hidden;
     height: auto;
-    scroll-behavior: smooth;
     overflow-y: auto;
+    scrollbar-gutter: stable;
   }
   body {
     @apply min-h-full overflow-x-hidden bg-slate-50 text-slate-900 antialiased;
@@ -23,23 +23,50 @@
     @apply min-h-screen;
     isolation: isolate;
     overflow-x: hidden;
-    overflow-y: auto;
+    overflow-y: visible;
   }
 }
 
 @layer components {
   .nexora-bg {
     @apply relative isolate min-h-screen bg-slate-50;
-    overflow-x: hidden;
-    overflow-y: auto;
+    overflow-x: clip;
+    overflow-y: visible;
   }
   .nexora-bg::before {
     content: '';
-    @apply pointer-events-none absolute -top-40 left-[22rem] h-[24rem] w-[24rem] rounded-full bg-gradient-to-br from-sky-100/55 via-white/10 to-violet-100/25 blur-2xl;
+    @apply pointer-events-none fixed -top-40 left-[22rem] h-[24rem] w-[24rem] rounded-full bg-gradient-to-br from-sky-100/55 via-white/10 to-violet-100/25 blur-2xl;
+    transform: translateZ(0);
   }
   .nexora-bg::after {
     content: '';
-    @apply pointer-events-none absolute -bottom-40 right-[-8rem] h-[24rem] w-[24rem] rounded-full bg-gradient-to-tr from-cyan-100/35 via-white/10 to-indigo-100/20 blur-2xl;
+    @apply pointer-events-none fixed -bottom-40 right-[-8rem] h-[24rem] w-[24rem] rounded-full bg-gradient-to-tr from-cyan-100/35 via-white/10 to-indigo-100/20 blur-2xl;
+    transform: translateZ(0);
+  }
+
+  .crm-shell,
+  .app-main,
+  .crm-main {
+    min-width: 0;
+    overflow-x: clip;
+    overflow-y: visible;
+    overscroll-behavior-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .crm-main table,
+  .crm-main [role='table'] {
+    overscroll-behavior-inline: contain;
+  }
+
+  .crm-shell .backdrop-blur-sm,
+  .crm-shell .backdrop-blur-md,
+  .crm-shell .backdrop-blur-lg,
+  .crm-shell .backdrop-blur-xl,
+  .crm-shell .backdrop-blur-2xl,
+  .crm-shell .backdrop-blur-3xl {
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
   }
 
   .glass {
@@ -63,8 +90,8 @@
   }
 
   .crm-dashboard-page {
-    content-visibility: auto;
-    contain-intrinsic-size: 1px 1400px;
+    content-visibility: visible;
+    contain-intrinsic-size: auto;
     overflow-x: hidden;
   }
 

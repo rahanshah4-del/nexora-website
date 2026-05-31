@@ -150,7 +150,10 @@ export function useInvoices() {
     const pending = invoices.filter((i) => i.paymentStatus === 'pending' || i.status === 'pending').length
     const overdue = invoices.filter((i) => i.status === 'overdue').length
     const cancelled = invoices.filter((i) => i.status === 'cancelled' || i.paymentStatus === 'rejected').length
-    return { paid, pending, overdue, cancelled, total: invoices.length }
+    const totalAmount = invoices.reduce((sum, invoice) => sum + toNumber(invoice.total ?? invoice.totalUsd, 0), 0)
+    const paidAmount = invoices.reduce((sum, invoice) => sum + toNumber(invoice.amountPaid ?? invoice.partialPaidAmount, 0), 0)
+    const outstanding = invoices.reduce((sum, invoice) => sum + toNumber(invoice.balanceDue, calculateBalanceDue(invoice.total ?? invoice.totalUsd, invoice.amountPaid ?? invoice.partialPaidAmount)), 0)
+    return { paid, pending, overdue, cancelled, total: invoices.length, totalAmount, paidAmount, outstanding }
   }, [invoices])
 
   const canApprovePayments = canRoleApprovePayments(role, userDoc)
@@ -172,33 +175,57 @@ export function useInvoices() {
         const email = String(invoice.customerEmail || '').trim()
         if (!invNo) return { ok: false, error: 'Invoice number is required' }
         if (!name) return { ok: false, error: 'Customer name is required' }
-        if (!email) return { ok: false, error: 'Customer email is required' }
         if (!invoice.items.length) return { ok: false, error: 'Add at least one invoice item' }
         if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now' }
         try {
+          const requestedStatus = statusValue(invoice.status, 'pending')
+          const amountPaid = requestedStatus === 'paid'
+            ? invoice.total
+            : toNumber(invoice.amountPaid ?? invoice.partialPaidAmount, 0)
+          const fullyPaid = invoice.total > 0 && amountPaid >= invoice.total
+          const partialPaid = amountPaid > 0 && !fullyPaid
+          const paymentStatus = fullyPaid ? 'paid' : partialPaid ? 'partial' : requestedStatus === 'draft' ? 'draft' : 'pending'
+          const approvalStatus = fullyPaid ? 'approved' : requestedStatus === 'draft' ? 'draft' : 'pending'
+          const requiresApproval = requestedStatus !== 'draft' && !fullyPaid
           const docPayload = {
             invoiceNumber: invNo,
             customerName: name,
             customerEmail: email,
             customerPhone: invoice.customerPhone || '',
+            customerTaxId: invoice.customerTaxId || invoice.customerNtn || invoice.ntnCnic || '',
+            customerAddress: invoice.customerAddress || invoice.billingAddress || '',
+            customerNotes: invoice.customerNotes || '',
+            issueDate: invoice.issueDate || invoice.invoiceDate || '',
+            invoiceDate: invoice.issueDate || invoice.invoiceDate || '',
+            paymentTerms: invoice.paymentTerms || 'Net 14 Days',
+            paymentMethod: invoice.paymentMethod || 'Bank Transfer',
+            template: invoice.template || 'Professional',
+            attachmentName: invoice.attachmentName || '',
+            signatureName: invoice.signatureName || '',
+            terms: invoice.terms || invoice.termsConditions || '',
+            notes: invoice.notes || '',
             items: invoice.items,
             subtotal: invoice.subtotal,
             discount: invoice.discount,
+            discountTotal: invoice.discountTotal ?? invoice.discount,
             taxableAmount: invoice.taxableAmount,
             taxRate: invoice.taxRate ?? 0,
             taxAmount: invoice.taxAmount,
+            taxTotal: invoice.taxTotal ?? invoice.taxAmount,
+            roundOff: invoice.roundOff ?? 0,
             total: invoice.total,
+            amountInWords: invoice.amountInWords || '',
             currency: invoice.currency || 'PKR',
-            status: 'pending',
-            paymentStatus: 'pending',
-            approvalStatus: 'pending',
-            requiresApproval: true,
-            amountPaid: 0,
-            partialPaidAmount: 0,
-            balanceDue: invoice.total,
+            status: requestedStatus,
+            paymentStatus,
+            approvalStatus,
+            requiresApproval,
+            amountPaid,
+            partialPaidAmount: amountPaid,
+            balanceDue: calculateBalanceDue(invoice.total, amountPaid),
             dueDate: invoice.dueDate || '—',
             recurring: Boolean(invoice.recurring),
-            notes: invoice.notes || '',
+            recurringCycle: invoice.recurringCycle || '',
             createdBy: userId,
             createdAt: serverTimestamp(),
             subtotalUsd: invoice.subtotal,

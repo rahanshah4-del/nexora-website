@@ -1,65 +1,48 @@
 import { memo, useMemo } from 'react'
+import { HiOutlineArrowDownTray, HiOutlineEllipsisHorizontal, HiOutlineEye } from 'react-icons/hi2'
 import Badge from '../ui/Badge.jsx'
 import Button from '../ui/Button.jsx'
 import Table from '../ui/Table.jsx'
 import { formatCurrency } from '../../utils/format.js'
-
-function paymentBadge(invoice) {
-  const value = String(invoice.paymentStatus || invoice.status || 'pending').toLowerCase()
-  if (value === 'paid') return { label: 'Paid', variant: 'success' }
-  if (value === 'partial') return { label: 'Partial Payment', variant: 'info' }
-  if (value === 'rejected' || value === 'cancelled') return { label: 'Payment Rejected', variant: 'danger' }
-  return { label: 'Payment Pending', variant: 'warning' }
-}
-
-function invoiceStatusLabel(status) {
-  const value = String(status || 'pending').toLowerCase()
-  if (value === 'paid') return 'Paid'
-  if (value === 'partial') return 'Partial'
-  if (value === 'cancelled') return 'Cancelled'
-  if (value === 'overdue') return 'Overdue'
-  return 'Pending'
-}
+import { dateLabel, invoiceIssueDate, invoicePaidAmount, statusBadge } from '../../lib/invoiceHelpers.js'
 
 function InvoiceTable({
   invoices,
   currency,
   canApprovePayments = false,
   onOpen,
-  onMarkPaid,
-  onRejectPayment,
-  onPartialPayment,
 }) {
   const columns = useMemo(() => [
-    { key: 'invoiceNumber', header: 'Invoice' },
-    { key: 'customerName', header: 'Customer', cell: (r) => <span className="font-semibold">{r.customerName}</span> },
+    { key: 'invoiceNumber', header: 'Invoice Number', cell: (r) => <span className="font-black text-slate-950">{r.invoiceNumber || r.id}</span> },
     {
-      key: 'totalUsd',
-      header: 'Total',
-      cell: (r) => <span className="font-semibold">{formatCurrency(r.total ?? r.totalUsd ?? 0, r.currency || currency || 'PKR')}</span>,
+      key: 'customerName',
+      header: 'Customer',
+      cell: (r) => (
+        <span>
+          <span className="block font-bold text-slate-950">{r.customerName || 'Customer'}</span>
+          <span className="block text-xs text-slate-500">{r.customerEmail || r.customerPhone || '-'}</span>
+        </span>
+      ),
     },
-    { key: 'dueDate', header: 'Due' },
-    {
-      key: 'recurring',
-      header: 'Recurring',
-      cell: (r) => <Badge variant={r.recurring ? 'info' : 'default'}>{r.recurring ? 'Yes' : 'No'}</Badge>,
-    },
+    { key: 'issueDate', header: 'Issue Date', cell: (r) => dateLabel(invoiceIssueDate(r)) },
+    { key: 'dueDate', header: 'Due Date', cell: (r) => dateLabel(r.dueDate) },
     {
       key: 'status',
       header: 'Status',
       cell: (r) => {
-        const value = String(r.status || '').toLowerCase()
-        const v = value === 'paid' ? 'success' : value === 'overdue' ? 'danger' : value === 'cancelled' ? 'default' : value === 'partial' ? 'info' : 'warning'
-        return <Badge variant={v}>{invoiceStatusLabel(r.status)}</Badge>
+        const badge = statusBadge(r.status || r.paymentStatus)
+        return <Badge variant={badge.variant}>{badge.label}</Badge>
       },
     },
     {
-      key: 'paymentStatus',
-      header: 'Payment',
-      cell: (r) => {
-        const badge = paymentBadge(r)
-        return <Badge variant={badge.variant}>{badge.label}</Badge>
-      },
+      key: 'totalUsd',
+      header: 'Amount',
+      cell: (r) => <span className="font-black text-slate-950">{formatCurrency(r.total ?? r.totalUsd ?? 0, r.currency || currency || 'PKR')}</span>,
+    },
+    {
+      key: 'amountPaid',
+      header: 'Paid Amount',
+      cell: (r) => <span className="font-semibold text-emerald-700">{formatCurrency(invoicePaidAmount(r), r.currency || currency || 'PKR')}</span>,
     },
     {
       key: 'actions',
@@ -72,60 +55,46 @@ function InvoiceTable({
           <div className="flex items-center gap-2">
             <Button
               variant="subtle"
-              className="rounded-xl px-3 py-2 text-xs"
+              className="h-9 rounded-xl px-2.5 py-2 text-xs"
               type="button"
+              title="View invoice"
               onClick={(event) => {
                 event.preventDefault()
                 onOpen?.(r)
               }}
             >
-              View
+              <HiOutlineEye className="h-4 w-4" />
             </Button>
-            {!isPaid && !isCancelled ? (
-              <>
-                <Button
-                  variant="subtle"
-                  className="rounded-xl px-3 py-2 text-xs"
-                  type="button"
-                  disabled={!canApprovePayments}
-                  onClick={(event) => {
-                    event.preventDefault()
-                    onMarkPaid?.(r)
-                  }}
-                >
-                  Mark as Paid
-                </Button>
-                <Button
-                  variant="ghost"
-                  className="rounded-xl px-3 py-2 text-xs"
-                  type="button"
-                  disabled={!canApprovePayments}
-                  onClick={(event) => {
-                    event.preventDefault()
-                    onPartialPayment?.(r)
-                  }}
-                >
-                  Partial
-                </Button>
-                <Button
-                  variant="ghost"
-                  className="rounded-xl px-3 py-2 text-xs text-rose-700 hover:bg-rose-50 hover:text-rose-800"
-                  type="button"
-                  disabled={!canApprovePayments}
-                  onClick={(event) => {
-                    event.preventDefault()
-                    onRejectPayment?.(r)
-                  }}
-                >
-                  Reject
-                </Button>
-              </>
-            ) : null}
+            <Button
+              variant="subtle"
+              className="h-9 rounded-xl px-2.5 py-2 text-xs"
+              type="button"
+              title="Download invoice"
+              onClick={(event) => {
+                event.preventDefault()
+                onOpen?.(r)
+              }}
+            >
+              <HiOutlineArrowDownTray className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              className="h-9 rounded-xl px-2.5 py-2 text-xs"
+              type="button"
+              title="More actions"
+              disabled={isPaid || isCancelled ? false : !canApprovePayments}
+              onClick={(event) => {
+                event.preventDefault()
+                onOpen?.(r)
+              }}
+            >
+              <HiOutlineEllipsisHorizontal className="h-5 w-5" />
+            </Button>
           </div>
         )
       },
     },
-  ], [canApprovePayments, currency, onMarkPaid, onOpen, onPartialPayment, onRejectPayment])
+  ], [canApprovePayments, currency, onOpen])
 
   return <Table columns={columns} rows={invoices} />
 }

@@ -225,17 +225,17 @@ export default function DashboardLayout() {
   }
 
   return (
-    <div className="nexora-bg min-h-dvh overflow-x-hidden overflow-y-auto">
+    <div className="nexora-bg crm-shell min-h-dvh overflow-x-clip">
       <Sidebar collapsed={collapsed} onToggleCollapse={toggleCollapse} onSwitchProduct={openProductSwitcher} />
 
       <div
-        className={`relative z-10 flex min-h-dvh min-w-0 flex-col print:ml-0 ${
+        className={`app-main relative z-10 flex min-h-dvh min-w-0 flex-col print:ml-0 ${
           collapsed ? 'lg:ml-[72px]' : 'lg:ml-[236px]'
         }`}
       >
         <TopNav collapsed={collapsed} onOpenSidebar={() => setMobileOpen(true)} onSwitchProduct={openProductSwitcher} />
 
-        <main className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto px-3 pb-5 pt-4 print:p-0 sm:px-5 lg:px-6 lg:pb-6 lg:pt-5">
+        <main className="crm-main min-w-0 flex-1 overflow-x-clip px-3 pb-5 pt-4 print:p-0 sm:px-5 lg:px-6 lg:pb-6 lg:pt-5">
           <div className="mx-auto w-full max-w-[1440px] min-w-0 print:max-w-none">
             <Outlet />
           </div>

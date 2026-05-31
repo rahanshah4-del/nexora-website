@@ -27,13 +27,32 @@ export function normalizeCurrency(value) {
 
 export function normalizeInvoiceItem(item = {}) {
   const quantity = Math.max(toNumber(item.quantity ?? item.qty, 0), 0)
-  const price = Math.max(toNumber(item.price ?? item.priceUsd, 0), 0)
-  if (item.price === undefined && item.priceUsd === undefined) warnInvalidData('Invoice item is missing price.', item)
+  const price = Math.max(toNumber(item.price ?? item.rate ?? item.priceUsd, 0), 0)
+  const lineSubtotal = quantity * price
+  const discountPercent = Math.min(Math.max(toNumber(item.discountPercent ?? item.discountRate, 0), 0), 100)
+  const percentDiscount = lineSubtotal * (discountPercent / 100)
+  const absoluteDiscount =
+    item.discountPercent !== undefined || item.discountRate !== undefined
+      ? percentDiscount
+      : Math.min(Math.max(toNumber(item.discount, 0), 0), lineSubtotal)
+  const taxableAmount = Math.max(lineSubtotal - absoluteDiscount, 0)
+  const taxRate = Math.max(toNumber(item.taxRate ?? item.taxPercent, 0), 0)
+  const taxAmount = taxableAmount * (taxRate / 100)
+  const lineTotal = taxableAmount + taxAmount
+  if (item.price === undefined && item.rate === undefined && item.priceUsd === undefined) warnInvalidData('Invoice item is missing price.', item)
   return {
     ...item,
     quantity,
     qty: quantity,
     price,
+    rate: price,
+    discountPercent,
+    discountAmount: absoluteDiscount,
+    taxableAmount,
+    taxRate,
+    taxAmount,
+    lineSubtotal,
+    lineTotal,
   }
 }
 
@@ -43,14 +62,29 @@ export function calculateBalanceDue(total = 0, amountPaid = 0) {
 
 export function calculateInvoiceTotals(input = {}) {
   const items = Array.isArray(input.items) ? input.items.map(normalizeInvoiceItem) : []
+  const hasLineDiscounts = items.some((item) => toNumber(item.discountAmount, 0) > 0)
+  const hasLineTaxes = items.some((item) => toNumber(item.taxRate, 0) > 0 || toNumber(item.taxAmount, 0) > 0)
   const subtotal = items.length
     ? items.reduce((sum, item) => sum + toNumber(item.price, 0) * toNumber(item.quantity ?? item.qty, 0), 0)
     : Math.max(toNumber(input.subtotal ?? input.subtotalUsd, 0), 0)
+  const lineDiscount = items.reduce((sum, item) => sum + toNumber(item.discountAmount, 0), 0)
+  const inputDiscount = Math.max(toNumber(input.discountTotal ?? input.discount, 0), 0)
+  const discountSource = hasLineDiscounts ? lineDiscount : inputDiscount
+  const taxableAmount = items.length
+    ? Math.max(subtotal - discountSource, 0)
+    : Math.max(toNumber(input.taxableAmount ?? subtotal - discountSource, 0), 0)
   const taxRate = Math.max(toNumber(input.taxRate, 0), 0)
-  const taxAmount = items.length || input.taxAmount === undefined ? subtotal * (taxRate / 100) : Math.max(toNumber(input.taxAmount, 0), 0)
-  const maxDiscount = Math.max(subtotal + taxAmount, 0)
-  const discount = Math.min(Math.max(toNumber(input.discount, 0), 0), maxDiscount)
-  const calculatedTotal = Math.max(subtotal + taxAmount - discount, 0)
+  const lineTax = items.reduce((sum, item) => sum + toNumber(item.taxAmount, 0), 0)
+  const taxAmount =
+    hasLineTaxes
+      ? lineTax
+      : items.length || input.taxAmount === undefined
+        ? taxableAmount * (taxRate / 100)
+        : Math.max(toNumber(input.taxAmount ?? input.taxTotal, 0), 0)
+  const maxDiscount = Math.max(subtotal, 0)
+  const discount = Math.min(discountSource, maxDiscount)
+  const roundOff = toNumber(input.roundOff, 0)
+  const calculatedTotal = Math.max(taxableAmount + taxAmount + roundOff, 0)
   const total = items.length || input.total === undefined ? calculatedTotal : Math.max(toNumber(input.total ?? input.totalUsd, calculatedTotal), 0)
   const amountPaid = Math.min(Math.max(toNumber(input.amountPaid ?? input.partialPaidAmount, 0), 0), total)
   const balanceDue = calculateBalanceDue(total, amountPaid)
@@ -62,10 +96,13 @@ export function calculateInvoiceTotals(input = {}) {
   return {
     items,
     subtotal,
-    taxableAmount: subtotal,
+    taxableAmount,
     taxRate,
     taxAmount,
+    taxTotal: taxAmount,
     discount,
+    discountTotal: discount,
+    roundOff,
     total,
     amountPaid,
     partialPaidAmount: amountPaid,

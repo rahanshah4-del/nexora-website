@@ -22,6 +22,7 @@ import FollowUpsPage from './crm/pages/FollowUps.jsx'
 import TeamPage from './crm/pages/Team.jsx'
 import HRDashboardPage from './crm/pages/HRDashboard.jsx'
 import InvoicesPage from './crm/pages/Invoices.jsx'
+import InvoiceCreatePage from './crm/pages/InvoiceCreate.jsx'
 import ExpensesPage from './crm/pages/Expenses.jsx'
 import AccountManagementPage from './crm/pages/AccountManagement.jsx'
 import AccountStatementsPage from './crm/pages/AccountStatements.jsx'
@@ -79,6 +80,7 @@ export default function AppRouter() {
         <Route path="team" element={<TeamPage />} />
         <Route path="hr" element={<HRDashboardPage />} />
         <Route path="invoices" element={<InvoicesPage />} />
+        <Route path="invoices/create" element={<InvoiceCreatePage />} />
         <Route path="expenses" element={<ExpensesPage />} />
         <Route path="accounts" element={<AccountManagementPage />} />
         <Route path="accounts/statements" element={<AccountStatementsPage />} />
