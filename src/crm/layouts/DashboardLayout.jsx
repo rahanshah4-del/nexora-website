@@ -5,6 +5,8 @@ import Sidebar from '../components/sidebar/Sidebar.jsx'
 import TopNav from '../components/navbar/TopNav.jsx'
 import ProductSelectionModal from '../components/product/ProductSelectionModal.jsx'
 import OnboardingWizard from '../components/onboarding/OnboardingWizard.jsx'
+import Badge from '../components/ui/Badge.jsx'
+import Button from '../components/ui/Button.jsx'
 import { useAuth } from '../hooks/useAuth.js'
 import { useUser } from '../hooks/useUser.js'
 import {
@@ -52,6 +54,50 @@ function MobileAppAccessBlock() {
   )
 }
 
+function formatAccessDate(value) {
+  const date = typeof value?.toDate === 'function' ? value.toDate() : value instanceof Date ? value : value ? new Date(value) : null
+  if (!date || Number.isNaN(date.getTime())) return ''
+  return new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', year: 'numeric' }).format(date)
+}
+
+function isActivePlanStatus(status) {
+  return ['active', 'paid', 'approved', 'current'].includes(String(status || '').trim().toLowerCase())
+}
+
+function TrialAccessBlock({ expired, trialEndsAt, onBackToWorkspace, onUpgrade }) {
+  const endLabel = formatAccessDate(trialEndsAt)
+  return (
+    <div className="nexora-bg grid min-h-dvh place-items-center overflow-x-hidden px-4 py-10">
+      <motion.div
+        className="w-full max-w-xl rounded-[1.6rem] border border-white/85 bg-white/95 p-6 shadow-[0_24px_80px_-48px_rgba(15,23,42,0.55)]"
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.22, ease: 'easeOut' }}
+      >
+        <Badge variant={expired ? 'danger' : 'warning'} className="font-semibold">
+          {expired ? 'Trial expired' : 'Package inactive'}
+        </Badge>
+        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-slate-950">
+          {expired ? 'Your 7-day trial has expired' : 'CRM access needs an active package'}
+        </h1>
+        <p className="mt-3 text-sm leading-7 text-slate-600">
+          {expired
+            ? `Your Nexora CRM trial${endLabel ? ` ended on ${endLabel}` : ''}. Upgrade to continue using CRM data, customers, invoices, leads, and reports.`
+            : 'Return to Workspace or choose an active package to continue using Nexora CRM.'}
+        </p>
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+          <Button className="h-11 rounded-2xl" type="button" onClick={onUpgrade}>
+            Upgrade Package
+          </Button>
+          <Button className="h-11 rounded-2xl" variant="subtle" type="button" onClick={onBackToWorkspace}>
+            Back to Workspace
+          </Button>
+        </div>
+      </motion.div>
+    </div>
+  )
+}
+
 export default function DashboardLayout() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
@@ -62,13 +108,28 @@ export default function DashboardLayout() {
   const [selectedWorkspace, setSelectedWorkspace] = useState(null)
   const [sessionInfo, setSessionInfo] = useState(null)
   const { user, ready } = useAuth()
-  const { userDoc, loading: userLoading, isStaff, workspaceId } = useUser()
+  const {
+    userDoc,
+    loading: userLoading,
+    isStaff,
+    workspaceId,
+    accessPlan,
+    isTrialActive,
+    isTrialExpired,
+    trialEndsAt,
+  } = useUser()
   const navigate = useNavigate()
   const persistedKeyRef = useRef('')
 
   const toggleCollapse = useCallback(() => setCollapsed((c) => !c), [])
   const userId = user?.uid ?? null
   const isAuthenticated = Boolean(userId)
+  const hasActiveAccess =
+    isTrialActive ||
+    isActivePlanStatus(userDoc?.planStatus) ||
+    accessPlan === 'Business' ||
+    accessPlan === 'Enterprise'
+  const crmAccessBlocked = ready && isAuthenticated && !userLoading && Boolean(userDoc) && !isStaff && !hasActiveAccess
   const mobileBlocked = ready && isAuthenticated && isMobileScreen
   const onboardingOpen = Boolean(ready && userId && !userLoading && !isStaff && userDoc?.onboardingCompleted !== true)
 
@@ -148,22 +209,33 @@ export default function DashboardLayout() {
     setProductModalOpen(true)
   }, [])
 
+  if (crmAccessBlocked) {
+    return (
+      <TrialAccessBlock
+        expired={isTrialExpired}
+        trialEndsAt={trialEndsAt}
+        onBackToWorkspace={() => navigate('/workspace')}
+        onUpgrade={() => navigate('/upgrade-business', { state: { fromUpgradeBusiness: true } })}
+      />
+    )
+  }
+
   if (mobileBlocked) {
     return <MobileAppAccessBlock />
   }
 
   return (
-    <div className="nexora-bg min-h-dvh overflow-x-hidden">
+    <div className="nexora-bg min-h-dvh overflow-x-hidden overflow-y-auto">
       <Sidebar collapsed={collapsed} onToggleCollapse={toggleCollapse} onSwitchProduct={openProductSwitcher} />
 
       <div
-        className={`relative z-10 min-h-dvh min-w-0 print:ml-0 ${
+        className={`relative z-10 flex min-h-dvh min-w-0 flex-col print:ml-0 ${
           collapsed ? 'lg:ml-[72px]' : 'lg:ml-[236px]'
         }`}
       >
         <TopNav collapsed={collapsed} onOpenSidebar={() => setMobileOpen(true)} onSwitchProduct={openProductSwitcher} />
 
-        <main className="min-w-0 overflow-x-hidden px-3 pb-5 pt-4 print:p-0 sm:px-5 lg:px-6 lg:pb-6 lg:pt-5">
+        <main className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto px-3 pb-5 pt-4 print:p-0 sm:px-5 lg:px-6 lg:pb-6 lg:pt-5">
           <div className="mx-auto w-full max-w-[1440px] min-w-0 print:max-w-none">
             <Outlet />
           </div>

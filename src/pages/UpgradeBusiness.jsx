@@ -7,18 +7,17 @@ import useNoIndex from '../hooks/useNoIndex.js'
 import { assertFirebaseReady, auth, db, storage } from '../lib/firebase.js'
 
 const PLAN = {
-  name: 'Business Plan',
-  monthlyLabel: 'Rs 9,999 / month',
-  yearlyLabel: 'Rs 99,999 / year',
+  name: 'Standard Package',
+  monthlyLabel: 'Rs 5,999 / month',
+  yearlyLabel: 'Rs 71,988 / year',
   monthlyValue: 'business_monthly',
   yearlyValue: 'business_yearly',
   features: [
-    'Advanced Reports',
-    'Team Permissions',
-    'Multi-user Access',
-    'Export Reports',
+    'All Basic Features',
+    'School OR Property ERP',
+    'Up to 5 Users',
+    '20GB Storage',
     'Priority Support',
-    'Usage Analytics',
   ],
 }
 
@@ -257,7 +256,7 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
   const userId = user?.uid ?? null
 
   const headerSubtitle = useMemo(() => {
-    return 'Unlock advanced reports, multi-user access, export tools, team permissions, priority support, and usage analytics.'
+    return 'Unlock the Standard package with all Basic features, School OR Property ERP, up to 5 users, 20GB storage, and priority support.'
   }, [])
 
   const canSubmit = Boolean(paymentMethod && screenshotFile && !isSubmitting && !submitted)
@@ -328,7 +327,7 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
             <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
               <div className="max-w-2xl">
                 <p className="text-xs font-semibold uppercase tracking-[0.36em] text-indigo-200/80">NEXORA SOLUTIONS</p>
-                <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">Upgrade to Business</h1>
+                <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">Upgrade to Standard</h1>
                 <p className="mt-3 text-base text-slate-200/90 sm:text-lg">{headerSubtitle}</p>
               </div>
               <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
@@ -351,7 +350,7 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
 
             <p className="text-sm font-semibold text-indigo-200">{PLAN.name}</p>
             <p className="mt-2 text-3xl font-semibold tracking-tight text-white">{planPriceLabel}</p>
-            <p className="mt-1 text-sm text-slate-200/80">Premium access • Cancel anytime after approval</p>
+            <p className="mt-1 text-sm text-slate-200/80">Standard access • Cancel anytime after approval</p>
 
             <div className="mt-6 flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-slate-950/30 p-4">
               <div>

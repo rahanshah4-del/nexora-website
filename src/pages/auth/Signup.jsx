@@ -33,7 +33,7 @@ export default function Signup() {
   const [info, setInfo] = useState('')
 
   if (!loading && user) {
-    return <Navigate to="/app/dashboard" replace />
+    return <Navigate to="/workspace" replace />
   }
 
   const handleSubmit = async (event) => {
@@ -68,7 +68,7 @@ export default function Signup() {
         await sendEmailVerification(userRecord).catch(() => {})
       }
 
-      navigate('/app/dashboard', { replace: true })
+      navigate('/workspace', { replace: true })
     } catch (err) {
       setError(err?.message || 'Unable to create account. Please try again.')
     } finally {
@@ -102,7 +102,7 @@ export default function Signup() {
         })
       }
 
-      navigate('/app/dashboard', { replace: true })
+      navigate('/workspace', { replace: true })
     } catch (err) {
       setError(err?.message || 'Google signup failed. Please try again.')
     } finally {

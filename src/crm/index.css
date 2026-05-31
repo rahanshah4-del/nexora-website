@@ -23,7 +23,7 @@
     @apply min-h-screen;
     isolation: isolate;
     overflow-x: hidden;
-    overflow-y: visible;
+    overflow-y: auto;
   }
 }
 
@@ -31,7 +31,7 @@
   .nexora-bg {
     @apply relative isolate min-h-screen bg-slate-50;
     overflow-x: hidden;
-    overflow-y: visible;
+    overflow-y: auto;
   }
   .nexora-bg::before {
     content: '';

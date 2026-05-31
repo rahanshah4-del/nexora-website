@@ -30,10 +30,11 @@ import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore'
 import logoUrl from '../../assets/logo/nexora-logo.svg'
 import useAuth from '../../context/useAuth.js'
 import { auth, db } from '../../lib/firebase.js'
+import { normalizeWorkspaceName, resolveWorkspaceName, saveStoredWorkspaceName } from '../../lib/workspaceName.js'
 import { packageNameForPlan } from '../../crm/data/moduleAccess.js'
 
 const moduleAccess = [
-  { name: 'Nexora CRM', icon: HiOutlineUserGroup, color: 'bg-blue-600', active: true },
+  { name: 'Nexora CRM', icon: HiOutlineUserGroup, color: 'bg-blue-600', active: true, route: '/app/dashboard' },
   { name: 'School ERP', icon: HiOutlineBuildingLibrary, color: 'bg-emerald-500', disabled: true },
   { name: 'Property ERP', icon: HiOutlineBuildingOffice2, color: 'bg-violet-600', disabled: true },
   { name: 'POS System', icon: HiOutlineBriefcase, color: 'bg-amber-500', disabled: true },
@@ -434,7 +435,21 @@ function CreateWorkspaceModal({ creating, hasWorkspace, message, profile, onCrea
   )
 }
 
-function SettingsModal({ profile, selectedLanguage, selectedRegion, onLanguageChange, onRegionChange, onLogout, loggingOut, onClose }) {
+function SettingsModal({
+  profile,
+  selectedLanguage,
+  selectedRegion,
+  workspaceNameDraft,
+  workspaceNameSaving,
+  workspaceNameMessage,
+  onWorkspaceNameChange,
+  onSaveWorkspaceName,
+  onLanguageChange,
+  onRegionChange,
+  onLogout,
+  loggingOut,
+  onClose,
+}) {
   return (
     <ModalShell title="Settings" onClose={onClose}>
       <div className="px-5 py-4">
@@ -449,9 +464,31 @@ function SettingsModal({ profile, selectedLanguage, selectedRegion, onLanguageCh
         </div>
 
         <div className="mt-4 rounded-lg border border-slate-200 px-3">
+          <DetailRow label="Workspace" value={profile.workspaceName} />
           <DetailRow label="Plan" value={profile.planLabel} />
           <DetailRow label="Trial" value={profile.trialLabel} />
           <DetailRow label="Language" value={selectedLanguage} />
+        </div>
+
+        <div className="mt-4 rounded-lg border border-slate-200 bg-white p-3">
+          <label className="block">
+            <span className="text-xs font-bold uppercase tracking-[0.1em] text-slate-400">Workspace / Company Name</span>
+            <input
+              value={workspaceNameDraft}
+              onChange={(event) => onWorkspaceNameChange(event.target.value)}
+              className="mt-1 h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+              placeholder="Workspace name"
+            />
+          </label>
+          {workspaceNameMessage ? <p className="mt-2 text-xs font-bold text-blue-700">{workspaceNameMessage}</p> : null}
+          <button
+            type="button"
+            disabled={workspaceNameSaving}
+            onClick={onSaveWorkspaceName}
+            className="mt-3 flex h-10 w-full items-center justify-center rounded-lg bg-blue-600 text-sm font-bold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-65"
+          >
+            {workspaceNameSaving ? 'Saving...' : 'Save Workspace Name'}
+          </button>
         </div>
 
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -514,6 +551,9 @@ export default function WorkspaceSelection() {
   const [workspaceView, setWorkspaceView] = useState('enter')
   const [accountData, setAccountData] = useState(null)
   const [workspaceData, setWorkspaceData] = useState(null)
+  const [workspaceNameDraft, setWorkspaceNameDraft] = useState('')
+  const [workspaceNameSaving, setWorkspaceNameSaving] = useState(false)
+  const [workspaceNameMessage, setWorkspaceNameMessage] = useState('')
   const [loggingOut, setLoggingOut] = useState(false)
 
   useEffect(() => {
@@ -566,12 +606,19 @@ export default function WorkspaceSelection() {
     const isTrial = status.toLowerCase().includes('trial') || Boolean(workspaceData?.isTrialActive || accountData?.isTrialActive)
     const trialExpired = isTrial && remainingDays <= 0
     const packageName = packageNameForPlan(plan)
+    const workspaceName = resolveWorkspaceName({
+      workspaceData,
+      accountData,
+      userId: user?.uid,
+      fallback: 'Nexora CRM',
+    })
 
     return {
       name,
       email,
       initials: initialsFor(name, email),
       role: cleanString(accountData?.role) || 'owner',
+      workspaceName,
       planLabel: `${packageName}${status ? ` · ${trialExpired ? 'expired' : status}` : ''}`,
       trialLabel: trialExpired
         ? `Expired on ${formatDate(trialEndsAt)}`
@@ -584,10 +631,33 @@ export default function WorkspaceSelection() {
   }, [accountData, user, workspaceData])
 
   const hasCrmWorkspace = Boolean(workspaceData || accountData?.workspaceId)
-  const visibleWorkspaces = workspaces
+  const visibleWorkspaces = useMemo(
+    () =>
+      workspaces.map((workspace) =>
+        workspace.active
+          ? {
+              ...workspace,
+              name: profile.workspaceName,
+              id: profile.workspaceId || workspace.id,
+            }
+          : workspace,
+      ),
+    [profile.workspaceId, profile.workspaceName],
+  )
   const notificationCount = sampleNotifications.length
   const createDisabled = hasCrmWorkspace || creatingWorkspace
   const createWorkspaceMessage = hasCrmWorkspace ? 'You already have a CRM workspace.' : createMessage
+
+  useEffect(() => {
+    if (!settingsOpen) {
+      setWorkspaceNameDraft(profile.workspaceName)
+      setWorkspaceNameMessage('')
+    }
+  }, [profile.workspaceName, settingsOpen])
+
+  useEffect(() => {
+    if (settingsOpen) setWorkspaceNameDraft(profile.workspaceName)
+  }, [profile.workspaceName, settingsOpen])
 
   const handleLogout = useCallback(async () => {
     if (loggingOut) return
@@ -602,6 +672,72 @@ export default function WorkspaceSelection() {
       setLoggingOut(false)
     }
   }, [loggingOut, navigate])
+
+  const handleSaveWorkspaceName = useCallback(async () => {
+    const cleanName = normalizeWorkspaceName(workspaceNameDraft, profile.workspaceName || 'Nexora CRM')
+    const uid = user?.uid
+    const workspaceId = cleanString(workspaceData?.workspaceId) || cleanString(accountData?.workspaceId) || uid
+    const hasWorkspaceTarget = Boolean(workspaceData || accountData?.workspaceId)
+
+    setWorkspaceNameSaving(true)
+    setWorkspaceNameMessage('')
+    saveStoredWorkspaceName(uid, cleanName)
+    setWorkspaceNameDraft(cleanName)
+    setAccountData((current) => ({
+      ...(current || {}),
+      workspaceName: cleanName,
+      company: cleanName,
+    }))
+    if (hasWorkspaceTarget) {
+      setWorkspaceData((current) => ({
+        ...(current || {}),
+        workspaceId: cleanString(current?.workspaceId) || workspaceId,
+        workspaceName: cleanName,
+        name: cleanName,
+      }))
+    }
+
+    if (!db || !uid || !workspaceId) {
+      setWorkspaceNameMessage('Saved on this device.')
+      setWorkspaceNameSaving(false)
+      return
+    }
+
+    try {
+      const now = serverTimestamp()
+      const writes = [
+        setDoc(
+          doc(db, 'users', uid),
+          {
+            workspaceName: cleanName,
+            company: cleanName,
+            updatedAt: now,
+          },
+          { merge: true },
+        ),
+      ]
+      if (hasWorkspaceTarget) {
+        writes.push(
+          setDoc(
+            doc(db, 'workspaces', workspaceId),
+            {
+              workspaceName: cleanName,
+              name: cleanName,
+              updatedAt: now,
+              lastAccessedAt: now,
+            },
+            { merge: true },
+          ),
+        )
+      }
+      await Promise.all(writes)
+      setWorkspaceNameMessage('Workspace name saved.')
+    } catch {
+      setWorkspaceNameMessage('Saved on this device. Cloud sync will retry when available.')
+    } finally {
+      setWorkspaceNameSaving(false)
+    }
+  }, [accountData?.workspaceId, profile.workspaceName, user?.uid, workspaceData, workspaceNameDraft])
 
   const handleOpenCreate = useCallback(() => {
     if (hasCrmWorkspace) {
@@ -625,6 +761,7 @@ export default function WorkspaceSelection() {
       const uid = user.uid
       const email = cleanString(user.email).toLowerCase()
       const name = cleanString(user.displayName) || cleanString(email.split('@')[0]) || 'Nexora User'
+      const workspaceName = normalizeWorkspaceName(profile.workspaceName, 'Nexora CRM')
       const now = serverTimestamp()
       const trialEndsAt = addDays(new Date(), CRM_TRIAL_DAYS)
       const userRef = doc(db, 'users', uid)
@@ -656,7 +793,8 @@ export default function WorkspaceSelection() {
         isTrialActive: true,
         enabledModules: ['crm'],
         selectedFeatures: ['Nexora CRM'],
-        workspaceName: 'Nexora CRM',
+        workspaceName,
+        company: workspaceName,
         updatedAt: now,
         lastLoginAt: now,
       }
@@ -664,8 +802,8 @@ export default function WorkspaceSelection() {
         ownerId: uid,
         userId: uid,
         workspaceId: uid,
-        name: 'Nexora CRM',
-        workspaceName: 'Nexora CRM',
+        name: workspaceName,
+        workspaceName,
         email,
         plan: 'Free',
         planStatus: 'trial',
@@ -694,7 +832,7 @@ export default function WorkspaceSelection() {
     } finally {
       setCreatingWorkspace(false)
     }
-  }, [creatingWorkspace, hasCrmWorkspace, user])
+  }, [creatingWorkspace, hasCrmWorkspace, profile.workspaceName, user])
 
   return (
     <main className="min-h-screen overflow-x-clip bg-slate-50 text-slate-950">
@@ -737,6 +875,7 @@ export default function WorkspaceSelection() {
                   <p className="truncate text-sm font-bold">{profile.name}</p>
                   <p className="mt-0.5 truncate text-xs text-slate-500">{profile.email}</p>
                   <div className="mt-3 rounded-lg bg-slate-50 px-3 py-2">
+                    <p className="truncate text-xs font-bold text-slate-700">{profile.workspaceName}</p>
                     <p className="text-xs font-bold text-slate-700">{profile.planLabel}</p>
                     <p className="mt-0.5 text-xs text-slate-500">{profile.trialLabel}</p>
                   </div>
@@ -790,11 +929,17 @@ export default function WorkspaceSelection() {
               <div className="mt-3 space-y-2">
                 {moduleAccess.map((module) => {
                   const Icon = module.icon
+                  const canOpenModule = Boolean(module.active && module.route)
 
                   return (
-                    <div
+                    <button
+                      type="button"
                       key={module.name}
-                      className={`flex h-9 items-center gap-3 rounded-lg px-2 text-[13px] font-semibold ${
+                      disabled={!canOpenModule}
+                      onClick={() => {
+                        if (canOpenModule) navigate(module.route)
+                      }}
+                      className={`flex h-9 w-full items-center gap-3 rounded-lg px-2 text-left text-[13px] font-semibold ${
                         module.active ? 'text-white' : 'text-slate-300 opacity-75'
                       }`}
                       aria-disabled={module.disabled ? 'true' : undefined}
@@ -808,7 +953,7 @@ export default function WorkspaceSelection() {
                           Soon
                         </span>
                       ) : null}
-                    </div>
+                    </button>
                   )
                 })}
               </div>
@@ -1060,6 +1205,11 @@ export default function WorkspaceSelection() {
           profile={profile}
           selectedLanguage={selectedLanguage}
           selectedRegion={selectedRegion}
+          workspaceNameDraft={workspaceNameDraft}
+          workspaceNameSaving={workspaceNameSaving}
+          workspaceNameMessage={workspaceNameMessage}
+          onWorkspaceNameChange={setWorkspaceNameDraft}
+          onSaveWorkspaceName={handleSaveWorkspaceName}
           onLanguageChange={setSelectedLanguage}
           onRegionChange={setSelectedRegion}
           onLogout={handleLogout}

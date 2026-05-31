@@ -2,12 +2,11 @@ import { NavLink } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { navItems } from '../../data/navigation.js'
 import { cn } from '../../utils/cn.js'
-import Badge from '../ui/Badge.jsx'
-import PricingModal from '../billing/PricingModal.jsx'
-import { memo, useCallback, useMemo, useState } from 'react'
+import { memo, useCallback, useMemo } from 'react'
 import { useUser } from '../../hooks/useUser.js'
 import logoUrl from '../../../assets/logo/nexora-logo.svg'
 import { selectedModulesForSidebar } from '../../data/moduleAccess.js'
+import { resolveWorkspaceName } from '../../../lib/workspaceName.js'
 
 const priorityRoutes = [
   '/app/dashboard',
@@ -26,7 +25,6 @@ const priorityRoutes = [
   '/app/accounts',
   '/app/accounts/statements',
   '/app/approvals',
-  '/app/subscriptions',
   '/app/support',
   '/app/analytics',
   '/app/settings',
@@ -88,7 +86,7 @@ const SidebarNavItem = memo(function SidebarNavItem({ item, collapsed, onNavigat
   )
 })
 
-function Brand({ collapsed }) {
+function Brand({ collapsed, workspaceName }) {
   return (
     <div className={`flex items-center ${collapsed ? 'justify-center' : 'gap-2.5'} px-2 py-1.5`}>
       <div className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-[1rem] border border-slate-200 bg-slate-950 p-1.5 shadow-sm">
@@ -97,51 +95,24 @@ function Brand({ collapsed }) {
       {!collapsed ? (
         <div className="min-w-0 leading-tight">
           <p className="truncate text-sm font-semibold tracking-tight text-slate-950">Nexora CRM</p>
-          <p className="truncate text-[10px] font-medium text-slate-500">Business workspace</p>
+          <p className="truncate text-[10px] font-medium text-slate-500">{workspaceName}</p>
         </div>
       ) : null}
     </div>
   )
 }
 
-function UpgradeCard({ isBusiness, isTrialActive, isTrialExpired, onViewPlans }) {
-  const badgeLabel = isBusiness ? (isTrialActive ? 'Trial' : 'Active') : isTrialExpired ? 'Expired' : 'Basic'
-  const badgeVariant = isBusiness ? 'success' : isTrialExpired ? 'warning' : 'default'
-
-  return (
-    <div className="px-2 pt-2">
-      <div className="relative overflow-hidden rounded-[1.05rem] border border-sky-100/90 bg-gradient-to-br from-white via-sky-50/90 to-violet-50/80 p-2.5 shadow-[0_18px_50px_-36px_rgba(14,165,233,0.7)]">
-        <div className="pointer-events-none absolute right-0 top-0 h-12 w-12 rounded-full bg-sky-300/20 blur-2xl" />
-        <div className="flex items-center justify-between gap-2">
-          <p className="min-w-0 text-[12px] font-semibold leading-4 text-slate-950">Standard Package</p>
-          <Badge variant={badgeVariant} className="shrink-0 px-2 py-0.5 text-[10px]">
-            {badgeLabel}
-          </Badge>
-        </div>
-        <p className="mt-1 text-[11px] leading-4 text-slate-500">
-          PKR 5,999/month with priority support
-        </p>
-        <div className="mt-2 flex items-center justify-between gap-2 border-t border-sky-100/80 pt-2">
-          <span className="truncate text-[10px] font-medium uppercase tracking-[0.14em] text-slate-400">
-            Nexora
-          </span>
-          <button
-            type="button"
-            className="focus-ring shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold text-sky-700 transition hover:bg-sky-500/10 hover:text-sky-900"
-            onClick={onViewPlans}
-          >
-            View Plans
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollapse, onSwitchProduct }) {
-  const [pricingOpen, setPricingOpen] = useState(false)
-  const { accessPlan, isTrialActive, isTrialExpired, userDoc } = useUser()
-  const isBusiness = accessPlan === 'Business' || accessPlan === 'Enterprise'
+  const { accessPlan, userDoc, userId } = useUser()
+  const workspaceName = useMemo(
+    () =>
+      resolveWorkspaceName({
+        accountData: userDoc,
+        userId,
+        fallback: 'Nexora Workspace',
+      }),
+    [userDoc, userId],
+  )
   const sidebarItems = useMemo(() => {
     const allowedRoutes = new Set(
       selectedModulesForSidebar({
@@ -160,11 +131,11 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
 
   const content = useMemo(() => (
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
-      <Brand collapsed={collapsed} />
+      <Brand collapsed={collapsed} workspaceName={workspaceName} />
       <div className={`mt-1 px-2 ${collapsed ? 'hidden' : ''}`}>
         <div className="rounded-[0.95rem] border border-slate-200/70 bg-slate-50/80 px-2.5 py-1.5">
           <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-slate-400">Workspace</p>
-          <p className="mt-0.5 truncate text-[11px] font-semibold text-slate-700">Operations Console</p>
+          <p className="mt-0.5 truncate text-[11px] font-semibold text-slate-700">{workspaceName}</p>
         </div>
       </div>
 
@@ -185,16 +156,10 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
               Switch Product
             </button>
           </div>
-          <UpgradeCard
-            isBusiness={isBusiness}
-            isTrialActive={isTrialActive}
-            isTrialExpired={isTrialExpired}
-            onViewPlans={() => setPricingOpen(true)}
-          />
         </div>
       )}
     </div>
-  ), [collapsed, handleSwitchProduct, isBusiness, isTrialActive, isTrialExpired, onNavigate, sidebarItems])
+  ), [collapsed, handleSwitchProduct, onNavigate, sidebarItems, workspaceName])
 
   if (!mobile) {
     return (
@@ -212,7 +177,6 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
             </button>
           ) : null}
         </aside>
-        <PricingModal open={pricingOpen} onClose={() => setPricingOpen(false)} />
       </>
     )
   }
@@ -228,7 +192,6 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
       >
         {content}
       </motion.aside>
-      <PricingModal open={pricingOpen} onClose={() => setPricingOpen(false)} />
     </>
   )
 }

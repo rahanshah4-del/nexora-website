@@ -5,6 +5,7 @@ import {
   HiOutlineSquares2X2,
 } from 'react-icons/hi2'
 import Avatar from '../ui/Avatar.jsx'
+import Badge from '../ui/Badge.jsx'
 import Dropdown from '../ui/Dropdown.jsx'
 import Input from '../ui/Input.jsx'
 import Button from '../ui/Button.jsx'
@@ -18,6 +19,23 @@ import BranchSwitcher from '../system/BranchSwitcher.jsx'
 import OfflineStatus from '../system/OfflineStatus.jsx'
 import GlobalSearch from '../system/GlobalSearch.jsx'
 import { packageNameForPlan } from '../../data/moduleAccess.js'
+import { resolveWorkspaceName } from '../../../lib/workspaceName.js'
+
+function formatTrialDate(value) {
+  const date = typeof value?.toDate === 'function' ? value.toDate() : value instanceof Date ? value : value ? new Date(value) : null
+  if (!date || Number.isNaN(date.getTime())) return ''
+  return new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', year: 'numeric' }).format(date)
+}
+
+function buildAccessLabel({ isTrialActive, isTrialExpired, trialDaysRemaining, trialEndsAt, plan, planStatus }) {
+  if (isTrialExpired) return 'Trial expired'
+  if (isTrialActive) {
+    const days = Math.max(Number(trialDaysRemaining) || 0, 0)
+    const endLabel = formatTrialDate(trialEndsAt)
+    return `${days || 1} trial day${days === 1 ? '' : 's'} left${endLabel ? ` - ends ${endLabel}` : ''}`
+  }
+  return `${packageNameForPlan(plan)} ${planStatus || 'active'}`
+}
 
 function Toast({ message, onClose }) {
   return (
@@ -39,18 +57,39 @@ function Toast({ message, onClose }) {
 function TopNav({ onOpenSidebar, onSwitchProduct }) {
   const { notifications, profile } = usePreferences()
   const { logout, busy } = useAuth()
-  const { firebaseUser, userDoc, plan, role, isTrialExpired } = useUser()
+  const { firebaseUser, userDoc, plan, role, isTrialActive, isTrialExpired, trialDaysRemaining, trialEndsAt } = useUser()
   const navigate = useNavigate()
   const [toast, setToast] = useState(null)
   const profileSummary = useMemo(
-    () => ({
-      displayName: userDoc?.fullName || userDoc?.name || profile.ownerName || firebaseUser?.displayName || 'Nexora User',
-      displayEmail: userDoc?.email || profile.email || firebaseUser?.email || 'No email',
-      workspaceName: userDoc?.workspaceName || userDoc?.company || profile.companyName || 'Nexora Workspace',
-      planStatus: isTrialExpired ? 'expired' : userDoc?.planStatus || 'trial',
-      packageName: packageNameForPlan(plan),
-    }),
-    [firebaseUser?.displayName, firebaseUser?.email, isTrialExpired, plan, profile.companyName, profile.email, profile.ownerName, userDoc],
+    () => {
+      const planStatus = isTrialExpired ? 'expired' : userDoc?.planStatus || 'trial'
+      return {
+        displayName: userDoc?.fullName || userDoc?.name || profile.ownerName || firebaseUser?.displayName || 'Nexora User',
+        displayEmail: userDoc?.email || profile.email || firebaseUser?.email || 'No email',
+        workspaceName: resolveWorkspaceName({
+          accountData: userDoc,
+          userId: firebaseUser?.uid,
+          fallback: profile.companyName || 'Nexora Workspace',
+        }),
+        planStatus,
+        accessLabel: buildAccessLabel({ isTrialActive, isTrialExpired, trialDaysRemaining, trialEndsAt, plan, planStatus }),
+        packageName: packageNameForPlan(plan),
+      }
+    },
+    [
+      firebaseUser?.displayName,
+      firebaseUser?.email,
+      firebaseUser?.uid,
+      isTrialActive,
+      isTrialExpired,
+      plan,
+      profile.companyName,
+      profile.email,
+      profile.ownerName,
+      trialDaysRemaining,
+      trialEndsAt,
+      userDoc,
+    ],
   )
 
   const handleLogout = useCallback(
@@ -94,6 +133,21 @@ function TopNav({ onOpenSidebar, onSwitchProduct }) {
               <OfflineStatus />
               <BranchSwitcher />
             </div>
+            <Badge
+              variant={isTrialExpired ? 'danger' : isTrialActive ? 'warning' : 'success'}
+              className="hidden h-9 max-w-[16rem] shrink-0 items-center truncate px-3 font-semibold lg:inline-flex"
+              title={profileSummary.accessLabel}
+            >
+              <span className="truncate">{profileSummary.accessLabel}</span>
+            </Badge>
+            <Button
+              variant="subtle"
+              className="hidden h-10 shrink-0 rounded-2xl px-3 text-xs lg:inline-flex"
+              onClick={() => navigate('/workspace')}
+              type="button"
+            >
+              Back to Workspace
+            </Button>
             <Button
               variant="subtle"
               className="hidden h-10 shrink-0 rounded-2xl px-3 text-xs xl:inline-flex"
@@ -146,7 +200,7 @@ function TopNav({ onOpenSidebar, onSwitchProduct }) {
                     <div className="mt-3 grid gap-2 text-xs">
                       <div className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2">
                         <span className="text-slate-500">Package status</span>
-                        <span className="truncate font-semibold text-slate-900">{profileSummary.packageName} · {profileSummary.planStatus}</span>
+                        <span className="truncate font-semibold text-slate-900">{profileSummary.accessLabel}</span>
                       </div>
                       <div className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2">
                         <span className="text-slate-500">Workspace</span>

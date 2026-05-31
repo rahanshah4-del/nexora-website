@@ -26,7 +26,7 @@ export default function LoginPage() {
   async function onSubmit() {
     setError('')
     const ok = mode === 'signup' ? await signup(email.trim(), password) : await login(email.trim(), password)
-    if (ok) navigate('/app/dashboard')
+    if (ok) navigate('/workspace')
   }
 
   async function onGoogle() {
@@ -40,7 +40,7 @@ export default function LoginPage() {
       const provider = new GoogleAuthProvider()
       const result = await signInWithPopup(auth, provider)
       await ensureUserWorkspace(result.user, { provider: 'google' })
-      navigate('/app/dashboard')
+      navigate('/workspace')
     } catch (err) {
       setError(clientSafeMessage(err, 'Google Sign In failed. Please try again.'))
     } finally {

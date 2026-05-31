@@ -17,7 +17,7 @@ export default function FeatureLockedModal({
           <HiOutlineLockClosed className="h-7 w-7" />
         </div>
         <Badge variant="warning" className="mt-5">
-          Premium Access
+          Standard Package
         </Badge>
         <h1 className="mt-4 text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">{title}</h1>
         <p className="mx-auto mt-3 max-w-md text-sm leading-7 text-slate-600 dark:text-slate-300">{message}</p>
@@ -25,8 +25,8 @@ export default function FeatureLockedModal({
           <Button className="rounded-2xl" type="button" onClick={() => navigate('/upgrade-business')}>
             Upgrade
           </Button>
-          <Button variant="subtle" className="rounded-2xl" type="button" onClick={() => navigate('/app/subscriptions')}>
-            Compare Packages
+          <Button variant="subtle" className="rounded-2xl" type="button" onClick={() => navigate('/workspace')}>
+            Back to Workspace
           </Button>
         </div>
       </Card>

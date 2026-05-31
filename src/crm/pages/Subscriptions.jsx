@@ -1,17 +1,8 @@
 import { motion } from 'framer-motion'
 import PageHeader from '../components/ui/PageHeader.jsx'
 import Badge from '../components/ui/Badge.jsx'
-import Button from '../components/ui/Button.jsx'
-import { useNavigate } from 'react-router-dom'
 import { useSubscriptions } from '../hooks/useSubscriptions.js'
-import PlanCards from '../components/subscriptions/PlanCards.jsx'
-import SubscriptionStatus from '../components/subscriptions/SubscriptionStatus.jsx'
-import SubscriptionHistory from '../components/subscriptions/SubscriptionHistory.jsx'
 import Card from '../components/ui/Card.jsx'
-
-function isBusinessPlan(plan) {
-  return ['business', 'enterprise'].includes(String(plan || '').toLowerCase())
-}
 
 function formatDate(value) {
   const date = value?.toDate?.() || (value ? new Date(value) : null)
@@ -35,7 +26,7 @@ function TrialStatusCard({ trial }) {
       </div>
       {expired ? (
         <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-100">
-          Your 7-day trial has expired. Upgrade to a package to continue using paid workspace features.
+          Your 7-day trial has expired. Please contact your workspace administrator for continued access.
         </div>
       ) : null}
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -52,103 +43,14 @@ function TrialStatusCard({ trial }) {
   )
 }
 
-function CurrentPlanCard({ subscription, currentPlan, currentPackage, onUpgrade }) {
-  const business = isBusinessPlan(currentPlan)
-  return (
-    <Card className="p-5">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-sm font-semibold text-slate-900 dark:text-white">Current Package</p>
-          <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
-            {business ? `${currentPackage} package features are available in this workspace.` : 'Basic package keeps core CRM tools available.'}
-          </p>
-        </div>
-        <Badge variant={business ? 'success' : 'default'}>{currentPackage}</Badge>
-      </div>
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">
-        <div className="glass-muted rounded-2xl p-4">
-          <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">Billing Currency</p>
-          <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{subscription.billingCurrency || 'PKR'}</p>
-        </div>
-        <div className="glass-muted rounded-2xl p-4">
-          <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">Next Billing Date</p>
-          <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{formatDate(subscription.nextBillingDate)}</p>
-        </div>
-      </div>
-      {!business ? (
-        <Button className="mt-4 rounded-2xl" type="button" onClick={onUpgrade}>
-          View Packages
-        </Button>
-      ) : null}
-    </Card>
-  )
-}
-
-function DesktopDownloadSection({ accessPlan, onUpgrade }) {
-  const business = isBusinessPlan(accessPlan)
-
-  return (
-    <Card className="mt-4 p-5">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="text-sm font-semibold text-slate-900 dark:text-white">Desktop Download</p>
-          <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">Desktop access is included with Standard, Premium, and Enterprise packages.</p>
-        </div>
-        <Badge variant={business ? 'success' : 'warning'}>{business ? 'Available' : 'Upgrade Required'}</Badge>
-      </div>
-
-      <div className="mt-4 grid gap-3 md:grid-cols-3">
-        <a
-          href={business ? '/downloads/nexora-business-suite-windows.exe' : '#trial-download'}
-          className="focus-ring rounded-2xl border border-slate-200 bg-white p-4 text-sm font-semibold text-slate-900 shadow-sm transition hover:border-sky-200 hover:text-sky-700"
-          onClick={(event) => {
-            if (!business) event.preventDefault()
-          }}
-        >
-          Download for Windows
-          <span className="mt-1 block text-xs font-medium text-slate-500">Windows app access</span>
-        </a>
-        <button
-          type="button"
-          className="focus-ring rounded-2xl border border-slate-200 bg-white p-4 text-left text-sm font-semibold text-slate-900 shadow-sm transition hover:border-sky-200 hover:text-sky-700"
-          disabled={!business}
-        >
-          Download for Mac
-          <span className="mt-1 block text-xs font-medium text-slate-500">Mac installer coming soon</span>
-        </button>
-        {business ? (
-          <a
-            href="/downloads/nexora-business-suite-windows.exe"
-            className="focus-ring rounded-2xl bg-slate-950 p-4 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700"
-          >
-            Windows EXE
-            <span className="mt-1 block text-xs font-medium text-white/70">Download Windows App</span>
-          </a>
-        ) : (
-          <button type="button" className="focus-ring rounded-2xl bg-slate-950 p-4 text-left text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700" onClick={onUpgrade}>
-            Upgrade for Desktop App
-            <span className="mt-1 block text-xs font-medium text-white/70">Paid packages unlock full desktop downloads.</span>
-          </button>
-        )}
-      </div>
-    </Card>
-  )
-}
-
 export default function SubscriptionsPage() {
-  const navigate = useNavigate()
   const subs = useSubscriptions()
 
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
       <PageHeader
         title="Subscriptions"
-        subtitle="7-day trial status and Nexora package options."
-        right={
-          <Button className="rounded-2xl" onClick={() => navigate('/upgrade-business')}>
-            View Packages
-          </Button>
-        }
+        subtitle="7-day trial status."
       />
 
       <div className="mb-4 flex items-center justify-between gap-3">
@@ -156,34 +58,8 @@ export default function SubscriptionsPage() {
         {subs.error ? <Badge variant="danger">Error</Badge> : null}
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-4">
         <TrialStatusCard trial={subs.trial} />
-        <CurrentPlanCard subscription={subs.subscription} currentPlan={subs.currentPlan} currentPackage={subs.currentPackage} onUpgrade={() => navigate('/upgrade-business')} />
-      </div>
-
-      <div className="mt-4 grid gap-4 lg:grid-cols-2">
-        <SubscriptionStatus subscription={subs.subscription} reminder={subs.renewalReminder} />
-        <Card className="p-5">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-sm font-semibold text-slate-900 dark:text-white">Enterprise</p>
-              <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
-                Unlimited users, custom integrations, dedicated support, and custom development.
-              </p>
-            </div>
-            <Badge variant="warning">Contact Sales</Badge>
-          </div>
-          <Button variant="subtle" className="mt-4 rounded-2xl" type="button" onClick={() => navigate('/app/settings')}>
-            Contact Sales
-          </Button>
-        </Card>
-      </div>
-
-      <DesktopDownloadSection accessPlan={subs.currentPlan} onUpgrade={() => navigate('/upgrade-business')} />
-
-      <div className="mt-4 grid gap-4 lg:grid-cols-2">
-        <PlanCards plans={subs.plans} currentPlan={subs.currentPackage} />
-        <SubscriptionHistory rows={subs.history} loading={subs.loading && subs.source === 'firestore'} />
       </div>
     </motion.div>
   )
