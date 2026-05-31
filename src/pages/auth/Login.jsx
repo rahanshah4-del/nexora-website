@@ -1,7 +1,7 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { AiOutlineGoogle } from 'react-icons/ai'
 import { HiOutlineArrowLeft } from 'react-icons/hi2'
-import { Link, Navigate, useLocation } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
 import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
 import { auth, firebaseEnabled } from '../../lib/firebase.js'
 import { ensureUserWorkspace } from '../../lib/accountProvisioning.js'
@@ -10,7 +10,6 @@ import NexoraLogo from '../../components/brand/NexoraLogo.jsx'
 import { motion } from 'framer-motion'
 
 export default function Login() {
-  const location = useLocation()
   const { user, loading } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -19,10 +18,9 @@ export default function Login() {
   const [error, setError] = useState('')
   const [info, setInfo] = useState('')
 
-  const from = useMemo(() => location.state?.from || '/app/dashboard', [location.state])
-
   if (!loading && user) {
-    return <Navigate to={from} replace />
+    console.log('Redirecting to workspace')
+    return <Navigate to="/workspace" replace />
   }
 
   const onSubmit = async (event) => {

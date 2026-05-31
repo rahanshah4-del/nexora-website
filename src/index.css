@@ -26,6 +26,15 @@ body {
   overflow-x: hidden;
 }
 
+html.public-website,
+body.public-website {
+  height: auto;
+  min-height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: auto;
+}
+
 ::selection {
   background: #38bdf8;
   color: #0f172a;

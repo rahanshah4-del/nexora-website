@@ -302,6 +302,16 @@ function App({ initialSectionId = '' }) {
   const [billingCycle, setBillingCycle] = useState('monthly')
 
   useEffect(() => {
+    document.documentElement.classList.add('public-website')
+    document.body.classList.add('public-website')
+
+    return () => {
+      document.documentElement.classList.remove('public-website')
+      document.body.classList.remove('public-website')
+    }
+  }, [])
+
+  useEffect(() => {
     if (!initialSectionId) return undefined
     const handle = window.requestAnimationFrame(() => {
       document.getElementById(initialSectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' })

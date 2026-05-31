@@ -43,12 +43,9 @@ function Header() {
       if (event.key === 'Escape') setMobileMenuOpen(false)
     }
 
-    const originalOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
     window.addEventListener('keydown', onKeyDown)
 
     return () => {
-      document.body.style.overflow = originalOverflow
       window.removeEventListener('keydown', onKeyDown)
     }
   }, [mobileMenuOpen])
