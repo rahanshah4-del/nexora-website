@@ -26,7 +26,7 @@ import {
 import { FiLogOut } from 'react-icons/fi'
 import { useNavigate } from 'react-router-dom'
 import { sendEmailVerification, signOut } from 'firebase/auth'
-import { collection, doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore'
+import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore'
 import logoUrl from '../../assets/logo/nexora-logo.svg'
 import useAuth from '../../context/useAuth.js'
 import { auth, db } from '../../lib/firebase.js'
@@ -34,6 +34,7 @@ import { normalizeWorkspaceName, resolveWorkspaceName, saveStoredWorkspaceName }
 import {
   businessWorkspaceCatalog,
   businessWorkspaceForType,
+  businessTypes,
   getRecommendedModules,
   labelForBusinessModule,
   normalizeBusinessType,
@@ -72,7 +73,9 @@ const workspaces = businessWorkspaceCatalog.map((workspace) => ({
 
 const languageOptions = ['English', 'Urdu', 'Arabic', 'Hindi', 'Bengali']
 const regionOptions = ['Pakistan', 'India', 'Bangladesh', 'Middle East', 'Europe']
+const currencyOptions = ['PKR', 'INR', 'BDT', 'AED', 'SAR', 'USD', 'EUR']
 const CRM_TRIAL_DAYS = 7
+const CRM_DASHBOARD_ROUTE = '/app/dashboard'
 
 const featureStrip = [
   {
@@ -412,27 +415,153 @@ function ModalShell({ title, onClose, children }) {
   )
 }
 
-function CreateWorkspaceModal({ creating, message, profile, onCreate, onClose }) {
+function FieldLabel({ label, children }) {
   return (
-    <ModalShell title="Create New Workspace" onClose={onClose}>
-      <div className="px-5 py-4">
-        <div className="rounded-lg border border-blue-100 bg-blue-50 px-4 py-3">
-          <p className="text-sm font-bold text-slate-950">Nexora CRM</p>
-          <p className="mt-1 text-sm leading-5 text-slate-600">
-            Creates a separate CRM workspace for {profile.name}. This workspace gets its own 7-day trial.
-          </p>
+    <label className="block min-w-0">
+      <span className="text-[11px] font-black uppercase tracking-[0.12em] text-slate-500">{label}</span>
+      {children}
+    </label>
+  )
+}
+
+function formInputClass() {
+  return 'mt-1.5 h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100'
+}
+
+function OnboardingModal({ creating, message, form, onChange, onCreate, onClose, canClose }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 px-3 py-4 backdrop-blur-sm sm:px-5">
+      <motion.section
+        initial={{ opacity: 0, y: 14, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.2, ease: 'easeOut' }}
+        className="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-2xl shadow-slate-950/25"
+      >
+        <div className="border-b border-slate-100 bg-slate-950 px-5 py-4 text-white sm:px-6">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <p className="text-xs font-black uppercase tracking-[0.2em] text-blue-200">Workspace onboarding</p>
+              <h2 className="mt-1 text-xl font-black tracking-tight sm:text-2xl">Create your company workspace</h2>
+              <p className="mt-2 max-w-xl text-sm leading-6 text-slate-300">
+                Set up one company workspace first. Your 7-day Basic trial starts when this is saved.
+              </p>
+            </div>
+            {canClose ? (
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-300 transition hover:bg-white/10 hover:text-white"
+                aria-label="Close onboarding"
+              >
+                <HiOutlineXMark className="h-5 w-5" />
+              </button>
+            ) : null}
+          </div>
         </div>
-        {message ? <p className="mt-3 text-sm font-semibold text-amber-700">{message}</p> : null}
-        <button
-          type="button"
-          disabled={creating}
-          onClick={onCreate}
-          className="mt-4 flex h-10 w-full items-center justify-center rounded-lg bg-blue-600 text-sm font-bold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-65"
-        >
-          {creating ? 'Creating...' : 'Create Workspace'}
-        </button>
-      </div>
-    </ModalShell>
+
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <FieldLabel label="Company / Business Name">
+              <input
+                value={form.companyName}
+                onChange={(event) => onChange('companyName', event.target.value)}
+                className={formInputClass()}
+                placeholder="Your company name"
+              />
+            </FieldLabel>
+            <FieldLabel label="Owner Name">
+              <input
+                value={form.ownerName}
+                onChange={(event) => onChange('ownerName', event.target.value)}
+                className={formInputClass()}
+                placeholder="Owner full name"
+              />
+            </FieldLabel>
+            <FieldLabel label="Business Type">
+              <select value={form.businessType} onChange={(event) => onChange('businessType', event.target.value)} className={formInputClass()}>
+                {businessTypes.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
+                ))}
+              </select>
+            </FieldLabel>
+            <FieldLabel label="Country">
+              <select value={form.country} onChange={(event) => onChange('country', event.target.value)} className={formInputClass()}>
+                {regionOptions.map((country) => (
+                  <option key={country} value={country}>
+                    {country}
+                  </option>
+                ))}
+              </select>
+            </FieldLabel>
+            <FieldLabel label="Currency">
+              <select value={form.currency} onChange={(event) => onChange('currency', event.target.value)} className={formInputClass()}>
+                {currencyOptions.map((currency) => (
+                  <option key={currency} value={currency}>
+                    {currency}
+                  </option>
+                ))}
+              </select>
+            </FieldLabel>
+            <FieldLabel label="Preferred Language">
+              <select value={form.language} onChange={(event) => onChange('language', event.target.value)} className={formInputClass()}>
+                {languageOptions.map((language) => (
+                  <option key={language} value={language}>
+                    {language}
+                  </option>
+                ))}
+              </select>
+            </FieldLabel>
+            <FieldLabel label="Phone">
+              <input
+                value={form.phone}
+                onChange={(event) => onChange('phone', event.target.value)}
+                className={formInputClass()}
+                placeholder="+92 300 0000000"
+              />
+            </FieldLabel>
+            <FieldLabel label="Email">
+              <input
+                type="email"
+                value={form.email}
+                onChange={(event) => onChange('email', event.target.value)}
+                className={formInputClass()}
+                placeholder="owner@company.com"
+              />
+            </FieldLabel>
+            <FieldLabel label="Address">
+              <textarea
+                value={form.address}
+                onChange={(event) => onChange('address', event.target.value)}
+                className="mt-1.5 min-h-[92px] w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 sm:col-span-2"
+                placeholder="Office or business address"
+              />
+            </FieldLabel>
+          </div>
+
+          {message ? (
+            <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800">
+              {message}
+            </div>
+          ) : null}
+        </div>
+
+        <div className="flex flex-col gap-3 border-t border-slate-100 bg-slate-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <p className="text-xs font-semibold leading-5 text-slate-500">
+            Creates an active Basic trial workspace without demo data.
+          </p>
+          <button
+            type="button"
+            disabled={creating}
+            onClick={onCreate}
+            className="flex h-11 w-full items-center justify-center rounded-lg bg-blue-600 px-5 text-sm font-black text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-65 sm:w-auto"
+          >
+            {creating ? 'Creating...' : 'Create Workspace'}
+          </button>
+        </div>
+      </motion.section>
+    </div>
   )
 }
 
@@ -549,9 +678,21 @@ export default function WorkspaceSelection() {
   const [createOpen, setCreateOpen] = useState(false)
   const [createMessage, setCreateMessage] = useState('')
   const [creatingWorkspace, setCreatingWorkspace] = useState(false)
+  const [onboardingForm, setOnboardingForm] = useState(() => ({
+    companyName: '',
+    ownerName: '',
+    businessType: 'General CRM',
+    country: 'Pakistan',
+    currency: 'PKR',
+    phone: '',
+    email: '',
+    address: '',
+    language: 'English',
+  }))
   const [workspaceView, setWorkspaceView] = useState('enter')
   const [accountData, setAccountData] = useState(null)
   const [workspaceData, setWorkspaceData] = useState(null)
+  const [accountLoading, setAccountLoading] = useState(true)
   const [workspaceNameDraft, setWorkspaceNameDraft] = useState('')
   const [workspaceNameSaving, setWorkspaceNameSaving] = useState(false)
   const [workspaceNameMessage, setWorkspaceNameMessage] = useState('')
@@ -570,12 +711,14 @@ export default function WorkspaceSelection() {
 
   useEffect(() => {
     let cancelled = false
+    setAccountLoading(true)
 
     async function loadAccount() {
       if (!db || !user?.uid) {
         if (!cancelled) {
           setAccountData(null)
           setWorkspaceData(null)
+          setAccountLoading(false)
         }
         return
       }
@@ -588,6 +731,7 @@ export default function WorkspaceSelection() {
       if (!cancelled) {
         setAccountData(nextAccount)
         setWorkspaceData(workspaceSnap.exists() ? workspaceSnap.data() : null)
+        setAccountLoading(false)
       }
     }
 
@@ -596,6 +740,7 @@ export default function WorkspaceSelection() {
       if (!cancelled) {
         setAccountData(null)
         setWorkspaceData(null)
+        setAccountLoading(false)
       }
     })
 
@@ -650,7 +795,8 @@ export default function WorkspaceSelection() {
     }
   }, [accountData, emailVerified, nowMs, user, workspaceData])
 
-  const hasCrmWorkspace = Boolean(workspaceData || accountData?.workspaceId)
+  const hasCrmWorkspace = Boolean(workspaceData || accountData?.workspaceId || accountData?.onboardingCompleted)
+  const needsWorkspaceOnboarding = !authLoading && !accountLoading && Boolean(user?.uid) && !hasCrmWorkspace
   const visibleWorkspaces = useMemo(
     () =>
       workspaces.map((workspace) => {
@@ -685,6 +831,29 @@ export default function WorkspaceSelection() {
   useEffect(() => {
     if (settingsOpen) setWorkspaceNameDraft(profile.workspaceName)
   }, [profile.workspaceName, settingsOpen])
+
+  useEffect(() => {
+    if (!user) return
+    setOnboardingForm((current) => ({
+      ...current,
+      ownerName: current.ownerName || cleanString(accountData?.fullName) || cleanString(accountData?.name) || cleanString(user.displayName),
+      email: current.email || cleanString(accountData?.email) || cleanString(user.email).toLowerCase(),
+      companyName:
+        current.companyName ||
+        cleanString(accountData?.workspaceName) ||
+        cleanString(accountData?.company) ||
+        cleanString(accountData?.companyName),
+      businessType: normalizeBusinessType(current.businessType || accountData?.businessType),
+      country: current.country || selectedRegion,
+      language: current.language || selectedLanguage,
+    }))
+  }, [accountData, selectedLanguage, selectedRegion, user])
+
+  const handleOnboardingFieldChange = useCallback((field, value) => {
+    setOnboardingForm((current) => ({ ...current, [field]: value }))
+    if (field === 'language') setSelectedLanguage(value)
+    if (field === 'country') setSelectedRegion(value)
+  }, [])
 
   const handleLogout = useCallback(async () => {
     if (loggingOut) return
@@ -795,10 +964,22 @@ export default function WorkspaceSelection() {
   }, [accountData?.workspaceId, profile.workspaceName, user?.uid, workspaceData, workspaceNameDraft])
 
   const handleSelectBusinessWorkspace = useCallback(async (workspace) => {
+    if (businessTypeSaving) return
+
     const uid = user?.uid
     const workspaceId = cleanString(workspaceData?.workspaceId) || cleanString(accountData?.workspaceId) || uid
-    if (!uid || !workspaceId || !workspace?.type) {
-      navigate('/app/dashboard')
+    const availableWorkspace = workspace?.active !== false && workspace?.type
+    if (!availableWorkspace) {
+      setCreateMessage('This module is coming soon.')
+      return
+    }
+    if (!hasCrmWorkspace && !workspaceData && !accountData?.workspaceId) {
+      setCreateMessage('Create your company workspace first.')
+      setCreateOpen(true)
+      return
+    }
+    if (!uid || !workspaceId) {
+      navigate(CRM_DASHBOARD_ROUTE)
       return
     }
 
@@ -808,6 +989,7 @@ export default function WorkspaceSelection() {
     const now = serverTimestamp()
 
     setBusinessTypeSaving(workspace.type)
+    setCreateMessage('')
     setAccountData((current) => ({
       ...(current || {}),
       businessType,
@@ -824,12 +1006,12 @@ export default function WorkspaceSelection() {
       onboardingCompleted: true,
     }))
 
-    if (!db) {
-      navigate('/app/dashboard')
-      return
-    }
-
     try {
+      if (!db) {
+        navigate(CRM_DASHBOARD_ROUTE)
+        return
+      }
+
       await Promise.all([
         setDoc(
           doc(db, 'users', uid),
@@ -838,7 +1020,7 @@ export default function WorkspaceSelection() {
             selectedBusinessType: businessType,
             selectedWorkspace: workspace.id,
             workspaceId,
-            ownerId: workspaceId,
+            ownerId: uid,
             enabledModules,
             selectedFeatures,
             onboardingCompleted: true,
@@ -863,13 +1045,13 @@ export default function WorkspaceSelection() {
           { merge: true },
         ),
       ])
-      navigate(workspace.route || '/app/dashboard')
+      navigate(CRM_DASHBOARD_ROUTE)
     } catch (error) {
       setCreateMessage(clientSafeMessage(error, 'Could not save business type right now.', { context: 'Business workspace selection' }))
     } finally {
       setBusinessTypeSaving('')
     }
-  }, [accountData?.workspaceId, navigate, user?.uid, workspaceData?.workspaceId])
+  }, [accountData?.workspaceId, businessTypeSaving, hasCrmWorkspace, navigate, user?.uid, workspaceData, workspaceData?.ownerId, workspaceData?.workspaceId])
 
   const handleOpenCreate = useCallback(() => {
     setCreateMessage('')
@@ -877,38 +1059,56 @@ export default function WorkspaceSelection() {
   }, [])
 
   const handleCreateWorkspace = useCallback(async () => {
-    if (!db || !user?.uid || creatingWorkspace) return
+    if (creatingWorkspace) return
+    if (!db || !user?.uid) {
+      setCreateMessage('Workspace cannot be created until Firebase is connected.')
+      return
+    }
 
     setCreatingWorkspace(true)
     setCreateMessage('')
     try {
       const uid = user.uid
-      const email = cleanString(user.email).toLowerCase()
-      const name = cleanString(user.displayName) || cleanString(email.split('@')[0]) || 'Nexora User'
-      const workspaceName = normalizeWorkspaceName(profile.workspaceName, 'Nexora CRM')
+      const email = cleanString(onboardingForm.email || user.email).toLowerCase()
+      const ownerName = cleanString(onboardingForm.ownerName) || cleanString(user.displayName) || cleanString(email.split('@')[0])
+      const companyName = cleanString(onboardingForm.companyName)
+      if (!companyName || !ownerName || !email) {
+        setCreateMessage('Company name, owner name, and email are required.')
+        return
+      }
+
+      const workspaceName = normalizeWorkspaceName(companyName, companyName)
+      saveStoredWorkspaceName(uid, workspaceName)
+      const businessType = normalizeBusinessType(onboardingForm.businessType)
+      const country = cleanString(onboardingForm.country) || 'Pakistan'
+      const currency = cleanString(onboardingForm.currency) || 'PKR'
+      const phone = cleanString(onboardingForm.phone)
+      const address = cleanString(onboardingForm.address)
+      const preferredLanguage = cleanString(onboardingForm.language) || 'English'
       const now = serverTimestamp()
       const trialEndsAt = addDays(new Date(), CRM_TRIAL_DAYS)
       const userRef = doc(db, 'users', uid)
       const userSnap = await getDoc(userRef)
       const existingAccount = userSnap.exists() ? userSnap.data() : null
-      const workspaceRef = existingAccount?.workspaceId ? doc(collection(db, 'workspaces')) : doc(db, 'workspaces', uid)
+      const existingWorkspaceId = cleanString(existingAccount?.workspaceId)
+      const workspaceRef = existingWorkspaceId ? doc(db, 'workspaces', existingWorkspaceId) : doc(db, 'workspaces', uid)
       const workspaceId = workspaceRef.id
 
-      const businessType = 'General CRM'
       const enabledModules = getRecommendedModules(businessType)
       const selectedFeatures = enabledModules.map((key) => labelForBusinessModule(key, businessType))
       const userPayload = {
         uid,
-        ownerId: workspaceId,
+        ownerId: uid,
         userId: uid,
         workspaceId,
-        fullName: name,
-        name,
+        fullName: ownerName,
+        name: ownerName,
         email,
         role: 'owner',
         plan: 'Basic',
         planStatus: 'trial',
         subscriptionStatus: 'trial',
+        status: 'active',
         billingCycle: 'monthly',
         trialStartAt: now,
         trialStartedAt: now,
@@ -921,16 +1121,31 @@ export default function WorkspaceSelection() {
         onboardingCompleted: true,
         workspaceName,
         company: workspaceName,
+        companyName: workspaceName,
+        ownerName,
+        country,
+        currency,
+        phone,
+        address,
+        preferredLanguage,
         updatedAt: now,
         lastLoginAt: now,
       }
       const workspacePayload = {
         ownerId: uid,
-        userId: workspaceId,
+        userId: uid,
         workspaceId,
         name: workspaceName,
         workspaceName,
+        company: workspaceName,
+        companyName: workspaceName,
+        ownerName,
         email,
+        phone,
+        address,
+        country,
+        currency,
+        preferredLanguage,
         plan: 'Basic',
         planStatus: 'trial',
         subscriptionStatus: 'trial',
@@ -959,13 +1174,16 @@ export default function WorkspaceSelection() {
       setAccountData(userPayload)
       setWorkspaceData(workspacePayload)
       setCreateOpen(false)
-      setCreateMessage('New workspace created with a 7-day trial.')
+      setSelectedLanguage(preferredLanguage)
+      setSelectedRegion(country)
+      setCreateMessage('')
+      navigate(CRM_DASHBOARD_ROUTE)
     } catch (error) {
       setCreateMessage(clientSafeMessage(error, 'Could not create workspace right now.', { context: 'Workspace create' }))
     } finally {
       setCreatingWorkspace(false)
     }
-  }, [creatingWorkspace, profile.workspaceName, user])
+  }, [creatingWorkspace, navigate, onboardingForm, user])
 
   return (
     <main className="min-h-screen overflow-x-clip bg-slate-50 text-slate-950">
@@ -1401,12 +1619,25 @@ export default function WorkspaceSelection() {
         </section>
       </div>
       {createOpen ? (
-        <CreateWorkspaceModal
+        <OnboardingModal
           creating={creatingWorkspace}
           message={createMessage}
-          profile={profile}
+          form={onboardingForm}
+          onChange={handleOnboardingFieldChange}
           onCreate={handleCreateWorkspace}
           onClose={() => setCreateOpen(false)}
+          canClose={!needsWorkspaceOnboarding}
+        />
+      ) : null}
+      {needsWorkspaceOnboarding && !createOpen ? (
+        <OnboardingModal
+          creating={creatingWorkspace}
+          message={createMessage}
+          form={onboardingForm}
+          onChange={handleOnboardingFieldChange}
+          onCreate={handleCreateWorkspace}
+          onClose={() => {}}
+          canClose={false}
         />
       ) : null}
       {settingsOpen ? (
