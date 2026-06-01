@@ -14,7 +14,7 @@ function normalizeMember(m) {
 }
 
 export function useTeamMembers() {
-  const { userId, workspaceId, userDoc, firebaseUser } = useUser()
+  const { userId, workspaceId, businessType, userDoc, firebaseUser } = useUser()
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
   const [source, setSource] = useState('firestore')
@@ -55,9 +55,10 @@ export function useTeamMembers() {
         setSource('firestore')
         setLoading(false)
       },
+      { businessType },
     )
     return () => unsub()
-  }, [workspaceId])
+  }, [businessType, workspaceId])
 
   const api = useMemo(
     () => ({
@@ -93,10 +94,11 @@ export function useTeamMembers() {
             permissions: Array.isArray(docPayload.permissions) ? docPayload.permissions : [],
             joinedAt: docPayload.joinedAt,
             createdBy: userId,
-          })
+          }, { businessType })
           await logActivity({
             workspaceId,
             userId,
+            businessType,
             ...userActivityInfo(userDoc, firebaseUser),
             action: 'Staff created',
             module: 'Team',
@@ -113,11 +115,12 @@ export function useTeamMembers() {
       async updateMember(id, patch) {
         setRows((prev) => prev.map((m) => (m.id === id ? { ...m, ...patch } : m)))
         if (!db || !workspaceId || !userId || source !== 'firestore') return
-        await patchUserDoc(workspaceId, 'teamMembers', id, patch)
+        await patchUserDoc(workspaceId, 'teamMembers', id, patch, { businessType })
         const member = rows.find((item) => item.id === id)
         await logActivity({
           workspaceId,
           userId,
+          businessType,
           ...userActivityInfo(userDoc, firebaseUser),
           action: 'Staff updated',
           module: 'Team',
@@ -136,6 +139,7 @@ export function useTeamMembers() {
           await logActivity({
             workspaceId,
             userId,
+            businessType,
             ...userActivityInfo(userDoc, firebaseUser),
             action: 'Staff deleted',
             module: 'Team',
@@ -150,7 +154,7 @@ export function useTeamMembers() {
         }
       },
     }),
-    [rows, loading, source, error, firebaseUser, userDoc, userId, workspaceId],
+    [rows, loading, source, error, businessType, firebaseUser, userDoc, userId, workspaceId],
   )
 
   return api

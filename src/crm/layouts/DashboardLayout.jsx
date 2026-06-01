@@ -194,6 +194,7 @@ export default function DashboardLayout() {
     loading: userLoading,
     isStaff,
     workspaceId,
+    businessType,
     accessPlan,
     isTrialActive,
     isTrialExpired,
@@ -229,7 +230,7 @@ export default function DashboardLayout() {
     !userLoading &&
     Boolean(userDoc) &&
     Boolean(currentModule) &&
-    !routeAllowedByBusinessType(location.pathname, userDoc?.businessType)
+    !routeAllowedByBusinessType(location.pathname, businessType)
   const comingSoonBlocked =
     ready &&
     isAuthenticated &&

@@ -53,6 +53,8 @@ export function saveSelectedWorkspace(userId, workspace) {
   // Keep the previous key alive for older dashboard code or open tabs.
   localStorage.setItem(LEGACY_PRODUCT_KEY, workspace)
   localStorage.setItem(LEGACY_PRODUCT_USER_KEY, userId)
+
+  window.dispatchEvent(new CustomEvent('nexora:selectedWorkspaceChanged', { detail: { userId, workspace } }))
 }
 
 export function getSessionId(userId) {

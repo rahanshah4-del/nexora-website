@@ -1,6 +1,7 @@
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
 import { db } from './firebase.js'
 import { clientSafeMessage } from '../utils/messages.js'
+import { normalizeBusinessType } from '../data/moduleAccess.js'
 
 function cleanString(value, fallback = '') {
   return typeof value === 'string' && value.trim() ? value.trim() : fallback
@@ -14,6 +15,7 @@ export async function logActivity({
   action,
   module,
   description,
+  businessType,
   targetId = '',
   targetName = '',
   metadata = {},
@@ -31,6 +33,7 @@ export async function logActivity({
       action: cleanString(action, 'Action'),
       module: cleanString(module, 'System'),
       description: cleanString(description),
+      businessType: normalizeBusinessType(businessType),
       targetId: cleanString(targetId),
       targetName: cleanString(targetName),
       metadata: metadata && typeof metadata === 'object' ? metadata : {},

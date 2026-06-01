@@ -179,7 +179,7 @@ export const moduleCatalog = [
   { key: 'expenses', label: 'Expenses', route: '/app/expenses', minPlan: 'Basic' },
   { key: 'accounts', label: 'Account Management', route: '/app/accounts', minPlan: 'Basic' },
   { key: 'accountStatements', label: 'Account Statements', route: '/app/accounts/statements', minPlan: 'Basic' },
-  { key: 'approvals', label: 'Approval Center', route: '/app/approvals', minPlan: 'Business' },
+  { key: 'approvals', label: 'Approval Center', route: '/app/approvals', alwaysEnabled: true },
   { key: 'subscriptions', label: 'Subscriptions', route: '/app/subscriptions', alwaysEnabled: true },
   { key: 'support', label: 'Support Tickets', route: '/app/support', minPlan: 'Business' },
   { key: 'activity', label: 'Activity Logs', route: '/app/activity-logs', minPlan: 'Business' },

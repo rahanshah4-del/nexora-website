@@ -21,6 +21,7 @@ import {
   statusValue,
   toNumber,
 } from '../lib/calculations.js'
+import { normalizeBusinessType } from '../data/moduleAccess.js'
 
 function canRoleApprovePayments(userDoc) {
   const role = String(userDoc?.role || '').toLowerCase()
@@ -58,6 +59,7 @@ function normalizeInvoice(inv) {
     customerEmail: inv.customerEmail || '',
     status: getInvoiceStatus(normalized),
     dueDate: inv.dueDate || '—',
+    businessType: inv.businessType || 'General CRM',
     createdAt: inv.createdAt || '—',
     paidAt: inv.paidAt || null,
   }
@@ -76,9 +78,15 @@ function normalizePayment(p) {
     paymentReference: p.paymentReference || p.reference || '',
     notes: p.notes || '',
     paymentStatus: statusValue(p.paymentStatus || p.status, 'pending'),
+    businessType: p.businessType || 'General CRM',
     paidAt: p.paidAt || p.createdAt || null,
     reference: p.paymentReference || p.reference || p.transactionId || '—',
   }
+}
+
+function belongsToBusiness(row, businessType) {
+  const rowBusinessType = row?.businessType ? normalizeBusinessType(row.businessType) : 'General CRM'
+  return rowBusinessType === normalizeBusinessType(businessType)
 }
 
 async function addInventoryAdjustments(batch, workspaceId, invoice, now) {
@@ -114,7 +122,7 @@ async function addInventoryAdjustments(batch, workspaceId, invoice, now) {
 }
 
 export function useClientPortal() {
-  const { userDoc, userId, workspaceId, firebaseUser } = useUser()
+  const { userDoc, userId, workspaceId, businessType, firebaseUser } = useUser()
   const canApprovePayments = canRoleApprovePayments(userDoc)
   const [clients, setClients] = useState([])
   const [invoices, setInvoices] = useState([])
@@ -188,6 +196,7 @@ export function useClientPortal() {
             setSource('firestore')
             setLoading(false)
           },
+          { businessType },
         )
       : (() => {
           Promise.resolve().then(() => setClients([]))
@@ -205,7 +214,11 @@ export function useClientPortal() {
       ? onSnapshot(
           invoiceQuery,
           (snap) => {
-            setInvoices(snap.docs.map((docSnap) => normalizeInvoice({ id: docSnap.id, ...docSnap.data() })))
+            setInvoices(
+              snap.docs
+                .map((docSnap) => normalizeInvoice({ id: docSnap.id, ...docSnap.data() }))
+                .filter((row) => belongsToBusiness(row, businessType)),
+            )
             setSource('firestore')
             setLoading(false)
           },
@@ -235,7 +248,11 @@ export function useClientPortal() {
       ? onSnapshot(
           paymentQuery,
           (snap) => {
-            setPayments(snap.docs.map((docSnap) => normalizePayment({ id: docSnap.id, ...docSnap.data() })))
+            setPayments(
+              snap.docs
+                .map((docSnap) => normalizePayment({ id: docSnap.id, ...docSnap.data() }))
+                .filter((row) => belongsToBusiness(row, businessType)),
+            )
           },
           () => setPayments([]),
         )
@@ -283,6 +300,7 @@ export function useClientPortal() {
         setActivity(list)
       },
       () => setActivity([]),
+      { businessType },
     )
 
     return () => {
@@ -292,7 +310,7 @@ export function useClientPortal() {
       unsubSubs?.()
       unsubActivity?.()
     }
-  }, [canApprovePayments, userId, workspaceId, userDoc?.email, userDoc?.plan, userDoc?.planStatus, userDoc?.billingCycle])
+  }, [businessType, canApprovePayments, userId, workspaceId, userDoc?.email, userDoc?.plan, userDoc?.planStatus, userDoc?.billingCycle])
 
   const api = useMemo(
     () => ({
@@ -326,10 +344,11 @@ export function useClientPortal() {
             plan: plan || 'Trial',
             status: status || 'Active',
             createdBy: userId,
-          })
+          }, { businessType })
           await logActivity({
             workspaceId,
             userId,
+            businessType,
             ...userActivityInfo(userDoc, firebaseUser),
             action: 'Client created',
             module: 'Client Portal',
@@ -363,10 +382,11 @@ export function useClientPortal() {
             businessName,
             plan: plan || 'Trial',
             status: status || 'Active',
-          })
+          }, { businessType })
           await logActivity({
             workspaceId,
             userId,
+            businessType,
             ...userActivityInfo(userDoc, firebaseUser),
             action: 'Client updated',
             module: 'Client Portal',
@@ -390,6 +410,7 @@ export function useClientPortal() {
           await logActivity({
             workspaceId,
             userId,
+            businessType,
             ...userActivityInfo(userDoc, firebaseUser),
             action: 'Client deleted',
             module: 'Client Portal',
@@ -459,6 +480,7 @@ export function useClientPortal() {
             ownerId: workspaceId,
             userId: workspaceId,
             workspaceId,
+            businessType,
             createdBy: userId,
             createdAt: now,
             updatedAt: now,
@@ -467,6 +489,7 @@ export function useClientPortal() {
           await logActivity({
             workspaceId,
             userId,
+            businessType,
             ...userActivityInfo(userDoc, firebaseUser),
             action: fullyPaid ? 'Payment approved' : 'Partial payment recorded',
             module: 'Client Portal',
@@ -505,7 +528,7 @@ export function useClientPortal() {
             paymentSubmittedAt: serverTimestamp(),
             paymentSubmittedBy: userId,
             lastPaymentReference: paymentReference || transactionId,
-          })
+          }, { businessType })
           await createUserDoc(workspaceId, 'payments', {
             invoiceId,
             clientId,
@@ -521,10 +544,11 @@ export function useClientPortal() {
             paymentStatus: 'pending_verification',
             submittedBy: userId,
             paidAt: serverTimestamp(),
-          })
+          }, { businessType })
           await logActivity({
             workspaceId,
             userId,
+            businessType,
             ...userActivityInfo(userDoc, firebaseUser),
             action: 'Payment reference submitted',
             module: 'Client Portal',
@@ -539,7 +563,7 @@ export function useClientPortal() {
         }
       },
     }),
-    [loading, source, error, clients, invoices, payments, subscription, activity, canApprovePayments, firebaseUser, userDoc, userId, workspaceId],
+    [loading, source, error, clients, invoices, payments, subscription, activity, canApprovePayments, businessType, firebaseUser, userDoc, userId, workspaceId],
   )
 
   return api

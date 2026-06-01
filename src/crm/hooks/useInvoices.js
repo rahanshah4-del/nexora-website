@@ -123,7 +123,7 @@ function invoicePermissions(role, userDoc) {
 }
 
 export function useInvoices() {
-  const { userId, workspaceId, role, userDoc, firebaseUser } = useUser()
+  const { userId, workspaceId, businessType, role, userDoc, firebaseUser } = useUser()
   const [invoices, setInvoices] = useState([])
   const [payments, setPayments] = useState([])
   const [loading, setLoading] = useState(true)
@@ -167,18 +167,20 @@ export function useInvoices() {
         setSource('firestore')
         setLoading(false)
       },
+      { businessType },
     )
     const unsubPay = subscribeUserCollection(
       workspaceId,
       'payments',
       (rows) => setPayments((Array.isArray(rows) ? rows : []).map(normalizePayment)),
       () => setPayments([]),
+      { businessType },
     )
     return () => {
       unsubInv?.()
       unsubPay?.()
     }
-  }, [workspaceId])
+  }, [businessType, workspaceId])
 
   const stats = useMemo(() => {
     const byStatus = (status) => invoices.filter((i) => getInvoiceStatus(i) === status).length
@@ -279,10 +281,11 @@ export function useInvoices() {
             taxAmountUsd: invoice.taxAmount,
             totalUsd: invoice.total,
           }
-          const ref = await createUserDoc(workspaceId, 'invoices', docPayload)
+          const ref = await createUserDoc(workspaceId, 'invoices', docPayload, { businessType })
           await logActivity({
             workspaceId,
             userId,
+            businessType,
             ...userActivityInfo(userDoc, firebaseUser),
             action: 'Invoice created',
             module: 'Invoices',
@@ -351,6 +354,7 @@ export function useInvoices() {
             ownerId: workspaceId,
             userId: workspaceId,
             workspaceId,
+            businessType,
             createdBy: userId,
             createdAt: now,
             updatedAt: now,
@@ -377,6 +381,7 @@ export function useInvoices() {
             ownerId: workspaceId,
             userId: workspaceId,
             workspaceId,
+            businessType,
             createdAt: now,
             updatedAt: now,
             metadata: {
@@ -388,6 +393,7 @@ export function useInvoices() {
           await logActivity({
             workspaceId,
             userId,
+            businessType,
             ...userActivityInfo(userDoc, firebaseUser),
             action: 'Invoice paid',
             module: 'Invoices',
@@ -405,6 +411,7 @@ export function useInvoices() {
           await logActivity({
             workspaceId,
             userId,
+            businessType,
             ...userActivityInfo(userDoc, firebaseUser),
             action: 'Invoice payment added to wallet',
             module: 'Account Management',
@@ -438,10 +445,11 @@ export function useInvoices() {
             requiresApproval: false,
             rejectedAt: serverTimestamp(),
             rejectedBy: userId,
-          })
+          }, { businessType })
           await logActivity({
             workspaceId,
             userId,
+            businessType,
             ...userActivityInfo(userDoc, firebaseUser),
             action: 'Payment rejected',
             module: 'Invoices',
@@ -518,6 +526,7 @@ export function useInvoices() {
             ownerId: workspaceId,
             userId: workspaceId,
             workspaceId,
+            businessType,
             createdBy: userId,
             createdAt: now,
             updatedAt: now,
@@ -545,6 +554,7 @@ export function useInvoices() {
               ownerId: workspaceId,
               userId: workspaceId,
               workspaceId,
+              businessType,
               createdAt: now,
               updatedAt: now,
               metadata: {
@@ -557,6 +567,7 @@ export function useInvoices() {
           await logActivity({
             workspaceId,
             userId,
+            businessType,
             ...userActivityInfo(userDoc, firebaseUser),
             action: fullyPaid ? 'Invoice paid' : 'Partial payment recorded',
             module: 'Invoices',
@@ -576,6 +587,7 @@ export function useInvoices() {
             await logActivity({
               workspaceId,
               userId,
+              businessType,
               ...userActivityInfo(userDoc, firebaseUser),
               action: 'Invoice payment added to wallet',
               module: 'Account Management',
@@ -600,7 +612,7 @@ export function useInvoices() {
         if (!permissions.canEdit) return { ok: false, error: 'Only owner, admin, or accountant can edit invoices.' }
         setInvoices((prev) => prev.map((i) => (i.id === id ? { ...i, ...patch } : i)))
         if (!db || !workspaceId || source !== 'firestore') return { ok: true }
-        await patchUserDoc(workspaceId, 'invoices', id, patch)
+        await patchUserDoc(workspaceId, 'invoices', id, patch, { businessType })
         return { ok: true }
       },
       async sendForApproval(id) {
@@ -616,10 +628,11 @@ export function useInvoices() {
             requiresApproval: true,
             submittedForApprovalBy: userId,
             submittedForApprovalAt: serverTimestamp(),
-          })
+          }, { businessType })
           await logActivity({
             workspaceId,
             userId,
+            businessType,
             ...userActivityInfo(userDoc, firebaseUser),
             action: 'Invoice sent for approval',
             module: 'Invoices',
@@ -642,7 +655,7 @@ export function useInvoices() {
           requiresApproval: false,
           approvedBy: userId,
           approvedAt: serverTimestamp(),
-        })
+        }, { businessType })
         return { ok: true }
       },
       async markInvoiceSent(id) {
@@ -651,7 +664,7 @@ export function useInvoices() {
           status: 'sent',
           sentAt: serverTimestamp(),
           sentBy: userId,
-        })
+        }, { businessType })
         return { ok: true }
       },
       async markInvoiceUnpaid(id) {
@@ -665,7 +678,7 @@ export function useInvoices() {
           paidAt: null,
           lastPaymentAt: null,
           lastPaymentDate: null,
-        })
+        }, { businessType })
         return { ok: true }
       },
       async duplicateInvoice(id) {
@@ -692,7 +705,7 @@ export function useInvoices() {
             duplicatedFrom: id,
           }
           delete payload.id
-          await createUserDoc(workspaceId, 'invoices', payload)
+          await createUserDoc(workspaceId, 'invoices', payload, { businessType })
           return { ok: true }
         } catch (e) {
           return { ok: false, error: clientSafeMessage(e, 'Unable to duplicate invoice.') }
@@ -705,7 +718,7 @@ export function useInvoices() {
         return { ok: true }
       },
     }),
-    [invoices, payments, loading, source, error, stats, canApprovePayments, permissions, firebaseUser, userDoc, userId, workspaceId],
+    [invoices, payments, loading, source, error, stats, canApprovePayments, permissions, businessType, firebaseUser, userDoc, userId, workspaceId],
   )
 
   return api

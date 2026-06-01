@@ -21,7 +21,7 @@ function normalizeCustomer(c) {
 }
 
 export function useCustomers() {
-  const { userId, workspaceId, userDoc, firebaseUser } = useUser()
+  const { userId, workspaceId, businessType, userDoc, firebaseUser } = useUser()
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
   const [source, setSource] = useState(db ? 'firestore' : 'none')
@@ -63,9 +63,10 @@ export function useCustomers() {
         setRows([])
         setLoading(false)
       },
+      { businessType },
     )
     return () => unsub?.()
-  }, [workspaceId])
+  }, [businessType, workspaceId])
 
   const api = useMemo(
     () => ({
@@ -95,10 +96,11 @@ export function useCustomers() {
             status: status || 'Active',
             notes,
             createdBy: userId,
-          })
+          }, { businessType })
           await logActivity({
             workspaceId,
             userId,
+            businessType,
             ...userActivityInfo(userDoc, firebaseUser),
             action: 'Customer created',
             module: 'Customers',
@@ -113,7 +115,7 @@ export function useCustomers() {
         }
       },
     }),
-    [rows, loading, source, error, firebaseUser, userDoc, userId, workspaceId],
+    [rows, loading, source, error, businessType, firebaseUser, userDoc, userId, workspaceId],
   )
 
   return api

@@ -20,7 +20,7 @@ function emptyPermissions() {
 }
 
 export function useWorkspaceAccess() {
-  const { userId, workspaceId, staffId, role, isAdmin, isOwner, isStaff, isAccountant, isManager } = useUser()
+  const { userId, workspaceId, businessType, staffId, role, isAdmin, isOwner, isStaff, isAccountant, isManager } = useUser()
   const [permissions, setPermissions] = useState(() => emptyPermissions())
   const [loading, setLoading] = useState(true)
 
@@ -63,6 +63,7 @@ export function useWorkspaceAccess() {
       role,
       userId,
       workspaceId,
+      businessType,
       staffId,
       isOwner,
       isAdmin,
@@ -79,6 +80,6 @@ export function useWorkspaceAccess() {
         return isAdmin || Boolean(permissions[key])
       },
     }),
-    [isAccountant, isAdmin, isManager, isOwner, isStaff, loading, permissions, role, staffId, userId, workspaceId],
+    [businessType, isAccountant, isAdmin, isManager, isOwner, isStaff, loading, permissions, role, staffId, userId, workspaceId],
   )
 }

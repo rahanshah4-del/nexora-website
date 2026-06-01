@@ -18,7 +18,7 @@ import { clientSafeMessage } from '../utils/messages.js'
 
 export default function LeadsPage() {
   const scoring = useLeadScoring()
-  const { userId, workspaceId } = useUser()
+  const { userId, workspaceId, businessType } = useUser()
   const [createOpen, setCreateOpen] = useState(false)
   const [toast, setToast] = useState(null)
 
@@ -119,7 +119,7 @@ export default function LeadsPage() {
               paymentHistory: 0,
               activityFrequency: 50,
               lastContactDate: new Date().toISOString().slice(0, 10),
-            })
+            }, { businessType })
             setToast({ tone: 'success', message: 'Lead created successfully' })
             window.setTimeout(() => setToast(null), 1600)
             setCreateOpen(false)

@@ -131,8 +131,8 @@ function Brand({ collapsed, workspaceName, businessTitle }) {
 }
 
 function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollapse, onSwitchProduct }) {
-  const { accessPlan, userDoc, userId } = useUser()
-  const businessWorkspace = businessWorkspaceForType(userDoc?.businessType)
+  const { accessPlan, businessType, userDoc, userId } = useUser()
+  const businessWorkspace = businessWorkspaceForType(businessType)
   const workspaceName = useMemo(
     () =>
       resolveWorkspaceName({
@@ -148,14 +148,14 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
         enabledModules: userDoc?.enabledModules,
         onboardingCompleted: userDoc?.onboardingCompleted,
         plan: accessPlan,
-        businessType: userDoc?.businessType,
+        businessType,
       }).map((module) => module.route),
     )
     return selectedModulesForSidebar({
       enabledModules: userDoc?.enabledModules,
       onboardingCompleted: userDoc?.onboardingCompleted,
       plan: accessPlan,
-      businessType: userDoc?.businessType,
+      businessType,
     }).map((module) => {
       const navItem = orderedSidebarItems.find((item) => item.to === module.route)
       return {
@@ -165,7 +165,7 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
         comingSoon: module.comingSoon,
       }
     }).filter((item) => allowedRoutes.has(item.to) || item.comingSoon)
-  }, [accessPlan, userDoc?.businessType, userDoc?.enabledModules, userDoc?.onboardingCompleted])
+  }, [accessPlan, businessType, userDoc?.enabledModules, userDoc?.onboardingCompleted])
 
   const handleSwitchProduct = useCallback(() => {
     onNavigate?.()

@@ -22,7 +22,7 @@ function normalizeTicket(t) {
 }
 
 export function useSupportTickets() {
-  const { workspaceId } = useUser()
+  const { workspaceId, businessType } = useUser()
   const [tickets, setTickets] = useState([])
   const [loading, setLoading] = useState(true)
   const [source, setSource] = useState(db ? 'firestore' : 'none')
@@ -65,10 +65,11 @@ export function useSupportTickets() {
         setSource('firestore')
         setLoading(false)
       },
+      { businessType },
     )
 
     return () => unsub?.()
-  }, [workspaceId])
+  }, [businessType, workspaceId])
 
   const stats = useMemo(() => {
     const byStatus = tickets.reduce((acc, t) => {
@@ -118,7 +119,7 @@ export function useSupportTickets() {
             priority: ticket.priority || 'Medium',
             assignedTo: ticket.assignedTo || 'Unassigned',
             comments: ticket.comments || [],
-          })
+          }, { businessType })
           return { ok: true }
         } catch (e) {
           return { ok: false, error: clientSafeMessage(e, 'Unable to create ticket.') }
@@ -127,7 +128,7 @@ export function useSupportTickets() {
       async updateTicket(id, patch) {
         setTickets((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch, updatedAt: new Date().toISOString().slice(0, 10) } : t)))
         if (!db || !workspaceId || source !== 'firestore') return
-        await patchUserDoc(workspaceId, 'supportTickets', id, patch)
+        await patchUserDoc(workspaceId, 'supportTickets', id, patch, { businessType })
       },
       async addComment(id, comment) {
         const createdAt = new Date().toISOString().slice(0, 10)
@@ -141,10 +142,10 @@ export function useSupportTickets() {
         if (!db || !workspaceId || source !== 'firestore') return
         const current = tickets.find((t) => t.id === id)
         const next = [...(current?.comments || []), { id: `c_${Date.now()}`, ...comment, createdAt }]
-        await patchUserDoc(workspaceId, 'supportTickets', id, { comments: next })
+        await patchUserDoc(workspaceId, 'supportTickets', id, { comments: next }, { businessType })
       },
     }),
-    [tickets, loading, source, error, stats, workspaceId],
+    [tickets, loading, source, error, stats, businessType, workspaceId],
   )
 
   return api

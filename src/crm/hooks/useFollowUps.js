@@ -5,7 +5,7 @@ import { useUser } from './useUser.js'
 import { clientSafeMessage } from '../utils/messages.js'
 
 export function useFollowUps() {
-  const { userId, workspaceId } = useUser()
+  const { userId, workspaceId, businessType } = useUser()
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
   const [source, setSource] = useState(db ? 'firestore' : 'none')
@@ -46,9 +46,10 @@ export function useFollowUps() {
         setSource('firestore')
         setLoading(false)
       },
+      { businessType },
     )
     return () => unsub()
-  }, [workspaceId])
+  }, [businessType, workspaceId])
 
   const grouped = useMemo(() => {
     const buckets = { Today: [], Upcoming: [], Overdue: [], Completed: [] }
@@ -83,7 +84,7 @@ export function useFollowUps() {
         if (!clean.dueDate) return { ok: false, error: 'Due date is required' }
 
         try {
-          await createUserDoc(workspaceId, 'tasks', { ...clean, createdBy: userId })
+          await createUserDoc(workspaceId, 'tasks', { ...clean, createdBy: userId }, { businessType })
           return { ok: true }
         } catch (e) {
           return { ok: false, error: clientSafeMessage(e, 'Unable to create follow-up.') }
@@ -107,7 +108,7 @@ export function useFollowUps() {
         if (!clean.dueDate) return { ok: false, error: 'Due date is required' }
 
         try {
-          await patchUserDoc(workspaceId, 'tasks', id, clean)
+          await patchUserDoc(workspaceId, 'tasks', id, clean, { businessType })
           return { ok: true }
         } catch (e) {
           return { ok: false, error: clientSafeMessage(e, 'Unable to update follow-up.') }
@@ -125,7 +126,7 @@ export function useFollowUps() {
         }
       },
     }),
-    [rows, grouped, loading, source, error, userId, workspaceId],
+    [rows, grouped, loading, source, error, businessType, userId, workspaceId],
   )
 
   return api

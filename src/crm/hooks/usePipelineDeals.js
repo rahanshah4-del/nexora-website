@@ -5,7 +5,7 @@ import { useUser } from './useUser.js'
 import { clientSafeMessage } from '../utils/messages.js'
 
 export function usePipelineDeals() {
-  const { workspaceId } = useUser()
+  const { workspaceId, businessType } = useUser()
   const [deals, setDeals] = useState([])
   const [source, setSource] = useState(db ? 'firestore' : 'none')
   const [loading, setLoading] = useState(true)
@@ -45,9 +45,10 @@ export function usePipelineDeals() {
         setSource('firestore')
         setLoading(false)
       },
+      { businessType },
     )
     return () => unsub()
-  }, [workspaceId])
+  }, [businessType, workspaceId])
 
   const api = useMemo(
     () => ({
@@ -58,12 +59,12 @@ export function usePipelineDeals() {
       async moveDeal(id, stage) {
         setDeals((arr) => arr.map((d) => (d.id === id ? { ...d, stage } : d)))
         if (!db || !workspaceId) return
-        await patchUserDoc(workspaceId, 'pipelines', id, { stage })
+        await patchUserDoc(workspaceId, 'pipelines', id, { stage }, { businessType })
       },
       async saveDeal(deal) {
         setDeals((arr) => arr.map((d) => (d.id === deal.id ? deal : d)))
         if (!db || !workspaceId) return
-        await patchUserDoc(workspaceId, 'pipelines', deal.id, deal)
+        await patchUserDoc(workspaceId, 'pipelines', deal.id, deal, { businessType })
       },
       async deleteDeal(deal) {
         setDeals((arr) => arr.filter((d) => d.id !== deal.id))
@@ -78,14 +79,14 @@ export function usePipelineDeals() {
         if (!title) return { ok: false, error: 'Deal title is required' }
         if (!customerName) return { ok: false, error: 'Customer name is required' }
         try {
-          await createUserDoc(workspaceId, 'pipelines', { ...payload, title, customerName })
+          await createUserDoc(workspaceId, 'pipelines', { ...payload, title, customerName }, { businessType })
           return { ok: true }
         } catch (e) {
           return { ok: false, error: clientSafeMessage(e, 'Unable to create deal.') }
         }
       },
     }),
-    [deals, source, loading, error, workspaceId],
+    [businessType, deals, source, loading, error, workspaceId],
   )
 
   return api

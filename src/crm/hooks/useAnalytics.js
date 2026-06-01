@@ -76,7 +76,7 @@ function isConvertedLead(lead) {
 }
 
 export function useAnalytics({ dateRange = '30d' } = {}) {
-  const { workspaceId } = useUser()
+  const { workspaceId, businessType } = useUser()
   const [loading, setLoading] = useState(true)
   const [source, setSource] = useState(db ? 'firestore' : 'none')
   const [error, setError] = useState('')
@@ -114,14 +114,15 @@ export function useAnalytics({ dateRange = '30d' } = {}) {
 
     Promise.resolve().then(() => setLoading(true))
     const unsubs = []
+    const scope = { businessType }
     unsubs.push(
-      subscribeUserCollection(workspaceId, 'invoices', (d) => setInvoices(d), (e) => setError(clientSafeMessage(e, 'Unable to load invoices.'))),
+      subscribeUserCollection(workspaceId, 'invoices', (d) => setInvoices(d), (e) => setError(clientSafeMessage(e, 'Unable to load invoices.')), scope),
     )
-    unsubs.push(subscribeUserCollection(workspaceId, 'payments', (d) => setPayments(d)))
-    unsubs.push(subscribeUserCollection(workspaceId, 'customers', (d) => setCustomers(d)))
-    unsubs.push(subscribeUserCollection(workspaceId, 'expenses', (d) => setExpenses(d)))
-    unsubs.push(subscribeUserCollection(workspaceId, 'leads', (d) => setLeads(d)))
-    unsubs.push(subscribeUserCollection(workspaceId, 'teamMembers', (d) => setTeam(d)))
+    unsubs.push(subscribeUserCollection(workspaceId, 'payments', (d) => setPayments(d), undefined, scope))
+    unsubs.push(subscribeUserCollection(workspaceId, 'customers', (d) => setCustomers(d), undefined, scope))
+    unsubs.push(subscribeUserCollection(workspaceId, 'expenses', (d) => setExpenses(d), undefined, scope))
+    unsubs.push(subscribeUserCollection(workspaceId, 'leads', (d) => setLeads(d), undefined, scope))
+    unsubs.push(subscribeUserCollection(workspaceId, 'teamMembers', (d) => setTeam(d), undefined, scope))
 
     // Date-range filtering stays client-side for the current dashboard view.
     Promise.resolve().then(() => {
@@ -129,7 +130,7 @@ export function useAnalytics({ dateRange = '30d' } = {}) {
       setSource('firestore')
     })
     return () => unsubs.forEach((u) => u?.())
-  }, [workspaceId])
+  }, [businessType, workspaceId])
 
   const computed = useMemo(() => {
     const pendingInvoices = invoices.filter((i) => getInvoiceStatus(i) === 'pending').length

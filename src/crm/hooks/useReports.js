@@ -71,7 +71,7 @@ function isActiveSub(s) {
 
 export function useReports() {
   const access = useWorkspaceAccess()
-  const { userId, workspaceId } = access
+  const { userId, workspaceId, businessType } = access
   const canReadReports = access.isAdmin || access.hasPermission('reports')
   const [data, setData] = useState(() =>
     Object.fromEntries(COLLECTIONS.map((k) => [k, []])),
@@ -141,6 +141,7 @@ export function useReports() {
           loaded.add(path)
           if (loaded.size === COLLECTIONS.length) setLoading(false)
         },
+        { businessType },
       ),
     )
     const ownedUnsubs = OWNED_COLLECTIONS.map(({ path, field }) =>
@@ -166,7 +167,7 @@ export function useReports() {
     return () => {
       unsubs.forEach((u) => u?.())
     }
-  }, [access.loading, canReadReports, userId, workspaceId])
+  }, [access.loading, businessType, canReadReports, userId, workspaceId])
 
   const computed = useMemo(() => {
     const leads = data.leads

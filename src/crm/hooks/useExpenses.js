@@ -29,7 +29,7 @@ function normalizeExpense(expense) {
 }
 
 export function useExpenses() {
-  const { userId, workspaceId, userDoc, firebaseUser } = useUser()
+  const { userId, workspaceId, businessType, userDoc, firebaseUser } = useUser()
   const [expenses, setExpenses] = useState([])
   const [loading, setLoading] = useState(true)
   const [source, setSource] = useState(db ? 'firestore' : 'none')
@@ -73,10 +73,11 @@ export function useExpenses() {
         setExpenses([])
         setLoading(false)
       },
+      { businessType },
     )
 
     return () => unsub?.()
-  }, [workspaceId])
+  }, [businessType, workspaceId])
 
   return useMemo(
     () => ({
@@ -106,10 +107,11 @@ export function useExpenses() {
             notes: String(payload.notes || '').trim(),
             receiptReference: String(payload.receiptReference || '').trim(),
             createdBy: userId,
-          })
+          }, { businessType })
           await logActivity({
             workspaceId,
             userId,
+            businessType,
             ...userActivityInfo(userDoc, firebaseUser),
             action: 'Expense created',
             module: 'Expenses',
@@ -141,10 +143,11 @@ export function useExpenses() {
             paidBy: String(payload.paidBy || '').trim(),
             notes: String(payload.notes || '').trim(),
             receiptReference: String(payload.receiptReference || '').trim(),
-          })
+          }, { businessType })
           await logActivity({
             workspaceId,
             userId,
+            businessType,
             ...userActivityInfo(userDoc, firebaseUser),
             action: 'Expense updated',
             module: 'Expenses',
@@ -167,6 +170,7 @@ export function useExpenses() {
           await logActivity({
             workspaceId,
             userId,
+            businessType,
             ...userActivityInfo(userDoc, firebaseUser),
             action: 'Expense deleted',
             module: 'Expenses',
@@ -181,6 +185,6 @@ export function useExpenses() {
         }
       },
     }),
-    [expenses, loading, source, error, firebaseUser, userDoc, userId, workspaceId],
+    [expenses, loading, source, error, businessType, firebaseUser, userDoc, userId, workspaceId],
   )
 }

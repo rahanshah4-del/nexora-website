@@ -18,6 +18,7 @@ import { clientSafeMessage } from '../utils/messages.js'
 import { amountValue, calculateBalanceDue, invoiceValue, statusValue, toNumber } from '../lib/calculations.js'
 import { canApproveFinance } from '../lib/financeAccess.js'
 import { isPlatformAdminDoc } from '../../lib/roles.js'
+import { normalizeBusinessType } from '../data/moduleAccess.js'
 
 const pendingPaymentStatuses = ['pending', 'pending_verification', 'pending_partial', 'partial_pending']
 const pendingRecordStatuses = ['pending', 'pending_approval', 'requested', 'invited']
@@ -54,6 +55,12 @@ function isReviewableApproval(approval = {}) {
   const row = approval.row || {}
   const status = statusValue(row.approvalStatus || row.paymentStatus || row.status || approval.status, 'pending')
   return !['approved', 'paid', 'rejected', 'cancelled', 'canceled', 'active'].includes(status)
+}
+
+function belongsToBusiness(row, businessType) {
+  const currentBusinessType = normalizeBusinessType(businessType)
+  const rowBusinessType = row?.businessType ? normalizeBusinessType(row.businessType) : 'General CRM'
+  return rowBusinessType === currentBusinessType
 }
 
 function isPendingInvoice(row) {
@@ -159,7 +166,7 @@ function accountActionLabel(row = {}, approved = true) {
   return approved ? 'Wallet transaction approved' : 'Wallet transaction rejected'
 }
 
-function subscribeWorkspaceCollection(workspaceId, collectionName, onData, onError) {
+function subscribeWorkspaceCollection(workspaceId, collectionName, businessType, onData, onError) {
   if (!db || !workspaceId) {
     onData([])
     return () => {}
@@ -167,7 +174,7 @@ function subscribeWorkspaceCollection(workspaceId, collectionName, onData, onErr
   const ref = collection(db, workspaceCollectionPath(workspaceId, collectionName))
   return onSnapshot(
     ref,
-    (snap) => onData(snap.docs.map((item) => ({ id: item.id, ...item.data() }))),
+    (snap) => onData(snap.docs.map((item) => ({ id: item.id, ...item.data() })).filter((row) => belongsToBusiness(row, businessType))),
     (error) => onError?.(new Error(clientSafeMessage(error, 'Unable to load approvals.'))),
   )
 }
@@ -205,7 +212,7 @@ async function addInventoryAdjustments(batch, workspaceId, invoice, now) {
 }
 
 export function useApprovals() {
-  const { userId, workspaceId, role, userDoc, firebaseUser } = useUser()
+  const { userId, workspaceId, businessType, role, userDoc, firebaseUser } = useUser()
   const canApprove = canApproveFinance(userDoc?.role || role)
   const canApproveSubscription = isPlatformAdminDoc(userDoc || {})
   const [invoices, setInvoices] = useState([])
@@ -253,6 +260,7 @@ export function useApprovals() {
     const unsubInvoices = subscribeWorkspaceCollection(
       workspaceId,
       'invoices',
+      businessType,
       (rows) => {
         setInvoices(rows.filter(isPendingInvoice))
         markLoaded()
@@ -263,6 +271,7 @@ export function useApprovals() {
     const unsubPayments = subscribeWorkspaceCollection(
       workspaceId,
       'payments',
+      businessType,
       (rows) => {
         setPayments(rows.filter(isPendingPayment))
         markLoaded()
@@ -273,6 +282,7 @@ export function useApprovals() {
     const unsubTeam = subscribeWorkspaceCollection(
       workspaceId,
       'teamMembers',
+      businessType,
       (rows) => {
         setTeamMembers(rows.filter(isPendingRecord))
         markLoaded()
@@ -283,6 +293,7 @@ export function useApprovals() {
     const unsubClients = subscribeWorkspaceCollection(
       workspaceId,
       'clients',
+      businessType,
       (rows) => {
         setClients(rows.filter(isPendingRecord))
         markLoaded()
@@ -293,6 +304,7 @@ export function useApprovals() {
     const unsubExpenses = subscribeWorkspaceCollection(
       workspaceId,
       'expenses',
+      businessType,
       (rows) => {
         setExpenses(rows.filter(isPendingRecord))
         markLoaded()
@@ -303,6 +315,7 @@ export function useApprovals() {
     const unsubAccountTransactions = subscribeWorkspaceCollection(
       workspaceId,
       'accountTransactions',
+      businessType,
       (rows) => {
         setAccountTransactions(rows.filter(isPendingRecord))
         markLoaded()
@@ -337,7 +350,7 @@ export function useApprovals() {
       unsubAccountTransactions?.()
       unsubUpgrades?.()
     }
-  }, [canApprove, canApproveSubscription, userId, workspaceId])
+  }, [businessType, canApprove, canApproveSubscription, userId, workspaceId])
 
   const approvals = useMemo(() => {
     const rows = [
@@ -448,6 +461,7 @@ export function useApprovals() {
             ownerId: workspaceId,
             userId: workspaceId,
             workspaceId,
+            businessType,
             createdAt: now,
             updatedAt: now,
             metadata: {
@@ -559,6 +573,7 @@ export function useApprovals() {
         await logActivity({
           workspaceId,
           userId,
+          businessType,
           ...userActivityInfo(userDoc, firebaseUser),
           action:
             approval.sourceCollection === 'invoices'
@@ -589,6 +604,7 @@ export function useApprovals() {
           await logActivity({
             workspaceId,
             userId,
+            businessType,
             ...userActivityInfo(userDoc, firebaseUser),
             action: 'Invoice payment added to wallet',
             module: 'Account Management',
@@ -664,6 +680,7 @@ export function useApprovals() {
           ownerId: workspaceId,
           userId: workspaceId,
           workspaceId,
+          businessType,
           createdBy: userId,
           createdAt: now,
           updatedAt: now,
@@ -692,6 +709,7 @@ export function useApprovals() {
           ownerId: workspaceId,
           userId: workspaceId,
           workspaceId,
+          businessType,
           createdAt: now,
           updatedAt: now,
           metadata: {
@@ -704,6 +722,7 @@ export function useApprovals() {
         await logActivity({
           workspaceId,
           userId,
+          businessType,
           ...userActivityInfo(userDoc, firebaseUser),
           action: 'Invoice marked paid',
           module: 'Approvals',
@@ -721,6 +740,7 @@ export function useApprovals() {
         await logActivity({
           workspaceId,
           userId,
+          businessType,
           ...userActivityInfo(userDoc, firebaseUser),
           action: 'Invoice payment added to wallet',
           module: 'Account Management',
@@ -848,6 +868,7 @@ export function useApprovals() {
         await logActivity({
           workspaceId,
           userId,
+          businessType,
           ...userActivityInfo(userDoc, firebaseUser),
           action:
             approval.sourceCollection === 'invoices'

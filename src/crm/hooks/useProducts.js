@@ -60,7 +60,7 @@ function sanitizeProduct(payload) {
 }
 
 export function useProducts() {
-  const { userId, workspaceId, userDoc, firebaseUser } = useUser()
+  const { userId, workspaceId, businessType, userDoc, firebaseUser } = useUser()
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
   const [source, setSource] = useState(db ? 'firestore' : 'none')
@@ -105,10 +105,11 @@ export function useProducts() {
         setProducts([])
         setLoading(false)
       },
+      { businessType },
     )
 
     return () => unsub?.()
-  }, [workspaceId])
+  }, [businessType, workspaceId])
 
   return useMemo(
     () => ({
@@ -135,10 +136,11 @@ export function useProducts() {
               },
             ],
             createdBy: userId,
-          })
+          }, { businessType })
           await logActivity({
             workspaceId,
             userId,
+            businessType,
             ...userActivityInfo(userDoc, firebaseUser),
             action: 'Product created',
             module: 'Products',
@@ -181,10 +183,11 @@ export function useProducts() {
                   ],
                 }
               : {}),
-          })
+          }, { businessType })
           await logActivity({
             workspaceId,
             userId,
+            businessType,
             ...userActivityInfo(userDoc, firebaseUser),
             action: 'Product updated',
             module: 'Products',
@@ -208,6 +211,7 @@ export function useProducts() {
           await logActivity({
             workspaceId,
             userId,
+            businessType,
             ...userActivityInfo(userDoc, firebaseUser),
             action: 'Product deleted',
             module: 'Products',
@@ -246,10 +250,11 @@ export function useProducts() {
               },
             ],
             createdBy: userId,
-          })
+          }, { businessType })
           await logActivity({
             workspaceId,
             userId,
+            businessType,
             ...userActivityInfo(userDoc, firebaseUser),
             action: 'Product duplicated',
             module: 'Products',
@@ -272,10 +277,11 @@ export function useProducts() {
           await patchUserDoc(workspaceId, 'products', id, {
             status: 'archived',
             updatedAt: serverTimestamp(),
-          })
+          }, { businessType })
           await logActivity({
             workspaceId,
             userId,
+            businessType,
             ...userActivityInfo(userDoc, firebaseUser),
             action: 'Product archived',
             module: 'Products',
@@ -290,6 +296,6 @@ export function useProducts() {
         }
       },
     }),
-    [products, loading, source, error, firebaseUser, userDoc, userId, workspaceId],
+    [products, loading, source, error, businessType, firebaseUser, userDoc, userId, workspaceId],
   )
 }

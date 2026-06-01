@@ -7,8 +7,18 @@ import { ensureUserWorkspace } from '../../lib/accountProvisioning.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 import { normalizeFinanceRole } from '../lib/financeAccess.js'
 import { isPlatformAdminDoc } from '../../lib/roles.js'
-import { accessPlanForUser, daysUntil, isTrialExpired, normalizePlan, trialEndDate } from '../data/moduleAccess.js'
+import {
+  accessPlanForUser,
+  businessWorkspaceForSelection,
+  businessWorkspaceForType,
+  daysUntil,
+  isTrialExpired,
+  normalizeBusinessType,
+  normalizePlan,
+  trialEndDate,
+} from '../data/moduleAccess.js'
 import { ensureWorkspaceAccessFields, workspaceAccessState } from '../lib/workspaceAccess.js'
+import { readSelectedWorkspace } from '../lib/workspaceSession.js'
 
 const UserContext = createContext(null)
 
@@ -35,6 +45,7 @@ export function UserProvider({ children }) {
   const [staffAccessStatus, setStaffAccessStatus] = useState('')
   const [workspaceOwnerId, setWorkspaceOwnerId] = useState('')
   const [workspaceDoc, setWorkspaceDoc] = useState(null)
+  const [selectedBusinessWorkspace, setSelectedBusinessWorkspace] = useState(null)
   const [loading, setLoading] = useState(true)
   const provisionedUserRef = useRef('')
   const loggedLoginRef = useRef('')
@@ -139,6 +150,9 @@ export function UserProvider({ children }) {
 
   const role = normalizeRole(userDoc?.role)
   const workspaceId = userDoc?.workspaceId || user?.uid || null
+  const selectedBusiness = businessWorkspaceForSelection(selectedBusinessWorkspace || userDoc?.selectedWorkspace || userDoc?.businessType)
+  const businessType = normalizeBusinessType(selectedBusiness?.type || userDoc?.businessType)
+  const businessWorkspaceId = selectedBusiness?.id || businessWorkspaceForType(businessType).id
   const staffId = userDoc?.staffId || user?.uid || null
   const isPlatformAdmin = isPlatformAdminDoc(userDoc || {})
   const userStatus = String(userDoc?.status || '').trim().toLowerCase()
@@ -176,6 +190,25 @@ export function UserProvider({ children }) {
     return () => unsub()
   }, [loading, ready, user?.uid, workspaceId])
 
+  useEffect(() => {
+    if (!user?.uid) {
+      Promise.resolve().then(() => setSelectedBusinessWorkspace(null))
+      return undefined
+    }
+
+    const syncSelectedWorkspace = () => {
+      setSelectedBusinessWorkspace(readSelectedWorkspace(user.uid))
+    }
+
+    syncSelectedWorkspace()
+    window.addEventListener('storage', syncSelectedWorkspace)
+    window.addEventListener('nexora:selectedWorkspaceChanged', syncSelectedWorkspace)
+    return () => {
+      window.removeEventListener('storage', syncSelectedWorkspace)
+      window.removeEventListener('nexora:selectedWorkspaceChanged', syncSelectedWorkspace)
+    }
+  }, [user?.uid])
+
   const accessState = workspaceAccessState(workspaceDoc || {}, userDoc || {}, db ? 'Free' : localPlan ?? 'Free')
   const effectivePlan = normalizePlan(accessState.plan ?? (db ? 'Free' : localPlan ?? 'Free'))
   const accessPlan = accessState.accessPlan || accessPlanForUser(userDoc || {}, effectivePlan)
@@ -206,6 +239,9 @@ export function UserProvider({ children }) {
     () => ({
       userId: user?.uid ?? null,
       workspaceId,
+      businessType,
+      businessWorkspaceId,
+      selectedBusinessWorkspace: businessWorkspaceId,
       staffId,
       firebaseUser: user ?? null,
       userDoc,
@@ -231,6 +267,8 @@ export function UserProvider({ children }) {
     [
       user,
       workspaceId,
+      businessType,
+      businessWorkspaceId,
       staffId,
       userDoc,
       workspaceDoc,

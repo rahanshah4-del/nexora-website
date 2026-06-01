@@ -32,7 +32,7 @@ function normalizeLog(l) {
 }
 
 export function useActivityLogs() {
-  const { workspaceId } = useUser()
+  const { workspaceId, businessType } = useUser()
   const [logs, setLogs] = useState([])
   const [loading, setLoading] = useState(true)
   const [source, setSource] = useState(db ? 'firestore' : 'none')
@@ -80,10 +80,11 @@ export function useActivityLogs() {
         setSource('firestore')
         setLoading(false)
       },
+      { businessType },
     )
 
     return () => unsub?.()
-  }, [workspaceId])
+  }, [businessType, workspaceId])
 
   const api = useMemo(
     () => ({

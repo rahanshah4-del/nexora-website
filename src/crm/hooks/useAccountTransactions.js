@@ -52,7 +52,7 @@ function actionLabel(type, approved = false) {
 }
 
 export function useAccountTransactions() {
-  const { userId, workspaceId, role, userDoc, firebaseUser } = useUser()
+  const { userId, workspaceId, businessType, role, userDoc, firebaseUser } = useUser()
   const permissions = useMemo(() => financePermissions(userDoc?.role || role), [role, userDoc?.role])
   const canApprove = permissions.canApproveStandard
   const [transactions, setTransactions] = useState([])
@@ -103,10 +103,11 @@ export function useAccountTransactions() {
         setTransactions([])
         setLoading(false)
       },
+      { businessType },
     )
 
     return () => unsub?.()
-  }, [workspaceId])
+  }, [businessType, workspaceId])
 
   const createTransaction = useCallback(
     async (payload = {}) => {
@@ -162,10 +163,11 @@ export function useAccountTransactions() {
             createdByRole: permissions.role,
           },
           createdBy: userId,
-        })
+        }, { businessType })
         await logActivity({
           workspaceId,
           userId,
+          businessType,
           ...userActivityInfo(userDoc, firebaseUser),
           action: actionLabel(type),
           module: 'Account Management',
@@ -185,7 +187,7 @@ export function useAccountTransactions() {
         return { ok: false, error: clientSafeMessage(err, 'Unable to save transaction.') }
       }
     },
-    [firebaseUser, permissions, transactions, userDoc, userId, workspaceId],
+    [businessType, firebaseUser, permissions, transactions, userDoc, userId, workspaceId],
   )
 
   const approveTransaction = useCallback(
@@ -200,10 +202,11 @@ export function useAccountTransactions() {
           approvedBy: userId,
           approvedAt: serverTimestamp(),
           requiresApproval: false,
-        })
+        }, { businessType })
         await logActivity({
           workspaceId,
           userId,
+          businessType,
           ...userActivityInfo(userDoc, firebaseUser),
           action: actionLabel(transaction.type, true),
           module: 'Account Management',
@@ -223,7 +226,7 @@ export function useAccountTransactions() {
         return { ok: false, error: clientSafeMessage(err, 'Unable to approve transaction.') }
       }
     },
-    [canApprove, firebaseUser, userDoc, userId, workspaceId],
+    [businessType, canApprove, firebaseUser, userDoc, userId, workspaceId],
   )
 
   const rejectTransaction = useCallback(
@@ -238,10 +241,11 @@ export function useAccountTransactions() {
           rejectedBy: userId,
           rejectedAt: serverTimestamp(),
           requiresApproval: false,
-        })
+        }, { businessType })
         await logActivity({
           workspaceId,
           userId,
+          businessType,
           ...userActivityInfo(userDoc, firebaseUser),
           action: 'Wallet transaction rejected',
           module: 'Account Management',
@@ -261,7 +265,7 @@ export function useAccountTransactions() {
         return { ok: false, error: clientSafeMessage(err, 'Unable to reject transaction.') }
       }
     },
-    [canApprove, firebaseUser, userDoc, userId, workspaceId],
+    [businessType, canApprove, firebaseUser, userDoc, userId, workspaceId],
   )
 
   const deleteTransaction = useCallback(
@@ -273,6 +277,7 @@ export function useAccountTransactions() {
         await logActivity({
           workspaceId,
           userId,
+          businessType,
           ...userActivityInfo(userDoc, firebaseUser),
           action: 'Wallet transaction deleted',
           module: 'Account Management',
