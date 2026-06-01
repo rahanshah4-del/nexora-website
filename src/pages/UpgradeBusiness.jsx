@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
+import { addDoc, collection, doc, getDoc, serverTimestamp } from 'firebase/firestore'
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage'
 import { onAuthStateChanged } from 'firebase/auth'
 import useNoIndex from '../hooks/useNoIndex.js'
@@ -218,6 +218,7 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
   useNoIndex(true)
 
   const [user, setUser] = useState(null)
+  const [accountWorkspaceId, setAccountWorkspaceId] = useState('')
   const [authReady, setAuthReady] = useState(() => !auth)
 
   const [yearly, setYearly] = useState(false)
@@ -238,6 +239,24 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
     return () => unsubscribe()
   }, [])
 
+  useEffect(() => {
+    let cancelled = false
+    async function loadWorkspaceId() {
+      if (!db || !user?.uid) {
+        if (!cancelled) setAccountWorkspaceId('')
+        return
+      }
+      const snap = await getDoc(doc(db, 'users', user.uid))
+      if (!cancelled) setAccountWorkspaceId(snap.exists() ? String(snap.data()?.workspaceId || '') : '')
+    }
+    loadWorkspaceId().catch(() => {
+      if (!cancelled) setAccountWorkspaceId('')
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [user?.uid])
+
   const previewUrl = useMemo(() => (screenshotFile ? URL.createObjectURL(screenshotFile) : ''), [screenshotFile])
   useEffect(() => {
     if (!previewUrl) return undefined
@@ -255,6 +274,7 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
   const readableEmail = user?.email ?? ''
   const readableName = user?.displayName ?? user?.email?.split('@')?.[0] ?? ''
   const userId = user?.uid ?? null
+  const workspaceId = accountWorkspaceId || userId || ''
 
   const headerSubtitle = useMemo(() => {
     return 'Unlock the Standard package with all Basic features, School OR Property ERP, up to 5 users, 20GB storage, and priority support.'
@@ -267,7 +287,7 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
 
   const handleSubmit = async () => {
     setSubmitError('')
-    if (!userId) {
+    if (!userId || !workspaceId) {
       setSubmitError('Please login to submit an upgrade request.')
       return
     }
@@ -292,7 +312,7 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
       await addDoc(collection(db, 'upgradeRequests'), {
         userId,
         ownerId: userId,
-        workspaceId: userId,
+        workspaceId,
         createdBy: userId,
         userName: readableName,
         email: readableEmail,
