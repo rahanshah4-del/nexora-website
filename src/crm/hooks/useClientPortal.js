@@ -282,6 +282,7 @@ export function useClientPortal() {
           nextBillingDate: '—',
           seats: 1,
         }),
+      { businessType },
     )
 
     const unsubActivity = subscribeUserCollection(
@@ -451,6 +452,7 @@ export function useClientPortal() {
             status: fullyPaid ? 'paid' : 'partial',
             paymentStatus: fullyPaid ? 'paid' : 'partial',
             approvalStatus: fullyPaid ? 'approved' : invoice.approvalStatus || 'pending',
+            businessType,
             requiresApproval: fullyPaid ? false : invoice.requiresApproval ?? true,
             paidAt: fullyPaid ? now : invoice.paidAt || null,
             approvedBy: userId,

@@ -41,6 +41,7 @@ import {
   normalizeBusinessType,
   packageNameForPlan,
 } from '../../crm/data/moduleAccess.js'
+import { saveSelectedWorkspace } from '../../crm/lib/workspaceSession.js'
 import { clientSafeMessage, reportTechnicalError } from '../../lib/errorHandler.js'
 
 const workspaceIconMap = {
@@ -63,7 +64,7 @@ const moduleAccess = businessWorkspaceCatalog.map((workspace) => ({
 const workspaces = businessWorkspaceCatalog.map((workspace) => ({
   ...workspace,
   name: workspace.title,
-  id: workspace.id.toUpperCase(),
+  displayId: workspace.id.toUpperCase(),
   plan: 'Current Package',
   planTone: 'bg-blue-50 text-blue-700',
   status: 'Available',
@@ -815,7 +816,7 @@ export default function WorkspaceSelection() {
           ? {
               ...workspace,
               name: workspace.title,
-              id: profile.workspaceId || workspace.id,
+              workspaceRecordId: profile.workspaceId,
               plan: profile.planLabel,
               trialLabel: profile.trialShortLabel,
               trialExpired: profile.trialExpired,
@@ -1011,10 +1012,13 @@ export default function WorkspaceSelection() {
       ...(current || {}),
       workspaceId,
       businessType,
+      selectedBusinessType: businessType,
+      selectedWorkspace: workspace.id,
       enabledModules,
       selectedFeatures,
       onboardingCompleted: true,
     }))
+    saveSelectedWorkspace(uid, workspace.id)
 
     try {
       if (!db) {

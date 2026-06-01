@@ -122,6 +122,7 @@ export async function persistWorkspaceSession(session) {
   const uid = session.userId
   const sessionId = session.sessionId || getSessionId(uid)
   const selectedWorkspace = isValidWorkspace(session.selectedWorkspace) ? session.selectedWorkspace : businessWorkspaceCatalog[0].id
+  const businessType = businessWorkspaceForSelection(selectedWorkspace)?.type || businessWorkspaceCatalog[0].type
   const workspaceId = session.workspaceId || uid
   const ownerId = session.ownerId || workspaceId
   const payload = {
@@ -132,6 +133,8 @@ export async function persistWorkspaceSession(session) {
     loginTime: session.loginTime || session.sessionStartTime,
     lastLogin: session.lastLogin || session.loginTime || session.sessionStartTime,
     selectedWorkspace,
+    businessType,
+    selectedBusinessType: businessType,
     sessionStartTime: session.sessionStartTime,
     planType: session.planType || 'Free',
     trialStatus: session.trialStatus || 'trial',
@@ -155,6 +158,8 @@ export async function persistWorkspaceSession(session) {
         userId: workspaceId,
         workspaceId,
         selectedWorkspace,
+        businessType,
+        selectedBusinessType: businessType,
         currentSessionId: sessionId,
         sessionStartTime: session.sessionStartTime,
         planType: payload.planType,
@@ -167,6 +172,8 @@ export async function persistWorkspaceSession(session) {
       doc(db, 'users', uid),
       {
         selectedWorkspace,
+        businessType,
+        selectedBusinessType: businessType,
         lastLogin: payload.lastLogin,
         updatedAt: serverTimestamp(),
       },

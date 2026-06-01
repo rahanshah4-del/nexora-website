@@ -297,7 +297,7 @@ export function useAccountTransactions() {
         return { ok: false, error: clientSafeMessage(err, 'Unable to delete transaction.') }
       }
     },
-    [firebaseUser, permissions.canDeleteTransactions, userDoc, userId, workspaceId],
+    [businessType, firebaseUser, permissions.canDeleteTransactions, userDoc, userId, workspaceId],
   )
 
   return useMemo(

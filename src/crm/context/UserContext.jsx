@@ -150,8 +150,10 @@ export function UserProvider({ children }) {
 
   const role = normalizeRole(userDoc?.role)
   const workspaceId = userDoc?.workspaceId || user?.uid || null
-  const selectedBusiness = businessWorkspaceForSelection(selectedBusinessWorkspace || userDoc?.selectedWorkspace || userDoc?.businessType)
-  const businessType = normalizeBusinessType(selectedBusiness?.type || userDoc?.businessType)
+  const selectedBusiness = businessWorkspaceForSelection(
+    selectedBusinessWorkspace || userDoc?.selectedWorkspace || userDoc?.selectedBusinessType || userDoc?.businessType,
+  )
+  const businessType = normalizeBusinessType(selectedBusiness?.type || userDoc?.selectedBusinessType || userDoc?.businessType)
   const businessWorkspaceId = selectedBusiness?.id || businessWorkspaceForType(businessType).id
   const staffId = userDoc?.staffId || user?.uid || null
   const isPlatformAdmin = isPlatformAdminDoc(userDoc || {})

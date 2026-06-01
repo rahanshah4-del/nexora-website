@@ -57,7 +57,7 @@ function Toast({ message, onClose }) {
 function TopNav({ onOpenSidebar, onSwitchProduct }) {
   const { notifications, profile } = usePreferences()
   const { logout, busy } = useAuth()
-  const { firebaseUser, userDoc, plan, role, isTrialActive, isTrialExpired, trialDaysRemaining, trialEndsAt } = useUser()
+  const { firebaseUser, userDoc, plan, role, businessType, isTrialActive, isTrialExpired, trialDaysRemaining, trialEndsAt } = useUser()
   const navigate = useNavigate()
   const [toast, setToast] = useState(null)
   const profileSummary = useMemo(
@@ -133,6 +133,13 @@ function TopNav({ onOpenSidebar, onSwitchProduct }) {
               <OfflineStatus />
               <BranchSwitcher />
             </div>
+            <Badge
+              variant="info"
+              className="hidden h-9 max-w-[18rem] shrink-0 items-center truncate px-3 font-semibold lg:inline-flex"
+              title={`Current Business: ${businessType}`}
+            >
+              <span className="truncate">Current Business: {businessType}</span>
+            </Badge>
             <Badge
               variant={isTrialExpired ? 'danger' : isTrialActive ? 'warning' : 'success'}
               className="hidden h-9 max-w-[16rem] shrink-0 items-center truncate px-3 font-semibold lg:inline-flex"

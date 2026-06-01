@@ -396,6 +396,7 @@ export function useApprovals() {
           const invoiceRef = doc(db, workspaceCollectionPath(workspaceId, 'invoices'), approval.sourceId)
           batch.update(invoiceRef, {
             approvalStatus: 'approved',
+            businessType,
             approvedBy: userId,
             approvedAt: now,
             updatedAt: now,
@@ -409,6 +410,7 @@ export function useApprovals() {
           batch.update(paymentRef, {
             status: 'paid',
             paymentStatus: 'paid',
+            businessType,
             approvedBy: userId,
             approvedAt: now,
             paidAt: now,
@@ -427,6 +429,7 @@ export function useApprovals() {
                 status: 'paid',
                 paymentStatus: 'paid',
                 approvalStatus: 'approved',
+                businessType,
                 requiresApproval: false,
                 approvedBy: userId,
                 approvedAt: now,
@@ -516,6 +519,7 @@ export function useApprovals() {
           const patch = {
             status: 'active',
             approvalStatus: 'approved',
+            businessType,
             approvedBy: userId,
             approvedAt: now,
             updatedAt: now,
@@ -527,6 +531,7 @@ export function useApprovals() {
           batch.update(doc(db, workspaceCollectionPath(workspaceId, 'clients'), approval.sourceId), {
             status: 'Active',
             approvalStatus: 'approved',
+            businessType,
             approvedBy: userId,
             approvedAt: now,
             updatedAt: now,
@@ -537,6 +542,7 @@ export function useApprovals() {
           batch.update(doc(db, workspaceCollectionPath(workspaceId, 'expenses'), approval.sourceId), {
             approvalStatus: 'approved',
             status: 'approved',
+            businessType,
             approvedBy: userId,
             approvedAt: now,
             updatedAt: now,
@@ -548,6 +554,7 @@ export function useApprovals() {
           batch.update(doc(db, workspaceCollectionPath(workspaceId, 'accountTransactions'), approval.sourceId), {
             approvalStatus: 'approved',
             status: 'approved',
+            businessType,
             requiresApproval: false,
             approvedBy: userId,
             approvedAt: now,
@@ -559,6 +566,7 @@ export function useApprovals() {
               {
                 approvalStatus: 'approved',
                 status: 'paid',
+                businessType,
                 approvedBy: userId,
                 approvedAt: now,
                 paidAt: now,
@@ -626,7 +634,7 @@ export function useApprovals() {
         return { ok: false, error: clientSafeMessage(err, 'Unable to approve request.') }
       }
     },
-    [canApprove, canApproveSubscription, firebaseUser, userDoc, userId, workspaceId],
+    [businessType, canApprove, canApproveSubscription, firebaseUser, userDoc, userId, workspaceId],
   )
 
   const markPaid = useCallback(
@@ -649,6 +657,7 @@ export function useApprovals() {
           status: 'paid',
           paymentStatus: 'paid',
           approvalStatus: 'approved',
+          businessType,
           requiresApproval: false,
           amountPaid: invoiceTotal,
           partialPaidAmount: invoiceTotal,
@@ -760,7 +769,7 @@ export function useApprovals() {
         return { ok: false, error: clientSafeMessage(err, 'Unable to mark invoice as paid.') }
       }
     },
-    [canApprove, firebaseUser, userDoc, userId, workspaceId],
+    [businessType, canApprove, firebaseUser, userDoc, userId, workspaceId],
   )
 
   const reject = useCallback(
@@ -781,6 +790,7 @@ export function useApprovals() {
             approvalStatus: 'rejected',
             status: 'rejected',
             paymentStatus: 'rejected',
+            businessType,
             requiresApproval: false,
             rejectedBy: userId,
             rejectedAt: now,
@@ -792,6 +802,7 @@ export function useApprovals() {
           batch.update(doc(db, workspaceCollectionPath(workspaceId, 'payments'), approval.sourceId), {
             status: 'rejected',
             paymentStatus: 'rejected',
+            businessType,
             rejectedBy: userId,
             rejectedAt: now,
             updatedAt: now,
@@ -804,6 +815,7 @@ export function useApprovals() {
                 status: 'rejected',
                 paymentStatus: 'rejected',
                 approvalStatus: 'rejected',
+                businessType,
                 requiresApproval: false,
                 rejectedBy: userId,
                 rejectedAt: now,
@@ -826,6 +838,7 @@ export function useApprovals() {
           const patch = {
             status: 'rejected',
             approvalStatus: 'rejected',
+            businessType,
             rejectedBy: userId,
             rejectedAt: now,
             updatedAt: now,
@@ -837,6 +850,7 @@ export function useApprovals() {
           batch.update(doc(db, workspaceCollectionPath(workspaceId, 'clients'), approval.sourceId), {
             status: 'rejected',
             approvalStatus: 'rejected',
+            businessType,
             rejectedBy: userId,
             rejectedAt: now,
             updatedAt: now,
@@ -847,6 +861,7 @@ export function useApprovals() {
           batch.update(doc(db, workspaceCollectionPath(workspaceId, 'expenses'), approval.sourceId), {
             approvalStatus: 'rejected',
             status: 'rejected',
+            businessType,
             rejectedBy: userId,
             rejectedAt: now,
             updatedAt: now,
@@ -857,6 +872,7 @@ export function useApprovals() {
           batch.update(doc(db, workspaceCollectionPath(workspaceId, 'accountTransactions'), approval.sourceId), {
             approvalStatus: 'rejected',
             status: 'rejected',
+            businessType,
             requiresApproval: false,
             rejectedBy: userId,
             rejectedAt: now,
@@ -898,7 +914,7 @@ export function useApprovals() {
         return { ok: false, error: clientSafeMessage(err, 'Unable to reject request.') }
       }
     },
-    [canApprove, canApproveSubscription, firebaseUser, userDoc, userId, workspaceId],
+    [businessType, canApprove, canApproveSubscription, firebaseUser, userDoc, userId, workspaceId],
   )
 
   return useMemo(

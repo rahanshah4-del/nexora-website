@@ -59,7 +59,7 @@ export function subscribeCollection(path, onData, onError) {
 
 export function subscribeUserCollection(userId, path, onData, onError, options = {}) {
   const ref = userId ? collectionRef(workspaceCollectionPath(userId, path)) : null
-  const businessType = options?.businessType
+  const businessType = normalizeBusinessType(options?.businessType)
   if (!ref) {
     onData([])
     return () => {}
@@ -71,7 +71,7 @@ export function subscribeUserCollection(userId, path, onData, onError, options =
         snap.docs
           .map((d) => ({ id: d.id, ...d.data() }))
           .filter((row) => belongsToWorkspace(row, userId))
-          .filter((row) => (businessType ? belongsToBusiness(row, businessType) : true))
+          .filter((row) => belongsToBusiness(row, businessType))
           .map((row) => withWorkspaceFallback(row.id, row, userId)),
       ),
     (err) => onError?.(safeError(err, 'Unable to load account data.')),
