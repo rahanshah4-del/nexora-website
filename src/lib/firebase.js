@@ -14,19 +14,13 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 }
 
-const hasFirebaseConfig = Boolean(
-  firebaseConfig.apiKey &&
-    firebaseConfig.authDomain &&
-    firebaseConfig.projectId &&
-    firebaseConfig.storageBucket &&
-    firebaseConfig.messagingSenderId &&
-    firebaseConfig.appId,
-)
+const hasAuthConfig = Boolean(firebaseConfig.apiKey && firebaseConfig.authDomain && firebaseConfig.projectId && firebaseConfig.appId)
+const hasStorageConfig = Boolean(firebaseConfig.storageBucket)
 
-export const app = hasFirebaseConfig ? (getApps()[0] ?? initializeApp(firebaseConfig)) : null
+export const app = hasAuthConfig ? (getApps()[0] ?? initializeApp(firebaseConfig)) : null
 export const auth = app ? getAuth(app) : null
 export const db = app ? getFirestore(app) : null
-export const storage = app ? getStorage(app) : null
+export const storage = app && hasStorageConfig ? getStorage(app) : null
 export let analytics = null
 
 async function initializeAnalytics(appInstance) {
@@ -49,7 +43,8 @@ if (app) {
   })
 }
 
-export const firebaseEnabled = Boolean(app && auth && db && storage)
+export const firebaseAuthEnabled = Boolean(app && auth)
+export const firebaseEnabled = Boolean(app && auth && db)
 
 export function assertFirebaseReady() {
   if (!firebaseEnabled) {

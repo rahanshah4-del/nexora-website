@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { AiOutlineGoogle } from 'react-icons/ai'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
-import { createUserWithEmailAndPassword, GoogleAuthProvider, sendEmailVerification, signInWithPopup } from 'firebase/auth'
+import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
 import { auth, db } from '../../lib/firebase.js'
 import { ensureUserWorkspace } from '../../lib/accountProvisioning.js'
 import useAuth from '../../context/useAuth.js'
@@ -9,6 +9,7 @@ import NexoraLogo from '../../components/brand/NexoraLogo.jsx'
 import { motion } from 'framer-motion'
 import { clientSafeMessage, reportTechnicalError } from '../../lib/errorHandler.js'
 import { businessTypes } from '../../crm/data/moduleAccess.js'
+import { sendCustomVerificationEmail } from '../../lib/emailVerificationService.js'
 
 export default function Signup() {
   const { user, loading } = useAuth()
@@ -62,9 +63,13 @@ export default function Signup() {
         provider: 'password',
         allowUnverifiedProfile: true,
       })
-      await sendEmailVerification(userRecord)
+      const emailResult = await sendCustomVerificationEmail(userRecord)
+      if (!emailResult.ok) {
+        setError(emailResult.error || 'Could not send verification email right now.')
+        return
+      }
       setVerificationSent(true)
-      setInfo('Verification email sent.')
+      setInfo(emailResult.message || 'Verification email sent.')
     } catch (err) {
       setError(clientSafeMessage(err, 'Unable to create account. Please try again.', { context: 'Signup with email' }))
     } finally {

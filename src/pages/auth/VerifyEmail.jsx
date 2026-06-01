@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
-import { sendEmailVerification, signOut } from 'firebase/auth'
+import { signOut } from 'firebase/auth'
 import useAuth from '../../context/useAuth.js'
 import { auth } from '../../lib/firebase.js'
 import { ensureUserWorkspace } from '../../lib/accountProvisioning.js'
 import { clientSafeMessage } from '../../lib/errorHandler.js'
-import { sendResendVerificationEmail } from '../../lib/emailVerificationService.js'
+import { sendCustomVerificationEmail } from '../../lib/emailVerificationService.js'
 import NexoraLogo from '../../components/brand/NexoraLogo.jsx'
 import Toast from '../../crm/components/ui/Toast.jsx'
 
@@ -54,19 +54,18 @@ export default function VerifyEmail() {
     setMessage('')
     setError('')
     try {
-      await sendEmailVerification(currentUser)
-      const resendResult = await sendResendVerificationEmail({
-        email: currentUser.email,
-        name: currentUser.displayName || currentUser.email?.split('@')?.[0],
-        verificationUrl: `${window.location.origin}/verify-email`,
-      })
-      setMessage('Verification email sent.')
-      showToast({ tone: 'success', message: 'Verification email sent.' })
-      if (!resendResult.ok && resendResult.error !== 'Email service is not configured.') {
-        showToast({ tone: 'warning', message: 'Firebase verification was sent. Resend test email is unavailable.' }, 3200)
+      const resendResult = await sendCustomVerificationEmail(currentUser)
+      if (!resendResult.ok) {
+        const nextError = resendResult.error || 'Could not send verification email right now.'
+        setError(nextError)
+        showToast({ tone: 'error', message: nextError })
+        return
       }
+      const nextMessage = resendResult.message || 'Verification email sent.'
+      setMessage(nextMessage)
+      showToast({ tone: 'success', message: nextMessage })
     } catch (err) {
-      const nextError = clientSafeMessage(err, 'Could not send verification email right now.', { context: 'Firebase email verification' })
+      const nextError = clientSafeMessage(err, 'Could not send verification email right now.', { context: 'Resend email verification' })
       setError(nextError)
       showToast({ tone: 'error', message: nextError })
     } finally {
@@ -92,7 +91,10 @@ export default function VerifyEmail() {
               Open the verification email sent to <span className="font-semibold text-slate-900">{user?.email}</span>, verify your account, then refresh your status.
             </p>
             <p className="mt-2 text-sm leading-6 text-slate-500">
-              If you don&apos;t see the email, check Spam or Promotions folder.
+              If you don&apos;t see the verification email, please check your Spam, Junk, Promotions, or Updates folder.
+            </p>
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              Email na mile to Spam/Junk folder bhi check karein.
             </p>
           </div>
 

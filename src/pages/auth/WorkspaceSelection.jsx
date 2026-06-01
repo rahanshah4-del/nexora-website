@@ -25,7 +25,7 @@ import {
 } from 'react-icons/hi2'
 import { FiLogOut } from 'react-icons/fi'
 import { useNavigate } from 'react-router-dom'
-import { sendEmailVerification, signOut } from 'firebase/auth'
+import { signOut } from 'firebase/auth'
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore'
 import logoUrl from '../../assets/logo/nexora-logo.svg'
 import useAuth from '../../context/useAuth.js'
@@ -43,6 +43,7 @@ import {
 } from '../../crm/data/moduleAccess.js'
 import { saveSelectedWorkspace } from '../../crm/lib/workspaceSession.js'
 import { clientSafeMessage, reportTechnicalError } from '../../lib/errorHandler.js'
+import { sendCustomVerificationEmail } from '../../lib/emailVerificationService.js'
 
 const workspaceIconMap = {
   'General CRM': { icon: HiOutlineUserGroup, iconTone: 'bg-blue-50 text-blue-600', color: 'bg-blue-600' },
@@ -899,8 +900,12 @@ export default function WorkspaceSelection() {
     setVerificationSending(true)
     setVerificationMessage('')
     try {
-      await sendEmailVerification(currentUser)
-      setVerificationMessage('Verification email sent. Please check your inbox.')
+      const emailResult = await sendCustomVerificationEmail(currentUser)
+      if (!emailResult.ok) {
+        setVerificationMessage(emailResult.error || 'Could not send verification email right now.')
+        return
+      }
+      setVerificationMessage(emailResult.message || 'Verification email sent. Please check your inbox.')
     } catch (error) {
       setVerificationMessage(clientSafeMessage(error, 'Could not send verification email right now.', { context: 'Workspace email verification' }))
     } finally {

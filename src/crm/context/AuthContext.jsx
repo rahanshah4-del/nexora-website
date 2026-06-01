@@ -2,14 +2,14 @@ import { createContext, useCallback, useEffect, useMemo, useState } from 'react'
 import {
   createUserWithEmailAndPassword,
   onAuthStateChanged,
-  sendEmailVerification,
   signInWithEmailAndPassword,
   signOut,
 } from 'firebase/auth'
 import { doc, getDoc } from 'firebase/firestore'
-import { auth, firebaseEnabled, getFirebaseEnvHint } from '../lib/firebase.js'
+import { auth, getFirebaseEnvHint } from '../lib/firebase.js'
 import { db } from '../lib/firebase.js'
 import { ensureUserWorkspace } from '../../lib/accountProvisioning.js'
+import { sendCustomVerificationEmail } from '../../lib/emailVerificationService.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 import { clientSafeMessage } from '../utils/messages.js'
 
@@ -35,7 +35,7 @@ export function AuthProvider({ children }) {
 
   const login = useCallback(async (email, password) => {
     setError('')
-    if (!firebaseEnabled || !auth) {
+    if (!auth) {
       setError(getFirebaseEnvHint() || 'Secure Cloud Sync is not available right now.')
       return false
     }
@@ -54,7 +54,7 @@ export function AuthProvider({ children }) {
 
   const signup = useCallback(async (email, password) => {
     setError('')
-    if (!firebaseEnabled || !auth) {
+    if (!auth) {
       setError(getFirebaseEnvHint() || 'Secure Cloud Sync is not available right now.')
       return false
     }
@@ -63,7 +63,11 @@ export function AuthProvider({ children }) {
       const credentials = await createUserWithEmailAndPassword(auth, email, password)
       await ensureUserWorkspace(credentials.user, { email, provider: 'password' })
       if (!credentials.user.emailVerified) {
-        await sendEmailVerification(credentials.user).catch(() => {})
+        const emailResult = await sendCustomVerificationEmail(credentials.user)
+        if (!emailResult.ok) {
+          setError(emailResult.error || 'Could not send verification email right now.')
+          return false
+        }
       }
       return true
     } catch (e) {

@@ -9,7 +9,7 @@ import { HiOutlineArrowLeft } from 'react-icons/hi2'
 import { FaWindows } from 'react-icons/fa'
 import { useAuth } from '../hooks/useAuth.js'
 import Badge from '../components/ui/Badge.jsx'
-import { auth, firebaseEnabled } from '../lib/firebase.js'
+import { auth } from '../lib/firebase.js'
 import { ensureUserWorkspace } from '../../lib/accountProvisioning.js'
 import { clientSafeMessage } from '../utils/messages.js'
 
@@ -31,7 +31,7 @@ export default function LoginPage() {
 
   async function onGoogle() {
     setError('')
-    if (!firebaseEnabled || !auth) {
+    if (!auth) {
       setError('Google Sign In is not available right now.')
       return
     }
