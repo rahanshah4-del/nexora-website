@@ -25,7 +25,7 @@ import {
 } from 'react-icons/hi2'
 import { FiLogOut } from 'react-icons/fi'
 import { useNavigate } from 'react-router-dom'
-import { signOut } from 'firebase/auth'
+import { sendEmailVerification, signOut } from 'firebase/auth'
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore'
 import logoUrl from '../../assets/logo/nexora-logo.svg'
 import useAuth from '../../context/useAuth.js'
@@ -185,12 +185,6 @@ function formatDate(value) {
   return new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', year: 'numeric' }).format(date)
 }
 
-function daysUntil(value) {
-  const date = timestampToDate(value)
-  if (!date) return 0
-  return Math.max(Math.ceil((date.getTime() - Date.now()) / 86400000), 0)
-}
-
 function initialsFor(name, email) {
   const source = cleanString(name) || cleanString(email) || 'Nexora User'
   const initials = source
@@ -200,6 +194,51 @@ function initialsFor(name, email) {
     .map((part) => part[0]?.toUpperCase())
     .join('')
   return initials || 'NU'
+}
+
+function trialSourceDate(workspaceData, accountData, user) {
+  return (
+    workspaceData?.trialStart ||
+    workspaceData?.trialStartedAt ||
+    accountData?.trialStart ||
+    accountData?.trialStartedAt ||
+    workspaceData?.createdAt ||
+    accountData?.createdAt ||
+    user?.metadata?.creationTime ||
+    null
+  )
+}
+
+function resolveTrialEnd(workspaceData, accountData, user) {
+  const explicitEnd = workspaceData?.trialEndsAt || accountData?.trialEndsAt
+  if (explicitEnd) return explicitEnd
+  const start = timestampToDate(trialSourceDate(workspaceData, accountData, user))
+  return start ? addDays(start, CRM_TRIAL_DAYS) : addDays(new Date(), CRM_TRIAL_DAYS)
+}
+
+function trialCountdown(value, nowMs) {
+  const end = timestampToDate(value)
+  if (!end) {
+    return { expired: false, label: 'Trial: 7 days left', detail: '7 days left', daysLeft: CRM_TRIAL_DAYS }
+  }
+  const diffMs = end.getTime() - nowMs
+  if (diffMs <= 0) return { expired: true, label: 'Trial: expired', detail: `Expired on ${formatDate(end)}`, daysLeft: 0 }
+  if (diffMs < 86400000) return { expired: false, label: 'Trial: expires today', detail: `Expires today · ${formatDate(end)}`, daysLeft: 0 }
+  const daysLeft = Math.ceil(diffMs / 86400000)
+  return { expired: false, label: `Trial: ${daysLeft} days left`, detail: `${daysLeft} days left · ends ${formatDate(end)}`, daysLeft }
+}
+
+function VerificationBadge({ verified, compact = false }) {
+  return (
+    <span
+      className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 font-bold ${
+        compact ? 'text-[10px]' : 'text-[11px]'
+      } ${verified ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}
+    >
+      {verified ? <HiOutlineCheckCircle className="h-3.5 w-3.5" /> : null}
+      {verified ? 'Verified' : 'Email not verified'}
+    </span>
+  )
 }
 
 function SidebarItem({ icon: Icon, label, active = false, muted = false, onClick }) {
@@ -261,7 +300,7 @@ function NotificationDropdown({ notifications, onClose }) {
   )
 }
 
-function WorkspaceCard({ workspace, index }) {
+function WorkspaceCard({ workspace, index, emailVerified }) {
   const navigate = useNavigate()
   const Icon = workspace.icon
   const disabled = !workspace.active
@@ -281,7 +320,10 @@ function WorkspaceCard({ workspace, index }) {
             <Icon className="h-7 w-7" />
           </span>
           <div className="min-w-0 pt-0.5">
-            <h2 className="truncate text-[15px] font-bold leading-5 text-slate-950">{workspace.name}</h2>
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
+              <h2 className="truncate text-[15px] font-bold leading-5 text-slate-950">{workspace.name}</h2>
+              {workspace.active && emailVerified ? <VerificationBadge verified compact /> : null}
+            </div>
             <p className="mt-1 text-xs text-slate-500">Workspace ID: {workspace.id}</p>
             {workspace.plan ? (
               <p className="mt-1 text-xs text-slate-500">
@@ -292,7 +334,9 @@ function WorkspaceCard({ workspace, index }) {
               </p>
             ) : null}
             {workspace.trialLabel ? (
-              <p className="mt-1 text-xs font-semibold text-blue-700">{workspace.trialLabel}</p>
+              <p className={`mt-1 text-xs font-semibold ${workspace.trialExpired ? 'text-red-700' : 'text-blue-700'}`}>
+                {workspace.trialLabel}
+              </p>
             ) : null}
           </div>
         </div>
@@ -567,6 +611,16 @@ export default function WorkspaceSelection() {
   const [workspaceNameSaving, setWorkspaceNameSaving] = useState(false)
   const [workspaceNameMessage, setWorkspaceNameMessage] = useState('')
   const [loggingOut, setLoggingOut] = useState(false)
+  const [nowMs, setNowMs] = useState(() => Date.now())
+  const [verificationSending, setVerificationSending] = useState(false)
+  const [verificationMessage, setVerificationMessage] = useState('')
+
+  const emailVerified = Boolean(user?.emailVerified)
+
+  useEffect(() => {
+    const interval = window.setInterval(() => setNowMs(Date.now()), 60000)
+    return () => window.clearInterval(interval)
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -613,11 +667,18 @@ export default function WorkspaceSelection() {
       'Nexora User'
     const plan = cleanString(workspaceData?.plan) || cleanString(accountData?.plan) || 'Free'
     const status = cleanString(workspaceData?.planStatus) || cleanString(accountData?.planStatus) || 'trial'
-    const trialEndsAt = workspaceData?.trialEndsAt || accountData?.trialEndsAt || addDays(new Date(), CRM_TRIAL_DAYS)
-    const remainingDays = daysUntil(trialEndsAt)
-    const isTrial = status.toLowerCase().includes('trial') || Boolean(workspaceData?.isTrialActive || accountData?.isTrialActive)
-    const trialExpired = isTrial && remainingDays <= 0
+    const trialEndsAt = resolveTrialEnd(workspaceData, accountData, user)
+    const countdown = trialCountdown(trialEndsAt, nowMs)
     const packageName = packageNameForPlan(plan)
+    const normalizedStatus = status.toLowerCase()
+    const normalizedPlan = plan.toLowerCase()
+    const isBasicTrialPlan = packageName === 'Basic' || ['free', 'basic', 'trial'].includes(normalizedPlan)
+    const isTrial =
+      normalizedStatus.includes('trial') ||
+      (normalizedStatus === 'expired' && isBasicTrialPlan) ||
+      Boolean(workspaceData?.isTrialActive || accountData?.isTrialActive)
+    const trialExpired = isTrial && countdown.expired
+    const statusLabel = trialExpired ? 'Trial Expired' : isTrial ? 'Trial' : status ? status[0].toUpperCase() + status.slice(1) : ''
     const workspaceName = resolveWorkspaceName({
       workspaceData,
       accountData,
@@ -628,25 +689,18 @@ export default function WorkspaceSelection() {
     return {
       name,
       email,
+      emailVerified,
       initials: initialsFor(name, email),
       role: cleanString(accountData?.role) || 'owner',
       workspaceName,
-      planLabel: `${packageName}${status ? ` · ${trialExpired ? 'expired' : status}` : ''}`,
-      trialShortLabel: trialExpired
-        ? 'Trial expired'
-        : isTrial
-          ? `Trial: ${remainingDays} days left`
-          : '',
-      trialLabel: trialExpired
-        ? `Expired on ${formatDate(trialEndsAt)}`
-        : isTrial
-          ? `${remainingDays} days left · ends ${formatDate(trialEndsAt)}`
-          : `Ends ${formatDate(trialEndsAt)}`,
+      planLabel: `${packageName}${statusLabel ? ` · ${statusLabel}` : ''}`,
+      trialShortLabel: isTrial ? countdown.label : '',
+      trialLabel: isTrial ? countdown.detail : `Ends ${formatDate(trialEndsAt)}`,
       trialExpired,
       isTrial,
       workspaceId: cleanString(workspaceData?.workspaceId) || cleanString(accountData?.workspaceId) || user?.uid || '',
     }
-  }, [accountData, user, workspaceData])
+  }, [accountData, emailVerified, nowMs, user, workspaceData])
 
   const hasCrmWorkspace = Boolean(workspaceData || accountData?.workspaceId)
   const visibleWorkspaces = useMemo(
@@ -660,6 +714,8 @@ export default function WorkspaceSelection() {
               plan: profile.planLabel,
               trialLabel: profile.trialShortLabel,
               trialExpired: profile.trialExpired,
+              status: profile.trialExpired ? 'Trial Expired' : workspace.status,
+              statusTone: profile.trialExpired ? 'bg-red-50 text-red-700' : workspace.statusTone,
             }
           : workspace,
       ),
@@ -698,6 +754,29 @@ export default function WorkspaceSelection() {
     setProfileOpen(false)
     navigate('/upgrade-business', { state: { fromUpgradeBusiness: true } })
   }, [navigate])
+
+  const handleSendVerificationEmail = useCallback(async () => {
+    if (emailVerified) {
+      setVerificationMessage('Email is already verified.')
+      return
+    }
+    const currentUser = auth?.currentUser || user
+    if (!currentUser?.email) {
+      setVerificationMessage('No email address is available for verification.')
+      return
+    }
+
+    setVerificationSending(true)
+    setVerificationMessage('')
+    try {
+      await sendEmailVerification(currentUser)
+      setVerificationMessage('Verification email sent. Please check your inbox.')
+    } catch {
+      setVerificationMessage('Could not send verification email right now.')
+    } finally {
+      setVerificationSending(false)
+    }
+  }, [emailVerified, user])
 
   const handleSaveWorkspaceName = useCallback(async () => {
     const cleanName = normalizeWorkspaceName(workspaceNameDraft, profile.workspaceName || 'Nexora CRM')
@@ -889,7 +968,10 @@ export default function WorkspaceSelection() {
                     {profile.initials}
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-bold text-white">{authLoading ? 'Loading...' : profile.name}</span>
+                    <span className="flex min-w-0 items-center gap-1.5">
+                      <span className="block truncate text-sm font-bold text-white">{authLoading ? 'Loading...' : profile.name}</span>
+                      {profile.emailVerified ? <HiOutlineCheckCircle className="h-4 w-4 shrink-0 text-emerald-300" /> : null}
+                    </span>
                     <span className="mt-0.5 block truncate text-xs capitalize text-slate-300">{profile.role}</span>
                   </span>
                   <HiOutlineChevronDown className="h-4 w-4 shrink-0 text-slate-300" />
@@ -898,8 +980,25 @@ export default function WorkspaceSelection() {
 
               {profileOpen ? (
                 <div className="absolute left-0 right-0 top-full z-40 mt-2 rounded-lg border border-white/10 bg-white p-3 text-slate-900 shadow-xl shadow-slate-950/25">
-                  <p className="truncate text-sm font-bold">{profile.name}</p>
+                  <div className="flex min-w-0 items-center gap-2">
+                    <p className="truncate text-sm font-bold">{profile.name}</p>
+                    {profile.emailVerified ? <HiOutlineCheckCircle className="h-4 w-4 shrink-0 text-emerald-600" /> : null}
+                  </div>
                   <p className="mt-0.5 truncate text-xs text-slate-500">{profile.email}</p>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <VerificationBadge verified={profile.emailVerified} />
+                    {!profile.emailVerified ? (
+                      <button
+                        type="button"
+                        disabled={verificationSending}
+                        onClick={handleSendVerificationEmail}
+                        className="rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-bold text-blue-700 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {verificationSending ? 'Sending...' : 'Send Verification Email'}
+                      </button>
+                    ) : null}
+                  </div>
+                  {verificationMessage ? <p className="mt-2 text-xs font-semibold text-blue-700">{verificationMessage}</p> : null}
                   <div className="mt-3 rounded-lg bg-slate-50 px-3 py-2">
                     <p className="truncate text-xs font-bold text-slate-700">{profile.workspaceName}</p>
                     <p className="text-xs font-bold text-slate-700">{profile.planLabel}</p>
@@ -1187,7 +1286,7 @@ export default function WorkspaceSelection() {
               <div
                 className={`mt-4 flex flex-col gap-3 rounded-lg border px-4 py-3 sm:flex-row sm:items-center sm:justify-between ${
                   profile.trialExpired
-                    ? 'border-amber-200 bg-amber-50 text-amber-800'
+                    ? 'border-red-200 bg-red-50 text-red-800'
                     : 'border-blue-100 bg-blue-50 text-blue-800'
                 }`}
               >
@@ -1235,7 +1334,7 @@ export default function WorkspaceSelection() {
 
             <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {visibleWorkspaces.map((workspace, index) => (
-                <WorkspaceCard key={workspace.id} workspace={workspace} index={index} />
+                <WorkspaceCard key={workspace.id} workspace={workspace} index={index} emailVerified={profile.emailVerified} />
               ))}
               <CreateWorkspaceCard disabled={createDisabled} message={createWorkspaceMessage} onOpen={handleOpenCreate} />
             </div>
