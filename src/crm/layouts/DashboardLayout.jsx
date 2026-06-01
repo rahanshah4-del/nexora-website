@@ -320,12 +320,11 @@ export default function DashboardLayout() {
 
     const selected = readSelectedWorkspace(userId)
     const nextSession = buildWorkspaceSession({ user, userDoc, selectedWorkspace: selected, workspaceId })
-    const modalSeenKey = `nexoraWorkspaceModalSeen:${userId}:${nextSession.sessionId}`
-    const modalSeen = sessionStorage.getItem(modalSeenKey) === 'true'
 
     Promise.resolve().then(() => {
       setSelectedWorkspace((current) => (current === selected ? current : selected))
       setSessionInfo(nextSession)
+      setProductModalOpen(false)
     })
 
     const persistKey = `${nextSession.sessionId}:${nextSession.selectedWorkspace}:${nextSession.planType}:${nextSession.trialStatus}`
@@ -334,17 +333,6 @@ export default function DashboardLayout() {
       persistWorkspaceSession(nextSession).catch(() => {})
     }
 
-    if (!modalSeen) {
-      Promise.resolve().then(() => setProductModalOpen(true))
-      return
-    }
-
-    if (!selected) {
-      Promise.resolve().then(() => setProductModalOpen(true))
-      return
-    }
-
-    Promise.resolve().then(() => setProductModalOpen(false))
   }, [ready, user, userDoc, userId, userLoading, workspaceId])
 
   const markModalSeen = useCallback(() => {

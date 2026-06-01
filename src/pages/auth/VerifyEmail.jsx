@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
-import { sendEmailVerification, signOut } from 'firebase/auth'
+import { signOut } from 'firebase/auth'
 import useAuth from '../../context/useAuth.js'
 import { auth } from '../../lib/firebase.js'
 import { ensureUserWorkspace } from '../../lib/accountProvisioning.js'
 import { clientSafeMessage } from '../../lib/errorHandler.js'
+import { sendResendVerificationEmail } from '../../lib/emailVerificationService.js'
 import NexoraLogo from '../../components/brand/NexoraLogo.jsx'
+import Toast from '../../crm/components/ui/Toast.jsx'
 
 export default function VerifyEmail() {
   const { user, loading } = useAuth()
@@ -14,6 +16,12 @@ export default function VerifyEmail() {
   const [sending, setSending] = useState(false)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
+  const [toast, setToast] = useState(null)
+
+  function showToast(nextToast, timeout = 2400) {
+    setToast(nextToast)
+    window.setTimeout(() => setToast(null), timeout)
+  }
 
   if (!loading && !user) return <Navigate to="/login" replace />
   if (!loading && user?.emailVerified) return <Navigate to="/workspace" replace />
@@ -46,10 +54,23 @@ export default function VerifyEmail() {
     setMessage('')
     setError('')
     try {
-      await sendEmailVerification(currentUser)
+      const res = await sendResendVerificationEmail({
+        email: currentUser.email,
+        name: currentUser.displayName || currentUser.email?.split('@')?.[0],
+        verificationUrl: `${window.location.origin}/verify-email`,
+      })
+      if (!res.ok) {
+        const nextError = res.error || 'Could not send verification email right now.'
+        setError(nextError)
+        showToast({ tone: 'error', message: nextError })
+        return
+      }
       setMessage('Verification email sent.')
+      showToast({ tone: 'success', message: 'Verification email sent.' })
     } catch (err) {
-      setError(clientSafeMessage(err, 'Could not send verification email right now.', { context: 'Resend email verification' }))
+      const nextError = clientSafeMessage(err, 'Could not send verification email right now.', { context: 'Resend email verification' })
+      setError(nextError)
+      showToast({ tone: 'error', message: nextError })
     } finally {
       setSending(false)
     }
@@ -62,6 +83,7 @@ export default function VerifyEmail() {
 
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-10 text-slate-950">
+      {toast ? <Toast tone={toast.tone} message={toast.message} onClose={() => setToast(null)} /> : null}
       <section className="mx-auto flex min-h-[calc(100vh-5rem)] max-w-xl items-center">
         <div className="w-full rounded-[2rem] border border-slate-200 bg-white p-7 shadow-[0_28px_85px_-44px_rgba(15,23,42,0.38)] sm:p-9">
           <NexoraLogo compact />

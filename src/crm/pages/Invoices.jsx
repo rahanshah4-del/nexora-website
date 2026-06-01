@@ -24,6 +24,7 @@ import { useUser } from '../hooks/useUser.js'
 import { formatCurrency } from '../utils/format.js'
 import { exportCsv, exportExcel } from '../lib/exporters.js'
 import { invoiceIssueDate, statusBadge } from '../lib/invoiceHelpers.js'
+import { getEmailServiceError } from '../lib/emailService.js'
 import { resolveWorkspaceName } from '../../lib/workspaceName.js'
 import { normalizeBusinessType } from '../data/moduleAccess.js'
 
@@ -247,7 +248,9 @@ export default function InvoicesPage() {
       window.setTimeout(() => window.print(), 120)
     }
     if (action === 'email') {
-      if (invoice.customerEmail) window.location.href = `mailto:${invoice.customerEmail}?subject=${encodeURIComponent(`${isSchool ? 'Fee Bill' : 'Invoice'} ${invoice.invoiceNumber || invoice.id}`)}`
+      const emailServiceError = getEmailServiceError()
+      if (emailServiceError) res = { ok: false, error: emailServiceError }
+      else if (invoice.customerEmail) window.location.href = `mailto:${invoice.customerEmail}?subject=${encodeURIComponent(`${isSchool ? 'Fee Bill' : 'Invoice'} ${invoice.invoiceNumber || invoice.id}`)}`
       else res = { ok: false, error: isSchool ? 'Student email is missing.' : 'Customer email is missing.' }
     }
     if (action === 'whatsapp') {
