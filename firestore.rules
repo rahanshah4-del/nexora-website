@@ -64,6 +64,10 @@ service cloud.firestore {
       return role in ['manager', 'Manager', 'MANAGER'];
     }
 
+    function isSalesRole(role) {
+      return role in ['sales', 'Sales', 'SALES', 'sales staff', 'Sales Staff', 'SALES STAFF'];
+    }
+
     function permissionDocId() {
       return profile().staffId is string ? profile().staffId : request.auth.uid;
     }
@@ -100,6 +104,7 @@ service cloud.firestore {
         || isAdminRole(role)
         || (isManagerRole(role)
           && key in ['followUpEdit', 'followUpDelete', 'customerManagement', 'leadsManagement', 'invoices', 'reports'])
+        || (isSalesRole(role) && key in ['invoices'])
         || (isAccountantRole(role) && key in ['invoices', 'reports']);
     }
 
@@ -232,7 +237,7 @@ service cloud.firestore {
     }
 
     function paymentApprovalFieldsTouched() {
-      return request.resource.data.diff(resource.data).affectedKeys().hasAny([
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
         'paymentStatus',
         'approvalStatus',
         'status',
@@ -243,11 +248,22 @@ service cloud.firestore {
         'amountPaid',
         'partialPaidAmount',
         'balanceDue',
+        'paymentHistory',
         'lastPaymentAt',
+        'lastPaymentDate',
         'lastPaymentBy',
+        'submittedForApprovalBy',
+        'submittedForApprovalAt',
+        'sentAt',
+        'sentBy',
         'rejectedAt',
         'rejectedBy',
         'cancelledAt',
+        'paidAt',
+        'updatedAt',
+        'ownerId',
+        'userId',
+        'workspaceId',
       ]);
     }
 
@@ -476,9 +492,9 @@ service cloud.firestore {
           || canReadClientPortalInvoice(workspaceId);
         allow create: if staffPermission(workspaceId, 'invoices') && workspaceCreateMetadata(workspaceId);
         allow update: if (staffPermission(workspaceId, 'invoices') && !paymentApprovalFieldsTouched() && workspaceUpdateScopeSafe(workspaceId))
-          || (isPaymentApprover(workspaceId) && paymentApprovalFieldsTouched() && isOpenApprovalResource() && workspaceUpdateScopeSafe(workspaceId))
+          || (isPaymentApprover(workspaceId) && paymentApprovalFieldsTouched() && workspaceUpdateScopeSafe(workspaceId))
           || (isWorkspaceMember(workspaceId) && paymentReferenceFieldsTouched() && isOpenApprovalResource() && workspaceUpdateScopeSafe(workspaceId));
-        allow delete: if staffPermission(workspaceId, 'invoices');
+        allow delete: if isWorkspaceManager(workspaceId);
       }
 
       match /payments/{paymentId} {

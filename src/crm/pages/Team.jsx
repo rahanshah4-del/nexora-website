@@ -301,7 +301,7 @@ function AccessControlTab({ staffApi, members, onToast }) {
                 </div>
                 <Field label="Staff role">
                   <Select value={draft.role} onChange={(event) => setDraft((current) => ({ ...current, role: event.target.value }))}>
-                    <option value="staff">Sales Staff</option>
+                    <option value="sales">Sales Staff</option>
                     <option value="support">Support Agent</option>
                     <option value="manager">Manager</option>
                     <option value="admin">Admin</option>

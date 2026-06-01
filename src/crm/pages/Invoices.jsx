@@ -149,10 +149,15 @@ export default function InvoicesPage() {
     source,
     error,
     canApprovePayments,
+    permissions,
     markInvoicePaid,
     rejectInvoicePayment,
     recordPartialPayment,
     updateInvoice,
+    sendForApproval,
+    markInvoiceUnpaid,
+    duplicateInvoice,
+    deleteInvoice,
   } = useInvoices()
   const [openInvoice, setOpenInvoice] = useState(null)
   const [toast, setToast] = useState(null)
@@ -214,11 +219,50 @@ export default function InvoicesPage() {
   }
 
   function requestPaymentAction(action, invoice) {
-    if (!canApprovePayments) {
+    if (!permissions.canRecordPayments && action !== 'reject') {
       showToast({ tone: 'error', message: 'Only owner, admin, or accountant can approve payments' }, 2600)
       return
     }
+    if (action === 'reject' && !permissions.canReject) {
+      showToast({ tone: 'error', message: 'Only owner or admin can reject invoices' }, 2600)
+      return
+    }
     setPaymentAction({ action, invoice })
+  }
+
+  async function runInvoiceAction(action, invoice) {
+    if (!invoice?.id) return
+    let res = { ok: true }
+    if (action === 'view') setOpenInvoice(invoice)
+    if (action === 'edit') setOpenInvoice(invoice)
+    if (action === 'print' || action === 'pdf') {
+      setOpenInvoice(invoice)
+      window.setTimeout(() => window.print(), 120)
+    }
+    if (action === 'email') {
+      if (invoice.customerEmail) window.location.href = `mailto:${invoice.customerEmail}?subject=${encodeURIComponent(`Invoice ${invoice.invoiceNumber || invoice.id}`)}`
+      else res = { ok: false, error: 'Customer email is missing.' }
+    }
+    if (action === 'whatsapp') {
+      const phone = String(invoice.customerPhone || '').replace(/[^\d]/g, '')
+      if (phone) window.open(`https://wa.me/${phone}?text=${encodeURIComponent(`Invoice ${invoice.invoiceNumber || invoice.id} is ready.`)}`, '_blank', 'noopener,noreferrer')
+      else res = { ok: false, error: 'Customer phone is missing.' }
+    }
+    if (action === 'mark_paid') return requestPaymentAction('paid', invoice)
+    if (action === 'partial_paid') return requestPaymentAction('partial', invoice)
+    if (action === 'reject') return requestPaymentAction('reject', invoice)
+    if (action === 'mark_unpaid') res = await markInvoiceUnpaid(invoice.id)
+    if (action === 'send_approval') res = await sendForApproval(invoice.id)
+    if (action === 'duplicate') res = await duplicateInvoice(invoice.id)
+    if (action === 'delete') {
+      if (!window.confirm(`Delete invoice ${invoice.invoiceNumber || invoice.id}?`)) return
+      res = await deleteInvoice(invoice.id)
+    }
+    if (res?.ok && !['view', 'edit', 'print', 'pdf', 'email', 'whatsapp'].includes(action)) {
+      showToast({ tone: 'success', message: 'Invoice action completed' })
+    } else if (res?.error) {
+      showToast({ tone: 'error', message: res.error }, 2800)
+    }
   }
 
   async function confirmPaymentAction(payload) {
@@ -305,7 +349,10 @@ export default function InvoicesPage() {
                 <option value="all">All statuses</option>
                 <option value="draft">Draft</option>
                 <option value="pending">Pending</option>
-                <option value="partial">Partial</option>
+                <option value="pending approval">Pending Approval</option>
+                <option value="approved">Approved</option>
+                <option value="sent">Sent</option>
+                <option value="partial paid">Partial Paid</option>
                 <option value="paid">Paid</option>
                 <option value="overdue">Overdue</option>
                 <option value="cancelled">Cancelled</option>
@@ -354,8 +401,9 @@ export default function InvoicesPage() {
             <InvoiceTable
               invoices={filteredInvoices}
               currency={currency}
-              canApprovePayments={canApprovePayments}
+              permissions={permissions}
               onOpen={(invoice) => setOpenInvoice(invoice)}
+              onAction={runInvoiceAction}
             />
           )}
         </div>
@@ -368,7 +416,9 @@ export default function InvoicesPage() {
           <div className="mt-4 space-y-3 text-sm">
             {[
               ['Paid invoices', stats.paid],
-              ['Pending invoices', stats.pending],
+              ['Pending approval', stats.pendingApproval],
+              ['Approved invoices', stats.approved],
+              ['Partial paid', stats.partialPaid],
               ['Overdue invoices', stats.overdue],
               ['Cancelled invoices', stats.cancelled],
             ].map(([label, value]) => (

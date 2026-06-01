@@ -19,7 +19,7 @@ export const PAYMENT_METHODS = ['Cash', 'Bank Transfer', 'JazzCash', 'EasyPaisa'
 
 export const PAYMENT_TERMS = ['Due on receipt', 'Net 7 Days', 'Net 14 Days', 'Net 30 Days', 'Advance Payment', 'Custom']
 
-export const INVOICE_STATUS_OPTIONS = ['Draft', 'Pending', 'Partial', 'Paid', 'Overdue', 'Cancelled']
+export const INVOICE_STATUS_OPTIONS = ['Draft', 'Pending Approval', 'Approved', 'Sent', 'Partial Paid', 'Paid', 'Overdue', 'Cancelled']
 
 export const INVOICE_TEMPLATES = ['Professional', 'Executive White', 'Compact Finance']
 
@@ -203,8 +203,11 @@ export function dateLabel(value) {
 export function statusBadge(status) {
   const value = String(status || 'pending').toLowerCase()
   if (value === 'paid') return { label: 'Paid', variant: 'success' }
-  if (value === 'partial') return { label: 'Partial', variant: 'info' }
+  if (value === 'partial' || value === 'partial_paid') return { label: 'Partial Paid', variant: 'info' }
   if (value === 'overdue') return { label: 'Overdue', variant: 'danger' }
+  if (value === 'approved') return { label: 'Approved', variant: 'success' }
+  if (value === 'sent') return { label: 'Sent', variant: 'info' }
+  if (value === 'pending_approval') return { label: 'Pending Approval', variant: 'warning' }
   if (value === 'cancelled' || value === 'canceled' || value === 'rejected') return { label: 'Cancelled', variant: 'default' }
   if (value === 'draft') return { label: 'Draft', variant: 'purple' }
   return { label: 'Pending', variant: 'warning' }

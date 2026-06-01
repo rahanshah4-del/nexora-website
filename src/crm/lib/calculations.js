@@ -6,7 +6,7 @@ const inactivePipelineStatuses = new Set(['converted', 'customer', 'won', 'lost'
 const inactivePipelineTerms = Array.from(inactivePipelineStatuses)
 
 export function statusValue(value, fallback = 'pending') {
-  return String(value || fallback).trim().toLowerCase()
+  return String(value || fallback).trim().toLowerCase().replace(/\s+/g, '_')
 }
 
 export function toNumber(value, fallback = 0) {
@@ -114,11 +114,15 @@ export function getInvoiceStatus(invoice = {}) {
   const amountPaid = toNumber(invoice.amountPaid ?? invoice.partialPaidAmount, 0)
   const balanceDue = calculateBalanceDue(total, amountPaid)
   const dueDate = invoice.dueDate ? new Date(invoice.dueDate) : null
+  const approvalStatus = statusValue(invoice.approvalStatus, '')
 
   if (rejectedStatuses.has(status) || rejectedStatuses.has(paymentStatus)) return 'rejected'
   if (paidStatuses.has(status) || paidStatuses.has(paymentStatus) || (total > 0 && balanceDue <= 0)) return 'paid'
-  if (amountPaid > 0 && balanceDue > 0) return 'partial'
+  if (amountPaid > 0 && balanceDue > 0) return 'partial_paid'
   if (dueDate && !Number.isNaN(dueDate.getTime()) && dueDate.getTime() < Date.now()) return 'overdue'
+  if (approvalStatus === 'approved' || status === 'approved') return 'approved'
+  if (status === 'sent') return 'sent'
+  if (approvalStatus === 'pending' || approvalStatus === 'pending_approval' || status === 'pending_approval') return 'pending_approval'
   if (pendingStatuses.has(status) || pendingStatuses.has(paymentStatus)) return 'pending'
   return status || paymentStatus || 'pending'
 }

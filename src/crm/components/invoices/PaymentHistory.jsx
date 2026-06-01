@@ -14,7 +14,7 @@ function statusVariant(status) {
 function statusLabel(status) {
   const value = String(status || '').toLowerCase()
   if (value === 'paid') return 'Paid'
-  if (value === 'partial') return 'Partial'
+  if (value === 'partial' || value === 'partial_paid') return 'Partial Paid'
   if (value === 'rejected') return 'Rejected'
   return 'Pending'
 }

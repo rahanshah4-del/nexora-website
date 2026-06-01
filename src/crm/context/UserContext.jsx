@@ -154,7 +154,7 @@ export function UserProvider({ children }) {
   )
   const isOwner = role === 'owner' || ownsWorkspace
   const isAdmin = isOwner || role === 'admin'
-  const isStaff = !isOwner && role === 'staff'
+  const isStaff = !isOwner && ['staff', 'sales', 'support'].includes(role)
 
   useEffect(() => {
     if (!ready || !db || !user?.uid || loading || !workspaceId) {
@@ -213,6 +213,7 @@ export function UserProvider({ children }) {
       isBlocked,
       isAccountant: role === 'accountant',
       isManager: role === 'manager',
+      isSales: role === 'sales',
     }),
     [
       user,

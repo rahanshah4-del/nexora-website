@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { arrayUnion, collection, doc, getDoc, serverTimestamp, writeBatch } from 'firebase/firestore'
 import { db } from '../lib/firebase.js'
-import { createUserDoc, patchUserDoc, subscribeUserCollection, workspaceCollectionPath } from '../lib/firestore.js'
+import { createUserDoc, patchUserDoc, removeUserDoc, subscribeUserCollection, workspaceCollectionPath } from '../lib/firestore.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 import { useUser } from './useUser.js'
 import { clientSafeMessage } from '../utils/messages.js'
+import { financePermissions, normalizeFinanceRole } from '../lib/financeAccess.js'
 import {
   calculateBalanceDue,
   calculateInvoiceTotals,
@@ -17,6 +18,12 @@ import {
 
 function normalizeInvoice(inv) {
   const calculated = calculateInvoiceTotals(inv)
+  const lifecycleStatus = getInvoiceStatus({
+    ...inv,
+    ...calculated,
+    paymentStatus: statusValue(inv.paymentStatus || inv.status, 'pending'),
+    approvalStatus: statusValue(inv.approvalStatus, 'pending'),
+  })
   const normalized = {
     ...inv,
     ...calculated,
@@ -24,10 +31,12 @@ function normalizeInvoice(inv) {
     paymentStatus: statusValue(inv.paymentStatus || inv.status, 'pending'),
     approvalStatus: statusValue(inv.approvalStatus, 'pending'),
     requiresApproval: inv.requiresApproval ?? true,
+    lifecycleStatus,
+    lastPaymentDate: inv.lastPaymentDate || inv.lastPaymentAt || inv.paidAt || null,
   }
   return {
     ...normalized,
-    status: getInvoiceStatus(normalized),
+    status: lifecycleStatus,
     subtotalUsd: normalized.subtotal,
     taxAmountUsd: normalized.taxAmount,
     totalUsd: normalized.total,
@@ -82,9 +91,30 @@ async function addInventoryAdjustments(batch, workspaceId, invoice, now) {
   return true
 }
 
+function roleName(role, userDoc) {
+  return normalizeFinanceRole(userDoc?.role || role)
+}
+
 function canRoleApprovePayments(role, userDoc) {
   const rawRole = String(userDoc?.role ?? role ?? '').toLowerCase()
   return ['owner', 'admin', 'accountant'].includes(rawRole)
+}
+
+function invoicePermissions(role, userDoc) {
+  const normalized = roleName(role, userDoc)
+  const finance = financePermissions(normalized)
+  return {
+    role: normalized,
+    canView: finance.canViewInvoices || finance.canManageInvoices,
+    canCreate: finance.canCreateInvoices || finance.canManageInvoices,
+    canEdit: finance.canManageInvoices,
+    canDuplicate: finance.canCreateInvoices || finance.canManageInvoices,
+    canApprove: ['owner', 'admin'].includes(normalized),
+    canReject: ['owner', 'admin'].includes(normalized),
+    canRecordPayments: ['owner', 'admin', 'accountant'].includes(normalized),
+    canSend: ['owner', 'admin', 'accountant'].includes(normalized),
+    canDelete: ['owner', 'admin'].includes(normalized),
+  }
 }
 
 export function useInvoices() {
@@ -146,17 +176,25 @@ export function useInvoices() {
   }, [workspaceId])
 
   const stats = useMemo(() => {
-    const paid = invoices.filter((i) => i.paymentStatus === 'paid' || i.status === 'paid').length
-    const pending = invoices.filter((i) => i.paymentStatus === 'pending' || i.status === 'pending').length
-    const overdue = invoices.filter((i) => i.status === 'overdue').length
-    const cancelled = invoices.filter((i) => i.status === 'cancelled' || i.paymentStatus === 'rejected').length
+    const byStatus = (status) => invoices.filter((i) => getInvoiceStatus(i) === status).length
+    const paid = byStatus('paid')
+    const pending = byStatus('pending')
+    const pendingApproval = byStatus('pending_approval')
+    const approved = byStatus('approved')
+    const draft = byStatus('draft')
+    const sent = byStatus('sent')
+    const partialPaid = byStatus('partial_paid')
+    const overdue = byStatus('overdue')
+    const cancelled = invoices.filter((i) => ['cancelled', 'canceled', 'rejected'].includes(statusValue(i.status || i.paymentStatus, ''))).length
     const totalAmount = invoices.reduce((sum, invoice) => sum + toNumber(invoice.total ?? invoice.totalUsd, 0), 0)
     const paidAmount = invoices.reduce((sum, invoice) => sum + toNumber(invoice.amountPaid ?? invoice.partialPaidAmount, 0), 0)
     const outstanding = invoices.reduce((sum, invoice) => sum + toNumber(invoice.balanceDue, calculateBalanceDue(invoice.total ?? invoice.totalUsd, invoice.amountPaid ?? invoice.partialPaidAmount)), 0)
-    return { paid, pending, overdue, cancelled, total: invoices.length, totalAmount, paidAmount, outstanding }
+    const collectionRate = totalAmount > 0 ? (paidAmount / totalAmount) * 100 : 0
+    return { draft, pending, pendingApproval, approved, sent, partialPaid, paid, overdue, cancelled, total: invoices.length, totalAmount, paidAmount, outstanding, revenue: paidAmount, collectionRate }
   }, [invoices])
 
   const canApprovePayments = canRoleApprovePayments(role, userDoc)
+  const permissions = invoicePermissions(role, userDoc)
 
   const api = useMemo(
     () => ({
@@ -167,7 +205,9 @@ export function useInvoices() {
       error,
       stats,
       canApprovePayments,
+      permissions,
       async createInvoice(payload) {
+        if (!permissions.canCreate) return { ok: false, error: 'You do not have permission to create invoices.' }
         const invoice = normalizeInvoice(payload)
         if (!userId || !workspaceId) return { ok: false, error: 'Please login first' }
         const invNo = String(invoice.invoiceNumber || '').trim()
@@ -184,9 +224,9 @@ export function useInvoices() {
             : toNumber(invoice.amountPaid ?? invoice.partialPaidAmount, 0)
           const fullyPaid = invoice.total > 0 && amountPaid >= invoice.total
           const partialPaid = amountPaid > 0 && !fullyPaid
-          const paymentStatus = fullyPaid ? 'paid' : partialPaid ? 'partial' : requestedStatus === 'draft' ? 'draft' : 'pending'
-          const approvalStatus = fullyPaid ? 'approved' : requestedStatus === 'draft' ? 'draft' : 'pending'
-          const requiresApproval = requestedStatus !== 'draft' && !fullyPaid
+          const paymentStatus = fullyPaid ? 'paid' : partialPaid ? 'partial_paid' : requestedStatus === 'draft' ? 'draft' : 'pending'
+          const approvalStatus = fullyPaid || requestedStatus === 'approved' ? 'approved' : requestedStatus === 'draft' ? 'draft' : 'pending'
+          const requiresApproval = requestedStatus === 'pending_approval' || (requestedStatus !== 'draft' && requestedStatus !== 'approved' && !fullyPaid)
           const docPayload = {
             invoiceNumber: invNo,
             customerName: name,
@@ -223,6 +263,8 @@ export function useInvoices() {
             amountPaid,
             partialPaidAmount: amountPaid,
             balanceDue: calculateBalanceDue(invoice.total, amountPaid),
+            paymentHistory: [],
+            lastPaymentDate: null,
             dueDate: invoice.dueDate || '—',
             recurring: Boolean(invoice.recurring),
             recurringCycle: invoice.recurringCycle || '',
@@ -250,7 +292,7 @@ export function useInvoices() {
         }
       },
       async markInvoicePaid(id, options = {}) {
-        if (!canApprovePayments) return { ok: false, error: 'Only owner, admin, or accountant can approve payments' }
+        if (!permissions.canRecordPayments) return { ok: false, error: 'Only owner, admin, or accountant can record payments' }
         if (!userId || !workspaceId) return { ok: false, error: 'Please login first' }
         if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now' }
         const invoice = invoices.find((item) => item.id === id)
@@ -273,6 +315,16 @@ export function useInvoices() {
             amountPaid: invoice.total,
             partialPaidAmount: invoice.total,
             balanceDue: 0,
+            lastPaymentAt: now,
+            lastPaymentDate: now,
+            lastPaymentBy: userId,
+            paymentHistory: arrayUnion({
+              amount: invoice.total,
+              paymentMethod,
+              status: 'paid',
+              recordedBy: userId,
+              recordedAt: new Date().toISOString(),
+            }),
             ...(stockAdjusted ? { inventoryAdjustedAt: now } : {}),
           })
           const paymentRef = doc(db, workspaceCollectionPath(workspaceId, 'payments'), `invoice-${id}-paid`)
@@ -368,7 +420,7 @@ export function useInvoices() {
         }
       },
       async rejectInvoicePayment(id) {
-        if (!canApprovePayments) return { ok: false, error: 'Only owner, admin, or accountant can reject payments' }
+        if (!permissions.canReject) return { ok: false, error: 'Only owner or admin can reject invoices' }
         if (!userId || !workspaceId) return { ok: false, error: 'Please login first' }
         if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now' }
         const invoice = invoices.find((item) => item.id === id)
@@ -403,7 +455,7 @@ export function useInvoices() {
         }
       },
       async recordPartialPayment(id, options = {}) {
-        if (!canApprovePayments) return { ok: false, error: 'Only owner, admin, or accountant can record payments' }
+        if (!permissions.canRecordPayments) return { ok: false, error: 'Only owner, admin, or accountant can record payments' }
         if (!userId || !workspaceId) return { ok: false, error: 'Please login first' }
         if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now' }
         const invoice = invoices.find((item) => item.id === id)
@@ -421,8 +473,8 @@ export function useInvoices() {
           const invoiceRef = doc(db, workspaceCollectionPath(workspaceId, 'invoices'), id)
           const stockAdjusted = fullyPaid ? await addInventoryAdjustments(batch, workspaceId, invoice, now) : false
           batch.update(invoiceRef, {
-            paymentStatus: fullyPaid ? 'paid' : 'partial',
-            status: fullyPaid ? 'paid' : 'partial',
+            paymentStatus: fullyPaid ? 'paid' : 'partial_paid',
+            status: fullyPaid ? 'paid' : 'partial_paid',
             approvalStatus: fullyPaid ? 'approved' : invoice.approvalStatus || 'pending',
             requiresApproval: fullyPaid ? false : invoice.requiresApproval ?? true,
             amountPaid: nextPaid,
@@ -432,7 +484,15 @@ export function useInvoices() {
             approvedBy: fullyPaid ? userId : invoice.approvedBy || null,
             approvedAt: fullyPaid ? now : invoice.approvedAt || null,
             lastPaymentAt: now,
+            lastPaymentDate: now,
             lastPaymentBy: userId,
+            paymentHistory: arrayUnion({
+              amount,
+              paymentMethod,
+              status: fullyPaid ? 'paid' : 'partial_paid',
+              recordedBy: userId,
+              recordedAt: new Date().toISOString(),
+            }),
             ...(stockAdjusted ? { inventoryAdjustedAt: now } : {}),
           })
           const paymentRef = doc(collection(db, workspaceCollectionPath(workspaceId, 'payments')))
@@ -445,8 +505,8 @@ export function useInvoices() {
             amountUsd: amount,
             currency: invoice.currency || 'PKR',
             paymentMethod,
-            paymentStatus: fullyPaid ? 'paid' : 'partial',
-            status: fullyPaid ? 'paid' : 'partial',
+            paymentStatus: fullyPaid ? 'paid' : 'partial_paid',
+            status: fullyPaid ? 'paid' : 'partial_paid',
             approvedBy: userId,
             approvedAt: now,
             paidAt: now,
@@ -532,12 +592,115 @@ export function useInvoices() {
         }
       },
       async updateInvoice(id, patch) {
+        if (!permissions.canEdit) return { ok: false, error: 'Only owner, admin, or accountant can edit invoices.' }
         setInvoices((prev) => prev.map((i) => (i.id === id ? { ...i, ...patch } : i)))
-        if (!db || !workspaceId || source !== 'firestore') return
+        if (!db || !workspaceId || source !== 'firestore') return { ok: true }
         await patchUserDoc(workspaceId, 'invoices', id, patch)
+        return { ok: true }
+      },
+      async sendForApproval(id) {
+        if (!permissions.canEdit) return { ok: false, error: 'Only owner, admin, or accountant can send invoices for approval.' }
+        if (!userId || !workspaceId) return { ok: false, error: 'Please login first' }
+        const invoice = invoices.find((item) => item.id === id)
+        if (!invoice) return { ok: false, error: 'Invoice not found' }
+        try {
+          await patchUserDoc(workspaceId, 'invoices', id, {
+            status: 'pending_approval',
+            approvalStatus: 'pending',
+            paymentStatus: invoice.amountPaid > 0 ? 'partial_paid' : 'pending',
+            requiresApproval: true,
+            submittedForApprovalBy: userId,
+            submittedForApprovalAt: serverTimestamp(),
+          })
+          await logActivity({
+            workspaceId,
+            userId,
+            ...userActivityInfo(userDoc, firebaseUser),
+            action: 'Invoice sent for approval',
+            module: 'Invoices',
+            description: `${invoice.invoiceNumber || id} was sent to Approval Center.`,
+            targetId: id,
+            targetName: invoice.invoiceNumber || id,
+          })
+          return { ok: true }
+        } catch (e) {
+          return { ok: false, error: clientSafeMessage(e, 'Unable to send invoice for approval.') }
+        }
+      },
+      async approveInvoice(id) {
+        if (!permissions.canApprove) return { ok: false, error: 'Only owner or admin can approve invoices.' }
+        const invoice = invoices.find((item) => item.id === id)
+        if (!invoice) return { ok: false, error: 'Invoice not found' }
+        await patchUserDoc(workspaceId, 'invoices', id, {
+          status: 'approved',
+          approvalStatus: 'approved',
+          requiresApproval: false,
+          approvedBy: userId,
+          approvedAt: serverTimestamp(),
+        })
+        return { ok: true }
+      },
+      async markInvoiceSent(id) {
+        if (!permissions.canSend) return { ok: false, error: 'Only owner, admin, or accountant can send invoices.' }
+        await patchUserDoc(workspaceId, 'invoices', id, {
+          status: 'sent',
+          sentAt: serverTimestamp(),
+          sentBy: userId,
+        })
+        return { ok: true }
+      },
+      async markInvoiceUnpaid(id) {
+        if (!permissions.canRecordPayments) return { ok: false, error: 'Only owner, admin, or accountant can update payments.' }
+        await patchUserDoc(workspaceId, 'invoices', id, {
+          status: 'sent',
+          paymentStatus: 'pending',
+          amountPaid: 0,
+          partialPaidAmount: 0,
+          balanceDue: invoices.find((item) => item.id === id)?.total || 0,
+          paidAt: null,
+          lastPaymentAt: null,
+          lastPaymentDate: null,
+        })
+        return { ok: true }
+      },
+      async duplicateInvoice(id) {
+        if (!permissions.canDuplicate) return { ok: false, error: 'You do not have permission to duplicate invoices.' }
+        const invoice = invoices.find((item) => item.id === id)
+        if (!invoice) return { ok: false, error: 'Invoice not found' }
+        const copyNumber = `${invoice.invoiceNumber || 'INV'}-COPY-${Date.now().toString().slice(-4)}`
+        try {
+          const payload = {
+            ...invoice,
+            invoiceNumber: copyNumber,
+            status: 'draft',
+            paymentStatus: 'draft',
+            approvalStatus: 'draft',
+            requiresApproval: false,
+            amountPaid: 0,
+            partialPaidAmount: 0,
+            balanceDue: invoice.total || invoice.totalUsd || 0,
+            paidAt: null,
+            lastPaymentAt: null,
+            lastPaymentDate: null,
+            paymentHistory: [],
+            createdBy: userId,
+            duplicatedFrom: id,
+          }
+          delete payload.id
+          await createUserDoc(workspaceId, 'invoices', payload)
+          return { ok: true }
+        } catch (e) {
+          return { ok: false, error: clientSafeMessage(e, 'Unable to duplicate invoice.') }
+        }
+      },
+      async deleteInvoice(id) {
+        if (!permissions.canDelete) return { ok: false, error: 'Only owner or admin can delete invoices.' }
+        if (!workspaceId) return { ok: false, error: 'Please login first' }
+        await removeUserDoc(workspaceId, 'invoices', id)
+        return { ok: true }
       },
     }),
-    [invoices, payments, loading, source, error, stats, canApprovePayments, firebaseUser, userDoc, userId, workspaceId],
+    [invoices, payments, loading, source, error, stats, canApprovePayments, permissions, firebaseUser, userDoc, userId, workspaceId],
   )
 
   return api

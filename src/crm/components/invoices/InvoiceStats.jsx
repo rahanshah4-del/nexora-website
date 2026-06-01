@@ -4,14 +4,17 @@ import { formatCurrency } from '../../utils/format.js'
 
 export default function InvoiceStats({ stats, currency = 'PKR' }) {
   const cards = [
-    { label: 'Total Invoices', value: stats.total, helper: 'Invoices created', tone: 'purple' },
-    { label: 'Total Amount', value: formatCurrency(stats.totalAmount || 0, currency), helper: 'Gross invoice value', tone: 'info' },
-    { label: 'Paid Amount', value: formatCurrency(stats.paidAmount || 0, currency), helper: `${stats.paid || 0} paid invoices`, tone: 'success' },
-    { label: 'Outstanding', value: formatCurrency(stats.outstanding || 0, currency), helper: `${stats.pending || 0} pending / ${stats.overdue || 0} overdue`, tone: 'warning' },
+    { label: 'Draft', value: stats.draft || 0, helper: 'Invoices being prepared', tone: 'purple' },
+    { label: 'Pending Approval', value: stats.pendingApproval || 0, helper: 'Visible in Approval Center', tone: 'warning' },
+    { label: 'Approved', value: stats.approved || 0, helper: 'Ready to send', tone: 'success' },
+    { label: 'Paid', value: stats.paid || 0, helper: formatCurrency(stats.paidAmount || 0, currency), tone: 'success' },
+    { label: 'Overdue', value: stats.overdue || 0, helper: formatCurrency(stats.outstanding || 0, currency), tone: 'danger' },
+    { label: 'Revenue', value: formatCurrency(stats.revenue || 0, currency), helper: 'Collected invoice value', tone: 'info' },
+    { label: 'Collection Rate', value: `${Math.round(stats.collectionRate || 0)}%`, helper: 'Paid against gross invoice value', tone: 'purple' },
   ]
 
   return (
-    <div className="grid gap-4 lg:grid-cols-4">
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-7">
       {cards.map((c) => (
         <Card key={c.label} className="border-slate-200/90 bg-white p-5 shadow-[0_18px_60px_-44px_rgba(79,70,229,0.45)]">
           <div className="flex items-start justify-between gap-2">

@@ -26,7 +26,7 @@ function normalizeStaffRole(role) {
   if (value === 'accountant') return 'accountant'
   if (value === 'manager') return 'manager'
   if (value === 'support' || value === 'support agent') return 'support'
-  if (value === 'sales' || value === 'sales staff') return 'staff'
+  if (value === 'sales' || value === 'sales staff' || value === 'staff') return 'sales'
   return 'staff'
 }
 

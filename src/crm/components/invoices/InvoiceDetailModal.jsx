@@ -12,7 +12,8 @@ import Button from '../ui/Button.jsx'
 import Input from '../ui/Input.jsx'
 import Select from '../ui/Select.jsx'
 import InvoicePreview from './InvoicePreview.jsx'
-import { INVOICE_STATUS_OPTIONS, statusBadge } from '../../lib/invoiceHelpers.js'
+import { INVOICE_STATUS_OPTIONS, dateLabel, invoicePaidAmount, invoiceTotal, statusBadge } from '../../lib/invoiceHelpers.js'
+import { formatCurrency } from '../../utils/format.js'
 
 function matchingPayments(payments, invoice) {
   const key = invoice?.id || invoice?.invoiceNumber
@@ -50,6 +51,10 @@ function InvoiceDetailModal({
   if (!invoice) return null
 
   const status = statusBadge(invoice.status || invoice.paymentStatus)
+  const total = invoiceTotal(invoice)
+  const amountPaid = invoicePaidAmount(invoice)
+  const balance = Math.max(Number(invoice.balanceDue ?? total - amountPaid) || 0, 0)
+  const paymentHistory = Array.isArray(invoice.paymentHistory) ? invoice.paymentHistory : []
 
   async function saveEdit() {
     if (!invoice?.id) return
@@ -98,6 +103,7 @@ function InvoiceDetailModal({
                   variant="subtle"
                   className="h-10 rounded-xl text-xs"
                   type="button"
+                  disabled={!onUpdate}
                   onClick={() => setEditing((value) => !value)}
                 >
                   <HiOutlinePencilSquare className="h-4 w-4" />
@@ -170,6 +176,35 @@ function InvoiceDetailModal({
                         Cancel
                       </Button>
                     </div>
+                  </div>
+                </div>
+              ) : null}
+
+              <div className="mx-auto mb-4 grid w-full max-w-[820px] gap-3 sm:grid-cols-4">
+                {[
+                  ['Amount Paid', formatCurrency(amountPaid, invoice.currency || 'PKR')],
+                  ['Remaining Balance', formatCurrency(balance, invoice.currency || 'PKR')],
+                  ['Last Payment Date', dateLabel(invoice.lastPaymentDate || invoice.lastPaymentAt || invoice.paidAt)],
+                  ['Payment History', `${invoicePayments.length + paymentHistory.length} entries`],
+                ].map(([label, value]) => (
+                  <div key={label} className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+                    <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">{label}</p>
+                    <p className="mt-1 text-sm font-black text-slate-950">{value}</p>
+                  </div>
+                ))}
+              </div>
+
+              {paymentHistory.length ? (
+                <div className="mx-auto mb-4 w-full max-w-[820px] rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <p className="text-sm font-black text-slate-950">Invoice Payment History</p>
+                  <div className="mt-3 divide-y divide-slate-100">
+                    {paymentHistory.slice().reverse().map((payment, index) => (
+                      <div key={`${payment.recordedAt || index}-${payment.amount}`} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
+                        <span className="font-semibold text-slate-700">{payment.paymentMethod || 'Manual'}</span>
+                        <span className="font-black text-slate-950">{formatCurrency(payment.amount || 0, invoice.currency || 'PKR')}</span>
+                        <span className="text-xs font-semibold text-slate-500">{dateLabel(payment.recordedAt)}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
               ) : null}
