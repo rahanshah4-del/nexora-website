@@ -36,7 +36,7 @@ service cloud.firestore {
       return activeSignedIn()
         && (
           profile().isAdmin == true
-          || profile().role in ['platform_admin', 'super_admin']
+          || profile().role in ['platform_admin', 'super_admin', 'PLATFORM_ADMIN', 'SUPER_ADMIN']
         );
     }
 
@@ -48,35 +48,76 @@ service cloud.firestore {
       return profile().role;
     }
 
+    function isOwnerRole(role) {
+      return role in ['owner', 'Owner', 'OWNER'];
+    }
+
+    function isAdminRole(role) {
+      return role in ['admin', 'Admin', 'ADMIN'];
+    }
+
+    function isAccountantRole(role) {
+      return role in ['accountant', 'Accountant', 'ACCOUNTANT'];
+    }
+
+    function isManagerRole(role) {
+      return role in ['manager', 'Manager', 'MANAGER'];
+    }
+
     function permissionDocId() {
       return profile().staffId is string ? profile().staffId : request.auth.uid;
     }
 
+    function profileWorkspaceMatches(workspaceId) {
+      return profileExists()
+        && (
+          profile().workspaceId == workspaceId
+          || profile().ownerId == workspaceId
+          || profile().userId == workspaceId
+        );
+    }
+
+    function workspaceOwnerMatches(workspaceId) {
+      return activeSignedIn()
+        && (
+          request.auth.uid == workspaceId
+          || (exists(/databases/$(database)/documents/workspaces/$(workspaceId))
+            && get(/databases/$(database)/documents/workspaces/$(workspaceId)).data.ownerId == request.auth.uid)
+          || (profileWorkspaceMatches(workspaceId) && isOwnerRole(memberRole()))
+        );
+    }
+
     function isWorkspaceMember(workspaceId) {
-      return activeSignedIn() && memberWorkspaceId() == workspaceId;
+      return activeSignedIn()
+        && (
+          profileWorkspaceMatches(workspaceId)
+          || workspaceOwnerMatches(workspaceId)
+        );
     }
 
     function roleHasPermission(role, key) {
-      return role in ['owner', 'admin']
-        || (role == 'manager'
+      return isOwnerRole(role)
+        || isAdminRole(role)
+        || (isManagerRole(role)
           && key in ['followUpEdit', 'followUpDelete', 'customerManagement', 'leadsManagement', 'invoices', 'reports'])
-        || (role == 'accountant' && key in ['invoices', 'reports']);
+        || (isAccountantRole(role) && key in ['invoices', 'reports']);
     }
 
     function isWorkspaceManager(workspaceId) {
-      return isActiveSelf(workspaceId)
+      return workspaceOwnerMatches(workspaceId)
         || isAdmin()
-        || (isWorkspaceMember(workspaceId) && memberRole() in ['owner', 'admin']);
+        || (isWorkspaceMember(workspaceId) && (isOwnerRole(memberRole()) || isAdminRole(memberRole())));
     }
 
     function isPaymentApprover(workspaceId) {
-      return isActiveSelf(workspaceId)
+      return workspaceOwnerMatches(workspaceId)
         || isAdmin()
-        || (isWorkspaceMember(workspaceId) && memberRole() in ['owner', 'admin', 'accountant']);
+        || (isWorkspaceMember(workspaceId) && (isOwnerRole(memberRole()) || isAdminRole(memberRole()) || isAccountantRole(memberRole())));
     }
 
     function staffPermission(workspaceId, key) {
-      return isAdmin()
+      return isWorkspaceManager(workspaceId)
+        || isAdmin()
         || (isWorkspaceMember(workspaceId)
           && (
             roleHasPermission(memberRole(), key)

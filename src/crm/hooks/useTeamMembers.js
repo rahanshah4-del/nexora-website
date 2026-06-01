@@ -92,6 +92,7 @@ export function useTeamMembers() {
             status: docPayload.status || 'Invited',
             permissions: Array.isArray(docPayload.permissions) ? docPayload.permissions : [],
             joinedAt: docPayload.joinedAt,
+            createdBy: userId,
           })
           await logActivity({
             workspaceId,

@@ -32,6 +32,7 @@ export function UserProvider({ children }) {
   const { profile, plan: localPlan } = usePreferences()
   const [userDoc, setUserDoc] = useState(null)
   const [staffAccessStatus, setStaffAccessStatus] = useState('')
+  const [workspaceOwnerId, setWorkspaceOwnerId] = useState('')
   const [loading, setLoading] = useState(true)
   const provisionedUserRef = useRef('')
   const loggedLoginRef = useRef('')
@@ -55,6 +56,7 @@ export function UserProvider({ children }) {
         provisionedUserRef.current = ''
         setUserDoc(null)
         setStaffAccessStatus('')
+        setWorkspaceOwnerId('')
         setLoading(false)
       })
       return
@@ -147,6 +149,28 @@ export function UserProvider({ children }) {
   const staffStatus = String(staffAccessStatus || '').trim().toLowerCase()
   const accountStatus = staffStatus || userStatus || 'active'
   const isBlocked = blockedStatuses.includes(userStatus) || blockedStatuses.includes(staffStatus)
+  const ownsWorkspace = Boolean(
+    user?.uid && (user.uid === workspaceId || user.uid === userDoc?.ownerId || user.uid === workspaceOwnerId),
+  )
+  const isOwner = role === 'owner' || ownsWorkspace
+  const isAdmin = isOwner || role === 'admin'
+  const isStaff = !isOwner && role === 'staff'
+
+  useEffect(() => {
+    if (!ready || !db || !user?.uid || loading || !workspaceId) {
+      Promise.resolve().then(() => setWorkspaceOwnerId(''))
+      return undefined
+    }
+
+    const ref = doc(db, 'workspaces', workspaceId)
+    const unsub = onSnapshot(
+      ref,
+      (snap) => setWorkspaceOwnerId(snap.exists() ? String(snap.data()?.ownerId || '') : ''),
+      () => setWorkspaceOwnerId(''),
+    )
+
+    return () => unsub()
+  }, [loading, ready, user?.uid, workspaceId])
 
   useEffect(() => {
     if (!user?.uid || !workspaceId || loading || loggedLoginRef.current === user.uid) return
@@ -181,9 +205,9 @@ export function UserProvider({ children }) {
       trialEndsAt,
       trialDaysRemaining,
       role,
-      isOwner: role === 'owner',
-      isStaff: role === 'staff',
-      isAdmin: role === 'admin' || role === 'owner',
+      isOwner,
+      isStaff,
+      isAdmin,
       isPlatformAdmin,
       accountStatus,
       isBlocked,
@@ -206,6 +230,11 @@ export function UserProvider({ children }) {
       isPlatformAdmin,
       accountStatus,
       isBlocked,
+      ownsWorkspace,
+      workspaceOwnerId,
+      isOwner,
+      isAdmin,
+      isStaff,
     ],
   )
 
