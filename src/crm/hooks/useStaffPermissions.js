@@ -25,6 +25,8 @@ function normalizeStaffRole(role) {
   if (value === 'admin') return 'admin'
   if (value === 'accountant') return 'accountant'
   if (value === 'manager') return 'manager'
+  if (value === 'support' || value === 'support agent') return 'support'
+  if (value === 'sales' || value === 'sales staff') return 'staff'
   return 'staff'
 }
 
@@ -248,6 +250,30 @@ export function useStaffPermissions() {
           targetName: staffRow?.name || staffId,
           metadata: { permission: key, enabled: Boolean(value) },
         })
+        return { ok: true }
+      },
+      async setStaffStatus(staffId, status) {
+        if (!access.isAdmin) return { ok: false, error: 'Only an owner or admin can update staff access.' }
+        if (!db || !workspaceId || !userId) return { ok: false, error: 'Secure Cloud Sync is not available right now.' }
+        const staffRow = staff.find((item) => item.id === staffId)
+        const nextStatus = String(status || 'active').trim().toLowerCase()
+        const now = serverTimestamp()
+        await Promise.all([
+          setDoc(doc(db, 'workspaces', workspaceId, 'staff', staffId), { status: nextStatus, updatedAt: now, updatedBy: userId }, { merge: true }),
+          setDoc(doc(db, 'workspaces', workspaceId, 'teamMembers', staffId), { status: nextStatus, updatedAt: now, updatedBy: userId }, { merge: true }),
+          setDoc(doc(db, 'users', staffId), { status: nextStatus, updatedAt: now, updatedBy: userId }, { merge: true }),
+          logActivity({
+            workspaceId,
+            userId,
+            ...userActivityInfo(userDoc, firebaseUser),
+            action: nextStatus === 'blocked' ? 'Staff blocked' : 'Staff access updated',
+            module: 'Team',
+            description: `${staffRow?.name || staffId} access set to ${nextStatus}.`,
+            targetId: staffId,
+            targetName: staffRow?.name || staffId,
+            metadata: { status: nextStatus },
+          }),
+        ])
         return { ok: true }
       },
     }),

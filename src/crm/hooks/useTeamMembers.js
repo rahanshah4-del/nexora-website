@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { db } from '../lib/firebase.js'
-import { createUserDoc, patchUserDoc, subscribeUserCollection } from '../lib/firestore.js'
+import { createUserDoc, patchUserDoc, removeUserDoc, subscribeUserCollection } from '../lib/firestore.js'
 import { permissionKeys } from '../data/permissions.js'
 import { useUser } from './useUser.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
@@ -125,6 +125,28 @@ export function useTeamMembers() {
           targetName: member?.name || id,
           metadata: patch,
         })
+      },
+      async deleteMember(id) {
+        const member = rows.find((item) => item.id === id)
+        setRows((prev) => prev.filter((m) => m.id !== id))
+        if (!db || !workspaceId || !userId || source !== 'firestore') return { ok: true }
+        try {
+          await removeUserDoc(workspaceId, 'teamMembers', id)
+          await logActivity({
+            workspaceId,
+            userId,
+            ...userActivityInfo(userDoc, firebaseUser),
+            action: 'Staff deleted',
+            module: 'Team',
+            description: `${member?.name || 'Team member'} was removed from the team.`,
+            targetId: id,
+            targetName: member?.name || id,
+            metadata: { email: member?.email || '' },
+          })
+          return { ok: true }
+        } catch (e) {
+          return { ok: false, error: clientSafeMessage(e, 'Unable to delete team member.') }
+        }
       },
     }),
     [rows, loading, source, error, firebaseUser, userDoc, userId, workspaceId],

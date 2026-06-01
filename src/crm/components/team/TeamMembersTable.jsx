@@ -4,7 +4,14 @@ import Button from '../ui/Button.jsx'
 import Table from '../ui/Table.jsx'
 import TeamMemberModal from './TeamMemberModal.jsx'
 
-export default function TeamMembersTable({ members, permissionKeys, onAdd, onUpdate }) {
+function statusVariant(status) {
+  const value = String(status || '').toLowerCase()
+  if (value === 'active') return 'success'
+  if (value === 'disabled' || value === 'inactive' || value === 'blocked') return 'danger'
+  return 'warning'
+}
+
+export default function TeamMembersTable({ members, permissionKeys, onAdd, onUpdate, onDelete }) {
   const [open, setOpen] = useState(false)
   const [mode, setMode] = useState('add')
   const [active, setActive] = useState(null)
@@ -15,28 +22,51 @@ export default function TeamMembersTable({ members, permissionKeys, onAdd, onUpd
       { key: 'email', header: 'Email' },
       { key: 'phone', header: 'Phone' },
       { key: 'role', header: 'Role', cell: (r) => <Badge variant="purple">{r.role}</Badge> },
-      { key: 'status', header: 'Status', cell: (r) => <Badge variant={r.status === 'Active' ? 'success' : 'warning'}>{r.status}</Badge> },
+      { key: 'status', header: 'Status', cell: (r) => <Badge variant={statusVariant(r.status)}>{r.status || 'Invited'}</Badge> },
       { key: 'lastActive', header: 'Last Active', cell: (r) => <span className="text-xs">{r.lastActive || '—'}</span> },
       {
         key: 'actions',
         header: 'Actions',
-        cell: (r) => (
-          <Button
-            variant="subtle"
-            className="rounded-xl px-3 py-2 text-xs"
-            type="button"
-            onClick={() => {
-              setActive(r)
-              setMode('edit')
-              setOpen(true)
-            }}
-          >
-            Edit
-          </Button>
-        ),
+        cell: (r) => {
+          const disabled = ['disabled', 'inactive', 'blocked'].includes(String(r.status || '').toLowerCase())
+          return (
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="subtle"
+                className="rounded-xl px-3 py-2 text-xs"
+                type="button"
+                onClick={() => {
+                  setActive(r)
+                  setMode('edit')
+                  setOpen(true)
+                }}
+              >
+                Edit
+              </Button>
+              <Button
+                variant="ghost"
+                className="rounded-xl px-3 py-2 text-xs"
+                type="button"
+                onClick={() => onUpdate?.(r.id, { status: disabled ? 'Active' : 'Disabled' })}
+              >
+                {disabled ? 'Enable' : 'Disable'}
+              </Button>
+              <Button
+                variant="ghost"
+                className="rounded-xl px-3 py-2 text-xs text-rose-700 hover:bg-rose-50"
+                type="button"
+                onClick={() => {
+                  if (window.confirm(`Delete ${r.name || 'this team member'}?`)) onDelete?.(r.id)
+                }}
+              >
+                Delete
+              </Button>
+            </div>
+          )
+        },
       },
     ],
-    [],
+    [onDelete, onUpdate],
   )
 
   return (
@@ -76,4 +106,3 @@ export default function TeamMembersTable({ members, permissionKeys, onAdd, onUpd
     </div>
   )
 }
-

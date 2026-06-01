@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   HiOutlineArrowLeft,
@@ -108,7 +108,7 @@ export default function InvoiceCreatePage() {
   const [toast, setToast] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const [previewSeen, setPreviewSeen] = useState(false)
-  const previewRef = useRef(null)
+  const [previewOpen, setPreviewOpen] = useState(false)
 
   const totals = useMemo(() => calculateInvoiceDraft(invoice), [invoice])
   const company = useMemo(
@@ -161,7 +161,7 @@ export default function InvoiceCreatePage() {
 
   function showPreview() {
     setPreviewSeen(true)
-    previewRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    setPreviewOpen(true)
   }
 
   async function submitInvoice(status = '', allowWithoutPreview = false) {
@@ -276,7 +276,7 @@ export default function InvoiceCreatePage() {
         </div>
       </div>
 
-      <div className="mx-auto grid max-w-[1600px] gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(420px,0.78fr)]">
+      <div className="mx-auto max-w-[1500px]">
         <main className="space-y-4">
           <SectionCard number="1" title="Customer Information">
             <div className="grid gap-3 md:grid-cols-3">
@@ -423,7 +423,7 @@ export default function InvoiceCreatePage() {
             </div>
           </SectionCard>
 
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(260px,0.65fr)_minmax(280px,0.8fr)]">
+          <div className="grid gap-4 xl:grid-cols-2 2xl:grid-cols-[minmax(0,1fr)_minmax(280px,0.55fr)_minmax(330px,0.68fr)]">
             <SectionCard number="4" title="Additional Options">
               <div className="grid gap-3 sm:grid-cols-2">
                 <label>
@@ -475,7 +475,7 @@ export default function InvoiceCreatePage() {
               </div>
             </SectionCard>
 
-            <SectionCard number="6" title="Smart Calculations">
+            <SectionCard number="6" title="Smart Calculations" className="xl:col-span-2 2xl:col-span-1">
               <div className="space-y-2 text-sm">
                 {[
                   ['Subtotal', totals.subtotal],
@@ -507,44 +507,65 @@ export default function InvoiceCreatePage() {
             <Button variant="subtle" className="h-10 rounded-xl" type="button" disabled={submitting} onClick={() => submitInvoice('draft', true)}>
               Save Draft
             </Button>
+            <Button variant="subtle" className="h-10 rounded-xl" type="button" onClick={showPreview}>
+              <HiOutlineEye className="h-4 w-4" />
+              Preview
+            </Button>
             <Button className="h-10 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600" type="button" disabled={submitting} onClick={() => submitInvoice()}>
               {submitting ? 'Saving...' : previewSeen ? 'Save Final Invoice' : 'Next -> Preview'}
             </Button>
           </div>
         </main>
-
-        <aside ref={previewRef} className="space-y-3 xl:sticky xl:top-[10rem] xl:self-start">
-          <div className="no-print flex flex-wrap justify-between gap-2 rounded-[1.35rem] border border-slate-200 bg-white p-3 shadow-[0_18px_60px_-50px_rgba(79,70,229,0.5)]">
-            <div className="flex items-center gap-3">
-              <StepBadge number="6" />
-              <p className="text-sm font-black text-slate-950">Invoice Preview</p>
-            </div>
-            <div className="flex gap-2">
-              <Button variant="subtle" className="h-9 rounded-xl px-3 text-xs" type="button" onClick={() => window.print()}>
-                <HiOutlineDocumentArrowDown className="h-4 w-4" />
-                Download PDF
-              </Button>
-              <Button variant="subtle" className="h-9 rounded-xl px-3 text-xs" type="button" onClick={() => window.print()}>
-                <HiOutlinePrinter className="h-4 w-4" />
-                Print
-              </Button>
-            </div>
-          </div>
-          <InvoicePreview invoice={{ ...invoice, ...totals, total: totals.grandTotal }} company={company} />
-          <div className="no-print grid gap-2 sm:grid-cols-3 xl:grid-cols-3">
-            <Button variant="subtle" className="rounded-xl text-xs text-indigo-700" type="button">
-              <HiOutlinePaperAirplane className="h-4 w-4" />
-              Send via Email
-            </Button>
-            <Button variant="subtle" className="rounded-xl text-xs text-emerald-700" type="button">
-              Send via WhatsApp
-            </Button>
-            <Button variant="subtle" className="rounded-xl text-xs text-indigo-700" type="button">
-              Share Invoice Link
-            </Button>
-          </div>
-        </aside>
       </div>
+
+      {previewOpen ? (
+        <div
+          className="no-print fixed inset-0 z-[80] grid place-items-center overflow-y-auto overflow-x-hidden bg-slate-950/45 p-3 backdrop-blur-sm sm:p-4"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setPreviewOpen(false)}
+        >
+          <div
+            className="flex max-h-[92vh] w-full max-w-[980px] min-w-0 flex-col overflow-hidden rounded-[1.6rem] bg-white shadow-[0_28px_100px_-45px_rgba(15,23,42,0.65)]"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex shrink-0 flex-col gap-3 border-b border-slate-200 bg-white px-4 py-4 sm:px-5 lg:flex-row lg:items-center lg:justify-between">
+              <div className="min-w-0">
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-indigo-600">Invoice Preview</p>
+                <h2 className="mt-1 truncate text-xl font-black tracking-tight text-slate-950">{invoice.invoiceNumber}</h2>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button variant="subtle" className="h-10 rounded-xl text-xs" type="button" onClick={() => window.print()}>
+                  <HiOutlineDocumentArrowDown className="h-4 w-4" />
+                  Download PDF
+                </Button>
+                <Button variant="subtle" className="h-10 rounded-xl text-xs" type="button" onClick={() => window.print()}>
+                  <HiOutlinePrinter className="h-4 w-4" />
+                  Print
+                </Button>
+                <Button variant="subtle" className="h-10 rounded-xl text-xs" type="button">
+                  <HiOutlinePaperAirplane className="h-4 w-4" />
+                  Send
+                </Button>
+                <Button variant="ghost" className="h-10 rounded-xl px-3" type="button" onClick={() => setPreviewOpen(false)}>
+                  Close
+                </Button>
+              </div>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden bg-slate-50 px-3 py-4 sm:px-5">
+              <div className="mx-auto w-full max-w-[820px] min-w-0">
+                <InvoicePreview
+                  invoice={{ ...invoice, ...totals, total: totals.grandTotal }}
+                  company={company}
+                  compact
+                  id="invoice-print"
+                  className="w-full max-w-full"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </motion.div>
   )
 }

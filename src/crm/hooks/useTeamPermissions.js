@@ -4,7 +4,7 @@ import { db } from '../lib/firebase.js'
 import { useUser } from './useUser.js'
 import { clientSafeMessage } from '../utils/messages.js'
 
-const ROLES = ['Owner', 'Admin', 'Manager', 'Sales Staff', 'Support Agent', 'Accountant']
+const ROLES = ['Owner', 'Admin', 'Manager', 'Sales Staff', 'Support Agent', 'Accountant', 'Custom Role']
 
 function emptyMatrix(permissionKeys) {
   const matrix = {}
@@ -15,8 +15,18 @@ function emptyMatrix(permissionKeys) {
   return matrix
 }
 
+function normalizeMatrix(matrix, permissionKeys) {
+  const normalized = emptyMatrix(permissionKeys)
+  for (const role of ROLES) {
+    for (const key of permissionKeys) {
+      normalized[role][key] = role === 'Owner' ? true : Boolean(matrix?.[role]?.[key])
+    }
+  }
+  return normalized
+}
+
 function defaultTemplate(permissionKeys) {
-  const matrix = emptyMatrix(permissionKeys)
+  const matrix = normalizeMatrix(null, permissionKeys)
   for (const role of ['Owner', 'Admin']) {
     for (const key of permissionKeys) matrix[role][key] = true
   }
@@ -38,7 +48,7 @@ export function useTeamPermissions({ permissionKeys }) {
   useEffect(() => {
     if (!db) {
       Promise.resolve().then(() => {
-        setMatrix(emptyMatrix(permissionKeys))
+        setMatrix(normalizeMatrix(null, permissionKeys))
         setExists(false)
         setLoading(false)
         setSource('none')
@@ -48,7 +58,7 @@ export function useTeamPermissions({ permissionKeys }) {
     }
     if (!workspaceId) {
       Promise.resolve().then(() => {
-        setMatrix(emptyMatrix(permissionKeys))
+        setMatrix(normalizeMatrix(null, permissionKeys))
         setExists(false)
         setLoading(false)
         setSource('firestore')
@@ -62,11 +72,11 @@ export function useTeamPermissions({ permissionKeys }) {
       ref,
       (snap) => {
         if (!snap.exists()) {
-          setMatrix(emptyMatrix(permissionKeys))
+          setMatrix(normalizeMatrix(null, permissionKeys))
           setExists(false)
         } else {
           const data = snap.data()
-          setMatrix(data?.matrix || emptyMatrix(permissionKeys))
+          setMatrix(normalizeMatrix(data?.matrix, permissionKeys))
           setExists(true)
         }
         setSource('firestore')
@@ -74,7 +84,7 @@ export function useTeamPermissions({ permissionKeys }) {
       },
       (err) => {
         setError(clientSafeMessage(err, 'Unable to load team permissions.'))
-        setMatrix(emptyMatrix(permissionKeys))
+        setMatrix(normalizeMatrix(null, permissionKeys))
         setExists(false)
         setSource('firestore')
         setLoading(false)
@@ -92,6 +102,7 @@ export function useTeamPermissions({ permissionKeys }) {
       source,
       error,
       toggle(role, permission) {
+        if (role === 'Owner') return
         setMatrix((prev) => ({
           ...prev,
           [role]: { ...(prev[role] || {}), [permission]: !prev?.[role]?.[permission] },
@@ -125,12 +136,14 @@ export function useTeamPermissions({ permissionKeys }) {
         if (!isAdmin) return { ok: false, error: 'Only an owner or admin can save permissions.' }
         if (!userId || !workspaceId) return { ok: false, error: 'Please login first' }
         if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now' }
+        const nextMatrix = normalizeMatrix(matrix, permissionKeys)
         try {
           await setDoc(
             doc(db, 'workspaces', workspaceId, 'teamPermissions', 'default'),
-            { matrix, ownerId: workspaceId, userId: workspaceId, workspaceId, updatedAt: serverTimestamp(), updatedBy: userId },
+            { matrix: nextMatrix, ownerId: workspaceId, userId: workspaceId, workspaceId, updatedAt: serverTimestamp(), updatedBy: userId },
             { merge: true },
           )
+          setMatrix(nextMatrix)
           return { ok: true }
         } catch (e) {
           return { ok: false, error: clientSafeMessage(e, 'Unable to save permissions.') }

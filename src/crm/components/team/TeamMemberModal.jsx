@@ -6,7 +6,8 @@ import Input from '../ui/Input.jsx'
 import Select from '../ui/Select.jsx'
 import Badge from '../ui/Badge.jsx'
 
-const roles = ['Owner', 'Admin', 'Manager', 'Sales Staff', 'Support Agent', 'Accountant']
+const roles = ['Owner', 'Admin', 'Manager', 'Sales Staff', 'Support Agent', 'Accountant', 'Custom Role']
+const statuses = ['Active', 'Invited', 'Disabled']
 
 function TeamMemberModal({ open, mode = 'add', member, permissionKeys, onClose, onSave }) {
   const [draft, setDraft] = useState(member || null)
@@ -14,7 +15,7 @@ function TeamMemberModal({ open, mode = 'add', member, permissionKeys, onClose, 
   useEffect(() => {
     if (!open) return
     Promise.resolve().then(() =>
-      setDraft(member || { name: '', email: '', phone: '', role: 'Sales Staff', permissions: [] }),
+      setDraft(member || { name: '', email: '', phone: '', role: 'Sales Staff', status: 'Active', permissions: [] }),
     )
   }, [open, member])
 
@@ -69,6 +70,16 @@ function TeamMemberModal({ open, mode = 'add', member, permissionKeys, onClose, 
                       {roles.map((r) => (
                         <option key={r} value={r}>
                           {r}
+                        </option>
+                      ))}
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Status</label>
+                    <Select className="mt-1" value={draft.status || 'Active'} onChange={(e) => setDraft((d) => ({ ...d, status: e.target.value }))}>
+                      {statuses.map((status) => (
+                        <option key={status} value={status}>
+                          {status}
                         </option>
                       ))}
                     </Select>

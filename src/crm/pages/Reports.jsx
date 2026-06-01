@@ -643,7 +643,7 @@ export default function ReportsPage() {
           <ReportSection title="Staff/team report" badge="Team">
             <DataTable
               rows={staffRows}
-              empty="Create staff members in Team & Permissions to see team reporting."
+              empty="Create staff members in Team Management to see team reporting."
               columns={[
                 { key: 'name', label: 'Name', render: (row) => safeText(row.name) },
                 { key: 'email', label: 'Email', render: (row) => safeText(row.email, 'No email yet') },
