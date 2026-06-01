@@ -29,6 +29,7 @@ import { ensureUserWorkspace } from '../../lib/accountProvisioning.js'
 import useAuth from '../../context/useAuth.js'
 import logoUrl from '../../assets/logo/nexora-logo.svg'
 import { motion } from 'framer-motion'
+import { clientSafeMessage } from '../../lib/errorHandler.js'
 
 const modules = [
   { name: 'CRM', detail: 'Customer Relationship Management', icon: HiOutlineUserGroup, color: 'bg-blue-600' },
@@ -144,7 +145,7 @@ export default function Login() {
       const credentials = await signInWithEmailAndPassword(auth, email.trim(), password)
       await ensureUserWorkspace(credentials.user, { provider: 'password' })
     } catch (err) {
-      setError(err?.message || 'Unable to sign in. Please verify your credentials.')
+      setError(clientSafeMessage(err, 'Unable to sign in. Please verify your credentials.', { context: 'Login with email' }))
     } finally {
       setSubmitting(false)
     }
@@ -165,7 +166,7 @@ export default function Login() {
       const result = await signInWithPopup(auth, provider)
       await ensureUserWorkspace(result.user, { provider: 'google' })
     } catch (err) {
-      setError(err?.message || 'Google sign-in failed. Please try again.')
+      setError(clientSafeMessage(err, 'Google sign-in failed. Please try again.', { context: 'Login with Google' }))
     } finally {
       setGoogleLoading(false)
     }
@@ -394,12 +395,15 @@ export default function Login() {
                 </button>
               </div>
 
-              <p className="mt-7 text-center text-sm font-medium text-slate-600">
-                Don&apos;t have an account?{' '}
-                <Link to="/contact" className="font-bold text-blue-600 transition hover:text-blue-800">
-                  Contact Administrator
+              <div className="mt-7 rounded-2xl border border-blue-100 bg-blue-50/70 p-4 text-center">
+                <p className="text-sm font-medium text-slate-600">Don&apos;t have an account?</p>
+                <Link
+                  to="/signup"
+                  className="mt-3 inline-flex h-11 w-full items-center justify-center rounded-lg bg-slate-950 px-4 text-sm font-bold text-white shadow-lg shadow-slate-950/15 transition hover:bg-blue-700 sm:w-auto"
+                >
+                  Create Account
                 </Link>
-              </p>
+              </div>
             </motion.div>
           </section>
         </section>

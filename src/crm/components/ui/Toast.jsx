@@ -2,7 +2,11 @@ export default function Toast({ tone = 'success', message, onClose }) {
   const toneClasses =
     tone === 'error'
       ? 'border-rose-500/20 bg-rose-500/10 text-rose-900 dark:text-rose-100'
-      : 'border-emerald-500/20 bg-emerald-500/10 text-emerald-900 dark:text-emerald-100'
+      : tone === 'warning'
+        ? 'border-amber-500/20 bg-amber-500/10 text-amber-900 dark:text-amber-100'
+        : tone === 'info'
+          ? 'border-sky-500/20 bg-sky-500/10 text-sky-900 dark:text-sky-100'
+          : 'border-emerald-500/20 bg-emerald-500/10 text-emerald-900 dark:text-emerald-100'
 
   return (
     <div className={`glass fixed right-4 top-4 z-[70] w-[22rem] max-w-[calc(100vw-2rem)] rounded-2xl border p-3 ${toneClasses}`}>
@@ -19,4 +23,3 @@ export default function Toast({ tone = 'success', message, onClose }) {
     </div>
   )
 }
-

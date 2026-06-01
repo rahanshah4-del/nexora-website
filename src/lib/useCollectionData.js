@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { collection, getDocs, limit, orderBy, query, where } from 'firebase/firestore'
 import { db } from './firebase.js'
+import { clientSafeMessage } from './errorHandler.js'
 
 export function useCollectionData(collectionName, options = {}) {
   const { orderByField = '', direction = 'desc', limitCount = 20, userId = '', admin = false, workspaceScoped = true, allowGlobal = false } = options
@@ -42,7 +43,7 @@ export function useCollectionData(collectionName, options = {}) {
         setItems(data)
       } catch (e) {
         if (!canceled) {
-          setError(e)
+          setError(clientSafeMessage(e, 'Unable to load data.', { context: `Load ${collectionName}` }))
           setItems([])
         }
       } finally {

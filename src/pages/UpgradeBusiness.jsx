@@ -5,6 +5,7 @@ import { getDownloadURL, ref, uploadBytes } from 'firebase/storage'
 import { onAuthStateChanged } from 'firebase/auth'
 import useNoIndex from '../hooks/useNoIndex.js'
 import { assertFirebaseReady, auth, db, storage } from '../lib/firebase.js'
+import { clientSafeMessage } from '../lib/errorHandler.js'
 
 const PLAN = {
   name: 'Standard Package',
@@ -305,7 +306,7 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
 
       setSubmitted(true)
     } catch (error) {
-      setSubmitError(error?.message || 'Failed to submit upgrade request. Please try again.')
+      setSubmitError(clientSafeMessage(error, 'Failed to submit upgrade request. Please try again.', { context: 'Upgrade request submit' }))
     } finally {
       setIsSubmitting(false)
     }

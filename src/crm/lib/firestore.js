@@ -3,7 +3,7 @@ import { db } from './firebase.js'
 import { clientSafeMessage } from '../utils/messages.js'
 
 function safeError(error, fallback) {
-  return new Error(clientSafeMessage(error, fallback))
+  return new Error(clientSafeMessage(error, fallback, { context: fallback }))
 }
 
 function belongsToWorkspace(data, workspaceId) {

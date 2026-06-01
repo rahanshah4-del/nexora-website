@@ -5,6 +5,7 @@ import { AuthContext } from './auth-context.js'
 import { auth, db } from '../lib/firebase.js'
 import { ensureUserWorkspace } from '../lib/accountProvisioning.js'
 import { isPlatformAdminDoc } from '../lib/roles.js'
+import { reportTechnicalError } from '../lib/errorHandler.js'
 
 async function fetchUserRole(userId) {
   if (!db || !userId) return { role: 'user', isAdmin: false }
@@ -40,7 +41,8 @@ export default function AuthProvider({ children }) {
         const nextRole = await fetchUserRole(nextUser.uid)
         setRole(nextRole.role)
         setIsAdmin(nextRole.isAdmin)
-      } catch {
+      } catch (error) {
+        reportTechnicalError(error, 'Auth workspace bootstrap')
         setRole('user')
         setIsAdmin(false)
       } finally {

@@ -32,6 +32,7 @@ import useAuth from '../../context/useAuth.js'
 import { auth, db } from '../../lib/firebase.js'
 import { normalizeWorkspaceName, resolveWorkspaceName, saveStoredWorkspaceName } from '../../lib/workspaceName.js'
 import { packageNameForPlan } from '../../crm/data/moduleAccess.js'
+import { clientSafeMessage, reportTechnicalError } from '../../lib/errorHandler.js'
 
 const moduleAccess = [
   { name: 'Nexora CRM', icon: HiOutlineUserGroup, color: 'bg-blue-600', active: true, route: '/app/dashboard' },
@@ -645,7 +646,8 @@ export default function WorkspaceSelection() {
       }
     }
 
-    loadAccount().catch(() => {
+    loadAccount().catch((error) => {
+      reportTechnicalError(error, 'Workspace account load')
       if (!cancelled) {
         setAccountData(null)
         setWorkspaceData(null)
@@ -771,8 +773,8 @@ export default function WorkspaceSelection() {
     try {
       await sendEmailVerification(currentUser)
       setVerificationMessage('Verification email sent. Please check your inbox.')
-    } catch {
-      setVerificationMessage('Could not send verification email right now.')
+    } catch (error) {
+      setVerificationMessage(clientSafeMessage(error, 'Could not send verification email right now.', { context: 'Workspace email verification' }))
     } finally {
       setVerificationSending(false)
     }
@@ -837,8 +839,8 @@ export default function WorkspaceSelection() {
       }
       await Promise.all(writes)
       setWorkspaceNameMessage('Workspace name saved.')
-    } catch {
-      setWorkspaceNameMessage('Saved on this device. Cloud sync will retry when available.')
+    } catch (error) {
+      setWorkspaceNameMessage(clientSafeMessage(error, 'Saved on this device. Cloud sync will retry when available.', { context: 'Workspace name save' }))
     } finally {
       setWorkspaceNameSaving(false)
     }
@@ -932,8 +934,8 @@ export default function WorkspaceSelection() {
       setWorkspaceData(workspacePayload)
       setCreateOpen(false)
       setCreateMessage('You already have a CRM workspace.')
-    } catch {
-      setCreateMessage('Could not create workspace right now.')
+    } catch (error) {
+      setCreateMessage(clientSafeMessage(error, 'Could not create workspace right now.', { context: 'Workspace create' }))
     } finally {
       setCreatingWorkspace(false)
     }

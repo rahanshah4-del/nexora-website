@@ -7,6 +7,7 @@ import { ensureUserWorkspace } from '../../lib/accountProvisioning.js'
 import useAuth from '../../context/useAuth.js'
 import NexoraLogo from '../../components/brand/NexoraLogo.jsx'
 import { motion } from 'framer-motion'
+import { clientSafeMessage, reportTechnicalError } from '../../lib/errorHandler.js'
 
 const businessTypes = [
   'Retail / POS',
@@ -65,12 +66,12 @@ export default function Signup() {
         provider: 'password',
       })
       if (!userRecord.emailVerified) {
-        await sendEmailVerification(userRecord).catch(() => {})
+        await sendEmailVerification(userRecord).catch((error) => reportTechnicalError(error, 'Signup email verification'))
       }
 
       navigate('/workspace', { replace: true })
     } catch (err) {
-      setError(err?.message || 'Unable to create account. Please try again.')
+      setError(clientSafeMessage(err, 'Unable to create account. Please try again.', { context: 'Signup with email' }))
     } finally {
       setSubmitting(false)
     }
@@ -104,7 +105,7 @@ export default function Signup() {
 
       navigate('/workspace', { replace: true })
     } catch (err) {
-      setError(err?.message || 'Google signup failed. Please try again.')
+      setError(clientSafeMessage(err, 'Google signup failed. Please try again.', { context: 'Signup with Google' }))
     } finally {
       setGoogleLoading(false)
     }

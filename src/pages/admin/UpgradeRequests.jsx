@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { collection, doc, onSnapshot, orderBy, query, serverTimestamp, updateDoc, writeBatch } from 'firebase/firestore'
 import { db } from '../../lib/firebase.js'
 import useAuth from '../../context/useAuth.js'
+import { clientSafeMessage } from '../../lib/errorHandler.js'
 
 function StatusPill({ value }) {
   const style =
@@ -32,7 +33,7 @@ export default function UpgradeRequests() {
         setLoading(false)
       },
       (e) => {
-        setError(e?.message || 'Failed to load upgrade requests.')
+        setError(clientSafeMessage(e, 'Failed to load upgrade requests.', { context: 'Admin upgrade requests load' }))
         setLoading(false)
       },
     )
@@ -88,6 +89,9 @@ export default function UpgradeRequests() {
         { merge: true },
       )
       await batch.commit()
+      setError('')
+    } catch (error) {
+      setError(clientSafeMessage(error, 'Unable to update upgrade request.', { context: 'Admin upgrade request update' }))
     } finally {
       setUpdatingId('')
     }
