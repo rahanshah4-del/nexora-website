@@ -24,7 +24,7 @@ import {
 } from 'react-icons/hi2'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
-import { auth, firebaseEnabled } from '../../lib/firebase.js'
+import { auth } from '../../lib/firebase.js'
 import { ensureUserWorkspace } from '../../lib/accountProvisioning.js'
 import useAuth from '../../context/useAuth.js'
 import logoUrl from '../../assets/logo/nexora-logo.svg'
@@ -136,7 +136,7 @@ export default function Login() {
     setError('')
     setInfo('')
 
-    if (!firebaseEnabled || !auth) {
+    if (!auth) {
       setError('Authentication is not configured. Please check your setup and try again.')
       return
     }
@@ -161,7 +161,7 @@ export default function Login() {
     setError('')
     setInfo('')
 
-    if (!firebaseEnabled || !auth) {
+    if (!auth) {
       setError('Google sign-in is not available. Please try email sign in.')
       return
     }

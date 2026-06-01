@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { AiOutlineGoogle } from 'react-icons/ai'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { createUserWithEmailAndPassword, GoogleAuthProvider, sendEmailVerification, signInWithPopup } from 'firebase/auth'
-import { auth, db, firebaseEnabled } from '../../lib/firebase.js'
+import { auth, db } from '../../lib/firebase.js'
 import { ensureUserWorkspace } from '../../lib/accountProvisioning.js'
 import useAuth from '../../context/useAuth.js'
 import NexoraLogo from '../../components/brand/NexoraLogo.jsx'
@@ -35,8 +35,12 @@ export default function Signup() {
     setError('')
     setInfo('')
 
-    if (!firebaseEnabled || !auth || !db) {
+    if (!auth) {
       setError('Authentication is not available right now. Please try again later.')
+      return
+    }
+    if (!db) {
+      setError('Workspace setup is not available right now. Please try again later.')
       return
     }
 
@@ -72,8 +76,12 @@ export default function Signup() {
     setError('')
     setInfo('')
 
-    if (!firebaseEnabled || !auth || !db) {
+    if (!auth) {
       setError('Google sign-up is not configured. Please try email sign up instead.')
+      return
+    }
+    if (!db) {
+      setError('Workspace setup is not available right now. Please try again later.')
       return
     }
 

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
-import { signOut } from 'firebase/auth'
+import { sendEmailVerification, signOut } from 'firebase/auth'
 import useAuth from '../../context/useAuth.js'
 import { auth } from '../../lib/firebase.js'
 import { ensureUserWorkspace } from '../../lib/accountProvisioning.js'
@@ -54,21 +54,19 @@ export default function VerifyEmail() {
     setMessage('')
     setError('')
     try {
-      const res = await sendResendVerificationEmail({
+      await sendEmailVerification(currentUser)
+      const resendResult = await sendResendVerificationEmail({
         email: currentUser.email,
         name: currentUser.displayName || currentUser.email?.split('@')?.[0],
         verificationUrl: `${window.location.origin}/verify-email`,
       })
-      if (!res.ok) {
-        const nextError = res.error || 'Could not send verification email right now.'
-        setError(nextError)
-        showToast({ tone: 'error', message: nextError })
-        return
-      }
       setMessage('Verification email sent.')
       showToast({ tone: 'success', message: 'Verification email sent.' })
+      if (!resendResult.ok && resendResult.error !== 'Email service is not configured.') {
+        showToast({ tone: 'warning', message: 'Firebase verification was sent. Resend test email is unavailable.' }, 3200)
+      }
     } catch (err) {
-      const nextError = clientSafeMessage(err, 'Could not send verification email right now.', { context: 'Resend email verification' })
+      const nextError = clientSafeMessage(err, 'Could not send verification email right now.', { context: 'Firebase email verification' })
       setError(nextError)
       showToast({ tone: 'error', message: nextError })
     } finally {
