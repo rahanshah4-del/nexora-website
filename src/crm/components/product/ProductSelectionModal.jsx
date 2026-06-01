@@ -14,45 +14,41 @@ import { useNavigate } from 'react-router-dom'
 import logoUrl from '../../../assets/logo/nexora-logo.svg'
 import { cn } from '../../utils/cn.js'
 import { formatSessionTime, isValidWorkspace, workspaceLabel } from '../../lib/workspaceSession.js'
-import { packageNameForPlan } from '../../data/moduleAccess.js'
+import { businessWorkspaceCatalog, labelForBusinessModule, moduleCatalog, packageNameForPlan } from '../../data/moduleAccess.js'
 
-const products = [
-  {
-    id: 'restaurant-pos',
-    title: 'Nexora Restaurant POS',
-    button: 'Open Restaurant POS',
-    icon: HiOutlineSquares2X2,
-    accent: 'from-cyan-500 to-sky-600',
-    comingSoon: true,
-    features: [
-      'Billing & cashier system',
-      'Table management',
-      'Kitchen order tickets / KOT',
-      'Menu management',
-      'Inventory tracking',
-      'Daily sales reports',
-      'Staff roles',
-      'Restaurant dashboard',
-    ],
-  },
-  {
-    id: 'crm',
-    title: 'Nexora CRM',
-    button: 'Open CRM Dashboard',
-    icon: HiOutlineUserGroup,
-    accent: 'from-indigo-500 to-violet-600',
-    features: [
-      'Customers management',
-      'Leads management',
-      'Follow-up automation',
-      'Invoices & payments',
-      'Support tickets',
-      'Analytics dashboard',
-      'Team management',
-      'Business reports',
-    ],
-  },
-]
+const accentMap = {
+  'general-crm': 'from-indigo-500 to-violet-600',
+  'retail-pos': 'from-amber-500 to-orange-600',
+  'school-erp': 'from-emerald-500 to-teal-600',
+  'property-erp': 'from-violet-500 to-fuchsia-600',
+  'restaurant-pos': 'from-rose-500 to-red-600',
+  'whatsapp-crm': 'from-green-500 to-emerald-600',
+}
+
+const iconMap = {
+  'general-crm': HiOutlineUserGroup,
+  'retail-pos': HiOutlineSquares2X2,
+  'school-erp': HiOutlineUserCircle,
+  'property-erp': HiOutlineSquares2X2,
+  'restaurant-pos': HiOutlineSquares2X2,
+  'whatsapp-crm': HiOutlineEnvelope,
+}
+
+const products = businessWorkspaceCatalog.map((workspace) => ({
+  id: workspace.id,
+  type: workspace.type,
+  title: workspace.title,
+  button: `Open ${workspace.title}`,
+  icon: iconMap[workspace.id] || HiOutlineSquares2X2,
+  accent: accentMap[workspace.id] || accentMap['general-crm'],
+  features: workspace.modules
+    .map((key) => {
+      const module = moduleCatalog.find((item) => item.key === key)
+      return module ? `${labelForBusinessModule(key, workspace.type)}${module.comingSoon ? ' (Coming Soon)' : ''}` : ''
+    })
+    .filter(Boolean)
+    .slice(0, 8),
+}))
 
 function SessionPill({ icon: Icon, label, value }) {
   return (
@@ -104,7 +100,7 @@ function ProductCard({ product, onSelect }) {
             {product.title}
           </span>
           <span className="mt-1 block text-xs font-medium text-slate-500 dark:text-slate-300">
-            {disabled ? 'Restaurant POS module is coming soon.' : 'Choose your workspace'}
+            CRM engine with business-specific modules
           </span>
         </span>
         {disabled ? (
@@ -138,7 +134,7 @@ function ProductCard({ product, onSelect }) {
 
 function ProductSelectionModal({ open, session, selectedWorkspace, onSelect, onContinueLast, onClose }) {
   const navigate = useNavigate()
-  const hasLastWorkspace = isValidWorkspace(selectedWorkspace) && selectedWorkspace !== 'restaurant-pos'
+  const hasLastWorkspace = isValidWorkspace(selectedWorkspace)
   const selectedStatus = hasLastWorkspace ? workspaceLabel(selectedWorkspace) : 'Not selected'
   const upgradeTrialLabel = formatUpgradeTrialLabel(session)
 
@@ -235,7 +231,7 @@ function ProductSelectionModal({ open, session, selectedWorkspace, onSelect, onC
               </div>
             ) : null}
 
-            <div className="relative mt-5 grid gap-4 lg:grid-cols-2">
+            <div className="relative mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {products.map((product) => (
                 <ProductCard key={product.id} product={product} onSelect={onSelect} />
               ))}

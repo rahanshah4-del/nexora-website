@@ -9,18 +9,14 @@ import Input from '../ui/Input.jsx'
 import Select from '../ui/Select.jsx'
 import { db } from '../../lib/firebase.js'
 import {
-  basicCrmModules,
   businessTypes,
   getRecommendedModules,
+  labelForBusinessModule,
   moduleCatalog,
   normalizeBusinessType,
 } from '../../data/moduleAccess.js'
 import { useUser } from '../../hooks/useUser.js'
 import { clientSafeMessage } from '../../utils/messages.js'
-
-function moduleLabel(key) {
-  return moduleCatalog.find((module) => module.key === key)?.label || key
-}
 
 export default function OnboardingWizard({ open, onComplete }) {
   const { userId, workspaceId, userDoc, firebaseUser } = useUser()
@@ -30,28 +26,16 @@ export default function OnboardingWizard({ open, onComplete }) {
   const [workspaceName, setWorkspaceName] = useState(
     userDoc?.workspaceName || userDoc?.company || userDoc?.companyName || `${userDoc?.name || 'Nexora'} Workspace`,
   )
-  const [enabledModules, setEnabledModules] = useState(() => getRecommendedModules(initialBusinessType))
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
   const recommended = useMemo(() => getRecommendedModules(businessType), [businessType])
-  const selectableModules = useMemo(
-    () => moduleCatalog.filter((module) => basicCrmModules.includes(module.key) && !module.alwaysEnabled),
-    [],
+  const visibleModules = useMemo(
+    () => recommended
+      .map((key) => moduleCatalog.find((module) => module.key === key))
+      .filter(Boolean),
+    [recommended],
   )
-
-  function toggleModule(key) {
-    setEnabledModules((current) => {
-      const next = new Set(current)
-      if (next.has(key)) next.delete(key)
-      else next.add(key)
-      return Array.from(next)
-    })
-  }
-
-  function applyRecommendations() {
-    setEnabledModules(recommended)
-  }
 
   async function saveSetup() {
     setError('')
@@ -61,15 +45,12 @@ export default function OnboardingWizard({ open, onComplete }) {
     }
 
     const cleanWorkspaceName = workspaceName.trim() || 'Nexora Workspace'
-    const modules = Array.from(
-      new Set([
-        ...enabledModules.filter((key) => basicCrmModules.includes(key)),
-        ...basicCrmModules,
-      ]),
-    )
-    const selectedFeatures = modules.map(moduleLabel)
+    const normalizedBusinessType = normalizeBusinessType(businessType)
+    const modules = getRecommendedModules(normalizedBusinessType)
+    const selectedFeatures = modules.map((key) => labelForBusinessModule(key, normalizedBusinessType))
     const setup = {
-      businessType,
+      businessType: normalizedBusinessType,
+      selectedBusinessType: normalizedBusinessType,
       selectedFeatures,
       enabledModules: modules,
       onboardingCompleted: true,
@@ -160,11 +141,7 @@ export default function OnboardingWizard({ open, onComplete }) {
                   <Select
                     className="mt-1.5"
                     value={businessType}
-                    onChange={(event) => {
-                      const nextType = event.target.value
-                      setBusinessType(nextType)
-                      setEnabledModules(getRecommendedModules(nextType))
-                    }}
+                    onChange={(event) => setBusinessType(event.target.value)}
                   >
                     {businessTypes.map((type) => (
                       <option key={type} value={type}>
@@ -178,36 +155,28 @@ export default function OnboardingWizard({ open, onComplete }) {
               <div className="mt-5 rounded-2xl border border-sky-100 bg-sky-50/70 p-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <p className="text-sm font-semibold text-slate-950">Recommended modules</p>
-                    <p className="mt-1 text-xs leading-5 text-slate-600">You can edit these before saving.</p>
+                    <p className="text-sm font-semibold text-slate-950">Business workspace modules</p>
+                    <p className="mt-1 text-xs leading-5 text-slate-600">Available modules open in CRM. Coming Soon modules are visible but disabled.</p>
                   </div>
-                  <Button variant="subtle" className="rounded-2xl" type="button" onClick={applyRecommendations}>
-                    Use Recommendations
-                  </Button>
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {recommended.map((key) => (
                     <Badge key={key} variant="info">
-                      {moduleLabel(key)}
+                      {labelForBusinessModule(key, businessType)}
                     </Badge>
                   ))}
                 </div>
               </div>
 
               <div className="mt-5 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                {selectableModules.map((module) => (
-                  <label
+                {visibleModules.map((module) => (
+                  <div
                     key={module.key}
                     className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200/80 bg-white/80 px-3 py-3 shadow-sm transition hover:border-sky-200"
                   >
-                    <span className="min-w-0 text-sm font-semibold text-slate-800">{module.label}</span>
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4 shrink-0 rounded border-slate-300 text-sky-600"
-                      checked={enabledModules.includes(module.key)}
-                      onChange={() => toggleModule(module.key)}
-                    />
-                  </label>
+                    <span className="min-w-0 text-sm font-semibold text-slate-800">{labelForBusinessModule(module.key, businessType)}</span>
+                    <Badge variant={module.comingSoon ? 'warning' : 'success'}>{module.comingSoon ? 'Coming Soon' : 'Enabled'}</Badge>
+                  </div>
                 ))}
               </div>
 

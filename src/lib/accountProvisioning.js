@@ -1,6 +1,6 @@
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore'
 import { db } from './firebase.js'
-import { BUSINESS_TRIAL_DAYS, addDays, basicCrmModules, moduleCatalog, normalizeBusinessType } from '../crm/data/moduleAccess.js'
+import { BUSINESS_TRIAL_DAYS, addDays, getRecommendedModules, labelForBusinessModule, normalizeBusinessType } from '../crm/data/moduleAccess.js'
 
 export const FREE_TRIAL_PLAN = 'Basic'
 export const FREE_TRIAL_STATUS = 'trial'
@@ -23,10 +23,8 @@ export async function ensureUserWorkspace(user, overrides = {}) {
   const fullName = userDisplayName(user, overrides.fullName || overrides.name)
   const company = cleanString(overrides.company)
   const businessType = normalizeBusinessType(overrides.businessType)
-  const enabledModules = basicCrmModules
-  const selectedFeatures = enabledModules.map(
-    (key) => moduleCatalog.find((module) => module.key === key)?.label || key,
-  )
+  const enabledModules = getRecommendedModules(businessType)
+  const selectedFeatures = enabledModules.map((key) => labelForBusinessModule(key, businessType))
   const provider = cleanString(overrides.provider) || user?.providerData?.[0]?.providerId || 'password'
 
   const userRef = doc(db, 'users', uid)
@@ -60,8 +58,10 @@ export async function ensureUserWorkspace(user, overrides = {}) {
       isAdmin: false,
       plan: FREE_TRIAL_PLAN,
       planStatus: FREE_TRIAL_STATUS,
+      subscriptionStatus: FREE_TRIAL_STATUS,
       trialDays: BUSINESS_TRIAL_DAYS,
       billingCycle: 'monthly',
+      trialStartAt: now,
       trialStartedAt: now,
       trialEndsAt,
       isTrialActive: true,
@@ -115,8 +115,10 @@ export async function ensureUserWorkspace(user, overrides = {}) {
       onboardingCompleted: false,
       plan: FREE_TRIAL_PLAN,
       planStatus: FREE_TRIAL_STATUS,
+      subscriptionStatus: FREE_TRIAL_STATUS,
       status: 'active',
       billingCycle: 'monthly',
+      trialStartAt: now,
       trialDays: BUSINESS_TRIAL_DAYS,
       trialStartedAt: now,
       trialEndsAt,

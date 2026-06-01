@@ -137,6 +137,7 @@ export default function AppRouter() {
         <Route path="approvals" element={<LazyPage><ApprovalsPage /></LazyPage>} />
         <Route path="reports" element={<LazyPage><ReportsPage /></LazyPage>} />
         <Route path="settings" element={<LazyPage><SettingsPage /></LazyPage>} />
+        <Route path="coming-soon/:moduleId" element={<LazyPage><DashboardHomePage /></LazyPage>} />
       </Route>
 
       <Route element={<RequireAdmin />}>

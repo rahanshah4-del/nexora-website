@@ -40,7 +40,7 @@ export function addDays(date, days) {
 }
 
 export function trialEndDate(userDoc = {}) {
-  return timestampToDate(userDoc.trialEndsAt) || addDays(userDoc.trialStartedAt || userDoc.createdAt, BUSINESS_TRIAL_DAYS)
+  return timestampToDate(userDoc.trialEndsAt) || addDays(userDoc.trialStartAt || userDoc.trialStartedAt || userDoc.createdAt, BUSINESS_TRIAL_DAYS)
 }
 
 export function daysUntil(date) {
@@ -66,7 +66,7 @@ export function packageNameForPlan(plan) {
 }
 
 export function isTrialActive(userDoc = {}) {
-  const status = String(userDoc?.planStatus || '').toLowerCase()
+  const status = String(userDoc?.subscriptionStatus || userDoc?.planStatus || '').toLowerCase()
   const plan = normalizePlan(userDoc?.plan)
   if (!['Free', 'Basic'].includes(plan)) return false
   if (!['trial', 'free trial'].includes(status) && userDoc?.isTrialActive !== true) return false
@@ -74,7 +74,7 @@ export function isTrialActive(userDoc = {}) {
 }
 
 export function isTrialExpired(userDoc = {}) {
-  const status = String(userDoc?.planStatus || '').toLowerCase()
+  const status = String(userDoc?.subscriptionStatus || userDoc?.planStatus || '').toLowerCase()
   const plan = normalizePlan(userDoc?.plan)
   if (!['Free', 'Basic'].includes(plan)) return false
   if (!['trial', 'free trial', 'expired', 'trial expired'].includes(status) && userDoc?.isTrialActive !== true) return false
@@ -83,7 +83,7 @@ export function isTrialExpired(userDoc = {}) {
 
 export function isBusinessSubscriptionActive(userDoc = {}) {
   const plan = normalizePlan(userDoc?.plan)
-  const status = String(userDoc?.planStatus || '').toLowerCase()
+  const status = String(userDoc?.subscriptionStatus || userDoc?.planStatus || '').toLowerCase()
   if (!['Business', 'Enterprise'].includes(plan) || status !== 'active') return false
   const expiry = timestampToDate(userDoc.subscriptionExpiresAt || userDoc.nextBillingDate)
   return !expiry || expiry.getTime() >= Date.now()
@@ -91,6 +91,7 @@ export function isBusinessSubscriptionActive(userDoc = {}) {
 
 export function accessPlanForUser(userDoc = {}, fallbackPlan = 'Free') {
   if (isTrialActive(userDoc)) return 'Basic'
+  if (isTrialExpired(userDoc)) return 'Free'
   if (isBusinessSubscriptionActive(userDoc)) return normalizePlan(userDoc?.plan)
   const normalizedFallback = normalizePlan(fallbackPlan)
   if (normalizedFallback === 'Enterprise') return 'Enterprise'
@@ -165,7 +166,7 @@ export const moduleCatalog = [
   { key: 'dashboard', label: 'Dashboard', route: '/app/dashboard', alwaysEnabled: true },
   { key: 'clientPortal', label: 'Client Portal', route: '/app/client-portal', minPlan: 'Business' },
   { key: 'customers', label: 'Customers', route: '/app/customers', minPlan: 'Basic' },
-  { key: 'products', label: 'Products', route: '/app/products', minPlan: 'Business' },
+  { key: 'products', label: 'Products / Services', route: '/app/products', minPlan: 'Business' },
   { key: 'leads', label: 'Leads', route: '/app/leads', minPlan: 'Basic' },
   { key: 'aiLeadScoring', label: 'AI Lead Scoring', route: '/app/leads/scoring', minPlan: 'Business' },
   { key: 'aiAssistant', label: 'AI Assistant', route: '/app/ai-assistant', minPlan: 'Business' },
@@ -186,37 +187,216 @@ export const moduleCatalog = [
   { key: 'notifications', label: 'Notifications', route: '/app/notifications', minPlan: 'Basic' },
   { key: 'reports', label: 'Reports', route: '/app/reports', minPlan: 'Basic' },
   { key: 'settings', label: 'Settings', route: '/app/settings', alwaysEnabled: true },
+  { key: 'inventory', label: 'Inventory', route: '/app/coming-soon/inventory', comingSoon: true },
+  { key: 'pos', label: 'POS', route: '/app/coming-soon/pos', comingSoon: true },
+  { key: 'cashRegister', label: 'Cash Register', route: '/app/coming-soon/cash-register', comingSoon: true },
+  { key: 'purchases', label: 'Purchases', route: '/app/coming-soon/purchases', comingSoon: true },
+  { key: 'suppliers', label: 'Suppliers', route: '/app/coming-soon/suppliers', comingSoon: true },
+  { key: 'attendance', label: 'Attendance', route: '/app/coming-soon/attendance', comingSoon: true },
+  { key: 'exams', label: 'Exams', route: '/app/coming-soon/exams', comingSoon: true },
+  { key: 'classes', label: 'Classes', route: '/app/coming-soon/classes', comingSoon: true },
+  { key: 'maintenance', label: 'Maintenance', route: '/app/coming-soon/maintenance', comingSoon: true },
+  { key: 'contracts', label: 'Contracts', route: '/app/coming-soon/contracts', comingSoon: true },
+  { key: 'tables', label: 'Tables', route: '/app/coming-soon/tables', comingSoon: true },
+  { key: 'ordersKot', label: 'Orders/KOT', route: '/app/coming-soon/orders-kot', comingSoon: true },
+  { key: 'kitchenDisplay', label: 'Kitchen Display', route: '/app/coming-soon/kitchen-display', comingSoon: true },
+  { key: 'whatsappInbox', label: 'WhatsApp Inbox', route: '/app/coming-soon/whatsapp-inbox', comingSoon: true },
+  { key: 'autoReplies', label: 'Auto Replies', route: '/app/coming-soon/auto-replies', comingSoon: true },
+  { key: 'campaigns', label: 'Campaigns', route: '/app/coming-soon/campaigns', comingSoon: true },
 ]
 
 export const businessTypes = [
-  'Restaurant / POS',
-  'Transport / Rental',
-  'Software Agency',
-  'Retail / Inventory',
-  'General Business',
+  'General CRM',
+  'Retail / POS',
+  'School ERP',
+  'Property ERP',
+  'Restaurant POS',
+  'WhatsApp CRM',
 ]
 
-const recommendationMap = {
-  'Restaurant / POS': ['dashboard', 'customers', 'products', 'invoices', 'payments', 'expenses', 'accounts', 'accountStatements', 'reports', 'team', 'support'],
-  'Transport / Rental': ['dashboard', 'customers', 'leads', 'invoices', 'payments', 'expenses', 'accounts', 'accountStatements', 'reports', 'activity'],
-  'Software Agency': ['dashboard', 'clientPortal', 'customers', 'leads', 'salesPipeline', 'followUps', 'invoices', 'accounts', 'accountStatements', 'reports', 'support'],
-  'Retail / Inventory': ['dashboard', 'customers', 'products', 'invoices', 'expenses', 'accounts', 'accountStatements', 'reports', 'team'],
-  'General Business': ['dashboard', 'customers', 'leads', 'invoices', 'expenses', 'accounts', 'accountStatements', 'reports'],
+export const coreFinanceModules = ['invoices', 'payments', 'expenses', 'accounts', 'reports']
+
+export const businessWorkspaceCatalog = [
+  {
+    id: 'general-crm',
+    type: 'General CRM',
+    title: 'General CRM',
+    route: '/app/dashboard',
+    description: 'Customer, sales, billing, approvals, team, and reporting workflows.',
+    modules: [
+      'dashboard',
+      'customers',
+      'leads',
+      'salesPipeline',
+      'followUps',
+      'invoices',
+      'payments',
+      'expenses',
+      'accounts',
+      'reports',
+      'approvals',
+      'team',
+      'settings',
+    ],
+  },
+  {
+    id: 'retail-pos',
+    type: 'Retail / POS',
+    title: 'Retail / POS',
+    route: '/app/dashboard',
+    description: 'CRM billing and catalog tools with POS-specific modules staged for release.',
+    modules: [
+      'dashboard',
+      'customers',
+      'products',
+      'invoices',
+      'payments',
+      'expenses',
+      'accounts',
+      'reports',
+      'approvals',
+      'inventory',
+      'pos',
+      'cashRegister',
+      'purchases',
+      'suppliers',
+    ],
+  },
+  {
+    id: 'school-erp',
+    type: 'School ERP',
+    title: 'School ERP',
+    route: '/app/dashboard',
+    description: 'Student, parent, fees, payments, expenses, approvals, and school reports.',
+    labels: {
+      customers: 'Students/Parents',
+      invoices: 'Fees/Billing',
+    },
+    modules: [
+      'dashboard',
+      'customers',
+      'invoices',
+      'payments',
+      'expenses',
+      'accounts',
+      'reports',
+      'approvals',
+      'team',
+      'attendance',
+      'exams',
+      'classes',
+    ],
+  },
+  {
+    id: 'property-erp',
+    type: 'Property ERP',
+    title: 'Property ERP',
+    route: '/app/dashboard',
+    description: 'Tenant, owner, property, rent, finance, approval, and maintenance views.',
+    labels: {
+      customers: 'Tenants/Owners',
+      products: 'Properties',
+      invoices: 'Rent/Billing',
+    },
+    modules: [
+      'dashboard',
+      'customers',
+      'products',
+      'invoices',
+      'payments',
+      'expenses',
+      'accounts',
+      'reports',
+      'approvals',
+      'team',
+      'maintenance',
+      'contracts',
+    ],
+  },
+  {
+    id: 'restaurant-pos',
+    type: 'Restaurant POS',
+    title: 'Restaurant POS',
+    route: '/app/dashboard',
+    description: 'Menu, bills, payments, expenses, reports, and restaurant operations modules.',
+    labels: {
+      products: 'Menu Items',
+      invoices: 'Bills/Invoices',
+    },
+    modules: [
+      'dashboard',
+      'customers',
+      'products',
+      'invoices',
+      'payments',
+      'expenses',
+      'accounts',
+      'reports',
+      'approvals',
+      'team',
+      'tables',
+      'ordersKot',
+      'kitchenDisplay',
+      'inventory',
+    ],
+  },
+  {
+    id: 'whatsapp-crm',
+    type: 'WhatsApp CRM',
+    title: 'WhatsApp CRM',
+    route: '/app/dashboard',
+    description: 'Lead, customer, follow-up, support, finance, approval, and WhatsApp workflows.',
+    modules: [
+      'dashboard',
+      'customers',
+      'leads',
+      'followUps',
+      'support',
+      'invoices',
+      'payments',
+      'expenses',
+      'accounts',
+      'reports',
+      'approvals',
+      'whatsappInbox',
+      'autoReplies',
+      'campaigns',
+    ],
+  },
+]
+
+const recommendationMap = Object.fromEntries(
+  businessWorkspaceCatalog.map((workspace) => [workspace.type, workspace.modules]),
+)
+
+const businessTypeAliases = {
+  'General Business': 'General CRM',
+  'Restaurant / POS': 'Restaurant POS',
+  'Restaurant / Canteen': 'Restaurant POS',
+  'Retail / Inventory': 'Retail / POS',
+  'Inventory / Pharma': 'Retail / POS',
+  'Healthcare / Hospital': 'General CRM',
+  'Transport / Rental': 'General CRM',
+  'Transport / Logistics': 'General CRM',
+  'Software Agency': 'General CRM',
+  'Custom Enterprise': 'General CRM',
 }
 
-export const alwaysEnabledModules = ['dashboard', 'settings', 'subscriptions']
+export const alwaysEnabledModules = ['dashboard', 'settings']
 export const basicCrmModules = [
   'dashboard',
   'customers',
   'leads',
+  'salesPipeline',
+  'followUps',
   'invoices',
+  'payments',
   'expenses',
   'accounts',
-  'accountStatements',
+  'approvals',
   'reports',
+  'team',
   'settings',
-  'notifications',
-  'subscriptions',
 ]
 
 export function planRank(plan) {
@@ -228,17 +408,45 @@ export function hasPlanAccess(plan, minPlan = 'Free') {
 }
 
 export function normalizeBusinessType(type) {
-  const value = String(type || '').toLowerCase()
-  if (value.includes('restaurant') || value.includes('canteen') || value.includes('pos')) return 'Restaurant / POS'
-  if (value.includes('transport') || value.includes('rental') || value.includes('logistics')) return 'Transport / Rental'
-  if (value.includes('software') || value.includes('agency') || value.includes('saas')) return 'Software Agency'
-  if (value.includes('retail') || value.includes('inventory') || value.includes('pharma')) return 'Retail / Inventory'
-  return 'General Business'
+  const raw = String(type || '').trim()
+  if (businessTypes.includes(raw)) return raw
+  if (businessTypeAliases[raw]) return businessTypeAliases[raw]
+  const value = raw.toLowerCase()
+  if (value.includes('school') || value.includes('student') || value.includes('parent')) return 'School ERP'
+  if (value.includes('property') || value.includes('tenant') || value.includes('rent')) return 'Property ERP'
+  if (value.includes('whatsapp')) return 'WhatsApp CRM'
+  if (value.includes('restaurant') || value.includes('canteen') || value.includes('kot') || value.includes('kitchen')) return 'Restaurant POS'
+  if (value.includes('retail') || value.includes('inventory') || value.includes('pharma') || value === 'pos' || value.includes('pos')) return 'Retail / POS'
+  return 'General CRM'
+}
+
+export function businessWorkspaceForType(type) {
+  const normalized = normalizeBusinessType(type)
+  return businessWorkspaceCatalog.find((workspace) => workspace.type === normalized) || businessWorkspaceCatalog[0]
+}
+
+export function businessWorkspaceForId(id) {
+  return businessWorkspaceCatalog.find((workspace) => workspace.id === id) || null
+}
+
+export function businessWorkspaceForSelection(value) {
+  return businessWorkspaceForId(value) || businessWorkspaceForType(value)
+}
+
+export function businessModuleKeys(type) {
+  const workspace = businessWorkspaceForType(type)
+  return Array.from(new Set([...workspace.modules, ...coreFinanceModules, 'dashboard', 'approvals']))
+}
+
+export function labelForBusinessModule(moduleKey, type) {
+  const workspace = businessWorkspaceForType(type)
+  const module = moduleCatalog.find((item) => item.key === moduleKey)
+  return workspace.labels?.[moduleKey] || module?.label || moduleKey
 }
 
 export function getRecommendedModules(type) {
   const normalized = normalizeBusinessType(type)
-  return Array.from(new Set([...recommendationMap[normalized], ...alwaysEnabledModules]))
+  return Array.from(new Set([...(recommendationMap[normalized] || recommendationMap['General CRM']), ...alwaysEnabledModules, ...coreFinanceModules, 'approvals']))
 }
 
 export function moduleByRoute(route) {
@@ -259,19 +467,35 @@ export function routeAllowedByPlan(route, plan) {
   return hasPlanAccess(plan, module.minPlan)
 }
 
+export function routeAllowedByBusinessType(route, type) {
+  const module = moduleByRoute(route)
+  if (!module) return true
+  if (module.alwaysEnabled) return true
+  if (module.comingSoon) return false
+  if (module.key === 'accountStatements') return businessModuleKeys(type).includes('accounts')
+  return businessModuleKeys(type).includes(module.key)
+}
+
 export function moduleAllowedByPlan(moduleKey, plan) {
   const module = moduleCatalog.find((item) => item.key === moduleKey)
   if (!module || module.alwaysEnabled) return true
   return hasPlanAccess(plan, module.minPlan)
 }
 
-export function selectedModulesForSidebar({ enabledModules, onboardingCompleted, plan }) {
-  const selected = new Set(Array.isArray(enabledModules) ? enabledModules : [])
+export function selectedModulesForSidebar({ enabledModules, onboardingCompleted, plan, businessType }) {
+  const businessKeys = businessModuleKeys(businessType)
+  const selected = new Set(onboardingCompleted ? businessKeys : Array.isArray(enabledModules) && enabledModules.length ? enabledModules : businessKeys)
   return moduleCatalog.filter((module) => {
-    if (module.alwaysEnabled) return true
+    if (module.key === 'subscriptions') return false
+    if (module.alwaysEnabled) return selected.has(module.key) || businessKeys.includes(module.key)
+    if (module.comingSoon) return businessKeys.includes(module.key)
     if (!moduleAllowedByPlan(module.key, plan)) return false
-    if (module.key === 'accounts' || module.key === 'accountStatements') return true
+    if (module.key === 'accountStatements') return businessKeys.includes('accounts')
+    if (coreFinanceModules.includes(module.key) || module.key === 'approvals') return businessKeys.includes(module.key)
     if (!onboardingCompleted) return true
-    return selected.has(module.key)
-  })
+    return selected.has(module.key) && businessKeys.includes(module.key)
+  }).map((module) => ({
+    ...module,
+    label: labelForBusinessModule(module.key, businessType),
+  }))
 }

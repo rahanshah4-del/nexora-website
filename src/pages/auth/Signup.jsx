@@ -8,15 +8,7 @@ import useAuth from '../../context/useAuth.js'
 import NexoraLogo from '../../components/brand/NexoraLogo.jsx'
 import { motion } from 'framer-motion'
 import { clientSafeMessage, reportTechnicalError } from '../../lib/errorHandler.js'
-
-const businessTypes = [
-  'Retail / POS',
-  'Healthcare / Hospital',
-  'Inventory / Pharma',
-  'Transport / Logistics',
-  'Restaurant / Canteen',
-  'Custom Enterprise',
-]
+import { businessTypes } from '../../crm/data/moduleAccess.js'
 
 export default function Signup() {
   const { user, loading } = useAuth()

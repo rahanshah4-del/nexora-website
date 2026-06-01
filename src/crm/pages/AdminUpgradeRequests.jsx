@@ -207,12 +207,15 @@ export default function AdminUpgradeRequestsPage() {
       const planUpdate = {
         plan: 'Business',
         planStatus: 'active',
+        subscriptionStatus: 'active',
         billingCycle: 'monthly',
         billingCurrency: r.billingCurrency || r.currency || 'PKR',
         nextBillingDate: subscriptionExpiresAt,
+        expiresAt: subscriptionExpiresAt,
         subscriptionStartedAt: serverTimestamp(),
         subscriptionExpiresAt,
         isTrialActive: false,
+        paidAt: serverTimestamp(),
         upgradedAt: serverTimestamp(),
       }
 
@@ -233,9 +236,9 @@ export default function AdminUpgradeRequestsPage() {
         workspaceRef,
         {
           ...planUpdate,
-          ownerId: r.userId,
-          userId: r.userId,
-          workspaceId: r.userId,
+          ownerId: r.ownerId || r.userId,
+          userId: r.workspaceId || r.userId,
+          workspaceId: r.workspaceId || r.userId,
           updatedAt: serverTimestamp(),
         },
         { merge: true },

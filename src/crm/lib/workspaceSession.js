@@ -1,6 +1,6 @@
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore'
 import { db } from './firebase.js'
-import { accessPlanForUser } from '../data/moduleAccess.js'
+import { accessPlanForUser, businessWorkspaceCatalog, businessWorkspaceForId, businessWorkspaceForSelection, businessWorkspaceForType } from '../data/moduleAccess.js'
 
 export const SELECTED_WORKSPACE_KEY = 'selectedWorkspace'
 export const SELECTED_WORKSPACE_USER_KEY = 'selectedWorkspaceUserId'
@@ -8,17 +8,18 @@ const LEGACY_PRODUCT_KEY = 'selectedProduct'
 const LEGACY_PRODUCT_USER_KEY = 'selectedProductUserId'
 
 export function isValidWorkspace(workspace) {
-  return workspace === 'restaurant-pos' || workspace === 'crm'
+  return workspace === 'crm' || Boolean(businessWorkspaceForId(workspace))
 }
 
 export function workspaceLabel(workspace) {
-  if (workspace === 'restaurant-pos') return 'Nexora Restaurant POS'
-  if (workspace === 'crm') return 'Nexora CRM'
+  if (workspace === 'crm') return 'General CRM'
+  const business = businessWorkspaceForId(workspace)
+  if (business) return business.title
   return 'Not selected'
 }
 
 export function workspaceRoute(workspace) {
-  return workspace === 'restaurant-pos' ? '/app/restaurant-pos' : '/app/dashboard'
+  return businessWorkspaceForSelection(workspace)?.route || '/app/dashboard'
 }
 
 export function scopedWorkspaceKey(userId) {
@@ -34,9 +35,11 @@ export function readSelectedWorkspace(userId) {
   const sharedUser = localStorage.getItem(SELECTED_WORKSPACE_USER_KEY)
   const shared = localStorage.getItem(SELECTED_WORKSPACE_KEY)
   if (sharedUser === userId && isValidWorkspace(shared)) return shared
+  if (sharedUser === userId && shared === 'restaurant-pos') return 'restaurant-pos'
 
   const legacyUser = localStorage.getItem(LEGACY_PRODUCT_USER_KEY)
   const legacy = localStorage.getItem(LEGACY_PRODUCT_KEY)
+  if (legacyUser === userId && legacy === 'restaurant-pos') return 'restaurant-pos'
   return legacyUser === userId && isValidWorkspace(legacy) ? legacy : null
 }
 
@@ -102,8 +105,8 @@ export function buildWorkspaceSession({ user, userDoc, selectedWorkspace, worksp
     clientName: userDoc?.fullName || userDoc?.name || user?.displayName || email?.split('@')?.[0] || 'Nexora Client',
     loginTime: sessionStartTime,
     lastLogin: userDoc?.lastLogin || userDoc?.lastLoginAt || sessionStartTime,
-    selectedWorkspace: isValidWorkspace(selectedWorkspace) ? selectedWorkspace : 'not-selected',
-    selectedWorkspaceLabel: workspaceLabel(selectedWorkspace),
+    selectedWorkspace: isValidWorkspace(selectedWorkspace) ? selectedWorkspace : businessWorkspaceForType(userDoc?.businessType).id,
+    selectedWorkspaceLabel: workspaceLabel(isValidWorkspace(selectedWorkspace) ? selectedWorkspace : businessWorkspaceForType(userDoc?.businessType).id),
     sessionId: getSessionId(userId),
     sessionStartTime,
     planType,
@@ -116,7 +119,7 @@ export async function persistWorkspaceSession(session) {
 
   const uid = session.userId
   const sessionId = session.sessionId || getSessionId(uid)
-  const selectedWorkspace = isValidWorkspace(session.selectedWorkspace) ? session.selectedWorkspace : 'not-selected'
+  const selectedWorkspace = isValidWorkspace(session.selectedWorkspace) ? session.selectedWorkspace : businessWorkspaceCatalog[0].id
   const workspaceId = session.workspaceId || uid
   const ownerId = session.ownerId || workspaceId
   const payload = {

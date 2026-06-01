@@ -26,95 +26,49 @@ import {
 import { FiLogOut } from 'react-icons/fi'
 import { useNavigate } from 'react-router-dom'
 import { sendEmailVerification, signOut } from 'firebase/auth'
-import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore'
+import { collection, doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore'
 import logoUrl from '../../assets/logo/nexora-logo.svg'
 import useAuth from '../../context/useAuth.js'
 import { auth, db } from '../../lib/firebase.js'
 import { normalizeWorkspaceName, resolveWorkspaceName, saveStoredWorkspaceName } from '../../lib/workspaceName.js'
-import { packageNameForPlan } from '../../crm/data/moduleAccess.js'
+import {
+  businessWorkspaceCatalog,
+  businessWorkspaceForType,
+  getRecommendedModules,
+  labelForBusinessModule,
+  normalizeBusinessType,
+  packageNameForPlan,
+} from '../../crm/data/moduleAccess.js'
 import { clientSafeMessage, reportTechnicalError } from '../../lib/errorHandler.js'
 
-const moduleAccess = [
-  { name: 'Nexora CRM', icon: HiOutlineUserGroup, color: 'bg-blue-600', active: true, route: '/app/dashboard' },
-  { name: 'School ERP', icon: HiOutlineBuildingLibrary, color: 'bg-emerald-500', disabled: true },
-  { name: 'Property ERP', icon: HiOutlineBuildingOffice2, color: 'bg-violet-600', disabled: true },
-  { name: 'POS System', icon: HiOutlineBriefcase, color: 'bg-amber-500', disabled: true },
-  { name: 'WhatsApp CRM', icon: HiOutlineChatBubbleLeftRight, color: 'bg-green-500', disabled: true },
-  { name: 'Reports & Analytics', icon: HiOutlineChartBarSquare, color: 'bg-cyan-500', disabled: true },
-  { name: 'HRM', icon: HiOutlineUsers, color: 'bg-rose-500', disabled: true },
-  { name: 'Accounting', icon: HiOutlineChartBarSquare, color: 'bg-indigo-500', disabled: true },
-]
+const workspaceIconMap = {
+  'General CRM': { icon: HiOutlineUserGroup, iconTone: 'bg-blue-50 text-blue-600', color: 'bg-blue-600' },
+  'Retail / POS': { icon: HiOutlineBriefcase, iconTone: 'bg-orange-50 text-orange-500', color: 'bg-amber-500' },
+  'School ERP': { icon: HiOutlineBuildingLibrary, iconTone: 'bg-emerald-50 text-emerald-600', color: 'bg-emerald-500' },
+  'Property ERP': { icon: HiOutlineHomeModern, iconTone: 'bg-violet-50 text-violet-600', color: 'bg-violet-600' },
+  'Restaurant POS': { icon: HiOutlineBuildingOffice2, iconTone: 'bg-rose-50 text-rose-600', color: 'bg-rose-500' },
+  'WhatsApp CRM': { icon: HiOutlineChatBubbleLeftRight, iconTone: 'bg-green-50 text-green-600', color: 'bg-green-500' },
+}
 
-const workspaces = [
-  {
-    name: 'Nexora CRM',
-    id: 'CRM-0001',
-    plan: 'Current Package',
-    planTone: 'bg-blue-50 text-blue-700',
-    status: 'Active',
-    statusTone: 'bg-emerald-50 text-emerald-700',
-    icon: HiOutlineBuildingOffice2,
-    iconTone: 'bg-blue-50 text-blue-600',
-    active: true,
-    route: '/app/dashboard',
-  },
-  {
-    name: 'School ERP',
-    id: 'SCHOOL-0001',
-    status: 'Coming Soon',
-    statusTone: 'bg-slate-100 text-slate-600',
-    icon: HiOutlineBuildingLibrary,
-    iconTone: 'bg-emerald-50 text-emerald-600',
-  },
-  {
-    name: 'Property ERP',
-    id: 'PROPERTY-0001',
-    status: 'Coming Soon',
-    statusTone: 'bg-slate-100 text-slate-600',
-    icon: HiOutlineHomeModern,
-    iconTone: 'bg-violet-50 text-violet-600',
-  },
-  {
-    name: 'POS System',
-    id: 'POS-0001',
-    status: 'Coming Soon',
-    statusTone: 'bg-slate-100 text-slate-600',
-    icon: HiOutlineBriefcase,
-    iconTone: 'bg-orange-50 text-orange-500',
-  },
-  {
-    name: 'WhatsApp CRM',
-    id: 'WHATSAPP-0001',
-    status: 'Coming Soon',
-    statusTone: 'bg-slate-100 text-slate-600',
-    icon: HiOutlineChatBubbleLeftRight,
-    iconTone: 'bg-green-50 text-green-600',
-  },
-  {
-    name: 'Reports & Analytics',
-    id: 'REPORTS-0001',
-    status: 'Coming Soon',
-    statusTone: 'bg-slate-100 text-slate-600',
-    icon: HiOutlineChartBarSquare,
-    iconTone: 'bg-cyan-50 text-cyan-600',
-  },
-  {
-    name: 'HRM',
-    id: 'HRM-0001',
-    status: 'Coming Soon',
-    statusTone: 'bg-slate-100 text-slate-600',
-    icon: HiOutlineUsers,
-    iconTone: 'bg-rose-50 text-rose-600',
-  },
-  {
-    name: 'Accounting',
-    id: 'ACCOUNTING-0001',
-    status: 'Coming Soon',
-    statusTone: 'bg-slate-100 text-slate-600',
-    icon: HiOutlineChartBarSquare,
-    iconTone: 'bg-indigo-50 text-indigo-600',
-  },
-]
+const moduleAccess = businessWorkspaceCatalog.map((workspace) => ({
+  name: workspace.title,
+  detail: workspace.description,
+  ...(workspaceIconMap[workspace.type] || workspaceIconMap['General CRM']),
+  active: true,
+  route: workspace.route,
+}))
+
+const workspaces = businessWorkspaceCatalog.map((workspace) => ({
+  ...workspace,
+  name: workspace.title,
+  id: workspace.id.toUpperCase(),
+  plan: 'Current Package',
+  planTone: 'bg-blue-50 text-blue-700',
+  status: 'Available',
+  statusTone: 'bg-emerald-50 text-emerald-700',
+  active: true,
+  ...(workspaceIconMap[workspace.type] || workspaceIconMap['General CRM']),
+}))
 
 const languageOptions = ['English', 'Urdu', 'Arabic', 'Hindi', 'Bengali']
 const regionOptions = ['Pakistan', 'India', 'Bangladesh', 'Middle East', 'Europe']
@@ -301,7 +255,7 @@ function NotificationDropdown({ notifications, onClose }) {
   )
 }
 
-function WorkspaceCard({ workspace, index, emailVerified }) {
+function WorkspaceCard({ workspace, index, emailVerified, selected, saving, onSelect }) {
   const navigate = useNavigate()
   const Icon = workspace.icon
   const disabled = !workspace.active
@@ -312,7 +266,7 @@ function WorkspaceCard({ workspace, index, emailVerified }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.22, delay: index * 0.03, ease: 'easeOut' }}
       className={`rounded-lg border bg-white p-4 shadow-[0_12px_32px_-26px_rgba(15,23,42,0.42)] ${
-        workspace.active ? 'border-blue-500 ring-1 ring-blue-100' : 'border-slate-200'
+        selected ? 'border-blue-500 ring-1 ring-blue-100' : 'border-slate-200'
       }`}
     >
       <div className="flex items-start justify-between gap-3">
@@ -323,9 +277,9 @@ function WorkspaceCard({ workspace, index, emailVerified }) {
           <div className="min-w-0 pt-0.5">
             <div className="flex min-w-0 flex-wrap items-center gap-2">
               <h2 className="truncate text-[15px] font-bold leading-5 text-slate-950">{workspace.name}</h2>
-              {workspace.active && emailVerified ? <VerificationBadge verified compact /> : null}
+              {selected && emailVerified ? <VerificationBadge verified compact /> : null}
             </div>
-            <p className="mt-1 text-xs text-slate-500">Workspace ID: {workspace.id}</p>
+            <p className="mt-1 text-xs text-slate-500">Business type: {workspace.type}</p>
             {workspace.plan ? (
               <p className="mt-1 text-xs text-slate-500">
                 Plan:{' '}
@@ -341,7 +295,7 @@ function WorkspaceCard({ workspace, index, emailVerified }) {
             ) : null}
           </div>
         </div>
-        {workspace.active ? (
+        {selected ? (
           <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white">
             <HiOutlineArrowRight className="h-4 w-4 rotate-[-45deg]" />
           </span>
@@ -362,20 +316,18 @@ function WorkspaceCard({ workspace, index, emailVerified }) {
 
       <button
         type="button"
-        disabled={disabled}
-        onClick={() => {
-          if (workspace.route) navigate(workspace.route)
-        }}
+        disabled={disabled || saving}
+        onClick={() => onSelect?.(workspace)}
         className={`mt-4 flex h-10 w-full items-center justify-center gap-3 rounded-lg border text-[13px] font-bold transition ${
           workspace.active
             ? 'border-blue-600 bg-blue-600 text-white hover:bg-blue-700'
             : 'cursor-not-allowed border-slate-200 bg-white text-slate-700 opacity-70'
         }`}
       >
-        {workspace.active ? 'Enter Workspace' : 'Coming Soon'}
+        {saving ? 'Saving...' : selected ? 'Enter Workspace' : 'Select Business'}
         <HiOutlineArrowRight className="h-4 w-4" />
       </button>
-      {workspace.active ? (
+      {selected ? (
         <button
           type="button"
           onClick={() => navigate('/upgrade-business', { state: { fromUpgradeBusiness: true } })}
@@ -402,7 +354,7 @@ function CreateWorkspaceCard({ disabled, message, onOpen }) {
         <div>
           <h2 className="text-[15px] font-bold text-slate-950">Create New Workspace</h2>
           <p className="mt-1.5 text-sm leading-5 text-slate-600">
-            {disabled ? 'CRM workspace is already available on this account.' : 'Start a 7-day Nexora CRM trial workspace.'}
+            {disabled ? 'Workspace creation is already in progress.' : 'Start a separate 7-day Nexora CRM trial workspace.'}
           </p>
           {message ? <p className="mt-2 text-xs font-bold text-amber-700">{message}</p> : null}
         </div>
@@ -418,7 +370,7 @@ function CreateWorkspaceCard({ disabled, message, onOpen }) {
             : 'border-blue-600 bg-white text-blue-600 hover:bg-blue-600 hover:text-white'
         }`}
       >
-        {disabled ? 'Workspace Exists' : 'Create Workspace'}
+        {disabled ? 'Creating...' : 'Create Workspace'}
         <HiOutlineArrowRight className="h-4 w-4" />
       </button>
     </article>
@@ -460,33 +412,25 @@ function ModalShell({ title, onClose, children }) {
   )
 }
 
-function CreateWorkspaceModal({ creating, hasWorkspace, message, profile, onCreate, onClose }) {
+function CreateWorkspaceModal({ creating, message, profile, onCreate, onClose }) {
   return (
     <ModalShell title="Create New Workspace" onClose={onClose}>
       <div className="px-5 py-4">
-        {hasWorkspace ? (
-          <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-bold text-amber-800">
-            You already have a CRM workspace.
+        <div className="rounded-lg border border-blue-100 bg-blue-50 px-4 py-3">
+          <p className="text-sm font-bold text-slate-950">Nexora CRM</p>
+          <p className="mt-1 text-sm leading-5 text-slate-600">
+            Creates a separate CRM workspace for {profile.name}. This workspace gets its own 7-day trial.
           </p>
-        ) : (
-          <>
-            <div className="rounded-lg border border-blue-100 bg-blue-50 px-4 py-3">
-              <p className="text-sm font-bold text-slate-950">Nexora CRM</p>
-              <p className="mt-1 text-sm leading-5 text-slate-600">
-                Creates one CRM workspace for {profile.name}. Trial access lasts 7 days.
-              </p>
-            </div>
-            {message ? <p className="mt-3 text-sm font-semibold text-amber-700">{message}</p> : null}
-            <button
-              type="button"
-              disabled={creating}
-              onClick={onCreate}
-              className="mt-4 flex h-10 w-full items-center justify-center rounded-lg bg-blue-600 text-sm font-bold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-65"
-            >
-              {creating ? 'Creating...' : 'Create Workspace'}
-            </button>
-          </>
-        )}
+        </div>
+        {message ? <p className="mt-3 text-sm font-semibold text-amber-700">{message}</p> : null}
+        <button
+          type="button"
+          disabled={creating}
+          onClick={onCreate}
+          className="mt-4 flex h-10 w-full items-center justify-center rounded-lg bg-blue-600 text-sm font-bold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-65"
+        >
+          {creating ? 'Creating...' : 'Create Workspace'}
+        </button>
       </div>
     </ModalShell>
   )
@@ -615,6 +559,7 @@ export default function WorkspaceSelection() {
   const [nowMs, setNowMs] = useState(() => Date.now())
   const [verificationSending, setVerificationSending] = useState(false)
   const [verificationMessage, setVerificationMessage] = useState('')
+  const [businessTypeSaving, setBusinessTypeSaving] = useState('')
 
   const emailVerified = Boolean(user?.emailVerified)
 
@@ -701,31 +646,34 @@ export default function WorkspaceSelection() {
       trialExpired,
       isTrial,
       workspaceId: cleanString(workspaceData?.workspaceId) || cleanString(accountData?.workspaceId) || user?.uid || '',
+      businessType: normalizeBusinessType(workspaceData?.businessType || accountData?.businessType),
     }
   }, [accountData, emailVerified, nowMs, user, workspaceData])
 
   const hasCrmWorkspace = Boolean(workspaceData || accountData?.workspaceId)
   const visibleWorkspaces = useMemo(
     () =>
-      workspaces.map((workspace) =>
-        workspace.active
+      workspaces.map((workspace) => {
+        const selected = workspace.type === profile.businessType
+        return workspace.active
           ? {
               ...workspace,
-              name: profile.workspaceName,
+              name: workspace.title,
               id: profile.workspaceId || workspace.id,
               plan: profile.planLabel,
               trialLabel: profile.trialShortLabel,
               trialExpired: profile.trialExpired,
               status: profile.trialExpired ? 'Trial Expired' : workspace.status,
               statusTone: profile.trialExpired ? 'bg-red-50 text-red-700' : workspace.statusTone,
+              selected,
             }
-          : workspace,
-      ),
-    [profile.planLabel, profile.trialExpired, profile.trialShortLabel, profile.workspaceId, profile.workspaceName],
+          : { ...workspace, selected }
+      }),
+    [profile.businessType, profile.planLabel, profile.trialExpired, profile.trialShortLabel, profile.workspaceId],
   )
   const notificationCount = sampleNotifications.length
-  const createDisabled = hasCrmWorkspace || creatingWorkspace
-  const createWorkspaceMessage = hasCrmWorkspace ? 'You already have a CRM workspace.' : createMessage
+  const createDisabled = creatingWorkspace
+  const createWorkspaceMessage = createMessage
 
   useEffect(() => {
     if (!settingsOpen) {
@@ -846,21 +794,90 @@ export default function WorkspaceSelection() {
     }
   }, [accountData?.workspaceId, profile.workspaceName, user?.uid, workspaceData, workspaceNameDraft])
 
-  const handleOpenCreate = useCallback(() => {
-    if (hasCrmWorkspace) {
-      setCreateMessage('You already have a CRM workspace.')
+  const handleSelectBusinessWorkspace = useCallback(async (workspace) => {
+    const uid = user?.uid
+    const workspaceId = cleanString(workspaceData?.workspaceId) || cleanString(accountData?.workspaceId) || uid
+    if (!uid || !workspaceId || !workspace?.type) {
+      navigate('/app/dashboard')
       return
     }
+
+    const businessType = normalizeBusinessType(workspace.type)
+    const enabledModules = getRecommendedModules(businessType)
+    const selectedFeatures = enabledModules.map((key) => labelForBusinessModule(key, businessType))
+    const now = serverTimestamp()
+
+    setBusinessTypeSaving(workspace.type)
+    setAccountData((current) => ({
+      ...(current || {}),
+      businessType,
+      enabledModules,
+      selectedFeatures,
+      onboardingCompleted: true,
+    }))
+    setWorkspaceData((current) => ({
+      ...(current || {}),
+      workspaceId,
+      businessType,
+      enabledModules,
+      selectedFeatures,
+      onboardingCompleted: true,
+    }))
+
+    if (!db) {
+      navigate('/app/dashboard')
+      return
+    }
+
+    try {
+      await Promise.all([
+        setDoc(
+          doc(db, 'users', uid),
+          {
+            businessType,
+            selectedBusinessType: businessType,
+            selectedWorkspace: workspace.id,
+            workspaceId,
+            ownerId: workspaceId,
+            enabledModules,
+            selectedFeatures,
+            onboardingCompleted: true,
+            updatedAt: now,
+          },
+          { merge: true },
+        ),
+        setDoc(
+          doc(db, 'workspaces', workspaceId),
+          {
+            businessType,
+            selectedBusinessType: businessType,
+            selectedWorkspace: workspace.id,
+            workspaceId,
+            ownerId: cleanString(workspaceData?.ownerId) || uid,
+            enabledModules,
+            selectedFeatures,
+            onboardingCompleted: true,
+            updatedAt: now,
+            lastAccessedAt: now,
+          },
+          { merge: true },
+        ),
+      ])
+      navigate(workspace.route || '/app/dashboard')
+    } catch (error) {
+      setCreateMessage(clientSafeMessage(error, 'Could not save business type right now.', { context: 'Business workspace selection' }))
+    } finally {
+      setBusinessTypeSaving('')
+    }
+  }, [accountData?.workspaceId, navigate, user?.uid, workspaceData?.workspaceId])
+
+  const handleOpenCreate = useCallback(() => {
     setCreateMessage('')
     setCreateOpen(true)
-  }, [hasCrmWorkspace])
+  }, [])
 
   const handleCreateWorkspace = useCallback(async () => {
     if (!db || !user?.uid || creatingWorkspace) return
-    if (hasCrmWorkspace) {
-      setCreateMessage('You already have a CRM workspace.')
-      return
-    }
 
     setCreatingWorkspace(true)
     setCreateMessage('')
@@ -872,34 +889,36 @@ export default function WorkspaceSelection() {
       const now = serverTimestamp()
       const trialEndsAt = addDays(new Date(), CRM_TRIAL_DAYS)
       const userRef = doc(db, 'users', uid)
-      const workspaceRef = doc(db, 'workspaces', uid)
-      const [userSnap, workspaceSnap] = await Promise.all([getDoc(userRef), getDoc(workspaceRef)])
+      const userSnap = await getDoc(userRef)
+      const existingAccount = userSnap.exists() ? userSnap.data() : null
+      const workspaceRef = existingAccount?.workspaceId ? doc(collection(db, 'workspaces')) : doc(db, 'workspaces', uid)
+      const workspaceId = workspaceRef.id
 
-      if (workspaceSnap.exists() || cleanString(userSnap.data()?.workspaceId)) {
-        const nextAccount = userSnap.exists() ? userSnap.data() : null
-        setAccountData(nextAccount)
-        setWorkspaceData(workspaceSnap.exists() ? workspaceSnap.data() : null)
-        setCreateMessage('You already have a CRM workspace.')
-        return
-      }
-
+      const businessType = 'General CRM'
+      const enabledModules = getRecommendedModules(businessType)
+      const selectedFeatures = enabledModules.map((key) => labelForBusinessModule(key, businessType))
       const userPayload = {
         uid,
-        ownerId: uid,
+        ownerId: workspaceId,
         userId: uid,
-        workspaceId: uid,
+        workspaceId,
         fullName: name,
         name,
         email,
         role: 'owner',
-        plan: 'Free',
+        plan: 'Basic',
         planStatus: 'trial',
+        subscriptionStatus: 'trial',
         billingCycle: 'monthly',
+        trialStartAt: now,
         trialStartedAt: now,
         trialEndsAt,
         isTrialActive: true,
-        enabledModules: ['crm'],
-        selectedFeatures: ['Nexora CRM'],
+        businessType,
+        selectedBusinessType: businessType,
+        enabledModules,
+        selectedFeatures,
+        onboardingCompleted: true,
         workspaceName,
         company: workspaceName,
         updatedAt: now,
@@ -907,19 +926,26 @@ export default function WorkspaceSelection() {
       }
       const workspacePayload = {
         ownerId: uid,
-        userId: uid,
-        workspaceId: uid,
+        userId: workspaceId,
+        workspaceId,
         name: workspaceName,
         workspaceName,
         email,
-        plan: 'Free',
+        plan: 'Basic',
         planStatus: 'trial',
+        subscriptionStatus: 'trial',
+        status: 'active',
         billingCycle: 'monthly',
+        trialDays: CRM_TRIAL_DAYS,
+        trialStartAt: now,
         trialStartedAt: now,
         trialEndsAt,
         isTrialActive: true,
-        enabledModules: ['crm'],
-        selectedFeatures: ['Nexora CRM'],
+        businessType,
+        selectedBusinessType: businessType,
+        enabledModules,
+        selectedFeatures,
+        onboardingCompleted: true,
         createdAt: now,
         createdBy: uid,
         updatedAt: now,
@@ -933,13 +959,13 @@ export default function WorkspaceSelection() {
       setAccountData(userPayload)
       setWorkspaceData(workspacePayload)
       setCreateOpen(false)
-      setCreateMessage('You already have a CRM workspace.')
+      setCreateMessage('New workspace created with a 7-day trial.')
     } catch (error) {
       setCreateMessage(clientSafeMessage(error, 'Could not create workspace right now.', { context: 'Workspace create' }))
     } finally {
       setCreatingWorkspace(false)
     }
-  }, [creatingWorkspace, hasCrmWorkspace, profile.workspaceName, user])
+  }, [creatingWorkspace, profile.workspaceName, user])
 
   return (
     <main className="min-h-screen overflow-x-clip bg-slate-50 text-slate-950">
@@ -1092,7 +1118,8 @@ export default function WorkspaceSelection() {
                       key={module.name}
                       disabled={!canOpenModule}
                       onClick={() => {
-                        if (canOpenModule) navigate(module.route)
+                        const workspace = businessWorkspaceForType(module.name)
+                        if (canOpenModule) handleSelectBusinessWorkspace(workspace)
                       }}
                       className={`flex h-9 w-full items-center gap-3 rounded-lg px-2 text-left text-[13px] font-semibold ${
                         module.active ? 'text-white' : 'text-slate-300 opacity-75'
@@ -1336,7 +1363,15 @@ export default function WorkspaceSelection() {
 
             <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {visibleWorkspaces.map((workspace, index) => (
-                <WorkspaceCard key={workspace.id} workspace={workspace} index={index} emailVerified={profile.emailVerified} />
+                <WorkspaceCard
+                  key={workspace.id}
+                  workspace={workspace}
+                  index={index}
+                  emailVerified={profile.emailVerified}
+                  selected={workspace.selected}
+                  saving={businessTypeSaving === workspace.type}
+                  onSelect={handleSelectBusinessWorkspace}
+                />
               ))}
               <CreateWorkspaceCard disabled={createDisabled} message={createWorkspaceMessage} onOpen={handleOpenCreate} />
             </div>
@@ -1368,7 +1403,6 @@ export default function WorkspaceSelection() {
       {createOpen ? (
         <CreateWorkspaceModal
           creating={creatingWorkspace}
-          hasWorkspace={hasCrmWorkspace}
           message={createMessage}
           profile={profile}
           onCreate={handleCreateWorkspace}

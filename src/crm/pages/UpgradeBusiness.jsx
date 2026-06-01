@@ -88,7 +88,7 @@ function PaymentDetailRow({ label, value }) {
 export default function UpgradeBusinessPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const { userId, plan, accessPlan } = useUser()
+  const { userId, workspaceId, workspaceDoc, plan, accessPlan } = useUser()
   const { profile } = usePreferences()
   const businessPrice = useMemo(() => getBusinessPlanPrice(), [])
   const currency = businessPrice.currency
@@ -119,13 +119,13 @@ export default function UpgradeBusinessPage() {
   // (Keeps UI stable even after reload.)
   useEffect(() => {
     if (!db) return
-    if (!userId) {
+    if (!userId || !workspaceId) {
       Promise.resolve().then(() => setPendingRequest(null))
       return
     }
     const q = query(
       collection(db, 'upgradeRequests'),
-      where('userId', '==', userId),
+      where('workspaceId', '==', workspaceId),
     )
     const unsub = onSnapshot(
       q,
@@ -143,11 +143,12 @@ export default function UpgradeBusinessPage() {
       () => setPendingRequest(null),
     )
     return () => unsub()
-  }, [userId])
+  }, [userId, workspaceId])
 
   const canSubmit = useMemo(
     () =>
       !!userId &&
+      !!workspaceId &&
       customerName.trim().length > 0 &&
       customerEmail.trim().length > 0 &&
       customerPhone.trim().length > 0 &&
@@ -155,7 +156,7 @@ export default function UpgradeBusinessPage() {
       paymentReference.trim().length > 0 &&
       String(amountPaid).trim().length > 0 &&
       !submitting,
-    [userId, customerName, customerEmail, customerPhone, transactionId, paymentReference, amountPaid, submitting],
+    [userId, workspaceId, customerName, customerEmail, customerPhone, transactionId, paymentReference, amountPaid, submitting],
   )
 
   async function onSubmit() {
@@ -165,7 +166,7 @@ export default function UpgradeBusinessPage() {
       setError(firebaseHint || 'Secure Cloud Sync is not available right now.')
       return
     }
-    if (!userId) {
+    if (!userId || !workspaceId) {
       setToast({ tone: 'error', message: 'Please login first' })
       return
     }
@@ -180,13 +181,13 @@ export default function UpgradeBusinessPage() {
     try {
       const payload = {
         userId,
-        ownerId: userId,
-        workspaceId: userId,
+        ownerId: workspaceDoc?.ownerId || userId,
+        workspaceId,
         createdBy: userId,
         userName: customerName.trim(),
         userEmail: customerEmail.trim(),
         userPhone: customerPhone.trim(),
-        currentPlan: plan || 'Free',
+        currentPlan: workspaceDoc?.plan || plan || 'Basic',
         selectedPlan,
         requestedPlan: selectedPlan,
         billingCycle,

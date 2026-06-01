@@ -8,7 +8,7 @@ import OnboardingWizard from '../components/onboarding/OnboardingWizard.jsx'
 import Badge from '../components/ui/Badge.jsx'
 import Button from '../components/ui/Button.jsx'
 import PageLoader from '../components/ui/PageLoader.jsx'
-import { moduleByRoute, routeAllowedByPlan } from '../data/moduleAccess.js'
+import { moduleByRoute, routeAllowedByBusinessType, routeAllowedByPlan } from '../data/moduleAccess.js'
 import { useAuth } from '../hooks/useAuth.js'
 import { useUser } from '../hooks/useUser.js'
 import {
@@ -223,7 +223,18 @@ export default function DashboardLayout() {
     Boolean(userDoc) &&
     Boolean(currentModule) &&
     !routeAllowedByPlan(location.pathname, accessPlan)
-  const comingSoonBlocked = ready && isAuthenticated && !userLoading && location.pathname === '/app/restaurant-pos'
+  const routeBusinessBlocked =
+    ready &&
+    isAuthenticated &&
+    !userLoading &&
+    Boolean(userDoc) &&
+    Boolean(currentModule) &&
+    !routeAllowedByBusinessType(location.pathname, userDoc?.businessType)
+  const comingSoonBlocked =
+    ready &&
+    isAuthenticated &&
+    !userLoading &&
+    (location.pathname === '/app/restaurant-pos' || currentModule?.comingSoon)
   const mobileBlocked = ready && isAuthenticated && isMobileScreen
   const onboardingOpen = Boolean(ready && userId && !userLoading && !isStaff && userDoc?.onboardingCompleted !== true)
 
@@ -265,11 +276,6 @@ export default function DashboardLayout() {
       return
     }
 
-    if (selected === 'restaurant-pos') {
-      Promise.resolve().then(() => setProductModalOpen(true))
-      return
-    }
-
     Promise.resolve().then(() => setProductModalOpen(false))
   }, [ready, user, userDoc, userId, userLoading, workspaceId])
 
@@ -280,7 +286,6 @@ export default function DashboardLayout() {
 
   const selectWorkspace = useCallback((workspace) => {
     if (!userId || !isValidWorkspace(workspace)) return
-    if (workspace === 'restaurant-pos') return
     saveSelectedWorkspace(userId, workspace)
     setSelectedWorkspace(workspace)
     setProductModalOpen(false)
@@ -295,8 +300,8 @@ export default function DashboardLayout() {
   }, [markModalSeen, navigate, user, userDoc, userId, workspaceId])
 
   const continueLastWorkspace = useCallback(() => {
-    const workspace = selectedWorkspace || readSelectedWorkspace(userId) || 'crm'
-    selectWorkspace(workspace === 'restaurant-pos' ? 'crm' : workspace)
+    const workspace = selectedWorkspace || readSelectedWorkspace(userId) || 'general-crm'
+    selectWorkspace(workspace)
   }, [selectWorkspace, selectedWorkspace, userId])
 
   const openProductSwitcher = useCallback(() => {
@@ -332,6 +337,16 @@ export default function DashboardLayout() {
 
   if (comingSoonBlocked) {
     return <ComingSoonBlock onBackToWorkspace={() => navigate('/workspace')} />
+  }
+
+  if (routeBusinessBlocked) {
+    return (
+      <UpgradeRequiredBlock
+        moduleLabel={currentModule?.label}
+        onBackToDashboard={() => navigate('/app/dashboard')}
+        onUpgrade={() => navigate('/workspace')}
+      />
+    )
   }
 
   if (routePlanBlocked) {

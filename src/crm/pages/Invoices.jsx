@@ -250,7 +250,7 @@ export default function InvoicesPage() {
     }
     if (action === 'mark_paid') return requestPaymentAction('paid', invoice)
     if (action === 'partial_paid') return requestPaymentAction('partial', invoice)
-    if (action === 'reject') return requestPaymentAction('reject', invoice)
+    if (action === 'cancel') return requestPaymentAction('reject', invoice)
     if (action === 'mark_unpaid') res = await markInvoiceUnpaid(invoice.id)
     if (action === 'send_approval') res = await sendForApproval(invoice.id)
     if (action === 'duplicate') res = await duplicateInvoice(invoice.id)

@@ -472,17 +472,29 @@ export function useApprovals() {
             const planPatch = {
               plan,
               planStatus: 'active',
+              subscriptionStatus: 'active',
               billingCycle,
               billingCurrency: row.billingCurrency || row.currency || 'PKR',
               nextBillingDate: subscriptionExpiresAt,
+              expiresAt: subscriptionExpiresAt,
               subscriptionStartedAt,
               subscriptionExpiresAt,
               isTrialActive: false,
+              paidAt: now,
               upgradedAt: now,
               updatedAt: now,
             }
             batch.set(doc(db, 'users', row.userId), planPatch, { merge: true })
-            batch.set(doc(db, 'workspaces', row.workspaceId || row.userId), planPatch, { merge: true })
+            batch.set(
+              doc(db, 'workspaces', row.workspaceId || row.userId),
+              {
+                ...planPatch,
+                ownerId: row.ownerId || row.userId,
+                userId: row.workspaceId || row.userId,
+                workspaceId: row.workspaceId || row.userId,
+              },
+              { merge: true },
+            )
           }
         }
 

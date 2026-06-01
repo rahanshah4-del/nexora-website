@@ -98,7 +98,7 @@ export async function createUserDoc(userId, path, payload) {
   try {
     return await addDoc(ref, {
       ...payload,
-      ownerId: userId,
+      ownerId: payload.ownerId || userId,
       userId,
       workspaceId: userId,
       createdBy: payload.createdBy || payload.submittedBy || userId,
@@ -126,7 +126,7 @@ export async function patchUserDoc(userId, path, id, patch) {
   try {
     return await updateDoc(ref, {
       ...patch,
-      ownerId: userId,
+      ownerId: patch.ownerId || userId,
       userId,
       workspaceId: userId,
       updatedAt: serverTimestamp(),

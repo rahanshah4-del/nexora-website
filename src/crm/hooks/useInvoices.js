@@ -97,23 +97,28 @@ function roleName(role, userDoc) {
 
 function canRoleApprovePayments(role, userDoc) {
   const rawRole = String(userDoc?.role ?? role ?? '').toLowerCase()
-  return ['owner', 'admin', 'accountant'].includes(rawRole)
+  return !rawRole || ['owner', 'admin', 'accountant'].includes(rawRole)
 }
 
 function invoicePermissions(role, userDoc) {
-  const normalized = roleName(role, userDoc)
+  const rawRole = String(userDoc?.role ?? role ?? '').trim().toLowerCase()
+  const normalized = rawRole ? roleName(role, userDoc) : 'owner'
   const finance = financePermissions(normalized)
+  const isOwnerAdmin = ['owner', 'admin'].includes(normalized)
+  const isAccountant = normalized === 'accountant'
+  const isSales = normalized === 'sales'
   return {
     role: normalized,
+    invoiceActionRole: normalized,
     canView: finance.canViewInvoices || finance.canManageInvoices,
     canCreate: finance.canCreateInvoices || finance.canManageInvoices,
-    canEdit: finance.canManageInvoices,
-    canDuplicate: finance.canCreateInvoices || finance.canManageInvoices,
-    canApprove: ['owner', 'admin'].includes(normalized),
-    canReject: ['owner', 'admin'].includes(normalized),
-    canRecordPayments: ['owner', 'admin', 'accountant'].includes(normalized),
-    canSend: ['owner', 'admin', 'accountant'].includes(normalized),
-    canDelete: ['owner', 'admin'].includes(normalized),
+    canEdit: isOwnerAdmin || isSales,
+    canDuplicate: isOwnerAdmin,
+    canApprove: isOwnerAdmin,
+    canReject: isOwnerAdmin,
+    canRecordPayments: isOwnerAdmin || isAccountant,
+    canSend: isOwnerAdmin,
+    canDelete: isOwnerAdmin,
   }
 }
 

@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { collection, limit, onSnapshot, query, updateDoc, where, writeBatch, doc } from 'firebase/firestore'
+import { limit, onSnapshot, query, updateDoc, where, writeBatch, doc } from 'firebase/firestore'
 import { db } from '../lib/firebase.js'
 import { useUser } from './useUser.js'
 import { clientSafeMessage } from '../utils/messages.js'
+import { collectionRef, workspaceCollectionPath } from '../lib/firestore.js'
 
 function toDateValue(value) {
   if (!value) return null
@@ -52,7 +53,7 @@ export function useNotifications() {
   const lastSeenTopIdRef = useRef(null)
 
   useEffect(() => {
-    if (!db || !userId) {
+    if (!db || !userId || !workspaceId) {
       lastSeenTopIdRef.current = null
       Promise.resolve().then(() => {
         setItems([])
@@ -66,7 +67,7 @@ export function useNotifications() {
     Promise.resolve().then(() => setLoading(true))
     Promise.resolve().then(() => setError(''))
 
-    const ref = collection(db, 'notifications')
+    const ref = collectionRef(workspaceCollectionPath(workspaceId, 'notifications'))
     // Avoid composite index requirement: do not combine `where + orderBy`.
     // Sort client-side by `createdAt` desc.
     const q = query(ref, where('userId', '==', userId), limit(50))
@@ -125,24 +126,24 @@ export function useNotifications() {
       async markAsRead(id) {
         setItems((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)))
         if (!db || source !== 'firestore') return
-        await updateDoc(doc(db, 'notifications', id), { read: true })
+        await updateDoc(doc(db, workspaceCollectionPath(workspaceId, 'notifications'), id), { read: true })
       },
       async markAllRead() {
         setItems((prev) => prev.map((n) => ({ ...n, read: true })))
         if (!db || source !== 'firestore') return
         const batch = writeBatch(db)
-        items.filter((n) => !n.read).forEach((n) => batch.update(doc(db, 'notifications', n.id), { read: true }))
+        items.filter((n) => !n.read).forEach((n) => batch.update(doc(db, workspaceCollectionPath(workspaceId, 'notifications'), n.id), { read: true }))
         await batch.commit()
       },
       async clearAll() {
         setItems([])
         if (!db || source !== 'firestore') return
         const batch = writeBatch(db)
-        items.forEach((n) => batch.delete(doc(db, 'notifications', n.id)))
+        items.forEach((n) => batch.delete(doc(db, workspaceCollectionPath(workspaceId, 'notifications'), n.id)))
         await batch.commit()
       },
     }),
-    [items, loading, source, error, unreadCount],
+    [items, loading, source, error, unreadCount, workspaceId],
   )
 
   return api

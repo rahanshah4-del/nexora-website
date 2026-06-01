@@ -1,7 +1,10 @@
-import { memo, useMemo } from 'react'
+import { memo, useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import {
   HiOutlineArrowDownTray,
+  HiOutlineChatBubbleLeftRight,
   HiOutlineCheckCircle,
+  HiOutlineClock,
   HiOutlineDocumentDuplicate,
   HiOutlineEllipsisHorizontal,
   HiOutlineEnvelope,
@@ -9,10 +12,10 @@ import {
   HiOutlinePencilSquare,
   HiOutlinePrinter,
   HiOutlineTrash,
+  HiOutlineXCircle,
 } from 'react-icons/hi2'
 import Badge from '../ui/Badge.jsx'
 import Button from '../ui/Button.jsx'
-import Dropdown from '../ui/Dropdown.jsx'
 import Table from '../ui/Table.jsx'
 import { formatCurrency } from '../../utils/format.js'
 import { dateLabel, invoiceIssueDate, invoicePaidAmount, invoiceTotal, statusBadge } from '../../lib/invoiceHelpers.js'
@@ -30,6 +33,123 @@ function ActionItem({ icon: Icon, label, danger = false, disabled = false, onCli
       {Icon ? <Icon className="h-4 w-4" /> : null}
       {label}
     </button>
+  )
+}
+
+function actionAccess(permissions, invoice) {
+  const role = permissions?.invoiceActionRole || permissions?.role || 'owner'
+  const isOwnerAdmin = role === 'owner' || role === 'admin'
+  const isAccountant = role === 'accountant'
+  const isSales = role === 'sales'
+  const status = String(invoice?.paymentStatus || invoice?.status || 'pending').toLowerCase().replace(/\s+/g, '_')
+  const isDraft = status === 'draft'
+  const isPaid = status === 'paid'
+  const isCancelled = status === 'rejected' || status === 'cancelled' || status === 'canceled'
+
+  return {
+    canView: isOwnerAdmin || isAccountant || isSales || permissions?.canView,
+    canEdit: isOwnerAdmin || (isSales && isDraft),
+    canDuplicate: isOwnerAdmin,
+    canDownload: isOwnerAdmin || isAccountant,
+    canPrint: isOwnerAdmin || isAccountant,
+    canSendEmail: isOwnerAdmin,
+    canSendWhatsApp: isOwnerAdmin,
+    canMarkPaid: (isOwnerAdmin || isAccountant) && !isPaid && !isCancelled,
+    canMarkPartial: (isOwnerAdmin || isAccountant) && !isPaid && !isCancelled,
+    canSendApproval: (isOwnerAdmin || isSales) && !isPaid && !isCancelled,
+    canCancel: isOwnerAdmin && !isCancelled,
+    canDelete: isOwnerAdmin,
+  }
+}
+
+function InvoiceActionsMenu({ invoice, permissions, onOpen, onAction }) {
+  const [open, setOpen] = useState(false)
+  const [position, setPosition] = useState({ top: 0, left: 0 })
+  const triggerRef = useRef(null)
+  const menuRef = useRef(null)
+  const access = actionAccess(permissions, invoice)
+
+  useEffect(() => {
+    if (!open) return undefined
+
+    function closeIfOutside(event) {
+      if (triggerRef.current?.contains(event.target) || menuRef.current?.contains(event.target)) return
+      setOpen(false)
+    }
+
+    function placeMenu() {
+      const rect = triggerRef.current?.getBoundingClientRect()
+      if (!rect) return
+      const menuWidth = 256
+      const left = Math.min(Math.max(8, rect.right - menuWidth), window.innerWidth - menuWidth - 8)
+      setPosition({ top: rect.bottom + 8, left })
+    }
+
+    placeMenu()
+    document.addEventListener('mousedown', closeIfOutside)
+    window.addEventListener('resize', placeMenu)
+    window.addEventListener('scroll', placeMenu, true)
+    return () => {
+      document.removeEventListener('mousedown', closeIfOutside)
+      window.removeEventListener('resize', placeMenu)
+      window.removeEventListener('scroll', placeMenu, true)
+    }
+  }, [open])
+
+  function run(action) {
+    setOpen(false)
+    if (action === 'view') {
+      onOpen?.(invoice)
+      return
+    }
+    onAction?.(action, invoice)
+  }
+
+  return (
+    <>
+      <span ref={triggerRef} className="inline-flex">
+        <Button
+          variant="ghost"
+          className="h-9 rounded-xl px-2.5 py-2 text-xs"
+          type="button"
+          title="More actions"
+          aria-label={`More actions for invoice ${invoice.invoiceNumber || invoice.id}`}
+          aria-expanded={open}
+          onClick={(event) => {
+            event.preventDefault()
+            event.stopPropagation()
+            setOpen((value) => !value)
+          }}
+        >
+          <HiOutlineEllipsisHorizontal className="h-5 w-5" />
+        </Button>
+      </span>
+
+      {open && typeof document !== 'undefined'
+        ? createPortal(
+          <div
+            ref={menuRef}
+            className="fixed z-[90] w-64 rounded-2xl border border-slate-200 bg-white p-1 shadow-[0_24px_70px_-30px_rgba(15,23,42,0.55)]"
+            style={{ top: position.top, left: position.left }}
+            role="menu"
+          >
+            <ActionItem icon={HiOutlineEye} label="View Invoice" disabled={!access.canView} onClick={() => run('view')} />
+            <ActionItem icon={HiOutlinePencilSquare} label="Edit Invoice" disabled={!access.canEdit} onClick={() => run('edit')} />
+            <ActionItem icon={HiOutlineDocumentDuplicate} label="Duplicate Invoice" disabled={!access.canDuplicate} onClick={() => run('duplicate')} />
+            <ActionItem icon={HiOutlineArrowDownTray} label="Download PDF" disabled={!access.canDownload} onClick={() => run('pdf')} />
+            <ActionItem icon={HiOutlinePrinter} label="Print" disabled={!access.canPrint} onClick={() => run('print')} />
+            <ActionItem icon={HiOutlineEnvelope} label="Send Email" disabled={!access.canSendEmail} onClick={() => run('email')} />
+            <ActionItem icon={HiOutlineChatBubbleLeftRight} label="Send WhatsApp" disabled={!access.canSendWhatsApp} onClick={() => run('whatsapp')} />
+            <ActionItem icon={HiOutlineCheckCircle} label="Mark as Paid" disabled={!access.canMarkPaid} onClick={() => run('mark_paid')} />
+            <ActionItem label="Mark as Partial Paid" disabled={!access.canMarkPartial} onClick={() => run('partial_paid')} />
+            <ActionItem icon={HiOutlineClock} label="Send for Approval" disabled={!access.canSendApproval} onClick={() => run('send_approval')} />
+            <ActionItem icon={HiOutlineXCircle} label="Cancel Invoice" disabled={!access.canCancel} danger onClick={() => run('cancel')} />
+            <ActionItem icon={HiOutlineTrash} label="Delete Invoice" disabled={!access.canDelete} danger onClick={() => run('delete')} />
+          </div>,
+          document.body,
+        )
+        : null}
+    </>
   )
 }
 
@@ -81,9 +201,6 @@ function InvoiceTable({
       key: 'actions',
       header: 'Actions',
       cell: (r) => {
-        const status = String(r.paymentStatus || r.status || 'pending').toLowerCase()
-        const isPaid = status === 'paid'
-        const isCancelled = status === 'rejected' || status === 'cancelled'
         return (
           <div className="flex items-center gap-2">
             <Button
@@ -98,35 +215,7 @@ function InvoiceTable({
             >
               <HiOutlineEye className="h-4 w-4" />
             </Button>
-            <Dropdown
-              align="right"
-              panelClassName="w-60 bg-white"
-              trigger={() => (
-                <Button variant="ghost" className="h-9 rounded-xl px-2.5 py-2 text-xs" type="button" title="More actions">
-                  <HiOutlineEllipsisHorizontal className="h-5 w-5" />
-                </Button>
-              )}
-            >
-              {({ close }) => (
-                <div>
-                  <ActionItem icon={HiOutlineEye} label="View" onClick={() => { onOpen?.(r); close() }} />
-                  <ActionItem icon={HiOutlinePencilSquare} label="Edit" disabled={!permissions.canEdit || isCancelled} onClick={() => { onAction?.('edit', r); close() }} />
-                  <ActionItem icon={HiOutlineDocumentDuplicate} label="Duplicate" disabled={!permissions.canDuplicate} onClick={() => { onAction?.('duplicate', r); close() }} />
-                  <ActionItem icon={HiOutlinePrinter} label="Print" onClick={() => { onAction?.('print', r); close() }} />
-                  <ActionItem icon={HiOutlineArrowDownTray} label="PDF" onClick={() => { onAction?.('pdf', r); close() }} />
-                  <ActionItem icon={HiOutlineEnvelope} label="Email" onClick={() => { onAction?.('email', r); close() }} />
-                  <ActionItem label="WhatsApp" onClick={() => { onAction?.('whatsapp', r); close() }} />
-                  <ActionItem icon={HiOutlineCheckCircle} label="Mark Paid" disabled={!permissions.canRecordPayments || isPaid || isCancelled} onClick={() => { onAction?.('mark_paid', r); close() }} />
-                  <ActionItem label="Mark Unpaid" disabled={!permissions.canRecordPayments || isCancelled} onClick={() => { onAction?.('mark_unpaid', r); close() }} />
-                  <ActionItem label="Partial Paid" disabled={!permissions.canRecordPayments || isPaid || isCancelled} onClick={() => { onAction?.('partial_paid', r); close() }} />
-                  <ActionItem label="Send For Approval" disabled={isPaid || isCancelled || !permissions.canEdit} onClick={() => { onAction?.('send_approval', r); close() }} />
-                  <ActionItem label="Reject" disabled={!permissions.canReject || isCancelled} danger onClick={() => { onAction?.('reject', r); close() }} />
-                  {permissions.canDelete ? (
-                    <ActionItem icon={HiOutlineTrash} label="Delete" danger onClick={() => { onAction?.('delete', r); close() }} />
-                  ) : null}
-                </div>
-              )}
-            </Dropdown>
+            <InvoiceActionsMenu invoice={r} permissions={permissions} onOpen={onOpen} onAction={onAction} />
           </div>
         )
       },

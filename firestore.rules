@@ -48,6 +48,10 @@ service cloud.firestore {
       return profile().role;
     }
 
+    function workspaceDoc(workspaceId) {
+      return get(/databases/$(database)/documents/workspaces/$(workspaceId)).data;
+    }
+
     function isOwnerRole(role) {
       return role in ['owner', 'Owner', 'OWNER'];
     }
@@ -99,6 +103,50 @@ service cloud.firestore {
         );
     }
 
+    function isBlockedWorkspaceMember(workspaceId) {
+      return profileExists()
+        && profileWorkspaceMatches(workspaceId)
+        && profile().status in ['blocked', 'disabled', 'inactive', 'Blocked', 'Disabled', 'Inactive'];
+    }
+
+    function workspaceExists(workspaceId) {
+      return exists(/databases/$(database)/documents/workspaces/$(workspaceId));
+    }
+
+    function workspaceSubscriptionActive(workspaceId) {
+      return workspaceExists(workspaceId)
+        && (
+          workspaceDoc(workspaceId).subscriptionStatus in ['active', 'paid', 'approved', 'current']
+          || workspaceDoc(workspaceId).planStatus in ['active', 'paid', 'approved', 'current']
+        )
+        && (
+          !workspaceDoc(workspaceId).keys().hasAny(['subscriptionExpiresAt'])
+          || workspaceDoc(workspaceId).subscriptionExpiresAt >= request.time
+        )
+        && (
+          !workspaceDoc(workspaceId).keys().hasAny(['expiresAt'])
+          || workspaceDoc(workspaceId).expiresAt >= request.time
+        )
+        && (
+          !workspaceDoc(workspaceId).keys().hasAny(['nextBillingDate'])
+          || workspaceDoc(workspaceId).nextBillingDate >= request.time
+        );
+    }
+
+    function workspaceTrialActive(workspaceId) {
+      return workspaceExists(workspaceId)
+        && (
+          workspaceDoc(workspaceId).subscriptionStatus in ['trial', 'free trial']
+          || workspaceDoc(workspaceId).planStatus in ['trial', 'free trial']
+          || workspaceDoc(workspaceId).isTrialActive == true
+        )
+        && workspaceDoc(workspaceId).trialEndsAt >= request.time;
+    }
+
+    function workspaceHasWriteAccess(workspaceId) {
+      return isAdmin() || workspaceSubscriptionActive(workspaceId) || workspaceTrialActive(workspaceId);
+    }
+
     function roleHasPermission(role, key) {
       return isOwnerRole(role)
         || isAdminRole(role)
@@ -145,13 +193,13 @@ service cloud.firestore {
       return request.resource.data.workspaceId == workspaceId
         && request.resource.data.createdBy == request.auth.uid
         && request.resource.data.createdAt is timestamp
-        && (!request.resource.data.keys().hasAny(['ownerId']) || request.resource.data.ownerId == workspaceId);
+        && (!request.resource.data.keys().hasAny(['ownerId']) || request.resource.data.ownerId == workspaceId || request.resource.data.ownerId == workspaceDoc(workspaceId).ownerId);
     }
 
     function workspaceUpdateScopeSafe(workspaceId) {
       return (!request.resource.data.keys().hasAny(['workspaceId']) || request.resource.data.workspaceId == workspaceId)
         && (!resource.data.keys().hasAny(['workspaceId']) || request.resource.data.workspaceId == resource.data.workspaceId)
-        && (!request.resource.data.keys().hasAny(['ownerId']) || request.resource.data.ownerId == workspaceId)
+        && (!request.resource.data.keys().hasAny(['ownerId']) || request.resource.data.ownerId == workspaceId || request.resource.data.ownerId == workspaceDoc(workspaceId).ownerId)
         && (!resource.data.keys().hasAny(['ownerId']) || request.resource.data.ownerId == resource.data.ownerId);
     }
 
@@ -195,8 +243,9 @@ service cloud.firestore {
     }
 
     function hasSafeTrialPlan() {
-      return (!request.resource.data.keys().hasAny(['plan']) || request.resource.data.plan in ['Free', 'Basic'])
+      return (!request.resource.data.keys().hasAny(['plan']) || request.resource.data.plan in ['Basic'])
         && (!request.resource.data.keys().hasAny(['planStatus']) || request.resource.data.planStatus in ['trial', 'Free Plan', 'Basic Trial', 'inactive'])
+        && (!request.resource.data.keys().hasAny(['subscriptionStatus']) || request.resource.data.subscriptionStatus == 'trial')
         && (!request.resource.data.keys().hasAny(['role']) || request.resource.data.role in ['owner', 'user'])
         && (!request.resource.data.keys().hasAny(['status']) || request.resource.data.status in ['active', 'Active'])
         && (!request.resource.data.keys().hasAny(['trialDays']) || request.resource.data.trialDays == 7)
@@ -207,10 +256,12 @@ service cloud.firestore {
       return !request.resource.data.diff(resource.data).affectedKeys().hasAny([
         'plan',
         'planStatus',
+        'subscriptionStatus',
         'billingCycle',
         'role',
         'isAdmin',
         'upgradedAt',
+        'trialStartAt',
         'trialStartedAt',
         'trialEndsAt',
         'isTrialActive',
@@ -225,9 +276,12 @@ service cloud.firestore {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
         'plan',
         'planStatus',
+        'subscriptionStatus',
         'billingCycle',
         'billingCurrency',
         'nextBillingDate',
+        'expiresAt',
+        'paidAt',
         'subscriptionStartedAt',
         'subscriptionExpiresAt',
         'isTrialActive',
@@ -312,7 +366,7 @@ service cloud.firestore {
     }
 
     function accountTransactionCreateScope(workspaceId) {
-      return request.resource.data.ownerId == workspaceId
+      return (request.resource.data.ownerId == workspaceId || request.resource.data.ownerId == workspaceDoc(workspaceId).ownerId)
         && request.resource.data.userId == workspaceId
         && request.resource.data.workspaceId == workspaceId
         && request.resource.data.createdBy == request.auth.uid
@@ -359,7 +413,7 @@ service cloud.firestore {
       return isWorkspaceMember(workspaceId)
         && request.resource.data.paymentStatus == 'pending_verification'
         && request.resource.data.submittedBy == request.auth.uid
-        && request.resource.data.ownerId == workspaceId
+        && (request.resource.data.ownerId == workspaceId || request.resource.data.ownerId == workspaceDoc(workspaceId).ownerId)
         && request.resource.data.userId == workspaceId
         && request.resource.data.workspaceId == workspaceId
         && request.resource.data.createdBy == request.auth.uid
@@ -424,9 +478,11 @@ service cloud.firestore {
 
     match /workspaces/{workspaceId} {
       allow create: if isAdmin()
-        || (isActiveSelf(workspaceId)
-          && hasOwnScope(workspaceId)
-          && request.resource.data.createdBy == workspaceId
+        || (activeSignedIn()
+          && request.resource.data.ownerId == request.auth.uid
+          && request.resource.data.userId == workspaceId
+          && request.resource.data.workspaceId == workspaceId
+          && request.resource.data.createdBy == request.auth.uid
           && request.resource.data.createdAt is timestamp
           && hasSafeTrialPlan());
       allow read: if isWorkspaceMember(workspaceId) || isAdmin();
@@ -436,9 +492,9 @@ service cloud.firestore {
 
       match /tasks/{taskId} {
         allow read: if isWorkspaceMember(workspaceId) || isWorkspaceManager(workspaceId);
-        allow create: if staffPermission(workspaceId, 'followUpEdit') && workspaceCreateMetadata(workspaceId);
-        allow update: if staffPermission(workspaceId, 'followUpEdit') && workspaceUpdateScopeSafe(workspaceId);
-        allow delete: if staffPermission(workspaceId, 'followUpDelete');
+        allow create: if workspaceHasWriteAccess(workspaceId) && staffPermission(workspaceId, 'followUpEdit') && workspaceCreateMetadata(workspaceId);
+        allow update: if workspaceHasWriteAccess(workspaceId) && staffPermission(workspaceId, 'followUpEdit') && workspaceUpdateScopeSafe(workspaceId);
+        allow delete: if workspaceHasWriteAccess(workspaceId) && staffPermission(workspaceId, 'followUpDelete');
       }
 
       match /staff/{staffId} {
@@ -446,43 +502,45 @@ service cloud.firestore {
           || staffPermission(workspaceId, 'reports')
           || (isWorkspaceMember(workspaceId)
             && (resource.data.userId == request.auth.uid || resource.data.staffId == permissionDocId()));
-        allow create: if isWorkspaceManager(workspaceId) && workspaceCreateMetadata(workspaceId);
-        allow update: if isWorkspaceManager(workspaceId) && workspaceUpdateScopeSafe(workspaceId);
-        allow delete: if isWorkspaceManager(workspaceId);
+        allow create: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId) && workspaceCreateMetadata(workspaceId);
+        allow update: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId) && workspaceUpdateScopeSafe(workspaceId);
+        allow delete: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId);
       }
 
       match /permissions/{staffId} {
         allow read: if isWorkspaceManager(workspaceId) || (isWorkspaceMember(workspaceId) && staffId == permissionDocId());
-        allow create, update, delete: if isWorkspaceManager(workspaceId);
+        allow create, update, delete: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId);
       }
 
       match /customers/{customerId} {
         allow read: if staffPermission(workspaceId, 'customerManagement') || staffPermission(workspaceId, 'reports');
-        allow create: if staffPermission(workspaceId, 'customerManagement') && workspaceCreateMetadata(workspaceId);
-        allow update: if staffPermission(workspaceId, 'customerManagement') && workspaceUpdateScopeSafe(workspaceId);
-        allow delete: if staffPermission(workspaceId, 'customerManagement');
+        allow create: if workspaceHasWriteAccess(workspaceId) && staffPermission(workspaceId, 'customerManagement') && workspaceCreateMetadata(workspaceId);
+        allow update: if workspaceHasWriteAccess(workspaceId) && staffPermission(workspaceId, 'customerManagement') && workspaceUpdateScopeSafe(workspaceId);
+        allow delete: if workspaceHasWriteAccess(workspaceId) && staffPermission(workspaceId, 'customerManagement');
       }
 
       match /clients/{clientId} {
         allow read: if isWorkspaceManager(workspaceId) || isPaymentApprover(workspaceId) || staffPermission(workspaceId, 'reports');
-        allow create: if isWorkspaceManager(workspaceId) && workspaceCreateMetadata(workspaceId);
-        allow update: if (isWorkspaceManager(workspaceId) && workspaceUpdateScopeSafe(workspaceId))
-          || (isPaymentApprover(workspaceId) && approvalStatusFieldsTouched() && isOpenApprovalResource() && workspaceUpdateScopeSafe(workspaceId));
-        allow delete: if isWorkspaceManager(workspaceId);
+        allow create: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId) && workspaceCreateMetadata(workspaceId);
+        allow update: if workspaceHasWriteAccess(workspaceId) && (
+          (isWorkspaceManager(workspaceId) && workspaceUpdateScopeSafe(workspaceId))
+          || (isPaymentApprover(workspaceId) && approvalStatusFieldsTouched() && isOpenApprovalResource() && workspaceUpdateScopeSafe(workspaceId))
+        );
+        allow delete: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId);
       }
 
       match /products/{productId} {
         allow read: if staffPermission(workspaceId, 'invoices') || staffPermission(workspaceId, 'reports');
-        allow create: if isWorkspaceManager(workspaceId) && workspaceCreateMetadata(workspaceId);
-        allow update: if isWorkspaceManager(workspaceId) && workspaceUpdateScopeSafe(workspaceId);
-        allow delete: if isWorkspaceManager(workspaceId);
+        allow create: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId) && workspaceCreateMetadata(workspaceId);
+        allow update: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId) && workspaceUpdateScopeSafe(workspaceId);
+        allow delete: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId);
       }
 
       match /leads/{leadId} {
         allow read: if staffPermission(workspaceId, 'leadsManagement') || staffPermission(workspaceId, 'reports');
-        allow create: if staffPermission(workspaceId, 'leadsManagement') && workspaceCreateMetadata(workspaceId);
-        allow update: if staffPermission(workspaceId, 'leadsManagement') && workspaceUpdateScopeSafe(workspaceId);
-        allow delete: if staffPermission(workspaceId, 'leadsManagement');
+        allow create: if workspaceHasWriteAccess(workspaceId) && staffPermission(workspaceId, 'leadsManagement') && workspaceCreateMetadata(workspaceId);
+        allow update: if workspaceHasWriteAccess(workspaceId) && staffPermission(workspaceId, 'leadsManagement') && workspaceUpdateScopeSafe(workspaceId);
+        allow delete: if workspaceHasWriteAccess(workspaceId) && staffPermission(workspaceId, 'leadsManagement');
       }
 
       match /invoices/{invoiceId} {
@@ -490,11 +548,11 @@ service cloud.firestore {
           || staffPermission(workspaceId, 'reports')
           || isPaymentApprover(workspaceId)
           || canReadClientPortalInvoice(workspaceId);
-        allow create: if staffPermission(workspaceId, 'invoices') && workspaceCreateMetadata(workspaceId);
-        allow update: if (staffPermission(workspaceId, 'invoices') && !paymentApprovalFieldsTouched() && workspaceUpdateScopeSafe(workspaceId))
+        allow create: if workspaceHasWriteAccess(workspaceId) && staffPermission(workspaceId, 'invoices') && workspaceCreateMetadata(workspaceId);
+        allow update: if workspaceHasWriteAccess(workspaceId) && ((staffPermission(workspaceId, 'invoices') && !paymentApprovalFieldsTouched() && workspaceUpdateScopeSafe(workspaceId))
           || (isPaymentApprover(workspaceId) && paymentApprovalFieldsTouched() && workspaceUpdateScopeSafe(workspaceId))
-          || (isWorkspaceMember(workspaceId) && paymentReferenceFieldsTouched() && isOpenApprovalResource() && workspaceUpdateScopeSafe(workspaceId));
-        allow delete: if isWorkspaceManager(workspaceId);
+          || (isWorkspaceMember(workspaceId) && paymentReferenceFieldsTouched() && isOpenApprovalResource() && workspaceUpdateScopeSafe(workspaceId)));
+        allow delete: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId);
       }
 
       match /payments/{paymentId} {
@@ -502,34 +560,34 @@ service cloud.firestore {
           || staffPermission(workspaceId, 'reports')
           || isPaymentApprover(workspaceId)
           || canReadClientPortalPayment(workspaceId);
-        allow create: if ((isPaymentApprover(workspaceId) && workspaceCreateMetadata(workspaceId)) || canSubmitPaymentReference(workspaceId));
-        allow update: if (isWorkspaceManager(workspaceId) && !paymentApprovalFieldsTouched() && workspaceUpdateScopeSafe(workspaceId))
-          || (isPaymentApprover(workspaceId) && paymentApprovalFieldsTouched() && isOpenApprovalResource() && workspaceUpdateScopeSafe(workspaceId));
-        allow delete: if isWorkspaceManager(workspaceId);
+        allow create: if workspaceHasWriteAccess(workspaceId) && ((isPaymentApprover(workspaceId) && workspaceCreateMetadata(workspaceId)) || canSubmitPaymentReference(workspaceId));
+        allow update: if workspaceHasWriteAccess(workspaceId) && ((isWorkspaceManager(workspaceId) && !paymentApprovalFieldsTouched() && workspaceUpdateScopeSafe(workspaceId))
+          || (isPaymentApprover(workspaceId) && paymentApprovalFieldsTouched() && isOpenApprovalResource() && workspaceUpdateScopeSafe(workspaceId)));
+        allow delete: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId);
       }
 
       match /expenses/{expenseId} {
         allow read: if staffPermission(workspaceId, 'reports') || isPaymentApprover(workspaceId);
-        allow create: if (isWorkspaceManager(workspaceId) || isPaymentApprover(workspaceId))
+        allow create: if workspaceHasWriteAccess(workspaceId) && (isWorkspaceManager(workspaceId) || isPaymentApprover(workspaceId))
           && accountTransactionCreateScope(workspaceId);
-        allow update: if (isWorkspaceManager(workspaceId) && !approvalStatusFieldsTouched() && workspaceUpdateScopeSafe(workspaceId))
-          || (isPaymentApprover(workspaceId) && approvalStatusFieldsTouched() && isOpenApprovalResource() && workspaceUpdateScopeSafe(workspaceId));
-        allow delete: if isWorkspaceManager(workspaceId);
+        allow update: if workspaceHasWriteAccess(workspaceId) && ((isWorkspaceManager(workspaceId) && !approvalStatusFieldsTouched() && workspaceUpdateScopeSafe(workspaceId))
+          || (isPaymentApprover(workspaceId) && approvalStatusFieldsTouched() && isOpenApprovalResource() && workspaceUpdateScopeSafe(workspaceId)));
+        allow delete: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId);
       }
 
       match /accountTransactions/{transactionId} {
         allow read: if staffPermission(workspaceId, 'reports') || isPaymentApprover(workspaceId);
-        allow create: if isPaymentApprover(workspaceId) && accountTransactionCreateScope(workspaceId);
-        allow update: if (isWorkspaceManager(workspaceId) && !accountTransactionApprovalFieldsTouched() && workspaceUpdateScopeSafe(workspaceId))
-          || (isPaymentApprover(workspaceId) && accountTransactionApprovalFieldsTouched() && isOpenApprovalResource() && workspaceUpdateScopeSafe(workspaceId));
-        allow delete: if isActiveSelf(workspaceId);
+        allow create: if workspaceHasWriteAccess(workspaceId) && isPaymentApprover(workspaceId) && accountTransactionCreateScope(workspaceId);
+        allow update: if workspaceHasWriteAccess(workspaceId) && ((isWorkspaceManager(workspaceId) && !accountTransactionApprovalFieldsTouched() && workspaceUpdateScopeSafe(workspaceId))
+          || (isPaymentApprover(workspaceId) && accountTransactionApprovalFieldsTouched() && isOpenApprovalResource() && workspaceUpdateScopeSafe(workspaceId)));
+        allow delete: if workspaceHasWriteAccess(workspaceId) && isActiveSelf(workspaceId);
       }
 
       match /pipelines/{dealId} {
         allow read: if staffPermission(workspaceId, 'reports') || staffPermission(workspaceId, 'leadsManagement');
-        allow create: if staffPermission(workspaceId, 'leadsManagement') && workspaceCreateMetadata(workspaceId);
-        allow update: if staffPermission(workspaceId, 'leadsManagement') && workspaceUpdateScopeSafe(workspaceId);
-        allow delete: if isWorkspaceManager(workspaceId);
+        allow create: if workspaceHasWriteAccess(workspaceId) && staffPermission(workspaceId, 'leadsManagement') && workspaceCreateMetadata(workspaceId);
+        allow update: if workspaceHasWriteAccess(workspaceId) && staffPermission(workspaceId, 'leadsManagement') && workspaceUpdateScopeSafe(workspaceId);
+        allow delete: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId);
       }
 
       match /supportTickets/{ticketId} {
@@ -541,13 +599,14 @@ service cloud.firestore {
 
       match /subscriptions/{subscriptionId} {
         allow read: if staffPermission(workspaceId, 'reports');
-        allow create: if isWorkspaceManager(workspaceId) && workspaceCreateMetadata(workspaceId);
+        allow create: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId) && workspaceCreateMetadata(workspaceId);
         allow update, delete: if isAdmin();
       }
 
       match /activityLogs/{logId} {
         allow read: if staffPermission(workspaceId, 'reports');
-        allow create: if (isActiveSelf(workspaceId) || isWorkspaceMember(workspaceId))
+        allow create: if workspaceHasWriteAccess(workspaceId)
+          && (isActiveSelf(workspaceId) || isWorkspaceMember(workspaceId))
           && request.resource.data.userId == request.auth.uid
           && request.resource.data.ownerId == workspaceId
           && request.resource.data.workspaceId == workspaceId
@@ -560,32 +619,52 @@ service cloud.firestore {
         allow read: if staffPermission(workspaceId, 'reports')
           || staffPermission(workspaceId, 'settingsAccess')
           || isPaymentApprover(workspaceId);
-        allow create: if isWorkspaceManager(workspaceId) && workspaceCreateMetadata(workspaceId);
-        allow update: if (isWorkspaceManager(workspaceId) && workspaceUpdateScopeSafe(workspaceId))
-          || (isPaymentApprover(workspaceId) && approvalStatusFieldsTouched() && isOpenApprovalResource() && workspaceUpdateScopeSafe(workspaceId));
-        allow delete: if isWorkspaceManager(workspaceId);
+        allow create: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId) && workspaceCreateMetadata(workspaceId);
+        allow update: if workspaceHasWriteAccess(workspaceId) && ((isWorkspaceManager(workspaceId) && workspaceUpdateScopeSafe(workspaceId))
+          || (isPaymentApprover(workspaceId) && approvalStatusFieldsTouched() && isOpenApprovalResource() && workspaceUpdateScopeSafe(workspaceId)));
+        allow delete: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId);
       }
 
       match /branches/{branchId} {
         allow read: if isWorkspaceMember(workspaceId);
-        allow create: if isWorkspaceManager(workspaceId) && workspaceCreateMetadata(workspaceId);
-        allow update: if isWorkspaceManager(workspaceId) && workspaceUpdateScopeSafe(workspaceId);
-        allow delete: if isWorkspaceManager(workspaceId);
+        allow create: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId) && workspaceCreateMetadata(workspaceId);
+        allow update: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId) && workspaceUpdateScopeSafe(workspaceId);
+        allow delete: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId);
       }
 
       match /reports/{reportId} {
         allow read: if staffPermission(workspaceId, 'reports');
-        allow create: if staffPermission(workspaceId, 'reports') && workspaceCreateMetadata(workspaceId);
-        allow update, delete: if isWorkspaceManager(workspaceId);
+        allow create: if workspaceHasWriteAccess(workspaceId) && staffPermission(workspaceId, 'reports') && workspaceCreateMetadata(workspaceId);
+        allow update, delete: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId);
       }
 
       match /hr/{employeeId} {
-        allow read, write: if staffPermission(workspaceId, 'hrDashboard');
+        allow read: if staffPermission(workspaceId, 'hrDashboard');
+        allow write: if workspaceHasWriteAccess(workspaceId) && staffPermission(workspaceId, 'hrDashboard');
       }
 
       match /teamPermissions/{permissionId} {
         allow read: if staffPermission(workspaceId, 'settingsAccess') || isWorkspaceManager(workspaceId);
-        allow create, update, delete: if isWorkspaceManager(workspaceId);
+        allow create, update, delete: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId);
+      }
+
+      match /notifications/{notificationId} {
+        allow create: if workspaceHasWriteAccess(workspaceId)
+          && isWorkspaceMember(workspaceId)
+          && request.resource.data.userId == request.auth.uid
+          && request.resource.data.workspaceId == workspaceId
+          && request.resource.data.createdBy == request.auth.uid
+          && request.resource.data.createdAt is timestamp;
+        allow read: if isAdmin()
+          || (isWorkspaceMember(workspaceId) && resource.data.userId == request.auth.uid);
+        allow update: if workspaceHasWriteAccess(workspaceId)
+          && (isAdmin()
+            || (isWorkspaceMember(workspaceId)
+              && resource.data.userId == request.auth.uid
+              && request.resource.data.userId == resource.data.userId
+              && request.resource.data.workspaceId == workspaceId));
+        allow delete: if workspaceHasWriteAccess(workspaceId)
+          && (isAdmin() || (isWorkspaceMember(workspaceId) && resource.data.userId == request.auth.uid));
       }
 
       match /{document=**} {
@@ -596,8 +675,10 @@ service cloud.firestore {
     match /upgradeRequests/{requestId} {
       allow create: if activeSignedIn()
         && request.resource.data.userId == request.auth.uid
-        && request.resource.data.ownerId == request.auth.uid
-        && request.resource.data.workspaceId == request.auth.uid
+        && request.resource.data.workspaceId is string
+        && request.resource.data.ownerId is string
+        && isWorkspaceMember(request.resource.data.workspaceId)
+        && request.resource.data.ownerId == workspaceDoc(request.resource.data.workspaceId).ownerId
         && request.resource.data.createdBy == request.auth.uid
         && request.resource.data.createdAt is timestamp
         && request.resource.data.approvalStatus == 'pending'

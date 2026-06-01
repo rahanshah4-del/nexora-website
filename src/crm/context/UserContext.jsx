@@ -7,7 +7,8 @@ import { ensureUserWorkspace } from '../../lib/accountProvisioning.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 import { normalizeFinanceRole } from '../lib/financeAccess.js'
 import { isPlatformAdminDoc } from '../../lib/roles.js'
-import { accessPlanForUser, daysUntil, isTrialActive, isTrialExpired, normalizePlan, trialEndDate } from '../data/moduleAccess.js'
+import { accessPlanForUser, daysUntil, isTrialExpired, normalizePlan, trialEndDate } from '../data/moduleAccess.js'
+import { ensureWorkspaceAccessFields, workspaceAccessState } from '../lib/workspaceAccess.js'
 
 const UserContext = createContext(null)
 
@@ -33,6 +34,7 @@ export function UserProvider({ children }) {
   const [userDoc, setUserDoc] = useState(null)
   const [staffAccessStatus, setStaffAccessStatus] = useState('')
   const [workspaceOwnerId, setWorkspaceOwnerId] = useState('')
+  const [workspaceDoc, setWorkspaceDoc] = useState(null)
   const [loading, setLoading] = useState(true)
   const provisionedUserRef = useRef('')
   const loggedLoginRef = useRef('')
@@ -135,12 +137,6 @@ export function UserProvider({ children }) {
     return () => unsub()
   }, [loading, ready, user, userDoc])
 
-  const effectivePlan = normalizePlan(userDoc?.plan ?? (db ? 'Free' : localPlan ?? 'Free'))
-  const accessPlan = accessPlanForUser(userDoc || {}, effectivePlan)
-  const trialActive = isTrialActive(userDoc || {})
-  const trialEndsAt = trialEndDate(userDoc || {})
-  const trialDaysRemaining = trialActive ? daysUntil(trialEndsAt) : 0
-  const trialExpired = isTrialExpired(userDoc || {})
   const role = normalizeRole(userDoc?.role)
   const workspaceId = userDoc?.workspaceId || user?.uid || null
   const staffId = userDoc?.staffId || user?.uid || null
@@ -165,12 +161,28 @@ export function UserProvider({ children }) {
     const ref = doc(db, 'workspaces', workspaceId)
     const unsub = onSnapshot(
       ref,
-      (snap) => setWorkspaceOwnerId(snap.exists() ? String(snap.data()?.ownerId || '') : ''),
-      () => setWorkspaceOwnerId(''),
+      (snap) => {
+        const data = snap.exists() ? snap.data() : null
+        setWorkspaceDoc(data)
+        setWorkspaceOwnerId(data ? String(data?.ownerId || '') : '')
+        if (data) ensureWorkspaceAccessFields(workspaceId, data.ownerId || user.uid).catch(() => {})
+      },
+      () => {
+        setWorkspaceDoc(null)
+        setWorkspaceOwnerId('')
+      },
     )
 
     return () => unsub()
   }, [loading, ready, user?.uid, workspaceId])
+
+  const accessState = workspaceAccessState(workspaceDoc || {}, userDoc || {}, db ? 'Free' : localPlan ?? 'Free')
+  const effectivePlan = normalizePlan(accessState.plan ?? (db ? 'Free' : localPlan ?? 'Free'))
+  const accessPlan = accessState.accessPlan || accessPlanForUser(userDoc || {}, effectivePlan)
+  const trialActive = accessState.isTrialActive
+  const trialEndsAt = accessState.trialEndsAt || trialEndDate(userDoc || {})
+  const trialDaysRemaining = trialActive ? accessState.trialDaysRemaining || daysUntil(trialEndsAt) : 0
+  const trialExpired = accessState.isTrialExpired || isTrialExpired(userDoc || {})
 
   useEffect(() => {
     if (!user?.uid || !workspaceId || loading || loggedLoginRef.current === user.uid) return
@@ -197,6 +209,7 @@ export function UserProvider({ children }) {
       staffId,
       firebaseUser: user ?? null,
       userDoc,
+      workspaceDoc,
       loading,
       plan: effectivePlan,
       accessPlan,
@@ -220,6 +233,7 @@ export function UserProvider({ children }) {
       workspaceId,
       staffId,
       userDoc,
+      workspaceDoc,
       loading,
       effectivePlan,
       accessPlan,
