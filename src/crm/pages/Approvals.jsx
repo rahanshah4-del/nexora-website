@@ -19,13 +19,6 @@ function statusBadge(status) {
   return { label: 'Pending', variant: 'warning' }
 }
 
-function checkApprovalRouteStillInCrm(actionLabel) {
-  if (typeof window === 'undefined') return
-  if (!window.location.pathname.startsWith('/app/')) {
-    console.error(`[CRM approval route check] ${actionLabel} moved outside CRM: ${window.location.pathname}`)
-  }
-}
-
 function isInvoiceRow(row) {
   return row?.sourceCollection === 'invoices'
 }
@@ -265,8 +258,6 @@ export default function ApprovalsPage() {
   async function runAction(event) {
     event?.preventDefault?.()
     if (!confirm.action || !confirm.approval) return
-    const actionLabel = confirm.action === 'approve' ? 'Approve' : confirm.action === 'mark_paid' ? 'Mark as Paid' : 'Reject'
-    checkApprovalRouteStillInCrm(`${actionLabel} started`)
     setBusy(true)
     const res =
       confirm.action === 'approve'
@@ -275,7 +266,6 @@ export default function ApprovalsPage() {
           ? await approvals.markPaid(confirm.approval)
           : await approvals.reject(confirm.approval)
     setBusy(false)
-    checkApprovalRouteStillInCrm(`${actionLabel} completed`)
 
     if (res?.ok) {
       setToast({

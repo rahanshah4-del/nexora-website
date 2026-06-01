@@ -14,11 +14,7 @@ export function toNumber(value, fallback = 0) {
   return Number.isFinite(next) ? next : fallback
 }
 
-export function warnInvalidData(message, record = {}) {
-  if (typeof console === 'undefined') return
-  const id = record?.id || record?.invoiceNumber || record?.reference || record?.name || ''
-  console.warn('[Nexora CRM data warning]', message, id ? { id } : record)
-}
+export function warnInvalidData() {}
 
 export function normalizeCurrency(value) {
   const currency = String(value || '').trim().toUpperCase()

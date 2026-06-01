@@ -20,6 +20,8 @@ const defaultUserDoc = {
   upgradedAt: null,
 }
 
+const blockedStatuses = ['blocked', 'disabled', 'inactive']
+
 function normalizeRole(role) {
   const value = normalizeFinanceRole(role)
   return value === 'staff' && !role ? 'owner' : value
@@ -29,6 +31,7 @@ export function UserProvider({ children }) {
   const { user, ready } = useAuth()
   const { profile, plan: localPlan } = usePreferences()
   const [userDoc, setUserDoc] = useState(null)
+  const [staffAccessStatus, setStaffAccessStatus] = useState('')
   const [loading, setLoading] = useState(true)
   const provisionedUserRef = useRef('')
   const loggedLoginRef = useRef('')
@@ -51,6 +54,7 @@ export function UserProvider({ children }) {
       Promise.resolve().then(() => {
         provisionedUserRef.current = ''
         setUserDoc(null)
+        setStaffAccessStatus('')
         setLoading(false)
       })
       return
@@ -105,6 +109,30 @@ export function UserProvider({ children }) {
     return () => unsub()
   }, [ready, user])
 
+  useEffect(() => {
+    if (!ready || !db || !user || loading || !userDoc) {
+      Promise.resolve().then(() => setStaffAccessStatus(''))
+      return undefined
+    }
+
+    const nextWorkspaceId = userDoc.workspaceId || user.uid
+    const nextStaffId = userDoc.staffId || user.uid
+    const nextRole = normalizeRole(userDoc.role)
+    if (!nextWorkspaceId || !nextStaffId || nextRole === 'owner') {
+      Promise.resolve().then(() => setStaffAccessStatus(''))
+      return undefined
+    }
+
+    const ref = doc(db, 'workspaces', nextWorkspaceId, 'staff', nextStaffId)
+    const unsub = onSnapshot(
+      ref,
+      (snap) => setStaffAccessStatus(snap.exists() ? String(snap.data()?.status || '') : ''),
+      () => setStaffAccessStatus(''),
+    )
+
+    return () => unsub()
+  }, [loading, ready, user, userDoc])
+
   const effectivePlan = normalizePlan(userDoc?.plan ?? (db ? 'Free' : localPlan ?? 'Free'))
   const accessPlan = accessPlanForUser(userDoc || {}, effectivePlan)
   const trialActive = isTrialActive(userDoc || {})
@@ -115,6 +143,10 @@ export function UserProvider({ children }) {
   const workspaceId = userDoc?.workspaceId || user?.uid || null
   const staffId = userDoc?.staffId || user?.uid || null
   const isPlatformAdmin = isPlatformAdminDoc(userDoc || {})
+  const userStatus = String(userDoc?.status || '').trim().toLowerCase()
+  const staffStatus = String(staffAccessStatus || '').trim().toLowerCase()
+  const accountStatus = staffStatus || userStatus || 'active'
+  const isBlocked = blockedStatuses.includes(userStatus) || blockedStatuses.includes(staffStatus)
 
   useEffect(() => {
     if (!user?.uid || !workspaceId || loading || loggedLoginRef.current === user.uid) return
@@ -153,10 +185,28 @@ export function UserProvider({ children }) {
       isStaff: role === 'staff',
       isAdmin: role === 'admin' || role === 'owner',
       isPlatformAdmin,
+      accountStatus,
+      isBlocked,
       isAccountant: role === 'accountant',
       isManager: role === 'manager',
     }),
-    [user, workspaceId, staffId, userDoc, loading, effectivePlan, accessPlan, trialActive, trialExpired, trialEndsAt, trialDaysRemaining, role, isPlatformAdmin],
+    [
+      user,
+      workspaceId,
+      staffId,
+      userDoc,
+      loading,
+      effectivePlan,
+      accessPlan,
+      trialActive,
+      trialExpired,
+      trialEndsAt,
+      trialDaysRemaining,
+      role,
+      isPlatformAdmin,
+      accountStatus,
+      isBlocked,
+    ],
   )
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>

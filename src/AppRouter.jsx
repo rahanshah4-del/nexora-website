@@ -1,51 +1,50 @@
-import { Component } from 'react'
+import { Component, Suspense, lazy } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import UpgradeBusiness from './pages/UpgradeBusiness.jsx'
 import MarketingRoute from './pages/public/MarketingRoute.jsx'
 import Login from './pages/auth/Login.jsx'
 import Signup from './pages/auth/Signup.jsx'
 import WorkspaceSelection from './pages/auth/WorkspaceSelection.jsx'
-import RequireAuth from './crm/components/auth/RequireAuth.jsx'
+import CrmRequireAuth from './crm/components/auth/RequireAuth.jsx'
+import PageLoader from './crm/components/ui/PageLoader.jsx'
+import RootRequireAuth from './layouts/RequireAuth.jsx'
 import RequireAdmin from './layouts/RequireAdmin.jsx'
 import DashboardLayout from './crm/layouts/DashboardLayout.jsx'
 import CRMProviders from './crm/CRMProviders.jsx'
 import AdminLayout from './layouts/AdminLayout.jsx'
-import DashboardHomePage from './crm/pages/DashboardHome.jsx'
-import RestaurantPOSPage from './crm/pages/RestaurantPOS.jsx'
-import ClientPortalPage from './crm/pages/ClientPortal.jsx'
-import CustomersPage from './crm/pages/Customers.jsx'
-import ProductsPage from './crm/pages/Products.jsx'
-import LeadsPage from './crm/pages/Leads.jsx'
-import LeadScoringPage from './crm/pages/LeadScoring.jsx'
-import AIAssistantPage from './crm/pages/AIAssistant.jsx'
-import PipelinePage from './crm/pages/SalesPipeline.jsx'
-import FollowUpsPage from './crm/pages/FollowUps.jsx'
-import TeamPage from './crm/pages/Team.jsx'
-import HRDashboardPage from './crm/pages/HRDashboard.jsx'
-import InvoicesPage from './crm/pages/Invoices.jsx'
-import InvoiceCreatePage from './crm/pages/InvoiceCreate.jsx'
-import ExpensesPage from './crm/pages/Expenses.jsx'
-import AccountManagementPage from './crm/pages/AccountManagement.jsx'
-import AccountStatementsPage from './crm/pages/AccountStatements.jsx'
-import SubscriptionsPage from './crm/pages/Subscriptions.jsx'
-import SupportPage from './crm/pages/Support.jsx'
-import ActivityLogsPage from './crm/pages/ActivityLogs.jsx'
-import AnalyticsPage from './crm/pages/Analytics.jsx'
-import NotificationsPage from './crm/pages/Notifications.jsx'
-import ApprovalsPage from './crm/pages/Approvals.jsx'
-import ReportsPage from './crm/pages/Reports.jsx'
-import SettingsPage from './crm/pages/Settings.jsx'
-import UpgradeRequests from './pages/admin/UpgradeRequests.jsx'
+
+const DashboardHomePage = lazy(() => import('./crm/pages/DashboardHome.jsx'))
+const RestaurantPOSPage = lazy(() => import('./crm/pages/RestaurantPOS.jsx'))
+const ClientPortalPage = lazy(() => import('./crm/pages/ClientPortal.jsx'))
+const CustomersPage = lazy(() => import('./crm/pages/Customers.jsx'))
+const ProductsPage = lazy(() => import('./crm/pages/Products.jsx'))
+const LeadsPage = lazy(() => import('./crm/pages/Leads.jsx'))
+const LeadScoringPage = lazy(() => import('./crm/pages/LeadScoring.jsx'))
+const AIAssistantPage = lazy(() => import('./crm/pages/AIAssistant.jsx'))
+const PipelinePage = lazy(() => import('./crm/pages/SalesPipeline.jsx'))
+const FollowUpsPage = lazy(() => import('./crm/pages/FollowUps.jsx'))
+const TeamPage = lazy(() => import('./crm/pages/Team.jsx'))
+const HRDashboardPage = lazy(() => import('./crm/pages/HRDashboard.jsx'))
+const InvoicesPage = lazy(() => import('./crm/pages/Invoices.jsx'))
+const InvoiceCreatePage = lazy(() => import('./crm/pages/InvoiceCreate.jsx'))
+const ExpensesPage = lazy(() => import('./crm/pages/Expenses.jsx'))
+const AccountManagementPage = lazy(() => import('./crm/pages/AccountManagement.jsx'))
+const AccountStatementsPage = lazy(() => import('./crm/pages/AccountStatements.jsx'))
+const SubscriptionsPage = lazy(() => import('./crm/pages/Subscriptions.jsx'))
+const SupportPage = lazy(() => import('./crm/pages/Support.jsx'))
+const ActivityLogsPage = lazy(() => import('./crm/pages/ActivityLogs.jsx'))
+const AnalyticsPage = lazy(() => import('./crm/pages/Analytics.jsx'))
+const NotificationsPage = lazy(() => import('./crm/pages/Notifications.jsx'))
+const ApprovalsPage = lazy(() => import('./crm/pages/Approvals.jsx'))
+const ReportsPage = lazy(() => import('./crm/pages/Reports.jsx'))
+const SettingsPage = lazy(() => import('./crm/pages/Settings.jsx'))
+const UpgradeRequests = lazy(() => import('./pages/admin/UpgradeRequests.jsx'))
 
 class InvoiceRouteBoundary extends Component {
   state = { hasError: false }
 
   static getDerivedStateFromError() {
     return { hasError: true }
-  }
-
-  componentDidCatch(error, info) {
-    console.error('[Nexora CRM] Invoice route failed to render', error, info)
   }
 
   render() {
@@ -76,6 +75,10 @@ class InvoiceRouteBoundary extends Component {
   }
 }
 
+function LazyPage({ children }) {
+  return <Suspense fallback={<PageLoader />}>{children}</Suspense>
+}
+
 function UpgradeRouteGuard() {
   const location = useLocation()
   const cameFromUpgrade = Boolean(location.state?.fromUpgradeBusiness)
@@ -93,50 +96,52 @@ export default function AppRouter() {
 
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
-      <Route path="/workspace" element={<WorkspaceSelection />} />
+      <Route element={<RootRequireAuth />}>
+        <Route path="/workspace" element={<WorkspaceSelection />} />
+      </Route>
       <Route path="/upgrade-business" element={<UpgradeRouteGuard />} />
 
       <Route
         path="/app"
         element={
           <CRMProviders>
-            <RequireAuth>
+            <CrmRequireAuth>
               <DashboardLayout />
-            </RequireAuth>
+            </CrmRequireAuth>
           </CRMProviders>
         }
       >
         <Route index element={<Navigate to="/app/dashboard" replace />} />
-        <Route path="dashboard" element={<DashboardHomePage />} />
-        <Route path="restaurant-pos" element={<RestaurantPOSPage />} />
-        <Route path="client-portal" element={<ClientPortalPage />} />
-        <Route path="customers" element={<CustomersPage />} />
-        <Route path="products" element={<ProductsPage />} />
-        <Route path="leads" element={<LeadsPage />} />
-        <Route path="leads/scoring" element={<LeadScoringPage />} />
-        <Route path="ai-assistant" element={<AIAssistantPage />} />
-        <Route path="pipeline" element={<PipelinePage />} />
-        <Route path="follow-ups" element={<FollowUpsPage />} />
-        <Route path="team" element={<TeamPage />} />
-        <Route path="hr" element={<HRDashboardPage />} />
-        <Route path="invoices" element={<InvoiceRouteBoundary><InvoicesPage /></InvoiceRouteBoundary>} />
-        <Route path="invoices/create" element={<InvoiceCreatePage />} />
-        <Route path="expenses" element={<ExpensesPage />} />
-        <Route path="accounts" element={<AccountManagementPage />} />
-        <Route path="accounts/statements" element={<AccountStatementsPage />} />
-        <Route path="subscriptions" element={<SubscriptionsPage />} />
-        <Route path="support" element={<SupportPage />} />
-        <Route path="activity-logs" element={<ActivityLogsPage />} />
-        <Route path="analytics" element={<AnalyticsPage />} />
-        <Route path="notifications" element={<NotificationsPage />} />
-        <Route path="approvals" element={<ApprovalsPage />} />
-        <Route path="reports" element={<ReportsPage />} />
-        <Route path="settings" element={<SettingsPage />} />
+        <Route path="dashboard" element={<LazyPage><DashboardHomePage /></LazyPage>} />
+        <Route path="restaurant-pos" element={<LazyPage><RestaurantPOSPage /></LazyPage>} />
+        <Route path="client-portal" element={<LazyPage><ClientPortalPage /></LazyPage>} />
+        <Route path="customers" element={<LazyPage><CustomersPage /></LazyPage>} />
+        <Route path="products" element={<LazyPage><ProductsPage /></LazyPage>} />
+        <Route path="leads" element={<LazyPage><LeadsPage /></LazyPage>} />
+        <Route path="leads/scoring" element={<LazyPage><LeadScoringPage /></LazyPage>} />
+        <Route path="ai-assistant" element={<LazyPage><AIAssistantPage /></LazyPage>} />
+        <Route path="pipeline" element={<LazyPage><PipelinePage /></LazyPage>} />
+        <Route path="follow-ups" element={<LazyPage><FollowUpsPage /></LazyPage>} />
+        <Route path="team" element={<LazyPage><TeamPage /></LazyPage>} />
+        <Route path="hr" element={<LazyPage><HRDashboardPage /></LazyPage>} />
+        <Route path="invoices" element={<InvoiceRouteBoundary><LazyPage><InvoicesPage /></LazyPage></InvoiceRouteBoundary>} />
+        <Route path="invoices/create" element={<InvoiceRouteBoundary><LazyPage><InvoiceCreatePage /></LazyPage></InvoiceRouteBoundary>} />
+        <Route path="expenses" element={<LazyPage><ExpensesPage /></LazyPage>} />
+        <Route path="accounts" element={<LazyPage><AccountManagementPage /></LazyPage>} />
+        <Route path="accounts/statements" element={<LazyPage><AccountStatementsPage /></LazyPage>} />
+        <Route path="subscriptions" element={<LazyPage><SubscriptionsPage /></LazyPage>} />
+        <Route path="support" element={<LazyPage><SupportPage /></LazyPage>} />
+        <Route path="activity-logs" element={<LazyPage><ActivityLogsPage /></LazyPage>} />
+        <Route path="analytics" element={<LazyPage><AnalyticsPage /></LazyPage>} />
+        <Route path="notifications" element={<LazyPage><NotificationsPage /></LazyPage>} />
+        <Route path="approvals" element={<LazyPage><ApprovalsPage /></LazyPage>} />
+        <Route path="reports" element={<LazyPage><ReportsPage /></LazyPage>} />
+        <Route path="settings" element={<LazyPage><SettingsPage /></LazyPage>} />
       </Route>
 
       <Route element={<RequireAdmin />}>
         <Route path="/admin" element={<AdminLayout />}>
-          <Route path="upgrade-requests" element={<UpgradeRequests />} />
+          <Route path="upgrade-requests" element={<LazyPage><UpgradeRequests /></LazyPage>} />
           <Route index element={<Navigate to="/admin/upgrade-requests" replace />} />
         </Route>
       </Route>

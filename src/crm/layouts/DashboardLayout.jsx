@@ -1,12 +1,14 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Outlet, useNavigate } from 'react-router-dom'
+import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import Sidebar from '../components/sidebar/Sidebar.jsx'
 import TopNav from '../components/navbar/TopNav.jsx'
 import ProductSelectionModal from '../components/product/ProductSelectionModal.jsx'
 import OnboardingWizard from '../components/onboarding/OnboardingWizard.jsx'
 import Badge from '../components/ui/Badge.jsx'
 import Button from '../components/ui/Button.jsx'
+import PageLoader from '../components/ui/PageLoader.jsx'
+import { moduleByRoute, routeAllowedByPlan } from '../data/moduleAccess.js'
 import { useAuth } from '../hooks/useAuth.js'
 import { useUser } from '../hooks/useUser.js'
 import {
@@ -98,6 +100,85 @@ function TrialAccessBlock({ expired, trialEndsAt, onBackToWorkspace, onUpgrade }
   )
 }
 
+function AccountBlockedBlock({ onBackToWorkspace }) {
+  return (
+    <div className="nexora-bg grid min-h-dvh place-items-center overflow-x-hidden px-4 py-10">
+      <motion.div
+        className="w-full max-w-xl rounded-[1.6rem] border border-rose-100 bg-white/95 p-6 shadow-[0_24px_80px_-48px_rgba(15,23,42,0.55)]"
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.22, ease: 'easeOut' }}
+      >
+        <Badge variant="danger" className="font-semibold">
+          Access blocked
+        </Badge>
+        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-slate-950">
+          Your account is blocked. Contact administrator.
+        </h1>
+        <p className="mt-3 text-sm leading-7 text-slate-600">
+          CRM access has been disabled for this account. Ask your workspace owner or administrator to restore access.
+        </p>
+        <Button className="mt-6 h-11 rounded-2xl" variant="subtle" type="button" onClick={onBackToWorkspace}>
+          Back to Workspace
+        </Button>
+      </motion.div>
+    </div>
+  )
+}
+
+function UpgradeRequiredBlock({ moduleLabel, onBackToDashboard, onUpgrade }) {
+  return (
+    <div className="nexora-bg grid min-h-dvh place-items-center overflow-x-hidden px-4 py-10">
+      <motion.div
+        className="w-full max-w-xl rounded-[1.6rem] border border-white/85 bg-white/95 p-6 shadow-[0_24px_80px_-48px_rgba(15,23,42,0.55)]"
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.22, ease: 'easeOut' }}
+      >
+        <Badge variant="warning" className="font-semibold">
+          Upgrade required
+        </Badge>
+        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-slate-950">Upgrade Required</h1>
+        <p className="mt-3 text-sm leading-7 text-slate-600">
+          {moduleLabel || 'This module'} is not included in your current package. Upgrade to open this CRM route.
+        </p>
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+          <Button className="h-11 rounded-2xl" type="button" onClick={onUpgrade}>
+            Upgrade Package
+          </Button>
+          <Button className="h-11 rounded-2xl" variant="subtle" type="button" onClick={onBackToDashboard}>
+            Back to Dashboard
+          </Button>
+        </div>
+      </motion.div>
+    </div>
+  )
+}
+
+function ComingSoonBlock({ onBackToWorkspace }) {
+  return (
+    <div className="nexora-bg grid min-h-dvh place-items-center overflow-x-hidden px-4 py-10">
+      <motion.div
+        className="w-full max-w-xl rounded-[1.6rem] border border-white/85 bg-white/95 p-6 shadow-[0_24px_80px_-48px_rgba(15,23,42,0.55)]"
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.22, ease: 'easeOut' }}
+      >
+        <Badge variant="info" className="font-semibold">
+          Coming soon
+        </Badge>
+        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-slate-950">This module is not available yet</h1>
+        <p className="mt-3 text-sm leading-7 text-slate-600">
+          This workspace module is still marked coming soon and cannot be opened directly.
+        </p>
+        <Button className="mt-6 h-11 rounded-2xl" variant="subtle" type="button" onClick={onBackToWorkspace}>
+          Back to Workspace
+        </Button>
+      </motion.div>
+    </div>
+  )
+}
+
 export default function DashboardLayout() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
@@ -117,8 +198,10 @@ export default function DashboardLayout() {
     isTrialActive,
     isTrialExpired,
     trialEndsAt,
+    isBlocked,
   } = useUser()
   const navigate = useNavigate()
+  const location = useLocation()
   const persistedKeyRef = useRef('')
 
   const toggleCollapse = useCallback(() => setCollapsed((c) => !c), [])
@@ -130,6 +213,16 @@ export default function DashboardLayout() {
     accessPlan === 'Business' ||
     accessPlan === 'Enterprise'
   const crmAccessBlocked = ready && isAuthenticated && !userLoading && Boolean(userDoc) && !isStaff && !hasActiveAccess
+  const accountBlocked = ready && isAuthenticated && !userLoading && Boolean(userDoc) && isBlocked
+  const currentModule = moduleByRoute(location.pathname)
+  const routePlanBlocked =
+    ready &&
+    isAuthenticated &&
+    !userLoading &&
+    Boolean(userDoc) &&
+    Boolean(currentModule) &&
+    !routeAllowedByPlan(location.pathname, accessPlan)
+  const comingSoonBlocked = ready && isAuthenticated && !userLoading && location.pathname === '/app/restaurant-pos'
   const mobileBlocked = ready && isAuthenticated && isMobileScreen
   const onboardingOpen = Boolean(ready && userId && !userLoading && !isStaff && userDoc?.onboardingCompleted !== true)
 
@@ -209,6 +302,18 @@ export default function DashboardLayout() {
     setProductModalOpen(true)
   }, [])
 
+  if (ready && isAuthenticated && userLoading) {
+    return (
+      <div className="nexora-bg grid min-h-dvh place-items-center overflow-x-hidden px-4 py-10">
+        <PageLoader />
+      </div>
+    )
+  }
+
+  if (accountBlocked) {
+    return <AccountBlockedBlock onBackToWorkspace={() => navigate('/workspace')} />
+  }
+
   if (crmAccessBlocked) {
     return (
       <TrialAccessBlock
@@ -222,6 +327,20 @@ export default function DashboardLayout() {
 
   if (mobileBlocked) {
     return <MobileAppAccessBlock />
+  }
+
+  if (comingSoonBlocked) {
+    return <ComingSoonBlock onBackToWorkspace={() => navigate('/workspace')} />
+  }
+
+  if (routePlanBlocked) {
+    return (
+      <UpgradeRequiredBlock
+        moduleLabel={currentModule?.label}
+        onBackToDashboard={() => navigate('/app/dashboard')}
+        onUpgrade={() => navigate('/upgrade-business', { state: { fromUpgradeBusiness: true } })}
+      />
+    )
   }
 
   return (

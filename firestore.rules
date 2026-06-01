@@ -10,12 +10,30 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
 
+    function profileExists() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function isBlockedProfile() {
+      return profileExists()
+        && profile().status in ['blocked', 'disabled', 'inactive', 'Blocked', 'Disabled', 'Inactive'];
+    }
+
+    function activeSignedIn() {
+      return signedIn() && !isBlockedProfile();
+    }
+
     function isSelf(userId) {
       return signedIn() && request.auth.uid == userId;
     }
 
+    function isActiveSelf(userId) {
+      return activeSignedIn() && request.auth.uid == userId;
+    }
+
     function isAdmin() {
-      return signedIn()
+      return activeSignedIn()
         && (
           profile().isAdmin == true
           || profile().role in ['platform_admin', 'super_admin']
@@ -35,7 +53,7 @@ service cloud.firestore {
     }
 
     function isWorkspaceMember(workspaceId) {
-      return signedIn() && memberWorkspaceId() == workspaceId;
+      return activeSignedIn() && memberWorkspaceId() == workspaceId;
     }
 
     function roleHasPermission(role, key) {
@@ -46,13 +64,13 @@ service cloud.firestore {
     }
 
     function isWorkspaceManager(workspaceId) {
-      return isSelf(workspaceId)
+      return isActiveSelf(workspaceId)
         || isAdmin()
         || (isWorkspaceMember(workspaceId) && memberRole() in ['owner', 'admin']);
     }
 
     function isPaymentApprover(workspaceId) {
-      return isSelf(workspaceId)
+      return isActiveSelf(workspaceId)
         || isAdmin()
         || (isWorkspaceMember(workspaceId) && memberRole() in ['owner', 'admin', 'accountant']);
     }
@@ -290,7 +308,7 @@ service cloud.firestore {
     }
 
     function isCreatingStaffUser(userId) {
-      return signedIn()
+      return activeSignedIn()
         && request.resource.data.uid == userId
         && request.resource.data.userId == userId
         && request.resource.data.workspaceId is string
@@ -307,14 +325,14 @@ service cloud.firestore {
         && request.resource.data.ownerId == request.resource.data.workspaceId
         && (
           request.resource.data.workspaceId == userId
-          || (signedIn() && memberWorkspaceId() == request.resource.data.workspaceId)
+          || (activeSignedIn() && memberWorkspaceId() == request.resource.data.workspaceId)
         );
     }
 
     match /users/{userId} {
       allow create: if isAdmin()
         || isCreatingStaffUser(userId)
-        || (isSelf(userId)
+        || (isActiveSelf(userId)
           && request.resource.data.uid == userId
           && hasOwnScope(userId)
           && request.resource.data.createdBy == userId
@@ -322,21 +340,21 @@ service cloud.firestore {
           && hasSafeTrialPlan());
       allow read: if isSelf(userId) || isAdmin();
       allow update: if isAdmin()
-        || (isSelf(userId) && protectedAccountFieldsUnchanged() && userIdentityScopeSafe(userId))
-        || (signedIn()
+        || (isActiveSelf(userId) && protectedAccountFieldsUnchanged() && userIdentityScopeSafe(userId))
+        || (activeSignedIn()
           && resource.data.workspaceId is string
           && isAdmin()
           && planApprovalFieldsTouched());
       allow delete: if isAdmin();
 
       match /sessions/{sessionId} {
-        allow create: if isSelf(userId)
+        allow create: if isActiveSelf(userId)
           && validSessionScope(userId)
           && request.resource.data.createdBy == userId
           && request.resource.data.createdAt is timestamp;
         allow read: if isSelf(userId) || isAdmin();
         allow update: if isAdmin()
-          || (isSelf(userId)
+          || (isActiveSelf(userId)
             && validSessionScope(userId)
             && request.resource.data.userId == resource.data.userId
             && request.resource.data.workspaceId == resource.data.workspaceId
@@ -347,14 +365,14 @@ service cloud.firestore {
 
     match /workspaces/{workspaceId} {
       allow create: if isAdmin()
-        || (isSelf(workspaceId)
+        || (isActiveSelf(workspaceId)
           && hasOwnScope(workspaceId)
           && request.resource.data.createdBy == workspaceId
           && request.resource.data.createdAt is timestamp
           && hasSafeTrialPlan());
       allow read: if isWorkspaceMember(workspaceId) || isAdmin();
       allow update: if isAdmin()
-        || (isSelf(workspaceId) && protectedAccountFieldsUnchanged() && workspaceAccountScopeSafe(workspaceId));
+        || (isActiveSelf(workspaceId) && protectedAccountFieldsUnchanged() && workspaceAccountScopeSafe(workspaceId));
       allow delete: if isAdmin();
 
       match /tasks/{taskId} {
@@ -445,7 +463,7 @@ service cloud.firestore {
         allow create: if isPaymentApprover(workspaceId) && accountTransactionCreateScope(workspaceId);
         allow update: if (isWorkspaceManager(workspaceId) && !accountTransactionApprovalFieldsTouched() && workspaceUpdateScopeSafe(workspaceId))
           || (isPaymentApprover(workspaceId) && accountTransactionApprovalFieldsTouched() && isOpenApprovalResource() && workspaceUpdateScopeSafe(workspaceId));
-        allow delete: if isSelf(workspaceId);
+        allow delete: if isActiveSelf(workspaceId);
       }
 
       match /pipelines/{dealId} {
@@ -470,7 +488,7 @@ service cloud.firestore {
 
       match /activityLogs/{logId} {
         allow read: if staffPermission(workspaceId, 'reports');
-        allow create: if (isSelf(workspaceId) || isWorkspaceMember(workspaceId))
+        allow create: if (isActiveSelf(workspaceId) || isWorkspaceMember(workspaceId))
           && request.resource.data.userId == request.auth.uid
           && request.resource.data.ownerId == workspaceId
           && request.resource.data.workspaceId == workspaceId
@@ -517,7 +535,7 @@ service cloud.firestore {
     }
 
     match /upgradeRequests/{requestId} {
-      allow create: if signedIn()
+      allow create: if activeSignedIn()
         && request.resource.data.userId == request.auth.uid
         && request.resource.data.ownerId == request.auth.uid
         && request.resource.data.workspaceId == request.auth.uid
@@ -526,8 +544,8 @@ service cloud.firestore {
         && request.resource.data.approvalStatus == 'pending'
         && request.resource.data.paymentStatus == 'pending';
       allow read: if isAdmin()
-        || (signedIn() && resource.data.userId == request.auth.uid)
-        || (signedIn()
+        || (activeSignedIn() && resource.data.userId == request.auth.uid)
+        || (activeSignedIn()
           && resource.data.workspaceId is string
           && (isPaymentApprover(resource.data.workspaceId) || staffPermission(resource.data.workspaceId, 'reports')));
       allow update: if isAdmin()
@@ -540,18 +558,18 @@ service cloud.firestore {
     }
 
     match /notifications/{notificationId} {
-      allow create: if signedIn()
+      allow create: if activeSignedIn()
         && request.resource.data.userId == request.auth.uid
         && request.resource.data.workspaceId == memberWorkspaceId()
         && request.resource.data.createdBy == request.auth.uid
         && request.resource.data.createdAt is timestamp;
-      allow read: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
+      allow read: if isAdmin() || (activeSignedIn() && resource.data.userId == request.auth.uid);
       allow update: if isAdmin()
-        || (signedIn()
+        || (activeSignedIn()
           && resource.data.userId == request.auth.uid
           && request.resource.data.userId == resource.data.userId
           && request.resource.data.workspaceId == resource.data.workspaceId);
-      allow delete: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
+      allow delete: if isAdmin() || (activeSignedIn() && resource.data.userId == request.auth.uid);
     }
 
     match /{document=**} {

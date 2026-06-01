@@ -225,7 +225,15 @@ export function getRecommendedModules(type) {
 }
 
 export function moduleByRoute(route) {
-  return moduleCatalog.find((module) => module.route === route) || null
+  const pathname = String(route || '').split('?')[0].replace(/\/+$/, '') || '/'
+  return (
+    moduleCatalog
+      .filter((module) => {
+        const moduleRoute = module.route.replace(/\/+$/, '')
+        return pathname === moduleRoute || pathname.startsWith(`${moduleRoute}/`)
+      })
+      .sort((a, b) => b.route.length - a.route.length)[0] || null
+  )
 }
 
 export function routeAllowedByPlan(route, plan) {

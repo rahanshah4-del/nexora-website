@@ -127,10 +127,7 @@ export default function Login() {
   const [error, setError] = useState('')
   const [info, setInfo] = useState('')
 
-  if (!loading && user) {
-    console.log('Redirecting to workspace')
-    return <Navigate to="/workspace" replace />
-  }
+  if (!loading && user) return <Navigate to="/workspace" replace />
 
   const onSubmit = async (event) => {
     event.preventDefault()
