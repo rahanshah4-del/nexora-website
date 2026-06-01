@@ -71,6 +71,9 @@ export default function VerifyEmail() {
             <p className="mt-3 text-sm leading-6 text-slate-600">
               Open the verification email sent to <span className="font-semibold text-slate-900">{user?.email}</span>, verify your account, then refresh your status.
             </p>
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              If you don&apos;t see the email, check Spam or Promotions folder.
+            </p>
           </div>
 
           <div className="mt-6 grid gap-3 text-sm">
