@@ -11,6 +11,7 @@ import PageLoader from '../components/ui/PageLoader.jsx'
 import { isDeveloperOwnerAccount, moduleByRoute, routeAllowedByBusinessType, routeAllowedByPlan } from '../data/moduleAccess.js'
 import { useAuth } from '../hooks/useAuth.js'
 import { useUser } from '../hooks/useUser.js'
+import { useWorkspaceAccess } from '../hooks/useWorkspaceAccess.js'
 import {
   buildWorkspaceSession,
   isValidWorkspace,
@@ -181,6 +182,32 @@ function BusinessModuleBlock({ onBackToWorkspace }) {
   )
 }
 
+function PermissionBlock({ onBackToWorkspace }) {
+  return (
+    <div className="nexora-bg grid min-h-dvh place-items-center overflow-x-hidden px-4 py-10">
+      <motion.div
+        className="w-full max-w-xl rounded-[1.6rem] border border-white/85 bg-white/95 p-6 shadow-[0_24px_80px_-48px_rgba(15,23,42,0.55)]"
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.22, ease: 'easeOut' }}
+      >
+        <Badge variant="warning" className="font-semibold">
+          Permission required
+        </Badge>
+        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-slate-950">
+          You do not have permission to open this module.
+        </h1>
+        <p className="mt-3 text-sm leading-7 text-slate-600">
+          Ask an owner or admin to enable this module for your selected business workspace.
+        </p>
+        <Button className="mt-6 h-11 rounded-2xl" variant="subtle" type="button" onClick={onBackToWorkspace}>
+          Back to Workspace
+        </Button>
+      </motion.div>
+    </div>
+  )
+}
+
 function ComingSoonBlock({ onBackToWorkspace }) {
   return (
     <div className="nexora-bg grid min-h-dvh place-items-center overflow-x-hidden px-4 py-10">
@@ -228,6 +255,7 @@ export default function DashboardLayout() {
     isBlocked,
     firebaseUser,
   } = useUser()
+  const workspaceAccess = useWorkspaceAccess()
   const navigate = useNavigate()
   const location = useLocation()
   const persistedKeyRef = useRef('')
@@ -242,6 +270,7 @@ export default function DashboardLayout() {
     accessPlan === 'Business' ||
     accessPlan === 'Enterprise'
   const developerOverride = isDeveloperOwnerAccount(userDoc, firebaseUser)
+  const teamOverride = workspaceAccess.isAdmin || workspaceAccess.hasPermission('settingsAccess')
   const crmAccessBlocked = ready && isAuthenticated && !userLoading && Boolean(userDoc) && !isStaff && !hasActiveAccess && !developerOverride
   const accountBlocked = ready && isAuthenticated && !userLoading && Boolean(userDoc) && isBlocked
   const currentModule = moduleByRoute(location.pathname)
@@ -251,7 +280,7 @@ export default function DashboardLayout() {
     !userLoading &&
     Boolean(userDoc) &&
     Boolean(currentModule) &&
-    !routeAllowedByPlan(location.pathname, accessPlan, { developerOverride })
+    !routeAllowedByPlan(location.pathname, accessPlan, { developerOverride, teamOverride })
   const routeBusinessBlocked =
     ready &&
     isAuthenticated &&
@@ -265,6 +294,14 @@ export default function DashboardLayout() {
     !userLoading &&
     !developerOverride &&
     (location.pathname === '/app/restaurant-pos' || currentModule?.comingSoon)
+  const routePermissionBlocked =
+    ready &&
+    isAuthenticated &&
+    !userLoading &&
+    Boolean(userDoc) &&
+    currentModule?.key === 'team' &&
+    !developerOverride &&
+    !teamOverride
   const mobileBlocked = ready && isAuthenticated && isMobileScreen
   const onboardingOpen = Boolean(ready && userId && !userLoading && !isStaff && userDoc?.onboardingCompleted !== true)
 
@@ -367,6 +404,10 @@ export default function DashboardLayout() {
 
   if (routeBusinessBlocked) {
     return <BusinessModuleBlock onBackToWorkspace={() => navigate('/workspace')} />
+  }
+
+  if (routePermissionBlocked) {
+    return <PermissionBlock onBackToWorkspace={() => navigate('/workspace')} />
   }
 
   if (comingSoonBlocked) {

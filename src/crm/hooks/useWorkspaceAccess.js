@@ -3,6 +3,7 @@ import { doc, onSnapshot } from 'firebase/firestore'
 import { db } from '../lib/firebase.js'
 import { useUser } from './useUser.js'
 import { workspacePermissionDefaults } from '../../lib/roles.js'
+import { businessPermissionKey } from '../data/moduleAccess.js'
 
 export const workspacePermissionKeys = [
   { key: 'followUpEdit', label: 'Follow-Up Edit' },
@@ -17,6 +18,14 @@ export const workspacePermissionKeys = [
 
 function emptyPermissions() {
   return Object.fromEntries(workspacePermissionKeys.map((item) => [item.key, false]))
+}
+
+function permissionsForBusiness(data = {}, businessType) {
+  const key = businessPermissionKey(businessType)
+  if (data.businessPermissions && typeof data.businessPermissions === 'object') {
+    return { ...emptyPermissions(), ...(data.businessPermissions[key] || {}) }
+  }
+  return key === 'general-crm' ? { ...emptyPermissions(), ...data } : emptyPermissions()
 }
 
 export function useWorkspaceAccess() {
@@ -47,7 +56,7 @@ export function useWorkspaceAccess() {
     const unsub = onSnapshot(
       ref,
       (snap) => {
-        setPermissions({ ...emptyPermissions(), ...(snap.exists() ? snap.data() : {}) })
+        setPermissions(permissionsForBusiness(snap.exists() ? snap.data() : {}, businessType))
         setLoading(false)
       },
       () => {
@@ -56,7 +65,7 @@ export function useWorkspaceAccess() {
       },
     )
     return () => unsub()
-  }, [isOwner, isStaff, role, staffId, userId, workspaceId])
+  }, [businessType, isOwner, isStaff, role, staffId, userId, workspaceId])
 
   return useMemo(
     () => ({

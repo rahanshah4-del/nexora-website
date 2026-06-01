@@ -432,6 +432,13 @@ export function isDeveloperOwnerAccount(userDoc, firebaseUser) {
   return isDeveloperOwnerEmail(userDoc?.email || firebaseUser?.email)
 }
 
+export function businessPermissionKey(type) {
+  return normalizeBusinessType(type)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '') || 'general-crm'
+}
+
 export function businessWorkspaceForType(type) {
   const normalized = normalizeBusinessType(type)
   return businessWorkspaceCatalog.find((workspace) => workspace.type === normalized) || businessWorkspaceCatalog[0]
@@ -477,6 +484,7 @@ export function routeAllowedByPlan(route, plan, options = {}) {
   if (options?.developerOverride) return true
   const module = moduleByRoute(route)
   if (!module || module.alwaysEnabled) return true
+  if (module.key === 'team' && options?.teamOverride) return true
   return hasPlanAccess(plan, module.minPlan)
 }
 
@@ -495,7 +503,7 @@ export function moduleAllowedByPlan(moduleKey, plan) {
   return hasPlanAccess(plan, module.minPlan)
 }
 
-export function selectedModulesForSidebar({ enabledModules, onboardingCompleted, plan, businessType, developerOverride = false }) {
+export function selectedModulesForSidebar({ enabledModules, onboardingCompleted, plan, businessType, developerOverride = false, teamOverride = false }) {
   if (developerOverride) {
     return moduleCatalog.map((module) => ({
       ...module,
@@ -510,7 +518,7 @@ export function selectedModulesForSidebar({ enabledModules, onboardingCompleted,
     if (module.key === 'subscriptions') return false
     if (module.alwaysEnabled) return selected.has(module.key) || businessKeys.includes(module.key)
     if (module.comingSoon) return businessKeys.includes(module.key)
-    if (!moduleAllowedByPlan(module.key, plan)) return false
+    if (!moduleAllowedByPlan(module.key, plan) && !(module.key === 'team' && teamOverride)) return false
     if (module.key === 'accountStatements') return businessKeys.includes('accounts')
     if (coreFinanceModules.includes(module.key) || module.key === 'approvals') return businessKeys.includes(module.key)
     return selected.has(module.key) && businessKeys.includes(module.key)

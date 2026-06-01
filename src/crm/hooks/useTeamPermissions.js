@@ -3,6 +3,7 @@ import { doc, onSnapshot, serverTimestamp, setDoc } from 'firebase/firestore'
 import { db } from '../lib/firebase.js'
 import { useUser } from './useUser.js'
 import { clientSafeMessage } from '../utils/messages.js'
+import { businessPermissionKey, normalizeBusinessType } from '../data/moduleAccess.js'
 
 const ROLES = ['Owner', 'Admin', 'Manager', 'Sales Staff', 'Support Agent', 'Accountant', 'Custom Role']
 
@@ -38,7 +39,7 @@ function defaultTemplate(permissionKeys) {
 }
 
 export function useTeamPermissions({ permissionKeys }) {
-  const { userId, workspaceId, isAdmin } = useUser()
+  const { userId, workspaceId, businessType, isAdmin } = useUser()
   const [matrix, setMatrix] = useState(() => emptyMatrix(permissionKeys))
   const [exists, setExists] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -67,7 +68,7 @@ export function useTeamPermissions({ permissionKeys }) {
       return
     }
 
-    const ref = doc(db, 'workspaces', workspaceId, 'teamPermissions', 'default')
+    const ref = doc(db, 'workspaces', workspaceId, 'teamPermissions', `default-${businessPermissionKey(businessType)}`)
     const unsub = onSnapshot(
       ref,
       (snap) => {
@@ -91,7 +92,7 @@ export function useTeamPermissions({ permissionKeys }) {
       },
     )
     return () => unsub()
-  }, [permissionKeys, workspaceId])
+  }, [businessType, permissionKeys, workspaceId])
 
   const api = useMemo(
     () => ({
@@ -115,9 +116,10 @@ export function useTeamPermissions({ permissionKeys }) {
         const template = defaultTemplate(permissionKeys)
         try {
           await setDoc(
-            doc(db, 'workspaces', workspaceId, 'teamPermissions', 'default'),
+            doc(db, 'workspaces', workspaceId, 'teamPermissions', `default-${businessPermissionKey(businessType)}`),
             {
               matrix: template,
+              businessType: normalizeBusinessType(businessType),
               ownerId: workspaceId,
               userId: workspaceId,
               workspaceId,
@@ -139,8 +141,8 @@ export function useTeamPermissions({ permissionKeys }) {
         const nextMatrix = normalizeMatrix(matrix, permissionKeys)
         try {
           await setDoc(
-            doc(db, 'workspaces', workspaceId, 'teamPermissions', 'default'),
-            { matrix: nextMatrix, ownerId: workspaceId, userId: workspaceId, workspaceId, updatedAt: serverTimestamp(), updatedBy: userId },
+            doc(db, 'workspaces', workspaceId, 'teamPermissions', `default-${businessPermissionKey(businessType)}`),
+            { matrix: nextMatrix, businessType: normalizeBusinessType(businessType), ownerId: workspaceId, userId: workspaceId, workspaceId, updatedAt: serverTimestamp(), updatedBy: userId },
             { merge: true },
           )
           setMatrix(nextMatrix)
@@ -150,7 +152,7 @@ export function useTeamPermissions({ permissionKeys }) {
         }
       },
     }),
-    [matrix, exists, loading, source, error, permissionKeys, userId, workspaceId, isAdmin],
+    [businessType, matrix, exists, loading, source, error, permissionKeys, userId, workspaceId, isAdmin],
   )
 
   return api

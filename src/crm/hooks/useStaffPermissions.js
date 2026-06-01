@@ -7,6 +7,7 @@ import { useUser } from './useUser.js'
 import { useWorkspaceAccess, workspacePermissionKeys } from './useWorkspaceAccess.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 import { clientSafeMessage } from '../utils/messages.js'
+import { businessPermissionKey, normalizeBusinessType } from '../data/moduleAccess.js'
 
 function defaultPermissions() {
   return Object.fromEntries(workspacePermissionKeys.map((item) => [item.key, false]))
@@ -30,6 +31,27 @@ function normalizeStaffRole(role) {
   return 'staff'
 }
 
+function permissionsForBusiness(row = {}, businessType) {
+  const key = businessPermissionKey(businessType)
+  if (row.businessPermissions && typeof row.businessPermissions === 'object') {
+    return { ...defaultPermissions(), ...(row.businessPermissions[key] || {}), __businessPermissions: row.businessPermissions }
+  }
+  return key === 'general-crm' ? { ...defaultPermissions(), ...row, __businessPermissions: {} } : { ...defaultPermissions(), __businessPermissions: {} }
+}
+
+function rootPermissionUnion(existing = {}, nextBusinessPermissions = {}) {
+  const merged = defaultPermissions()
+  for (const key of workspacePermissionKeys.map((item) => item.key)) {
+    merged[key] = Boolean(existing[key])
+  }
+  for (const permissions of Object.values(nextBusinessPermissions || {})) {
+    for (const key of workspacePermissionKeys.map((item) => item.key)) {
+      merged[key] = Boolean(merged[key] || permissions?.[key])
+    }
+  }
+  return merged
+}
+
 async function createSecondaryAuthUser(email, password) {
   if (!firebaseEnabled) return { ok: false, error: 'Secure account creation is not available right now.' }
   const secondaryApp = initializeApp(firebaseConfig, `staff-create-${Date.now()}-${Math.random().toString(36).slice(2)}`)
@@ -47,7 +69,7 @@ async function createSecondaryAuthUser(email, password) {
 }
 
 export function useStaffPermissions() {
-  const { userId, workspaceId, userDoc, firebaseUser, plan } = useUser()
+  const { userId, workspaceId, businessType, userDoc, firebaseUser, plan } = useUser()
   const access = useWorkspaceAccess()
   const [staff, setStaff] = useState([])
   const [permissions, setPermissions] = useState({})
@@ -86,7 +108,7 @@ export function useStaffPermissions() {
     const unsubPermissions = onSnapshot(
       permissionsRef,
       (snap) => {
-        setPermissions(Object.fromEntries(snap.docs.map((item) => [item.id, { ...defaultPermissions(), ...item.data() }])))
+        setPermissions(Object.fromEntries(snap.docs.map((item) => [item.id, permissionsForBusiness(item.data(), businessType)])))
       },
       () => setPermissions({}),
     )
@@ -95,7 +117,7 @@ export function useStaffPermissions() {
       unsubStaff()
       unsubPermissions()
     }
-  }, [access.isAdmin, userId, workspaceId])
+  }, [access.isAdmin, businessType, userId, workspaceId])
 
   return useMemo(
     () => ({
@@ -126,6 +148,7 @@ export function useStaffPermissions() {
         const authResult = await createSecondaryAuthUser(email, password)
         const staffId = authResult.uid || payload.staffId || `staff-${slug(email) || Date.now()}`
         const basePermissions = { ...defaultPermissions(), ...(payload.permissions || {}) }
+        const businessKey = businessPermissionKey(businessType)
         const now = serverTimestamp()
         const baseStaff = {
           uid: staffId,
@@ -137,6 +160,8 @@ export function useStaffPermissions() {
           role,
           status,
           permissions: basePermissions,
+          businessType: normalizeBusinessType(businessType),
+          businessPermissions: { [businessKey]: basePermissions },
           ownerId: workspaceId,
           companyId: workspaceId,
           workspaceId,
@@ -155,6 +180,8 @@ export function useStaffPermissions() {
             doc(db, 'workspaces', workspaceId, 'permissions', staffId),
             {
               ...basePermissions,
+              businessType: normalizeBusinessType(businessType),
+              businessPermissions: { [businessKey]: basePermissions },
               staffId,
               email,
               ownerId: workspaceId,
@@ -187,6 +214,7 @@ export function useStaffPermissions() {
                 userId: staffId,
                 staffId,
                 permissions: basePermissions,
+                businessPermissions: { [businessKey]: basePermissions },
                 plan: userDoc?.plan || plan || 'Free',
                 planStatus: userDoc?.planStatus || 'active',
                 billingCycle: userDoc?.billingCycle || 'monthly',
@@ -204,6 +232,7 @@ export function useStaffPermissions() {
           logActivity({
             workspaceId,
             userId,
+            businessType,
             ...userActivityInfo(userDoc, firebaseUser),
             action: 'Staff created',
             module: 'Team',
@@ -225,10 +254,23 @@ export function useStaffPermissions() {
         if (!db || !workspaceId || !userId) return { ok: false, error: 'Secure Cloud Sync is not available right now.' }
         if (!workspacePermissionKeys.some((item) => item.key === key)) return { ok: false, error: 'Unknown permission.' }
         const staffRow = staff.find((item) => item.id === staffId)
+        const existing = permissions[staffId] || {}
+        const businessKey = businessPermissionKey(businessType)
+        const existingBusinessPermissions = existing.__businessPermissions || staffRow?.businessPermissions || {}
+        const nextBusinessPermissions = {
+          ...existingBusinessPermissions,
+          [businessKey]: {
+            ...defaultPermissions(),
+            ...existing,
+            [key]: Boolean(value),
+          },
+        }
         await setDoc(
           doc(db, 'workspaces', workspaceId, 'permissions', staffId),
           {
-            [key]: Boolean(value),
+            ...rootPermissionUnion(existing, nextBusinessPermissions),
+            businessType: normalizeBusinessType(businessType),
+            businessPermissions: nextBusinessPermissions,
             staffId,
             email: staffRow?.email || '',
             ownerId: workspaceId,
@@ -242,6 +284,7 @@ export function useStaffPermissions() {
         await logActivity({
           workspaceId,
           userId,
+          businessType,
           ...userActivityInfo(userDoc, firebaseUser),
           action: 'Staff permission updated',
           module: 'Team',
@@ -265,6 +308,7 @@ export function useStaffPermissions() {
           logActivity({
             workspaceId,
             userId,
+            businessType,
             ...userActivityInfo(userDoc, firebaseUser),
             action: nextStatus === 'blocked' ? 'Staff blocked' : 'Staff access updated',
             module: 'Team',
@@ -277,6 +321,6 @@ export function useStaffPermissions() {
         return { ok: true }
       },
     }),
-    [access, error, firebaseUser, loading, permissions, plan, staff, userDoc, userId, workspaceId],
+    [access, businessType, error, firebaseUser, loading, permissions, plan, staff, userDoc, userId, workspaceId],
   )
 }

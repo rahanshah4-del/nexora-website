@@ -1,13 +1,11 @@
 import {
   HiOutlineArrowRightOnRectangle,
   HiOutlineCog6Tooth,
-  HiOutlineMagnifyingGlass,
   HiOutlineSquares2X2,
 } from 'react-icons/hi2'
 import Avatar from '../ui/Avatar.jsx'
 import Badge from '../ui/Badge.jsx'
 import Dropdown from '../ui/Dropdown.jsx'
-import Input from '../ui/Input.jsx'
 import Button from '../ui/Button.jsx'
 import { memo, useCallback, useMemo, useState } from 'react'
 import { usePreferences } from '../../hooks/usePreferences.js'
@@ -259,10 +257,7 @@ function TopNav({ onOpenSidebar, onSwitchProduct }) {
         </div>
 
         <div className="mx-auto w-full max-w-[1440px] px-0 pb-3 pt-2 md:hidden">
-          <div className="relative">
-            <HiOutlineMagnifyingGlass className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400" />
-            <Input className="h-11 rounded-2xl pl-10" placeholder="Search..." />
-          </div>
+          <GlobalSearch className="max-w-none" />
         </div>
       </header>
     </>

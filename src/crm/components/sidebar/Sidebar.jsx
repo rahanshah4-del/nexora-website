@@ -4,6 +4,7 @@ import { navItems } from '../../data/navigation.js'
 import { cn } from '../../utils/cn.js'
 import { memo, useCallback, useMemo } from 'react'
 import { useUser } from '../../hooks/useUser.js'
+import { useWorkspaceAccess } from '../../hooks/useWorkspaceAccess.js'
 import logoUrl from '../../../assets/logo/nexora-logo.svg'
 import { businessWorkspaceForType, isDeveloperOwnerAccount, selectedModulesForSidebar } from '../../data/moduleAccess.js'
 import { resolveWorkspaceName } from '../../../lib/workspaceName.js'
@@ -133,6 +134,7 @@ function Brand({ collapsed, workspaceName, businessTitle }) {
 
 function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollapse, onSwitchProduct }) {
   const { accessPlan, businessType, userDoc, userId, firebaseUser } = useUser()
+  const access = useWorkspaceAccess()
   const businessWorkspace = businessWorkspaceForType(businessType)
   const developerOverride = isDeveloperOwnerAccount(userDoc, firebaseUser)
   const workspaceName = useMemo(
@@ -151,6 +153,7 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
       plan: accessPlan,
       businessType,
       developerOverride,
+      teamOverride: access.isAdmin || access.hasPermission('settingsAccess'),
     })
     const allowedRoutes = new Set(modules.map((module) => module.route))
     return modules.map((module) => {
@@ -161,8 +164,11 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
         label: module.label,
         comingSoon: module.comingSoon,
       }
-    }).filter((item) => allowedRoutes.has(item.to) || item.comingSoon)
-  }, [accessPlan, businessType, developerOverride, userDoc?.enabledModules, userDoc?.onboardingCompleted])
+    }).filter((item) => {
+      if (item.to === '/app/team' && !developerOverride && !access.isAdmin && !access.hasPermission('settingsAccess')) return false
+      return allowedRoutes.has(item.to) || item.comingSoon
+    })
+  }, [access, accessPlan, businessType, developerOverride, userDoc?.enabledModules, userDoc?.onboardingCompleted])
 
   const handleSwitchProduct = useCallback(() => {
     onNavigate?.()
