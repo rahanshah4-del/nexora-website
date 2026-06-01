@@ -13,7 +13,7 @@ function belongsToWorkspace(data, workspaceId) {
 
 export function belongsToBusiness(data, businessType) {
   const currentBusinessType = normalizeBusinessType(businessType)
-  const rowBusinessType = data?.businessType ? normalizeBusinessType(data.businessType) : 'General CRM'
+  const rowBusinessType = data?.businessType ? normalizeBusinessType(data.businessType) : currentBusinessType
   return rowBusinessType === currentBusinessType
 }
 
@@ -24,7 +24,7 @@ function withWorkspaceFallback(id, data, workspaceId) {
     workspaceId: data.workspaceId || workspaceId,
     ownerId: data.ownerId || workspaceId,
     createdBy: data.createdBy || data.submittedBy || data.userId || workspaceId,
-    businessType: data.businessType || 'General CRM',
+    businessType: data.businessType || data.selectedBusinessType || '',
     createdAt: data.createdAt || null,
   }
 }

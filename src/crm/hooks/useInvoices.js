@@ -101,6 +101,15 @@ function canRoleApprovePayments(role, userDoc) {
   return !rawRole || ['owner', 'admin', 'accountant'].includes(rawRole)
 }
 
+function approvalMetaForBusiness(businessType) {
+  const type = String(businessType || '').trim()
+  if (type === 'School ERP') return { approvalType: 'fee', approvalLabel: 'Fee Approval', sourceRoute: '/app/invoices' }
+  if (type === 'Property ERP') return { approvalType: 'rent', approvalLabel: 'Rent Approval', sourceRoute: '/app/invoices' }
+  if (type === 'Restaurant POS') return { approvalType: 'bill', approvalLabel: 'Bill Approval', sourceRoute: '/app/invoices' }
+  if (type === 'Retail / POS') return { approvalType: 'bill', approvalLabel: 'Sales Bill Approval', sourceRoute: '/app/invoices' }
+  return { approvalType: 'invoice', approvalLabel: 'Invoice Approval', sourceRoute: '/app/invoices' }
+}
+
 function invoicePermissions(role, userDoc) {
   const rawRole = String(userDoc?.role ?? role ?? '').trim().toLowerCase()
   const normalized = rawRole ? roleName(role, userDoc) : 'owner'
@@ -236,6 +245,8 @@ export function useInvoices() {
           const approvalStatus = fullyPaid || requestedStatus === 'approved' ? 'approved' : requestedStatus === 'draft' ? 'draft' : 'pending'
           const requiresApproval = requestedStatus === 'pending_approval' || (requestedStatus !== 'draft' && requestedStatus !== 'approved' && !fullyPaid)
           const docPayload = {
+            workspaceId,
+            businessType,
             invoiceNumber: invNo,
             customerName: name,
             customerEmail: email,
@@ -268,6 +279,15 @@ export function useInvoices() {
             paymentStatus,
             approvalStatus,
             requiresApproval,
+            ...(requiresApproval
+              ? {
+                  ...approvalMetaForBusiness(businessType),
+                  approvalAmount: invoice.total,
+                  approvalCustomerName: name,
+                  submittedForApprovalBy: userId,
+                  submittedForApprovalAt: serverTimestamp(),
+                }
+              : {}),
             amountPaid,
             partialPaidAmount: amountPaid,
             balanceDue: calculateBalanceDue(invoice.total, amountPaid),
@@ -624,11 +644,23 @@ export function useInvoices() {
         const invoice = invoices.find((item) => item.id === id)
         if (!invoice) return { ok: false, error: 'Invoice not found' }
         try {
+          const approvalMeta = approvalMetaForBusiness(businessType)
+          const amount = toNumber(invoice.total ?? invoice.totalUsd, 0)
           await patchUserDoc(workspaceId, 'invoices', id, {
             status: 'pending_approval',
             approvalStatus: 'pending',
             paymentStatus: invoice.amountPaid > 0 ? 'partial_paid' : 'pending',
             requiresApproval: true,
+            ...approvalMeta,
+            workspaceId,
+            businessType,
+            createdBy: invoice.createdBy || userId,
+            amount,
+            approvalAmount: amount,
+            customerName: invoice.customerName || '',
+            approvalCustomerName: invoice.customerName || invoice.customerEmail || '',
+            route: approvalMeta.sourceRoute,
+            sourceRoute: approvalMeta.sourceRoute,
             submittedForApprovalBy: userId,
             submittedForApprovalAt: serverTimestamp(),
           }, { businessType })

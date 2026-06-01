@@ -228,6 +228,7 @@ export const businessWorkspaceCatalog = [
     modules: [
       'dashboard',
       'customers',
+      'products',
       'leads',
       'salesPipeline',
       'followUps',
@@ -357,6 +358,10 @@ export const businessWorkspaceCatalog = [
       'leads',
       'followUps',
       'support',
+      'invoices',
+      'payments',
+      'expenses',
+      'accounts',
       'reports',
       'approvals',
       'team',

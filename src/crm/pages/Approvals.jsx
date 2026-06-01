@@ -154,7 +154,14 @@ export default function ApprovalsPage() {
   const [toast, setToast] = useState(null)
   const [details, setDetails] = useState(null)
   const [confirm, setConfirm] = useState({ action: null, approval: null })
+  const [statusView, setStatusView] = useState('pending')
   const [busy, setBusy] = useState(false)
+  const visibleApprovals =
+    statusView === 'approved'
+      ? approvals.approvedApprovals
+      : statusView === 'rejected'
+        ? approvals.rejectedApprovals
+        : approvals.pendingApprovals
 
   const summaryCards = useMemo(
     () => [
@@ -203,40 +210,44 @@ export default function ApprovalsPage() {
         header: 'Actions',
         cell: (row) => (
           <div className="flex flex-wrap gap-2">
-            <Button
-              className="h-8 rounded-xl px-3 text-xs"
-              type="button"
-              onClick={(event) => {
-                event.preventDefault()
-                setConfirm({ action: 'approve', approval: row })
-              }}
-            >
-              Approve
-            </Button>
-            {isInvoiceRow(row) && !isPaidRow(row) ? (
-              <Button
-                variant="subtle"
-                className="h-8 rounded-xl px-3 text-xs"
-                type="button"
-                onClick={(event) => {
-                  event.preventDefault()
-                  setConfirm({ action: 'mark_paid', approval: row })
-                }}
-              >
-                Mark as Paid
-              </Button>
+            {statusView === 'pending' ? (
+              <>
+                <Button
+                  className="h-8 rounded-xl px-3 text-xs"
+                  type="button"
+                  onClick={(event) => {
+                    event.preventDefault()
+                    setConfirm({ action: 'approve', approval: row })
+                  }}
+                >
+                  Approve
+                </Button>
+                {isInvoiceRow(row) && !isPaidRow(row) ? (
+                  <Button
+                    variant="subtle"
+                    className="h-8 rounded-xl px-3 text-xs"
+                    type="button"
+                    onClick={(event) => {
+                      event.preventDefault()
+                      setConfirm({ action: 'mark_paid', approval: row })
+                    }}
+                  >
+                    Mark as Paid
+                  </Button>
+                ) : null}
+                <Button
+                  variant="subtle"
+                  className="h-8 rounded-xl border-rose-200 px-3 text-xs text-rose-700 hover:border-rose-300"
+                  type="button"
+                  onClick={(event) => {
+                    event.preventDefault()
+                    setConfirm({ action: 'reject', approval: row })
+                  }}
+                >
+                  Reject
+                </Button>
+              </>
             ) : null}
-            <Button
-              variant="subtle"
-              className="h-8 rounded-xl border-rose-200 px-3 text-xs text-rose-700 hover:border-rose-300"
-              type="button"
-              onClick={(event) => {
-                event.preventDefault()
-                setConfirm({ action: 'reject', approval: row })
-              }}
-            >
-              Reject
-            </Button>
             <Button
               variant="ghost"
               className="h-8 rounded-xl px-3 text-xs"
@@ -252,7 +263,7 @@ export default function ApprovalsPage() {
         ),
       },
     ],
-    [],
+    [statusView],
   )
 
   async function runAction(event) {
@@ -328,10 +339,27 @@ export default function ApprovalsPage() {
       <Card className="p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <p className="text-sm font-semibold text-slate-900 dark:text-white">Approval Queue</p>
-            <p className="text-xs text-slate-600 dark:text-slate-300">Only pending CRM approvals appear here.</p>
+            <p className="text-sm font-semibold text-slate-900 dark:text-white">Approval Center</p>
+            <p className="text-xs text-slate-600 dark:text-slate-300">Approvals are filtered to the current business type.</p>
           </div>
-          <Badge variant="purple">{approvals.summary.total} pending</Badge>
+          <Badge variant="purple">{approvals.summary.pending} pending</Badge>
+        </div>
+        <div className="mt-4 flex flex-wrap gap-2">
+          {[
+            ['pending', 'Pending', approvals.summary.pending],
+            ['approved', 'Approved', approvals.summary.approved],
+            ['rejected', 'Rejected', approvals.summary.rejected],
+          ].map(([key, label, count]) => (
+            <Button
+              key={key}
+              variant={statusView === key ? 'primary' : 'subtle'}
+              className="h-9 rounded-xl px-3 text-xs"
+              type="button"
+              onClick={() => setStatusView(key)}
+            >
+              {label} ({count})
+            </Button>
+          ))}
         </div>
 
         <div className="mt-4">
@@ -339,10 +367,10 @@ export default function ApprovalsPage() {
             <div className="grid min-h-[14rem] place-items-center text-sm text-slate-600 dark:text-slate-300">
               Loading approvals…
             </div>
-          ) : approvals.approvals.length ? (
-            <Table columns={columns} rows={approvals.approvals} />
+          ) : visibleApprovals.length ? (
+            <Table columns={columns} rows={visibleApprovals} />
           ) : (
-            <EmptyState title="No approvals pending" description="Payment, upgrade, staff, and client approvals will appear here." />
+            <EmptyState title={`No ${statusView} approvals`} description="Billing, payment, expense, team, and upgrade approvals will appear here." />
           )}
         </div>
       </Card>

@@ -59,19 +59,33 @@ function isReviewableApproval(approval = {}) {
 
 function belongsToBusiness(row, businessType) {
   const currentBusinessType = normalizeBusinessType(businessType)
-  const rowBusinessType = row?.businessType ? normalizeBusinessType(row.businessType) : 'General CRM'
+  const rowBusinessType = row?.businessType ? normalizeBusinessType(row.businessType) : currentBusinessType
   return rowBusinessType === currentBusinessType
+}
+
+function isApprovalInvoice(row) {
+  const status = statusValue(row?.status, '')
+  const paymentStatus = statusValue(row?.paymentStatus, '')
+  const approvalStatus = statusValue(row?.approvalStatus, '')
+  return (
+    row?.requiresApproval === true ||
+    Boolean(row?.approvalType) ||
+    Boolean(row?.submittedForApprovalAt) ||
+    ['pending', 'pending_approval', 'approved', 'rejected', 'paid'].includes(status) ||
+    ['pending', 'pending_approval', 'approved', 'rejected'].includes(approvalStatus) ||
+    ['pending', 'pending_approval', 'paid', 'partial_paid', 'rejected'].includes(paymentStatus)
+  )
 }
 
 function isPendingInvoice(row) {
   const status = statusValue(row?.status, '')
   const paymentStatus = statusValue(row?.paymentStatus, '')
   const approvalStatus = statusValue(row?.approvalStatus, '')
-  if ([status, paymentStatus, approvalStatus].some((value) => ['rejected', 'cancelled', 'canceled'].includes(value))) return false
-  if (status === 'paid' || paymentStatus === 'paid') return false
+  if ([status, paymentStatus, approvalStatus].some((value) => ['approved', 'paid', 'rejected', 'cancelled', 'canceled'].includes(value))) return false
   return (
     row?.requiresApproval === true ||
     status === 'pending' ||
+    status === 'pending_approval' ||
     paymentStatus === 'pending' ||
     approvalStatus === 'pending'
   )
@@ -90,6 +104,21 @@ function isPendingPayment(row) {
   )
 }
 
+function isApprovalPayment(row) {
+  const status = statusValue(row?.status, '')
+  const paymentStatus = statusValue(row?.paymentStatus, '')
+  const approvalStatus = statusValue(row?.approvalStatus, '')
+  return (
+    row?.requiresApproval === true ||
+    Boolean(row?.approvalType) ||
+    Boolean(row?.approvedAt) ||
+    Boolean(row?.rejectedAt) ||
+    ['pending', 'pending_verification', 'pending_partial', 'partial_pending', 'paid', 'approved', 'rejected'].includes(status) ||
+    ['pending', 'pending_verification', 'pending_partial', 'partial_pending', 'paid', 'approved', 'rejected'].includes(paymentStatus) ||
+    ['pending', 'approved', 'rejected'].includes(approvalStatus)
+  )
+}
+
 function isPendingRecord(row) {
   const status = statusValue(row?.status, '')
   const approvalStatus = statusValue(row?.approvalStatus, '')
@@ -99,11 +128,31 @@ function isPendingRecord(row) {
   return row?.requiresApproval === true || pendingRecordStatuses.includes(status) || pendingRecordStatuses.includes(approvalStatus)
 }
 
+function isApprovalRecord(row) {
+  const status = statusValue(row?.status, '')
+  const approvalStatus = statusValue(row?.approvalStatus, '')
+  const paymentStatus = statusValue(row?.paymentStatus, '')
+  return (
+    row?.requiresApproval === true ||
+    Boolean(row?.approvalType) ||
+    Boolean(row?.approvedAt) ||
+    Boolean(row?.rejectedAt) ||
+    pendingRecordStatuses.includes(status) ||
+    pendingRecordStatuses.includes(approvalStatus) ||
+    ['pending', 'approved', 'paid', 'rejected', 'cancelled', 'canceled'].includes(status) ||
+    ['pending', 'approved', 'paid', 'rejected'].includes(paymentStatus) ||
+    ['pending', 'approved', 'rejected'].includes(approvalStatus)
+  )
+}
+
 function createApproval(type, sourceCollection, row) {
-  const amount = sourceCollection === 'invoices' ? invoiceValue(row) : amountValue(row)
+  const amount = row.approvalAmount ?? (sourceCollection === 'invoices' ? invoiceValue(row) : amountValue(row))
   const amountPaid = amountPaidValue(row)
   const customer =
     row.customerName ||
+    row.approvalCustomerName ||
+    row.studentName ||
+    row.tenantName ||
     row.clientName ||
     row.title ||
     row.name ||
@@ -124,7 +173,8 @@ function createApproval(type, sourceCollection, row) {
   return {
     id: `${type}:${row.id}`,
     sourceId: row.id,
-    type,
+    type: row.approvalLabel || type,
+    approvalType: row.approvalType || '',
     sourceCollection,
     customer,
     amount,
@@ -142,8 +192,19 @@ function createApproval(type, sourceCollection, row) {
     invoiceId: row.invoiceId || '',
     invoiceNumber: row.invoiceNumber || '',
     userId: row.userId || '',
+    businessType: row.businessType || '',
+    route: row.route || row.sourceRoute || '',
     row,
   }
+}
+
+function invoiceApprovalTypeForBusiness(businessType) {
+  const type = normalizeBusinessType(businessType)
+  if (type === 'School ERP') return { type: 'fee', label: 'Fee Approval' }
+  if (type === 'Property ERP') return { type: 'rent', label: 'Rent Approval' }
+  if (type === 'Restaurant POS') return { type: 'bill', label: 'Bill Approval' }
+  if (type === 'Retail / POS') return { type: 'bill', label: 'Sales Bill Approval' }
+  return { type: 'invoice', label: 'Invoice Approval' }
 }
 
 function transactionApprovalType(row = {}) {
@@ -263,7 +324,7 @@ export function useApprovals() {
       'invoices',
       businessType,
       (rows) => {
-        setInvoices(rows.filter(isPendingInvoice))
+        setInvoices(rows.filter(isApprovalInvoice))
         markLoaded()
       },
       onError,
@@ -274,7 +335,7 @@ export function useApprovals() {
       'payments',
       businessType,
       (rows) => {
-        setPayments(rows.filter(isPendingPayment))
+        setPayments(rows.filter(isApprovalPayment))
         markLoaded()
       },
       onError,
@@ -285,7 +346,7 @@ export function useApprovals() {
       'teamMembers',
       businessType,
       (rows) => {
-        setTeamMembers(rows.filter(isPendingRecord))
+        setTeamMembers(rows.filter(isApprovalRecord))
         markLoaded()
       },
       onError,
@@ -296,7 +357,7 @@ export function useApprovals() {
       'clients',
       businessType,
       (rows) => {
-        setClients(rows.filter(isPendingRecord))
+        setClients(rows.filter(isApprovalRecord))
         markLoaded()
       },
       onError,
@@ -307,7 +368,7 @@ export function useApprovals() {
       'expenses',
       businessType,
       (rows) => {
-        setExpenses(rows.filter(isPendingRecord))
+        setExpenses(rows.filter(isApprovalRecord))
         markLoaded()
       },
       onError,
@@ -318,7 +379,7 @@ export function useApprovals() {
       'accountTransactions',
       businessType,
       (rows) => {
-        setAccountTransactions(rows.filter(isPendingRecord))
+        setAccountTransactions(rows.filter(isApprovalRecord))
         markLoaded()
       },
       onError,
@@ -332,7 +393,7 @@ export function useApprovals() {
               snap.docs
                 .map((item) => ({ id: item.id, ...item.data() }))
                 .filter((item) => belongsToBusiness(item, businessType))
-                .filter((item) => isPendingRecord(item) || statusValue(item.paymentStatus, '') === 'pending'),
+                .filter((item) => isApprovalRecord(item) || statusValue(item.paymentStatus, '') === 'pending'),
             )
             markLoaded()
           },
@@ -355,8 +416,9 @@ export function useApprovals() {
   }, [businessType, canApprove, canApproveSubscription, userId, workspaceId])
 
   const approvals = useMemo(() => {
+    const invoiceLabel = invoiceApprovalTypeForBusiness(businessType).label
     const rows = [
-      ...invoices.map((row) => createApproval('Invoice', 'invoices', row)),
+      ...invoices.map((row) => createApproval(row.approvalLabel || invoiceLabel, 'invoices', row)),
       ...payments.map((row) => createApproval('Client payment reference', 'payments', row)),
       ...upgradeRequests.map((row) => createApproval('Subscription upgrade', 'upgradeRequests', row)),
       ...teamMembers.map((row) => createApproval('Staff access request', 'teamMembers', row)),
@@ -365,19 +427,38 @@ export function useApprovals() {
       ...accountTransactions.map((row) => createApproval(transactionApprovalType(row), 'accountTransactions', row)),
     ]
     return rows.sort((a, b) => b.sortAt - a.sortAt)
-  }, [accountTransactions, clients, expenses, invoices, payments, teamMembers, upgradeRequests])
+  }, [accountTransactions, businessType, clients, expenses, invoices, payments, teamMembers, upgradeRequests])
+
+  const pendingApprovals = useMemo(() => approvals.filter(isReviewableApproval), [approvals])
+  const approvedApprovals = useMemo(
+    () =>
+      approvals.filter((approval) =>
+        ['approved', 'paid', 'active'].includes(statusValue(approval.row?.approvalStatus || approval.row?.paymentStatus || approval.row?.status || approval.status, '')),
+      ),
+    [approvals],
+  )
+  const rejectedApprovals = useMemo(
+    () =>
+      approvals.filter((approval) =>
+        ['rejected', 'cancelled', 'canceled'].includes(statusValue(approval.row?.approvalStatus || approval.row?.paymentStatus || approval.row?.status || approval.status, '')),
+      ),
+    [approvals],
+  )
 
   const summary = useMemo(
     () => ({
-      pendingPayments: payments.length,
-      pendingInvoices: invoices.length,
-      upgradeRequests: upgradeRequests.length,
-      staffRequests: teamMembers.length,
-      expenseRequests: expenses.length,
-      accountRequests: accountTransactions.length,
-      total: approvals.length,
+      pendingPayments: payments.filter((row) => isPendingPayment(row)).length,
+      pendingInvoices: invoices.filter((row) => isPendingInvoice(row)).length,
+      upgradeRequests: upgradeRequests.filter((row) => isPendingRecord(row) || statusValue(row.paymentStatus, '') === 'pending').length,
+      staffRequests: teamMembers.filter((row) => isPendingRecord(row)).length,
+      expenseRequests: expenses.filter((row) => isPendingRecord(row)).length,
+      accountRequests: accountTransactions.filter((row) => isPendingRecord(row)).length,
+      pending: pendingApprovals.length,
+      approved: approvedApprovals.length,
+      rejected: rejectedApprovals.length,
+      total: pendingApprovals.length,
     }),
-    [accountTransactions.length, approvals.length, expenses.length, invoices.length, payments.length, teamMembers.length, upgradeRequests.length],
+    [accountTransactions, approvedApprovals.length, expenses, invoices, payments, pendingApprovals.length, rejectedApprovals.length, teamMembers, upgradeRequests],
   )
 
   const approve = useCallback(
@@ -922,6 +1003,9 @@ export function useApprovals() {
   return useMemo(
     () => ({
       approvals,
+      pendingApprovals,
+      approvedApprovals,
+      rejectedApprovals,
       canApprove,
       canApproveSubscription,
       error,
@@ -931,6 +1015,6 @@ export function useApprovals() {
       markPaid,
       reject,
     }),
-    [approvals, approve, canApprove, canApproveSubscription, error, loading, markPaid, reject, summary],
+    [approvedApprovals, approvals, approve, canApprove, canApproveSubscription, error, loading, markPaid, pendingApprovals, reject, rejectedApprovals, summary],
   )
 }
