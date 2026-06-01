@@ -7,11 +7,12 @@ import { clientSafeMessage } from '../utils/messages.js'
 
 function normalizeCustomer(c) {
   return {
+    ...c,
     id: c.id,
-    name: c.name || 'No name',
+    name: c.name || c.studentName || 'No name',
     email: c.email || '',
     phone: c.phone || '',
-    company: c.company || '',
+    company: c.company || c.className || '',
     customerType: c.customerType || 'General',
     status: c.status || 'Active',
     notes: c.notes || '',
@@ -88,6 +89,7 @@ export function useCustomers() {
         if (!email) return { ok: false, error: 'Email is required' }
         try {
           const ref = await createUserDoc(workspaceId, 'customers', {
+            ...payload,
             name,
             email,
             phone,

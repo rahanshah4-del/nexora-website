@@ -20,10 +20,12 @@ import CurrencySelector from '../components/invoices/CurrencySelector.jsx'
 import InvoicePreview from '../components/invoices/InvoicePreview.jsx'
 import { useInvoices } from '../hooks/useInvoices.js'
 import { useProducts } from '../hooks/useProducts.js'
+import { useCustomers } from '../hooks/useCustomers.js'
 import { useUser } from '../hooks/useUser.js'
 import { formatCurrency } from '../utils/format.js'
 import { cn } from '../utils/cn.js'
 import { resolveWorkspaceName } from '../../lib/workspaceName.js'
+import { normalizeBusinessType } from '../data/moduleAccess.js'
 import {
   INVOICE_STATUS_OPTIONS,
   INVOICE_TEMPLATES,
@@ -103,12 +105,14 @@ export default function InvoiceCreatePage() {
   const navigate = useNavigate()
   const { createInvoice } = useInvoices()
   const { products } = useProducts()
-  const { userDoc, userId } = useUser()
+  const { customers } = useCustomers()
+  const { userDoc, userId, businessType } = useUser()
   const [invoice, setInvoice] = useState(() => createBlankInvoice())
   const [toast, setToast] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const [previewSeen, setPreviewSeen] = useState(false)
   const [previewOpen, setPreviewOpen] = useState(false)
+  const isSchool = normalizeBusinessType(businessType) === 'School ERP'
 
   const totals = useMemo(() => calculateInvoiceDraft(invoice), [invoice])
   const company = useMemo(
@@ -125,6 +129,72 @@ export default function InvoiceCreatePage() {
 
   function update(key, value) {
     setInvoice((current) => ({ ...current, [key]: value }))
+  }
+
+  function buildSchoolFeeItems(nextInvoice) {
+    const rows = [
+      ['Tuition Fee', nextInvoice.tuitionFee],
+      ['Admission Fee', nextInvoice.admissionFee],
+      ['Exam Fee', nextInvoice.examFee],
+      ['Transport Fee', nextInvoice.transportFee],
+      ['Other Charges', nextInvoice.otherCharges],
+      ['Fine/Late Fee', nextInvoice.fineLateFee],
+    ]
+      .map(([name, value]) => ({ name, value: money(value) }))
+      .filter((item) => item.value > 0)
+
+    return rows.length
+      ? rows.map((item) => ({
+          ...blankInvoiceItem(),
+          name: item.name,
+          description: nextInvoice.feeMonth ? `Fee month: ${nextInvoice.feeMonth}` : '',
+          quantity: 1,
+          qty: 1,
+          unit: 'Month',
+          price: item.value,
+          rate: item.value,
+          taxRate: 0,
+          discountPercent: 0,
+        }))
+      : [{ ...blankInvoiceItem(), name: 'Tuition Fee', quantity: 1, qty: 1, unit: 'Month', taxRate: 0 }]
+  }
+
+  function updateSchoolFee(key, value) {
+    setInvoice((current) => {
+      const next = { ...current, [key]: value }
+      if (key === 'discount') next.roundOff = -money(value)
+      if (key === 'paidAmount') next.amountPaid = money(value)
+      if (['tuitionFee', 'admissionFee', 'examFee', 'transportFee', 'otherCharges', 'fineLateFee', 'feeMonth'].includes(key)) {
+        next.items = buildSchoolFeeItems(next)
+      }
+      return next
+    })
+  }
+
+  function selectStudent(studentId) {
+    const student = customers.find((item) => item.id === studentId)
+    if (!student) {
+      setInvoice((current) => ({ ...current, customerId: '', customerName: '', customerEmail: '', customerPhone: '', customerAddress: '', className: '', section: '' }))
+      return
+    }
+    setInvoice((current) => {
+      const tuitionFee = current.tuitionFee || student.monthlyFee || ''
+      const next = {
+        ...current,
+        customerId: student.id,
+        customerName: student.studentName || student.name || '',
+        customerEmail: student.parentEmail || student.email || '',
+        customerPhone: student.parentPhone || student.phone || '',
+        customerAddress: student.address || student.customerAddress || '',
+        className: student.className || '',
+        section: student.section || '',
+        admissionNo: student.admissionNo || '',
+        rollNo: student.rollNo || '',
+        tuitionFee,
+      }
+      next.items = buildSchoolFeeItems(next)
+      return next
+    })
   }
 
   function updateItem(index, patch) {
@@ -168,7 +238,7 @@ export default function InvoiceCreatePage() {
     const requestedStatus = status || String(invoice.status || 'pending').toLowerCase()
     if (!allowWithoutPreview && !previewSeen) {
       showPreview()
-      showToast({ tone: 'info', message: 'Preview the invoice before saving final invoice.' })
+      showToast({ tone: 'info', message: isSchool ? 'Preview the fee bill before saving final fee bill.' : 'Preview the invoice before saving final invoice.' })
       return
     }
 
@@ -219,10 +289,10 @@ export default function InvoiceCreatePage() {
     setSubmitting(false)
 
     if (res?.ok) {
-      showToast({ tone: 'success', message: requestedStatus === 'draft' ? 'Draft invoice saved' : 'Invoice created successfully' })
+      showToast({ tone: 'success', message: requestedStatus === 'draft' ? (isSchool ? 'Draft fee bill saved' : 'Draft invoice saved') : (isSchool ? 'Fee bill created successfully' : 'Invoice created successfully') })
       window.setTimeout(() => navigate('/app/invoices'), 650)
     } else {
-      showToast({ tone: 'error', message: res?.error || 'Unable to create invoice' }, 2800)
+      showToast({ tone: 'error', message: res?.error || (isSchool ? 'Unable to create fee bill' : 'Unable to create invoice') }, 2800)
     }
   }
 
@@ -250,13 +320,13 @@ export default function InvoiceCreatePage() {
               type="button"
               className="focus-ring grid h-10 w-10 place-items-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50"
               onClick={() => navigate('/app/invoices')}
-              aria-label="Back to invoices"
+              aria-label={isSchool ? 'Back to fee records' : 'Back to invoices'}
             >
               <HiOutlineArrowLeft />
             </button>
             <div className="min-w-0">
               <p className="text-sm font-semibold text-slate-500">
-                Invoices <span className="text-slate-300">/</span> <span className="font-black text-slate-950">Create Invoice</span>
+                {isSchool ? 'Fees' : 'Invoices'} <span className="text-slate-300">/</span> <span className="font-black text-slate-950">{isSchool ? 'Create Fee Bill' : 'Create Invoice'}</span>
               </p>
               <p className="mt-1 truncate text-xs font-medium text-slate-500">{company.name}</p>
             </div>
@@ -267,10 +337,10 @@ export default function InvoiceCreatePage() {
             </Button>
             <Button variant="subtle" className="h-10 rounded-xl" type="button" onClick={showPreview}>
               <HiOutlineEye className="h-4 w-4" />
-              Preview
+              {isSchool ? 'Preview Fee Bill' : 'Preview'}
             </Button>
             <Button className="h-10 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-5 shadow-lg shadow-indigo-600/20" type="button" disabled={submitting} onClick={() => submitInvoice()}>
-              {previewSeen ? 'Save Final Invoice' : 'Next -> Preview'}
+              {previewSeen ? (isSchool ? 'Save Final Fee Bill' : 'Save Final Invoice') : 'Next -> Preview'}
             </Button>
           </div>
         </div>
@@ -278,38 +348,73 @@ export default function InvoiceCreatePage() {
 
       <div className="mx-auto max-w-[1500px]">
         <main className="space-y-4">
-          <SectionCard number="1" title="Customer Information">
+          <SectionCard number="1" title={isSchool ? 'Student Fee Information' : 'Customer Information'}>
             <div className="grid gap-3 md:grid-cols-3">
-              <Field label="Customer Name" required>
-                <div className="flex gap-2">
-                  <Input value={invoice.customerName} onChange={(event) => update('customerName', event.target.value)} placeholder="Tech Solutions PK" />
-                  <Button variant="subtle" className="h-10 rounded-xl px-3 text-xs" type="button">+ New</Button>
-                </div>
-              </Field>
-              <Field label="Phone">
-                <Input value={invoice.customerPhone} onChange={(event) => update('customerPhone', event.target.value)} placeholder="+92 300 1234567" />
-              </Field>
-              <Field label="Email">
-                <Input type="email" value={invoice.customerEmail} onChange={(event) => update('customerEmail', event.target.value)} placeholder="billing@example.com" />
-              </Field>
-              <Field label="NTN / CNIC">
-                <Input value={invoice.customerTaxId} onChange={(event) => update('customerTaxId', event.target.value)} placeholder="9876543-2" />
-              </Field>
-              <Field label="Address" className="md:col-span-2">
-                <Input value={invoice.customerAddress} onChange={(event) => update('customerAddress', event.target.value)} placeholder="Street, city, country" />
-              </Field>
-              <Field label="Customer Notes" className="md:col-span-3">
-                <TextArea value={invoice.customerNotes} onChange={(event) => update('customerNotes', event.target.value)} placeholder="Add any notes for this customer..." />
-              </Field>
+              {isSchool ? (
+                <>
+                  <Field label="Select Student" required>
+                  <Select value={invoice.customerId || ''} onChange={(event) => selectStudent(event.target.value)}>
+                    <option value="">Select student</option>
+                    {customers.map((student) => (
+                      <option key={student.id} value={student.id}>
+                        {[student.studentName || student.name, student.className, student.section].filter(Boolean).join(' - ')}
+                      </option>
+                    ))}
+                  </Select>
+                  </Field>
+                  <Field label="Class">
+                    <Input value={invoice.className || ''} onChange={(event) => update('className', event.target.value)} placeholder="Class 8" />
+                  </Field>
+                  <Field label="Section">
+                    <Input value={invoice.section || ''} onChange={(event) => update('section', event.target.value)} placeholder="A" />
+                  </Field>
+                  <Field label="Fee Month">
+                    <Input type="month" value={invoice.feeMonth || ''} onChange={(event) => updateSchoolFee('feeMonth', event.target.value)} />
+                  </Field>
+                  <Field label="Parent Phone">
+                    <Input value={invoice.customerPhone} onChange={(event) => update('customerPhone', event.target.value)} placeholder="+92 300 1234567" />
+                  </Field>
+                  <Field label="Parent Email">
+                    <Input type="email" value={invoice.customerEmail} onChange={(event) => update('customerEmail', event.target.value)} placeholder="parent@example.com" />
+                  </Field>
+                  <Field label="Address" className="md:col-span-3">
+                    <Input value={invoice.customerAddress} onChange={(event) => update('customerAddress', event.target.value)} placeholder="Student address" />
+                  </Field>
+                </>
+              ) : (
+                <>
+                  <Field label="Customer Name" required>
+                  <div className="flex gap-2">
+                    <Input value={invoice.customerName} onChange={(event) => update('customerName', event.target.value)} placeholder="Tech Solutions PK" />
+                    <Button variant="subtle" className="h-10 rounded-xl px-3 text-xs" type="button">+ New</Button>
+                  </div>
+                  </Field>
+                  <Field label="Phone">
+                    <Input value={invoice.customerPhone} onChange={(event) => update('customerPhone', event.target.value)} placeholder="+92 300 1234567" />
+                  </Field>
+                  <Field label="Email">
+                    <Input type="email" value={invoice.customerEmail} onChange={(event) => update('customerEmail', event.target.value)} placeholder="billing@example.com" />
+                  </Field>
+                  <Field label="NTN / CNIC">
+                    <Input value={invoice.customerTaxId} onChange={(event) => update('customerTaxId', event.target.value)} placeholder="9876543-2" />
+                  </Field>
+                  <Field label="Address" className="md:col-span-2">
+                    <Input value={invoice.customerAddress} onChange={(event) => update('customerAddress', event.target.value)} placeholder="Street, city, country" />
+                  </Field>
+                  <Field label="Customer Notes" className="md:col-span-3">
+                    <TextArea value={invoice.customerNotes} onChange={(event) => update('customerNotes', event.target.value)} placeholder="Add any notes for this customer..." />
+                  </Field>
+                </>
+              )}
             </div>
           </SectionCard>
 
-          <SectionCard number="2" title="Invoice Information">
+          <SectionCard number="2" title={isSchool ? 'Fee Bill Information' : 'Invoice Information'}>
             <div className="grid gap-3 md:grid-cols-4">
-              <Field label="Invoice Number">
+              <Field label={isSchool ? 'Fee Bill Number' : 'Invoice Number'}>
                 <Input value={invoice.invoiceNumber} onChange={(event) => update('invoiceNumber', event.target.value)} />
               </Field>
-              <Field label="Invoice Date">
+              <Field label={isSchool ? 'Bill Date' : 'Invoice Date'}>
                 <Input type="date" value={invoice.issueDate} onChange={(event) => update('issueDate', event.target.value)} />
               </Field>
               <Field label="Due Date">
@@ -318,14 +423,20 @@ export default function InvoiceCreatePage() {
               <Field label="Currency">
                 <CurrencySelector value={invoice.currency} onChange={(value) => update('currency', value)} />
               </Field>
-              <Field label="Payment Terms">
+              <Field label={isSchool ? 'Payment Method' : 'Payment Terms'}>
+                {isSchool ? (
+                  <Select value={invoice.paymentMethod} onChange={(event) => update('paymentMethod', event.target.value)}>
+                    {PAYMENT_METHODS.map((method) => <option key={method}>{method}</option>)}
+                  </Select>
+                ) : (
                 <Select value={invoice.paymentTerms} onChange={(event) => update('paymentTerms', event.target.value)}>
                   {PAYMENT_TERMS.map((term) => <option key={term}>{term}</option>)}
                 </Select>
+                )}
               </Field>
-              <Field label="Invoice Status">
+              <Field label={isSchool ? 'Status' : 'Invoice Status'}>
                 <Select value={invoice.status} onChange={(event) => update('status', event.target.value)}>
-                  {INVOICE_STATUS_OPTIONS.map((status) => <option key={status}>{status}</option>)}
+                  {(isSchool ? ['Draft', 'Pending', 'Partial Paid', 'Paid', 'Overdue'] : INVOICE_STATUS_OPTIONS).map((status) => <option key={status}>{status}</option>)}
                 </Select>
               </Field>
             </div>
@@ -333,8 +444,9 @@ export default function InvoiceCreatePage() {
 
           <SectionCard
             number="3"
-            title="Items"
+            title={isSchool ? 'Fee Components' : 'Items'}
             action={
+              isSchool ? null :
               <div className="flex items-center gap-2">
                 <span className="text-xs font-semibold text-slate-500">Amounts are</span>
                 <Select className="h-9 w-40 rounded-xl text-xs" value="Tax Exclusive" readOnly>
@@ -343,6 +455,30 @@ export default function InvoiceCreatePage() {
               </div>
             }
           >
+            {isSchool ? (
+              <div className="grid gap-3 md:grid-cols-4">
+                {[
+                  ['Tuition Fee', 'tuitionFee'],
+                  ['Admission Fee', 'admissionFee'],
+                  ['Exam Fee', 'examFee'],
+                  ['Transport Fee', 'transportFee'],
+                  ['Other Charges', 'otherCharges'],
+                  ['Discount', 'discount'],
+                  ['Fine/Late Fee', 'fineLateFee'],
+                  ['Paid Amount', 'paidAmount'],
+                ].map(([label, key]) => (
+                  <Field key={key} label={label}>
+                    <Input
+                      inputMode="decimal"
+                      value={key === 'paidAmount' ? invoice.amountPaid || '' : invoice[key] || ''}
+                      onChange={(event) => updateSchoolFee(key, event.target.value)}
+                      placeholder="0"
+                    />
+                  </Field>
+                ))}
+              </div>
+            ) : (
+              <>
             <div className="overflow-x-auto">
               <table className="min-w-[1060px] w-full text-left text-xs">
                 <thead className="text-slate-500">
@@ -421,6 +557,8 @@ export default function InvoiceCreatePage() {
                 Add Bulk Items
               </Button>
             </div>
+              </>
+            )}
           </SectionCard>
 
           <div className="grid gap-4 xl:grid-cols-2 2xl:grid-cols-[minmax(0,1fr)_minmax(280px,0.55fr)_minmax(330px,0.68fr)]">
@@ -433,14 +571,14 @@ export default function InvoiceCreatePage() {
                   <input className="sr-only" type="file" onChange={(event) => update('attachmentName', event.target.files?.[0]?.name || '')} />
                 </label>
                 <label>
-                  <OptionTile title="Recurring Invoice" detail="Set recurrence" active={invoice.recurring} />
+                  <OptionTile title={isSchool ? 'Recurring Fee Bill' : 'Recurring Invoice'} detail="Set recurrence" active={invoice.recurring} />
                   <input className="sr-only" type="checkbox" checked={invoice.recurring} onChange={(event) => update('recurring', event.target.checked)} />
                 </label>
-                <OptionTile title="Invoice Template" detail={invoice.template}>
+                <OptionTile title={isSchool ? 'Fee Bill Template' : 'Invoice Template'} detail={invoice.template}>
                   <HiOutlineEye className="h-4 w-4" />
                 </OptionTile>
                 <OptionTile title="Signature" detail={invoice.signatureName || 'Add signature'} />
-                <Field label="Invoice Template" className="sm:col-span-2">
+                <Field label={isSchool ? 'Fee Bill Template' : 'Invoice Template'} className="sm:col-span-2">
                   <Select value={invoice.template} onChange={(event) => update('template', event.target.value)}>
                     {INVOICE_TEMPLATES.map((template) => <option key={template}>{template}</option>)}
                   </Select>
@@ -509,10 +647,10 @@ export default function InvoiceCreatePage() {
             </Button>
             <Button variant="subtle" className="h-10 rounded-xl" type="button" onClick={showPreview}>
               <HiOutlineEye className="h-4 w-4" />
-              Preview
+              {isSchool ? 'Preview Fee Bill' : 'Preview'}
             </Button>
             <Button className="h-10 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600" type="button" disabled={submitting} onClick={() => submitInvoice()}>
-              {submitting ? 'Saving...' : previewSeen ? 'Save Final Invoice' : 'Next -> Preview'}
+              {submitting ? 'Saving...' : previewSeen ? (isSchool ? 'Save Final Fee Bill' : 'Save Final Invoice') : 'Next -> Preview'}
             </Button>
           </div>
         </main>
@@ -531,7 +669,7 @@ export default function InvoiceCreatePage() {
           >
             <div className="flex shrink-0 flex-col gap-3 border-b border-slate-200 bg-white px-4 py-4 sm:px-5 lg:flex-row lg:items-center lg:justify-between">
               <div className="min-w-0">
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-indigo-600">Invoice Preview</p>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-indigo-600">{isSchool ? 'Fee Bill Preview' : 'Invoice Preview'}</p>
                 <h2 className="mt-1 truncate text-xl font-black tracking-tight text-slate-950">{invoice.invoiceNumber}</h2>
               </div>
               <div className="flex flex-wrap gap-2">

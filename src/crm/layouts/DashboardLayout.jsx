@@ -299,9 +299,10 @@ export default function DashboardLayout() {
     isAuthenticated &&
     !userLoading &&
     Boolean(userDoc) &&
-    currentModule?.key === 'team' &&
+    Boolean(currentModule) &&
     !developerOverride &&
-    !teamOverride
+    ((currentModule?.key === 'team' && !teamOverride && !workspaceAccess.hasModulePermission('team', 'view')) ||
+      (workspaceAccess.isStaff && !workspaceAccess.hasModulePermission(currentModule.key, 'view')))
   const mobileBlocked = ready && isAuthenticated && isMobileScreen
   const onboardingOpen = Boolean(ready && userId && !userLoading && !isStaff && userDoc?.onboardingCompleted !== true)
 

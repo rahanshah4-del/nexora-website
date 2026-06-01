@@ -463,6 +463,85 @@ export function labelForBusinessModule(moduleKey, type) {
   return workspace.labels?.[moduleKey] || module?.label || moduleKey
 }
 
+export const modulePermissionActions = ['view', 'create', 'edit', 'delete', 'export', 'approve']
+
+export const modulePermissionActionLabels = {
+  view: 'View',
+  create: 'Create',
+  edit: 'Edit',
+  delete: 'Delete',
+  export: 'Export',
+  approve: 'Approve',
+}
+
+export const legacyPermissionAliases = {
+  dashboard: ['dashboard'],
+  customers: ['customerManagement'],
+  leads: ['leadsManagement'],
+  salesPipeline: ['deals', 'pipeline', 'salesPipeline'],
+  followUps: ['followUpEdit', 'followUpDelete'],
+  team: ['manageTeam', 'teamManagement', 'settingsAccess'],
+  hr: ['hrDashboard'],
+  invoices: ['invoices', 'manageBilling'],
+  payments: ['payments', 'manageBilling', 'invoices'],
+  expenses: ['expenses'],
+  accounts: ['accounts', 'manageBilling'],
+  accountStatements: ['accountStatements', 'reports'],
+  approvals: ['approveRequests', 'approvals'],
+  support: ['support'],
+  activity: ['activityLogs'],
+  analytics: ['analytics', 'reports'],
+  notifications: ['notifications'],
+  reports: ['reports', 'viewReports'],
+  settings: ['settingsAccess'],
+}
+
+export function modulePermissionKey(moduleKey, action = 'view') {
+  return `module.${moduleKey}.${action}`
+}
+
+export function moduleViewPermissionKey(moduleKey) {
+  return modulePermissionKey(moduleKey, 'view')
+}
+
+export function permissionModuleDefinitions({ businessType, plan = 'Business', developerOverride = false, teamOverride = true, enabledModules, onboardingCompleted = true } = {}) {
+  return selectedModulesForSidebar({
+    enabledModules,
+    onboardingCompleted,
+    plan,
+    businessType,
+    developerOverride,
+    teamOverride,
+  }).map((module) => ({
+    key: module.key,
+    label: labelForBusinessModule(module.key, businessType),
+    route: module.route,
+    comingSoon: Boolean(module.comingSoon),
+  }))
+}
+
+export function permissionKeysForBusiness(options = {}) {
+  return permissionModuleDefinitions(options).flatMap((module) =>
+    modulePermissionActions.map((action) => ({
+      key: modulePermissionKey(module.key, action),
+      moduleKey: module.key,
+      moduleLabel: module.label,
+      action,
+      actionLabel: modulePermissionActionLabels[action],
+      label: `${module.label} - ${modulePermissionActionLabels[action]}`,
+      route: module.route,
+      comingSoon: module.comingSoon,
+    })),
+  )
+}
+
+export function mapLegacyPermissionToModule(row = {}, moduleKey, action = 'view') {
+  const direct = row[modulePermissionKey(moduleKey, action)]
+  if (typeof direct === 'boolean') return direct
+  if (action !== 'view') return false
+  return (legacyPermissionAliases[moduleKey] || []).some((key) => Boolean(row[key]))
+}
+
 export function getRecommendedModules(type) {
   const normalized = normalizeBusinessType(type)
   return Array.from(new Set([...(recommendationMap[normalized] || recommendationMap['General CRM']), ...alwaysEnabledModules, 'approvals']))
@@ -516,6 +595,7 @@ export function selectedModulesForSidebar({ enabledModules, onboardingCompleted,
   const selected = new Set(onboardingCompleted ? businessKeys : Array.isArray(enabledModules) && enabledModules.length ? enabledModules : businessKeys)
   return moduleCatalog.filter((module) => {
     if (module.key === 'subscriptions') return false
+    if (module.key === 'payments') return false
     if (module.alwaysEnabled) return selected.has(module.key) || businessKeys.includes(module.key)
     if (module.comingSoon) return businessKeys.includes(module.key)
     if (!moduleAllowedByPlan(module.key, plan) && !(module.key === 'team' && teamOverride)) return false

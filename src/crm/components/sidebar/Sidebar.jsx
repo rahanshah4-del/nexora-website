@@ -160,12 +160,14 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
       const navItem = orderedSidebarItems.find((item) => item.to === module.route)
       return {
         ...(navItem || module),
+        key: module.key,
         to: module.route,
         label: module.label,
         comingSoon: module.comingSoon,
       }
     }).filter((item) => {
-      if (item.to === '/app/team' && !developerOverride && !access.isAdmin && !access.hasPermission('settingsAccess')) return false
+      if (!developerOverride && access.isStaff && !access.hasModulePermission(item.key, 'view')) return false
+      if (item.to === '/app/team' && !developerOverride && !access.isAdmin && !access.hasModulePermission('team', 'view')) return false
       return allowedRoutes.has(item.to) || item.comingSoon
     })
   }, [access, accessPlan, businessType, developerOverride, userDoc?.enabledModules, userDoc?.onboardingCompleted])

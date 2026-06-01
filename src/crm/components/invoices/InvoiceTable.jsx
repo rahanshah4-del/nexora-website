@@ -62,7 +62,7 @@ function actionAccess(permissions, invoice) {
   }
 }
 
-function InvoiceActionsMenu({ invoice, permissions, onOpen, onAction }) {
+function InvoiceActionsMenu({ invoice, permissions, onOpen, onAction, schoolMode = false }) {
   const [open, setOpen] = useState(false)
   const [position, setPosition] = useState({ top: 0, left: 0 })
   const triggerRef = useRef(null)
@@ -133,9 +133,9 @@ function InvoiceActionsMenu({ invoice, permissions, onOpen, onAction }) {
             style={{ top: position.top, left: position.left }}
             role="menu"
           >
-            <ActionItem icon={HiOutlineEye} label="View Invoice" disabled={!access.canView} onClick={() => run('view')} />
-            <ActionItem icon={HiOutlinePencilSquare} label="Edit Invoice" disabled={!access.canEdit} onClick={() => run('edit')} />
-            <ActionItem icon={HiOutlineDocumentDuplicate} label="Duplicate Invoice" disabled={!access.canDuplicate} onClick={() => run('duplicate')} />
+            <ActionItem icon={HiOutlineEye} label={schoolMode ? 'View Fee Bill' : 'View Invoice'} disabled={!access.canView} onClick={() => run('view')} />
+            <ActionItem icon={HiOutlinePencilSquare} label={schoolMode ? 'Edit Fee Bill' : 'Edit Invoice'} disabled={!access.canEdit} onClick={() => run('edit')} />
+            <ActionItem icon={HiOutlineDocumentDuplicate} label={schoolMode ? 'Duplicate Fee Bill' : 'Duplicate Invoice'} disabled={!access.canDuplicate} onClick={() => run('duplicate')} />
             <ActionItem icon={HiOutlineArrowDownTray} label="Download PDF" disabled={!access.canDownload} onClick={() => run('pdf')} />
             <ActionItem icon={HiOutlinePrinter} label="Print" disabled={!access.canPrint} onClick={() => run('print')} />
             <ActionItem icon={HiOutlineEnvelope} label="Send Email" disabled={!access.canSendEmail} onClick={() => run('email')} />
@@ -143,8 +143,8 @@ function InvoiceActionsMenu({ invoice, permissions, onOpen, onAction }) {
             <ActionItem icon={HiOutlineCheckCircle} label="Mark as Paid" disabled={!access.canMarkPaid} onClick={() => run('mark_paid')} />
             <ActionItem label="Mark as Partial Paid" disabled={!access.canMarkPartial} onClick={() => run('partial_paid')} />
             <ActionItem icon={HiOutlineClock} label="Send for Approval" disabled={!access.canSendApproval} onClick={() => run('send_approval')} />
-            <ActionItem icon={HiOutlineXCircle} label="Cancel Invoice" disabled={!access.canCancel} danger onClick={() => run('cancel')} />
-            <ActionItem icon={HiOutlineTrash} label="Delete Invoice" disabled={!access.canDelete} danger onClick={() => run('delete')} />
+            <ActionItem icon={HiOutlineXCircle} label={schoolMode ? 'Cancel Fee Bill' : 'Cancel Invoice'} disabled={!access.canCancel} danger onClick={() => run('cancel')} />
+            <ActionItem icon={HiOutlineTrash} label={schoolMode ? 'Delete Fee Bill' : 'Delete Invoice'} disabled={!access.canDelete} danger onClick={() => run('delete')} />
           </div>,
           document.body,
         )
@@ -157,17 +157,18 @@ function InvoiceTable({
   invoices,
   currency,
   permissions = {},
+  schoolMode = false,
   onOpen,
   onAction,
 }) {
   const columns = useMemo(() => [
-    { key: 'invoiceNumber', header: 'Invoice Number', cell: (r) => <span className="font-black text-slate-950">{r.invoiceNumber || r.id}</span> },
+    { key: 'invoiceNumber', header: schoolMode ? 'Fee Bill No' : 'Invoice Number', cell: (r) => <span className="font-black text-slate-950">{r.invoiceNumber || r.id}</span> },
     {
       key: 'customerName',
-      header: 'Customer',
+      header: schoolMode ? 'Student' : 'Customer',
       cell: (r) => (
         <span>
-          <span className="block font-bold text-slate-950">{r.customerName || 'Customer'}</span>
+          <span className="block font-bold text-slate-950">{r.customerName || (schoolMode ? 'Student' : 'Customer')}</span>
           <span className="block text-xs text-slate-500">{r.customerEmail || r.customerPhone || '-'}</span>
         </span>
       ),
@@ -184,17 +185,17 @@ function InvoiceTable({
     },
     {
       key: 'totalUsd',
-      header: 'Amount',
+      header: schoolMode ? 'Fee Amount' : 'Amount',
       cell: (r) => <span className="font-black text-slate-950">{formatCurrency(r.total ?? r.totalUsd ?? 0, r.currency || currency || 'PKR')}</span>,
     },
     {
       key: 'amountPaid',
-      header: 'Payment',
+      header: schoolMode ? 'Paid Fee' : 'Payment',
       cell: (r) => <span className="font-semibold text-emerald-700">{formatCurrency(invoicePaidAmount(r), r.currency || currency || 'PKR')}</span>,
     },
     {
       key: 'balanceDue',
-      header: 'Balance',
+      header: schoolMode ? 'Pending Fee' : 'Balance',
       cell: (r) => <span className="font-semibold text-slate-700">{formatCurrency(r.balanceDue ?? Math.max(invoiceTotal(r) - invoicePaidAmount(r), 0), r.currency || currency || 'PKR')}</span>,
     },
     {
@@ -207,7 +208,7 @@ function InvoiceTable({
               variant="subtle"
               className="h-9 rounded-xl px-2.5 py-2 text-xs"
               type="button"
-              title="View invoice"
+              title={schoolMode ? 'View fee bill' : 'View invoice'}
               onClick={(event) => {
                 event.preventDefault()
                 onOpen?.(r)
@@ -215,12 +216,12 @@ function InvoiceTable({
             >
               <HiOutlineEye className="h-4 w-4" />
             </Button>
-            <InvoiceActionsMenu invoice={r} permissions={permissions} onOpen={onOpen} onAction={onAction} />
+            <InvoiceActionsMenu invoice={r} permissions={permissions} schoolMode={schoolMode} onOpen={onOpen} onAction={onAction} />
           </div>
         )
       },
     },
-  ], [currency, onAction, onOpen, permissions])
+  ], [currency, onAction, onOpen, permissions, schoolMode])
 
   return <Table columns={columns} rows={invoices} />
 }

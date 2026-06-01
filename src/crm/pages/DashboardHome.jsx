@@ -23,6 +23,7 @@ import { useActivityLogs } from '../hooks/useActivityLogs.js'
 import { usePipelineDeals } from '../hooks/usePipelineDeals.js'
 import { useSupportTickets } from '../hooks/useSupportTickets.js'
 import { useExpenses } from '../hooks/useExpenses.js'
+import { useUser } from '../hooks/useUser.js'
 import {
   calculateConversionRate,
   calculatePipelineValue,
@@ -34,6 +35,7 @@ import {
 } from '../lib/calculations.js'
 import { formatCompact, formatCurrency, formatPercentValue, toFiniteNumber } from '../utils/format.js'
 import { cn } from '../utils/cn.js'
+import { normalizeBusinessType } from '../data/moduleAccess.js'
 
 function dateFromValue(value) {
   if (!value) return null
@@ -230,6 +232,8 @@ export default function DashboardHomePage() {
   const pipelineApi = usePipelineDeals()
   const ticketsApi = useSupportTickets()
   const expensesApi = useExpenses()
+  const { businessType } = useUser()
+  const isSchool = normalizeBusinessType(businessType) === 'School ERP'
 
   const loading =
     invoicesApi.loading ||
@@ -327,25 +331,25 @@ export default function DashboardHomePage() {
     () => [
       {
         icon: HiOutlineCurrencyDollar,
-        label: 'Revenue',
+        label: isSchool ? 'Monthly Fee Collection' : 'Revenue',
         value: formatCurrency(totalRevenueUsd, currency),
-        helper: `${formatCompact(paidPayments.length || paidInvoices.length)} paid records`,
+        helper: isSchool ? `${formatCompact(paidPayments.length || paidInvoices.length)} paid fee records` : `${formatCompact(paidPayments.length || paidInvoices.length)} paid records`,
         tone: 'sky',
         loading: invoicesApi.loading,
       },
       {
         icon: HiOutlineUserGroup,
-        label: 'Customers',
+        label: isSchool ? 'Total Students' : 'Customers',
         value: formatCompact(dashboardStats.totalCustomers),
-        helper: 'Active customers',
+        helper: isSchool ? 'Active students' : 'Active customers',
         tone: 'cyan',
         loading: customersApi.loading,
       },
       {
         icon: HiOutlineBolt,
-        label: 'Leads Pipeline',
+        label: isSchool ? 'Pending Fees' : 'Leads Pipeline',
         value: formatCompact(dashboardStats.activeLeads),
-        helper: `${formatCompact(hotLeads.length)} high intent leads`,
+        helper: isSchool ? formatCurrency(pendingRevenueUsd, currency) : `${formatCompact(hotLeads.length)} high intent leads`,
         tone: 'violet',
         loading: leadsApi.loading,
       },
@@ -371,16 +375,18 @@ export default function DashboardHomePage() {
       paidPayments.length,
       ticketsApi.loading,
       totalRevenueUsd,
+      isSchool,
+      pendingRevenueUsd,
     ],
   )
 
   const invoiceRows = useMemo(
     () => [
-      ['Paid invoices', formatCompact(paidInvoices.length), 'Closed revenue'],
-      ['Pending invoices', formatCompact(dashboardStats.pendingInvoices), formatCurrency(pendingRevenueUsd, currency)],
-      ['Total invoices', formatCompact(invoicesApi.invoices.length), 'Tracked in workspace'],
+      [isSchool ? 'Paid fee bills' : 'Paid invoices', formatCompact(paidInvoices.length), isSchool ? 'Closed fees' : 'Closed revenue'],
+      [isSchool ? 'Pending fees' : 'Pending invoices', formatCompact(dashboardStats.pendingInvoices), formatCurrency(pendingRevenueUsd, currency)],
+      [isSchool ? 'Total fee bills' : 'Total invoices', formatCompact(invoicesApi.invoices.length), 'Tracked in workspace'],
     ],
-    [currency, dashboardStats.pendingInvoices, invoicesApi.invoices.length, paidInvoices.length, pendingRevenueUsd],
+    [currency, dashboardStats.pendingInvoices, invoicesApi.invoices.length, isSchool, paidInvoices.length, pendingRevenueUsd],
   )
 
   const healthRows = useMemo(
@@ -394,13 +400,13 @@ export default function DashboardHomePage() {
 
   const summaryRows = useMemo(
     () => [
-      { icon: HiOutlineCheckCircle, label: 'Customers', value: formatCompact(dashboardStats.totalCustomers) },
-      { icon: HiOutlineClock, label: 'Pending revenue', value: formatCurrency(pendingRevenueUsd, currency) },
+      { icon: HiOutlineCheckCircle, label: isSchool ? 'Total Students' : 'Customers', value: formatCompact(dashboardStats.totalCustomers) },
+      { icon: HiOutlineClock, label: isSchool ? 'Pending Fees' : 'Pending revenue', value: formatCurrency(pendingRevenueUsd, currency) },
       { icon: HiOutlineCurrencyDollar, label: 'Expenses', value: formatCurrency(dashboardStats.expenses, currency) },
       { icon: HiOutlineChartBar, label: 'Profit', value: formatCurrency(dashboardStats.profit, currency) },
       { icon: HiOutlineLifebuoy, label: 'Open support', value: formatCompact(openTickets.length) },
     ],
-    [currency, dashboardStats.expenses, dashboardStats.profit, dashboardStats.totalCustomers, openTickets.length, pendingRevenueUsd],
+    [currency, dashboardStats.expenses, dashboardStats.profit, dashboardStats.totalCustomers, isSchool, openTickets.length, pendingRevenueUsd],
   )
 
   return (
@@ -415,7 +421,7 @@ export default function DashboardHomePage() {
                 CRM command center
               </h1>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500 dark:text-slate-300">
-                Revenue, customers, leads, invoices, and support health in one clean workspace view.
+                {isSchool ? 'Students, fee collection, pending fees, expenses, and school readiness in one clean workspace view.' : 'Revenue, customers, leads, invoices, and support health in one clean workspace view.'}
               </p>
             </div>
             <div className="grid min-w-0 gap-2 sm:grid-cols-2 lg:w-[22rem]">
@@ -439,20 +445,20 @@ export default function DashboardHomePage() {
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-slate-950">Add your first record</p>
-                  <p className="mt-1 text-sm text-slate-600">Start by adding customers or creating invoices.</p>
+                  <p className="mt-1 text-sm text-slate-600">{isSchool ? 'Start by adding students or creating fee bills.' : 'Start by adding customers or creating invoices.'}</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <Link
                     to="/app/customers"
                     className="focus-ring inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors duration-100 hover:bg-sky-700"
                   >
-                    <HiOutlinePlus className="h-4 w-4" /> Add customer
+                    <HiOutlinePlus className="h-4 w-4" /> {isSchool ? 'Add student' : 'Add customer'}
                   </Link>
                   <Link
                     to="/app/invoices"
                     className="focus-ring inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-colors duration-100 hover:border-sky-200"
                   >
-                    Create invoice
+                    {isSchool ? 'Create fee bill' : 'Create invoice'}
                   </Link>
                 </div>
               </div>
@@ -487,8 +493,8 @@ export default function DashboardHomePage() {
       <section className="grid min-w-0 gap-5 lg:grid-cols-12">
         <Card className="rounded-[1.6rem] p-5 lg:col-span-7">
           <SectionTitle
-            eyebrow="Revenue Overview"
-            title="Collected revenue trend"
+            eyebrow={isSchool ? 'Fees Overview' : 'Revenue Overview'}
+            title={isSchool ? 'Monthly fee collection trend' : 'Collected revenue trend'}
             action={<Badge variant="info">{formatCurrency(totalRevenueUsd, currency)}</Badge>}
           />
           <div className="mt-5">
@@ -498,8 +504,8 @@ export default function DashboardHomePage() {
 
         <Card className="rounded-[1.6rem] p-5 lg:col-span-5">
           <SectionTitle
-            eyebrow="Sales Performance"
-            title="Weekly paid invoices"
+            eyebrow={isSchool ? 'Billing Performance' : 'Sales Performance'}
+            title={isSchool ? 'Weekly paid fee bills' : 'Weekly paid invoices'}
             action={<Badge variant="purple">{`${formatCompact(paidInvoices.length)} paid`}</Badge>}
           />
           <div className="mt-5">
@@ -511,8 +517,8 @@ export default function DashboardHomePage() {
       <section className="grid min-w-0 gap-5 lg:grid-cols-12">
         <Card className="rounded-[1.6rem] p-5 lg:col-span-4">
           <SectionTitle
-            eyebrow="Customers"
-            title="Customer snapshot"
+            eyebrow={isSchool ? 'Students' : 'Customers'}
+            title={isSchool ? 'Student snapshot' : 'Customer snapshot'}
             action={<Link to="/app/customers" className="text-xs font-semibold text-sky-700 hover:text-sky-900">View all</Link>}
           />
           <div className="mt-5 space-y-3">
@@ -524,11 +530,11 @@ export default function DashboardHomePage() {
                   key={customer.id}
                   label={safeText(customer.name)}
                   value={safeText(customer.status, 'Active')}
-                  badge={safeText(customer.company, customer.email || 'Customer')}
+                  badge={safeText(customer.company, customer.email || (isSchool ? 'Student' : 'Customer'))}
                 />
               ))
             ) : (
-              <InlineEmpty title="No customers yet" description="Start by adding customers to build your CRM view." />
+              <InlineEmpty title={isSchool ? 'No students yet' : 'No customers yet'} description={isSchool ? 'Start by adding students to build your School ERP view.' : 'Start by adding customers to build your CRM view.'} />
             )}
           </div>
         </Card>
@@ -560,7 +566,7 @@ export default function DashboardHomePage() {
 
         <Card className="rounded-[1.6rem] p-5 lg:col-span-4">
           <SectionTitle
-            eyebrow="Invoices"
+            eyebrow={isSchool ? 'Fees' : 'Invoices'}
             title="Billing status"
             action={<Link to="/app/invoices" className="text-xs font-semibold text-sky-700 hover:text-sky-900">Manage</Link>}
           />
@@ -570,7 +576,7 @@ export default function DashboardHomePage() {
             ) : invoicesApi.invoices.length ? (
               invoiceRows.map(([label, value, badge]) => <DataRow key={label} label={label} value={value} badge={badge} />)
             ) : (
-              <InlineEmpty title="No invoices yet" description="Create invoices to track paid and pending revenue." />
+              <InlineEmpty title={isSchool ? 'No fee bills yet' : 'No invoices yet'} description={isSchool ? 'Create fee bills to track paid fees and dues.' : 'Create invoices to track paid and pending revenue.'} />
             )}
           </div>
         </Card>
@@ -601,10 +607,20 @@ export default function DashboardHomePage() {
         <Card className="rounded-[1.6rem] p-5 lg:col-span-4">
           <SectionTitle eyebrow="Quick Actions" title="Move work forward" />
           <div className="mt-5 grid gap-3">
-            <QuickAction to="/app/customers" icon={HiOutlineUserGroup} title="Add customer" detail="Create a CRM account" />
-            <QuickAction to="/app/leads" icon={HiOutlineSparkles} title="Add lead" detail="Capture a new opportunity" />
-            <QuickAction to="/app/invoices" icon={HiOutlineDocumentText} title="Create invoice" detail="Start billing flow" />
+            <QuickAction to="/app/customers" icon={HiOutlineUserGroup} title={isSchool ? 'Add student' : 'Add customer'} detail={isSchool ? 'Create a student profile' : 'Create a CRM account'} />
+            {isSchool ? (
+              <>
+                <QuickAction to="/app/invoices" icon={HiOutlineDocumentText} title="Create fee bill" detail="Start fee billing" />
+                <QuickAction to="/app/reports" icon={HiOutlineChartBar} title="Attendance Coming Soon" detail="Planned School ERP module" />
+              </>
+            ) : (
+              <>
+                <QuickAction to="/app/leads" icon={HiOutlineSparkles} title="Add lead" detail="Capture a new opportunity" />
+                <QuickAction to="/app/invoices" icon={HiOutlineDocumentText} title="Create invoice" detail="Start billing flow" />
+              </>
+            )}
             <QuickAction to="/app/reports" icon={HiOutlineChartBar} title="Open reports" detail="Review performance" />
+            {isSchool ? <QuickAction to="/app/reports" icon={HiOutlineSparkles} title="Exams Coming Soon" detail="Planned School ERP module" /> : null}
           </div>
         </Card>
 
@@ -614,12 +630,12 @@ export default function DashboardHomePage() {
             <DataRow
               label="Data setup"
               value={hasAnyData ? 'Active' : '0 records'}
-              badge={hasAnyData ? 'Workspace has records' : 'Start with customers or invoices'}
+              badge={hasAnyData ? 'Workspace has records' : isSchool ? 'Start with students or fee bills' : 'Start with customers or invoices'}
             />
             <DataRow
-              label="Revenue engine"
+              label={isSchool ? 'Fee collection' : 'Revenue engine'}
               value={formatCurrency(totalRevenueUsd, currency)}
-              badge={paidInvoices.length || paidPayments.length ? 'Paid records found' : 'Create invoices to activate'}
+              badge={paidInvoices.length || paidPayments.length ? 'Paid records found' : isSchool ? 'Create fee bills to activate' : 'Create invoices to activate'}
             />
             <DataRow
               label="Support loop"

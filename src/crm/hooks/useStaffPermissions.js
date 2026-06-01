@@ -4,13 +4,13 @@ import { createUserWithEmailAndPassword, getAuth, signOut } from 'firebase/auth'
 import { collection, doc, onSnapshot, serverTimestamp, setDoc } from 'firebase/firestore'
 import { db, firebaseConfig, firebaseEnabled } from '../lib/firebase.js'
 import { useUser } from './useUser.js'
-import { useWorkspaceAccess, workspacePermissionKeys } from './useWorkspaceAccess.js'
+import { useWorkspaceAccess, workspacePermissionKeysForBusiness } from './useWorkspaceAccess.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 import { clientSafeMessage } from '../utils/messages.js'
-import { businessPermissionKey, normalizeBusinessType } from '../data/moduleAccess.js'
+import { businessPermissionKey, mapLegacyPermissionToModule, normalizeBusinessType } from '../data/moduleAccess.js'
 
-function defaultPermissions() {
-  return Object.fromEntries(workspacePermissionKeys.map((item) => [item.key, false]))
+function defaultPermissions(permissionKeys) {
+  return Object.fromEntries(permissionKeys.map((item) => [item.key, false]))
 }
 
 function slug(value) {
@@ -31,21 +31,33 @@ function normalizeStaffRole(role) {
   return 'staff'
 }
 
-function permissionsForBusiness(row = {}, businessType) {
-  const key = businessPermissionKey(businessType)
-  if (row.businessPermissions && typeof row.businessPermissions === 'object') {
-    return { ...defaultPermissions(), ...(row.businessPermissions[key] || {}), __businessPermissions: row.businessPermissions }
+function normalizePermissionSet(raw = {}, permissionKeys = []) {
+  const next = defaultPermissions(permissionKeys)
+  for (const item of permissionKeys) {
+    if (typeof raw[item.key] === 'boolean') {
+      next[item.key] = raw[item.key]
+    } else {
+      next[item.key] = mapLegacyPermissionToModule(raw, item.moduleKey, item.action)
+    }
   }
-  return key === 'general-crm' ? { ...defaultPermissions(), ...row, __businessPermissions: {} } : { ...defaultPermissions(), __businessPermissions: {} }
+  return next
 }
 
-function rootPermissionUnion(existing = {}, nextBusinessPermissions = {}) {
-  const merged = defaultPermissions()
-  for (const key of workspacePermissionKeys.map((item) => item.key)) {
+function permissionsForBusiness(row = {}, businessType, permissionKeys) {
+  const key = businessPermissionKey(businessType)
+  if (row.businessPermissions && typeof row.businessPermissions === 'object') {
+    return { ...normalizePermissionSet(row.businessPermissions[key] || {}, permissionKeys), __businessPermissions: row.businessPermissions }
+  }
+  return key === 'general-crm' ? { ...normalizePermissionSet(row, permissionKeys), __businessPermissions: {} } : { ...defaultPermissions(permissionKeys), __businessPermissions: {} }
+}
+
+function rootPermissionUnion(existing = {}, nextBusinessPermissions = {}, permissionKeys = []) {
+  const merged = defaultPermissions(permissionKeys)
+  for (const key of permissionKeys.map((item) => item.key)) {
     merged[key] = Boolean(existing[key])
   }
   for (const permissions of Object.values(nextBusinessPermissions || {})) {
-    for (const key of workspacePermissionKeys.map((item) => item.key)) {
+    for (const key of permissionKeys.map((item) => item.key)) {
       merged[key] = Boolean(merged[key] || permissions?.[key])
     }
   }
@@ -69,8 +81,9 @@ async function createSecondaryAuthUser(email, password) {
 }
 
 export function useStaffPermissions() {
-  const { userId, workspaceId, businessType, userDoc, firebaseUser, plan } = useUser()
+  const { userId, workspaceId, businessType, userDoc, firebaseUser, plan, accessPlan } = useUser()
   const access = useWorkspaceAccess()
+  const currentPermissionKeys = useMemo(() => workspacePermissionKeysForBusiness(businessType, accessPlan || plan), [accessPlan, businessType, plan])
   const [staff, setStaff] = useState([])
   const [permissions, setPermissions] = useState({})
   const [loading, setLoading] = useState(true)
@@ -108,7 +121,7 @@ export function useStaffPermissions() {
     const unsubPermissions = onSnapshot(
       permissionsRef,
       (snap) => {
-        setPermissions(Object.fromEntries(snap.docs.map((item) => [item.id, permissionsForBusiness(item.data(), businessType)])))
+        setPermissions(Object.fromEntries(snap.docs.map((item) => [item.id, permissionsForBusiness(item.data(), businessType, currentPermissionKeys)])))
       },
       () => setPermissions({}),
     )
@@ -117,7 +130,7 @@ export function useStaffPermissions() {
       unsubStaff()
       unsubPermissions()
     }
-  }, [access.isAdmin, businessType, userId, workspaceId])
+  }, [access.isAdmin, businessType, currentPermissionKeys, userId, workspaceId])
 
   return useMemo(
     () => ({
@@ -126,7 +139,7 @@ export function useStaffPermissions() {
       loading,
       error,
       canManage: access.isAdmin,
-      permissionKeys: workspacePermissionKeys,
+      permissionKeys: currentPermissionKeys,
       async createStaff(payload) {
         if (!access.isAdmin) return { ok: false, error: 'Only an owner or admin can create staff.' }
         if (!db || !workspaceId || !userId) return { ok: false, error: 'Secure Cloud Sync is not available right now.' }
@@ -147,7 +160,7 @@ export function useStaffPermissions() {
 
         const authResult = await createSecondaryAuthUser(email, password)
         const staffId = authResult.uid || payload.staffId || `staff-${slug(email) || Date.now()}`
-        const basePermissions = { ...defaultPermissions(), ...(payload.permissions || {}) }
+        const basePermissions = { ...defaultPermissions(currentPermissionKeys), ...(payload.permissions || {}) }
         const businessKey = businessPermissionKey(businessType)
         const now = serverTimestamp()
         const baseStaff = {
@@ -252,23 +265,24 @@ export function useStaffPermissions() {
       async setStaffPermission(staffId, key, value) {
         if (!access.isAdmin) return { ok: false, error: 'Only an owner or admin can update staff permissions.' }
         if (!db || !workspaceId || !userId) return { ok: false, error: 'Secure Cloud Sync is not available right now.' }
-        if (!workspacePermissionKeys.some((item) => item.key === key)) return { ok: false, error: 'Unknown permission.' }
+        if (!currentPermissionKeys.some((item) => item.key === key)) return { ok: false, error: 'Unknown permission.' }
         const staffRow = staff.find((item) => item.id === staffId)
         const existing = permissions[staffId] || {}
+        const { __businessPermissions, ...existingCurrentPermissions } = existing
         const businessKey = businessPermissionKey(businessType)
-        const existingBusinessPermissions = existing.__businessPermissions || staffRow?.businessPermissions || {}
+        const existingBusinessPermissions = __businessPermissions || staffRow?.businessPermissions || {}
         const nextBusinessPermissions = {
           ...existingBusinessPermissions,
           [businessKey]: {
-            ...defaultPermissions(),
-            ...existing,
+            ...defaultPermissions(currentPermissionKeys),
+            ...existingCurrentPermissions,
             [key]: Boolean(value),
           },
         }
         await setDoc(
           doc(db, 'workspaces', workspaceId, 'permissions', staffId),
           {
-            ...rootPermissionUnion(existing, nextBusinessPermissions),
+            ...rootPermissionUnion(existing, nextBusinessPermissions, currentPermissionKeys),
             businessType: normalizeBusinessType(businessType),
             businessPermissions: nextBusinessPermissions,
             staffId,
@@ -321,6 +335,6 @@ export function useStaffPermissions() {
         return { ok: true }
       },
     }),
-    [access, businessType, error, firebaseUser, loading, permissions, plan, staff, userDoc, userId, workspaceId],
+    [access, businessType, currentPermissionKeys, error, firebaseUser, loading, permissions, plan, staff, userDoc, userId, workspaceId],
   )
 }

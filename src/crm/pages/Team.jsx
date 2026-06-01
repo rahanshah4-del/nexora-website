@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import Card from '../components/ui/Card.jsx'
 import PageHeader from '../components/ui/PageHeader.jsx'
 import Badge from '../components/ui/Badge.jsx'
@@ -14,8 +14,10 @@ import { useTeamPermissions } from '../hooks/useTeamPermissions.js'
 import { useStaffPermissions } from '../hooks/useStaffPermissions.js'
 import { useActivityLogs } from '../hooks/useActivityLogs.js'
 import { usePreferences } from '../hooks/usePreferences.js'
+import { useUser } from '../hooks/useUser.js'
 import ActivityTimeline from '../components/activity/ActivityTimeline.jsx'
 import { clientSafeMessage } from '../utils/messages.js'
+import { modulePermissionActionLabels, modulePermissionActions, permissionModuleDefinitions } from '../data/moduleAccess.js'
 
 const roleCards = [
   { name: 'Owner', summary: 'Full workspace access. Owner permissions are always enabled.' },
@@ -27,21 +29,7 @@ const roleCards = [
   { name: 'Custom Role', summary: 'Use the permission matrix to shape a custom access profile.' },
 ]
 
-const modulePermissions = [
-  'Dashboard',
-  'Customers',
-  'Leads',
-  'Deals',
-  'Invoices',
-  'Payments',
-  'Reports',
-  'Tasks',
-  'Settings',
-  'Team Management',
-]
-
-const actionPermissions = ['View', 'Create', 'Edit', 'Delete', 'Export', 'Approve', 'Manage Billing']
-const matrixPermissionKeys = [...modulePermissions, ...actionPermissions]
+const actionPermissions = modulePermissionActions.map((action) => modulePermissionActionLabels[action])
 
 function Field({ label, children }) {
   return (
@@ -64,6 +52,55 @@ function PermissionSwitch({ label, checked, disabled, onChange }) {
         className="h-4 w-4 shrink-0 rounded border-slate-300 text-sky-600 disabled:opacity-50"
       />
     </label>
+  )
+}
+
+function groupPermissionKeys(permissionKeys = []) {
+  const groups = []
+  const byModule = new Map()
+  permissionKeys.forEach((permission) => {
+    const moduleKey = permission.moduleKey || 'general'
+    if (!byModule.has(moduleKey)) {
+      const group = {
+        key: moduleKey,
+        label: permission.moduleLabel || permission.label,
+        route: permission.route,
+        comingSoon: permission.comingSoon,
+        permissions: [],
+      }
+      byModule.set(moduleKey, group)
+      groups.push(group)
+    }
+    byModule.get(moduleKey).permissions.push(permission)
+  })
+  return groups
+}
+
+function PermissionModuleGrid({ permissionKeys, values, disabled, onChange }) {
+  const groups = useMemo(() => groupPermissionKeys(permissionKeys), [permissionKeys])
+
+  return (
+    <div className="space-y-3">
+      {groups.map((group) => (
+        <div key={group.key} className="rounded-[1.1rem] border border-slate-200/80 bg-white/70 p-3">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <p className="truncate text-xs font-bold text-slate-800">{group.label}</p>
+            {group.comingSoon ? <Badge variant="warning">Coming Soon</Badge> : null}
+          </div>
+          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+            {group.permissions.map((permission) => (
+              <PermissionSwitch
+                key={permission.key}
+                label={permission.actionLabel || permission.label}
+                checked={Boolean(values?.[permission.key])}
+                disabled={disabled}
+                onChange={(checked) => onChange?.(permission.key, checked)}
+              />
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
   )
 }
 
@@ -137,7 +174,7 @@ function RolesTab() {
   )
 }
 
-function PermissionsTab({ perms, onToast }) {
+function PermissionsTab({ perms, modulePermissions, onToast }) {
   return (
     <div className="space-y-4">
       {perms.error ? (
@@ -316,19 +353,16 @@ function AccessControlTab({ staffApi, members, onToast }) {
                 </Field>
                 <div className="grid gap-2">
                   <p className="text-xs font-semibold text-slate-600">Restrict module access</p>
-                  {staffApi.permissionKeys.map((permission) => (
-                    <PermissionSwitch
-                      key={permission.key}
-                      label={permission.label}
-                      checked={Boolean(draft.permissions[permission.key])}
-                      onChange={(checked) =>
-                        setDraft((current) => ({
-                          ...current,
-                          permissions: { ...current.permissions, [permission.key]: checked },
-                        }))
-                      }
-                    />
-                  ))}
+                  <PermissionModuleGrid
+                    permissionKeys={staffApi.permissionKeys}
+                    values={draft.permissions}
+                    onChange={(key, checked) =>
+                      setDraft((current) => ({
+                        ...current,
+                        permissions: { ...current.permissions, [key]: checked },
+                      }))
+                    }
+                  />
                 </div>
                 <Button
                   type="button"
@@ -390,19 +424,16 @@ function AccessControlTab({ staffApi, members, onToast }) {
                             </Button>
                           </div>
                         </div>
-                        <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                          {staffApi.permissionKeys.map((permission) => (
-                            <PermissionSwitch
-                              key={permission.key}
-                              label={permission.label}
-                              checked={Boolean(rowPermissions[permission.key])}
-                              disabled={!staffApi.canManage}
-                              onChange={async (checked) => {
-                                const res = await staffApi.setStaffPermission(staff.id, permission.key, checked)
-                                if (!res.ok) onToast('error', res.error || 'Failed to update permission')
-                              }}
-                            />
-                          ))}
+                        <div className="mt-3">
+                          <PermissionModuleGrid
+                            permissionKeys={staffApi.permissionKeys}
+                            values={rowPermissions}
+                            disabled={!staffApi.canManage}
+                            onChange={async (key, checked) => {
+                              const res = await staffApi.setStaffPermission(staff.id, key, checked)
+                              if (!res.ok) onToast('error', res.error || 'Failed to update permission')
+                            }}
+                          />
                         </div>
                       </div>
                     )
@@ -425,9 +456,22 @@ function AccessControlTab({ staffApi, members, onToast }) {
 }
 
 export default function TeamPage() {
+  const { businessType, accessPlan } = useUser()
   const { members, loading, source, error, permissionKeys, addMember, updateMember, deleteMember } = useTeamMembers()
   const [toast, setToast] = useState(null)
   const [tab, setTab] = useState('members')
+  const modulePermissions = useMemo(
+    () =>
+      permissionModuleDefinitions({
+        businessType,
+        plan: accessPlan,
+        developerOverride: false,
+        teamOverride: true,
+        onboardingCompleted: true,
+      }).map((module) => module.label),
+    [accessPlan, businessType],
+  )
+  const matrixPermissionKeys = useMemo(() => [...modulePermissions, ...actionPermissions], [modulePermissions])
   const perms = useTeamPermissions({ permissionKeys: matrixPermissionKeys })
   const staffApi = useStaffPermissions()
   const activity = useActivityLogs()
@@ -551,7 +595,7 @@ export default function TeamPage() {
 
         {tab === 'roles' ? <RolesTab /> : null}
 
-        {tab === 'permissions' ? <PermissionsTab perms={perms} onToast={showToast} /> : null}
+        {tab === 'permissions' ? <PermissionsTab perms={perms} modulePermissions={modulePermissions} onToast={showToast} /> : null}
 
         {tab === 'access' ? <AccessControlTab staffApi={staffApi} members={members} onToast={showToast} /> : null}
 

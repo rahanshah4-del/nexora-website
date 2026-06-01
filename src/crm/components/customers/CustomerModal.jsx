@@ -6,23 +6,51 @@ import Card from '../ui/Card.jsx'
 import Input from '../ui/Input.jsx'
 import Select from '../ui/Select.jsx'
 
-function CustomerModal({ open, onClose, onCreate }) {
+function CustomerModal({ open, onClose, onCreate, schoolMode = false }) {
   const [draft, setDraft] = useState(null)
 
   useEffect(() => {
     if (!open) return
     Promise.resolve().then(() =>
-      setDraft({
-        name: '',
-        email: '',
-        phone: '',
-        company: '',
-        customerType: 'Retail',
-        status: 'Active',
-        notes: '',
-      }),
+      setDraft(
+        schoolMode
+          ? {
+              name: '',
+              email: '',
+              phone: '',
+              company: '',
+              customerType: 'Student',
+              status: 'Active',
+              notes: '',
+              studentName: '',
+              admissionNo: '',
+              rollNo: '',
+              className: '',
+              section: '',
+              dateOfBirth: '',
+              gender: '',
+              studentPhone: '',
+              parentName: '',
+              relation: '',
+              parentPhone: '',
+              parentEmail: '',
+              address: '',
+              monthlyFee: '',
+              admissionFee: '',
+              discount: '',
+            }
+          : {
+              name: '',
+              email: '',
+              phone: '',
+              company: '',
+              customerType: 'Retail',
+              status: 'Active',
+              notes: '',
+            },
+      ),
     )
-  }, [open])
+  }, [open, schoolMode])
 
   return (
     <AnimatePresence>
@@ -47,13 +75,82 @@ function CustomerModal({ open, onClose, onCreate }) {
             <Card className="rounded-3xl p-4 sm:p-5">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-base font-semibold text-slate-900 dark:text-white">Add Customer</p>
-                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Creates a real Workspace customer record.</p>
+                  <p className="text-base font-semibold text-slate-900 dark:text-white">{schoolMode ? 'Add Student' : 'Add Customer'}</p>
+                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+                    {schoolMode ? 'Creates a student and parent record using the existing customer collection.' : 'Creates a real Workspace customer record.'}
+                  </p>
                 </div>
-                <Badge variant="purple">Customer</Badge>
+                <Badge variant="purple">{schoolMode ? 'Student' : 'Customer'}</Badge>
               </div>
 
-              {draft ? (
+              {draft && schoolMode ? (
+                <div className="mt-4 space-y-4">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">Student Information</p>
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                      {[
+                        ['Student Name *', 'studentName'],
+                        ['Admission No', 'admissionNo'],
+                        ['Roll No', 'rollNo'],
+                        ['Class', 'className'],
+                        ['Section', 'section'],
+                        ['Date of Birth', 'dateOfBirth', 'date'],
+                        ['Gender', 'gender'],
+                        ['Student Phone optional', 'studentPhone'],
+                      ].map(([label, key, type]) => (
+                        <div key={key}>
+                          <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">{label}</label>
+                          <Input className="mt-1" type={type || 'text'} value={draft[key]} onChange={(e) => setDraft((d) => ({ ...d, [key]: e.target.value }))} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">Parent/Guardian Information</p>
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                      {[
+                        ['Parent/Guardian Name *', 'parentName'],
+                        ['Relation', 'relation'],
+                        ['Parent Phone', 'parentPhone'],
+                        ['Parent Email *', 'parentEmail', 'email'],
+                        ['Address', 'address'],
+                      ].map(([label, key, type]) => (
+                        <div key={key} className={key === 'address' ? 'sm:col-span-2' : ''}>
+                          <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">{label}</label>
+                          <Input className="mt-1" type={type || 'text'} value={draft[key]} onChange={(e) => setDraft((d) => ({ ...d, [key]: e.target.value }))} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">Academic/Fee</p>
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                      <div>
+                        <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Monthly Fee</label>
+                        <Input className="mt-1" inputMode="decimal" value={draft.monthlyFee} onChange={(e) => setDraft((d) => ({ ...d, monthlyFee: e.target.value }))} />
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Admission Fee</label>
+                        <Input className="mt-1" inputMode="decimal" value={draft.admissionFee} onChange={(e) => setDraft((d) => ({ ...d, admissionFee: e.target.value }))} />
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Discount</label>
+                        <Input className="mt-1" inputMode="decimal" value={draft.discount} onChange={(e) => setDraft((d) => ({ ...d, discount: e.target.value }))} />
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Status</label>
+                        <Select className="mt-1" value={draft.status} onChange={(e) => setDraft((d) => ({ ...d, status: e.target.value }))}>
+                          <option>Active</option>
+                          <option>Left</option>
+                          <option>Suspended</option>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : draft ? (
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
                   <div>
                     <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Name *</label>
@@ -102,8 +199,35 @@ function CustomerModal({ open, onClose, onCreate }) {
               ) : null}
 
               <div className="mt-5 flex flex-wrap gap-2">
-                <Button className="rounded-2xl" type="button" onClick={() => draft && onCreate?.(draft)}>
-                  Create
+                <Button
+                  className="rounded-2xl"
+                  type="button"
+                  onClick={() =>
+                    draft &&
+                    onCreate?.(
+                      schoolMode
+                        ? {
+                            ...draft,
+                            name: draft.studentName,
+                            email: draft.parentEmail,
+                            phone: draft.parentPhone,
+                            company: [draft.className, draft.section].filter(Boolean).join(' - '),
+                            customerType: 'Student',
+                            studentName: draft.studentName,
+                            parentName: draft.parentName,
+                            className: draft.className,
+                            section: draft.section,
+                            admissionNo: draft.admissionNo,
+                            rollNo: draft.rollNo,
+                            monthlyFee: Number(draft.monthlyFee || 0),
+                            admissionFee: Number(draft.admissionFee || 0),
+                            discount: Number(draft.discount || 0),
+                          }
+                        : draft,
+                    )
+                  }
+                >
+                  {schoolMode ? 'Create Student' : 'Create'}
                 </Button>
                 <Button variant="subtle" className="rounded-2xl" type="button" onClick={onClose}>
                   Cancel

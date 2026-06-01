@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { db } from '../lib/firebase.js'
 import { createUserDoc, patchUserDoc, removeUserDoc, subscribeUserCollection } from '../lib/firestore.js'
-import { permissionKeys } from '../data/permissions.js'
 import { useUser } from './useUser.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 import { clientSafeMessage } from '../utils/messages.js'
+import { permissionKeysForBusiness } from '../data/moduleAccess.js'
 
 function normalizeMember(m) {
   return {
@@ -14,7 +14,7 @@ function normalizeMember(m) {
 }
 
 export function useTeamMembers() {
-  const { userId, workspaceId, businessType, userDoc, firebaseUser } = useUser()
+  const { userId, workspaceId, businessType, userDoc, firebaseUser, accessPlan } = useUser()
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
   const [source, setSource] = useState('firestore')
@@ -66,7 +66,7 @@ export function useTeamMembers() {
       loading,
       source,
       error,
-      permissionKeys,
+      permissionKeys: permissionKeysForBusiness({ businessType, plan: accessPlan, teamOverride: true }).map((permission) => permission.label),
       async addMember(payload) {
         if (!userId || !workspaceId) return { ok: false, error: 'Please login first' }
         const docPayload = {
@@ -154,7 +154,7 @@ export function useTeamMembers() {
         }
       },
     }),
-    [rows, loading, source, error, businessType, firebaseUser, userDoc, userId, workspaceId],
+    [rows, loading, source, error, accessPlan, businessType, firebaseUser, userDoc, userId, workspaceId],
   )
 
   return api

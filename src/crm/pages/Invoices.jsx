@@ -25,8 +25,9 @@ import { formatCurrency } from '../utils/format.js'
 import { exportCsv, exportExcel } from '../lib/exporters.js'
 import { invoiceIssueDate, statusBadge } from '../lib/invoiceHelpers.js'
 import { resolveWorkspaceName } from '../../lib/workspaceName.js'
+import { normalizeBusinessType } from '../data/moduleAccess.js'
 
-function PaymentActionModal({ action, invoice, busy, onClose, onConfirm }) {
+function PaymentActionModal({ action, invoice, busy, schoolMode = false, onClose, onConfirm }) {
   const [draft, setDraft] = useState({ amount: '', paymentMethod: 'Bank Transfer' })
   const open = Boolean(action && invoice)
   const total = Number(invoice?.total ?? invoice?.totalUsd ?? 0) || 0
@@ -35,10 +36,10 @@ function PaymentActionModal({ action, invoice, busy, onClose, onConfirm }) {
 
   const title =
     action === 'paid'
-      ? 'Approve full payment?'
+      ? schoolMode ? 'Approve full fee payment?' : 'Approve full payment?'
       : action === 'partial'
-        ? 'Record partial payment'
-        : 'Cancel this invoice?'
+        ? schoolMode ? 'Record partial fee payment' : 'Record partial payment'
+        : schoolMode ? 'Cancel this fee bill?' : 'Cancel this invoice?'
 
   return (
     <AnimatePresence>
@@ -65,7 +66,7 @@ function PaymentActionModal({ action, invoice, busy, onClose, onConfirm }) {
                 <div>
                   <p className="text-lg font-black tracking-tight text-slate-950">{title}</p>
                   <p className="mt-1 text-sm leading-6 text-slate-600">
-                    Invoice {invoice?.invoiceNumber || invoice?.id} - {formatCurrency(balance || total, invoice?.currency || 'PKR')} remaining
+                    {schoolMode ? 'Fee Bill' : 'Invoice'} {invoice?.invoiceNumber || invoice?.id} - {formatCurrency(balance || total, invoice?.currency || 'PKR')} remaining
                   </p>
                 </div>
                 <Badge variant={action === 'reject' ? 'danger' : 'success'}>{action === 'reject' ? 'Review' : 'Payment'}</Badge>
@@ -92,7 +93,7 @@ function PaymentActionModal({ action, invoice, busy, onClose, onConfirm }) {
                     </Select>
                   </label>
                   <label className="text-xs font-bold text-slate-600">
-                    {action === 'partial' ? 'Partial Amount' : 'Amount'}
+                    {action === 'partial' ? (schoolMode ? 'Partial Fee' : 'Partial Amount') : schoolMode ? 'Fee Amount' : 'Amount'}
                     <Input
                       className="mt-1"
                       inputMode="decimal"
@@ -104,7 +105,7 @@ function PaymentActionModal({ action, invoice, busy, onClose, onConfirm }) {
                 </div>
               ) : (
                 <p className="rounded-2xl border border-rose-100 bg-rose-50 p-4 text-sm leading-6 text-rose-800">
-                  This will cancel the invoice payment state and mark the invoice as rejected for this workspace.
+                  This will cancel the {schoolMode ? 'fee bill' : 'invoice'} payment state and mark the {schoolMode ? 'fee bill' : 'invoice'} as rejected for this workspace.
                 </p>
               )}
 
@@ -118,7 +119,7 @@ function PaymentActionModal({ action, invoice, busy, onClose, onConfirm }) {
                     onConfirm?.({ ...draft, amount: action === 'partial' ? Number(draft.amount || 0) : total })
                   }}
                 >
-                  {busy ? 'Saving...' : action === 'reject' ? 'Cancel Invoice' : action === 'partial' ? 'Record Partial Payment' : 'Mark as Paid'}
+                  {busy ? 'Saving...' : action === 'reject' ? (schoolMode ? 'Cancel Fee Bill' : 'Cancel Invoice') : action === 'partial' ? (schoolMode ? 'Record Partial Fee' : 'Record Partial Payment') : 'Mark as Paid'}
                 </Button>
                 <Button variant="subtle" className="rounded-2xl" type="button" disabled={busy} onClick={onClose}>
                   Close
@@ -140,7 +141,8 @@ function toDateMillis(value) {
 export default function InvoicesPage() {
   const navigate = useNavigate()
   const { currency } = usePreferences()
-  const { userDoc, userId } = useUser()
+  const { userDoc, userId, businessType } = useUser()
+  const isSchool = normalizeBusinessType(businessType) === 'School ERP'
   const {
     invoices,
     payments,
@@ -182,11 +184,11 @@ export default function InvoicesPage() {
   )
 
   const exportColumns = [
-    { key: 'invoiceNumber', label: 'Invoice Number' },
-    { key: 'customerName', label: 'Customer' },
+    { key: 'invoiceNumber', label: isSchool ? 'Fee Bill Number' : 'Invoice Number' },
+    { key: 'customerName', label: isSchool ? 'Student' : 'Customer' },
     { key: 'customerEmail', label: 'Email' },
-    { key: 'total', label: 'Total' },
-    { key: 'amountPaid', label: 'Paid Amount' },
+    { key: 'total', label: isSchool ? 'Fee Amount' : 'Total' },
+    { key: 'amountPaid', label: isSchool ? 'Paid Fee' : 'Paid Amount' },
     { key: 'currency', label: 'Currency' },
     { key: 'status', label: 'Status' },
   ]
@@ -202,6 +204,11 @@ export default function InvoicesPage() {
         invoice.customerEmail,
         invoice.customerPhone,
         invoice.customerTaxId,
+        invoice.className,
+        invoice.section,
+        invoice.feeMonth,
+        invoice.rollNo,
+        invoice.admissionNo,
       ].join(' ').toLowerCase()
       if (needle && !haystack.includes(needle)) return false
       const status = statusBadge(invoice.status || invoice.paymentStatus).label.toLowerCase()
@@ -240,13 +247,13 @@ export default function InvoicesPage() {
       window.setTimeout(() => window.print(), 120)
     }
     if (action === 'email') {
-      if (invoice.customerEmail) window.location.href = `mailto:${invoice.customerEmail}?subject=${encodeURIComponent(`Invoice ${invoice.invoiceNumber || invoice.id}`)}`
-      else res = { ok: false, error: 'Customer email is missing.' }
+      if (invoice.customerEmail) window.location.href = `mailto:${invoice.customerEmail}?subject=${encodeURIComponent(`${isSchool ? 'Fee Bill' : 'Invoice'} ${invoice.invoiceNumber || invoice.id}`)}`
+      else res = { ok: false, error: isSchool ? 'Student email is missing.' : 'Customer email is missing.' }
     }
     if (action === 'whatsapp') {
       const phone = String(invoice.customerPhone || '').replace(/[^\d]/g, '')
-      if (phone) window.open(`https://wa.me/${phone}?text=${encodeURIComponent(`Invoice ${invoice.invoiceNumber || invoice.id} is ready.`)}`, '_blank', 'noopener,noreferrer')
-      else res = { ok: false, error: 'Customer phone is missing.' }
+      if (phone) window.open(`https://wa.me/${phone}?text=${encodeURIComponent(`${isSchool ? 'Fee Bill' : 'Invoice'} ${invoice.invoiceNumber || invoice.id} is ready.`)}`, '_blank', 'noopener,noreferrer')
+      else res = { ok: false, error: isSchool ? 'Student phone is missing.' : 'Customer phone is missing.' }
     }
     if (action === 'mark_paid') return requestPaymentAction('paid', invoice)
     if (action === 'partial_paid') return requestPaymentAction('partial', invoice)
@@ -255,11 +262,11 @@ export default function InvoicesPage() {
     if (action === 'send_approval') res = await sendForApproval(invoice.id)
     if (action === 'duplicate') res = await duplicateInvoice(invoice.id)
     if (action === 'delete') {
-      if (!window.confirm(`Delete invoice ${invoice.invoiceNumber || invoice.id}?`)) return
+      if (!window.confirm(`Delete ${isSchool ? 'fee bill' : 'invoice'} ${invoice.invoiceNumber || invoice.id}?`)) return
       res = await deleteInvoice(invoice.id)
     }
     if (res?.ok && !['view', 'edit', 'print', 'pdf', 'email', 'whatsapp'].includes(action)) {
-      showToast({ tone: 'success', message: 'Invoice action completed' })
+      showToast({ tone: 'success', message: isSchool ? 'Fee bill action completed' : 'Invoice action completed' })
     } else if (res?.error) {
       showToast({ tone: 'error', message: res.error }, 2800)
     }
@@ -280,7 +287,7 @@ export default function InvoicesPage() {
     if (res?.ok) {
       showToast({
         tone: 'success',
-        message: action === 'paid' ? 'Invoice marked as paid' : action === 'partial' ? 'Partial payment recorded' : 'Invoice cancelled',
+        message: action === 'paid' ? (isSchool ? 'Fee bill marked as paid' : 'Invoice marked as paid') : action === 'partial' ? (isSchool ? 'Partial fee payment recorded' : 'Partial payment recorded') : (isSchool ? 'Fee bill cancelled' : 'Invoice cancelled'),
       })
       setPaymentAction({ action: null, invoice: null })
     } else {
@@ -301,22 +308,22 @@ export default function InvoicesPage() {
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div>
             <p className="text-sm font-semibold text-slate-500">
-              Invoices <span className="text-slate-300">/</span> <span className="text-slate-950">Dashboard</span>
+              {isSchool ? 'Fees' : 'Invoices'} <span className="text-slate-300">/</span> <span className="text-slate-950">Dashboard</span>
             </p>
-            <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950">Invoice Management</h1>
-            <p className="mt-1 text-sm text-slate-500">Modern ERP billing, payment tracking, previews, and export-ready invoice records.</p>
+            <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950">{isSchool ? 'Fees & Billing' : 'Invoice Management'}</h1>
+            <p className="mt-1 text-sm text-slate-500">{isSchool ? 'Manage student fee invoices, payments, dues, and receipts.' : 'Modern ERP billing, payment tracking, previews, and export-ready invoice records.'}</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button variant="subtle" className="h-11 rounded-xl" type="button" onClick={() => exportExcel('nexora-invoices.xls', exportColumns, filteredInvoices)}>
+            <Button variant="subtle" className="h-11 rounded-xl" type="button" onClick={() => exportExcel(isSchool ? 'nexora-fee-records.xls' : 'nexora-invoices.xls', exportColumns, filteredInvoices)}>
               <HiOutlineArrowDownTray className="h-4 w-4" />
               Excel
             </Button>
-            <Button variant="subtle" className="h-11 rounded-xl" type="button" onClick={() => exportCsv('nexora-invoices.csv', exportColumns, filteredInvoices)}>
+            <Button variant="subtle" className="h-11 rounded-xl" type="button" onClick={() => exportCsv(isSchool ? 'nexora-fee-records.csv' : 'nexora-invoices.csv', exportColumns, filteredInvoices)}>
               CSV
             </Button>
             <Button className="h-11 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-5 shadow-lg shadow-indigo-600/20" onClick={() => navigate('/app/invoices/create')}>
               <HiOutlinePlus className="h-5 w-5" />
-              New Invoice
+              {isSchool ? 'Create Fee Bill' : 'New Invoice'}
             </Button>
           </div>
         </div>
@@ -326,7 +333,7 @@ export default function InvoicesPage() {
             <HiOutlineMagnifyingGlass className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
             <Input
               className="h-12 rounded-2xl pl-11"
-              placeholder="Search invoices, customers, phone, NTN/CNIC..."
+              placeholder={isSchool ? 'Search fee bills, students, class, roll no...' : 'Search invoices, customers, phone, NTN/CNIC...'}
               value={query}
               onChange={(event) => setQuery(event.target.value)}
             />
@@ -372,29 +379,29 @@ export default function InvoicesPage() {
 
       <div className="flex items-center justify-between">
         <Badge variant={source === 'firestore' ? 'success' : 'default'}>{loading ? 'Loading...' : source === 'firestore' ? 'Live Sync' : 'No data yet'}</Badge>
-        {error ? <Badge variant="danger">Unable to load invoices</Badge> : null}
+        {error ? <Badge variant="danger">{isSchool ? 'Unable to load fee records' : 'Unable to load invoices'}</Badge> : null}
       </div>
 
-      <InvoiceStats stats={stats} currency={currency} />
+      <InvoiceStats stats={stats} currency={currency} schoolMode={isSchool} />
 
       <Card className="border-slate-200/90 bg-white p-5 shadow-[0_22px_80px_-58px_rgba(79,70,229,0.55)]">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-lg font-black tracking-tight text-slate-950">Invoice List</p>
+            <p className="text-lg font-black tracking-tight text-slate-950">{isSchool ? 'Fee Records' : 'Invoice List'}</p>
             <p className="mt-1 text-sm text-slate-500">
-              {filteredInvoices.length} of {invoices.length} invoices shown
+              {filteredInvoices.length} of {invoices.length} {isSchool ? 'fee records' : 'invoices'} shown
             </p>
           </div>
           <Badge variant="purple">ERP Billing</Badge>
         </div>
         <div className="mt-4">
           {loading ? (
-            <div className="grid min-h-[18rem] place-items-center text-sm font-semibold text-slate-500">Loading invoices...</div>
+            <div className="grid min-h-[18rem] place-items-center text-sm font-semibold text-slate-500">{isSchool ? 'Loading fee records...' : 'Loading invoices...'}</div>
           ) : filteredInvoices.length === 0 ? (
             <div className="grid min-h-[18rem] place-items-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 text-center">
               <div>
-                <p className="text-sm font-bold text-slate-700">No invoices found</p>
-                <p className="mt-1 text-xs text-slate-500">Create a new invoice or adjust your filters.</p>
+                <p className="text-sm font-bold text-slate-700">{isSchool ? 'No fee records found' : 'No invoices found'}</p>
+                <p className="mt-1 text-xs text-slate-500">{isSchool ? 'Create a fee bill or adjust your filters.' : 'Create a new invoice or adjust your filters.'}</p>
               </div>
             </div>
           ) : (
@@ -402,6 +409,7 @@ export default function InvoicesPage() {
               invoices={filteredInvoices}
               currency={currency}
               permissions={permissions}
+              schoolMode={isSchool}
               onOpen={(invoice) => setOpenInvoice(invoice)}
               onAction={runInvoiceAction}
             />
@@ -412,15 +420,15 @@ export default function InvoicesPage() {
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
         <PaymentHistory payments={payments} currency={currency} />
         <Card className="border-slate-200/90 bg-white p-5">
-          <p className="text-sm font-black text-slate-950">Payment Snapshot</p>
+          <p className="text-sm font-black text-slate-950">{isSchool ? 'Fee Snapshot' : 'Payment Snapshot'}</p>
           <div className="mt-4 space-y-3 text-sm">
             {[
-              ['Paid invoices', stats.paid],
+              [isSchool ? 'Paid fee bills' : 'Paid invoices', stats.paid],
               ['Pending approval', stats.pendingApproval],
-              ['Approved invoices', stats.approved],
+              [isSchool ? 'Approved fee bills' : 'Approved invoices', stats.approved],
               ['Partial paid', stats.partialPaid],
-              ['Overdue invoices', stats.overdue],
-              ['Cancelled invoices', stats.cancelled],
+              [isSchool ? 'Overdue fees' : 'Overdue invoices', stats.overdue],
+              [isSchool ? 'Cancelled fee bills' : 'Cancelled invoices', stats.cancelled],
             ].map(([label, value]) => (
               <div key={label} className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
                 <span className="font-semibold text-slate-600">{label}</span>
@@ -449,6 +457,7 @@ export default function InvoicesPage() {
         action={paymentAction.action}
         invoice={paymentAction.invoice}
         busy={paymentBusy}
+        schoolMode={isSchool}
         onClose={() => setPaymentAction({ action: null, invoice: null })}
         onConfirm={confirmPaymentAction}
       />

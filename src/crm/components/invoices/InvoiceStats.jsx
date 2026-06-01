@@ -2,15 +2,15 @@ import Card from '../ui/Card.jsx'
 import Badge from '../ui/Badge.jsx'
 import { formatCurrency } from '../../utils/format.js'
 
-export default function InvoiceStats({ stats, currency = 'PKR' }) {
+export default function InvoiceStats({ stats, currency = 'PKR', schoolMode = false }) {
   const cards = [
-    { label: 'Draft', value: stats.draft || 0, helper: 'Invoices being prepared', tone: 'purple' },
+    { label: 'Draft', value: stats.draft || 0, helper: schoolMode ? 'Fee bills being prepared' : 'Invoices being prepared', tone: 'purple' },
     { label: 'Pending Approval', value: stats.pendingApproval || 0, helper: 'Visible in Approval Center', tone: 'warning' },
-    { label: 'Approved', value: stats.approved || 0, helper: 'Ready to send', tone: 'success' },
+    { label: 'Approved', value: stats.approved || 0, helper: schoolMode ? 'Ready to issue' : 'Ready to send', tone: 'success' },
     { label: 'Paid', value: stats.paid || 0, helper: formatCurrency(stats.paidAmount || 0, currency), tone: 'success' },
-    { label: 'Overdue', value: stats.overdue || 0, helper: formatCurrency(stats.outstanding || 0, currency), tone: 'danger' },
-    { label: 'Revenue', value: formatCurrency(stats.revenue || 0, currency), helper: 'Collected invoice value', tone: 'info' },
-    { label: 'Collection Rate', value: `${Math.round(stats.collectionRate || 0)}%`, helper: 'Paid against gross invoice value', tone: 'purple' },
+    { label: schoolMode ? 'Pending Fee' : 'Overdue', value: stats.overdue || 0, helper: formatCurrency(stats.outstanding || 0, currency), tone: 'danger' },
+    { label: schoolMode ? 'Monthly Fee Collection' : 'Revenue', value: formatCurrency(stats.revenue || 0, currency), helper: schoolMode ? 'Collected fee value' : 'Collected invoice value', tone: 'info' },
+    { label: 'Collection Rate', value: `${Math.round(stats.collectionRate || 0)}%`, helper: schoolMode ? 'Paid against gross fee value' : 'Paid against gross invoice value', tone: 'purple' },
   ]
 
   return (
