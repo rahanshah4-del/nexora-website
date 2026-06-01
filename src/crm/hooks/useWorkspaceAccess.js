@@ -35,7 +35,7 @@ export function useWorkspaceAccess() {
 
     if (!isStaff) {
       Promise.resolve().then(() => {
-        setPermissions({ ...emptyPermissions(), ...workspacePermissionDefaults(role) })
+        setPermissions({ ...emptyPermissions(), ...workspacePermissionDefaults(isOwner ? 'owner' : role) })
         setLoading(false)
       })
       return
@@ -56,7 +56,7 @@ export function useWorkspaceAccess() {
       },
     )
     return () => unsub()
-  }, [isStaff, role, staffId, userId, workspaceId])
+  }, [isOwner, isStaff, role, staffId, userId, workspaceId])
 
   return useMemo(
     () => ({

@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore'
 import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Badge from '../ui/Badge.jsx'
 import Button from '../ui/Button.jsx'
 import Card from '../ui/Card.jsx'
@@ -8,6 +9,7 @@ import Input from '../ui/Input.jsx'
 import Select from '../ui/Select.jsx'
 import { db } from '../../lib/firebase.js'
 import {
+  basicCrmModules,
   businessTypes,
   getRecommendedModules,
   moduleCatalog,
@@ -21,7 +23,8 @@ function moduleLabel(key) {
 }
 
 export default function OnboardingWizard({ open, onComplete }) {
-  const { userId, workspaceId, userDoc, plan } = useUser()
+  const { userId, workspaceId, userDoc, firebaseUser } = useUser()
+  const navigate = useNavigate()
   const initialBusinessType = normalizeBusinessType(userDoc?.businessType || userDoc?.profile?.businessType)
   const [businessType, setBusinessType] = useState(initialBusinessType)
   const [workspaceName, setWorkspaceName] = useState(
@@ -33,7 +36,7 @@ export default function OnboardingWizard({ open, onComplete }) {
 
   const recommended = useMemo(() => getRecommendedModules(businessType), [businessType])
   const selectableModules = useMemo(
-    () => moduleCatalog.filter((module) => !module.alwaysEnabled && module.key !== 'payments'),
+    () => moduleCatalog.filter((module) => basicCrmModules.includes(module.key) && !module.alwaysEnabled),
     [],
   )
 
@@ -58,7 +61,12 @@ export default function OnboardingWizard({ open, onComplete }) {
     }
 
     const cleanWorkspaceName = workspaceName.trim() || 'Nexora Workspace'
-    const modules = Array.from(new Set([...enabledModules, 'dashboard', 'settings', 'subscriptions']))
+    const modules = Array.from(
+      new Set([
+        ...enabledModules.filter((key) => basicCrmModules.includes(key)),
+        ...basicCrmModules,
+      ]),
+    )
     const selectedFeatures = modules.map(moduleLabel)
     const setup = {
       businessType,
@@ -66,10 +74,10 @@ export default function OnboardingWizard({ open, onComplete }) {
       enabledModules: modules,
       onboardingCompleted: true,
       workspaceName: cleanWorkspaceName,
-      plan: plan || 'Free',
       createdAt: userDoc?.createdAt || serverTimestamp(),
       updatedAt: serverTimestamp(),
     }
+    const ownerId = userDoc?.ownerId || firebaseUser?.uid || userId
 
     setSaving(true)
     try {
@@ -79,6 +87,12 @@ export default function OnboardingWizard({ open, onComplete }) {
           {
             ...setup,
             name: userDoc?.name || userDoc?.fullName || cleanWorkspaceName,
+            uid: userId,
+            userId,
+            ownerId,
+            workspaceId,
+            role: userDoc?.role || 'owner',
+            status: userDoc?.status || 'active',
           },
           { merge: true },
         ),
@@ -87,7 +101,7 @@ export default function OnboardingWizard({ open, onComplete }) {
           {
             ...setup,
             name: cleanWorkspaceName,
-            ownerId: workspaceId,
+            ownerId,
             userId: workspaceId,
             workspaceId,
             lastAccessedAt: serverTimestamp(),
@@ -96,6 +110,7 @@ export default function OnboardingWizard({ open, onComplete }) {
         ),
       ])
       onComplete?.()
+      navigate('/app/dashboard', { replace: true })
     } catch (err) {
       setError(clientSafeMessage(err, 'Could not save your workspace setup.'))
     } finally {

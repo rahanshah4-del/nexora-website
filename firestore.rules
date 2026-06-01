@@ -191,8 +191,10 @@ service cloud.firestore {
 
     function hasSafeTrialPlan() {
       return (!request.resource.data.keys().hasAny(['plan']) || request.resource.data.plan in ['Free', 'Basic'])
-        && (!request.resource.data.keys().hasAny(['planStatus']) || request.resource.data.planStatus in ['trial', 'Free Plan', 'inactive'])
+        && (!request.resource.data.keys().hasAny(['planStatus']) || request.resource.data.planStatus in ['trial', 'Free Plan', 'Basic Trial', 'inactive'])
         && (!request.resource.data.keys().hasAny(['role']) || request.resource.data.role in ['owner', 'user'])
+        && (!request.resource.data.keys().hasAny(['status']) || request.resource.data.status in ['active', 'Active'])
+        && (!request.resource.data.keys().hasAny(['trialDays']) || request.resource.data.trialDays == 7)
         && (!request.resource.data.keys().hasAny(['isAdmin']) || request.resource.data.isAdmin == false);
     }
 

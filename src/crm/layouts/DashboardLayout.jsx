@@ -210,6 +210,7 @@ export default function DashboardLayout() {
   const hasActiveAccess =
     isTrialActive ||
     isActivePlanStatus(userDoc?.planStatus) ||
+    accessPlan === 'Basic' ||
     accessPlan === 'Business' ||
     accessPlan === 'Enterprise'
   const crmAccessBlocked = ready && isAuthenticated && !userLoading && Boolean(userDoc) && !isStaff && !hasActiveAccess

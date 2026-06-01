@@ -1,5 +1,5 @@
 export const BUSINESS_TRIAL_DAYS = 7
-export const PLAN_ORDER = ['Free', 'Business', 'Enterprise']
+export const PLAN_ORDER = ['Free', 'Basic', 'Business', 'Enterprise']
 export const PRIMARY_UPGRADE_PLAN_NAME = 'Standard'
 export const PRIMARY_UPGRADE_PLAN_PRICE = 'PKR 5,999/month'
 
@@ -51,7 +51,8 @@ export function daysUntil(date) {
 
 export function normalizePlan(plan) {
   const value = String(plan || '').trim().toLowerCase()
-  if (value === 'trial' || value === 'basic' || value === 'free') return 'Free'
+  if (value === 'trial' || value === 'basic') return 'Basic'
+  if (value === 'free') return 'Free'
   if (value === 'starter' || value === 'business' || value === 'standard' || value === 'premium') return 'Business'
   if (value === 'enterprise') return 'Enterprise'
   return 'Free'
@@ -67,15 +68,15 @@ export function packageNameForPlan(plan) {
 export function isTrialActive(userDoc = {}) {
   const status = String(userDoc?.planStatus || '').toLowerCase()
   const plan = normalizePlan(userDoc?.plan)
-  if (plan !== 'Free') return false
-  if (!['trial', 'free trial'].includes(status)) return false
+  if (!['Free', 'Basic'].includes(plan)) return false
+  if (!['trial', 'free trial'].includes(status) && userDoc?.isTrialActive !== true) return false
   return daysUntil(trialEndDate(userDoc)) > 0
 }
 
 export function isTrialExpired(userDoc = {}) {
   const status = String(userDoc?.planStatus || '').toLowerCase()
   const plan = normalizePlan(userDoc?.plan)
-  if (plan !== 'Free') return false
+  if (!['Free', 'Basic'].includes(plan)) return false
   if (!['trial', 'free trial', 'expired', 'trial expired'].includes(status) && userDoc?.isTrialActive !== true) return false
   return daysUntil(trialEndDate(userDoc)) <= 0
 }
@@ -89,9 +90,12 @@ export function isBusinessSubscriptionActive(userDoc = {}) {
 }
 
 export function accessPlanForUser(userDoc = {}, fallbackPlan = 'Free') {
-  if (isTrialActive(userDoc)) return 'Business'
+  if (isTrialActive(userDoc)) return 'Basic'
   if (isBusinessSubscriptionActive(userDoc)) return normalizePlan(userDoc?.plan)
-  return normalizePlan(fallbackPlan) === 'Enterprise' ? 'Enterprise' : 'Free'
+  const normalizedFallback = normalizePlan(fallbackPlan)
+  if (normalizedFallback === 'Enterprise') return 'Enterprise'
+  if (normalizedFallback === 'Business') return 'Business'
+  return normalizedFallback === 'Basic' ? 'Basic' : 'Free'
 }
 
 export function detectBillingMarket() {
@@ -160,27 +164,27 @@ export function getPlanCatalog() {
 export const moduleCatalog = [
   { key: 'dashboard', label: 'Dashboard', route: '/app/dashboard', alwaysEnabled: true },
   { key: 'clientPortal', label: 'Client Portal', route: '/app/client-portal', minPlan: 'Business' },
-  { key: 'customers', label: 'Customers', route: '/app/customers', minPlan: 'Free' },
+  { key: 'customers', label: 'Customers', route: '/app/customers', minPlan: 'Basic' },
   { key: 'products', label: 'Products', route: '/app/products', minPlan: 'Business' },
-  { key: 'leads', label: 'Leads', route: '/app/leads', minPlan: 'Business' },
+  { key: 'leads', label: 'Leads', route: '/app/leads', minPlan: 'Basic' },
   { key: 'aiLeadScoring', label: 'AI Lead Scoring', route: '/app/leads/scoring', minPlan: 'Business' },
   { key: 'aiAssistant', label: 'AI Assistant', route: '/app/ai-assistant', minPlan: 'Business' },
   { key: 'salesPipeline', label: 'Sales Pipeline', route: '/app/pipeline', minPlan: 'Business' },
   { key: 'followUps', label: 'Follow-Up Automation', route: '/app/follow-ups', minPlan: 'Business' },
   { key: 'team', label: 'Team Management', route: '/app/team', minPlan: 'Business' },
   { key: 'hr', label: 'HR Dashboard', route: '/app/hr', minPlan: 'Business' },
-  { key: 'invoices', label: 'Invoices', route: '/app/invoices', minPlan: 'Free' },
+  { key: 'invoices', label: 'Invoices', route: '/app/invoices', minPlan: 'Basic' },
   { key: 'payments', label: 'Payments', route: '/app/invoices', minPlan: 'Business' },
-  { key: 'expenses', label: 'Expenses', route: '/app/expenses', minPlan: 'Business' },
-  { key: 'accounts', label: 'Account Management', route: '/app/accounts', minPlan: 'Business' },
-  { key: 'accountStatements', label: 'Account Statements', route: '/app/accounts/statements', minPlan: 'Business' },
+  { key: 'expenses', label: 'Expenses', route: '/app/expenses', minPlan: 'Basic' },
+  { key: 'accounts', label: 'Account Management', route: '/app/accounts', minPlan: 'Basic' },
+  { key: 'accountStatements', label: 'Account Statements', route: '/app/accounts/statements', minPlan: 'Basic' },
   { key: 'approvals', label: 'Approval Center', route: '/app/approvals', minPlan: 'Business' },
   { key: 'subscriptions', label: 'Subscriptions', route: '/app/subscriptions', alwaysEnabled: true },
   { key: 'support', label: 'Support Tickets', route: '/app/support', minPlan: 'Business' },
   { key: 'activity', label: 'Activity Logs', route: '/app/activity-logs', minPlan: 'Business' },
   { key: 'analytics', label: 'Advanced Analytics', route: '/app/analytics', minPlan: 'Business' },
-  { key: 'notifications', label: 'Notifications', route: '/app/notifications', minPlan: 'Business' },
-  { key: 'reports', label: 'Reports', route: '/app/reports', minPlan: 'Free' },
+  { key: 'notifications', label: 'Notifications', route: '/app/notifications', minPlan: 'Basic' },
+  { key: 'reports', label: 'Reports', route: '/app/reports', minPlan: 'Basic' },
   { key: 'settings', label: 'Settings', route: '/app/settings', alwaysEnabled: true },
 ]
 
@@ -201,6 +205,19 @@ const recommendationMap = {
 }
 
 export const alwaysEnabledModules = ['dashboard', 'settings', 'subscriptions']
+export const basicCrmModules = [
+  'dashboard',
+  'customers',
+  'leads',
+  'invoices',
+  'expenses',
+  'accounts',
+  'accountStatements',
+  'reports',
+  'settings',
+  'notifications',
+  'subscriptions',
+]
 
 export function planRank(plan) {
   return PLAN_ORDER.indexOf(normalizePlan(plan))

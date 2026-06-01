@@ -1,8 +1,8 @@
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore'
 import { db } from './firebase.js'
-import { BUSINESS_TRIAL_DAYS, addDays, getRecommendedModules, moduleCatalog, normalizeBusinessType } from '../crm/data/moduleAccess.js'
+import { BUSINESS_TRIAL_DAYS, addDays, basicCrmModules, moduleCatalog, normalizeBusinessType } from '../crm/data/moduleAccess.js'
 
-export const FREE_TRIAL_PLAN = 'Free'
+export const FREE_TRIAL_PLAN = 'Basic'
 export const FREE_TRIAL_STATUS = 'trial'
 
 function cleanString(value) {
@@ -23,7 +23,7 @@ export async function ensureUserWorkspace(user, overrides = {}) {
   const fullName = userDisplayName(user, overrides.fullName || overrides.name)
   const company = cleanString(overrides.company)
   const businessType = normalizeBusinessType(overrides.businessType)
-  const enabledModules = getRecommendedModules(businessType)
+  const enabledModules = basicCrmModules
   const selectedFeatures = enabledModules.map(
     (key) => moduleCatalog.find((module) => module.key === key)?.label || key,
   )
@@ -56,9 +56,11 @@ export async function ensureUserWorkspace(user, overrides = {}) {
       provider,
       emailVerified: Boolean(user.emailVerified),
       role: 'owner',
+      status: 'active',
       isAdmin: false,
       plan: FREE_TRIAL_PLAN,
       planStatus: FREE_TRIAL_STATUS,
+      trialDays: BUSINESS_TRIAL_DAYS,
       billingCycle: 'monthly',
       trialStartedAt: now,
       trialEndsAt,
@@ -113,7 +115,9 @@ export async function ensureUserWorkspace(user, overrides = {}) {
       onboardingCompleted: false,
       plan: FREE_TRIAL_PLAN,
       planStatus: FREE_TRIAL_STATUS,
+      status: 'active',
       billingCycle: 'monthly',
+      trialDays: BUSINESS_TRIAL_DAYS,
       trialStartedAt: now,
       trialEndsAt,
       isTrialActive: true,
