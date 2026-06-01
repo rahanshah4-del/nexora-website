@@ -30,6 +30,7 @@ import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore'
 import logoUrl from '../../assets/logo/nexora-logo.svg'
 import useAuth from '../../context/useAuth.js'
 import { auth, db } from '../../lib/firebase.js'
+import { workspacePermissionDefaults } from '../../lib/roles.js'
 import { normalizeWorkspaceName, resolveWorkspaceName, saveStoredWorkspaceName } from '../../lib/workspaceName.js'
 import {
   businessWorkspaceCatalog,
@@ -76,6 +77,15 @@ const regionOptions = ['Pakistan', 'India', 'Bangladesh', 'Middle East', 'Europe
 const currencyOptions = ['PKR', 'INR', 'BDT', 'AED', 'SAR', 'USD', 'EUR']
 const CRM_TRIAL_DAYS = 7
 const CRM_DASHBOARD_ROUTE = '/app/dashboard'
+
+function onboardingErrorMessage(error) {
+  const raw = String(error?.message || error || '')
+  const code = String(error?.code || '')
+  if (/permission-denied|missing or insufficient permissions/i.test(`${code} ${raw}`)) {
+    return 'We could not create your first workspace with the current account session. Please refresh and try again, or sign in again.'
+  }
+  return clientSafeMessage(error, 'Could not create workspace right now.', { context: 'Workspace onboarding' })
+}
 
 const featureStrip = [
   {
@@ -1093,10 +1103,11 @@ export default function WorkspaceSelection() {
       const existingWorkspaceId = cleanString(existingAccount?.workspaceId)
       const workspaceRef = existingWorkspaceId ? doc(db, 'workspaces', existingWorkspaceId) : doc(db, 'workspaces', uid)
       const workspaceId = workspaceRef.id
+      const isFirstUserProfile = !userSnap.exists()
 
       const enabledModules = getRecommendedModules(businessType)
       const selectedFeatures = enabledModules.map((key) => labelForBusinessModule(key, businessType))
-      const userPayload = {
+      const baseUserPayload = {
         uid,
         ownerId: uid,
         userId: uid,
@@ -1105,15 +1116,7 @@ export default function WorkspaceSelection() {
         name: ownerName,
         email,
         role: 'owner',
-        plan: 'Basic',
-        planStatus: 'trial',
-        subscriptionStatus: 'trial',
         status: 'active',
-        billingCycle: 'monthly',
-        trialStartAt: now,
-        trialStartedAt: now,
-        trialEndsAt,
-        isTrialActive: true,
         businessType,
         selectedBusinessType: businessType,
         enabledModules,
@@ -1131,9 +1134,29 @@ export default function WorkspaceSelection() {
         updatedAt: now,
         lastLoginAt: now,
       }
+      const trialUserFields = {
+        plan: 'Basic',
+        planStatus: 'trial',
+        subscriptionStatus: 'trial',
+        billingCycle: 'monthly',
+        trialStartAt: now,
+        trialStartedAt: now,
+        trialEndsAt,
+        isTrialActive: true,
+        trialDays: CRM_TRIAL_DAYS,
+      }
+      const userPayload = isFirstUserProfile
+        ? {
+            ...baseUserPayload,
+            ...trialUserFields,
+            createdAt: now,
+            createdBy: uid,
+            isAdmin: false,
+          }
+        : baseUserPayload
       const workspacePayload = {
         ownerId: uid,
-        userId: uid,
+        userId: workspaceId,
         workspaceId,
         name: workspaceName,
         workspaceName,
@@ -1166,10 +1189,44 @@ export default function WorkspaceSelection() {
         updatedAt: now,
         lastAccessedAt: now,
       }
+      const ownerMembership = {
+        uid,
+        staffId: uid,
+        ownerId: uid,
+        userId: uid,
+        workspaceId,
+        name: ownerName,
+        fullName: ownerName,
+        email,
+        phone,
+        role: 'owner',
+        status: 'active',
+        permissions: workspacePermissionDefaults('owner'),
+        createdAt: now,
+        createdBy: uid,
+        updatedAt: now,
+        updatedBy: uid,
+      }
 
+      await setDoc(userRef, userPayload, { merge: true })
+      await setDoc(workspaceRef, workspacePayload, { merge: true })
       await Promise.all([
-        setDoc(userRef, userPayload, { merge: true }),
-        setDoc(workspaceRef, workspacePayload, { merge: true }),
+        setDoc(doc(db, 'workspaces', workspaceId, 'staff', uid), ownerMembership, { merge: true }),
+        setDoc(doc(db, 'workspaces', workspaceId, 'teamMembers', uid), ownerMembership, { merge: true }),
+        setDoc(
+          doc(db, 'workspaces', workspaceId, 'permissions', uid),
+          {
+            ...workspacePermissionDefaults('owner'),
+            ownerId: uid,
+            userId: uid,
+            staffId: uid,
+            workspaceId,
+            role: 'owner',
+            updatedAt: now,
+            updatedBy: uid,
+          },
+          { merge: true },
+        ),
       ])
       setAccountData(userPayload)
       setWorkspaceData(workspacePayload)
@@ -1179,7 +1236,7 @@ export default function WorkspaceSelection() {
       setCreateMessage('')
       navigate(CRM_DASHBOARD_ROUTE)
     } catch (error) {
-      setCreateMessage(clientSafeMessage(error, 'Could not create workspace right now.', { context: 'Workspace create' }))
+      setCreateMessage(onboardingErrorMessage(error))
     } finally {
       setCreatingWorkspace(false)
     }
