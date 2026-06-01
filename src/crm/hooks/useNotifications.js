@@ -3,7 +3,8 @@ import { limit, onSnapshot, query, updateDoc, where, writeBatch, doc } from 'fir
 import { db } from '../lib/firebase.js'
 import { useUser } from './useUser.js'
 import { clientSafeMessage } from '../utils/messages.js'
-import { collectionRef, workspaceCollectionPath } from '../lib/firestore.js'
+import { belongsToBusiness, collectionRef, workspaceCollectionPath } from '../lib/firestore.js'
+import { normalizeBusinessType } from '../data/moduleAccess.js'
 
 function toDateValue(value) {
   if (!value) return null
@@ -41,11 +42,12 @@ function normalizeNotification(n) {
     createdAt,
     timeLabel: formatTimeAgo(createdAt),
     relatedId: n.relatedId ?? null,
+    businessType: normalizeBusinessType(n.businessType),
   }
 }
 
 export function useNotifications() {
-  const { userId, workspaceId } = useUser()
+  const { userId, workspaceId, businessType } = useUser()
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [source, setSource] = useState(db ? 'firestore' : 'none')
@@ -78,6 +80,7 @@ export function useNotifications() {
         const rows = snap.docs
           .map((d) => ({ id: d.id, ...d.data() }))
           .filter((row) => !row.workspaceId || row.workspaceId === workspaceId)
+          .filter((row) => belongsToBusiness(row, businessType))
           .map((row) => normalizeNotification(row))
           .sort((a, b) => {
             const at = a.createdAt?.getTime?.() || 0
@@ -103,7 +106,7 @@ export function useNotifications() {
     )
 
     return () => unsub()
-  }, [userId, workspaceId])
+  }, [businessType, userId, workspaceId])
 
   const unreadCount = useMemo(() => items.filter((n) => !n.read).length, [items])
 
@@ -126,13 +129,21 @@ export function useNotifications() {
       async markAsRead(id) {
         setItems((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)))
         if (!db || source !== 'firestore') return
-        await updateDoc(doc(db, workspaceCollectionPath(workspaceId, 'notifications'), id), { read: true })
+        await updateDoc(doc(db, workspaceCollectionPath(workspaceId, 'notifications'), id), {
+          read: true,
+          businessType: normalizeBusinessType(businessType),
+        })
       },
       async markAllRead() {
         setItems((prev) => prev.map((n) => ({ ...n, read: true })))
         if (!db || source !== 'firestore') return
         const batch = writeBatch(db)
-        items.filter((n) => !n.read).forEach((n) => batch.update(doc(db, workspaceCollectionPath(workspaceId, 'notifications'), n.id), { read: true }))
+        items.filter((n) => !n.read).forEach((n) =>
+          batch.update(doc(db, workspaceCollectionPath(workspaceId, 'notifications'), n.id), {
+            read: true,
+            businessType: normalizeBusinessType(businessType),
+          }),
+        )
         await batch.commit()
       },
       async clearAll() {
@@ -143,7 +154,7 @@ export function useNotifications() {
         await batch.commit()
       },
     }),
-    [items, loading, source, error, unreadCount, workspaceId],
+    [businessType, items, loading, source, error, unreadCount, workspaceId],
   )
 
   return api

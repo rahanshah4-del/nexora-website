@@ -89,7 +89,7 @@ function belongsToBusiness(row, businessType) {
   return rowBusinessType === normalizeBusinessType(businessType)
 }
 
-async function addInventoryAdjustments(batch, workspaceId, invoice, now) {
+async function addInventoryAdjustments(batch, workspaceId, invoice, now, businessType) {
   if (!db || !workspaceId || invoice.inventoryAdjustedAt || invoice.stockAdjustedAt) return false
   const productItems = (invoice.items || []).filter((item) => item.productId && toNumber(item.quantity ?? item.qty, 0) > 0)
   if (!productItems.length) return false
@@ -102,6 +102,7 @@ async function addInventoryAdjustments(batch, workspaceId, invoice, now) {
       const currentStock = toNumber(productSnap.data().stockQuantity ?? productSnap.data().stock, 0)
       const quantity = toNumber(item.quantity ?? item.qty, 0)
       batch.update(productRef, {
+        businessType,
         stockQuantity: Math.max(0, currentStock - quantity),
         stockHistory: arrayUnion({
           type: 'client_portal_invoice_paid',
@@ -447,7 +448,7 @@ export function useClientPortal() {
           const fullyPaid = calculateBalanceDue(invoice.total, nextPaid) <= 0
           const now = serverTimestamp()
           const batch = writeBatch(db)
-          const stockAdjusted = fullyPaid ? await addInventoryAdjustments(batch, workspaceId, invoice, now) : false
+          const stockAdjusted = fullyPaid ? await addInventoryAdjustments(batch, workspaceId, invoice, now, businessType) : false
           batch.update(doc(db, workspaceCollectionPath(workspaceId, 'invoices'), invoiceId), {
             status: fullyPaid ? 'paid' : 'partial',
             paymentStatus: fullyPaid ? 'paid' : 'partial',

@@ -144,8 +144,9 @@ export function useReports() {
         { businessType },
       ),
     )
-    const ownedUnsubs = OWNED_COLLECTIONS.map(({ path, field }) =>
-      subscribeOwnedCollection(
+    const ownedUnsubs = OWNED_COLLECTIONS.map(({ path, field }) => {
+      const shouldFilterByBusiness = path === 'notifications'
+      return subscribeOwnedCollection(
         path,
         field === 'workspaceId' ? workspaceId : userId,
         (rows) => {
@@ -160,8 +161,9 @@ export function useReports() {
           if (loaded.size === COLLECTIONS.length) setLoading(false)
         },
         field,
-      ),
-    )
+        shouldFilterByBusiness ? { businessType } : {},
+      )
+    })
     const unsubs = [...workspaceUnsubs, ...ownedUnsubs]
 
     return () => {

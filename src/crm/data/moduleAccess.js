@@ -205,6 +205,8 @@ export const moduleCatalog = [
   { key: 'campaigns', label: 'Campaigns', route: '/app/coming-soon/campaigns', comingSoon: true },
 ]
 
+export const DEVELOPER_OWNER_EMAIL = 'ownertast@gmail.com'
+
 export const businessTypes = [
   'General CRM',
   'Retail / POS',
@@ -236,6 +238,7 @@ export const businessWorkspaceCatalog = [
       'reports',
       'approvals',
       'team',
+      'notifications',
       'settings',
     ],
   },
@@ -257,9 +260,9 @@ export const businessWorkspaceCatalog = [
       'approvals',
       'inventory',
       'pos',
-      'cashRegister',
-      'purchases',
-      'suppliers',
+      'team',
+      'notifications',
+      'settings',
     ],
   },
   {
@@ -282,9 +285,8 @@ export const businessWorkspaceCatalog = [
       'reports',
       'approvals',
       'team',
-      'attendance',
-      'exams',
-      'classes',
+      'notifications',
+      'settings',
     ],
   },
   {
@@ -309,6 +311,8 @@ export const businessWorkspaceCatalog = [
       'reports',
       'approvals',
       'team',
+      'settings',
+      'notifications',
       'maintenance',
       'contracts',
     ],
@@ -334,10 +338,11 @@ export const businessWorkspaceCatalog = [
       'reports',
       'approvals',
       'team',
+      'settings',
+      'notifications',
       'tables',
       'ordersKot',
       'kitchenDisplay',
-      'inventory',
     ],
   },
   {
@@ -352,12 +357,11 @@ export const businessWorkspaceCatalog = [
       'leads',
       'followUps',
       'support',
-      'invoices',
-      'payments',
-      'expenses',
-      'accounts',
       'reports',
       'approvals',
+      'team',
+      'settings',
+      'notifications',
       'whatsappInbox',
       'autoReplies',
       'campaigns',
@@ -420,6 +424,14 @@ export function normalizeBusinessType(type) {
   return 'General CRM'
 }
 
+export function isDeveloperOwnerEmail(email) {
+  return String(email || '').trim().toLowerCase() === DEVELOPER_OWNER_EMAIL
+}
+
+export function isDeveloperOwnerAccount(userDoc, firebaseUser) {
+  return isDeveloperOwnerEmail(userDoc?.email || firebaseUser?.email)
+}
+
 export function businessWorkspaceForType(type) {
   const normalized = normalizeBusinessType(type)
   return businessWorkspaceCatalog.find((workspace) => workspace.type === normalized) || businessWorkspaceCatalog[0]
@@ -435,7 +447,7 @@ export function businessWorkspaceForSelection(value) {
 
 export function businessModuleKeys(type) {
   const workspace = businessWorkspaceForType(type)
-  return Array.from(new Set([...workspace.modules, ...coreFinanceModules, 'dashboard', 'approvals']))
+  return Array.from(new Set([...workspace.modules, 'dashboard', 'approvals']))
 }
 
 export function labelForBusinessModule(moduleKey, type) {
@@ -446,7 +458,7 @@ export function labelForBusinessModule(moduleKey, type) {
 
 export function getRecommendedModules(type) {
   const normalized = normalizeBusinessType(type)
-  return Array.from(new Set([...(recommendationMap[normalized] || recommendationMap['General CRM']), ...alwaysEnabledModules, ...coreFinanceModules, 'approvals']))
+  return Array.from(new Set([...(recommendationMap[normalized] || recommendationMap['General CRM']), ...alwaysEnabledModules, 'approvals']))
 }
 
 export function moduleByRoute(route) {
@@ -461,17 +473,18 @@ export function moduleByRoute(route) {
   )
 }
 
-export function routeAllowedByPlan(route, plan) {
+export function routeAllowedByPlan(route, plan, options = {}) {
+  if (options?.developerOverride) return true
   const module = moduleByRoute(route)
   if (!module || module.alwaysEnabled) return true
   return hasPlanAccess(plan, module.minPlan)
 }
 
-export function routeAllowedByBusinessType(route, type) {
+export function routeAllowedByBusinessType(route, type, options = {}) {
+  if (options?.developerOverride) return true
   const module = moduleByRoute(route)
   if (!module) return true
   if (module.alwaysEnabled) return true
-  if (module.comingSoon) return false
   if (module.key === 'accountStatements') return businessModuleKeys(type).includes('accounts')
   return businessModuleKeys(type).includes(module.key)
 }
@@ -482,7 +495,15 @@ export function moduleAllowedByPlan(moduleKey, plan) {
   return hasPlanAccess(plan, module.minPlan)
 }
 
-export function selectedModulesForSidebar({ enabledModules, onboardingCompleted, plan, businessType }) {
+export function selectedModulesForSidebar({ enabledModules, onboardingCompleted, plan, businessType, developerOverride = false }) {
+  if (developerOverride) {
+    return moduleCatalog.map((module) => ({
+      ...module,
+      comingSoon: false,
+      label: labelForBusinessModule(module.key, businessType),
+    }))
+  }
+
   const businessKeys = businessModuleKeys(businessType)
   const selected = new Set(onboardingCompleted ? businessKeys : Array.isArray(enabledModules) && enabledModules.length ? enabledModules : businessKeys)
   return moduleCatalog.filter((module) => {
@@ -492,7 +513,6 @@ export function selectedModulesForSidebar({ enabledModules, onboardingCompleted,
     if (!moduleAllowedByPlan(module.key, plan)) return false
     if (module.key === 'accountStatements') return businessKeys.includes('accounts')
     if (coreFinanceModules.includes(module.key) || module.key === 'approvals') return businessKeys.includes(module.key)
-    if (!onboardingCompleted) return true
     return selected.has(module.key) && businessKeys.includes(module.key)
   }).map((module) => ({
     ...module,

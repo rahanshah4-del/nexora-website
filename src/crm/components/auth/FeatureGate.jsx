@@ -1,14 +1,15 @@
 import { useLocation } from 'react-router-dom'
 import FeatureLockedModal from '../billing/FeatureLockedModal.jsx'
-import { moduleByRoute, routeAllowedByPlan } from '../../data/moduleAccess.js'
+import { isDeveloperOwnerAccount, moduleByRoute, routeAllowedByPlan } from '../../data/moduleAccess.js'
 import { useUser } from '../../hooks/useUser.js'
 
 export default function FeatureGate({ children }) {
   const { pathname } = useLocation()
-  const { accessPlan } = useUser()
+  const { accessPlan, firebaseUser, userDoc } = useUser()
   const module = moduleByRoute(pathname)
+  const developerOverride = isDeveloperOwnerAccount(userDoc, firebaseUser)
 
-  if (!routeAllowedByPlan(pathname, accessPlan)) {
+  if (!routeAllowedByPlan(pathname, accessPlan, { developerOverride })) {
     return (
       <FeatureLockedModal
         title={module?.label || 'Paid Package Feature'}

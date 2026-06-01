@@ -33,6 +33,7 @@ const NotificationsPage = lazy(() => import('./pages/Notifications.jsx'))
 const ClientPortalPage = lazy(() => import('./pages/ClientPortal.jsx'))
 const AIAssistantPage = lazy(() => import('./pages/AIAssistant.jsx'))
 const ApprovalsPage = lazy(() => import('./pages/Approvals.jsx'))
+const ModulePlaceholderPage = lazy(() => import('./pages/ModulePlaceholder.jsx'))
 
 function gated(element) {
   return <FeatureGate>{element}</FeatureGate>
@@ -89,6 +90,7 @@ export default function App() {
             <Route path="/app/ai-assistant" element={gated(<AIAssistantPage />)} />
             <Route path="/app/reports" element={gated(<ReportsPage />)} />
             <Route path="/app/settings" element={<SettingsPage />} />
+            <Route path="/app/coming-soon/:module" element={<ModulePlaceholderPage />} />
             <Route path="/app/admin/upgrade-requests" element={<Navigate to="/admin/upgrade-requests" replace />} />
             <Route path="/admin/upgrade-requests" element={<AdminUpgradeRequestsPage />} />
           </Route>

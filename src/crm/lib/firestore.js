@@ -11,7 +11,7 @@ function belongsToWorkspace(data, workspaceId) {
   return !data?.workspaceId || data.workspaceId === workspaceId
 }
 
-function belongsToBusiness(data, businessType) {
+export function belongsToBusiness(data, businessType) {
   const currentBusinessType = normalizeBusinessType(businessType)
   const rowBusinessType = data?.businessType ? normalizeBusinessType(data.businessType) : 'General CRM'
   return rowBusinessType === currentBusinessType
@@ -78,15 +78,21 @@ export function subscribeUserCollection(userId, path, onData, onError, options =
   )
 }
 
-export function subscribeOwnedCollection(path, userId, onData, onError, ownerField = 'userId') {
+export function subscribeOwnedCollection(path, userId, onData, onError, ownerField = 'userId', options = {}) {
   const ref = userId ? collectionRef(path) : null
+  const businessType = normalizeBusinessType(options?.businessType)
   if (!ref) {
     onData([])
     return () => {}
   }
   return onSnapshot(
     query(ref, where(ownerField, '==', userId)),
-    (snap) => onData(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
+    (snap) =>
+      onData(
+        snap.docs
+          .map((d) => ({ id: d.id, ...d.data() }))
+          .filter((row) => (options?.businessType ? belongsToBusiness(row, businessType) : true)),
+      ),
     (err) => onError?.(safeError(err, 'Unable to load account data.')),
   )
 }

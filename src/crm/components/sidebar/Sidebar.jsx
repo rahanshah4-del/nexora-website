@@ -5,7 +5,7 @@ import { cn } from '../../utils/cn.js'
 import { memo, useCallback, useMemo } from 'react'
 import { useUser } from '../../hooks/useUser.js'
 import logoUrl from '../../../assets/logo/nexora-logo.svg'
-import { businessWorkspaceForType, selectedModulesForSidebar } from '../../data/moduleAccess.js'
+import { businessWorkspaceForType, isDeveloperOwnerAccount, selectedModulesForSidebar } from '../../data/moduleAccess.js'
 import { resolveWorkspaceName } from '../../../lib/workspaceName.js'
 import { HiOutlineSquares2X2 } from 'react-icons/hi2'
 
@@ -69,16 +69,17 @@ const SidebarNavItem = memo(function SidebarNavItem({ item, collapsed, onNavigat
 
   if (disabled) {
     return (
-      <NavLink
-        to={item.to}
+      <button
+        type="button"
         onClick={onNavigate}
         className={cn(
-          'focus-ring group relative flex items-center rounded-xl border border-transparent text-[13px] font-semibold text-slate-400 transition-colors duration-150 ease-out hover:border-slate-200/80 hover:bg-white hover:text-slate-600',
+          'focus-ring group relative flex w-full cursor-not-allowed items-center rounded-xl border border-transparent text-[13px] font-semibold text-slate-400 transition-colors duration-150 ease-out hover:border-slate-200/80 hover:bg-white hover:text-slate-600',
           collapsed ? 'justify-center px-0 py-2' : 'gap-2.5 px-2.5 py-1.5',
         )}
+        title="Coming Soon / Not included in your selected business type"
       >
         {content}
-      </NavLink>
+      </button>
     )
   }
 
@@ -131,8 +132,9 @@ function Brand({ collapsed, workspaceName, businessTitle }) {
 }
 
 function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollapse, onSwitchProduct }) {
-  const { accessPlan, businessType, userDoc, userId } = useUser()
+  const { accessPlan, businessType, userDoc, userId, firebaseUser } = useUser()
   const businessWorkspace = businessWorkspaceForType(businessType)
+  const developerOverride = isDeveloperOwnerAccount(userDoc, firebaseUser)
   const workspaceName = useMemo(
     () =>
       resolveWorkspaceName({
@@ -143,20 +145,15 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
     [userDoc, userId],
   )
   const sidebarItems = useMemo(() => {
-    const allowedRoutes = new Set(
-      selectedModulesForSidebar({
-        enabledModules: userDoc?.enabledModules,
-        onboardingCompleted: userDoc?.onboardingCompleted,
-        plan: accessPlan,
-        businessType,
-      }).map((module) => module.route),
-    )
-    return selectedModulesForSidebar({
+    const modules = selectedModulesForSidebar({
       enabledModules: userDoc?.enabledModules,
       onboardingCompleted: userDoc?.onboardingCompleted,
       plan: accessPlan,
       businessType,
-    }).map((module) => {
+      developerOverride,
+    })
+    const allowedRoutes = new Set(modules.map((module) => module.route))
+    return modules.map((module) => {
       const navItem = orderedSidebarItems.find((item) => item.to === module.route)
       return {
         ...(navItem || module),
@@ -165,7 +162,7 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
         comingSoon: module.comingSoon,
       }
     }).filter((item) => allowedRoutes.has(item.to) || item.comingSoon)
-  }, [accessPlan, businessType, userDoc?.enabledModules, userDoc?.onboardingCompleted])
+  }, [accessPlan, businessType, developerOverride, userDoc?.enabledModules, userDoc?.onboardingCompleted])
 
   const handleSwitchProduct = useCallback(() => {
     onNavigate?.()

@@ -19,7 +19,7 @@ import { db, getFirebaseEnvHint } from '../lib/firebase.js'
 import { useAuth } from '../hooks/useAuth.js'
 import { usePreferences } from '../hooks/usePreferences.js'
 import { useUser } from '../hooks/useUser.js'
-import { getBusinessPlanPrice } from '../data/moduleAccess.js'
+import { getBusinessPlanPrice, normalizeBusinessType } from '../data/moduleAccess.js'
 import { formatCurrency } from '../utils/format.js'
 import { clientSafeMessage } from '../utils/messages.js'
 
@@ -88,7 +88,7 @@ function PaymentDetailRow({ label, value }) {
 export default function UpgradeBusinessPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const { userId, workspaceId, workspaceDoc, plan, accessPlan } = useUser()
+  const { userId, workspaceId, workspaceDoc, plan, accessPlan, businessType } = useUser()
   const { profile } = usePreferences()
   const businessPrice = useMemo(() => getBusinessPlanPrice(), [])
   const currency = businessPrice.currency
@@ -133,6 +133,7 @@ export default function UpgradeBusinessPage() {
         const all = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
         const pending = all
           .filter((r) => r.approvalStatus === 'pending')
+          .filter((r) => normalizeBusinessType(r.businessType) === normalizeBusinessType(businessType))
           .sort((a, b) => {
             const at = a.createdAt?.toMillis?.() ?? 0
             const bt = b.createdAt?.toMillis?.() ?? 0
@@ -143,7 +144,7 @@ export default function UpgradeBusinessPage() {
       () => setPendingRequest(null),
     )
     return () => unsub()
-  }, [userId, workspaceId])
+  }, [businessType, userId, workspaceId])
 
   const canSubmit = useMemo(
     () =>
@@ -203,6 +204,7 @@ export default function UpgradeBusinessPage() {
         paymentNotes: paymentNotes.trim(),
         paymentStatus: 'pending',
         approvalStatus: 'pending',
+        businessType: normalizeBusinessType(businessType),
         createdAt: serverTimestamp(),
         approvedAt: null,
         rejectedAt: null,

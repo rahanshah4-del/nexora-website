@@ -59,7 +59,7 @@ function normalizePayment(payment) {
   }
 }
 
-async function addInventoryAdjustments(batch, workspaceId, invoice, now) {
+async function addInventoryAdjustments(batch, workspaceId, invoice, now, businessType) {
   if (!db || !workspaceId || invoice.inventoryAdjustedAt || invoice.stockAdjustedAt) return false
   const productItems = (invoice.items || []).filter((item) => item.productId && toNumber(item.quantity ?? item.qty, 0) > 0)
   if (!productItems.length) return false
@@ -72,6 +72,7 @@ async function addInventoryAdjustments(batch, workspaceId, invoice, now) {
       const currentStock = toNumber(productSnap.data().stockQuantity ?? productSnap.data().stock, 0)
       const quantity = toNumber(item.quantity ?? item.qty, 0)
       batch.update(productRef, {
+        businessType,
         stockQuantity: Math.max(0, currentStock - quantity),
         stockHistory: arrayUnion({
           type: 'invoice_paid',
@@ -311,7 +312,7 @@ export function useInvoices() {
           const now = serverTimestamp()
           const batch = writeBatch(db)
           const invoiceRef = doc(db, workspaceCollectionPath(workspaceId, 'invoices'), id)
-          const stockAdjusted = await addInventoryAdjustments(batch, workspaceId, invoice, now)
+          const stockAdjusted = await addInventoryAdjustments(batch, workspaceId, invoice, now, businessType)
           batch.update(invoiceRef, {
             paymentStatus: 'paid',
             status: 'paid',
@@ -485,7 +486,7 @@ export function useInvoices() {
           const now = serverTimestamp()
           const batch = writeBatch(db)
           const invoiceRef = doc(db, workspaceCollectionPath(workspaceId, 'invoices'), id)
-          const stockAdjusted = fullyPaid ? await addInventoryAdjustments(batch, workspaceId, invoice, now) : false
+          const stockAdjusted = fullyPaid ? await addInventoryAdjustments(batch, workspaceId, invoice, now, businessType) : false
           batch.update(invoiceRef, {
             paymentStatus: fullyPaid ? 'paid' : 'partial_paid',
             status: fullyPaid ? 'paid' : 'partial_paid',

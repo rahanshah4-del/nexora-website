@@ -179,7 +179,7 @@ function subscribeWorkspaceCollection(workspaceId, collectionName, businessType,
   )
 }
 
-async function addInventoryAdjustments(batch, workspaceId, invoice, now) {
+async function addInventoryAdjustments(batch, workspaceId, invoice, now, businessType) {
   if (!db || !workspaceId || invoice?.inventoryAdjustedAt || invoice?.stockAdjustedAt) return false
   const productItems = (invoice?.items || []).filter((item) => item.productId && toNumber(item.quantity ?? item.qty, 0) > 0)
   if (!productItems.length) return false
@@ -192,6 +192,7 @@ async function addInventoryAdjustments(batch, workspaceId, invoice, now) {
       const currentStock = toNumber(productSnap.data().stockQuantity ?? productSnap.data().stock, 0)
       const quantity = toNumber(item.quantity ?? item.qty, 0)
       batch.update(productRef, {
+        businessType,
         stockQuantity: Math.max(0, currentStock - quantity),
         stockHistory: arrayUnion({
           type: 'invoice_approved',
@@ -330,6 +331,7 @@ export function useApprovals() {
             setUpgradeRequests(
               snap.docs
                 .map((item) => ({ id: item.id, ...item.data() }))
+                .filter((item) => belongsToBusiness(item, businessType))
                 .filter((item) => isPendingRecord(item) || statusValue(item.paymentStatus, '') === 'pending'),
             )
             markLoaded()
@@ -424,7 +426,7 @@ export function useApprovals() {
               const invoiceData = { id: approval.invoiceId, ...invoiceSnap.data() }
               const invoiceAmount = invoiceValue(invoiceData) || amountValue(row)
               walletAmount = invoiceAmount
-              const stockAdjusted = await addInventoryAdjustments(batch, workspaceId, invoiceData, now)
+              const stockAdjusted = await addInventoryAdjustments(batch, workspaceId, invoiceData, now, businessType)
               batch.update(invoiceRef, {
                 status: 'paid',
                 paymentStatus: 'paid',
@@ -650,7 +652,7 @@ export function useApprovals() {
         const row = approval.row || {}
         const invoiceTotal = invoiceValue(row)
         if (isClosedStatus(row.paymentStatus || row.status)) return { ok: false, error: 'This invoice is already closed.' }
-        const stockAdjusted = await addInventoryAdjustments(batch, workspaceId, row, now)
+        const stockAdjusted = await addInventoryAdjustments(batch, workspaceId, row, now, businessType)
 
         const invoiceRef = doc(db, workspaceCollectionPath(workspaceId, 'invoices'), approval.sourceId)
         batch.update(invoiceRef, {

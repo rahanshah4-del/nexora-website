@@ -8,7 +8,7 @@ import OnboardingWizard from '../components/onboarding/OnboardingWizard.jsx'
 import Badge from '../components/ui/Badge.jsx'
 import Button from '../components/ui/Button.jsx'
 import PageLoader from '../components/ui/PageLoader.jsx'
-import { moduleByRoute, routeAllowedByBusinessType, routeAllowedByPlan } from '../data/moduleAccess.js'
+import { isDeveloperOwnerAccount, moduleByRoute, routeAllowedByBusinessType, routeAllowedByPlan } from '../data/moduleAccess.js'
 import { useAuth } from '../hooks/useAuth.js'
 import { useUser } from '../hooks/useUser.js'
 import {
@@ -155,6 +155,32 @@ function UpgradeRequiredBlock({ moduleLabel, onBackToDashboard, onUpgrade }) {
   )
 }
 
+function BusinessModuleBlock({ onBackToWorkspace }) {
+  return (
+    <div className="nexora-bg grid min-h-dvh place-items-center overflow-x-hidden px-4 py-10">
+      <motion.div
+        className="w-full max-w-xl rounded-[1.6rem] border border-white/85 bg-white/95 p-6 shadow-[0_24px_80px_-48px_rgba(15,23,42,0.55)]"
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.22, ease: 'easeOut' }}
+      >
+        <Badge variant="warning" className="font-semibold">
+          Not included
+        </Badge>
+        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-slate-950">
+          This module is not included in your selected business type.
+        </h1>
+        <p className="mt-3 text-sm leading-7 text-slate-600">
+          Switch to a matching workspace to use this module.
+        </p>
+        <Button className="mt-6 h-11 rounded-2xl" variant="subtle" type="button" onClick={onBackToWorkspace}>
+          Back to Workspace
+        </Button>
+      </motion.div>
+    </div>
+  )
+}
+
 function ComingSoonBlock({ onBackToWorkspace }) {
   return (
     <div className="nexora-bg grid min-h-dvh place-items-center overflow-x-hidden px-4 py-10">
@@ -200,6 +226,7 @@ export default function DashboardLayout() {
     isTrialExpired,
     trialEndsAt,
     isBlocked,
+    firebaseUser,
   } = useUser()
   const navigate = useNavigate()
   const location = useLocation()
@@ -214,7 +241,8 @@ export default function DashboardLayout() {
     accessPlan === 'Basic' ||
     accessPlan === 'Business' ||
     accessPlan === 'Enterprise'
-  const crmAccessBlocked = ready && isAuthenticated && !userLoading && Boolean(userDoc) && !isStaff && !hasActiveAccess
+  const developerOverride = isDeveloperOwnerAccount(userDoc, firebaseUser)
+  const crmAccessBlocked = ready && isAuthenticated && !userLoading && Boolean(userDoc) && !isStaff && !hasActiveAccess && !developerOverride
   const accountBlocked = ready && isAuthenticated && !userLoading && Boolean(userDoc) && isBlocked
   const currentModule = moduleByRoute(location.pathname)
   const routePlanBlocked =
@@ -223,18 +251,19 @@ export default function DashboardLayout() {
     !userLoading &&
     Boolean(userDoc) &&
     Boolean(currentModule) &&
-    !routeAllowedByPlan(location.pathname, accessPlan)
+    !routeAllowedByPlan(location.pathname, accessPlan, { developerOverride })
   const routeBusinessBlocked =
     ready &&
     isAuthenticated &&
     !userLoading &&
     Boolean(userDoc) &&
     Boolean(currentModule) &&
-    !routeAllowedByBusinessType(location.pathname, businessType)
+    !routeAllowedByBusinessType(location.pathname, businessType, { developerOverride })
   const comingSoonBlocked =
     ready &&
     isAuthenticated &&
     !userLoading &&
+    !developerOverride &&
     (location.pathname === '/app/restaurant-pos' || currentModule?.comingSoon)
   const mobileBlocked = ready && isAuthenticated && isMobileScreen
   const onboardingOpen = Boolean(ready && userId && !userLoading && !isStaff && userDoc?.onboardingCompleted !== true)
@@ -336,18 +365,12 @@ export default function DashboardLayout() {
     return <MobileAppAccessBlock />
   }
 
-  if (comingSoonBlocked) {
-    return <ComingSoonBlock onBackToWorkspace={() => navigate('/workspace')} />
+  if (routeBusinessBlocked) {
+    return <BusinessModuleBlock onBackToWorkspace={() => navigate('/workspace')} />
   }
 
-  if (routeBusinessBlocked) {
-    return (
-      <UpgradeRequiredBlock
-        moduleLabel={currentModule?.label}
-        onBackToDashboard={() => navigate('/app/dashboard')}
-        onUpgrade={() => navigate('/workspace')}
-      />
-    )
+  if (comingSoonBlocked) {
+    return <ComingSoonBlock onBackToWorkspace={() => navigate('/workspace')} />
   }
 
   if (routePlanBlocked) {
