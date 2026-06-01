@@ -372,7 +372,7 @@ function CreateWorkspaceCard({ disabled, message, onOpen }) {
         <div>
           <h2 className="text-[15px] font-bold text-slate-950">Create New Workspace</h2>
           <p className="mt-1.5 text-sm leading-5 text-slate-600">
-            {message || disabled ? 'Your account is limited to one active business module.' : 'Start a separate 7-day Nexora CRM trial workspace.'}
+            {message || (disabled ? 'Workspace creation is already in progress.' : 'Start a separate 7-day Nexora CRM trial workspace.')}
           </p>
           {message ? <p className="mt-2 text-xs font-bold text-amber-700">{message}</p> : null}
         </div>
@@ -443,7 +443,7 @@ function formInputClass() {
   return 'mt-1.5 h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100'
 }
 
-function OnboardingModal({ creating, message, form, onChange, onCreate, onClose, canClose }) {
+function OnboardingModal({ creating, message, form, onChange, onCreate, onClose, canClose, businessTypeLocked = false }) {
   const businessType = normalizeBusinessType(form.businessType)
   const isSchoolErp = businessType === 'School ERP'
   const workspaceTitle = isSchoolErp ? 'Setup School ERP Workspace' : `Setup ${businessType} Workspace`
@@ -499,7 +499,12 @@ function OnboardingModal({ creating, message, form, onChange, onCreate, onClose,
               />
             </FieldLabel>
             <FieldLabel label="Business Type">
-              <select value={form.businessType} onChange={(event) => onChange('businessType', event.target.value)} className={formInputClass()}>
+              <select
+                value={form.businessType}
+                onChange={(event) => onChange('businessType', event.target.value)}
+                disabled={businessTypeLocked}
+                className={`${formInputClass()} ${businessTypeLocked ? 'cursor-not-allowed bg-slate-100 text-slate-500' : ''}`}
+              >
                 {businessTypes.map((type) => (
                   <option key={type} value={type}>
                     {type}
@@ -874,7 +879,7 @@ export default function WorkspaceSelection() {
         : workspaces
 
       return sourceWorkspaces.map((workspace) => {
-        const selected = workspace.type === (lockedBusinessType || profile.businessType)
+        const selected = Boolean(lockedBusinessType) && workspace.type === (lockedBusinessType || profile.businessType)
         return workspace.active
           ? {
               ...workspace,
@@ -893,8 +898,13 @@ export default function WorkspaceSelection() {
     [hasModuleLock, lockedBusinessType, profile.businessType, profile.planLabel, profile.trialExpired, profile.trialShortLabel, profile.workspaceId],
   )
   const notificationCount = sampleNotifications.length
-  const createDisabled = creatingWorkspace || hasModuleLock
-  const createWorkspaceMessage = hasModuleLock ? moduleLockMessage : createMessage
+  const mustSelectModuleFirst = !developerOverride && !lockedBusinessType
+  const createDisabled = creatingWorkspace || hasModuleLock || mustSelectModuleFirst
+  const createWorkspaceMessage = hasModuleLock
+    ? moduleLockMessage
+    : mustSelectModuleFirst
+      ? 'Select a business module above to start onboarding.'
+      : createMessage
 
   useEffect(() => {
     if (!settingsOpen) {
@@ -1062,6 +1072,15 @@ export default function WorkspaceSelection() {
       setCreateMessage(moduleLockMessage)
       return
     }
+    if (!developerOverride && !lockedBusinessType) {
+      setCreateMessage('')
+      setOnboardingForm((current) => ({
+        ...current,
+        businessType,
+      }))
+      setCreateOpen(true)
+      return
+    }
     if (!hasCrmWorkspace && !workspaceData && !accountData?.workspaceId) {
       setCreateMessage('Create your company workspace first.')
       setOnboardingForm((current) => ({
@@ -1157,6 +1176,7 @@ export default function WorkspaceSelection() {
     emailVerified,
     hasCrmWorkspace,
     hasModuleLock,
+    developerOverride,
     lockedBusinessType,
     moduleLockMessage,
     navigate,
@@ -1176,9 +1196,13 @@ export default function WorkspaceSelection() {
       setCreateMessage(moduleLockMessage)
       return
     }
+    if (mustSelectModuleFirst) {
+      setCreateMessage('Select a business module above to start onboarding.')
+      return
+    }
     setCreateMessage('')
     setCreateOpen(true)
-  }, [emailVerified, hasModuleLock, moduleLockMessage, navigate])
+  }, [emailVerified, hasModuleLock, moduleLockMessage, mustSelectModuleFirst, navigate])
 
   const handleCreateWorkspace = useCallback(async () => {
     if (creatingWorkspace) return
@@ -1825,17 +1849,7 @@ export default function WorkspaceSelection() {
           onCreate={handleCreateWorkspace}
           onClose={() => setCreateOpen(false)}
           canClose={!needsWorkspaceOnboarding}
-        />
-      ) : null}
-      {needsWorkspaceOnboarding && !createOpen ? (
-        <OnboardingModal
-          creating={creatingWorkspace}
-          message={createMessage}
-          form={onboardingForm}
-          onChange={handleOnboardingFieldChange}
-          onCreate={handleCreateWorkspace}
-          onClose={() => {}}
-          canClose={false}
+          businessTypeLocked={!developerOverride}
         />
       ) : null}
       {settingsOpen ? (

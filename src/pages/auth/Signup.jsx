@@ -8,7 +8,6 @@ import useAuth from '../../context/useAuth.js'
 import NexoraLogo from '../../components/brand/NexoraLogo.jsx'
 import { motion } from 'framer-motion'
 import { clientSafeMessage, reportTechnicalError } from '../../lib/errorHandler.js'
-import { businessTypes } from '../../crm/data/moduleAccess.js'
 import { sendCustomVerificationEmail } from '../../lib/emailVerificationService.js'
 
 export default function Signup() {
@@ -18,7 +17,6 @@ export default function Signup() {
   const [company, setCompany] = useState('')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
-  const [businessType, setBusinessType] = useState(businessTypes[0])
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -59,7 +57,6 @@ export default function Signup() {
         company: company.trim(),
         email: email.trim().toLowerCase(),
         phone: phone.trim(),
-        businessType,
         provider: 'password',
         allowUnverifiedProfile: true,
       })
@@ -102,7 +99,6 @@ export default function Signup() {
           company: company.trim(),
           email: signedUser.email || email.trim().toLowerCase(),
           phone: phone.trim(),
-          businessType,
           provider: 'google',
         })
       }
@@ -272,19 +268,6 @@ export default function Signup() {
                       />
                     </label>
                   </div>
-
-                  <label className="space-y-2 text-sm text-slate-700">
-                    <span>Business type</span>
-                    <select
-                      value={businessType}
-                      onChange={(event) => setBusinessType(event.target.value)}
-                      className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
-                    >
-                      {businessTypes.map((type) => (
-                        <option key={type} value={type}>{type}</option>
-                      ))}
-                    </select>
-                  </label>
 
                   <div className="grid gap-4 sm:grid-cols-2">
                     <label className="space-y-2 text-sm text-slate-700">

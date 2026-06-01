@@ -6,10 +6,8 @@ import {
   HiOutlineArrowPath,
   HiOutlineArrowRight,
   HiOutlineBuildingLibrary,
-  HiOutlineBuildingOffice2,
   HiOutlineChartBarSquare,
   HiOutlineChatBubbleLeftRight,
-  HiOutlineChevronDown,
   HiOutlineCloud,
   HiOutlineEye,
   HiOutlineEyeSlash,
@@ -53,8 +51,6 @@ const footerBadges = [
 ]
 
 const languageOptions = ['English', 'Urdu', 'Arabic', 'Hindi']
-const workspaceOptions = ['Nexora CRM Workspace']
-const defaultWorkspace = workspaceOptions[0]
 
 function BrandLogo({ dark = false }) {
   return (
@@ -120,7 +116,6 @@ export default function Login() {
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [workspace, setWorkspace] = useState(defaultWorkspace)
   const [language, setLanguage] = useState(languageOptions[0])
   const [rememberMe, setRememberMe] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
@@ -283,24 +278,6 @@ export default function Login() {
               ) : null}
 
               <form className="mt-7 space-y-5" onSubmit={onSubmit}>
-                <FormField label="Workspace / Company">
-                  <div className="relative mt-2">
-                    <HiOutlineBuildingOffice2 className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-500" />
-                    <select
-                      value={workspace}
-                      onChange={(event) => setWorkspace(event.target.value)}
-                      className="h-12 w-full appearance-none rounded-lg border border-slate-200 bg-white pl-12 pr-10 text-sm font-medium text-slate-600 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-                    >
-                      {workspaceOptions.map((option) => (
-                        <option key={option} value={option}>
-                          {option}
-                        </option>
-                      ))}
-                    </select>
-                    <HiOutlineChevronDown className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-500" />
-                  </div>
-                </FormField>
-
                 <FormField label="Email / Username">
                   <div className="relative mt-2">
                     <HiOutlineUser className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-500" />
