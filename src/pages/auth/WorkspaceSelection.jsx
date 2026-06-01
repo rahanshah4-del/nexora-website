@@ -30,6 +30,7 @@ import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore'
 import logoUrl from '../../assets/logo/nexora-logo.svg'
 import useAuth from '../../context/useAuth.js'
 import { auth, db } from '../../lib/firebase.js'
+import PageLoader from '../../crm/components/ui/PageLoader.jsx'
 import { workspacePermissionDefaults } from '../../lib/roles.js'
 import { normalizeWorkspaceName, resolveWorkspaceName, saveStoredWorkspaceName } from '../../lib/workspaceName.js'
 import {
@@ -37,6 +38,7 @@ import {
   businessWorkspaceForType,
   businessTypes,
   getRecommendedModules,
+  isDeveloperOwnerAccount,
   labelForBusinessModule,
   normalizeBusinessType,
   packageNameForPlan,
@@ -56,6 +58,7 @@ const workspaceIconMap = {
 
 const moduleAccess = businessWorkspaceCatalog.map((workspace) => ({
   name: workspace.title,
+  type: workspace.type,
   detail: workspace.description,
   ...(workspaceIconMap[workspace.type] || workspaceIconMap['General CRM']),
   active: true,
@@ -369,7 +372,7 @@ function CreateWorkspaceCard({ disabled, message, onOpen }) {
         <div>
           <h2 className="text-[15px] font-bold text-slate-950">Create New Workspace</h2>
           <p className="mt-1.5 text-sm leading-5 text-slate-600">
-            {disabled ? 'Workspace creation is already in progress.' : 'Start a separate 7-day Nexora CRM trial workspace.'}
+            {message || disabled ? 'Your account is limited to one active business module.' : 'Start a separate 7-day Nexora CRM trial workspace.'}
           </p>
           {message ? <p className="mt-2 text-xs font-bold text-amber-700">{message}</p> : null}
         </div>
@@ -441,6 +444,12 @@ function formInputClass() {
 }
 
 function OnboardingModal({ creating, message, form, onChange, onCreate, onClose, canClose }) {
+  const businessType = normalizeBusinessType(form.businessType)
+  const isSchoolErp = businessType === 'School ERP'
+  const workspaceTitle = isSchoolErp ? 'Setup School ERP Workspace' : `Setup ${businessType} Workspace`
+  const nameLabel = isSchoolErp ? 'School Name' : 'Company / Business Name'
+  const namePlaceholder = isSchoolErp ? 'Your school name' : 'Your company name'
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 px-3 py-4 backdrop-blur-sm sm:px-5">
       <motion.section
@@ -453,9 +462,9 @@ function OnboardingModal({ creating, message, form, onChange, onCreate, onClose,
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
               <p className="text-xs font-black uppercase tracking-[0.2em] text-blue-200">Workspace onboarding</p>
-              <h2 className="mt-1 text-xl font-black tracking-tight sm:text-2xl">Create your company workspace</h2>
+              <h2 className="mt-1 text-xl font-black tracking-tight sm:text-2xl">{workspaceTitle}</h2>
               <p className="mt-2 max-w-xl text-sm leading-6 text-slate-300">
-                Set up one company workspace first. Your 7-day Basic trial starts when this is saved.
+                Set up one {businessType} workspace first. Your 7-day Basic trial starts when this is saved.
               </p>
             </div>
             {canClose ? (
@@ -473,12 +482,12 @@ function OnboardingModal({ creating, message, form, onChange, onCreate, onClose,
 
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6">
           <div className="grid gap-4 sm:grid-cols-2">
-            <FieldLabel label="Company / Business Name">
+            <FieldLabel label={nameLabel}>
               <input
                 value={form.companyName}
                 onChange={(event) => onChange('companyName', event.target.value)}
                 className={formInputClass()}
-                placeholder="Your company name"
+                placeholder={namePlaceholder}
               />
             </FieldLabel>
             <FieldLabel label="Owner Name">
@@ -550,6 +559,34 @@ function OnboardingModal({ creating, message, form, onChange, onCreate, onClose,
                 placeholder="Office or business address"
               />
             </FieldLabel>
+            {isSchoolErp ? (
+              <>
+                <FieldLabel label="Academic Year">
+                  <input
+                    value={form.academicYear}
+                    onChange={(event) => onChange('academicYear', event.target.value)}
+                    className={formInputClass()}
+                    placeholder="2026-2027"
+                  />
+                </FieldLabel>
+                <FieldLabel label="Classes Range">
+                  <input
+                    value={form.classesRange}
+                    onChange={(event) => onChange('classesRange', event.target.value)}
+                    className={formInputClass()}
+                    placeholder="Nursery to Grade 10"
+                  />
+                </FieldLabel>
+                <FieldLabel label="Monthly Fee Setup Optional">
+                  <input
+                    value={form.monthlyFeeSetup}
+                    onChange={(event) => onChange('monthlyFeeSetup', event.target.value)}
+                    className={formInputClass()}
+                    placeholder="Example: 5000 PKR per month"
+                  />
+                </FieldLabel>
+              </>
+            ) : null}
           </div>
 
           {message ? (
@@ -700,6 +737,9 @@ export default function WorkspaceSelection() {
     email: '',
     address: '',
     language: 'English',
+    academicYear: '',
+    classesRange: '',
+    monthlyFeeSetup: '',
   }))
   const [workspaceView, setWorkspaceView] = useState('enter')
   const [accountData, setAccountData] = useState(null)
@@ -803,16 +843,38 @@ export default function WorkspaceSelection() {
       trialExpired,
       isTrial,
       workspaceId: cleanString(workspaceData?.workspaceId) || cleanString(accountData?.workspaceId) || user?.uid || '',
-      businessType: normalizeBusinessType(workspaceData?.businessType || accountData?.businessType),
+      businessType: normalizeBusinessType(
+        workspaceData?.selectedBusinessType || workspaceData?.businessType || accountData?.selectedBusinessType || accountData?.businessType,
+      ),
     }
   }, [accountData, emailVerified, nowMs, user, workspaceData])
 
   const hasCrmWorkspace = Boolean(workspaceData || accountData?.workspaceId || accountData?.onboardingCompleted)
+  const developerOverride = isDeveloperOwnerAccount(accountData, user)
+  const lockedBusinessTypeSource =
+    cleanString(workspaceData?.selectedBusinessType) ||
+    cleanString(workspaceData?.businessType) ||
+    cleanString(accountData?.selectedBusinessType) ||
+    cleanString(accountData?.businessType)
+  const lockedBusinessType = lockedBusinessTypeSource ? normalizeBusinessType(lockedBusinessTypeSource) : ''
+  const hasModuleLock = !developerOverride && hasCrmWorkspace && Boolean(lockedBusinessType)
+  const moduleLockMessage = 'Contact Nexora to enable another module'
   const needsWorkspaceOnboarding = !authLoading && !accountLoading && Boolean(user?.uid) && !hasCrmWorkspace
-  const visibleWorkspaces = useMemo(
+  const visibleModuleAccess = useMemo(
     () =>
-      workspaces.map((workspace) => {
-        const selected = workspace.type === profile.businessType
+      hasModuleLock
+        ? moduleAccess.filter((workspace) => normalizeBusinessType(workspace.type) === lockedBusinessType)
+        : moduleAccess,
+    [hasModuleLock, lockedBusinessType],
+  )
+  const visibleWorkspaces = useMemo(
+    () => {
+      const sourceWorkspaces = hasModuleLock
+        ? workspaces.filter((workspace) => normalizeBusinessType(workspace.type) === lockedBusinessType)
+        : workspaces
+
+      return sourceWorkspaces.map((workspace) => {
+        const selected = workspace.type === (lockedBusinessType || profile.businessType)
         return workspace.active
           ? {
               ...workspace,
@@ -826,12 +888,13 @@ export default function WorkspaceSelection() {
               selected,
             }
           : { ...workspace, selected }
-      }),
-    [profile.businessType, profile.planLabel, profile.trialExpired, profile.trialShortLabel, profile.workspaceId],
+      })
+    },
+    [hasModuleLock, lockedBusinessType, profile.businessType, profile.planLabel, profile.trialExpired, profile.trialShortLabel, profile.workspaceId],
   )
   const notificationCount = sampleNotifications.length
-  const createDisabled = creatingWorkspace
-  const createWorkspaceMessage = createMessage
+  const createDisabled = creatingWorkspace || hasModuleLock
+  const createWorkspaceMessage = hasModuleLock ? moduleLockMessage : createMessage
 
   useEffect(() => {
     if (!settingsOpen) {
@@ -855,7 +918,7 @@ export default function WorkspaceSelection() {
         cleanString(accountData?.workspaceName) ||
         cleanString(accountData?.company) ||
         cleanString(accountData?.companyName),
-      businessType: normalizeBusinessType(current.businessType || accountData?.businessType),
+      businessType: normalizeBusinessType(current.businessType || accountData?.selectedBusinessType || accountData?.businessType),
       country: current.country || selectedRegion,
       language: current.language || selectedLanguage,
     }))
@@ -994,8 +1057,17 @@ export default function WorkspaceSelection() {
       setCreateMessage('This module is coming soon.')
       return
     }
+    const businessType = normalizeBusinessType(workspace.type)
+    if (hasModuleLock && businessType !== lockedBusinessType) {
+      setCreateMessage(moduleLockMessage)
+      return
+    }
     if (!hasCrmWorkspace && !workspaceData && !accountData?.workspaceId) {
       setCreateMessage('Create your company workspace first.')
+      setOnboardingForm((current) => ({
+        ...current,
+        businessType,
+      }))
       setCreateOpen(true)
       return
     }
@@ -1004,7 +1076,6 @@ export default function WorkspaceSelection() {
       return
     }
 
-    const businessType = normalizeBusinessType(workspace.type)
     const enabledModules = getRecommendedModules(businessType)
     const selectedFeatures = enabledModules.map((key) => labelForBusinessModule(key, businessType))
     const now = serverTimestamp()
@@ -1014,6 +1085,9 @@ export default function WorkspaceSelection() {
     setAccountData((current) => ({
       ...(current || {}),
       businessType,
+      selectedBusinessType: businessType,
+      currentBusinessType: businessType,
+      selectedWorkspace: workspace.id,
       enabledModules,
       selectedFeatures,
       onboardingCompleted: true,
@@ -1041,6 +1115,7 @@ export default function WorkspaceSelection() {
           doc(db, 'users', uid),
           {
             businessType,
+            currentBusinessType: businessType,
             selectedBusinessType: businessType,
             selectedWorkspace: workspace.id,
             workspaceId,
@@ -1056,6 +1131,7 @@ export default function WorkspaceSelection() {
           doc(db, 'workspaces', workspaceId),
           {
             businessType,
+            currentBusinessType: businessType,
             selectedBusinessType: businessType,
             selectedWorkspace: workspace.id,
             workspaceId,
@@ -1075,7 +1151,20 @@ export default function WorkspaceSelection() {
     } finally {
       setBusinessTypeSaving('')
     }
-  }, [accountData?.workspaceId, businessTypeSaving, emailVerified, hasCrmWorkspace, navigate, user?.uid, workspaceData, workspaceData?.ownerId, workspaceData?.workspaceId])
+  }, [
+    accountData?.workspaceId,
+    businessTypeSaving,
+    emailVerified,
+    hasCrmWorkspace,
+    hasModuleLock,
+    lockedBusinessType,
+    moduleLockMessage,
+    navigate,
+    user?.uid,
+    workspaceData,
+    workspaceData?.ownerId,
+    workspaceData?.workspaceId,
+  ])
 
   const handleOpenCreate = useCallback(() => {
     if (!emailVerified) {
@@ -1083,9 +1172,13 @@ export default function WorkspaceSelection() {
       navigate('/verify-email')
       return
     }
+    if (hasModuleLock) {
+      setCreateMessage(moduleLockMessage)
+      return
+    }
     setCreateMessage('')
     setCreateOpen(true)
-  }, [emailVerified, navigate])
+  }, [emailVerified, hasModuleLock, moduleLockMessage, navigate])
 
   const handleCreateWorkspace = useCallback(async () => {
     if (creatingWorkspace) return
@@ -1118,6 +1211,9 @@ export default function WorkspaceSelection() {
       const currency = cleanString(onboardingForm.currency) || 'PKR'
       const phone = cleanString(onboardingForm.phone)
       const address = cleanString(onboardingForm.address)
+      const academicYear = cleanString(onboardingForm.academicYear)
+      const classesRange = cleanString(onboardingForm.classesRange)
+      const monthlyFeeSetup = cleanString(onboardingForm.monthlyFeeSetup)
       const preferredLanguage = cleanString(onboardingForm.language) || 'English'
       const now = serverTimestamp()
       const trialEndsAt = addDays(new Date(), CRM_TRIAL_DAYS)
@@ -1143,6 +1239,9 @@ export default function WorkspaceSelection() {
         status: 'active',
         businessType,
         selectedBusinessType: businessType,
+        currentBusinessType: businessType,
+        selectedWorkspace: businessWorkspaceForType(businessType).id,
+        trialBusinessType: businessType,
         enabledModules,
         selectedFeatures,
         onboardingCompleted: true,
@@ -1155,6 +1254,9 @@ export default function WorkspaceSelection() {
         phone,
         address,
         preferredLanguage,
+        academicYear,
+        classesRange,
+        monthlyFeeSetup,
         updatedAt: now,
         lastLoginAt: now,
       }
@@ -1166,6 +1268,7 @@ export default function WorkspaceSelection() {
         trialStartAt: now,
         trialStartedAt: now,
         trialEndsAt,
+        trialBusinessType: businessType,
         isTrialActive: true,
         trialDays: CRM_TRIAL_DAYS,
       }
@@ -1193,6 +1296,9 @@ export default function WorkspaceSelection() {
         country,
         currency,
         preferredLanguage,
+        academicYear,
+        classesRange,
+        monthlyFeeSetup,
         plan: 'Basic',
         planStatus: 'trial',
         subscriptionStatus: 'trial',
@@ -1205,6 +1311,9 @@ export default function WorkspaceSelection() {
         isTrialActive: true,
         businessType,
         selectedBusinessType: businessType,
+        currentBusinessType: businessType,
+        selectedWorkspace: businessWorkspaceForType(businessType).id,
+        trialBusinessType: businessType,
         enabledModules,
         selectedFeatures,
         onboardingCompleted: true,
@@ -1265,6 +1374,9 @@ export default function WorkspaceSelection() {
       setCreatingWorkspace(false)
     }
   }, [creatingWorkspace, emailVerified, navigate, onboardingForm, user])
+
+  if (authLoading) return <PageLoader stage="auth" />
+  if (accountLoading) return <PageLoader stage="workspace" businessType={profile.businessType || onboardingForm.businessType} />
 
   return (
     <main className="min-h-screen overflow-x-clip bg-slate-50 text-slate-950">
@@ -1407,7 +1519,7 @@ export default function WorkspaceSelection() {
                 Your Module Access
               </p>
               <div className="mt-3 space-y-2">
-                {moduleAccess.map((module) => {
+                {visibleModuleAccess.map((module) => {
                   const Icon = module.icon
                   const canOpenModule = Boolean(module.active && module.route)
 
@@ -1417,7 +1529,7 @@ export default function WorkspaceSelection() {
                       key={module.name}
                       disabled={!canOpenModule}
                       onClick={() => {
-                        const workspace = businessWorkspaceForType(module.name)
+                        const workspace = businessWorkspaceForType(module.type)
                         if (canOpenModule) handleSelectBusinessWorkspace(workspace)
                       }}
                       className={`flex h-9 w-full items-center gap-3 rounded-lg px-2 text-left text-[13px] font-semibold ${
@@ -1438,6 +1550,11 @@ export default function WorkspaceSelection() {
                   )
                 })}
               </div>
+              {hasModuleLock ? (
+                <p className="mt-3 px-2 text-xs font-semibold leading-5 text-slate-300">
+                  {moduleLockMessage}
+                </p>
+              ) : null}
             </div>
 
             <SidebarItem icon={HiOutlineCog6Tooth} label="Settings" muted onClick={() => setSettingsOpen(true)} />

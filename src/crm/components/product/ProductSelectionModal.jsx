@@ -132,11 +132,23 @@ function ProductCard({ product, onSelect }) {
   )
 }
 
-function ProductSelectionModal({ open, session, selectedWorkspace, onSelect, onContinueLast, onClose }) {
+function ProductSelectionModal({
+  open,
+  session,
+  selectedWorkspace,
+  developerOverride = false,
+  lockedWorkspaceId = '',
+  onSelect,
+  onContinueLast,
+  onClose,
+}) {
   const navigate = useNavigate()
   const hasLastWorkspace = isValidWorkspace(selectedWorkspace)
   const selectedStatus = hasLastWorkspace ? workspaceLabel(selectedWorkspace) : 'Not selected'
   const upgradeTrialLabel = formatUpgradeTrialLabel(session)
+  const visibleProducts = developerOverride || !isValidWorkspace(lockedWorkspaceId)
+    ? products
+    : products.filter((product) => product.id === lockedWorkspaceId)
 
   return (
     <AnimatePresence>
@@ -174,7 +186,7 @@ function ProductSelectionModal({ open, session, selectedWorkspace, onSelect, onC
                     Welcome to Nexora Workspace
                   </h2>
                   <p className="mt-1 text-sm text-slate-500 dark:text-slate-300">
-                    Choose the system you want to use today.
+                    {developerOverride ? 'Choose the system you want to use today.' : 'Your account is locked to the enabled business module.'}
                   </p>
                 </div>
               </div>
@@ -232,10 +244,15 @@ function ProductSelectionModal({ open, session, selectedWorkspace, onSelect, onC
             ) : null}
 
             <div className="relative mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {products.map((product) => (
+              {visibleProducts.map((product) => (
                 <ProductCard key={product.id} product={product} onSelect={onSelect} />
               ))}
             </div>
+            {!developerOverride && isValidWorkspace(lockedWorkspaceId) ? (
+              <p className="relative mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800 dark:border-amber-400/20 dark:bg-amber-400/10 dark:text-amber-100">
+                Contact Nexora to enable another module
+              </p>
+            ) : null}
 
             <div className="relative mt-5 flex flex-col gap-3 border-t border-slate-200/70 pt-4 text-sm text-slate-500 dark:border-white/10 dark:text-slate-300 sm:flex-row sm:items-center sm:justify-between">
               <span className="inline-flex items-center gap-2">

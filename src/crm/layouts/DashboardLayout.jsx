@@ -8,7 +8,13 @@ import OnboardingWizard from '../components/onboarding/OnboardingWizard.jsx'
 import Badge from '../components/ui/Badge.jsx'
 import Button from '../components/ui/Button.jsx'
 import PageLoader from '../components/ui/PageLoader.jsx'
-import { isDeveloperOwnerAccount, moduleByRoute, routeAllowedByBusinessType, routeAllowedByPlan } from '../data/moduleAccess.js'
+import {
+  businessWorkspaceForType,
+  isDeveloperOwnerAccount,
+  moduleByRoute,
+  routeAllowedByBusinessType,
+  routeAllowedByPlan,
+} from '../data/moduleAccess.js'
 import { useAuth } from '../hooks/useAuth.js'
 import { useUser } from '../hooks/useUser.js'
 import { useWorkspaceAccess } from '../hooks/useWorkspaceAccess.js'
@@ -169,10 +175,10 @@ function BusinessModuleBlock({ onBackToWorkspace }) {
           Not included
         </Badge>
         <h1 className="mt-4 text-2xl font-semibold tracking-tight text-slate-950">
-          This module is not included in your selected business type.
+          This module is not enabled for your account.
         </h1>
         <p className="mt-3 text-sm leading-7 text-slate-600">
-          Switch to a matching workspace to use this module.
+          Contact Nexora to enable another module.
         </p>
         <Button className="mt-6 h-11 rounded-2xl" variant="subtle" type="button" onClick={onBackToWorkspace}>
           Back to Workspace
@@ -270,6 +276,7 @@ export default function DashboardLayout() {
     accessPlan === 'Business' ||
     accessPlan === 'Enterprise'
   const developerOverride = isDeveloperOwnerAccount(userDoc, firebaseUser)
+  const lockedWorkspaceId = businessWorkspaceForType(userDoc?.selectedBusinessType || userDoc?.businessType).id
   const teamOverride = workspaceAccess.isAdmin || workspaceAccess.hasPermission('settingsAccess')
   const crmAccessBlocked = ready && isAuthenticated && !userLoading && Boolean(userDoc) && !isStaff && !hasActiveAccess && !developerOverride
   const accountBlocked = ready && isAuthenticated && !userLoading && Boolean(userDoc) && isBlocked
@@ -318,7 +325,7 @@ export default function DashboardLayout() {
   useEffect(() => {
     if (!ready || !userId || userLoading) return
 
-    const selected = readSelectedWorkspace(userId)
+    const selected = developerOverride ? readSelectedWorkspace(userId) : lockedWorkspaceId
     const nextSession = buildWorkspaceSession({ user, userDoc, selectedWorkspace: selected, workspaceId })
 
     Promise.resolve().then(() => {
@@ -333,7 +340,7 @@ export default function DashboardLayout() {
       persistWorkspaceSession(nextSession).catch(() => {})
     }
 
-  }, [ready, user, userDoc, userId, userLoading, workspaceId])
+  }, [developerOverride, lockedWorkspaceId, ready, user, userDoc, userId, userLoading, workspaceId])
 
   const markModalSeen = useCallback(() => {
     if (!sessionInfo?.sessionId || !userId) return
@@ -342,6 +349,11 @@ export default function DashboardLayout() {
 
   const selectWorkspace = useCallback((workspace) => {
     if (!userId || !isValidWorkspace(workspace)) return
+    if (!developerOverride && workspace !== lockedWorkspaceId) {
+      setProductModalOpen(false)
+      navigate('/workspace', { replace: true })
+      return
+    }
     saveSelectedWorkspace(userId, workspace)
     setSelectedWorkspace(workspace)
     setProductModalOpen(false)
@@ -353,12 +365,12 @@ export default function DashboardLayout() {
     persistWorkspaceSession(nextSession).catch(() => {})
 
     navigate(workspaceRoute(workspace), { replace: true })
-  }, [markModalSeen, navigate, user, userDoc, userId, workspaceId])
+  }, [developerOverride, lockedWorkspaceId, markModalSeen, navigate, user, userDoc, userId, workspaceId])
 
   const continueLastWorkspace = useCallback(() => {
-    const workspace = selectedWorkspace || readSelectedWorkspace(userId) || 'general-crm'
+    const workspace = developerOverride ? selectedWorkspace || readSelectedWorkspace(userId) || 'general-crm' : lockedWorkspaceId
     selectWorkspace(workspace)
-  }, [selectWorkspace, selectedWorkspace, userId])
+  }, [developerOverride, lockedWorkspaceId, selectWorkspace, selectedWorkspace, userId])
 
   const openProductSwitcher = useCallback(() => {
     setProductModalOpen(true)
@@ -367,7 +379,7 @@ export default function DashboardLayout() {
   if (ready && isAuthenticated && userLoading) {
     return (
       <div className="nexora-bg grid min-h-dvh place-items-center overflow-x-hidden px-4 py-10">
-        <PageLoader />
+        <PageLoader stage="permissions" businessType={userDoc?.businessType} />
       </div>
     )
   }
@@ -435,6 +447,8 @@ export default function DashboardLayout() {
         open={productModalOpen && !onboardingOpen}
         session={sessionInfo}
         selectedWorkspace={selectedWorkspace}
+        developerOverride={developerOverride}
+        lockedWorkspaceId={lockedWorkspaceId}
         onSelect={selectWorkspace}
         onContinueLast={continueLastWorkspace}
         onClose={continueLastWorkspace}

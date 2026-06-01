@@ -6,8 +6,7 @@ export default function RequireAuth({ children }) {
   const { user, ready } = useAuth()
   const location = useLocation()
 
-  if (!ready) return <PageLoader />
+  if (!ready) return <PageLoader stage="auth" />
   if (!user) return <Navigate to="/login" replace state={{ from: location.pathname }} />
   return children
 }
-

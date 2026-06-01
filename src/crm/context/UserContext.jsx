@@ -12,6 +12,7 @@ import {
   businessWorkspaceForSelection,
   businessWorkspaceForType,
   daysUntil,
+  isDeveloperOwnerAccount,
   isTrialExpired,
   normalizeBusinessType,
   normalizePlan,
@@ -150,8 +151,13 @@ export function UserProvider({ children }) {
 
   const role = normalizeRole(userDoc?.role)
   const workspaceId = userDoc?.workspaceId || user?.uid || null
+  const developerOverride = isDeveloperOwnerAccount(userDoc, user)
+  const lockedBusinessType =
+    userDoc?.selectedBusinessType || userDoc?.businessType || workspaceDoc?.selectedBusinessType || workspaceDoc?.businessType
   const selectedBusiness = businessWorkspaceForSelection(
-    selectedBusinessWorkspace || userDoc?.selectedWorkspace || userDoc?.selectedBusinessType || userDoc?.businessType,
+    developerOverride
+      ? selectedBusinessWorkspace || userDoc?.selectedWorkspace || userDoc?.selectedBusinessType || userDoc?.businessType
+      : lockedBusinessType || userDoc?.selectedWorkspace,
   )
   const businessType = normalizeBusinessType(selectedBusiness?.type || userDoc?.selectedBusinessType || userDoc?.businessType)
   const businessWorkspaceId = selectedBusiness?.id || businessWorkspaceForType(businessType).id
