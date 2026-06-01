@@ -117,7 +117,7 @@ function TopNav({ onOpenSidebar, onSwitchProduct }) {
     <>
       {toast ? <Toast message={toast} onClose={() => setToast(null)} /> : null}
       <header className="sticky top-0 z-40 w-full px-3 pt-3 print:hidden sm:px-5 lg:px-6">
-        <div className="mx-auto flex min-h-[64px] w-full max-w-[1440px] min-w-0 items-center gap-3 rounded-[1.35rem] border border-white/70 bg-white/[0.94] px-3 py-2.5 shadow-[0_16px_48px_-40px_rgba(15,23,42,0.45)] backdrop-blur-sm transition-colors duration-200 dark:border-slate-800 dark:bg-slate-950/90 sm:px-4">
+        <div className="mx-auto flex min-h-[64px] w-full max-w-[1440px] min-w-0 flex-wrap items-center gap-2 rounded-[1.35rem] border border-white/70 bg-white/[0.94] px-3 py-2.5 shadow-[0_16px_48px_-40px_rgba(15,23,42,0.45)] backdrop-blur-sm transition-colors duration-200 dark:border-slate-800 dark:bg-slate-950/90 sm:gap-3 sm:px-4 xl:flex-nowrap">
           <button
             type="button"
             className="focus-ring inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-white/10 lg:hidden"
@@ -131,11 +131,11 @@ function TopNav({ onOpenSidebar, onSwitchProduct }) {
             </span>
           </button>
 
-          <div className="hidden min-w-0 flex-[1_1_46rem] md:block">
+          <div className="order-3 hidden w-full min-w-0 lg:block xl:order-none xl:w-auto xl:flex-[0_1_320px] 2xl:flex-[0_1_360px]">
             <GlobalSearch />
           </div>
 
-          <div className="ml-auto flex shrink-0 items-center justify-end gap-1.5 sm:gap-2">
+          <div className="ml-auto flex min-w-0 flex-1 items-center justify-end gap-1.5 sm:gap-2 xl:flex-none">
             <div className="hidden shrink-0 items-center gap-2 2xl:flex">
               <OfflineStatus />
               <BranchSwitcher />

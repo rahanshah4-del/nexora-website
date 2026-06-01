@@ -248,12 +248,12 @@ export default function GlobalSearch({ className }) {
   }, [])
 
   return (
-    <div ref={rootRef} className={cn('relative flex w-full min-w-0 max-w-[46rem]', className)}>
+    <div ref={rootRef} className={cn('relative flex w-full min-w-0', className)}>
       <div className="relative flex h-12 w-full min-w-0 items-center sm:h-[50px]">
         <HiOutlineMagnifyingGlass className="pointer-events-none absolute left-4 top-1/2 z-10 h-5 w-5 -translate-y-1/2 text-slate-400" />
         <input
           ref={inputRef}
-          className="focus-ring h-full w-full min-w-0 rounded-2xl border border-slate-200 bg-slate-50/85 pl-12 pr-11 text-sm font-medium leading-none text-slate-900 shadow-none outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-sky-300 focus:bg-white dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-100 dark:placeholder:text-slate-400 sm:pr-[7.25rem]"
+          className="focus-ring h-full w-full min-w-0 rounded-2xl border border-slate-200 bg-slate-50/85 pl-12 pr-24 text-sm font-medium leading-none text-slate-900 shadow-none outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-sky-300 focus:bg-white dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-100 dark:placeholder:text-slate-400"
           placeholder={placeholder}
           value={query}
           onFocus={() => setOpen(true)}
@@ -266,14 +266,14 @@ export default function GlobalSearch({ className }) {
         {query ? (
           <button
             type="button"
-            className="focus-ring absolute right-3 top-1/2 z-10 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-xl text-slate-500 transition hover:bg-slate-200/70 hover:text-slate-900 dark:hover:bg-white/10 sm:right-[4.75rem]"
+            className="focus-ring absolute right-[4.75rem] top-1/2 z-10 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-xl text-slate-500 transition hover:bg-slate-200/70 hover:text-slate-900 dark:hover:bg-white/10"
             onClick={clear}
             aria-label="Clear search"
           >
             <HiOutlineXMark className="h-4 w-4" />
           </button>
         ) : null}
-        <span className="pointer-events-none absolute right-3 top-1/2 hidden h-7 -translate-y-1/2 items-center rounded-lg border border-slate-200 bg-white px-2 text-[10px] font-bold leading-none text-slate-400 dark:border-slate-700 dark:bg-slate-900 sm:inline-flex">
+        <span className="pointer-events-none absolute right-3 top-1/2 inline-flex h-7 -translate-y-1/2 items-center rounded-lg border border-slate-200 bg-white px-2 text-[10px] font-bold leading-none text-slate-400 dark:border-slate-700 dark:bg-slate-900">
           Ctrl K
         </span>
       </div>
