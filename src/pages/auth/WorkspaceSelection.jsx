@@ -205,7 +205,7 @@ function VerificationBadge({ verified, compact = false }) {
       } ${verified ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}
     >
       {verified ? <HiOutlineCheckCircle className="h-3.5 w-3.5" /> : null}
-      {verified ? 'Verified' : 'Email not verified'}
+      {verified ? 'Verified ✅' : 'Not Verified ⚠️'}
     </span>
   )
 }
@@ -976,6 +976,11 @@ export default function WorkspaceSelection() {
 
   const handleSelectBusinessWorkspace = useCallback(async (workspace) => {
     if (businessTypeSaving) return
+    if (!emailVerified) {
+      setCreateMessage('Please verify your email before creating a workspace.')
+      navigate('/verify-email')
+      return
+    }
 
     const uid = user?.uid
     const workspaceId = cleanString(workspaceData?.workspaceId) || cleanString(accountData?.workspaceId) || uid
@@ -1065,15 +1070,25 @@ export default function WorkspaceSelection() {
     } finally {
       setBusinessTypeSaving('')
     }
-  }, [accountData?.workspaceId, businessTypeSaving, hasCrmWorkspace, navigate, user?.uid, workspaceData, workspaceData?.ownerId, workspaceData?.workspaceId])
+  }, [accountData?.workspaceId, businessTypeSaving, emailVerified, hasCrmWorkspace, navigate, user?.uid, workspaceData, workspaceData?.ownerId, workspaceData?.workspaceId])
 
   const handleOpenCreate = useCallback(() => {
+    if (!emailVerified) {
+      setCreateMessage('Please verify your email before creating a workspace.')
+      navigate('/verify-email')
+      return
+    }
     setCreateMessage('')
     setCreateOpen(true)
-  }, [])
+  }, [emailVerified, navigate])
 
   const handleCreateWorkspace = useCallback(async () => {
     if (creatingWorkspace) return
+    if (!emailVerified) {
+      setCreateMessage('Please verify your email before creating a workspace.')
+      navigate('/verify-email')
+      return
+    }
     if (!db || !user?.uid) {
       setCreateMessage('Workspace cannot be created until Firebase is connected.')
       return
@@ -1244,7 +1259,7 @@ export default function WorkspaceSelection() {
     } finally {
       setCreatingWorkspace(false)
     }
-  }, [creatingWorkspace, navigate, onboardingForm, user])
+  }, [creatingWorkspace, emailVerified, navigate, onboardingForm, user])
 
   return (
     <main className="min-h-screen overflow-x-clip bg-slate-50 text-slate-950">

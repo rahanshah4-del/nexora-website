@@ -13,6 +13,11 @@ function userDisplayName(user, fallback = '') {
   return cleanString(fallback) || cleanString(user?.displayName) || cleanString(user?.email?.split('@')?.[0]) || 'Nexora User'
 }
 
+function isPasswordOnlyUser(user, provider) {
+  const providers = Array.isArray(user?.providerData) ? user.providerData.map((item) => item?.providerId).filter(Boolean) : []
+  return provider === 'password' || providers.includes('password')
+}
+
 export async function ensureUserWorkspace(user, overrides = {}) {
   if (!db || !user?.uid) return null
 
@@ -26,20 +31,27 @@ export async function ensureUserWorkspace(user, overrides = {}) {
   const enabledModules = getRecommendedModules(businessType)
   const selectedFeatures = enabledModules.map((key) => labelForBusinessModule(key, businessType))
   const provider = cleanString(overrides.provider) || user?.providerData?.[0]?.providerId || 'password'
+  const emailVerified = Boolean(user.emailVerified)
+  const allowUnverifiedProfile = overrides.allowUnverifiedProfile === true
+  const canCreateWorkspace = emailVerified || !isPasswordOnlyUser(user, provider)
 
   const userRef = doc(db, 'users', uid)
   const workspaceRef = doc(db, 'workspaces', uid)
   const [userSnap, workspaceSnap] = await Promise.all([getDoc(userRef), getDoc(workspaceRef)])
   const existingUser = userSnap.exists() ? userSnap.data() : null
-  const effectiveWorkspaceId = cleanString(existingUser?.workspaceId) || uid
+  const existingWorkspaceId = cleanString(existingUser?.workspaceId)
+  const effectiveWorkspaceId = existingWorkspaceId || (canCreateWorkspace ? uid : '')
   const effectiveOwnerId = cleanString(existingUser?.ownerId) || effectiveWorkspaceId
 
   if (!userSnap.exists()) {
+    if (!canCreateWorkspace && !allowUnverifiedProfile) {
+      return null
+    }
     await setDoc(userRef, {
       uid,
-      ownerId: uid,
+      ownerId: canCreateWorkspace ? uid : '',
       userId: uid,
-      workspaceId: uid,
+      workspaceId: canCreateWorkspace ? uid : '',
       fullName,
       name: fullName,
       company,
@@ -52,7 +64,7 @@ export async function ensureUserWorkspace(user, overrides = {}) {
       workspaceName: company || `${fullName}'s Workspace`,
       photoURL: cleanString(overrides.photoURL) || cleanString(user.photoURL),
       provider,
-      emailVerified: Boolean(user.emailVerified),
+      emailVerified,
       role: 'owner',
       status: 'active',
       isAdmin: false,
@@ -77,7 +89,7 @@ export async function ensureUserWorkspace(user, overrides = {}) {
       userId: uid,
       workspaceId: effectiveWorkspaceId,
       email,
-      emailVerified: Boolean(user.emailVerified),
+      emailVerified,
       photoURL: cleanString(overrides.photoURL) || cleanString(user.photoURL),
       provider,
       updatedAt: now,
@@ -95,6 +107,10 @@ export async function ensureUserWorkspace(user, overrides = {}) {
       update.enabledModules = enabledModules
     }
     await setDoc(userRef, update, { merge: true })
+  }
+
+  if (!canCreateWorkspace) {
+    return { uid, workspaceId: effectiveWorkspaceId || '' }
   }
 
   if (effectiveWorkspaceId !== uid) {

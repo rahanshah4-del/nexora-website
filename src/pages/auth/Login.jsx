@@ -22,7 +22,7 @@ import {
   HiOutlineUserGroup,
   HiOutlineUsers,
 } from 'react-icons/hi2'
-import { Link, Navigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
 import { auth, firebaseEnabled } from '../../lib/firebase.js'
 import { ensureUserWorkspace } from '../../lib/accountProvisioning.js'
@@ -117,6 +117,7 @@ function FormField({ label, children }) {
 
 export default function Login() {
   const { user, loading } = useAuth()
+  const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [workspace, setWorkspace] = useState(defaultWorkspace)
@@ -143,7 +144,12 @@ export default function Login() {
     setSubmitting(true)
     try {
       const credentials = await signInWithEmailAndPassword(auth, email.trim(), password)
+      if (!credentials.user.emailVerified) {
+        navigate('/verify-email', { replace: true })
+        return
+      }
       await ensureUserWorkspace(credentials.user, { provider: 'password' })
+      navigate('/workspace', { replace: true })
     } catch (err) {
       setError(clientSafeMessage(err, 'Unable to sign in. Please verify your credentials.', { context: 'Login with email' }))
     } finally {
@@ -165,6 +171,7 @@ export default function Login() {
       const provider = new GoogleAuthProvider()
       const result = await signInWithPopup(auth, provider)
       await ensureUserWorkspace(result.user, { provider: 'google' })
+      navigate('/workspace', { replace: true })
     } catch (err) {
       setError(clientSafeMessage(err, 'Google sign-in failed. Please try again.', { context: 'Login with Google' }))
     } finally {

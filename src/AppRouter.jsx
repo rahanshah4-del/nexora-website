@@ -4,6 +4,7 @@ import UpgradeBusiness from './pages/UpgradeBusiness.jsx'
 import MarketingRoute from './pages/public/MarketingRoute.jsx'
 import Login from './pages/auth/Login.jsx'
 import Signup from './pages/auth/Signup.jsx'
+import VerifyEmail from './pages/auth/VerifyEmail.jsx'
 import WorkspaceSelection from './pages/auth/WorkspaceSelection.jsx'
 import CrmRequireAuth from './crm/components/auth/RequireAuth.jsx'
 import PageLoader from './crm/components/ui/PageLoader.jsx'
@@ -97,6 +98,7 @@ export default function AppRouter() {
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
       <Route element={<RootRequireAuth />}>
+        <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/workspace" element={<WorkspaceSelection />} />
       </Route>
       <Route path="/upgrade-business" element={<UpgradeRouteGuard />} />

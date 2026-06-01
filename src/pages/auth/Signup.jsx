@@ -24,8 +24,9 @@ export default function Signup() {
   const [googleLoading, setGoogleLoading] = useState(false)
   const [error, setError] = useState('')
   const [info, setInfo] = useState('')
+  const [verificationSent, setVerificationSent] = useState(false)
 
-  if (!loading && user) {
+  if (!loading && user && !verificationSent) {
     return <Navigate to="/workspace" replace />
   }
 
@@ -48,7 +49,6 @@ export default function Signup() {
     try {
       const credentials = await createUserWithEmailAndPassword(auth, email.trim(), password)
       const userRecord = credentials.user
-
       await ensureUserWorkspace(userRecord, {
         fullName: fullName.trim(),
         company: company.trim(),
@@ -56,12 +56,11 @@ export default function Signup() {
         phone: phone.trim(),
         businessType,
         provider: 'password',
+        allowUnverifiedProfile: true,
       })
-      if (!userRecord.emailVerified) {
-        await sendEmailVerification(userRecord).catch((error) => reportTechnicalError(error, 'Signup email verification'))
-      }
-
-      navigate('/workspace', { replace: true })
+      await sendEmailVerification(userRecord)
+      setVerificationSent(true)
+      setInfo('Verification email sent.')
     } catch (err) {
       setError(clientSafeMessage(err, 'Unable to create account. Please try again.', { context: 'Signup with email' }))
     } finally {
@@ -180,23 +179,37 @@ export default function Signup() {
                   </div>
                 ) : null}
 
-                <button
-                  type="button"
-                  onClick={handleGoogleSignUp}
-                  disabled={googleLoading}
-                  className="flex w-full items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  <AiOutlineGoogle className="h-5 w-5 text-slate-700" />
-                  {googleLoading ? 'Connecting with Google…' : 'Sign up with Google'}
-                </button>
+                {verificationSent ? (
+                  <div className="rounded-3xl border border-emerald-200 bg-emerald-50 p-5 text-sm text-emerald-800">
+                    <p className="text-base font-semibold text-emerald-900">Verification email sent.</p>
+                    <p className="mt-2 leading-6">Check your inbox, open the email, and verify your account before creating a workspace.</p>
+                    <button
+                      type="button"
+                      onClick={() => navigate('/verify-email', { replace: true })}
+                      className="mt-4 rounded-2xl bg-emerald-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-800"
+                    >
+                      Continue to verification
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={handleGoogleSignUp}
+                      disabled={googleLoading}
+                      className="flex w-full items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <AiOutlineGoogle className="h-5 w-5 text-slate-700" />
+                      {googleLoading ? 'Connecting with Google…' : 'Sign up with Google'}
+                    </button>
 
-                <div className="flex items-center gap-2 text-xs text-slate-400">
-                  <span className="h-px flex-1 bg-slate-200" />
-                  <span>or continue with email</span>
-                  <span className="h-px flex-1 bg-slate-200" />
-                </div>
+                    <div className="flex items-center gap-2 text-xs text-slate-400">
+                      <span className="h-px flex-1 bg-slate-200" />
+                      <span>or continue with email</span>
+                      <span className="h-px flex-1 bg-slate-200" />
+                    </div>
 
-                <form className="space-y-4" onSubmit={handleSubmit}>
+                    <form className="space-y-4" onSubmit={handleSubmit}>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <label className="space-y-2 text-sm text-slate-700">
                       <span>Full name</span>
@@ -296,7 +309,9 @@ export default function Signup() {
                   >
                     {submitting ? 'Creating account…' : 'Create account'}
                   </button>
-                </form>
+                    </form>
+                  </>
+                )}
 
                 <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
                   <p className="font-semibold text-slate-900">Why join Nexora?</p>

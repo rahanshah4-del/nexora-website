@@ -248,36 +248,38 @@ export default function GlobalSearch({ className }) {
   }, [])
 
   return (
-    <div ref={rootRef} className={cn('relative flex w-full min-w-0 max-w-[38rem]', className)}>
-      <HiOutlineMagnifyingGlass className="pointer-events-none absolute left-3.5 top-1/2 z-10 h-5 w-5 -translate-y-1/2 text-slate-400" />
-      <input
-        ref={inputRef}
-        className="focus-ring h-10 w-full min-w-0 rounded-2xl border border-slate-200 bg-slate-50/85 pl-10 pr-20 text-sm font-medium text-slate-900 shadow-none outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-sky-300 focus:bg-white dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-100 dark:placeholder:text-slate-400 sm:h-11"
-        placeholder={placeholder}
-        value={query}
-        onFocus={() => setOpen(true)}
-        onChange={(event) => {
-          setQuery(event.target.value)
-          setOpen(true)
-        }}
-        aria-label="Global search"
-      />
-      {query ? (
-        <button
-          type="button"
-          className="focus-ring absolute right-12 top-1/2 z-10 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-xl text-slate-500 hover:bg-slate-200/70 hover:text-slate-900 dark:hover:bg-white/10"
-          onClick={clear}
-          aria-label="Clear search"
-        >
-          <HiOutlineXMark className="h-4 w-4" />
-        </button>
-      ) : null}
-      <span className="pointer-events-none absolute right-3 top-1/2 hidden -translate-y-1/2 rounded-lg border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-bold text-slate-400 dark:border-slate-700 dark:bg-slate-900 sm:inline">
-        Ctrl K
-      </span>
+    <div ref={rootRef} className={cn('relative flex w-full min-w-0 max-w-[46rem]', className)}>
+      <div className="relative flex h-12 w-full min-w-0 items-center sm:h-[50px]">
+        <HiOutlineMagnifyingGlass className="pointer-events-none absolute left-4 top-1/2 z-10 h-5 w-5 -translate-y-1/2 text-slate-400" />
+        <input
+          ref={inputRef}
+          className="focus-ring h-full w-full min-w-0 rounded-2xl border border-slate-200 bg-slate-50/85 pl-12 pr-11 text-sm font-medium leading-none text-slate-900 shadow-none outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-sky-300 focus:bg-white dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-100 dark:placeholder:text-slate-400 sm:pr-[7.25rem]"
+          placeholder={placeholder}
+          value={query}
+          onFocus={() => setOpen(true)}
+          onChange={(event) => {
+            setQuery(event.target.value)
+            setOpen(true)
+          }}
+          aria-label="Global search"
+        />
+        {query ? (
+          <button
+            type="button"
+            className="focus-ring absolute right-3 top-1/2 z-10 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-xl text-slate-500 transition hover:bg-slate-200/70 hover:text-slate-900 dark:hover:bg-white/10 sm:right-[4.75rem]"
+            onClick={clear}
+            aria-label="Clear search"
+          >
+            <HiOutlineXMark className="h-4 w-4" />
+          </button>
+        ) : null}
+        <span className="pointer-events-none absolute right-3 top-1/2 hidden h-7 -translate-y-1/2 items-center rounded-lg border border-slate-200 bg-white px-2 text-[10px] font-bold leading-none text-slate-400 dark:border-slate-700 dark:bg-slate-900 sm:inline-flex">
+          Ctrl K
+        </span>
+      </div>
 
       {open ? (
-        <div className="glass absolute left-0 top-full z-50 mt-2 w-full min-w-[min(24rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-white/70 bg-white/95 p-2 shadow-[0_24px_70px_-44px_rgba(15,23,42,0.7)] dark:border-white/10 dark:bg-slate-950/95 sm:w-[38rem]">
+        <div className="glass absolute left-0 top-full z-50 mt-2 w-full overflow-hidden rounded-2xl border border-white/70 bg-white/95 p-2 shadow-[0_24px_70px_-44px_rgba(15,23,42,0.7)] dark:border-white/10 dark:bg-slate-950/95">
           <div className="flex items-center justify-between gap-3 px-2 py-2">
             <div>
               <p className="text-sm font-semibold text-slate-950 dark:text-white">Global Search</p>

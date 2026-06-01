@@ -19,5 +19,9 @@ export default function RequireAuth() {
     return <Navigate to="/login" replace state={{ from: location.pathname }} />
   }
 
+  if (!user.emailVerified && location.pathname !== '/verify-email') {
+    return <Navigate to="/verify-email" replace state={{ from: location.pathname }} />
+  }
+
   return <Outlet />
 }

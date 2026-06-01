@@ -37,7 +37,11 @@ export default function AuthProvider({ children }) {
 
       setLoading(true)
       try {
-        await ensureUserWorkspace(nextUser)
+        if (nextUser.emailVerified) {
+          await ensureUserWorkspace(nextUser)
+        } else {
+          await ensureUserWorkspace(nextUser, { allowUnverifiedProfile: true })
+        }
         const nextRole = await fetchUserRole(nextUser.uid)
         setRole(nextRole.role)
         setIsAdmin(nextRole.isAdmin)

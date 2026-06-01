@@ -35,6 +35,14 @@ function buildAccessLabel({ isTrialActive, isTrialExpired, trialDaysRemaining, t
   return `${packageNameForPlan(plan)} ${planStatus || 'active'}`
 }
 
+function EmailVerificationBadge({ verified }) {
+  return (
+    <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold ${verified ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
+      {verified ? 'Verified ✅' : 'Not Verified ⚠️'}
+    </span>
+  )
+}
+
 function Toast({ message, onClose }) {
   return (
     <div className="glass fixed right-4 top-4 z-[60] w-[22rem] max-w-[calc(100vw-2rem)] rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-3 text-emerald-800 dark:text-emerald-200">
@@ -64,6 +72,7 @@ function TopNav({ onOpenSidebar, onSwitchProduct }) {
       return {
         displayName: userDoc?.fullName || userDoc?.name || profile.ownerName || firebaseUser?.displayName || 'Nexora User',
         displayEmail: userDoc?.email || profile.email || firebaseUser?.email || 'No email',
+        emailVerified: Boolean(firebaseUser?.emailVerified || userDoc?.emailVerified),
         workspaceName: resolveWorkspaceName({
           accountData: userDoc,
           userId: firebaseUser?.uid,
@@ -122,7 +131,7 @@ function TopNav({ onOpenSidebar, onSwitchProduct }) {
             </span>
           </button>
 
-          <div className="hidden min-w-0 flex-1 md:block">
+          <div className="hidden min-w-0 flex-[1_1_46rem] md:block">
             <GlobalSearch />
           </div>
 
@@ -197,12 +206,16 @@ function TopNav({ onOpenSidebar, onSwitchProduct }) {
                       ) : (
                         <Avatar name={profileSummary.displayName} className="h-12 w-12 shrink-0 rounded-2xl" />
                       )}
-                      <div className="min-w-0">
+      <div className="min-w-0">
                         <p className="truncate text-sm font-semibold text-slate-950">{profileSummary.displayName}</p>
                         <p className="truncate text-xs text-slate-500">{profileSummary.displayEmail}</p>
                       </div>
                     </div>
                     <div className="mt-3 grid gap-2 text-xs">
+                      <div className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2">
+                        <span className="text-slate-500">Email status</span>
+                        <EmailVerificationBadge verified={profileSummary.emailVerified} />
+                      </div>
                       <div className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2">
                         <span className="text-slate-500">Package status</span>
                         <span className="truncate font-semibold text-slate-900">{profileSummary.accessLabel}</span>
