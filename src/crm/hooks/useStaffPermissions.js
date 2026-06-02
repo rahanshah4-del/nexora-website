@@ -81,7 +81,7 @@ async function createSecondaryAuthUser(email, password) {
 }
 
 export function useStaffPermissions() {
-  const { userId, workspaceId, businessType, userDoc, firebaseUser, plan, accessPlan } = useUser()
+  const { userId, workspaceId, businessType, userDoc, workspaceDoc, firebaseUser, plan, accessPlan } = useUser()
   const access = useWorkspaceAccess()
   const currentPermissionKeys = useMemo(() => workspacePermissionKeysForBusiness(businessType, accessPlan || plan), [accessPlan, businessType, plan])
   const [staff, setStaff] = useState([])
@@ -267,6 +267,13 @@ export function useStaffPermissions() {
         if (!db || !workspaceId || !userId) return { ok: false, error: 'Secure Cloud Sync is not available right now.' }
         if (!currentPermissionKeys.some((item) => item.key === key)) return { ok: false, error: 'Unknown permission.' }
         const staffRow = staff.find((item) => item.id === staffId)
+        const ownerId = String(workspaceDoc?.ownerId || workspaceId || userId || '')
+        const isOwnerSelf =
+          String(staffId) === ownerId ||
+          (String(staffId) === String(userId) && String(staffRow?.email || '').toLowerCase() === String(firebaseUser?.email || userDoc?.email || '').toLowerCase())
+        if (isOwnerSelf && value === false) {
+          return { ok: false, error: 'Workspace owner cannot be disabled or downgraded.' }
+        }
         const existing = permissions[staffId] || {}
         const { __businessPermissions, ...existingCurrentPermissions } = existing
         const businessKey = businessPermissionKey(businessType)
@@ -313,6 +320,19 @@ export function useStaffPermissions() {
         if (!access.isAdmin) return { ok: false, error: 'Only an owner or admin can update staff access.' }
         if (!db || !workspaceId || !userId) return { ok: false, error: 'Secure Cloud Sync is not available right now.' }
         const staffRow = staff.find((item) => item.id === staffId)
+        const ownerId = String(workspaceDoc?.ownerId || workspaceId || userId || '')
+        const isOwnerSelf =
+          String(staffId) === ownerId ||
+          (String(staffId) === String(userId) && String(staffRow?.email || '').toLowerCase() === String(firebaseUser?.email || userDoc?.email || '').toLowerCase())
+        if (isOwnerSelf) {
+          const now = serverTimestamp()
+          await Promise.all([
+            setDoc(doc(db, 'workspaces', workspaceId, 'staff', staffId), { role: 'owner', status: 'active', updatedAt: now, updatedBy: userId }, { merge: true }),
+            setDoc(doc(db, 'workspaces', workspaceId, 'teamMembers', staffId), { role: 'Owner', status: 'Active', updatedAt: now, updatedBy: userId }, { merge: true }),
+            setDoc(doc(db, 'users', staffId), { role: 'owner', status: 'active', updatedAt: now, updatedBy: userId }, { merge: true }),
+          ])
+          return { ok: false, error: 'Workspace owner cannot be disabled or downgraded.' }
+        }
         const nextStatus = String(status || 'active').trim().toLowerCase()
         const now = serverTimestamp()
         await Promise.all([
@@ -335,6 +355,6 @@ export function useStaffPermissions() {
         return { ok: true }
       },
     }),
-    [access, businessType, currentPermissionKeys, error, firebaseUser, loading, permissions, plan, staff, userDoc, userId, workspaceId],
+    [access, businessType, currentPermissionKeys, error, firebaseUser, loading, permissions, plan, staff, userDoc, userId, workspaceDoc, workspaceId],
   )
 }

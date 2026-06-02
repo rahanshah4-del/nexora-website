@@ -40,6 +40,7 @@ const ApprovalsPage = lazy(() => import('./crm/pages/Approvals.jsx'))
 const ReportsPage = lazy(() => import('./crm/pages/Reports.jsx'))
 const SettingsPage = lazy(() => import('./crm/pages/Settings.jsx'))
 const UpgradeRequests = lazy(() => import('./pages/admin/UpgradeRequests.jsx'))
+const ControlCentre = lazy(() => import('./pages/admin/ControlCentre.jsx'))
 
 class InvoiceRouteBoundary extends Component {
   state = { hasError: false }
@@ -143,9 +144,10 @@ export default function AppRouter() {
       </Route>
 
       <Route element={<RequireAdmin />}>
+        <Route path="/admin/control-centre" element={<LazyPage><ControlCentre /></LazyPage>} />
         <Route path="/admin" element={<AdminLayout />}>
           <Route path="upgrade-requests" element={<LazyPage><UpgradeRequests /></LazyPage>} />
-          <Route index element={<Navigate to="/admin/upgrade-requests" replace />} />
+          <Route index element={<Navigate to="/admin/control-centre" replace />} />
         </Route>
       </Route>
 

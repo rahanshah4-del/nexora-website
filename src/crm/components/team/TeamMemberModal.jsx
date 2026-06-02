@@ -10,7 +10,7 @@ import Badge from '../ui/Badge.jsx'
 const roles = ['Owner', 'Admin', 'Manager', 'Sales Staff', 'Support Agent', 'Accountant', 'Custom Role']
 const statuses = ['Active', 'Invited', 'Disabled']
 
-function TeamMemberModal({ open, mode = 'add', member, permissionKeys, onClose, onSave }) {
+function TeamMemberModal({ open, mode = 'add', member, permissionKeys, ownerProtected = false, onClose, onSave }) {
   const [draft, setDraft] = useState(member || null)
 
   useEffect(() => {
@@ -72,7 +72,12 @@ function TeamMemberModal({ open, mode = 'add', member, permissionKeys, onClose, 
                     </div>
                     <div className="min-w-0">
                       <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Role</label>
-                      <Select className="mt-1" value={draft.role} onChange={(e) => setDraft((d) => ({ ...d, role: e.target.value }))}>
+                      <Select
+                        className="mt-1"
+                        value={ownerProtected ? 'Owner' : draft.role}
+                        disabled={ownerProtected}
+                        onChange={(e) => setDraft((d) => ({ ...d, role: e.target.value }))}
+                      >
                         {roles.map((r) => (
                           <option key={r} value={r}>
                             {r}
@@ -82,26 +87,35 @@ function TeamMemberModal({ open, mode = 'add', member, permissionKeys, onClose, 
                     </div>
                     <div className="min-w-0 sm:col-span-2 sm:max-w-[50%] sm:pr-1.5">
                       <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Status</label>
-                      <Select className="mt-1" value={draft.status || 'Active'} onChange={(e) => setDraft((d) => ({ ...d, status: e.target.value }))}>
+                      <Select
+                        className="mt-1"
+                        value={ownerProtected ? 'Active' : draft.status || 'Active'}
+                        disabled={ownerProtected}
+                        onChange={(e) => setDraft((d) => ({ ...d, status: e.target.value }))}
+                      >
                         {statuses.map((status) => (
                           <option key={status} value={status}>
                             {status}
                           </option>
                         ))}
                       </Select>
+                      {ownerProtected ? (
+                        <p className="mt-2 text-xs font-semibold text-slate-500">Workspace owner cannot be disabled or downgraded.</p>
+                      ) : null}
                     </div>
 
                     <div className="min-w-0 sm:col-span-2">
                       <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Permissions</label>
                       <div className="mt-2 grid min-w-0 gap-2 sm:grid-cols-2">
                         {permissionKeys.map((p) => {
-                          const checked = draft.permissions?.includes(p)
+                          const checked = ownerProtected || draft.permissions?.includes(p)
                           return (
                             <label key={p} className="glass-muted flex min-w-0 items-center justify-between gap-3 rounded-2xl p-3">
                               <span className="min-w-0 break-words text-sm text-slate-800 dark:text-slate-100">{p}</span>
                               <input
                                 type="checkbox"
                                 checked={checked}
+                                disabled={ownerProtected}
                                 onChange={(e) => {
                                   setDraft((d) => {
                                     const next = new Set(d.permissions || [])
@@ -128,7 +142,7 @@ function TeamMemberModal({ open, mode = 'add', member, permissionKeys, onClose, 
                     type="button"
                     onClick={() => {
                       if (!draft) return
-                      onSave?.(draft)
+                      onSave?.(ownerProtected ? { ...draft, role: 'Owner', status: 'Active', permissions: permissionKeys } : draft)
                     }}
                   >
                     Save

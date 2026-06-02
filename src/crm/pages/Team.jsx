@@ -456,7 +456,7 @@ function AccessControlTab({ staffApi, members, onToast }) {
 }
 
 export default function TeamPage() {
-  const { businessType, accessPlan } = useUser()
+  const { userId, businessType, accessPlan, workspaceId, workspaceDoc, firebaseUser, userDoc } = useUser()
   const { members, loading, source, error, permissionKeys, addMember, updateMember, deleteMember } = useTeamMembers()
   const [toast, setToast] = useState(null)
   const [tab, setTab] = useState('members')
@@ -545,6 +545,9 @@ export default function TeamPage() {
               <TeamMembersTable
                 members={members}
                 permissionKeys={permissionKeys}
+                ownerId={workspaceDoc?.ownerId || workspaceId || userId}
+                currentUserId={userId}
+                currentUserEmail={firebaseUser?.email || userDoc?.email || ''}
                 onAdd={async (m) => {
                   const res = await addMember(m)
                   if (res?.ok) showToast('success', 'Team member added successfully')
@@ -552,8 +555,9 @@ export default function TeamPage() {
                 }}
                 onUpdate={async (id, m) => {
                   try {
-                    await updateMember(id, m)
-                    showToast('success', 'Team member updated')
+                    const res = await updateMember(id, m)
+                    if (res?.error) showToast('error', res.error)
+                    else showToast('success', res?.message || 'Team member updated')
                   } catch (e) {
                     showToast('error', clientSafeMessage(e, 'Unable to update team member.'))
                   }
@@ -570,6 +574,9 @@ export default function TeamPage() {
               <TeamMembersTable
                 members={members}
                 permissionKeys={permissionKeys}
+                ownerId={workspaceDoc?.ownerId || workspaceId || userId}
+                currentUserId={userId}
+                currentUserEmail={firebaseUser?.email || userDoc?.email || ''}
                 onAdd={async (m) => {
                   const res = await addMember(m)
                   if (res?.ok) showToast('success', 'Team member added successfully')
@@ -577,8 +584,9 @@ export default function TeamPage() {
                 }}
                 onUpdate={async (id, m) => {
                   try {
-                    await updateMember(id, m)
-                    showToast('success', 'Team member updated')
+                    const res = await updateMember(id, m)
+                    if (res?.error) showToast('error', res.error)
+                    else showToast('success', res?.message || 'Team member updated')
                   } catch (e) {
                     showToast('error', clientSafeMessage(e, 'Unable to update team member.'))
                   }

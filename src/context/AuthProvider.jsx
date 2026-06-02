@@ -7,12 +7,12 @@ import { ensureUserWorkspace } from '../lib/accountProvisioning.js'
 import { isPlatformAdminDoc } from '../lib/roles.js'
 import { reportTechnicalError } from '../lib/errorHandler.js'
 
-async function fetchUserRole(userId) {
-  if (!db || !userId) return { role: 'user', isAdmin: false }
-  const snap = await getDoc(doc(db, 'users', userId))
+async function fetchUserRole(user) {
+  if (!db || !user?.uid) return { role: 'user', isAdmin: false }
+  const snap = await getDoc(doc(db, 'users', user.uid))
   const data = snap.exists() ? snap.data() : null
   const role = typeof data?.role === 'string' ? data.role : 'user'
-  const isAdmin = isPlatformAdminDoc(data || {})
+  const isAdmin = isPlatformAdminDoc({ ...(data || {}), email: data?.email || user.email || '' })
   return { role, isAdmin }
 }
 
@@ -42,7 +42,7 @@ export default function AuthProvider({ children }) {
         } else {
           await ensureUserWorkspace(nextUser, { allowUnverifiedProfile: true })
         }
-        const nextRole = await fetchUserRole(nextUser.uid)
+        const nextRole = await fetchUserRole(nextUser)
         setRole(nextRole.role)
         setIsAdmin(nextRole.isAdmin)
       } catch (error) {

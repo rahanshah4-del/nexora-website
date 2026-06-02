@@ -1,6 +1,9 @@
 import { Link, NavLink, Outlet } from 'react-router-dom'
 
-const adminNav = [{ to: '/admin/upgrade-requests', label: 'Upgrade Requests' }]
+const adminNav = [
+  { to: '/admin/control-centre', label: 'Control Centre' },
+  { to: '/admin/upgrade-requests', label: 'Upgrade Requests' },
+]
 
 export default function AdminLayout() {
   return (
@@ -50,4 +53,3 @@ export default function AdminLayout() {
     </div>
   )
 }
-

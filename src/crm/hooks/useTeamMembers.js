@@ -13,8 +13,10 @@ function normalizeMember(m) {
   }
 }
 
+const OWNER_PROTECTION_MESSAGE = 'Workspace owner cannot be disabled or downgraded.'
+
 export function useTeamMembers() {
-  const { userId, workspaceId, businessType, userDoc, firebaseUser, accessPlan } = useUser()
+  const { userId, workspaceId, businessType, userDoc, workspaceDoc, firebaseUser, accessPlan } = useUser()
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
   const [source, setSource] = useState('firestore')
@@ -113,10 +115,24 @@ export function useTeamMembers() {
         }
       },
       async updateMember(id, patch) {
-        setRows((prev) => prev.map((m) => (m.id === id ? { ...m, ...patch } : m)))
-        if (!db || !workspaceId || !userId || source !== 'firestore') return
-        await patchUserDoc(workspaceId, 'teamMembers', id, patch, { businessType })
         const member = rows.find((item) => item.id === id)
+        const ownerId = String(workspaceDoc?.ownerId || workspaceId || userId || '')
+        const isOwnerSelf =
+          String(id) === ownerId ||
+          (String(id) === String(userId) && String(member?.email || '').toLowerCase() === String(firebaseUser?.email || userDoc?.email || '').toLowerCase())
+        const safePatch = isOwnerSelf
+          ? {
+              ...patch,
+              role: 'Owner',
+              status: 'Active',
+              permissions: permissionKeysForBusiness({ businessType, plan: accessPlan, teamOverride: true }).map((permission) => permission.label),
+            }
+          : patch
+        setRows((prev) => prev.map((m) => (m.id === id ? { ...m, ...safePatch } : m)))
+        if (!db || !workspaceId || !userId || source !== 'firestore') {
+          return { ok: true, ...(isOwnerSelf ? { message: OWNER_PROTECTION_MESSAGE } : {}) }
+        }
+        await patchUserDoc(workspaceId, 'teamMembers', id, safePatch, { businessType })
         await logActivity({
           workspaceId,
           userId,
@@ -127,11 +143,17 @@ export function useTeamMembers() {
           description: `${member?.name || 'Team member'} was updated.`,
           targetId: id,
           targetName: member?.name || id,
-          metadata: patch,
+          metadata: safePatch,
         })
+        return { ok: true, ...(isOwnerSelf ? { message: OWNER_PROTECTION_MESSAGE } : {}) }
       },
       async deleteMember(id) {
         const member = rows.find((item) => item.id === id)
+        const ownerId = String(workspaceDoc?.ownerId || workspaceId || userId || '')
+        const isOwnerSelf =
+          String(id) === ownerId ||
+          (String(id) === String(userId) && String(member?.email || '').toLowerCase() === String(firebaseUser?.email || userDoc?.email || '').toLowerCase())
+        if (isOwnerSelf) return { ok: false, error: OWNER_PROTECTION_MESSAGE }
         setRows((prev) => prev.filter((m) => m.id !== id))
         if (!db || !workspaceId || !userId || source !== 'firestore') return { ok: true }
         try {
@@ -154,7 +176,7 @@ export function useTeamMembers() {
         }
       },
     }),
-    [rows, loading, source, error, accessPlan, businessType, firebaseUser, userDoc, userId, workspaceId],
+    [rows, loading, source, error, accessPlan, businessType, firebaseUser, userDoc, userId, workspaceDoc, workspaceId],
   )
 
   return api

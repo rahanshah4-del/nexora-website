@@ -709,6 +709,26 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    match /plans/{planId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /backendStaff/{staffId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /announcements/{announcementId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /featureFlags/{flagId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /emailTemplates/{templateId} {
+      allow read, write: if isAdmin();
+    }
+
     match /notifications/{notificationId} {
       allow create: if activeSignedIn()
         && request.resource.data.userId == request.auth.uid

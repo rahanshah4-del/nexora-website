@@ -1,6 +1,7 @@
 import NexoraLogo from '../../../components/brand/NexoraLogo.jsx'
 import Badge from '../ui/Badge.jsx'
 import { formatCurrency } from '../../utils/format.js'
+import InvoiceQrCode from './InvoiceQrCode.jsx'
 import {
   amountInWords,
   calculateInvoiceDraft,
@@ -11,19 +12,6 @@ import {
   invoiceTotal,
   statusBadge,
 } from '../../lib/invoiceHelpers.js'
-
-function QRPlaceholder() {
-  return (
-    <div className="grid h-24 w-24 grid-cols-5 gap-1 rounded-xl border border-slate-200 bg-white p-2">
-      {Array.from({ length: 25 }).map((_, index) => (
-        <span
-          key={index}
-          className={index % 2 === 0 || [6, 8, 16, 18].includes(index) ? 'rounded-sm bg-slate-950' : 'rounded-sm bg-slate-100'}
-        />
-      ))}
-    </div>
-  )
-}
 
 function normalizePreviewInvoice(invoice = {}) {
   const totals = invoice.items?.length ? calculateInvoiceDraft(invoice) : null
@@ -112,7 +100,7 @@ export default function InvoicePreview({
           <p className="text-slate-600">NTN/CNIC: {invoice.customerTaxId || invoice.customerNtn || '-'}</p>
         </div>
         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 text-center">
-          <QRPlaceholder />
+          <InvoiceQrCode invoice={invoice} totals={totals} />
           <p className="mt-2 text-[11px] font-semibold text-slate-500">Scan to Pay</p>
         </div>
       </div>

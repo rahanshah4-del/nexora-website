@@ -146,7 +146,10 @@ function isApprovalRecord(row) {
 }
 
 function createApproval(type, sourceCollection, row) {
-  const amount = row.approvalAmount ?? (sourceCollection === 'invoices' ? invoiceValue(row) : amountValue(row))
+  const isApprovalRecordSource = sourceCollection === 'approvals'
+  const targetCollection = isApprovalRecordSource ? row.sourceCollection || 'invoices' : sourceCollection
+  const sourceId = isApprovalRecordSource ? row.sourceId || row.invoiceId || row.id : row.id
+  const amount = row.approvalAmount ?? (targetCollection === 'invoices' ? invoiceValue(row) : amountValue(row))
   const amountPaid = amountPaidValue(row)
   const customer =
     row.customerName ||
@@ -171,11 +174,12 @@ function createApproval(type, sourceCollection, row) {
     '—'
 
   return {
-    id: `${type}:${row.id}`,
-    sourceId: row.id,
+    id: `${isApprovalRecordSource ? 'approval' : type}:${row.id}`,
+    sourceId,
     type: row.approvalLabel || type,
     approvalType: row.approvalType || '',
-    sourceCollection,
+    sourceCollection: targetCollection,
+    approvalRecordId: isApprovalRecordSource ? row.id : row.approvalRecordId || '',
     customer,
     amount,
     amountPaid,
@@ -278,6 +282,7 @@ export function useApprovals() {
   const canApprove = canApproveFinance(userDoc?.role || role)
   const canApproveSubscription = isPlatformAdminDoc(userDoc || {})
   const [invoices, setInvoices] = useState([])
+  const [approvalRecords, setApprovalRecords] = useState([])
   const [payments, setPayments] = useState([])
   const [upgradeRequests, setUpgradeRequests] = useState([])
   const [teamMembers, setTeamMembers] = useState([])
@@ -291,6 +296,7 @@ export function useApprovals() {
     if (!db || !workspaceId || !userId || !canApprove) {
       Promise.resolve().then(() => {
         setInvoices([])
+        setApprovalRecords([])
         setPayments([])
         setUpgradeRequests([])
         setTeamMembers([])
@@ -308,7 +314,7 @@ export function useApprovals() {
       setError('')
     })
 
-    const expectedLoads = canApproveSubscription ? 7 : 6
+    const expectedLoads = canApproveSubscription ? 8 : 7
     let loaded = 0
     function markLoaded() {
       loaded += 1
@@ -325,6 +331,17 @@ export function useApprovals() {
       businessType,
       (rows) => {
         setInvoices(rows.filter(isApprovalInvoice))
+        markLoaded()
+      },
+      onError,
+    )
+
+    const unsubApprovalRecords = subscribeWorkspaceCollection(
+      workspaceId,
+      'approvals',
+      businessType,
+      (rows) => {
+        setApprovalRecords(rows.filter(isApprovalRecord))
         markLoaded()
       },
       onError,
@@ -406,6 +423,7 @@ export function useApprovals() {
 
     return () => {
       unsubInvoices?.()
+      unsubApprovalRecords?.()
       unsubPayments?.()
       unsubTeam?.()
       unsubClients?.()
@@ -417,8 +435,10 @@ export function useApprovals() {
 
   const approvals = useMemo(() => {
     const invoiceLabel = invoiceApprovalTypeForBusiness(businessType).label
+    const approvalRecordSourceIds = new Set(approvalRecords.map((row) => row.sourceId || row.invoiceId).filter(Boolean))
     const rows = [
-      ...invoices.map((row) => createApproval(row.approvalLabel || invoiceLabel, 'invoices', row)),
+      ...approvalRecords.map((row) => createApproval(row.approvalLabel || invoiceLabel, 'approvals', row)),
+      ...invoices.filter((row) => !approvalRecordSourceIds.has(row.id)).map((row) => createApproval(row.approvalLabel || invoiceLabel, 'invoices', row)),
       ...payments.map((row) => createApproval('Client payment reference', 'payments', row)),
       ...upgradeRequests.map((row) => createApproval('Subscription upgrade', 'upgradeRequests', row)),
       ...teamMembers.map((row) => createApproval('Staff access request', 'teamMembers', row)),
@@ -427,7 +447,7 @@ export function useApprovals() {
       ...accountTransactions.map((row) => createApproval(transactionApprovalType(row), 'accountTransactions', row)),
     ]
     return rows.sort((a, b) => b.sortAt - a.sortAt)
-  }, [accountTransactions, businessType, clients, expenses, invoices, payments, teamMembers, upgradeRequests])
+  }, [accountTransactions, approvalRecords, businessType, clients, expenses, invoices, payments, teamMembers, upgradeRequests])
 
   const pendingApprovals = useMemo(() => approvals.filter(isReviewableApproval), [approvals])
   const approvedApprovals = useMemo(
@@ -448,7 +468,7 @@ export function useApprovals() {
   const summary = useMemo(
     () => ({
       pendingPayments: payments.filter((row) => isPendingPayment(row)).length,
-      pendingInvoices: invoices.filter((row) => isPendingInvoice(row)).length,
+      pendingInvoices: approvalRecords.filter((row) => statusValue(row.status || row.approvalStatus, '') === 'pending').length || invoices.filter((row) => isPendingInvoice(row)).length,
       upgradeRequests: upgradeRequests.filter((row) => isPendingRecord(row) || statusValue(row.paymentStatus, '') === 'pending').length,
       staffRequests: teamMembers.filter((row) => isPendingRecord(row)).length,
       expenseRequests: expenses.filter((row) => isPendingRecord(row)).length,
@@ -458,7 +478,7 @@ export function useApprovals() {
       rejected: rejectedApprovals.length,
       total: pendingApprovals.length,
     }),
-    [accountTransactions, approvedApprovals.length, expenses, invoices, payments, pendingApprovals.length, rejectedApprovals.length, teamMembers, upgradeRequests],
+    [accountTransactions, approvalRecords, approvedApprovals.length, expenses, invoices, payments, pendingApprovals.length, rejectedApprovals.length, teamMembers, upgradeRequests],
   )
 
   const approve = useCallback(
@@ -474,12 +494,24 @@ export function useApprovals() {
         const batch = writeBatch(db)
         const now = serverTimestamp()
         const row = approval.row || {}
+        if (approval.approvalRecordId) {
+          batch.set(doc(db, workspaceCollectionPath(workspaceId, 'approvals'), approval.approvalRecordId), {
+            status: 'approved',
+            approvalStatus: 'approved',
+            businessType,
+            approvedBy: userId,
+            approvedAt: now,
+            updatedAt: now,
+          }, { merge: true })
+        }
 
         if (approval.sourceCollection === 'invoices') {
           const invoiceRef = doc(db, workspaceCollectionPath(workspaceId, 'invoices'), approval.sourceId)
           batch.update(invoiceRef, {
+            status: 'approved',
             approvalStatus: 'approved',
             businessType,
+            requiresApproval: false,
             approvedBy: userId,
             approvedAt: now,
             updatedAt: now,
@@ -735,6 +767,18 @@ export function useApprovals() {
         if (isClosedStatus(row.paymentStatus || row.status)) return { ok: false, error: 'This invoice is already closed.' }
         const stockAdjusted = await addInventoryAdjustments(batch, workspaceId, row, now, businessType)
 
+        if (approval.approvalRecordId) {
+          batch.set(doc(db, workspaceCollectionPath(workspaceId, 'approvals'), approval.approvalRecordId), {
+            status: 'approved',
+            approvalStatus: 'approved',
+            paymentStatus: 'paid',
+            businessType,
+            approvedBy: userId,
+            approvedAt: now,
+            updatedAt: now,
+          }, { merge: true })
+        }
+
         const invoiceRef = doc(db, workspaceCollectionPath(workspaceId, 'invoices'), approval.sourceId)
         batch.update(invoiceRef, {
           status: 'paid',
@@ -867,6 +911,16 @@ export function useApprovals() {
       try {
         const batch = writeBatch(db)
         const now = serverTimestamp()
+        if (approval.approvalRecordId) {
+          batch.set(doc(db, workspaceCollectionPath(workspaceId, 'approvals'), approval.approvalRecordId), {
+            status: 'rejected',
+            approvalStatus: 'rejected',
+            businessType,
+            rejectedBy: userId,
+            rejectedAt: now,
+            updatedAt: now,
+          }, { merge: true })
+        }
 
         if (approval.sourceCollection === 'invoices') {
           batch.update(doc(db, workspaceCollectionPath(workspaceId, 'invoices'), approval.sourceId), {
