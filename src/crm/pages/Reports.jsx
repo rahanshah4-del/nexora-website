@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import QRCode from 'qrcode'
 import {
   HiOutlineArrowDownTray,
   HiOutlineBuildingOffice2,
@@ -16,6 +17,8 @@ import Card from '../components/ui/Card.jsx'
 import Input from '../components/ui/Input.jsx'
 import Select from '../components/ui/Select.jsx'
 import { supportedCurrencies } from '../data/currency.js'
+import { normalizeBusinessType } from '../data/moduleAccess.js'
+import { useBusinessSettings } from '../hooks/useBusinessSettings.js'
 import { usePreferences } from '../hooks/usePreferences.js'
 import { useReports } from '../hooks/useReports.js'
 import { useUser } from '../hooks/useUser.js'
@@ -31,8 +34,18 @@ import {
 } from '../lib/calculations.js'
 import { convertFromUsd } from '../utils/currency.js'
 import { formatCurrency } from '../utils/format.js'
+import { buildReportId, exportReportCsv, exportReportExcel, exportReportPdf } from '../lib/reportGenerator.js'
 
 const NEXORA_LOGO = '/nexora-logo.jpg'
+
+const reportLabelByBusiness = {
+  'General CRM': 'Sales Report',
+  'School ERP': 'Fee Collection Report',
+  'Property ERP': 'Rent Report',
+  'Retail / POS': 'Sales Report',
+  'Restaurant POS': 'Bill/Revenue Report',
+  'WhatsApp CRM': 'Lead/Support Report',
+}
 
 const rangeOptions = [
   { value: 'today', label: 'Today' },
@@ -237,10 +250,38 @@ function DataTable({ columns, rows, empty }) {
   )
 }
 
+function ReportQrCode({ payload }) {
+  const [src, setSrc] = useState('')
+  const value = useMemo(() => JSON.stringify(payload || {}), [payload])
+
+  useEffect(() => {
+    let active = true
+    QRCode.toDataURL(value, {
+      errorCorrectionLevel: 'M',
+      margin: 1,
+      width: 132,
+      color: { dark: '#0f172a', light: '#ffffff' },
+    })
+      .then((dataUrl) => {
+        if (active) setSrc(dataUrl)
+      })
+      .catch(() => {
+        if (active) setSrc('')
+      })
+    return () => {
+      active = false
+    }
+  }, [value])
+
+  if (!src) return <div className="grid h-24 w-24 place-items-center rounded-2xl border border-slate-200 bg-slate-50 text-[10px] font-semibold text-slate-500">QR</div>
+  return <img src={src} alt="Report QR code" className="h-24 w-24 rounded-2xl border border-slate-200 bg-white p-1" />
+}
+
 export default function ReportsPage() {
   const reports = useReports()
   const { profile, currency: preferredCurrency } = usePreferences()
-  const { userDoc, firebaseUser, workspaceId, plan } = useUser()
+  const businessSettingsApi = useBusinessSettings()
+  const { userDoc, firebaseUser, workspaceId, businessType, plan } = useUser()
   const [filters, setFilters] = useState({
     range: 'month',
     startDate: '',
@@ -322,14 +363,18 @@ export default function ReportsPage() {
 
   const branding = useMemo(
     () => ({
-      companyName: safeText(profile.companyName || userDoc?.company || userDoc?.workspaceName, 'Nexora Workspace'),
+      companyName: safeText(businessSettingsApi.settings.businessName || profile.companyName || userDoc?.company || userDoc?.workspaceName, 'Nexora Workspace'),
+      businessName: safeText(businessSettingsApi.settings.businessName || profile.companyName || userDoc?.company || userDoc?.workspaceName, 'Nexora Workspace'),
       ownerName: safeText(profile.ownerName || userDoc?.fullName || userDoc?.name || firebaseUser?.displayName, 'Workspace Owner'),
-      email: safeText(profile.email || userDoc?.email || firebaseUser?.email, 'No email yet'),
-      phone: safeText(profile.phone, 'No phone yet'),
-      address: safeText(profile.address || [profile.city, profile.country].filter(Boolean).join(', '), 'No address yet'),
-      logo: profile.avatarDataUrl || NEXORA_LOGO,
+      email: safeText(businessSettingsApi.settings.email || profile.email || userDoc?.email || firebaseUser?.email, 'No email yet'),
+      phone: safeText(businessSettingsApi.settings.phone || profile.phone, 'No phone yet'),
+      address: safeText(businessSettingsApi.settings.address || profile.address || [profile.city, profile.country].filter(Boolean).join(', '), 'No address yet'),
+      receiptFooter: businessSettingsApi.settings.receiptFooter || '',
+      signatureUrl: businessSettingsApi.settings.signatureUrl || '',
+      logo: businessSettingsApi.settings.logoUrl || profile.avatarDataUrl || NEXORA_LOGO,
+      logoUrl: businessSettingsApi.settings.logoUrl || profile.avatarDataUrl || '',
     }),
-    [firebaseUser?.displayName, firebaseUser?.email, profile, userDoc],
+    [businessSettingsApi.settings, firebaseUser?.displayName, firebaseUser?.email, profile, userDoc],
   )
 
   const reportDate = useMemo(
@@ -340,30 +385,6 @@ export default function ReportsPage() {
         year: 'numeric',
       }).format(new Date()),
     [],
-  )
-
-  const csvRows = useMemo(
-    () => [
-      ['Company', branding.companyName],
-      ['Owner', branding.ownerName],
-      ['Email', branding.email],
-      ['Workspace', workspaceId || 'No data yet'],
-      ['Report date', reportDate],
-      [],
-      ['Report', 'Metric', 'Value'],
-      ['Revenue report', 'Total revenue', formatMoney(reportData.totalRevenueUsd, filters.currency)],
-      ['Revenue report', 'Paid payment total', formatMoney(reportData.paymentRevenueUsd, filters.currency)],
-      ['Expense report', 'Approved expenses', formatMoney(reportData.expensesUsd, filters.currency)],
-      ['Profit report', 'Profit', formatMoney(reportData.profitUsd, filters.currency)],
-      ['Sales report', 'Pipeline value', formatMoney(reportData.pipelineUsd, filters.currency)],
-      ['Sales report', 'Deals', reportData.deals.length],
-      ['Customer report', 'Customers', reportData.customers.length],
-      ['Leads report', 'Leads', reportData.leads.length],
-      ['Invoices report', 'Invoices', reportData.invoices.length],
-      ['Activity report', 'Activity events', reportData.activityLogs.length],
-      ['Staff report', 'Team members', reportData.staff.length],
-    ],
-    [branding, filters.currency, reportData, reportDate, workspaceId],
   )
 
   const invoiceRows = reportData.invoices.slice(0, 8)
@@ -377,6 +398,66 @@ export default function ReportsPage() {
     setNotice(message)
     window.setTimeout(() => setNotice(''), 2200)
   }
+
+  const activeBusinessType = normalizeBusinessType(businessType)
+  const reportTitle = reportLabelByBusiness[activeBusinessType] || 'Workspace Report'
+  const dateRangeLabel = filters.range === 'custom'
+    ? `${filters.startDate || 'Start'} to ${filters.endDate || 'End'}`
+    : rangeOptions.find((option) => option.value === filters.range)?.label || 'This month'
+
+  const reportExport = useMemo(() => {
+    const generatedAt = new Date().toLocaleString()
+    const reportId = buildReportId(businessSettingsApi.settings.reportPrefix || 'RPT')
+    const invoiceColumns = [
+      { label: 'Invoice/Fee/Rent/Bill', value: (row) => row.invoiceNumber || row.id || '' },
+      { label: 'Customer/Student/Tenant', value: (row) => row.customerName || row.studentName || row.tenantName || '' },
+      { label: 'Status', value: (row) => row.status || row.paymentStatus || '' },
+      { label: 'Total', value: (row) => formatMoney(invoiceValue(row), filters.currency) },
+      { label: 'Due Date', value: (row) => row.dueDate || '' },
+    ]
+    const expenseColumns = [
+      { label: 'Expense', value: (row) => row.title || row.name || row.category || 'Expense' },
+      { label: 'Category', value: (row) => row.category || 'General' },
+      { label: 'Status', value: (row) => row.approvalStatus || row.status || '' },
+      { label: 'Amount', value: (row) => formatMoney(expenseValue(row), filters.currency) },
+    ]
+
+    return {
+      reportId,
+      title: reportTitle,
+      workspaceId,
+      workspaceName: branding.companyName,
+      businessType: activeBusinessType,
+      dateRange: dateRangeLabel,
+      generatedBy: branding.ownerName,
+      generatedAt,
+      branding,
+      summary: [
+        { label: 'Total revenue', value: formatMoney(reportData.totalRevenueUsd, filters.currency) },
+        { label: 'Paid amount', value: formatMoney(reportData.paymentRevenueUsd, filters.currency) },
+        { label: 'Outstanding', value: String(reportData.pendingInvoices.length + reportData.overdueInvoices.length) },
+        { label: 'Expenses', value: formatMoney(reportData.expensesUsd, filters.currency) },
+        { label: 'Net amount', value: formatMoney(reportData.profitUsd, filters.currency) },
+        { label: 'Customers / Students / Tenants', value: String(reportData.customers.length) },
+        { label: 'Pending approvals', value: String(reportData.pendingInvoices.length) },
+        { label: 'Team members', value: String(reportData.staff.length) },
+      ],
+      tables: [
+        { title: `${reportTitle} - Billing Rows`, columns: invoiceColumns, rows: reportData.invoices },
+        { title: 'Expense Rows', columns: expenseColumns, rows: reportData.expenses },
+      ],
+      qrPayload: {
+        reportId,
+        workspaceId,
+        businessType: activeBusinessType,
+        dateRange: dateRangeLabel,
+        generatedAt,
+        totalRevenue: reportData.totalRevenueUsd,
+        totalExpense: reportData.expensesUsd,
+        netAmount: reportData.profitUsd,
+      },
+    }
+  }, [activeBusinessType, branding, businessSettingsApi.settings.reportPrefix, dateRangeLabel, filters.currency, reportData, reportTitle, workspaceId])
 
   return (
     <motion.div
@@ -397,9 +478,9 @@ export default function ReportsPage() {
             <HiOutlineDocumentText className="h-4 w-4" />
             Workspace reports
           </div>
-          <h1 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">Reports Center</h1>
+          <h1 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">{reportTitle}</h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-            Revenue, sales, customers, leads, invoices, activity, and team reports using your current workspace data.
+            Revenue, billing, payments, expenses, accounts, and activity reports for {activeBusinessType} only.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -459,7 +540,13 @@ export default function ReportsPage() {
             variant="subtle"
             className="h-10 rounded-2xl"
             type="button"
-            onClick={() => showNotice('PDF download is coming soon. Use Print Report for now.')}
+            onClick={async () => {
+              try {
+                await exportReportPdf(reportExport)
+              } catch (error) {
+                showNotice(error.message || 'Unable to export PDF.')
+              }
+            }}
           >
             <HiOutlineDocumentText className="h-4 w-4" />
             PDF
@@ -467,10 +554,18 @@ export default function ReportsPage() {
           <Button
             className="h-10 rounded-2xl xl:col-start-6"
             type="button"
-            onClick={() => downloadCsv(csvRows, `nexora-report-${new Date().toISOString().slice(0, 10)}.csv`)}
+            onClick={() => exportReportCsv(reportExport)}
           >
             <HiOutlineArrowDownTray className="h-4 w-4" />
             Export CSV
+          </Button>
+          <Button
+            variant="subtle"
+            className="h-10 rounded-2xl"
+            type="button"
+            onClick={() => exportReportExcel(reportExport)}
+          >
+            Excel
           </Button>
         </div>
       </Card>
@@ -494,6 +589,10 @@ export default function ReportsPage() {
               </div>
             </div>
             <div className="grid gap-2 text-sm text-slate-600 sm:text-right">
+              <div className="ml-auto">
+                <ReportQrCode payload={reportExport.qrPayload} />
+              </div>
+              <p><span className="font-semibold text-slate-950">Report ID:</span> {reportExport.reportId}</p>
               <p><span className="font-semibold text-slate-950">Report date:</span> {reportDate}</p>
               <p><span className="font-semibold text-slate-950">Phone:</span> {branding.phone}</p>
               <p><span className="font-semibold text-slate-950">Address:</span> {branding.address}</p>
@@ -668,7 +767,8 @@ export default function ReportsPage() {
             </div>
           </div>
           <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-4 text-xs text-slate-500">
-            <span>Powered by Nexora Solutions</span>
+            <span>{branding.receiptFooter || 'Powered by Nexora Solutions'}</span>
+            <span>Module: {activeBusinessType}</span>
             <span><HiOutlineCalendarDays className="mr-1 inline h-4 w-4" />{reportDate}</span>
             <span><HiOutlineBuildingOffice2 className="mr-1 inline h-4 w-4" />{branding.companyName}</span>
           </div>

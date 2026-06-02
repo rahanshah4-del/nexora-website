@@ -735,6 +735,18 @@ service cloud.firestore {
         allow update, delete: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId);
       }
 
+      match /businessSettings/{businessTypeId} {
+        allow read: if isAdmin() || isWorkspaceMember(workspaceId);
+        allow create: if workspaceHasWriteAccess(workspaceId)
+          && (isWorkspaceManager(workspaceId) || staffPermission(workspaceId, 'settingsAccess'))
+          && request.resource.data.workspaceId == workspaceId;
+        allow update: if workspaceHasWriteAccess(workspaceId)
+          && (isWorkspaceManager(workspaceId) || staffPermission(workspaceId, 'settingsAccess'))
+          && resource.data.workspaceId == workspaceId
+          && request.resource.data.workspaceId == workspaceId;
+        allow delete: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId);
+      }
+
       match /hr/{employeeId} {
         allow read: if staffPermission(workspaceId, 'hrDashboard');
         allow write: if workspaceHasWriteAccess(workspaceId) && staffPermission(workspaceId, 'hrDashboard');

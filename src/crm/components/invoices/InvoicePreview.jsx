@@ -70,7 +70,17 @@ export default function InvoicePreview({
     >
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <NexoraLogo compact textClassName="text-slate-950" />
+          {company?.logoUrl ? (
+            <div className="flex items-center gap-3">
+              <img src={company.logoUrl} alt="Business logo" className="h-12 w-12 rounded-2xl border border-slate-200 bg-white object-contain p-1" />
+              <div className="min-w-0">
+                <p className="truncate text-base font-black text-slate-950">{company?.name || 'Nexora Solutions'}</p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-500">Business Billing</p>
+              </div>
+            </div>
+          ) : (
+            <NexoraLogo compact textClassName="text-slate-950" />
+          )}
           <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.32em] text-slate-500">Solutions</p>
         </div>
         <div className="min-w-0 text-right">
@@ -228,12 +238,21 @@ export default function InvoicePreview({
           {invoice.notes ? <p className="mt-4 text-xs leading-6 text-slate-600">{invoice.notes}</p> : null}
         </div>
         <div className="pt-6 text-center">
-          <div className="mx-auto h-12 w-44 border-b border-slate-300 text-2xl italic text-slate-500">
-            {invoice.signatureName || company?.signature || ''}
-          </div>
+          {company?.signatureUrl ? (
+            <img src={company.signatureUrl} alt="Authorized signature" className="mx-auto h-12 max-w-44 object-contain" />
+          ) : (
+            <div className="mx-auto h-12 w-44 border-b border-slate-300 text-2xl italic text-slate-500">
+              {invoice.signatureName || company?.signature || ''}
+            </div>
+          )}
           <p className="mt-2 text-xs font-bold">Authorized Signature</p>
         </div>
       </div>
+      {company?.footer ? (
+        <div className="mt-5 border-t border-slate-200 pt-3 text-center text-[11px] font-semibold text-slate-500">
+          {company.footer}
+        </div>
+      ) : null}
     </article>
   )
 }

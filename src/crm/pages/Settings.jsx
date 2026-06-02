@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   HiOutlineArrowRightOnRectangle,
@@ -15,6 +15,7 @@ import Select from '../components/ui/Select.jsx'
 import Avatar from '../components/ui/Avatar.jsx'
 import { supportedCurrencies } from '../data/currency.js'
 import { usePreferences } from '../hooks/usePreferences.js'
+import { useBusinessSettings } from '../hooks/useBusinessSettings.js'
 import { useUser } from '../hooks/useUser.js'
 import { useAuth } from '../hooks/useAuth.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
@@ -34,12 +35,38 @@ export default function SettingsPage() {
   const { plan, userId, workspaceId, userDoc, firebaseUser } = useUser()
   const { logout, busy } = useAuth()
   const { currency, setCurrency, profile, setProfile } = usePreferences()
-  const [draft, setDraft] = useState(profile)
+  const { settings, businessType, saveSettings } = useBusinessSettings()
+  const [draft, setDraft] = useState({ ...profile, ...settings })
   const [saved, setSaved] = useState(false)
+  const [error, setError] = useState('')
   const fileRef = useRef(null)
   const packageName = packageNameForPlan(plan)
 
-  function onSaveProfile() {
+  useEffect(() => {
+    setDraft((current) => ({ ...current, ...profile, ...settings }))
+  }, [profile, settings])
+
+  async function onSaveProfile() {
+    const businessPatch = {
+      businessName: draft.businessName || draft.companyName || '',
+      logoUrl: draft.logoUrl || draft.avatarDataUrl || '',
+      address: draft.address || '',
+      phone: draft.phone || '',
+      email: draft.email || '',
+      taxNumber: draft.taxNumber || draft.taxId || '',
+      currency,
+      invoicePrefix: draft.invoicePrefix || '',
+      reportPrefix: draft.reportPrefix || '',
+      receiptFooter: draft.receiptFooter || '',
+      signatureUrl: draft.signatureUrl || '',
+      themeColor: draft.themeColor || '#2563eb',
+    }
+    const res = await saveSettings(businessPatch)
+    if (!res.ok) {
+      setError(res.error || 'Unable to save business settings.')
+      return
+    }
+    setError('')
     setProfile(draft)
     logActivity({
       workspaceId,
@@ -47,10 +74,10 @@ export default function SettingsPage() {
       ...userActivityInfo(userDoc, firebaseUser),
       action: 'Settings/profile updated',
       module: 'Settings',
-      description: 'Profile and business settings were updated.',
+      description: `${businessType} profile and business settings were updated.`,
       targetId: userId || '',
-      targetName: draft.companyName || draft.ownerName || 'Profile',
-      metadata: { companyName: draft.companyName || '', ownerName: draft.ownerName || '', currency },
+      targetName: draft.businessName || draft.companyName || draft.ownerName || 'Profile',
+      metadata: { businessName: businessPatch.businessName, businessType, ownerName: draft.ownerName || '', currency },
     }).catch(() => {})
     setSaved(true)
     window.setTimeout(() => setSaved(false), 1400)
@@ -59,7 +86,7 @@ export default function SettingsPage() {
   function onAvatarChange(file) {
     if (!file) return
     const reader = new FileReader()
-    reader.onload = () => setDraft((current) => ({ ...current, avatarDataUrl: String(reader.result || '') }))
+    reader.onload = () => setDraft((current) => ({ ...current, avatarDataUrl: String(reader.result || ''), logoUrl: String(reader.result || '') }))
     reader.readAsDataURL(file)
   }
 
@@ -81,7 +108,8 @@ export default function SettingsPage() {
         right={
           <div className="flex flex-wrap items-center gap-2">
             {saved ? <Badge variant="success">Saved</Badge> : null}
-            <Button variant="subtle" className="rounded-2xl" onClick={() => setDraft(profile)} type="button">
+            {error ? <Badge variant="danger">{error}</Badge> : null}
+            <Button variant="subtle" className="rounded-2xl" onClick={() => setDraft({ ...profile, ...settings })} type="button">
               Reset
             </Button>
             <Button className="rounded-2xl" onClick={onSaveProfile} type="button">
@@ -107,7 +135,7 @@ export default function SettingsPage() {
                     {saved ? <HiOutlineCheckCircle className="text-lg text-emerald-500" /> : null}
                   </div>
                   <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-300">
-                    Owner and contact details used across your workspace.
+                    Owner and contact details for the current {businessType} module.
                   </p>
                 </div>
               </div>
@@ -118,7 +146,7 @@ export default function SettingsPage() {
                 <Button
                   variant="ghost"
                   className="rounded-2xl"
-                  onClick={() => setDraft((current) => ({ ...current, avatarDataUrl: '' }))}
+                  onClick={() => setDraft((current) => ({ ...current, avatarDataUrl: '', logoUrl: '' }))}
                   type="button"
                 >
                   Remove
@@ -166,7 +194,7 @@ export default function SettingsPage() {
                 </span>
                 <div>
                   <p className="text-sm font-semibold text-slate-950 dark:text-white">Company / Workspace info</p>
-                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-300">Company details for invoices and reports.</p>
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-300">Module-isolated company details for invoices and reports.</p>
                 </div>
               </div>
               <Badge variant={plan === 'Business' ? 'success' : 'default'}>{packageName}</Badge>
@@ -175,16 +203,16 @@ export default function SettingsPage() {
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
               <Field label="Company Name" className="sm:col-span-2">
                 <Input
-                  value={draft.companyName}
-                  onChange={(event) => setDraft((current) => ({ ...current, companyName: event.target.value }))}
+                  value={draft.businessName || draft.companyName || ''}
+                  onChange={(event) => setDraft((current) => ({ ...current, businessName: event.target.value, companyName: event.target.value }))}
                   placeholder="Company name"
                 />
               </Field>
               <Field label="Business Type">
                 <Input
-                  value={draft.businessType}
-                  onChange={(event) => setDraft((current) => ({ ...current, businessType: event.target.value }))}
-                  placeholder="SaaS / Agency / Retail..."
+                  value={businessType}
+                  disabled
+                  placeholder="Current module"
                 />
               </Field>
               <Field label="Currency">
@@ -201,6 +229,41 @@ export default function SettingsPage() {
                   value={draft.address || ''}
                   onChange={(event) => setDraft((current) => ({ ...current, address: event.target.value }))}
                   placeholder="Business address for printable reports"
+                />
+              </Field>
+              <Field label="Tax Number">
+                <Input
+                  value={draft.taxNumber || ''}
+                  onChange={(event) => setDraft((current) => ({ ...current, taxNumber: event.target.value }))}
+                  placeholder="NTN / Tax ID"
+                />
+              </Field>
+              <Field label="Invoice Prefix">
+                <Input
+                  value={draft.invoicePrefix || ''}
+                  onChange={(event) => setDraft((current) => ({ ...current, invoicePrefix: event.target.value }))}
+                  placeholder="INV"
+                />
+              </Field>
+              <Field label="Report Prefix">
+                <Input
+                  value={draft.reportPrefix || ''}
+                  onChange={(event) => setDraft((current) => ({ ...current, reportPrefix: event.target.value }))}
+                  placeholder="RPT"
+                />
+              </Field>
+              <Field label="Theme Color">
+                <Input
+                  type="color"
+                  value={draft.themeColor || '#2563eb'}
+                  onChange={(event) => setDraft((current) => ({ ...current, themeColor: event.target.value }))}
+                />
+              </Field>
+              <Field label="Receipt Footer" className="sm:col-span-2">
+                <Input
+                  value={draft.receiptFooter || ''}
+                  onChange={(event) => setDraft((current) => ({ ...current, receiptFooter: event.target.value }))}
+                  placeholder="Thank you for your business"
                 />
               </Field>
               <Field label="Country">

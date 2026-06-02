@@ -10,6 +10,7 @@ import {
 } from 'react-icons/hi2'
 import Button from '../components/ui/Button.jsx'
 import { usePreferences } from '../hooks/usePreferences.js'
+import { useBusinessSettings } from '../hooks/useBusinessSettings.js'
 import { useInvoices } from '../hooks/useInvoices.js'
 import InvoiceStats from '../components/invoices/InvoiceStats.jsx'
 import InvoiceTable from '../components/invoices/InvoiceTable.jsx'
@@ -142,6 +143,7 @@ function toDateMillis(value) {
 export default function InvoicesPage() {
   const navigate = useNavigate()
   const { currency } = usePreferences()
+  const { settings: businessSettings } = useBusinessSettings()
   const { userDoc, userId, businessType } = useUser()
   const isSchool = normalizeBusinessType(businessType) === 'School ERP'
   const {
@@ -174,14 +176,18 @@ export default function InvoicesPage() {
 
   const company = useMemo(
     () => ({
-      name: resolveWorkspaceName({ accountData: userDoc, userId, fallback: userDoc?.company || 'Nexora Solutions' }),
-      email: userDoc?.email || '',
-      phone: userDoc?.phone || '',
-      address: userDoc?.companyAddress || userDoc?.address || '',
-      taxId: userDoc?.ntn || userDoc?.taxId || '',
+      name: businessSettings.businessName || resolveWorkspaceName({ accountData: userDoc, userId, fallback: userDoc?.company || 'Nexora Solutions' }),
+      email: businessSettings.email || userDoc?.email || '',
+      phone: businessSettings.phone || userDoc?.phone || '',
+      address: businessSettings.address || userDoc?.companyAddress || userDoc?.address || '',
+      taxId: businessSettings.taxNumber || userDoc?.ntn || userDoc?.taxId || '',
       signature: userDoc?.fullName || userDoc?.name || '',
+      logoUrl: businessSettings.logoUrl || '',
+      invoicePrefix: businessSettings.invoicePrefix || '',
+      footer: businessSettings.receiptFooter || '',
+      signatureUrl: businessSettings.signatureUrl || '',
     }),
-    [userDoc, userId],
+    [businessSettings, userDoc, userId],
   )
 
   const exportColumns = [

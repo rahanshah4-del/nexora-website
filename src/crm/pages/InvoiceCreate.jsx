@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   HiOutlineArrowLeft,
@@ -19,6 +19,7 @@ import Toast from '../components/ui/Toast.jsx'
 import CurrencySelector from '../components/invoices/CurrencySelector.jsx'
 import InvoicePreview from '../components/invoices/InvoicePreview.jsx'
 import { useInvoices } from '../hooks/useInvoices.js'
+import { useBusinessSettings } from '../hooks/useBusinessSettings.js'
 import { useProducts } from '../hooks/useProducts.js'
 import { useCustomers } from '../hooks/useCustomers.js'
 import { useUser } from '../hooks/useUser.js'
@@ -104,6 +105,7 @@ function OptionTile({ title, detail, active, children }) {
 export default function InvoiceCreatePage() {
   const navigate = useNavigate()
   const { createInvoice } = useInvoices()
+  const { settings: businessSettings } = useBusinessSettings()
   const { products } = useProducts()
   const { customers } = useCustomers()
   const { userDoc, userId, businessType } = useUser()
@@ -115,16 +117,29 @@ export default function InvoiceCreatePage() {
   const isSchool = normalizeBusinessType(businessType) === 'School ERP'
 
   const totals = useMemo(() => calculateInvoiceDraft(invoice), [invoice])
+  useEffect(() => {
+    const prefix = String(businessSettings.invoicePrefix || '').trim().toUpperCase().replace(/[^A-Z0-9-]/g, '')
+    if (!prefix || !invoice.invoiceNumber || !invoice.invoiceNumber.startsWith('INV-')) return
+    setInvoice((current) => {
+      const nextInvoiceNumber = current.invoiceNumber.replace(/^INV/, prefix)
+      return nextInvoiceNumber === current.invoiceNumber ? current : { ...current, invoiceNumber: nextInvoiceNumber }
+    })
+  }, [businessSettings.invoicePrefix, invoice.invoiceNumber])
+
   const company = useMemo(
     () => ({
-      name: resolveWorkspaceName({ accountData: userDoc, userId, fallback: userDoc?.company || 'Nexora Solutions' }),
-      email: userDoc?.email || '',
-      phone: userDoc?.phone || '',
-      address: userDoc?.companyAddress || userDoc?.address || '',
-      taxId: userDoc?.ntn || userDoc?.taxId || '',
+      name: businessSettings.businessName || resolveWorkspaceName({ accountData: userDoc, userId, fallback: userDoc?.company || 'Nexora Solutions' }),
+      email: businessSettings.email || userDoc?.email || '',
+      phone: businessSettings.phone || userDoc?.phone || '',
+      address: businessSettings.address || userDoc?.companyAddress || userDoc?.address || '',
+      taxId: businessSettings.taxNumber || userDoc?.ntn || userDoc?.taxId || '',
       signature: userDoc?.fullName || userDoc?.name || '',
+      logoUrl: businessSettings.logoUrl || '',
+      invoicePrefix: businessSettings.invoicePrefix || '',
+      footer: businessSettings.receiptFooter || '',
+      signatureUrl: businessSettings.signatureUrl || '',
     }),
-    [userDoc, userId],
+    [businessSettings, userDoc, userId],
   )
 
   function update(key, value) {
