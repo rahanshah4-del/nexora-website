@@ -26,6 +26,8 @@ import { useExpenses } from '../hooks/useExpenses.js'
 import { useUser } from '../hooks/useUser.js'
 import {
   calculateConversionRate,
+  invoiceBalanceDue,
+  isOutstandingInvoice,
   calculatePipelineValue,
   getDashboardStats,
   getInvoiceStatus,
@@ -247,7 +249,7 @@ export default function DashboardHomePage() {
   const paidInvoices = useMemo(() => invoicesApi.invoices.filter((invoice) => getInvoiceStatus(invoice) === 'paid'), [invoicesApi.invoices])
   const paidPayments = useMemo(() => invoicesApi.payments.filter(isPaidRecord), [invoicesApi.payments])
   const pendingInvoices = useMemo(
-    () => invoicesApi.invoices.filter((invoice) => getInvoiceStatus(invoice) === 'pending'),
+    () => invoicesApi.invoices.filter(isOutstandingInvoice),
     [invoicesApi.invoices],
   )
   const openTickets = useMemo(() => ticketsApi.tickets.filter(isOpenTicket), [ticketsApi.tickets])
@@ -268,7 +270,7 @@ export default function DashboardHomePage() {
   )
   const totalRevenueUsd = dashboardStats.totalRevenue
   const pendingRevenueUsd = useMemo(
-    () => pendingInvoices.reduce((sum, invoice) => sum + toFiniteNumber(invoice.totalUsd ?? invoice.total), 0),
+    () => pendingInvoices.reduce((sum, invoice) => sum + invoiceBalanceDue(invoice), 0),
     [pendingInvoices],
   )
   const pipelineValuePkr = useMemo(

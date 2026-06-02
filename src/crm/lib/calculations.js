@@ -147,6 +147,19 @@ export function invoiceValue(invoice = {}) {
   return Math.max(toNumber(invoice.total ?? invoice.totalUsd ?? invoice.amount ?? invoice.amountUsd, 0), 0)
 }
 
+export function invoicePaidValue(invoice = {}) {
+  return Math.min(Math.max(toNumber(invoice.amountPaid ?? invoice.partialPaidAmount, 0), 0), invoiceValue(invoice))
+}
+
+export function invoiceBalanceDue(invoice = {}) {
+  return Math.max(toNumber(invoice.balanceDue, calculateBalanceDue(invoiceValue(invoice), invoicePaidValue(invoice))), 0)
+}
+
+export function isOutstandingInvoice(invoice = {}) {
+  const status = getInvoiceStatus(invoice)
+  return !['paid', 'rejected', 'cancelled', 'canceled'].includes(status) && invoiceBalanceDue(invoice) > 0
+}
+
 export function paymentValue(payment = {}) {
   return Math.max(toNumber(payment.amount ?? payment.amountUsd ?? payment.amountPaid, 0), 0)
 }
@@ -238,7 +251,7 @@ export function getDashboardStats({ invoices = [], payments = [], customers = []
     totalRevenue,
     totalCustomers: customers.filter((customer) => !['inactive', 'archived', 'deleted', 'rejected'].includes(statusValue(customer.status, 'active'))).length,
     activeLeads: leads.filter(isActivePipelineItem).length,
-    pendingInvoices: invoices.filter((invoice) => getInvoiceStatus(invoice) === 'pending').length,
+    pendingInvoices: invoices.filter(isOutstandingInvoice).length,
     monthlySales,
     expenses: totalExpenses,
     profit: calculateProfit({ revenue: totalRevenue, expenses: totalExpenses }),

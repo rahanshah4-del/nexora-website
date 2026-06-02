@@ -2,7 +2,9 @@ import {
   calculateApprovedExpenses,
   expenseValue,
   getInvoiceStatus,
+  invoiceBalanceDue,
   isApprovedExpense,
+  isOutstandingInvoice,
   isPaidRecord,
   invoiceValue,
   normalizeCurrency,
@@ -177,8 +179,8 @@ export function calculateFinanceSummary({ invoices = [], payments = [], expenses
   const totalRevenue = calculateTotalRevenue({ invoices, payments, transactions })
   const totalExpenses = calculateTotalExpenses({ expenses, transactions })
   const pendingRevenue = invoices
-    .filter((invoice) => getInvoiceStatus(invoice) === 'pending')
-    .reduce((sum, invoice) => sum + invoiceValue(invoice), 0)
+    .filter(isOutstandingInvoice)
+    .reduce((sum, invoice) => sum + invoiceBalanceDue(invoice), 0)
   return {
     walletBalance: calculateWalletBalance({ invoices, payments, expenses, transactions }),
     cashBalance: calculateCashBalance({ invoices, payments, expenses, transactions }),
