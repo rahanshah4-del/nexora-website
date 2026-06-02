@@ -13,7 +13,8 @@ function belongsToWorkspace(data, workspaceId) {
 
 export function belongsToBusiness(data, businessType) {
   const currentBusinessType = normalizeBusinessType(businessType)
-  const rowBusinessType = data?.businessType ? normalizeBusinessType(data.businessType) : currentBusinessType
+  if (!data?.businessType && !data?.selectedBusinessType) return false
+  const rowBusinessType = normalizeBusinessType(data.businessType || data.selectedBusinessType)
   return rowBusinessType === currentBusinessType
 }
 

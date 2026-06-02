@@ -158,8 +158,6 @@ export async function persistWorkspaceSession(session) {
         userId: workspaceId,
         workspaceId,
         selectedWorkspace,
-        businessType,
-        selectedBusinessType: businessType,
         currentSessionId: sessionId,
         sessionStartTime: session.sessionStartTime,
         planType: payload.planType,
@@ -172,8 +170,6 @@ export async function persistWorkspaceSession(session) {
       doc(db, 'users', uid),
       {
         selectedWorkspace,
-        businessType,
-        selectedBusinessType: businessType,
         lastLogin: payload.lastLogin,
         updatedAt: serverTimestamp(),
       },

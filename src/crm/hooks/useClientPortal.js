@@ -85,7 +85,8 @@ function normalizePayment(p) {
 }
 
 function belongsToBusiness(row, businessType) {
-  const rowBusinessType = row?.businessType ? normalizeBusinessType(row.businessType) : 'General CRM'
+  if (!row?.businessType && !row?.selectedBusinessType) return false
+  const rowBusinessType = normalizeBusinessType(row.businessType || row.selectedBusinessType)
   return rowBusinessType === normalizeBusinessType(businessType)
 }
 

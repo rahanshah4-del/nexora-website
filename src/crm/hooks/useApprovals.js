@@ -5,9 +5,7 @@ import {
   doc,
   getDoc,
   onSnapshot,
-  query,
   serverTimestamp,
-  where,
   writeBatch,
 } from 'firebase/firestore'
 import { db } from '../lib/firebase.js'
@@ -59,7 +57,8 @@ function isReviewableApproval(approval = {}) {
 
 function belongsToBusiness(row, businessType) {
   const currentBusinessType = normalizeBusinessType(businessType)
-  const rowBusinessType = row?.businessType ? normalizeBusinessType(row.businessType) : currentBusinessType
+  if (!row?.businessType && !row?.selectedBusinessType) return false
+  const rowBusinessType = normalizeBusinessType(row.businessType || row.selectedBusinessType)
   return rowBusinessType === currentBusinessType
 }
 
@@ -280,11 +279,10 @@ async function addInventoryAdjustments(batch, workspaceId, invoice, now, busines
 export function useApprovals() {
   const { userId, workspaceId, businessType, role, userDoc, firebaseUser } = useUser()
   const canApprove = canApproveFinance(userDoc?.role || role)
-  const canApproveSubscription = isPlatformAdminDoc(userDoc || {})
+  const canApproveSubscription = false
   const [invoices, setInvoices] = useState([])
   const [approvalRecords, setApprovalRecords] = useState([])
   const [payments, setPayments] = useState([])
-  const [upgradeRequests, setUpgradeRequests] = useState([])
   const [teamMembers, setTeamMembers] = useState([])
   const [clients, setClients] = useState([])
   const [expenses, setExpenses] = useState([])
@@ -298,7 +296,6 @@ export function useApprovals() {
         setInvoices([])
         setApprovalRecords([])
         setPayments([])
-        setUpgradeRequests([])
         setTeamMembers([])
         setClients([])
         setExpenses([])
@@ -314,7 +311,7 @@ export function useApprovals() {
       setError('')
     })
 
-    const expectedLoads = canApproveSubscription ? 8 : 7
+    const expectedLoads = 7
     let loaded = 0
     function markLoaded() {
       loaded += 1
@@ -402,25 +399,6 @@ export function useApprovals() {
       onError,
     )
 
-    const unsubUpgrades = canApproveSubscription
-      ? onSnapshot(
-          query(collection(db, 'upgradeRequests'), where('workspaceId', '==', workspaceId)),
-          (snap) => {
-            setUpgradeRequests(
-              snap.docs
-                .map((item) => ({ id: item.id, ...item.data() }))
-                .filter((item) => belongsToBusiness(item, businessType))
-                .filter((item) => isApprovalRecord(item) || statusValue(item.paymentStatus, '') === 'pending'),
-            )
-            markLoaded()
-          },
-          onError,
-        )
-      : (() => {
-          setUpgradeRequests([])
-          return () => {}
-        })()
-
     return () => {
       unsubInvoices?.()
       unsubApprovalRecords?.()
@@ -429,9 +407,8 @@ export function useApprovals() {
       unsubClients?.()
       unsubExpenses?.()
       unsubAccountTransactions?.()
-      unsubUpgrades?.()
     }
-  }, [businessType, canApprove, canApproveSubscription, userId, workspaceId])
+  }, [businessType, canApprove, userId, workspaceId])
 
   const approvals = useMemo(() => {
     const invoiceLabel = invoiceApprovalTypeForBusiness(businessType).label
@@ -440,14 +417,13 @@ export function useApprovals() {
       ...approvalRecords.map((row) => createApproval(row.approvalLabel || invoiceLabel, 'approvals', row)),
       ...invoices.filter((row) => !approvalRecordSourceIds.has(row.id)).map((row) => createApproval(row.approvalLabel || invoiceLabel, 'invoices', row)),
       ...payments.map((row) => createApproval('Client payment reference', 'payments', row)),
-      ...upgradeRequests.map((row) => createApproval('Subscription upgrade', 'upgradeRequests', row)),
       ...teamMembers.map((row) => createApproval('Staff access request', 'teamMembers', row)),
       ...clients.map((row) => createApproval('Client approval', 'clients', row)),
       ...expenses.map((row) => createApproval('Expense approval', 'expenses', row)),
       ...accountTransactions.map((row) => createApproval(transactionApprovalType(row), 'accountTransactions', row)),
     ]
     return rows.sort((a, b) => b.sortAt - a.sortAt)
-  }, [accountTransactions, approvalRecords, businessType, clients, expenses, invoices, payments, teamMembers, upgradeRequests])
+  }, [accountTransactions, approvalRecords, businessType, clients, expenses, invoices, payments, teamMembers])
 
   const pendingApprovals = useMemo(() => approvals.filter(isReviewableApproval), [approvals])
   const approvedApprovals = useMemo(
@@ -469,7 +445,7 @@ export function useApprovals() {
     () => ({
       pendingPayments: payments.filter((row) => isPendingPayment(row)).length,
       pendingInvoices: approvalRecords.filter((row) => statusValue(row.status || row.approvalStatus, '') === 'pending').length || invoices.filter((row) => isPendingInvoice(row)).length,
-      upgradeRequests: upgradeRequests.filter((row) => isPendingRecord(row) || statusValue(row.paymentStatus, '') === 'pending').length,
+      upgradeRequests: 0,
       staffRequests: teamMembers.filter((row) => isPendingRecord(row)).length,
       expenseRequests: expenses.filter((row) => isPendingRecord(row)).length,
       accountRequests: accountTransactions.filter((row) => isPendingRecord(row)).length,
@@ -478,7 +454,7 @@ export function useApprovals() {
       rejected: rejectedApprovals.length,
       total: pendingApprovals.length,
     }),
-    [accountTransactions, approvalRecords, approvedApprovals.length, expenses, invoices, payments, pendingApprovals.length, rejectedApprovals.length, teamMembers, upgradeRequests],
+    [accountTransactions, approvalRecords, approvedApprovals.length, expenses, invoices, payments, pendingApprovals.length, rejectedApprovals.length, teamMembers],
   )
 
   const approve = useCallback(

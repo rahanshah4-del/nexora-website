@@ -16,7 +16,6 @@ const AnalyticsPage = lazy(() => import('./pages/Analytics.jsx'))
 const ReportsPage = lazy(() => import('./pages/Reports.jsx'))
 const SettingsPage = lazy(() => import('./pages/Settings.jsx'))
 const UpgradeBusinessPage = lazy(() => import('./pages/UpgradeBusiness.jsx'))
-const AdminUpgradeRequestsPage = lazy(() => import('./pages/AdminUpgradeRequests.jsx'))
 const TeamPage = lazy(() => import('./pages/Team.jsx'))
 const InvoicesPage = lazy(() => import('./pages/Invoices.jsx'))
 const InvoiceCreatePage = lazy(() => import('./pages/InvoiceCreate.jsx'))
@@ -91,8 +90,8 @@ export default function App() {
             <Route path="/app/reports" element={gated(<ReportsPage />)} />
             <Route path="/app/settings" element={<SettingsPage />} />
             <Route path="/app/coming-soon/:module" element={<ModulePlaceholderPage />} />
-            <Route path="/app/admin/upgrade-requests" element={<Navigate to="/admin/upgrade-requests" replace />} />
-            <Route path="/admin/upgrade-requests" element={<AdminUpgradeRequestsPage />} />
+            <Route path="/app/admin/upgrade-requests" element={<Navigate to="/app/dashboard" replace />} />
+            <Route path="/admin/upgrade-requests" element={<Navigate to="/login" replace />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/login" replace />} />

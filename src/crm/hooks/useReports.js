@@ -27,7 +27,6 @@ const WORKSPACE_COLLECTIONS = [
 
 const OWNED_COLLECTIONS = [
   { path: 'notifications', field: 'userId' },
-  { path: 'upgradeRequests', field: 'workspaceId' },
 ]
 const COLLECTIONS = [...WORKSPACE_COLLECTIONS, ...OWNED_COLLECTIONS.map((item) => item.path)]
 
@@ -185,7 +184,6 @@ export function useReports() {
     const subscriptions = data.subscriptions
     const notifications = data.notifications
     const activityLogs = data.activityLogs
-    const upgradeRequests = data.upgradeRequests
 
     const totalRevenueUsd = calculateRevenue({ invoices, payments })
     const pendingInvoices = invoices.filter((i) => getInvoiceStatus(i) === 'pending').length
@@ -193,7 +191,7 @@ export function useReports() {
     const completedTasks = tasks.filter((t) => t.status === 'Completed').length
     const activeSubs = subscriptions.filter(isActiveSub).length
     const teamCount = teamMembers.length || staff.length
-    const upgradeCount = upgradeRequests.length
+    const upgradeCount = 0
 
     const paidPaymentsUsd = payments.filter(isPaidRecord).reduce((sum, p) => sum + paymentValue(p), 0)
     const expensesUsd = calculateApprovedExpenses(expenses)
@@ -217,7 +215,6 @@ export function useReports() {
         ...subscriptions,
         ...notifications,
         ...activityLogs,
-        ...upgradeRequests,
       ]) || null
 
     return {

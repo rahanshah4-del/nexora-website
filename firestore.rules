@@ -328,6 +328,59 @@ service cloud.firestore {
       ]);
     }
 
+    function analyticsEventFieldsSafe() {
+      return request.resource.data.keys().hasOnly([
+        'eventType',
+        'page',
+        'buttonLabel',
+        'moduleName',
+        'userId',
+        'email',
+        'phone',
+        'workspaceId',
+        'businessType',
+        'status',
+        'sessionId',
+        'visitorId',
+        'referrer',
+        'deviceType',
+        'browser',
+        'os',
+        'country',
+        'userAgent',
+        'sessionDurationMs',
+        'timestamp',
+        'createdAt'
+      ])
+      && request.resource.data.eventType is string
+      && request.resource.data.sessionId is string
+      && request.resource.data.visitorId is string
+      && request.resource.data.createdAt is timestamp;
+    }
+
+    function userSessionFieldsSafe() {
+      return request.resource.data.keys().hasOnly([
+        'sessionId',
+        'visitorId',
+        'userId',
+        'email',
+        'phone',
+        'workspaceId',
+        'businessType',
+        'deviceType',
+        'browser',
+        'os',
+        'userAgent',
+        'startedAt',
+        'lastActiveAt',
+        'lastEventType',
+        'sessionDurationMs'
+      ])
+      && request.resource.data.sessionId is string
+      && request.resource.data.visitorId is string
+      && request.resource.data.lastActiveAt is timestamp;
+    }
+
     function paymentApprovalFieldsTouched() {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
         'paymentStatus',
@@ -782,12 +835,12 @@ service cloud.firestore {
     }
 
     match /analyticsEvents/{eventId} {
-      allow create: if true;
+      allow create: if analyticsEventFieldsSafe();
       allow read, update, delete: if isBackendAdmin();
     }
 
     match /userSessions/{sessionId} {
-      allow create, update: if true;
+      allow create, update: if userSessionFieldsSafe();
       allow read, delete: if isBackendAdmin();
     }
 
