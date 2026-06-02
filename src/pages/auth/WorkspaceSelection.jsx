@@ -46,6 +46,7 @@ import {
 import { saveSelectedWorkspace } from '../../crm/lib/workspaceSession.js'
 import { clientSafeMessage, reportTechnicalError } from '../../lib/errorHandler.js'
 import { sendCustomVerificationEmail } from '../../lib/emailVerificationService.js'
+import { trackAnalyticsEvent } from '../../lib/analyticsTracking.js'
 
 const workspaceIconMap = {
   'General CRM': { icon: HiOutlineUserGroup, iconTone: 'bg-blue-50 text-blue-600', color: 'bg-blue-600' },
@@ -1078,6 +1079,7 @@ export default function WorkspaceSelection() {
         ...current,
         businessType,
       }))
+      trackAnalyticsEvent('onboarding_started', { userId: uid, email: user?.email || '', workspaceId, businessType, moduleName: businessType, page: '/workspace' })
       setCreateOpen(true)
       return
     }
@@ -1164,6 +1166,8 @@ export default function WorkspaceSelection() {
           { merge: true },
         ),
       ])
+      await trackAnalyticsEvent('workspace_selected', { userId: uid, email: user?.email || '', workspaceId, businessType, moduleName: businessType, page: '/workspace' })
+      await trackAnalyticsEvent('onboarding_completed', { userId: uid, email: user?.email || '', workspaceId, businessType, moduleName: businessType, page: '/workspace' })
       navigate(CRM_DASHBOARD_ROUTE)
     } catch (error) {
       setCreateMessage(clientSafeMessage(error, 'Could not save business type right now.', { context: 'Business workspace selection' }))
@@ -1385,6 +1389,8 @@ export default function WorkspaceSelection() {
           { merge: true },
         ),
       ])
+      await trackAnalyticsEvent('workspace_selected', { userId: uid, email, phone, workspaceId, businessType, moduleName: businessType, page: '/workspace' })
+      await trackAnalyticsEvent('onboarding_completed', { userId: uid, email, phone, workspaceId, businessType, moduleName: businessType, page: '/workspace' })
       setAccountData(userPayload)
       setWorkspaceData(workspacePayload)
       setCreateOpen(false)

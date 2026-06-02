@@ -13,6 +13,7 @@ import RequireAdmin from './layouts/RequireAdmin.jsx'
 import DashboardLayout from './crm/layouts/DashboardLayout.jsx'
 import CRMProviders from './crm/CRMProviders.jsx'
 import AdminLayout from './layouts/AdminLayout.jsx'
+import AnalyticsTracker from './components/AnalyticsTracker.jsx'
 
 const DashboardHomePage = lazy(() => import('./crm/pages/DashboardHome.jsx'))
 const RestaurantPOSPage = lazy(() => import('./crm/pages/RestaurantPOS.jsx'))
@@ -108,8 +109,10 @@ function AdminUpgradeRequestsRoute() {
 
 export default function AppRouter() {
   return (
-    <Routes>
-      <Route path="/" element={<MarketingRoute />} />
+    <>
+      <AnalyticsTracker />
+      <Routes>
+        <Route path="/" element={<MarketingRoute />} />
       <Route path="/features" element={<MarketingRoute sectionId="services" />} />
       <Route path="/pricing" element={<MarketingRoute sectionId="pricing" />} />
       <Route path="/contact" element={<MarketingRoute sectionId="contact" />} />
@@ -169,7 +172,8 @@ export default function AppRouter() {
           <Route index element={<Navigate to="/admin/control-centre" replace />} />
       </Route>
 
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </>
   )
 }

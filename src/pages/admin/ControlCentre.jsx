@@ -42,7 +42,13 @@ import {
 import { auth, firestoreDb as db } from '../../lib/firebase.js'
 import useAuth from '../../context/useAuth.js'
 import { clientSafeMessage } from '../../lib/errorHandler.js'
-import { DEFAULT_SAAS_CURRENCY, PLATFORM_PLAN_COLLECTION, mergePlatformPlans, planPriceLabel } from '../../lib/platformPlans.js'
+import {
+  DEFAULT_SAAS_CURRENCY,
+  PLATFORM_PLAN_COLLECTION,
+  defaultPlatformSettings as defaultSaasPlatformSettings,
+  mergePlatformPlans,
+  planPriceLabel,
+} from '../../lib/platformPlans.js'
 
 export class ControlCentreErrorBoundary extends Component {
   state = { error: null }
@@ -82,6 +88,7 @@ const planNames = ['Basic', 'Standard', 'Premium', 'Enterprise']
 const adminRoles = ['Super Admin', 'Admin', 'Support', 'Billing Manager', 'Read Only']
 const moduleColors = ['#7c3aed', '#3b82f6', '#f59e0b', '#ef4444', '#14b8a6', '#0ea5e9']
 const defaultPlatformSettings = {
+  ...defaultSaasPlatformSettings,
   systemName: 'Nexora Solutions',
   defaultCurrency: DEFAULT_SAAS_CURRENCY,
   trialDays: 7,
@@ -108,6 +115,7 @@ const navGroups = [
       ['upgrades', 'Upgrade Requests', HiOutlineCheckBadge],
       ['transactions', 'Transactions', HiOutlineCurrencyDollar],
       ['plans', 'Plans', HiOutlineCreditCard],
+      ['visitorAnalytics', 'Visitor Analytics', HiOutlineChartBarSquare],
     ],
   },
   {
@@ -156,6 +164,10 @@ function rowCurrency(row = {}) {
   return row.currency || row.billingCurrency || DEFAULT_SAAS_CURRENCY
 }
 
+function proofUrl(row = {}) {
+  return row.paymentProof || row.proofUrl || row.screenshotUrl || row.paymentProofUrl || ''
+}
+
 function statusValue(value, fallback = 'unknown') {
   return String(value || fallback).trim().toLowerCase().replace(/\s+/g, '_')
 }
@@ -174,6 +186,10 @@ function userName(row = {}) {
 
 function userEmail(row = {}) {
   return row.email || row.ownerEmail || row.clientEmail || ''
+}
+
+function phoneNumber(row = {}) {
+  return row.phone || row.phoneNumber || row.ownerPhone || row.mobile || ''
 }
 
 function isPaid(row = {}) {
@@ -237,6 +253,8 @@ function useControlCentreData() {
     clientSessions: [],
     userPresence: [],
     platformSettings: [],
+    analyticsEvents: [],
+    userSessions: [],
     loading: Boolean(db),
     error: '',
     sourceErrors: {},
@@ -262,6 +280,8 @@ function useControlCentreData() {
       clientSessions: [],
       userPresence: [],
       platformSettings: [],
+      analyticsEvents: [],
+      userSessions: [],
     }
     const expected = Object.keys(cache).length
     const loaded = new Set()
@@ -315,11 +335,13 @@ function useControlCentreData() {
       listen('backendActivityLogs', 'backendActivityLogs', 500),
       listen('announcements', 'announcements', 200),
       listen('supportTickets', 'supportTickets', 200),
-      listen('plans', 'plans', 50),
+      listen('plans', PLATFORM_PLAN_COLLECTION, 50),
       listen('backendStaff', 'backendStaff', 100),
       listen('clientSessions', 'clientSessions', 300),
       listen('userPresence', 'userPresence', 300),
       listen('platformSettings', 'platformSettings', 20),
+      listen('analyticsEvents', 'analyticsEvents', 1000),
+      listen('userSessions', 'userSessions', 500),
     ]
 
     return () => unsubscribers.forEach((unsubscribe) => unsubscribe?.())
@@ -576,6 +598,59 @@ export default function ControlCentre() {
   }, [data.supportTickets, data.upgradeRequests, data.workspaces, payments])
 
   const unreadNotifications = allNotifications.filter((item) => !readNotifications.has(item.id))
+  const analyticsStats = useMemo(() => {
+    const today = new Date().toDateString()
+    const events = data.analyticsEvents
+    const visitors = new Set(events.map((row) => row.visitorId).filter(Boolean))
+    const activeSessions = data.userSessions.filter((row) => {
+      const lastActive = toDate(row.lastActiveAt)
+      return lastActive && Date.now() - lastActive.getTime() <= 5 * 60 * 1000
+    })
+    const moduleClicks = new Map()
+    events.filter((row) => row.eventType === 'module_click').forEach((row) => {
+      const key = row.moduleName || row.buttonLabel || 'Unknown'
+      moduleClicks.set(key, (moduleClicks.get(key) || 0) + 1)
+    })
+    const mostClickedModule = [...moduleClicks.entries()].sort((a, b) => b[1] - a[1])?.[0]?.[0] || '-'
+    const signupStarted = events.filter((row) => row.eventType === 'signup_started').length
+    const signupCompleted = events.filter((row) => row.eventType === 'signup_completed').length
+    return {
+      totalVisitors: events.length,
+      uniqueVisitors: visitors.size,
+      clicksToday: events.filter((row) => ['button_click', 'module_click', 'pricing_click', 'start_free_trial_click'].includes(row.eventType) && toDate(row.timestamp || row.createdAt)?.toDateString() === today).length,
+      signupStarted,
+      signupCompleted,
+      loginCompleted: events.filter((row) => row.eventType === 'login_completed').length,
+      dropOffs: Math.max(0, signupStarted - signupCompleted),
+      activeSessions: activeSessions.length,
+      mostClickedModule,
+    }
+  }, [data.analyticsEvents, data.userSessions])
+
+  const funnelRows = useMemo(() => {
+    const events = data.analyticsEvents
+    const steps = [
+      ['Website Visit', 'page_view'],
+      ['Module Click', 'module_click'],
+      ['Signup Started', 'signup_started'],
+      ['Email Verified', 'signup_completed'],
+      ['Workspace Selected', 'workspace_selected'],
+      ['Login Completed', 'login_completed'],
+      ['CRM Opened', 'login_completed'],
+    ]
+    return steps.map(([label, type], index) => {
+      const count = type === 'login_completed' && label === 'CRM Opened'
+        ? events.filter((row) => row.eventType === type && (row.status === 'crm_opened' || row.page === '/app/dashboard')).length
+        : events.filter((row) => row.eventType === type).length
+      const previous = index ? steps[index - 1] : null
+      const previousCount = previous
+        ? previous[1] === 'login_completed' && previous[0] === 'CRM Opened'
+          ? events.filter((row) => row.eventType === previous[1] && (row.status === 'crm_opened' || row.page === '/app/dashboard')).length
+          : events.filter((row) => row.eventType === previous[1]).length
+        : count
+      return { label, count, dropOff: Math.max(0, previousCount - count) }
+    })
+  }, [data.analyticsEvents])
 
   const moduleBreakdown = useMemo(() => {
     const counts = new Map(modules.map((module) => [module, 0]))
@@ -735,7 +810,10 @@ export default function ControlCentre() {
       amount: amountValue(row),
       currency,
       transactionId: row.transactionId || row.txnId || '',
+      senderName: row.senderName || '',
+      senderNumber: row.senderNumber || row.userPhone || row.phone || '',
       paymentMethod: row.paymentMethod || row.method || 'Manual',
+      paymentProof: proofUrl(row),
       status: 'paid',
       paymentStatus: 'paid',
       approvedBy: user?.uid || '',
@@ -829,6 +907,7 @@ export default function ControlCentre() {
     { key: 'uid', label: 'UID', render: (row) => <span className="font-mono text-xs">{row.uid || row.id}</span> },
     { key: 'displayName', label: 'Name', render: (row) => userName(row) },
     { key: 'email', label: 'Email', render: (row) => userEmail(row) || '-' },
+    { key: 'phone', label: 'Phone', render: (row) => phoneNumber(row) || phoneNumber(workspacesById.get(row.workspaceId || row.currentWorkspaceId || row.uid || row.id) || {}) || '-' },
     { key: 'verified', label: 'Email Verified', render: (row) => <Status value={row.emailVerified ? 'verified' : 'unverified'} /> },
     { key: 'workspace', label: 'Workspace', render: (row) => workspaceName(workspacesById.get(row.workspaceId || row.currentWorkspaceId || row.uid || row.id) || { id: row.workspaceId || row.currentWorkspaceId || '-' }) },
     { key: 'plan', label: 'Plan', render: (row) => workspacesById.get(row.workspaceId || row.currentWorkspaceId || row.uid || row.id)?.plan || row.plan || 'Basic' },
@@ -869,8 +948,10 @@ export default function ControlCentre() {
     { key: 'plan', label: 'Requested Plan', render: (row) => row.requestedPlan || row.plan || '-' },
     { key: 'amount', label: 'Amount', render: (row) => money(amountValue(row), rowCurrency(row)) },
     { key: 'transactionId', label: 'Transaction ID', render: (row) => row.transactionId || row.txnId || '-' },
+    { key: 'senderNumber', label: 'Sender Number', render: (row) => row.senderNumber || row.userPhone || row.phone || '-' },
     { key: 'method', label: 'Method', render: (row) => row.paymentMethod || row.method || '-' },
-    { key: 'proof', label: 'Proof', render: (row) => row.proofUrl || row.screenshotUrl || row.paymentProofUrl ? <a className="font-bold text-violet-700" href={row.proofUrl || row.screenshotUrl || row.paymentProofUrl} target="_blank" rel="noreferrer">View</a> : '-' },
+    { key: 'proof', label: 'Proof', render: (row) => proofUrl(row) ? <a className="font-bold text-violet-700" href={proofUrl(row)} target="_blank" rel="noreferrer">View</a> : '-' },
+    { key: 'date', label: 'Date', render: (row) => dateTimeLabel(row.paymentDate || row.createdAt) },
     { key: 'status', label: 'Status', render: (row) => <Status value={row.approvalStatus || row.status || 'pending'} /> },
     {
       key: 'actions',
@@ -892,7 +973,7 @@ export default function ControlCentre() {
     { key: 'amount', label: 'Amount', render: (row) => money(amountValue(row), rowCurrency(row)) },
     { key: 'currency', label: 'Currency', render: (row) => rowCurrency(row) },
     { key: 'method', label: 'Method', render: (row) => row.paymentMethod || row.method || '-' },
-    { key: 'proof', label: 'Proof', render: (row) => row.proofUrl || row.screenshotUrl || row.paymentProofUrl ? <a className="font-bold text-violet-700" href={row.proofUrl || row.screenshotUrl || row.paymentProofUrl} target="_blank" rel="noreferrer">View Proof</a> : '-' },
+    { key: 'proof', label: 'Proof', render: (row) => proofUrl(row) ? <a className="font-bold text-violet-700" href={proofUrl(row)} target="_blank" rel="noreferrer">View Proof</a> : '-' },
     { key: 'date', label: 'Payment Date', render: (row) => dateTimeLabel(row.paymentDate || row.paidAt || row.createdAt) },
     { key: 'status', label: 'Status', render: (row) => <Status value={row.paymentStatus || row.status || 'pending'} /> },
     { key: 'approvedBy', label: 'Approved By', render: (row) => row.approvedByEmail || row.approvedBy || '-' },
@@ -903,7 +984,7 @@ export default function ControlCentre() {
       render: (row) => (
         <div className="flex min-w-[22rem] flex-wrap gap-2">
           <ShellButton onClick={() => setToast(`Transaction details: ${row.transactionId || row.id} · ${row.clientEmail || row.email || row.workspaceId || 'Client'} · ${money(amountValue(row), rowCurrency(row))}`)}>View Details</ShellButton>
-          {row.proofUrl || row.screenshotUrl || row.paymentProofUrl ? <ShellButton onClick={() => window.open(row.proofUrl || row.screenshotUrl || row.paymentProofUrl, '_blank', 'noopener,noreferrer')}>View Proof</ShellButton> : null}
+          {proofUrl(row) ? <ShellButton onClick={() => window.open(proofUrl(row), '_blank', 'noopener,noreferrer')}>View Proof</ShellButton> : null}
           <ShellButton onClick={() => runAction(`transaction-approve-${row.id}`, () => updateTransaction(row, { status: 'approved', paymentStatus: 'paid', approvalStatus: 'approved', approvedBy: user?.uid || '', approvedByEmail: user?.email || '', approvedAt: serverTimestamp(), paidAt: serverTimestamp() }, 'transaction_approved'), 'Payment approved.')}>Approve</ShellButton>
           <ShellButton onClick={() => runAction(`transaction-reject-${row.id}`, () => updateTransaction(row, { status: 'rejected', paymentStatus: 'rejected', approvalStatus: 'rejected', rejectedBy: user?.uid || '', rejectedByEmail: user?.email || '', rejectedAt: serverTimestamp() }, 'transaction_rejected'), 'Payment rejected.')}>Reject</ShellButton>
           <ShellButton onClick={() => runAction(`transaction-paid-${row.id}`, () => updateTransaction(row, { status: 'paid', paymentStatus: 'paid', approvalStatus: 'approved', approvedBy: user?.uid || '', approvedByEmail: user?.email || '', approvedAt: serverTimestamp(), paidAt: serverTimestamp() }, 'transaction_marked_paid'), 'Payment marked paid.')}>Mark Paid</ShellButton>
@@ -1141,7 +1222,22 @@ export default function ControlCentre() {
                 runAction(
                   `plan-save-${plan.id}`,
                   async () => {
-                    await setDoc(doc(db, PLATFORM_PLAN_COLLECTION, plan.id), { ...plan, price, currency, billingCycle, enabled, features, updatedAt: serverTimestamp(), updatedBy: user?.uid || '' }, { merge: true })
+                    const monthlyPrice = price
+                    const yearlyPrice = price === 'custom' ? 'custom' : Number(price || 0) * 12
+                    await setDoc(doc(db, PLATFORM_PLAN_COLLECTION, plan.id), {
+                      ...plan,
+                      planName: plan.name,
+                      monthlyPrice,
+                      yearlyPrice,
+                      price: monthlyPrice,
+                      currency,
+                      billingCycle,
+                      active: enabled,
+                      enabled,
+                      features,
+                      updatedAt: serverTimestamp(),
+                      updatedBy: user?.uid || '',
+                    }, { merge: true })
                     await logActivity('plan_saved', { planId: plan.id, price, currency, enabled })
                   },
                   'Plan saved.',
@@ -1404,6 +1500,55 @@ export default function ControlCentre() {
             </label>
           </div>
         </Panel>
+        <Panel title="Payment Accounts">
+          <div className="grid gap-4 lg:grid-cols-2">
+            {[
+              ['jazzcash', 'JazzCash'],
+              ['easypaisa', 'Easypaisa'],
+              ['bank_transfer', 'Bank Transfer'],
+              ['manual_payment', 'Manual Payment'],
+            ].map(([key, label]) => {
+              const account = settingsDraft.paymentAccounts?.[key] || defaultPlatformSettings.paymentAccounts?.[key] || {}
+              const updateAccount = (field, value) => setSettingsDraft((current) => ({
+                ...current,
+                paymentAccounts: {
+                  ...(current.paymentAccounts || {}),
+                  [key]: {
+                    ...(current.paymentAccounts?.[key] || defaultPlatformSettings.paymentAccounts?.[key] || {}),
+                    id: key,
+                    label,
+                    [field]: value,
+                  },
+                },
+              }))
+              return (
+                <div key={key} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <p className="text-sm font-black text-slate-950">{label}</p>
+                  <div className="mt-3 grid gap-3">
+                    {key === 'bank_transfer' ? (
+                      <label className="text-xs font-bold text-slate-600">
+                        Bank Name
+                        <input className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" value={account.bankName || ''} onChange={(event) => updateAccount('bankName', event.target.value)} />
+                      </label>
+                    ) : null}
+                    <label className="text-xs font-bold text-slate-600">
+                      Account Title
+                      <input className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" value={account.accountTitle || ''} onChange={(event) => updateAccount('accountTitle', event.target.value)} />
+                    </label>
+                    <label className="text-xs font-bold text-slate-600">
+                      Account Number
+                      <input className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" value={account.accountNumber || ''} onChange={(event) => updateAccount('accountNumber', event.target.value)} />
+                    </label>
+                    <label className="text-xs font-bold text-slate-600">
+                      Instructions
+                      <textarea className="mt-1 h-20 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" value={account.instructions || ''} onChange={(event) => updateAccount('instructions', event.target.value)} />
+                    </label>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </Panel>
         <div className="grid gap-4 lg:grid-cols-2">
           <Panel title="Maintenance Mode">
             <label className="flex items-center justify-between rounded-2xl bg-slate-50 p-4 text-sm font-bold text-slate-700">
@@ -1442,6 +1587,77 @@ export default function ControlCentre() {
             ))}
           </div>
           <ShellButton className="mt-4" onClick={() => runAction('settings-save', saveSettings, 'Settings saved.')}>Save Settings</ShellButton>
+        </Panel>
+      </div>
+    )
+  }
+
+  function VisitorAnalytics() {
+    const eventRows = [...data.analyticsEvents]
+      .sort((a, b) => (toDate(b.timestamp || b.createdAt)?.getTime() || 0) - (toDate(a.timestamp || a.createdAt)?.getTime() || 0))
+      .slice(0, 500)
+    const sessionRows = [...data.userSessions]
+      .sort((a, b) => (toDate(b.lastActiveAt)?.getTime() || 0) - (toDate(a.lastActiveAt)?.getTime() || 0))
+      .slice(0, 300)
+    return (
+      <div className="space-y-4">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <KpiCard label="Total Visitors" value={analyticsStats.totalVisitors} helper="Tracked events" icon={HiOutlineUsers} />
+          <KpiCard label="Unique Visitors" value={analyticsStats.uniqueVisitors} helper="Unique visitor IDs" icon={HiOutlineUserGroup} tone="sky" />
+          <KpiCard label="Clicks Today" value={analyticsStats.clicksToday} helper="Meaningful clicks" icon={HiOutlineChartBarSquare} tone="amber" />
+          <KpiCard label="Signup Started" value={analyticsStats.signupStarted} helper="Signup intent" icon={HiOutlineEnvelope} tone="violet" />
+          <KpiCard label="Signup Completed" value={analyticsStats.signupCompleted} helper="Accounts created" icon={HiOutlineCheckBadge} tone="emerald" />
+          <KpiCard label="Login Completed" value={analyticsStats.loginCompleted} helper="Successful logins" icon={HiOutlineShieldCheck} tone="emerald" />
+          <KpiCard label="Drop-offs" value={analyticsStats.dropOffs} helper="Signup starts not completed" icon={HiOutlineBell} tone="rose" />
+          <KpiCard label="Active Sessions" value={analyticsStats.activeSessions} helper={`Top module: ${analyticsStats.mostClickedModule}`} icon={HiOutlineHome} tone="sky" />
+        </div>
+
+        <Panel title="Signup Funnel">
+          <div className="grid gap-3 lg:grid-cols-7">
+            {funnelRows.map((row) => (
+              <div key={row.label} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <p className="text-xs font-black text-slate-500">{row.label}</p>
+                <p className="mt-2 text-2xl font-black text-slate-950">{row.count}</p>
+                <p className="mt-1 text-xs font-bold text-rose-600">Drop-off {row.dropOff}</p>
+              </div>
+            ))}
+          </div>
+        </Panel>
+
+        <Panel title="Click Heat / Activity Events">
+          <AdminTable
+            rows={eventRows}
+            emptyTitle="No analytics events found"
+            columns={[
+              { key: 'time', label: 'Time', render: (row) => dateTimeLabel(row.timestamp || row.createdAt) },
+              { key: 'visitor', label: 'Visitor/User', render: (row) => row.userId || row.visitorId || '-' },
+              { key: 'email', label: 'Email', render: (row) => row.email || '-' },
+              { key: 'phone', label: 'Phone', render: (row) => row.phone || '-' },
+              { key: 'event', label: 'Event', render: (row) => <Status value={row.eventType} /> },
+              { key: 'page', label: 'Page', render: (row) => row.page || '-' },
+              { key: 'button', label: 'Button / Module', render: (row) => row.buttonLabel || row.moduleName || '-' },
+              { key: 'status', label: 'Status', render: (row) => row.status || '-' },
+              { key: 'device', label: 'Device', render: (row) => `${row.deviceType || '-'} · ${row.browser || '-'}` },
+              { key: 'duration', label: 'Session Duration', render: (row) => `${Math.round(Number(row.sessionDurationMs || 0) / 1000)}s` },
+            ]}
+          />
+        </Panel>
+
+        <Panel title="User Sessions">
+          <AdminTable
+            rows={sessionRows}
+            emptyTitle="No user sessions found"
+            columns={[
+              { key: 'online', label: 'Online', render: (row) => <Status value={isOnline(row) ? 'online' : 'offline'} /> },
+              { key: 'email', label: 'Email', render: (row) => row.email || '-' },
+              { key: 'phone', label: 'Phone', render: (row) => row.phone || '-' },
+              { key: 'login', label: 'Last Active', render: (row) => dateTimeLabel(row.lastActiveAt) },
+              { key: 'duration', label: 'Total Session Duration', render: (row) => `${Math.round(Number(row.sessionDurationMs || 0) / 1000)}s` },
+              { key: 'workspace', label: 'Workspace', render: (row) => row.workspaceId || '-' },
+              { key: 'module', label: 'Module', render: (row) => row.businessType || '-' },
+              { key: 'device', label: 'Device', render: (row) => `${row.deviceType || '-'} · ${row.browser || '-'} · ${row.os || '-'}` },
+            ]}
+          />
         </Panel>
       </div>
     )
@@ -1505,6 +1721,7 @@ export default function ControlCentre() {
     upgrades: <Panel title="Upgrade Requests" action={<ShellButton>Firestore: upgradeRequests</ShellButton>}><AdminTable rows={upgradeRows} columns={upgradeColumns} emptyTitle="No upgrade requests found" /></Panel>,
     transactions: <Transactions />,
     plans: <Plans />,
+    visitorAnalytics: <VisitorAnalytics />,
     announcements: <Announcements />,
     support: <SupportTickets />,
     settings: <Settings />,

@@ -28,6 +28,7 @@ import useAuth from '../../context/useAuth.js'
 import logoUrl from '../../assets/logo/nexora-logo.svg'
 import { motion } from 'framer-motion'
 import { clientSafeMessage } from '../../lib/errorHandler.js'
+import { trackAnalyticsEvent } from '../../lib/analyticsTracking.js'
 
 const modules = [
   { name: 'CRM', detail: 'Customer Relationship Management', icon: HiOutlineUserGroup, color: 'bg-blue-600' },
@@ -138,14 +139,17 @@ export default function Login() {
 
     setSubmitting(true)
     try {
+      await trackAnalyticsEvent('login_started', { email: email.trim().toLowerCase(), page: '/login' })
       const credentials = await signInWithEmailAndPassword(auth, email.trim(), password)
       if (!credentials.user.emailVerified) {
         navigate('/verify-email', { replace: true })
         return
       }
       await ensureUserWorkspace(credentials.user, { provider: 'password' })
+      await trackAnalyticsEvent('login_completed', { userId: credentials.user.uid, email: credentials.user.email || email.trim().toLowerCase(), page: '/login', status: 'success' })
       navigate('/workspace', { replace: true })
     } catch (err) {
+      await trackAnalyticsEvent('login_failed', { email: email.trim().toLowerCase(), page: '/login', status: err?.code || 'failed' })
       setError(clientSafeMessage(err, 'Unable to sign in. Please verify your credentials.', { context: 'Login with email' }))
     } finally {
       setSubmitting(false)
@@ -164,10 +168,13 @@ export default function Login() {
     setGoogleLoading(true)
     try {
       const provider = new GoogleAuthProvider()
+      await trackAnalyticsEvent('login_started', { page: '/login', buttonLabel: 'Google sign in' })
       const result = await signInWithPopup(auth, provider)
       await ensureUserWorkspace(result.user, { provider: 'google' })
+      await trackAnalyticsEvent('login_completed', { userId: result.user.uid, email: result.user.email || '', page: '/login', status: 'google' })
       navigate('/workspace', { replace: true })
     } catch (err) {
+      await trackAnalyticsEvent('login_failed', { page: '/login', status: err?.code || 'google_failed' })
       setError(clientSafeMessage(err, 'Google sign-in failed. Please try again.', { context: 'Login with Google' }))
     } finally {
       setGoogleLoading(false)

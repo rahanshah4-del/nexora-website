@@ -760,11 +760,27 @@ service cloud.firestore {
     }
 
     match /platformSettings/{settingId} {
-      allow read, write: if isAdmin();
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /analyticsEvents/{eventId} {
+      allow create: if true;
+      allow read, update, delete: if isBackendAdmin();
+    }
+
+    match /userSessions/{sessionId} {
+      allow create, update: if true;
+      allow read, delete: if isBackendAdmin();
     }
 
     match /plans/{planId} {
       allow read, write: if isAdmin();
+    }
+
+    match /platformPlans/{planId} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
     match /backendStaff/{staffId} {

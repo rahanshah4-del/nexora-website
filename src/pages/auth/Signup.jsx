@@ -9,6 +9,7 @@ import NexoraLogo from '../../components/brand/NexoraLogo.jsx'
 import { motion } from 'framer-motion'
 import { clientSafeMessage, reportTechnicalError } from '../../lib/errorHandler.js'
 import { sendCustomVerificationEmail } from '../../lib/emailVerificationService.js'
+import { trackAnalyticsEvent } from '../../lib/analyticsTracking.js'
 
 export default function Signup() {
   const { user, loading } = useAuth()
@@ -50,6 +51,7 @@ export default function Signup() {
 
     setSubmitting(true)
     try {
+      await trackAnalyticsEvent('signup_started', { email: email.trim().toLowerCase(), phone: phone.trim(), page: '/signup' })
       const credentials = await createUserWithEmailAndPassword(auth, email.trim(), password)
       const userRecord = credentials.user
       await ensureUserWorkspace(userRecord, {
@@ -67,6 +69,7 @@ export default function Signup() {
       }
       setVerificationSent(true)
       setInfo(emailResult.message || 'Verification email sent.')
+      await trackAnalyticsEvent('signup_completed', { userId: userRecord.uid, email: email.trim().toLowerCase(), phone: phone.trim(), page: '/signup', status: 'verification_sent' })
     } catch (err) {
       setError(clientSafeMessage(err, 'Unable to create account. Please try again.', { context: 'Signup with email' }))
     } finally {
@@ -90,6 +93,7 @@ export default function Signup() {
     setGoogleLoading(true)
     try {
       const provider = new GoogleAuthProvider()
+      await trackAnalyticsEvent('signup_started', { email: email.trim().toLowerCase(), phone: phone.trim(), page: '/signup', buttonLabel: 'Google signup' })
       const result = await signInWithPopup(auth, provider)
       const signedUser = result.user
 
@@ -104,6 +108,7 @@ export default function Signup() {
       }
 
       navigate('/workspace', { replace: true })
+      await trackAnalyticsEvent('signup_completed', { userId: signedUser.uid, email: signedUser.email || email.trim().toLowerCase(), phone: phone.trim(), page: '/signup', status: 'google' })
     } catch (err) {
       setError(clientSafeMessage(err, 'Google signup failed. Please try again.', { context: 'Signup with Google' }))
     } finally {

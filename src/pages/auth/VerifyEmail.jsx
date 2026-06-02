@@ -6,6 +6,7 @@ import { auth } from '../../lib/firebase.js'
 import { ensureUserWorkspace } from '../../lib/accountProvisioning.js'
 import { clientSafeMessage } from '../../lib/errorHandler.js'
 import { sendCustomVerificationEmail } from '../../lib/emailVerificationService.js'
+import { trackAnalyticsEvent } from '../../lib/analyticsTracking.js'
 import NexoraLogo from '../../components/brand/NexoraLogo.jsx'
 import Toast from '../../crm/components/ui/Toast.jsx'
 
@@ -36,6 +37,7 @@ export default function VerifyEmail() {
       await currentUser.reload()
       if (currentUser.emailVerified) {
         await ensureUserWorkspace(currentUser, { provider: 'password' })
+        await trackAnalyticsEvent('signup_completed', { userId: currentUser.uid, email: currentUser.email || '', page: '/verify-email', status: 'email_verified' })
         navigate('/workspace', { replace: true })
         return
       }
@@ -74,6 +76,7 @@ export default function VerifyEmail() {
   }
 
   const handleSignOut = async () => {
+    await trackAnalyticsEvent('logout', { userId: user?.uid || '', email: user?.email || '', page: '/verify-email' })
     if (auth) await signOut(auth)
     navigate('/login', { replace: true })
   }

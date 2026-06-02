@@ -6,210 +6,137 @@ import { onAuthStateChanged } from 'firebase/auth'
 import useNoIndex from '../hooks/useNoIndex.js'
 import { assertFirebaseReady, auth, db, storage } from '../lib/firebase.js'
 import { clientSafeMessage } from '../lib/errorHandler.js'
-import { mergePlatformPlans, planPriceLabel } from '../lib/platformPlans.js'
+import {
+  DEFAULT_SAAS_CURRENCY,
+  PLATFORM_PLAN_COLLECTION,
+  mergePlatformPlans,
+  mergePlatformSettings,
+  paymentMethodsFromSettings,
+  planPriceLabel,
+} from '../lib/platformPlans.js'
+import { trackAnalyticsEvent } from '../lib/analyticsTracking.js'
 
-const PLAN = {
-  name: 'Standard Package',
-  monthlyLabel: 'Rs 5,999 / month',
-  yearlyLabel: 'Rs 71,988 / year',
-  monthlyValue: 'business_monthly',
-  yearlyValue: 'business_yearly',
-  features: [
-    'All Basic Features',
-    'School OR Property ERP',
-    'Up to 5 Users',
-    '20GB Storage',
-    'Priority Support',
-  ],
+function Section({ children, className = '' }) {
+  return <section className={`mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 ${className}`}>{children}</section>
 }
 
-const PAYMENT_METHODS = [
-  {
-    id: 'bank_transfer',
-    label: 'Bank Transfer',
-    detailLines: ['NEXORA SOLUTIONS', 'Account: 1234567890', 'Bank: Demo Bank', 'IBAN: PK00DEMO0000000000'],
-  },
-  {
-    id: 'jazzcash',
-    label: 'JazzCash',
-    detailLines: ['Account Title: NEXORA SOLUTIONS', 'JazzCash: 03xx-xxxxxxx', 'Reference: Your email / User ID'],
-  },
-  {
-    id: 'easypaisa',
-    label: 'EasyPaisa',
-    detailLines: ['Account Title: NEXORA SOLUTIONS', 'EasyPaisa: 03xx-xxxxxxx', 'Reference: Your email / User ID'],
-  },
-  {
-    id: 'binance',
-    label: 'Binance (Optional)',
-    detailLines: ['USDT (TRC20)', 'Wallet: TDemoWalletAddressHere', 'Reference: Your email / User ID'],
-  },
-]
-
-function SectionShell({ children }) {
-  return <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8">{children}</div>
+function Panel({ children, className = '' }) {
+  return <div className={`rounded-[1.6rem] border border-slate-200 bg-white p-5 shadow-[0_24px_70px_-44px_rgba(15,23,42,0.45)] ${className}`}>{children}</div>
 }
 
-function FieldLabel({ children }) {
-  return <p className="text-sm font-semibold text-slate-200">{children}</p>
+function Badge({ children, tone = 'slate' }) {
+  const tones = {
+    slate: 'bg-slate-100 text-slate-700 ring-slate-200',
+    green: 'bg-emerald-50 text-emerald-700 ring-emerald-100',
+    violet: 'bg-violet-50 text-violet-700 ring-violet-100',
+    amber: 'bg-amber-50 text-amber-700 ring-amber-100',
+  }
+  return <span className={`inline-flex rounded-full px-3 py-1 text-xs font-black ring-1 ${tones[tone] || tones.slate}`}>{children}</span>
 }
 
-function GlassCard({ className = '', children }) {
-  return (
-    <div
-      className={[
-        'rounded-2xl border border-white/10 bg-white/10 p-5 shadow-[0_20px_60px_-30px_rgba(0,0,0,0.55)] backdrop-blur-xl',
-        className,
-      ].join(' ')}
-    >
-      {children}
-    </div>
-  )
+function money(value, currency = DEFAULT_SAAS_CURRENCY) {
+  if (String(value).toLowerCase() === 'custom') return 'Custom'
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency, maximumFractionDigits: 0 }).format(Number(value || 0))
 }
 
-function Toggle({ enabled, onChange }) {
+function planSavings(plan) {
+  const monthly = Number(plan.monthlyPrice || 0)
+  const yearly = Number(plan.yearlyPrice || 0)
+  if (!monthly || !yearly || String(plan.yearlyPrice).toLowerCase() === 'custom') return ''
+  const fullYear = monthly * 12
+  const savings = Math.max(0, fullYear - yearly)
+  return savings ? `Save ${money(savings, plan.currency)}` : 'Best annual value'
+}
+
+function PlanCard({ plan, selected, active, onSelect }) {
+  const disabled = plan.active === false
   return (
     <button
       type="button"
-      onClick={() => onChange(!enabled)}
+      onClick={() => !disabled && onSelect(plan.id)}
+      disabled={disabled}
       className={[
-        'relative h-10 w-20 rounded-full border border-white/15 bg-white/10 p-1 transition hover:bg-white/15',
-        'focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950',
-      ].join(' ')}
-      aria-pressed={enabled}
-    >
-      <span
-        className={[
-          'block h-8 w-8 rounded-full bg-gradient-to-br from-indigo-400 to-fuchsia-400 shadow-lg transition',
-          enabled ? 'translate-x-10' : 'translate-x-0',
-        ].join(' ')}
-      />
-    </button>
-  )
-}
-
-function PaymentMethodCard({ method, selected, onSelect }) {
-  return (
-    <button
-      type="button"
-      onClick={() => onSelect(method.id)}
-      className={[
-        'group w-full rounded-2xl border p-4 text-left transition',
-        selected ? 'border-indigo-400/60 bg-indigo-500/10' : 'border-white/10 bg-white/5 hover:bg-white/10',
-        'focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950',
+        'relative flex h-full flex-col rounded-[1.4rem] border p-5 text-left transition',
+        selected ? 'border-violet-400 bg-violet-50 shadow-[0_20px_60px_-38px_rgba(124,58,237,0.65)]' : 'border-slate-200 bg-white hover:border-violet-200 hover:bg-violet-50/40',
+        disabled ? 'cursor-not-allowed opacity-55' : '',
       ].join(' ')}
     >
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-sm font-semibold text-white">{method.label}</p>
-          <p className="mt-1 text-xs text-slate-300">Manual payment • Screenshot required</p>
+          <p className="text-lg font-black text-slate-950">{plan.name}</p>
+          <p className="mt-1 text-xs font-bold text-slate-500">{plan.currency || DEFAULT_SAAS_CURRENCY} billing</p>
         </div>
-        <div
-          className={[
-            'mt-1 h-4 w-4 rounded-full border',
-            selected ? 'border-indigo-300 bg-indigo-400' : 'border-white/20 bg-transparent',
-          ].join(' ')}
-          aria-hidden="true"
-        />
+        <div className="flex flex-col items-end gap-2">
+          {active ? <Badge tone="green">Active plan</Badge> : null}
+          {plan.recommended ? <Badge tone="violet">Recommended</Badge> : null}
+        </div>
       </div>
-      <div className="mt-3 space-y-1">
-        {method.detailLines.map((line) => (
-          <p key={line} className="text-xs text-slate-200/90">
-            {line}
-          </p>
+      <div className="mt-5">
+        <p className="text-3xl font-black tracking-tight text-slate-950">{planPriceLabel(plan, 'monthly')}</p>
+        <p className="mt-1 text-sm font-semibold text-slate-500">per month</p>
+      </div>
+      <div className="mt-4 rounded-2xl bg-slate-50 p-3">
+        <p className="text-sm font-black text-slate-900">{planPriceLabel(plan, 'yearly')}</p>
+        <p className="mt-1 text-xs font-bold text-emerald-700">{planSavings(plan) || 'Yearly billing available'}</p>
+      </div>
+      <ul className="mt-5 flex-1 space-y-2 text-sm font-semibold text-slate-600">
+        {(plan.features || []).slice(0, 5).map((feature) => (
+          <li key={feature} className="flex gap-2">
+            <span className="text-emerald-600">✓</span>
+            <span>{feature}</span>
+          </li>
         ))}
-      </div>
-      <div className="mt-3 h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-      <p className="mt-3 text-xs text-slate-300">
-        Tip: Add your email or user ID in the payment reference to speed up approval.
-      </p>
+      </ul>
+      <span className={`mt-5 inline-flex justify-center rounded-2xl px-4 py-3 text-sm font-black ${selected ? 'bg-violet-600 text-white' : 'bg-slate-950 text-white'}`}>
+        {disabled ? 'Disabled' : selected ? 'Selected' : 'Choose plan'}
+      </span>
     </button>
   )
 }
 
-function UploadDropzone({ file, previewUrl, onPickFile, disabled }) {
+function PaymentCard({ method, selected, onSelect }) {
+  const lines = [
+    method.bankName,
+    method.accountTitle ? `Account Title: ${method.accountTitle}` : '',
+    method.accountNumber ? `Account Number: ${method.accountNumber}` : '',
+    method.instructions,
+  ].filter(Boolean)
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(method.id)}
+      className={`rounded-[1.25rem] border p-4 text-left transition ${selected ? 'border-violet-400 bg-violet-50' : 'border-slate-200 bg-white hover:border-violet-200'}`}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm font-black text-slate-950">{method.label}</p>
+        <span className={`h-4 w-4 rounded-full border ${selected ? 'border-violet-500 bg-violet-500' : 'border-slate-300'}`} />
+      </div>
+      <div className="mt-3 space-y-1 text-xs font-semibold text-slate-600">
+        {lines.map((line) => <p key={line}>{line}</p>)}
+      </div>
+    </button>
+  )
+}
+
+function UploadBox({ file, previewUrl, onFile }) {
   const inputRef = useRef(null)
-  const [dragOver, setDragOver] = useState(false)
-
-  const openPicker = () => {
-    if (disabled) return
-    inputRef.current?.click()
-  }
-
-  const handleFiles = (files) => {
-    const picked = files?.[0]
-    if (!picked) return
-    if (!picked.type?.startsWith('image/')) return
-    onPickFile(picked)
-  }
-
   return (
     <div>
       <button
         type="button"
-        onClick={openPicker}
-        disabled={disabled}
-        onDragEnter={(event) => {
-          event.preventDefault()
-          if (!disabled) setDragOver(true)
-        }}
-        onDragOver={(event) => {
-          event.preventDefault()
-          if (!disabled) setDragOver(true)
-        }}
-        onDragLeave={() => setDragOver(false)}
-        onDrop={(event) => {
-          event.preventDefault()
-          setDragOver(false)
-          if (disabled) return
-          handleFiles(event.dataTransfer.files)
-        }}
-        className={[
-          'w-full rounded-2xl border border-dashed p-6 text-left transition',
-          disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer',
-          dragOver ? 'border-indigo-400/70 bg-indigo-500/10' : 'border-white/15 bg-white/5 hover:bg-white/10',
-          'focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950',
-        ].join(' ')}
+        onClick={() => inputRef.current?.click()}
+        className="w-full rounded-[1.25rem] border border-dashed border-violet-300 bg-violet-50/70 p-5 text-left transition hover:bg-violet-50"
       >
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-sm font-semibold text-white">Upload payment screenshot</p>
-            <p className="mt-1 text-xs text-slate-300">Drag & drop or click to select (PNG/JPG).</p>
+            <p className="text-sm font-black text-slate-950">Upload Payment Proof Screenshot</p>
+            <p className="mt-1 text-xs font-semibold text-slate-500">PNG/JPG receipt screenshot is required before submission.</p>
           </div>
-          <div className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-slate-200">
-            {file ? 'Replace' : 'Choose file'}
-          </div>
+          <span className="rounded-full bg-violet-600 px-4 py-2 text-xs font-black text-white">{file ? 'Replace proof' : 'Choose file'}</span>
         </div>
-        {previewUrl ? (
-          <div className="mt-4 overflow-hidden rounded-xl border border-white/10 bg-slate-950/20">
-            <img src={previewUrl} alt="Payment screenshot preview" className="h-56 w-full object-cover sm:h-64" />
-          </div>
-        ) : (
-          <div className="mt-4 rounded-xl border border-white/10 bg-slate-950/20 p-4">
-            <p className="text-xs text-slate-300">
-              We only use this screenshot to verify your manual payment. Your Business access activates after admin approval.
-            </p>
-          </div>
-        )}
+        {previewUrl ? <img src={previewUrl} alt="Payment proof preview" className="mt-4 h-56 w-full rounded-2xl object-cover" /> : null}
       </button>
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={(event) => handleFiles(event.target.files)}
-      />
-    </div>
-  )
-}
-
-function SuccessCard() {
-  return (
-    <div className="rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-6">
-      <p className="text-base font-semibold text-emerald-200">Upgrade request submitted</p>
-      <p className="mt-1 text-sm text-emerald-100/80">
-        Your payment request has been submitted successfully. Business access will activate after admin approval.
-      </p>
+      <input ref={inputRef} className="hidden" type="file" accept="image/*" onChange={(event) => onFile(event.target.files?.[0] || null)} />
     </div>
   )
 }
@@ -219,332 +146,363 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
   useNoIndex(true)
 
   const [user, setUser] = useState(null)
-  const [accountWorkspaceId, setAccountWorkspaceId] = useState('')
   const [authReady, setAuthReady] = useState(() => !auth)
-
-  const [yearly, setYearly] = useState(false)
+  const [userDoc, setUserDoc] = useState(null)
+  const [workspaceDoc, setWorkspaceDoc] = useState(null)
   const [planDocs, setPlanDocs] = useState([])
-  const platformPlans = useMemo(() => mergePlatformPlans(planDocs), [planDocs])
-  const standardPlan = useMemo(() => platformPlans.find((item) => item.id === 'standard') || platformPlans[1], [platformPlans])
-  const selectedPlan = standardPlan.name || 'Standard'
-
-  const [paymentMethod, setPaymentMethod] = useState('')
-  const [screenshotFile, setScreenshotFile] = useState(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [settingsDocs, setSettingsDocs] = useState([])
+  const [selectedPlanId, setSelectedPlanId] = useState('standard')
+  const [billingCycle, setBillingCycle] = useState('monthly')
+  const [paymentMethod, setPaymentMethod] = useState('jazzcash')
+  const [form, setForm] = useState({
+    transactionId: '',
+    amountPaid: '',
+    paymentDate: new Date().toISOString().slice(0, 10),
+    senderName: '',
+    senderNumber: '',
+    notes: '',
+  })
+  const [proofFile, setProofFile] = useState(null)
+  const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
   const [submitted, setSubmitted] = useState(false)
 
   useEffect(() => {
     if (!auth) return undefined
-    const unsubscribe = onAuthStateChanged(auth, (nextUser) => {
+    return onAuthStateChanged(auth, (nextUser) => {
       setUser(nextUser)
       setAuthReady(true)
     })
-    return () => unsubscribe()
   }, [])
 
   useEffect(() => {
     if (!db) return undefined
-    const unsubscribe = onSnapshot(
-      query(collection(db, 'plans')),
+    const unsubPlans = onSnapshot(
+      query(collection(db, PLATFORM_PLAN_COLLECTION)),
       (snap) => setPlanDocs(snap.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }))),
       () => setPlanDocs([]),
     )
-    return () => unsubscribe()
+    const unsubSettings = onSnapshot(
+      query(collection(db, 'platformSettings')),
+      (snap) => setSettingsDocs(snap.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }))),
+      () => setSettingsDocs([]),
+    )
+    return () => {
+      unsubPlans()
+      unsubSettings()
+    }
   }, [])
 
   useEffect(() => {
     let cancelled = false
-    async function loadWorkspaceId() {
+    async function loadProfile() {
       if (!db || !user?.uid) {
-        if (!cancelled) setAccountWorkspaceId('')
+        if (!cancelled) {
+          setUserDoc(null)
+          setWorkspaceDoc(null)
+        }
         return
       }
-      const snap = await getDoc(doc(db, 'users', user.uid))
-      if (!cancelled) setAccountWorkspaceId(snap.exists() ? String(snap.data()?.workspaceId || '') : '')
+      const profileSnap = await getDoc(doc(db, 'users', user.uid))
+      const profile = profileSnap.exists() ? { id: profileSnap.id, ...profileSnap.data() } : null
+      const workspaceId = profile?.workspaceId || user.uid
+      const workspaceSnap = workspaceId ? await getDoc(doc(db, 'workspaces', workspaceId)) : null
+      if (!cancelled) {
+        setUserDoc(profile)
+        setWorkspaceDoc(workspaceSnap?.exists?.() ? { id: workspaceSnap.id, ...workspaceSnap.data() } : null)
+      }
     }
-    loadWorkspaceId().catch(() => {
-      if (!cancelled) setAccountWorkspaceId('')
+    loadProfile().catch(() => {
+      if (!cancelled) {
+        setUserDoc(null)
+        setWorkspaceDoc(null)
+      }
     })
     return () => {
       cancelled = true
     }
   }, [user?.uid])
 
-  const previewUrl = useMemo(() => (screenshotFile ? URL.createObjectURL(screenshotFile) : ''), [screenshotFile])
+  const platformPlans = useMemo(() => mergePlatformPlans(planDocs), [planDocs])
+  const activePlans = useMemo(() => platformPlans.filter((plan) => plan.active !== false), [platformPlans])
+  const platformSettings = useMemo(() => mergePlatformSettings(settingsDocs), [settingsDocs])
+  const paymentMethods = useMemo(() => paymentMethodsFromSettings(platformSettings), [platformSettings])
+  const selectedPlan = platformPlans.find((plan) => plan.id === selectedPlanId) || platformPlans[1] || platformPlans[0]
+  const selectedMethod = paymentMethods.find((method) => method.id === paymentMethod) || paymentMethods[0]
+  const currentPlan = workspaceDoc?.plan || workspaceDoc?.selectedPlan || userDoc?.plan || 'Basic'
+  const workspaceId = userDoc?.workspaceId || workspaceDoc?.id || user?.uid || ''
+  const workspaceName = workspaceDoc?.workspaceName || workspaceDoc?.companyName || workspaceDoc?.businessName || userDoc?.workspaceName || 'Nexora Workspace'
+  const businessType = workspaceDoc?.selectedBusinessType || workspaceDoc?.businessType || userDoc?.selectedBusinessType || userDoc?.businessType || ''
+  const currency = selectedPlan?.currency || platformSettings.defaultCurrency || DEFAULT_SAAS_CURRENCY
+  const selectedAmount = billingCycle === 'yearly' ? selectedPlan?.yearlyPrice : selectedPlan?.monthlyPrice
+  const previewUrl = useMemo(() => (proofFile ? URL.createObjectURL(proofFile) : ''), [proofFile])
+
   useEffect(() => {
     if (!previewUrl) return undefined
     return () => URL.revokeObjectURL(previewUrl)
   }, [previewUrl])
 
-  const isAllowed = useMemo(() => {
-    if (!authReady) return false
-    return Boolean(user) || cameFromUpgrade
-  }, [authReady, cameFromUpgrade, user])
+  useEffect(() => {
+    setForm((current) => ({
+      ...current,
+      amountPaid: String(selectedAmount || '').toLowerCase() === 'custom' ? current.amountPaid : String(selectedAmount || ''),
+      senderName: current.senderName || user?.displayName || userDoc?.ownerName || '',
+    }))
+  }, [selectedAmount, user?.displayName, userDoc?.ownerName])
 
-  const redirectTarget = '/'
-  const shouldRedirect = authReady && !isAllowed
+  const canSubmit = Boolean(
+    user?.uid &&
+    workspaceId &&
+    selectedPlan?.id &&
+    selectedMethod?.id &&
+    form.transactionId.trim() &&
+    form.amountPaid.trim() &&
+    form.paymentDate &&
+    form.senderName.trim() &&
+    form.senderNumber.trim() &&
+    proofFile &&
+    !submitting,
+  )
 
-  const readableEmail = user?.email ?? ''
-  const readableName = user?.displayName ?? user?.email?.split('@')?.[0] ?? ''
-  const userId = user?.uid ?? null
-  const workspaceId = accountWorkspaceId || userId || ''
-
-  const headerSubtitle = useMemo(() => {
-    return `Unlock the ${standardPlan.name || 'Standard'} package with backend-managed pricing, ${standardPlan.currency || 'PKR'} billing, and priority support.`
-  }, [standardPlan.currency, standardPlan.name])
-
-  const canSubmit = Boolean(paymentMethod && screenshotFile && !isSubmitting && !submitted)
-
-  const planPriceAmount = Number(standardPlan.price || 0)
-  const planPriceText = String(standardPlan.price).toLowerCase() === 'custom'
-    ? 'Custom'
-    : yearly
-      ? planPriceLabel({ ...standardPlan, price: planPriceAmount * 12 })
-      : planPriceLabel(standardPlan)
-  const planPill = yearly ? 'Yearly' : 'Monthly'
-
-  const handleSubmit = async () => {
+  async function handleSubmit() {
     setSubmitError('')
-    if (!userId || !workspaceId) {
-      setSubmitError('Please login to submit an upgrade request.')
+    if (!canSubmit) {
+      setSubmitError('Complete all required transaction fields and upload payment proof.')
       return
     }
-    if (!paymentMethod) {
-      setSubmitError('Please select a payment method.')
-      return
-    }
-    if (!screenshotFile) {
-      setSubmitError('Please upload your payment screenshot.')
-      return
-    }
-
-    setIsSubmitting(true)
+    setSubmitting(true)
     try {
       assertFirebaseReady()
-      const safeName = screenshotFile.name?.replaceAll(/[^\w.-]+/g, '_') ?? 'payment.png'
-      const objectPath = `upgradeRequests/${userId}/${Date.now()}_${safeName}`
+      if (!storage) throw new Error('Payment proof upload is not configured.')
+      const safeName = proofFile.name?.replaceAll(/[^\w.-]+/g, '_') || 'payment-proof.png'
+      const objectPath = `upgradeRequests/${user.uid}/${Date.now()}_${safeName}`
       const storageRef = ref(storage, objectPath)
-      await uploadBytes(storageRef, screenshotFile, { contentType: screenshotFile.type || 'image/png' })
-      const screenshotUrl = await getDownloadURL(storageRef)
-
-      await addDoc(collection(db, 'upgradeRequests'), {
-        userId,
-        ownerId: userId,
+      await uploadBytes(storageRef, proofFile, { contentType: proofFile.type || 'image/png' })
+      const paymentProof = await getDownloadURL(storageRef)
+      const payload = {
+        email: user.email || userDoc?.email || '',
+        uid: user.uid,
+        userId: user.uid,
+        ownerId: workspaceDoc?.ownerId || user.uid,
         workspaceId,
-        createdBy: userId,
-        userName: readableName,
-        email: readableEmail,
-        selectedPlan,
-        requestedPlan: selectedPlan,
-        planPrice: yearly ? planPriceAmount * 12 : planPriceAmount,
-        amount: yearly ? planPriceAmount * 12 : planPriceAmount,
-        currency: standardPlan.currency || 'PKR',
-        billingCurrency: standardPlan.currency || 'PKR',
-        billingCycle: yearly ? 'yearly' : standardPlan.billingCycle || 'monthly',
-        paymentMethod,
-        screenshotUrl,
-        paymentStatus: 'pending',
+        workspaceName,
+        businessType,
+        currentPlan,
+        requestedPlan: selectedPlan.name,
+        selectedPlan: selectedPlan.name,
+        billingCycle,
+        amount: Number(form.amountPaid),
+        amountPaid: Number(form.amountPaid),
+        currency,
+        transactionId: form.transactionId.trim(),
+        senderName: form.senderName.trim(),
+        senderNumber: form.senderNumber.trim(),
+        paymentMethod: selectedMethod.label || selectedMethod.id,
+        paymentMethodId: selectedMethod.id,
+        paymentDate: form.paymentDate,
+        paymentProof,
+        paymentProofPath: objectPath,
+        screenshotUrl: paymentProof,
+        notes: form.notes.trim(),
+        paymentNotes: form.notes.trim(),
+        status: 'pending',
         approvalStatus: 'pending',
+        paymentStatus: 'pending',
         createdAt: serverTimestamp(),
+      }
+      await addDoc(collection(db, 'upgradeRequests'), payload)
+      await trackAnalyticsEvent('upgrade_request_submitted', {
+        userId: user.uid,
+        email: payload.email,
+        workspaceId,
+        businessType,
+        page: '/upgrade-business',
+        buttonLabel: 'Submit Upgrade Request',
+        status: 'pending',
       })
-
       setSubmitted(true)
     } catch (error) {
       setSubmitError(clientSafeMessage(error, 'Failed to submit upgrade request. Please try again.', { context: 'Upgrade request submit' }))
     } finally {
-      setIsSubmitting(false)
+      setSubmitting(false)
     }
   }
 
-  if (shouldRedirect) {
-    return <Navigate to={redirectTarget} replace state={{ from: location.pathname }} />
+  if (authReady && !user && !cameFromUpgrade) {
+    return <Navigate to="/" replace state={{ from: location.pathname }} />
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
-      <div className="relative overflow-hidden">
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-indigo-600/30 via-slate-950 to-fuchsia-500/20" />
-        <div className="pointer-events-none absolute -top-44 left-1/2 h-96 w-[38rem] -translate-x-1/2 rounded-full bg-indigo-500/25 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-48 right-[-10%] h-[30rem] w-[30rem] rounded-full bg-fuchsia-500/20 blur-3xl" />
-
-        <SectionShell>
-          <div className="relative py-10 sm:py-14 lg:py-16">
-            <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-              <div className="max-w-2xl">
-                <p className="text-xs font-semibold uppercase tracking-[0.36em] text-indigo-200/80">NEXORA SOLUTIONS</p>
-                <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">Upgrade to Standard</h1>
-                <p className="mt-3 text-base text-slate-200/90 sm:text-lg">{headerSubtitle}</p>
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-300">Current user</p>
-                <p className="mt-1 text-sm font-semibold text-white">{user ? readableEmail || 'Authenticated' : 'Not logged in'}</p>
-              </div>
+    <main className="min-h-screen bg-slate-50 text-slate-950">
+      <div className="relative overflow-hidden bg-slate-950 text-white">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(124,58,237,0.42),transparent_32%),radial-gradient(circle_at_80%_20%,rgba(14,165,233,0.28),transparent_30%)]" />
+        <Section className="relative py-10 sm:py-14">
+          <div className="grid gap-6 lg:grid-cols-[1.35fr_0.65fr] lg:items-end">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.32em] text-violet-200">Nexora SaaS Upgrade Portal</p>
+              <h1 className="mt-4 text-3xl font-black tracking-tight sm:text-5xl">Upgrade plan and submit payment proof.</h1>
+              <p className="mt-4 max-w-2xl text-base font-medium leading-7 text-slate-200">
+                Choose a backend-controlled plan, pay through the configured account, and submit your transaction for Nexora approval.
+              </p>
             </div>
+            <Panel className="border-white/10 bg-white/10 text-white backdrop-blur-xl">
+              <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-300">Current Plan</p>
+              <p className="mt-3 text-2xl font-black">{currentPlan}</p>
+              <p className="mt-2 text-sm font-semibold text-slate-200">{workspaceName}</p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Badge tone="violet">{businessType || 'Workspace'}</Badge>
+                <Badge tone="green">{workspaceDoc?.subscriptionStatus || 'trial'}</Badge>
+              </div>
+            </Panel>
           </div>
-        </SectionShell>
+        </Section>
       </div>
 
-      <SectionShell>
-        <div className="grid gap-6 pb-12 lg:grid-cols-2 lg:items-start">
-          <GlassCard className="relative overflow-hidden">
-            <div className="absolute right-4 top-4">
-              <span className="rounded-full bg-gradient-to-r from-indigo-500 to-fuchsia-500 px-3 py-1 text-xs font-semibold text-white shadow">
-                Recommended
-              </span>
-            </div>
-
-            <p className="text-sm font-semibold text-indigo-200">{standardPlan.name || PLAN.name}</p>
-            <p className="mt-2 text-3xl font-semibold tracking-tight text-white">{planPriceText}</p>
-            <p className="mt-1 text-sm text-slate-200/80">Standard access • Cancel anytime after approval</p>
-
-            <div className="mt-6 flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-slate-950/30 p-4">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-300">Billing</p>
-                <p className="mt-1 text-sm font-semibold text-white">{planPill}</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className={yearly ? 'text-xs font-semibold text-slate-300' : 'text-xs font-semibold text-white'}>
-                  Monthly
-                </span>
-                <Toggle enabled={yearly} onChange={setYearly} />
-                <span className={yearly ? 'text-xs font-semibold text-white' : 'text-xs font-semibold text-slate-300'}>
-                  Yearly
-                </span>
-              </div>
-            </div>
-
-            <div className="mt-6">
-              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-300">Included features</p>
-              <ul className="mt-4 space-y-2 text-sm text-slate-100/90">
-                {(standardPlan.features || PLAN.features).map((feature) => (
-                  <li key={feature} className="flex items-start gap-3">
-                    <span className="mt-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-indigo-500/15 text-indigo-200">
-                      ✓
-                    </span>
-                    <span>{feature}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </GlassCard>
-
+      <Section className="py-8">
+        <div className="grid gap-6 xl:grid-cols-[1fr_22rem]">
           <div className="space-y-6">
-            <GlassCard>
-              <p className="text-sm font-semibold text-white">Payment methods</p>
-              <p className="mt-1 text-sm text-slate-200/80">Choose a manual payment option and submit your screenshot for approval.</p>
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                {PAYMENT_METHODS.map((method) => (
-                  <PaymentMethodCard
-                    key={method.id}
-                    method={method}
-                    selected={paymentMethod === method.id}
-                    onSelect={setPaymentMethod}
-                  />
+            <Panel>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.24em] text-violet-600">Plans</p>
+                  <h2 className="mt-2 text-2xl font-black">Choose your SaaS plan</h2>
+                </div>
+                <div className="inline-flex rounded-2xl bg-slate-100 p-1">
+                  {['monthly', 'yearly'].map((cycle) => (
+                    <button key={cycle} type="button" onClick={() => setBillingCycle(cycle)} className={`rounded-xl px-4 py-2 text-xs font-black capitalize ${billingCycle === cycle ? 'bg-white text-violet-700 shadow-sm' : 'text-slate-500'}`}>
+                      {cycle}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                {platformPlans.map((plan) => (
+                  <PlanCard key={plan.id} plan={plan} selected={selectedPlan?.id === plan.id} active={String(currentPlan).toLowerCase() === String(plan.name).toLowerCase()} onSelect={setSelectedPlanId} />
                 ))}
               </div>
-            </GlassCard>
+            </Panel>
 
-            <GlassCard>
-              <p className="text-sm font-semibold text-white">Payment instructions</p>
-              <ol className="mt-4 space-y-3 text-sm text-slate-200/90">
-                <li className="flex gap-3">
-                  <span className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs font-semibold text-white">
-                    1
-                  </span>
-                  <span>Send payment using your selected method.</span>
-                </li>
-                <li className="flex gap-3">
-                  <span className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs font-semibold text-white">
-                    2
-                  </span>
-                  <span>Upload a clear screenshot (transaction receipt / confirmation).</span>
-                </li>
-                <li className="flex gap-3">
-                  <span className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs font-semibold text-white">
-                    3
-                  </span>
-                  <span>Wait for admin approval (status stays pending until verified).</span>
-                </li>
-                <li className="flex gap-3">
-                  <span className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs font-semibold text-white">
-                    4
-                  </span>
-                  <span>Business access activates automatically after approval.</span>
-                </li>
-              </ol>
-            </GlassCard>
-
-            <GlassCard>
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-white">Payment screenshot</p>
-                  <p className="mt-1 text-sm text-slate-200/80">Upload your payment proof to request Business activation.</p>
-                </div>
-                <div className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-slate-200">
-                  {paymentMethod ? `Method: ${paymentMethod}` : 'Select method first'}
-                </div>
+            <Panel>
+              <h2 className="text-xl font-black">Feature comparison</h2>
+              <div className="mt-4 overflow-x-auto">
+                <table className="min-w-full text-left text-sm">
+                  <thead className="bg-slate-50 text-xs font-black uppercase text-slate-500">
+                    <tr>
+                      <th className="px-4 py-3">Plan</th>
+                      <th className="px-4 py-3">Monthly</th>
+                      <th className="px-4 py-3">Yearly</th>
+                      <th className="px-4 py-3">Features</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {activePlans.map((plan) => (
+                      <tr key={plan.id}>
+                        <td className="px-4 py-4 font-black">{plan.name}</td>
+                        <td className="px-4 py-4 font-bold">{planPriceLabel(plan, 'monthly')}</td>
+                        <td className="px-4 py-4 font-bold">{planPriceLabel(plan, 'yearly')}</td>
+                        <td className="px-4 py-4 text-slate-600">{(plan.features || []).join(' • ')}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-              <div className="mt-4">
-                <UploadDropzone
-                  file={screenshotFile}
-                  previewUrl={previewUrl}
-                  onPickFile={setScreenshotFile}
-                  disabled={!paymentMethod || submitted || isSubmitting}
-                />
-              </div>
-            </GlassCard>
+            </Panel>
 
-            <GlassCard>
-              <div className="flex flex-col gap-4">
-                <div className="grid gap-3 sm:grid-cols-3">
-                  <div className="rounded-2xl border border-white/10 bg-slate-950/20 p-4">
-                    <FieldLabel>Plan</FieldLabel>
-                    <p className="mt-1 text-sm font-semibold text-white">{selectedPlan}</p>
-                  </div>
-                  <div className="rounded-2xl border border-white/10 bg-slate-950/20 p-4">
-                    <FieldLabel>Payment</FieldLabel>
-                    <p className="mt-1 text-sm font-semibold text-white">{paymentMethod || 'Not selected'}</p>
-                  </div>
-                  <div className="rounded-2xl border border-white/10 bg-slate-950/20 p-4">
-                    <FieldLabel>Status</FieldLabel>
-                    <p className="mt-1 text-sm font-semibold text-white">{submitted ? 'Submitted' : 'Not submitted'}</p>
-                  </div>
-                </div>
-
-                {submitted ? (
-                  <SuccessCard />
-                ) : (
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      {submitError ? <p className="text-sm font-semibold text-rose-200">{submitError}</p> : null}
-                      {!auth ? (
-                        <p className="mt-1 text-xs text-slate-300">
-                          Firebase Auth isn&apos;t initialized yet. Configure Firebase to enable login + submissions.
-                        </p>
-                      ) : null}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleSubmit}
-                      disabled={!canSubmit}
-                      className={[
-                        'inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold transition',
-                        canSubmit
-                          ? 'bg-gradient-to-r from-indigo-500 to-fuchsia-500 text-white shadow hover:brightness-110'
-                          : 'cursor-not-allowed bg-white/10 text-slate-300',
-                        'focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950',
-                      ].join(' ')}
-                    >
-                      {isSubmitting ? 'Submitting…' : 'Submit Payment for Approval'}
-                    </button>
-                  </div>
-                )}
+            <Panel>
+              <h2 className="text-xl font-black">Payment information</h2>
+              <p className="mt-1 text-sm font-semibold text-slate-500">Select a payment method before submitting your transaction details.</p>
+              <div className="mt-5 grid gap-4 md:grid-cols-2">
+                {paymentMethods.map((method) => (
+                  <PaymentCard key={method.id} method={method} selected={selectedMethod?.id === method.id} onSelect={setPaymentMethod} />
+                ))}
               </div>
-            </GlassCard>
+            </Panel>
+
+            <Panel>
+              <h2 className="text-xl font-black">Transaction information</h2>
+              <div className="mt-5 grid gap-4 md:grid-cols-2">
+                <label className="text-xs font-black text-slate-600">
+                  Transaction ID
+                  <input className="mt-1 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold" value={form.transactionId} onChange={(event) => setForm((current) => ({ ...current, transactionId: event.target.value }))} placeholder="e.g. TXN-123456" />
+                </label>
+                <label className="text-xs font-black text-slate-600">
+                  Amount Paid
+                  <input className="mt-1 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold" value={form.amountPaid} onChange={(event) => setForm((current) => ({ ...current, amountPaid: event.target.value }))} inputMode="decimal" placeholder={money(selectedAmount, currency)} />
+                </label>
+                <label className="text-xs font-black text-slate-600">
+                  Payment Date
+                  <input type="date" className="mt-1 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold" value={form.paymentDate} onChange={(event) => setForm((current) => ({ ...current, paymentDate: event.target.value }))} />
+                </label>
+                <label className="text-xs font-black text-slate-600">
+                  Sender Name
+                  <input className="mt-1 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold" value={form.senderName} onChange={(event) => setForm((current) => ({ ...current, senderName: event.target.value }))} placeholder="Name on payment account" />
+                </label>
+                <label className="text-xs font-black text-slate-600">
+                  Sender Number
+                  <input className="mt-1 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold" value={form.senderNumber} onChange={(event) => setForm((current) => ({ ...current, senderNumber: event.target.value }))} placeholder="e.g. 03xx-xxxxxxx" />
+                </label>
+                <label className="text-xs font-black text-slate-600">
+                  Payment Method
+                  <input className="mt-1 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold" value={selectedMethod?.label || ''} readOnly />
+                </label>
+                <label className="md:col-span-2 text-xs font-black text-slate-600">
+                  Notes
+                  <textarea className="mt-1 h-28 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold" value={form.notes} onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))} placeholder="Optional note for Nexora billing team" />
+                </label>
+              </div>
+            </Panel>
+
+            <Panel>
+              <UploadBox file={proofFile} previewUrl={previewUrl} onFile={setProofFile} />
+            </Panel>
           </div>
+
+          <aside className="space-y-6 xl:sticky xl:top-6">
+            <Panel>
+              <p className="text-xs font-black uppercase tracking-[0.24em] text-violet-600">Request Summary</p>
+              <h2 className="mt-2 text-2xl font-black">{selectedPlan?.name}</h2>
+              <div className="mt-4 space-y-3 text-sm font-bold text-slate-600">
+                <div className="flex justify-between gap-4"><span>Billing</span><span className="text-slate-950 capitalize">{billingCycle}</span></div>
+                <div className="flex justify-between gap-4"><span>Amount</span><span className="text-slate-950">{money(selectedAmount, currency)}</span></div>
+                <div className="flex justify-between gap-4"><span>Currency</span><span className="text-slate-950">{currency}</span></div>
+                <div className="flex justify-between gap-4"><span>Payment</span><span className="text-slate-950">{selectedMethod?.label}</span></div>
+              </div>
+              {submitError ? <p className="mt-4 rounded-2xl bg-rose-50 p-3 text-sm font-bold text-rose-700">{submitError}</p> : null}
+              {submitted ? <p className="mt-4 rounded-2xl bg-emerald-50 p-3 text-sm font-bold text-emerald-700">Upgrade request submitted. Status is pending until Nexora approves payment.</p> : null}
+              <button type="button" disabled={!canSubmit || submitted} onClick={handleSubmit} className={`mt-5 w-full rounded-2xl px-5 py-4 text-sm font-black transition ${canSubmit && !submitted ? 'bg-slate-950 text-white hover:bg-violet-700' : 'cursor-not-allowed bg-slate-200 text-slate-500'}`}>
+                {submitting ? 'Submitting...' : submitted ? 'Submitted' : 'Submit Upgrade Request'}
+              </button>
+            </Panel>
+
+            <Panel>
+              <h3 className="text-lg font-black">Request status timeline</h3>
+              <div className="mt-4 space-y-4">
+                {['Payment submitted', 'Nexora review', 'Approved or rejected', 'Workspace plan updated'].map((item, index) => (
+                  <div key={item} className="flex gap-3">
+                    <span className={`mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-black ${index === 0 && submitted ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-600'}`}>{index + 1}</span>
+                    <p className="text-sm font-bold text-slate-600">{item}</p>
+                  </div>
+                ))}
+              </div>
+            </Panel>
+
+            <Panel>
+              <h3 className="text-lg font-black">FAQ</h3>
+              <div className="mt-4 space-y-3 text-sm font-semibold text-slate-600">
+                <p><span className="font-black text-slate-950">How long approval takes?</span><br />Usually after payment verification by Nexora billing.</p>
+                <p><span className="font-black text-slate-950">Can I change plans?</span><br />Submit a new request for the target plan.</p>
+                <p><span className="font-black text-slate-950">Need help?</span><br />Contact {platformSettings.supportEmail || 'support@nexorasolution.online'}.</p>
+              </div>
+            </Panel>
+          </aside>
         </div>
-      </SectionShell>
-    </div>
+      </Section>
+
+      <div className="sticky bottom-0 z-30 border-t border-slate-200 bg-white/95 p-3 backdrop-blur xl:hidden">
+        <button type="button" disabled={!canSubmit || submitted} onClick={handleSubmit} className={`w-full rounded-2xl px-5 py-4 text-sm font-black ${canSubmit && !submitted ? 'bg-slate-950 text-white' : 'bg-slate-200 text-slate-500'}`}>
+          {submitting ? 'Submitting...' : submitted ? 'Submitted' : 'Submit Upgrade Request'}
+        </button>
+      </div>
+    </main>
   )
 }
