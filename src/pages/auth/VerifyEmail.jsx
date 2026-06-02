@@ -10,6 +10,17 @@ import { trackAnalyticsEvent } from '../../lib/analyticsTracking.js'
 import NexoraLogo from '../../components/brand/NexoraLogo.jsx'
 import Toast from '../../crm/components/ui/Toast.jsx'
 
+function logFullOtpError(error) {
+  console.error('[OTP email full error]', {
+    message: error?.message,
+    code: error?.code,
+    name: error?.name,
+    stack: error?.stack,
+    response: error?.response,
+    raw: JSON.stringify(error, Object.getOwnPropertyNames(error)),
+  })
+}
+
 export default function VerifyEmail() {
   const { user, loading } = useAuth()
   const navigate = useNavigate()
@@ -42,6 +53,7 @@ export default function VerifyEmail() {
       }
       setMessage('Not verified yet. Enter the 6 digit code from your email, or send a new code.')
     } catch (err) {
+      logFullOtpError(err)
       setError(clientSafeMessage(err, 'Could not refresh verification status. Please try again.', { context: 'Refresh email verification' }))
     } finally {
       setChecking(false)
@@ -66,6 +78,7 @@ export default function VerifyEmail() {
       setMessage(nextMessage)
       showToast({ tone: 'success', message: nextMessage })
     } catch (err) {
+      logFullOtpError(err)
       const nextError = clientSafeMessage(err, 'Could not send verification email right now.', { context: 'Send email verification' })
       setError(nextError)
       showToast({ tone: 'error', message: nextError })
@@ -93,6 +106,7 @@ export default function VerifyEmail() {
         showToast({ tone: 'error', message: nextMessage })
       }
     } catch (err) {
+      logFullOtpError(err)
       const nextError = clientSafeMessage(err, 'Could not send test OTP email right now.', { context: 'Send test OTP verification' })
       setError(nextError)
       showToast({ tone: 'error', message: nextError })
@@ -119,6 +133,7 @@ export default function VerifyEmail() {
       showToast({ tone: 'success', message: 'Email verified successfully.' })
       navigate('/workspace', { replace: true })
     } catch (err) {
+      logFullOtpError(err)
       const nextError = clientSafeMessage(err, 'Could not verify code right now.', { context: 'Verify custom email OTP' })
       setError(nextError)
       showToast({ tone: 'error', message: nextError })

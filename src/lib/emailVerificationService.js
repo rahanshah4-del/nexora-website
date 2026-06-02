@@ -5,6 +5,21 @@ import { EMAIL_WORKER_URL, sendWorkerEmail } from './transactionalEmail.js'
 const OTP_TTL_MINUTES = 10
 const technicalLogPrefix = '[Nexora email verification]'
 
+function logFullOtpError(error) {
+  console.error('[OTP email full error]', {
+    message: error?.message,
+    code: error?.code,
+    name: error?.name,
+    stack: error?.stack,
+    response: error?.response,
+    raw: JSON.stringify(error, Object.getOwnPropertyNames(error)),
+  })
+}
+
+function isPermissionDenied(error) {
+  return error?.code === 'permission-denied' || /permission/i.test(String(error?.message || ''))
+}
+
 function clean(value) {
   return typeof value === 'string' ? value.trim() : ''
 }
@@ -43,6 +58,7 @@ export function getEmailVerificationServiceError() {
 export async function sendCustomVerificationEmail(user, options = {}) {
   const to = clean(user?.email)
   const uid = clean(user?.uid)
+  console.log('[OTP email] currentUser', { uid, email: to })
   if (!uid || !to) return { ok: false, error: 'Email address is missing.' }
   if (!db) return sendVerificationNoticeOnly(user, options)
 
@@ -52,22 +68,34 @@ export async function sendCustomVerificationEmail(user, options = {}) {
 
   try {
     const userRef = doc(db, 'users', uid)
-    const existingSnap = await getDoc(userRef)
-    const alreadyCustomVerified = existingSnap.exists() && existingSnap.data()?.emailVerifiedCustom === true
-    await setDoc(
-      userRef,
-      {
-        uid,
-        email: to.toLowerCase(),
-        emailVerifiedCustom: alreadyCustomVerified,
-        emailVerificationOtpHash: await sha256(otpPayload({ uid, email: to, otp })),
-        emailVerificationOtpExpiresAt: Timestamp.fromDate(expiresAt),
-        emailVerificationOtpSentAt: serverTimestamp(),
-        emailVerificationOtpEmail: to.toLowerCase(),
-        updatedAt: serverTimestamp(),
-      },
-      { merge: true },
-    )
+    const userDocPath = `users/${uid}`
+    console.log('[OTP email] Firestore user doc path', userDocPath)
+    let alreadyCustomVerified = false
+    try {
+      console.log('[OTP email] OTP save start', { path: userDocPath })
+      const existingSnap = await getDoc(userRef)
+      alreadyCustomVerified = existingSnap.exists() && existingSnap.data()?.emailVerifiedCustom === true
+      await setDoc(
+        userRef,
+        {
+          uid,
+          email: to.toLowerCase(),
+          emailVerifiedCustom: alreadyCustomVerified,
+          emailVerificationOtpHash: await sha256(otpPayload({ uid, email: to, otp })),
+          emailVerificationOtpExpiresAt: Timestamp.fromDate(expiresAt),
+          emailVerificationOtpSentAt: serverTimestamp(),
+          emailVerificationOtpEmail: to.toLowerCase(),
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true },
+      )
+      console.log('[OTP email] OTP save success', { path: userDocPath, expiresAt: expiresAt.toISOString() })
+    } catch (error) {
+      console.error('[OTP email] OTP save fail', { path: userDocPath })
+      logFullOtpError(error)
+      if (isPermissionDenied(error)) return { ok: false, error: 'Firestore permission denied while saving OTP.' }
+      return { ok: false, error: error?.message || 'Could not save verification code.' }
+    }
 
     console.log('[OTP email] endpoint', EMAIL_WORKER_URL)
     const result = await sendWorkerEmail({
@@ -80,14 +108,14 @@ export async function sendCustomVerificationEmail(user, options = {}) {
         verificationUrl,
       },
     })
+    console.log('[OTP email] Worker response status', result.status || null)
+    console.log('[OTP email] Worker response body', result.response || null)
 
-    if (!result.ok) return { ok: false, error: result.error || 'Could not send verification email right now.' }
+    if (!result.ok) return { ok: false, error: `Email worker failed: ${result.error || 'Could not send verification email right now.'}` }
     return { ok: true, provider: 'worker', otp: true, message: 'Verification email sent. Please check inbox/spam.' }
   } catch (error) {
-    console.warn(technicalLogPrefix, 'OTP verification email failed.', {
-      message: error?.message,
-      name: error?.name,
-    })
+    console.error(technicalLogPrefix, 'OTP verification email failed.')
+    logFullOtpError(error)
     return { ok: false, error: error?.message || 'Could not send verification email right now.' }
   }
 }
@@ -105,7 +133,9 @@ async function sendVerificationNoticeOnly(user, options = {}) {
       verificationUrl: `https://nexorasolution.online/verify-email?uid=${encodeURIComponent(uid)}`,
     },
   })
-  if (!result.ok) return { ok: false, error: result.error || 'Could not send verification email right now.' }
+  console.log('[OTP email] Worker response status', result.status || null)
+  console.log('[OTP email] Worker response body', result.response || null)
+  if (!result.ok) return { ok: false, error: `Email worker failed: ${result.error || 'Could not send verification email right now.'}` }
   return { ok: true, provider: 'worker', message: 'Verification email sent. Please check inbox/spam.' }
 }
 
@@ -143,10 +173,8 @@ export async function verifyCustomEmailOtp(user, otp) {
 
     return { ok: true }
   } catch (error) {
-    console.warn(technicalLogPrefix, 'OTP verification failed.', {
-      message: error?.message,
-      name: error?.name,
-    })
+    console.error(technicalLogPrefix, 'OTP verification failed.')
+    logFullOtpError(error)
     return { ok: false, error: error?.message || 'Could not verify code right now.' }
   }
 }

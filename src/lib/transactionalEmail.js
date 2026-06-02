@@ -55,18 +55,41 @@ export async function sendWorkerEmail({ to, subject, html, type, data }) {
   if (!payload.type && !payload.html) return { ok: false, error: 'Email content is missing.' }
 
   try {
+    console.log('[Worker email] request', {
+      endpoint: EMAIL_WORKER_URL,
+      type: payload.type || 'raw',
+      to: payload.to,
+    })
     const response = await fetch(EMAIL_WORKER_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     })
-    const data = await response.json().catch(() => null)
-    if (!response.ok || data?.success !== true) {
-      return { ok: false, error: data?.error || `Email failed with status ${response.status}.` }
+    const responseBody = await response.json().catch(() => null)
+    console.log('[Worker email] response', {
+      endpoint: EMAIL_WORKER_URL,
+      status: response.status,
+      body: responseBody,
+    })
+    if (!response.ok || responseBody?.success !== true) {
+      return {
+        ok: false,
+        error: responseBody?.error || `Email failed with status ${response.status}.`,
+        status: response.status,
+        response: responseBody,
+      }
     }
-    return { ok: true }
+    return { ok: true, status: response.status, response: responseBody }
   } catch (error) {
-    return { ok: false, error: error?.message || 'Email service is unreachable.' }
+    console.error('[OTP email full error]', {
+      message: error?.message,
+      code: error?.code,
+      name: error?.name,
+      stack: error?.stack,
+      response: error?.response,
+      raw: JSON.stringify(error, Object.getOwnPropertyNames(error)),
+    })
+    return { ok: false, error: error?.message || 'Email service is unreachable.', response: error?.response }
   }
 }
 
