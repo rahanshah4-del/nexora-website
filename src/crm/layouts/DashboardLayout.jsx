@@ -178,7 +178,7 @@ function BusinessModuleBlock({ onBackToWorkspace }) {
           This module is not enabled for your account.
         </h1>
         <p className="mt-3 text-sm leading-7 text-slate-600">
-          Contact Nexora to enable another module.
+          This module is not enabled for your account. Contact Nexora support.
         </p>
         <Button className="mt-6 h-11 rounded-2xl" variant="subtle" type="button" onClick={onBackToWorkspace}>
           Back to Workspace
@@ -254,6 +254,9 @@ export default function DashboardLayout() {
     isStaff,
     workspaceId,
     businessType,
+    allowedBusinessTypes,
+    specialModuleAccess,
+    allModulesAccess,
     accessPlan,
     isTrialActive,
     isTrialExpired,
@@ -294,7 +297,11 @@ export default function DashboardLayout() {
     !userLoading &&
     Boolean(userDoc) &&
     Boolean(currentModule) &&
-    !routeAllowedByBusinessType(location.pathname, businessType, { developerOverride })
+    !routeAllowedByBusinessType(location.pathname, businessType, {
+      developerOverride,
+      allowedBusinessTypes,
+      allModulesAccess: allModulesAccess || specialModuleAccess && Array.isArray(allowedBusinessTypes) && allowedBusinessTypes.length >= 6,
+    })
   const comingSoonBlocked =
     ready &&
     isAuthenticated &&

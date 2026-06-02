@@ -42,6 +42,7 @@ import {
 import { auth, firestoreDb as db } from '../../lib/firebase.js'
 import useAuth from '../../context/useAuth.js'
 import { clientSafeMessage } from '../../lib/errorHandler.js'
+import logoUrl from '../../assets/logo/nexora-logo.svg'
 import {
   DEFAULT_SAAS_CURRENCY,
   PLATFORM_PLAN_COLLECTION,
@@ -115,6 +116,7 @@ const navGroups = [
       ['upgrades', 'Upgrade Requests', HiOutlineCheckBadge],
       ['transactions', 'Transactions', HiOutlineCurrencyDollar],
       ['plans', 'Plans', HiOutlineCreditCard],
+      ['moduleAccess', 'Module Access', HiOutlineShieldCheck],
       ['visitorAnalytics', 'Visitor Analytics', HiOutlineChartBarSquare],
     ],
   },
@@ -173,7 +175,19 @@ function statusValue(value, fallback = 'unknown') {
 }
 
 function workspaceBusinessType(row = {}) {
-  return row.selectedBusinessType || row.currentBusinessType || row.businessType || row.module || 'General CRM'
+  return row.primaryBusinessType || row.selectedBusinessType || row.currentBusinessType || row.businessType || row.module || 'General CRM'
+}
+
+function normalizeAdminBusinessType(type) {
+  const value = String(type || '').trim().toLowerCase()
+  return modules.find((module) => module.toLowerCase() === value) || modules.find((module) => value && module.toLowerCase().includes(value)) || 'General CRM'
+}
+
+function moduleAccessForWorkspace(row = {}) {
+  const primary = normalizeAdminBusinessType(row.primaryBusinessType || row.selectedBusinessType || row.businessType)
+  if (row.allModulesAccess === true) return { primary, allowed: modules, special: true, all: true }
+  const allowed = Array.from(new Set([primary, ...(Array.isArray(row.allowedBusinessTypes) ? row.allowedBusinessTypes : [])].map(normalizeAdminBusinessType)))
+  return { primary, allowed, special: row.specialModuleAccess === true || allowed.length > 1, all: false }
 }
 
 function workspaceName(row = {}) {
@@ -398,12 +412,12 @@ function KpiCard({ label, value, helper, icon: Icon, tone = 'violet' }) {
     rose: 'bg-rose-100 text-rose-700',
   }
   return (
-    <Card className="p-4 sm:p-5">
+    <Card className="min-w-0 p-4 sm:p-5">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="truncate text-xs font-black text-slate-500">{label}</p>
-          <p className="mt-3 text-2xl font-black tracking-tight text-slate-950">{value}</p>
-          <p className="mt-2 text-xs font-semibold text-slate-500">{helper}</p>
+          <p className="text-xs font-black leading-4 text-slate-500">{label}</p>
+          <p className="mt-3 break-words text-xl font-black tracking-tight text-slate-950 sm:text-2xl">{value}</p>
+          <p className="mt-2 break-words text-xs font-semibold leading-5 text-slate-500">{helper}</p>
         </div>
         <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl ${colors[tone]}`}>
           <Icon className="h-5 w-5" />
@@ -770,6 +784,22 @@ export default function ControlCentre() {
     await logActivity(action, { workspaceId, email: userEmail(row), update })
   }
 
+  async function updateWorkspaceModuleAccess(row, patch, action = 'module_access_updated') {
+    const workspaceId = row.workspaceId || row.id
+    const ownerId = row.ownerId || row.userId || row.uid
+    const payload = {
+      ...patch,
+      updatedAt: serverTimestamp(),
+      updatedBy: user?.uid || '',
+      updatedByEmail: user?.email || '',
+    }
+    await setDoc(doc(db, 'workspaces', workspaceId), payload, { merge: true })
+    if (ownerId) {
+      await setDoc(doc(db, 'users', ownerId), payload, { merge: true })
+    }
+    await logActivity(action, { workspaceId, ownerId, email: userEmail(row), patch })
+  }
+
   async function updateUser(row, update, action) {
     const uid = row.uid || row.userId || row.id
     await updateDoc(doc(db, 'users', uid), { ...update, updatedAt: serverTimestamp(), updatedBy: user?.uid || '' })
@@ -997,7 +1027,7 @@ export default function ControlCentre() {
   function Dashboard() {
     return (
       <div className="space-y-4">
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">
           <KpiCard label="Total Clients" value={stats.totalClients} helper="Client workspaces" icon={HiOutlineBuildingOffice2} />
           <KpiCard label="Active Clients" value={stats.activeClients} helper="Active SaaS accounts" icon={HiOutlineCheckBadge} tone="emerald" />
           <KpiCard label="Trial Clients" value={stats.trialClients} helper="Free trial accounts" icon={HiOutlineCreditCard} tone="amber" />
@@ -1246,6 +1276,86 @@ export default function ControlCentre() {
             </Card>
           ))}
         </div>
+      </Panel>
+    )
+  }
+
+  function ModuleAccess() {
+    const rows = useSearch(data.workspaces, search, ['id', 'workspaceId', 'ownerEmail', 'email', 'workspaceName', 'companyName', 'businessType', 'selectedBusinessType', 'primaryBusinessType'])
+    const columns = [
+      { key: 'client', label: 'Client', render: (row) => <div><p className="font-black text-slate-900">{userEmail(row) || '-'}</p><p className="text-xs text-slate-500">{row.ownerId || row.userId || row.uid || '-'}</p></div> },
+      { key: 'workspace', label: 'Workspace', render: (row) => <div><p className="font-black text-slate-900">{workspaceName(row)}</p><p className="text-xs text-slate-500">{row.workspaceId || row.id}</p></div> },
+      { key: 'primary', label: 'Primary Module', render: (row) => moduleAccessForWorkspace(row).primary },
+      { key: 'plan', label: 'Plan', render: (row) => row.plan || row.selectedPlan || 'Basic' },
+      { key: 'status', label: 'Status', render: (row) => <Status value={row.status || row.subscriptionStatus || row.planStatus || 'active'} /> },
+      {
+        key: 'allowed',
+        label: 'Allowed Modules',
+        render: (row) => {
+          const access = moduleAccessForWorkspace(row)
+          return (
+            <div className="min-w-[28rem]">
+              <div className="grid gap-2 md:grid-cols-2">
+                {modules.map((module) => {
+                  const id = `module-access-${row.id}-${module.replace(/[^a-z0-9]+/gi, '-')}`
+                  const isPrimary = module === access.primary
+                  return (
+                    <label key={module} className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold ${isPrimary ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-slate-200 bg-slate-50 text-slate-700'}`}>
+                      <input id={id} type="checkbox" defaultChecked={access.allowed.includes(module)} disabled={isPrimary} />
+                      <span>{module}{isPrimary ? ' · primary' : ''}</span>
+                    </label>
+                  )
+                })}
+              </div>
+            </div>
+          )
+        },
+      },
+      { key: 'special', label: 'Special Access', render: (row) => <Status value={moduleAccessForWorkspace(row).all ? 'all modules' : moduleAccessForWorkspace(row).special ? 'enabled' : 'primary only'} /> },
+      {
+        key: 'actions',
+        label: 'Actions',
+        render: (row) => {
+          const access = moduleAccessForWorkspace(row)
+          const readSelected = () => modules.filter((module) => {
+            if (module === access.primary) return true
+            const id = `module-access-${row.id}-${module.replace(/[^a-z0-9]+/gi, '-')}`
+            return document.getElementById(id)?.checked === true
+          })
+          return (
+            <div className="flex min-w-[18rem] flex-wrap gap-2">
+              <ShellButton onClick={() => {
+                const allowedBusinessTypes = readSelected()
+                runAction(`module-save-${row.id}`, () => updateWorkspaceModuleAccess(row, {
+                  primaryBusinessType: access.primary,
+                  allowedBusinessTypes,
+                  specialModuleAccess: allowedBusinessTypes.length > 1,
+                  allModulesAccess: allowedBusinessTypes.length === modules.length,
+                }), 'Module access saved.')
+              }}>Save</ShellButton>
+              <ShellButton onClick={() => runAction(`module-all-${row.id}`, () => updateWorkspaceModuleAccess(row, {
+                primaryBusinessType: access.primary,
+                allowedBusinessTypes: modules,
+                specialModuleAccess: true,
+                allModulesAccess: true,
+              }, 'module_access_all_enabled'), 'All modules enabled.')}>Enable All</ShellButton>
+              <ShellButton onClick={() => runAction(`module-reset-${row.id}`, () => updateWorkspaceModuleAccess(row, {
+                primaryBusinessType: access.primary,
+                allowedBusinessTypes: [access.primary],
+                specialModuleAccess: false,
+                allModulesAccess: false,
+              }, 'module_access_reset_primary'), 'Reset to primary module only.')}>Reset</ShellButton>
+            </div>
+          )
+        },
+      },
+    ]
+    return (
+      <Panel title="Module Access / Special Access" action={<ShellButton>Workspaces: special module grants</ShellButton>}>
+        <p className="mb-4 text-sm font-semibold leading-6 text-slate-600">
+          Normal clients keep one primary module. Use this panel to grant extra modules without changing workspace isolation or deleting existing data.
+        </p>
+        <AdminTable rows={rows} columns={columns} emptyTitle="No workspaces found" />
       </Panel>
     )
   }
@@ -1721,6 +1831,7 @@ export default function ControlCentre() {
     upgrades: <Panel title="Upgrade Requests" action={<ShellButton>Firestore: upgradeRequests</ShellButton>}><AdminTable rows={upgradeRows} columns={upgradeColumns} emptyTitle="No upgrade requests found" /></Panel>,
     transactions: <Transactions />,
     plans: <Plans />,
+    moduleAccess: <ModuleAccess />,
     visitorAnalytics: <VisitorAnalytics />,
     announcements: <Announcements />,
     support: <SupportTickets />,
@@ -1732,9 +1843,9 @@ export default function ControlCentre() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-950">
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-72 overflow-y-auto bg-[#08172b] px-4 py-5 text-white shadow-2xl lg:block">
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[260px] overflow-y-auto bg-[#08172b] px-4 py-5 text-white shadow-2xl lg:block">
         <div className="flex items-center gap-3 px-1">
-          <div className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-sky-400 to-violet-600 font-black">N</div>
+          <img src={logoUrl} alt="Nexora" className="h-11 w-11 rounded-xl bg-white object-contain p-1.5" />
           <div>
             <p className="text-2xl font-black tracking-wide">NEXORA</p>
             <p className="text-xs text-slate-300">SaaS Owner Admin Panel</p>
@@ -1761,18 +1872,19 @@ export default function ControlCentre() {
         </a>
       </aside>
 
-      <main className="min-w-0 lg:pl-72">
+      <main className="min-w-0 lg:pl-[260px]">
         <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/90 backdrop-blur">
-          <div className="flex flex-col gap-3 px-4 py-4 sm:px-6 xl:flex-row xl:items-center xl:justify-between">
-            <div>
+          <div className="flex flex-col gap-4 px-4 py-4 sm:px-6 xl:flex-row xl:items-center xl:justify-between">
+            <div className="min-w-0">
               <p className="text-2xl font-black tracking-tight">{navGroups.flatMap((g) => g.items).find(([key]) => key === activeTab)?.[1] || 'Dashboard'}</p>
               <p className="text-sm text-slate-500">Nexora SaaS business management. Client internal CRM records are not shown here.</p>
             </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="relative">
-                <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search clients, users, payments..." className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 pr-20 text-sm outline-none focus:border-violet-300 sm:w-80" />
+            <div className="flex min-w-0 flex-col gap-3 md:flex-row md:items-center md:justify-end">
+              <div className="relative min-w-0 md:w-[320px]">
+                <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search clients, users, payments..." className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 pr-20 text-sm outline-none focus:border-violet-300" />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md bg-slate-100 px-2 py-1 text-[10px] font-black text-slate-500">Ctrl + K</span>
               </div>
+              <div className="flex shrink-0 flex-wrap items-center gap-2">
               <div className="relative">
                 <button className="relative grid h-10 w-10 place-items-center rounded-full text-slate-700 hover:bg-slate-100" type="button" onClick={() => setNotificationsOpen((open) => !open)}>
                   <HiOutlineBell className="h-5 w-5" />
@@ -1821,6 +1933,7 @@ export default function ControlCentre() {
                   <p className="text-sm font-black">System Admin</p>
                   <p className="text-xs text-slate-500">{user?.email || 'Super Admin'}</p>
                 </div>
+              </div>
               </div>
             </div>
           </div>

@@ -574,11 +574,18 @@ export function routeAllowedByPlan(route, plan, options = {}) {
 
 export function routeAllowedByBusinessType(route, type, options = {}) {
   if (options?.developerOverride) return true
+  if (options?.allModulesAccess) return true
   const module = moduleByRoute(route)
   if (!module) return true
   if (module.alwaysEnabled) return true
-  if (module.key === 'accountStatements') return businessModuleKeys(type).includes('accounts')
-  return businessModuleKeys(type).includes(module.key)
+  const allowedTypes = Array.from(new Set([
+    type,
+    ...(Array.isArray(options?.allowedBusinessTypes) ? options.allowedBusinessTypes : []),
+  ].filter(Boolean))).map(normalizeBusinessType)
+  return allowedTypes.some((businessType) => {
+    if (module.key === 'accountStatements') return businessModuleKeys(businessType).includes('accounts')
+    return businessModuleKeys(businessType).includes(module.key)
+  })
 }
 
 export function moduleAllowedByPlan(moduleKey, plan) {

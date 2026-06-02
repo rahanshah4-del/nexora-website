@@ -858,25 +858,41 @@ export default function WorkspaceSelection() {
   const hasCrmWorkspace = Boolean(workspaceData || accountData?.workspaceId || accountData?.onboardingCompleted)
   const developerOverride = isDeveloperOwnerAccount(accountData, user)
   const lockedBusinessTypeSource =
+    cleanString(workspaceData?.primaryBusinessType) ||
+    cleanString(accountData?.primaryBusinessType) ||
     cleanString(workspaceData?.selectedBusinessType) ||
     cleanString(workspaceData?.businessType) ||
     cleanString(accountData?.selectedBusinessType) ||
     cleanString(accountData?.businessType)
   const lockedBusinessType = lockedBusinessTypeSource ? normalizeBusinessType(lockedBusinessTypeSource) : ''
+  const workspaceAllowedBusinessTypes = Array.from(new Set([
+    lockedBusinessType,
+    ...(Array.isArray(workspaceData?.allowedBusinessTypes) ? workspaceData.allowedBusinessTypes : []),
+    ...(Array.isArray(accountData?.allowedBusinessTypes) ? accountData.allowedBusinessTypes : []),
+  ].filter(Boolean).map(normalizeBusinessType)))
+  const allModulesAccess = workspaceData?.allModulesAccess === true || accountData?.allModulesAccess === true
+  const specialModuleAccess = allModulesAccess || workspaceData?.specialModuleAccess === true || accountData?.specialModuleAccess === true
+  const allowedWorkspaceTypes = developerOverride || allModulesAccess
+    ? businessTypes
+    : specialModuleAccess
+      ? workspaceAllowedBusinessTypes
+      : lockedBusinessType
+        ? [lockedBusinessType]
+        : []
   const hasModuleLock = !developerOverride && hasCrmWorkspace && Boolean(lockedBusinessType)
-  const moduleLockMessage = 'Contact Nexora to enable another module'
+  const moduleLockMessage = 'This module is not enabled for your account. Contact Nexora support.'
   const needsWorkspaceOnboarding = !authLoading && !accountLoading && Boolean(user?.uid) && !hasCrmWorkspace
   const visibleModuleAccess = useMemo(
     () =>
       hasModuleLock
-        ? moduleAccess.filter((workspace) => normalizeBusinessType(workspace.type) === lockedBusinessType)
+        ? moduleAccess.filter((workspace) => allowedWorkspaceTypes.includes(normalizeBusinessType(workspace.type)))
         : moduleAccess,
-    [hasModuleLock, lockedBusinessType],
+    [allowedWorkspaceTypes, hasModuleLock],
   )
   const visibleWorkspaces = useMemo(
     () => {
       const sourceWorkspaces = hasModuleLock
-        ? workspaces.filter((workspace) => normalizeBusinessType(workspace.type) === lockedBusinessType)
+        ? workspaces.filter((workspace) => allowedWorkspaceTypes.includes(normalizeBusinessType(workspace.type)))
         : workspaces
 
       return sourceWorkspaces.map((workspace) => {
@@ -896,7 +912,7 @@ export default function WorkspaceSelection() {
           : { ...workspace, selected }
       })
     },
-    [hasModuleLock, lockedBusinessType, profile.businessType, profile.planLabel, profile.trialExpired, profile.trialShortLabel, profile.workspaceId],
+    [allowedWorkspaceTypes, hasModuleLock, lockedBusinessType, profile.businessType, profile.planLabel, profile.trialExpired, profile.trialShortLabel, profile.workspaceId],
   )
   const notificationCount = sampleNotifications.length
   const mustSelectModuleFirst = !developerOverride && !lockedBusinessType
@@ -1069,7 +1085,7 @@ export default function WorkspaceSelection() {
       return
     }
     const businessType = normalizeBusinessType(workspace.type)
-    if (hasModuleLock && businessType !== lockedBusinessType) {
+    if (hasModuleLock && !allowedWorkspaceTypes.includes(businessType)) {
       setCreateMessage(moduleLockMessage)
       return
     }
@@ -1181,6 +1197,7 @@ export default function WorkspaceSelection() {
     hasCrmWorkspace,
     hasModuleLock,
     developerOverride,
+    allowedWorkspaceTypes,
     lockedBusinessType,
     moduleLockMessage,
     navigate,
@@ -1255,6 +1272,8 @@ export default function WorkspaceSelection() {
 
       const enabledModules = getRecommendedModules(businessType)
       const selectedFeatures = enabledModules.map((key) => labelForBusinessModule(key, businessType))
+      const primaryBusinessType = businessType
+      const allowedBusinessTypes = [businessType]
       const baseUserPayload = {
         uid,
         ownerId: uid,
@@ -1268,6 +1287,10 @@ export default function WorkspaceSelection() {
         businessType,
         selectedBusinessType: businessType,
         currentBusinessType: businessType,
+        primaryBusinessType,
+        allowedBusinessTypes,
+        specialModuleAccess: false,
+        allModulesAccess: false,
         selectedWorkspace: businessWorkspaceForType(businessType).id,
         trialBusinessType: businessType,
         enabledModules,
@@ -1340,6 +1363,10 @@ export default function WorkspaceSelection() {
         businessType,
         selectedBusinessType: businessType,
         currentBusinessType: businessType,
+        primaryBusinessType,
+        allowedBusinessTypes,
+        specialModuleAccess: false,
+        allModulesAccess: false,
         selectedWorkspace: businessWorkspaceForType(businessType).id,
         trialBusinessType: businessType,
         enabledModules,

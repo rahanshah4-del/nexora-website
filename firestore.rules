@@ -290,7 +290,24 @@ service cloud.firestore {
         'nextBillingDate',
         'subscriptionStartedAt',
         'subscriptionExpiresAt',
-      ]);
+      ])
+      && (
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+          'allowedBusinessTypes',
+          'primaryBusinessType',
+          'specialModuleAccess',
+          'allModulesAccess',
+        ])
+        || (
+          resource.data.onboardingCompleted != true
+          && request.resource.data.specialModuleAccess == false
+          && request.resource.data.allModulesAccess == false
+          && request.resource.data.allowedBusinessTypes is list
+          && request.resource.data.allowedBusinessTypes.size() == 1
+          && request.resource.data.primaryBusinessType is string
+          && request.resource.data.allowedBusinessTypes[0] == request.resource.data.primaryBusinessType
+        )
+      );
     }
 
     function planApprovalFieldsTouched() {

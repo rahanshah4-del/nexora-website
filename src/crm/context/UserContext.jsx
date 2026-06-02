@@ -152,12 +152,22 @@ export function UserProvider({ children }) {
   const role = normalizeRole(userDoc?.role)
   const workspaceId = userDoc?.workspaceId || user?.uid || null
   const developerOverride = isDeveloperOwnerAccount(userDoc, user)
+  const allowedBusinessTypes = Array.from(new Set([
+    ...(Array.isArray(workspaceDoc?.allowedBusinessTypes) ? workspaceDoc.allowedBusinessTypes : []),
+    ...(Array.isArray(userDoc?.allowedBusinessTypes) ? userDoc.allowedBusinessTypes : []),
+  ].filter(Boolean).map(normalizeBusinessType)))
+  const allModulesAccess = workspaceDoc?.allModulesAccess === true || userDoc?.allModulesAccess === true
+  const specialModuleAccess = allModulesAccess || workspaceDoc?.specialModuleAccess === true || userDoc?.specialModuleAccess === true
   const lockedBusinessType =
-    userDoc?.selectedBusinessType || userDoc?.businessType || workspaceDoc?.selectedBusinessType || workspaceDoc?.businessType
+    userDoc?.primaryBusinessType || workspaceDoc?.primaryBusinessType || userDoc?.selectedBusinessType || userDoc?.businessType || workspaceDoc?.selectedBusinessType || workspaceDoc?.businessType
+  const requestedBusinessType = normalizeBusinessType(userDoc?.selectedBusinessType || userDoc?.currentBusinessType || userDoc?.businessType)
+  const requestedBusinessAllowed = allModulesAccess || allowedBusinessTypes.includes(requestedBusinessType) || requestedBusinessType === normalizeBusinessType(lockedBusinessType)
   const selectedBusiness = businessWorkspaceForSelection(
     developerOverride
       ? selectedBusinessWorkspace || userDoc?.selectedWorkspace || userDoc?.selectedBusinessType || userDoc?.businessType
-      : lockedBusinessType || userDoc?.selectedWorkspace,
+      : specialModuleAccess && requestedBusinessAllowed
+        ? requestedBusinessType
+        : lockedBusinessType || userDoc?.selectedWorkspace,
   )
   const businessType = normalizeBusinessType(selectedBusiness?.type || userDoc?.selectedBusinessType || userDoc?.businessType)
   const businessWorkspaceId = selectedBusiness?.id || businessWorkspaceForType(businessType).id
@@ -248,6 +258,9 @@ export function UserProvider({ children }) {
       userId: user?.uid ?? null,
       workspaceId,
       businessType,
+      allowedBusinessTypes,
+      specialModuleAccess,
+      allModulesAccess,
       businessWorkspaceId,
       selectedBusinessWorkspace: businessWorkspaceId,
       staffId,
@@ -276,6 +289,9 @@ export function UserProvider({ children }) {
       user,
       workspaceId,
       businessType,
+      allowedBusinessTypes,
+      specialModuleAccess,
+      allModulesAccess,
       businessWorkspaceId,
       staffId,
       userDoc,
