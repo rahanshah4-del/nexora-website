@@ -165,7 +165,6 @@ export async function verifyCustomEmailOtp(user, otp) {
 
     await updateDoc(userRef, {
       emailVerifiedCustom: true,
-      emailVerified: true,
       emailVerifiedCustomAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     })

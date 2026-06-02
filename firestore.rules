@@ -313,12 +313,10 @@ service cloud.firestore {
     function finalEmailVerificationFieldsTouched() {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
         'emailVerifiedCustom',
-        'emailVerified',
         'emailVerifiedCustomAt',
         'updatedAt',
       ])
       && request.resource.data.emailVerifiedCustom == true
-      && request.resource.data.emailVerified == true
       && request.resource.data.emailVerifiedCustomAt is timestamp
       && request.resource.data.updatedAt is timestamp;
     }
