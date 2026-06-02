@@ -556,6 +556,12 @@ service cloud.firestore {
           'emailVerifiedCustomAt',
           'updatedAt'
         ]);
+      allow update: if isAdmin()
+        || (isActiveSelf(userId) && protectedAccountFieldsUnchanged() && userIdentityScopeSafe(userId))
+        || (activeSignedIn()
+          && resource.data.workspaceId is string
+          && isAdmin()
+          && planApprovalFieldsTouched());
       allow delete: if isAdmin();
 
       match /verification/{docId} {
