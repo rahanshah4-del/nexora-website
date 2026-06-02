@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
-import { collection, doc, onSnapshot, orderBy, query, serverTimestamp, updateDoc, writeBatch } from 'firebase/firestore'
+import { collection, doc, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc, writeBatch } from 'firebase/firestore'
 import { db } from '../../lib/firebase.js'
 import useAuth from '../../context/useAuth.js'
 import { clientSafeMessage } from '../../lib/errorHandler.js'
+import { isBackendAdminEmail } from '../../lib/roles.js'
 
 function StatusPill({ value }) {
   const style =
@@ -16,6 +17,7 @@ function StatusPill({ value }) {
 
 export default function UpgradeRequests() {
   const { user } = useAuth()
+  const backendAdminAllowed = isBackendAdminEmail(user?.email)
   const firebaseEnabled = Boolean(db)
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(() => firebaseEnabled)
@@ -50,48 +52,83 @@ export default function UpgradeRequests() {
 
   const updateApproval = async (item, approvalStatus) => {
     if (!db) return
+    if (!backendAdminAllowed) {
+      setError('Backend admin access required.')
+      return
+    }
     const id = item?.id
     if (!id) return
     setUpdatingId(id)
     try {
       if (approvalStatus !== 'approved' || !item.userId) {
         await updateDoc(doc(db, 'upgradeRequests', id), {
+          status: approvalStatus,
           approvalStatus,
           paymentStatus: approvalStatus === 'rejected' ? 'rejected' : item.paymentStatus || 'pending',
-          ...(approvalStatus === 'rejected' ? { rejectedBy: user?.uid || '', rejectedAt: serverTimestamp() } : {}),
+          ...(approvalStatus === 'rejected' ? { rejectedBy: user?.email || '', rejectedAt: serverTimestamp() } : {}),
         })
         return
       }
 
       const batch = writeBatch(db)
+      const workspaceId = item.workspaceId || item.userId
+      const plan = item.selectedPlan || item.requestedPlan || 'Business'
+      const now = serverTimestamp()
       const planUpdate = {
-        plan: item.selectedPlan || item.requestedPlan || 'Business',
+        plan,
         planStatus: 'active',
+        subscriptionStatus: 'active',
+        paymentStatus: 'paid',
         billingCycle: item.billingCycle || 'monthly',
-        upgradedAt: serverTimestamp(),
+        upgradedAt: now,
+        planUpdatedAt: now,
       }
       batch.update(doc(db, 'upgradeRequests', id), {
+        status: 'approved',
         approvalStatus: 'approved',
         paymentStatus: 'paid',
-        approvedBy: user?.uid || '',
-        approvedAt: serverTimestamp(),
+        approvedBy: user?.email || '',
+        approvedAt: now,
       })
       batch.set(doc(db, 'users', item.userId), planUpdate, { merge: true })
       batch.set(
-        doc(db, 'workspaces', item.userId),
+        doc(db, 'workspaces', workspaceId),
         {
           ...planUpdate,
           ownerId: item.userId,
-          userId: item.userId,
-          workspaceId: item.userId,
-          updatedAt: serverTimestamp(),
+          userId: workspaceId,
+          workspaceId,
+          updatedAt: now,
         },
         { merge: true },
       )
+      batch.set(doc(db, 'platformPayments', id), {
+        clientEmail: item.clientEmail || item.email || '',
+        workspaceId,
+        workspaceName: item.workspaceName || '',
+        plan,
+        amount: Number(item.amount || item.amountPaid || item.planPrice || 0) || 0,
+        currency: item.currency || item.billingCurrency || 'PKR',
+        transactionId: item.transactionId || '',
+        senderName: item.senderName || '',
+        senderNumber: item.senderNumber || item.userPhone || '',
+        paymentMethod: item.paymentMethod || 'Manual',
+        paymentProof: item.paymentProof || item.screenshotUrl || '',
+        status: 'paid',
+        paymentStatus: 'paid',
+        approvedBy: user?.email || '',
+        approvedAt: now,
+        source: 'upgradeRequests',
+        sourceId: id,
+        updatedAt: now,
+      }, { merge: true })
       await batch.commit()
       setError('')
     } catch (error) {
-      setError(clientSafeMessage(error, 'Unable to update upgrade request.', { context: 'Admin upgrade request update' }))
+      const raw = String(error?.message || error || '')
+      setError(/missing or insufficient permissions|permission-denied|permission denied/i.test(raw)
+        ? 'Backend admin access required. Firestore admin write permission is missing.'
+        : clientSafeMessage(error, 'Unable to update backend upgrade request.', { context: 'Admin upgrade request update' }))
     } finally {
       setUpdatingId('')
     }

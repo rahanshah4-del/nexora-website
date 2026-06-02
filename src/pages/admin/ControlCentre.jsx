@@ -42,6 +42,7 @@ import {
 import { auth, firestoreDb as db } from '../../lib/firebase.js'
 import useAuth from '../../context/useAuth.js'
 import { clientSafeMessage } from '../../lib/errorHandler.js'
+import { isBackendAdminEmail } from '../../lib/roles.js'
 import logoUrl from '../../assets/logo/nexora-logo.svg'
 import {
   DEFAULT_SAAS_CURRENCY,
@@ -506,6 +507,7 @@ export default function ControlCentre() {
   const [workspacePlanFilter, setWorkspacePlanFilter] = useState('all')
   const [userFilter, setUserFilter] = useState('all')
   const [settingsDraft, setSettingsDraft] = useState(defaultPlatformSettings)
+  const backendAdminAllowed = isBackendAdminEmail(user?.email)
 
   const liveUsers = useMemo(() => mergePresence(data.users, data.clientSessions, data.userPresence), [data.users, data.clientSessions, data.userPresence])
   const onlineUsers = useMemo(() => liveUsers.filter(isOnline), [liveUsers])
@@ -745,10 +747,17 @@ export default function ControlCentre() {
     setBusy(id)
     setToast('')
     try {
+      if (!backendAdminAllowed) throw new Error('Backend admin access required.')
       await action()
       setToast(success)
     } catch (error) {
-      setToast(clientSafeMessage(error, 'Unable to complete action.', { context: 'Backend control centre action' }))
+      const raw = String(error?.message || error || '')
+      const message = /backend admin access required/i.test(raw)
+        ? 'Backend admin access required.'
+        : /missing or insufficient permissions|permission-denied|permission denied/i.test(raw)
+          ? 'Backend admin access required. Firestore admin write permission is missing.'
+          : clientSafeMessage(error, 'Unable to complete backend admin action.', { context: 'Backend control centre action' })
+      setToast(message)
     } finally {
       setBusy('')
     }
@@ -807,18 +816,21 @@ export default function ControlCentre() {
   }
 
   async function approveUpgrade(row) {
+    if (!backendAdminAllowed) throw new Error('Backend admin access required.')
     const workspaceId = row.workspaceId || row.ownerId || row.userId
     const plan = row.requestedPlan || row.plan || 'Standard'
     const currency = rowCurrency(row)
+    const adminEmail = user?.email || ''
+    const now = serverTimestamp()
     await updateDoc(row.ref || doc(db, 'upgradeRequests', row.id), {
       status: 'approved',
       approvalStatus: 'approved',
       paymentStatus: 'paid',
       currency,
-      approvedBy: user?.uid || '',
-      approvedByEmail: user?.email || '',
-      approvedAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
+      approvedBy: adminEmail,
+      approvedByEmail: adminEmail,
+      approvedAt: now,
+      updatedAt: now,
     })
     if (workspaceId) {
       await updateDoc(doc(db, 'workspaces', workspaceId), {
@@ -828,8 +840,9 @@ export default function ControlCentre() {
         planStatus: 'active',
         paymentStatus: 'paid',
         billingCurrency: currency,
-        paidAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
+        paidAt: now,
+        planUpdatedAt: now,
+        updatedAt: now,
       })
     }
     await setDoc(doc(db, 'platformPayments', row.id), {
@@ -846,26 +859,45 @@ export default function ControlCentre() {
       paymentProof: proofUrl(row),
       status: 'paid',
       paymentStatus: 'paid',
-      approvedBy: user?.uid || '',
-      approvedByEmail: user?.email || '',
-      approvedAt: serverTimestamp(),
-      paymentDate: serverTimestamp(),
+      approvedBy: adminEmail,
+      approvedByEmail: adminEmail,
+      approvedAt: now,
+      paymentDate: row.paymentDate || now,
       source: 'upgradeRequests',
       sourceId: row.id,
-      updatedAt: serverTimestamp(),
+      updatedAt: now,
+    }, { merge: true })
+    await setDoc(doc(db, 'platformSubscriptions', workspaceId || row.id), {
+      clientEmail: row.clientEmail || row.email || row.ownerEmail || '',
+      workspaceId: workspaceId || '',
+      workspaceName: row.workspaceName || row.companyName || '',
+      plan,
+      currency,
+      status: 'active',
+      subscriptionStatus: 'active',
+      paymentStatus: 'paid',
+      source: 'upgradeRequests',
+      sourceId: row.id,
+      approvedBy: adminEmail,
+      approvedAt: now,
+      updatedAt: now,
     }, { merge: true })
     await logActivity('upgrade_approved', { workspaceId, upgradeRequestId: row.id, plan })
   }
 
   async function rejectUpgrade(row) {
+    if (!backendAdminAllowed) throw new Error('Backend admin access required.')
+    const adminEmail = user?.email || ''
+    const now = serverTimestamp()
     await updateDoc(row.ref || doc(db, 'upgradeRequests', row.id), {
       status: 'rejected',
       approvalStatus: 'rejected',
       paymentStatus: 'rejected',
-      rejectedBy: user?.uid || '',
-      rejectedByEmail: user?.email || '',
-      rejectedAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
+      rejectedBy: adminEmail,
+      rejectedByEmail: adminEmail,
+      rejectionReason: row.rejectionReason || row.reason || '',
+      rejectedAt: now,
+      updatedAt: now,
     })
     await logActivity('upgrade_rejected', { upgradeRequestId: row.id, workspaceId: row.workspaceId || '' })
   }

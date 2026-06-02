@@ -446,11 +446,16 @@ service cloud.firestore {
 
     function upgradeApprovalFieldsTouched() {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+        'status',
         'approvalStatus',
         'paymentStatus',
+        'currency',
         'approvedBy',
+        'approvedByEmail',
         'approvedAt',
         'rejectedBy',
+        'rejectedByEmail',
+        'rejectionReason',
         'rejectedAt',
         'updatedAt',
       ]);
@@ -810,6 +815,10 @@ service cloud.firestore {
     }
 
     match /platformPayments/{paymentId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /platformSubscriptions/{subscriptionId} {
       allow read, write: if isAdmin();
     }
 
