@@ -315,21 +315,12 @@ service cloud.firestore {
         'emailVerified',
         'emailVerifiedCustom',
         'emailVerifiedCustomAt',
-        'emailVerificationOtpHash',
-        'emailVerificationOtpExpiresAt',
-        'emailVerificationOtpSentAt',
-        'emailVerificationOtpEmail',
         'updatedAt',
       ])
-      && request.resource.data.uid == resource.data.uid
-      && request.resource.data.email == resource.data.email
-      && (!request.resource.data.keys().hasAny(['emailVerificationOtpHash']) || request.resource.data.emailVerificationOtpHash == null || request.resource.data.emailVerificationOtpHash is string)
-      && (!request.resource.data.keys().hasAny(['emailVerificationOtpExpiresAt']) || request.resource.data.emailVerificationOtpExpiresAt == null || request.resource.data.emailVerificationOtpExpiresAt is timestamp)
-      && (!request.resource.data.keys().hasAny(['emailVerificationOtpSentAt']) || request.resource.data.emailVerificationOtpSentAt is timestamp)
-      && (!request.resource.data.keys().hasAny(['emailVerificationOtpEmail']) || request.resource.data.emailVerificationOtpEmail == null || request.resource.data.emailVerificationOtpEmail == resource.data.email)
-      && (!request.resource.data.keys().hasAny(['emailVerifiedCustomAt']) || request.resource.data.emailVerifiedCustomAt is timestamp)
-      && (!request.resource.data.keys().hasAny(['emailVerified']) || request.resource.data.emailVerified == true || request.resource.data.emailVerified == resource.data.emailVerified)
-      && (!request.resource.data.keys().hasAny(['emailVerifiedCustom']) || request.resource.data.emailVerifiedCustom == true || request.resource.data.emailVerifiedCustom == resource.data.emailVerifiedCustom);
+      && request.resource.data.emailVerified == true
+      && request.resource.data.emailVerifiedCustom == true
+      && request.resource.data.emailVerifiedCustomAt is timestamp
+      && request.resource.data.updatedAt is timestamp;
     }
 
     function planApprovalFieldsTouched() {
@@ -579,6 +570,10 @@ service cloud.firestore {
           && isAdmin()
           && planApprovalFieldsTouched());
       allow delete: if isAdmin();
+
+      match /verification/{docId} {
+        allow read, write: if isSelf(userId);
+      }
 
       match /sessions/{sessionId} {
         allow create: if isActiveSelf(userId)

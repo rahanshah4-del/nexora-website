@@ -68,30 +68,31 @@ export async function sendCustomVerificationEmail(user, options = {}) {
 
   try {
     const userRef = doc(db, 'users', uid)
-    const userDocPath = `users/${uid}`
-    console.log('[OTP email] Firestore user doc path', userDocPath)
-    let alreadyCustomVerified = false
+    const otpRef = doc(db, 'users', uid, 'verification', 'otp')
+    const otpDocPath = `users/${uid}/verification/otp`
+    console.log('[OTP email] Firestore OTP doc path', otpDocPath)
     try {
-      console.log('[OTP email] OTP save start', { path: userDocPath })
+      console.log('[OTP email] OTP save start', { path: otpDocPath })
       const existingSnap = await getDoc(userRef)
-      alreadyCustomVerified = existingSnap.exists() && existingSnap.data()?.emailVerifiedCustom === true
+      if (existingSnap.exists() && existingSnap.data()?.emailVerifiedCustom === true) {
+        return { ok: true, provider: 'already_verified', otp: false, message: 'Email is already verified.' }
+      }
       await setDoc(
-        userRef,
+        otpRef,
         {
-          uid,
-          email: to.toLowerCase(),
-          emailVerifiedCustom: alreadyCustomVerified,
-          emailVerificationOtpHash: await sha256(otpPayload({ uid, email: to, otp })),
-          emailVerificationOtpExpiresAt: Timestamp.fromDate(expiresAt),
-          emailVerificationOtpSentAt: serverTimestamp(),
-          emailVerificationOtpEmail: to.toLowerCase(),
+          otpHash: await sha256(otpPayload({ uid, email: to, otp })),
+          otpExpiresAt: Timestamp.fromDate(expiresAt),
+          otpSentAt: serverTimestamp(),
+          otpEmail: to.toLowerCase(),
+          attempts: 0,
+          createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         },
         { merge: true },
       )
-      console.log('[OTP email] OTP save success', { path: userDocPath, expiresAt: expiresAt.toISOString() })
+      console.log('[OTP email] OTP save success', { path: otpDocPath, expiresAt: expiresAt.toISOString() })
     } catch (error) {
-      console.error('[OTP email] OTP save fail', { path: userDocPath })
+      console.error('[OTP email] OTP save fail', { path: otpDocPath })
       logFullOtpError(error)
       if (isPermissionDenied(error)) return { ok: false, error: 'Firestore permission denied while saving OTP.' }
       return { ok: false, error: error?.message || 'Could not save verification code.' }
@@ -149,15 +150,16 @@ export async function verifyCustomEmailOtp(user, otp) {
 
   try {
     const userRef = doc(db, 'users', uid)
-    const snap = await getDoc(userRef)
+    const otpRef = doc(db, 'users', uid, 'verification', 'otp')
+    const snap = await getDoc(otpRef)
     const data = snap.exists() ? snap.data() : null
-    const expiresAt = toDate(data?.emailVerificationOtpExpiresAt)
-    if (!data?.emailVerificationOtpHash || !expiresAt || expiresAt.getTime() < Date.now()) {
+    const expiresAt = toDate(data?.otpExpiresAt)
+    if (!data?.otpHash || !expiresAt || expiresAt.getTime() < Date.now()) {
       return { ok: false, error: 'Verification code expired. Please send a new code.' }
     }
 
     const nextHash = await sha256(otpPayload({ uid, email, otp: code }))
-    if (nextHash !== data.emailVerificationOtpHash) {
+    if (nextHash !== data.otpHash) {
       return { ok: false, error: 'Invalid verification code.' }
     }
 
@@ -165,9 +167,6 @@ export async function verifyCustomEmailOtp(user, otp) {
       emailVerifiedCustom: true,
       emailVerified: true,
       emailVerifiedCustomAt: serverTimestamp(),
-      emailVerificationOtpHash: null,
-      emailVerificationOtpExpiresAt: null,
-      emailVerificationOtpEmail: null,
       updatedAt: serverTimestamp(),
     })
 
