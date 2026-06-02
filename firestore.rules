@@ -32,12 +32,22 @@ service cloud.firestore {
       return activeSignedIn() && request.auth.uid == userId;
     }
 
+    function isBackendAdmin() {
+      return signedIn()
+        && request.auth.token.email == 'rahanshah2@gmail.com';
+    }
+
+    function isBackendAdminEmail() {
+      return isBackendAdmin();
+    }
+
     function isAdmin() {
-      return activeSignedIn()
+      return isBackendAdmin()
+        || (activeSignedIn()
         && (
           profile().isAdmin == true
           || profile().role in ['platform_admin', 'super_admin', 'PLATFORM_ADMIN', 'SUPER_ADMIN']
-        );
+        ));
     }
 
     function memberWorkspaceId() {
@@ -709,6 +719,50 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    match /subscriptions/{subscriptionId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /payments/{paymentId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /invoices/{invoiceId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /approvals/{approvalId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /activityLogs/{logId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /platformPayments/{paymentId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /backendActivityLogs/{logId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /supportTickets/{ticketId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /clientSessions/{sessionId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /userPresence/{presenceId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /platformSettings/{settingId} {
+      allow read, write: if isAdmin();
+    }
+
     match /plans/{planId} {
       allow read, write: if isAdmin();
     }
@@ -727,6 +781,30 @@ service cloud.firestore {
 
     match /emailTemplates/{templateId} {
       allow read, write: if isAdmin();
+    }
+
+    match /{path=**}/subscriptions/{subscriptionId} {
+      allow read, write: if isBackendAdmin();
+    }
+
+    match /{path=**}/payments/{paymentId} {
+      allow read, write: if isBackendAdmin();
+    }
+
+    match /{path=**}/invoices/{invoiceId} {
+      allow read, write: if isBackendAdmin();
+    }
+
+    match /{path=**}/approvals/{approvalId} {
+      allow read, write: if isBackendAdmin();
+    }
+
+    match /{path=**}/activityLogs/{logId} {
+      allow read, write: if isBackendAdmin();
+    }
+
+    match /{path=**}/supportTickets/{ticketId} {
+      allow read, write: if isBackendAdmin();
     }
 
     match /notifications/{notificationId} {

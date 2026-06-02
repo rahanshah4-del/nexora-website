@@ -45,7 +45,8 @@ if (missingFirebaseAuthEnvVars.length) {
 
 export const app = hasAuthConfig ? (getApps()[0] ?? initializeApp(firebaseConfig)) : null
 export const auth = app ? getAuth(app) : null
-export const db = app ? getFirestore(app) : null
+export const firestoreDb = app ? getFirestore(app) : null
+export const db = firestoreDb
 export const storage = app && hasStorageConfig ? getStorage(app) : null
 export let analytics = null
 

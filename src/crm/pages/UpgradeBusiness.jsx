@@ -19,9 +19,10 @@ import { db, getFirebaseEnvHint } from '../lib/firebase.js'
 import { useAuth } from '../hooks/useAuth.js'
 import { usePreferences } from '../hooks/usePreferences.js'
 import { useUser } from '../hooks/useUser.js'
-import { getBusinessPlanPrice, normalizeBusinessType } from '../data/moduleAccess.js'
+import { normalizeBusinessType } from '../data/moduleAccess.js'
 import { formatCurrency } from '../utils/format.js'
 import { clientSafeMessage } from '../utils/messages.js'
+import { mergePlatformPlans, planPriceLabel } from '../../lib/platformPlans.js'
 
 const nayapayAccounts = [
   { key: 'NayaPay ID', value: 'mehranshah01@nayapay' },
@@ -90,12 +91,14 @@ export default function UpgradeBusinessPage() {
   const { user } = useAuth()
   const { userId, workspaceId, workspaceDoc, plan, accessPlan, businessType } = useUser()
   const { profile } = usePreferences()
-  const businessPrice = useMemo(() => getBusinessPlanPrice(), [])
-  const currency = businessPrice.currency
-  const selectedPlan = 'Business'
-  const selectedPlanLabel = businessPrice.planName || 'Standard'
-  const billingCycle = 'monthly'
-  const planPrice = businessPrice.amount
+  const [planDocs, setPlanDocs] = useState([])
+  const platformPlans = useMemo(() => mergePlatformPlans(planDocs), [planDocs])
+  const standardPlan = useMemo(() => platformPlans.find((item) => item.id === 'standard') || platformPlans[1], [platformPlans])
+  const currency = standardPlan.currency || 'PKR'
+  const selectedPlan = standardPlan.name || 'Standard'
+  const selectedPlanLabel = standardPlan.name || 'Standard'
+  const billingCycle = standardPlan.billingCycle || 'monthly'
+  const planPrice = Number(standardPlan.price || 0)
 
   const [amountPaid, setAmountPaid] = useState('')
 
@@ -114,6 +117,16 @@ export default function UpgradeBusinessPage() {
   const [toast, setToast] = useState(null)
   const [pendingRequest, setPendingRequest] = useState(null)
   const firebaseHint = getFirebaseEnvHint()
+
+  useEffect(() => {
+    if (!db) return undefined
+    const unsub = onSnapshot(
+      query(collection(db, 'plans')),
+      (snap) => setPlanDocs(snap.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }))),
+      () => setPlanDocs([]),
+    )
+    return () => unsub()
+  }, [])
 
   // Show pending approval status if a request already exists.
   // (Keeps UI stable even after reload.)
@@ -321,7 +334,7 @@ export default function UpgradeBusinessPage() {
               </div>
               <div>
                 <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Package Price</label>
-                <Input className="mt-1" value={businessPrice.priceLabel || formatCurrency(planPrice, currency)} readOnly />
+                <Input className="mt-1" value={planPriceLabel(standardPlan) || formatCurrency(planPrice, currency)} readOnly />
               </div>
               <div>
                 <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Amount Paid</label>

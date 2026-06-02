@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
-import { addDoc, collection, doc, getDoc, serverTimestamp } from 'firebase/firestore'
+import { addDoc, collection, doc, getDoc, onSnapshot, query, serverTimestamp } from 'firebase/firestore'
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage'
 import { onAuthStateChanged } from 'firebase/auth'
 import useNoIndex from '../hooks/useNoIndex.js'
 import { assertFirebaseReady, auth, db, storage } from '../lib/firebase.js'
 import { clientSafeMessage } from '../lib/errorHandler.js'
+import { mergePlatformPlans, planPriceLabel } from '../lib/platformPlans.js'
 
 const PLAN = {
   name: 'Standard Package',
@@ -222,7 +223,10 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
   const [authReady, setAuthReady] = useState(() => !auth)
 
   const [yearly, setYearly] = useState(false)
-  const selectedPlan = yearly ? PLAN.yearlyValue : PLAN.monthlyValue
+  const [planDocs, setPlanDocs] = useState([])
+  const platformPlans = useMemo(() => mergePlatformPlans(planDocs), [planDocs])
+  const standardPlan = useMemo(() => platformPlans.find((item) => item.id === 'standard') || platformPlans[1], [platformPlans])
+  const selectedPlan = standardPlan.name || 'Standard'
 
   const [paymentMethod, setPaymentMethod] = useState('')
   const [screenshotFile, setScreenshotFile] = useState(null)
@@ -236,6 +240,16 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
       setUser(nextUser)
       setAuthReady(true)
     })
+    return () => unsubscribe()
+  }, [])
+
+  useEffect(() => {
+    if (!db) return undefined
+    const unsubscribe = onSnapshot(
+      query(collection(db, 'plans')),
+      (snap) => setPlanDocs(snap.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }))),
+      () => setPlanDocs([]),
+    )
     return () => unsubscribe()
   }, [])
 
@@ -277,12 +291,17 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
   const workspaceId = accountWorkspaceId || userId || ''
 
   const headerSubtitle = useMemo(() => {
-    return 'Unlock the Standard package with all Basic features, School OR Property ERP, up to 5 users, 20GB storage, and priority support.'
-  }, [])
+    return `Unlock the ${standardPlan.name || 'Standard'} package with backend-managed pricing, ${standardPlan.currency || 'PKR'} billing, and priority support.`
+  }, [standardPlan.currency, standardPlan.name])
 
   const canSubmit = Boolean(paymentMethod && screenshotFile && !isSubmitting && !submitted)
 
-  const planPriceLabel = yearly ? PLAN.yearlyLabel : PLAN.monthlyLabel
+  const planPriceAmount = Number(standardPlan.price || 0)
+  const planPriceText = String(standardPlan.price).toLowerCase() === 'custom'
+    ? 'Custom'
+    : yearly
+      ? planPriceLabel({ ...standardPlan, price: planPriceAmount * 12 })
+      : planPriceLabel(standardPlan)
   const planPill = yearly ? 'Yearly' : 'Monthly'
 
   const handleSubmit = async () => {
@@ -317,6 +336,12 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
         userName: readableName,
         email: readableEmail,
         selectedPlan,
+        requestedPlan: selectedPlan,
+        planPrice: yearly ? planPriceAmount * 12 : planPriceAmount,
+        amount: yearly ? planPriceAmount * 12 : planPriceAmount,
+        currency: standardPlan.currency || 'PKR',
+        billingCurrency: standardPlan.currency || 'PKR',
+        billingCycle: yearly ? 'yearly' : standardPlan.billingCycle || 'monthly',
         paymentMethod,
         screenshotUrl,
         paymentStatus: 'pending',
@@ -369,8 +394,8 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
               </span>
             </div>
 
-            <p className="text-sm font-semibold text-indigo-200">{PLAN.name}</p>
-            <p className="mt-2 text-3xl font-semibold tracking-tight text-white">{planPriceLabel}</p>
+            <p className="text-sm font-semibold text-indigo-200">{standardPlan.name || PLAN.name}</p>
+            <p className="mt-2 text-3xl font-semibold tracking-tight text-white">{planPriceText}</p>
             <p className="mt-1 text-sm text-slate-200/80">Standard access • Cancel anytime after approval</p>
 
             <div className="mt-6 flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-slate-950/30 p-4">
@@ -392,7 +417,7 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
             <div className="mt-6">
               <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-300">Included features</p>
               <ul className="mt-4 space-y-2 text-sm text-slate-100/90">
-                {PLAN.features.map((feature) => (
+                {(standardPlan.features || PLAN.features).map((feature) => (
                   <li key={feature} className="flex items-start gap-3">
                     <span className="mt-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-indigo-500/15 text-indigo-200">
                       ✓

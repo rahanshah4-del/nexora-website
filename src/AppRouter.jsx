@@ -40,7 +40,8 @@ const ApprovalsPage = lazy(() => import('./crm/pages/Approvals.jsx'))
 const ReportsPage = lazy(() => import('./crm/pages/Reports.jsx'))
 const SettingsPage = lazy(() => import('./crm/pages/Settings.jsx'))
 const UpgradeRequests = lazy(() => import('./pages/admin/UpgradeRequests.jsx'))
-const ControlCentre = lazy(() => import('./pages/admin/ControlCentre.jsx'))
+const ControlCentrePage = lazy(() => import('./pages/admin/ControlCentre.jsx'))
+const AdminLogin = lazy(() => import('./pages/admin/AdminLogin.jsx'))
 
 class InvoiceRouteBoundary extends Component {
   state = { hasError: false }
@@ -85,6 +86,24 @@ function UpgradeRouteGuard() {
   const location = useLocation()
   const cameFromUpgrade = Boolean(location.state?.fromUpgradeBusiness)
   return <UpgradeBusiness cameFromUpgrade={cameFromUpgrade} />
+}
+
+function AdminControlCentreRoute() {
+  return (
+    <RequireAdmin>
+      <LazyPage>
+        <ControlCentrePage />
+      </LazyPage>
+    </RequireAdmin>
+  )
+}
+
+function AdminUpgradeRequestsRoute() {
+  return (
+    <RequireAdmin>
+      <AdminLayout />
+    </RequireAdmin>
+  )
 }
 
 export default function AppRouter() {
@@ -143,12 +162,11 @@ export default function AppRouter() {
         <Route path="coming-soon/:moduleId" element={<LazyPage><DashboardHomePage /></LazyPage>} />
       </Route>
 
-      <Route element={<RequireAdmin />}>
-        <Route path="/admin/control-centre" element={<LazyPage><ControlCentre /></LazyPage>} />
-        <Route path="/admin" element={<AdminLayout />}>
+      <Route path="/admin/login" element={<LazyPage><AdminLogin /></LazyPage>} />
+      <Route path="/admin/control-centre" element={<AdminControlCentreRoute />} />
+      <Route path="/admin" element={<AdminUpgradeRequestsRoute />}>
           <Route path="upgrade-requests" element={<LazyPage><UpgradeRequests /></LazyPage>} />
           <Route index element={<Navigate to="/admin/control-centre" replace />} />
-        </Route>
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

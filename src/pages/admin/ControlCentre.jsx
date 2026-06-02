@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
+import { Component, useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   HiOutlineBell,
   HiOutlineBuildingOffice2,
@@ -7,23 +8,17 @@ import {
   HiOutlineCog6Tooth,
   HiOutlineCreditCard,
   HiOutlineCurrencyDollar,
-  HiOutlineDocumentText,
   HiOutlineEnvelope,
-  HiOutlineFlag,
   HiOutlineHome,
   HiOutlineLifebuoy,
-  HiOutlineLockClosed,
   HiOutlineMegaphone,
   HiOutlineMoon,
-  HiOutlinePuzzlePiece,
   HiOutlineShieldCheck,
-  HiOutlineTicket,
   HiOutlineUserGroup,
   HiOutlineUsers,
 } from 'react-icons/hi2'
 import {
   collection,
-  collectionGroup,
   doc,
   limit,
   onSnapshot,
@@ -32,6 +27,7 @@ import {
   setDoc,
   updateDoc,
 } from 'firebase/firestore'
+import { sendPasswordResetEmail, signOut } from 'firebase/auth'
 import {
   Area,
   AreaChart,
@@ -43,52 +39,91 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { db } from '../../lib/firebase.js'
+import { auth, firestoreDb as db } from '../../lib/firebase.js'
 import useAuth from '../../context/useAuth.js'
 import { clientSafeMessage } from '../../lib/errorHandler.js'
+import { DEFAULT_SAAS_CURRENCY, PLATFORM_PLAN_COLLECTION, mergePlatformPlans, planPriceLabel } from '../../lib/platformPlans.js'
+
+export class ControlCentreErrorBoundary extends Component {
+  state = { error: null }
+
+  static getDerivedStateFromError(error) {
+    return { error }
+  }
+
+  componentDidCatch(error, info) {
+    console.error('[Backend Control Centre] Runtime render error', error, info)
+  }
+
+  render() {
+    if (this.state.error) {
+      return (
+        <main className="min-h-screen bg-slate-50 p-6 text-slate-950">
+          <section className="mx-auto max-w-4xl rounded-3xl border border-rose-200 bg-white p-6 shadow-sm">
+            <p className="text-sm font-black uppercase tracking-[0.2em] text-rose-600">Backend Control Centre</p>
+            <h1 className="mt-3 text-2xl font-black tracking-tight">Control centre could not render</h1>
+            <p className="mt-2 text-sm leading-6 text-slate-600">A runtime error was caught before the admin page could finish loading.</p>
+            <pre className="mt-4 max-h-60 overflow-auto rounded-2xl bg-slate-950 p-4 text-xs text-rose-100">
+              {this.state.error?.message || String(this.state.error)}
+            </pre>
+            <button type="button" className="mt-5 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-bold text-white" onClick={() => this.setState({ error: null })}>
+              Try Again
+            </button>
+          </section>
+        </main>
+      )
+    }
+    return this.props.children
+  }
+}
 
 const modules = ['General CRM', 'School ERP', 'Retail / POS', 'Property ERP', 'Restaurant POS', 'WhatsApp CRM']
-const plans = ['Basic', 'Standard', 'Premium', 'Enterprise']
-const roles = ['Super Admin', 'Admin', 'Support', 'Billing Manager', 'Read Only']
+const planNames = ['Basic', 'Standard', 'Premium', 'Enterprise']
+const adminRoles = ['Super Admin', 'Admin', 'Support', 'Billing Manager', 'Read Only']
 const moduleColors = ['#7c3aed', '#3b82f6', '#f59e0b', '#ef4444', '#14b8a6', '#0ea5e9']
+const defaultPlatformSettings = {
+  systemName: 'Nexora Solutions',
+  defaultCurrency: DEFAULT_SAAS_CURRENCY,
+  trialDays: 7,
+  supportEmail: 'support@nexorasolution.online',
+  maintenanceMode: false,
+  emailSenderName: 'Nexora Solutions',
+  emailReplyTo: 'support@nexorasolution.online',
+  featureFlags: {
+    announcements: true,
+    supportTickets: true,
+    planUpgrades: true,
+    maintenanceBanner: false,
+  },
+}
 
 const navGroups = [
   {
-    label: 'Platform',
+    label: 'SaaS Business',
     items: [
       ['dashboard', 'Dashboard', HiOutlineHome],
-      ['workspaces', 'Clients / Workspaces', HiOutlineBuildingOffice2],
-      ['subscriptions', 'Subscriptions', HiOutlineCheckBadge],
-      ['modules', 'Modules', HiOutlinePuzzlePiece],
-      ['plans', 'Plans & Pricing', HiOutlineCreditCard],
+      ['activity', 'Live Client Activity', HiOutlineChartBarSquare],
+      ['clients', 'Clients / Workspaces', HiOutlineBuildingOffice2],
+      ['users', 'Authentication / Users', HiOutlineUsers],
+      ['upgrades', 'Upgrade Requests', HiOutlineCheckBadge],
       ['transactions', 'Transactions', HiOutlineCurrencyDollar],
-      ['invoices', 'Invoices', HiOutlineDocumentText],
-      ['payouts', 'Payouts', HiOutlineChartBarSquare],
+      ['plans', 'Plans', HiOutlineCreditCard],
     ],
   },
   {
-    label: 'User Management',
+    label: 'Communication',
     items: [
-      ['users', 'Users', HiOutlineUsers],
-      ['roles', 'Roles & Permissions', HiOutlineShieldCheck],
-      ['staff', 'Staff Management', HiOutlineUserGroup],
+      ['announcements', 'Announcements', HiOutlineMegaphone],
+      ['support', 'Support Tickets', HiOutlineLifebuoy],
     ],
   },
   {
     label: 'System',
     items: [
-      ['system', 'Settings', HiOutlineCog6Tooth],
-      ['logs', 'System Logs', HiOutlineDocumentText],
-      ['email', 'Email Templates', HiOutlineEnvelope],
-      ['announcements', 'Announcements', HiOutlineMegaphone],
-      ['flags', 'Feature Flags', HiOutlineFlag],
-    ],
-  },
-  {
-    label: 'Support',
-    items: [
-      ['support', 'Support Tickets', HiOutlineLifebuoy],
-      ['reports', 'Reports', HiOutlineTicket],
+      ['settings', 'Settings', HiOutlineCog6Tooth],
+      ['logs', 'System Logs', HiOutlineCog6Tooth],
+      ['roles', 'Roles & Permissions', HiOutlineShieldCheck],
+      ['staff', 'Staff Management', HiOutlineUserGroup],
     ],
   },
 ]
@@ -98,17 +133,27 @@ function toDate(value) {
   return date && !Number.isNaN(date.getTime()) ? date : null
 }
 
-function dateLabel(value) {
+function dateTimeLabel(value) {
   const date = toDate(value)
-  return date ? date.toLocaleDateString() : '—'
+  return date ? date.toLocaleString() : '-'
 }
 
-function money(value) {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(Number(value || 0))
+function dateLabel(value) {
+  const date = toDate(value)
+  return date ? date.toLocaleDateString() : '-'
+}
+
+function money(value, currency = DEFAULT_SAAS_CURRENCY) {
+  if (String(value).toLowerCase() === 'custom') return 'Custom'
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency, maximumFractionDigits: 0 }).format(Number(value || 0))
 }
 
 function amountValue(row = {}) {
-  return Number(row.amount ?? row.amountPaid ?? row.total ?? row.totalUsd ?? row.approvalAmount ?? row.price ?? 0) || 0
+  return Number(row.amount ?? row.amountPaid ?? row.price ?? row.total ?? 0) || 0
+}
+
+function rowCurrency(row = {}) {
+  return row.currency || row.billingCurrency || DEFAULT_SAAS_CURRENCY
 }
 
 function statusValue(value, fallback = 'unknown') {
@@ -121,6 +166,14 @@ function workspaceBusinessType(row = {}) {
 
 function workspaceName(row = {}) {
   return row.companyName || row.workspaceName || row.businessName || row.name || row.email || row.id || 'Workspace'
+}
+
+function userName(row = {}) {
+  return row.displayName || row.fullName || row.name || row.email || row.id || 'User'
+}
+
+function userEmail(row = {}) {
+  return row.email || row.ownerEmail || row.clientEmail || ''
 }
 
 function isPaid(row = {}) {
@@ -138,24 +191,35 @@ function isExpired(row = {}) {
   return ['expired', 'cancelled', 'canceled', 'inactive'].includes(status) || (trialEndsAt && trialEndsAt < new Date()) || (expiresAt && expiresAt < new Date())
 }
 
+function daysLeft(value) {
+  const date = toDate(value)
+  if (!date) return '-'
+  return Math.max(0, Math.ceil((date.getTime() - Date.now()) / 86400000))
+}
+
+function isOnline(row = {}) {
+  const lastActive = toDate(row.lastActiveAt)
+  return Boolean(lastActive && Date.now() - lastActive.getTime() <= 5 * 60 * 1000)
+}
+
 function normalizeSnapDoc(docSnap) {
   const data = docSnap.data()
   return {
     id: docSnap.id,
     ref: docSnap.ref,
     path: docSnap.ref.path,
-    workspaceId: data.workspaceId || data.ownerId || docSnap.ref.parent?.parent?.id || data.userId || '',
     ...data,
   }
 }
 
-function mergeRows(...lists) {
-  const map = new Map()
-  lists.flat().forEach((row) => {
-    const key = row.path || row.id
-    if (key) map.set(key, row)
-  })
-  return Array.from(map.values())
+function firestoreErrorMessage(key, error) {
+  const code = error?.code || error?.name || 'unknown'
+  const rawMessage = error?.message || String(error || 'Unknown Firestore error')
+  const indexUrl = rawMessage.match(/https:\/\/console\.firebase\.google\.com[^\s)]+/)?.[0] || ''
+  if (code === 'permission-denied') return `permission-denied: Backend admin needs Firestore admin read permission. Firebase message: ${rawMessage}`
+  if (code === 'failed-precondition' && indexUrl) return `index-needed: Firestore requires an index for ${key}. ${indexUrl}`
+  if (code === 'not-found') return `not-found: ${key} is unavailable. Showing an empty state. Firebase message: ${rawMessage}`
+  return `${code}: ${rawMessage}`
 }
 
 function useControlCentreData() {
@@ -164,15 +228,18 @@ function useControlCentreData() {
     workspaces: [],
     upgradeRequests: [],
     subscriptions: [],
-    payments: [],
-    invoices: [],
-    approvals: [],
-    activityLogs: [],
+    platformPayments: [],
+    backendActivityLogs: [],
+    announcements: [],
     supportTickets: [],
     plans: [],
     backendStaff: [],
+    clientSessions: [],
+    userPresence: [],
+    platformSettings: [],
     loading: Boolean(db),
     error: '',
+    sourceErrors: {},
   })
 
   useEffect(() => {
@@ -185,71 +252,84 @@ function useControlCentreData() {
       users: [],
       workspaces: [],
       upgradeRequests: [],
-      subscriptionsTop: [],
-      subscriptionsGroup: [],
-      payments: [],
-      invoices: [],
-      approvals: [],
-      activityLogsTop: [],
-      activityLogsGroup: [],
+      subscriptions: [],
+      platformPayments: [],
+      backendActivityLogs: [],
+      announcements: [],
       supportTickets: [],
       plans: [],
       backendStaff: [],
+      clientSessions: [],
+      userPresence: [],
+      platformSettings: [],
     }
+    const expected = Object.keys(cache).length
     const loaded = new Set()
     const setRows = (key, docs) => {
       cache[key] = docs
       loaded.add(key)
-      setState({
-        users: cache.users,
-        workspaces: cache.workspaces,
-        upgradeRequests: cache.upgradeRequests,
-        subscriptions: mergeRows(cache.subscriptionsTop, cache.subscriptionsGroup),
-        payments: cache.payments,
-        invoices: cache.invoices,
-        approvals: cache.approvals,
-        activityLogs: mergeRows(cache.activityLogsTop, cache.activityLogsGroup),
-        supportTickets: cache.supportTickets,
-        plans: cache.plans,
-        backendStaff: cache.backendStaff,
-        loading: loaded.size < 13,
-        error: '',
-      })
+      setState((current) => ({
+        ...current,
+        ...cache,
+        loading: loaded.size < expected,
+        sourceErrors: Object.fromEntries(Object.entries(current.sourceErrors || {}).filter(([source]) => source !== key)),
+      }))
     }
-    const fail = (error) => {
+    const fail = (key, error) => {
+      console.error(`[Backend Control Centre] Firestore listener failed for ${key}`, {
+        code: error?.code,
+        message: error?.message,
+        error,
+      })
+      const message = firestoreErrorMessage(key, error)
       setState((current) => ({
         ...current,
         loading: false,
-        error: clientSafeMessage(error, 'Unable to load backend control centre data.', { context: 'Backend control centre' }),
+        error: error?.code === 'permission-denied' ? 'Backend admin needs Firestore admin read permission.' : current.error,
+        sourceErrors: { ...(current.sourceErrors || {}), [key]: message },
       }))
     }
-    const listen = (key, ref) =>
-      onSnapshot(
-        ref,
-        (snap) => setRows(key, snap.docs.map(normalizeSnapDoc)),
-        fail,
-      )
+    const listen = (key, collectionName, rowLimit = 300) => {
+      try {
+        return onSnapshot(
+          query(collection(db, collectionName), limit(rowLimit)),
+          (snap) => setRows(key, snap.docs.map(normalizeSnapDoc)),
+          (error) => {
+            setRows(key, [])
+            fail(key, error)
+          },
+        )
+      } catch (error) {
+        setRows(key, [])
+        fail(key, error)
+        return () => {}
+      }
+    }
 
     const unsubscribers = [
-      listen('users', query(collection(db, 'users'), limit(500))),
-      listen('workspaces', query(collection(db, 'workspaces'), limit(500))),
-      listen('upgradeRequests', query(collection(db, 'upgradeRequests'), limit(300))),
-      listen('subscriptionsTop', query(collection(db, 'subscriptions'), limit(300))),
-      listen('subscriptionsGroup', query(collectionGroup(db, 'subscriptions'), limit(300))),
-      listen('payments', query(collectionGroup(db, 'payments'), limit(500))),
-      listen('invoices', query(collectionGroup(db, 'invoices'), limit(500))),
-      listen('approvals', query(collectionGroup(db, 'approvals'), limit(500))),
-      listen('activityLogsTop', query(collection(db, 'activityLogs'), limit(300))),
-      listen('activityLogsGroup', query(collectionGroup(db, 'activityLogs'), limit(500))),
-      listen('supportTickets', query(collectionGroup(db, 'supportTickets'), limit(200))),
-      listen('plans', query(collection(db, 'plans'), limit(50))),
-      listen('backendStaff', query(collection(db, 'backendStaff'), limit(100))),
+      listen('users', 'users', 500),
+      listen('workspaces', 'workspaces', 500),
+      listen('upgradeRequests', 'upgradeRequests', 300),
+      listen('subscriptions', 'subscriptions', 300),
+      listen('platformPayments', 'platformPayments', 500),
+      listen('backendActivityLogs', 'backendActivityLogs', 500),
+      listen('announcements', 'announcements', 200),
+      listen('supportTickets', 'supportTickets', 200),
+      listen('plans', 'plans', 50),
+      listen('backendStaff', 'backendStaff', 100),
+      listen('clientSessions', 'clientSessions', 300),
+      listen('userPresence', 'userPresence', 300),
+      listen('platformSettings', 'platformSettings', 20),
     ]
 
     return () => unsubscribers.forEach((unsubscribe) => unsubscribe?.())
   }, [])
 
   return state
+}
+
+function Card({ children, className = '' }) {
+  return <section className={`rounded-2xl border border-slate-200 bg-white shadow-sm ${className}`}>{children}</section>
 }
 
 function ShellButton({ children, className = '', ...props }) {
@@ -264,23 +344,19 @@ function ShellButton({ children, className = '', ...props }) {
   )
 }
 
-function Card({ children, className = '' }) {
-  return <section className={`rounded-2xl border border-slate-200 bg-white shadow-sm ${className}`}>{children}</section>
-}
-
 function Status({ value }) {
   const status = statusValue(value)
-  const tone = ['active', 'paid', 'approved', 'healthy'].includes(status)
+  const tone = ['active', 'paid', 'approved', 'healthy', 'online', 'verified'].includes(status)
     ? 'bg-emerald-50 text-emerald-700 ring-emerald-100'
-    : ['trial', 'pending', 'pending_approval', 'pending_verification'].includes(status)
+    : ['trial', 'pending', 'pending_approval'].includes(status)
       ? 'bg-amber-50 text-amber-700 ring-amber-100'
-      : ['blocked', 'disabled', 'expired', 'rejected', 'cancelled', 'canceled'].includes(status)
+      : ['blocked', 'disabled', 'expired', 'rejected', 'offline'].includes(status)
         ? 'bg-rose-50 text-rose-700 ring-rose-100'
         : 'bg-slate-100 text-slate-600 ring-slate-200'
   return <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold capitalize ring-1 ${tone}`}>{String(value || 'Unknown').replace(/_/g, ' ')}</span>
 }
 
-function EmptyState({ title = 'No data yet', detail = 'This panel is connected to Firestore and will populate when records exist.' }) {
+function EmptyState({ title = 'No data yet', detail = 'This panel is connected to Firestore and will populate when SaaS records exist.' }) {
   return (
     <div className="grid min-h-[10rem] place-items-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 p-6 text-center">
       <div>
@@ -305,39 +381,13 @@ function KpiCard({ label, value, helper, icon: Icon, tone = 'violet' }) {
         <div className="min-w-0">
           <p className="truncate text-xs font-black text-slate-500">{label}</p>
           <p className="mt-3 text-2xl font-black tracking-tight text-slate-950">{value}</p>
-          <p className="mt-2 text-xs font-semibold text-emerald-600">{helper}</p>
+          <p className="mt-2 text-xs font-semibold text-slate-500">{helper}</p>
         </div>
         <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl ${colors[tone]}`}>
           <Icon className="h-5 w-5" />
         </span>
       </div>
     </Card>
-  )
-}
-
-function AdminTable({ columns, rows, emptyTitle, maxHeight = 'max-h-[28rem]' }) {
-  if (!rows.length) return <EmptyState title={emptyTitle} />
-  return (
-    <div className={`overflow-auto ${maxHeight}`}>
-      <table className="min-w-full text-left text-sm">
-        <thead className="sticky top-0 z-10 bg-slate-50 text-xs font-black uppercase tracking-wide text-slate-500">
-          <tr>
-            {columns.map((column) => (
-              <th key={column.key} className="whitespace-nowrap px-4 py-3">{column.label}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-slate-100">
-          {rows.map((row) => (
-            <tr key={row.path || row.id} className="align-top hover:bg-slate-50/80">
-              {columns.map((column) => (
-                <td key={column.key} className="px-4 py-3 text-slate-700">{column.render ? column.render(row) : row[column.key] || '—'}</td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
   )
 }
 
@@ -353,6 +403,26 @@ function Panel({ title, action, children }) {
   )
 }
 
+function AdminTable({ columns, rows, emptyTitle, maxHeight = 'max-h-[30rem]' }) {
+  if (!rows.length) return <EmptyState title={emptyTitle} />
+  return (
+    <div className={`overflow-auto ${maxHeight}`}>
+      <table className="min-w-full text-left text-sm">
+        <thead className="sticky top-0 z-10 bg-slate-50 text-xs font-black uppercase tracking-wide text-slate-500">
+          <tr>{columns.map((column) => <th key={column.key} className="whitespace-nowrap px-4 py-3">{column.label}</th>)}</tr>
+        </thead>
+        <tbody className="divide-y divide-slate-100">
+          {rows.map((row) => (
+            <tr key={row.path || row.id} className="align-top hover:bg-slate-50/80">
+              {columns.map((column) => <td key={column.key} className="px-4 py-3 text-slate-700">{column.render ? column.render(row) : row[column.key] || '-'}</td>)}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
 function useSearch(rows, queryText, fields) {
   return useMemo(() => {
     const q = queryText.trim().toLowerCase()
@@ -361,41 +431,151 @@ function useSearch(rows, queryText, fields) {
   }, [fields, queryText, rows])
 }
 
+function mergePresence(users, clientSessions, userPresence) {
+  const sessionByUid = new Map([...clientSessions, ...userPresence].map((row) => [row.uid || row.userId || row.id, row]))
+  return users.map((user) => ({ ...user, ...(sessionByUid.get(user.uid || user.id) || {}) }))
+}
+
 export default function ControlCentre() {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const data = useControlCentreData()
   const [activeTab, setActiveTab] = useState('dashboard')
   const [search, setSearch] = useState('')
   const [busy, setBusy] = useState('')
   const [toast, setToast] = useState('')
+  const [notificationsOpen, setNotificationsOpen] = useState(false)
+  const [readNotifications, setReadNotifications] = useState(() => new Set())
   const [staffDraft, setStaffDraft] = useState({ name: '', email: '', role: 'Support' })
+  const [announcementDraft, setAnnouncementDraft] = useState({
+    title: '',
+    message: '',
+    type: 'info',
+    audience: 'all',
+    workspaceId: '',
+    businessType: '',
+    priority: 'medium',
+    scheduledAt: '',
+    expiresAt: '',
+    pinned: false,
+    status: 'draft',
+  })
+  const [ticketDraft, setTicketDraft] = useState({ title: '', clientEmail: '', category: 'Technical Support', priority: 'medium' })
+  const [transactionStatusFilter, setTransactionStatusFilter] = useState('all')
+  const [transactionPlanFilter, setTransactionPlanFilter] = useState('all')
+  const [transactionMethodFilter, setTransactionMethodFilter] = useState('all')
+  const [transactionDateFrom, setTransactionDateFrom] = useState('')
+  const [transactionDateTo, setTransactionDateTo] = useState('')
+  const [workspaceStatusFilter, setWorkspaceStatusFilter] = useState('all')
+  const [workspacePlanFilter, setWorkspacePlanFilter] = useState('all')
+  const [userFilter, setUserFilter] = useState('all')
+  const [settingsDraft, setSettingsDraft] = useState(defaultPlatformSettings)
 
+  const liveUsers = useMemo(() => mergePresence(data.users, data.clientSessions, data.userPresence), [data.users, data.clientSessions, data.userPresence])
+  const onlineUsers = useMemo(() => liveUsers.filter(isOnline), [liveUsers])
+  const platformPlans = useMemo(() => mergePlatformPlans(data.plans), [data.plans])
+  const platformSettings = useMemo(() => ({ ...defaultPlatformSettings, ...(data.platformSettings[0] || {}) }), [data.platformSettings])
+  const workspacesById = useMemo(() => {
+    const map = new Map()
+    data.workspaces.forEach((workspace) => {
+      map.set(workspace.workspaceId || workspace.id, workspace)
+      if (workspace.ownerId) map.set(workspace.ownerId, workspace)
+      if (workspace.userId) map.set(workspace.userId, workspace)
+    })
+    return map
+  }, [data.workspaces])
+
+  useEffect(() => {
+    setSettingsDraft(platformSettings)
+  }, [platformSettings])
+
+  const payments = data.platformPayments
   const stats = useMemo(() => {
-    const paidPayments = data.payments.filter(isPaid)
+    const now = new Date()
+    const paidPayments = payments.filter(isPaid)
     const approvedUpgrades = data.upgradeRequests.filter(isPaid)
     const revenueRows = [...paidPayments, ...approvedUpgrades]
-    const now = new Date()
     const monthlyRevenue = revenueRows
       .filter((row) => {
-        const date = toDate(row.paidAt || row.approvedAt || row.createdAt)
+        const date = toDate(row.paymentDate || row.paidAt || row.approvedAt || row.createdAt)
         return date && date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear()
       })
       .reduce((sum, row) => sum + amountValue(row), 0)
-    const totalRevenue = revenueRows.reduce((sum, row) => sum + amountValue(row), 0)
-    const trialWorkspaces = data.workspaces.filter(isTrial)
-    const expiredWorkspaces = data.workspaces.filter(isExpired)
-    const activeSubscriptions = data.workspaces.filter((row) => !isExpired(row) && (isPaid(row) || statusValue(row.subscriptionStatus || row.planStatus) === 'active'))
-    const pendingApprovals = [...data.approvals, ...data.upgradeRequests].filter((row) => statusValue(row.approvalStatus || row.status) === 'pending')
+    const todayLogins = data.users.filter((row) => {
+      const date = toDate(row.lastLoginAt)
+      return date && date.toDateString() === now.toDateString()
+    }).length
     return {
-      totalWorkspaces: data.workspaces.length,
-      activeSubscriptions: activeSubscriptions.length,
-      trialWorkspaces: trialWorkspaces.length,
-      expiredWorkspaces: expiredWorkspaces.length,
+      totalClients: data.workspaces.length,
+      activeClients: data.workspaces.filter((row) => !isExpired(row) && statusValue(row.status || row.subscriptionStatus) !== 'blocked').length,
+      trialClients: data.workspaces.filter(isTrial).length,
+      expiredClients: data.workspaces.filter(isExpired).length,
+      blockedClients: data.workspaces.filter((row) => statusValue(row.status || row.accountStatus) === 'blocked').length,
+      onlineNow: onlineUsers.length,
+      todayLogins,
+      pendingUpgrades: data.upgradeRequests.filter((row) => statusValue(row.approvalStatus || row.status) === 'pending').length,
       monthlyRevenue,
-      totalRevenue,
-      pendingApprovals: pendingApprovals.length,
+      totalRevenue: revenueRows.reduce((sum, row) => sum + amountValue(row), 0),
     }
-  }, [data])
+  }, [data.upgradeRequests, data.users, data.workspaces, onlineUsers.length, payments])
+
+  const allNotifications = useMemo(() => {
+    const signupItems = [...data.workspaces]
+      .sort((a, b) => (toDate(b.createdAt)?.getTime() || 0) - (toDate(a.createdAt)?.getTime() || 0))
+      .slice(0, 5)
+      .map((row) => ({
+        id: `signup-${row.id}`,
+        type: 'new signup',
+        title: 'New client signup',
+        detail: `${workspaceName(row)} · ${userEmail(row) || row.id}`,
+        createdAt: row.createdAt,
+      }))
+    const upgradeItems = data.upgradeRequests
+      .filter((row) => statusValue(row.approvalStatus || row.status) === 'pending')
+      .slice(0, 5)
+      .map((row) => ({
+        id: `upgrade-${row.id}`,
+        type: 'upgrade request',
+        title: 'Upgrade request pending',
+        detail: `${row.clientEmail || row.email || row.workspaceId || 'Client'} · ${row.requestedPlan || row.plan || 'Plan'}`,
+        createdAt: row.createdAt,
+      }))
+    const paymentItems = payments
+      .filter((row) => ['pending', 'pending_approval'].includes(statusValue(row.paymentStatus || row.status)))
+      .slice(0, 5)
+      .map((row) => ({
+        id: `payment-${row.id}`,
+        type: 'payment pending',
+        title: 'Payment pending',
+        detail: `${row.clientEmail || row.email || row.workspaceId || 'Client'} · ${money(amountValue(row), rowCurrency(row))}`,
+        createdAt: row.createdAt || row.paymentDate,
+      }))
+    const ticketItems = data.supportTickets
+      .filter((row) => ['open', 'pending'].includes(statusValue(row.status)))
+      .slice(0, 5)
+      .map((row) => ({
+        id: `ticket-${row.id}`,
+        type: 'support ticket',
+        title: row.title || row.subject || 'Support ticket',
+        detail: `${row.clientEmail || row.email || row.workspaceId || 'Client'} · ${row.priority || 'medium'}`,
+        createdAt: row.createdAt,
+      }))
+    const expiredItems = data.workspaces
+      .filter(isExpired)
+      .slice(0, 5)
+      .map((row) => ({
+        id: `expired-${row.id}`,
+        type: 'expired trial',
+        title: 'Trial expired',
+        detail: `${workspaceName(row)} · ${dateLabel(row.trialEndsAt || row.subscriptionExpiresAt)}`,
+        createdAt: row.trialEndsAt || row.subscriptionExpiresAt,
+      }))
+    return [...signupItems, ...upgradeItems, ...paymentItems, ...ticketItems, ...expiredItems]
+      .sort((a, b) => (toDate(b.createdAt)?.getTime() || 0) - (toDate(a.createdAt)?.getTime() || 0))
+      .slice(0, 20)
+  }, [data.supportTickets, data.upgradeRequests, data.workspaces, payments])
+
+  const unreadNotifications = allNotifications.filter((item) => !readNotifications.has(item.id))
 
   const moduleBreakdown = useMemo(() => {
     const counts = new Map(modules.map((module) => [module, 0]))
@@ -410,149 +590,324 @@ export default function ControlCentre() {
     const days = Array.from({ length: 14 }, (_, index) => {
       const date = new Date()
       date.setDate(date.getDate() - (13 - index))
-      return {
-        key: date.toISOString().slice(0, 10),
-        label: date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
-        revenue: 0,
-        subscriptions: 0,
-      }
+      return { key: date.toISOString().slice(0, 10), label: date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }), revenue: 0 }
     })
-    data.payments.filter(isPaid).forEach((payment) => {
-      const date = toDate(payment.paidAt || payment.approvedAt || payment.createdAt)
-      const key = date?.toISOString().slice(0, 10)
-      const item = days.find((day) => day.key === key)
-      if (item) {
-        item.revenue += amountValue(payment)
-        item.subscriptions += 1
-      }
+    payments.filter(isPaid).forEach((payment) => {
+      const date = toDate(payment.paymentDate || payment.paidAt || payment.approvedAt || payment.createdAt)
+      const item = days.find((day) => day.key === date?.toISOString().slice(0, 10))
+      if (item) item.revenue += amountValue(payment)
     })
     return days
-  }, [data.payments])
+  }, [payments])
 
-  const recentSignups = useMemo(
-    () => [...data.workspaces].sort((a, b) => (toDate(b.createdAt)?.getTime() || 0) - (toDate(a.createdAt)?.getTime() || 0)).slice(0, 6),
-    [data.workspaces],
+  const workspaceRows = useSearch(
+    data.workspaces
+      .filter((row) => workspaceStatusFilter === 'all' || statusValue(row.status || row.subscriptionStatus || row.planStatus) === workspaceStatusFilter || (workspaceStatusFilter === 'expired' && isExpired(row)) || (workspaceStatusFilter === 'trial' && isTrial(row)))
+      .filter((row) => workspacePlanFilter === 'all' || statusValue(row.plan || row.selectedPlan) === statusValue(workspacePlanFilter)),
+    search,
+    ['id', 'uid', 'email', 'ownerEmail', 'companyName', 'workspaceName', 'businessName', 'selectedBusinessType', 'businessType'],
   )
-  const topWorkspaces = useMemo(() => {
-    const totals = new Map()
-    data.payments.filter(isPaid).forEach((payment) => {
-      const key = payment.workspaceId || payment.userId || payment.ownerId || 'unknown'
-      totals.set(key, (totals.get(key) || 0) + amountValue(payment))
+  const userRows = useSearch(
+    liveUsers.filter((row) => {
+      if (userFilter === 'verified') return row.emailVerified === true
+      if (userFilter === 'unverified') return row.emailVerified !== true
+      if (userFilter === 'online') return isOnline(row)
+      if (userFilter === 'blocked') return statusValue(row.status) === 'blocked'
+      return true
+    }),
+    search,
+    ['id', 'uid', 'email', 'name', 'fullName', 'displayName', 'role'],
+  )
+  const upgradeRows = useSearch(data.upgradeRequests, search, ['id', 'email', 'clientEmail', 'workspaceName', 'requestedPlan', 'transactionId', 'paymentMethod', 'status'])
+  const paymentRows = useSearch(
+    payments
+      .filter((row) => transactionStatusFilter === 'all' || statusValue(row.paymentStatus || row.status) === transactionStatusFilter)
+      .filter((row) => transactionPlanFilter === 'all' || statusValue(row.plan || row.selectedPlan) === statusValue(transactionPlanFilter)),
+    // Date and method filters are kept outside the query to avoid Firestore indexes.
+    search,
+    ['id', 'email', 'clientEmail', 'workspaceName', 'workspaceId', 'plan', 'paymentMethod', 'transactionId', 'status'],
+  )
+    .filter((row) => transactionMethodFilter === 'all' || statusValue(row.paymentMethod || row.method) === statusValue(transactionMethodFilter))
+    .filter((row) => {
+      const date = toDate(row.paymentDate || row.paidAt || row.createdAt)
+      if (!date) return !transactionDateFrom && !transactionDateTo
+      if (transactionDateFrom && date < new Date(transactionDateFrom)) return false
+      if (transactionDateTo) {
+        const end = new Date(transactionDateTo)
+        end.setHours(23, 59, 59, 999)
+        if (date > end) return false
+      }
+      return true
     })
-    return [...data.workspaces]
-      .map((workspace) => ({ ...workspace, revenue: totals.get(workspace.id) || 0 }))
-      .sort((a, b) => b.revenue - a.revenue)
-      .slice(0, 6)
-  }, [data.payments, data.workspaces])
 
-  const workspaceRows = useSearch(data.workspaces, search, ['id', 'email', 'companyName', 'workspaceName', 'businessName', 'selectedBusinessType', 'businessType'])
-  const userRows = useSearch(data.users, search, ['id', 'email', 'name', 'fullName', 'role'])
-  const paymentRows = useSearch(data.payments, search, ['id', 'email', 'customerName', 'workspaceId', 'paymentMethod', 'paymentStatus'])
-  const invoiceRows = useSearch(data.invoices, search, ['id', 'invoiceNumber', 'customerName', 'workspaceId', 'paymentStatus', 'status'])
+  async function logActivity(action, details = {}) {
+    if (!db) return
+    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+    await setDoc(doc(db, 'backendActivityLogs', id), {
+      action,
+      adminUid: user?.uid || '',
+      adminEmail: user?.email || '',
+      details,
+      createdAt: serverTimestamp(),
+    })
+  }
 
-  async function runAction(id, action) {
+  async function runAction(id, action, success = 'Action completed.') {
     setBusy(id)
     setToast('')
     try {
       await action()
-      setToast('Action completed.')
+      setToast(success)
     } catch (error) {
-      setToast(clientSafeMessage(error, 'Unable to complete action.', { context: 'Control centre action' }))
+      setToast(clientSafeMessage(error, 'Unable to complete action.', { context: 'Backend control centre action' }))
     } finally {
       setBusy('')
     }
   }
 
+  async function handleLogout() {
+    await signOut(auth)
+    navigate('/admin/login', { replace: true })
+  }
+
+  async function saveSettings() {
+    const payload = {
+      ...settingsDraft,
+      trialDays: Number(settingsDraft.trialDays || 7),
+      updatedAt: serverTimestamp(),
+      updatedBy: user?.uid || '',
+      updatedByEmail: user?.email || '',
+    }
+    await setDoc(doc(db, 'platformSettings', 'main'), payload, { merge: true })
+    await logActivity('platform_settings_saved', { defaultCurrency: payload.defaultCurrency, trialDays: payload.trialDays, maintenanceMode: payload.maintenanceMode })
+  }
+
+  async function sendReset(row) {
+    const email = userEmail(row)
+    if (!auth || !email) throw new Error('Client email is missing.')
+    await sendPasswordResetEmail(auth, email)
+    await logActivity('password_reset_sent', { uid: row.uid || row.id, email })
+  }
+
+  async function updateWorkspace(row, update, action) {
+    const workspaceId = row.workspaceId || row.id
+    await updateDoc(doc(db, 'workspaces', workspaceId), { ...update, updatedAt: serverTimestamp(), updatedBy: user?.uid || '' })
+    await logActivity(action, { workspaceId, email: userEmail(row), update })
+  }
+
+  async function updateUser(row, update, action) {
+    const uid = row.uid || row.userId || row.id
+    await updateDoc(doc(db, 'users', uid), { ...update, updatedAt: serverTimestamp(), updatedBy: user?.uid || '' })
+    await logActivity(action, { uid, email: userEmail(row), update })
+  }
+
+  async function approveUpgrade(row) {
+    const workspaceId = row.workspaceId || row.ownerId || row.userId
+    const plan = row.requestedPlan || row.plan || 'Standard'
+    const currency = rowCurrency(row)
+    await updateDoc(row.ref || doc(db, 'upgradeRequests', row.id), {
+      status: 'approved',
+      approvalStatus: 'approved',
+      paymentStatus: 'paid',
+      currency,
+      approvedBy: user?.uid || '',
+      approvedByEmail: user?.email || '',
+      approvedAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    })
+    if (workspaceId) {
+      await updateDoc(doc(db, 'workspaces', workspaceId), {
+        plan,
+        selectedPlan: plan,
+        subscriptionStatus: 'active',
+        planStatus: 'active',
+        paymentStatus: 'paid',
+        billingCurrency: currency,
+        paidAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      })
+    }
+    await setDoc(doc(db, 'platformPayments', row.id), {
+      clientEmail: row.clientEmail || row.email || row.ownerEmail || '',
+      workspaceId: workspaceId || '',
+      workspaceName: row.workspaceName || row.companyName || '',
+      plan,
+      amount: amountValue(row),
+      currency,
+      transactionId: row.transactionId || row.txnId || '',
+      paymentMethod: row.paymentMethod || row.method || 'Manual',
+      status: 'paid',
+      paymentStatus: 'paid',
+      approvedBy: user?.uid || '',
+      approvedByEmail: user?.email || '',
+      approvedAt: serverTimestamp(),
+      paymentDate: serverTimestamp(),
+      source: 'upgradeRequests',
+      sourceId: row.id,
+      updatedAt: serverTimestamp(),
+    }, { merge: true })
+    await logActivity('upgrade_approved', { workspaceId, upgradeRequestId: row.id, plan })
+  }
+
+  async function rejectUpgrade(row) {
+    await updateDoc(row.ref || doc(db, 'upgradeRequests', row.id), {
+      status: 'rejected',
+      approvalStatus: 'rejected',
+      paymentStatus: 'rejected',
+      rejectedBy: user?.uid || '',
+      rejectedByEmail: user?.email || '',
+      rejectedAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    })
+    await logActivity('upgrade_rejected', { upgradeRequestId: row.id, workspaceId: row.workspaceId || '' })
+  }
+
+  async function updateTransaction(row, update, action) {
+    await updateDoc(row.ref || doc(db, 'platformPayments', row.id), {
+      ...update,
+      updatedAt: serverTimestamp(),
+      updatedBy: user?.uid || '',
+      updatedByEmail: user?.email || '',
+    })
+    if (row.source === 'upgradeRequests' && row.sourceId) {
+      await updateDoc(doc(db, 'upgradeRequests', row.sourceId), {
+        status: update.status || update.paymentStatus || row.status || 'pending',
+        paymentStatus: update.paymentStatus || update.status || row.paymentStatus || 'pending',
+        approvalStatus: update.approvalStatus || row.approvalStatus || update.status || 'pending',
+        updatedAt: serverTimestamp(),
+      })
+    }
+    if ((update.status === 'approved' || update.status === 'paid' || update.paymentStatus === 'paid') && row.workspaceId) {
+      await updateDoc(doc(db, 'workspaces', row.workspaceId), {
+        plan: row.plan || row.selectedPlan || 'Standard',
+        selectedPlan: row.plan || row.selectedPlan || 'Standard',
+        subscriptionStatus: 'active',
+        planStatus: 'active',
+        paymentStatus: 'paid',
+        billingCurrency: rowCurrency(row),
+        paidAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      })
+    }
+    await logActivity(action, { transactionId: row.transactionId || row.id, workspaceId: row.workspaceId || '', update })
+  }
+
   const workspaceColumns = [
-    {
-      key: 'workspace',
-      label: 'Workspace',
-      render: (row) => (
-        <div>
-          <p className="font-black text-slate-900">{workspaceName(row)}</p>
-          <p className="mt-1 text-xs text-slate-500">{row.email || row.ownerEmail || row.id}</p>
-        </div>
-      ),
-    },
-    { key: 'module', label: 'Module', render: (row) => workspaceBusinessType(row) },
+    { key: 'workspaceId', label: 'Workspace ID', render: (row) => <span className="font-mono text-xs">{row.workspaceId || row.id}</span> },
+    { key: 'workspace', label: 'Workspace Name', render: (row) => <div><p className="font-black text-slate-900">{workspaceName(row)}</p><p className="text-xs text-slate-500">{row.ownerId || row.userId || row.uid || row.id}</p></div> },
+    { key: 'email', label: 'Client Email', render: (row) => userEmail(row) || '-' },
+    { key: 'module', label: 'Business Type', render: (row) => workspaceBusinessType(row) },
     { key: 'plan', label: 'Plan', render: (row) => row.plan || row.selectedPlan || 'Basic' },
     { key: 'status', label: 'Status', render: (row) => <Status value={row.status || row.subscriptionStatus || row.planStatus || (isTrial(row) ? 'trial' : 'active')} /> },
-    { key: 'trial', label: 'Trial Ends', render: (row) => dateLabel(row.trialEndsAt || row.subscriptionExpiresAt) },
+    { key: 'trialEndsAt', label: 'Trial Ends', render: (row) => dateLabel(row.trialEndsAt || row.subscriptionExpiresAt) },
+    { key: 'lastActiveAt', label: 'Last Active', render: (row) => dateTimeLabel(row.lastActiveAt || row.lastAccessedAt || workspacesById.get(row.ownerId || row.userId || row.id)?.lastActiveAt) },
+    { key: 'createdAt', label: 'Created', render: (row) => dateLabel(row.createdAt) },
     {
       key: 'actions',
       label: 'Actions',
       render: (row) => (
-        <div className="flex min-w-[25rem] flex-wrap gap-2">
-          <ShellButton disabled={busy === `block-${row.id}`} onClick={() => runAction(`block-${row.id}`, () => updateDoc(doc(db, 'workspaces', row.id), { status: 'blocked', accountStatus: 'blocked', updatedAt: serverTimestamp() }))}>Block</ShellButton>
-          <ShellButton disabled={busy === `unblock-${row.id}`} onClick={() => runAction(`unblock-${row.id}`, () => updateDoc(doc(db, 'workspaces', row.id), { status: 'active', accountStatus: 'active', updatedAt: serverTimestamp() }))}>Unblock</ShellButton>
-          <select
-            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold"
-            value={row.plan || 'Basic'}
-            onChange={(event) => runAction(`workspace-plan-${row.id}`, () => updateDoc(doc(db, 'workspaces', row.id), { plan: event.target.value, updatedAt: serverTimestamp() }))}
-          >
-            {plans.map((plan) => <option key={plan}>{plan}</option>)}
+        <div className="flex min-w-[38rem] flex-wrap gap-2">
+          <ShellButton onClick={() => setToast(`Client summary: ${workspaceName(row)} · ${row.workspaceId || row.id}`)}>View Summary</ShellButton>
+          <ShellButton disabled={busy === `block-${row.id}`} onClick={() => runAction(`block-${row.id}`, () => updateWorkspace(row, { status: 'blocked', accountStatus: 'blocked' }, 'client_blocked'))}>Block</ShellButton>
+          <ShellButton onClick={() => runAction(`unblock-${row.id}`, () => updateWorkspace(row, { status: 'active', accountStatus: 'active' }, 'client_unblocked'))}>Unblock</ShellButton>
+          <select className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold" value={row.plan || 'Basic'} onChange={(event) => runAction(`plan-${row.id}`, () => updateWorkspace(row, { plan: event.target.value, selectedPlan: event.target.value }, 'plan_changed'))}>
+            {platformPlans.map((plan) => <option key={plan.id}>{plan.name}</option>)}
           </select>
           <ShellButton onClick={() => {
             const next = new Date()
             next.setDate(next.getDate() + 7)
-            runAction(`extend-${row.id}`, () => updateDoc(doc(db, 'workspaces', row.id), { isTrialActive: true, trialEndsAt: next, subscriptionStatus: 'trial', planStatus: 'trial', updatedAt: serverTimestamp() }))
+            runAction(`extend-${row.id}`, () => updateWorkspace(row, { isTrialActive: true, trialEndsAt: next, subscriptionStatus: 'trial', planStatus: 'trial' }, 'trial_extended'))
           }}>Extend Trial</ShellButton>
-          <ShellButton onClick={() => runAction(`paid-${row.id}`, () => updateDoc(doc(db, 'workspaces', row.id), { planStatus: 'active', subscriptionStatus: 'active', paymentStatus: 'paid', paidAt: serverTimestamp(), updatedAt: serverTimestamp() }))}>Mark Paid</ShellButton>
-          <ShellButton onClick={() => runAction(`expire-${row.id}`, () => updateDoc(doc(db, 'workspaces', row.id), { planStatus: 'expired', subscriptionStatus: 'expired', isTrialActive: false, updatedAt: serverTimestamp() }))}>Expire</ShellButton>
-        </div>
-      ),
-    },
-  ]
-
-  const paymentColumns = [
-    { key: 'workspaceId', label: 'Workspace' },
-    { key: 'method', label: 'Method', render: (row) => row.paymentMethod || row.method || 'Manual' },
-    { key: 'amount', label: 'Amount', render: (row) => money(amountValue(row)) },
-    { key: 'status', label: 'Status', render: (row) => <Status value={row.paymentStatus || row.status || row.approvalStatus} /> },
-    { key: 'date', label: 'Date', render: (row) => dateLabel(row.paidAt || row.createdAt || row.approvedAt) },
-    {
-      key: 'actions',
-      label: 'Actions',
-      render: (row) => (
-        <div className="flex flex-wrap gap-2">
-          <ShellButton onClick={() => runAction(`payment-paid-${row.path}`, () => updateDoc(row.ref, { paymentStatus: 'paid', status: 'paid', approvalStatus: 'approved', approvedBy: user?.uid || '', approvedAt: serverTimestamp(), paidAt: serverTimestamp(), updatedAt: serverTimestamp() }))}>Approve</ShellButton>
-          <ShellButton onClick={() => runAction(`payment-reject-${row.path}`, () => updateDoc(row.ref, { paymentStatus: 'rejected', status: 'rejected', approvalStatus: 'rejected', rejectedBy: user?.uid || '', rejectedAt: serverTimestamp(), updatedAt: serverTimestamp() }))}>Reject</ShellButton>
-        </div>
-      ),
-    },
-  ]
-
-  const invoiceColumns = [
-    { key: 'invoice', label: 'Invoice', render: (row) => <div><p className="font-black text-slate-900">{row.invoiceNumber || row.id}</p><p className="text-xs text-slate-500">{row.customerName || row.customerEmail || '—'}</p></div> },
-    { key: 'workspaceId', label: 'Workspace' },
-    { key: 'amount', label: 'Amount', render: (row) => money(amountValue(row)) },
-    { key: 'status', label: 'Status', render: (row) => <Status value={row.paymentStatus || row.status || row.approvalStatus} /> },
-    { key: 'date', label: 'Date', render: (row) => dateLabel(row.createdAt || row.issueDate) },
-    {
-      key: 'actions',
-      label: 'Actions',
-      render: (row) => (
-        <div className="flex flex-wrap gap-2">
-          <ShellButton onClick={() => window.print()}>Print</ShellButton>
-          <ShellButton onClick={() => runAction(`invoice-paid-${row.path}`, () => updateDoc(row.ref, { status: 'paid', paymentStatus: 'paid', approvalStatus: 'approved', amountPaid: amountValue(row), balanceDue: 0, paidAt: serverTimestamp(), updatedAt: serverTimestamp() }))}>Mark Paid</ShellButton>
-          <ShellButton onClick={() => runAction(`invoice-unpaid-${row.path}`, () => updateDoc(row.ref, { status: 'sent', paymentStatus: 'pending', amountPaid: 0, updatedAt: serverTimestamp() }))}>Unpaid</ShellButton>
+          <ShellButton onClick={() => runAction(`paid-${row.id}`, () => updateWorkspace(row, { planStatus: 'active', subscriptionStatus: 'active', paymentStatus: 'paid', paidAt: serverTimestamp() }, 'client_marked_paid'))}>Mark Paid</ShellButton>
+          <ShellButton onClick={() => navigator.clipboard?.writeText(row.workspaceId || row.id)}>Copy Workspace ID</ShellButton>
         </div>
       ),
     },
   ]
 
   const userColumns = [
-    { key: 'user', label: 'User', render: (row) => <div><p className="font-black text-slate-900">{row.name || row.fullName || row.email || row.id}</p><p className="text-xs text-slate-500">{row.email || row.id}</p></div> },
-    { key: 'workspaceId', label: 'Workspace' },
+    { key: 'uid', label: 'UID', render: (row) => <span className="font-mono text-xs">{row.uid || row.id}</span> },
+    { key: 'displayName', label: 'Name', render: (row) => userName(row) },
+    { key: 'email', label: 'Email', render: (row) => userEmail(row) || '-' },
+    { key: 'verified', label: 'Email Verified', render: (row) => <Status value={row.emailVerified ? 'verified' : 'unverified'} /> },
+    { key: 'workspace', label: 'Workspace', render: (row) => workspaceName(workspacesById.get(row.workspaceId || row.currentWorkspaceId || row.uid || row.id) || { id: row.workspaceId || row.currentWorkspaceId || '-' }) },
+    { key: 'plan', label: 'Plan', render: (row) => workspacesById.get(row.workspaceId || row.currentWorkspaceId || row.uid || row.id)?.plan || row.plan || 'Basic' },
     { key: 'role', label: 'Role', render: (row) => row.role || 'user' },
-    { key: 'status', label: 'Status', render: (row) => <Status value={row.status || 'active'} /> },
+    { key: 'status', label: 'Status', render: (row) => <Status value={row.status || (isOnline(row) ? 'online' : 'active')} /> },
+    { key: 'lastLoginAt', label: 'Last Login', render: (row) => dateTimeLabel(row.lastLoginAt) },
+    { key: 'lastActiveAt', label: 'Last Active', render: (row) => dateTimeLabel(row.lastActiveAt) },
+    { key: 'createdAt', label: 'Created', render: (row) => dateLabel(row.createdAt) },
+    {
+      key: 'actions',
+      label: 'Actions',
+      render: (row) => (
+        <div className="flex min-w-[22rem] flex-wrap gap-2">
+          <ShellButton onClick={() => setToast(`User: ${userEmail(row) || row.id} · Workspace: ${row.workspaceId || row.currentWorkspaceId || '-'}`)}>View User</ShellButton>
+          <ShellButton onClick={() => runAction(`reset-user-${row.id}`, () => sendReset(row), 'Password reset email sent.')}>Send Reset</ShellButton>
+          <ShellButton onClick={() => runAction(`user-block-${row.id}`, () => updateUser(row, { status: 'blocked' }, 'user_blocked'))}>Block</ShellButton>
+          <ShellButton onClick={() => runAction(`user-active-${row.id}`, () => updateUser(row, { status: 'active' }, 'user_activated'))}>Unblock</ShellButton>
+          <ShellButton onClick={() => navigator.clipboard?.writeText(row.uid || row.id)}>Copy UID</ShellButton>
+          <ShellButton onClick={() => setActiveTab('clients')}>View Workspace</ShellButton>
+        </div>
+      ),
+    },
+  ]
+
+  const liveColumns = [
+    { key: 'status', label: 'Status', render: (row) => <Status value={isOnline(row) ? 'online' : 'offline'} /> },
+    { key: 'email', label: 'Email', render: (row) => userEmail(row) || '-' },
+    { key: 'uid', label: 'UID', render: (row) => <span className="font-mono text-xs">{row.uid || row.id}</span> },
+    { key: 'workspace', label: 'Workspace', render: (row) => row.workspaceName || row.currentWorkspaceId || row.workspaceId || '-' },
+    { key: 'businessType', label: 'Module', render: (row) => row.currentBusinessType || row.selectedBusinessType || row.businessType || '-' },
+    { key: 'login', label: 'Login Time', render: (row) => dateTimeLabel(row.lastLoginAt || row.loginAt) },
+    { key: 'active', label: 'Last Active', render: (row) => dateTimeLabel(row.lastActiveAt) },
+    { key: 'device', label: 'Device / Browser', render: (row) => row.device || row.browser || row.userAgent || '-' },
+  ]
+
+  const upgradeColumns = [
+    { key: 'client', label: 'Client', render: (row) => <div><p className="font-black text-slate-900">{row.clientEmail || row.email || row.ownerEmail || '-'}</p><p className="text-xs text-slate-500">{row.workspaceName || row.companyName || row.workspaceId || '-'}</p></div> },
+    { key: 'plan', label: 'Requested Plan', render: (row) => row.requestedPlan || row.plan || '-' },
+    { key: 'amount', label: 'Amount', render: (row) => money(amountValue(row), rowCurrency(row)) },
+    { key: 'transactionId', label: 'Transaction ID', render: (row) => row.transactionId || row.txnId || '-' },
+    { key: 'method', label: 'Method', render: (row) => row.paymentMethod || row.method || '-' },
+    { key: 'proof', label: 'Proof', render: (row) => row.proofUrl || row.screenshotUrl || row.paymentProofUrl ? <a className="font-bold text-violet-700" href={row.proofUrl || row.screenshotUrl || row.paymentProofUrl} target="_blank" rel="noreferrer">View</a> : '-' },
+    { key: 'status', label: 'Status', render: (row) => <Status value={row.approvalStatus || row.status || 'pending'} /> },
     {
       key: 'actions',
       label: 'Actions',
       render: (row) => (
         <div className="flex flex-wrap gap-2">
-          <ShellButton onClick={() => runAction(`user-block-${row.id}`, () => updateDoc(doc(db, 'users', row.id), { status: 'blocked', updatedAt: serverTimestamp() }))}>Block</ShellButton>
-          <ShellButton onClick={() => runAction(`user-unblock-${row.id}`, () => updateDoc(doc(db, 'users', row.id), { status: 'active', updatedAt: serverTimestamp() }))}>Unblock</ShellButton>
+          <ShellButton onClick={() => runAction(`upgrade-approve-${row.id}`, () => approveUpgrade(row), 'Upgrade approved.')}>Approve</ShellButton>
+          <ShellButton onClick={() => runAction(`upgrade-reject-${row.id}`, () => rejectUpgrade(row), 'Upgrade rejected.')}>Reject</ShellButton>
+          <ShellButton onClick={() => runAction(`upgrade-paid-${row.id}`, () => approveUpgrade(row), 'Payment marked paid.')}>Mark Paid</ShellButton>
+        </div>
+      ),
+    },
+  ]
+
+  const paymentColumns = [
+    { key: 'transactionId', label: 'Transaction ID', render: (row) => <span className="font-mono text-xs">{row.transactionId || row.id}</span> },
+    { key: 'client', label: 'Client', render: (row) => <div><p className="font-black text-slate-900">{row.clientEmail || row.email || '-'}</p><p className="text-xs text-slate-500">{row.workspaceName || row.workspaceId || '-'}</p></div> },
+    { key: 'plan', label: 'Plan', render: (row) => row.plan || row.selectedPlan || '-' },
+    { key: 'amount', label: 'Amount', render: (row) => money(amountValue(row), rowCurrency(row)) },
+    { key: 'currency', label: 'Currency', render: (row) => rowCurrency(row) },
+    { key: 'method', label: 'Method', render: (row) => row.paymentMethod || row.method || '-' },
+    { key: 'proof', label: 'Proof', render: (row) => row.proofUrl || row.screenshotUrl || row.paymentProofUrl ? <a className="font-bold text-violet-700" href={row.proofUrl || row.screenshotUrl || row.paymentProofUrl} target="_blank" rel="noreferrer">View Proof</a> : '-' },
+    { key: 'date', label: 'Payment Date', render: (row) => dateTimeLabel(row.paymentDate || row.paidAt || row.createdAt) },
+    { key: 'status', label: 'Status', render: (row) => <Status value={row.paymentStatus || row.status || 'pending'} /> },
+    { key: 'approvedBy', label: 'Approved By', render: (row) => row.approvedByEmail || row.approvedBy || '-' },
+    { key: 'approvedAt', label: 'Approved At', render: (row) => dateTimeLabel(row.approvedAt) },
+    {
+      key: 'actions',
+      label: 'Actions',
+      render: (row) => (
+        <div className="flex min-w-[22rem] flex-wrap gap-2">
+          <ShellButton onClick={() => setToast(`Transaction details: ${row.transactionId || row.id} · ${row.clientEmail || row.email || row.workspaceId || 'Client'} · ${money(amountValue(row), rowCurrency(row))}`)}>View Details</ShellButton>
+          {row.proofUrl || row.screenshotUrl || row.paymentProofUrl ? <ShellButton onClick={() => window.open(row.proofUrl || row.screenshotUrl || row.paymentProofUrl, '_blank', 'noopener,noreferrer')}>View Proof</ShellButton> : null}
+          <ShellButton onClick={() => runAction(`transaction-approve-${row.id}`, () => updateTransaction(row, { status: 'approved', paymentStatus: 'paid', approvalStatus: 'approved', approvedBy: user?.uid || '', approvedByEmail: user?.email || '', approvedAt: serverTimestamp(), paidAt: serverTimestamp() }, 'transaction_approved'), 'Payment approved.')}>Approve</ShellButton>
+          <ShellButton onClick={() => runAction(`transaction-reject-${row.id}`, () => updateTransaction(row, { status: 'rejected', paymentStatus: 'rejected', approvalStatus: 'rejected', rejectedBy: user?.uid || '', rejectedByEmail: user?.email || '', rejectedAt: serverTimestamp() }, 'transaction_rejected'), 'Payment rejected.')}>Reject</ShellButton>
+          <ShellButton onClick={() => runAction(`transaction-paid-${row.id}`, () => updateTransaction(row, { status: 'paid', paymentStatus: 'paid', approvalStatus: 'approved', approvedBy: user?.uid || '', approvedByEmail: user?.email || '', approvedAt: serverTimestamp(), paidAt: serverTimestamp() }, 'transaction_marked_paid'), 'Payment marked paid.')}>Mark Paid</ShellButton>
+          <ShellButton onClick={() => navigator.clipboard?.writeText(row.transactionId || row.id)}>Copy ID</ShellButton>
         </div>
       ),
     },
@@ -562,15 +917,20 @@ export default function ControlCentre() {
     return (
       <div className="space-y-4">
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-          <KpiCard label="Total Workspaces" value={stats.totalWorkspaces} helper="+ live Firestore count" icon={HiOutlineBuildingOffice2} />
-          <KpiCard label="Active Subscriptions" value={stats.activeSubscriptions} helper="Paid or active plans" icon={HiOutlineCheckBadge} tone="emerald" />
-          <KpiCard label="Trial Workspaces" value={stats.trialWorkspaces} helper="7-day trial accounts" icon={HiOutlineCreditCard} tone="amber" />
-          <KpiCard label="Total Revenue" value={money(stats.totalRevenue)} helper={`${money(stats.monthlyRevenue)} this month`} icon={HiOutlineCurrencyDollar} tone="sky" />
-          <KpiCard label="Pending Approvals" value={stats.pendingApprovals} helper="Approval queue" icon={HiOutlineUsers} tone="rose" />
+          <KpiCard label="Total Clients" value={stats.totalClients} helper="Client workspaces" icon={HiOutlineBuildingOffice2} />
+          <KpiCard label="Active Clients" value={stats.activeClients} helper="Active SaaS accounts" icon={HiOutlineCheckBadge} tone="emerald" />
+          <KpiCard label="Trial Clients" value={stats.trialClients} helper="Free trial accounts" icon={HiOutlineCreditCard} tone="amber" />
+          <KpiCard label="Expired Clients" value={stats.expiredClients} helper="Needs renewal" icon={HiOutlineShieldCheck} tone="rose" />
+          <KpiCard label="Blocked Clients" value={stats.blockedClients} helper="Disabled app access" icon={HiOutlineUsers} tone="rose" />
+          <KpiCard label="Online Now" value={stats.onlineNow} helper="Active in last 5 min" icon={HiOutlineChartBarSquare} tone="emerald" />
+          <KpiCard label="Today Logins" value={stats.todayLogins} helper="User login activity" icon={HiOutlineUsers} tone="sky" />
+          <KpiCard label="Pending Upgrades" value={stats.pendingUpgrades} helper="Upgrade queue" icon={HiOutlineBell} tone="amber" />
+          <KpiCard label="Monthly Revenue" value={money(stats.monthlyRevenue)} helper="SaaS payments only" icon={HiOutlineCurrencyDollar} tone="sky" />
+          <KpiCard label="Total Revenue" value={money(stats.totalRevenue)} helper="Platform revenue" icon={HiOutlineCurrencyDollar} tone="violet" />
         </div>
 
         <div className="grid gap-4 xl:grid-cols-[1.25fr_1fr_0.9fr]">
-          <Panel title="Revenue Overview" action={<ShellButton>Last 14 Days</ShellButton>}>
+          <Panel title="SaaS Revenue Overview" action={<ShellButton>Last 14 Days</ShellButton>}>
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={revenueTrend}>
@@ -582,14 +942,14 @@ export default function ControlCentre() {
                   </defs>
                   <XAxis dataKey="label" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
-                  <Tooltip formatter={(value, name) => (name === 'revenue' ? money(value) : value)} />
+                  <Tooltip formatter={(value) => money(value)} />
                   <Area type="monotone" dataKey="revenue" stroke="#7c3aed" fill="url(#revenue)" strokeWidth={3} />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
           </Panel>
 
-          <Panel title="Workspaces by Module" action={<ShellButton onClick={() => setActiveTab('modules')}>View All</ShellButton>}>
+          <Panel title="Clients by Module">
             <div className="grid gap-4 sm:grid-cols-[13rem_1fr] xl:grid-cols-1 2xl:grid-cols-[13rem_1fr]">
               <div className="h-52">
                 <ResponsiveContainer width="100%" height="100%">
@@ -615,88 +975,33 @@ export default function ControlCentre() {
             </div>
           </Panel>
 
-          <Panel title="Recent Transactions" action={<ShellButton onClick={() => setActiveTab('transactions')}>View All</ShellButton>}>
+          <Panel title="Online Clients" action={<ShellButton onClick={() => setActiveTab('activity')}>View All</ShellButton>}>
             <div className="space-y-3">
-              {data.payments.slice(0, 6).map((payment) => (
-                <div key={payment.path} className="flex items-center justify-between gap-3 rounded-xl border border-slate-100 p-3">
+              {onlineUsers.slice(0, 7).map((row) => (
+                <div key={row.id} className="flex items-center justify-between gap-3 rounded-xl border border-slate-100 p-3">
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-black text-slate-900">{payment.customerName || payment.workspaceId || 'Payment'}</p>
-                    <p className="text-xs text-slate-500">{payment.paymentMethod || payment.method || 'Manual'} · {dateLabel(payment.createdAt || payment.paidAt)}</p>
+                    <p className="truncate text-sm font-black text-slate-900">{userEmail(row) || userName(row)}</p>
+                    <p className="text-xs text-slate-500">{row.currentBusinessType || row.businessType || '-'} · {dateTimeLabel(row.lastActiveAt)}</p>
                   </div>
-                  <p className="text-sm font-black text-emerald-600">{money(amountValue(payment))}</p>
+                  <Status value="online" />
                 </div>
               ))}
-              {!data.payments.length ? <EmptyState title="No transactions yet" /> : null}
+              {!onlineUsers.length ? <EmptyState title="No clients online" /> : null}
             </div>
           </Panel>
         </div>
 
-        <div className="grid gap-4 xl:grid-cols-3">
+        <div className="grid gap-4 xl:grid-cols-[1.4fr_0.7fr]">
+          <Panel title="Pending Upgrade Requests" action={<ShellButton onClick={() => setActiveTab('upgrades')}>Review</ShellButton>}>
+            <AdminTable rows={data.upgradeRequests.filter((row) => statusValue(row.approvalStatus || row.status) === 'pending').slice(0, 6)} columns={upgradeColumns.slice(0, 7)} emptyTitle="No pending upgrade requests" maxHeight="max-h-[18rem]" />
+          </Panel>
           <Panel title="System Health">
-            {['Database', 'Storage', 'API Services', 'Email Service', 'Backup'].map((item) => (
+            {['Firestore SaaS Collections', 'Firebase Auth', 'Password Reset Email', 'Presence Tracking'].map((item) => (
               <div key={item} className="flex items-center justify-between border-b border-slate-100 py-3 last:border-0">
                 <span className="text-sm font-semibold text-slate-700">{item}</span>
                 <Status value={data.error ? 'Warning' : 'Healthy'} />
               </div>
             ))}
-          </Panel>
-          <Panel title="Recent Signups" action={<ShellButton onClick={() => setActiveTab('workspaces')}>View All</ShellButton>}>
-            {recentSignups.map((workspace) => (
-              <div key={workspace.id} className="flex items-center justify-between border-b border-slate-100 py-3 last:border-0">
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-black text-slate-900">{workspaceName(workspace)}</p>
-                  <p className="text-xs text-slate-500">{workspaceBusinessType(workspace)}</p>
-                </div>
-                <span className="text-xs font-semibold text-slate-500">{dateLabel(workspace.createdAt)}</span>
-              </div>
-            ))}
-            {!recentSignups.length ? <EmptyState title="No recent signups" /> : null}
-          </Panel>
-          <Panel title="Top Workspaces" action={<ShellButton onClick={() => setActiveTab('workspaces')}>View All</ShellButton>}>
-            {topWorkspaces.map((workspace) => (
-              <div key={workspace.id} className="flex items-center justify-between border-b border-slate-100 py-3 last:border-0">
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-black text-slate-900">{workspaceName(workspace)}</p>
-                  <p className="text-xs text-slate-500">{workspaceBusinessType(workspace)}</p>
-                </div>
-                <span className="text-sm font-black text-slate-900">{money(workspace.revenue)}</span>
-              </div>
-            ))}
-            {!topWorkspaces.length ? <EmptyState title="No revenue yet" /> : null}
-          </Panel>
-        </div>
-
-        <div className="grid gap-4 xl:grid-cols-[1.4fr_0.7fr]">
-          <Panel title="System Activity Logs">
-            <AdminTable
-              rows={data.activityLogs.slice(0, 7)}
-              emptyTitle="No activity logs yet"
-              columns={[
-                { key: 'user', label: 'User', render: (row) => row.userEmail || row.email || row.userId || '—' },
-                { key: 'action', label: 'Action' },
-                { key: 'module', label: 'Module' },
-                { key: 'workspaceId', label: 'Workspace' },
-                { key: 'time', label: 'Time', render: (row) => dateLabel(row.createdAt || row.updatedAt) },
-              ]}
-              maxHeight="max-h-[18rem]"
-            />
-          </Panel>
-          <Panel title="Quick Actions">
-            <div className="grid grid-cols-2 gap-3">
-              {[
-                ['workspaces', 'Add Workspace', HiOutlineBuildingOffice2],
-                ['plans', 'Create Plan', HiOutlineCreditCard],
-                ['announcements', 'Send Announcement', HiOutlineMegaphone],
-                ['system', 'System Settings', HiOutlineCog6Tooth],
-              ].map(([tab, label, Icon]) => (
-                <button key={label} type="button" onClick={() => setActiveTab(tab)} className="rounded-2xl border border-slate-200 p-4 text-center transition hover:border-violet-200 hover:bg-violet-50">
-                  <span className="mx-auto grid h-12 w-12 place-items-center rounded-xl bg-violet-100 text-violet-700">
-                    <Icon className="h-6 w-6" />
-                  </span>
-                  <span className="mt-3 block text-xs font-black text-slate-800">{label}</span>
-                </button>
-              ))}
-            </div>
           </Panel>
         </div>
       </div>
@@ -704,115 +1009,468 @@ export default function ControlCentre() {
   }
 
   function Workspaces() {
+    const workspaceStats = {
+      total: data.workspaces.length,
+      active: data.workspaces.filter((row) => !isExpired(row) && statusValue(row.status || row.subscriptionStatus) !== 'blocked').length,
+      trial: data.workspaces.filter(isTrial).length,
+      expired: data.workspaces.filter(isExpired).length,
+      blocked: data.workspaces.filter((row) => statusValue(row.status || row.accountStatus) === 'blocked').length,
+    }
     return (
-      <Panel title="Clients / Workspaces" action={<ShellButton>Firestore: workspaces</ShellButton>}>
-        <AdminTable rows={workspaceRows} columns={workspaceColumns} emptyTitle="No workspaces found" />
-      </Panel>
-    )
-  }
-
-  function Subscriptions() {
-    const rows = data.subscriptions.length ? data.subscriptions : data.workspaces
-    return (
-      <Panel title="Subscriptions" action={<ShellButton>Active · Trial · Expired · Cancelled</ShellButton>}>
-        <AdminTable
-          rows={rows}
-          emptyTitle="No subscriptions found"
-          columns={[
-            { key: 'workspace', label: 'Workspace', render: (row) => workspaceName(row) },
-            { key: 'plan', label: 'Plan', render: (row) => row.plan || row.selectedPlan || 'Basic' },
-            { key: 'status', label: 'Status', render: (row) => <Status value={row.subscriptionStatus || row.planStatus || row.status || (isTrial(row) ? 'trial' : 'active')} /> },
-            { key: 'nextBillingDate', label: 'Next Billing', render: (row) => dateLabel(row.nextBillingDate || row.subscriptionExpiresAt || row.trialEndsAt) },
-            { key: 'paymentStatus', label: 'Payment', render: (row) => <Status value={row.paymentStatus || row.approvalStatus || 'pending'} /> },
-            {
-              key: 'actions',
-              label: 'Plan Actions',
-              render: (row) => (
-                <select
-                  className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold"
-                  value={row.plan || 'Basic'}
-                  onChange={(event) => runAction(`plan-${row.path || row.id}`, () => updateDoc(row.ref || doc(db, 'workspaces', row.id), { plan: event.target.value, updatedAt: serverTimestamp() }))}
-                >
-                  {plans.map((plan) => <option key={plan}>{plan}</option>)}
-                </select>
-              ),
-            },
-          ]}
-        />
-      </Panel>
-    )
-  }
-
-  function Modules() {
-    return (
-      <Panel title="Modules" action={<ShellButton>Per-workspace toggles</ShellButton>}>
-        <div className="grid gap-4 lg:grid-cols-2">
-          {modules.map((module) => (
-            <Card key={module} className="p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="font-black text-slate-950">{module}</p>
-                  <p className="mt-1 text-xs text-slate-500">{data.workspaces.filter((workspace) => workspaceBusinessType(workspace) === module).length} active workspace records</p>
-                </div>
-                <Status value={module === 'WhatsApp CRM' ? 'Coming Soon' : 'Active'} />
-              </div>
-              <div className="mt-4 max-h-48 space-y-2 overflow-auto">
-                {data.workspaces.slice(0, 12).map((workspace) => {
-                  const enabled = (workspace.enabledModules || []).includes(module) || workspaceBusinessType(workspace) === module
-                  return (
-                    <label key={`${workspace.id}-${module}`} className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2 text-xs font-semibold">
-                      <span className="truncate">{workspaceName(workspace)}</span>
-                      <input
-                        type="checkbox"
-                        checked={enabled}
-                        onChange={(event) => {
-                          const current = new Set(workspace.enabledModules || [workspaceBusinessType(workspace)])
-                          if (event.target.checked) current.add(module)
-                          else current.delete(module)
-                          runAction(`module-${workspace.id}-${module}`, () => updateDoc(doc(db, 'workspaces', workspace.id), { enabledModules: Array.from(current), updatedAt: serverTimestamp() }))
-                        }}
-                      />
-                    </label>
-                  )
-                })}
-                {!data.workspaces.length ? <EmptyState title="No workspaces available" /> : null}
-              </div>
-            </Card>
-          ))}
+      <div className="space-y-4">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+          <KpiCard label="Total Workspaces" value={workspaceStats.total} helper="All SaaS clients" icon={HiOutlineBuildingOffice2} />
+          <KpiCard label="Active" value={workspaceStats.active} helper="Active accounts" icon={HiOutlineCheckBadge} tone="emerald" />
+          <KpiCard label="Trial" value={workspaceStats.trial} helper="Trial accounts" icon={HiOutlineCreditCard} tone="amber" />
+          <KpiCard label="Expired" value={workspaceStats.expired} helper="Expired accounts" icon={HiOutlineShieldCheck} tone="rose" />
+          <KpiCard label="Blocked" value={workspaceStats.blocked} helper="Blocked access" icon={HiOutlineUsers} tone="rose" />
         </div>
-      </Panel>
+        <Panel
+          title="Workspaces"
+          action={
+            <div className="flex flex-wrap gap-2">
+              <select className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold" value={workspaceStatusFilter} onChange={(event) => setWorkspaceStatusFilter(event.target.value)}>
+                {['all', 'active', 'trial', 'expired', 'blocked'].map((status) => <option key={status} value={status}>{status}</option>)}
+              </select>
+              <select className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold" value={workspacePlanFilter} onChange={(event) => setWorkspacePlanFilter(event.target.value)}>
+                {['all', ...platformPlans.map((plan) => plan.name)].map((plan) => <option key={plan} value={plan}>{plan}</option>)}
+              </select>
+            </div>
+          }
+        >
+          <AdminTable rows={workspaceRows} columns={workspaceColumns} emptyTitle="No client workspaces found" />
+        </Panel>
+      </div>
+    )
+  }
+
+  function Users() {
+    const userStats = {
+      total: liveUsers.length,
+      verified: liveUsers.filter((row) => row.emailVerified === true).length,
+      unverified: liveUsers.filter((row) => row.emailVerified !== true).length,
+      online: liveUsers.filter(isOnline).length,
+      blocked: liveUsers.filter((row) => statusValue(row.status) === 'blocked').length,
+    }
+    return (
+      <div className="space-y-4">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+          <KpiCard label="Total Users" value={userStats.total} helper="Firestore users" icon={HiOutlineUsers} />
+          <KpiCard label="Verified Users" value={userStats.verified} helper="Email verified" icon={HiOutlineCheckBadge} tone="emerald" />
+          <KpiCard label="Unverified Users" value={userStats.unverified} helper="Pending verification" icon={HiOutlineEnvelope} tone="amber" />
+          <KpiCard label="Online Now" value={userStats.online} helper="Last 5 minutes" icon={HiOutlineChartBarSquare} tone="sky" />
+          <KpiCard label="Blocked Users" value={userStats.blocked} helper="Disabled access" icon={HiOutlineShieldCheck} tone="rose" />
+        </div>
+        <Panel
+          title="Authentication / Users"
+          action={
+            <select className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold" value={userFilter} onChange={(event) => setUserFilter(event.target.value)}>
+              {['all', 'verified', 'unverified', 'online', 'blocked'].map((filter) => <option key={filter} value={filter}>{filter}</option>)}
+            </select>
+          }
+        >
+          <AdminTable rows={userRows} columns={userColumns} emptyTitle="No users found" />
+        </Panel>
+      </div>
     )
   }
 
   function Plans() {
-    const planRows = plans.map((plan, index) => data.plans.find((row) => row.id === plan.toLowerCase()) || { id: plan.toLowerCase(), name: plan, price: [29, 79, 149, 299][index], features: ['CRM engine', 'Invoices & payments', 'Team permissions'] })
     return (
-      <Panel title="Plans & Pricing" action={<ShellButton>Firestore: plans</ShellButton>}>
+      <Panel title="Plans & Pricing Management" action={<ShellButton>Firestore: {PLATFORM_PLAN_COLLECTION}</ShellButton>}>
         <div className="grid gap-4 lg:grid-cols-4">
-          {planRows.map((plan) => (
+          {platformPlans.map((plan) => (
             <Card key={plan.id} className="p-4">
-              <p className="text-sm font-black text-slate-950">{plan.name || plan.id}</p>
-              <input id={`price-${plan.id}`} className="mt-4 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-black" defaultValue={plan.price || 0} />
-              <div className="mt-4 space-y-2 text-xs text-slate-600">
-                {['CRM engine', 'Invoices & payments', 'Team permissions', plan.name === 'Premium' || plan.name === 'Enterprise' ? 'All modules' : 'Selected module'].map((feature) => (
-                  <label key={feature} className="flex items-center gap-2">
-                    <input type="checkbox" defaultChecked={(plan.features || []).includes(feature) || true} />
-                    {feature}
-                  </label>
-                ))}
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-black text-slate-950">{plan.name}</p>
+                  <p className="mt-1 text-xs font-bold text-violet-700">{planPriceLabel(plan)} / {plan.billingCycle}</p>
+                </div>
+                <Status value={plan.enabled === false ? 'disabled' : 'active'} />
               </div>
-              <ShellButton
-                className="mt-4 w-full"
-                onClick={() => {
-                  const price = Number(document.getElementById(`price-${plan.id}`)?.value || 0)
-                  runAction(`plan-save-${plan.id}`, () => setDoc(doc(db, 'plans', plan.id), { name: plan.name || plan.id, price, currency: 'USD', features: plan.features || [], updatedAt: serverTimestamp(), updatedBy: user?.uid || '' }, { merge: true }))
-                }}
-              >
-                Save Plan
-              </ShellButton>
+              <div className="mt-4 flex items-center gap-2">
+                <ShellButton onClick={() => {
+                  const input = document.getElementById(`price-${plan.id}`)
+                  if (!input || input.value === 'custom') return
+                  input.value = Math.max(0, Number(input.value || 0) - 500)
+                }}>−</ShellButton>
+                <input id={`price-${plan.id}`} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-black" defaultValue={plan.price} />
+                <ShellButton onClick={() => {
+                  const input = document.getElementById(`price-${plan.id}`)
+                  if (!input || input.value === 'custom') return
+                  input.value = Number(input.value || 0) + 500
+                }}>+</ShellButton>
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <select id={`currency-${plan.id}`} className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold" defaultValue={plan.currency || DEFAULT_SAAS_CURRENCY}>
+                  {['PKR', 'USD', 'AED', 'SAR'].map((currency) => <option key={currency}>{currency}</option>)}
+                </select>
+                <select id={`cycle-${plan.id}`} className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold" defaultValue={plan.billingCycle || 'monthly'}>
+                  {['monthly', 'yearly', 'custom'].map((cycle) => <option key={cycle}>{cycle}</option>)}
+                </select>
+              </div>
+              <label className="mt-3 flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2 text-xs font-bold text-slate-700">
+                Enabled
+                <input id={`enabled-${plan.id}`} type="checkbox" defaultChecked={plan.enabled !== false} />
+              </label>
+              <textarea
+                id={`features-${plan.id}`}
+                className="mt-3 h-32 w-full rounded-xl border border-slate-200 px-3 py-2 text-xs"
+                defaultValue={(plan.features || []).join('\n')}
+              />
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <ShellButton onClick={() => {
+                  const input = document.getElementById(`features-${plan.id}`)
+                  if (input) input.value = `${input.value.trim()}\nNew Feature`.trim()
+                }}>Add Feature</ShellButton>
+                <ShellButton onClick={() => {
+                  const input = document.getElementById(`features-${plan.id}`)
+                  if (input) input.value = input.value.split('\n').slice(0, -1).join('\n')
+                }}>Remove Last</ShellButton>
+              </div>
+              <ShellButton className="mt-4 w-full" onClick={() => {
+                const rawPrice = document.getElementById(`price-${plan.id}`)?.value || plan.price
+                const price = String(rawPrice).toLowerCase() === 'custom' ? 'custom' : Number(rawPrice || 0)
+                const currency = document.getElementById(`currency-${plan.id}`)?.value || DEFAULT_SAAS_CURRENCY
+                const billingCycle = document.getElementById(`cycle-${plan.id}`)?.value || 'monthly'
+                const enabled = document.getElementById(`enabled-${plan.id}`)?.checked !== false
+                const features = String(document.getElementById(`features-${plan.id}`)?.value || '')
+                  .split('\n')
+                  .map((feature) => feature.trim())
+                  .filter(Boolean)
+                runAction(
+                  `plan-save-${plan.id}`,
+                  async () => {
+                    await setDoc(doc(db, PLATFORM_PLAN_COLLECTION, plan.id), { ...plan, price, currency, billingCycle, enabled, features, updatedAt: serverTimestamp(), updatedBy: user?.uid || '' }, { merge: true })
+                    await logActivity('plan_saved', { planId: plan.id, price, currency, enabled })
+                  },
+                  'Plan saved.',
+                )
+              }}>Save Plan</ShellButton>
             </Card>
           ))}
         </div>
+      </Panel>
+    )
+  }
+
+  function Transactions() {
+    const statuses = ['all', 'pending', 'approved', 'paid', 'rejected', 'failed']
+    const planFilters = ['all', ...platformPlans.map((plan) => plan.name)]
+    const methodFilters = ['all', ...Array.from(new Set(payments.map((row) => row.paymentMethod || row.method).filter(Boolean)))]
+    const transactionStats = {
+      totalRevenue: payments.filter(isPaid).reduce((sum, row) => sum + amountValue(row), 0),
+      pending: payments.filter((row) => ['pending', 'pending_approval'].includes(statusValue(row.paymentStatus || row.status))).length,
+      approved: payments.filter((row) => ['approved', 'paid'].includes(statusValue(row.paymentStatus || row.status))).length,
+      rejected: payments.filter((row) => statusValue(row.paymentStatus || row.status) === 'rejected').length,
+      monthRevenue: payments.filter((row) => {
+        const date = toDate(row.paymentDate || row.paidAt || row.createdAt)
+        const now = new Date()
+        return isPaid(row) && date && date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear()
+      }).reduce((sum, row) => sum + amountValue(row), 0),
+    }
+    return (
+      <Panel
+        title="Transactions / SaaS Subscription Payments"
+        action={
+          <div className="flex flex-wrap gap-2">
+            <select className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold" value={transactionStatusFilter} onChange={(event) => setTransactionStatusFilter(event.target.value)}>
+              {statuses.map((status) => <option key={status} value={status}>{status}</option>)}
+            </select>
+            <select className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold" value={transactionPlanFilter} onChange={(event) => setTransactionPlanFilter(event.target.value)}>
+              {planFilters.map((plan) => <option key={plan} value={plan}>{plan}</option>)}
+            </select>
+            <select className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold" value={transactionMethodFilter} onChange={(event) => setTransactionMethodFilter(event.target.value)}>
+              {methodFilters.map((method) => <option key={method} value={method}>{method}</option>)}
+            </select>
+            <input type="date" className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold" value={transactionDateFrom} onChange={(event) => setTransactionDateFrom(event.target.value)} />
+            <input type="date" className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold" value={transactionDateTo} onChange={(event) => setTransactionDateTo(event.target.value)} />
+            <ShellButton onClick={() => {
+              const header = ['Transaction ID', 'Client Email', 'Workspace', 'Plan', 'Amount', 'Currency', 'Method', 'Status']
+              const rows = paymentRows.map((row) => [row.transactionId || row.id, row.clientEmail || row.email || '', row.workspaceName || row.workspaceId || '', row.plan || '', amountValue(row), rowCurrency(row), row.paymentMethod || row.method || '', row.paymentStatus || row.status || ''])
+              const csv = [header, ...rows].map((line) => line.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(',')).join('\n')
+              navigator.clipboard?.writeText(csv)
+              setToast('CSV copied to clipboard.')
+            }}>Export CSV</ShellButton>
+          </div>
+        }
+      >
+        <div className="mb-4 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+          <KpiCard label="Total Revenue" value={money(transactionStats.totalRevenue)} helper="Approved SaaS payments" icon={HiOutlineCurrencyDollar} />
+          <KpiCard label="Pending Payments" value={transactionStats.pending} helper="Needs review" icon={HiOutlineBell} tone="amber" />
+          <KpiCard label="Approved Payments" value={transactionStats.approved} helper="Approved or paid" icon={HiOutlineCheckBadge} tone="emerald" />
+          <KpiCard label="Rejected Payments" value={transactionStats.rejected} helper="Rejected records" icon={HiOutlineShieldCheck} tone="rose" />
+          <KpiCard label="This Month Revenue" value={money(transactionStats.monthRevenue)} helper="Current month" icon={HiOutlineChartBarSquare} tone="sky" />
+        </div>
+        <AdminTable rows={paymentRows} columns={paymentColumns} emptyTitle="No SaaS payment records found" />
+      </Panel>
+    )
+  }
+
+  function Announcements() {
+    const workspaceOptions = data.workspaces.slice(0, 100)
+    return (
+      <Panel title="Advanced Announcements" action={<ShellButton>Firestore: announcements</ShellButton>}>
+        <div className="mb-4 grid gap-3 lg:grid-cols-4">
+          <input className="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Title" value={announcementDraft.title} onChange={(event) => setAnnouncementDraft((current) => ({ ...current, title: event.target.value }))} />
+          <select className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold" value={announcementDraft.type} onChange={(event) => setAnnouncementDraft((current) => ({ ...current, type: event.target.value }))}>
+            {['info', 'warning', 'maintenance', 'promotion', 'urgent'].map((type) => <option key={type}>{type}</option>)}
+          </select>
+          <select className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold" value={announcementDraft.audience} onChange={(event) => setAnnouncementDraft((current) => ({ ...current, audience: event.target.value }))}>
+            <option value="all">all clients</option>
+            <option value="trial">trial clients</option>
+            <option value="paid">paid clients</option>
+            <option value="expired">expired clients</option>
+            <option value="workspace">selected workspace</option>
+            <option value="businessType">selected businessType</option>
+          </select>
+          <select className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold" value={announcementDraft.priority} onChange={(event) => setAnnouncementDraft((current) => ({ ...current, priority: event.target.value }))}>
+            {['low', 'medium', 'high'].map((priority) => <option key={priority}>{priority}</option>)}
+          </select>
+          <textarea className="min-h-24 rounded-xl border border-slate-200 px-3 py-2 text-sm lg:col-span-2" placeholder="Message" value={announcementDraft.message} onChange={(event) => setAnnouncementDraft((current) => ({ ...current, message: event.target.value }))} />
+          <select className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold" value={announcementDraft.workspaceId} onChange={(event) => setAnnouncementDraft((current) => ({ ...current, workspaceId: event.target.value }))}>
+            <option value="">Select workspace</option>
+            {workspaceOptions.map((workspace) => <option key={workspace.id} value={workspace.workspaceId || workspace.id}>{workspaceName(workspace)}</option>)}
+          </select>
+          <select className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold" value={announcementDraft.businessType} onChange={(event) => setAnnouncementDraft((current) => ({ ...current, businessType: event.target.value }))}>
+            <option value="">Select businessType</option>
+            {modules.map((module) => <option key={module}>{module}</option>)}
+          </select>
+          <label className="text-xs font-bold text-slate-600">
+            Schedule
+            <input type="datetime-local" className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" value={announcementDraft.scheduledAt} onChange={(event) => setAnnouncementDraft((current) => ({ ...current, scheduledAt: event.target.value }))} />
+          </label>
+          <label className="text-xs font-bold text-slate-600">
+            Expiry
+            <input type="datetime-local" className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" value={announcementDraft.expiresAt} onChange={(event) => setAnnouncementDraft((current) => ({ ...current, expiresAt: event.target.value }))} />
+          </label>
+          <select className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold" value={announcementDraft.status} onChange={(event) => setAnnouncementDraft((current) => ({ ...current, status: event.target.value }))}>
+            {['draft', 'published', 'scheduled', 'expired'].map((status) => <option key={status}>{status}</option>)}
+          </select>
+          <label className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2 text-xs font-bold text-slate-700">
+            Pin announcement
+            <input type="checkbox" checked={announcementDraft.pinned} onChange={(event) => setAnnouncementDraft((current) => ({ ...current, pinned: event.target.checked }))} />
+          </label>
+          <ShellButton onClick={() => {
+            const id = `${Date.now()}`
+            runAction(`announcement-${id}`, async () => {
+              await setDoc(doc(db, 'announcements', id), {
+                ...announcementDraft,
+                createdAt: serverTimestamp(),
+                createdBy: user?.uid || '',
+                createdByEmail: user?.email || '',
+              })
+              await logActivity('announcement_sent', announcementDraft)
+              setAnnouncementDraft({ title: '', message: '', type: 'info', audience: 'all', workspaceId: '', businessType: '', priority: 'medium', scheduledAt: '', expiresAt: '', pinned: false, status: 'draft' })
+            }, 'Announcement saved.')
+          }}>Save</ShellButton>
+          <Card className="p-4 lg:col-span-4">
+            <p className="text-xs font-black uppercase tracking-wide text-slate-500">Preview</p>
+            <div className="mt-3 rounded-2xl border border-violet-100 bg-violet-50 p-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <Status value={announcementDraft.type} />
+                <Status value={announcementDraft.priority} />
+                {announcementDraft.pinned ? <Status value="pinned" /> : null}
+              </div>
+              <p className="mt-3 text-sm font-black text-slate-950">{announcementDraft.title || 'Announcement title'}</p>
+              <p className="mt-1 text-sm text-slate-600">{announcementDraft.message || 'Announcement message preview appears here.'}</p>
+            </div>
+          </Card>
+        </div>
+        <AdminTable rows={data.announcements} emptyTitle="No announcements found" columns={[
+          { key: 'title', label: 'Title' },
+          { key: 'type', label: 'Type', render: (row) => <Status value={row.type || 'info'} /> },
+          { key: 'audience', label: 'Audience', render: (row) => row.audience || row.target || 'all' },
+          { key: 'priority', label: 'Priority', render: (row) => <Status value={row.priority || 'medium'} /> },
+          { key: 'status', label: 'Status', render: (row) => <Status value={row.status || 'draft'} /> },
+          { key: 'pinned', label: 'Pinned', render: (row) => row.pinned ? 'Yes' : 'No' },
+          { key: 'createdAt', label: 'Created', render: (row) => dateTimeLabel(row.createdAt) },
+          {
+            key: 'actions',
+            label: 'Actions',
+            render: (row) => (
+              <div className="flex flex-wrap gap-2">
+                <ShellButton onClick={() => runAction(`announcement-publish-${row.id}`, () => updateDoc(row.ref || doc(db, 'announcements', row.id), { status: 'published', publishedAt: serverTimestamp(), updatedAt: serverTimestamp() }), 'Announcement published.')}>Publish</ShellButton>
+                <ShellButton onClick={() => runAction(`announcement-draft-${row.id}`, () => updateDoc(row.ref || doc(db, 'announcements', row.id), { status: 'draft', updatedAt: serverTimestamp() }), 'Announcement moved to draft.')}>Draft</ShellButton>
+                <ShellButton onClick={() => runAction(`announcement-expire-${row.id}`, () => updateDoc(row.ref || doc(db, 'announcements', row.id), { status: 'expired', expiredAt: serverTimestamp(), updatedAt: serverTimestamp() }), 'Announcement expired.')}>Expire</ShellButton>
+              </div>
+            ),
+          },
+        ]} />
+      </Panel>
+    )
+  }
+
+  function SupportTickets() {
+    const ticketRows = useSearch(data.supportTickets, search, ['title', 'subject', 'clientEmail', 'email', 'workspaceName', 'category', 'status', 'priority'])
+    return (
+      <Panel title="Futuristic Support Ticket Centre" action={<ShellButton>Firestore: supportTickets</ShellButton>}>
+        <div className="mb-4 grid gap-3 lg:grid-cols-[1fr_1fr_14rem_12rem_auto]">
+          <input className="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Ticket title" value={ticketDraft.title} onChange={(event) => setTicketDraft((current) => ({ ...current, title: event.target.value }))} />
+          <input className="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Client email" value={ticketDraft.clientEmail} onChange={(event) => setTicketDraft((current) => ({ ...current, clientEmail: event.target.value }))} />
+          <select className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold" value={ticketDraft.category} onChange={(event) => setTicketDraft((current) => ({ ...current, category: event.target.value }))}>
+            {['Billing', 'Login', 'Workspace', 'CRM Bug', 'Feature Request', 'Technical Support'].map((category) => <option key={category}>{category}</option>)}
+          </select>
+          <select className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold" value={ticketDraft.priority} onChange={(event) => setTicketDraft((current) => ({ ...current, priority: event.target.value }))}>
+            {['low', 'medium', 'high', 'urgent'].map((priority) => <option key={priority}>{priority}</option>)}
+          </select>
+          <ShellButton onClick={() => {
+            const id = `${Date.now()}`
+            runAction(`ticket-create-${id}`, async () => {
+              await setDoc(doc(db, 'supportTickets', id), { ...ticketDraft, status: 'open', conversation: [], internalNotes: '', createdAt: serverTimestamp(), createdBy: user?.uid || '', createdByEmail: user?.email || '' })
+              await logActivity('support_ticket_created', ticketDraft)
+              setTicketDraft({ title: '', clientEmail: '', category: 'Technical Support', priority: 'medium' })
+            }, 'Support ticket created.')
+          }}>Create</ShellButton>
+        </div>
+        <AdminTable rows={ticketRows} emptyTitle="No support tickets found" columns={[
+          { key: 'ticket', label: 'Ticket', render: (row) => <div><p className="font-black text-slate-900">{row.title || row.subject || row.id}</p><p className="text-xs text-slate-500">{row.category || 'Technical Support'} · SLA {statusValue(row.priority) === 'urgent' ? '2h' : statusValue(row.priority) === 'high' ? '8h' : '24h'}</p></div> },
+          { key: 'client', label: 'Client', render: (row) => <div><p>{row.clientEmail || row.email || '-'}</p><p className="text-xs text-slate-500">{row.workspaceName || row.workspaceId || '-'}</p></div> },
+          { key: 'priority', label: 'Priority', render: (row) => <Status value={row.priority || 'medium'} /> },
+          { key: 'status', label: 'Status', render: (row) => <Status value={row.status || 'open'} /> },
+          { key: 'assigned', label: 'Assigned Staff', render: (row) => row.assignedStaff || row.assignedTo || 'Unassigned' },
+          { key: 'lastReply', label: 'Last Reply', render: (row) => dateTimeLabel(row.lastReplyAt || row.updatedAt || row.createdAt) },
+          { key: 'notes', label: 'Internal Notes', render: (row) => row.internalNotes || '-' },
+          {
+            key: 'conversation',
+            label: 'Timeline / Reply',
+            render: (row) => (
+              <div className="min-w-[22rem] space-y-2">
+                <div className="max-h-24 overflow-auto rounded-xl bg-slate-50 p-2 text-xs">
+                  {(row.conversation || []).slice(-3).map((item, index) => <p key={`${row.id}-${index}`}>{item.author || 'Support'}: {item.message}</p>)}
+                  {!(row.conversation || []).length ? <p>No conversation yet.</p> : null}
+                </div>
+                <div className="flex gap-2">
+                  <input id={`reply-${row.id}`} className="w-44 rounded-xl border border-slate-200 px-3 py-2 text-xs" placeholder="Reply..." />
+                  <ShellButton onClick={() => {
+                    const input = document.getElementById(`reply-${row.id}`)
+                    const message = input?.value?.trim()
+                    if (!message) return
+                    const conversation = [...(row.conversation || []), { author: user?.email || 'Admin', message, createdAt: new Date().toISOString() }]
+                    runAction(`ticket-reply-${row.id}`, () => updateDoc(row.ref || doc(db, 'supportTickets', row.id), { conversation, lastReplyAt: serverTimestamp(), updatedAt: serverTimestamp() }), 'Reply saved.')
+                    input.value = ''
+                  }}>Reply</ShellButton>
+                </div>
+                <p className="text-xs text-slate-400">Attachments placeholder ready</p>
+              </div>
+            ),
+          },
+          {
+            key: 'actions',
+            label: 'Actions',
+            render: (row) => (
+              <div className="flex flex-wrap gap-2">
+                <ShellButton onClick={() => runAction(`ticket-resolve-${row.id}`, () => updateDoc(row.ref || doc(db, 'supportTickets', row.id), { status: 'resolved', resolvedAt: serverTimestamp(), updatedAt: serverTimestamp() }), 'Ticket resolved.')}>Resolve</ShellButton>
+                <ShellButton onClick={() => runAction(`ticket-reopen-${row.id}`, () => updateDoc(row.ref || doc(db, 'supportTickets', row.id), { status: 'open', reopenedAt: serverTimestamp(), updatedAt: serverTimestamp() }), 'Ticket reopened.')}>Reopen</ShellButton>
+                <ShellButton onClick={() => runAction(`ticket-close-${row.id}`, () => updateDoc(row.ref || doc(db, 'supportTickets', row.id), { status: 'closed', closedAt: serverTimestamp(), updatedAt: serverTimestamp() }), 'Ticket closed.')}>Close</ShellButton>
+              </div>
+            ),
+          },
+        ]} />
+      </Panel>
+    )
+  }
+
+  function Settings() {
+    return (
+      <div className="space-y-4">
+        <Panel title="System Profile" action={<ShellButton>Firestore: platformSettings/main</ShellButton>}>
+          <div className="grid gap-4 lg:grid-cols-3">
+            <label className="text-xs font-bold text-slate-600">
+              System Name
+              <input className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" value={settingsDraft.systemName || ''} onChange={(event) => setSettingsDraft((current) => ({ ...current, systemName: event.target.value }))} />
+            </label>
+            <label className="text-xs font-bold text-slate-600">
+              Default Currency
+              <select className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" value={settingsDraft.defaultCurrency || DEFAULT_SAAS_CURRENCY} onChange={(event) => setSettingsDraft((current) => ({ ...current, defaultCurrency: event.target.value }))}>
+                {['PKR', 'USD', 'AED', 'SAR'].map((currency) => <option key={currency}>{currency}</option>)}
+              </select>
+            </label>
+            <label className="text-xs font-bold text-slate-600">
+              Trial Days
+              <input type="number" className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" value={settingsDraft.trialDays || 7} onChange={(event) => setSettingsDraft((current) => ({ ...current, trialDays: event.target.value }))} />
+            </label>
+            <label className="text-xs font-bold text-slate-600">
+              Support Email
+              <input className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" value={settingsDraft.supportEmail || ''} onChange={(event) => setSettingsDraft((current) => ({ ...current, supportEmail: event.target.value }))} />
+            </label>
+            <label className="text-xs font-bold text-slate-600">
+              Email Sender Name
+              <input className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" value={settingsDraft.emailSenderName || ''} onChange={(event) => setSettingsDraft((current) => ({ ...current, emailSenderName: event.target.value }))} />
+            </label>
+            <label className="text-xs font-bold text-slate-600">
+              Email Reply-To
+              <input className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" value={settingsDraft.emailReplyTo || ''} onChange={(event) => setSettingsDraft((current) => ({ ...current, emailReplyTo: event.target.value }))} />
+            </label>
+          </div>
+        </Panel>
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Panel title="Maintenance Mode">
+            <label className="flex items-center justify-between rounded-2xl bg-slate-50 p-4 text-sm font-bold text-slate-700">
+              Enable maintenance mode UI
+              <input type="checkbox" checked={Boolean(settingsDraft.maintenanceMode)} onChange={(event) => setSettingsDraft((current) => ({ ...current, maintenanceMode: event.target.checked }))} />
+            </label>
+          </Panel>
+          <Panel title="Feature Flags">
+            <div className="space-y-3">
+              {Object.entries(settingsDraft.featureFlags || defaultPlatformSettings.featureFlags).map(([key, value]) => (
+                <label key={key} className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2 text-xs font-bold text-slate-700">
+                  {key}
+                  <input
+                    type="checkbox"
+                    checked={Boolean(value)}
+                    onChange={(event) => setSettingsDraft((current) => ({
+                      ...current,
+                      featureFlags: { ...(current.featureFlags || {}), [key]: event.target.checked },
+                    }))}
+                  />
+                </label>
+              ))}
+            </div>
+          </Panel>
+        </div>
+        <Panel title="Email Template Settings">
+          <div className="grid gap-3 lg:grid-cols-3">
+            {['welcomeTemplate', 'upgradeApprovedTemplate', 'paymentRejectedTemplate'].map((key) => (
+              <textarea
+                key={key}
+                className="h-28 rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                placeholder={key}
+                value={settingsDraft[key] || ''}
+                onChange={(event) => setSettingsDraft((current) => ({ ...current, [key]: event.target.value }))}
+              />
+            ))}
+          </div>
+          <ShellButton className="mt-4" onClick={() => runAction('settings-save', saveSettings, 'Settings saved.')}>Save Settings</ShellButton>
+        </Panel>
+      </div>
+    )
+  }
+
+  function StaffManagement() {
+    return (
+      <Panel title="Staff Management" action={<ShellButton>Firestore: backendStaff</ShellButton>}>
+        <div className="mb-4 grid gap-3 lg:grid-cols-[1fr_1fr_14rem_auto]">
+          <input className="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Staff name" value={staffDraft.name} onChange={(event) => setStaffDraft((current) => ({ ...current, name: event.target.value }))} />
+          <input className="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Email" value={staffDraft.email} onChange={(event) => setStaffDraft((current) => ({ ...current, email: event.target.value }))} />
+          <select className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold" value={staffDraft.role} onChange={(event) => setStaffDraft((current) => ({ ...current, role: event.target.value }))}>
+            {adminRoles.map((role) => <option key={role}>{role}</option>)}
+          </select>
+          <ShellButton onClick={() => {
+            const id = staffDraft.email.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-') || `staff-${Date.now()}`
+            runAction(`staff-add-${id}`, async () => {
+              await setDoc(doc(db, 'backendStaff', id), { ...staffDraft, status: 'active', createdAt: serverTimestamp(), updatedAt: serverTimestamp(), createdBy: user?.uid || '' }, { merge: true })
+              await logActivity('backend_staff_saved', { email: staffDraft.email, role: staffDraft.role })
+              setStaffDraft({ name: '', email: '', role: 'Support' })
+            }, 'Backend staff saved.')
+          }}>Add Staff</ShellButton>
+        </div>
+        <AdminTable rows={data.backendStaff} emptyTitle="No backend staff found" columns={[
+          { key: 'name', label: 'Staff', render: (row) => <div><p className="font-black text-slate-900">{row.name || row.email || row.id}</p><p className="text-xs text-slate-500">{row.email || row.id}</p></div> },
+          { key: 'role', label: 'Role', render: (row) => row.role || 'Support' },
+          { key: 'status', label: 'Status', render: (row) => <Status value={row.status || 'active'} /> },
+          { key: 'actions', label: 'Actions', render: (row) => <div className="flex flex-wrap gap-2"><ShellButton onClick={() => runAction(`staff-enable-${row.id}`, () => updateDoc(row.ref || doc(db, 'backendStaff', row.id), { status: 'active', updatedAt: serverTimestamp() }))}>Enable</ShellButton><ShellButton onClick={() => runAction(`staff-disable-${row.id}`, () => updateDoc(row.ref || doc(db, 'backendStaff', row.id), { status: 'disabled', updatedAt: serverTimestamp() }))}>Disable</ShellButton></div> },
+        ]} />
       </Panel>
     )
   }
@@ -821,14 +1479,14 @@ export default function ControlCentre() {
     return (
       <Panel title="Roles & Permissions">
         <div className="grid gap-4 lg:grid-cols-5">
-          {roles.map((role) => (
+          {adminRoles.map((role) => (
             <Card key={role} className="p-4">
               <p className="font-black text-slate-950">{role}</p>
               <div className="mt-4 space-y-2 text-xs font-semibold text-slate-600">
-                {['Dashboard', 'Billing', 'Users', 'Modules', 'System'].map((permission) => (
+                {['Dashboard', 'Clients', 'Subscriptions', 'Users', 'System Logs'].map((permission) => (
                   <label key={permission} className="flex items-center justify-between gap-3">
                     <span>{permission}</span>
-                    <input type="checkbox" defaultChecked={['Super Admin', 'Admin'].includes(role)} disabled={role === 'Read Only'} />
+                    <input type="checkbox" defaultChecked={['Super Admin', 'Admin'].includes(role)} disabled />
                   </label>
                 ))}
               </div>
@@ -839,78 +1497,20 @@ export default function ControlCentre() {
     )
   }
 
-  function Placeholder({ title, detail }) {
-    return (
-      <Panel title={title}>
-        <EmptyState title={title} detail={detail || 'No records exist yet. This control centre will show live Firestore data when available.'} />
-      </Panel>
-    )
-  }
-
-  function StaffManagement() {
-    const staffRows = data.backendStaff.length ? data.backendStaff : data.users.filter((row) => ['platform_admin', 'super_admin', 'support', 'billing_manager', 'read_only'].includes(statusValue(row.role)))
-    return (
-      <Panel title="Staff Management" action={<ShellButton>Firestore: backendStaff</ShellButton>}>
-        <div className="mb-4 grid gap-3 lg:grid-cols-[1fr_1fr_14rem_auto]">
-          <input className="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Staff name" value={staffDraft.name} onChange={(event) => setStaffDraft((current) => ({ ...current, name: event.target.value }))} />
-          <input className="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Email" value={staffDraft.email} onChange={(event) => setStaffDraft((current) => ({ ...current, email: event.target.value }))} />
-          <select className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold" value={staffDraft.role} onChange={(event) => setStaffDraft((current) => ({ ...current, role: event.target.value }))}>
-            {roles.map((role) => <option key={role}>{role}</option>)}
-          </select>
-          <ShellButton
-            onClick={() => {
-              const id = staffDraft.email.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-') || `staff-${Date.now()}`
-              runAction(`staff-add-${id}`, async () => {
-                await setDoc(doc(db, 'backendStaff', id), { ...staffDraft, status: 'active', createdAt: serverTimestamp(), updatedAt: serverTimestamp(), createdBy: user?.uid || '' }, { merge: true })
-                setStaffDraft({ name: '', email: '', role: 'Support' })
-              })
-            }}
-          >
-            Add Staff
-          </ShellButton>
-        </div>
-        <AdminTable
-          rows={staffRows}
-          emptyTitle="No backend staff found"
-          columns={[
-            { key: 'name', label: 'Staff', render: (row) => <div><p className="font-black text-slate-900">{row.name || row.fullName || row.email || row.id}</p><p className="text-xs text-slate-500">{row.email || row.id}</p></div> },
-            { key: 'role', label: 'Role', render: (row) => row.role || 'Support' },
-            { key: 'status', label: 'Status', render: (row) => <Status value={row.status || 'active'} /> },
-            {
-              key: 'actions',
-              label: 'Actions',
-              render: (row) => (
-                <div className="flex flex-wrap gap-2">
-                  <ShellButton onClick={() => runAction(`staff-active-${row.id}`, () => updateDoc(row.ref || doc(db, 'backendStaff', row.id), { status: 'active', updatedAt: serverTimestamp() }))}>Enable</ShellButton>
-                  <ShellButton onClick={() => runAction(`staff-disable-${row.id}`, () => updateDoc(row.ref || doc(db, 'backendStaff', row.id), { status: 'disabled', updatedAt: serverTimestamp() }))}>Disable</ShellButton>
-                </div>
-              ),
-            },
-          ]}
-        />
-      </Panel>
-    )
-  }
-
   const content = {
     dashboard: <Dashboard />,
-    workspaces: <Workspaces />,
-    subscriptions: <Subscriptions />,
-    modules: <Modules />,
+    activity: <Panel title="Live Client Activity" action={<ShellButton>Online = last 5 minutes</ShellButton>}><AdminTable rows={useSearch(liveUsers, search, ['email', 'uid', 'workspaceName', 'currentBusinessType'])} columns={liveColumns} emptyTitle="No client activity found" /></Panel>,
+    clients: <Workspaces />,
+    users: <Users />,
+    upgrades: <Panel title="Upgrade Requests" action={<ShellButton>Firestore: upgradeRequests</ShellButton>}><AdminTable rows={upgradeRows} columns={upgradeColumns} emptyTitle="No upgrade requests found" /></Panel>,
+    transactions: <Transactions />,
     plans: <Plans />,
-    transactions: <Panel title="Transactions" action={<ShellButton>Payment records</ShellButton>}><AdminTable rows={paymentRows} columns={paymentColumns} emptyTitle="No payment records found" /></Panel>,
-    invoices: <Panel title="Platform & Client Invoices" action={<ShellButton>Print-ready records</ShellButton>}><AdminTable rows={invoiceRows} columns={invoiceColumns} emptyTitle="No invoices found" /></Panel>,
-    payouts: <Placeholder title="Payouts" detail="Payout data is not available yet. This module is ready for future payout records." />,
-    users: <Panel title="Users" action={<ShellButton>Firestore: users</ShellButton>}><AdminTable rows={userRows} columns={userColumns} emptyTitle="No users found" /></Panel>,
+    announcements: <Announcements />,
+    support: <SupportTickets />,
+    settings: <Settings />,
+    logs: <Panel title="System Logs" action={<ShellButton>Firestore: backendActivityLogs</ShellButton>}><AdminTable rows={data.backendActivityLogs} emptyTitle="No backend activity logs found" columns={[{ key: 'admin', label: 'Admin', render: (row) => row.adminEmail || row.adminUid || '-' }, { key: 'action', label: 'Action' }, { key: 'details', label: 'Details', render: (row) => JSON.stringify(row.details || {}).slice(0, 120) }, { key: 'date', label: 'Date', render: (row) => dateTimeLabel(row.createdAt) }]} /></Panel>,
     roles: <Roles />,
     staff: <StaffManagement />,
-    system: <Placeholder title="System Settings" />,
-    logs: <Panel title="System & Activity Logs"><AdminTable rows={data.activityLogs} emptyTitle="No logs found" columns={[{ key: 'user', label: 'User', render: (row) => row.userEmail || row.email || row.userId || '—' }, { key: 'action', label: 'Action' }, { key: 'module', label: 'Module' }, { key: 'workspaceId', label: 'Workspace' }, { key: 'date', label: 'Date', render: (row) => dateLabel(row.createdAt || row.updatedAt) }]} /></Panel>,
-    email: <Placeholder title="Email Templates" detail="Email templates are currently code-based. Firestore template records will appear here when added." />,
-    announcements: <Placeholder title="Announcements" />,
-    flags: <Placeholder title="Feature Flags" />,
-    support: <Panel title="Support Tickets"><AdminTable rows={data.supportTickets} emptyTitle="No support tickets found" columns={[{ key: 'title', label: 'Ticket', render: (row) => row.title || row.subject || row.id }, { key: 'workspaceId', label: 'Workspace' }, { key: 'status', label: 'Status', render: (row) => <Status value={row.status || 'open'} /> }, { key: 'date', label: 'Date', render: (row) => dateLabel(row.createdAt) }]} /></Panel>,
-    reports: <Placeholder title="Reports" detail="Use the dashboard KPI, revenue, module, subscription, transaction, and approval panels for live reports." />,
   }
 
   return (
@@ -920,7 +1520,7 @@ export default function ControlCentre() {
           <div className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-sky-400 to-violet-600 font-black">N</div>
           <div>
             <p className="text-2xl font-black tracking-wide">NEXORA</p>
-            <p className="text-xs text-slate-300">Backend Control Centre</p>
+            <p className="text-xs text-slate-300">SaaS Owner Admin Panel</p>
           </div>
         </div>
         <nav className="mt-7 space-y-6">
@@ -929,15 +1529,9 @@ export default function ControlCentre() {
               <p className="px-2 text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">{group.label}</p>
               <div className="mt-2 space-y-1">
                 {group.items.map(([key, label, Icon]) => (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => setActiveTab(key)}
-                    className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold transition ${activeTab === key ? 'bg-gradient-to-r from-blue-600 to-violet-600 text-white shadow-lg shadow-violet-950/30' : 'text-slate-200 hover:bg-white/10'}`}
-                  >
+                  <button key={key} type="button" onClick={() => setActiveTab(key)} className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold transition ${activeTab === key ? 'bg-gradient-to-r from-blue-600 to-violet-600 text-white shadow-lg shadow-violet-950/30' : 'text-slate-200 hover:bg-white/10'}`}>
                     <Icon className="h-5 w-5" />
                     <span className="truncate">{label}</span>
-                    {label === 'Announcements' ? <span className="ml-auto rounded-full bg-amber-400/20 px-2 py-0.5 text-[10px] text-amber-200">New</span> : null}
                   </button>
                 ))}
               </div>
@@ -948,7 +1542,6 @@ export default function ControlCentre() {
           View Nexora Site
           <span>↗</span>
         </a>
-        <p className="mt-5 text-xs leading-5 text-slate-400">© 2026 Nexora<br />All rights reserved.</p>
       </aside>
 
       <main className="min-w-0 lg:pl-72">
@@ -956,23 +1549,55 @@ export default function ControlCentre() {
           <div className="flex flex-col gap-3 px-4 py-4 sm:px-6 xl:flex-row xl:items-center xl:justify-between">
             <div>
               <p className="text-2xl font-black tracking-tight">{navGroups.flatMap((g) => g.items).find(([key]) => key === activeTab)?.[1] || 'Dashboard'}</p>
-              <p className="text-sm text-slate-500">Welcome to Nexora Backend Control Centre</p>
+              <p className="text-sm text-slate-500">Nexora SaaS business management. Client internal CRM records are not shown here.</p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <div className="relative">
-                <input
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Search anything..."
-                  className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 pr-20 text-sm outline-none focus:border-violet-300 sm:w-80"
-                />
+                <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search clients, users, payments..." className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 pr-20 text-sm outline-none focus:border-violet-300 sm:w-80" />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md bg-slate-100 px-2 py-1 text-[10px] font-black text-slate-500">Ctrl + K</span>
               </div>
-              <button className="relative grid h-10 w-10 place-items-center rounded-full text-slate-700 hover:bg-slate-100" type="button">
-                <HiOutlineBell className="h-5 w-5" />
-                <span className="absolute right-1 top-1 grid h-4 w-4 place-items-center rounded-full bg-rose-500 text-[9px] font-black text-white">{stats.pendingApprovals}</span>
-              </button>
+              <div className="relative">
+                <button className="relative grid h-10 w-10 place-items-center rounded-full text-slate-700 hover:bg-slate-100" type="button" onClick={() => setNotificationsOpen((open) => !open)}>
+                  <HiOutlineBell className="h-5 w-5" />
+                  {unreadNotifications.length ? <span className="absolute right-1 top-1 grid h-4 w-4 place-items-center rounded-full bg-rose-500 text-[9px] font-black text-white">{unreadNotifications.length}</span> : null}
+                </button>
+                {notificationsOpen ? (
+                  <div className="absolute right-0 top-12 z-40 w-96 max-w-[calc(100vw-2rem)] rounded-2xl border border-slate-200 bg-white p-3 shadow-2xl">
+                    <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-2">
+                      <p className="text-sm font-black text-slate-950">Backend Notifications</p>
+                      <div className="flex gap-2">
+                        <button type="button" className="text-xs font-bold text-violet-700" onClick={() => setReadNotifications(new Set(allNotifications.map((item) => item.id)))}>Mark all read</button>
+                        <button type="button" className="text-xs font-bold text-slate-500" onClick={() => setReadNotifications(new Set(allNotifications.map((item) => item.id)))}>Clear all</button>
+                      </div>
+                    </div>
+                    <div className="mt-2 max-h-96 overflow-auto">
+                      {allNotifications.map((item) => {
+                        const unread = !readNotifications.has(item.id)
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            className={`mb-2 w-full rounded-xl border p-3 text-left ${unread ? 'border-violet-100 bg-violet-50' : 'border-slate-100 bg-slate-50'}`}
+                            onClick={() => setReadNotifications((current) => new Set([...current, item.id]))}
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-black text-slate-900">{item.title}</p>
+                                <p className="mt-1 truncate text-xs text-slate-500">{item.detail}</p>
+                                <p className="mt-1 text-[11px] font-bold uppercase tracking-wide text-violet-600">{item.type}</p>
+                              </div>
+                              {unread ? <span className="mt-1 h-2 w-2 rounded-full bg-rose-500" /> : null}
+                            </div>
+                          </button>
+                        )
+                      })}
+                      {!allNotifications.length ? <EmptyState title="No notifications" detail="New signups, payments, upgrade requests, support tickets, and expired trials will appear here." /> : null}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
               <button className="grid h-10 w-10 place-items-center rounded-full text-slate-700 hover:bg-slate-100" type="button"><HiOutlineMoon className="h-5 w-5" /></button>
+              <ShellButton onClick={() => runAction('admin-logout', handleLogout, 'Signed out.')}>Logout</ShellButton>
               <div className="flex items-center gap-3 border-l border-slate-200 pl-3">
                 <div className="grid h-10 w-10 place-items-center rounded-full bg-slate-200 text-sm font-black">{String(user?.email || 'A').slice(0, 1).toUpperCase()}</div>
                 <div className="hidden sm:block">
@@ -987,7 +1612,12 @@ export default function ControlCentre() {
         <div className="px-4 py-4 sm:px-6">
           {toast ? <div className="mb-4 rounded-2xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm font-semibold text-violet-800">{toast}</div> : null}
           {data.error ? <div className="mb-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{data.error}</div> : null}
-          {data.loading ? <div className="mb-4 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600">Loading live Firestore data…</div> : null}
+          {Object.keys(data.sourceErrors || {}).length ? (
+            <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-semibold text-amber-800">
+              {Object.entries(data.sourceErrors).map(([key, message]) => <p key={key}>{key}: {message}</p>)}
+            </div>
+          ) : null}
+          {data.loading ? <div className="mb-4 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600">Loading SaaS admin data…</div> : null}
           {content[activeTab] || <Dashboard />}
         </div>
       </main>

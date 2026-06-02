@@ -1,4 +1,4 @@
-import { Link, NavLink, Outlet } from 'react-router-dom'
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 
 const adminNav = [
   { to: '/admin/control-centre', label: 'Control Centre' },
@@ -6,6 +6,9 @@ const adminNav = [
 ]
 
 export default function AdminLayout() {
+  const location = useLocation()
+  if (location.pathname === '/admin/control-centre') return <Outlet />
+
   return (
     <div className="min-h-screen bg-slate-950 text-white">
       <header className="border-b border-white/10 bg-slate-950/60 backdrop-blur">
