@@ -549,19 +549,13 @@ service cloud.firestore {
           && request.resource.data.createdAt is timestamp
           && hasSafeTrialPlan());
       allow read: if isSelf(userId) || isAdmin();
-      allow update: if isAdmin()
-        || (request.auth != null
-          && request.auth.uid == userId
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-            'emailVerifiedCustom',
-            'emailVerifiedCustomAt',
-            'updatedAt'
-          ]))
-        || (isActiveSelf(userId) && protectedAccountFieldsUnchanged() && userIdentityScopeSafe(userId))
-        || (activeSignedIn()
-          && resource.data.workspaceId is string
-          && isAdmin()
-          && planApprovalFieldsTouched());
+      allow update: if request.auth != null
+        && request.auth.uid == userId
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'emailVerifiedCustom',
+          'emailVerifiedCustomAt',
+          'updatedAt'
+        ]);
       allow delete: if isAdmin();
 
       match /verification/{docId} {
