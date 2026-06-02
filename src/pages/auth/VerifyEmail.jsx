@@ -74,6 +74,33 @@ export default function VerifyEmail() {
     }
   }
 
+  const handleSendTestOtp = async () => {
+    const currentUser = auth?.currentUser || user
+    if (!currentUser?.email) return
+    setSending(true)
+    setMessage('')
+    setError('')
+    try {
+      const emailResult = await sendCustomVerificationEmail(currentUser, { clientName: currentUser.displayName || 'Test User' })
+      const nextMessage = emailResult.ok
+        ? 'Test OTP email sent. Network should show nexora-email-api.rahanshah4.workers.dev/send-email.'
+        : emailResult.error || 'Could not send test OTP email right now.'
+      if (emailResult.ok) {
+        setMessage(nextMessage)
+        showToast({ tone: 'success', message: 'Test OTP sent.' })
+      } else {
+        setError(nextMessage)
+        showToast({ tone: 'error', message: nextMessage })
+      }
+    } catch (err) {
+      const nextError = clientSafeMessage(err, 'Could not send test OTP email right now.', { context: 'Send test OTP verification' })
+      setError(nextError)
+      showToast({ tone: 'error', message: nextError })
+    } finally {
+      setSending(false)
+    }
+  }
+
   const handleVerifyOtp = async () => {
     const currentUser = auth?.currentUser || user
     if (!currentUser?.email) return
@@ -169,6 +196,10 @@ export default function VerifyEmail() {
 
           <button type="button" onClick={handleRefreshStatus} disabled={checking} className="mt-4 text-sm font-semibold text-sky-700 transition hover:text-sky-900">
             {checking ? 'Checking...' : 'Refresh verification status'}
+          </button>
+
+          <button type="button" onClick={handleSendTestOtp} disabled={sending} className="ml-4 mt-4 text-sm font-semibold text-violet-700 transition hover:text-violet-900">
+            {sending ? 'Sending...' : 'Send test OTP'}
           </button>
 
           <button type="button" onClick={handleSignOut} className="mt-5 text-sm font-semibold text-slate-500 transition hover:text-slate-900">

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nexora-pwa-v2'
+const CACHE_NAME = 'nexora-pwa-v3'
 const CACHE_URLS = ['/', '/nexora-logo.jpg', '/nexora-logo.png', '/index.html']
 const OFFLINE_HTML = '<!doctype html><html><body><h1>Nexora is offline</h1><p>Please reconnect and try again.</p></body></html>'
 

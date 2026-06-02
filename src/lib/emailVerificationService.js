@@ -1,6 +1,6 @@
 import { doc, getDoc, serverTimestamp, setDoc, Timestamp, updateDoc } from 'firebase/firestore'
 import { db } from './firebase.js'
-import { sendWorkerEmail } from './transactionalEmail.js'
+import { EMAIL_WORKER_URL, sendWorkerEmail } from './transactionalEmail.js'
 
 const OTP_TTL_MINUTES = 10
 const technicalLogPrefix = '[Nexora email verification]'
@@ -69,6 +69,7 @@ export async function sendCustomVerificationEmail(user, options = {}) {
       { merge: true },
     )
 
+    console.log('[OTP email] endpoint', EMAIL_WORKER_URL)
     const result = await sendWorkerEmail({
       type: 'otp_verification',
       to,
@@ -94,6 +95,7 @@ export async function sendCustomVerificationEmail(user, options = {}) {
 async function sendVerificationNoticeOnly(user, options = {}) {
   const to = clean(user?.email)
   const uid = clean(user?.uid)
+  console.log('[OTP email] endpoint', EMAIL_WORKER_URL)
   const result = await sendWorkerEmail({
     type: 'email_verification',
     to,

@@ -1,4 +1,4 @@
-const EMAIL_API_URL = 'https://nexora-email-api.rahanshah4.workers.dev/send-email'
+export const EMAIL_WORKER_URL = 'https://nexora-email-api.rahanshah4.workers.dev/send-email'
 
 function clean(value) {
   return typeof value === 'string' ? value.trim() : ''
@@ -55,7 +55,7 @@ export async function sendWorkerEmail({ to, subject, html, type, data }) {
   if (!payload.type && !payload.html) return { ok: false, error: 'Email content is missing.' }
 
   try {
-    const response = await fetch(EMAIL_API_URL, {
+    const response = await fetch(EMAIL_WORKER_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
