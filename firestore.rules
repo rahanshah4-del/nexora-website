@@ -310,15 +310,6 @@ service cloud.firestore {
       );
     }
 
-    function finalEmailVerificationFieldsTouched() {
-      return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-        'emailVerifiedCustom',
-        'emailVerifiedCustomAt',
-        'updatedAt',
-      ])
-      && request.resource.data.emailVerifiedCustom == true;
-    }
-
     function planApprovalFieldsTouched() {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
         'plan',
@@ -559,7 +550,13 @@ service cloud.firestore {
           && hasSafeTrialPlan());
       allow read: if isSelf(userId) || isAdmin();
       allow update: if isAdmin()
-        || (isSelf(userId) && finalEmailVerificationFieldsTouched())
+        || (request.auth != null
+          && request.auth.uid == userId
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'emailVerifiedCustom',
+            'emailVerifiedCustomAt',
+            'updatedAt'
+          ]))
         || (isActiveSelf(userId) && protectedAccountFieldsUnchanged() && userIdentityScopeSafe(userId))
         || (activeSignedIn()
           && resource.data.workspaceId is string

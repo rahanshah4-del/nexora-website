@@ -189,6 +189,8 @@ export async function verifyCustomEmailOtp(user, otp) {
       emailVerifiedCustomAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     }
+    console.log('VERIFY PAYLOAD', parentPayload)
+    console.log('VERIFY AFFECTED KEYS', Object.keys(parentPayload))
     console.log('[OTP verify] update parent start', { path: userDocPath, payloadFields: Object.keys(parentPayload) })
     try {
       await updateDoc(userRef, parentPayload)
