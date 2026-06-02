@@ -15,6 +15,7 @@ import {
   planPriceLabel,
 } from '../lib/platformPlans.js'
 import { trackAnalyticsEvent } from '../lib/analyticsTracking.js'
+import { sendWorkerEmail, upgradeRequestReceivedEmail } from '../lib/transactionalEmail.js'
 
 function Section({ children, className = '' }) {
   return <section className={`mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 ${className}`}>{children}</section>
@@ -365,6 +366,13 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
       })
       const requestRef = await addDoc(collection(db, 'upgradeRequests'), payload)
       console.info('Upgrade request Firestore write completed:', { id: requestRef.id, collectionPath: 'upgradeRequests' })
+      const emailTemplate = upgradeRequestReceivedEmail({
+        name: payload.senderName || user.displayName || 'there',
+        plan: requestedPlan,
+        amount: paidAmount,
+        currency,
+      })
+      const emailResult = await sendWorkerEmail({ to: payload.email, ...emailTemplate })
       await trackAnalyticsEvent('upgrade_request_submitted', {
         userId: user.uid,
         email: payload.email,
@@ -375,6 +383,9 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
         status: 'pending',
       })
       setSubmitted(true)
+      if (!emailResult.ok) {
+        setSubmitError(`Upgrade request submitted, but confirmation email failed: ${emailResult.error}`)
+      }
     } catch (error) {
       console.error('Upgrade Request Error:', error)
       console.error('Upgrade Request Context:', upgradeRequestContext())

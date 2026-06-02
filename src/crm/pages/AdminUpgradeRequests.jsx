@@ -19,6 +19,7 @@ import Table from '../components/ui/Table.jsx'
 import Spinner from '../components/ui/Spinner.jsx'
 import { db } from '../lib/firebase.js'
 import { useUser } from '../hooks/useUser.js'
+import { sendWorkerEmail, upgradeApprovedEmail, upgradeRejectedEmail } from '../../lib/transactionalEmail.js'
 
 function Toast({ tone = 'success', message, onClose }) {
   const toneClass =
@@ -259,7 +260,16 @@ export default function AdminUpgradeRequestsPage() {
       )
 
       await batch.commit()
-      setToast({ tone: 'success', message: 'Approved. User plan updated.' })
+      const to = r.clientEmail || r.email || r.ownerEmail || r.userEmail || ''
+      if (to) {
+        const template = upgradeApprovedEmail({ name: r.senderName || r.userName || r.ownerName || 'there', plan: requestedPlan })
+        const sent = await sendWorkerEmail({ to, ...template })
+        setToast(sent.ok
+          ? { tone: 'success', message: 'Approved. User plan updated and email sent.' }
+          : { tone: 'error', message: `Approved. User plan updated, but email failed: ${sent.error}` })
+      } else {
+        setToast({ tone: 'error', message: 'Approved. User plan updated, but client email is missing.' })
+      }
     } finally {
       setBusyId('')
     }
@@ -277,7 +287,16 @@ export default function AdminUpgradeRequestsPage() {
         rejectedAt: serverTimestamp(),
       })
       await batch.commit()
-      setToast({ tone: 'success', message: 'Request rejected. User plan unchanged.' })
+      const to = r.clientEmail || r.email || r.ownerEmail || r.userEmail || ''
+      if (to) {
+        const template = upgradeRejectedEmail({ name: r.senderName || r.userName || r.ownerName || 'there', reason: r.rejectionReason || r.reason || '' })
+        const sent = await sendWorkerEmail({ to, ...template })
+        setToast(sent.ok
+          ? { tone: 'success', message: 'Request rejected and email sent.' }
+          : { tone: 'error', message: `Request rejected, but email failed: ${sent.error}` })
+      } else {
+        setToast({ tone: 'error', message: 'Request rejected, but client email is missing.' })
+      }
     } finally {
       setBusyId('')
     }

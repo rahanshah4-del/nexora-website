@@ -27,7 +27,7 @@ import {
   setDoc,
   updateDoc,
 } from 'firebase/firestore'
-import { sendPasswordResetEmail, signOut } from 'firebase/auth'
+import { signOut } from 'firebase/auth'
 import {
   Area,
   AreaChart,
@@ -51,6 +51,14 @@ import {
   mergePlatformPlans,
   planPriceLabel,
 } from '../../lib/platformPlans.js'
+import {
+  createPasswordResetLink,
+  passwordResetEmail,
+  sendWorkerEmail,
+  trialExpiryReminderEmail,
+  upgradeApprovedEmail,
+  upgradeRejectedEmail,
+} from '../../lib/transactionalEmail.js'
 
 export class ControlCentreErrorBoundary extends Component {
   state = { error: null }
@@ -783,8 +791,25 @@ export default function ControlCentre() {
   async function sendReset(row) {
     const email = userEmail(row)
     if (!auth || !email) throw new Error('Client email is missing.')
-    await sendPasswordResetEmail(auth, email)
+    const resetLink = await createPasswordResetLink(email)
+    if (!resetLink.ok) throw new Error(resetLink.error)
+    const template = passwordResetEmail({ link: resetLink.link })
+    const sent = await sendWorkerEmail({ to: email, ...template })
+    if (!sent.ok) throw new Error(sent.error)
     await logActivity('password_reset_sent', { uid: row.uid || row.id, email })
+  }
+
+  async function sendTrialReminder(row) {
+    const email = userEmail(row)
+    if (!email) throw new Error('Client email is missing.')
+    const template = trialExpiryReminderEmail({
+      name: row.ownerName || row.displayName || row.name || 'there',
+      workspaceName: workspaceName(row),
+      trialEndsAt: dateLabel(row.trialEndsAt || row.subscriptionExpiresAt),
+    })
+    const sent = await sendWorkerEmail({ to: email, ...template })
+    if (!sent.ok) throw new Error(sent.error)
+    await logActivity('trial_expiry_reminder_sent', { workspaceId: row.workspaceId || row.id, email })
   }
 
   async function updateWorkspace(row, update, action) {
@@ -882,6 +907,12 @@ export default function ControlCentre() {
       approvedAt: now,
       updatedAt: now,
     }, { merge: true })
+    const email = userEmail(row)
+    if (email) {
+      const template = upgradeApprovedEmail({ name: row.senderName || row.ownerName || row.displayName || 'there', plan })
+      const sent = await sendWorkerEmail({ to: email, ...template })
+      if (!sent.ok) throw new Error(sent.error)
+    }
     await logActivity('upgrade_approved', { workspaceId, upgradeRequestId: row.id, plan })
   }
 
@@ -899,6 +930,12 @@ export default function ControlCentre() {
       rejectedAt: now,
       updatedAt: now,
     })
+    const email = userEmail(row)
+    if (email) {
+      const template = upgradeRejectedEmail({ name: row.senderName || row.ownerName || row.displayName || 'there', reason: row.rejectionReason || row.reason || '' })
+      const sent = await sendWorkerEmail({ to: email, ...template })
+      if (!sent.ok) throw new Error(sent.error)
+    }
     await logActivity('upgrade_rejected', { upgradeRequestId: row.id, workspaceId: row.workspaceId || '' })
   }
 
@@ -958,6 +995,7 @@ export default function ControlCentre() {
             next.setDate(next.getDate() + 7)
             runAction(`extend-${row.id}`, () => updateWorkspace(row, { isTrialActive: true, trialEndsAt: next, subscriptionStatus: 'trial', planStatus: 'trial' }, 'trial_extended'))
           }}>Extend Trial</ShellButton>
+          <ShellButton onClick={() => runAction(`trial-reminder-${row.id}`, () => sendTrialReminder(row), 'Trial reminder email sent.')}>Send Trial Reminder</ShellButton>
           <ShellButton onClick={() => runAction(`paid-${row.id}`, () => updateWorkspace(row, { planStatus: 'active', subscriptionStatus: 'active', paymentStatus: 'paid', paidAt: serverTimestamp() }, 'client_marked_paid'))}>Mark Paid</ShellButton>
           <ShellButton onClick={() => navigator.clipboard?.writeText(row.workspaceId || row.id)}>Copy Workspace ID</ShellButton>
         </div>

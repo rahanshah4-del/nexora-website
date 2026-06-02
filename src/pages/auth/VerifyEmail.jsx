@@ -56,18 +56,18 @@ export default function VerifyEmail() {
     setMessage('')
     setError('')
     try {
-      const resendResult = await sendCustomVerificationEmail(currentUser)
-      if (!resendResult.ok) {
-        const nextError = resendResult.error || 'Could not send verification email right now.'
+      const emailResult = await sendCustomVerificationEmail(currentUser)
+      if (!emailResult.ok) {
+        const nextError = emailResult.error || 'Could not send verification email right now.'
         setError(nextError)
         showToast({ tone: 'error', message: nextError })
         return
       }
-      const nextMessage = resendResult.message || 'Verification email sent.'
+      const nextMessage = emailResult.message || 'Verification email sent.'
       setMessage(nextMessage)
       showToast({ tone: 'success', message: nextMessage })
     } catch (err) {
-      const nextError = clientSafeMessage(err, 'Could not send verification email right now.', { context: 'Resend email verification' })
+      const nextError = clientSafeMessage(err, 'Could not send verification email right now.', { context: 'Send email verification' })
       setError(nextError)
       showToast({ tone: 'error', message: nextError })
     } finally {

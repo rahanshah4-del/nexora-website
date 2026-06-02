@@ -10,6 +10,7 @@ import { auth, getFirebaseEnvHint } from '../lib/firebase.js'
 import { db } from '../lib/firebase.js'
 import { ensureUserWorkspace } from '../../lib/accountProvisioning.js'
 import { sendCustomVerificationEmail } from '../../lib/emailVerificationService.js'
+import { sendWorkerEmail, welcomeEmail } from '../../lib/transactionalEmail.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 import { clientSafeMessage } from '../utils/messages.js'
 
@@ -68,6 +69,11 @@ export function AuthProvider({ children }) {
           setError(emailResult.error || 'Could not send verification email right now.')
           return false
         }
+      }
+      const welcome = welcomeEmail({ name: credentials.user.displayName || 'there' })
+      const welcomeResult = await sendWorkerEmail({ to: credentials.user.email || email, ...welcome })
+      if (!welcomeResult.ok) {
+        setError(`Account created, but welcome email failed: ${welcomeResult.error}`)
       }
       return true
     } catch (e) {

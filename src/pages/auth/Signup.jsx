@@ -10,6 +10,7 @@ import { motion } from 'framer-motion'
 import { clientSafeMessage, reportTechnicalError } from '../../lib/errorHandler.js'
 import { sendCustomVerificationEmail } from '../../lib/emailVerificationService.js'
 import { trackAnalyticsEvent } from '../../lib/analyticsTracking.js'
+import { sendWorkerEmail, welcomeEmail } from '../../lib/transactionalEmail.js'
 
 export default function Signup() {
   const { user, loading } = useAuth()
@@ -67,8 +68,10 @@ export default function Signup() {
         setError(emailResult.error || 'Could not send verification email right now.')
         return
       }
+      const welcome = welcomeEmail({ name: fullName.trim() || userRecord.displayName || 'there' })
+      const welcomeResult = await sendWorkerEmail({ to: userRecord.email || email.trim().toLowerCase(), ...welcome })
       setVerificationSent(true)
-      setInfo(emailResult.message || 'Verification email sent.')
+      setInfo(welcomeResult.ok ? 'Welcome and verification emails sent.' : `Verification email sent. Welcome email failed: ${welcomeResult.error}`)
       await trackAnalyticsEvent('signup_completed', { userId: userRecord.uid, email: email.trim().toLowerCase(), phone: phone.trim(), page: '/signup', status: 'verification_sent' })
     } catch (err) {
       setError(clientSafeMessage(err, 'Unable to create account. Please try again.', { context: 'Signup with email' }))

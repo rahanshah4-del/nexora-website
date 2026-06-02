@@ -27,7 +27,7 @@ import { formatCurrency } from '../utils/format.js'
 import { exportCsv, exportExcel } from '../lib/exporters.js'
 import { exportInvoicePdf } from '../lib/invoicePdf.js'
 import { invoiceIssueDate, statusBadge } from '../lib/invoiceHelpers.js'
-import { getEmailServiceError } from '../lib/emailService.js'
+import { getEmailServiceError, sendInvoiceEmail } from '../lib/emailService.js'
 import { resolveWorkspaceName } from '../../lib/workspaceName.js'
 import { normalizeBusinessType } from '../data/moduleAccess.js'
 
@@ -162,6 +162,7 @@ export default function InvoicesPage() {
     recordPartialPayment,
     updateInvoice,
     sendForApproval,
+    markInvoiceSent,
     markInvoiceUnpaid,
     duplicateInvoice,
     deleteInvoice,
@@ -278,7 +279,13 @@ export default function InvoicesPage() {
     if (action === 'email') {
       const emailServiceError = getEmailServiceError()
       if (emailServiceError) res = { ok: false, error: emailServiceError }
-      else if (invoice.customerEmail) window.location.href = `mailto:${invoice.customerEmail}?subject=${encodeURIComponent(`${isSchool ? 'Fee Bill' : 'Invoice'} ${invoice.invoiceNumber || invoice.id}`)}`
+      else if (invoice.customerEmail) {
+        res = await sendInvoiceEmail({ invoice, company, businessType })
+        if (res.ok) {
+          await markInvoiceSent(invoice.id)
+          showToast({ tone: 'success', message: `${isSchool ? 'Fee bill' : 'Invoice'} emailed to ${invoice.customerEmail}` })
+        }
+      }
       else res = { ok: false, error: isSchool ? 'Student email is missing.' : 'Customer email is missing.' }
     }
     if (action === 'whatsapp') {
@@ -490,6 +497,7 @@ export default function InvoicesPage() {
         canApprovePayments={canApprovePayments}
         onPrint={printInvoiceDocument}
         onDownloadPdf={downloadInvoicePdf}
+        onEmail={(invoice) => runInvoiceAction('email', invoice)}
         onClose={() => setOpenInvoice(null)}
         onUpdate={updateInvoice}
         onMarkPaid={(invoice) => requestPaymentAction('paid', invoice)}

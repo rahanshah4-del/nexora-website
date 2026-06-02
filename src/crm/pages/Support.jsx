@@ -12,6 +12,7 @@ import { useMemo, useState } from 'react'
 import { useSupportTickets } from '../hooks/useSupportTickets.js'
 import { usePreferences } from '../hooks/usePreferences.js'
 import Toast from '../components/ui/Toast.jsx'
+import { sendSupportReplyEmail } from '../lib/emailService.js'
 
 export default function SupportPage() {
   const { profile } = usePreferences()
@@ -121,7 +122,19 @@ export default function SupportPage() {
           const { id, ...patch } = draft
           support.updateTicket(id, patch)
         }}
-        onAddComment={(t, c) => support.addComment(t.id, c)}
+        onAddComment={async (t, c) => {
+          const saved = await support.addComment(t.id, c)
+          if (!saved?.ok) {
+            setToast({ tone: 'error', message: saved?.error || 'Unable to add support reply' })
+            window.setTimeout(() => setToast(null), 2400)
+            return
+          }
+          const sent = await sendSupportReplyEmail({ ticket: t, message: c.message })
+          setToast(sent.ok
+            ? { tone: 'success', message: 'Reply saved and emailed to customer' }
+            : { tone: 'error', message: `Reply saved, but email failed: ${sent.error}` })
+          window.setTimeout(() => setToast(null), sent.ok ? 1800 : 2800)
+        }}
       />
     </motion.div>
   )

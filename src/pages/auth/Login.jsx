@@ -29,6 +29,7 @@ import logoUrl from '../../assets/logo/nexora-logo.svg'
 import { motion } from 'framer-motion'
 import { clientSafeMessage } from '../../lib/errorHandler.js'
 import { trackAnalyticsEvent } from '../../lib/analyticsTracking.js'
+import { createPasswordResetLink, passwordResetEmail, sendWorkerEmail } from '../../lib/transactionalEmail.js'
 
 const modules = [
   { name: 'CRM', detail: 'Customer Relationship Management', icon: HiOutlineUserGroup, color: 'bg-blue-600' },
@@ -178,6 +179,33 @@ export default function Login() {
       setError(clientSafeMessage(err, 'Google sign-in failed. Please try again.', { context: 'Login with Google' }))
     } finally {
       setGoogleLoading(false)
+    }
+  }
+
+  const handlePasswordReset = async () => {
+    setError('')
+    setInfo('')
+    const to = email.trim().toLowerCase()
+    if (!to) {
+      setError('Enter your email first, then request a password reset.')
+      return
+    }
+    setSubmitting(true)
+    try {
+      const resetLink = await createPasswordResetLink(to)
+      if (!resetLink.ok) {
+        setError(resetLink.error || 'Could not create password reset link.')
+        return
+      }
+      const template = passwordResetEmail({ link: resetLink.link })
+      const sent = await sendWorkerEmail({ to, ...template })
+      if (!sent.ok) {
+        setError(sent.error || 'Could not send password reset email.')
+        return
+      }
+      setInfo('Password reset email sent.')
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -335,7 +363,7 @@ export default function Login() {
                   </label>
                   <button
                     type="button"
-                    onClick={() => setInfo('Password reset is not available. Contact support for help.')}
+                    onClick={handlePasswordReset}
                     className="text-sm font-bold text-blue-600 transition hover:text-blue-800"
                   >
                     Forgot Password?

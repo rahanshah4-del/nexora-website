@@ -12,6 +12,7 @@ import Badge from '../components/ui/Badge.jsx'
 import { auth } from '../lib/firebase.js'
 import { ensureUserWorkspace } from '../../lib/accountProvisioning.js'
 import { clientSafeMessage } from '../utils/messages.js'
+import { createPasswordResetLink, passwordResetEmail, sendWorkerEmail } from '../../lib/transactionalEmail.js'
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -20,17 +21,20 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [googleBusy, setGoogleBusy] = useState(false)
+  const [info, setInfo] = useState('')
 
   const canSubmit = useMemo(() => email.trim() && password.trim() && !busy, [email, password, busy])
 
   async function onSubmit() {
     setError('')
+    setInfo('')
     const ok = mode === 'signup' ? await signup(email.trim(), password) : await login(email.trim(), password)
     if (ok) navigate('/workspace')
   }
 
   async function onGoogle() {
     setError('')
+    setInfo('')
     if (!auth) {
       setError('Google Sign In is not available right now.')
       return
@@ -46,6 +50,28 @@ export default function LoginPage() {
     } finally {
       setGoogleBusy(false)
     }
+  }
+
+  async function onPasswordReset() {
+    setError('')
+    setInfo('')
+    const to = email.trim().toLowerCase()
+    if (!to) {
+      setError('Enter your email first, then request a password reset.')
+      return
+    }
+    const resetLink = await createPasswordResetLink(to)
+    if (!resetLink.ok) {
+      setError(resetLink.error || 'Could not create password reset link.')
+      return
+    }
+    const template = passwordResetEmail({ link: resetLink.link })
+    const sent = await sendWorkerEmail({ to, ...template })
+    if (!sent.ok) {
+      setError(sent.error || 'Could not send password reset email.')
+      return
+    }
+    setInfo('Password reset email sent.')
   }
 
   return (
@@ -151,6 +177,11 @@ export default function LoginPage() {
                   {error}
                 </div>
               ) : null}
+              {info ? (
+                <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-3 text-sm text-emerald-800 dark:text-emerald-200">
+                  {info}
+                </div>
+              ) : null}
 
               <Button
                 className="h-11 w-full rounded-2xl"
@@ -163,7 +194,7 @@ export default function LoginPage() {
 
               <div className="flex items-center justify-between pt-1">
                 <Badge variant="default">Secure Access</Badge>
-                <button className="focus-ring text-xs font-semibold text-indigo-600 hover:underline dark:text-indigo-300" type="button">
+                <button className="focus-ring text-xs font-semibold text-indigo-600 hover:underline dark:text-indigo-300" type="button" onClick={onPasswordReset}>
                   Forgot password?
                 </button>
               </div>

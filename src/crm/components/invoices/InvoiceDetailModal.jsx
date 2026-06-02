@@ -27,6 +27,7 @@ function InvoiceDetailModal({
   company,
   onPrint,
   onDownloadPdf,
+  onEmail,
   onClose,
   onUpdate,
 }) {
@@ -123,9 +124,7 @@ function InvoiceDetailModal({
                   variant="subtle"
                   className="h-10 rounded-xl text-xs"
                   type="button"
-                  onClick={() => {
-                    if (invoice.customerEmail) window.location.href = `mailto:${invoice.customerEmail}`
-                  }}
+                  onClick={() => onEmail?.(invoice)}
                 >
                   <HiOutlineEnvelope className="h-4 w-4" />
                   Send

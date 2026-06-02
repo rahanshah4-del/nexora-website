@@ -132,17 +132,23 @@ export function useSupportTickets() {
       },
       async addComment(id, comment) {
         const createdAt = new Date().toISOString().slice(0, 10)
+        const nextComment = { id: `c_${Date.now()}`, ...comment, createdAt }
         setTickets((prev) =>
           prev.map((t) =>
             t.id === id
-              ? { ...t, comments: [...t.comments, { id: `c_${Date.now()}`, ...comment, createdAt }], updatedAt: createdAt }
+              ? { ...t, comments: [...t.comments, nextComment], updatedAt: createdAt }
               : t,
           ),
         )
-        if (!db || !workspaceId || source !== 'firestore') return
+        if (!db || !workspaceId || source !== 'firestore') return { ok: true }
         const current = tickets.find((t) => t.id === id)
-        const next = [...(current?.comments || []), { id: `c_${Date.now()}`, ...comment, createdAt }]
-        await patchUserDoc(workspaceId, 'supportTickets', id, { comments: next }, { businessType })
+        const next = [...(current?.comments || []), nextComment]
+        try {
+          await patchUserDoc(workspaceId, 'supportTickets', id, { comments: next }, { businessType })
+          return { ok: true }
+        } catch (e) {
+          return { ok: false, error: clientSafeMessage(e, 'Unable to add comment.') }
+        }
       },
     }),
     [tickets, loading, source, error, stats, businessType, workspaceId],
