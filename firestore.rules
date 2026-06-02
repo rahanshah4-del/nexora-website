@@ -310,15 +310,15 @@ service cloud.firestore {
       );
     }
 
-    function otpVerificationFieldsTouched() {
+    function finalEmailVerificationFieldsTouched() {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-        'emailVerified',
         'emailVerifiedCustom',
+        'emailVerified',
         'emailVerifiedCustomAt',
         'updatedAt',
       ])
-      && request.resource.data.emailVerified == true
       && request.resource.data.emailVerifiedCustom == true
+      && request.resource.data.emailVerified == true
       && request.resource.data.emailVerifiedCustomAt is timestamp
       && request.resource.data.updatedAt is timestamp;
     }
@@ -563,7 +563,7 @@ service cloud.firestore {
           && hasSafeTrialPlan());
       allow read: if isSelf(userId) || isAdmin();
       allow update: if isAdmin()
-        || (isSelf(userId) && otpVerificationFieldsTouched())
+        || (isSelf(userId) && finalEmailVerificationFieldsTouched())
         || (isActiveSelf(userId) && protectedAccountFieldsUnchanged() && userIdentityScopeSafe(userId))
         || (activeSignedIn()
           && resource.data.workspaceId is string
