@@ -53,7 +53,7 @@ export function normalizePlan(plan) {
   const value = String(plan || '').trim().toLowerCase()
   if (value === 'trial' || value === 'basic') return 'Basic'
   if (value === 'free') return 'Free'
-  if (value === 'starter' || value === 'business' || value === 'standard' || value === 'premium') return 'Business'
+  if (value === 'starter' || value === 'business' || value === 'standard') return 'Business'
   if (value === 'enterprise') return 'Enterprise'
   return 'Free'
 }
@@ -136,16 +136,6 @@ export const planCatalog = [
     featured: true,
   },
   {
-    id: 'Premium',
-    name: 'Premium',
-    badge: 'All Modules',
-    description: 'For established businesses.',
-    monthlyPkr: 9999,
-    monthlyUsd: null,
-    priceLabel: 'PKR 9,999/month',
-    features: ['All Standard Features', 'All Modules Access', 'Up to 10 Users', '50GB Storage', 'Priority Support'],
-  },
-  {
     id: 'Enterprise',
     name: 'Enterprise',
     badge: 'Contact Sales',
@@ -154,7 +144,7 @@ export const planCatalog = [
     monthlyUsd: null,
     priceLabel: 'Custom Pricing',
     contactSales: true,
-    features: ['All Premium Features', 'Unlimited Users', 'Custom Integrations', 'Dedicated Support', 'Custom Development'],
+    features: ['All Standard Features', 'Unlimited Users', 'Custom Integrations', 'Dedicated Support', 'Custom Development'],
   },
 ]
 

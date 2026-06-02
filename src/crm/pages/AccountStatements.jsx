@@ -154,7 +154,7 @@ export default function AccountStatementsPage() {
         right={
           permissions.canExportReports ? (
             <div className="flex flex-wrap gap-2">
-              <Button variant="subtle" className="rounded-2xl" type="button" onClick={() => exportPdf()}>
+              <Button variant="subtle" className="rounded-2xl" type="button" onClick={() => exportPdf('nexora-account-statements.pdf', exportColumns, rows, 'Account Statements')}>
                 Export PDF
               </Button>
               <Button variant="subtle" className="rounded-2xl" type="button" onClick={() => exportExcel('nexora-account-statements.xls', exportColumns, rows)}>

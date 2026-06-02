@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   HiOutlineArrowDownTray,
@@ -21,9 +21,11 @@ import Input from '../components/ui/Input.jsx'
 import Select from '../components/ui/Select.jsx'
 import Toast from '../components/ui/Toast.jsx'
 import InvoiceDetailModal from '../components/invoices/InvoiceDetailModal.jsx'
+import PrintableInvoice from '../components/print/PrintableInvoice.jsx'
 import { useUser } from '../hooks/useUser.js'
 import { formatCurrency } from '../utils/format.js'
 import { exportCsv, exportExcel } from '../lib/exporters.js'
+import { exportInvoicePdf } from '../lib/invoicePdf.js'
 import { invoiceIssueDate, statusBadge } from '../lib/invoiceHelpers.js'
 import { getEmailServiceError } from '../lib/emailService.js'
 import { resolveWorkspaceName } from '../../lib/workspaceName.js'
@@ -173,6 +175,13 @@ export default function InvoicesPage() {
   const [statusFilter, setStatusFilter] = useState('all')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
+  const [printInvoice, setPrintInvoice] = useState(null)
+
+  useEffect(() => {
+    const clearPrintInvoice = () => setPrintInvoice(null)
+    window.addEventListener('afterprint', clearPrintInvoice)
+    return () => window.removeEventListener('afterprint', clearPrintInvoice)
+  }, [])
 
   const company = useMemo(
     () => ({
@@ -244,15 +253,28 @@ export default function InvoicesPage() {
     setPaymentAction({ action, invoice })
   }
 
+  function printInvoiceDocument(invoice) {
+    if (!invoice) return
+    setPrintInvoice(invoice)
+    window.setTimeout(() => window.print(), 350)
+  }
+
+  async function downloadInvoicePdf(invoice) {
+    if (!invoice) return
+    try {
+      await exportInvoicePdf({ invoice, company, payments, businessType })
+    } catch (error) {
+      showToast({ tone: 'error', message: error?.message || (isSchool ? 'Unable to export fee bill PDF' : 'Unable to export invoice PDF') }, 2800)
+    }
+  }
+
   async function runInvoiceAction(action, invoice) {
     if (!invoice?.id) return
     let res = { ok: true }
     if (action === 'view') setOpenInvoice(invoice)
     if (action === 'edit') setOpenInvoice(invoice)
-    if (action === 'print' || action === 'pdf') {
-      setOpenInvoice(invoice)
-      window.setTimeout(() => window.print(), 120)
-    }
+    if (action === 'print') return printInvoiceDocument(invoice)
+    if (action === 'pdf') return downloadInvoicePdf(invoice)
     if (action === 'email') {
       const emailServiceError = getEmailServiceError()
       if (emailServiceError) res = { ok: false, error: emailServiceError }
@@ -311,6 +333,17 @@ export default function InvoicesPage() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.22 }}
     >
+      {printInvoice ? (
+        <PrintableInvoice
+          className="print-only"
+          invoice={printInvoice}
+          company={company}
+          payments={payments}
+          businessType={businessType}
+        />
+      ) : null}
+
+      <div className={printInvoice ? 'no-print space-y-5' : 'space-y-5'}>
       {toast ? <Toast tone={toast.tone} message={toast.message} onClose={() => setToast(null)} /> : null}
 
       <section className="rounded-[1.6rem] border border-slate-200 bg-white p-4 shadow-[0_24px_80px_-58px_rgba(79,70,229,0.65)] sm:p-5">
@@ -455,6 +488,8 @@ export default function InvoicesPage() {
         currency={currency}
         company={company}
         canApprovePayments={canApprovePayments}
+        onPrint={printInvoiceDocument}
+        onDownloadPdf={downloadInvoicePdf}
         onClose={() => setOpenInvoice(null)}
         onUpdate={updateInvoice}
         onMarkPaid={(invoice) => requestPaymentAction('paid', invoice)}
@@ -470,6 +505,7 @@ export default function InvoicesPage() {
         onClose={() => setPaymentAction({ action: null, invoice: null })}
         onConfirm={confirmPaymentAction}
       />
+      </div>
     </motion.div>
   )
 }

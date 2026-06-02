@@ -146,7 +146,7 @@ export function useSubscriptions() {
           .slice(0, 20)
           .map((r) => ({
             id: r.id,
-            plan: packageNameForPlan(r.selectedPlan || r.requestedPlan || 'Business'),
+            plan: packageNameForPlan(r.selectedPlan || r.requestedPlan || 'Standard'),
             billingCycle: r.billingCycle || '—',
             status: 'approved',
             changedAt: r.approvedAt?.toDate?.()?.toISOString?.().slice(0, 10) || '—',

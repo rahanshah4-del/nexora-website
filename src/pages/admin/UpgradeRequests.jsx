@@ -15,6 +15,10 @@ function StatusPill({ value }) {
   return <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${style}`}>{value}</span>
 }
 
+function proofUrl(item = {}) {
+  return item.paymentProof || item.screenshotUrl || item.paymentProofUrl || ''
+}
+
 export default function UpgradeRequests() {
   const { user } = useAuth()
   const backendAdminAllowed = isBackendAdminEmail(user?.email)
@@ -72,7 +76,7 @@ export default function UpgradeRequests() {
 
       const batch = writeBatch(db)
       const workspaceId = item.workspaceId || item.userId
-      const plan = item.selectedPlan || item.requestedPlan || 'Business'
+      const plan = item.requestedPlan || item.selectedPlan || item.plan || 'Standard'
       const now = serverTimestamp()
       const planUpdate = {
         plan,
@@ -140,7 +144,7 @@ export default function UpgradeRequests() {
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1 className="text-xl font-semibold">Upgrade Requests</h1>
-            <p className="mt-1 text-sm text-slate-200/80">Review Business plan upgrade submissions.</p>
+            <p className="mt-1 text-sm text-slate-200/80">Review plan upgrade submissions.</p>
           </div>
           <div className="flex items-center gap-2 text-xs text-slate-300">
             <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5">
@@ -164,11 +168,16 @@ export default function UpgradeRequests() {
         <div className="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-rose-100">{error}</div>
       ) : null}
 
-      <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5">
-        <div className="grid grid-cols-[1.2fr_1fr_0.8fr_0.8fr_1fr] gap-0 border-b border-white/10 bg-slate-950/40 px-4 py-3 text-xs font-semibold text-slate-200/90">
+      <div className="overflow-x-auto rounded-2xl border border-white/10 bg-white/5">
+        <div className="min-w-[1180px]">
+        <div className="grid grid-cols-[1.15fr_0.75fr_1fr_0.9fr_0.9fr_0.9fr_1.05fr_0.75fr_1fr] gap-0 border-b border-white/10 bg-slate-950/40 px-4 py-3 text-xs font-semibold text-slate-200/90">
           <div>User</div>
           <div>Plan</div>
-          <div>Payment</div>
+          <div>Transaction ID</div>
+          <div>Payment Method</div>
+          <div>Sender Name</div>
+          <div>Sender Number</div>
+          <div>Screenshot</div>
           <div>Status</div>
           <div className="text-right">Actions</div>
         </div>
@@ -179,14 +188,14 @@ export default function UpgradeRequests() {
         ) : (
           <div className="divide-y divide-white/10">
             {items.map((item) => (
-              <div key={item.id} className="grid grid-cols-[1.2fr_1fr_0.8fr_0.8fr_1fr] gap-0 px-4 py-4 text-sm">
+              <div key={item.id} className="grid grid-cols-[1.15fr_0.75fr_1fr_0.9fr_0.9fr_0.9fr_1.05fr_0.75fr_1fr] gap-0 px-4 py-4 text-sm">
                 <div className="min-w-0">
                   <p className="truncate font-semibold text-white">{item.email || item.userName || item.userId || 'Unknown'}</p>
                   <div className="mt-1 flex flex-wrap gap-2 text-xs text-slate-300">
                     {item.userId ? <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5">{item.userId}</span> : null}
-                    {item.screenshotUrl ? (
+                    {proofUrl(item) ? (
                       <a
-                        href={item.screenshotUrl}
+                        href={proofUrl(item)}
                         target="_blank"
                         rel="noreferrer"
                         className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 font-semibold text-slate-100 hover:bg-white/10"
@@ -196,8 +205,14 @@ export default function UpgradeRequests() {
                     ) : null}
                   </div>
                 </div>
-                <div className="text-slate-200/90">{item.selectedPlan || '-'}</div>
-                <div className="text-slate-200/90">{item.paymentMethod || '-'}</div>
+                <div className="text-slate-200/90">{item.requestedPlan || item.selectedPlan || item.plan || '-'}</div>
+                <div className="font-mono text-xs text-slate-200/90">{item.transactionId || item.txnId || '-'}</div>
+                <div className="text-slate-200/90">{item.paymentMethod || item.method || '-'}</div>
+                <div className="text-slate-200/90">{item.senderName || '-'}</div>
+                <div className="text-slate-200/90">{item.senderNumber || item.userPhone || item.phone || '-'}</div>
+                <div className="text-slate-200/90">
+                  {proofUrl(item) ? <a className="font-semibold text-slate-100 hover:underline" href={proofUrl(item)} target="_blank" rel="noreferrer">View Screenshot</a> : 'No Screenshot Uploaded'}
+                </div>
                 <div>
                   <StatusPill value={item.approvalStatus || 'pending'} />
                 </div>
@@ -231,6 +246,7 @@ export default function UpgradeRequests() {
             ))}
           </div>
         )}
+        </div>
       </div>
     </div>
   )

@@ -96,6 +96,10 @@ function subscriptionEndDate(days = 30) {
   return new Date(Date.now() + days * 86400000)
 }
 
+function proofUrl(row = {}) {
+  return row.paymentProof || row.screenshotUrl || row.paymentProofUrl || ''
+}
+
 export default function AdminUpgradeRequestsPage() {
   const { isPlatformAdmin, loading: userLoading, userId } = useUser()
   const navigate = useNavigate()
@@ -134,22 +138,31 @@ export default function AdminUpgradeRequestsPage() {
 
   const columns = useMemo(
     () => [
-      { key: 'userName', header: 'Customer Name', cell: (r) => <span className="font-semibold">{r.userName}</span> },
-      { key: 'userEmail', header: 'Email' },
+      { key: 'userName', header: 'Customer Name', cell: (r) => <span className="font-semibold">{r.userName || r.ownerName || r.email || r.userId || '—'}</span> },
+      { key: 'userEmail', header: 'Email', cell: (r) => r.userEmail || r.email || r.clientEmail || '—' },
       { key: 'userPhone', header: 'Phone', cell: (r) => <span className="text-xs font-semibold">{r.userPhone || '—'}</span> },
       {
         key: 'selectedPlan',
-        header: 'Selected Plan',
-        cell: (r) => <Badge variant="purple">{r.selectedPlan || r.requestedPlan || '—'}</Badge>,
+        header: 'Plan',
+        cell: (r) => <Badge variant="purple">{r.requestedPlan || r.selectedPlan || r.plan || '—'}</Badge>,
       },
       { key: 'billingCycle', header: 'Billing Cycle', cell: (r) => <Badge variant="default">{r.billingCycle || '—'}</Badge> },
       { key: 'planPrice', header: 'Plan Price', cell: (r) => <span className="text-xs font-semibold">{r.planPrice ?? '—'}</span> },
       { key: 'amountPaid', header: 'Amount Paid', cell: (r) => <span className="text-xs font-semibold">{r.amountPaid ?? '—'}</span> },
       { key: 'currency', header: 'Currency', cell: (r) => <Badge variant="info">{r.currency || '—'}</Badge> },
       { key: 'paymentMethod', header: 'Payment Method', cell: (r) => <Badge variant="info">{r.paymentMethod || '—'}</Badge> },
+      { key: 'senderName', header: 'Sender Name', cell: (r) => <span className="text-xs font-semibold">{r.senderName || '—'}</span> },
+      { key: 'senderNumber', header: 'Sender Number', cell: (r) => <span className="text-xs font-semibold">{r.senderNumber || r.userPhone || '—'}</span> },
       { key: 'paidToAccount', header: 'Paid To Account', cell: (r) => <span className="text-xs font-semibold">{r.paidToAccount || '—'}</span> },
       { key: 'transactionId', header: 'Transaction ID', cell: (r) => <span className="text-xs font-semibold">{r.transactionId || '—'}</span> },
       { key: 'paymentReference', header: 'Payment Reference', cell: (r) => <span className="text-xs font-semibold">{r.paymentReference || '—'}</span> },
+      {
+        key: 'screenshot',
+        header: 'Screenshot',
+        cell: (r) => proofUrl(r)
+          ? <a className="text-xs font-bold text-violet-700 hover:underline dark:text-violet-300" href={proofUrl(r)} target="_blank" rel="noreferrer">View Screenshot</a>
+          : <span className="text-xs font-semibold">No Screenshot Uploaded</span>,
+      },
       {
         key: 'approvalStatus',
         header: 'Approval',
@@ -204,8 +217,9 @@ export default function AdminUpgradeRequestsPage() {
       const userRef = doc(db, 'users', r.userId)
       const workspaceRef = doc(db, 'workspaces', r.workspaceId || r.userId)
       const subscriptionExpiresAt = subscriptionEndDate(Number(r.requestedDurationDays) || 30)
+      const requestedPlan = r.requestedPlan || r.selectedPlan || r.plan || 'Standard'
       const planUpdate = {
-        plan: 'Business',
+        plan: requestedPlan,
         planStatus: 'active',
         subscriptionStatus: 'active',
         billingCycle: 'monthly',
@@ -281,7 +295,7 @@ export default function AdminUpgradeRequestsPage() {
         title={confirm.action === 'approve' ? 'Approve upgrade request?' : 'Reject upgrade request?'}
         description={
           confirm.row
-            ? `${confirm.row.userName} (${confirm.row.userEmail}) requested Business.`
+            ? `${confirm.row.userName || confirm.row.email || 'Client'} (${confirm.row.userEmail || confirm.row.email || 'no email'}) requested ${confirm.row.requestedPlan || confirm.row.selectedPlan || confirm.row.plan || 'a plan'}.`
             : 'Confirm action.'
         }
         confirmLabel={confirm.action === 'approve' ? 'Approve' : 'Reject'}
@@ -302,7 +316,7 @@ export default function AdminUpgradeRequestsPage() {
       />
 
       <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
-        <PageHeader title="Admin Upgrade Requests" subtitle="Approve or reject Business plan upgrade requests." />
+        <PageHeader title="Admin Upgrade Requests" subtitle="Approve or reject plan upgrade requests." />
         <Card className="p-5">
           {loading ? (
             <div className="grid min-h-[40vh] place-items-center">
@@ -316,7 +330,7 @@ export default function AdminUpgradeRequestsPage() {
               <div>
                 <p className="text-sm font-semibold text-slate-900 dark:text-white">No upgrade requests</p>
                 <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-                  When users submit payment proof, requests will appear here.
+                  When users submit upgrade requests, requests will appear here.
                 </p>
               </div>
             </div>

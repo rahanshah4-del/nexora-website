@@ -25,6 +25,8 @@ function InvoiceDetailModal({
   invoice,
   payments = [],
   company,
+  onPrint,
+  onDownloadPdf,
   onClose,
   onUpdate,
 }) {
@@ -109,11 +111,11 @@ function InvoiceDetailModal({
                   <HiOutlinePencilSquare className="h-4 w-4" />
                   Edit
                 </Button>
-                <Button variant="subtle" className="h-10 rounded-xl text-xs" type="button" onClick={() => window.print()}>
+                <Button variant="subtle" className="h-10 rounded-xl text-xs" type="button" onClick={() => onDownloadPdf?.(invoice)}>
                   <HiOutlineArrowDownTray className="h-4 w-4" />
                   Download PDF
                 </Button>
-                <Button variant="subtle" className="h-10 rounded-xl text-xs" type="button" onClick={() => window.print()}>
+                <Button variant="subtle" className="h-10 rounded-xl text-xs" type="button" onClick={() => onPrint?.(invoice)}>
                   <HiOutlinePrinter className="h-4 w-4" />
                   Print
                 </Button>

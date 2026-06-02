@@ -280,7 +280,7 @@ export default function ExpensesPage() {
         subtitle="Track, review, and approve workspace spending."
         right={
           <div className="flex flex-wrap gap-2">
-            <Button variant="subtle" className="rounded-2xl" type="button" onClick={() => exportPdf()}>
+            <Button variant="subtle" className="rounded-2xl" type="button" onClick={() => exportPdf('nexora-expenses.pdf', exportColumns, expensesApi.expenses, 'Expenses')}>
               Export PDF
             </Button>
             <Button variant="subtle" className="rounded-2xl" type="button" onClick={() => exportExcel('nexora-expenses.xls', exportColumns, expensesApi.expenses)}>

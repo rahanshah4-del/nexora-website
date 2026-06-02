@@ -28,7 +28,7 @@ export default function LockedFeatureCard({
             Upgrade
           </Button>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            This feature is available in Standard, Premium, or Enterprise packages.
+            This feature is available in Standard or Enterprise packages.
           </p>
         </div>
       </div>

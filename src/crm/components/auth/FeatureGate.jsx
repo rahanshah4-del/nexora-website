@@ -16,7 +16,7 @@ export default function FeatureGate({ children }) {
     return (
       <FeatureLockedModal
         title={module?.label || 'Paid Package Feature'}
-        message="This feature is available in Standard, Premium, or Enterprise packages."
+        message="This feature is available in Standard or Enterprise packages."
       />
     )
   }

@@ -48,7 +48,7 @@ function PricingModal({ open, onClose }) {
                     {accessPlan === 'Business' ? <Badge variant="success">{isTrialActive ? 'Trial Active' : 'Active'}</Badge> : null}
                   </div>
                   <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-                    Compare Basic, Standard, Premium, and Enterprise package options.
+                    Compare Basic, Standard, and Enterprise package options.
                   </p>
                 </div>
                 <button

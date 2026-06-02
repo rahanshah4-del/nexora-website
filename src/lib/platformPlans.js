@@ -29,7 +29,7 @@ export const defaultPaymentAccounts = {
     label: 'Manual Payment',
     accountTitle: 'Nexora Solutions',
     accountNumber: 'Contact support',
-    instructions: 'Contact support after payment and upload proof here.',
+    instructions: 'Contact support after payment and upload proof if available.',
   },
 }
 
@@ -69,20 +69,6 @@ export const defaultPlatformPlans = [
     features: ['All Basic Features', 'One Business Module', 'Up to 5 Users', '20GB Storage', 'Priority Support'],
   },
   {
-    id: 'premium',
-    planName: 'Premium',
-    name: 'Premium',
-    monthlyPrice: 9999,
-    yearlyPrice: 9999 * 12,
-    price: 9999,
-    currency: DEFAULT_SAAS_CURRENCY,
-    billingCycle: 'monthly',
-    active: true,
-    enabled: true,
-    recommended: false,
-    features: ['All Modules Access', 'Up to 10 Users', '50GB Storage', 'Priority Support'],
-  },
-  {
     id: 'enterprise',
     planName: 'Enterprise',
     name: 'Enterprise',
@@ -94,7 +80,7 @@ export const defaultPlatformPlans = [
     active: true,
     enabled: true,
     recommended: false,
-    features: ['Unlimited Users', 'Custom Integrations', 'Dedicated Support', 'Custom Development'],
+    features: ['All Standard Features', 'Unlimited Users', 'Custom Integrations', 'Dedicated Support', 'Custom Development'],
   },
 ]
 

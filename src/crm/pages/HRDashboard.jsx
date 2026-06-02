@@ -34,7 +34,7 @@ export default function HRDashboardPage() {
   const allowed = isPaidPlan(accessPlan) && access.canAccessHr
 
   if (!allowed) {
-    return <FeatureLockedModal title="HR Management" message="This feature is available in Standard, Premium, or Enterprise packages." />
+    return <FeatureLockedModal title="HR Management" message="This feature is available in Standard or Enterprise packages." />
   }
 
   return (

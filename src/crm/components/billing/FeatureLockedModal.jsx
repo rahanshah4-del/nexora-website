@@ -6,7 +6,7 @@ import Card from '../ui/Card.jsx'
 
 export default function FeatureLockedModal({
   title = 'Paid Package Feature',
-  message = 'This feature is available in Standard, Premium, or Enterprise packages.',
+  message = 'This feature is available in Standard or Enterprise packages.',
 }) {
   const navigate = useNavigate()
 

@@ -18,6 +18,7 @@ import Select from '../components/ui/Select.jsx'
 import Toast from '../components/ui/Toast.jsx'
 import CurrencySelector from '../components/invoices/CurrencySelector.jsx'
 import InvoicePreview from '../components/invoices/InvoicePreview.jsx'
+import PrintableInvoice from '../components/print/PrintableInvoice.jsx'
 import { useInvoices } from '../hooks/useInvoices.js'
 import { useBusinessSettings } from '../hooks/useBusinessSettings.js'
 import { useProducts } from '../hooks/useProducts.js'
@@ -25,6 +26,7 @@ import { useCustomers } from '../hooks/useCustomers.js'
 import { useUser } from '../hooks/useUser.js'
 import { formatCurrency } from '../utils/format.js'
 import { cn } from '../utils/cn.js'
+import { exportInvoicePdf } from '../lib/invoicePdf.js'
 import { resolveWorkspaceName } from '../../lib/workspaceName.js'
 import { normalizeBusinessType } from '../data/moduleAccess.js'
 import {
@@ -114,6 +116,7 @@ export default function InvoiceCreatePage() {
   const [submitting, setSubmitting] = useState(false)
   const [previewSeen, setPreviewSeen] = useState(false)
   const [previewOpen, setPreviewOpen] = useState(false)
+  const [printInvoice, setPrintInvoice] = useState(null)
   const isSchool = normalizeBusinessType(businessType) === 'School ERP'
 
   const totals = useMemo(() => calculateInvoiceDraft(invoice), [invoice])
@@ -125,6 +128,12 @@ export default function InvoiceCreatePage() {
       return nextInvoiceNumber === current.invoiceNumber ? current : { ...current, invoiceNumber: nextInvoiceNumber }
     })
   }, [businessSettings.invoicePrefix, invoice.invoiceNumber])
+
+  useEffect(() => {
+    const clearPrintInvoice = () => setPrintInvoice(null)
+    window.addEventListener('afterprint', clearPrintInvoice)
+    return () => window.removeEventListener('afterprint', clearPrintInvoice)
+  }, [])
 
   const company = useMemo(
     () => ({
@@ -249,6 +258,37 @@ export default function InvoiceCreatePage() {
     setPreviewOpen(true)
   }
 
+  function buildPrintableDraft() {
+    return {
+      ...invoice,
+      businessType,
+      subtotal: totals.subtotal,
+      discount: totals.discountTotal,
+      discountTotal: totals.discountTotal,
+      taxableAmount: totals.taxableAmount,
+      taxAmount: totals.taxTotal,
+      taxTotal: totals.taxTotal,
+      roundOff: totals.roundOff,
+      total: totals.grandTotal,
+      amountPaid: totals.amountPaid,
+      balanceDue: totals.balanceDue,
+      amountInWords: totals.amountInWords,
+    }
+  }
+
+  function printDraftInvoice() {
+    setPrintInvoice(buildPrintableDraft())
+    window.setTimeout(() => window.print(), 350)
+  }
+
+  async function downloadDraftPdf() {
+    try {
+      await exportInvoicePdf({ invoice: buildPrintableDraft(), company, payments: [], businessType })
+    } catch (error) {
+      showToast({ tone: 'error', message: error?.message || (isSchool ? 'Unable to export fee bill PDF' : 'Unable to export invoice PDF') }, 2800)
+    }
+  }
+
   async function submitInvoice(status = '', allowWithoutPreview = false) {
     const requestedStatus = status || String(invoice.status || 'pending').toLowerCase()
     if (!allowWithoutPreview && !previewSeen) {
@@ -318,15 +358,18 @@ export default function InvoiceCreatePage() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.22 }}
     >
+      {printInvoice ? (
+        <PrintableInvoice
+          className="print-only"
+          invoice={printInvoice}
+          company={company}
+          payments={[]}
+          businessType={businessType}
+        />
+      ) : null}
+
+      <div className={printInvoice ? 'no-print' : ''}>
       {toast ? <Toast tone={toast.tone} message={toast.message} onClose={() => setToast(null)} /> : null}
-      <style>{`
-        @media print {
-          body * { visibility: hidden !important; }
-          #invoice-print, #invoice-print * { visibility: visible !important; }
-          #invoice-print { position: absolute !important; inset: 0 !important; width: 210mm !important; min-height: 297mm !important; border: 0 !important; box-shadow: none !important; }
-          .no-print { display: none !important; }
-        }
-      `}</style>
 
       <div className="no-print sticky top-[5.5rem] z-20 -mx-3 mb-4 border-b border-slate-200 bg-white/95 px-3 py-3 shadow-[0_18px_50px_-44px_rgba(15,23,42,0.5)] backdrop-blur-sm sm:-mx-5 sm:px-5">
         <div className="mx-auto flex max-w-[1600px] flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
@@ -688,11 +731,11 @@ export default function InvoiceCreatePage() {
                 <h2 className="mt-1 truncate text-xl font-black tracking-tight text-slate-950">{invoice.invoiceNumber}</h2>
               </div>
               <div className="flex flex-wrap gap-2">
-                <Button variant="subtle" className="h-10 rounded-xl text-xs" type="button" onClick={() => window.print()}>
+                <Button variant="subtle" className="h-10 rounded-xl text-xs" type="button" onClick={downloadDraftPdf}>
                   <HiOutlineDocumentArrowDown className="h-4 w-4" />
                   Download PDF
                 </Button>
-                <Button variant="subtle" className="h-10 rounded-xl text-xs" type="button" onClick={() => window.print()}>
+                <Button variant="subtle" className="h-10 rounded-xl text-xs" type="button" onClick={printDraftInvoice}>
                   <HiOutlinePrinter className="h-4 w-4" />
                   Print
                 </Button>
@@ -719,6 +762,7 @@ export default function InvoiceCreatePage() {
           </div>
         </div>
       ) : null}
+      </div>
     </motion.div>
   )
 }

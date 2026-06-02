@@ -16,6 +16,7 @@ import Button from '../components/ui/Button.jsx'
 import Card from '../components/ui/Card.jsx'
 import Input from '../components/ui/Input.jsx'
 import Select from '../components/ui/Select.jsx'
+import PrintableReport from '../components/print/PrintableReport.jsx'
 import { supportedCurrencies } from '../data/currency.js'
 import { normalizeBusinessType } from '../data/moduleAccess.js'
 import { useBusinessSettings } from '../hooks/useBusinessSettings.js'
@@ -399,6 +400,10 @@ export default function ReportsPage() {
     window.setTimeout(() => setNotice(''), 2200)
   }
 
+  function printReport() {
+    window.setTimeout(() => window.print(), 180)
+  }
+
   const activeBusinessType = normalizeBusinessType(businessType)
   const reportTitle = reportLabelByBusiness[activeBusinessType] || 'Workspace Report'
   const dateRangeLabel = filters.range === 'custom'
@@ -532,7 +537,7 @@ export default function ReportsPage() {
               ))}
             </Select>
           </div>
-          <Button variant="subtle" className="h-10 rounded-2xl" type="button" onClick={() => window.print()}>
+          <Button variant="subtle" className="h-10 rounded-2xl" type="button" onClick={printReport}>
             <HiOutlinePrinter className="h-4 w-4" />
             Print Report
           </Button>
@@ -570,7 +575,9 @@ export default function ReportsPage() {
         </div>
       </Card>
 
-      <section className="printable-report space-y-5">
+      <PrintableReport report={reportExport} className="print-only" />
+
+      <section className="no-print space-y-5">
         <Card className="p-5 sm:p-6">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex min-w-0 items-center gap-4">

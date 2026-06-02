@@ -4,7 +4,7 @@ import Card from '../ui/Card.jsx'
 import { useNavigate } from 'react-router-dom'
 
 function badgeVariant(name) {
-  if (name === 'Standard' || name === 'Premium') return 'purple'
+  if (name === 'Standard') return 'purple'
   if (name === 'Enterprise') return 'warning'
   return 'default'
 }
@@ -13,7 +13,7 @@ export default function PlanCards({ plans, currentPlan }) {
   const navigate = useNavigate()
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
       {plans.map((p) => (
         <Card key={p.id} className="p-5">
           <div className="flex items-start justify-between gap-3">

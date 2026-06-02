@@ -115,16 +115,10 @@ const pricingPlans = [
     featured: true,
   },
   {
-    name: 'Premium',
-    monthly: 9999,
-    description: 'For established businesses',
-    features: ['All Standard Features', 'All Modules Access', 'Up to 10 Users', '50GB Storage', 'Priority Support'],
-  },
-  {
     name: 'Enterprise',
     custom: true,
     description: 'For large organizations',
-    features: ['All Premium Features', 'Unlimited Users', 'Custom Integrations', 'Dedicated Support', 'Custom Development'],
+    features: ['All Standard Features', 'Unlimited Users', 'Custom Integrations', 'Dedicated Support', 'Custom Development'],
   },
 ]
 

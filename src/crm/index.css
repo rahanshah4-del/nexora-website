@@ -113,8 +113,21 @@
     color: #0f172a;
   }
 
+  .print-only {
+    display: none;
+  }
+
+  .print-document {
+    color: #0f172a;
+  }
+
   .print-break-inside-avoid {
     break-inside: avoid;
+  }
+
+  .print-avoid-break {
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 }
 
@@ -158,6 +171,11 @@
 }
 
 @media print {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+
   html,
   body,
   #root {
@@ -167,6 +185,7 @@
   }
 
   body {
+    background: #ffffff !important;
     color: #0f172a !important;
   }
 
@@ -179,6 +198,33 @@
   .nexora-bg::after,
   .no-print {
     display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  .print-document {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 auto !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+  }
+
+  .print-document table {
+    page-break-inside: auto;
+  }
+
+  .print-document thead {
+    display: table-header-group;
+  }
+
+  .print-document tr,
+  .print-document header,
+  .print-avoid-break {
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 
   .glass,

@@ -86,7 +86,7 @@ export class ControlCentreErrorBoundary extends Component {
 }
 
 const modules = ['General CRM', 'School ERP', 'Retail / POS', 'Property ERP', 'Restaurant POS', 'WhatsApp CRM']
-const planNames = ['Basic', 'Standard', 'Premium', 'Enterprise']
+const planNames = ['Basic', 'Standard', 'Enterprise']
 const adminRoles = ['Super Admin', 'Admin', 'Support', 'Billing Manager', 'Read Only']
 const moduleColors = ['#7c3aed', '#3b82f6', '#f59e0b', '#ef4444', '#14b8a6', '#0ea5e9']
 const defaultPlatformSettings = {
@@ -1007,12 +1007,13 @@ export default function ControlCentre() {
 
   const upgradeColumns = [
     { key: 'client', label: 'Client', render: (row) => <div><p className="font-black text-slate-900">{row.clientEmail || row.email || row.ownerEmail || '-'}</p><p className="text-xs text-slate-500">{row.workspaceName || row.companyName || row.workspaceId || '-'}</p></div> },
-    { key: 'plan', label: 'Requested Plan', render: (row) => row.requestedPlan || row.plan || '-' },
+    { key: 'plan', label: 'Plan', render: (row) => row.requestedPlan || row.plan || '-' },
     { key: 'amount', label: 'Amount', render: (row) => money(amountValue(row), rowCurrency(row)) },
     { key: 'transactionId', label: 'Transaction ID', render: (row) => row.transactionId || row.txnId || '-' },
+    { key: 'senderName', label: 'Sender Name', render: (row) => row.senderName || '-' },
     { key: 'senderNumber', label: 'Sender Number', render: (row) => row.senderNumber || row.userPhone || row.phone || '-' },
-    { key: 'method', label: 'Method', render: (row) => row.paymentMethod || row.method || '-' },
-    { key: 'proof', label: 'Proof', render: (row) => proofUrl(row) ? <a className="font-bold text-violet-700" href={proofUrl(row)} target="_blank" rel="noreferrer">View</a> : '-' },
+    { key: 'method', label: 'Payment Method', render: (row) => row.paymentMethod || row.method || '-' },
+    { key: 'proof', label: 'Screenshot', render: (row) => proofUrl(row) ? <a className="font-bold text-violet-700" href={proofUrl(row)} target="_blank" rel="noreferrer">View Screenshot</a> : 'No Screenshot Uploaded' },
     { key: 'date', label: 'Date', render: (row) => dateTimeLabel(row.paymentDate || row.createdAt) },
     { key: 'status', label: 'Status', render: (row) => <Status value={row.approvalStatus || row.status || 'pending'} /> },
     {
@@ -1035,7 +1036,7 @@ export default function ControlCentre() {
     { key: 'amount', label: 'Amount', render: (row) => money(amountValue(row), rowCurrency(row)) },
     { key: 'currency', label: 'Currency', render: (row) => rowCurrency(row) },
     { key: 'method', label: 'Method', render: (row) => row.paymentMethod || row.method || '-' },
-    { key: 'proof', label: 'Proof', render: (row) => proofUrl(row) ? <a className="font-bold text-violet-700" href={proofUrl(row)} target="_blank" rel="noreferrer">View Proof</a> : '-' },
+    { key: 'proof', label: 'Proof', render: (row) => proofUrl(row) ? <a className="font-bold text-violet-700" href={proofUrl(row)} target="_blank" rel="noreferrer">View Proof</a> : 'No Screenshot Uploaded' },
     { key: 'date', label: 'Payment Date', render: (row) => dateTimeLabel(row.paymentDate || row.paidAt || row.createdAt) },
     { key: 'status', label: 'Status', render: (row) => <Status value={row.paymentStatus || row.status || 'pending'} /> },
     { key: 'approvedBy', label: 'Approved By', render: (row) => row.approvedByEmail || row.approvedBy || '-' },
@@ -1221,7 +1222,7 @@ export default function ControlCentre() {
   function Plans() {
     return (
       <Panel title="Plans & Pricing Management" action={<ShellButton>Firestore: {PLATFORM_PLAN_COLLECTION}</ShellButton>}>
-        <div className="grid gap-4 lg:grid-cols-4">
+        <div className="grid gap-4 lg:grid-cols-3">
           {platformPlans.map((plan) => (
             <Card key={plan.id} className="p-4">
               <div className="flex items-start justify-between gap-3">

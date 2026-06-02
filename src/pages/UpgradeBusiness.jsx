@@ -130,9 +130,9 @@ function UploadBox({ file, previewUrl, onFile }) {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm font-black text-slate-950">Upload Payment Proof Screenshot</p>
-            <p className="mt-1 text-xs font-semibold text-slate-500">PNG/JPG receipt screenshot is required before submission.</p>
+            <p className="mt-1 text-xs font-semibold text-slate-500">Optional PNG/JPG receipt screenshot for faster verification.</p>
           </div>
-          <span className="rounded-full bg-violet-600 px-4 py-2 text-xs font-black text-white">{file ? 'Replace proof' : 'Choose file'}</span>
+          <span className="rounded-full bg-violet-600 px-4 py-2 text-xs font-black text-white">{file ? 'Replace proof' : 'Choose optional file'}</span>
         </div>
         {previewUrl ? <img src={previewUrl} alt="Payment proof preview" className="mt-4 h-56 w-full rounded-2xl object-cover" /> : null}
       </button>
@@ -212,7 +212,8 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
         setWorkspaceDoc(workspaceSnap?.exists?.() ? { id: workspaceSnap.id, ...workspaceSnap.data() } : null)
       }
     }
-    loadProfile().catch(() => {
+    loadProfile().catch((error) => {
+      console.error('Upgrade Request Profile Load Error:', error)
       if (!cancelled) {
         setUserDoc(null)
         setWorkspaceDoc(null)
@@ -235,6 +236,7 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
   const businessType = workspaceDoc?.selectedBusinessType || workspaceDoc?.businessType || userDoc?.selectedBusinessType || userDoc?.businessType || ''
   const currency = selectedPlan?.currency || platformSettings.defaultCurrency || DEFAULT_SAAS_CURRENCY
   const selectedAmount = billingCycle === 'yearly' ? selectedPlan?.yearlyPrice : selectedPlan?.monthlyPrice
+  const requestedPlan = selectedPlan?.name || ''
   const previewUrl = useMemo(() => (proofFile ? URL.createObjectURL(proofFile) : ''), [proofFile])
 
   useEffect(() => {
@@ -250,56 +252,97 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
     }))
   }, [selectedAmount, user?.displayName, userDoc?.ownerName])
 
-  const canSubmit = Boolean(
-    user?.uid &&
-    workspaceId &&
-    selectedPlan?.id &&
-    selectedMethod?.id &&
-    form.transactionId.trim() &&
-    form.amountPaid.trim() &&
-    form.paymentDate &&
-    form.senderName.trim() &&
-    form.senderNumber.trim() &&
-    proofFile &&
-    !submitting,
-  )
+  const canSubmit = !submitting && !submitted
+
+  function upgradeRequestContext() {
+    return {
+      collectionPath: 'upgradeRequests',
+      hasDb: Boolean(db),
+      hasStorage: Boolean(storage),
+      hasUserUid: Boolean(user?.uid),
+      userUid: user?.uid || '',
+      hasWorkspaceId: Boolean(workspaceId),
+      workspaceId,
+      hasWorkspaceDoc: Boolean(workspaceDoc?.id),
+      workspaceDocId: workspaceDoc?.id || '',
+      hasWorkspaceOwnerId: Boolean(workspaceDoc?.ownerId),
+      workspaceOwnerId: workspaceDoc?.ownerId || '',
+      hasBusinessType: Boolean(businessType),
+      businessType,
+      hasRequestedPlan: Boolean(requestedPlan),
+      requestedPlan,
+      hasPaymentMethod: Boolean(selectedMethod?.id),
+      paymentMethodId: selectedMethod?.id || '',
+      hasScreenshot: Boolean(proofFile),
+      hasTransactionId: Boolean(form.transactionId.trim()),
+      hasSenderName: Boolean(form.senderName.trim()),
+      hasSenderNumber: Boolean(form.senderNumber.trim()),
+    }
+  }
+
+  function validateUpgradeRequest() {
+    if (!user?.uid) return 'Authentication is required before submitting an upgrade request.'
+    if (!workspaceId) return 'Workspace ID is missing. Please reselect your workspace and try again.'
+    if (!workspaceDoc?.id) return 'Workspace record is missing. Please reselect your workspace and try again.'
+    if (!workspaceDoc?.ownerId) return 'Workspace owner ID is missing. Please contact support.'
+    if (!businessType) return 'Business type is missing for this workspace.'
+    if (!requestedPlan) return 'Plan is required.'
+    if (!selectedMethod?.id) return 'Payment method is required.'
+    return ''
+  }
 
   async function handleSubmit() {
     setSubmitError('')
-    if (!canSubmit) {
-      setSubmitError('Complete all required transaction fields and upload payment proof.')
+    const requestContext = upgradeRequestContext()
+    console.info('Upgrade Request Validation:', requestContext)
+    const validationError = validateUpgradeRequest()
+    if (validationError) {
+      const error = new Error(validationError)
+      console.error('Upgrade Request Error:', error)
+      console.error('Upgrade Request Context:', requestContext)
+      setSubmitError(validationError)
       return
     }
     setSubmitting(true)
     try {
       assertFirebaseReady()
-      if (!storage) throw new Error('Payment proof upload is not configured.')
-      const safeName = proofFile.name?.replaceAll(/[^\w.-]+/g, '_') || 'payment-proof.png'
-      const objectPath = `upgradeRequests/${user.uid}/${Date.now()}_${safeName}`
-      const storageRef = ref(storage, objectPath)
-      await uploadBytes(storageRef, proofFile, { contentType: proofFile.type || 'image/png' })
-      const paymentProof = await getDownloadURL(storageRef)
+      let paymentProof = ''
+      let objectPath = ''
+      if (proofFile) {
+        if (!storage) throw new Error('Payment proof upload is not configured.')
+        const safeName = proofFile.name?.replaceAll(/[^\w.-]+/g, '_') || 'payment-proof.png'
+        objectPath = `upgradeRequests/${user.uid}/${Date.now()}_${safeName}`
+        console.info('Upgrade request screenshot upload starting:', { objectPath, size: proofFile.size, type: proofFile.type })
+        const storageRef = ref(storage, objectPath)
+        await uploadBytes(storageRef, proofFile, { contentType: proofFile.type || 'image/png' })
+        paymentProof = await getDownloadURL(storageRef)
+        console.info('Upgrade request screenshot upload completed:', { objectPath, hasPaymentProofUrl: Boolean(paymentProof) })
+      } else {
+        console.info('Upgrade request screenshot upload skipped: no screenshot uploaded.')
+      }
+      const paidAmount = Number(form.amountPaid || (String(selectedAmount).toLowerCase() === 'custom' ? 0 : selectedAmount) || 0) || 0
       const payload = {
         email: user.email || userDoc?.email || '',
         uid: user.uid,
         userId: user.uid,
-        ownerId: workspaceDoc?.ownerId || user.uid,
+        createdBy: user.uid,
+        ownerId: workspaceDoc.ownerId,
         workspaceId,
         workspaceName,
         businessType,
         currentPlan,
-        requestedPlan: selectedPlan.name,
-        selectedPlan: selectedPlan.name,
+        requestedPlan,
+        selectedPlan: requestedPlan,
         billingCycle,
-        amount: Number(form.amountPaid),
-        amountPaid: Number(form.amountPaid),
+        amount: paidAmount,
+        amountPaid: paidAmount,
         currency,
         transactionId: form.transactionId.trim(),
         senderName: form.senderName.trim(),
         senderNumber: form.senderNumber.trim(),
         paymentMethod: selectedMethod.label || selectedMethod.id,
         paymentMethodId: selectedMethod.id,
-        paymentDate: form.paymentDate,
+        paymentDate: form.paymentDate || '',
         paymentProof,
         paymentProofPath: objectPath,
         screenshotUrl: paymentProof,
@@ -310,7 +353,18 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
         paymentStatus: 'pending',
         createdAt: serverTimestamp(),
       }
-      await addDoc(collection(db, 'upgradeRequests'), payload)
+      console.info('Upgrade request Firestore write starting:', {
+        collectionPath: 'upgradeRequests',
+        userId: payload.userId,
+        createdBy: payload.createdBy,
+        workspaceId: payload.workspaceId,
+        businessType: payload.businessType,
+        requestedPlan: payload.requestedPlan,
+        paymentMethod: payload.paymentMethod,
+        hasScreenshot: Boolean(payload.screenshotUrl),
+      })
+      const requestRef = await addDoc(collection(db, 'upgradeRequests'), payload)
+      console.info('Upgrade request Firestore write completed:', { id: requestRef.id, collectionPath: 'upgradeRequests' })
       await trackAnalyticsEvent('upgrade_request_submitted', {
         userId: user.uid,
         email: payload.email,
@@ -322,6 +376,8 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
       })
       setSubmitted(true)
     } catch (error) {
+      console.error('Upgrade Request Error:', error)
+      console.error('Upgrade Request Context:', upgradeRequestContext())
       setSubmitError(clientSafeMessage(error, 'Failed to submit upgrade request. Please try again.', { context: 'Upgrade request submit' }))
     } finally {
       setSubmitting(false)
@@ -340,7 +396,7 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
           <div className="grid gap-6 lg:grid-cols-[1.35fr_0.65fr] lg:items-end">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.32em] text-violet-200">Nexora SaaS Upgrade Portal</p>
-              <h1 className="mt-4 text-3xl font-black tracking-tight sm:text-5xl">Upgrade plan and submit payment proof.</h1>
+              <h1 className="mt-4 text-3xl font-black tracking-tight sm:text-5xl">Upgrade plan and submit transaction details.</h1>
               <p className="mt-4 max-w-2xl text-base font-medium leading-7 text-slate-200">
                 Choose a backend-controlled plan, pay through the configured account, and submit your transaction for Nexora approval.
               </p>
@@ -375,7 +431,7 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
                   ))}
                 </div>
               </div>
-              <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {platformPlans.map((plan) => (
                   <PlanCard key={plan.id} plan={plan} selected={selectedPlan?.id === plan.id} active={String(currentPlan).toLowerCase() === String(plan.name).toLowerCase()} onSelect={setSelectedPlanId} />
                 ))}
@@ -422,27 +478,27 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
               <h2 className="text-xl font-black">Transaction information</h2>
               <div className="mt-5 grid gap-4 md:grid-cols-2">
                 <label className="text-xs font-black text-slate-600">
-                  Transaction ID
+                  Transaction ID <span className="font-semibold text-slate-400">(optional)</span>
                   <input className="mt-1 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold" value={form.transactionId} onChange={(event) => setForm((current) => ({ ...current, transactionId: event.target.value }))} placeholder="e.g. TXN-123456" />
                 </label>
                 <label className="text-xs font-black text-slate-600">
-                  Amount Paid
+                  Amount Paid <span className="font-semibold text-slate-400">(optional)</span>
                   <input className="mt-1 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold" value={form.amountPaid} onChange={(event) => setForm((current) => ({ ...current, amountPaid: event.target.value }))} inputMode="decimal" placeholder={money(selectedAmount, currency)} />
                 </label>
                 <label className="text-xs font-black text-slate-600">
-                  Payment Date
+                  Payment Date <span className="font-semibold text-slate-400">(optional)</span>
                   <input type="date" className="mt-1 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold" value={form.paymentDate} onChange={(event) => setForm((current) => ({ ...current, paymentDate: event.target.value }))} />
                 </label>
                 <label className="text-xs font-black text-slate-600">
-                  Sender Name
+                  Sender Name <span className="font-semibold text-slate-400">(optional)</span>
                   <input className="mt-1 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold" value={form.senderName} onChange={(event) => setForm((current) => ({ ...current, senderName: event.target.value }))} placeholder="Name on payment account" />
                 </label>
                 <label className="text-xs font-black text-slate-600">
-                  Sender Number
+                  Sender Number <span className="font-semibold text-slate-400">(optional)</span>
                   <input className="mt-1 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold" value={form.senderNumber} onChange={(event) => setForm((current) => ({ ...current, senderNumber: event.target.value }))} placeholder="e.g. 03xx-xxxxxxx" />
                 </label>
                 <label className="text-xs font-black text-slate-600">
-                  Payment Method
+                  Payment Method <span className="font-semibold text-rose-500">(required)</span>
                   <input className="mt-1 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold" value={selectedMethod?.label || ''} readOnly />
                 </label>
                 <label className="md:col-span-2 text-xs font-black text-slate-600">
@@ -469,7 +525,7 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
               </div>
               {submitError ? <p className="mt-4 rounded-2xl bg-rose-50 p-3 text-sm font-bold text-rose-700">{submitError}</p> : null}
               {submitted ? <p className="mt-4 rounded-2xl bg-emerald-50 p-3 text-sm font-bold text-emerald-700">Upgrade request submitted. Status is pending until Nexora approves payment.</p> : null}
-              <button type="button" disabled={!canSubmit || submitted} onClick={handleSubmit} className={`mt-5 w-full rounded-2xl px-5 py-4 text-sm font-black transition ${canSubmit && !submitted ? 'bg-slate-950 text-white hover:bg-violet-700' : 'cursor-not-allowed bg-slate-200 text-slate-500'}`}>
+              <button type="button" disabled={!canSubmit} onClick={handleSubmit} className={`mt-5 w-full rounded-2xl px-5 py-4 text-sm font-black transition ${canSubmit ? 'bg-slate-950 text-white hover:bg-violet-700' : 'cursor-not-allowed bg-slate-200 text-slate-500'}`}>
                 {submitting ? 'Submitting...' : submitted ? 'Submitted' : 'Submit Upgrade Request'}
               </button>
             </Panel>
@@ -499,7 +555,7 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
       </Section>
 
       <div className="sticky bottom-0 z-30 border-t border-slate-200 bg-white/95 p-3 backdrop-blur xl:hidden">
-        <button type="button" disabled={!canSubmit || submitted} onClick={handleSubmit} className={`w-full rounded-2xl px-5 py-4 text-sm font-black ${canSubmit && !submitted ? 'bg-slate-950 text-white' : 'bg-slate-200 text-slate-500'}`}>
+        <button type="button" disabled={!canSubmit} onClick={handleSubmit} className={`w-full rounded-2xl px-5 py-4 text-sm font-black ${canSubmit ? 'bg-slate-950 text-white' : 'bg-slate-200 text-slate-500'}`}>
           {submitting ? 'Submitting...' : submitted ? 'Submitted' : 'Submit Upgrade Request'}
         </button>
       </div>
