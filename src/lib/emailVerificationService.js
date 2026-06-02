@@ -16,6 +16,16 @@ function logFullOtpError(error) {
   })
 }
 
+function logVerifyOperationFailure(operation, error, path, payload = null) {
+  console.error('[OTP verify] operation failed', {
+    operation,
+    path,
+    code: error?.code || null,
+    message: error?.message || String(error || ''),
+    payload,
+  })
+}
+
 function isPermissionDenied(error) {
   return error?.code === 'permission-denied' || /permission/i.test(String(error?.message || ''))
 }
@@ -151,7 +161,18 @@ export async function verifyCustomEmailOtp(user, otp) {
   try {
     const userRef = doc(db, 'users', uid)
     const otpRef = doc(db, 'users', uid, 'verification', 'otp')
-    const snap = await getDoc(otpRef)
+    const userDocPath = `users/${uid}`
+    const otpDocPath = `users/${uid}/verification/otp`
+    console.log('[OTP verify] read otp start', { path: otpDocPath })
+    let snap
+    try {
+      snap = await getDoc(otpRef)
+      console.log('[OTP verify] read otp success', { path: otpDocPath, exists: snap.exists() })
+    } catch (error) {
+      logVerifyOperationFailure('read_otp', error, otpDocPath)
+      throw error
+    }
+
     const data = snap.exists() ? snap.data() : null
     const expiresAt = toDate(data?.otpExpiresAt)
     if (!data?.otpHash || !expiresAt || expiresAt.getTime() < Date.now()) {
@@ -163,11 +184,19 @@ export async function verifyCustomEmailOtp(user, otp) {
       return { ok: false, error: 'Invalid verification code.' }
     }
 
-    await updateDoc(userRef, {
+    const parentPayload = {
       emailVerifiedCustom: true,
       emailVerifiedCustomAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
-    })
+    }
+    console.log('[OTP verify] update parent start', { path: userDocPath, payloadFields: Object.keys(parentPayload) })
+    try {
+      await updateDoc(userRef, parentPayload)
+      console.log('[OTP verify] update parent success', { path: userDocPath })
+    } catch (error) {
+      logVerifyOperationFailure('update_parent', error, userDocPath, Object.keys(parentPayload))
+      throw error
+    }
 
     return { ok: true }
   } catch (error) {

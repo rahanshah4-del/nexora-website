@@ -570,7 +570,7 @@ service cloud.firestore {
       allow delete: if isAdmin();
 
       match /verification/{docId} {
-        allow read, write: if isSelf(userId);
+        allow read, create, update, delete: if isSelf(userId);
       }
 
       match /sessions/{sessionId} {
