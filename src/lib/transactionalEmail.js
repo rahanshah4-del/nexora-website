@@ -1,6 +1,4 @@
 const EMAIL_API_URL = 'https://nexora-email-api.rahanshah4.workers.dev/send-email'
-const firebaseApiKey = import.meta.env.VITE_FIREBASE_API_KEY
-const firebaseOobEndpoint = `https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=${firebaseApiKey || ''}`
 
 function clean(value) {
   return typeof value === 'string' ? value.trim() : ''
@@ -43,16 +41,18 @@ function money(amount, currency = 'PKR') {
   return `${currency} ${Number.isFinite(value) ? value.toLocaleString() : '0'}`
 }
 
-export async function sendWorkerEmail({ to, subject, html }) {
+export async function sendWorkerEmail({ to, subject, html, type, data }) {
   const payload = {
     to: clean(to),
-    subject: clean(subject),
-    html: clean(html),
   }
+  if (type) payload.type = clean(type)
+  if (data) payload.data = data
+  if (subject) payload.subject = clean(subject)
+  if (html) payload.html = clean(html)
 
   if (!payload.to) return { ok: false, error: 'Recipient email is missing.' }
-  if (!payload.subject) return { ok: false, error: 'Email subject is missing.' }
-  if (!payload.html) return { ok: false, error: 'Email content is missing.' }
+  if (!payload.type && !payload.subject) return { ok: false, error: 'Email subject is missing.' }
+  if (!payload.type && !payload.html) return { ok: false, error: 'Email content is missing.' }
 
   try {
     const response = await fetch(EMAIL_API_URL, {
@@ -72,28 +72,8 @@ export async function sendWorkerEmail({ to, subject, html }) {
 
 export async function createPasswordResetLink(email) {
   const to = clean(email)
-  if (!firebaseApiKey) return { ok: false, error: 'Firebase API key is missing.' }
   if (!to) return { ok: false, error: 'Email address is missing.' }
-
-  try {
-    const response = await fetch(firebaseOobEndpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        requestType: 'PASSWORD_RESET',
-        email: to,
-        continueUrl: `${window.location.origin}/login`,
-        returnOobLink: true,
-      }),
-    })
-    const data = await response.json().catch(() => null)
-    if (!response.ok || !data?.oobLink) {
-      return { ok: false, error: data?.error?.message || 'Password reset link could not be created.' }
-    }
-    return { ok: true, link: String(data.oobLink) }
-  } catch (error) {
-    return { ok: false, error: error?.message || 'Password reset link could not be created.' }
-  }
+  return { ok: true, link: `${window.location.origin}/login?email=${encodeURIComponent(to)}` }
 }
 
 export function welcomeEmail({ name = 'there' } = {}) {
@@ -220,4 +200,3 @@ export function invoiceDeliveryEmail({ invoice, company = {}, businessType = '' 
     }),
   }
 }
-

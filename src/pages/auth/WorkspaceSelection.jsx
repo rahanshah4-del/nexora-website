@@ -760,7 +760,7 @@ export default function WorkspaceSelection() {
   const [verificationMessage, setVerificationMessage] = useState('')
   const [businessTypeSaving, setBusinessTypeSaving] = useState('')
 
-  const emailVerified = Boolean(user?.emailVerified)
+  const emailVerified = Boolean(user?.emailVerified || accountData?.emailVerifiedCustom)
 
   useEffect(() => {
     const interval = window.setInterval(() => setNowMs(Date.now()), 60000)

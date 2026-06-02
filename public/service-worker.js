@@ -1,5 +1,6 @@
-const CACHE_NAME = 'nexora-pwa-v1'
+const CACHE_NAME = 'nexora-pwa-v2'
 const CACHE_URLS = ['/', '/nexora-logo.jpg', '/nexora-logo.png', '/index.html']
+const OFFLINE_HTML = '<!doctype html><html><body><h1>Nexora is offline</h1><p>Please reconnect and try again.</p></body></html>'
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -26,10 +27,22 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
+  const url = new URL(event.request.url)
+
   if (event.request.mode === 'navigate') {
     event.respondWith(
-      fetch(event.request).catch(() => caches.match('/index.html')),
+      fetch(event.request)
+        .catch(() => caches.match('/index.html'))
+        .then((response) => response || new Response(OFFLINE_HTML, {
+          status: 503,
+          headers: { 'Content-Type': 'text/html; charset=utf-8' },
+        })),
     )
+    return
+  }
+
+  if (url.origin !== self.location.origin) {
+    event.respondWith(fetch(event.request))
     return
   }
 
@@ -47,7 +60,7 @@ self.addEventListener('fetch', (event) => {
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone))
           return networkResponse
         })
-        .catch(() => cachedResponse)
+        .catch(() => new Response('', { status: 504, statusText: 'Gateway Timeout' }))
     }),
   )
 })
