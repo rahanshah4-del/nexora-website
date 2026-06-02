@@ -8,13 +8,26 @@ const ALLOWED_ORIGINS = new Set([
   'http://localhost:5173',
 ])
 
+const BRAND = {
+  background: '#070B18',
+  card: '#111827',
+  cardSoft: '#1F2937',
+  text: '#F8FAFC',
+  muted: '#94A3B8',
+  primary: '#6D5BFF',
+  secondary: '#3B82F6',
+  success: '#22C55E',
+  warning: '#F59E0B',
+  danger: '#EF4444',
+}
+
 function corsHeaders(request) {
   const origin = request.headers.get('Origin') || ''
   const allowedOrigin = ALLOWED_ORIGINS.has(origin) ? origin : 'https://nexorasolution.online'
 
   return {
     'Access-Control-Allow-Origin': allowedOrigin,
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
     'Access-Control-Max-Age': '86400',
   }
@@ -26,6 +39,16 @@ function jsonResponse(request, body, status = 200) {
     headers: {
       ...corsHeaders(request),
       'Content-Type': 'application/json',
+    },
+  })
+}
+
+function htmlResponse(html, status = 200) {
+  return new Response(html, {
+    status,
+    headers: {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'no-store',
     },
   })
 }
@@ -47,253 +70,196 @@ function dataString(data, key, fallback = '') {
   return getString(data?.[key]) || fallback
 }
 
-function brandedEmailLayout({ eyebrow = 'Nexora Solutions', title, intro = '', body = '', ctaLabel = 'Open Nexora', ctaUrl = DEFAULT_LOGIN_URL }) {
-  const safeCtaUrl = escapeHtml(ctaUrl || DEFAULT_LOGIN_URL)
-  const safeCtaLabel = escapeHtml(ctaLabel || 'Open Nexora')
+function safeUrl(value, fallback = DEFAULT_LOGIN_URL) {
+  const raw = getString(value) || fallback
+  if (/^https?:\/\//i.test(raw)) return raw
+  return fallback
+}
+
+function themeColor(theme = 'primary') {
+  if (theme === 'success') return BRAND.success
+  if (theme === 'warning') return BRAND.warning
+  if (theme === 'danger') return BRAND.danger
+  if (theme === 'secondary') return BRAND.secondary
+  return BRAND.primary
+}
+
+function paragraph(text) {
+  if (!text) return ''
+  return `<p style="margin:0 0 16px 0;font-size:15px;line-height:24px;color:${BRAND.muted};font-family:Arial,Helvetica,sans-serif;">${escapeHtml(text)}</p>`
+}
+
+function strongText(text) {
+  return `<span style="color:${BRAND.text};font-weight:700;">${escapeHtml(text)}</span>`
+}
+
+function infoTable(infoRows = []) {
+  const rows = infoRows
+    .filter((row) => row?.label && row?.value)
+    .map((row) => `<tr>
+      <td style="padding:11px 0;border-bottom:1px solid rgba(148,163,184,.16);font-size:13px;line-height:18px;color:${BRAND.muted};font-family:Arial,Helvetica,sans-serif;">${escapeHtml(row.label)}</td>
+      <td align="right" style="padding:11px 0;border-bottom:1px solid rgba(148,163,184,.16);font-size:13px;line-height:18px;color:${BRAND.text};font-weight:700;font-family:Arial,Helvetica,sans-serif;">${escapeHtml(row.value)}</td>
+    </tr>`)
+    .join('')
+
+  if (!rows) return ''
+  return `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:20px 0 0 0;border-collapse:collapse;">${rows}</table>`
+}
+
+function ctaButton(cta, accent, secondary = false) {
+  if (!cta?.label || !cta?.url) return ''
+  const bg = secondary ? BRAND.cardSoft : accent
+  const border = secondary ? `1px solid rgba(148,163,184,.24)` : `1px solid ${accent}`
+  return `<a href="${escapeHtml(safeUrl(cta.url))}" style="display:inline-block;margin:0 8px 10px 0;padding:14px 18px;border-radius:12px;background:${bg};border:${border};color:${BRAND.text};font-size:14px;line-height:18px;font-weight:800;text-decoration:none;font-family:Arial,Helvetica,sans-serif;">${escapeHtml(cta.label)}</a>`
+}
+
+function createNexoraEmailLayout({
+  preheader = '',
+  badge = 'Nexora Notification',
+  title = 'Nexora Solutions',
+  subtitle = '',
+  bodyHtml = '',
+  primaryCta = null,
+  secondaryCta = null,
+  infoRows = [],
+  highlightBox = '',
+  footerNote = '',
+  theme = 'primary',
+} = {}) {
+  const accent = themeColor(theme)
+  const safeTitle = escapeHtml(title)
+  const safeSubtitle = escapeHtml(subtitle)
+  const safeBadge = escapeHtml(badge)
+  const safePreheader = escapeHtml(preheader)
+  const safeFooterNote = escapeHtml(footerNote)
 
   return `<!doctype html>
 <html>
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>${escapeHtml(title)}</title>
-    <style>
-      @media only screen and (max-width: 640px) {
-        .nx-shell { padding: 18px 10px !important; }
-        .nx-card { border-radius: 18px !important; }
-        .nx-header, .nx-body { padding: 22px !important; }
-        .nx-title { font-size: 24px !important; }
-        .nx-button { display: block !important; text-align: center !important; }
-      }
-    </style>
+    <meta name="x-apple-disable-message-reformatting">
+    <title>${safeTitle}</title>
   </head>
-  <body style="margin:0;background:#f4f7fb;font-family:Inter,Segoe UI,Arial,sans-serif;color:#0f172a">
-    <div class="nx-shell" style="padding:32px 16px;background:linear-gradient(135deg,#eef2ff 0%,#f8fafc 48%,#eff6ff 100%)">
-      <div class="nx-card" style="max-width:660px;margin:0 auto;overflow:hidden;border-radius:24px;background:#ffffff;border:1px solid #e2e8f0;box-shadow:0 24px 80px rgba(15,23,42,.12)">
-        <div style="height:7px;background:linear-gradient(90deg,#7c3aed 0%,#2563eb 50%,#06b6d4 100%)"></div>
-        <div class="nx-header" style="padding:30px 32px 24px;background:#ffffff">
-          <div style="display:flex;align-items:center;gap:12px">
-            <div style="width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,#7c3aed,#2563eb);color:#ffffff;font-weight:900;font-size:22px;line-height:46px;text-align:center">N</div>
-            <div>
-              <div style="font-size:18px;font-weight:900;letter-spacing:.08em;color:#0f172a">NEXORA</div>
-              <div style="margin-top:2px;font-size:11px;font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:#64748b">Solutions</div>
-            </div>
-          </div>
-          <p style="margin:24px 0 8px;font-size:12px;font-weight:900;letter-spacing:.18em;text-transform:uppercase;color:#2563eb">${escapeHtml(eyebrow)}</p>
-          <h1 class="nx-title" style="margin:0;font-size:30px;line-height:1.2;letter-spacing:-.02em;color:#0f172a">${escapeHtml(title)}</h1>
-          ${intro ? `<p style="margin:14px 0 0;font-size:16px;line-height:1.7;color:#475569">${escapeHtml(intro)}</p>` : ''}
-        </div>
-        <div class="nx-body" style="padding:0 32px 30px">
-          <div style="border-radius:18px;background:#f8fafc;border:1px solid #e2e8f0;padding:22px">
-            ${body}
-          </div>
-          <div style="margin-top:24px">
-            <a class="nx-button" href="${safeCtaUrl}" style="display:inline-block;border-radius:14px;background:linear-gradient(135deg,#7c3aed,#2563eb);padding:14px 20px;color:#ffffff;font-size:14px;font-weight:900;text-decoration:none;box-shadow:0 12px 30px rgba(37,99,235,.24)">${safeCtaLabel}</a>
-          </div>
-        </div>
-        <div style="padding:20px 32px 28px;border-top:1px solid #e2e8f0;background:#ffffff">
-          <p style="margin:0;font-size:12px;line-height:1.7;color:#64748b">Nexora Solutions email notifications are sent from <strong style="color:#334155">support@nexorasolution.online</strong>.</p>
-          <p style="margin:8px 0 0;font-size:12px;color:#64748b"><a href="${SITE_URL}" style="color:#2563eb;text-decoration:none;font-weight:800">nexorasolution.online</a></p>
-        </div>
-      </div>
-    </div>
+  <body style="margin:0;padding:0;background:${BRAND.background};font-family:Arial,Helvetica,sans-serif;color:${BRAND.text};">
+    <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">${safePreheader}</div>
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="width:100%;background:${BRAND.background};border-collapse:collapse;">
+      <tr>
+        <td align="center" style="padding:28px 12px;">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="width:100%;max-width:680px;border-collapse:collapse;">
+            <tr>
+              <td style="padding:0;border-radius:24px;overflow:hidden;background:${BRAND.card};border:1px solid rgba(148,163,184,.18);">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
+                  <tr>
+                    <td style="padding:28px 28px 18px 28px;">
+                      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
+                        <tr>
+                          <td width="54" valign="top">
+                            <div style="width:46px;height:46px;border-radius:14px;background:${BRAND.primary};color:#ffffff;font-size:24px;line-height:46px;text-align:center;font-weight:900;font-family:Arial,Helvetica,sans-serif;">N</div>
+                          </td>
+                          <td valign="top">
+                            <div style="font-size:15px;line-height:20px;font-weight:900;letter-spacing:1.8px;color:${BRAND.text};font-family:Arial,Helvetica,sans-serif;">NEXORA SOLUTIONS</div>
+                            <div style="margin-top:3px;font-size:12px;line-height:18px;color:${BRAND.muted};font-family:Arial,Helvetica,sans-serif;">Software &amp; Systems Studio</div>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="height:3px;background:${BRAND.primary};background-image:linear-gradient(90deg,${BRAND.primary},${BRAND.secondary},${BRAND.success});font-size:1px;line-height:1px;">&nbsp;</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:28px;">
+                      <div style="display:inline-block;margin:0 0 14px 0;padding:7px 10px;border-radius:999px;background:${BRAND.cardSoft};border:1px solid rgba(148,163,184,.18);color:${accent};font-size:12px;line-height:14px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;font-family:Arial,Helvetica,sans-serif;">${safeBadge}</div>
+                      <h1 style="margin:0;color:${BRAND.text};font-size:30px;line-height:38px;font-weight:900;letter-spacing:-.4px;font-family:Arial,Helvetica,sans-serif;">${safeTitle}</h1>
+                      ${safeSubtitle ? `<p style="margin:12px 0 0 0;color:${BRAND.muted};font-size:16px;line-height:25px;font-family:Arial,Helvetica,sans-serif;">${safeSubtitle}</p>` : ''}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding:0 28px 28px 28px;">
+                      <div style="padding:22px;border-radius:18px;background:${BRAND.cardSoft};border:1px solid rgba(148,163,184,.16);">
+                        ${bodyHtml}
+                        ${highlightBox ? `<div style="margin:20px 0 0 0;padding:18px;border-radius:16px;background:${BRAND.background};border:1px solid rgba(148,163,184,.18);">${highlightBox}</div>` : ''}
+                        ${infoTable(infoRows)}
+                      </div>
+                      ${(primaryCta || secondaryCta) ? `<div style="margin:24px 0 0 0;">${ctaButton(primaryCta, accent)}${ctaButton(secondaryCta, accent, true)}</div>` : ''}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding:22px 28px 28px 28px;border-top:1px solid rgba(148,163,184,.14);background:#0B1020;">
+                      ${safeFooterNote ? `<p style="margin:0 0 12px 0;font-size:12px;line-height:19px;color:${BRAND.muted};font-family:Arial,Helvetica,sans-serif;">${safeFooterNote}</p>` : ''}
+                      <p style="margin:0;font-size:12px;line-height:20px;color:${BRAND.muted};font-family:Arial,Helvetica,sans-serif;">You received this email because you use Nexora Business Suite.</p>
+                      <p style="margin:8px 0 0 0;font-size:12px;line-height:20px;color:${BRAND.muted};font-family:Arial,Helvetica,sans-serif;"><a href="${SITE_URL}" style="color:${BRAND.text};font-weight:800;text-decoration:none;">nexorasolution.online</a> &nbsp;|&nbsp; <a href="mailto:support@nexorasolution.online" style="color:${BRAND.text};font-weight:800;text-decoration:none;">support@nexorasolution.online</a></p>
+                      <p style="margin:10px 0 0 0;font-size:11px;line-height:18px;color:${BRAND.muted};letter-spacing:.6px;font-family:Arial,Helvetica,sans-serif;">CRM &middot; ERP &middot; POS &middot; Fleet &middot; Dashboards</p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
   </body>
 </html>`
 }
 
-function p(text) {
-  return `<p style="margin:0 0 14px;font-size:15px;line-height:1.7;color:#334155">${escapeHtml(text)}</p>`
-}
+function otpVerificationTemplate(data = {}) {
+  const clientName = dataString(data, 'clientName', 'there')
+  const otp = dataString(data, 'otp')
+  const email = dataString(data, 'email')
+  const verificationUrl = dataString(data, 'verificationUrl', DEFAULT_LOGIN_URL)
 
-function detailRow(label, value) {
-  if (!value) return ''
-  return `<tr>
-    <td style="padding:9px 0;font-size:13px;font-weight:800;color:#64748b">${escapeHtml(label)}</td>
-    <td style="padding:9px 0;font-size:13px;font-weight:900;color:#0f172a;text-align:right">${escapeHtml(value)}</td>
-  </tr>`
-}
-
-function detailTable(rows) {
-  const body = rows.filter(Boolean).join('')
-  if (!body) return ''
-  return `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-top:18px;border-top:1px solid #e2e8f0">${body}</table>`
+  return {
+    subject: 'Your Nexora verification code',
+    html: createNexoraEmailLayout({
+      preheader: 'Use this 6 digit code to verify your Nexora account. It expires in 10 minutes.',
+      badge: 'Security Verification',
+      title: 'Secure Account Verification',
+      subtitle: `Hi ${clientName}, enter this code on the Nexora verification page.`,
+      theme: 'primary',
+      bodyHtml: [
+        paragraph('Use this verification code to confirm your email address and continue setting up your Nexora workspace.'),
+      ].join(''),
+      highlightBox: `<div style="text-align:center;">
+        <div style="font-size:12px;line-height:16px;color:${BRAND.muted};font-weight:800;text-transform:uppercase;letter-spacing:1.8px;font-family:Arial,Helvetica,sans-serif;">Verification Code</div>
+        <div style="margin-top:10px;font-size:38px;line-height:44px;color:${BRAND.text};font-weight:900;letter-spacing:8px;font-family:Arial,Helvetica,sans-serif;">${escapeHtml(otp)}</div>
+        <div style="margin-top:12px;font-size:13px;line-height:20px;color:${BRAND.muted};font-family:Arial,Helvetica,sans-serif;">Expires in 10 minutes.</div>
+      </div>`,
+      primaryCta: { label: 'Open Verification Page', url: verificationUrl },
+      infoRows: [
+        { label: 'Email', value: email },
+        { label: 'Expiry', value: '10 minutes' },
+      ],
+      footerNote: 'Security note: Nexora will never ask for your password or payment details by email.',
+    }),
+  }
 }
 
 function welcomeEmailTemplate(data = {}) {
   const clientName = dataString(data, 'clientName', 'there')
-  const workspaceName = dataString(data, 'workspaceName', 'your Nexora workspace')
+  const workspaceName = dataString(data, 'workspaceName')
+  const trialDays = dataString(data, 'trialDays')
   const loginUrl = dataString(data, 'loginUrl', DEFAULT_LOGIN_URL)
 
   return {
-    subject: `Welcome to Nexora Solutions, ${clientName}`,
-    html: brandedEmailLayout({
-      title: 'Welcome to Nexora Solutions',
-      intro: 'Your business workspace is ready.',
-      ctaLabel: 'Open Workspace',
-      ctaUrl: loginUrl,
-      body: [
-        p(`Hi ${clientName},`),
-        p(`Welcome to Nexora Solutions. ${workspaceName} is ready, and you can now start managing your customers, invoices, support, and business operations.`),
-        detailTable([
-          detailRow('Workspace', workspaceName),
-          detailRow('Plan', dataString(data, 'planName')),
-        ]),
+    subject: 'Welcome to Nexora Business Suite',
+    html: createNexoraEmailLayout({
+      preheader: 'Your Nexora workspace is ready.',
+      badge: 'Workspace Ready',
+      title: 'Welcome to Nexora Business Suite',
+      subtitle: `Hi ${clientName}, your operating system for growth is ready.`,
+      theme: 'success',
+      bodyHtml: [
+        paragraph('Nexora brings your CRM, invoicing, operations, dashboards, and business workflows into one connected workspace.'),
+        workspaceName ? paragraph(`${workspaceName} is now ready to use.`) : '',
       ].join(''),
-    }),
-  }
-}
-
-function upgradeRequestReceivedTemplate(data = {}) {
-  const clientName = dataString(data, 'clientName', 'there')
-  const planName = dataString(data, 'planName', 'your selected plan')
-  const loginUrl = dataString(data, 'loginUrl', DEFAULT_LOGIN_URL)
-
-  return {
-    subject: 'Upgrade request received',
-    html: brandedEmailLayout({
-      title: 'Upgrade Request Received',
-      intro: 'Your payment details were submitted for review.',
-      ctaLabel: 'View Workspace',
-      ctaUrl: loginUrl,
-      body: [
-        p(`Hi ${clientName},`),
-        p(`We received your upgrade request for ${planName}. Our team will review your payment information and update your workspace as soon as it is approved.`),
-        detailTable([
-          detailRow('Workspace', dataString(data, 'workspaceName')),
-          detailRow('Plan', planName),
-          detailRow('Amount', dataString(data, 'amount')),
-          detailRow('Transaction ID', dataString(data, 'transactionId')),
-        ]),
-      ].join(''),
-    }),
-  }
-}
-
-function upgradeApprovedTemplate(data = {}) {
-  const clientName = dataString(data, 'clientName', 'there')
-  const planName = dataString(data, 'planName', 'your plan')
-  const loginUrl = dataString(data, 'loginUrl', DEFAULT_LOGIN_URL)
-
-  return {
-    subject: 'Your Nexora upgrade was approved',
-    html: brandedEmailLayout({
-      title: 'Upgrade Approved',
-      intro: 'Your workspace plan is now active.',
-      ctaLabel: 'Login to Nexora',
-      ctaUrl: loginUrl,
-      body: [
-        p(`Hi ${clientName},`),
-        p(`Your upgrade to ${planName} has been approved. Your Nexora workspace access has been updated.`),
-        detailTable([
-          detailRow('Workspace', dataString(data, 'workspaceName')),
-          detailRow('Plan', planName),
-          detailRow('Amount', dataString(data, 'amount')),
-        ]),
-      ].join(''),
-    }),
-  }
-}
-
-function upgradeRejectedTemplate(data = {}) {
-  const clientName = dataString(data, 'clientName', 'there')
-  const reason = dataString(data, 'reason', 'Payment details could not be verified.')
-  const loginUrl = dataString(data, 'loginUrl', DEFAULT_LOGIN_URL)
-
-  return {
-    subject: 'Upgrade request update',
-    html: brandedEmailLayout({
-      title: 'Upgrade Request Rejected',
-      intro: 'Your upgrade request needs attention.',
-      ctaLabel: 'Review Upgrade',
-      ctaUrl: loginUrl,
-      body: [
-        p(`Hi ${clientName},`),
-        p('Your upgrade request was rejected after review. Please submit corrected payment details or contact support for assistance.'),
-        detailTable([
-          detailRow('Workspace', dataString(data, 'workspaceName')),
-          detailRow('Plan', dataString(data, 'planName')),
-          detailRow('Reason', reason),
-        ]),
-      ].join(''),
-    }),
-  }
-}
-
-function supportTicketReplyTemplate(data = {}) {
-  const clientName = dataString(data, 'clientName', 'there')
-  const ticketNumber = dataString(data, 'ticketNumber')
-  const message = dataString(data, 'message', 'A support agent replied to your ticket.')
-  const loginUrl = dataString(data, 'loginUrl', DEFAULT_LOGIN_URL)
-
-  return {
-    subject: `Support reply${ticketNumber ? `: ${ticketNumber}` : ''}`,
-    html: brandedEmailLayout({
-      title: 'Support Ticket Reply',
-      intro: 'Our support team replied to your request.',
-      ctaLabel: 'View Ticket',
-      ctaUrl: loginUrl,
-      body: [
-        p(`Hi ${clientName},`),
-        p(message),
-        detailTable([
-          detailRow('Ticket', ticketNumber),
-          detailRow('Subject', dataString(data, 'subject')),
-          detailRow('Workspace', dataString(data, 'workspaceName')),
-        ]),
-      ].join(''),
-    }),
-  }
-}
-
-function trialExpiryReminderTemplate(data = {}) {
-  const clientName = dataString(data, 'clientName', 'there')
-  const workspaceName = dataString(data, 'workspaceName', 'your workspace')
-  const trialEndsAt = dataString(data, 'trialEndsAt', 'soon')
-  const loginUrl = dataString(data, 'loginUrl', DEFAULT_LOGIN_URL)
-
-  return {
-    subject: 'Your Nexora trial is ending soon',
-    html: brandedEmailLayout({
-      title: 'Trial Expiry Reminder',
-      intro: 'Keep your workspace active by upgrading your plan.',
-      ctaLabel: 'Upgrade Plan',
-      ctaUrl: loginUrl,
-      body: [
-        p(`Hi ${clientName},`),
-        p(`Your trial for ${workspaceName} ends ${trialEndsAt}. Upgrade your package to keep using Nexora without interruption.`),
-        detailTable([
-          detailRow('Workspace', workspaceName),
-          detailRow('Trial Ends', trialEndsAt),
-          detailRow('Recommended Plan', dataString(data, 'planName')),
-        ]),
-      ].join(''),
-    }),
-  }
-}
-
-function invoiceEmailTemplate(data = {}) {
-  const clientName = dataString(data, 'clientName', 'there')
-  const invoiceNumber = dataString(data, 'invoiceNumber')
-  const amount = dataString(data, 'amount')
-  const loginUrl = dataString(data, 'loginUrl', DEFAULT_LOGIN_URL)
-
-  return {
-    subject: `Invoice${invoiceNumber ? ` ${invoiceNumber}` : ''} from Nexora Solutions`,
-    html: brandedEmailLayout({
-      title: invoiceNumber ? `Invoice ${invoiceNumber}` : 'Invoice Ready',
-      intro: 'Your invoice details are ready.',
-      ctaLabel: 'View Invoice',
-      ctaUrl: loginUrl,
-      body: [
-        p(`Hi ${clientName},`),
-        p('Your invoice has been prepared. Please review the details below and contact us if you have any questions.'),
-        detailTable([
-          detailRow('Workspace', dataString(data, 'workspaceName')),
-          detailRow('Invoice', invoiceNumber),
-          detailRow('Amount', amount),
-          detailRow('Due Date', dataString(data, 'dueDate')),
-        ]),
-      ].join(''),
+      primaryCta: { label: 'Open Workspace', url: loginUrl },
+      infoRows: [
+        { label: 'Workspace', value: workspaceName },
+        { label: 'Trial', value: trialDays ? `${trialDays} days` : '' },
+        { label: 'Account email', value: dataString(data, 'email') },
+      ],
     }),
   }
 }
@@ -304,15 +270,163 @@ function passwordResetTemplate(data = {}) {
 
   return {
     subject: 'Reset your Nexora password',
-    html: brandedEmailLayout({
-      title: 'Reset Your Password',
-      intro: 'Use the secure button below to set a new password.',
-      ctaLabel: 'Reset Password',
-      ctaUrl: resetUrl,
-      body: [
-        p(`Hi ${clientName},`),
-        p('We received a request to reset your Nexora account password. If you did not request this, you can safely ignore this email.'),
-      ].join(''),
+    html: createNexoraEmailLayout({
+      preheader: 'Use the secure link to reset your Nexora password.',
+      badge: 'Account Security',
+      title: 'Reset your password',
+      subtitle: `Hi ${clientName}, use the secure button below to create a new password.`,
+      theme: 'warning',
+      bodyHtml: paragraph('If you requested this reset, continue using the button below. This link may expire soon for your protection.'),
+      primaryCta: { label: 'Reset Password', url: resetUrl },
+      highlightBox: `<p style="margin:0;font-size:14px;line-height:22px;color:${BRAND.muted};font-family:Arial,Helvetica,sans-serif;">If you did not request a password reset, ignore this email and keep your current password. Your account remains protected.</p>`,
+    }),
+  }
+}
+
+function upgradeRequestReceivedTemplate(data = {}) {
+  const clientName = dataString(data, 'clientName', 'there')
+  const planName = dataString(data, 'planName', 'selected plan')
+  const loginUrl = dataString(data, 'loginUrl', DEFAULT_LOGIN_URL)
+
+  return {
+    subject: 'Upgrade request received',
+    html: createNexoraEmailLayout({
+      preheader: 'Your Nexora upgrade request is pending review.',
+      badge: 'Billing Review',
+      title: 'Upgrade request received',
+      subtitle: `Hi ${clientName}, your payment details were received and are pending review.`,
+      theme: 'warning',
+      bodyHtml: paragraph('Our billing team will verify the payment information and activate your subscription after approval.'),
+      primaryCta: { label: 'Open Workspace', url: loginUrl },
+      infoRows: [
+        { label: 'Requested plan', value: planName },
+        { label: 'Amount', value: dataString(data, 'amount') },
+        { label: 'Transaction ID', value: dataString(data, 'transactionId') },
+        { label: 'Payment method', value: dataString(data, 'paymentMethod') },
+        { label: 'Status', value: 'Pending review' },
+      ],
+    }),
+  }
+}
+
+function upgradeApprovedTemplate(data = {}) {
+  const clientName = dataString(data, 'clientName', 'there')
+  const dashboardUrl = dataString(data, 'dashboardUrl') || dataString(data, 'loginUrl', DEFAULT_LOGIN_URL)
+
+  return {
+    subject: 'Subscription activated',
+    html: createNexoraEmailLayout({
+      preheader: 'Your Nexora subscription is now active.',
+      badge: 'Subscription Active',
+      title: 'Subscription Activated',
+      subtitle: `Hi ${clientName}, your Nexora workspace access has been upgraded.`,
+      theme: 'success',
+      bodyHtml: paragraph('Your approved plan is now active. You can open the dashboard and continue using your upgraded workspace.'),
+      primaryCta: { label: 'Open Dashboard', url: dashboardUrl },
+      infoRows: [
+        { label: 'Plan', value: dataString(data, 'planName') },
+        { label: 'Workspace', value: dataString(data, 'workspaceName') },
+        { label: 'Amount', value: dataString(data, 'amount') },
+      ],
+    }),
+  }
+}
+
+function upgradeRejectedTemplate(data = {}) {
+  const clientName = dataString(data, 'clientName', 'there')
+  const reason = dataString(data, 'reason') || dataString(data, 'rejectionReason')
+  const supportUrl = dataString(data, 'supportUrl') || dataString(data, 'loginUrl', DEFAULT_LOGIN_URL)
+
+  return {
+    subject: 'Upgrade request needs attention',
+    html: createNexoraEmailLayout({
+      preheader: 'Your Nexora upgrade request needs attention.',
+      badge: 'Billing Action Needed',
+      title: 'Upgrade request needs attention',
+      subtitle: `Hi ${clientName}, we could not approve the submitted upgrade request yet.`,
+      theme: 'danger',
+      bodyHtml: paragraph('Please review the details and contact support or resubmit corrected payment information.'),
+      primaryCta: { label: 'Contact Support or Resubmit', url: supportUrl },
+      infoRows: [
+        { label: 'Plan', value: dataString(data, 'planName') },
+        { label: 'Workspace', value: dataString(data, 'workspaceName') },
+        { label: 'Reason', value: reason },
+      ],
+    }),
+  }
+}
+
+function trialExpiryReminderTemplate(data = {}) {
+  const clientName = dataString(data, 'clientName', 'there')
+  const daysLeft = dataString(data, 'daysLeft')
+  const planUrl = dataString(data, 'planUrl') || dataString(data, 'loginUrl', DEFAULT_LOGIN_URL)
+
+  return {
+    subject: 'Your Nexora trial is ending soon',
+    html: createNexoraEmailLayout({
+      preheader: 'Choose a plan to keep your Nexora workspace active.',
+      badge: 'Trial Reminder',
+      title: 'Trial ending soon',
+      subtitle: `Hi ${clientName}, keep your workspace active by choosing a plan.`,
+      theme: 'warning',
+      bodyHtml: paragraph('Your trial access is nearing its end. Upgrade before expiry to avoid interruption to your business workspace.'),
+      primaryCta: { label: 'Choose Plan', url: planUrl },
+      infoRows: [
+        { label: 'Days left', value: daysLeft },
+        { label: 'Workspace', value: dataString(data, 'workspaceName') },
+        { label: 'Recommended plan', value: dataString(data, 'planName') },
+      ],
+    }),
+  }
+}
+
+function supportTicketReplyTemplate(data = {}) {
+  const clientName = dataString(data, 'clientName', 'there')
+  const ticketSubject = dataString(data, 'ticketSubject') || dataString(data, 'subject')
+  const message = dataString(data, 'message', 'A support agent replied to your ticket.')
+  const ticketUrl = dataString(data, 'ticketUrl') || dataString(data, 'loginUrl', DEFAULT_LOGIN_URL)
+
+  return {
+    subject: ticketSubject ? `Support reply: ${ticketSubject}` : 'Support ticket reply',
+    html: createNexoraEmailLayout({
+      preheader: 'A Nexora support agent replied to your ticket.',
+      badge: 'Support Update',
+      title: 'Support ticket reply',
+      subtitle: `Hi ${clientName}, our support team replied to your request.`,
+      theme: 'secondary',
+      bodyHtml: paragraph('Open the ticket to review the full response and continue the conversation.'),
+      highlightBox: `<p style="margin:0;font-size:14px;line-height:22px;color:${BRAND.text};font-family:Arial,Helvetica,sans-serif;">${escapeHtml(message)}</p>`,
+      primaryCta: { label: 'Open Support Ticket', url: ticketUrl },
+      infoRows: [
+        { label: 'Ticket subject', value: ticketSubject },
+        { label: 'Ticket status', value: dataString(data, 'status') },
+        { label: 'Ticket number', value: dataString(data, 'ticketNumber') },
+      ],
+    }),
+  }
+}
+
+function invoiceEmailTemplate(data = {}) {
+  const clientName = dataString(data, 'clientName', 'there')
+  const invoiceNumber = dataString(data, 'invoiceNumber')
+  const invoiceUrl = dataString(data, 'invoiceUrl') || dataString(data, 'loginUrl', DEFAULT_LOGIN_URL)
+
+  return {
+    subject: invoiceNumber ? `Invoice ${invoiceNumber} from Nexora Solutions` : 'Invoice from Nexora Solutions',
+    html: createNexoraEmailLayout({
+      preheader: 'Your Nexora invoice is ready to view.',
+      badge: 'Invoice',
+      title: invoiceNumber ? `Invoice ${invoiceNumber}` : 'Invoice ready',
+      subtitle: `Hi ${clientName}, your invoice details are available below.`,
+      theme: 'primary',
+      bodyHtml: paragraph('Please review the invoice details and open the invoice for the full breakdown.'),
+      primaryCta: { label: 'View Invoice', url: invoiceUrl },
+      infoRows: [
+        { label: 'Invoice number', value: invoiceNumber },
+        { label: 'Amount', value: dataString(data, 'amount') },
+        { label: 'Due date', value: dataString(data, 'dueDate') },
+        { label: 'Workspace', value: dataString(data, 'workspaceName') || dataString(data, 'businessName') },
+      ],
     }),
   }
 }
@@ -323,66 +437,118 @@ function emailVerificationTemplate(data = {}) {
 
   return {
     subject: 'Verify your Nexora email',
-    html: brandedEmailLayout({
-      title: 'Verify Your Email',
-      intro: 'Confirm your email address to activate your Nexora workspace.',
-      ctaLabel: 'Verify Email',
-      ctaUrl: verificationUrl,
-      body: [
-        p(`Hi ${clientName},`),
-        p('Please verify your email address to continue using Nexora Solutions.'),
-        detailTable([
-          detailRow('Email', dataString(data, 'email')),
-          detailRow('Workspace', dataString(data, 'workspaceName')),
-        ]),
-      ].join(''),
-    }),
-  }
-}
-
-function otpVerificationTemplate(data = {}) {
-  const clientName = dataString(data, 'clientName', 'there')
-  const otp = dataString(data, 'otp')
-  const verificationUrl = dataString(data, 'verificationUrl', DEFAULT_LOGIN_URL)
-
-  return {
-    subject: 'Your Nexora verification code',
-    html: brandedEmailLayout({
-      title: 'Your Verification Code',
-      intro: 'Enter this code on the Nexora verification page.',
-      ctaLabel: 'Open Verification Page',
-      ctaUrl: verificationUrl,
-      body: [
-        p(`Hi ${clientName},`),
-        p('Use the verification code below to confirm your email address. This code expires in 10 minutes.'),
-        `<div style="margin:18px 0;border-radius:16px;background:#ffffff;border:1px solid #dbeafe;padding:18px;text-align:center;font-size:32px;font-weight:900;letter-spacing:.32em;color:#1d4ed8">${escapeHtml(otp)}</div>`,
-        detailTable([
-          detailRow('Email', dataString(data, 'email')),
-          detailRow('Workspace', dataString(data, 'workspaceName')),
-        ]),
-      ].join(''),
+    html: createNexoraEmailLayout({
+      preheader: 'Verify your email address to continue using Nexora.',
+      badge: 'Email Verification',
+      title: 'Verify your email',
+      subtitle: `Hi ${clientName}, confirm this email address to continue.`,
+      theme: 'primary',
+      bodyHtml: paragraph('Use the secure button below to verify your email address.'),
+      primaryCta: { label: 'Verify Email', url: verificationUrl },
+      infoRows: [
+        { label: 'Email', value: dataString(data, 'email') },
+        { label: 'Workspace', value: dataString(data, 'workspaceName') },
+      ],
     }),
   }
 }
 
 const TEMPLATES = {
-  welcome: welcomeEmailTemplate,
-  welcome_email: welcomeEmailTemplate,
-  email_verification: emailVerificationTemplate,
-  verify_email: emailVerificationTemplate,
   otp_verification: otpVerificationTemplate,
   verification_otp: otpVerificationTemplate,
+  welcome: welcomeEmailTemplate,
+  welcome_email: welcomeEmailTemplate,
+  password_reset: passwordResetTemplate,
+  email_verification: emailVerificationTemplate,
+  verify_email: emailVerificationTemplate,
   upgrade_request_received: upgradeRequestReceivedTemplate,
   upgrade_received: upgradeRequestReceivedTemplate,
   upgrade_approved: upgradeApprovedTemplate,
   upgrade_rejected: upgradeRejectedTemplate,
-  support_ticket_reply: supportTicketReplyTemplate,
-  support_reply: supportTicketReplyTemplate,
+  trial_expiry: trialExpiryReminderTemplate,
   trial_expiry_reminder: trialExpiryReminderTemplate,
   trial_reminder: trialExpiryReminderTemplate,
+  support_ticket_reply: supportTicketReplyTemplate,
+  support_reply: supportTicketReplyTemplate,
+  invoice: invoiceEmailTemplate,
   invoice_email: invoiceEmailTemplate,
   invoice_delivery: invoiceEmailTemplate,
+}
+
+const PREVIEW_TYPES = {
+  otp_verification: otpVerificationTemplate,
+  welcome: welcomeEmailTemplate,
   password_reset: passwordResetTemplate,
+  upgrade_request_received: upgradeRequestReceivedTemplate,
+  upgrade_approved: upgradeApprovedTemplate,
+  upgrade_rejected: upgradeRejectedTemplate,
+  trial_expiry: trialExpiryReminderTemplate,
+  support_ticket_reply: supportTicketReplyTemplate,
+  invoice: invoiceEmailTemplate,
+}
+
+const PREVIEW_DATA = {
+  otp_verification: {
+    clientName: 'Ayesha Khan',
+    email: 'client@example.com',
+    otp: '482913',
+    verificationUrl: `${SITE_URL}/verify-email`,
+  },
+  welcome: {
+    clientName: 'Ayesha Khan',
+    workspaceName: 'Nexora Demo Workspace',
+    trialDays: '7',
+    email: 'client@example.com',
+    loginUrl: DEFAULT_LOGIN_URL,
+  },
+  password_reset: {
+    clientName: 'Ayesha Khan',
+    resetUrl: `${SITE_URL}/reset-password`,
+  },
+  upgrade_request_received: {
+    clientName: 'Ayesha Khan',
+    planName: 'Business Pro',
+    amount: 'PKR 12,000',
+    transactionId: 'TXN-948201',
+    paymentMethod: 'Bank Transfer',
+  },
+  upgrade_approved: {
+    clientName: 'Ayesha Khan',
+    planName: 'Business Pro',
+    workspaceName: 'Nexora Demo Workspace',
+    amount: 'PKR 12,000',
+    dashboardUrl: `${SITE_URL}/dashboard`,
+  },
+  upgrade_rejected: {
+    clientName: 'Ayesha Khan',
+    planName: 'Business Pro',
+    workspaceName: 'Nexora Demo Workspace',
+    rejectionReason: 'Transaction reference could not be verified.',
+    supportUrl: `${SITE_URL}/support`,
+  },
+  trial_expiry: {
+    clientName: 'Ayesha Khan',
+    workspaceName: 'Nexora Demo Workspace',
+    daysLeft: '2',
+    planName: 'Business Pro',
+    planUrl: `${SITE_URL}/upgrade`,
+  },
+  support_ticket_reply: {
+    clientName: 'Ayesha Khan',
+    ticketSubject: 'Invoice export issue',
+    message: 'We reviewed your workspace and restored invoice export access. Please try again from the invoices module.',
+    status: 'Open',
+    ticketNumber: 'NX-2048',
+    ticketUrl: `${SITE_URL}/support`,
+  },
+  invoice: {
+    clientName: 'Ayesha Khan',
+    invoiceNumber: 'INV-1042',
+    amount: 'PKR 18,500',
+    dueDate: '2026-06-10',
+    workspaceName: 'Nexora Demo Workspace',
+    invoiceUrl: `${SITE_URL}/invoice/INV-1042`,
+  },
 }
 
 function buildEmailPayload(body) {
@@ -452,6 +618,21 @@ export default {
           from: SENDER,
           allowedOrigins: [...ALLOWED_ORIGINS],
         })
+      }
+
+      if (request.method === 'GET' && url.pathname === '/preview') {
+        const type = getString(url.searchParams.get('type')) || 'otp_verification'
+        const template = PREVIEW_TYPES[type]
+        if (!template) {
+          return jsonResponse(request, {
+            success: false,
+            error: 'Unsupported preview type.',
+            supportedTypes: Object.keys(PREVIEW_TYPES),
+          }, 400)
+        }
+
+        const { html } = template(PREVIEW_DATA[type] || {})
+        return htmlResponse(html)
       }
 
       if (url.pathname !== '/send-email') {
