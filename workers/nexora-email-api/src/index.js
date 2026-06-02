@@ -2,6 +2,7 @@ const RESEND_EMAIL_ENDPOINT = 'https://api.resend.com/emails'
 const SENDER = 'Nexora Solutions <support@nexorasolution.online>'
 const SITE_URL = 'https://nexorasolution.online'
 const DEFAULT_LOGIN_URL = `${SITE_URL}/login`
+const RESEND_TIMEOUT_MS = 10000
 const ALLOWED_ORIGINS = new Set([
   'https://nexorasolution.online',
   'http://localhost:5173',
@@ -405,70 +406,107 @@ function getErrorMessage(data) {
   return 'Email could not be sent.'
 }
 
+async function fetchResendWithTimeout(payload, apiKey) {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort('Resend timeout'), RESEND_TIMEOUT_MS)
+
+  try {
+    return await fetch(RESEND_EMAIL_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    })
+  } finally {
+    clearTimeout(timeoutId)
+  }
+}
+
 export default {
   async fetch(request, env) {
-    const url = new URL(request.url)
-
-    if (request.method === 'OPTIONS') {
-      return new Response(null, {
-        status: 204,
-        headers: corsHeaders(request),
-      })
-    }
-
-    if (url.pathname !== '/send-email') {
-      return jsonResponse(request, { success: false, error: 'Not found' }, 404)
-    }
-
-    if (request.method !== 'POST') {
-      return jsonResponse(request, { success: false, error: 'Method not allowed' }, 405)
-    }
-
-    if (!ALLOWED_ORIGINS.has(request.headers.get('Origin') || '')) {
-      return jsonResponse(request, { success: false, error: 'Origin not allowed' }, 403)
-    }
-
-    if (!env.RESEND_API_KEY) {
-      return jsonResponse(request, { success: false, error: 'Email service is not configured.' }, 500)
-    }
-
-    let body
     try {
-      body = await request.json()
-    } catch {
-      return jsonResponse(request, { success: false, error: 'Invalid JSON body.' }, 400)
-    }
+      const url = new URL(request.url)
 
-    const to = getString(body?.to)
-    const { subject, html } = buildEmailPayload(body)
+      if (request.method === 'OPTIONS' && url.pathname === '/send-email') {
+        return new Response(null, {
+          status: 204,
+          headers: corsHeaders(request),
+        })
+      }
 
-    if (!to || !subject || !html) {
-      return jsonResponse(request, { success: false, error: 'Missing required fields: to and either a valid type/data or raw subject/html.' }, 400)
-    }
+      if (request.method === 'GET' && url.pathname === '/health') {
+        return jsonResponse(request, {
+          success: true,
+          status: 'ok',
+          service: 'nexora-email-api',
+        })
+      }
 
-    try {
-      const resendResponse = await fetch(RESEND_EMAIL_ENDPOINT, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${env.RESEND_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      if (request.method === 'GET' && url.pathname === '/debug') {
+        return jsonResponse(request, {
+          success: true,
+          hasResendKey: Boolean(env.RESEND_API_KEY),
+          from: SENDER,
+          allowedOrigins: [...ALLOWED_ORIGINS],
+        })
+      }
+
+      if (url.pathname !== '/send-email') {
+        return jsonResponse(request, { success: false, error: 'Not found' }, 404)
+      }
+
+      if (request.method !== 'POST') {
+        return jsonResponse(request, { success: false, error: 'Method not allowed' }, 405)
+      }
+
+      if (!ALLOWED_ORIGINS.has(request.headers.get('Origin') || '')) {
+        return jsonResponse(request, { success: false, error: 'Origin not allowed' }, 403)
+      }
+
+      if (!env.RESEND_API_KEY) {
+        return jsonResponse(request, { success: false, error: 'RESEND_API_KEY missing' }, 500)
+      }
+
+      let body
+      try {
+        body = await request.json()
+      } catch {
+        return jsonResponse(request, { success: false, error: 'Invalid JSON body.' }, 400)
+      }
+
+      const to = getString(body?.to)
+      const { subject, html } = buildEmailPayload(body)
+
+      if (!to || !subject || !html) {
+        return jsonResponse(request, { success: false, error: 'Missing required fields: to and either a valid type/data or raw subject/html.' }, 400)
+      }
+
+      try {
+        const resendResponse = await fetchResendWithTimeout({
           from: SENDER,
           to,
           subject,
           html,
-        }),
-      })
+        }, env.RESEND_API_KEY)
 
-      const data = await resendResponse.json().catch(() => null)
-      if (!resendResponse.ok) {
-        return jsonResponse(request, { success: false, error: getErrorMessage(data) }, resendResponse.status)
+        const data = await resendResponse.json().catch(() => null)
+        if (!resendResponse.ok) {
+          return jsonResponse(request, { success: false, error: `Resend error: ${getErrorMessage(data)}` }, resendResponse.status)
+        }
+
+        return jsonResponse(request, { success: true })
+      } catch (error) {
+        const timedOut = error?.name === 'AbortError' || String(error?.message || error || '').toLowerCase().includes('timeout')
+        return jsonResponse(request, {
+          success: false,
+          error: timedOut ? 'Resend error: request timed out after 10 seconds' : `Resend error: ${error?.message || 'Email could not be sent.'}`,
+        }, timedOut ? 504 : 502)
       }
-
-      return jsonResponse(request, { success: true })
     } catch (error) {
-      return jsonResponse(request, { success: false, error: error?.message || 'Email could not be sent.' }, 500)
+      return jsonResponse(request, { success: false, error: error?.message || 'Worker error: email request failed.' }, 500)
     }
   },
 }
