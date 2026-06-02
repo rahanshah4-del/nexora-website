@@ -316,9 +316,7 @@ service cloud.firestore {
         'emailVerifiedCustomAt',
         'updatedAt',
       ])
-      && request.resource.data.emailVerifiedCustom == true
-      && request.resource.data.emailVerifiedCustomAt is timestamp
-      && request.resource.data.updatedAt is timestamp;
+      && request.resource.data.emailVerifiedCustom == true;
     }
 
     function planApprovalFieldsTouched() {
@@ -570,7 +568,8 @@ service cloud.firestore {
       allow delete: if isAdmin();
 
       match /verification/{docId} {
-        allow read, create, update, delete: if isSelf(userId);
+        allow read, create, update, delete: if request.auth != null
+          && request.auth.uid == userId;
       }
 
       match /sessions/{sessionId} {

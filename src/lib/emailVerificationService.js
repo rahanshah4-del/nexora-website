@@ -1,4 +1,4 @@
-import { doc, getDoc, serverTimestamp, setDoc, Timestamp, updateDoc } from 'firebase/firestore'
+import { deleteDoc, doc, getDoc, serverTimestamp, setDoc, Timestamp, updateDoc } from 'firebase/firestore'
 import { db } from './firebase.js'
 import { EMAIL_WORKER_URL, sendWorkerEmail } from './transactionalEmail.js'
 
@@ -196,6 +196,14 @@ export async function verifyCustomEmailOtp(user, otp) {
     } catch (error) {
       logVerifyOperationFailure('update_parent', error, userDocPath, Object.keys(parentPayload))
       throw error
+    }
+
+    console.log('[OTP verify] delete otp start', { path: otpDocPath })
+    try {
+      await deleteDoc(otpRef)
+      console.log('[OTP verify] delete otp success', { path: otpDocPath })
+    } catch (error) {
+      logVerifyOperationFailure('delete_otp', error, otpDocPath)
     }
 
     return { ok: true }
