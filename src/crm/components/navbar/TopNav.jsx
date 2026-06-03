@@ -11,7 +11,7 @@ import { memo, useCallback, useMemo, useState } from 'react'
 import { usePreferences } from '../../hooks/usePreferences.js'
 import { useAuth } from '../../hooks/useAuth.js'
 import { useUser } from '../../hooks/useUser.js'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import NotificationBell from '../notifications/NotificationBell.jsx'
 import BranchSwitcher from '../system/BranchSwitcher.jsx'
 import OfflineStatus from '../system/OfflineStatus.jsx'
@@ -65,6 +65,7 @@ function TopNav({ onOpenSidebar, onSwitchProduct }) {
   const { logout, busy } = useAuth()
   const { firebaseUser, userDoc, plan, role, businessType, isTrialActive, isTrialExpired, trialDaysRemaining, trialEndsAt } = useUser()
   const navigate = useNavigate()
+  const location = useLocation()
   const [toast, setToast] = useState(null)
   const profileSummary = useMemo(
     () => {
@@ -158,8 +159,11 @@ function TopNav({ onOpenSidebar, onSwitchProduct }) {
               variant="subtle"
               className="hidden h-10 shrink-0 rounded-2xl px-3 text-xs lg:inline-flex"
               onClick={() => {
-                console.log('[Back To Workspace]', { source: 'topbar', route: '/workspace' })
-                navigate('/workspace')
+                console.log('[Back To Workspace] clicked', {
+                  target: '/workspace',
+                  currentPath: location.pathname,
+                })
+                navigate('/workspace', { replace: false })
               }}
               type="button"
             >

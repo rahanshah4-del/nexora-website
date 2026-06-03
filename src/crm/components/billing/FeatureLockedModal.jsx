@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { HiOutlineLockClosed } from 'react-icons/hi2'
 import Badge from '../ui/Badge.jsx'
 import Button from '../ui/Button.jsx'
@@ -9,6 +9,7 @@ export default function FeatureLockedModal({
   message = 'This feature is available in Standard or Enterprise packages.',
 }) {
   const navigate = useNavigate()
+  const location = useLocation()
 
   return (
     <div className="grid min-h-[62vh] place-items-center px-3 py-8">
@@ -25,7 +26,18 @@ export default function FeatureLockedModal({
           <Button className="rounded-2xl" type="button" onClick={() => navigate('/upgrade-business')}>
             Upgrade
           </Button>
-          <Button variant="subtle" className="rounded-2xl" type="button" onClick={() => navigate('/workspace')}>
+          <Button
+            variant="subtle"
+            className="rounded-2xl"
+            type="button"
+            onClick={() => {
+              console.log('[Back To Workspace] clicked', {
+                target: '/workspace',
+                currentPath: location.pathname,
+              })
+              navigate('/workspace', { replace: false })
+            }}
+          >
             Back to Workspace
           </Button>
         </div>

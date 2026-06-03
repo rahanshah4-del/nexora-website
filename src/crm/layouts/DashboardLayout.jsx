@@ -380,9 +380,12 @@ export default function DashboardLayout() {
   }, [developerOverride, lockedWorkspaceId, selectWorkspace, selectedWorkspace, userId])
 
   const backToWorkspace = useCallback(() => {
-    console.log('[Back To Workspace]', { source: 'crm-layout', route: '/workspace' })
-    navigate('/workspace')
-  }, [navigate])
+    console.log('[Back To Workspace] clicked', {
+      target: '/workspace',
+      currentPath: location.pathname,
+    })
+    navigate('/workspace', { replace: false })
+  }, [location.pathname, navigate])
 
   const openProductSwitcher = useCallback(() => {
     setProductModalOpen(true)

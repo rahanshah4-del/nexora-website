@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import Badge from '../components/ui/Badge.jsx'
 import Button from '../components/ui/Button.jsx'
 import Card from '../components/ui/Card.jsx'
@@ -17,6 +17,7 @@ function titleFromSlug(slug = '') {
 export default function ModulePlaceholderPage() {
   const { module = '' } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
   const current = useMemo(
     () => moduleCatalog.find((item) => item.route === `/app/coming-soon/${module}`),
     [module],
@@ -35,7 +36,18 @@ export default function ModulePlaceholderPage() {
         <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-600 dark:text-slate-300">
           This module route is available for developer/owner access. The production feature can be connected here when implementation is ready.
         </p>
-        <Button className="mt-5 rounded-2xl" variant="subtle" type="button" onClick={() => navigate('/workspace')}>
+        <Button
+          className="mt-5 rounded-2xl"
+          variant="subtle"
+          type="button"
+          onClick={() => {
+            console.log('[Back To Workspace] clicked', {
+              target: '/workspace',
+              currentPath: location.pathname,
+            })
+            navigate('/workspace', { replace: false })
+          }}
+        >
           Back to Workspace
         </Button>
       </Card>
