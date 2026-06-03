@@ -25,6 +25,31 @@ function isPasswordOnlyUser(user, provider) {
   return provider === 'password' || providers.includes('password')
 }
 
+export async function createSignupUserProfile(user, emailOverride = '') {
+  if (!db || !user?.uid) return null
+
+  const userRef = doc(db, 'users', user.uid)
+  const userSnap = await getDoc(userRef)
+  const now = serverTimestamp()
+
+  await setDoc(
+    userRef,
+    {
+      uid: user.uid,
+      email: (cleanString(emailOverride) || cleanString(user.email)).toLowerCase(),
+      role: 'owner',
+      status: 'active',
+      emailVerifiedCustom: false,
+      createdAt: now,
+      updatedAt: now,
+    },
+    { merge: true },
+  )
+
+  console.log(userSnap.exists() ? '[Signup] user profile exists' : '[Signup] user profile created')
+  return { exists: userSnap.exists() }
+}
+
 export async function ensureUserWorkspace(user, overrides = {}) {
   if (!db || !user?.uid) return null
 
@@ -93,7 +118,7 @@ export async function ensureUserWorkspace(user, overrides = {}) {
       role: 'owner',
       status: 'active',
       isAdmin: false,
-      createdAt: now,
+      createdAt: existingUser?.createdAt || now,
       createdBy: uid,
       updatedAt: now,
       lastLoginAt: now,

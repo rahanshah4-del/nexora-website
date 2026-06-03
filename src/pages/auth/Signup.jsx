@@ -3,11 +3,11 @@ import { AiOutlineGoogle } from 'react-icons/ai'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
 import { auth, db } from '../../lib/firebase.js'
-import { ensureUserWorkspace } from '../../lib/accountProvisioning.js'
+import { createSignupUserProfile, ensureUserWorkspace } from '../../lib/accountProvisioning.js'
 import useAuth from '../../context/useAuth.js'
 import NexoraLogo from '../../components/brand/NexoraLogo.jsx'
 import { motion } from 'framer-motion'
-import { clientSafeMessage, reportTechnicalError } from '../../lib/errorHandler.js'
+import { clientSafeMessage } from '../../lib/errorHandler.js'
 import { sendCustomVerificationEmail } from '../../lib/emailVerificationService.js'
 import { trackAnalyticsEvent } from '../../lib/analyticsTracking.js'
 import { sendWorkerEmail, welcomeEmail } from '../../lib/transactionalEmail.js'
@@ -55,6 +55,7 @@ export default function Signup() {
       await trackAnalyticsEvent('signup_started', { email: email.trim().toLowerCase(), phone: phone.trim(), page: '/signup' })
       const credentials = await createUserWithEmailAndPassword(auth, email.trim(), password)
       const userRecord = credentials.user
+      await createSignupUserProfile(userRecord, email.trim().toLowerCase())
       await ensureUserWorkspace(userRecord, {
         fullName: fullName.trim(),
         company: company.trim(),

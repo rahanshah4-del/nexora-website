@@ -1,4 +1,4 @@
-import { deleteDoc, doc, getDoc, serverTimestamp, setDoc, Timestamp, updateDoc } from 'firebase/firestore'
+import { deleteDoc, doc, getDoc, serverTimestamp, setDoc, Timestamp } from 'firebase/firestore'
 import { db } from './firebase.js'
 import { EMAIL_WORKER_URL, sendWorkerEmail } from './transactionalEmail.js'
 
@@ -189,12 +189,14 @@ export async function verifyCustomEmailOtp(user, otp) {
       emailVerifiedCustomAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     }
-    console.log('VERIFY PAYLOAD', parentPayload)
-    console.log('VERIFY AFFECTED KEYS', Object.keys(parentPayload))
     console.log('[OTP verify] update parent start', { path: userDocPath, payloadFields: Object.keys(parentPayload) })
     try {
-      await updateDoc(userRef, parentPayload)
-      console.log('[OTP verify] update parent success', { path: userDocPath })
+      const parentSnap = await getDoc(userRef)
+      if (parentSnap.exists()) {
+        console.log('[Verify] parent profile exists')
+      }
+      await setDoc(userRef, parentPayload, { merge: true })
+      console.log('[Verify] verification flags updated')
     } catch (error) {
       logVerifyOperationFailure('update_parent', error, userDocPath, Object.keys(parentPayload))
       throw error

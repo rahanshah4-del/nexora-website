@@ -8,7 +8,7 @@ import {
 import { doc, getDoc } from 'firebase/firestore'
 import { auth, getFirebaseEnvHint } from '../lib/firebase.js'
 import { db } from '../lib/firebase.js'
-import { ensureUserWorkspace } from '../../lib/accountProvisioning.js'
+import { createSignupUserProfile, ensureUserWorkspace } from '../../lib/accountProvisioning.js'
 import { sendCustomVerificationEmail } from '../../lib/emailVerificationService.js'
 import { sendWorkerEmail, welcomeEmail } from '../../lib/transactionalEmail.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
@@ -62,6 +62,7 @@ export function AuthProvider({ children }) {
     setBusy(true)
     try {
       const credentials = await createUserWithEmailAndPassword(auth, email, password)
+      await createSignupUserProfile(credentials.user, email)
       await ensureUserWorkspace(credentials.user, { email, provider: 'password' })
       if (!credentials.user.emailVerified) {
         const emailResult = await sendCustomVerificationEmail(credentials.user)
