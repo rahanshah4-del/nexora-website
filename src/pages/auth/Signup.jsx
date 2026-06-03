@@ -55,7 +55,12 @@ export default function Signup() {
       await trackAnalyticsEvent('signup_started', { email: email.trim().toLowerCase(), phone: phone.trim(), page: '/signup' })
       const credentials = await createUserWithEmailAndPassword(auth, email.trim(), password)
       const userRecord = credentials.user
-      await createSignupUserProfile(userRecord, email.trim().toLowerCase())
+      try {
+        await createSignupUserProfile(userRecord)
+      } catch {
+        setError('Account profile could not be created. Please try again.')
+        return
+      }
       await ensureUserWorkspace(userRecord, {
         fullName: fullName.trim(),
         company: company.trim(),

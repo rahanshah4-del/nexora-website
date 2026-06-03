@@ -528,6 +528,45 @@ service cloud.firestore {
         && isWorkspaceManager(request.resource.data.workspaceId);
     }
 
+    function safeFirstSignupProfileCreate(userId) {
+      return request.auth != null
+        && request.auth.uid == userId
+        && request.resource.data.uid == userId
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.createdBy == userId
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.updatedAt is timestamp
+        && request.resource.data.emailVerifiedCustom == false
+        && request.resource.data.role in ['owner', 'user']
+        && request.resource.data.status in ['active', 'Active']
+        && (
+          !request.resource.data.keys().hasAny(['isAdmin'])
+          || request.resource.data.isAdmin == false
+        )
+        && request.resource.data.keys().hasOnly([
+          'uid',
+          'email',
+          'role',
+          'status',
+          'createdBy',
+          'createdAt',
+          'updatedAt',
+          'emailVerifiedCustom',
+          'workspaceId',
+          'ownerId',
+          'userId',
+          'plan',
+          'planStatus',
+          'subscriptionStatus',
+          'trialDays',
+          'isAdmin',
+          'allowedBusinessTypes',
+          'primaryBusinessType',
+          'specialModuleAccess',
+          'allModulesAccess'
+        ]);
+    }
+
     function validSessionScope(userId) {
       return request.resource.data.userId == userId
         && request.resource.data.workspaceId is string
@@ -542,6 +581,7 @@ service cloud.firestore {
     match /users/{userId} {
       allow create: if isAdmin()
         || isCreatingStaffUser(userId)
+        || safeFirstSignupProfileCreate(userId)
         || (isActiveSelf(userId)
           && request.resource.data.uid == userId
           && hasOwnScope(userId)

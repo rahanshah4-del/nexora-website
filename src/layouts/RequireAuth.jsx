@@ -3,6 +3,7 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import useAuth from '../context/useAuth.js'
 import PageLoader from '../crm/components/ui/PageLoader.jsx'
 import { getCustomEmailVerificationStatus } from '../lib/emailVerificationService.js'
+import { isUserCustomVerified } from '../lib/authRouteState.js'
 
 export default function RequireAuth() {
   const location = useLocation()
@@ -38,7 +39,15 @@ export default function RequireAuth() {
     return <Navigate to="/login" replace state={{ from: location.pathname }} />
   }
 
-  if (!user.emailVerified && !customVerified && location.pathname !== '/verify-email') {
+  const verified = isUserCustomVerified({ ...user, emailVerifiedCustom: customVerified })
+  console.log('[RequireAuth Gate]', {
+    path: location.pathname,
+    firebaseEmailVerified: user.emailVerified,
+    customVerified,
+    verified,
+  })
+
+  if (!verified && location.pathname !== '/verify-email') {
     return <Navigate to="/verify-email" replace state={{ from: location.pathname }} />
   }
 

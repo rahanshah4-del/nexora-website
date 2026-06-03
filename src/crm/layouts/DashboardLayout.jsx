@@ -379,6 +379,11 @@ export default function DashboardLayout() {
     selectWorkspace(workspace)
   }, [developerOverride, lockedWorkspaceId, selectWorkspace, selectedWorkspace, userId])
 
+  const backToWorkspace = useCallback(() => {
+    console.log('[Back To Workspace]', { source: 'crm-layout', route: '/workspace' })
+    navigate('/workspace')
+  }, [navigate])
+
   const openProductSwitcher = useCallback(() => {
     setProductModalOpen(true)
   }, [])
@@ -392,7 +397,7 @@ export default function DashboardLayout() {
   }
 
   if (accountBlocked) {
-    return <AccountBlockedBlock onBackToWorkspace={() => navigate('/workspace')} />
+    return <AccountBlockedBlock onBackToWorkspace={backToWorkspace} />
   }
 
   if (crmAccessBlocked) {
@@ -400,7 +405,7 @@ export default function DashboardLayout() {
       <TrialAccessBlock
         expired={isTrialExpired}
         trialEndsAt={trialEndsAt}
-        onBackToWorkspace={() => navigate('/workspace')}
+        onBackToWorkspace={backToWorkspace}
         onUpgrade={() => navigate('/upgrade-business', { state: { fromUpgradeBusiness: true } })}
       />
     )
@@ -411,15 +416,15 @@ export default function DashboardLayout() {
   }
 
   if (routeBusinessBlocked) {
-    return <BusinessModuleBlock onBackToWorkspace={() => navigate('/workspace')} />
+    return <BusinessModuleBlock onBackToWorkspace={backToWorkspace} />
   }
 
   if (routePermissionBlocked) {
-    return <PermissionBlock onBackToWorkspace={() => navigate('/workspace')} />
+    return <PermissionBlock onBackToWorkspace={backToWorkspace} />
   }
 
   if (comingSoonBlocked) {
-    return <ComingSoonBlock onBackToWorkspace={() => navigate('/workspace')} />
+    return <ComingSoonBlock onBackToWorkspace={backToWorkspace} />
   }
 
   if (routePlanBlocked) {

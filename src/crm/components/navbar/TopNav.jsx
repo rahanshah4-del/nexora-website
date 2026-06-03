@@ -157,7 +157,10 @@ function TopNav({ onOpenSidebar, onSwitchProduct }) {
             <Button
               variant="subtle"
               className="hidden h-10 shrink-0 rounded-2xl px-3 text-xs lg:inline-flex"
-              onClick={() => navigate('/workspace')}
+              onClick={() => {
+                console.log('[Back To Workspace]', { source: 'topbar', route: '/workspace' })
+                navigate('/workspace')
+              }}
               type="button"
             >
               Back to Workspace

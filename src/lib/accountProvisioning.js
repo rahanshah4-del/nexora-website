@@ -11,9 +11,14 @@ import {
 
 export const FREE_TRIAL_PLAN = 'Basic'
 export const FREE_TRIAL_STATUS = 'trial'
+export const DEFAULT_SIGNUP_BUSINESS_TYPE = 'general-crm'
 
 function cleanString(value) {
   return typeof value === 'string' ? value.trim() : ''
+}
+
+function removeUndefinedFields(payload) {
+  return Object.fromEntries(Object.entries(payload).filter(([, value]) => value !== undefined && value !== null))
 }
 
 function userDisplayName(user, fallback = '') {
@@ -25,29 +30,64 @@ function isPasswordOnlyUser(user, provider) {
   return provider === 'password' || providers.includes('password')
 }
 
-export async function createSignupUserProfile(user, emailOverride = '') {
-  if (!db || !user?.uid) return null
+export async function createSignupUserProfile(user) {
+  if (!db || !user?.uid) {
+    const error = new Error(!db ? 'Firestore is not initialized.' : 'Firebase Auth user is missing uid.')
+    console.error('[Signup Provisioning] fail', {
+      code: !db ? 'missing-db' : 'missing-uid',
+      message: error.message,
+    })
+    throw error
+  }
 
   const userRef = doc(db, 'users', user.uid)
-  const userSnap = await getDoc(userRef)
   const now = serverTimestamp()
+  const selectedBusinessType = DEFAULT_SIGNUP_BUSINESS_TYPE
+  const payload = removeUndefinedFields({
+    uid: user.uid,
+    email: user.email,
+    createdBy: user.uid,
+    createdAt: now,
+    updatedAt: now,
+    role: 'owner',
+    status: 'active',
+    emailVerifiedCustom: false,
+    userId: user.uid,
+    ownerId: user.uid,
+    workspaceId: user.uid,
+    plan: FREE_TRIAL_PLAN,
+    planStatus: FREE_TRIAL_STATUS,
+    subscriptionStatus: FREE_TRIAL_STATUS,
+    trialDays: BUSINESS_TRIAL_DAYS,
+    isAdmin: false,
+    allowedBusinessTypes: [selectedBusinessType],
+    primaryBusinessType: selectedBusinessType,
+    specialModuleAccess: false,
+    allModulesAccess: false,
+  })
 
-  await setDoc(
-    userRef,
-    {
-      uid: user.uid,
-      email: (cleanString(emailOverride) || cleanString(user.email)).toLowerCase(),
-      role: 'owner',
-      status: 'active',
-      emailVerifiedCustom: false,
-      createdAt: now,
-      updatedAt: now,
-    },
-    { merge: true },
-  )
+  console.log('[Signup Provisioning] start', { path: `users/${user.uid}`, uid: user.uid })
+  console.log('[Signup Provisioning] payload', payload)
 
-  console.log(userSnap.exists() ? '[Signup] user profile exists' : '[Signup] user profile created')
-  return { exists: userSnap.exists() }
+  try {
+    await setDoc(userRef, payload, { merge: true })
+    const snap = await getDoc(userRef)
+    if (!snap.exists()) {
+      throw new Error('Signup profile was not created')
+    }
+    console.log('[Signup] user profile created')
+    console.log('[Signup Provisioning] success', { path: `users/${user.uid}`, exists: snap.exists() })
+    return { id: snap.id, ...snap.data() }
+  } catch (error) {
+    console.error("[Signup Provisioning] fail", {
+      code: error?.code,
+      message: error?.message,
+      payload,
+      uid: user?.uid,
+      email: user?.email,
+    })
+    throw error
+  }
 }
 
 export async function ensureUserWorkspace(user, overrides = {}) {
@@ -64,17 +104,24 @@ export async function ensureUserWorkspace(user, overrides = {}) {
   const enabledModules = hasBusinessSelection ? getRecommendedModules(businessType) : []
   const selectedFeatures = hasBusinessSelection ? enabledModules.map((key) => labelForBusinessModule(key, businessType)) : []
   const provider = cleanString(overrides.provider) || user?.providerData?.[0]?.providerId || 'password'
-  const emailVerified = Boolean(user.emailVerified)
   const allowUnverifiedProfile = overrides.allowUnverifiedProfile === true
-  const canCreateWorkspace = emailVerified || !isPasswordOnlyUser(user, provider)
 
   const userRef = doc(db, 'users', uid)
   const workspaceRef = doc(db, 'workspaces', uid)
   const [userSnap, workspaceSnap] = await Promise.all([getDoc(userRef), getDoc(workspaceRef)])
   const existingUser = userSnap.exists() ? userSnap.data() : null
+  const emailVerified = Boolean(user.emailVerified || existingUser?.emailVerifiedCustom === true)
+  const canCreateWorkspace = emailVerified || !isPasswordOnlyUser(user, provider)
+  console.log("[Workspace Bootstrap]", {
+    firebaseEmailVerified: user.emailVerified,
+    customEmailVerified: existingUser?.emailVerifiedCustom,
+    canCreateWorkspace,
+  })
   const existingWorkspaceId = cleanString(existingUser?.workspaceId)
   const effectiveWorkspaceId = existingWorkspaceId || (canCreateWorkspace ? uid : '')
   const effectiveOwnerId = cleanString(existingUser?.ownerId) || effectiveWorkspaceId
+  const existingWorkspace = workspaceSnap.exists() ? workspaceSnap.data() : null
+  const onboardingCompleted = existingUser?.onboardingCompleted === true || existingWorkspace?.onboardingCompleted === true
 
   if (!userSnap.exists()) {
     if (!canCreateWorkspace && !allowUnverifiedProfile) {
@@ -151,21 +198,33 @@ export async function ensureUserWorkspace(user, overrides = {}) {
   }
 
   if (!canCreateWorkspace) {
-    return { uid, workspaceId: effectiveWorkspaceId || '' }
+    return { uid, workspaceId: effectiveWorkspaceId || '', onboardingCompleted }
   }
 
   if (effectiveWorkspaceId !== uid) {
-    return { uid, workspaceId: effectiveWorkspaceId }
+    return { uid, workspaceId: effectiveWorkspaceId, onboardingCompleted }
   }
 
+  console.log('[Workspace Bootstrap] workspace exists', { workspaceId: uid, exists: workspaceSnap.exists() })
+
   if (!workspaceSnap.exists()) {
-    await setDoc(workspaceRef, {
+    const workspaceCreatePayload = {
       ownerId: uid,
       userId: uid,
       workspaceId: uid,
       name: company || `${fullName}'s Workspace`,
       workspaceName: company || `${fullName}'s Workspace`,
       email,
+      plan: FREE_TRIAL_PLAN,
+      planStatus: FREE_TRIAL_STATUS,
+      subscriptionStatus: FREE_TRIAL_STATUS,
+      status: 'active',
+      billingCycle: 'monthly',
+      trialStartAt: now,
+      trialDays: BUSINESS_TRIAL_DAYS,
+      trialStartedAt: now,
+      trialEndsAt,
+      isTrialActive: true,
       ...(hasBusinessSelection
         ? {
             businessType,
@@ -174,25 +233,33 @@ export async function ensureUserWorkspace(user, overrides = {}) {
             selectedWorkspace: businessWorkspaceForType(businessType).id,
             selectedFeatures,
             enabledModules,
-            plan: FREE_TRIAL_PLAN,
-            planStatus: FREE_TRIAL_STATUS,
-            subscriptionStatus: FREE_TRIAL_STATUS,
-            status: 'active',
-            billingCycle: 'monthly',
-            trialStartAt: now,
-            trialDays: BUSINESS_TRIAL_DAYS,
-            trialStartedAt: now,
-            trialEndsAt,
             trialBusinessType: businessType,
-            isTrialActive: true,
           }
-        : { status: 'pending_onboarding' }),
+        : {}),
       onboardingCompleted: false,
       createdAt: now,
       createdBy: uid,
       updatedAt: now,
       lastAccessedAt: now,
-    })
+    }
+    console.log('[Workspace Bootstrap] create payload', workspaceCreatePayload)
+    try {
+      await setDoc(workspaceRef, workspaceCreatePayload)
+      console.log('[Workspace Bootstrap] create success', { workspaceId: uid })
+    } catch (error) {
+      console.error('[Workspace Bootstrap] create fail', {
+        workspaceId: uid,
+        code: error?.code,
+        message: error?.message,
+        payload: workspaceCreatePayload,
+      })
+      const failedUserSnap = await getDoc(doc(db, 'users', uid))
+      console.log('[Workspace Bootstrap] user exists', failedUserSnap.exists())
+      console.log('[Workspace Bootstrap] user data', failedUserSnap.data())
+      const failedWorkspaceSnap = await getDoc(doc(db, 'workspaces', uid))
+      console.log('[Workspace Bootstrap] workspace exists after fail', failedWorkspaceSnap.exists())
+      throw error
+    }
   } else {
     await setDoc(
       workspaceRef,
@@ -208,5 +275,5 @@ export async function ensureUserWorkspace(user, overrides = {}) {
     )
   }
 
-  return { uid, workspaceId: effectiveWorkspaceId }
+  return { uid, workspaceId: effectiveWorkspaceId, onboardingCompleted }
 }

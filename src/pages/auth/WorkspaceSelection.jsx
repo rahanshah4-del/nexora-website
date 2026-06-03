@@ -47,6 +47,7 @@ import { saveSelectedWorkspace } from '../../crm/lib/workspaceSession.js'
 import { clientSafeMessage, reportTechnicalError } from '../../lib/errorHandler.js'
 import { sendCustomVerificationEmail } from '../../lib/emailVerificationService.js'
 import { trackAnalyticsEvent } from '../../lib/analyticsTracking.js'
+import { getAuthRouteState, isUserCustomVerified, shouldShowWorkspaceSelection } from '../../lib/authRouteState.js'
 
 const workspaceIconMap = {
   'General CRM': { icon: HiOutlineUserGroup, iconTone: 'bg-blue-50 text-blue-600', color: 'bg-blue-600' },
@@ -760,7 +761,7 @@ export default function WorkspaceSelection() {
   const [verificationMessage, setVerificationMessage] = useState('')
   const [businessTypeSaving, setBusinessTypeSaving] = useState('')
 
-  const emailVerified = Boolean(user?.emailVerified || accountData?.emailVerifiedCustom)
+  const emailVerified = isUserCustomVerified({ ...user, emailVerifiedCustom: accountData?.emailVerifiedCustom })
 
   useEffect(() => {
     const interval = window.setInterval(() => setNowMs(Date.now()), 60000)
@@ -855,7 +856,16 @@ export default function WorkspaceSelection() {
     }
   }, [accountData, emailVerified, nowMs, user, workspaceData])
 
-  const hasCrmWorkspace = Boolean(workspaceData || accountData?.workspaceId || accountData?.onboardingCompleted)
+  const onboardingCompleted = workspaceData?.onboardingCompleted === true || accountData?.onboardingCompleted === true
+  const configuredBusinessType = normalizeBusinessType(
+    workspaceData?.selectedBusinessType ||
+      workspaceData?.businessType ||
+      accountData?.selectedBusinessType ||
+      accountData?.businessType,
+  )
+  const configuredSelectedWorkspace = cleanString(workspaceData?.selectedWorkspace) || cleanString(accountData?.selectedWorkspace)
+  const workspaceFullyConfigured = Boolean(onboardingCompleted && configuredBusinessType && configuredSelectedWorkspace)
+  const hasCrmWorkspace = workspaceFullyConfigured
   const developerOverride = isDeveloperOwnerAccount(accountData, user)
   const lockedBusinessTypeSource =
     cleanString(workspaceData?.primaryBusinessType) ||
@@ -922,6 +932,43 @@ export default function WorkspaceSelection() {
     : mustSelectModuleFirst
       ? 'Select a business module above to start onboarding.'
       : createMessage
+
+  useEffect(() => {
+    if (authLoading || accountLoading || !user?.uid) return
+
+    const showWorkspaceSelection = shouldShowWorkspaceSelection(accountData, workspaceData)
+    const state = {
+      route: showWorkspaceSelection ? '/workspace' : CRM_DASHBOARD_ROUTE,
+      showWorkspaceSelection,
+      onboardingCompleted,
+      businessType: configuredBusinessType,
+      selectedWorkspace: configuredSelectedWorkspace,
+      workspaceFullyConfigured,
+      hasWorkspaceDoc: Boolean(workspaceData),
+      hasAccountWorkspaceId: Boolean(accountData?.workspaceId),
+    }
+    console.log('[Onboarding] state', state)
+
+    if (!showWorkspaceSelection) {
+      console.log('[Onboarding] redirect dashboard')
+      navigate(CRM_DASHBOARD_ROUTE, { replace: true })
+      return
+    }
+
+    console.log('[Onboarding] onboarding incomplete')
+    console.log('[Onboarding] redirect workspace')
+  }, [
+    accountData?.workspaceId,
+    accountLoading,
+    authLoading,
+    configuredBusinessType,
+    configuredSelectedWorkspace,
+    navigate,
+    onboardingCompleted,
+    user?.uid,
+    workspaceData,
+    workspaceFullyConfigured,
+  ])
 
   useEffect(() => {
     if (!settingsOpen) {
@@ -1073,7 +1120,7 @@ export default function WorkspaceSelection() {
     if (businessTypeSaving) return
     if (!emailVerified) {
       setCreateMessage('Please verify your email before creating a workspace.')
-      navigate('/verify-email')
+      navigate(getAuthRouteState({ ...user, emailVerifiedCustom: accountData?.emailVerifiedCustom }).route)
       return
     }
 
@@ -1147,6 +1194,41 @@ export default function WorkspaceSelection() {
         return
       }
 
+      const workspaceRef = doc(db, 'workspaces', workspaceId)
+      const workspaceSnap = await getDoc(workspaceRef)
+      const workspaceExists = workspaceSnap.exists()
+      console.log('[WorkspaceSelection] workspace exists', { workspaceId, workspaceExists })
+
+      const workspaceUpdatePayload = {
+        businessType,
+        currentBusinessType: businessType,
+        selectedBusinessType: businessType,
+        selectedWorkspace: workspace.id,
+        workspaceId,
+        ownerId: cleanString(workspaceData?.ownerId) || uid,
+        enabledModules,
+        selectedFeatures,
+        onboardingCompleted: true,
+        updatedAt: now,
+        lastAccessedAt: now,
+      }
+      const workspacePayload = workspaceExists
+        ? workspaceUpdatePayload
+        : {
+            ...workspaceUpdatePayload,
+            userId: workspaceId,
+            createdBy: uid,
+            createdAt: now,
+            plan: 'Basic',
+            planStatus: 'trial',
+            subscriptionStatus: 'trial',
+            trialDays: CRM_TRIAL_DAYS,
+            status: 'active',
+            isTrialActive: true,
+          }
+
+      console.log(workspaceExists ? '[WorkspaceSelection] update payload' : '[WorkspaceSelection] create payload', workspacePayload)
+
       await Promise.all([
         setDoc(
           doc(db, 'users', uid),
@@ -1165,27 +1247,21 @@ export default function WorkspaceSelection() {
           { merge: true },
         ),
         setDoc(
-          doc(db, 'workspaces', workspaceId),
-          {
-            businessType,
-            currentBusinessType: businessType,
-            selectedBusinessType: businessType,
-            selectedWorkspace: workspace.id,
-            workspaceId,
-            ownerId: cleanString(workspaceData?.ownerId) || uid,
-            enabledModules,
-            selectedFeatures,
-            onboardingCompleted: true,
-            updatedAt: now,
-            lastAccessedAt: now,
-          },
+          workspaceRef,
+          workspacePayload,
           { merge: true },
         ),
       ])
+      console.log('[WorkspaceSelection] workspace save success', { workspaceId, workspaceExists })
       await trackAnalyticsEvent('workspace_selected', { userId: uid, email: user?.email || '', workspaceId, businessType, moduleName: businessType, page: '/workspace' })
       await trackAnalyticsEvent('onboarding_completed', { userId: uid, email: user?.email || '', workspaceId, businessType, moduleName: businessType, page: '/workspace' })
       navigate(CRM_DASHBOARD_ROUTE)
     } catch (error) {
+      console.error('[WorkspaceSelection] workspace save fail', {
+        workspaceId,
+        code: error?.code,
+        message: error?.message,
+      })
       setCreateMessage(clientSafeMessage(error, 'Could not save business type right now.', { context: 'Business workspace selection' }))
     } finally {
       setBusinessTypeSaving('')
@@ -1210,7 +1286,7 @@ export default function WorkspaceSelection() {
   const handleOpenCreate = useCallback(() => {
     if (!emailVerified) {
       setCreateMessage('Please verify your email before creating a workspace.')
-      navigate('/verify-email')
+      navigate(getAuthRouteState({ ...user, emailVerifiedCustom: accountData?.emailVerifiedCustom }).route)
       return
     }
     if (hasModuleLock) {
@@ -1223,13 +1299,13 @@ export default function WorkspaceSelection() {
     }
     setCreateMessage('')
     setCreateOpen(true)
-  }, [emailVerified, hasModuleLock, moduleLockMessage, mustSelectModuleFirst, navigate])
+  }, [accountData?.emailVerifiedCustom, emailVerified, hasModuleLock, moduleLockMessage, mustSelectModuleFirst, navigate, user])
 
   const handleCreateWorkspace = useCallback(async () => {
     if (creatingWorkspace) return
     if (!emailVerified) {
       setCreateMessage('Please verify your email before creating a workspace.')
-      navigate('/verify-email')
+      navigate(getAuthRouteState({ ...user, emailVerifiedCustom: accountData?.emailVerifiedCustom }).route)
       return
     }
     if (!db || !user?.uid) {

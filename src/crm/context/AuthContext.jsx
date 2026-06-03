@@ -62,7 +62,12 @@ export function AuthProvider({ children }) {
     setBusy(true)
     try {
       const credentials = await createUserWithEmailAndPassword(auth, email, password)
-      await createSignupUserProfile(credentials.user, email)
+      try {
+        await createSignupUserProfile(credentials.user)
+      } catch {
+        setError('Account profile could not be created. Please try again.')
+        return false
+      }
       await ensureUserWorkspace(credentials.user, { email, provider: 'password' })
       if (!credentials.user.emailVerified) {
         const emailResult = await sendCustomVerificationEmail(credentials.user)

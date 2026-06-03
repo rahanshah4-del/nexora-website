@@ -163,6 +163,11 @@ export async function verifyCustomEmailOtp(user, otp) {
     const otpRef = doc(db, 'users', uid, 'verification', 'otp')
     const userDocPath = `users/${uid}`
     const otpDocPath = `users/${uid}/verification/otp`
+    const parentSnap = await getDoc(userRef)
+    if (!parentSnap.exists()) {
+      throw new Error('User profile missing. Please sign up again.')
+    }
+    console.log('[Verify] parent profile exists')
     console.log('[OTP verify] read otp start', { path: otpDocPath })
     let snap
     try {
@@ -191,10 +196,6 @@ export async function verifyCustomEmailOtp(user, otp) {
     }
     console.log('[OTP verify] update parent start', { path: userDocPath, payloadFields: Object.keys(parentPayload) })
     try {
-      const parentSnap = await getDoc(userRef)
-      if (parentSnap.exists()) {
-        console.log('[Verify] parent profile exists')
-      }
       await setDoc(userRef, parentPayload, { merge: true })
       console.log('[Verify] verification flags updated')
     } catch (error) {

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { AiOutlineGoogle } from 'react-icons/ai'
 import { FaApple, FaMicrosoft } from 'react-icons/fa'
 import {
@@ -29,7 +29,9 @@ import logoUrl from '../../assets/logo/nexora-logo.svg'
 import { motion } from 'framer-motion'
 import { clientSafeMessage } from '../../lib/errorHandler.js'
 import { trackAnalyticsEvent } from '../../lib/analyticsTracking.js'
+import { getCustomEmailVerificationStatus } from '../../lib/emailVerificationService.js'
 import { createPasswordResetLink, passwordResetEmail, sendWorkerEmail } from '../../lib/transactionalEmail.js'
+import { getPostLoginRoute } from '../../lib/authRouteState.js'
 
 const modules = [
   { name: 'CRM', detail: 'Customer Relationship Management', icon: HiOutlineUserGroup, color: 'bg-blue-600' },
@@ -125,8 +127,46 @@ export default function Login() {
   const [googleLoading, setGoogleLoading] = useState(false)
   const [error, setError] = useState('')
   const [info, setInfo] = useState('')
+  const [existingUserRoute, setExistingUserRoute] = useState('')
 
-  if (!loading && user) return <Navigate to="/workspace" replace />
+  useEffect(() => {
+    let cancelled = false
+
+    async function resolveExistingUserRoute() {
+      if (loading || !user) {
+        setExistingUserRoute('')
+        return
+      }
+
+      const customVerified = await getCustomEmailVerificationStatus(user)
+      if (!user.emailVerified && !customVerified) {
+        if (!cancelled) setExistingUserRoute(getPostLoginRoute({ ...user, emailVerifiedCustom: false }))
+        return
+      }
+
+      const workspaceResult = await ensureUserWorkspace(user)
+      if (!cancelled) {
+        setExistingUserRoute(getPostLoginRoute({
+          ...user,
+          emailVerifiedCustom: customVerified,
+          onboardingCompleted: workspaceResult?.onboardingCompleted,
+        }))
+      }
+    }
+
+    resolveExistingUserRoute().catch((err) => {
+      if (!cancelled) {
+        console.error('[Post Login Route]', { error: err?.message || err })
+        setExistingUserRoute('/workspace')
+      }
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [loading, user])
+
+  if (!loading && user && existingUserRoute) return <Navigate to={existingUserRoute} replace />
 
   const onSubmit = async (event) => {
     event.preventDefault()
@@ -142,13 +182,22 @@ export default function Login() {
     try {
       await trackAnalyticsEvent('login_started', { email: email.trim().toLowerCase(), page: '/login' })
       const credentials = await signInWithEmailAndPassword(auth, email.trim(), password)
-      if (!credentials.user.emailVerified) {
-        navigate('/verify-email', { replace: true })
+      const customVerified = await getCustomEmailVerificationStatus(credentials.user)
+      console.log('[Login Verification Gate]', {
+        firebaseEmailVerified: credentials.user.emailVerified,
+        customVerified,
+      })
+      if (!credentials.user.emailVerified && !customVerified) {
+        navigate(getPostLoginRoute({ ...credentials.user, emailVerifiedCustom: false }), { replace: true })
         return
       }
-      await ensureUserWorkspace(credentials.user, { provider: 'password' })
+      const workspaceResult = await ensureUserWorkspace(credentials.user, { provider: 'password' })
       await trackAnalyticsEvent('login_completed', { userId: credentials.user.uid, email: credentials.user.email || email.trim().toLowerCase(), page: '/login', status: 'success' })
-      navigate('/workspace', { replace: true })
+      navigate(getPostLoginRoute({
+        ...credentials.user,
+        emailVerifiedCustom: customVerified,
+        onboardingCompleted: workspaceResult?.onboardingCompleted,
+      }), { replace: true })
     } catch (err) {
       await trackAnalyticsEvent('login_failed', { email: email.trim().toLowerCase(), page: '/login', status: err?.code || 'failed' })
       setError(clientSafeMessage(err, 'Unable to sign in. Please verify your credentials.', { context: 'Login with email' }))
@@ -171,9 +220,13 @@ export default function Login() {
       const provider = new GoogleAuthProvider()
       await trackAnalyticsEvent('login_started', { page: '/login', buttonLabel: 'Google sign in' })
       const result = await signInWithPopup(auth, provider)
-      await ensureUserWorkspace(result.user, { provider: 'google' })
+      const workspaceResult = await ensureUserWorkspace(result.user, { provider: 'google' })
       await trackAnalyticsEvent('login_completed', { userId: result.user.uid, email: result.user.email || '', page: '/login', status: 'google' })
-      navigate('/workspace', { replace: true })
+      navigate(getPostLoginRoute({
+        ...result.user,
+        emailVerifiedCustom: true,
+        onboardingCompleted: workspaceResult?.onboardingCompleted,
+      }), { replace: true })
     } catch (err) {
       await trackAnalyticsEvent('login_failed', { page: '/login', status: err?.code || 'google_failed' })
       setError(clientSafeMessage(err, 'Google sign-in failed. Please try again.', { context: 'Login with Google' }))

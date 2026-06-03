@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { signOut } from 'firebase/auth'
 import useAuth from '../../context/useAuth.js'
@@ -9,6 +9,7 @@ import { getCustomEmailVerificationStatus, sendCustomVerificationEmail, verifyCu
 import { trackAnalyticsEvent } from '../../lib/analyticsTracking.js'
 import NexoraLogo from '../../components/brand/NexoraLogo.jsx'
 import Toast from '../../crm/components/ui/Toast.jsx'
+import { getPostVerificationRoute } from '../../lib/authRouteState.js'
 
 function logFullOtpError(error) {
   console.error('[OTP email full error]', {
@@ -36,6 +37,28 @@ export default function VerifyEmail() {
     window.setTimeout(() => setToast(null), timeout)
   }
 
+  useEffect(() => {
+    let cancelled = false
+
+    async function redirectIfVerified() {
+      if (loading || !user) return
+      try {
+        const customVerified = await getCustomEmailVerificationStatus(user)
+        const route = getPostVerificationRoute({ ...user, emailVerifiedCustom: customVerified })
+        if (!cancelled && route === '/workspace') {
+          navigate(route, { replace: true })
+        }
+      } catch (err) {
+        logFullOtpError(err)
+      }
+    }
+
+    redirectIfVerified()
+    return () => {
+      cancelled = true
+    }
+  }, [loading, navigate, user])
+
   if (!loading && !user) return <Navigate to="/login" replace />
   const handleRefreshStatus = async () => {
     const currentUser = auth?.currentUser || user
@@ -44,11 +67,15 @@ export default function VerifyEmail() {
     setMessage('')
     setError('')
     try {
-      const verified = currentUser.emailVerified || await getCustomEmailVerificationStatus(currentUser)
+      const customVerified = await getCustomEmailVerificationStatus(currentUser)
+      const verified = currentUser.emailVerified || customVerified
       if (verified) {
-        await ensureUserWorkspace(currentUser, { provider: 'password' })
+        const workspaceResult = await ensureUserWorkspace(currentUser, { provider: 'password' })
+        console.log('[Verify] workspace bootstrap result', workspaceResult)
         await trackAnalyticsEvent('signup_completed', { userId: currentUser.uid, email: currentUser.email || '', page: '/verify-email', status: 'email_verified_custom' })
-        navigate('/workspace', { replace: true })
+        const route = getPostVerificationRoute({ ...currentUser, emailVerifiedCustom: customVerified })
+        console.log('[Verify] redirect', route)
+        navigate(route, { replace: true })
         return
       }
       setMessage('Not verified yet. Enter the 6 digit code from your email, or send a new code.')
@@ -128,10 +155,13 @@ export default function VerifyEmail() {
         showToast({ tone: 'error', message: result.error || 'Invalid verification code.' })
         return
       }
-      await ensureUserWorkspace(currentUser, { provider: 'password' })
+      const workspaceResult = await ensureUserWorkspace(currentUser, { provider: 'password' })
+      console.log('[Verify] workspace bootstrap result', workspaceResult)
       await trackAnalyticsEvent('signup_completed', { userId: currentUser.uid, email: currentUser.email || '', page: '/verify-email', status: 'email_verified_custom' })
       showToast({ tone: 'success', message: 'Email verified successfully.' })
-      navigate('/workspace', { replace: true })
+      const route = getPostVerificationRoute({ ...currentUser, emailVerifiedCustom: true })
+      console.log('[Verify] redirect', route)
+      navigate(route, { replace: true })
     } catch (err) {
       logFullOtpError(err)
       const nextError = clientSafeMessage(err, 'Could not verify code right now.', { context: 'Verify custom email OTP' })
