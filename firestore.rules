@@ -42,12 +42,8 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isBackendAdmin()
-        || (activeSignedIn()
-        && (
-          profile().isAdmin == true
-          || profile().role in ['platform_admin', 'super_admin', 'PLATFORM_ADMIN', 'SUPER_ADMIN']
-        ));
+      // TODO: Replace this backend email allowlist with Firebase custom claims for platform_admin.
+      return isBackendAdmin();
     }
 
     function memberWorkspaceId() {
@@ -290,6 +286,8 @@ service cloud.firestore {
         'nextBillingDate',
         'subscriptionStartedAt',
         'subscriptionExpiresAt',
+        'emailVerifiedCustom',
+        'emailVerifiedCustomAt',
       ])
       && (
         !request.resource.data.diff(resource.data).affectedKeys().hasAny([
@@ -326,6 +324,62 @@ service cloud.firestore {
         'upgradedAt',
         'updatedAt',
       ]);
+    }
+
+    function verificationEmailMatches(data) {
+      return data.otpEmail == request.auth.token.email
+        || data.otpEmail == resource.data.email
+        || data.otpEmail == request.resource.data.email;
+    }
+
+    function validPendingOtpDoc(userId) {
+      return exists(/databases/$(database)/documents/users/$(userId)/verification/otp)
+        && get(/databases/$(database)/documents/users/$(userId)/verification/otp).data.otpHash is string
+        && get(/databases/$(database)/documents/users/$(userId)/verification/otp).data.otpExpiresAt is timestamp
+        && get(/databases/$(database)/documents/users/$(userId)/verification/otp).data.otpExpiresAt >= request.time
+        && verificationEmailMatches(get(/databases/$(database)/documents/users/$(userId)/verification/otp).data);
+    }
+
+    function customEmailVerificationFieldsTouched() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+        'emailVerifiedCustom',
+        'emailVerifiedCustomAt',
+        'updatedAt'
+      ]);
+    }
+
+    function validCustomEmailVerificationUpdate(userId) {
+      return request.auth != null
+        && request.auth.uid == userId
+        && customEmailVerificationFieldsTouched()
+        && request.resource.data.emailVerifiedCustom == true
+        && request.resource.data.emailVerifiedCustomAt is timestamp
+        && request.resource.data.updatedAt is timestamp
+        && validPendingOtpDoc(userId);
+    }
+
+    function verificationOtpWriteSafe(userId, docId) {
+      return request.auth != null
+        && request.auth.uid == userId
+        && docId == 'otp'
+        && request.resource.data.keys().hasOnly([
+          'otpHash',
+          'otpExpiresAt',
+          'otpSentAt',
+          'otpEmail',
+          'attempts',
+          'createdAt',
+          'updatedAt'
+        ])
+        && request.resource.data.otpHash is string
+        && request.resource.data.otpExpiresAt is timestamp
+        && request.resource.data.otpExpiresAt > request.time
+        && request.resource.data.otpSentAt is timestamp
+        && request.resource.data.otpEmail is string
+        && request.resource.data.otpEmail == request.auth.token.email
+        && request.resource.data.attempts is int
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.updatedAt is timestamp;
     }
 
     function analyticsEventFieldsSafe() {
@@ -589,13 +643,7 @@ service cloud.firestore {
           && request.resource.data.createdAt is timestamp
           && hasSafeTrialPlan());
       allow read: if isSelf(userId) || isAdmin();
-      allow update: if request.auth != null
-        && request.auth.uid == userId
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-          'emailVerifiedCustom',
-          'emailVerifiedCustomAt',
-          'updatedAt'
-        ]);
+      allow update: if validCustomEmailVerificationUpdate(userId);
       allow update: if isAdmin()
         || (isActiveSelf(userId) && protectedAccountFieldsUnchanged() && userIdentityScopeSafe(userId))
         || (activeSignedIn()
@@ -605,8 +653,10 @@ service cloud.firestore {
       allow delete: if isAdmin();
 
       match /verification/{docId} {
-        allow read, create, update, delete: if request.auth != null
-          && request.auth.uid == userId;
+        allow read, delete: if request.auth != null
+          && request.auth.uid == userId
+          && docId == 'otp';
+        allow create, update: if verificationOtpWriteSafe(userId, docId);
       }
 
       match /sessions/{sessionId} {

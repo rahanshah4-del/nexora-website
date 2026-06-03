@@ -70,7 +70,7 @@ function formatAccessDate(value) {
 }
 
 function isActivePlanStatus(status) {
-  return ['active', 'paid', 'approved', 'current'].includes(String(status || '').trim().toLowerCase())
+  return ['active', 'paid', 'approved'].includes(String(status || '').trim().toLowerCase())
 }
 
 function TrialAccessBlock({ expired, trialEndsAt, onBackToWorkspace, onUpgrade }) {
@@ -274,10 +274,8 @@ export default function DashboardLayout() {
   const isAuthenticated = Boolean(userId)
   const hasActiveAccess =
     isTrialActive ||
-    isActivePlanStatus(userDoc?.planStatus) ||
-    accessPlan === 'Basic' ||
-    accessPlan === 'Business' ||
-    accessPlan === 'Enterprise'
+    isActivePlanStatus(userDoc?.subscriptionStatus) ||
+    isActivePlanStatus(userDoc?.planStatus)
   const developerOverride = isDeveloperOwnerAccount(userDoc, firebaseUser)
   const lockedWorkspaceId = businessWorkspaceForType(userDoc?.selectedBusinessType || userDoc?.businessType).id
   const teamOverride = workspaceAccess.isAdmin || workspaceAccess.hasPermission('settingsAccess')
