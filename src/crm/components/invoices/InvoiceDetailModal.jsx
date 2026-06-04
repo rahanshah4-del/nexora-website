@@ -2,9 +2,12 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { memo, useEffect, useMemo, useState } from 'react'
 import {
   HiOutlineArrowDownTray,
+  HiOutlineCheckCircle,
+  HiOutlineClock,
   HiOutlineEnvelope,
   HiOutlinePencilSquare,
   HiOutlinePrinter,
+  HiOutlineXCircle,
   HiOutlineXMark,
 } from 'react-icons/hi2'
 import Badge from '../ui/Badge.jsx'
@@ -14,6 +17,7 @@ import Select from '../ui/Select.jsx'
 import InvoicePreview from './InvoicePreview.jsx'
 import { INVOICE_STATUS_OPTIONS, dateLabel, invoicePaidAmount, invoiceTotal, statusBadge } from '../../lib/invoiceHelpers.js'
 import { formatCurrency } from '../../utils/format.js'
+import { invoiceActionAccess } from '../../lib/invoiceAccess.js'
 
 function matchingPayments(payments, invoice) {
   const key = invoice?.id || invoice?.invoiceNumber
@@ -25,11 +29,20 @@ function InvoiceDetailModal({
   invoice,
   payments = [],
   company,
+  permissions = {},
+  canEditInvoice,
+  canExportInvoice,
+  canPrintInvoice,
+  canEmailInvoice,
+  canRecordPayment,
   onPrint,
   onDownloadPdf,
   onEmail,
   onClose,
   onUpdate,
+  onMarkPaid,
+  onRejectPayment,
+  onPartialPayment,
 }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState({})
@@ -58,12 +71,36 @@ function InvoiceDetailModal({
   const amountPaid = invoicePaidAmount(invoice)
   const balance = Math.max(Number(invoice.balanceDue ?? total - amountPaid) || 0, 0)
   const paymentHistory = Array.isArray(invoice.paymentHistory) ? invoice.paymentHistory : []
+  const modalPermissions = {
+    ...permissions,
+    ...(typeof canEditInvoice === 'boolean' ? { canEditInvoice } : {}),
+    ...(typeof canExportInvoice === 'boolean' ? { canExportInvoice } : {}),
+    ...(typeof canPrintInvoice === 'boolean' ? { canPrintInvoice } : {}),
+    ...(typeof canEmailInvoice === 'boolean' ? { canEmailInvoice } : {}),
+    ...(typeof canRecordPayment === 'boolean' ? { canRecordPayment } : {}),
+  }
+  const access = invoiceActionAccess(modalPermissions, invoice)
+  const draftStatusValue = String(draft.status || '').toLowerCase().replace(/\s+/g, '_')
+  const statusSelectValue = access.canSetAnyStatus || ['draft', 'pending'].includes(draftStatusValue) ? draft.status : 'pending'
 
   async function saveEdit() {
     if (!invoice?.id) return
+    if (!access.canEdit) return
+    const normalizedDraftStatus = String(draft.status || '').toLowerCase().replace(/\s+/g, '_')
+    const patch = {
+      customerName: draft.customerName,
+      customerPhone: draft.customerPhone,
+      customerEmail: draft.customerEmail,
+      dueDate: draft.dueDate,
+      notes: draft.notes,
+      terms: draft.terms,
+      ...(access.canEditStatus && (access.canSetAnyStatus || ['draft', 'pending'].includes(normalizedDraftStatus))
+        ? { status: draft.status }
+        : {}),
+    }
     setSaving(true)
     try {
-      await onUpdate?.(invoice.id, draft)
+      await onUpdate?.(invoice.id, patch)
       setEditing(false)
     } finally {
       setSaving(false)
@@ -102,33 +139,60 @@ function InvoiceDetailModal({
               </div>
 
               <div className="flex flex-wrap items-center gap-2 lg:justify-end">
-                <Button
-                  variant="subtle"
-                  className="h-10 rounded-xl text-xs"
-                  type="button"
-                  disabled={!onUpdate}
-                  onClick={() => setEditing((value) => !value)}
-                >
-                  <HiOutlinePencilSquare className="h-4 w-4" />
-                  Edit
-                </Button>
-                <Button variant="subtle" className="h-10 rounded-xl text-xs" type="button" onClick={() => onDownloadPdf?.(invoice)}>
-                  <HiOutlineArrowDownTray className="h-4 w-4" />
-                  Download PDF
-                </Button>
-                <Button variant="subtle" className="h-10 rounded-xl text-xs" type="button" onClick={() => onPrint?.(invoice)}>
-                  <HiOutlinePrinter className="h-4 w-4" />
-                  Print
-                </Button>
-                <Button
-                  variant="subtle"
-                  className="h-10 rounded-xl text-xs"
-                  type="button"
-                  onClick={() => onEmail?.(invoice)}
-                >
-                  <HiOutlineEnvelope className="h-4 w-4" />
-                  Send
-                </Button>
+                {access.canEdit ? (
+                  <Button
+                    variant="subtle"
+                    className="h-10 rounded-xl text-xs"
+                    type="button"
+                    disabled={!onUpdate}
+                    onClick={() => setEditing((value) => !value)}
+                  >
+                    <HiOutlinePencilSquare className="h-4 w-4" />
+                    Edit
+                  </Button>
+                ) : null}
+                {access.canMarkPaid ? (
+                  <Button variant="subtle" className="h-10 rounded-xl text-xs" type="button" disabled={!onMarkPaid} onClick={() => onMarkPaid?.(invoice)}>
+                    <HiOutlineCheckCircle className="h-4 w-4" />
+                    Mark Paid
+                  </Button>
+                ) : null}
+                {access.canMarkPartial ? (
+                  <Button variant="subtle" className="h-10 rounded-xl text-xs" type="button" disabled={!onPartialPayment} onClick={() => onPartialPayment?.(invoice)}>
+                    <HiOutlineClock className="h-4 w-4" />
+                    Partial
+                  </Button>
+                ) : null}
+                {access.canCancel ? (
+                  <Button variant="subtle" className="h-10 rounded-xl text-xs" type="button" disabled={!onRejectPayment} onClick={() => onRejectPayment?.(invoice)}>
+                    <HiOutlineXCircle className="h-4 w-4" />
+                    Cancel
+                  </Button>
+                ) : null}
+                {access.canDownload ? (
+                  <Button variant="subtle" className="h-10 rounded-xl text-xs" type="button" disabled={!onDownloadPdf} onClick={() => onDownloadPdf?.(invoice)}>
+                    <HiOutlineArrowDownTray className="h-4 w-4" />
+                    Download PDF
+                  </Button>
+                ) : null}
+                {access.canPrint ? (
+                  <Button variant="subtle" className="h-10 rounded-xl text-xs" type="button" disabled={!onPrint} onClick={() => onPrint?.(invoice)}>
+                    <HiOutlinePrinter className="h-4 w-4" />
+                    Print
+                  </Button>
+                ) : null}
+                {access.canSendEmail ? (
+                  <Button
+                    variant="subtle"
+                    className="h-10 rounded-xl text-xs"
+                    type="button"
+                    disabled={!onEmail}
+                    onClick={() => onEmail?.(invoice)}
+                  >
+                    <HiOutlineEnvelope className="h-4 w-4" />
+                    Send
+                  </Button>
+                ) : null}
                 <Button variant="ghost" className="h-10 rounded-xl px-3" type="button" onClick={onClose} title="Close">
                   <HiOutlineXMark className="h-5 w-5" />
                 </Button>
@@ -155,12 +219,14 @@ function InvoiceDetailModal({
                       Due Date
                       <Input className="mt-1" type="date" value={draft.dueDate} onChange={(event) => setDraft((current) => ({ ...current, dueDate: event.target.value }))} />
                     </label>
-                    <label className="text-xs font-bold text-slate-600">
-                      Status
-                      <Select className="mt-1" value={draft.status} onChange={(event) => setDraft((current) => ({ ...current, status: event.target.value }))}>
-                        {INVOICE_STATUS_OPTIONS.map((option) => <option key={option} value={option.toLowerCase()}>{option}</option>)}
-                      </Select>
-                    </label>
+                    {access.canEditStatus ? (
+                      <label className="text-xs font-bold text-slate-600">
+                        Status
+                        <Select className="mt-1" value={statusSelectValue} onChange={(event) => setDraft((current) => ({ ...current, status: event.target.value }))}>
+                          {(access.canSetAnyStatus ? INVOICE_STATUS_OPTIONS : ['Draft', 'Pending']).map((option) => <option key={option} value={option.toLowerCase()}>{option}</option>)}
+                        </Select>
+                      </label>
+                    ) : null}
                     <label className="text-xs font-bold text-slate-600 sm:col-span-2">
                       Notes
                       <textarea

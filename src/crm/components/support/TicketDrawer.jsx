@@ -22,7 +22,7 @@ function priorityVariant(priority) {
   return 'default'
 }
 
-export default function TicketDrawer({ open, ticket, onClose, onSave, onAddComment }) {
+export default function TicketDrawer({ open, ticket, onClose, onSave, onAddComment, canEdit = false, canComment = false }) {
   const [draft, setDraft] = useState(ticket)
 
   useEffect(() => {
@@ -73,15 +73,15 @@ export default function TicketDrawer({ open, ticket, onClose, onSave, onAddComme
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="sm:col-span-2">
                     <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Customer</label>
-                    <Input className="mt-1" value={draft.customerName} onChange={(e) => setDraft((d) => ({ ...d, customerName: e.target.value }))} />
+                    <Input className="mt-1" value={draft.customerName} disabled={!canEdit} onChange={(e) => setDraft((d) => ({ ...d, customerName: e.target.value }))} />
                   </div>
                   <div className="sm:col-span-2">
                     <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Email</label>
-                    <Input className="mt-1" type="email" value={draft.customerEmail} onChange={(e) => setDraft((d) => ({ ...d, customerEmail: e.target.value }))} />
+                    <Input className="mt-1" type="email" value={draft.customerEmail} disabled={!canEdit} onChange={(e) => setDraft((d) => ({ ...d, customerEmail: e.target.value }))} />
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Status</label>
-                    <Select className="mt-1" value={draft.status} onChange={(e) => setDraft((d) => ({ ...d, status: e.target.value }))}>
+                    <Select className="mt-1" value={draft.status} disabled={!canEdit} onChange={(e) => setDraft((d) => ({ ...d, status: e.target.value }))}>
                       <option>Open</option>
                       <option>In Progress</option>
                       <option>Resolved</option>
@@ -90,7 +90,7 @@ export default function TicketDrawer({ open, ticket, onClose, onSave, onAddComme
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Priority</label>
-                    <Select className="mt-1" value={draft.priority} onChange={(e) => setDraft((d) => ({ ...d, priority: e.target.value }))}>
+                    <Select className="mt-1" value={draft.priority} disabled={!canEdit} onChange={(e) => setDraft((d) => ({ ...d, priority: e.target.value }))}>
                       <option>Low</option>
                       <option>Medium</option>
                       <option>High</option>
@@ -99,7 +99,7 @@ export default function TicketDrawer({ open, ticket, onClose, onSave, onAddComme
                   </div>
                   <div className="sm:col-span-2">
                     <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Assigned To</label>
-                    <Select className="mt-1" value={draft.assignedTo} onChange={(e) => setDraft((d) => ({ ...d, assignedTo: e.target.value }))}>
+                    <Select className="mt-1" value={draft.assignedTo} disabled={!canEdit} onChange={(e) => setDraft((d) => ({ ...d, assignedTo: e.target.value }))}>
                       <option>Unassigned</option>
                       <option>Owner</option>
                       <option>Admin</option>
@@ -114,22 +114,25 @@ export default function TicketDrawer({ open, ticket, onClose, onSave, onAddComme
                     <textarea
                       className="focus-ring mt-1 h-28 w-full rounded-xl border border-white/30 bg-white/40 p-3 text-sm text-slate-900 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/40 dark:text-slate-100"
                       value={draft.message}
+                      disabled={!canEdit}
                       onChange={(e) => setDraft((d) => ({ ...d, message: e.target.value }))}
-                      placeholder="Describe the issue…"
+                      placeholder="Describe the issue..."
                     />
                   </div>
                 </div>
 
                 <div className="mt-5">
-                  <TicketComments ticket={draft} onAdd={(c) => onAddComment?.(draft, c)} />
+                  <TicketComments ticket={draft} canAdd={canComment} onAdd={(c) => onAddComment?.(draft, c)} />
                 </div>
               </div>
 
               <div className="absolute bottom-0 left-0 right-0 border-t border-white/15 bg-white/40 p-4 backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/40">
                 <div className="flex flex-wrap items-center gap-2">
-                  <Button className="rounded-2xl" type="button" onClick={() => onSave?.(draft)}>
-                    Save
-                  </Button>
+                  {canEdit ? (
+                    <Button className="rounded-2xl" type="button" onClick={() => onSave?.(draft)}>
+                      Save
+                    </Button>
+                  ) : null}
                   <Button variant="subtle" className="rounded-2xl" type="button" onClick={onClose}>
                     Close
                   </Button>
@@ -142,4 +145,3 @@ export default function TicketDrawer({ open, ticket, onClose, onSave, onAddComme
     </AnimatePresence>
   )
 }
-

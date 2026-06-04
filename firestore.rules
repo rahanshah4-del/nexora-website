@@ -191,6 +191,26 @@ service cloud.firestore {
           ));
     }
 
+    function supportTicketReadPermission(workspaceId) {
+      return staffPermission(workspaceId, 'support')
+        || staffPermission(workspaceId, 'module.support.view');
+    }
+
+    function supportTicketCreatePermission(workspaceId) {
+      return staffPermission(workspaceId, 'support')
+        || staffPermission(workspaceId, 'module.support.create');
+    }
+
+    function supportTicketEditPermission(workspaceId) {
+      return staffPermission(workspaceId, 'support')
+        || staffPermission(workspaceId, 'module.support.edit');
+    }
+
+    function supportTicketDeletePermission(workspaceId) {
+      return staffPermission(workspaceId, 'support')
+        || staffPermission(workspaceId, 'module.support.delete');
+    }
+
     function isOpenStatus(value) {
       return value in ['pending', 'pending_approval', 'pending_verification', 'pending_partial', 'partial_pending', 'partial', 'requested', 'invited'];
     }
@@ -531,6 +551,82 @@ service cloud.firestore {
         );
     }
 
+    function invoiceBusinessEditFieldsTouched() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+        'customerName',
+        'customerEmail',
+        'customerPhone',
+        'customerTaxId',
+        'customerAddress',
+        'customerNotes',
+        'items',
+        'subtotal',
+        'subtotalUsd',
+        'discount',
+        'discountTotal',
+        'tax',
+        'taxableAmount',
+        'taxRate',
+        'taxAmount',
+        'taxTotal',
+        'roundOff',
+        'total',
+        'totalUsd',
+        'amountInWords',
+        'notes',
+        'terms',
+        'dueDate',
+        'issueDate',
+        'invoiceDate',
+        'paymentTerms',
+        'template',
+        'attachmentName',
+        'signatureName',
+        'status',
+        'updatedAt'
+      ]);
+    }
+
+    function invoiceBusinessStatusSafe() {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status'])
+        || request.resource.data.status in ['draft', 'Draft', 'DRAFT', 'pending', 'Pending', 'PENDING'];
+    }
+
+    function isDraftInvoice() {
+      return resource.data.status in ['draft', 'Draft', 'DRAFT']
+        || resource.data.paymentStatus in ['draft', 'Draft', 'DRAFT'];
+    }
+
+    function invoiceBusinessEditSafe(workspaceId) {
+      return workspaceUpdateScopeSafe(workspaceId)
+        && invoiceBusinessEditFieldsTouched()
+        && invoiceBusinessStatusSafe();
+    }
+
+    function invoicePaymentEditSafe(workspaceId) {
+      return workspaceUpdateScopeSafe(workspaceId)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'amountPaid',
+          'partialPaidAmount',
+          'balanceDue',
+          'paymentStatus',
+          'approvalStatus',
+          'requiresApproval',
+          'paidAt',
+          'approvedAt',
+          'approvedBy',
+          'paymentHistory',
+          'lastPaymentAt',
+          'lastPaymentDate',
+          'updatedAt'
+        ]);
+    }
+
+    function canCreateBusinessInvoice(workspaceId) {
+      return isWorkspaceManager(workspaceId)
+        || (isWorkspaceMember(workspaceId) && (isManagerRole(memberRole()) || isSalesRole(memberRole())));
+    }
+
     function paymentReferenceFieldsTouched() {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
         'paymentStatus',
@@ -814,9 +910,11 @@ service cloud.firestore {
           || staffPermission(workspaceId, 'reports')
           || isPaymentApprover(workspaceId)
           || canReadClientPortalInvoice(workspaceId);
-        allow create: if workspaceHasWriteAccess(workspaceId) && staffPermission(workspaceId, 'invoices') && workspaceCreateMetadata(workspaceId) && invoiceCreatePaymentApprovalFieldsSafe(workspaceId);
-        allow update: if workspaceHasWriteAccess(workspaceId) && ((staffPermission(workspaceId, 'invoices') && !paymentApprovalFieldsTouched() && workspaceUpdateScopeSafe(workspaceId))
-          || (isPaymentApprover(workspaceId) && paymentApprovalFieldsTouched() && workspaceUpdateScopeSafe(workspaceId))
+        allow create: if workspaceHasWriteAccess(workspaceId) && canCreateBusinessInvoice(workspaceId) && workspaceCreateMetadata(workspaceId) && invoiceCreatePaymentApprovalFieldsSafe(workspaceId);
+        allow update: if workspaceHasWriteAccess(workspaceId) && ((isWorkspaceManager(workspaceId) && workspaceUpdateScopeSafe(workspaceId))
+          || (isManagerRole(memberRole()) && isWorkspaceMember(workspaceId) && invoiceBusinessEditSafe(workspaceId))
+          || (isSalesRole(memberRole()) && isWorkspaceMember(workspaceId) && isDraftInvoice() && invoiceBusinessEditSafe(workspaceId))
+          || (isPaymentApprover(workspaceId) && invoicePaymentEditSafe(workspaceId))
           || (isWorkspaceMember(workspaceId) && paymentReferenceFieldsTouched() && isOpenApprovalResource() && workspaceUpdateScopeSafe(workspaceId)));
         allow delete: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId);
       }
@@ -857,10 +955,10 @@ service cloud.firestore {
       }
 
       match /supportTickets/{ticketId} {
-        allow read: if staffPermission(workspaceId, 'reports');
-        allow create: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId) && workspaceCreateMetadata(workspaceId);
-        allow update: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId) && workspaceUpdateScopeSafe(workspaceId);
-        allow delete: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId);
+        allow read: if supportTicketReadPermission(workspaceId);
+        allow create: if workspaceHasWriteAccess(workspaceId) && supportTicketCreatePermission(workspaceId) && workspaceCreateMetadata(workspaceId);
+        allow update: if workspaceHasWriteAccess(workspaceId) && supportTicketEditPermission(workspaceId) && workspaceUpdateScopeSafe(workspaceId);
+        allow delete: if workspaceHasWriteAccess(workspaceId) && supportTicketDeletePermission(workspaceId);
       }
 
       match /subscriptions/{subscriptionId} {

@@ -19,6 +19,7 @@ import Button from '../ui/Button.jsx'
 import Table from '../ui/Table.jsx'
 import { formatCurrency } from '../../utils/format.js'
 import { dateLabel, invoiceIssueDate, invoicePaidAmount, invoiceTotal, statusBadge } from '../../lib/invoiceHelpers.js'
+import { invoiceActionAccess } from '../../lib/invoiceAccess.js'
 
 function ActionItem({ icon: Icon, label, danger = false, disabled = false, onClick }) {
   return (
@@ -36,38 +37,12 @@ function ActionItem({ icon: Icon, label, danger = false, disabled = false, onCli
   )
 }
 
-function actionAccess(permissions, invoice) {
-  const role = permissions?.invoiceActionRole || permissions?.role || 'owner'
-  const isOwnerAdmin = role === 'owner' || role === 'admin'
-  const isAccountant = role === 'accountant'
-  const isSales = role === 'sales'
-  const status = String(invoice?.paymentStatus || invoice?.status || 'pending').toLowerCase().replace(/\s+/g, '_')
-  const isDraft = status === 'draft'
-  const isPaid = status === 'paid'
-  const isCancelled = status === 'rejected' || status === 'cancelled' || status === 'canceled'
-
-  return {
-    canView: isOwnerAdmin || isAccountant || isSales || permissions?.canView,
-    canEdit: isOwnerAdmin || (isSales && isDraft),
-    canDuplicate: isOwnerAdmin,
-    canDownload: isOwnerAdmin || isAccountant,
-    canPrint: isOwnerAdmin || isAccountant,
-    canSendEmail: isOwnerAdmin,
-    canSendWhatsApp: isOwnerAdmin,
-    canMarkPaid: (isOwnerAdmin || isAccountant) && !isPaid && !isCancelled,
-    canMarkPartial: (isOwnerAdmin || isAccountant) && !isPaid && !isCancelled,
-    canSendApproval: (isOwnerAdmin || isSales) && !isPaid && !isCancelled,
-    canCancel: isOwnerAdmin && !isCancelled,
-    canDelete: isOwnerAdmin,
-  }
-}
-
 function InvoiceActionsMenu({ invoice, permissions, onOpen, onAction, schoolMode = false }) {
   const [open, setOpen] = useState(false)
   const [position, setPosition] = useState({ top: 0, left: 0 })
   const triggerRef = useRef(null)
   const menuRef = useRef(null)
-  const access = actionAccess(permissions, invoice)
+  const access = invoiceActionAccess(permissions, invoice)
 
   useEffect(() => {
     if (!open) return undefined
@@ -202,15 +177,18 @@ function InvoiceTable({
       key: 'actions',
       header: 'Actions',
       cell: (r) => {
+        const access = invoiceActionAccess(permissions, r)
         return (
           <div className="flex items-center gap-2">
             <Button
               variant="subtle"
               className="h-9 rounded-xl px-2.5 py-2 text-xs"
               type="button"
+              disabled={!access.canView}
               title={schoolMode ? 'View fee bill' : 'View invoice'}
               onClick={(event) => {
                 event.preventDefault()
+                if (!access.canView) return
                 onOpen?.(r)
               }}
             >

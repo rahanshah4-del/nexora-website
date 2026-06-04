@@ -26,6 +26,7 @@ import {
   saveSelectedWorkspace,
   workspaceRoute,
 } from '../lib/workspaceSession.js'
+import { goToWorkspace } from '../../lib/workspaceNavigation.js'
 
 function MobileAppAccessBlock() {
   return (
@@ -394,12 +395,8 @@ export default function DashboardLayout() {
   }, [developerOverride, lockedWorkspaceId, selectWorkspace, selectedWorkspace, userId])
 
   const backToWorkspace = useCallback(() => {
-    console.log('[Back To Workspace] clicked', {
-      target: '/workspace',
-      currentPath: location.pathname,
-    })
-    navigate('/workspace', { replace: false })
-  }, [location.pathname, navigate])
+    goToWorkspace(navigate, location)
+  }, [location, navigate])
 
   const openProductSwitcher = useCallback(() => {
     setProductModalOpen(true)

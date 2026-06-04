@@ -22,7 +22,7 @@ function normalizeTicket(t) {
 }
 
 export function useSupportTickets() {
-  const { workspaceId, businessType } = useUser()
+  const { userId, workspaceId, businessType } = useUser()
   const [tickets, setTickets] = useState([])
   const [loading, setLoading] = useState(true)
   const [source, setSource] = useState(db ? 'firestore' : 'none')
@@ -93,7 +93,7 @@ export function useSupportTickets() {
       stats,
       async createTicket(payload) {
         const ticket = normalizeTicket(payload)
-        if (!workspaceId) return { ok: false, error: 'Please login first' }
+        if (!userId || !workspaceId) return { ok: false, error: 'Please login first' }
         const tno = String(ticket.ticketNumber || '').trim()
         const name = String(ticket.customerName || '').trim()
         const email = String(ticket.customerEmail || '').trim()
@@ -119,6 +119,7 @@ export function useSupportTickets() {
             priority: ticket.priority || 'Medium',
             assignedTo: ticket.assignedTo || 'Unassigned',
             comments: ticket.comments || [],
+            createdBy: userId,
           }, { businessType })
           return { ok: true }
         } catch (e) {
@@ -151,7 +152,7 @@ export function useSupportTickets() {
         }
       },
     }),
-    [tickets, loading, source, error, stats, businessType, workspaceId],
+    [tickets, loading, source, error, stats, businessType, userId, workspaceId],
   )
 
   return api

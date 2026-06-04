@@ -5,6 +5,7 @@ import Button from '../components/ui/Button.jsx'
 import Card from '../components/ui/Card.jsx'
 import PageHeader from '../components/ui/PageHeader.jsx'
 import { moduleCatalog } from '../data/moduleAccess.js'
+import { goToWorkspace } from '../../lib/workspaceNavigation.js'
 
 function titleFromSlug(slug = '') {
   return String(slug)
@@ -40,13 +41,7 @@ export default function ModulePlaceholderPage() {
           className="mt-5 rounded-2xl"
           variant="subtle"
           type="button"
-          onClick={() => {
-            console.log('[Back To Workspace] clicked', {
-              target: '/workspace',
-              currentPath: location.pathname,
-            })
-            navigate('/workspace', { replace: false })
-          }}
+          onClick={() => goToWorkspace(navigate, location)}
         >
           Back to Workspace
         </Button>

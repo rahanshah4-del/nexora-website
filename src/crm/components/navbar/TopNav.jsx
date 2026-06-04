@@ -18,6 +18,7 @@ import OfflineStatus from '../system/OfflineStatus.jsx'
 import GlobalSearch from '../system/GlobalSearch.jsx'
 import { packageNameForPlan } from '../../data/moduleAccess.js'
 import { resolveWorkspaceName } from '../../../lib/workspaceName.js'
+import { goToWorkspace } from '../../../lib/workspaceNavigation.js'
 
 function formatTrialDate(value) {
   const date = typeof value?.toDate === 'function' ? value.toDate() : value instanceof Date ? value : value ? new Date(value) : null
@@ -158,13 +159,7 @@ function TopNav({ onOpenSidebar, onSwitchProduct }) {
             <Button
               variant="subtle"
               className="hidden h-10 shrink-0 rounded-2xl px-3 text-xs lg:inline-flex"
-              onClick={() => {
-                console.log('[Back To Workspace] clicked', {
-                  target: '/workspace',
-                  currentPath: location.pathname,
-                })
-                navigate('/workspace', { replace: false })
-              }}
+              onClick={() => goToWorkspace(navigate, location)}
               type="button"
             >
               Back to Workspace

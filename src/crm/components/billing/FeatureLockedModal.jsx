@@ -3,6 +3,7 @@ import { HiOutlineLockClosed } from 'react-icons/hi2'
 import Badge from '../ui/Badge.jsx'
 import Button from '../ui/Button.jsx'
 import Card from '../ui/Card.jsx'
+import { goToWorkspace } from '../../../lib/workspaceNavigation.js'
 
 export default function FeatureLockedModal({
   title = 'Paid Package Feature',
@@ -30,13 +31,7 @@ export default function FeatureLockedModal({
             variant="subtle"
             className="rounded-2xl"
             type="button"
-            onClick={() => {
-              console.log('[Back To Workspace] clicked', {
-                target: '/workspace',
-                currentPath: location.pathname,
-              })
-              navigate('/workspace', { replace: false })
-            }}
+            onClick={() => goToWorkspace(navigate, location)}
           >
             Back to Workspace
           </Button>

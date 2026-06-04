@@ -30,6 +30,7 @@ import { invoiceIssueDate, statusBadge } from '../lib/invoiceHelpers.js'
 import { getEmailServiceError, sendInvoiceEmail } from '../lib/emailService.js'
 import { resolveWorkspaceName } from '../../lib/workspaceName.js'
 import { normalizeBusinessType } from '../data/moduleAccess.js'
+import { invoiceActionAccess } from '../lib/invoiceAccess.js'
 
 function PaymentActionModal({ action, invoice, busy, schoolMode = false, onClose, onConfirm }) {
   const [draft, setDraft] = useState({ amount: '', paymentMethod: 'Bank Transfer' })
@@ -236,6 +237,8 @@ export default function InvoicesPage() {
       return true
     })
   }, [dateFrom, dateTo, invoices, query, statusFilter])
+  const canCreateInvoices = Boolean(permissions.canCreateInvoice ?? permissions.canCreate)
+  const canExportInvoices = Boolean(permissions.canExportInvoice ?? permissions.canExport)
 
   function showToast(nextToast, timeout = 2200) {
     setToast(nextToast)
@@ -243,11 +246,16 @@ export default function InvoicesPage() {
   }
 
   function requestPaymentAction(action, invoice) {
-    if (!permissions.canRecordPayments && action !== 'reject') {
-      showToast({ tone: 'error', message: 'Only owner, admin, or accountant can approve payments' }, 2600)
+    const access = invoiceActionAccess(permissions, invoice)
+    if (action === 'paid' && !access.canMarkPaid) {
+      showToast({ tone: 'error', message: 'Only owner, admin, or accountant can record invoice payments.' }, 2600)
       return
     }
-    if (action === 'reject' && !permissions.canReject) {
+    if (action === 'partial' && !access.canMarkPartial) {
+      showToast({ tone: 'error', message: 'Only owner, admin, or accountant can record invoice payments.' }, 2600)
+      return
+    }
+    if (action === 'reject' && !access.canCancel) {
       showToast({ tone: 'error', message: 'Only owner or admin can reject invoices' }, 2600)
       return
     }
@@ -256,12 +264,20 @@ export default function InvoicesPage() {
 
   function printInvoiceDocument(invoice) {
     if (!invoice) return
+    if (!invoiceActionAccess(permissions, invoice).canPrint) {
+      showToast({ tone: 'error', message: 'You do not have permission to print invoices.' }, 2600)
+      return
+    }
     setPrintInvoice(invoice)
     window.setTimeout(() => window.print(), 350)
   }
 
   async function downloadInvoicePdf(invoice) {
     if (!invoice) return
+    if (!invoiceActionAccess(permissions, invoice).canDownload) {
+      showToast({ tone: 'error', message: 'You do not have permission to export invoices.' }, 2600)
+      return
+    }
     try {
       await exportInvoicePdf({ invoice, company, payments, businessType })
     } catch (error) {
@@ -271,27 +287,42 @@ export default function InvoicesPage() {
 
   async function runInvoiceAction(action, invoice) {
     if (!invoice?.id) return
+    const access = invoiceActionAccess(permissions, invoice)
     let res = { ok: true }
-    if (action === 'view') setOpenInvoice(invoice)
-    if (action === 'edit') setOpenInvoice(invoice)
+    if (action === 'view') {
+      if (!access.canView) res = { ok: false, error: 'You do not have permission to view this invoice.' }
+      else setOpenInvoice(invoice)
+    }
+    if (action === 'edit') {
+      if (!access.canEdit) res = { ok: false, error: 'You do not have permission to edit this invoice.' }
+      else setOpenInvoice(invoice)
+    }
     if (action === 'print') return printInvoiceDocument(invoice)
     if (action === 'pdf') return downloadInvoicePdf(invoice)
     if (action === 'email') {
-      const emailServiceError = getEmailServiceError()
-      if (emailServiceError) res = { ok: false, error: emailServiceError }
-      else if (invoice.customerEmail) {
-        res = await sendInvoiceEmail({ invoice, company, businessType })
-        if (res.ok) {
-          await markInvoiceSent(invoice.id)
-          showToast({ tone: 'success', message: `${isSchool ? 'Fee bill' : 'Invoice'} emailed to ${invoice.customerEmail}` })
+      if (!access.canSendEmail) {
+        res = { ok: false, error: 'You do not have permission to email invoices.' }
+      } else {
+        const emailServiceError = getEmailServiceError()
+        if (emailServiceError) res = { ok: false, error: emailServiceError }
+        else if (invoice.customerEmail) {
+          res = await sendInvoiceEmail({ invoice, company, businessType })
+          if (res.ok) {
+            await markInvoiceSent(invoice.id)
+            showToast({ tone: 'success', message: `${isSchool ? 'Fee bill' : 'Invoice'} emailed to ${invoice.customerEmail}` })
+          }
         }
+        else res = { ok: false, error: isSchool ? 'Student email is missing.' : 'Customer email is missing.' }
       }
-      else res = { ok: false, error: isSchool ? 'Student email is missing.' : 'Customer email is missing.' }
     }
     if (action === 'whatsapp') {
-      const phone = String(invoice.customerPhone || '').replace(/[^\d]/g, '')
-      if (phone) window.open(`https://wa.me/${phone}?text=${encodeURIComponent(`${isSchool ? 'Fee Bill' : 'Invoice'} ${invoice.invoiceNumber || invoice.id} is ready.`)}`, '_blank', 'noopener,noreferrer')
-      else res = { ok: false, error: isSchool ? 'Student phone is missing.' : 'Customer phone is missing.' }
+      if (!access.canSendWhatsApp) {
+        res = { ok: false, error: 'You do not have permission to send invoices.' }
+      } else {
+        const phone = String(invoice.customerPhone || '').replace(/[^\d]/g, '')
+        if (phone) window.open(`https://wa.me/${phone}?text=${encodeURIComponent(`${isSchool ? 'Fee Bill' : 'Invoice'} ${invoice.invoiceNumber || invoice.id} is ready.`)}`, '_blank', 'noopener,noreferrer')
+        else res = { ok: false, error: isSchool ? 'Student phone is missing.' : 'Customer phone is missing.' }
+      }
     }
     if (action === 'mark_paid') return requestPaymentAction('paid', invoice)
     if (action === 'partial_paid') return requestPaymentAction('partial', invoice)
@@ -363,14 +394,33 @@ export default function InvoicesPage() {
             <p className="mt-1 text-sm text-slate-500">{isSchool ? 'Manage student fee invoices, payments, dues, and receipts.' : 'Modern ERP billing, payment tracking, previews, and export-ready invoice records.'}</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button variant="subtle" className="h-11 rounded-xl" type="button" onClick={() => exportExcel(isSchool ? 'nexora-fee-records.xls' : 'nexora-invoices.xls', exportColumns, filteredInvoices)}>
+            <Button
+              variant="subtle"
+              className="h-11 rounded-xl"
+              type="button"
+              disabled={!canExportInvoices}
+              onClick={() => exportExcel(isSchool ? 'nexora-fee-records.xls' : 'nexora-invoices.xls', exportColumns, filteredInvoices)}
+            >
               <HiOutlineArrowDownTray className="h-4 w-4" />
               Excel
             </Button>
-            <Button variant="subtle" className="h-11 rounded-xl" type="button" onClick={() => exportCsv(isSchool ? 'nexora-fee-records.csv' : 'nexora-invoices.csv', exportColumns, filteredInvoices)}>
+            <Button
+              variant="subtle"
+              className="h-11 rounded-xl"
+              type="button"
+              disabled={!canExportInvoices}
+              onClick={() => exportCsv(isSchool ? 'nexora-fee-records.csv' : 'nexora-invoices.csv', exportColumns, filteredInvoices)}
+            >
               CSV
             </Button>
-            <Button className="h-11 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-5 shadow-lg shadow-indigo-600/20" onClick={() => navigate('/app/invoices/create')}>
+            <Button
+              className="h-11 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-5 shadow-lg shadow-indigo-600/20"
+              disabled={!canCreateInvoices}
+              onClick={() => {
+                if (!canCreateInvoices) return
+                navigate('/app/invoices/create')
+              }}
+            >
               <HiOutlinePlus className="h-5 w-5" />
               {isSchool ? 'Create Fee Bill' : 'New Invoice'}
             </Button>
@@ -494,6 +544,12 @@ export default function InvoicesPage() {
         payments={payments}
         currency={currency}
         company={company}
+        permissions={permissions}
+        canEditInvoice={permissions.canEditInvoice}
+        canExportInvoice={permissions.canExportInvoice}
+        canPrintInvoice={permissions.canPrintInvoice}
+        canEmailInvoice={permissions.canEmailInvoice}
+        canRecordPayment={permissions.canRecordPayment}
         canApprovePayments={canApprovePayments}
         onPrint={printInvoiceDocument}
         onDownloadPdf={downloadInvoicePdf}

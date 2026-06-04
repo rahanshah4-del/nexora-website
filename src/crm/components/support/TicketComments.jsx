@@ -3,7 +3,7 @@ import Button from '../ui/Button.jsx'
 import Input from '../ui/Input.jsx'
 import Badge from '../ui/Badge.jsx'
 
-export default function TicketComments({ ticket, onAdd }) {
+export default function TicketComments({ ticket, onAdd, canAdd = false }) {
   const [message, setMessage] = useState('')
   const comments = ticket?.comments || []
 
@@ -30,22 +30,23 @@ export default function TicketComments({ ticket, onAdd }) {
         )}
       </div>
 
-      <div className="mt-4 space-y-2">
-        <Input placeholder="Add a comment…" value={message} onChange={(e) => setMessage(e.target.value)} />
-        <Button
-          className="rounded-2xl"
-          type="button"
-          onClick={() => {
-            const text = message.trim()
-            if (!text) return
-            onAdd?.({ author: 'Agent', message: text })
-            setMessage('')
-          }}
-        >
-          Add Comment
-        </Button>
-      </div>
+      {canAdd ? (
+        <div className="mt-4 space-y-2">
+          <Input placeholder="Add a comment…" value={message} onChange={(e) => setMessage(e.target.value)} />
+          <Button
+            className="rounded-2xl"
+            type="button"
+            onClick={() => {
+              const text = message.trim()
+              if (!text) return
+              onAdd?.({ author: 'Agent', message: text })
+              setMessage('')
+            }}
+          >
+            Add Comment
+          </Button>
+        </div>
+      ) : null}
     </div>
   )
 }
-

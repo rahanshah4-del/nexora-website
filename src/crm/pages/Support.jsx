@@ -13,10 +13,15 @@ import { useSupportTickets } from '../hooks/useSupportTickets.js'
 import { usePreferences } from '../hooks/usePreferences.js'
 import Toast from '../components/ui/Toast.jsx'
 import { sendSupportReplyEmail } from '../lib/emailService.js'
+import { useWorkspaceAccess } from '../hooks/useWorkspaceAccess.js'
 
 export default function SupportPage() {
   const { profile } = usePreferences()
   const support = useSupportTickets()
+  const access = useWorkspaceAccess()
+  const hasLegacySupportPermission = access.hasPermission('support')
+  const canCreateSupportTicket = hasLegacySupportPermission || access.hasModulePermission('support', 'create')
+  const canEditSupportTicket = hasLegacySupportPermission || access.hasModulePermission('support', 'edit')
   const initialCustomer = useMemo(
     () => ({ name: profile.companyName || profile.ownerName, email: profile.email }),
     [profile.companyName, profile.ownerName, profile.email],
@@ -53,9 +58,11 @@ export default function SupportPage() {
             <Badge variant={support.source === 'firestore' ? 'success' : 'default'}>
               {support.loading ? 'Loading…' : support.source === 'firestore' ? 'Live Sync' : 'No data yet'}
             </Badge>
-            <Button className="rounded-2xl" onClick={() => setCreateOpen(true)} type="button">
-              Create Ticket
-            </Button>
+            {canCreateSupportTicket ? (
+              <Button className="rounded-2xl" onClick={() => setCreateOpen(true)} type="button">
+                Create Ticket
+              </Button>
+            ) : null}
           </div>
         }
       />
@@ -98,10 +105,11 @@ export default function SupportPage() {
       </div>
 
       <TicketModal
-        open={createOpen}
+        open={canCreateSupportTicket && createOpen}
         onClose={() => setCreateOpen(false)}
         initialCustomer={initialCustomer}
         onCreate={async (payload) => {
+          if (!canCreateSupportTicket) return
           const res = await support.createTicket(payload)
           if (res?.ok) {
             setToast({ tone: 'success', message: 'Ticket created successfully' })
@@ -118,11 +126,15 @@ export default function SupportPage() {
         open={drawerOpen}
         ticket={active}
         onClose={() => setDrawerOpen(false)}
+        canEdit={canEditSupportTicket}
+        canComment={canEditSupportTicket}
         onSave={(draft) => {
+          if (!canEditSupportTicket) return
           const { id, ...patch } = draft
           support.updateTicket(id, patch)
         }}
         onAddComment={async (t, c) => {
+          if (!canEditSupportTicket) return
           const saved = await support.addComment(t.id, c)
           if (!saved?.ok) {
             setToast({ tone: 'error', message: saved?.error || 'Unable to add support reply' })

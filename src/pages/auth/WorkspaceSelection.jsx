@@ -761,7 +761,12 @@ export default function WorkspaceSelection() {
   const [verificationMessage, setVerificationMessage] = useState('')
   const [businessTypeSaving, setBusinessTypeSaving] = useState('')
 
-  const emailVerified = isUserCustomVerified({ ...user, emailVerifiedCustom: accountData?.emailVerifiedCustom })
+  const emailVerifiedCustom = accountData?.emailVerifiedCustom === true
+  const emailVerified = isUserCustomVerified({ ...user, emailVerifiedCustom })
+
+  useEffect(() => {
+    console.log('[WorkspaceSelection] mounted')
+  }, [])
 
   useEffect(() => {
     const interval = window.setInterval(() => setNowMs(Date.now()), 60000)
@@ -934,36 +939,42 @@ export default function WorkspaceSelection() {
       : createMessage
 
   useEffect(() => {
-    if (authLoading || accountLoading || !user?.uid) return
+    if (authLoading || accountLoading) return
 
     const showWorkspaceSelection = shouldShowWorkspaceSelection(accountData, workspaceData)
-    const state = {
-      route: showWorkspaceSelection ? '/workspace' : CRM_DASHBOARD_ROUTE,
-      showWorkspaceSelection,
+    const decision = !user?.uid
+      ? 'wait_for_auth'
+      : !emailVerified
+        ? 'blocked_until_email_verified'
+        : !onboardingCompleted
+          ? 'show_workspace_selection_onboarding_incomplete'
+          : 'show_workspace_selection_onboarding_complete'
+
+    console.log('[WorkspaceSelection] auth state', {
+      uid: user?.uid || '',
+      emailVerifiedCustom,
+      onboardingCompleted,
+    })
+    console.log('[WorkspaceSelection] route decision', { decision })
+    console.log('[Onboarding] state', {
+      route: '/workspace',
+      showWorkspaceSelection: true,
+      previousShowWorkspaceSelection: showWorkspaceSelection,
       onboardingCompleted,
       businessType: configuredBusinessType,
       selectedWorkspace: configuredSelectedWorkspace,
       workspaceFullyConfigured,
       hasWorkspaceDoc: Boolean(workspaceData),
       hasAccountWorkspaceId: Boolean(accountData?.workspaceId),
-    }
-    console.log('[Onboarding] state', state)
-
-    if (!showWorkspaceSelection) {
-      console.log('[Onboarding] redirect dashboard')
-      navigate(CRM_DASHBOARD_ROUTE, { replace: true })
-      return
-    }
-
-    console.log('[Onboarding] onboarding incomplete')
-    console.log('[Onboarding] redirect workspace')
+    })
   }, [
-    accountData?.workspaceId,
+    accountData,
     accountLoading,
     authLoading,
     configuredBusinessType,
     configuredSelectedWorkspace,
-    navigate,
+    emailVerified,
+    emailVerifiedCustom,
     onboardingCompleted,
     user?.uid,
     workspaceData,

@@ -80,12 +80,14 @@ export function useWorkspaceAccess() {
   const { userId, workspaceId, businessType, staffId, role, isAdmin, isOwner, isStaff, isAccountant, isManager, accessPlan } = useUser()
   const currentPermissionKeys = useMemo(() => workspacePermissionKeysForBusiness(businessType, accessPlan), [accessPlan, businessType])
   const [permissions, setPermissions] = useState(() => emptyPermissions(currentPermissionKeys))
+  const [explicitPermissions, setExplicitPermissions] = useState(() => emptyPermissions(currentPermissionKeys))
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (!db || !workspaceId || !userId) {
       Promise.resolve().then(() => {
         setPermissions(emptyPermissions(currentPermissionKeys))
+        setExplicitPermissions(emptyPermissions(currentPermissionKeys))
         setLoading(false)
       })
       return
@@ -98,6 +100,7 @@ export function useWorkspaceAccess() {
           defaults[item.key] = true
         })
         setPermissions(defaults)
+        setExplicitPermissions(emptyPermissions(currentPermissionKeys))
         setLoading(false)
       })
       return
@@ -111,11 +114,13 @@ export function useWorkspaceAccess() {
       (snap) => {
         const defaults = roleDefaultPermissions(role, businessType, accessPlan)
         const overrides = snap.exists() ? permissionsForBusiness(snap.data(), businessType, accessPlan) : {}
+        setExplicitPermissions(snap.exists() ? overrides : emptyPermissions(currentPermissionKeys))
         setPermissions(mergePermissionGrants(defaults, overrides))
         setLoading(false)
       },
       () => {
         setPermissions(emptyPermissions(currentPermissionKeys))
+        setExplicitPermissions(emptyPermissions(currentPermissionKeys))
         setLoading(false)
       },
     )
@@ -136,6 +141,7 @@ export function useWorkspaceAccess() {
       isManager,
       loading,
       permissions,
+      explicitPermissions,
       canManageSettings: isAdmin || Boolean(permissions.settingsAccess),
       canEditFollowUps: isAdmin || Boolean(permissions.followUpEdit),
       canDeleteFollowUps: isAdmin || Boolean(permissions.followUpDelete),
@@ -148,6 +154,6 @@ export function useWorkspaceAccess() {
         return isAdmin || Boolean(permissions[key])
       },
     }),
-    [businessType, currentPermissionKeys, isAccountant, isAdmin, isManager, isOwner, isStaff, loading, permissions, role, staffId, userId, workspaceId],
+    [businessType, currentPermissionKeys, explicitPermissions, isAccountant, isAdmin, isManager, isOwner, isStaff, loading, permissions, role, staffId, userId, workspaceId],
   )
 }

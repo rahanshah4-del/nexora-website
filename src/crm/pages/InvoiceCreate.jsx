@@ -9,6 +9,7 @@ import {
   HiOutlinePaperAirplane,
   HiOutlinePlus,
   HiOutlinePrinter,
+  HiOutlineShieldExclamation,
   HiOutlineTrash,
 } from 'react-icons/hi2'
 import Badge from '../components/ui/Badge.jsx'
@@ -118,6 +119,10 @@ export default function InvoiceCreatePage() {
   const [previewOpen, setPreviewOpen] = useState(false)
   const [printInvoice, setPrintInvoice] = useState(null)
   const isSchool = normalizeBusinessType(businessType) === 'School ERP'
+  const canCreateInvoices = Boolean(permissions.canCreateInvoice ?? permissions.canCreate)
+  const canExportDraft = Boolean(permissions.canExportInvoice ?? permissions.canExport)
+  const canPrintDraft = Boolean(permissions.canPrintInvoice ?? permissions.canPrint)
+  const canEmailDraft = Boolean(permissions.canEmailInvoice ?? permissions.canEmail ?? permissions.canSend)
   const canCreatePaidInvoices = permissions.canCreatePaidInvoices
   const statusOptions = useMemo(
     () => {
@@ -158,6 +163,34 @@ export default function InvoiceCreatePage() {
     }),
     [businessSettings, userDoc, userId],
   )
+
+  if (!canCreateInvoices) {
+    return (
+      <motion.div
+        className="grid min-h-[calc(100vh-5rem)] place-items-center bg-slate-50 p-4"
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.22 }}
+      >
+        <div className="w-full max-w-lg rounded-[1.4rem] border border-slate-200 bg-white p-6 text-center shadow-[0_24px_80px_-58px_rgba(79,70,229,0.55)]">
+          <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-rose-50 text-rose-600">
+            <HiOutlineShieldExclamation className="h-6 w-6" />
+          </span>
+          <Badge variant="danger" className="mt-4">Access denied</Badge>
+          <h1 className="mt-3 text-2xl font-black tracking-tight text-slate-950">
+            {isSchool ? 'Fee bill creation unavailable' : 'Invoice creation unavailable'}
+          </h1>
+          <p className="mt-2 text-sm leading-6 text-slate-600">
+            {isSchool ? 'Your role can view fee bills but cannot create them.' : 'Your role can view invoices but cannot create them.'}
+          </p>
+          <Button className="mt-5 rounded-2xl" type="button" onClick={() => navigate('/app/invoices')}>
+            <HiOutlineArrowLeft className="h-4 w-4" />
+            {isSchool ? 'Back to fees' : 'Back to invoices'}
+          </Button>
+        </div>
+      </motion.div>
+    )
+  }
 
   function update(key, value) {
     setInvoice((current) => ({ ...current, [key]: value }))
@@ -285,11 +318,19 @@ export default function InvoiceCreatePage() {
   }
 
   function printDraftInvoice() {
+    if (!canPrintDraft) {
+      showToast({ tone: 'error', message: 'You do not have permission to print invoices.' }, 2600)
+      return
+    }
     setPrintInvoice(buildPrintableDraft())
     window.setTimeout(() => window.print(), 350)
   }
 
   async function downloadDraftPdf() {
+    if (!canExportDraft) {
+      showToast({ tone: 'error', message: 'You do not have permission to export invoices.' }, 2600)
+      return
+    }
     try {
       await exportInvoicePdf({ invoice: buildPrintableDraft(), company, payments: [], businessType })
     } catch (error) {
@@ -298,6 +339,10 @@ export default function InvoiceCreatePage() {
   }
 
   async function submitInvoice(status = '', allowWithoutPreview = false) {
+    if (!canCreateInvoices) {
+      showToast({ tone: 'error', message: 'You do not have permission to create invoices.' }, 2600)
+      return
+    }
     const rawStatus = String(status || invoice.status || 'pending').toLowerCase()
     const requestedStatus = canCreatePaidInvoices || !['paid', 'approved', 'partial paid', 'partial_paid'].includes(rawStatus)
       ? rawStatus
@@ -748,18 +793,29 @@ export default function InvoiceCreatePage() {
                 <h2 className="mt-1 truncate text-xl font-black tracking-tight text-slate-950">{invoice.invoiceNumber}</h2>
               </div>
               <div className="flex flex-wrap gap-2">
-                <Button variant="subtle" className="h-10 rounded-xl text-xs" type="button" onClick={downloadDraftPdf}>
-                  <HiOutlineDocumentArrowDown className="h-4 w-4" />
-                  Download PDF
-                </Button>
-                <Button variant="subtle" className="h-10 rounded-xl text-xs" type="button" onClick={printDraftInvoice}>
-                  <HiOutlinePrinter className="h-4 w-4" />
-                  Print
-                </Button>
-                <Button variant="subtle" className="h-10 rounded-xl text-xs" type="button">
-                  <HiOutlinePaperAirplane className="h-4 w-4" />
-                  Send
-                </Button>
+                {canExportDraft ? (
+                  <Button variant="subtle" className="h-10 rounded-xl text-xs" type="button" onClick={downloadDraftPdf}>
+                    <HiOutlineDocumentArrowDown className="h-4 w-4" />
+                    Download PDF
+                  </Button>
+                ) : null}
+                {canPrintDraft ? (
+                  <Button variant="subtle" className="h-10 rounded-xl text-xs" type="button" onClick={printDraftInvoice}>
+                    <HiOutlinePrinter className="h-4 w-4" />
+                    Print
+                  </Button>
+                ) : null}
+                {canEmailDraft ? (
+                  <Button
+                    variant="subtle"
+                    className="h-10 rounded-xl text-xs"
+                    type="button"
+                    onClick={() => showToast({ tone: 'info', message: isSchool ? 'Save the fee bill before sending email.' : 'Save the invoice before sending email.' })}
+                  >
+                    <HiOutlinePaperAirplane className="h-4 w-4" />
+                    Send
+                  </Button>
+                ) : null}
                 <Button variant="ghost" className="h-10 rounded-xl px-3" type="button" onClick={() => setPreviewOpen(false)}>
                   Close
                 </Button>

@@ -5,7 +5,8 @@ import { createUserDoc, patchUserDoc, removeUserDoc, subscribeUserCollection, wo
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 import { useUser } from './useUser.js'
 import { clientSafeMessage } from '../utils/messages.js'
-import { financePermissions, normalizeFinanceRole } from '../lib/financeAccess.js'
+import { useWorkspaceAccess } from './useWorkspaceAccess.js'
+import { isDraftInvoice, resolveInvoicePermissions } from '../lib/invoiceAccess.js'
 import {
   calculateBalanceDue,
   calculateInvoiceTotals,
@@ -92,10 +93,6 @@ async function addInventoryAdjustments(batch, workspaceId, invoice, now, busines
   return true
 }
 
-function roleName(role, userDoc) {
-  return normalizeFinanceRole(userDoc?.role || role)
-}
-
 function canRoleApprovePayments(role, userDoc) {
   const rawRole = String(userDoc?.role ?? role ?? '').toLowerCase()
   return !rawRole || ['owner', 'admin', 'accountant'].includes(rawRole)
@@ -110,31 +107,71 @@ function approvalMetaForBusiness(businessType) {
   return { approvalType: 'invoice', approvalLabel: 'Invoice Approval', sourceRoute: '/app/invoices' }
 }
 
-function invoicePermissions(role, userDoc) {
-  const rawRole = String(userDoc?.role ?? role ?? '').trim().toLowerCase()
-  const normalized = rawRole ? roleName(role, userDoc) : 'owner'
-  const finance = financePermissions(normalized)
-  const isOwnerAdmin = ['owner', 'admin'].includes(normalized)
-  const isAccountant = normalized === 'accountant'
-  const isSales = normalized === 'sales'
-  return {
-    role: normalized,
-    invoiceActionRole: normalized,
-    canView: finance.canViewInvoices || finance.canManageInvoices,
-    canCreate: finance.canCreateInvoices || finance.canManageInvoices,
-    canEdit: isOwnerAdmin || isSales,
-    canDuplicate: isOwnerAdmin,
-    canApprove: isOwnerAdmin,
-    canReject: isOwnerAdmin,
-    canRecordPayments: isOwnerAdmin || isAccountant,
-    canCreatePaidInvoices: isOwnerAdmin || isAccountant,
-    canSend: isOwnerAdmin,
-    canDelete: isOwnerAdmin,
-  }
+const INVOICE_BUSINESS_EDIT_FIELDS = new Set([
+  'customerName',
+  'customerEmail',
+  'customerPhone',
+  'customerTaxId',
+  'customerAddress',
+  'customerNotes',
+  'items',
+  'subtotal',
+  'subtotalUsd',
+  'discount',
+  'discountTotal',
+  'tax',
+  'taxableAmount',
+  'taxRate',
+  'taxAmount',
+  'taxTotal',
+  'roundOff',
+  'total',
+  'totalUsd',
+  'amountInWords',
+  'notes',
+  'terms',
+  'dueDate',
+  'issueDate',
+  'invoiceDate',
+  'paymentTerms',
+  'template',
+  'attachmentName',
+  'signatureName',
+  'status',
+  'updatedAt',
+])
+
+const INVOICE_PAYMENT_EDIT_FIELDS = new Set([
+  'amountPaid',
+  'partialPaidAmount',
+  'balanceDue',
+  'paymentStatus',
+  'approvalStatus',
+  'requiresApproval',
+  'paidAt',
+  'approvedAt',
+  'approvedBy',
+  'paymentHistory',
+  'lastPaymentAt',
+  'lastPaymentDate',
+  'updatedAt',
+])
+
+function filterInvoicePatch(patch, allowedFields) {
+  return Object.fromEntries(Object.entries(patch || {}).filter(([key]) => allowedFields.has(key)))
+}
+
+function changedInvoicePatch(invoice, patch) {
+  return Object.fromEntries(Object.entries(patch || {}).filter(([key, value]) => !Object.is(invoice?.[key], value)))
+}
+
+function hasUnsafeBusinessStatus(patch) {
+  return Object.prototype.hasOwnProperty.call(patch || {}, 'status') && !['draft', 'pending'].includes(statusValue(patch.status, 'pending'))
 }
 
 export function useInvoices() {
   const { userId, workspaceId, businessType, role, userDoc, firebaseUser } = useUser()
+  const workspaceAccess = useWorkspaceAccess()
   const [invoices, setInvoices] = useState([])
   const [payments, setPayments] = useState([])
   const [loading, setLoading] = useState(true)
@@ -212,7 +249,7 @@ export function useInvoices() {
   }, [invoices])
 
   const canApprovePayments = canRoleApprovePayments(role, userDoc)
-  const permissions = invoicePermissions(role, userDoc)
+  const permissions = resolveInvoicePermissions(role, userDoc, workspaceAccess.permissions, workspaceAccess.explicitPermissions)
 
   const api = useMemo(
     () => ({
@@ -225,7 +262,7 @@ export function useInvoices() {
       canApprovePayments,
       permissions,
       async createInvoice(payload) {
-        if (!permissions.canCreate) return { ok: false, error: 'You do not have permission to create invoices.' }
+        if (!permissions.canCreateInvoice) return { ok: false, error: 'You do not have permission to create invoices.' }
         const invoice = normalizeInvoice(payload)
         if (!userId || !workspaceId) return { ok: false, error: 'Please login first' }
         const invNo = String(invoice.invoiceNumber || '').trim()
@@ -329,7 +366,7 @@ export function useInvoices() {
         }
       },
       async markInvoicePaid(id, options = {}) {
-        if (!permissions.canRecordPayments) return { ok: false, error: 'Only owner, admin, or accountant can record payments' }
+        if (!permissions.canRecordPayment) return { ok: false, error: 'Only owner, admin, or accountant can record invoice payments.' }
         if (!userId || !workspaceId) return { ok: false, error: 'Please login first' }
         if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now' }
         const invoice = invoices.find((item) => item.id === id)
@@ -340,10 +377,10 @@ export function useInvoices() {
           const now = serverTimestamp()
           const batch = writeBatch(db)
           const invoiceRef = doc(db, workspaceCollectionPath(workspaceId, 'invoices'), id)
-          const stockAdjusted = await addInventoryAdjustments(batch, workspaceId, invoice, now, businessType)
+          const canEditAllInvoiceFields = permissions.canEditAllInvoiceFields
+          const stockAdjusted = canEditAllInvoiceFields ? await addInventoryAdjustments(batch, workspaceId, invoice, now, businessType) : false
           batch.update(invoiceRef, {
             paymentStatus: 'paid',
-            status: 'paid',
             approvalStatus: 'approved',
             businessType,
             requiresApproval: false,
@@ -355,7 +392,6 @@ export function useInvoices() {
             balanceDue: 0,
             lastPaymentAt: now,
             lastPaymentDate: now,
-            lastPaymentBy: userId,
             paymentHistory: arrayUnion({
               amount: invoice.total,
               paymentMethod,
@@ -363,6 +399,7 @@ export function useInvoices() {
               recordedBy: userId,
               recordedAt: new Date().toISOString(),
             }),
+            ...(canEditAllInvoiceFields ? { status: 'paid', lastPaymentBy: userId } : {}),
             ...(stockAdjusted ? { inventoryAdjustedAt: now } : {}),
           })
           const paymentRef = doc(db, workspaceCollectionPath(workspaceId, 'payments'), `invoice-${id}-paid`)
@@ -498,7 +535,7 @@ export function useInvoices() {
         }
       },
       async recordPartialPayment(id, options = {}) {
-        if (!permissions.canRecordPayments) return { ok: false, error: 'Only owner, admin, or accountant can record payments' }
+        if (!permissions.canRecordPayment) return { ok: false, error: 'Only owner, admin, or accountant can record invoice payments.' }
         if (!userId || !workspaceId) return { ok: false, error: 'Please login first' }
         if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now' }
         const invoice = invoices.find((item) => item.id === id)
@@ -514,10 +551,10 @@ export function useInvoices() {
           const now = serverTimestamp()
           const batch = writeBatch(db)
           const invoiceRef = doc(db, workspaceCollectionPath(workspaceId, 'invoices'), id)
-          const stockAdjusted = fullyPaid ? await addInventoryAdjustments(batch, workspaceId, invoice, now, businessType) : false
+          const canEditAllInvoiceFields = permissions.canEditAllInvoiceFields
+          const stockAdjusted = fullyPaid && canEditAllInvoiceFields ? await addInventoryAdjustments(batch, workspaceId, invoice, now, businessType) : false
           batch.update(invoiceRef, {
             paymentStatus: fullyPaid ? 'paid' : 'partial_paid',
-            status: fullyPaid ? 'paid' : 'partial_paid',
             approvalStatus: fullyPaid ? 'approved' : invoice.approvalStatus || 'pending',
             businessType,
             requiresApproval: fullyPaid ? false : invoice.requiresApproval ?? true,
@@ -529,7 +566,6 @@ export function useInvoices() {
             approvedAt: fullyPaid ? now : invoice.approvedAt || null,
             lastPaymentAt: now,
             lastPaymentDate: now,
-            lastPaymentBy: userId,
             paymentHistory: arrayUnion({
               amount,
               paymentMethod,
@@ -537,6 +573,7 @@ export function useInvoices() {
               recordedBy: userId,
               recordedAt: new Date().toISOString(),
             }),
+            ...(canEditAllInvoiceFields ? { status: fullyPaid ? 'paid' : 'partial_paid', lastPaymentBy: userId } : {}),
             ...(stockAdjusted ? { inventoryAdjustedAt: now } : {}),
           })
           const paymentRef = doc(collection(db, workspaceCollectionPath(workspaceId, 'payments')))
@@ -640,14 +677,39 @@ export function useInvoices() {
         }
       },
       async updateInvoice(id, patch) {
-        if (!permissions.canEdit) return { ok: false, error: 'Only owner, admin, or accountant can edit invoices.' }
-        setInvoices((prev) => prev.map((i) => (i.id === id ? { ...i, ...patch } : i)))
+        const invoice = invoices.find((item) => item.id === id)
+        if (!invoice) return { ok: false, error: 'Invoice not found' }
+        const changedPatch = changedInvoicePatch(invoice, patch)
+        const roleName = permissions.invoiceActionRole || permissions.role
+        const isOwnerAdmin = roleName === 'owner' || roleName === 'admin'
+        const isManager = roleName === 'manager'
+        const isSales = roleName === 'sales'
+        const isAccountant = roleName === 'accountant'
+        let safePatch = {}
+
+        if (isOwnerAdmin) {
+          safePatch = changedPatch
+        } else if (isManager) {
+          safePatch = filterInvoicePatch(changedPatch, INVOICE_BUSINESS_EDIT_FIELDS)
+          if (hasUnsafeBusinessStatus(safePatch)) return { ok: false, error: 'Managers can only set draft or pending invoice status.' }
+        } else if (isSales) {
+          if (!isDraftInvoice(invoice)) return { ok: false, error: 'Sales can only edit draft invoices.' }
+          safePatch = filterInvoicePatch(changedPatch, INVOICE_BUSINESS_EDIT_FIELDS)
+          if (hasUnsafeBusinessStatus(safePatch)) return { ok: false, error: 'Sales can only set draft or pending invoice status.' }
+        } else if (isAccountant) {
+          safePatch = filterInvoicePatch(changedPatch, INVOICE_PAYMENT_EDIT_FIELDS)
+        } else {
+          return { ok: false, error: 'You do not have permission to edit invoices.' }
+        }
+
+        if (!Object.keys(safePatch).length) return { ok: false, error: 'No permitted invoice fields to update.' }
+        setInvoices((prev) => prev.map((i) => (i.id === id ? { ...i, ...safePatch } : i)))
         if (!db || !workspaceId || source !== 'firestore') return { ok: true }
-        await patchUserDoc(workspaceId, 'invoices', id, patch, { businessType })
+        await patchUserDoc(workspaceId, 'invoices', id, safePatch, { businessType })
         return { ok: true }
       },
       async sendForApproval(id) {
-        if (!permissions.canEdit) return { ok: false, error: 'Only owner, admin, or accountant can send invoices for approval.' }
+        if (!permissions.canApprove) return { ok: false, error: 'Only owner or admin can send invoices for approval.' }
         if (!userId || !workspaceId) return { ok: false, error: 'Please login first' }
         if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now.' }
         const invoice = invoices.find((item) => item.id === id)
@@ -741,7 +803,8 @@ export function useInvoices() {
         return { ok: true }
       },
       async markInvoiceSent(id) {
-        if (!permissions.canSend) return { ok: false, error: 'Only owner, admin, or accountant can send invoices.' }
+        if (!permissions.canEmailInvoice) return { ok: false, error: 'You do not have permission to email invoices.' }
+        if (!permissions.canEditAllInvoiceFields) return { ok: true }
         await patchUserDoc(workspaceId, 'invoices', id, {
           status: 'sent',
           sentAt: serverTimestamp(),
@@ -750,9 +813,9 @@ export function useInvoices() {
         return { ok: true }
       },
       async markInvoiceUnpaid(id) {
-        if (!permissions.canRecordPayments) return { ok: false, error: 'Only owner, admin, or accountant can update payments.' }
+        if (!permissions.canRecordPayment) return { ok: false, error: 'Only owner, admin, or accountant can record invoice payments.' }
         await patchUserDoc(workspaceId, 'invoices', id, {
-          status: 'sent',
+          ...(permissions.canEditAllInvoiceFields ? { status: 'sent' } : {}),
           paymentStatus: 'pending',
           amountPaid: 0,
           partialPaidAmount: 0,
