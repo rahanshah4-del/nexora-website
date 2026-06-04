@@ -142,6 +142,24 @@ function cleanString(value) {
   return typeof value === 'string' ? value.trim() : ''
 }
 
+function onboardingModuleSelection(workspaceOrType) {
+  const catalogWorkspace = typeof workspaceOrType === 'string'
+    ? businessWorkspaceForType(workspaceOrType)
+    : businessWorkspaceForType(workspaceOrType?.type || workspaceOrType?.id || workspaceOrType?.title)
+  const businessTypeLabel = normalizeBusinessType(catalogWorkspace.type)
+  const businessTypeId = catalogWorkspace.id
+  const enabledModules = getRecommendedModules(businessTypeLabel)
+
+  return {
+    businessTypeLabel,
+    businessTypeId,
+    selectedWorkspace: businessTypeId,
+    enabledModules,
+    selectedFeatures: enabledModules.map((key) => labelForBusinessModule(key, businessTypeLabel)),
+    redirectTarget: catalogWorkspace.route || CRM_DASHBOARD_ROUTE,
+  }
+}
+
 function timestampToDate(value) {
   if (!value) return null
   if (value instanceof Date) return value
@@ -446,9 +464,10 @@ function formInputClass() {
 }
 
 function OnboardingModal({ creating, message, form, onChange, onCreate, onClose, canClose, businessTypeLocked = false }) {
-  const businessType = normalizeBusinessType(form.businessType)
+  const rawBusinessType = cleanString(form.businessType)
+  const businessType = rawBusinessType ? normalizeBusinessType(rawBusinessType) : ''
   const isSchoolErp = businessType === 'School ERP'
-  const workspaceTitle = isSchoolErp ? 'Setup School ERP Workspace' : `Setup ${businessType} Workspace`
+  const workspaceTitle = businessType ? (isSchoolErp ? 'Setup School ERP Workspace' : `Setup ${businessType} Workspace`) : 'Setup Workspace'
   const nameLabel = isSchoolErp ? 'School Name' : 'Company / Business Name'
   const namePlaceholder = isSchoolErp ? 'Your school name' : 'Your company name'
 
@@ -466,7 +485,7 @@ function OnboardingModal({ creating, message, form, onChange, onCreate, onClose,
               <p className="text-xs font-black uppercase tracking-[0.2em] text-blue-200">Workspace onboarding</p>
               <h2 className="mt-1 text-xl font-black tracking-tight sm:text-2xl">{workspaceTitle}</h2>
               <p className="mt-2 max-w-xl text-sm leading-6 text-slate-300">
-                Set up one {businessType} workspace first. Your 7-day Basic trial starts when this is saved.
+                Set up one {businessType || 'selected module'} workspace first. Your 7-day Basic trial starts when this is saved.
               </p>
             </div>
             {canClose ? (
@@ -507,6 +526,9 @@ function OnboardingModal({ creating, message, form, onChange, onCreate, onClose,
                 disabled={businessTypeLocked}
                 className={`${formInputClass()} ${businessTypeLocked ? 'cursor-not-allowed bg-slate-100 text-slate-500' : ''}`}
               >
+                <option value="" disabled>
+                  Select business module
+                </option>
                 {businessTypes.map((type) => (
                   <option key={type} value={type}>
                     {type}
@@ -737,7 +759,7 @@ export default function WorkspaceSelection() {
   const [onboardingForm, setOnboardingForm] = useState(() => ({
     companyName: '',
     ownerName: '',
-    businessType: 'General CRM',
+    businessType: '',
     country: 'Pakistan',
     currency: 'PKR',
     phone: '',
@@ -813,6 +835,8 @@ export default function WorkspaceSelection() {
     }
   }, [user?.uid])
 
+  const onboardingCompleted = workspaceData?.onboardingCompleted === true || accountData?.onboardingCompleted === true
+
   const profile = useMemo(() => {
     const email = cleanString(accountData?.email) || cleanString(user?.email) || 'No email available'
     const name =
@@ -841,6 +865,9 @@ export default function WorkspaceSelection() {
       userId: user?.uid,
       fallback: 'Nexora CRM',
     })
+    const profileBusinessTypeSource = onboardingCompleted
+      ? cleanString(workspaceData?.selectedBusinessType || workspaceData?.businessType || accountData?.selectedBusinessType || accountData?.businessType)
+      : ''
 
     return {
       name,
@@ -855,38 +882,43 @@ export default function WorkspaceSelection() {
       trialExpired,
       isTrial,
       workspaceId: cleanString(workspaceData?.workspaceId) || cleanString(accountData?.workspaceId) || user?.uid || '',
-      businessType: normalizeBusinessType(
-        workspaceData?.selectedBusinessType || workspaceData?.businessType || accountData?.selectedBusinessType || accountData?.businessType,
-      ),
+      businessType: profileBusinessTypeSource ? normalizeBusinessType(profileBusinessTypeSource) : '',
     }
-  }, [accountData, emailVerified, nowMs, user, workspaceData])
+  }, [accountData, emailVerified, nowMs, onboardingCompleted, user, workspaceData])
 
-  const onboardingCompleted = workspaceData?.onboardingCompleted === true || accountData?.onboardingCompleted === true
-  const configuredBusinessType = normalizeBusinessType(
-    workspaceData?.selectedBusinessType ||
-      workspaceData?.businessType ||
-      accountData?.selectedBusinessType ||
-      accountData?.businessType,
-  )
-  const configuredSelectedWorkspace = cleanString(workspaceData?.selectedWorkspace) || cleanString(accountData?.selectedWorkspace)
+  const configuredBusinessTypeSource = onboardingCompleted
+    ? cleanString(
+        workspaceData?.selectedBusinessType ||
+          workspaceData?.businessType ||
+          accountData?.selectedBusinessType ||
+          accountData?.businessType,
+      )
+    : ''
+  const configuredBusinessType = configuredBusinessTypeSource ? normalizeBusinessType(configuredBusinessTypeSource) : ''
+  const configuredSelectedWorkspace = onboardingCompleted
+    ? cleanString(workspaceData?.selectedWorkspace) || cleanString(accountData?.selectedWorkspace)
+    : ''
   const workspaceFullyConfigured = Boolean(onboardingCompleted && configuredBusinessType && configuredSelectedWorkspace)
   const hasCrmWorkspace = workspaceFullyConfigured
   const developerOverride = isDeveloperOwnerAccount(accountData, user)
-  const lockedBusinessTypeSource =
-    cleanString(workspaceData?.primaryBusinessType) ||
-    cleanString(accountData?.primaryBusinessType) ||
-    cleanString(workspaceData?.selectedBusinessType) ||
-    cleanString(workspaceData?.businessType) ||
-    cleanString(accountData?.selectedBusinessType) ||
-    cleanString(accountData?.businessType)
+  const lockedBusinessTypeSource = onboardingCompleted
+    ? cleanString(workspaceData?.primaryBusinessType) ||
+      cleanString(accountData?.primaryBusinessType) ||
+      cleanString(workspaceData?.selectedBusinessType) ||
+      cleanString(workspaceData?.businessType) ||
+      cleanString(accountData?.selectedBusinessType) ||
+      cleanString(accountData?.businessType)
+    : ''
   const lockedBusinessType = lockedBusinessTypeSource ? normalizeBusinessType(lockedBusinessTypeSource) : ''
-  const workspaceAllowedBusinessTypes = Array.from(new Set([
-    lockedBusinessType,
-    ...(Array.isArray(workspaceData?.allowedBusinessTypes) ? workspaceData.allowedBusinessTypes : []),
-    ...(Array.isArray(accountData?.allowedBusinessTypes) ? accountData.allowedBusinessTypes : []),
-  ].filter(Boolean).map(normalizeBusinessType)))
-  const allModulesAccess = workspaceData?.allModulesAccess === true || accountData?.allModulesAccess === true
-  const specialModuleAccess = allModulesAccess || workspaceData?.specialModuleAccess === true || accountData?.specialModuleAccess === true
+  const workspaceAllowedBusinessTypes = onboardingCompleted
+    ? Array.from(new Set([
+        lockedBusinessType,
+        ...(Array.isArray(workspaceData?.allowedBusinessTypes) ? workspaceData.allowedBusinessTypes : []),
+        ...(Array.isArray(accountData?.allowedBusinessTypes) ? accountData.allowedBusinessTypes : []),
+      ].filter(Boolean).map(normalizeBusinessType)))
+    : []
+  const allModulesAccess = onboardingCompleted && (workspaceData?.allModulesAccess === true || accountData?.allModulesAccess === true)
+  const specialModuleAccess = onboardingCompleted && (allModulesAccess || workspaceData?.specialModuleAccess === true || accountData?.specialModuleAccess === true)
   const allowedWorkspaceTypes = developerOverride || allModulesAccess
     ? businessTypes
     : specialModuleAccess
@@ -895,6 +927,7 @@ export default function WorkspaceSelection() {
         ? [lockedBusinessType]
         : []
   const hasModuleLock = !developerOverride && hasCrmWorkspace && Boolean(lockedBusinessType)
+  const onboardingSelectionMode = !developerOverride && !onboardingCompleted
   const moduleLockMessage = 'This module is not enabled for your account. Contact Nexora support.'
   const needsWorkspaceOnboarding = !authLoading && !accountLoading && Boolean(user?.uid) && !hasCrmWorkspace
   const visibleModuleAccess = useMemo(
@@ -917,17 +950,17 @@ export default function WorkspaceSelection() {
               ...workspace,
               name: workspace.title,
               workspaceRecordId: profile.workspaceId,
-              plan: profile.planLabel,
-              trialLabel: profile.trialShortLabel,
+              plan: onboardingSelectionMode ? 'Setup Wizard' : profile.planLabel,
+              trialLabel: onboardingSelectionMode ? '' : profile.trialShortLabel,
               trialExpired: profile.trialExpired,
-              status: profile.trialExpired ? 'Trial Expired' : workspace.status,
-              statusTone: profile.trialExpired ? 'bg-red-50 text-red-700' : workspace.statusTone,
-              selected,
+              status: onboardingSelectionMode ? 'Select Module' : profile.trialExpired ? 'Trial Expired' : workspace.status,
+              statusTone: onboardingSelectionMode ? 'bg-blue-50 text-blue-700' : profile.trialExpired ? 'bg-red-50 text-red-700' : workspace.statusTone,
+              selected: onboardingSelectionMode ? false : selected,
             }
           : { ...workspace, selected }
       })
     },
-    [allowedWorkspaceTypes, hasModuleLock, lockedBusinessType, profile.businessType, profile.planLabel, profile.trialExpired, profile.trialShortLabel, profile.workspaceId],
+    [allowedWorkspaceTypes, hasModuleLock, lockedBusinessType, onboardingSelectionMode, profile.businessType, profile.planLabel, profile.trialExpired, profile.trialShortLabel, profile.workspaceId],
   )
   const notificationCount = sampleNotifications.length
   const mustSelectModuleFirst = !developerOverride && !lockedBusinessType
@@ -994,20 +1027,27 @@ export default function WorkspaceSelection() {
 
   useEffect(() => {
     if (!user) return
-    setOnboardingForm((current) => ({
-      ...current,
-      ownerName: current.ownerName || cleanString(accountData?.fullName) || cleanString(accountData?.name) || cleanString(user.displayName),
-      email: current.email || cleanString(accountData?.email) || cleanString(user.email).toLowerCase(),
-      companyName:
-        current.companyName ||
-        cleanString(accountData?.workspaceName) ||
-        cleanString(accountData?.company) ||
-        cleanString(accountData?.companyName),
-      businessType: normalizeBusinessType(current.businessType || accountData?.selectedBusinessType || accountData?.businessType),
-      country: current.country || selectedRegion,
-      language: current.language || selectedLanguage,
-    }))
-  }, [accountData, selectedLanguage, selectedRegion, user])
+    setOnboardingForm((current) => {
+      const savedBusinessTypeSource = onboardingCompleted
+        ? cleanString(workspaceData?.selectedBusinessType || workspaceData?.businessType || accountData?.selectedBusinessType || accountData?.businessType)
+        : ''
+      const formBusinessTypeSource = cleanString(current.businessType) || savedBusinessTypeSource
+
+      return {
+        ...current,
+        ownerName: current.ownerName || cleanString(accountData?.fullName) || cleanString(accountData?.name) || cleanString(user.displayName),
+        email: current.email || cleanString(accountData?.email) || cleanString(user.email).toLowerCase(),
+        companyName:
+          current.companyName ||
+          cleanString(accountData?.workspaceName) ||
+          cleanString(accountData?.company) ||
+          cleanString(accountData?.companyName),
+        businessType: formBusinessTypeSource ? normalizeBusinessType(formBusinessTypeSource) : '',
+        country: current.country || selectedRegion,
+        language: current.language || selectedLanguage,
+      }
+    })
+  }, [accountData, onboardingCompleted, selectedLanguage, selectedRegion, user, workspaceData])
 
   const handleOnboardingFieldChange = useCallback((field, value) => {
     setOnboardingForm((current) => ({ ...current, [field]: value }))
@@ -1142,18 +1182,36 @@ export default function WorkspaceSelection() {
       setCreateMessage('This module is coming soon.')
       return
     }
-    const businessType = normalizeBusinessType(workspace.type)
+    const {
+      businessTypeLabel,
+      businessTypeId,
+      selectedWorkspace,
+      enabledModules,
+      selectedFeatures,
+      redirectTarget,
+    } = onboardingModuleSelection(workspace)
+    const businessType = businessTypeLabel
     if (hasModuleLock && !allowedWorkspaceTypes.includes(businessType)) {
       setCreateMessage(moduleLockMessage)
       return
     }
+    console.log('[Onboarding] selected module', {
+      source: 'workspace-card',
+      businessType,
+      businessTypeId,
+      selectedWorkspace,
+      redirectTarget,
+    })
     if (!developerOverride && !lockedBusinessType) {
       setCreateMessage('')
       setOnboardingForm((current) => ({
         ...current,
         businessType,
       }))
-      trackAnalyticsEvent('onboarding_started', { userId: uid, email: user?.email || '', workspaceId, businessType, moduleName: businessType, page: '/workspace' })
+      trackAnalyticsEvent('onboarding_started', { userId: uid, email: user?.email || '', workspaceId, businessType: businessTypeId, moduleName: businessType, page: '/workspace' })
+        .catch((analyticsError) => {
+          console.warn('[Onboarding] onboarding_started analytics failed', { error: analyticsError?.message || analyticsError })
+        })
       setCreateOpen(true)
       return
     }
@@ -1167,22 +1225,24 @@ export default function WorkspaceSelection() {
       return
     }
     if (!uid || !workspaceId) {
-      navigate(CRM_DASHBOARD_ROUTE)
+      console.log('[Onboarding] redirect target', { redirectTarget })
+      navigate(redirectTarget)
       return
     }
-
-    const enabledModules = getRecommendedModules(businessType)
-    const selectedFeatures = enabledModules.map((key) => labelForBusinessModule(key, businessType))
     const now = serverTimestamp()
 
     setBusinessTypeSaving(workspace.type)
     setCreateMessage('')
     setAccountData((current) => ({
       ...(current || {}),
-      businessType,
-      selectedBusinessType: businessType,
-      currentBusinessType: businessType,
-      selectedWorkspace: workspace.id,
+      businessType: businessTypeId,
+      selectedBusinessType: businessTypeId,
+      currentBusinessType: businessTypeId,
+      primaryBusinessType: businessTypeId,
+      allowedBusinessTypes: [businessTypeId],
+      specialModuleAccess: false,
+      allModulesAccess: false,
+      selectedWorkspace,
       enabledModules,
       selectedFeatures,
       onboardingCompleted: true,
@@ -1190,18 +1250,24 @@ export default function WorkspaceSelection() {
     setWorkspaceData((current) => ({
       ...(current || {}),
       workspaceId,
-      businessType,
-      selectedBusinessType: businessType,
-      selectedWorkspace: workspace.id,
+      businessType: businessTypeId,
+      selectedBusinessType: businessTypeId,
+      currentBusinessType: businessTypeId,
+      primaryBusinessType: businessTypeId,
+      allowedBusinessTypes: [businessTypeId],
+      specialModuleAccess: false,
+      allModulesAccess: false,
+      selectedWorkspace,
       enabledModules,
       selectedFeatures,
       onboardingCompleted: true,
     }))
-    saveSelectedWorkspace(uid, workspace.id)
+    saveSelectedWorkspace(uid, selectedWorkspace)
 
     try {
       if (!db) {
-        navigate(CRM_DASHBOARD_ROUTE)
+        console.log('[Onboarding] redirect target', { redirectTarget })
+        navigate(redirectTarget)
         return
       }
 
@@ -1211,10 +1277,14 @@ export default function WorkspaceSelection() {
       console.log('[WorkspaceSelection] workspace exists', { workspaceId, workspaceExists })
 
       const workspaceUpdatePayload = {
-        businessType,
-        currentBusinessType: businessType,
-        selectedBusinessType: businessType,
-        selectedWorkspace: workspace.id,
+        businessType: businessTypeId,
+        currentBusinessType: businessTypeId,
+        selectedBusinessType: businessTypeId,
+        primaryBusinessType: businessTypeId,
+        allowedBusinessTypes: [businessTypeId],
+        specialModuleAccess: false,
+        allModulesAccess: false,
+        selectedWorkspace,
         workspaceId,
         ownerId: cleanString(workspaceData?.ownerId) || uid,
         enabledModules,
@@ -1244,10 +1314,14 @@ export default function WorkspaceSelection() {
         setDoc(
           doc(db, 'users', uid),
           {
-            businessType,
-            currentBusinessType: businessType,
-            selectedBusinessType: businessType,
-            selectedWorkspace: workspace.id,
+            businessType: businessTypeId,
+            currentBusinessType: businessTypeId,
+            selectedBusinessType: businessTypeId,
+            primaryBusinessType: businessTypeId,
+            allowedBusinessTypes: [businessTypeId],
+            specialModuleAccess: false,
+            allModulesAccess: false,
+            selectedWorkspace,
             workspaceId,
             ownerId: uid,
             enabledModules,
@@ -1264,9 +1338,23 @@ export default function WorkspaceSelection() {
         ),
       ])
       console.log('[WorkspaceSelection] workspace save success', { workspaceId, workspaceExists })
-      await trackAnalyticsEvent('workspace_selected', { userId: uid, email: user?.email || '', workspaceId, businessType, moduleName: businessType, page: '/workspace' })
-      await trackAnalyticsEvent('onboarding_completed', { userId: uid, email: user?.email || '', workspaceId, businessType, moduleName: businessType, page: '/workspace' })
-      navigate(CRM_DASHBOARD_ROUTE)
+      console.log('[Onboarding] saved workspace module', {
+        workspaceId,
+        businessType: businessTypeId,
+        businessTypeLabel: businessType,
+        selectedWorkspace,
+        enabledModules,
+      })
+      trackAnalyticsEvent('workspace_selected', { userId: uid, email: user?.email || '', workspaceId, businessType: businessTypeId, moduleName: businessType, page: '/workspace' })
+        .catch((analyticsError) => {
+          console.warn('[Onboarding] workspace_selected analytics failed', { error: analyticsError?.message || analyticsError })
+        })
+      trackAnalyticsEvent('onboarding_completed', { userId: uid, email: user?.email || '', workspaceId, businessType: businessTypeId, moduleName: businessType, page: '/workspace' })
+        .catch((analyticsError) => {
+          console.warn('[Onboarding] onboarding_completed analytics failed', { error: analyticsError?.message || analyticsError })
+        })
+      console.log('[Onboarding] redirect target', { redirectTarget })
+      navigate(redirectTarget)
     } catch (error) {
       console.error('[WorkspaceSelection] workspace save fail', {
         workspaceId,
@@ -1335,10 +1423,29 @@ export default function WorkspaceSelection() {
         setCreateMessage('Company name, owner name, and email are required.')
         return
       }
+      if (!cleanString(onboardingForm.businessType)) {
+        setCreateMessage('Select a business module before saving your workspace.')
+        return
+      }
 
       const workspaceName = normalizeWorkspaceName(companyName, companyName)
       saveStoredWorkspaceName(uid, workspaceName)
-      const businessType = normalizeBusinessType(onboardingForm.businessType)
+      const {
+        businessTypeLabel,
+        businessTypeId,
+        selectedWorkspace,
+        enabledModules,
+        selectedFeatures,
+        redirectTarget,
+      } = onboardingModuleSelection(onboardingForm.businessType)
+      const businessType = businessTypeLabel
+      console.log('[Onboarding] selected module', {
+        source: 'workspace-modal',
+        businessType,
+        businessTypeId,
+        selectedWorkspace,
+        redirectTarget,
+      })
       const country = cleanString(onboardingForm.country) || 'Pakistan'
       const currency = cleanString(onboardingForm.currency) || 'PKR'
       const phone = cleanString(onboardingForm.phone)
@@ -1357,10 +1464,8 @@ export default function WorkspaceSelection() {
       const workspaceId = workspaceRef.id
       const isFirstUserProfile = !userSnap.exists()
 
-      const enabledModules = getRecommendedModules(businessType)
-      const selectedFeatures = enabledModules.map((key) => labelForBusinessModule(key, businessType))
-      const primaryBusinessType = businessType
-      const allowedBusinessTypes = [businessType]
+      const primaryBusinessType = businessTypeId
+      const allowedBusinessTypes = [businessTypeId]
       const baseUserPayload = {
         uid,
         ownerId: uid,
@@ -1371,15 +1476,15 @@ export default function WorkspaceSelection() {
         email,
         role: 'owner',
         status: 'active',
-        businessType,
-        selectedBusinessType: businessType,
-        currentBusinessType: businessType,
+        businessType: businessTypeId,
+        selectedBusinessType: businessTypeId,
+        currentBusinessType: businessTypeId,
         primaryBusinessType,
         allowedBusinessTypes,
         specialModuleAccess: false,
         allModulesAccess: false,
-        selectedWorkspace: businessWorkspaceForType(businessType).id,
-        trialBusinessType: businessType,
+        selectedWorkspace,
+        trialBusinessType: businessTypeId,
         enabledModules,
         selectedFeatures,
         onboardingCompleted: true,
@@ -1406,7 +1511,7 @@ export default function WorkspaceSelection() {
         trialStartAt: now,
         trialStartedAt: now,
         trialEndsAt,
-        trialBusinessType: businessType,
+        trialBusinessType: businessTypeId,
         isTrialActive: true,
         trialDays: CRM_TRIAL_DAYS,
       }
@@ -1447,15 +1552,15 @@ export default function WorkspaceSelection() {
         trialStartedAt: now,
         trialEndsAt,
         isTrialActive: true,
-        businessType,
-        selectedBusinessType: businessType,
-        currentBusinessType: businessType,
+        businessType: businessTypeId,
+        selectedBusinessType: businessTypeId,
+        currentBusinessType: businessTypeId,
         primaryBusinessType,
         allowedBusinessTypes,
         specialModuleAccess: false,
         allModulesAccess: false,
-        selectedWorkspace: businessWorkspaceForType(businessType).id,
-        trialBusinessType: businessType,
+        selectedWorkspace,
+        trialBusinessType: businessTypeId,
         enabledModules,
         selectedFeatures,
         onboardingCompleted: true,
@@ -1503,15 +1608,30 @@ export default function WorkspaceSelection() {
           { merge: true },
         ),
       ])
-      await trackAnalyticsEvent('workspace_selected', { userId: uid, email, phone, workspaceId, businessType, moduleName: businessType, page: '/workspace' })
-      await trackAnalyticsEvent('onboarding_completed', { userId: uid, email, phone, workspaceId, businessType, moduleName: businessType, page: '/workspace' })
+      saveSelectedWorkspace(uid, selectedWorkspace)
+      console.log('[Onboarding] saved workspace module', {
+        workspaceId,
+        businessType: businessTypeId,
+        businessTypeLabel: businessType,
+        selectedWorkspace,
+        enabledModules,
+      })
+      trackAnalyticsEvent('workspace_selected', { userId: uid, email, phone, workspaceId, businessType: businessTypeId, moduleName: businessType, page: '/workspace' })
+        .catch((analyticsError) => {
+          console.warn('[Onboarding] workspace_selected analytics failed', { error: analyticsError?.message || analyticsError })
+        })
+      trackAnalyticsEvent('onboarding_completed', { userId: uid, email, phone, workspaceId, businessType: businessTypeId, moduleName: businessType, page: '/workspace' })
+        .catch((analyticsError) => {
+          console.warn('[Onboarding] onboarding_completed analytics failed', { error: analyticsError?.message || analyticsError })
+        })
       setAccountData(userPayload)
       setWorkspaceData(workspacePayload)
       setCreateOpen(false)
       setSelectedLanguage(preferredLanguage)
       setSelectedRegion(country)
       setCreateMessage('')
-      navigate(CRM_DASHBOARD_ROUTE)
+      console.log('[Onboarding] redirect target', { redirectTarget })
+      navigate(redirectTarget)
     } catch (error) {
       setCreateMessage(onboardingErrorMessage(error))
     } finally {

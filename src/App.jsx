@@ -81,22 +81,64 @@ const stats = [
 
 const partners = ['Al-Haram Estate', 'Bright Future School', 'Mega Mart', 'Sunrise Solar', 'TechSoft Solutions']
 
-const reasons = [
+const posIndustries = [
   {
-    title: 'All-in-One Solution',
-    text: 'CRM, School, Property, POS and more, all in one platform.',
+    title: 'Restaurant POS',
+    text: 'Tables, KOT, quick bills, taxes and receipts for dine-in, takeaway and delivery.',
+    icon: HiOutlineBuildingOffice2,
   },
   {
-    title: 'Access Anywhere',
-    text: 'Use on any device, anytime, anywhere with internet.',
+    title: 'Retail POS',
+    text: 'Barcode-ready billing, stock movement, returns and cashier role control.',
+    icon: HiOutlineShoppingCart,
   },
   {
-    title: 'Secure & Reliable',
-    text: 'Your data is safe with enterprise grade security.',
+    title: 'Mall POS',
+    text: 'Multi-counter sales, branch reporting, daily cash summaries and cloud sync.',
+    icon: HiOutlineCloud,
   },
   {
-    title: 'Easy to Use',
-    text: 'User-friendly interface with simple navigation.',
+    title: 'Medical Store POS',
+    text: 'Fast item search, batch-aware inventory, receipts and sales performance reports.',
+    icon: HiOutlineShieldCheck,
+  },
+  {
+    title: 'Transport/Fleet POS',
+    text: 'Ticketing, route billing, fleet receipts, staff roles and live business reports.',
+    icon: HiOutlineMapPin,
+  },
+]
+
+const posFeatures = [
+  {
+    title: 'Fast Billing',
+    text: 'Create counter bills, restaurant checks and customer receipts in a clean sales flow.',
+    icon: HiOutlineShoppingCart,
+  },
+  {
+    title: 'Inventory Control',
+    text: 'Track products, menu items, stock alerts, branch movement and item-level pricing.',
+    icon: HiOutlineChartBarSquare,
+  },
+  {
+    title: 'Receipts & Reports',
+    text: 'Print receipts, view daily sales, monitor cash, compare staff and export reports.',
+    icon: HiOutlineDocumentChartBar,
+  },
+  {
+    title: 'Roles & Permissions',
+    text: 'Give owners, managers, cashiers and staff the right access without exposing data.',
+    icon: HiOutlineUserGroup,
+  },
+  {
+    title: 'Cloud Sync',
+    text: 'Keep web, desktop and mobile-ready views aligned with secure cloud data sync.',
+    icon: HiOutlineCloud,
+  },
+  {
+    title: 'Multi-Device Ready',
+    text: 'Run the same POS experience from desktop counters, web dashboards and mobile views.',
+    icon: HiOutlineDevicePhoneMobile,
   },
 ]
 
@@ -292,6 +334,138 @@ function DashboardPreview() {
   )
 }
 
+function PosShowcasePreview() {
+  const categories = ['All', 'Food', 'Retail', 'Pharma', 'Fleet']
+  const products = [
+    ['Burger Meal', 'PKR 1,250', 'bg-blue-50 text-blue-600'],
+    ['Premium Shirt', 'PKR 3,950', 'bg-emerald-50 text-emerald-600'],
+    ['Medicine Pack', 'PKR 820', 'bg-rose-50 text-rose-600'],
+    ['Route Ticket', 'PKR 450', 'bg-violet-50 text-violet-600'],
+    ['Coffee Combo', 'PKR 680', 'bg-amber-50 text-amber-600'],
+    ['Inventory Item', 'PKR 2,100', 'bg-sky-50 text-sky-600'],
+  ]
+  const order = [
+    ['Burger Meal', '2', 'PKR 2,500'],
+    ['Coffee Combo', '1', 'PKR 680'],
+    ['Service Tax', '5%', 'PKR 134'],
+  ]
+
+  return (
+    <div className="relative mx-auto w-full max-w-3xl">
+      <div className="pos-float-card absolute -left-4 top-12 z-10 hidden w-44 rounded-2xl border border-blue-100 bg-white/95 p-4 shadow-[0_24px_60px_-34px_rgba(15,23,42,0.38)] backdrop-blur xl:block">
+        <p className="text-[0.65rem] font-extrabold uppercase tracking-[0.16em] text-slate-400">Today Sales</p>
+        <p className="mt-2 text-xl font-extrabold text-slate-950">PKR 184K</p>
+        <p className="mt-1 text-xs font-semibold text-emerald-600">+22% live counter growth</p>
+      </div>
+
+      <div className="pos-float-card absolute -right-3 bottom-10 z-10 hidden w-48 rounded-2xl border border-sky-100 bg-white/95 p-4 shadow-[0_24px_60px_-34px_rgba(15,23,42,0.36)] backdrop-blur lg:block">
+        <div className="flex items-center gap-3">
+          <span className="grid h-10 w-10 place-items-center rounded-xl bg-blue-50 text-blue-600">
+            <HiOutlineCloud className="text-xl" />
+          </span>
+          <div>
+            <p className="text-sm font-extrabold text-slate-950">Cloud Synced</p>
+            <p className="text-xs text-slate-500">Desktop, web, mobile</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="pos-preview-shell overflow-hidden rounded-[1.65rem] border border-blue-100 bg-white shadow-[0_34px_100px_-54px_rgba(15,23,42,0.5)]">
+        <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/70 px-4 py-3 sm:px-5">
+          <div className="flex items-center gap-2">
+            <span className="h-2.5 w-2.5 rounded-full bg-rose-300" />
+            <span className="h-2.5 w-2.5 rounded-full bg-amber-300" />
+            <span className="h-2.5 w-2.5 rounded-full bg-emerald-300" />
+          </div>
+          <div className="hidden rounded-full border border-blue-100 bg-white px-3 py-1 text-[0.65rem] font-extrabold uppercase tracking-[0.14em] text-blue-600 sm:block">
+            Nexora POS Live
+          </div>
+          <div className="flex items-center gap-2 text-[0.65rem] font-bold text-slate-500">
+            <span className="h-2 w-2 rounded-full bg-emerald-500" />
+            Online
+          </div>
+        </div>
+
+        <div className="grid gap-4 bg-[linear-gradient(180deg,#fbfdff_0%,#eef6ff_100%)] p-4 sm:p-5 lg:grid-cols-[1fr_18rem]">
+          <div className="min-w-0 rounded-2xl border border-white bg-white/80 p-4 shadow-sm">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-blue-600">Counter Workspace</p>
+                <h3 className="mt-1 text-xl font-extrabold text-slate-950">Fast POS Billing</h3>
+              </div>
+              <div className="rounded-full bg-slate-950 px-4 py-2 text-xs font-extrabold text-white">Shift #A-104</div>
+            </div>
+
+            <div className="mt-5 flex gap-2 overflow-x-auto pb-1">
+              {categories.map((category, index) => (
+                <span
+                  key={category}
+                  className={`shrink-0 rounded-full border px-3 py-2 text-xs font-bold ${
+                    index === 0 ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-200 bg-white text-slate-600'
+                  }`}
+                >
+                  {category}
+                </span>
+              ))}
+            </div>
+
+            <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {products.map(([name, price, tone]) => (
+                <div key={name} className="rounded-2xl border border-slate-100 bg-white p-3 shadow-[0_18px_40px_-32px_rgba(15,23,42,0.35)]">
+                  <div className={`grid h-16 place-items-center rounded-xl ${tone}`}>
+                    <HiOutlineShoppingCart className="text-2xl" />
+                  </div>
+                  <p className="mt-3 truncate text-sm font-extrabold text-slate-950">{name}</p>
+                  <div className="mt-2 flex items-center justify-between gap-2">
+                    <span className="text-xs font-bold text-slate-500">{price}</span>
+                    <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[0.65rem] font-extrabold text-blue-600">Add</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <aside className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-slate-400">Current Bill</p>
+                <p className="mt-1 text-lg font-extrabold text-slate-950">Table 12</p>
+              </div>
+              <span className="rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-extrabold text-emerald-600">Paid</span>
+            </div>
+
+            <div className="mt-5 space-y-3">
+              {order.map(([item, qty, price]) => (
+                <div key={item} className="grid grid-cols-[1fr_auto_auto] items-center gap-3 rounded-xl bg-slate-50 px-3 py-2">
+                  <span className="truncate text-xs font-bold text-slate-700">{item}</span>
+                  <span className="text-xs text-slate-500">{qty}</span>
+                  <span className="text-xs font-extrabold text-slate-950">{price}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-5 rounded-2xl bg-slate-950 p-4 text-white">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-slate-300">Total</span>
+                <span className="text-xl font-extrabold">PKR 3,314</span>
+              </div>
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <span className="rounded-xl bg-white/10 px-3 py-2 text-center text-xs font-bold">Cash</span>
+                <span className="rounded-xl bg-blue-500 px-3 py-2 text-center text-xs font-bold">Card</span>
+              </div>
+            </div>
+
+            <div className="mt-4 rounded-2xl border border-dashed border-blue-200 bg-blue-50/60 p-3">
+              <p className="text-xs font-extrabold text-slate-950">Receipt ready</p>
+              <p className="mt-1 text-xs leading-5 text-slate-500">Print, email, or sync instantly to reports.</p>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function App({ initialSectionId = '' }) {
   const [billingCycle, setBillingCycle] = useState('monthly')
 
@@ -448,65 +622,82 @@ function App({ initialSectionId = '' }) {
           </div>
         </section>
 
-        <section id="products" data-reveal className="bg-[linear-gradient(180deg,#ffffff_0%,#f7fbff_100%)] py-16 sm:py-20 lg:py-24">
-          <div className="mx-auto grid max-w-7xl items-center gap-14 px-5 sm:px-6 lg:grid-cols-2 lg:px-8">
-            <div className="relative mx-auto grid w-full max-w-xl gap-5 sm:grid-cols-[0.38fr_0.62fr] sm:items-end">
-              <div className="hidden min-h-[19rem] rounded-[1.8rem] border-[7px] border-slate-950 bg-white shadow-xl shadow-slate-950/10 sm:block">
-                <div className="h-full rounded-[1.25rem] bg-[linear-gradient(180deg,#eef6ff,#ffffff)] p-4">
-                  <div className="mx-auto mb-5 h-1.5 w-12 rounded-full bg-slate-800" />
-                  <p className="text-[0.55rem] font-extrabold text-slate-500">Dashboard</p>
-                  <p className="mt-2 text-sm font-extrabold text-slate-950">Welcome Back!</p>
-                  <div className="mt-5 rounded-xl bg-white p-3 shadow-sm">
-                    <p className="text-[0.55rem] text-slate-500">Total Revenue</p>
-                    <p className="mt-1 text-sm font-extrabold">PKR 2,406,640</p>
-                    <svg viewBox="0 0 120 48" className="mt-2 h-10 w-full text-blue-600" fill="none" aria-hidden="true">
-                      <path d="M4 36 L22 24 L40 30 L58 14 L76 22 L94 10 L116 16" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-                    </svg>
-                  </div>
-                </div>
-              </div>
+        <section id="products" data-reveal className="relative overflow-hidden bg-[linear-gradient(180deg,#f8fbff_0%,#ffffff_48%,#f3f8ff_100%)] py-16 sm:py-20 lg:py-24">
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-200 to-transparent" />
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-sky-200 to-transparent" />
 
-              <div className="overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-xl shadow-slate-950/10 sm:p-5">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-extrabold text-slate-950">Students</h3>
-                  <span className="rounded-md bg-emerald-500 px-3 py-2 text-xs font-bold text-white">+ Add Student</span>
-                </div>
-                <div className="mt-5 overflow-hidden rounded-lg border border-slate-100">
-                  {[
-                    ['Ali Raza', 'Grade 8', 'Paid', '96%'],
-                    ['Umar Farooq', 'Grade 7', 'Pending', '90%'],
-                    ['Sara Khan', 'Grade 6', 'Paid', '98%'],
-                    ['Hassan Ali', 'Grade 8', 'Paid', '92%'],
-                  ].map(([name, grade, status, percent]) => (
-                    <div key={name} className="grid grid-cols-[1.2fr_0.8fr_0.8fr_0.6fr] items-center gap-2 border-b border-slate-100 px-3 py-3 text-xs last:border-0">
-                      <span className="font-bold text-slate-800">{name}</span>
-                      <span className="text-slate-500">{grade}</span>
-                      <span className={status === 'Paid' ? 'font-bold text-emerald-600' : 'font-bold text-orange-500'}>{status}</span>
-                      <span className="text-right text-slate-500">{percent}</span>
-                    </div>
+          <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
+            <div className="grid items-center gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:gap-14">
+              <div className="mx-auto max-w-2xl text-center lg:mx-0 lg:text-left">
+                <span className="inline-flex rounded-full border border-blue-200 bg-white px-4 py-2 text-xs font-extrabold uppercase tracking-[0.18em] text-blue-600 shadow-sm">
+                  Nexora POS Solution
+                </span>
+                <h2 className="mt-5 text-3xl font-extrabold leading-tight tracking-tight text-slate-950 sm:text-4xl lg:text-5xl">
+                  Modern POS for restaurants, retail stores and service counters.
+                </h2>
+                <p className="mx-auto mt-5 max-w-xl text-base leading-8 text-slate-600 lg:mx-0">
+                  A premium cloud POS experience for billing, inventory, receipts, reports, staff roles and multi-device business operations.
+                </p>
+
+                <div className="mt-7 flex flex-wrap justify-center gap-2 lg:justify-start">
+                  {['Desktop POS', 'Web Dashboard', 'Mobile-ready', 'Cloud Sync'].map((item) => (
+                    <span key={item} className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 shadow-sm">
+                      {item}
+                    </span>
                   ))}
                 </div>
+
+                <div className="mt-8 flex flex-col justify-center gap-3 min-[390px]:flex-row lg:justify-start">
+                  <a
+                    href="#contact"
+                    className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-blue-600 px-6 text-sm font-bold text-white shadow-[0_18px_38px_-22px_rgba(37,99,235,0.9)] transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-blue-700"
+                  >
+                    Book POS Demo
+                    <HiOutlineArrowRight className="text-lg" />
+                  </a>
+                  <a
+                    href="#pricing"
+                    className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md border border-blue-200 bg-white px-6 text-sm font-bold text-slate-950 transition duration-200 ease-out hover:-translate-y-0.5 hover:border-blue-500 hover:text-blue-600"
+                  >
+                    View Plans
+                    <HiOutlinePlayCircle className="text-xl text-blue-600" />
+                  </a>
+                </div>
               </div>
+
+              <PosShowcasePreview />
             </div>
 
-            <div id="features" className="mx-auto max-w-xl lg:mx-0">
-              <h2 className="text-2xl font-extrabold tracking-tight text-slate-950 sm:text-3xl lg:text-4xl">
-                Why Businesses Choose Nexora
-              </h2>
-              <div className="mt-3 h-1 w-24 rounded-full bg-blue-600" />
-              <div className="mt-7 space-y-5">
-                {reasons.map((reason) => (
-                  <div key={reason.title} className="flex gap-4">
-                    <span className="mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white">
-                      <HiOutlineCheckCircle className="text-base" />
-                    </span>
-                    <div>
-                      <h3 className="text-base font-extrabold text-slate-950">{reason.title}</h3>
-                      <p className="mt-1 text-sm leading-6 text-slate-600">{reason.text}</p>
-                    </div>
+            <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+              {posIndustries.map((industry) => (
+                <article
+                  key={industry.title}
+                  className="pos-reveal-card rounded-2xl border border-blue-100 bg-white/90 p-5 shadow-[0_22px_60px_-42px_rgba(15,23,42,0.34)] transition duration-300 ease-out hover:-translate-y-1 hover:border-blue-200 hover:shadow-[0_28px_68px_-42px_rgba(37,99,235,0.34)]"
+                >
+                  <span className="grid h-11 w-11 place-items-center rounded-xl bg-blue-50 text-blue-600">
+                    <industry.icon className="text-2xl" />
+                  </span>
+                  <h3 className="mt-4 text-base font-extrabold text-slate-950">{industry.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">{industry.text}</p>
+                </article>
+              ))}
+            </div>
+
+            <div id="features" className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {posFeatures.map((feature) => (
+                <article
+                  key={feature.title}
+                  className="pos-reveal-card flex min-h-40 gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_22px_60px_-44px_rgba(15,23,42,0.32)] transition duration-300 ease-out hover:-translate-y-1 hover:border-blue-200 hover:shadow-[0_28px_68px_-44px_rgba(37,99,235,0.3)]"
+                >
+                  <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-slate-950 text-white">
+                    <feature.icon className="text-2xl" />
+                  </span>
+                  <div>
+                    <h3 className="text-base font-extrabold text-slate-950">{feature.title}</h3>
+                    <p className="mt-2 text-sm leading-6 text-slate-600">{feature.text}</p>
                   </div>
-                ))}
-              </div>
+                </article>
+              ))}
             </div>
           </div>
         </section>

@@ -49,6 +49,13 @@ function clearLocalAuthWorkspaceState(userId) {
   })
 }
 
+function timestampMs() {
+  if (typeof performance !== 'undefined' && typeof performance.now === 'function') {
+    return performance.now()
+  }
+  return Date.now()
+}
+
 export default function VerifyEmail() {
   const { user, loading } = useAuth()
   const navigate = useNavigate()
@@ -90,6 +97,7 @@ export default function VerifyEmail() {
   const handleRefreshStatus = async () => {
     const currentUser = auth?.currentUser || user
     if (!currentUser) return
+    const redirectStartedAt = timestampMs()
     setChecking(true)
     setMessage('')
     setError('')
@@ -99,8 +107,18 @@ export default function VerifyEmail() {
       if (verified) {
         const workspaceResult = await ensureUserWorkspace(currentUser, { provider: 'password' })
         console.log('[Verify] workspace bootstrap result', workspaceResult)
-        await trackAnalyticsEvent('signup_completed', { userId: currentUser.uid, email: currentUser.email || '', page: '/verify-email', status: 'email_verified_custom' })
+        trackAnalyticsEvent('signup_completed', { userId: currentUser.uid, email: currentUser.email || '', page: '/verify-email', status: 'email_verified_custom' })
+          .catch((analyticsError) => {
+            console.warn('[Verify] signup_completed analytics failed', { error: analyticsError?.message || analyticsError })
+          })
         const route = getPostVerificationRoute({ ...currentUser, emailVerifiedCustom: customVerified })
+        console.log('[OTP Verify] redirect timing', {
+          source: 'refresh-status',
+          elapsedMs: Math.round(timestampMs() - redirectStartedAt),
+          workspaceId: workspaceResult?.workspaceId || '',
+          onboardingCompleted: workspaceResult?.onboardingCompleted === true,
+          route,
+        })
         console.log('[Verify] redirect', route)
         navigate(route, { replace: true })
         return
@@ -172,6 +190,7 @@ export default function VerifyEmail() {
   const handleVerifyOtp = async () => {
     const currentUser = auth?.currentUser || user
     if (!currentUser?.email) return
+    const redirectStartedAt = timestampMs()
     setChecking(true)
     setMessage('')
     setError('')
@@ -184,9 +203,19 @@ export default function VerifyEmail() {
       }
       const workspaceResult = await ensureUserWorkspace(currentUser, { provider: 'password' })
       console.log('[Verify] workspace bootstrap result', workspaceResult)
-      await trackAnalyticsEvent('signup_completed', { userId: currentUser.uid, email: currentUser.email || '', page: '/verify-email', status: 'email_verified_custom' })
+      trackAnalyticsEvent('signup_completed', { userId: currentUser.uid, email: currentUser.email || '', page: '/verify-email', status: 'email_verified_custom' })
+        .catch((analyticsError) => {
+          console.warn('[Verify] signup_completed analytics failed', { error: analyticsError?.message || analyticsError })
+        })
       showToast({ tone: 'success', message: 'Email verified successfully.' })
       const route = getPostVerificationRoute({ ...currentUser, emailVerifiedCustom: true })
+      console.log('[OTP Verify] redirect timing', {
+        source: 'otp-submit',
+        elapsedMs: Math.round(timestampMs() - redirectStartedAt),
+        workspaceId: workspaceResult?.workspaceId || '',
+        onboardingCompleted: workspaceResult?.onboardingCompleted === true,
+        route,
+      })
       console.log('[Verify] redirect', route)
       navigate(route, { replace: true })
     } catch (err) {

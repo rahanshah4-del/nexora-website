@@ -75,10 +75,21 @@ export default function Signup() {
         return
       }
       const welcome = welcomeEmail({ name: fullName.trim() || userRecord.displayName || 'there' })
-      const welcomeResult = await sendWorkerEmail({ to: userRecord.email || email.trim().toLowerCase(), ...welcome })
+      sendWorkerEmail({ to: userRecord.email || email.trim().toLowerCase(), ...welcome })
+        .then((welcomeResult) => {
+          if (!welcomeResult.ok) {
+            console.warn('[Signup] welcome email failed', { error: welcomeResult.error })
+          }
+        })
+        .catch((welcomeError) => {
+          console.warn('[Signup] welcome email failed', { error: welcomeError?.message || welcomeError })
+        })
       setVerificationSent(true)
-      setInfo(welcomeResult.ok ? 'Welcome and verification emails sent.' : `Verification email sent. Welcome email failed: ${welcomeResult.error}`)
-      await trackAnalyticsEvent('signup_completed', { userId: userRecord.uid, email: email.trim().toLowerCase(), phone: phone.trim(), page: '/signup', status: 'verification_sent' })
+      setInfo('Verification email sent. Please check your inbox and continue to verification.')
+      trackAnalyticsEvent('signup_completed', { userId: userRecord.uid, email: email.trim().toLowerCase(), phone: phone.trim(), page: '/signup', status: 'verification_sent' })
+        .catch((analyticsError) => {
+          console.warn('[Signup] signup_completed analytics failed', { error: analyticsError?.message || analyticsError })
+        })
     } catch (err) {
       setError(clientSafeMessage(err, 'Unable to create account. Please try again.', { context: 'Signup with email' }))
     } finally {
@@ -117,7 +128,10 @@ export default function Signup() {
       }
 
       navigate('/workspace', { replace: true })
-      await trackAnalyticsEvent('signup_completed', { userId: signedUser.uid, email: signedUser.email || email.trim().toLowerCase(), phone: phone.trim(), page: '/signup', status: 'google' })
+      trackAnalyticsEvent('signup_completed', { userId: signedUser.uid, email: signedUser.email || email.trim().toLowerCase(), phone: phone.trim(), page: '/signup', status: 'google' })
+        .catch((analyticsError) => {
+          console.warn('[Signup] google signup_completed analytics failed', { error: analyticsError?.message || analyticsError })
+        })
     } catch (err) {
       setError(clientSafeMessage(err, 'Google signup failed. Please try again.', { context: 'Signup with Google' }))
     } finally {

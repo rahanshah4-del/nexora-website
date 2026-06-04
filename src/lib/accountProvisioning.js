@@ -11,7 +11,6 @@ import {
 
 export const FREE_TRIAL_PLAN = 'Basic'
 export const FREE_TRIAL_STATUS = 'trial'
-export const DEFAULT_SIGNUP_BUSINESS_TYPE = 'general-crm'
 
 function cleanString(value) {
   return typeof value === 'string' ? value.trim() : ''
@@ -42,7 +41,6 @@ export async function createSignupUserProfile(user) {
 
   const userRef = doc(db, 'users', user.uid)
   const now = serverTimestamp()
-  const selectedBusinessType = DEFAULT_SIGNUP_BUSINESS_TYPE
   const payload = removeUndefinedFields({
     uid: user.uid,
     email: user.email,
@@ -60,10 +58,19 @@ export async function createSignupUserProfile(user) {
     subscriptionStatus: FREE_TRIAL_STATUS,
     trialDays: BUSINESS_TRIAL_DAYS,
     isAdmin: false,
-    allowedBusinessTypes: [selectedBusinessType],
-    primaryBusinessType: selectedBusinessType,
+    onboardingCompleted: false,
+    allowedBusinessTypes: [],
+    enabledModules: [],
+    selectedFeatures: [],
     specialModuleAccess: false,
     allModulesAccess: false,
+  })
+
+  console.log('[Onboarding] default module source', {
+    source: 'signup-profile',
+    businessType: null,
+    selectedBusinessType: null,
+    onboardingCompleted: false,
   })
 
   console.log('[Signup Provisioning] start', { path: `users/${user.uid}`, uid: user.uid })
@@ -122,6 +129,14 @@ export async function ensureUserWorkspace(user, overrides = {}) {
   const effectiveOwnerId = cleanString(existingUser?.ownerId) || effectiveWorkspaceId
   const existingWorkspace = workspaceSnap.exists() ? workspaceSnap.data() : null
   const onboardingCompleted = existingUser?.onboardingCompleted === true || existingWorkspace?.onboardingCompleted === true
+
+  console.log('[Onboarding] default module source', {
+    source: 'ensureUserWorkspace',
+    hasBusinessSelection,
+    businessType: hasBusinessSelection ? businessType : null,
+    selectedWorkspace: hasBusinessSelection ? businessWorkspaceForType(businessType).id : null,
+    onboardingCompleted,
+  })
 
   if (!userSnap.exists()) {
     if (!canCreateWorkspace && !allowUnverifiedProfile) {

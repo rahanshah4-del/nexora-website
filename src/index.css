@@ -146,6 +146,33 @@ body.public-website {
     animation: none;
   }
 
+  .pos-preview-shell {
+    position: relative;
+  }
+
+  .pos-preview-shell::after {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(115deg, transparent 0%, transparent 38%, rgba(255, 255, 255, 0.52) 48%, transparent 58%, transparent 100%);
+    content: '';
+    opacity: 0.45;
+    transform: translateX(-58%);
+    animation: posScreenSheen 4.8s ease-in-out infinite;
+  }
+
+  .pos-float-card {
+    animation: posFloat 5.6s ease-in-out infinite;
+  }
+
+  .pos-float-card:nth-child(2) {
+    animation-delay: 900ms;
+  }
+
+  .pos-reveal-card {
+    animation: posCardRise 420ms ease-out both;
+  }
+
   @keyframes pageEnter {
     from {
       opacity: 0;
@@ -190,6 +217,37 @@ body.public-website {
     }
   }
 
+  @keyframes posFloat {
+    0%,
+    100% {
+      transform: translate3d(0, 0, 0);
+    }
+    50% {
+      transform: translate3d(0, -7px, 0);
+    }
+  }
+
+  @keyframes posScreenSheen {
+    0%,
+    45% {
+      transform: translateX(-58%);
+    }
+    100% {
+      transform: translateX(58%);
+    }
+  }
+
+  @keyframes posCardRise {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 10px, 0);
+    }
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+  }
+
   @media (max-width: 640px) {
     .marketing-page [data-reveal] {
       transform: none;
@@ -214,7 +272,10 @@ body.public-website {
     .page-enter,
     .hero-enter,
     .glow-blob,
-    .hero-float {
+    .hero-float,
+    .pos-float-card,
+    .pos-preview-shell::after,
+    .pos-reveal-card {
       animation: none;
     }
 
