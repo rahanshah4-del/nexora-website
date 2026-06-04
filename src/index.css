@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Sora:wght@600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Kalam:wght@700&family=Sora:wght@600;700;800&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -67,10 +67,19 @@ body.public-website {
   .section-copy {
     @apply max-w-2xl text-sm leading-7 text-slate-600 sm:text-base sm:leading-8;
   }
-  .feature-pill {
-    @apply inline-flex items-center rounded-full border border-sky-200/80 bg-sky-50 px-3 py-1.5 text-xs font-semibold text-sky-700 sm:px-4 sm:py-2 sm:text-sm;
-  }
-}
+	  .feature-pill {
+	    @apply inline-flex items-center rounded-full border border-sky-200/80 bg-sky-50 px-3 py-1.5 text-xs font-semibold text-sky-700 sm:px-4 sm:py-2 sm:text-sm;
+	  }
+	  .premium-card {
+	    @apply rounded-[1.65rem] border border-slate-200/80 bg-white/90 shadow-[0_28px_80px_-48px_rgba(15,23,42,0.38)] backdrop-blur transition duration-300 ease-out hover:-translate-y-1 hover:border-blue-200 hover:shadow-[0_34px_90px_-50px_rgba(37,99,235,0.36)];
+	  }
+	  .premium-button-primary {
+	    @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-slate-950 px-7 text-sm font-extrabold text-white shadow-[0_20px_46px_-28px_rgba(15,23,42,0.95)] transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-blue-700;
+	  }
+	  .premium-button-secondary {
+	    @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-slate-200 bg-white/90 px-7 text-sm font-extrabold text-slate-950 shadow-[0_18px_42px_-34px_rgba(15,23,42,0.55)] transition duration-200 ease-out hover:-translate-y-0.5 hover:border-blue-300 hover:text-blue-700;
+	  }
+	}
 
 @layer utilities {
   .highlight-ring {
@@ -100,9 +109,53 @@ body.public-website {
     will-change: auto;
   }
 
-  .marketing-page section[id] {
-    scroll-margin-top: 5.5rem;
-  }
+	  .marketing-page section[id] {
+	    scroll-margin-top: 5.5rem;
+	  }
+
+	  .website-hero-heading,
+	  .website-section-heading {
+	    text-wrap: balance;
+	  }
+
+	  .hero-script-line {
+	    font-family: 'Kalam', 'Sora', ui-rounded, system-ui, sans-serif;
+	    letter-spacing: -0.01em;
+	  }
+
+	  .marker-highlight {
+	    position: relative;
+	    display: inline-block;
+	    isolation: isolate;
+	    padding-inline: 0.08em;
+	  }
+
+	  .marker-highlight::before {
+	    position: absolute;
+	    right: -0.04em;
+	    bottom: 0.08em;
+	    left: -0.04em;
+	    z-index: -1;
+	    height: 0.44em;
+	    border-radius: 999px;
+	    background: linear-gradient(90deg, rgba(250, 204, 21, 0.86), rgba(125, 211, 252, 0.72));
+	    content: '';
+	    transform: rotate(-1deg);
+	  }
+
+	  .marker-highlight-blue::before {
+	    background: linear-gradient(90deg, rgba(186, 230, 253, 0.9), rgba(59, 130, 246, 0.24));
+	  }
+
+	  .soft-arc-bg {
+	    position: absolute;
+	    right: -10%;
+	    bottom: -18%;
+	    left: -10%;
+	    height: 42%;
+	    border-radius: 50% 50% 0 0 / 62% 62% 0 0;
+	    background: linear-gradient(180deg, rgba(239, 246, 255, 0.86), rgba(255, 255, 255, 0.92));
+	  }
 
   .marketing-page .site-header .nav-link {
     position: relative;
@@ -146,9 +199,10 @@ body.public-website {
     animation: none;
   }
 
-  .pos-preview-shell {
-    position: relative;
-  }
+	  .pos-preview-shell {
+	    position: relative;
+	    transform: translateZ(0);
+	  }
 
   .pos-preview-shell::after {
     position: absolute;

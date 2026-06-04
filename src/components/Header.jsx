@@ -60,8 +60,8 @@ function Header() {
   }
 
   return (
-    <header className="site-header sticky top-0 z-50 border-b border-slate-100 bg-white/95 backdrop-blur-xl">
-      <div className="mx-auto flex h-20 max-w-7xl items-center gap-4 px-5 sm:px-6 lg:px-8">
+    <header className="site-header sticky top-0 z-50 border-b border-slate-100/80 bg-white/90 backdrop-blur-2xl">
+      <div className="mx-auto flex h-[4.75rem] max-w-7xl items-center gap-4 px-5 sm:px-6 lg:px-8">
         <a href="#hero" className="shrink-0" onClick={closeAll}>
           <NexoraLogo compact textClassName="[&>p:first-child]:text-lg [&>p:first-child]:tracking-[0.12em] [&>p:last-child]:text-[0.55rem]" />
         </a>
@@ -87,7 +87,7 @@ function Header() {
             </button>
 
             <div
-              className={`absolute left-1/2 top-[calc(100%+1.1rem)] w-64 -translate-x-1/2 rounded-lg border border-slate-200 bg-white p-2 shadow-[0_22px_60px_-36px_rgba(15,23,42,0.45)] transition duration-150 ${
+              className={`absolute left-1/2 top-[calc(100%+1.1rem)] w-64 -translate-x-1/2 rounded-2xl border border-slate-200/80 bg-white/95 p-2 shadow-[0_28px_80px_-48px_rgba(15,23,42,0.55)] backdrop-blur-xl transition duration-150 ${
                 activeDropdown === 'solutions' ? 'pointer-events-auto translate-y-0 opacity-100' : 'pointer-events-none -translate-y-1 opacity-0'
               }`}
             >
@@ -96,7 +96,7 @@ function Header() {
                   key={link.label}
                   href={link.href}
                   onClick={closeAll}
-                  className="flex items-center justify-between rounded-md px-4 py-3 text-sm font-semibold text-slate-700 transition duration-200 ease-out hover:bg-blue-50 hover:text-blue-600"
+                  className="flex items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold text-slate-700 transition duration-200 ease-out hover:bg-blue-50 hover:text-blue-600"
                 >
                   <span>{link.label}</span>
                   <HiOutlineArrowRight className="text-slate-400" />
@@ -127,7 +127,7 @@ function Header() {
             </button>
 
             <div
-              className={`absolute left-1/2 top-[calc(100%+1.1rem)] w-64 -translate-x-1/2 rounded-lg border border-slate-200 bg-white p-2 shadow-[0_22px_60px_-36px_rgba(15,23,42,0.45)] transition duration-150 ${
+              className={`absolute left-1/2 top-[calc(100%+1.1rem)] w-64 -translate-x-1/2 rounded-2xl border border-slate-200/80 bg-white/95 p-2 shadow-[0_28px_80px_-48px_rgba(15,23,42,0.55)] backdrop-blur-xl transition duration-150 ${
                 activeDropdown === 'resources' ? 'pointer-events-auto translate-y-0 opacity-100' : 'pointer-events-none -translate-y-1 opacity-0'
               }`}
             >
@@ -136,7 +136,7 @@ function Header() {
                   key={link.label}
                   href={link.href}
                   onClick={closeAll}
-                  className="flex items-center justify-between rounded-md px-4 py-3 text-sm font-semibold text-slate-700 transition duration-200 ease-out hover:bg-blue-50 hover:text-blue-600"
+                  className="flex items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold text-slate-700 transition duration-200 ease-out hover:bg-blue-50 hover:text-blue-600"
                 >
                   <span>{link.label}</span>
                   <HiOutlineArrowRight className="text-slate-400" />
@@ -149,13 +149,13 @@ function Header() {
         <div className="ml-auto hidden items-center gap-3 lg:flex">
           <Link
             to="/login"
-            className="inline-flex h-11 items-center justify-center rounded-md border border-slate-200 bg-white px-5 text-sm font-bold text-slate-900 transition duration-200 ease-out hover:-translate-y-0.5 hover:border-blue-300 hover:text-blue-600"
+            className="inline-flex h-11 items-center justify-center rounded-full border border-slate-200 bg-white px-5 text-sm font-bold text-slate-900 shadow-[0_14px_34px_-30px_rgba(15,23,42,0.7)] transition duration-200 ease-out hover:-translate-y-0.5 hover:border-blue-300 hover:text-blue-600"
           >
             Login
           </Link>
           <Link
             to="/signup"
-            className="inline-flex h-11 items-center justify-center rounded-md bg-blue-600 px-5 text-sm font-bold text-white shadow-[0_18px_38px_-24px_rgba(37,99,235,0.9)] transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-blue-700"
+            className="inline-flex h-11 items-center justify-center rounded-full bg-slate-950 px-5 text-sm font-bold text-white shadow-[0_18px_40px_-26px_rgba(15,23,42,0.9)] transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-blue-700"
           >
             Get Started Free
           </Link>
@@ -164,7 +164,7 @@ function Header() {
         <button
           type="button"
           onClick={() => setMobileMenuOpen((current) => !current)}
-          className="ml-auto inline-flex h-11 w-11 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-900 transition duration-200 ease-out hover:bg-slate-50 lg:hidden"
+          className="ml-auto inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-900 transition duration-200 ease-out hover:bg-slate-50 lg:hidden"
           aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
           aria-expanded={mobileMenuOpen}
         >

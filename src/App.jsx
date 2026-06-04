@@ -215,17 +215,17 @@ function DashboardPreview() {
   ]
 
   return (
-    <div className="relative mx-auto w-full max-w-[43rem] lg:mx-0 lg:ml-auto">
+    <div className="relative mx-auto w-full max-w-[58rem]">
       <div className="absolute -left-9 top-16 hidden space-y-5 2xl:block">
         {[
           ['bg-blue-50 text-blue-600', HiOutlineUserGroup],
           ['bg-emerald-50 text-emerald-600', HiOutlineAcademicCap],
           ['bg-violet-50 text-violet-600', HiOutlineBuildingOffice2],
         ].map(([style, Icon], index) => (
-          <div
-            key={style}
-            className={`flex h-16 w-16 items-center justify-center rounded-2xl border border-white bg-white shadow-lg shadow-blue-950/10 ${style}`}
-            style={{ animationDelay: `${index * 0.6}s` }}
+              <div
+                key={style}
+                className={`flex h-16 w-16 items-center justify-center rounded-2xl border border-white bg-white/95 shadow-[0_24px_60px_-34px_rgba(15,23,42,0.42)] backdrop-blur ${style}`}
+                style={{ animationDelay: `${index * 0.6}s` }}
           >
             <Icon className="text-3xl" />
           </div>
@@ -238,18 +238,18 @@ function DashboardPreview() {
           ['bg-green-50 text-green-600', HiOutlineChatBubbleLeftRight],
           ['bg-sky-50 text-sky-600', HiOutlineChartBarSquare],
         ].map(([style, Icon], index) => (
-          <div
-            key={style}
-            className={`flex h-16 w-16 items-center justify-center rounded-2xl border border-white bg-white shadow-lg shadow-blue-950/10 ${style}`}
-            style={{ animationDelay: `${index * 0.7}s` }}
+              <div
+                key={style}
+                className={`flex h-16 w-16 items-center justify-center rounded-2xl border border-white bg-white/95 shadow-[0_24px_60px_-34px_rgba(15,23,42,0.42)] backdrop-blur ${style}`}
+                style={{ animationDelay: `${index * 0.7}s` }}
           >
             <Icon className="text-3xl" />
           </div>
         ))}
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl shadow-blue-950/10">
-        <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 sm:px-5">
+      <div className="overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white shadow-[0_40px_120px_-62px_rgba(15,23,42,0.58)] ring-1 ring-white/80">
+        <div className="flex items-center justify-between border-b border-slate-100 bg-white/90 px-4 py-3 sm:px-5">
           <NexoraLogo compact iconClassName="rounded-xl" textClassName="[&>p:first-child]:text-[0.62rem] [&>p:last-child]:text-[0.45rem]" />
           <div className="hidden h-8 w-48 items-center rounded-lg border border-slate-100 bg-slate-50 px-3 text-[0.68rem] text-slate-400 sm:flex">
             Search anything...
@@ -263,14 +263,14 @@ function DashboardPreview() {
           </div>
         </div>
 
-        <div className="grid min-h-[20rem] grid-cols-[6.4rem_1fr] sm:grid-cols-[8rem_1fr]">
+        <div className="grid min-h-[20rem] grid-cols-[6.4rem_1fr] sm:grid-cols-[8rem_1fr] lg:min-h-[24rem]">
           <aside className="border-r border-slate-100 bg-slate-50/70 px-2 py-3">
             <div className="grid gap-1">
               {sideItems.map((item, index) => (
                 <div
                   key={item}
-                  className={`truncate rounded-md px-2 py-2 text-[0.56rem] font-semibold sm:text-[0.65rem] ${
-                    index === 0 ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600'
+                  className={`truncate rounded-lg px-2 py-2 text-[0.56rem] font-semibold sm:text-[0.65rem] ${
+                    index === 0 ? 'bg-slate-950 text-white shadow-sm' : 'text-slate-600'
                   }`}
                 >
                   {item}
@@ -283,7 +283,7 @@ function DashboardPreview() {
             <h3 className="text-sm font-extrabold text-slate-950 sm:text-base">Dashboard</h3>
             <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               {miniStats.map(([label, value, delta, tone, path]) => (
-                <div key={label} className="rounded-lg border border-slate-200 bg-white p-3">
+                <div key={label} className="rounded-2xl border border-slate-200 bg-white p-3 shadow-[0_18px_44px_-38px_rgba(15,23,42,0.45)]">
                   <p className="truncate text-[0.55rem] font-semibold text-slate-500">{label}</p>
                   <p className="mt-1 truncate text-xs font-extrabold text-slate-950 sm:text-sm">{value}</p>
                   <p className={`mt-1 text-[0.58rem] font-bold ${tone}`}>{delta} vs last month</p>
@@ -295,10 +295,10 @@ function DashboardPreview() {
             </div>
 
             <div className="mt-4 grid gap-3 lg:grid-cols-[1.2fr_0.8fr]">
-              <div className="rounded-lg border border-slate-200 p-3">
+              <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-[0_18px_44px_-38px_rgba(15,23,42,0.45)]">
                 <div className="mb-3 flex items-center justify-between">
                   <p className="text-[0.68rem] font-extrabold text-slate-900">Revenue Overview</p>
-                  <span className="rounded-md border border-slate-200 px-2 py-1 text-[0.55rem] text-slate-500">This Month</span>
+                  <span className="rounded-full border border-slate-200 px-2 py-1 text-[0.55rem] text-slate-500">This Month</span>
                 </div>
                 <svg viewBox="0 0 360 135" className="h-32 w-full text-blue-600" fill="none" aria-hidden="true">
                   <path d="M8 118 L42 82 L76 96 L110 60 L144 84 L178 44 L212 92 L246 50 L280 72 L316 40 L352 18" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
@@ -306,7 +306,7 @@ function DashboardPreview() {
                 </svg>
               </div>
 
-              <div className="rounded-lg border border-slate-200 p-3">
+              <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-[0_18px_44px_-38px_rgba(15,23,42,0.45)]">
                 <p className="text-[0.68rem] font-extrabold text-slate-900">Recent Activities</p>
                 <div className="mt-3 space-y-2">
                   {[
@@ -351,14 +351,14 @@ function PosShowcasePreview() {
   ]
 
   return (
-    <div className="relative mx-auto w-full max-w-3xl">
-      <div className="pos-float-card absolute -left-4 top-12 z-10 hidden w-44 rounded-2xl border border-blue-100 bg-white/95 p-4 shadow-[0_24px_60px_-34px_rgba(15,23,42,0.38)] backdrop-blur xl:block">
+    <div className="relative mx-auto w-full max-w-[58rem]">
+      <div className="pos-float-card absolute -left-7 top-16 z-10 hidden w-48 rounded-[1.45rem] border border-blue-100 bg-white/95 p-4 shadow-[0_28px_72px_-38px_rgba(15,23,42,0.42)] backdrop-blur xl:block">
         <p className="text-[0.65rem] font-extrabold uppercase tracking-[0.16em] text-slate-400">Today Sales</p>
-        <p className="mt-2 text-xl font-extrabold text-slate-950">PKR 184K</p>
+        <p className="mt-2 text-2xl font-black text-slate-950">PKR 184K</p>
         <p className="mt-1 text-xs font-semibold text-emerald-600">+22% live counter growth</p>
       </div>
 
-      <div className="pos-float-card absolute -right-3 bottom-10 z-10 hidden w-48 rounded-2xl border border-sky-100 bg-white/95 p-4 shadow-[0_24px_60px_-34px_rgba(15,23,42,0.36)] backdrop-blur lg:block">
+      <div className="pos-float-card absolute -right-5 bottom-12 z-10 hidden w-52 rounded-[1.45rem] border border-sky-100 bg-white/95 p-4 shadow-[0_28px_72px_-38px_rgba(15,23,42,0.4)] backdrop-blur lg:block">
         <div className="flex items-center gap-3">
           <span className="grid h-10 w-10 place-items-center rounded-xl bg-blue-50 text-blue-600">
             <HiOutlineCloud className="text-xl" />
@@ -370,14 +370,14 @@ function PosShowcasePreview() {
         </div>
       </div>
 
-      <div className="pos-preview-shell overflow-hidden rounded-[1.65rem] border border-blue-100 bg-white shadow-[0_34px_100px_-54px_rgba(15,23,42,0.5)]">
-        <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/70 px-4 py-3 sm:px-5">
+      <div className="pos-preview-shell overflow-hidden rounded-[2rem] border border-blue-100/90 bg-white shadow-[0_44px_126px_-62px_rgba(15,23,42,0.58)] ring-1 ring-white/80">
+        <div className="flex items-center justify-between border-b border-slate-100 bg-white/90 px-4 py-3 sm:px-5">
           <div className="flex items-center gap-2">
             <span className="h-2.5 w-2.5 rounded-full bg-rose-300" />
             <span className="h-2.5 w-2.5 rounded-full bg-amber-300" />
             <span className="h-2.5 w-2.5 rounded-full bg-emerald-300" />
           </div>
-          <div className="hidden rounded-full border border-blue-100 bg-white px-3 py-1 text-[0.65rem] font-extrabold uppercase tracking-[0.14em] text-blue-600 sm:block">
+          <div className="hidden rounded-full border border-blue-100 bg-blue-50/70 px-3 py-1 text-[0.65rem] font-extrabold uppercase tracking-[0.14em] text-blue-700 sm:block">
             Nexora POS Live
           </div>
           <div className="flex items-center gap-2 text-[0.65rem] font-bold text-slate-500">
@@ -386,22 +386,22 @@ function PosShowcasePreview() {
           </div>
         </div>
 
-        <div className="grid gap-4 bg-[linear-gradient(180deg,#fbfdff_0%,#eef6ff_100%)] p-4 sm:p-5 lg:grid-cols-[1fr_18rem]">
-          <div className="min-w-0 rounded-2xl border border-white bg-white/80 p-4 shadow-sm">
+        <div className="grid gap-4 bg-[linear-gradient(180deg,#fbfdff_0%,#edf6ff_100%)] p-4 sm:p-5 lg:grid-cols-[1fr_18rem] xl:grid-cols-[1fr_20rem]">
+          <div className="min-w-0 rounded-[1.45rem] border border-white bg-white/90 p-4 shadow-[0_20px_58px_-46px_rgba(15,23,42,0.5)]">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-blue-600">Counter Workspace</p>
-                <h3 className="mt-1 text-xl font-extrabold text-slate-950">Fast POS Billing</h3>
+                <h3 className="mt-1 text-2xl font-black text-slate-950">Fast POS Billing</h3>
               </div>
-              <div className="rounded-full bg-slate-950 px-4 py-2 text-xs font-extrabold text-white">Shift #A-104</div>
+              <div className="rounded-full bg-slate-950 px-4 py-2 text-xs font-extrabold text-white shadow-[0_16px_38px_-26px_rgba(15,23,42,0.9)]">Shift #A-104</div>
             </div>
 
             <div className="mt-5 flex gap-2 overflow-x-auto pb-1">
               {categories.map((category, index) => (
                 <span
                   key={category}
-                  className={`shrink-0 rounded-full border px-3 py-2 text-xs font-bold ${
-                    index === 0 ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-200 bg-white text-slate-600'
+                  className={`shrink-0 rounded-full border px-4 py-2 text-xs font-bold ${
+                    index === 0 ? 'border-slate-950 bg-slate-950 text-white' : 'border-slate-200 bg-white text-slate-600'
                   }`}
                 >
                   {category}
@@ -411,21 +411,21 @@ function PosShowcasePreview() {
 
             <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {products.map(([name, price, tone]) => (
-                <div key={name} className="rounded-2xl border border-slate-100 bg-white p-3 shadow-[0_18px_40px_-32px_rgba(15,23,42,0.35)]">
+                <div key={name} className="rounded-[1.2rem] border border-slate-100 bg-white p-3 shadow-[0_20px_48px_-36px_rgba(15,23,42,0.38)] transition duration-200 ease-out hover:-translate-y-0.5">
                   <div className={`grid h-16 place-items-center rounded-xl ${tone}`}>
                     <HiOutlineShoppingCart className="text-2xl" />
                   </div>
                   <p className="mt-3 truncate text-sm font-extrabold text-slate-950">{name}</p>
                   <div className="mt-2 flex items-center justify-between gap-2">
                     <span className="text-xs font-bold text-slate-500">{price}</span>
-                    <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[0.65rem] font-extrabold text-blue-600">Add</span>
+                    <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[0.65rem] font-extrabold text-blue-700">Add</span>
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
-          <aside className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+          <aside className="rounded-[1.45rem] border border-slate-100 bg-white p-4 shadow-[0_20px_58px_-46px_rgba(15,23,42,0.5)]">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-slate-400">Current Bill</p>
@@ -444,18 +444,18 @@ function PosShowcasePreview() {
               ))}
             </div>
 
-            <div className="mt-5 rounded-2xl bg-slate-950 p-4 text-white">
+            <div className="mt-5 rounded-[1.25rem] bg-slate-950 p-4 text-white shadow-[0_22px_56px_-36px_rgba(15,23,42,0.9)]">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-slate-300">Total</span>
                 <span className="text-xl font-extrabold">PKR 3,314</span>
               </div>
               <div className="mt-4 grid grid-cols-2 gap-2">
-                <span className="rounded-xl bg-white/10 px-3 py-2 text-center text-xs font-bold">Cash</span>
-                <span className="rounded-xl bg-blue-500 px-3 py-2 text-center text-xs font-bold">Card</span>
+                <span className="rounded-full bg-white/10 px-3 py-2 text-center text-xs font-bold">Cash</span>
+                <span className="rounded-full bg-blue-500 px-3 py-2 text-center text-xs font-bold">Card</span>
               </div>
             </div>
 
-            <div className="mt-4 rounded-2xl border border-dashed border-blue-200 bg-blue-50/60 p-3">
+            <div className="mt-4 rounded-[1.15rem] border border-dashed border-blue-200 bg-blue-50/70 p-3">
               <p className="text-xs font-extrabold text-slate-950">Receipt ready</p>
               <p className="mt-1 text-xs leading-5 text-slate-500">Print, email, or sync instantly to reports.</p>
             </div>
@@ -517,74 +517,74 @@ function App({ initialSectionId = '' }) {
       <Header />
 
       <main>
-        <section id="hero" className="hero-enter relative overflow-hidden bg-[linear-gradient(180deg,#f8fbff_0%,#ffffff_92%)] py-14 sm:py-16 lg:py-20">
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_30%_12%,rgba(37,99,235,0.09),transparent_28%),radial-gradient(circle_at_78%_18%,rgba(14,165,233,0.11),transparent_30%)]" />
-          <div className="pointer-events-none absolute left-[30%] top-6 hidden h-72 w-56 bg-[radial-gradient(circle,#dbeafe_1px,transparent_1px)] [background-size:18px_18px] opacity-75 lg:block" />
-          <div className="pointer-events-none absolute bottom-6 right-0 hidden h-56 w-64 bg-[radial-gradient(circle,#bfdbfe_1px,transparent_1px)] [background-size:18px_18px] opacity-80 lg:block" />
+        <section id="hero" className="hero-enter relative overflow-hidden bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_72%,#ffffff_100%)] pb-14 pt-12 sm:pb-16 sm:pt-14 lg:pb-20 lg:pt-16">
+          <div className="soft-arc-bg pointer-events-none" />
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-200 to-transparent" />
+          <div className="pointer-events-none absolute left-[12%] top-9 hidden h-52 w-52 rotate-3 bg-[radial-gradient(circle,#cbd5e1_1px,transparent_1px)] [background-size:18px_18px] opacity-50 lg:block" />
+          <div className="pointer-events-none absolute right-[11%] top-28 hidden h-48 w-48 -rotate-6 bg-[radial-gradient(circle,#bae6fd_1px,transparent_1px)] [background-size:18px_18px] opacity-60 lg:block" />
 
-          <div className="relative mx-auto max-w-7xl px-5 pb-12 sm:px-6 lg:px-8 lg:pb-16">
-            <div className="grid items-center gap-12 lg:grid-cols-[0.82fr_1.18fr] lg:gap-14">
-              <div className="text-center lg:text-left">
-                <h1 className="mx-auto max-w-2xl text-4xl font-extrabold leading-[1.08] tracking-tight text-slate-950 sm:text-5xl lg:mx-0 lg:text-[3.8rem]">
-                  One Platform for <span className="text-blue-600">All Your Business</span> Management
-                </h1>
-                <p className="mx-auto mt-5 max-w-xl text-base leading-8 text-slate-600 sm:text-lg lg:mx-0">
-                  Nexora Business Suite helps you manage customers, students, tenants, sales, invoices, reports and team access from one secure dashboard.
-                </p>
+          <div className="relative mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-5xl text-center">
+              <span className="inline-flex rounded-full border border-blue-100 bg-blue-50/70 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.18em] text-blue-700 shadow-sm">
+                Nexora Business Suite
+              </span>
+              <h1 className="website-hero-heading mx-auto mt-6 max-w-5xl text-[2.85rem] font-black leading-[0.98] tracking-tight text-slate-950 sm:text-[4.4rem] lg:text-[5.7rem]">
+                All your business on <span className="marker-highlight">one platform.</span>
+              </h1>
+              <p className="hero-script-line mx-auto mt-5 max-w-3xl text-3xl leading-tight text-slate-900 sm:text-4xl">
+                Simple, efficient, yet powerful.
+              </p>
+              <p className="mx-auto mt-5 max-w-3xl text-base leading-8 text-slate-600 sm:text-lg">
+                Nexora Business Suite helps you manage customers, students, tenants, sales, invoices, reports and team access from one secure dashboard.
+              </p>
 
-                <div className="mt-7 flex flex-col justify-center gap-3 min-[390px]:flex-row lg:justify-start">
-                  <Link
-                    to="/signup"
-                    className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-blue-600 px-6 text-sm font-bold text-white shadow-[0_18px_38px_-22px_rgba(37,99,235,0.9)] transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-blue-700"
-                  >
-                    Start Free Trial
-                    <HiOutlineArrowRight className="text-lg" />
-                  </Link>
-                  <a
-                    href="#contact"
-                    className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md border border-blue-200 bg-white px-6 text-sm font-bold text-slate-950 transition duration-200 ease-out hover:-translate-y-0.5 hover:border-blue-500 hover:text-blue-600"
-                  >
-                    Book a Demo
-                    <HiOutlinePlayCircle className="text-xl text-blue-600" />
-                  </a>
-                </div>
-
-                <div className="mt-10 grid grid-cols-2 gap-4 text-left sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
-                  {trustBadges.map((badge) => (
-                    <div key={badge.title} className="flex min-w-0 items-start gap-2">
-                      <badge.icon className="mt-0.5 shrink-0 text-xl text-blue-600" />
-                      <div className="min-w-0">
-                        <p className="text-xs font-extrabold leading-4 text-slate-900">{badge.title}</p>
-                        <p className="text-[0.68rem] leading-4 text-slate-500">{badge.text}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+              <div className="mt-7 flex flex-col justify-center gap-3 min-[390px]:flex-row">
+                <Link to="/signup" className="premium-button-primary">
+                  Start Free Trial
+                  <HiOutlineArrowRight className="text-lg" />
+                </Link>
+                <a href="#contact" className="premium-button-secondary">
+                  Book a Demo
+                  <HiOutlinePlayCircle className="text-xl text-blue-600" />
+                </a>
               </div>
 
-              <DashboardPreview />
+              <div className="mx-auto mt-9 grid max-w-4xl grid-cols-2 gap-3 text-left sm:grid-cols-4">
+                {trustBadges.map((badge) => (
+                  <div key={badge.title} className="rounded-2xl border border-slate-200/80 bg-white/80 p-4 shadow-[0_18px_50px_-40px_rgba(15,23,42,0.5)] backdrop-blur">
+                    <badge.icon className="text-2xl text-blue-600" />
+                    <div className="mt-3 min-w-0">
+                      <p className="text-xs font-extrabold leading-4 text-slate-900">{badge.title}</p>
+                      <p className="mt-1 text-[0.68rem] leading-4 text-slate-500">{badge.text}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-12 sm:mt-14">
+                <DashboardPreview />
+              </div>
             </div>
           </div>
         </section>
 
         <section id="services" data-reveal className="bg-white py-16 sm:py-20 lg:py-24">
           <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
-            <div className="mx-auto max-w-3xl text-center">
-              <h2 className="text-2xl font-extrabold tracking-tight text-slate-950 sm:text-3xl lg:text-4xl">
-                All Modules. One Platform. Unlimited Possibilities.
+            <div className="mx-auto max-w-4xl text-center">
+              <h2 className="website-section-heading text-3xl font-black tracking-tight text-slate-950 sm:text-5xl">
+                All Modules. <span className="marker-highlight marker-highlight-blue">One Platform.</span> Unlimited Possibilities.
               </h2>
-              <div className="mx-auto mt-3 h-1 w-24 rounded-full bg-blue-600" />
-              <p className="mt-5 text-base leading-7 text-slate-600">
+              <p className="mx-auto mt-5 max-w-2xl text-base leading-8 text-slate-600">
                 Powerful modules to run every part of your business efficiently.
               </p>
             </div>
 
             <div className="mt-12 grid items-stretch gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
               {moduleCards.map((card) => (
-                <article
-                  key={card.title}
-                  className="group flex h-full min-h-[16.5rem] flex-col items-center rounded-xl border border-slate-200 bg-white p-6 text-center shadow-lg shadow-slate-950/5 transition duration-200 ease-out hover:-translate-y-1 hover:border-blue-200 hover:shadow-blue-950/10"
-                >
+	                <article
+	                  key={card.title}
+	                  className="premium-card group flex h-full min-h-[16.5rem] flex-col items-center p-6 text-center"
+	                >
                   <ModuleIcon icon={card.icon} tone={card.tone} />
                   <h3 className="mt-4 text-lg font-extrabold text-slate-950">{card.title}</h3>
                   <p className="mt-3 flex-1 text-sm leading-6 text-slate-600">{card.text}</p>
@@ -598,42 +598,43 @@ function App({ initialSectionId = '' }) {
         </section>
 
         <section id="about" data-reveal className="bg-white px-5 pb-16 pt-2 sm:px-6 sm:pb-20 lg:px-8 lg:pb-24">
-          <div className="mx-auto grid max-w-7xl gap-6 rounded-2xl border border-blue-100 bg-blue-50/35 p-4 shadow-lg shadow-blue-950/5 lg:grid-cols-[1.1fr_1fr] lg:p-5">
-            <div className="rounded-xl border border-blue-100 bg-white p-6 shadow-sm">
-              <p className="text-base font-extrabold text-slate-950">Trusted by 500+ Businesses</p>
+          <div className="mx-auto grid max-w-7xl gap-6 rounded-[2rem] border border-blue-100 bg-[linear-gradient(135deg,#eff6ff_0%,#ffffff_64%,#f8fafc_100%)] p-4 shadow-[0_30px_90px_-62px_rgba(37,99,235,0.42)] lg:grid-cols-[1.1fr_1fr] lg:p-5">
+            <div className="rounded-[1.5rem] border border-blue-100 bg-white p-6 shadow-sm">
+              <p className="text-xl font-black text-slate-950">Trusted by 500+ Businesses</p>
               <p className="mt-2 text-sm text-slate-600">Across Pakistan</p>
               <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-5">
                 {partners.map((partner) => (
-                  <div key={partner} className="flex min-h-14 items-center justify-center rounded-md bg-slate-50 px-3 text-center text-[0.62rem] font-extrabold uppercase tracking-wide text-slate-500">
+                  <div key={partner} className="flex min-h-14 items-center justify-center rounded-xl bg-slate-50 px-3 text-center text-[0.62rem] font-extrabold uppercase tracking-wide text-slate-500">
                     {partner}
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-              {stats.map((stat) => (
-                <div key={stat.label} className="flex min-h-32 flex-col items-center justify-center rounded-xl border border-blue-100 bg-white p-5 text-center shadow-sm">
-                  <p className="text-2xl font-extrabold text-blue-600 sm:text-3xl">{stat.value}</p>
-                  <p className="mt-2 text-sm font-medium text-slate-700">{stat.label}</p>
-                </div>
+	            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+	              {stats.map((stat) => (
+	                <div key={stat.label} className="flex min-h-32 flex-col items-center justify-center rounded-[1.5rem] border border-blue-100 bg-white p-5 text-center shadow-sm">
+	                  <p className="text-3xl font-black text-blue-600 sm:text-4xl">{stat.value}</p>
+	                  <p className="mt-2 text-sm font-medium text-slate-700">{stat.label}</p>
+	                </div>
               ))}
             </div>
           </div>
         </section>
 
-        <section id="products" data-reveal className="relative overflow-hidden bg-[linear-gradient(180deg,#f8fbff_0%,#ffffff_48%,#f3f8ff_100%)] py-16 sm:py-20 lg:py-24">
+        <section id="products" data-reveal className="relative overflow-hidden bg-[linear-gradient(180deg,#f8fbff_0%,#ffffff_42%,#eef7ff_100%)] py-16 sm:py-20 lg:py-24">
           <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-200 to-transparent" />
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-sky-200 to-transparent" />
+          <div className="pointer-events-none absolute left-[10%] top-16 hidden h-40 w-40 rotate-6 bg-[radial-gradient(circle,#bfdbfe_1px,transparent_1px)] [background-size:16px_16px] opacity-50 lg:block" />
 
           <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
-            <div className="grid items-center gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:gap-14">
+            <div className="grid items-center gap-12 lg:grid-cols-[0.82fr_1.18fr] lg:gap-14">
               <div className="mx-auto max-w-2xl text-center lg:mx-0 lg:text-left">
-                <span className="inline-flex rounded-full border border-blue-200 bg-white px-4 py-2 text-xs font-extrabold uppercase tracking-[0.18em] text-blue-600 shadow-sm">
+                <span className="inline-flex rounded-full border border-blue-200 bg-white/90 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.18em] text-blue-700 shadow-sm">
                   Nexora POS Solution
                 </span>
-                <h2 className="mt-5 text-3xl font-extrabold leading-tight tracking-tight text-slate-950 sm:text-4xl lg:text-5xl">
-                  Modern POS for restaurants, retail stores and service counters.
+                <h2 className="website-section-heading mt-5 text-4xl font-black leading-[1.02] tracking-tight text-slate-950 sm:text-5xl lg:text-[4.4rem]">
+                  Modern POS for <span className="marker-highlight marker-highlight-blue">restaurants, retail stores</span> and service counters.
                 </h2>
                 <p className="mx-auto mt-5 max-w-xl text-base leading-8 text-slate-600 lg:mx-0">
                   A premium cloud POS experience for billing, inventory, receipts, reports, staff roles and multi-device business operations.
@@ -641,24 +642,18 @@ function App({ initialSectionId = '' }) {
 
                 <div className="mt-7 flex flex-wrap justify-center gap-2 lg:justify-start">
                   {['Desktop POS', 'Web Dashboard', 'Mobile-ready', 'Cloud Sync'].map((item) => (
-                    <span key={item} className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 shadow-sm">
+                    <span key={item} className="rounded-full border border-slate-200 bg-white/90 px-4 py-2 text-xs font-bold text-slate-600 shadow-sm">
                       {item}
                     </span>
                   ))}
                 </div>
 
                 <div className="mt-8 flex flex-col justify-center gap-3 min-[390px]:flex-row lg:justify-start">
-                  <a
-                    href="#contact"
-                    className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-blue-600 px-6 text-sm font-bold text-white shadow-[0_18px_38px_-22px_rgba(37,99,235,0.9)] transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-blue-700"
-                  >
+                  <a href="#contact" className="premium-button-primary">
                     Book POS Demo
                     <HiOutlineArrowRight className="text-lg" />
                   </a>
-                  <a
-                    href="#pricing"
-                    className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md border border-blue-200 bg-white px-6 text-sm font-bold text-slate-950 transition duration-200 ease-out hover:-translate-y-0.5 hover:border-blue-500 hover:text-blue-600"
-                  >
+                  <a href="#pricing" className="premium-button-secondary">
                     View Plans
                     <HiOutlinePlayCircle className="text-xl text-blue-600" />
                   </a>
@@ -670,30 +665,30 @@ function App({ initialSectionId = '' }) {
 
             <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
               {posIndustries.map((industry) => (
-                <article
-                  key={industry.title}
-                  className="pos-reveal-card rounded-2xl border border-blue-100 bg-white/90 p-5 shadow-[0_22px_60px_-42px_rgba(15,23,42,0.34)] transition duration-300 ease-out hover:-translate-y-1 hover:border-blue-200 hover:shadow-[0_28px_68px_-42px_rgba(37,99,235,0.34)]"
-                >
-                  <span className="grid h-11 w-11 place-items-center rounded-xl bg-blue-50 text-blue-600">
-                    <industry.icon className="text-2xl" />
-                  </span>
-                  <h3 className="mt-4 text-base font-extrabold text-slate-950">{industry.title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">{industry.text}</p>
-                </article>
+	                <article
+	                  key={industry.title}
+	                  className="premium-card pos-reveal-card p-5"
+	                >
+	                  <span className="grid h-12 w-12 place-items-center rounded-2xl bg-blue-50 text-blue-700">
+	                    <industry.icon className="text-2xl" />
+	                  </span>
+	                  <h3 className="mt-4 text-lg font-black text-slate-950">{industry.title}</h3>
+	                  <p className="mt-2 text-sm leading-6 text-slate-600">{industry.text}</p>
+	                </article>
               ))}
             </div>
 
             <div id="features" className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {posFeatures.map((feature) => (
-                <article
-                  key={feature.title}
-                  className="pos-reveal-card flex min-h-40 gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_22px_60px_-44px_rgba(15,23,42,0.32)] transition duration-300 ease-out hover:-translate-y-1 hover:border-blue-200 hover:shadow-[0_28px_68px_-44px_rgba(37,99,235,0.3)]"
-                >
-                  <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-slate-950 text-white">
-                    <feature.icon className="text-2xl" />
-                  </span>
-                  <div>
-                    <h3 className="text-base font-extrabold text-slate-950">{feature.title}</h3>
+	                <article
+	                  key={feature.title}
+	                  className="premium-card pos-reveal-card flex min-h-40 gap-4 p-5"
+	                >
+	                  <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-slate-950 text-white shadow-[0_18px_38px_-28px_rgba(15,23,42,0.8)]">
+	                    <feature.icon className="text-2xl" />
+	                  </span>
+	                  <div>
+	                    <h3 className="text-lg font-black text-slate-950">{feature.title}</h3>
                     <p className="mt-2 text-sm leading-6 text-slate-600">{feature.text}</p>
                   </div>
                 </article>
@@ -705,19 +700,18 @@ function App({ initialSectionId = '' }) {
         <section id="pricing" data-reveal className="bg-white py-16 sm:py-20 lg:py-24">
           <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-3xl text-center">
-              <h2 className="text-2xl font-extrabold tracking-tight text-slate-950 sm:text-3xl lg:text-4xl">
-                Simple, Transparent Pricing
+              <h2 className="website-section-heading text-3xl font-black tracking-tight text-slate-950 sm:text-5xl">
+                Simple, <span className="marker-highlight marker-highlight-blue">Transparent Pricing</span>
               </h2>
-              <div className="mx-auto mt-3 h-1 w-24 rounded-full bg-blue-600" />
-              <div className="mt-6 inline-flex rounded-lg border border-slate-200 bg-white p-1 shadow-sm">
+              <div className="mt-7 inline-flex rounded-full border border-slate-200 bg-white p-1 shadow-[0_18px_46px_-34px_rgba(15,23,42,0.45)]">
                 {['monthly', 'yearly'].map((cycle) => (
-                  <button
-                    key={cycle}
-                    type="button"
-                    onClick={() => setBillingCycle(cycle)}
-                    className={`min-h-9 rounded-md px-5 text-sm font-bold transition duration-200 ease-out ${
-                      billingCycle === cycle ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:text-blue-600'
-                    }`}
+	                  <button
+	                    key={cycle}
+	                    type="button"
+	                    onClick={() => setBillingCycle(cycle)}
+	                    className={`min-h-9 rounded-full px-5 text-sm font-bold transition duration-200 ease-out ${
+	                      billingCycle === cycle ? 'bg-slate-950 text-white shadow-sm' : 'text-slate-600 hover:text-blue-600'
+	                    }`}
                   >
                     {cycle === 'monthly' ? 'Monthly' : 'Yearly (Save 20%)'}
                   </button>
@@ -727,15 +721,15 @@ function App({ initialSectionId = '' }) {
 
             <div className="mt-10 grid items-stretch gap-5 md:grid-cols-2 xl:grid-cols-4">
               {pricingPlans.map((plan) => (
-                <article
-                  key={plan.name}
-                  className={`relative flex h-full min-h-[25rem] flex-col rounded-xl border bg-white p-6 shadow-lg shadow-slate-950/5 transition duration-200 ease-out hover:-translate-y-1 hover:shadow-blue-950/10 ${
-                    plan.featured ? 'border-blue-300 bg-blue-50/35 ring-2 ring-blue-100' : 'border-slate-200'
-                  }`}
+	                <article
+	                  key={plan.name}
+	                  className={`relative flex h-full min-h-[25rem] flex-col rounded-[1.65rem] border bg-white p-6 shadow-[0_28px_80px_-50px_rgba(15,23,42,0.34)] transition duration-200 ease-out hover:-translate-y-1 hover:shadow-[0_34px_90px_-52px_rgba(37,99,235,0.32)] ${
+	                    plan.featured ? 'border-blue-300 bg-blue-50/50 ring-2 ring-blue-100' : 'border-slate-200'
+	                  }`}
                 >
                   <div className="mb-3 flex min-h-7 justify-center">
                     {plan.featured && (
-                      <span className="rounded-full bg-blue-600 px-3 py-1 text-[0.68rem] font-extrabold text-white">
+	                      <span className="rounded-full bg-slate-950 px-3 py-1 text-[0.68rem] font-extrabold text-white">
                         Most Popular
                       </span>
                     )}
@@ -743,7 +737,7 @@ function App({ initialSectionId = '' }) {
                   <h3 className={`text-center text-xl font-extrabold ${plan.featured ? 'text-blue-600' : 'text-slate-950'}`}>{plan.name}</h3>
                   <p className="mt-2 text-center text-sm text-slate-500">{plan.description}</p>
                   <div className="mt-4 text-center">
-                    <p className="text-2xl font-extrabold text-slate-950">{getPrice(plan, billingCycle)}</p>
+	                  <p className="text-3xl font-black text-slate-950">{getPrice(plan, billingCycle)}</p>
                     {!plan.custom && <p className="text-sm text-slate-500">/{billingCycle === 'monthly' ? 'month' : 'year'}</p>}
                   </div>
 
@@ -759,9 +753,9 @@ function App({ initialSectionId = '' }) {
                   <Link
                     to={plan.custom ? '/contact' : '/signup'}
                     className={`mt-7 inline-flex min-h-11 items-center justify-center rounded-md border px-4 text-sm font-extrabold transition duration-200 ease-out hover:-translate-y-0.5 ${
-                      plan.featured
-                        ? 'border-blue-600 bg-blue-600 text-white hover:bg-blue-700'
-                        : 'border-slate-200 bg-white text-slate-950 hover:border-blue-300 hover:text-blue-600'
+	                      plan.featured
+	                        ? 'border-slate-950 bg-slate-950 text-white hover:bg-blue-700'
+	                        : 'border-slate-200 bg-white text-slate-950 hover:border-blue-300 hover:text-blue-600'
                     }`}
                   >
                     {plan.custom ? 'Contact Sales' : 'Start Free Trial'}
@@ -773,13 +767,13 @@ function App({ initialSectionId = '' }) {
         </section>
 
         <section id="contact" data-reveal className="bg-white px-5 pb-16 sm:px-6 sm:pb-20 lg:px-8">
-          <div className="mx-auto grid max-w-7xl items-center gap-6 rounded-2xl border border-blue-100 bg-[linear-gradient(135deg,#eef6ff_0%,#ffffff_100%)] p-6 shadow-lg shadow-blue-950/5 sm:p-8 lg:grid-cols-[1fr_auto]">
+          <div className="mx-auto grid max-w-7xl items-center gap-6 rounded-[2rem] border border-blue-100 bg-[linear-gradient(135deg,#eff6ff_0%,#ffffff_58%,#e0f2fe_100%)] p-6 shadow-[0_30px_90px_-60px_rgba(37,99,235,0.44)] sm:p-8 lg:grid-cols-[1fr_auto]">
             <div className="flex items-center gap-5">
               <span className="hidden h-20 w-20 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600 ring-8 ring-white sm:flex">
                 <HiOutlineChatBubbleLeftRight className="text-5xl" />
               </span>
               <div>
-                <h2 className="text-2xl font-extrabold text-blue-600">Want to See Nexora in Action?</h2>
+	                <h2 className="text-3xl font-black tracking-tight text-slate-950">Want to See <span className="text-blue-600">Nexora</span> in Action?</h2>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
                   Book a free live demo with our experts and see how Nexora can transform your business.
                 </p>
@@ -789,7 +783,7 @@ function App({ initialSectionId = '' }) {
               href={whatsappLeadLink}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-blue-600 px-8 text-sm font-extrabold text-white shadow-[0_18px_38px_-22px_rgba(37,99,235,0.9)] transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-blue-700"
+	              className="premium-button-primary px-8"
             >
               Book Free Demo
               <HiOutlineArrowRight className="text-lg" />
