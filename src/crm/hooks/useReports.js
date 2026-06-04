@@ -5,7 +5,7 @@ import { useWorkspaceAccess } from './useWorkspaceAccess.js'
 import { clientSafeMessage } from '../utils/messages.js'
 import { calculateApprovedExpenses, calculateProfit, calculateRevenue, getInvoiceStatus, isPaidRecord, paymentValue } from '../lib/calculations.js'
 
-const WORKSPACE_COLLECTIONS = [
+const REPORT_WORKSPACE_COLLECTIONS = [
   'leads',
   'pipelines',
   'customers',
@@ -19,11 +19,13 @@ const WORKSPACE_COLLECTIONS = [
   'teamMembers',
   'branches',
   'reports',
-  'supportTickets',
   'subscriptions',
   'activityLogs',
   'staff',
 ]
+
+const SUPPORT_TICKET_COLLECTION = 'supportTickets'
+const WORKSPACE_COLLECTIONS = [...REPORT_WORKSPACE_COLLECTIONS, SUPPORT_TICKET_COLLECTION]
 
 const OWNED_COLLECTIONS = [
   { path: 'notifications', field: 'userId' },
@@ -72,6 +74,11 @@ export function useReports() {
   const access = useWorkspaceAccess()
   const { userId, workspaceId, businessType } = access
   const canReadReports = access.isAdmin || access.hasPermission('reports')
+  const canReadSupportTickets = access.hasModulePermission('support', 'view')
+  const workspaceCollections = useMemo(
+    () => (canReadSupportTickets ? WORKSPACE_COLLECTIONS : REPORT_WORKSPACE_COLLECTIONS),
+    [canReadSupportTickets],
+  )
   const [data, setData] = useState(() =>
     Object.fromEntries(COLLECTIONS.map((k) => [k, []])),
   )
@@ -122,23 +129,27 @@ export function useReports() {
       setLoading(true)
       setSource('firestore')
       setError('')
+      if (!canReadSupportTickets) {
+        setData((prev) => ({ ...prev, [SUPPORT_TICKET_COLLECTION]: [] }))
+      }
     })
 
     const loaded = new Set()
-    const workspaceUnsubs = WORKSPACE_COLLECTIONS.map((path) =>
+    const expectedLoads = workspaceCollections.length + OWNED_COLLECTIONS.length
+    const workspaceUnsubs = workspaceCollections.map((path) =>
       subscribeUserCollection(
         workspaceId,
         path,
         (rows) => {
           setData((prev) => ({ ...prev, [path]: Array.isArray(rows) ? rows : [] }))
           loaded.add(path)
-          if (loaded.size === COLLECTIONS.length) setLoading(false)
+          if (loaded.size === expectedLoads) setLoading(false)
         },
         (err) => {
           setError(clientSafeMessage(err, 'Unable to load reports data.'))
           setData((prev) => ({ ...prev, [path]: [] }))
           loaded.add(path)
-          if (loaded.size === COLLECTIONS.length) setLoading(false)
+          if (loaded.size === expectedLoads) setLoading(false)
         },
         { businessType },
       ),
@@ -151,13 +162,13 @@ export function useReports() {
         (rows) => {
           setData((prev) => ({ ...prev, [path]: Array.isArray(rows) ? rows : [] }))
           loaded.add(path)
-          if (loaded.size === COLLECTIONS.length) setLoading(false)
+          if (loaded.size === expectedLoads) setLoading(false)
         },
         (err) => {
           setError(clientSafeMessage(err, 'Unable to load reports data.'))
           setData((prev) => ({ ...prev, [path]: [] }))
           loaded.add(path)
-          if (loaded.size === COLLECTIONS.length) setLoading(false)
+          if (loaded.size === expectedLoads) setLoading(false)
         },
         field,
         shouldFilterByBusiness ? { businessType } : {},
@@ -168,7 +179,7 @@ export function useReports() {
     return () => {
       unsubs.forEach((u) => u?.())
     }
-  }, [access.loading, businessType, canReadReports, userId, workspaceId])
+  }, [access.loading, businessType, canReadReports, canReadSupportTickets, userId, workspaceCollections, workspaceId])
 
   const computed = useMemo(() => {
     const leads = data.leads

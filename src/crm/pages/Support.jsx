@@ -19,9 +19,8 @@ export default function SupportPage() {
   const { profile } = usePreferences()
   const support = useSupportTickets()
   const access = useWorkspaceAccess()
-  const hasLegacySupportPermission = access.hasPermission('support')
-  const canCreateSupportTicket = hasLegacySupportPermission || access.hasModulePermission('support', 'create')
-  const canEditSupportTicket = hasLegacySupportPermission || access.hasModulePermission('support', 'edit')
+  const canCreateSupportTicket = access.hasModulePermission('support', 'create')
+  const canEditSupportTicket = access.hasModulePermission('support', 'edit')
   const initialCustomer = useMemo(
     () => ({ name: profile.companyName || profile.ownerName, email: profile.email }),
     [profile.companyName, profile.ownerName, profile.email],

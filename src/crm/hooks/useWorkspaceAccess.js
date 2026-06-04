@@ -18,6 +18,7 @@ export const legacyWorkspacePermissionKeys = [
   { key: 'leadsManagement', label: 'Leads Management' },
   { key: 'invoices', label: 'Invoices' },
   { key: 'reports', label: 'Reports' },
+  { key: 'support', label: 'Support Tickets' },
   { key: 'hrDashboard', label: 'HR Dashboard' },
   { key: 'settingsAccess', label: 'Settings Access' },
 ]
@@ -47,6 +48,7 @@ function applyLegacyCompatibility(next, raw = {}, keys = []) {
   next.leadsManagement = Boolean(next.leadsManagement || next[moduleViewPermissionKey('leads')])
   next.invoices = Boolean(next.invoices || next[moduleViewPermissionKey('invoices')])
   next.reports = Boolean(next.reports || next[moduleViewPermissionKey('reports')])
+  next.support = Boolean(next.support || next[moduleViewPermissionKey('support')])
   next.hrDashboard = Boolean(next.hrDashboard || next[moduleViewPermissionKey('hr')])
   next.settingsAccess = Boolean(next.settingsAccess || next[moduleViewPermissionKey('settings')])
   return next
@@ -77,7 +79,7 @@ function mergePermissionGrants(defaults = {}, overrides = {}) {
 }
 
 export function useWorkspaceAccess() {
-  const { userId, workspaceId, businessType, staffId, role, isAdmin, isOwner, isStaff, isAccountant, isManager, accessPlan } = useUser()
+  const { userId, workspaceId, businessType, staffId, role, userDoc, isAdmin, isOwner, isStaff, isAccountant, isManager, accessPlan } = useUser()
   const currentPermissionKeys = useMemo(() => workspacePermissionKeysForBusiness(businessType, accessPlan), [accessPlan, businessType])
   const [permissions, setPermissions] = useState(() => emptyPermissions(currentPermissionKeys))
   const [explicitPermissions, setExplicitPermissions] = useState(() => emptyPermissions(currentPermissionKeys))
@@ -112,7 +114,7 @@ export function useWorkspaceAccess() {
     const unsub = onSnapshot(
       ref,
       (snap) => {
-        const defaults = roleDefaultPermissions(role, businessType, accessPlan)
+        const defaults = roleDefaultPermissions(userDoc?.role || role, businessType, accessPlan)
         const overrides = snap.exists() ? permissionsForBusiness(snap.data(), businessType, accessPlan) : {}
         setExplicitPermissions(snap.exists() ? overrides : emptyPermissions(currentPermissionKeys))
         setPermissions(mergePermissionGrants(defaults, overrides))
@@ -125,7 +127,7 @@ export function useWorkspaceAccess() {
       },
     )
     return () => unsub()
-  }, [accessPlan, businessType, currentPermissionKeys, isAdmin, isOwner, role, staffId, userId, workspaceId])
+  }, [accessPlan, businessType, currentPermissionKeys, isAdmin, isOwner, role, staffId, userDoc?.role, userId, workspaceId])
 
   return useMemo(
     () => ({
@@ -148,6 +150,9 @@ export function useWorkspaceAccess() {
       canAccessHr: isAdmin || Boolean(permissions.hrDashboard),
       permissionKeys: currentPermissionKeys,
       hasModulePermission(moduleKey, action = 'view') {
+        if (moduleKey === 'support') {
+          return isAdmin || Boolean(permissions.support || permissions[modulePermissionKey(moduleKey, action)])
+        }
         return isAdmin || Boolean(permissions[modulePermissionKey(moduleKey, action)])
       },
       hasPermission(key) {

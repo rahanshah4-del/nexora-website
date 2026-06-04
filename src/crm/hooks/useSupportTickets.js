@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { db } from '../lib/firebase.js'
 import { createUserDoc, patchUserDoc, subscribeUserCollection } from '../lib/firestore.js'
 import { useUser } from './useUser.js'
+import { useWorkspaceAccess } from './useWorkspaceAccess.js'
 import { clientSafeMessage } from '../utils/messages.js'
 
 function normalizeTicket(t) {
@@ -23,6 +24,10 @@ function normalizeTicket(t) {
 
 export function useSupportTickets() {
   const { userId, workspaceId, businessType } = useUser()
+  const access = useWorkspaceAccess()
+  const canReadSupportTickets = access.hasModulePermission('support', 'view')
+  const canCreateSupportTickets = access.hasModulePermission('support', 'create')
+  const canEditSupportTickets = access.hasModulePermission('support', 'edit')
   const [tickets, setTickets] = useState([])
   const [loading, setLoading] = useState(true)
   const [source, setSource] = useState(db ? 'firestore' : 'none')
@@ -39,6 +44,26 @@ export function useSupportTickets() {
       return
     }
     if (!workspaceId) {
+      Promise.resolve().then(() => {
+        setTickets([])
+        setSource('firestore')
+        setError('')
+        setLoading(false)
+      })
+      return
+    }
+
+    if (access.loading) {
+      Promise.resolve().then(() => {
+        setTickets([])
+        setSource('firestore')
+        setError('')
+        setLoading(true)
+      })
+      return
+    }
+
+    if (!canReadSupportTickets) {
       Promise.resolve().then(() => {
         setTickets([])
         setSource('firestore')
@@ -69,7 +94,7 @@ export function useSupportTickets() {
     )
 
     return () => unsub?.()
-  }, [businessType, workspaceId])
+  }, [access.loading, businessType, canReadSupportTickets, workspaceId])
 
   const stats = useMemo(() => {
     const byStatus = tickets.reduce((acc, t) => {
@@ -93,6 +118,7 @@ export function useSupportTickets() {
       stats,
       async createTicket(payload) {
         const ticket = normalizeTicket(payload)
+        if (!canCreateSupportTickets) return { ok: false, error: 'Support ticket create permission is not enabled for this account.' }
         if (!userId || !workspaceId) return { ok: false, error: 'Please login first' }
         const tno = String(ticket.ticketNumber || '').trim()
         const name = String(ticket.customerName || '').trim()
@@ -127,11 +153,13 @@ export function useSupportTickets() {
         }
       },
       async updateTicket(id, patch) {
+        if (!canEditSupportTickets) return { ok: false, error: 'Support ticket edit permission is not enabled for this account.' }
         setTickets((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch, updatedAt: new Date().toISOString().slice(0, 10) } : t)))
         if (!db || !workspaceId || source !== 'firestore') return
         await patchUserDoc(workspaceId, 'supportTickets', id, patch, { businessType })
       },
       async addComment(id, comment) {
+        if (!canEditSupportTickets) return { ok: false, error: 'Support ticket comment permission is not enabled for this account.' }
         const createdAt = new Date().toISOString().slice(0, 10)
         const nextComment = { id: `c_${Date.now()}`, ...comment, createdAt }
         setTickets((prev) =>
@@ -152,7 +180,7 @@ export function useSupportTickets() {
         }
       },
     }),
-    [tickets, loading, source, error, stats, businessType, userId, workspaceId],
+    [tickets, loading, source, error, stats, businessType, canCreateSupportTickets, canEditSupportTickets, userId, workspaceId],
   )
 
   return api

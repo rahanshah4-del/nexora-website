@@ -1,4 +1,4 @@
-export const workspaceRoles = ['owner', 'admin', 'accountant', 'manager', 'staff']
+export const workspaceRoles = ['owner', 'admin', 'accountant', 'manager', 'support', 'staff']
 export const platformAdminRoles = ['platform_admin', 'super_admin']
 export const backendAdminEmails = [
   'rahanshah2@gmail.com',
@@ -29,6 +29,7 @@ export function workspacePermissionDefaults(role) {
     leadsManagement: true,
     invoices: true,
     reports: true,
+    support: true,
     hrDashboard: true,
     settingsAccess: true,
   }
@@ -42,6 +43,7 @@ export function workspacePermissionDefaults(role) {
       leadsManagement: true,
       invoices: true,
       reports: true,
+      support: false,
       hrDashboard: false,
       settingsAccess: false,
     }
@@ -54,6 +56,20 @@ export function workspacePermissionDefaults(role) {
       leadsManagement: false,
       invoices: true,
       reports: true,
+      support: false,
+      hrDashboard: false,
+      settingsAccess: false,
+    }
+  }
+  if (value === 'support') {
+    return {
+      followUpEdit: false,
+      followUpDelete: false,
+      customerManagement: false,
+      leadsManagement: false,
+      invoices: false,
+      reports: false,
+      support: true,
       hrDashboard: false,
       settingsAccess: false,
     }
@@ -65,6 +81,7 @@ export function workspacePermissionDefaults(role) {
     leadsManagement: false,
     invoices: false,
     reports: false,
+    support: false,
     hrDashboard: false,
     settingsAccess: false,
   }

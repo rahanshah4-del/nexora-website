@@ -78,6 +78,10 @@ service cloud.firestore {
       return role in ['sales', 'Sales', 'SALES', 'sales staff', 'Sales Staff', 'SALES STAFF'];
     }
 
+    function isSupportRole(role) {
+      return role in ['support', 'Support', 'SUPPORT', 'support agent', 'Support Agent', 'SUPPORT AGENT'];
+    }
+
     function permissionDocId() {
       return profile().staffId is string ? profile().staffId : request.auth.uid;
     }
@@ -166,6 +170,7 @@ service cloud.firestore {
         || (isManagerRole(role)
           && key in ['followUpEdit', 'followUpDelete', 'customerManagement', 'leadsManagement', 'invoices', 'reports'])
         || (isSalesRole(role) && key in ['invoices'])
+        || (isSupportRole(role) && key in ['support'])
         || (isAccountantRole(role) && key in ['invoices', 'reports']);
     }
 
