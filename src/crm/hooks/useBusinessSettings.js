@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { doc, onSnapshot, serverTimestamp, setDoc } from 'firebase/firestore'
 import { db } from '../lib/firebase.js'
 import { useUser } from './useUser.js'
+import { useWorkspaceAccess } from './useWorkspaceAccess.js'
 import { normalizeBusinessType } from '../data/moduleAccess.js'
 import { clientSafeMessage } from '../utils/messages.js'
 
@@ -26,6 +27,7 @@ export function businessSettingsId(businessType) {
 
 export function useBusinessSettings() {
   const { workspaceId, businessType, userId, userDoc, firebaseUser } = useUser()
+  const access = useWorkspaceAccess()
   const [settings, setSettings] = useState(defaultBusinessSettings)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -74,6 +76,9 @@ export function useBusinessSettings() {
   const saveSettings = useCallback(
     async (patch = {}) => {
       if (!db || !workspaceId || !docId) return { ok: false, error: 'Secure Cloud Sync is not available right now.' }
+      if (!access.canManageSettings) {
+        return { ok: false, error: 'You have view access only. Contact your workspace administrator to modify settings.' }
+      }
       try {
         await setDoc(
           doc(db, 'workspaces', workspaceId, 'businessSettings', docId),
@@ -92,7 +97,7 @@ export function useBusinessSettings() {
         return { ok: false, error: clientSafeMessage(err, 'Unable to save business settings.') }
       }
     },
-    [docId, normalizedBusinessType, userId, workspaceId],
+    [access.canManageSettings, docId, normalizedBusinessType, userId, workspaceId],
   )
 
   return useMemo(
@@ -102,7 +107,8 @@ export function useBusinessSettings() {
       error,
       businessType: normalizedBusinessType,
       saveSettings,
+      canManageSettings: access.canManageSettings,
     }),
-    [error, loading, normalizedBusinessType, saveSettings, settings],
+    [access.canManageSettings, error, loading, normalizedBusinessType, saveSettings, settings],
   )
 }

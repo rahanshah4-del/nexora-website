@@ -16,6 +16,7 @@ import Avatar from '../components/ui/Avatar.jsx'
 import { supportedCurrencies } from '../data/currency.js'
 import { usePreferences } from '../hooks/usePreferences.js'
 import { useBusinessSettings } from '../hooks/useBusinessSettings.js'
+import { useWorkspaceAccess } from '../hooks/useWorkspaceAccess.js'
 import { useUser } from '../hooks/useUser.js'
 import { useAuth } from '../hooks/useAuth.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
@@ -36,17 +37,24 @@ export default function SettingsPage() {
   const { logout, busy } = useAuth()
   const { currency, setCurrency, profile, setProfile } = usePreferences()
   const { settings, businessType, saveSettings } = useBusinessSettings()
+  const access = useWorkspaceAccess()
   const [draft, setDraft] = useState({ ...profile, ...settings })
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
   const fileRef = useRef(null)
   const packageName = packageNameForPlan(plan)
+  const canManageSettings = access.canManageSettings
+  const viewOnlyMessage = 'You have view access only. Contact your workspace administrator to modify settings.'
 
   useEffect(() => {
     setDraft((current) => ({ ...current, ...profile, ...settings }))
   }, [profile, settings])
 
   async function onSaveProfile() {
+    if (!canManageSettings) {
+      setError(viewOnlyMessage)
+      return
+    }
     const businessPatch = {
       businessName: draft.businessName || draft.companyName || '',
       logoUrl: draft.logoUrl || draft.avatarDataUrl || '',
@@ -84,7 +92,7 @@ export default function SettingsPage() {
   }
 
   function onAvatarChange(file) {
-    if (!file) return
+    if (!canManageSettings || !file) return
     const reader = new FileReader()
     reader.onload = () => setDraft((current) => ({ ...current, avatarDataUrl: String(reader.result || ''), logoUrl: String(reader.result || '') }))
     reader.readAsDataURL(file)
@@ -109,15 +117,21 @@ export default function SettingsPage() {
           <div className="flex flex-wrap items-center gap-2">
             {saved ? <Badge variant="success">Saved</Badge> : null}
             {error ? <Badge variant="danger">{error}</Badge> : null}
-            <Button variant="subtle" className="rounded-2xl" onClick={() => setDraft({ ...profile, ...settings })} type="button">
+            <Button variant="subtle" className="rounded-2xl" onClick={() => setDraft({ ...profile, ...settings })} type="button" disabled={!canManageSettings}>
               Reset
             </Button>
-            <Button className="rounded-2xl" onClick={onSaveProfile} type="button">
+            <Button className="rounded-2xl" onClick={onSaveProfile} type="button" disabled={!canManageSettings}>
               Save changes
             </Button>
           </div>
         }
       />
+
+      {!canManageSettings ? (
+        <Card className="border-amber-100 bg-amber-50/80 p-4 text-sm font-semibold text-amber-900">
+          {viewOnlyMessage}
+        </Card>
+      ) : null}
 
       <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(340px,0.85fr)]">
         <div className="min-w-0 space-y-5">
@@ -140,7 +154,7 @@ export default function SettingsPage() {
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
-                <Button variant="subtle" className="rounded-2xl" onClick={() => fileRef.current?.click()} type="button">
+                <Button variant="subtle" className="rounded-2xl" onClick={() => fileRef.current?.click()} type="button" disabled={!canManageSettings}>
                   Upload image
                 </Button>
                 <Button
@@ -148,6 +162,7 @@ export default function SettingsPage() {
                   className="rounded-2xl"
                   onClick={() => setDraft((current) => ({ ...current, avatarDataUrl: '', logoUrl: '' }))}
                   type="button"
+                  disabled={!canManageSettings}
                 >
                   Remove
                 </Button>
@@ -157,6 +172,7 @@ export default function SettingsPage() {
                   accept="image/*"
                   className="hidden"
                   onChange={(event) => onAvatarChange(event.target.files?.[0])}
+                  disabled={!canManageSettings}
                 />
               </div>
             </div>
@@ -164,24 +180,27 @@ export default function SettingsPage() {
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
               <Field label="Owner Name">
                 <Input
-                  value={draft.ownerName}
-                  onChange={(event) => setDraft((current) => ({ ...current, ownerName: event.target.value }))}
-                  placeholder="Owner name"
-                />
+	                  value={draft.ownerName}
+	                  onChange={(event) => setDraft((current) => ({ ...current, ownerName: event.target.value }))}
+	                  placeholder="Owner name"
+	                  readOnly={!canManageSettings}
+	                />
               </Field>
               <Field label="Phone Number">
                 <Input
-                  value={draft.phone}
-                  onChange={(event) => setDraft((current) => ({ ...current, phone: event.target.value }))}
-                  placeholder="+92..."
-                />
+	                  value={draft.phone}
+	                  onChange={(event) => setDraft((current) => ({ ...current, phone: event.target.value }))}
+	                  placeholder="+92..."
+	                  readOnly={!canManageSettings}
+	                />
               </Field>
               <Field label="Email" className="sm:col-span-2">
                 <Input
-                  value={draft.email}
-                  onChange={(event) => setDraft((current) => ({ ...current, email: event.target.value }))}
-                  placeholder="Email"
-                />
+	                  value={draft.email}
+	                  onChange={(event) => setDraft((current) => ({ ...current, email: event.target.value }))}
+	                  placeholder="Email"
+	                  readOnly={!canManageSettings}
+	                />
               </Field>
             </div>
           </Card>
@@ -203,10 +222,11 @@ export default function SettingsPage() {
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
               <Field label="Company Name" className="sm:col-span-2">
                 <Input
-                  value={draft.businessName || draft.companyName || ''}
-                  onChange={(event) => setDraft((current) => ({ ...current, businessName: event.target.value, companyName: event.target.value }))}
-                  placeholder="Company name"
-                />
+	                  value={draft.businessName || draft.companyName || ''}
+	                  onChange={(event) => setDraft((current) => ({ ...current, businessName: event.target.value, companyName: event.target.value }))}
+	                  placeholder="Company name"
+	                  readOnly={!canManageSettings}
+	                />
               </Field>
               <Field label="Business Type">
                 <Input
@@ -216,7 +236,7 @@ export default function SettingsPage() {
                 />
               </Field>
               <Field label="Currency">
-                <Select value={currency} onChange={(event) => setCurrency(event.target.value)}>
+                <Select value={currency} onChange={(event) => setCurrency(event.target.value)} disabled={!canManageSettings}>
                   {supportedCurrencies.map((item) => (
                     <option key={item.code} value={item.code}>
                       {item.label}
@@ -226,59 +246,67 @@ export default function SettingsPage() {
               </Field>
               <Field label="Address" className="sm:col-span-2">
                 <Input
-                  value={draft.address || ''}
-                  onChange={(event) => setDraft((current) => ({ ...current, address: event.target.value }))}
-                  placeholder="Business address for printable reports"
-                />
+	                  value={draft.address || ''}
+	                  onChange={(event) => setDraft((current) => ({ ...current, address: event.target.value }))}
+	                  placeholder="Business address for printable reports"
+	                  readOnly={!canManageSettings}
+	                />
               </Field>
               <Field label="Tax Number">
                 <Input
-                  value={draft.taxNumber || ''}
-                  onChange={(event) => setDraft((current) => ({ ...current, taxNumber: event.target.value }))}
-                  placeholder="NTN / Tax ID"
-                />
+	                  value={draft.taxNumber || ''}
+	                  onChange={(event) => setDraft((current) => ({ ...current, taxNumber: event.target.value }))}
+	                  placeholder="NTN / Tax ID"
+	                  readOnly={!canManageSettings}
+	                />
               </Field>
               <Field label="Invoice Prefix">
                 <Input
-                  value={draft.invoicePrefix || ''}
-                  onChange={(event) => setDraft((current) => ({ ...current, invoicePrefix: event.target.value }))}
-                  placeholder="INV"
-                />
+	                  value={draft.invoicePrefix || ''}
+	                  onChange={(event) => setDraft((current) => ({ ...current, invoicePrefix: event.target.value }))}
+	                  placeholder="INV"
+	                  readOnly={!canManageSettings}
+	                />
               </Field>
               <Field label="Report Prefix">
                 <Input
-                  value={draft.reportPrefix || ''}
-                  onChange={(event) => setDraft((current) => ({ ...current, reportPrefix: event.target.value }))}
-                  placeholder="RPT"
-                />
+	                  value={draft.reportPrefix || ''}
+	                  onChange={(event) => setDraft((current) => ({ ...current, reportPrefix: event.target.value }))}
+	                  placeholder="RPT"
+	                  readOnly={!canManageSettings}
+	                />
               </Field>
               <Field label="Theme Color">
                 <Input
-                  type="color"
-                  value={draft.themeColor || '#2563eb'}
-                  onChange={(event) => setDraft((current) => ({ ...current, themeColor: event.target.value }))}
-                />
+	                  type="color"
+	                  value={draft.themeColor || '#2563eb'}
+	                  onChange={(event) => setDraft((current) => ({ ...current, themeColor: event.target.value }))}
+	                  disabled={!canManageSettings}
+	                />
               </Field>
               <Field label="Receipt Footer" className="sm:col-span-2">
                 <Input
-                  value={draft.receiptFooter || ''}
-                  onChange={(event) => setDraft((current) => ({ ...current, receiptFooter: event.target.value }))}
-                  placeholder="Thank you for your business"
-                />
+	                  value={draft.receiptFooter || ''}
+	                  onChange={(event) => setDraft((current) => ({ ...current, receiptFooter: event.target.value }))}
+	                  placeholder="Thank you for your business"
+	                  readOnly={!canManageSettings}
+	                />
               </Field>
               <Field label="Country">
                 <Input
-                  value={draft.country}
-                  onChange={(event) => setDraft((current) => ({ ...current, country: event.target.value }))}
-                  placeholder="Country"
-                />
+	                  value={draft.country}
+	                  onChange={(event) => setDraft((current) => ({ ...current, country: event.target.value }))}
+	                  placeholder="Country"
+	                  readOnly={!canManageSettings}
+	                />
               </Field>
               <Field label="City">
                 <Input
-                  value={draft.city}
-                  onChange={(event) => setDraft((current) => ({ ...current, city: event.target.value }))}
-                  placeholder="City"
-                />
+	                  value={draft.city}
+	                  onChange={(event) => setDraft((current) => ({ ...current, city: event.target.value }))}
+	                  placeholder="City"
+	                  readOnly={!canManageSettings}
+	                />
               </Field>
             </div>
           </Card>

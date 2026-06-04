@@ -321,6 +321,7 @@ export default function DashboardLayout() {
     Boolean(userDoc) &&
     Boolean(currentModule) &&
     !developerOverride &&
+    currentModule.key !== 'settings' &&
     !isOwnerAdmin &&
     !workspaceAccess.hasModulePermission(currentModule.key, 'view')
   const mobileBlocked = ready && isAuthenticated && isMobileScreen
