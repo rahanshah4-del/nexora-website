@@ -141,17 +141,16 @@ service cloud.firestore {
           workspaceDoc(workspaceId).subscriptionStatus in ['active', 'paid', 'approved', 'current']
           || workspaceDoc(workspaceId).planStatus in ['active', 'paid', 'approved', 'current']
         )
-        && (
-          !workspaceDoc(workspaceId).keys().hasAny(['subscriptionExpiresAt'])
-          || workspaceDoc(workspaceId).subscriptionExpiresAt >= request.time
-        )
+        && workspaceDoc(workspaceId).subscriptionExpiresAt is timestamp
+        && workspaceDoc(workspaceId).nextBillingDate is timestamp
+        && workspaceDoc(workspaceId).subscriptionExpiresAt >= request.time
+        && workspaceDoc(workspaceId).nextBillingDate >= request.time
         && (
           !workspaceDoc(workspaceId).keys().hasAny(['expiresAt'])
-          || workspaceDoc(workspaceId).expiresAt >= request.time
-        )
-        && (
-          !workspaceDoc(workspaceId).keys().hasAny(['nextBillingDate'])
-          || workspaceDoc(workspaceId).nextBillingDate >= request.time
+          || (
+            workspaceDoc(workspaceId).expiresAt is timestamp
+            && workspaceDoc(workspaceId).expiresAt == workspaceDoc(workspaceId).subscriptionExpiresAt
+          )
         );
     }
 

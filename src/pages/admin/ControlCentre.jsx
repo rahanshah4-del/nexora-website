@@ -98,6 +98,7 @@ const modules = ['General CRM', 'School ERP', 'Retail / POS', 'Property ERP', 'R
 const planNames = ['Basic', 'Standard', 'Enterprise']
 const adminRoles = ['Super Admin', 'Admin', 'Support', 'Billing Manager', 'Read Only']
 const moduleColors = ['#7c3aed', '#3b82f6', '#f59e0b', '#ef4444', '#14b8a6', '#0ea5e9']
+const paidSubscriptionStatuses = ['active', 'paid', 'approved', 'current']
 const defaultPlatformSettings = {
   ...defaultSaasPlatformSettings,
   systemName: 'Nexora Solutions',
@@ -220,11 +221,25 @@ function isPaid(row = {}) {
   return ['paid', 'approved', 'active', 'completed'].includes(statusValue(row.paymentStatus || row.approvalStatus || row.status || row.planStatus))
 }
 
+function isPaidSubscriptionStatus(row = {}) {
+  return paidSubscriptionStatuses.includes(statusValue(row.subscriptionStatus || row.planStatus))
+}
+
+function hasMissingPaidSubscriptionExpiry(row = {}) {
+  return isPaidSubscriptionStatus(row) && (!toDate(row.subscriptionExpiresAt) || !toDate(row.nextBillingDate))
+}
+
+function workspaceStatusForDisplay(row = {}) {
+  if (hasMissingPaidSubscriptionExpiry(row)) return 'Invalid subscription: missing expiry'
+  return row.status || row.subscriptionStatus || row.planStatus || (isTrial(row) ? 'trial' : 'active')
+}
+
 function isTrial(row = {}) {
   return row.isTrialActive === true || ['trial', 'free_trial'].includes(statusValue(row.subscriptionStatus || row.planStatus))
 }
 
 function isExpired(row = {}) {
+  if (hasMissingPaidSubscriptionExpiry(row)) return true
   const status = statusValue(row.subscriptionStatus || row.planStatus || row.status)
   const trialEndsAt = toDate(row.trialEndsAt)
   const expiresAt = toDate(row.subscriptionExpiresAt || row.expiresAt)
@@ -392,7 +407,9 @@ function ShellButton({ children, className = '', ...props }) {
 
 function Status({ value }) {
   const status = statusValue(value)
-  const tone = ['active', 'paid', 'approved', 'healthy', 'online', 'verified'].includes(status)
+  const tone = status.startsWith('invalid_subscription')
+    ? 'bg-rose-50 text-rose-700 ring-rose-100'
+    : ['active', 'paid', 'approved', 'healthy', 'online', 'verified'].includes(status)
     ? 'bg-emerald-50 text-emerald-700 ring-emerald-100'
     : ['trial', 'pending', 'pending_approval'].includes(status)
       ? 'bg-amber-50 text-amber-700 ring-amber-100'
@@ -819,6 +836,27 @@ export default function ControlCentre() {
     await logActivity(action, { workspaceId, email: userEmail(row), update })
   }
 
+  async function markWorkspacePaid(row) {
+    const subscriptionPayload = buildApprovedSubscriptionPayload({
+      plan: row.plan || row.selectedPlan || row.requestedPlan || 'Standard',
+      billingCycle: row.billingCycle || 'monthly',
+      amount: amountValue(row),
+      currency: rowCurrency(row),
+      approvedBy: user?.uid || user?.email || '',
+      approvedByEmail: user?.email || '',
+    })
+
+    return updateWorkspace(
+      row,
+      {
+        ...subscriptionPayload,
+        paymentStatus: 'paid',
+        paidAt: subscriptionPayload.approvedAt,
+      },
+      'client_marked_paid',
+    )
+  }
+
   async function updateWorkspaceModuleAccess(row, patch, action = 'module_access_updated') {
     const workspaceId = row.workspaceId || row.id
     const ownerId = row.ownerId || row.userId || row.uid
@@ -1021,7 +1059,7 @@ export default function ControlCentre() {
     { key: 'email', label: 'Client Email', render: (row) => userEmail(row) || '-' },
     { key: 'module', label: 'Business Type', render: (row) => workspaceBusinessType(row) },
     { key: 'plan', label: 'Plan', render: (row) => row.plan || row.selectedPlan || 'Basic' },
-    { key: 'status', label: 'Status', render: (row) => <Status value={row.status || row.subscriptionStatus || row.planStatus || (isTrial(row) ? 'trial' : 'active')} /> },
+    { key: 'status', label: 'Status', render: (row) => <Status value={workspaceStatusForDisplay(row)} /> },
     { key: 'trialEndsAt', label: 'Trial Ends', render: (row) => dateLabel(row.trialEndsAt || row.subscriptionExpiresAt) },
     { key: 'lastActiveAt', label: 'Last Active', render: (row) => dateTimeLabel(row.lastActiveAt || row.lastAccessedAt || workspacesById.get(row.ownerId || row.userId || row.id)?.lastActiveAt) },
     { key: 'createdAt', label: 'Created', render: (row) => dateLabel(row.createdAt) },
@@ -1042,7 +1080,7 @@ export default function ControlCentre() {
             runAction(`extend-${row.id}`, () => updateWorkspace(row, { isTrialActive: true, trialEndsAt: next, subscriptionStatus: 'trial', planStatus: 'trial' }, 'trial_extended'))
           }}>Extend Trial</ShellButton>
           <ShellButton onClick={() => runAction(`trial-reminder-${row.id}`, () => sendTrialReminder(row), 'Trial reminder email sent.')}>Send Trial Reminder</ShellButton>
-          <ShellButton onClick={() => runAction(`paid-${row.id}`, () => updateWorkspace(row, { planStatus: 'active', subscriptionStatus: 'active', paymentStatus: 'paid', paidAt: serverTimestamp() }, 'client_marked_paid'))}>Mark Paid</ShellButton>
+          <ShellButton onClick={() => runAction(`paid-${row.id}`, () => markWorkspacePaid(row))}>Mark Paid</ShellButton>
           <ShellButton onClick={() => navigator.clipboard?.writeText(row.workspaceId || row.id)}>Copy Workspace ID</ShellButton>
         </div>
       ),

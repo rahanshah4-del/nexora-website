@@ -17,6 +17,7 @@ import { amountValue, calculateBalanceDue, invoiceValue, statusValue, toNumber }
 import { canApproveFinance } from '../lib/financeAccess.js'
 import { isPlatformAdminDoc } from '../../lib/roles.js'
 import { normalizeBusinessType } from '../data/moduleAccess.js'
+import { buildApprovedSubscriptionPayload } from '../../lib/subscriptionApproval.js'
 
 const pendingPaymentStatuses = ['pending', 'pending_verification', 'pending_partial', 'partial_pending']
 const pendingRecordStatuses = ['pending', 'pending_approval', 'requested', 'invited']
@@ -30,10 +31,6 @@ function dateLabel(value) {
   const date = value?.toDate?.() || (value ? new Date(value) : null)
   if (!date || Number.isNaN(date.getTime())) return '—'
   return date.toLocaleDateString()
-}
-
-function subscriptionEndDate(days = 30) {
-  return new Date(Date.now() + days * 86400000)
 }
 
 function amountPaidValue(row) {
@@ -566,31 +563,29 @@ export function useApprovals() {
         }
 
         if (approval.sourceCollection === 'upgradeRequests') {
-          const plan = 'Business'
-          const billingCycle = 'monthly'
-          const subscriptionStartedAt = new Date()
-          const subscriptionExpiresAt = subscriptionEndDate(Number(row.requestedDurationDays) || 30)
+          const plan = row.requestedPlan || row.selectedPlan || row.plan || 'Business'
+          const subscriptionPayload = buildApprovedSubscriptionPayload({
+            plan,
+            billingCycle: row.billingCycle || 'monthly',
+            amount: amountValue(row),
+            currency: row.billingCurrency || row.currency || 'PKR',
+            approvedBy: userId,
+            approvedByEmail: firebaseUser?.email || '',
+          })
           batch.update(doc(db, 'upgradeRequests', approval.sourceId), {
             approvalStatus: 'approved',
             paymentStatus: 'paid',
-            approvedBy: userId,
-            approvedAt: now,
+            approvedBy: subscriptionPayload.approvedBy,
+            approvedByEmail: subscriptionPayload.approvedByEmail,
+            approvedAt: subscriptionPayload.approvedAt,
+            subscriptionExpiresAt: subscriptionPayload.subscriptionExpiresAt,
+            nextBillingDate: subscriptionPayload.nextBillingDate,
+            updatedAt: subscriptionPayload.updatedAt,
           })
           if (row.userId) {
             const planPatch = {
-              plan,
-              planStatus: 'active',
-              subscriptionStatus: 'active',
-              billingCycle,
-              billingCurrency: row.billingCurrency || row.currency || 'PKR',
-              nextBillingDate: subscriptionExpiresAt,
-              expiresAt: subscriptionExpiresAt,
-              subscriptionStartedAt,
-              subscriptionExpiresAt,
-              isTrialActive: false,
-              paidAt: now,
-              upgradedAt: now,
-              updatedAt: now,
+              ...subscriptionPayload,
+              paidAt: subscriptionPayload.approvedAt,
             }
             batch.set(doc(db, 'users', row.userId), planPatch, { merge: true })
             batch.set(

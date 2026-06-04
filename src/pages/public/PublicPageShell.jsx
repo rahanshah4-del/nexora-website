@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { HiOutlineChatBubbleLeftRight } from 'react-icons/hi2'
 import Header from '../../components/Header.jsx'
 import PublicFooter from './PublicFooter.jsx'
+import TawkChat from './TawkChat.jsx'
 
 const whatsappLink = 'https://wa.me/923194329754'
 const whatsappLeadLink = `${whatsappLink}?text=${encodeURIComponent(
@@ -59,6 +60,7 @@ export default function PublicPageShell({ children }) {
       >
         <HiOutlineChatBubbleLeftRight className="text-3xl" />
       </a>
+      <TawkChat />
     </div>
   )
 }

@@ -84,9 +84,16 @@ export function isTrialExpired(userDoc = {}) {
 export function isBusinessSubscriptionActive(userDoc = {}) {
   const plan = normalizePlan(userDoc?.plan)
   const status = String(userDoc?.subscriptionStatus || userDoc?.planStatus || '').toLowerCase()
-  if (!['Business', 'Enterprise'].includes(plan) || status !== 'active') return false
-  const expiry = timestampToDate(userDoc.subscriptionExpiresAt || userDoc.nextBillingDate)
-  return !expiry || expiry.getTime() >= Date.now()
+  if (!['Business', 'Enterprise'].includes(plan) || !['active', 'paid', 'approved', 'current'].includes(status)) return false
+  const subscriptionExpiresAt = timestampToDate(userDoc.subscriptionExpiresAt)
+  const nextBillingDate = timestampToDate(userDoc.nextBillingDate)
+  const expiresAt = timestampToDate(userDoc.expiresAt)
+  if (!subscriptionExpiresAt || !nextBillingDate) return false
+  if (userDoc.expiresAt && (!expiresAt || expiresAt.getTime() !== subscriptionExpiresAt.getTime())) return false
+  const now = Date.now()
+  return subscriptionExpiresAt.getTime() >= now
+    && nextBillingDate.getTime() >= now
+    && (!userDoc.expiresAt || expiresAt.getTime() >= now)
 }
 
 export function accessPlanForUser(userDoc = {}, fallbackPlan = 'Free') {

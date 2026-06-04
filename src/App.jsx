@@ -18,6 +18,7 @@ import {
 } from 'react-icons/hi2'
 import Header from './components/Header'
 import NexoraLogo from './components/brand/NexoraLogo'
+import TawkChat from './pages/public/TawkChat.jsx'
 
 const whatsappNumberDisplay = '+92 319 432 9754'
 const whatsappLink = 'https://wa.me/923194329754'
@@ -801,6 +802,7 @@ function App({ initialSectionId = '' }) {
       >
         <HiOutlineChatBubbleLeftRight className="text-3xl" />
       </a>
+      <TawkChat />
     </div>
   )
 }

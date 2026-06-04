@@ -28,8 +28,47 @@ function subscriptionStatus(source = {}) {
   return cleanStatus(source.subscriptionStatus || source.planStatus)
 }
 
-function subscriptionExpiryDates(source = {}) {
-  return [source.subscriptionExpiresAt, source.expiresAt, source.nextBillingDate].map(toDate).filter(Boolean)
+function hasField(source = {}, key) {
+  return Object.prototype.hasOwnProperty.call(source, key)
+}
+
+function subscriptionExpiryState(source = {}) {
+  const subscriptionExpiresAt = toDate(source.subscriptionExpiresAt)
+  const nextBillingDate = toDate(source.nextBillingDate)
+  const expiresAt = toDate(source.expiresAt)
+  const hasExpiresAt = hasField(source, 'expiresAt') && source.expiresAt !== null && source.expiresAt !== undefined
+  const expiresAtConflict = hasExpiresAt && (
+    !expiresAt ||
+    !subscriptionExpiresAt ||
+    expiresAt.getTime() !== subscriptionExpiresAt.getTime()
+  )
+
+  return {
+    subscriptionExpiresAt,
+    nextBillingDate,
+    expiresAt,
+    hasExpiresAt,
+    expiresAtConflict,
+    missingRequired: !subscriptionExpiresAt || !nextBillingDate,
+  }
+}
+
+function subscriptionExpiryFuture(source = {}) {
+  const expiry = subscriptionExpiryState(source)
+  const now = Date.now()
+  if (expiry.missingRequired || expiry.expiresAtConflict) return false
+  return expiry.subscriptionExpiresAt.getTime() >= now
+    && expiry.nextBillingDate.getTime() >= now
+    && (!expiry.hasExpiresAt || expiry.expiresAt.getTime() >= now)
+}
+
+function subscriptionExpiryExpiredOrInvalid(source = {}) {
+  const expiry = subscriptionExpiryState(source)
+  const now = Date.now()
+  if (expiry.missingRequired || expiry.expiresAtConflict) return true
+  return expiry.subscriptionExpiresAt.getTime() < now
+    || expiry.nextBillingDate.getTime() < now
+    || (expiry.hasExpiresAt && expiry.expiresAt.getTime() < now)
 }
 
 export function workspaceBlockedForAccess(source = {}) {
@@ -40,7 +79,7 @@ export function workspaceBlockedForAccess(source = {}) {
 export function workspacePaidSubscriptionActive(source = {}) {
   if (workspaceBlockedForAccess(source)) return false
   if (!ACTIVE_SUBSCRIPTION_STATUSES.includes(subscriptionStatus(source))) return false
-  return subscriptionExpiryDates(source).every((date) => date.getTime() >= Date.now())
+  return subscriptionExpiryFuture(source)
 }
 
 export function workspaceSubscriptionExpired(source = {}) {
@@ -48,7 +87,7 @@ export function workspaceSubscriptionExpired(source = {}) {
   const status = subscriptionStatus(source)
   if (EXPIRED_SUBSCRIPTION_STATUSES.includes(status)) return true
   if (!ACTIVE_SUBSCRIPTION_STATUSES.includes(status)) return false
-  return subscriptionExpiryDates(source).some((date) => date.getTime() < Date.now())
+  return subscriptionExpiryExpiredOrInvalid(source)
 }
 
 export function workspaceHasActiveSubscription(source = {}) {
