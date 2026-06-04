@@ -2,6 +2,8 @@ import { Component, Suspense, lazy } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import UpgradeBusiness from './pages/UpgradeBusiness.jsx'
 import MarketingRoute from './pages/public/MarketingRoute.jsx'
+import PricingPage from './pages/public/PricingPage.jsx'
+import SolutionPage from './pages/public/SolutionPage.jsx'
 import Login from './pages/auth/Login.jsx'
 import Signup from './pages/auth/Signup.jsx'
 import VerifyEmail from './pages/auth/VerifyEmail.jsx'
@@ -113,10 +115,11 @@ export default function AppRouter() {
       <AnalyticsTracker />
       <Routes>
         <Route path="/" element={<MarketingRoute />} />
-      <Route path="/features" element={<MarketingRoute sectionId="services" />} />
-      <Route path="/pricing" element={<MarketingRoute sectionId="pricing" />} />
-      <Route path="/contact" element={<MarketingRoute sectionId="contact" />} />
-      <Route path="/industries" element={<MarketingRoute sectionId="products" />} />
+        <Route path="/features" element={<MarketingRoute sectionId="services" />} />
+        <Route path="/pricing" element={<PricingPage />} />
+        <Route path="/contact" element={<MarketingRoute sectionId="contact" />} />
+        <Route path="/industries" element={<MarketingRoute sectionId="products" />} />
+        <Route path="/solutions/:solutionSlug" element={<SolutionPage />} />
 
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import {
   HiOutlineArrowRight,
   HiOutlineBars3,
@@ -11,28 +11,24 @@ import {
 import NexoraLogo from './brand/NexoraLogo'
 
 const mainLinks = [
-  { label: 'Home', href: '#hero' },
-  { label: 'Pricing', href: '#pricing' },
-  { label: 'Industries', href: '#products' },
-  { label: 'About Us', href: '#about' },
+  { label: 'Home', to: '/' },
+  { label: 'Pricing', to: '/pricing' },
+  { label: 'Industries', to: '/industries' },
+  { label: 'About Us', href: '/#about' },
+  { label: 'Contact', to: '/contact' },
 ]
 
 const solutionLinks = [
-  { label: 'CRM', href: '#services' },
-  { label: 'School ERP', href: '#services' },
-  { label: 'Property ERP', href: '#services' },
-  { label: 'POS', href: '#services' },
-  { label: 'WhatsApp CRM', href: '#services' },
-  { label: 'Reports', href: '#services' },
-]
-
-const resourceLinks = [
-  { label: 'Why Choose Nexora', href: '#features' },
-  { label: 'Trusted Businesses', href: '#about' },
-  { label: 'Book a Demo', href: '#contact' },
+  { label: 'CRM', to: '/solutions/crm' },
+  { label: 'School ERP', to: '/solutions/school-erp' },
+  { label: 'Property ERP', to: '/solutions/property-erp' },
+  { label: 'POS', to: '/solutions/pos' },
+  { label: 'WhatsApp CRM', to: '/solutions/whatsapp-crm' },
+  { label: 'Reports', to: '/solutions/reports' },
 ]
 
 function Header() {
+  const location = useLocation()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [activeDropdown, setActiveDropdown] = useState(null)
 
@@ -59,17 +55,38 @@ function Header() {
     setActiveDropdown((current) => (current === key ? null : key))
   }
 
+  const navLinkClass = (link) => {
+    const isActive = link.to === '/' ? location.pathname === '/' : link.to && location.pathname === link.to
+    return `nav-link text-sm font-bold transition duration-200 ease-out hover:text-blue-600 ${
+      isActive ? 'active text-blue-600' : 'text-slate-900'
+    }`
+  }
+
+  const renderMainLink = (link) => {
+    if (link.to) {
+      return (
+        <Link key={link.label} to={link.to} onClick={closeAll} className={navLinkClass(link)}>
+          {link.label}
+        </Link>
+      )
+    }
+
+    return (
+      <a key={link.label} href={link.href} onClick={closeAll} className={navLinkClass(link)}>
+        {link.label}
+      </a>
+    )
+  }
+
   return (
     <header className="site-header sticky top-0 z-50 border-b border-slate-100/80 bg-white/90 backdrop-blur-2xl">
       <div className="mx-auto flex h-[4.75rem] max-w-7xl items-center gap-4 px-5 sm:px-6 lg:px-8">
-        <a href="#hero" className="shrink-0" onClick={closeAll}>
+        <Link to="/" className="shrink-0" onClick={closeAll}>
           <NexoraLogo compact textClassName="[&>p:first-child]:text-lg [&>p:first-child]:tracking-[0.12em] [&>p:last-child]:text-[0.55rem]" />
-        </a>
+        </Link>
 
         <nav className="hidden flex-1 items-center justify-center gap-7 lg:flex">
-          <a href="#hero" className="nav-link active text-sm font-bold text-blue-600 transition duration-200 ease-out hover:text-blue-700">
-            Home
-          </a>
+          {renderMainLink(mainLinks[0])}
 
           <div
             className="relative"
@@ -79,7 +96,9 @@ function Header() {
             <button
               type="button"
               onClick={() => toggleDropdown('solutions')}
-              className="nav-link inline-flex items-center gap-1 text-sm font-bold text-slate-900 transition duration-200 ease-out hover:text-blue-600"
+              className={`nav-link inline-flex items-center gap-1 text-sm font-bold transition duration-200 ease-out hover:text-blue-600 ${
+                location.pathname.startsWith('/solutions') ? 'active text-blue-600' : 'text-slate-900'
+              }`}
               aria-expanded={activeDropdown === 'solutions'}
             >
               Solutions
@@ -92,58 +111,20 @@ function Header() {
               }`}
             >
               {solutionLinks.map((link) => (
-                <a
+                <Link
                   key={link.label}
-                  href={link.href}
+                  to={link.to}
                   onClick={closeAll}
                   className="flex items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold text-slate-700 transition duration-200 ease-out hover:bg-blue-50 hover:text-blue-600"
                 >
                   <span>{link.label}</span>
                   <HiOutlineArrowRight className="text-slate-400" />
-                </a>
+                </Link>
               ))}
             </div>
           </div>
 
-          {mainLinks.slice(1).map((link) => (
-            <a key={link.label} href={link.href} className="nav-link text-sm font-bold text-slate-900 transition duration-200 ease-out hover:text-blue-600">
-              {link.label}
-            </a>
-          ))}
-
-          <div
-            className="relative"
-            onMouseEnter={() => setActiveDropdown('resources')}
-            onMouseLeave={() => setActiveDropdown(null)}
-          >
-            <button
-              type="button"
-              onClick={() => toggleDropdown('resources')}
-              className="nav-link inline-flex items-center gap-1 text-sm font-bold text-slate-900 transition duration-200 ease-out hover:text-blue-600"
-              aria-expanded={activeDropdown === 'resources'}
-            >
-              Resources
-              <HiOutlineChevronDown className="text-base" />
-            </button>
-
-            <div
-              className={`absolute left-1/2 top-[calc(100%+1.1rem)] w-64 -translate-x-1/2 rounded-2xl border border-slate-200/80 bg-white/95 p-2 shadow-[0_28px_80px_-48px_rgba(15,23,42,0.55)] backdrop-blur-xl transition duration-150 ${
-                activeDropdown === 'resources' ? 'pointer-events-auto translate-y-0 opacity-100' : 'pointer-events-none -translate-y-1 opacity-0'
-              }`}
-            >
-              {resourceLinks.map((link) => (
-                <a
-                  key={link.label}
-                  href={link.href}
-                  onClick={closeAll}
-                  className="flex items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold text-slate-700 transition duration-200 ease-out hover:bg-blue-50 hover:text-blue-600"
-                >
-                  <span>{link.label}</span>
-                  <HiOutlineArrowRight className="text-slate-400" />
-                </a>
-              ))}
-            </div>
-          </div>
+          {mainLinks.slice(1).map((link) => renderMainLink(link))}
         </nav>
 
         <div className="ml-auto hidden items-center gap-3 lg:flex">
@@ -202,49 +183,39 @@ function Header() {
 
           <div className="flex-1 overflow-y-auto px-4 py-4">
             <div className="grid gap-1">
-              {mainLinks.map((link) => (
-                <a
-                  key={link.label}
-                  href={link.href}
-                  onClick={closeAll}
-                  className="flex items-center justify-between rounded-lg px-4 py-3 text-sm font-bold text-slate-800 transition duration-200 ease-out hover:bg-blue-50 hover:text-blue-600"
-                >
-                  {link.label}
-                  <HiOutlineArrowRight className="text-slate-400" />
-                </a>
-              ))}
+              {mainLinks.map((link) => {
+                const className =
+                  'flex items-center justify-between rounded-lg px-4 py-3 text-sm font-bold text-slate-800 transition duration-200 ease-out hover:bg-blue-50 hover:text-blue-600'
+                if (link.to) {
+                  return (
+                    <Link key={link.label} to={link.to} onClick={closeAll} className={className}>
+                      {link.label}
+                      <HiOutlineArrowRight className="text-slate-400" />
+                    </Link>
+                  )
+                }
+                return (
+                  <a key={link.label} href={link.href} onClick={closeAll} className={className}>
+                    {link.label}
+                    <HiOutlineArrowRight className="text-slate-400" />
+                  </a>
+                )
+              })}
             </div>
 
             <div className="mt-5 rounded-lg border border-slate-200 bg-slate-50 p-3">
               <p className="px-2 pb-2 text-xs font-extrabold uppercase tracking-[0.16em] text-slate-500">Solutions</p>
               <div className="grid gap-1">
                 {solutionLinks.map((link) => (
-                  <a
+                  <Link
                     key={link.label}
-                    href={link.href}
+                    to={link.to}
                     onClick={closeAll}
                     className="flex items-center justify-between rounded-md px-4 py-3 text-sm font-semibold text-slate-700 transition duration-200 ease-out hover:bg-white hover:text-blue-600"
                   >
                     {link.label}
                     <HiOutlineArrowRight className="text-slate-400" />
-                  </a>
-                ))}
-              </div>
-            </div>
-
-            <div className="mt-5 rounded-lg border border-slate-200 bg-slate-50 p-3">
-              <p className="px-2 pb-2 text-xs font-extrabold uppercase tracking-[0.16em] text-slate-500">Resources</p>
-              <div className="grid gap-1">
-                {resourceLinks.map((link) => (
-                  <a
-                    key={link.label}
-                    href={link.href}
-                    onClick={closeAll}
-                    className="flex items-center justify-between rounded-md px-4 py-3 text-sm font-semibold text-slate-700 transition duration-200 ease-out hover:bg-white hover:text-blue-600"
-                  >
-                    {link.label}
-                    <HiOutlineArrowRight className="text-slate-400" />
-                  </a>
+                  </Link>
                 ))}
               </div>
             </div>

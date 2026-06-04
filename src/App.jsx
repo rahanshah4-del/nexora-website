@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import {
   HiOutlineAcademicCap,
@@ -39,36 +39,42 @@ const moduleCards = [
     text: 'Manage leads, customers, deals, follow-ups and invoices in one place.',
     icon: HiOutlineUserGroup,
     tone: 'blue',
+    route: '/solutions/crm',
   },
   {
     title: 'School ERP',
     text: 'Manage students, fees, attendance, exams, parents and staff.',
     icon: HiOutlineAcademicCap,
     tone: 'green',
+    route: '/solutions/school-erp',
   },
   {
     title: 'Property ERP',
     text: 'Manage properties, tenants, rent collection, maintenance and owners.',
     icon: HiOutlineBuildingOffice2,
     tone: 'purple',
+    route: '/solutions/property-erp',
   },
   {
     title: 'POS',
     text: 'Point of sale, stock management, billing and sales reports.',
     icon: HiOutlineShoppingCart,
     tone: 'orange',
+    route: '/solutions/pos',
   },
   {
     title: 'WhatsApp CRM',
     text: 'Capture leads, auto reply, team inbox and close more deals faster.',
     icon: HiOutlineChatBubbleLeftRight,
     tone: 'emerald',
+    route: '/solutions/whatsapp-crm',
   },
   {
     title: 'Reports',
     text: 'Advanced reports and analytics to grow your business with data.',
     icon: HiOutlineChartBarSquare,
     tone: 'sky',
+    route: '/solutions/reports',
   },
 ]
 
@@ -142,50 +148,24 @@ const posFeatures = [
   },
 ]
 
-const pricingPlans = [
-  {
-    name: 'Basic',
-    monthly: 2999,
-    description: 'Perfect for small businesses',
-    features: ['CRM Module', 'Up to 2 Users', '5GB Storage', 'Email Support'],
-  },
-  {
-    name: 'Standard',
-    monthly: 5999,
-    description: 'For growing businesses',
-    features: ['All Basic Features', 'School OR Property ERP', 'Up to 5 Users', '20GB Storage', 'Priority Support'],
-    featured: true,
-  },
-  {
-    name: 'Enterprise',
-    custom: true,
-    description: 'For large organizations',
-    features: ['All Standard Features', 'Unlimited Users', 'Custom Integrations', 'Dedicated Support', 'Custom Development'],
-  },
-]
-
 const footerGroups = {
   quickLinks: [
-    ['Home', '#hero'],
-    ['Solutions', '#services'],
-    ['Pricing', '#pricing'],
-    ['About Us', '#about'],
-    ['Contact Us', '#contact'],
+    ['Home', '/'],
+    ['Solutions', '/#services'],
+    ['Pricing', '/pricing'],
+    ['Industries', '/industries'],
+    ['About Us', '/#about'],
+    ['Contact Us', '/contact'],
   ],
-  modules: ['CRM', 'School ERP', 'Property ERP', 'POS', 'WhatsApp CRM'],
+  modules: [
+    ['CRM', '/solutions/crm'],
+    ['School ERP', '/solutions/school-erp'],
+    ['Property ERP', '/solutions/property-erp'],
+    ['POS', '/solutions/pos'],
+    ['WhatsApp CRM', '/solutions/whatsapp-crm'],
+    ['Reports', '/solutions/reports'],
+  ],
   resources: ['Blog', 'Help Center', 'Documentation', 'Privacy Policy', 'Terms & Conditions'],
-}
-
-const yearlyDiscount = 0.8
-
-function formatPrice(amount) {
-  return new Intl.NumberFormat('en-PK').format(amount)
-}
-
-function getPrice(plan, billingCycle) {
-  if (plan.custom) return 'Custom Pricing'
-  if (billingCycle === 'yearly') return `PKR ${formatPrice(Math.round(plan.monthly * 12 * yearlyDiscount))}`
-  return `PKR ${formatPrice(plan.monthly)}`
 }
 
 function ModuleIcon({ icon: Icon, tone }) {
@@ -467,8 +447,6 @@ function PosShowcasePreview() {
 }
 
 function App({ initialSectionId = '' }) {
-  const [billingCycle, setBillingCycle] = useState('monthly')
-
   useEffect(() => {
     document.documentElement.classList.add('public-website')
     document.body.classList.add('public-website')
@@ -588,9 +566,9 @@ function App({ initialSectionId = '' }) {
                   <ModuleIcon icon={card.icon} tone={card.tone} />
                   <h3 className="mt-4 text-lg font-extrabold text-slate-950">{card.title}</h3>
                   <p className="mt-3 flex-1 text-sm leading-6 text-slate-600">{card.text}</p>
-                  <a href="#contact" className="mt-4 inline-flex items-center gap-1 text-sm font-extrabold text-blue-600">
+                  <Link to={card.route} className="mt-4 inline-flex items-center gap-1 text-sm font-extrabold text-blue-600">
                     Learn More <HiOutlineArrowRight className="transition group-hover:translate-x-0.5" />
-                  </a>
+                  </Link>
                 </article>
               ))}
             </div>
@@ -653,10 +631,10 @@ function App({ initialSectionId = '' }) {
                     Book POS Demo
                     <HiOutlineArrowRight className="text-lg" />
                   </a>
-                  <a href="#pricing" className="premium-button-secondary">
+                  <Link to="/pricing" className="premium-button-secondary">
                     View Plans
                     <HiOutlinePlayCircle className="text-xl text-blue-600" />
-                  </a>
+                  </Link>
                 </div>
               </div>
 
@@ -697,72 +675,23 @@ function App({ initialSectionId = '' }) {
           </div>
         </section>
 
-        <section id="pricing" data-reveal className="bg-white py-16 sm:py-20 lg:py-24">
-          <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
-            <div className="mx-auto max-w-3xl text-center">
-              <h2 className="website-section-heading text-3xl font-black tracking-tight text-slate-950 sm:text-5xl">
-                Simple, <span className="marker-highlight marker-highlight-blue">Transparent Pricing</span>
+        <section id="pricing" data-reveal className="bg-white px-5 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-24">
+          <div className="mx-auto grid max-w-7xl items-center gap-6 rounded-[2rem] border border-blue-100 bg-[linear-gradient(135deg,#eff6ff_0%,#ffffff_58%,#e0f2fe_100%)] p-6 shadow-[0_30px_90px_-60px_rgba(37,99,235,0.44)] sm:p-8 lg:grid-cols-[1fr_auto]">
+            <div>
+              <span className="inline-flex rounded-full border border-blue-100 bg-white px-4 py-2 text-xs font-extrabold uppercase tracking-[0.18em] text-blue-700 shadow-sm">
+                Dedicated Pricing
+              </span>
+              <h2 className="website-section-heading mt-5 text-3xl font-black tracking-tight text-slate-950 sm:text-5xl">
+                Simple plans now live on one clear pricing page.
               </h2>
-              <div className="mt-7 inline-flex rounded-full border border-slate-200 bg-white p-1 shadow-[0_18px_46px_-34px_rgba(15,23,42,0.45)]">
-                {['monthly', 'yearly'].map((cycle) => (
-	                  <button
-	                    key={cycle}
-	                    type="button"
-	                    onClick={() => setBillingCycle(cycle)}
-	                    className={`min-h-9 rounded-full px-5 text-sm font-bold transition duration-200 ease-out ${
-	                      billingCycle === cycle ? 'bg-slate-950 text-white shadow-sm' : 'text-slate-600 hover:text-blue-600'
-	                    }`}
-                  >
-                    {cycle === 'monthly' ? 'Monthly' : 'Yearly (Save 20%)'}
-                  </button>
-                ))}
-              </div>
+              <p className="mt-4 max-w-2xl text-base leading-8 text-slate-600">
+                Compare Basic, Business and Enterprise plans with feature details, FAQ and a free trial CTA in one place.
+              </p>
             </div>
-
-            <div className="mt-10 grid items-stretch gap-5 md:grid-cols-2 xl:grid-cols-4">
-              {pricingPlans.map((plan) => (
-	                <article
-	                  key={plan.name}
-	                  className={`relative flex h-full min-h-[25rem] flex-col rounded-[1.65rem] border bg-white p-6 shadow-[0_28px_80px_-50px_rgba(15,23,42,0.34)] transition duration-200 ease-out hover:-translate-y-1 hover:shadow-[0_34px_90px_-52px_rgba(37,99,235,0.32)] ${
-	                    plan.featured ? 'border-blue-300 bg-blue-50/50 ring-2 ring-blue-100' : 'border-slate-200'
-	                  }`}
-                >
-                  <div className="mb-3 flex min-h-7 justify-center">
-                    {plan.featured && (
-	                      <span className="rounded-full bg-slate-950 px-3 py-1 text-[0.68rem] font-extrabold text-white">
-                        Most Popular
-                      </span>
-                    )}
-                  </div>
-                  <h3 className={`text-center text-xl font-extrabold ${plan.featured ? 'text-blue-600' : 'text-slate-950'}`}>{plan.name}</h3>
-                  <p className="mt-2 text-center text-sm text-slate-500">{plan.description}</p>
-                  <div className="mt-4 text-center">
-	                  <p className="text-3xl font-black text-slate-950">{getPrice(plan, billingCycle)}</p>
-                    {!plan.custom && <p className="text-sm text-slate-500">/{billingCycle === 'monthly' ? 'month' : 'year'}</p>}
-                  </div>
-
-                  <div className="mt-6 flex-1 space-y-3">
-                    {plan.features.map((feature) => (
-                      <div key={feature} className="flex items-start gap-3 text-sm text-slate-700">
-                        <HiOutlineCheckCircle className="mt-0.5 shrink-0 text-blue-600" />
-                        <span className="leading-6">{feature}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  <Link
-                    to={plan.custom ? '/contact' : '/signup'}
-                    className={`mt-7 inline-flex min-h-11 items-center justify-center rounded-md border px-4 text-sm font-extrabold transition duration-200 ease-out hover:-translate-y-0.5 ${
-	                      plan.featured
-	                        ? 'border-slate-950 bg-slate-950 text-white hover:bg-blue-700'
-	                        : 'border-slate-200 bg-white text-slate-950 hover:border-blue-300 hover:text-blue-600'
-                    }`}
-                  >
-                    {plan.custom ? 'Contact Sales' : 'Start Free Trial'}
-                  </Link>
-                </article>
-              ))}
-            </div>
+            <Link to="/pricing" className="premium-button-primary">
+              View Pricing
+              <HiOutlineArrowRight className="text-lg" />
+            </Link>
           </div>
         </section>
 
@@ -821,8 +750,10 @@ function App({ initialSectionId = '' }) {
             <div>
               <h3 className="text-sm font-extrabold">Modules</h3>
               <div className="mt-5 grid gap-3 text-sm text-blue-100">
-                {footerGroups.modules.map((module) => (
-                  <span key={module}>{module}</span>
+                {footerGroups.modules.map(([module, to]) => (
+                  <Link key={module} to={to} className="transition hover:text-white">
+                    {module}
+                  </Link>
                 ))}
               </div>
             </div>
