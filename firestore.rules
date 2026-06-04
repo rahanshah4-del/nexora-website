@@ -514,6 +514,23 @@ service cloud.firestore {
       ]);
     }
 
+    function invoiceCreatePaymentApprovalFieldsSafe(workspaceId) {
+      return isPaymentApprover(workspaceId)
+        || (
+          (!request.resource.data.keys().hasAny(['status']) || !(request.resource.data.status in ['paid', 'Paid', 'PAID', 'approved', 'Approved', 'APPROVED']))
+          && (!request.resource.data.keys().hasAny(['paymentStatus']) || request.resource.data.paymentStatus in ['pending', 'Pending', 'PENDING', 'draft', 'Draft', 'DRAFT'])
+          && (!request.resource.data.keys().hasAny(['approvalStatus']) || request.resource.data.approvalStatus in ['pending', 'Pending', 'PENDING', 'draft', 'Draft', 'DRAFT'])
+          && (!request.resource.data.keys().hasAny(['amountPaid']) || request.resource.data.amountPaid == 0)
+          && (!request.resource.data.keys().hasAny(['partialPaidAmount']) || request.resource.data.partialPaidAmount == 0)
+          && (!request.resource.data.keys().hasAny(['balanceDue']) || request.resource.data.balanceDue == request.resource.data.total)
+          && (!request.resource.data.keys().hasAny(['paidAt']) || request.resource.data.paidAt == null)
+          && (!request.resource.data.keys().hasAny(['approvedAt']) || request.resource.data.approvedAt == null)
+          && (!request.resource.data.keys().hasAny(['lastPaymentAt']) || request.resource.data.lastPaymentAt == null)
+          && (!request.resource.data.keys().hasAny(['lastPaymentDate']) || request.resource.data.lastPaymentDate == null)
+          && (!request.resource.data.keys().hasAny(['paymentHistory']) || (request.resource.data.paymentHistory is list && request.resource.data.paymentHistory.size() == 0))
+        );
+    }
+
     function paymentReferenceFieldsTouched() {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
         'paymentStatus',
@@ -797,7 +814,7 @@ service cloud.firestore {
           || staffPermission(workspaceId, 'reports')
           || isPaymentApprover(workspaceId)
           || canReadClientPortalInvoice(workspaceId);
-        allow create: if workspaceHasWriteAccess(workspaceId) && staffPermission(workspaceId, 'invoices') && workspaceCreateMetadata(workspaceId);
+        allow create: if workspaceHasWriteAccess(workspaceId) && staffPermission(workspaceId, 'invoices') && workspaceCreateMetadata(workspaceId) && invoiceCreatePaymentApprovalFieldsSafe(workspaceId);
         allow update: if workspaceHasWriteAccess(workspaceId) && ((staffPermission(workspaceId, 'invoices') && !paymentApprovalFieldsTouched() && workspaceUpdateScopeSafe(workspaceId))
           || (isPaymentApprover(workspaceId) && paymentApprovalFieldsTouched() && workspaceUpdateScopeSafe(workspaceId))
           || (isWorkspaceMember(workspaceId) && paymentReferenceFieldsTouched() && isOpenApprovalResource() && workspaceUpdateScopeSafe(workspaceId)));

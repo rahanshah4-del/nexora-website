@@ -106,7 +106,7 @@ function OptionTile({ title, detail, active, children }) {
 
 export default function InvoiceCreatePage() {
   const navigate = useNavigate()
-  const { createInvoice } = useInvoices()
+  const { createInvoice, permissions } = useInvoices()
   const { settings: businessSettings } = useBusinessSettings()
   const { products } = useProducts()
   const { customers } = useCustomers()
@@ -118,6 +118,14 @@ export default function InvoiceCreatePage() {
   const [previewOpen, setPreviewOpen] = useState(false)
   const [printInvoice, setPrintInvoice] = useState(null)
   const isSchool = normalizeBusinessType(businessType) === 'School ERP'
+  const canCreatePaidInvoices = permissions.canCreatePaidInvoices
+  const statusOptions = useMemo(
+    () => {
+      const options = isSchool ? ['Draft', 'Pending', 'Partial Paid', 'Paid', 'Overdue'] : INVOICE_STATUS_OPTIONS
+      return canCreatePaidInvoices ? options : options.filter((status) => !['paid', 'approved', 'partial paid'].includes(String(status).trim().toLowerCase()))
+    },
+    [canCreatePaidInvoices, isSchool],
+  )
 
   const totals = useMemo(() => calculateInvoiceDraft(invoice), [invoice])
   useEffect(() => {
@@ -290,7 +298,10 @@ export default function InvoiceCreatePage() {
   }
 
   async function submitInvoice(status = '', allowWithoutPreview = false) {
-    const requestedStatus = status || String(invoice.status || 'pending').toLowerCase()
+    const rawStatus = String(status || invoice.status || 'pending').toLowerCase()
+    const requestedStatus = canCreatePaidInvoices || !['paid', 'approved', 'partial paid', 'partial_paid'].includes(rawStatus)
+      ? rawStatus
+      : 'pending'
     if (!allowWithoutPreview && !previewSeen) {
       showPreview()
       showToast({ tone: 'info', message: isSchool ? 'Preview the fee bill before saving final fee bill.' : 'Preview the invoice before saving final invoice.' })
@@ -317,7 +328,9 @@ export default function InvoiceCreatePage() {
       })
 
     setSubmitting(true)
-    const finalAmountPaid = requestedStatus === 'paid' ? totals.grandTotal : totals.amountPaid
+    const finalAmountPaid = canCreatePaidInvoices
+      ? requestedStatus === 'paid' ? totals.grandTotal : totals.amountPaid
+      : 0
     const res = await createInvoice({
       ...invoice,
       items: cleanItems,
@@ -335,6 +348,10 @@ export default function InvoiceCreatePage() {
       roundOff: totals.roundOff,
       total: totals.grandTotal,
       amountPaid: finalAmountPaid,
+      partialPaidAmount: finalAmountPaid,
+      paymentHistory: [],
+      paidAt: null,
+      approvedAt: null,
       balanceDue: Math.max(totals.grandTotal - finalAmountPaid, 0),
       amountInWords: totals.amountInWords,
       subtotalUsd: totals.subtotal,
@@ -494,7 +511,7 @@ export default function InvoiceCreatePage() {
               </Field>
               <Field label={isSchool ? 'Status' : 'Invoice Status'}>
                 <Select value={invoice.status} onChange={(event) => update('status', event.target.value)}>
-                  {(isSchool ? ['Draft', 'Pending', 'Partial Paid', 'Paid', 'Overdue'] : INVOICE_STATUS_OPTIONS).map((status) => <option key={status}>{status}</option>)}
+                  {statusOptions.map((status) => <option key={status}>{status}</option>)}
                 </Select>
               </Field>
             </div>

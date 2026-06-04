@@ -127,6 +127,7 @@ function invoicePermissions(role, userDoc) {
     canApprove: isOwnerAdmin,
     canReject: isOwnerAdmin,
     canRecordPayments: isOwnerAdmin || isAccountant,
+    canCreatePaidInvoices: isOwnerAdmin || isAccountant,
     canSend: isOwnerAdmin,
     canDelete: isOwnerAdmin,
   }
@@ -235,12 +236,19 @@ export function useInvoices() {
         if (!invoice.items.length) return { ok: false, error: 'Add at least one invoice item' }
         if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now' }
         try {
-          const requestedStatus = statusValue(invoice.status, 'pending')
-          const amountPaid = requestedStatus === 'paid'
+          const initialStatus = statusValue(invoice.status, 'pending')
+          const requestedStatus = permissions.canCreatePaidInvoices && ['paid', 'approved'].includes(initialStatus)
+            ? initialStatus
+            : initialStatus === 'draft'
+              ? 'draft'
+              : 'pending'
+          const amountPaid = permissions.canCreatePaidInvoices && requestedStatus === 'paid'
             ? invoice.total
-            : toNumber(invoice.amountPaid ?? invoice.partialPaidAmount, 0)
+            : permissions.canCreatePaidInvoices
+              ? toNumber(invoice.amountPaid ?? invoice.partialPaidAmount, 0)
+              : 0
           const fullyPaid = invoice.total > 0 && amountPaid >= invoice.total
-          const partialPaid = amountPaid > 0 && !fullyPaid
+          const partialPaid = permissions.canCreatePaidInvoices && amountPaid > 0 && !fullyPaid
           const paymentStatus = fullyPaid ? 'paid' : partialPaid ? 'partial_paid' : requestedStatus === 'draft' ? 'draft' : 'pending'
           const approvalStatus = fullyPaid || requestedStatus === 'approved' ? 'approved' : requestedStatus === 'draft' ? 'draft' : 'pending'
           const requiresApproval = requestedStatus === 'pending_approval' || (requestedStatus !== 'draft' && requestedStatus !== 'approved' && !fullyPaid)
