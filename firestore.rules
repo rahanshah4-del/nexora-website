@@ -58,6 +58,14 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/workspaces/$(workspaceId)).data;
     }
 
+    function workspaceBlockedStatus(workspaceId) {
+      return exists(/databases/$(database)/documents/workspaces/$(workspaceId))
+        && (
+          workspaceDoc(workspaceId).status in ['blocked', 'Blocked', 'BLOCKED', 'inactive', 'Inactive', 'INACTIVE']
+          || workspaceDoc(workspaceId).accountStatus in ['blocked', 'Blocked', 'BLOCKED']
+        );
+    }
+
     function isOwnerRole(role) {
       return role in ['owner', 'Owner', 'OWNER'];
     }
@@ -97,6 +105,7 @@ service cloud.firestore {
 
     function workspaceOwnerMatches(workspaceId) {
       return activeSignedIn()
+        && !workspaceBlockedStatus(workspaceId)
         && (
           request.auth.uid == workspaceId
           || (exists(/databases/$(database)/documents/workspaces/$(workspaceId))
@@ -107,6 +116,7 @@ service cloud.firestore {
 
     function isWorkspaceMember(workspaceId) {
       return activeSignedIn()
+        && !workspaceBlockedStatus(workspaceId)
         && (
           profileWorkspaceMatches(workspaceId)
           || workspaceOwnerMatches(workspaceId)
@@ -114,9 +124,10 @@ service cloud.firestore {
     }
 
     function isBlockedWorkspaceMember(workspaceId) {
-      return profileExists()
-        && profileWorkspaceMatches(workspaceId)
-        && profile().status in ['blocked', 'disabled', 'inactive', 'Blocked', 'Disabled', 'Inactive'];
+      return workspaceBlockedStatus(workspaceId)
+        || (profileExists()
+          && profileWorkspaceMatches(workspaceId)
+          && profile().status in ['blocked', 'disabled', 'inactive', 'Blocked', 'Disabled', 'Inactive']);
     }
 
     function workspaceExists(workspaceId) {
@@ -125,6 +136,7 @@ service cloud.firestore {
 
     function workspaceSubscriptionActive(workspaceId) {
       return workspaceExists(workspaceId)
+        && !workspaceBlockedStatus(workspaceId)
         && (
           workspaceDoc(workspaceId).subscriptionStatus in ['active', 'paid', 'approved', 'current']
           || workspaceDoc(workspaceId).planStatus in ['active', 'paid', 'approved', 'current']
@@ -145,6 +157,7 @@ service cloud.firestore {
 
     function workspaceTrialActive(workspaceId) {
       return workspaceExists(workspaceId)
+        && !workspaceBlockedStatus(workspaceId)
         && (
           workspaceDoc(workspaceId).subscriptionStatus in ['trial', 'free trial']
           || workspaceDoc(workspaceId).planStatus in ['trial', 'free trial']
@@ -153,8 +166,12 @@ service cloud.firestore {
         && workspaceDoc(workspaceId).trialEndsAt >= request.time;
     }
 
+    function workspaceHasActiveSubscription(workspaceId) {
+      return workspaceSubscriptionActive(workspaceId) || workspaceTrialActive(workspaceId);
+    }
+
     function workspaceHasWriteAccess(workspaceId) {
-      return isAdmin() || workspaceSubscriptionActive(workspaceId) || workspaceTrialActive(workspaceId);
+      return isAdmin() || workspaceHasActiveSubscription(workspaceId);
     }
 
     function ownsTargetWorkspace(workspaceId) {
@@ -175,25 +192,36 @@ service cloud.firestore {
     }
 
     function isWorkspaceManager(workspaceId) {
-      return workspaceOwnerMatches(workspaceId)
-        || isAdmin()
-        || (isWorkspaceMember(workspaceId) && (isOwnerRole(memberRole()) || isAdminRole(memberRole())));
+      return isAdmin()
+        || (workspaceHasActiveSubscription(workspaceId)
+          && (workspaceOwnerMatches(workspaceId)
+            || (isWorkspaceMember(workspaceId) && (isOwnerRole(memberRole()) || isAdminRole(memberRole())))));
     }
 
     function isPaymentApprover(workspaceId) {
-      return workspaceOwnerMatches(workspaceId)
-        || isAdmin()
-        || (isWorkspaceMember(workspaceId) && (isOwnerRole(memberRole()) || isAdminRole(memberRole()) || isAccountantRole(memberRole())));
+      return isAdmin()
+        || (workspaceHasActiveSubscription(workspaceId)
+          && (workspaceOwnerMatches(workspaceId)
+            || (isWorkspaceMember(workspaceId) && (isOwnerRole(memberRole()) || isAdminRole(memberRole()) || isAccountantRole(memberRole())))));
     }
 
     function staffPermission(workspaceId, key) {
-      return isWorkspaceManager(workspaceId)
-        || isAdmin()
-        || (isWorkspaceMember(workspaceId)
-          && (
-            roleHasPermission(memberRole(), key)
-            || get(/databases/$(database)/documents/workspaces/$(workspaceId)/permissions/$(permissionDocId())).data[key] == true
-          ));
+      return isAdmin()
+        || (workspaceHasActiveSubscription(workspaceId)
+          && (isWorkspaceManager(workspaceId)
+            || (isWorkspaceMember(workspaceId)
+              && (
+                roleHasPermission(memberRole(), key)
+                || get(/databases/$(database)/documents/workspaces/$(workspaceId)/permissions/$(permissionDocId())).data[key] == true
+              ))));
+    }
+
+    function hasWorkspaceCrmReadAccess(workspaceId) {
+      return isAdmin() || (workspaceHasActiveSubscription(workspaceId) && isWorkspaceMember(workspaceId));
+    }
+
+    function hasWorkspaceBillingReadAccess(workspaceId) {
+      return isAdmin() || isWorkspaceMember(workspaceId);
     }
 
     function supportTicketReadPermission(workspaceId) {
@@ -677,6 +705,8 @@ service cloud.firestore {
         'rejectedByEmail',
         'rejectionReason',
         'rejectedAt',
+        'subscriptionExpiresAt',
+        'nextBillingDate',
         'updatedAt',
       ]);
     }
@@ -706,7 +736,8 @@ service cloud.firestore {
     }
 
     function canReadClientPortalInvoice(workspaceId) {
-      return isWorkspaceMember(workspaceId)
+      return workspaceHasActiveSubscription(workspaceId)
+        && isWorkspaceMember(workspaceId)
         && (
           resource.data.customerEmail == profile().email
           || resource.data.clientId == request.auth.uid
@@ -716,7 +747,8 @@ service cloud.firestore {
     }
 
     function canReadClientPortalPayment(workspaceId) {
-      return isWorkspaceMember(workspaceId)
+      return workspaceHasActiveSubscription(workspaceId)
+        && isWorkspaceMember(workspaceId)
         && (
           resource.data.submittedBy == request.auth.uid
           || resource.data.approvedBy == request.auth.uid
@@ -854,11 +886,14 @@ service cloud.firestore {
           && hasSafeTrialPlan());
       allow read: if isWorkspaceMember(workspaceId) || isAdmin();
       allow update: if isAdmin()
-        || (workspaceOwnerMatches(workspaceId) && protectedAccountFieldsUnchanged() && workspaceAccountScopeSafe(workspaceId));
+        || (workspaceHasActiveSubscription(workspaceId)
+          && workspaceOwnerMatches(workspaceId)
+          && protectedAccountFieldsUnchanged()
+          && workspaceAccountScopeSafe(workspaceId));
       allow delete: if isAdmin();
 
       match /tasks/{taskId} {
-        allow read: if isWorkspaceMember(workspaceId) || isWorkspaceManager(workspaceId);
+        allow read: if hasWorkspaceCrmReadAccess(workspaceId);
         allow create: if workspaceHasWriteAccess(workspaceId) && staffPermission(workspaceId, 'followUpEdit') && workspaceCreateMetadata(workspaceId);
         allow update: if workspaceHasWriteAccess(workspaceId) && staffPermission(workspaceId, 'followUpEdit') && workspaceUpdateScopeSafe(workspaceId);
         allow delete: if workspaceHasWriteAccess(workspaceId) && staffPermission(workspaceId, 'followUpDelete');
@@ -867,7 +902,8 @@ service cloud.firestore {
       match /staff/{staffId} {
         allow read: if isWorkspaceManager(workspaceId)
           || staffPermission(workspaceId, 'reports')
-          || (isWorkspaceMember(workspaceId)
+          || (workspaceHasActiveSubscription(workspaceId)
+            && isWorkspaceMember(workspaceId)
             && (resource.data.userId == request.auth.uid || resource.data.staffId == permissionDocId()));
         allow create: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId) && workspaceCreateMetadata(workspaceId) && ownerMemberCreateSafe(workspaceId, staffId);
         allow update: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId) && workspaceUpdateScopeSafe(workspaceId) && ownerMemberUpdateSafe(workspaceId, staffId);
@@ -875,7 +911,8 @@ service cloud.firestore {
       }
 
       match /permissions/{staffId} {
-        allow read: if isWorkspaceManager(workspaceId) || (isWorkspaceMember(workspaceId) && staffId == permissionDocId());
+        allow read: if isWorkspaceManager(workspaceId)
+          || (workspaceHasActiveSubscription(workspaceId) && isWorkspaceMember(workspaceId) && staffId == permissionDocId());
         allow create, update, delete: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId) && !isOwnerPermissionDoc(workspaceId, staffId);
       }
 
@@ -967,7 +1004,7 @@ service cloud.firestore {
       }
 
       match /subscriptions/{subscriptionId} {
-        allow read: if staffPermission(workspaceId, 'reports');
+        allow read: if hasWorkspaceBillingReadAccess(workspaceId);
         allow create: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId) && workspaceCreateMetadata(workspaceId);
         allow update, delete: if isAdmin();
       }
@@ -995,7 +1032,7 @@ service cloud.firestore {
       }
 
       match /branches/{branchId} {
-        allow read: if isWorkspaceMember(workspaceId);
+        allow read: if hasWorkspaceCrmReadAccess(workspaceId);
         allow create: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId) && workspaceCreateMetadata(workspaceId);
         allow update: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId) && workspaceUpdateScopeSafe(workspaceId);
         allow delete: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId);
@@ -1008,7 +1045,7 @@ service cloud.firestore {
       }
 
       match /businessSettings/{businessTypeId} {
-        allow read: if isAdmin() || isWorkspaceMember(workspaceId);
+        allow read: if hasWorkspaceCrmReadAccess(workspaceId);
         allow create: if workspaceHasWriteAccess(workspaceId)
           && (isWorkspaceManager(workspaceId) || staffPermission(workspaceId, 'settingsAccess'))
           && request.resource.data.workspaceId == workspaceId;
@@ -1037,7 +1074,7 @@ service cloud.firestore {
           && request.resource.data.createdBy == request.auth.uid
           && request.resource.data.createdAt is timestamp;
         allow read: if isAdmin()
-          || (isWorkspaceMember(workspaceId) && resource.data.userId == request.auth.uid);
+          || (workspaceHasActiveSubscription(workspaceId) && isWorkspaceMember(workspaceId) && resource.data.userId == request.auth.uid);
         allow update: if workspaceHasWriteAccess(workspaceId)
           && (isAdmin()
             || (isWorkspaceMember(workspaceId)
@@ -1188,17 +1225,29 @@ service cloud.firestore {
 
     match /notifications/{notificationId} {
       allow create: if activeSignedIn()
+        && request.resource.data.workspaceId is string
+        && workspaceHasWriteAccess(request.resource.data.workspaceId)
         && request.resource.data.userId == request.auth.uid
         && request.resource.data.workspaceId == memberWorkspaceId()
         && request.resource.data.createdBy == request.auth.uid
         && request.resource.data.createdAt is timestamp;
-      allow read: if isAdmin() || (activeSignedIn() && resource.data.userId == request.auth.uid);
+      allow read: if isAdmin()
+        || (activeSignedIn()
+          && resource.data.workspaceId is string
+          && workspaceHasActiveSubscription(resource.data.workspaceId)
+          && resource.data.userId == request.auth.uid);
       allow update: if isAdmin()
         || (activeSignedIn()
+          && resource.data.workspaceId is string
+          && workspaceHasWriteAccess(resource.data.workspaceId)
           && resource.data.userId == request.auth.uid
           && request.resource.data.userId == resource.data.userId
           && request.resource.data.workspaceId == resource.data.workspaceId);
-      allow delete: if isAdmin() || (activeSignedIn() && resource.data.userId == request.auth.uid);
+      allow delete: if isAdmin()
+        || (activeSignedIn()
+          && resource.data.workspaceId is string
+          && workspaceHasWriteAccess(resource.data.workspaceId)
+          && resource.data.userId == request.auth.uid);
     }
 
     match /{document=**} {

@@ -23,30 +23,34 @@ function logFullOtpError(error) {
 }
 
 function clearLocalAuthWorkspaceState(userId) {
-  if (typeof window === 'undefined' || !userId) return
+  if (typeof window === 'undefined') return
 
   const selectedWorkspaceUserId = window.localStorage.getItem('selectedWorkspaceUserId')
-  if (selectedWorkspaceUserId === userId) {
+  if (!userId || selectedWorkspaceUserId === userId) {
     window.localStorage.removeItem('selectedWorkspace')
     window.localStorage.removeItem('selectedWorkspaceUserId')
   }
-  window.localStorage.removeItem(`selectedWorkspace:${userId}`)
+  if (userId) window.localStorage.removeItem(`selectedWorkspace:${userId}`)
 
   const selectedProductUserId = window.localStorage.getItem('selectedProductUserId')
-  if (selectedProductUserId === userId) {
+  if (!userId || selectedProductUserId === userId) {
     window.localStorage.removeItem('selectedProduct')
     window.localStorage.removeItem('selectedProductUserId')
   }
 
-  window.sessionStorage.removeItem(`nexoraSessionId:${userId}`)
-  window.sessionStorage.removeItem(`nexoraSessionStartTime:${userId}`)
+  if (userId) {
+    window.sessionStorage.removeItem(`nexoraSessionId:${userId}`)
+    window.sessionStorage.removeItem(`nexoraSessionStartTime:${userId}`)
+  }
   window.sessionStorage.removeItem('nexoraSessionId')
   window.sessionStorage.removeItem('nexoraSessionStartedAt')
   Object.keys(window.sessionStorage).forEach((key) => {
-    if (key.startsWith(`nexoraWorkspaceModalSeen:${userId}:`)) {
+    if ((userId && key.startsWith(`nexoraWorkspaceModalSeen:${userId}:`)) || (!userId && key.startsWith('nexoraWorkspaceModalSeen:'))) {
       window.sessionStorage.removeItem(key)
     }
   })
+
+  window.dispatchEvent(new CustomEvent('nexora:selectedWorkspaceChanged', { detail: { userId: userId || '', workspace: null } }))
 }
 
 function timestampMs() {
@@ -65,6 +69,7 @@ export default function VerifyEmail() {
   const [error, setError] = useState('')
   const [otp, setOtp] = useState('')
   const [toast, setToast] = useState(null)
+  const [leaving, setLeaving] = useState(false)
 
   function showToast(nextToast, timeout = 2400) {
     setToast(nextToast)
@@ -231,16 +236,22 @@ export default function VerifyEmail() {
   const handleLeaveVerification = async () => {
     const currentUser = auth?.currentUser || user
     console.log('[VerifyEmail] switch account')
-    await trackAnalyticsEvent('logout', { userId: currentUser?.uid || '', email: currentUser?.email || '', page: '/verify-email' })
+    setLeaving(true)
+    setError('')
     try {
       if (auth) await signOut(auth)
       console.log('[VerifyEmail] signed out')
     } catch (err) {
       logFullOtpError(err)
       setError(clientSafeMessage(err, 'Could not sign out. Please try again.', { context: 'Leave email verification' }))
+      setLeaving(false)
       return
     }
     clearLocalAuthWorkspaceState(currentUser?.uid)
+    trackAnalyticsEvent('logout', { userId: currentUser?.uid || '', email: currentUser?.email || '', page: '/verify-email' })
+      .catch((analyticsError) => {
+        console.warn('[VerifyEmail] logout analytics failed', { error: analyticsError?.message || analyticsError })
+      })
     console.log('[VerifyEmail] redirect login')
     navigate('/login', { replace: true })
   }
@@ -315,10 +326,10 @@ export default function VerifyEmail() {
           </button>
 
           <div className="mt-5 flex flex-wrap gap-4">
-            <button type="button" onClick={handleLeaveVerification} className="text-sm font-semibold text-slate-500 transition hover:text-slate-900">
-              Sign in with another account
+            <button type="button" onClick={handleLeaveVerification} disabled={leaving} className="text-sm font-semibold text-slate-500 transition hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60">
+              {leaving ? 'Signing out...' : 'Sign in with another account'}
             </button>
-            <button type="button" onClick={handleLeaveVerification} className="text-sm font-semibold text-slate-500 transition hover:text-slate-900">
+            <button type="button" onClick={handleLeaveVerification} disabled={leaving} className="text-sm font-semibold text-slate-500 transition hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60">
               Back to Login
             </button>
           </div>

@@ -20,6 +20,7 @@ import Spinner from '../components/ui/Spinner.jsx'
 import { db } from '../lib/firebase.js'
 import { useUser } from '../hooks/useUser.js'
 import { sendWorkerEmail, upgradeApprovedEmail, upgradeRejectedEmail } from '../../lib/transactionalEmail.js'
+import { buildApprovedSubscriptionPayload } from '../../lib/subscriptionApproval.js'
 
 function Toast({ tone = 'success', message, onClose }) {
   const toneClass =
@@ -93,16 +94,12 @@ function formatCreatedDate(v) {
   return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(d)
 }
 
-function subscriptionEndDate(days = 30) {
-  return new Date(Date.now() + days * 86400000)
-}
-
 function proofUrl(row = {}) {
   return row.paymentProof || row.screenshotUrl || row.paymentProofUrl || ''
 }
 
 export default function AdminUpgradeRequestsPage() {
-  const { isPlatformAdmin, loading: userLoading, userId } = useUser()
+  const { isPlatformAdmin, loading: userLoading, userId, firebaseUser } = useUser()
   const navigate = useNavigate()
   const [rows, setRows] = useState([])
   const [busyId, setBusyId] = useState('')
@@ -215,46 +212,52 @@ export default function AdminUpgradeRequestsPage() {
     try {
       const batch = writeBatch(db)
       const reqRef = doc(db, 'upgradeRequests', r.id)
-      const userRef = doc(db, 'users', r.userId)
-      const workspaceRef = doc(db, 'workspaces', r.workspaceId || r.userId)
-      const subscriptionExpiresAt = subscriptionEndDate(Number(r.requestedDurationDays) || 30)
+      const ownerId = r.ownerId || r.uid || r.userId
+      const workspaceId = r.workspaceId || ownerId
+      if (!ownerId) throw new Error('Owner user ID is required to approve subscription upgrades.')
+      if (!workspaceId) throw new Error('Workspace ID is required to approve subscription upgrades.')
+      const userRef = doc(db, 'users', ownerId)
+      const workspaceRef = doc(db, 'workspaces', workspaceId)
       const requestedPlan = r.requestedPlan || r.selectedPlan || r.plan || 'Standard'
-      const planUpdate = {
+      const subscriptionPayload = buildApprovedSubscriptionPayload({
         plan: requestedPlan,
-        planStatus: 'active',
-        subscriptionStatus: 'active',
-        billingCycle: 'monthly',
-        billingCurrency: r.billingCurrency || r.currency || 'PKR',
-        nextBillingDate: subscriptionExpiresAt,
-        expiresAt: subscriptionExpiresAt,
-        subscriptionStartedAt: serverTimestamp(),
-        subscriptionExpiresAt,
-        isTrialActive: false,
-        paidAt: serverTimestamp(),
-        upgradedAt: serverTimestamp(),
-      }
-
-      batch.update(reqRef, {
+        billingCycle: r.billingCycle,
+        amount: Number(r.amount || r.amountPaid || r.planPrice || 0) || 0,
+        currency: r.billingCurrency || r.currency || 'PKR',
+        approvedBy: userId,
+        approvedByEmail: firebaseUser?.email || '',
+      })
+      const requestUpdate = {
+        status: 'approved',
         approvalStatus: 'approved',
         paymentStatus: 'paid',
-        approvedBy: userId,
-        approvedAt: serverTimestamp(),
-      })
+        approvedBy: subscriptionPayload.approvedBy,
+        approvedByEmail: subscriptionPayload.approvedByEmail,
+        approvedAt: subscriptionPayload.approvedAt,
+        subscriptionExpiresAt: subscriptionPayload.subscriptionExpiresAt,
+        nextBillingDate: subscriptionPayload.nextBillingDate,
+        updatedAt: subscriptionPayload.updatedAt,
+      }
 
+      console.log('[Subscription Approval] payload', { requestId: r.id, workspaceId, ownerId, subscriptionPayload })
+      console.log('[Subscription Approval] request update', { path: `upgradeRequests/${r.id}`, requestUpdate })
+      batch.update(reqRef, requestUpdate)
+
+      console.log('[Subscription Approval] user update', { path: `users/${ownerId}`, subscriptionPayload })
       batch.set(
         userRef,
-        planUpdate,
+        subscriptionPayload,
         { merge: true },
       )
 
+      console.log('[Subscription Approval] workspace update', { path: `workspaces/${workspaceId}`, subscriptionPayload })
       batch.set(
         workspaceRef,
         {
-          ...planUpdate,
-          ownerId: r.ownerId || r.userId,
-          userId: r.workspaceId || r.userId,
-          workspaceId: r.workspaceId || r.userId,
-          updatedAt: serverTimestamp(),
+          ...subscriptionPayload,
+          ownerId,
+          userId: workspaceId,
+          workspaceId,
         },
         { merge: true },
       )

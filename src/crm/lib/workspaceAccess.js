@@ -4,9 +4,55 @@ import { BUSINESS_TRIAL_DAYS, addDays, accessPlanForUser, daysUntil, isTrialActi
 
 export const TRIAL_PLAN = 'Basic'
 export const TRIAL_STATUS = 'trial'
+const ACTIVE_SUBSCRIPTION_STATUSES = ['active', 'paid', 'approved', 'current']
+const EXPIRED_SUBSCRIPTION_STATUSES = ['expired', 'subscription expired', 'past due', 'cancelled', 'canceled']
+const BLOCKED_WORKSPACE_STATUSES = ['blocked', 'inactive']
 
 export function cleanWorkspaceString(value) {
   return typeof value === 'string' ? value.trim() : ''
+}
+
+function cleanStatus(value) {
+  return cleanWorkspaceString(value).toLowerCase()
+}
+
+function toDate(value) {
+  if (!value) return null
+  if (value instanceof Date) return value
+  if (typeof value?.toDate === 'function') return value.toDate()
+  const parsed = new Date(value)
+  return Number.isNaN(parsed.getTime()) ? null : parsed
+}
+
+function subscriptionStatus(source = {}) {
+  return cleanStatus(source.subscriptionStatus || source.planStatus)
+}
+
+function subscriptionExpiryDates(source = {}) {
+  return [source.subscriptionExpiresAt, source.expiresAt, source.nextBillingDate].map(toDate).filter(Boolean)
+}
+
+export function workspaceBlockedForAccess(source = {}) {
+  return BLOCKED_WORKSPACE_STATUSES.includes(cleanStatus(source.status))
+    || cleanStatus(source.accountStatus) === 'blocked'
+}
+
+export function workspacePaidSubscriptionActive(source = {}) {
+  if (workspaceBlockedForAccess(source)) return false
+  if (!ACTIVE_SUBSCRIPTION_STATUSES.includes(subscriptionStatus(source))) return false
+  return subscriptionExpiryDates(source).every((date) => date.getTime() >= Date.now())
+}
+
+export function workspaceSubscriptionExpired(source = {}) {
+  if (workspaceBlockedForAccess(source)) return false
+  const status = subscriptionStatus(source)
+  if (EXPIRED_SUBSCRIPTION_STATUSES.includes(status)) return true
+  if (!ACTIVE_SUBSCRIPTION_STATUSES.includes(status)) return false
+  return subscriptionExpiryDates(source).some((date) => date.getTime() < Date.now())
+}
+
+export function workspaceHasActiveSubscription(source = {}) {
+  return !workspaceBlockedForAccess(source) && (isTrialActive(source) || workspacePaidSubscriptionActive(source))
 }
 
 export function workspaceAccessFields(startDate = new Date()) {
@@ -62,8 +108,14 @@ export function workspaceAccessState(workspaceDoc = {}, fallbackUserDoc = {}, fa
   const trialEndsAt = trialEndDate(source)
   const trialActive = isTrialActive(source)
   const trialExpired = isTrialExpired(source)
+  const subscriptionExpired = workspaceSubscriptionExpired(source)
+  const workspaceBlocked = workspaceBlockedForAccess(source)
+  const hasActiveWorkspaceSubscription = workspaceHasActiveSubscription(source)
+  const workspaceExpired = !workspaceBlocked
+    && !hasActiveWorkspaceSubscription
+    && (trialExpired || subscriptionExpired || source.onboardingCompleted === true)
   const plan = source.plan || fallbackPlan
-  const accessPlan = trialExpired ? 'Free' : accessPlanForUser(source, plan)
+  const accessPlan = hasActiveWorkspaceSubscription && !trialExpired ? accessPlanForUser(source, plan) : 'Free'
   const subscriptionStatus = source.subscriptionStatus || source.planStatus || (trialActive ? TRIAL_STATUS : '')
 
   return {
@@ -73,6 +125,10 @@ export function workspaceAccessState(workspaceDoc = {}, fallbackUserDoc = {}, fa
     subscriptionStatus,
     isTrialActive: trialActive,
     isTrialExpired: trialExpired,
+    isSubscriptionExpired: subscriptionExpired,
+    isWorkspaceBlocked: workspaceBlocked,
+    isWorkspaceExpired: workspaceExpired,
+    hasActiveWorkspaceSubscription,
     trialEndsAt,
     trialDaysRemaining: trialActive ? daysUntil(trialEndsAt) : 0,
   }

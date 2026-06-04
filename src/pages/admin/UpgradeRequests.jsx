@@ -4,6 +4,7 @@ import { db } from '../../lib/firebase.js'
 import useAuth from '../../context/useAuth.js'
 import { clientSafeMessage } from '../../lib/errorHandler.js'
 import { isBackendAdminEmail } from '../../lib/roles.js'
+import { buildApprovedSubscriptionPayload } from '../../lib/subscriptionApproval.js'
 
 function StatusPill({ value }) {
   const style =
@@ -64,7 +65,7 @@ export default function UpgradeRequests() {
     if (!id) return
     setUpdatingId(id)
     try {
-      if (approvalStatus !== 'approved' || !item.userId) {
+      if (approvalStatus !== 'approved') {
         await updateDoc(doc(db, 'upgradeRequests', id), {
           status: approvalStatus,
           approvalStatus,
@@ -75,34 +76,43 @@ export default function UpgradeRequests() {
       }
 
       const batch = writeBatch(db)
-      const workspaceId = item.workspaceId || item.userId
+      const ownerId = item.ownerId || item.uid || item.userId
+      const workspaceId = item.workspaceId || ownerId
+      if (!ownerId) throw new Error('Owner user ID is required to approve subscription upgrades.')
+      if (!workspaceId) throw new Error('Workspace ID is required to approve subscription upgrades.')
       const plan = item.requestedPlan || item.selectedPlan || item.plan || 'Standard'
-      const now = serverTimestamp()
-      const planUpdate = {
+      const subscriptionPayload = buildApprovedSubscriptionPayload({
         plan,
-        planStatus: 'active',
-        subscriptionStatus: 'active',
-        paymentStatus: 'paid',
-        billingCycle: item.billingCycle || 'monthly',
-        upgradedAt: now,
-        planUpdatedAt: now,
-      }
-      batch.update(doc(db, 'upgradeRequests', id), {
+        billingCycle: item.billingCycle,
+        amount: Number(item.amount || item.amountPaid || item.planPrice || 0) || 0,
+        currency: item.currency || item.billingCurrency || 'PKR',
+        approvedBy: user?.uid || user?.email || '',
+        approvedByEmail: user?.email || '',
+      })
+      const requestUpdate = {
         status: 'approved',
         approvalStatus: 'approved',
         paymentStatus: 'paid',
-        approvedBy: user?.email || '',
-        approvedAt: now,
-      })
-      batch.set(doc(db, 'users', item.userId), planUpdate, { merge: true })
+        approvedBy: subscriptionPayload.approvedBy,
+        approvedByEmail: subscriptionPayload.approvedByEmail,
+        approvedAt: subscriptionPayload.approvedAt,
+        subscriptionExpiresAt: subscriptionPayload.subscriptionExpiresAt,
+        nextBillingDate: subscriptionPayload.nextBillingDate,
+        updatedAt: subscriptionPayload.updatedAt,
+      }
+      console.log('[Subscription Approval] payload', { requestId: id, workspaceId, ownerId, subscriptionPayload })
+      console.log('[Subscription Approval] request update', { path: `upgradeRequests/${id}`, requestUpdate })
+      batch.update(doc(db, 'upgradeRequests', id), requestUpdate)
+      console.log('[Subscription Approval] user update', { path: `users/${ownerId}`, subscriptionPayload })
+      batch.set(doc(db, 'users', ownerId), subscriptionPayload, { merge: true })
+      console.log('[Subscription Approval] workspace update', { path: `workspaces/${workspaceId}`, subscriptionPayload })
       batch.set(
         doc(db, 'workspaces', workspaceId),
         {
-          ...planUpdate,
-          ownerId: item.userId,
+          ...subscriptionPayload,
+          ownerId,
           userId: workspaceId,
           workspaceId,
-          updatedAt: now,
         },
         { merge: true },
       )
@@ -120,11 +130,14 @@ export default function UpgradeRequests() {
         paymentProof: item.paymentProof || item.screenshotUrl || '',
         status: 'paid',
         paymentStatus: 'paid',
-        approvedBy: user?.email || '',
-        approvedAt: now,
+        approvedBy: subscriptionPayload.approvedBy,
+        approvedByEmail: subscriptionPayload.approvedByEmail,
+        approvedAt: subscriptionPayload.approvedAt,
+        subscriptionExpiresAt: subscriptionPayload.subscriptionExpiresAt,
+        nextBillingDate: subscriptionPayload.nextBillingDate,
         source: 'upgradeRequests',
         sourceId: id,
-        updatedAt: now,
+        updatedAt: subscriptionPayload.updatedAt,
       }, { merge: true })
       await batch.commit()
       setError('')

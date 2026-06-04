@@ -70,11 +70,7 @@ function formatAccessDate(value) {
   return new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', year: 'numeric' }).format(date)
 }
 
-function isActivePlanStatus(status) {
-  return ['active', 'paid', 'approved'].includes(String(status || '').trim().toLowerCase())
-}
-
-function TrialAccessBlock({ expired, trialEndsAt, onBackToWorkspace, onUpgrade }) {
+function TrialAccessBlock({ expired, subscriptionExpired, trialEndsAt, onBackToWorkspace, onUpgrade }) {
   const endLabel = formatAccessDate(trialEndsAt)
   return (
     <div className="nexora-bg grid min-h-dvh place-items-center overflow-x-hidden px-4 py-10">
@@ -85,15 +81,21 @@ function TrialAccessBlock({ expired, trialEndsAt, onBackToWorkspace, onUpgrade }
         transition={{ duration: 0.22, ease: 'easeOut' }}
       >
         <Badge variant={expired ? 'danger' : 'warning'} className="font-semibold">
-          {expired ? 'Trial expired' : 'Package inactive'}
+          {expired ? (subscriptionExpired ? 'Subscription expired' : 'Trial expired') : 'Package inactive'}
         </Badge>
         <h1 className="mt-4 text-2xl font-semibold tracking-tight text-slate-950">
-          {expired ? 'Your 7-day trial has expired' : 'CRM access needs an active package'}
+          {expired
+            ? subscriptionExpired
+              ? 'Your workspace subscription has expired'
+              : 'Your 7-day trial has expired'
+            : 'CRM access needs an active package'}
         </h1>
         <p className="mt-3 text-sm leading-7 text-slate-600">
-          {expired
-            ? `Your Nexora CRM trial${endLabel ? ` ended on ${endLabel}` : ''}. Upgrade to continue using CRM data, customers, invoices, leads, and reports.`
-            : 'Return to Workspace or choose an active package to continue using Nexora CRM.'}
+          {expired && subscriptionExpired
+            ? 'Renew or upgrade your package to continue using CRM data, customers, invoices, leads, and reports.'
+            : expired
+              ? `Your Nexora CRM trial${endLabel ? ` ended on ${endLabel}` : ''}. Upgrade to continue using CRM data, customers, invoices, leads, and reports.`
+              : 'Return to Workspace or choose an active package to continue using Nexora CRM.'}
         </p>
         <div className="mt-6 flex flex-col gap-3 sm:flex-row">
           <Button className="h-11 rounded-2xl" type="button" onClick={onUpgrade}>
@@ -261,6 +263,9 @@ export default function DashboardLayout() {
     accessPlan,
     isTrialActive,
     isTrialExpired,
+    isSubscriptionExpired,
+    isWorkspaceExpired,
+    hasActiveWorkspaceSubscription,
     trialEndsAt,
     isBlocked,
     firebaseUser,
@@ -273,14 +278,19 @@ export default function DashboardLayout() {
   const toggleCollapse = useCallback(() => setCollapsed((c) => !c), [])
   const userId = user?.uid ?? null
   const isAuthenticated = Boolean(userId)
-  const hasActiveAccess =
-    isTrialActive ||
-    isActivePlanStatus(userDoc?.subscriptionStatus) ||
-    isActivePlanStatus(userDoc?.planStatus)
+  const hasActiveAccess = Boolean(hasActiveWorkspaceSubscription || isTrialActive)
+  const billingRenewalRoute = location.pathname === '/app/subscriptions' || location.pathname.startsWith('/app/subscriptions/')
   const developerOverride = isDeveloperOwnerAccount(userDoc, firebaseUser)
   const lockedWorkspaceId = businessWorkspaceForType(userDoc?.selectedBusinessType || userDoc?.businessType).id
   const teamOverride = workspaceAccess.isAdmin || workspaceAccess.hasPermission('settingsAccess')
-  const crmAccessBlocked = ready && isAuthenticated && !userLoading && Boolean(userDoc) && !isStaff && !hasActiveAccess && !developerOverride
+  const crmAccessBlocked =
+    ready &&
+    isAuthenticated &&
+    !userLoading &&
+    Boolean(userDoc) &&
+    !hasActiveAccess &&
+    !developerOverride &&
+    !billingRenewalRoute
   const accountBlocked = ready && isAuthenticated && !userLoading && Boolean(userDoc) && isBlocked
   const currentModule = moduleByRoute(location.pathname)
   const isOwnerAdmin = workspaceAccess.isAdmin
@@ -417,7 +427,8 @@ export default function DashboardLayout() {
   if (crmAccessBlocked) {
     return (
       <TrialAccessBlock
-        expired={isTrialExpired}
+        expired={isTrialExpired || isSubscriptionExpired || isWorkspaceExpired}
+        subscriptionExpired={isSubscriptionExpired || (isWorkspaceExpired && !isTrialExpired)}
         trialEndsAt={trialEndsAt}
         onBackToWorkspace={backToWorkspace}
         onUpgrade={() => navigate('/upgrade-business', { state: { fromUpgradeBusiness: true } })}

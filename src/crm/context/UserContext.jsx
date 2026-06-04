@@ -46,6 +46,7 @@ export function UserProvider({ children }) {
   const [staffAccessStatus, setStaffAccessStatus] = useState('')
   const [workspaceOwnerId, setWorkspaceOwnerId] = useState('')
   const [workspaceDoc, setWorkspaceDoc] = useState(null)
+  const [workspaceAccessDenied, setWorkspaceAccessDenied] = useState(false)
   const [selectedBusinessWorkspace, setSelectedBusinessWorkspace] = useState(null)
   const [loading, setLoading] = useState(true)
   const provisionedUserRef = useRef('')
@@ -71,6 +72,7 @@ export function UserProvider({ children }) {
         setUserDoc(null)
         setStaffAccessStatus('')
         setWorkspaceOwnerId('')
+        setWorkspaceAccessDenied(false)
         setLoading(false)
       })
       return
@@ -175,8 +177,11 @@ export function UserProvider({ children }) {
   const isPlatformAdmin = isPlatformAdminDoc({ email: user?.email || '' })
   const userStatus = String(userDoc?.status || '').trim().toLowerCase()
   const staffStatus = String(staffAccessStatus || '').trim().toLowerCase()
-  const accountStatus = staffStatus || userStatus || 'active'
-  const isBlocked = blockedStatuses.includes(userStatus) || blockedStatuses.includes(staffStatus)
+  const workspaceStatus = String(workspaceDoc?.status || '').trim().toLowerCase()
+  const workspaceAccountStatus = String(workspaceDoc?.accountStatus || '').trim().toLowerCase()
+  const workspaceBlocked = workspaceAccessDenied || workspaceStatus === 'blocked' || workspaceStatus === 'inactive' || workspaceAccountStatus === 'blocked'
+  const accountStatus = workspaceBlocked ? 'blocked' : staffStatus || userStatus || 'active'
+  const isBlocked = workspaceBlocked || blockedStatuses.includes(userStatus) || blockedStatuses.includes(staffStatus)
   const ownsWorkspace = Boolean(
     user?.uid && (user.uid === workspaceId || user.uid === userDoc?.ownerId || user.uid === workspaceOwnerId),
   )
@@ -192,7 +197,10 @@ export function UserProvider({ children }) {
 
   useEffect(() => {
     if (!ready || !db || !user?.uid || loading || !workspaceId) {
-      Promise.resolve().then(() => setWorkspaceOwnerId(''))
+      Promise.resolve().then(() => {
+        setWorkspaceOwnerId('')
+        setWorkspaceAccessDenied(false)
+      })
       return undefined
     }
 
@@ -203,11 +211,13 @@ export function UserProvider({ children }) {
         const data = snap.exists() ? snap.data() : null
         setWorkspaceDoc(data)
         setWorkspaceOwnerId(data ? String(data?.ownerId || '') : '')
+        setWorkspaceAccessDenied(false)
         if (data) ensureWorkspaceAccessFields(workspaceId, data.ownerId || user.uid).catch(() => {})
       },
-      () => {
+      (error) => {
         setWorkspaceDoc(null)
         setWorkspaceOwnerId('')
+        setWorkspaceAccessDenied(error?.code === 'permission-denied')
       },
     )
 
@@ -240,6 +250,9 @@ export function UserProvider({ children }) {
   const trialEndsAt = accessState.trialEndsAt || trialEndDate(userDoc || {})
   const trialDaysRemaining = trialActive ? accessState.trialDaysRemaining || daysUntil(trialEndsAt) : 0
   const trialExpired = accessState.isTrialExpired || isTrialExpired(userDoc || {})
+  const isSubscriptionExpired = accessState.isSubscriptionExpired
+  const isWorkspaceExpired = !workspaceBlocked && accessState.isWorkspaceExpired
+  const hasActiveWorkspaceSubscription = !workspaceBlocked && accessState.hasActiveWorkspaceSubscription
 
   useEffect(() => {
     if (!user?.uid || !workspaceId || loading || loggedLoginRef.current === user.uid) return
@@ -273,11 +286,15 @@ export function UserProvider({ children }) {
       firebaseUser: user ?? null,
       userDoc,
       workspaceDoc,
+      workspaceAccessDenied,
       loading,
       plan: effectivePlan,
       accessPlan,
       isTrialActive: trialActive,
       isTrialExpired: trialExpired,
+      isSubscriptionExpired,
+      isWorkspaceExpired,
+      hasActiveWorkspaceSubscription,
       trialEndsAt,
       trialDaysRemaining,
       role,
@@ -287,6 +304,7 @@ export function UserProvider({ children }) {
       isPlatformAdmin,
       accountStatus,
       isBlocked,
+      workspaceBlocked,
       isAccountant: role === 'accountant',
       isManager: role === 'manager',
       isSales: role === 'sales',
@@ -302,17 +320,22 @@ export function UserProvider({ children }) {
       staffId,
       userDoc,
       workspaceDoc,
+      workspaceAccessDenied,
       loading,
       effectivePlan,
       accessPlan,
       trialActive,
       trialExpired,
+      isSubscriptionExpired,
+      isWorkspaceExpired,
+      hasActiveWorkspaceSubscription,
       trialEndsAt,
       trialDaysRemaining,
       role,
       isPlatformAdmin,
       accountStatus,
       isBlocked,
+      workspaceBlocked,
       ownsWorkspace,
       workspaceOwnerId,
       isOwner,

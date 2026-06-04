@@ -59,6 +59,7 @@ import {
   upgradeApprovedEmail,
   upgradeRejectedEmail,
 } from '../../lib/transactionalEmail.js'
+import { buildApprovedSubscriptionPayload } from '../../lib/subscriptionApproval.js'
 
 export class ControlCentreErrorBoundary extends Component {
   state = { error: null }
@@ -843,33 +844,41 @@ export default function ControlCentre() {
   async function approveUpgrade(row) {
     if (!backendAdminAllowed) throw new Error('Backend admin access required.')
     const workspaceId = row.workspaceId || row.ownerId || row.userId
-    const plan = row.requestedPlan || row.plan || 'Standard'
+    const workspace = workspacesById.get(workspaceId) || {}
+    const ownerId = row.ownerId || row.uid || row.userId || workspace.ownerId || workspace.userId
+    if (!workspaceId) throw new Error('Workspace ID is required to approve subscription upgrades.')
+    if (!ownerId) throw new Error('Owner user ID is required to approve subscription upgrades.')
+    const plan = row.requestedPlan || row.selectedPlan || row.plan || 'Standard'
     const currency = rowCurrency(row)
     const adminEmail = user?.email || ''
-    const now = serverTimestamp()
-    await updateDoc(row.ref || doc(db, 'upgradeRequests', row.id), {
+    const adminId = user?.uid || adminEmail
+    const subscriptionPayload = buildApprovedSubscriptionPayload({
+      plan,
+      billingCycle: row.billingCycle,
+      amount: amountValue(row),
+      currency,
+      approvedBy: adminId,
+      approvedByEmail: adminEmail,
+    })
+    const requestUpdate = {
       status: 'approved',
       approvalStatus: 'approved',
       paymentStatus: 'paid',
       currency,
-      approvedBy: adminEmail,
-      approvedByEmail: adminEmail,
-      approvedAt: now,
-      updatedAt: now,
-    })
-    if (workspaceId) {
-      await updateDoc(doc(db, 'workspaces', workspaceId), {
-        plan,
-        selectedPlan: plan,
-        subscriptionStatus: 'active',
-        planStatus: 'active',
-        paymentStatus: 'paid',
-        billingCurrency: currency,
-        paidAt: now,
-        planUpdatedAt: now,
-        updatedAt: now,
-      })
+      approvedBy: subscriptionPayload.approvedBy,
+      approvedByEmail: subscriptionPayload.approvedByEmail,
+      approvedAt: subscriptionPayload.approvedAt,
+      subscriptionExpiresAt: subscriptionPayload.subscriptionExpiresAt,
+      nextBillingDate: subscriptionPayload.nextBillingDate,
+      updatedAt: subscriptionPayload.updatedAt,
     }
+    console.log('[Subscription Approval] payload', { requestId: row.id, workspaceId, ownerId, subscriptionPayload })
+    console.log('[Subscription Approval] request update', { path: `upgradeRequests/${row.id}`, requestUpdate })
+    await updateDoc(row.ref || doc(db, 'upgradeRequests', row.id), requestUpdate)
+    console.log('[Subscription Approval] user update', { path: `users/${ownerId}`, subscriptionPayload })
+    await setDoc(doc(db, 'users', ownerId), subscriptionPayload, { merge: true })
+    console.log('[Subscription Approval] workspace update', { path: `workspaces/${workspaceId}`, subscriptionPayload })
+    await setDoc(doc(db, 'workspaces', workspaceId), subscriptionPayload, { merge: true })
     await setDoc(doc(db, 'platformPayments', row.id), {
       clientEmail: row.clientEmail || row.email || row.ownerEmail || '',
       workspaceId: workspaceId || '',
@@ -884,28 +893,27 @@ export default function ControlCentre() {
       paymentProof: proofUrl(row),
       status: 'paid',
       paymentStatus: 'paid',
-      approvedBy: adminEmail,
-      approvedByEmail: adminEmail,
-      approvedAt: now,
-      paymentDate: row.paymentDate || now,
+      approvedBy: subscriptionPayload.approvedBy,
+      approvedByEmail: subscriptionPayload.approvedByEmail,
+      approvedAt: subscriptionPayload.approvedAt,
+      paymentDate: row.paymentDate || subscriptionPayload.approvedAt,
       source: 'upgradeRequests',
       sourceId: row.id,
-      updatedAt: now,
+      subscriptionExpiresAt: subscriptionPayload.subscriptionExpiresAt,
+      nextBillingDate: subscriptionPayload.nextBillingDate,
+      updatedAt: subscriptionPayload.updatedAt,
     }, { merge: true })
     await setDoc(doc(db, 'platformSubscriptions', workspaceId || row.id), {
       clientEmail: row.clientEmail || row.email || row.ownerEmail || '',
       workspaceId: workspaceId || '',
       workspaceName: row.workspaceName || row.companyName || '',
-      plan,
+      ...subscriptionPayload,
       currency,
       status: 'active',
       subscriptionStatus: 'active',
       paymentStatus: 'paid',
       source: 'upgradeRequests',
       sourceId: row.id,
-      approvedBy: adminEmail,
-      approvedAt: now,
-      updatedAt: now,
     }, { merge: true })
     const email = userEmail(row)
     if (email) {
@@ -940,31 +948,69 @@ export default function ControlCentre() {
   }
 
   async function updateTransaction(row, update, action) {
+    const paymentApproved = update.status === 'approved' || update.status === 'paid' || update.paymentStatus === 'paid'
+    const workspaceId = row.workspaceId || ''
+    const workspace = workspaceId ? workspacesById.get(workspaceId) || {} : {}
+    const ownerId = row.ownerId || row.uid || row.userId || workspace.ownerId || workspace.userId
+    const adminEmail = user?.email || ''
+    const adminId = user?.uid || adminEmail
+    const subscriptionPayload = paymentApproved && workspaceId
+      ? buildApprovedSubscriptionPayload({
+        plan: row.plan || row.selectedPlan || row.requestedPlan || 'Standard',
+        billingCycle: row.billingCycle,
+        amount: amountValue(row),
+        currency: rowCurrency(row),
+        approvedBy: adminId,
+        approvedByEmail: adminEmail,
+      })
+      : null
+    if (paymentApproved && row.source === 'upgradeRequests' && !workspaceId) {
+      throw new Error('Workspace ID is required to approve subscription upgrades.')
+    }
+    if (paymentApproved && workspaceId && !ownerId) {
+      throw new Error('Owner user ID is required to approve subscription payments.')
+    }
+    if (subscriptionPayload) {
+      console.log('[Subscription Approval] payload', { requestId: row.sourceId || row.id, workspaceId, ownerId, subscriptionPayload })
+    }
     await updateDoc(row.ref || doc(db, 'platformPayments', row.id), {
       ...update,
-      updatedAt: serverTimestamp(),
+      ...(subscriptionPayload ? {
+        approvedAt: subscriptionPayload.approvedAt,
+        approvedBy: subscriptionPayload.approvedBy,
+        approvedByEmail: subscriptionPayload.approvedByEmail,
+        subscriptionExpiresAt: subscriptionPayload.subscriptionExpiresAt,
+        nextBillingDate: subscriptionPayload.nextBillingDate,
+      } : {}),
+      updatedAt: subscriptionPayload?.updatedAt || serverTimestamp(),
       updatedBy: user?.uid || '',
       updatedByEmail: user?.email || '',
     })
     if (row.source === 'upgradeRequests' && row.sourceId) {
-      await updateDoc(doc(db, 'upgradeRequests', row.sourceId), {
+      const requestUpdate = {
         status: update.status || update.paymentStatus || row.status || 'pending',
         paymentStatus: update.paymentStatus || update.status || row.paymentStatus || 'pending',
         approvalStatus: update.approvalStatus || row.approvalStatus || update.status || 'pending',
-        updatedAt: serverTimestamp(),
-      })
+        ...(subscriptionPayload ? {
+          status: 'approved',
+          approvalStatus: 'approved',
+          paymentStatus: 'paid',
+          approvedAt: subscriptionPayload.approvedAt,
+          approvedBy: subscriptionPayload.approvedBy,
+          approvedByEmail: subscriptionPayload.approvedByEmail,
+          subscriptionExpiresAt: subscriptionPayload.subscriptionExpiresAt,
+          nextBillingDate: subscriptionPayload.nextBillingDate,
+        } : {}),
+        updatedAt: subscriptionPayload?.updatedAt || serverTimestamp(),
+      }
+      console.log('[Subscription Approval] request update', { path: `upgradeRequests/${row.sourceId}`, requestUpdate })
+      await updateDoc(doc(db, 'upgradeRequests', row.sourceId), requestUpdate)
     }
-    if ((update.status === 'approved' || update.status === 'paid' || update.paymentStatus === 'paid') && row.workspaceId) {
-      await updateDoc(doc(db, 'workspaces', row.workspaceId), {
-        plan: row.plan || row.selectedPlan || 'Standard',
-        selectedPlan: row.plan || row.selectedPlan || 'Standard',
-        subscriptionStatus: 'active',
-        planStatus: 'active',
-        paymentStatus: 'paid',
-        billingCurrency: rowCurrency(row),
-        paidAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      })
+    if (subscriptionPayload && workspaceId) {
+      console.log('[Subscription Approval] user update', { path: `users/${ownerId}`, subscriptionPayload })
+      await setDoc(doc(db, 'users', ownerId), subscriptionPayload, { merge: true })
+      console.log('[Subscription Approval] workspace update', { path: `workspaces/${workspaceId}`, subscriptionPayload })
+      await setDoc(doc(db, 'workspaces', workspaceId), subscriptionPayload, { merge: true })
     }
     await logActivity(action, { transactionId: row.transactionId || row.id, workspaceId: row.workspaceId || '', update })
   }
