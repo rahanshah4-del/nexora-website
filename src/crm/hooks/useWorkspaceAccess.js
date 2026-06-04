@@ -62,6 +62,20 @@ function permissionsForBusiness(data = {}, businessType, plan) {
   return key === 'general-crm' ? applyLegacyCompatibility({ ...next, ...data }, data, keys) : next
 }
 
+function roleDefaultPermissions(role, businessType, plan) {
+  const defaults = workspacePermissionDefaults(role)
+  if (String(role || '').trim().toLowerCase() === 'sales') {
+    defaults.invoices = true
+  }
+  return permissionsForBusiness(defaults, businessType, plan)
+}
+
+function mergePermissionGrants(defaults = {}, overrides = {}) {
+  return Object.fromEntries(
+    Object.keys({ ...defaults, ...overrides }).map((key) => [key, Boolean(defaults[key] || overrides[key])]),
+  )
+}
+
 export function useWorkspaceAccess() {
   const { userId, workspaceId, businessType, staffId, role, isAdmin, isOwner, isStaff, isAccountant, isManager, accessPlan } = useUser()
   const currentPermissionKeys = useMemo(() => workspacePermissionKeysForBusiness(businessType, accessPlan), [accessPlan, businessType])
@@ -77,7 +91,7 @@ export function useWorkspaceAccess() {
       return
     }
 
-    if (!isStaff) {
+    if (isAdmin) {
       Promise.resolve().then(() => {
         const defaults = { ...emptyPermissions(currentPermissionKeys), ...workspacePermissionDefaults(isOwner ? 'owner' : role) }
         currentPermissionKeys.forEach((item) => {
@@ -95,7 +109,9 @@ export function useWorkspaceAccess() {
     const unsub = onSnapshot(
       ref,
       (snap) => {
-        setPermissions(permissionsForBusiness(snap.exists() ? snap.data() : {}, businessType, accessPlan))
+        const defaults = roleDefaultPermissions(role, businessType, accessPlan)
+        const overrides = snap.exists() ? permissionsForBusiness(snap.data(), businessType, accessPlan) : {}
+        setPermissions(mergePermissionGrants(defaults, overrides))
         setLoading(false)
       },
       () => {
@@ -104,7 +120,7 @@ export function useWorkspaceAccess() {
       },
     )
     return () => unsub()
-  }, [accessPlan, businessType, currentPermissionKeys, isOwner, isStaff, role, staffId, userId, workspaceId])
+  }, [accessPlan, businessType, currentPermissionKeys, isAdmin, isOwner, role, staffId, userId, workspaceId])
 
   return useMemo(
     () => ({

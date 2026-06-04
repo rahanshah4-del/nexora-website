@@ -12,7 +12,7 @@ async function fetchUserRole(user) {
   const snap = await getDoc(doc(db, 'users', user.uid))
   const data = snap.exists() ? snap.data() : null
   const role = typeof data?.role === 'string' ? data.role : 'user'
-  const isAdmin = isPlatformAdminDoc({ ...(data || {}), email: data?.email || user.email || '' })
+  const isAdmin = isPlatformAdminDoc({ email: user.email || '' })
   return { role, isAdmin }
 }
 

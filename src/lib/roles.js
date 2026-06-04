@@ -16,9 +16,8 @@ export function normalizeRoleValue(role, fallback = 'staff') {
 }
 
 export function isPlatformAdminDoc(userDoc = {}) {
-  const role = normalizeRoleValue(userDoc?.role, '')
   const email = userDoc?.email || userDoc?.userEmail || ''
-  return userDoc?.isAdmin === true || platformAdminRoles.includes(role) || isBackendAdminEmail(email)
+  return isBackendAdminEmail(email)
 }
 
 export function workspacePermissionDefaults(role) {

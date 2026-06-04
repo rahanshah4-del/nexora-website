@@ -195,6 +195,54 @@ service cloud.firestore {
       return value in ['pending', 'pending_approval', 'pending_verification', 'pending_partial', 'partial_pending', 'partial', 'requested', 'invited'];
     }
 
+    function isBlockedOwnerStatus(value) {
+      return value in ['blocked', 'disabled', 'inactive', 'Blocked', 'Disabled', 'Inactive'];
+    }
+
+    function isOwnerMemberResource(workspaceId, memberId) {
+      return memberId == workspaceId
+        || memberId == workspaceDoc(workspaceId).ownerId
+        || resource.data.userId == workspaceDoc(workspaceId).ownerId
+        || resource.data.uid == workspaceDoc(workspaceId).ownerId
+        || resource.data.staffId == workspaceDoc(workspaceId).ownerId
+        || isOwnerRole(resource.data.role);
+    }
+
+    function isOwnerMemberTarget(workspaceId, memberId) {
+      return memberId == workspaceId
+        || memberId == workspaceDoc(workspaceId).ownerId
+        || request.resource.data.userId == workspaceDoc(workspaceId).ownerId
+        || request.resource.data.uid == workspaceDoc(workspaceId).ownerId
+        || request.resource.data.staffId == workspaceDoc(workspaceId).ownerId
+        || isOwnerRole(request.resource.data.role);
+    }
+
+    function ownerRoleUnchanged(workspaceId, memberId) {
+      return !isOwnerMemberResource(workspaceId, memberId)
+        || isOwnerRole(request.resource.data.role);
+    }
+
+    function ownerStatusSafe(workspaceId, memberId) {
+      return !isOwnerMemberTarget(workspaceId, memberId)
+        || !request.resource.data.keys().hasAny(['status'])
+        || !isBlockedOwnerStatus(request.resource.data.status);
+    }
+
+    function ownerMemberCreateSafe(workspaceId, memberId) {
+      return !isOwnerMemberTarget(workspaceId, memberId)
+        || (isOwnerRole(request.resource.data.role) && ownerStatusSafe(workspaceId, memberId));
+    }
+
+    function ownerMemberUpdateSafe(workspaceId, memberId) {
+      return ownerRoleUnchanged(workspaceId, memberId)
+        && ownerStatusSafe(workspaceId, memberId);
+    }
+
+    function isOwnerPermissionDoc(workspaceId, permissionId) {
+      return permissionId == workspaceId
+        || permissionId == workspaceDoc(workspaceId).ownerId;
+    }
+
     function isOpenApprovalResource() {
       return resource.data.requiresApproval == true
         || isOpenStatus(resource.data.approvalStatus)
@@ -575,6 +623,8 @@ service cloud.firestore {
         && request.resource.data.uid == userId
         && request.resource.data.userId == userId
         && request.resource.data.workspaceId is string
+        && userId != request.resource.data.workspaceId
+        && userId != workspaceDoc(request.resource.data.workspaceId).ownerId
         && request.resource.data.ownerId == request.resource.data.workspaceId
         && request.resource.data.createdBy == request.auth.uid
         && request.resource.data.createdAt is timestamp
@@ -701,14 +751,14 @@ service cloud.firestore {
           || staffPermission(workspaceId, 'reports')
           || (isWorkspaceMember(workspaceId)
             && (resource.data.userId == request.auth.uid || resource.data.staffId == permissionDocId()));
-        allow create: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId) && workspaceCreateMetadata(workspaceId);
-        allow update: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId) && workspaceUpdateScopeSafe(workspaceId);
-        allow delete: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId);
+        allow create: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId) && workspaceCreateMetadata(workspaceId) && ownerMemberCreateSafe(workspaceId, staffId);
+        allow update: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId) && workspaceUpdateScopeSafe(workspaceId) && ownerMemberUpdateSafe(workspaceId, staffId);
+        allow delete: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId) && !isOwnerMemberResource(workspaceId, staffId);
       }
 
       match /permissions/{staffId} {
         allow read: if isWorkspaceManager(workspaceId) || (isWorkspaceMember(workspaceId) && staffId == permissionDocId());
-        allow create, update, delete: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId);
+        allow create, update, delete: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId) && !isOwnerPermissionDoc(workspaceId, staffId);
       }
 
       match /customers/{customerId} {
@@ -818,10 +868,10 @@ service cloud.firestore {
         allow read: if staffPermission(workspaceId, 'reports')
           || staffPermission(workspaceId, 'settingsAccess')
           || isPaymentApprover(workspaceId);
-        allow create: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId) && workspaceCreateMetadata(workspaceId);
+        allow create: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId) && workspaceCreateMetadata(workspaceId) && ownerMemberCreateSafe(workspaceId, memberId);
         allow update: if workspaceHasWriteAccess(workspaceId) && ((isWorkspaceManager(workspaceId) && workspaceUpdateScopeSafe(workspaceId))
-          || (isPaymentApprover(workspaceId) && approvalStatusFieldsTouched() && isOpenApprovalResource() && workspaceUpdateScopeSafe(workspaceId)));
-        allow delete: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId);
+          || (isPaymentApprover(workspaceId) && approvalStatusFieldsTouched() && isOpenApprovalResource() && workspaceUpdateScopeSafe(workspaceId))) && ownerMemberUpdateSafe(workspaceId, memberId);
+        allow delete: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId) && !isOwnerMemberResource(workspaceId, memberId);
       }
 
       match /branches/{branchId} {

@@ -172,7 +172,7 @@ export function UserProvider({ children }) {
   const businessType = normalizeBusinessType(selectedBusiness?.type || userDoc?.selectedBusinessType || userDoc?.businessType)
   const businessWorkspaceId = selectedBusiness?.id || businessWorkspaceForType(businessType).id
   const staffId = userDoc?.staffId || user?.uid || null
-  const isPlatformAdmin = isPlatformAdminDoc(userDoc || {})
+  const isPlatformAdmin = isPlatformAdminDoc({ email: user?.email || '' })
   const userStatus = String(userDoc?.status || '').trim().toLowerCase()
   const staffStatus = String(staffAccessStatus || '').trim().toLowerCase()
   const accountStatus = staffStatus || userStatus || 'active'
@@ -182,7 +182,13 @@ export function UserProvider({ children }) {
   )
   const isOwner = role === 'owner' || ownsWorkspace
   const isAdmin = isOwner || role === 'admin'
-  const isStaff = !isOwner && ['staff', 'sales', 'support'].includes(role)
+  const isStaff = !isAdmin
+
+  useEffect(() => {
+    console.log('[Role Access] role', role)
+    console.log('[Role Access] isOwnerAdmin', isAdmin)
+    console.log('[Role Access] isStaff', isStaff)
+  }, [isAdmin, isStaff, role])
 
   useEffect(() => {
     if (!ready || !db || !user?.uid || loading || !workspaceId) {

@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import Sidebar from '../components/sidebar/Sidebar.jsx'
 import TopNav from '../components/navbar/TopNav.jsx'
@@ -282,6 +282,14 @@ export default function DashboardLayout() {
   const crmAccessBlocked = ready && isAuthenticated && !userLoading && Boolean(userDoc) && !isStaff && !hasActiveAccess && !developerOverride
   const accountBlocked = ready && isAuthenticated && !userLoading && Boolean(userDoc) && isBlocked
   const currentModule = moduleByRoute(location.pathname)
+  const isOwnerAdmin = workspaceAccess.isAdmin
+  const allowedModules = useMemo(
+    () =>
+      workspaceAccess.permissionKeys
+        .filter((item) => item.action === 'view' && workspaceAccess.hasModulePermission(item.moduleKey, 'view'))
+        .map((item) => item.moduleKey),
+    [workspaceAccess],
+  )
   const routePlanBlocked =
     ready &&
     isAuthenticated &&
@@ -313,10 +321,17 @@ export default function DashboardLayout() {
     Boolean(userDoc) &&
     Boolean(currentModule) &&
     !developerOverride &&
-    ((currentModule?.key === 'team' && !teamOverride && !workspaceAccess.hasModulePermission('team', 'view')) ||
-      (workspaceAccess.isStaff && !workspaceAccess.hasModulePermission(currentModule.key, 'view')))
+    !isOwnerAdmin &&
+    !workspaceAccess.hasModulePermission(currentModule.key, 'view')
   const mobileBlocked = ready && isAuthenticated && isMobileScreen
   const onboardingOpen = Boolean(ready && userId && !userLoading && !isStaff && userDoc?.onboardingCompleted !== true)
+
+  useEffect(() => {
+    console.log('[Role Access] role', workspaceAccess.role)
+    console.log('[Role Access] isOwnerAdmin', isOwnerAdmin)
+    console.log('[Role Access] isStaff', workspaceAccess.isStaff)
+    console.log('[Role Access] allowed modules', allowedModules)
+  }, [allowedModules, isOwnerAdmin, workspaceAccess.isStaff, workspaceAccess.role])
 
   useEffect(() => {
     const media = window.matchMedia?.('(max-width: 767px)')
