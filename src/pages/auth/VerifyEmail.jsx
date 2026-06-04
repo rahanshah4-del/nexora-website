@@ -22,6 +22,33 @@ function logFullOtpError(error) {
   })
 }
 
+function clearLocalAuthWorkspaceState(userId) {
+  if (typeof window === 'undefined' || !userId) return
+
+  const selectedWorkspaceUserId = window.localStorage.getItem('selectedWorkspaceUserId')
+  if (selectedWorkspaceUserId === userId) {
+    window.localStorage.removeItem('selectedWorkspace')
+    window.localStorage.removeItem('selectedWorkspaceUserId')
+  }
+  window.localStorage.removeItem(`selectedWorkspace:${userId}`)
+
+  const selectedProductUserId = window.localStorage.getItem('selectedProductUserId')
+  if (selectedProductUserId === userId) {
+    window.localStorage.removeItem('selectedProduct')
+    window.localStorage.removeItem('selectedProductUserId')
+  }
+
+  window.sessionStorage.removeItem(`nexoraSessionId:${userId}`)
+  window.sessionStorage.removeItem(`nexoraSessionStartTime:${userId}`)
+  window.sessionStorage.removeItem('nexoraSessionId')
+  window.sessionStorage.removeItem('nexoraSessionStartedAt')
+  Object.keys(window.sessionStorage).forEach((key) => {
+    if (key.startsWith(`nexoraWorkspaceModalSeen:${userId}:`)) {
+      window.sessionStorage.removeItem(key)
+    }
+  })
+}
+
 export default function VerifyEmail() {
   const { user, loading } = useAuth()
   const navigate = useNavigate()
@@ -172,9 +199,20 @@ export default function VerifyEmail() {
     }
   }
 
-  const handleSignOut = async () => {
-    await trackAnalyticsEvent('logout', { userId: user?.uid || '', email: user?.email || '', page: '/verify-email' })
-    if (auth) await signOut(auth)
+  const handleLeaveVerification = async () => {
+    const currentUser = auth?.currentUser || user
+    console.log('[VerifyEmail] switch account')
+    await trackAnalyticsEvent('logout', { userId: currentUser?.uid || '', email: currentUser?.email || '', page: '/verify-email' })
+    try {
+      if (auth) await signOut(auth)
+      console.log('[VerifyEmail] signed out')
+    } catch (err) {
+      logFullOtpError(err)
+      setError(clientSafeMessage(err, 'Could not sign out. Please try again.', { context: 'Leave email verification' }))
+      return
+    }
+    clearLocalAuthWorkspaceState(currentUser?.uid)
+    console.log('[VerifyEmail] redirect login')
     navigate('/login', { replace: true })
   }
 
@@ -247,9 +285,14 @@ export default function VerifyEmail() {
             {sending ? 'Sending...' : 'Send test OTP'}
           </button>
 
-          <button type="button" onClick={handleSignOut} className="mt-5 text-sm font-semibold text-slate-500 transition hover:text-slate-900">
-            Sign in with another account
-          </button>
+          <div className="mt-5 flex flex-wrap gap-4">
+            <button type="button" onClick={handleLeaveVerification} className="text-sm font-semibold text-slate-500 transition hover:text-slate-900">
+              Sign in with another account
+            </button>
+            <button type="button" onClick={handleLeaveVerification} className="text-sm font-semibold text-slate-500 transition hover:text-slate-900">
+              Back to Login
+            </button>
+          </div>
         </div>
       </section>
     </main>

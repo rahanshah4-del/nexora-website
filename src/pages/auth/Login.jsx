@@ -188,7 +188,7 @@ export default function Login() {
         customVerified,
       })
       if (!credentials.user.emailVerified && !customVerified) {
-        navigate(getPostLoginRoute({ ...credentials.user, emailVerifiedCustom: false }), { replace: true })
+        navigate('/verify-email', { replace: true })
         return
       }
       const workspaceResult = await ensureUserWorkspace(credentials.user, { provider: 'password' })
