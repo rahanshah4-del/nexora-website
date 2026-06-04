@@ -710,6 +710,23 @@ service cloud.firestore {
       ]);
     }
 
+    function validUpgradeRequestPaymentEvidence() {
+      return request.resource.data.amount is number
+        && request.resource.data.amount > 0
+        && (
+          (
+            request.resource.data.keys().hasAny(['transactionId'])
+            && request.resource.data.transactionId is string
+            && request.resource.data.transactionId.size() > 0
+          )
+          || (
+            request.resource.data.keys().hasAny(['paymentProof'])
+            && request.resource.data.paymentProof is string
+            && request.resource.data.paymentProof.size() > 0
+          )
+        );
+    }
+
     function accountTransactionCreateScope(workspaceId) {
       return (request.resource.data.ownerId == workspaceId || request.resource.data.ownerId == workspaceDoc(workspaceId).ownerId)
         && request.resource.data.userId == workspaceId
@@ -1099,7 +1116,8 @@ service cloud.firestore {
         && request.resource.data.createdBy == request.auth.uid
         && request.resource.data.createdAt is timestamp
         && request.resource.data.approvalStatus == 'pending'
-        && request.resource.data.paymentStatus == 'pending';
+        && request.resource.data.paymentStatus == 'pending'
+        && validUpgradeRequestPaymentEvidence();
       allow read: if isAdmin()
         || (activeSignedIn() && resource.data.userId == request.auth.uid)
         || (activeSignedIn()

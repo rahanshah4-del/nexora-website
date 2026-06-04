@@ -40,6 +40,11 @@ function money(value, currency = DEFAULT_SAAS_CURRENCY) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency, maximumFractionDigits: 0 }).format(Number(value || 0))
 }
 
+function positiveAmount(value) {
+  const amount = Number(value)
+  return Number.isFinite(amount) && amount > 0 ? amount : 0
+}
+
 function planSavings(plan) {
   const monthly = Number(plan.monthlyPrice || 0)
   const yearly = Number(plan.yearlyPrice || 0)
@@ -131,9 +136,9 @@ function UploadBox({ file, previewUrl, onFile }) {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm font-black text-slate-950">Upload Payment Proof Screenshot</p>
-            <p className="mt-1 text-xs font-semibold text-slate-500">Optional PNG/JPG receipt screenshot for faster verification.</p>
+            <p className="mt-1 text-xs font-semibold text-slate-500">Required if no transaction ID is provided. PNG/JPG receipt screenshots are supported.</p>
           </div>
-          <span className="rounded-full bg-violet-600 px-4 py-2 text-xs font-black text-white">{file ? 'Replace proof' : 'Choose optional file'}</span>
+          <span className="rounded-full bg-violet-600 px-4 py-2 text-xs font-black text-white">{file ? 'Replace proof' : 'Choose proof file'}</span>
         </div>
         {previewUrl ? <img src={previewUrl} alt="Payment proof preview" className="mt-4 h-56 w-full rounded-2xl object-cover" /> : null}
       </button>
@@ -239,6 +244,8 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
   const selectedAmount = billingCycle === 'yearly' ? selectedPlan?.yearlyPrice : selectedPlan?.monthlyPrice
   const requestedPlan = selectedPlan?.name || ''
   const previewUrl = useMemo(() => (proofFile ? URL.createObjectURL(proofFile) : ''), [proofFile])
+  const paidAmount = positiveAmount(form.amountPaid)
+  const hasPaymentEvidence = Boolean(form.transactionId.trim() || proofFile)
 
   useEffect(() => {
     if (!previewUrl) return undefined
@@ -252,8 +259,6 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
       senderName: current.senderName || user?.displayName || userDoc?.ownerName || '',
     }))
   }, [selectedAmount, user?.displayName, userDoc?.ownerName])
-
-  const canSubmit = !submitting && !submitted
 
   function upgradeRequestContext() {
     return {
@@ -274,8 +279,11 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
       requestedPlan,
       hasPaymentMethod: Boolean(selectedMethod?.id),
       paymentMethodId: selectedMethod?.id || '',
+      amountPaid: paidAmount,
+      hasPositiveAmount: paidAmount > 0,
       hasScreenshot: Boolean(proofFile),
       hasTransactionId: Boolean(form.transactionId.trim()),
+      hasPaymentEvidence,
       hasSenderName: Boolean(form.senderName.trim()),
       hasSenderNumber: Boolean(form.senderNumber.trim()),
     }
@@ -289,8 +297,13 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
     if (!businessType) return 'Business type is missing for this workspace.'
     if (!requestedPlan) return 'Plan is required.'
     if (!selectedMethod?.id) return 'Payment method is required.'
+    if (paidAmount <= 0) return 'Enter the paid amount before submitting your upgrade request.'
+    if (!hasPaymentEvidence) return 'Add a transaction ID or upload payment proof before submitting.'
     return ''
   }
+
+  const validationError = validateUpgradeRequest()
+  const canSubmit = !submitting && !submitted && !validationError
 
   async function handleSubmit() {
     setSubmitError('')
@@ -321,7 +334,6 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
       } else {
         console.info('Upgrade request screenshot upload skipped: no screenshot uploaded.')
       }
-      const paidAmount = Number(form.amountPaid || (String(selectedAmount).toLowerCase() === 'custom' ? 0 : selectedAmount) || 0) || 0
       const payload = {
         email: user.email || userDoc?.email || '',
         uid: user.uid,
@@ -362,6 +374,8 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
         businessType: payload.businessType,
         requestedPlan: payload.requestedPlan,
         paymentMethod: payload.paymentMethod,
+        amount: payload.amount,
+        hasTransactionId: Boolean(payload.transactionId),
         hasScreenshot: Boolean(payload.screenshotUrl),
       })
       const requestRef = await addDoc(collection(db, 'upgradeRequests'), payload)
@@ -489,11 +503,11 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
               <h2 className="text-xl font-black">Transaction information</h2>
               <div className="mt-5 grid gap-4 md:grid-cols-2">
                 <label className="text-xs font-black text-slate-600">
-                  Transaction ID <span className="font-semibold text-slate-400">(optional)</span>
+                  Transaction ID <span className="font-semibold text-slate-400">(required if no proof)</span>
                   <input className="mt-1 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold" value={form.transactionId} onChange={(event) => setForm((current) => ({ ...current, transactionId: event.target.value }))} placeholder="e.g. TXN-123456" />
                 </label>
                 <label className="text-xs font-black text-slate-600">
-                  Amount Paid <span className="font-semibold text-slate-400">(optional)</span>
+                  Amount Paid <span className="font-semibold text-rose-500">(required)</span>
                   <input className="mt-1 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold" value={form.amountPaid} onChange={(event) => setForm((current) => ({ ...current, amountPaid: event.target.value }))} inputMode="decimal" placeholder={money(selectedAmount, currency)} />
                 </label>
                 <label className="text-xs font-black text-slate-600">
@@ -531,13 +545,15 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
               <div className="mt-4 space-y-3 text-sm font-bold text-slate-600">
                 <div className="flex justify-between gap-4"><span>Billing</span><span className="text-slate-950 capitalize">{billingCycle}</span></div>
                 <div className="flex justify-between gap-4"><span>Amount</span><span className="text-slate-950">{money(selectedAmount, currency)}</span></div>
+                <div className="flex justify-between gap-4"><span>Evidence</span><span className="text-right text-slate-950">{hasPaymentEvidence ? 'Transaction ID or proof added' : 'Required'}</span></div>
                 <div className="flex justify-between gap-4"><span>Currency</span><span className="text-slate-950">{currency}</span></div>
                 <div className="flex justify-between gap-4"><span>Payment</span><span className="text-slate-950">{selectedMethod?.label}</span></div>
               </div>
               {submitError ? <p className="mt-4 rounded-2xl bg-rose-50 p-3 text-sm font-bold text-rose-700">{submitError}</p> : null}
+              {!submitError && validationError && !submitted ? <p className="mt-4 rounded-2xl bg-amber-50 p-3 text-sm font-bold text-amber-700">{validationError}</p> : null}
               {submitted ? <p className="mt-4 rounded-2xl bg-emerald-50 p-3 text-sm font-bold text-emerald-700">Upgrade request submitted. Status is pending until Nexora approves payment.</p> : null}
               <button type="button" disabled={!canSubmit} onClick={handleSubmit} className={`mt-5 w-full rounded-2xl px-5 py-4 text-sm font-black transition ${canSubmit ? 'bg-slate-950 text-white hover:bg-violet-700' : 'cursor-not-allowed bg-slate-200 text-slate-500'}`}>
-                {submitting ? 'Submitting...' : submitted ? 'Submitted' : 'Submit Upgrade Request'}
+                {submitting ? 'Submitting...' : submitted ? 'Submitted' : validationError ? 'Complete Payment Details' : 'Submit Upgrade Request'}
               </button>
             </Panel>
 
@@ -567,7 +583,7 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
 
       <div className="sticky bottom-0 z-30 border-t border-slate-200 bg-white/95 p-3 backdrop-blur xl:hidden">
         <button type="button" disabled={!canSubmit} onClick={handleSubmit} className={`w-full rounded-2xl px-5 py-4 text-sm font-black ${canSubmit ? 'bg-slate-950 text-white' : 'bg-slate-200 text-slate-500'}`}>
-          {submitting ? 'Submitting...' : submitted ? 'Submitted' : 'Submit Upgrade Request'}
+          {submitting ? 'Submitting...' : submitted ? 'Submitted' : validationError ? 'Complete Payment Details' : 'Submit Upgrade Request'}
         </button>
       </div>
     </main>

@@ -146,7 +146,7 @@ export default function AdminUpgradeRequestsPage() {
       },
       { key: 'billingCycle', header: 'Billing Cycle', cell: (r) => <Badge variant="default">{r.billingCycle || '—'}</Badge> },
       { key: 'planPrice', header: 'Plan Price', cell: (r) => <span className="text-xs font-semibold">{r.planPrice ?? '—'}</span> },
-      { key: 'amountPaid', header: 'Amount Paid', cell: (r) => <span className="text-xs font-semibold">{r.amountPaid ?? '—'}</span> },
+      { key: 'amountPaid', header: 'Amount Paid', cell: (r) => <span className="text-xs font-semibold">{r.amountPaid ?? r.amount ?? '—'}</span> },
       { key: 'currency', header: 'Currency', cell: (r) => <Badge variant="info">{r.currency || '—'}</Badge> },
       { key: 'paymentMethod', header: 'Payment Method', cell: (r) => <Badge variant="info">{r.paymentMethod || '—'}</Badge> },
       { key: 'senderName', header: 'Sender Name', cell: (r) => <span className="text-xs font-semibold">{r.senderName || '—'}</span> },

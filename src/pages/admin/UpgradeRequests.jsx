@@ -20,6 +20,12 @@ function proofUrl(item = {}) {
   return item.paymentProof || item.screenshotUrl || item.paymentProofUrl || ''
 }
 
+function amountLabel(item = {}) {
+  const amount = Number(item.amount ?? item.amountPaid ?? item.planPrice ?? 0) || 0
+  const currency = item.currency || item.billingCurrency || 'PKR'
+  return amount > 0 ? `${currency} ${amount.toLocaleString('en-US')}` : '-'
+}
+
 export default function UpgradeRequests() {
   const { user } = useAuth()
   const backendAdminAllowed = isBackendAdminEmail(user?.email)
@@ -182,10 +188,11 @@ export default function UpgradeRequests() {
       ) : null}
 
       <div className="overflow-x-auto rounded-2xl border border-white/10 bg-white/5">
-        <div className="min-w-[1180px]">
-        <div className="grid grid-cols-[1.15fr_0.75fr_1fr_0.9fr_0.9fr_0.9fr_1.05fr_0.75fr_1fr] gap-0 border-b border-white/10 bg-slate-950/40 px-4 py-3 text-xs font-semibold text-slate-200/90">
+        <div className="min-w-[1260px]">
+        <div className="grid grid-cols-[1.15fr_0.75fr_0.7fr_1fr_0.9fr_0.9fr_0.9fr_1.05fr_0.75fr_1fr] gap-0 border-b border-white/10 bg-slate-950/40 px-4 py-3 text-xs font-semibold text-slate-200/90">
           <div>User</div>
           <div>Plan</div>
+          <div>Amount</div>
           <div>Transaction ID</div>
           <div>Payment Method</div>
           <div>Sender Name</div>
@@ -201,7 +208,7 @@ export default function UpgradeRequests() {
         ) : (
           <div className="divide-y divide-white/10">
             {items.map((item) => (
-              <div key={item.id} className="grid grid-cols-[1.15fr_0.75fr_1fr_0.9fr_0.9fr_0.9fr_1.05fr_0.75fr_1fr] gap-0 px-4 py-4 text-sm">
+              <div key={item.id} className="grid grid-cols-[1.15fr_0.75fr_0.7fr_1fr_0.9fr_0.9fr_0.9fr_1.05fr_0.75fr_1fr] gap-0 px-4 py-4 text-sm">
                 <div className="min-w-0">
                   <p className="truncate font-semibold text-white">{item.email || item.userName || item.userId || 'Unknown'}</p>
                   <div className="mt-1 flex flex-wrap gap-2 text-xs text-slate-300">
@@ -219,6 +226,7 @@ export default function UpgradeRequests() {
                   </div>
                 </div>
                 <div className="text-slate-200/90">{item.requestedPlan || item.selectedPlan || item.plan || '-'}</div>
+                <div className="text-slate-200/90">{amountLabel(item)}</div>
                 <div className="font-mono text-xs text-slate-200/90">{item.transactionId || item.txnId || '-'}</div>
                 <div className="text-slate-200/90">{item.paymentMethod || item.method || '-'}</div>
                 <div className="text-slate-200/90">{item.senderName || '-'}</div>
