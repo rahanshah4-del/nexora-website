@@ -26,6 +26,7 @@ import {
   serverTimestamp,
   setDoc,
   updateDoc,
+  writeBatch,
 } from 'firebase/firestore'
 import { signOut } from 'firebase/auth'
 import {
@@ -223,6 +224,33 @@ function isPaid(row = {}) {
 
 function isPaidSubscriptionStatus(row = {}) {
   return paidSubscriptionStatuses.includes(statusValue(row.subscriptionStatus || row.planStatus))
+}
+
+const subscriptionSyncFields = new Set([
+  'accountStatus',
+  'billingCycle',
+  'billingCurrency',
+  'expiresAt',
+  'isTrialActive',
+  'nextBillingDate',
+  'paidAt',
+  'paymentStatus',
+  'plan',
+  'planStatus',
+  'selectedPlan',
+  'status',
+  'subscriptionExpiresAt',
+  'subscriptionStartedAt',
+  'subscriptionStatus',
+  'trialDays',
+  'trialEndsAt',
+  'trialStartAt',
+  'trialStartedAt',
+  'upgradedAt',
+])
+
+function shouldSyncSubscriptionPayload(payload = {}) {
+  return Object.keys(payload || {}).some((key) => subscriptionSyncFields.has(key))
 }
 
 function hasMissingPaidSubscriptionExpiry(row = {}) {
@@ -769,6 +797,33 @@ export default function ControlCentre() {
     })
   }
 
+  function ownerIdForWorkspaceRow(row = {}, workspaceId = '') {
+    const workspace = workspaceId ? workspacesById.get(workspaceId) || {} : {}
+    if (row.ownerId) return row.ownerId
+    if (workspace.ownerId) return workspace.ownerId
+    if (row.uid) return row.uid
+    if (row.createdBy) return row.createdBy
+    if (row.userId && row.userId !== workspaceId) return row.userId
+    if (workspace.userId && workspace.userId !== workspaceId) return workspace.userId
+    return ''
+  }
+
+  async function syncWorkspaceAndUserSubscription({ workspaceId, ownerId, payload }) {
+    if (!workspaceId) throw new Error('Workspace ID is required to sync subscription state.')
+    if (!ownerId) throw new Error('Owner user ID is required to sync subscription state.')
+    const workspaceRef = doc(db, 'workspaces', workspaceId)
+    const userRef = doc(db, 'users', ownerId)
+    const batch = writeBatch(db)
+
+    console.log('[Subscription Sync] workspace update', { path: `workspaces/${workspaceId}`, payload })
+    batch.set(workspaceRef, payload, { merge: true })
+    console.log('[Subscription Sync] user update', { path: `users/${ownerId}`, payload })
+    batch.set(userRef, payload, { merge: true })
+
+    await batch.commit()
+    console.log('[Subscription Sync] complete', { workspaceId, ownerId })
+  }
+
   async function runAction(id, action, success = 'Action completed.') {
     setBusy(id)
     setToast('')
@@ -832,7 +887,21 @@ export default function ControlCentre() {
 
   async function updateWorkspace(row, update, action) {
     const workspaceId = row.workspaceId || row.id
-    await updateDoc(doc(db, 'workspaces', workspaceId), { ...update, updatedAt: serverTimestamp(), updatedBy: user?.uid || '' })
+    const payload = {
+      ...update,
+      updatedAt: serverTimestamp(),
+      updatedBy: user?.uid || '',
+      updatedByEmail: user?.email || '',
+    }
+    if (shouldSyncSubscriptionPayload(update)) {
+      await syncWorkspaceAndUserSubscription({
+        workspaceId,
+        ownerId: ownerIdForWorkspaceRow(row, workspaceId),
+        payload,
+      })
+    } else {
+      await updateDoc(doc(db, 'workspaces', workspaceId), payload)
+    }
     await logActivity(action, { workspaceId, email: userEmail(row), update })
   }
 
@@ -913,10 +982,7 @@ export default function ControlCentre() {
     console.log('[Subscription Approval] payload', { requestId: row.id, workspaceId, ownerId, subscriptionPayload })
     console.log('[Subscription Approval] request update', { path: `upgradeRequests/${row.id}`, requestUpdate })
     await updateDoc(row.ref || doc(db, 'upgradeRequests', row.id), requestUpdate)
-    console.log('[Subscription Approval] user update', { path: `users/${ownerId}`, subscriptionPayload })
-    await setDoc(doc(db, 'users', ownerId), subscriptionPayload, { merge: true })
-    console.log('[Subscription Approval] workspace update', { path: `workspaces/${workspaceId}`, subscriptionPayload })
-    await setDoc(doc(db, 'workspaces', workspaceId), subscriptionPayload, { merge: true })
+    await syncWorkspaceAndUserSubscription({ workspaceId, ownerId, payload: subscriptionPayload })
     await setDoc(doc(db, 'platformPayments', row.id), {
       clientEmail: row.clientEmail || row.email || row.ownerEmail || '',
       workspaceId: workspaceId || '',
@@ -1045,10 +1111,7 @@ export default function ControlCentre() {
       await updateDoc(doc(db, 'upgradeRequests', row.sourceId), requestUpdate)
     }
     if (subscriptionPayload && workspaceId) {
-      console.log('[Subscription Approval] user update', { path: `users/${ownerId}`, subscriptionPayload })
-      await setDoc(doc(db, 'users', ownerId), subscriptionPayload, { merge: true })
-      console.log('[Subscription Approval] workspace update', { path: `workspaces/${workspaceId}`, subscriptionPayload })
-      await setDoc(doc(db, 'workspaces', workspaceId), subscriptionPayload, { merge: true })
+      await syncWorkspaceAndUserSubscription({ workspaceId, ownerId, payload: subscriptionPayload })
     }
     await logActivity(action, { transactionId: row.transactionId || row.id, workspaceId: row.workspaceId || '', update })
   }
