@@ -2,8 +2,8 @@ import { useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 
 const TAWK_SCRIPT_ID = 'nexora-tawk-to-widget'
-const TAWK_PROPERTY_ID = import.meta.env.VITE_TAWK_TO_PROPERTY_ID || ''
-const TAWK_WIDGET_ID = import.meta.env.VITE_TAWK_TO_WIDGET_ID || 'default'
+const TAWK_PROPERTY_ID = import.meta.env.VITE_TAWK_TO_PROPERTY_ID || '6a21bb86204aec1c2e8c2b59'
+const TAWK_WIDGET_ID = import.meta.env.VITE_TAWK_TO_WIDGET_ID || '1jq9s92p1'
 const PUBLIC_PATHS = new Set(['/', '/pricing', '/industries', '/contact', '/about'])
 const BLOCKED_PATHS = new Set(['/login', '/signup', '/verify-email', '/workspace'])
 const BLOCKED_PREFIXES = ['/app', '/admin']
@@ -32,6 +32,15 @@ export default function TawkChat() {
   const shouldLoad = canLoadTawk(pathname)
 
   useEffect(() => {
+    console.log('[Tawk] config', {
+      pathname,
+      propertyId: TAWK_PROPERTY_ID,
+      widgetId: TAWK_WIDGET_ID,
+      shouldLoad,
+    })
+  }, [pathname, shouldLoad])
+
+  useEffect(() => {
     if (!shouldLoad) {
       window.Tawk_API?.hideWidget?.()
       removeTawkWidget()
@@ -49,6 +58,7 @@ export default function TawkChat() {
       script.charset = 'UTF-8'
       script.setAttribute('crossorigin', '*')
       document.body.appendChild(script)
+      console.log('[Tawk] script injected', { src: script.src })
     }
 
     return () => {
