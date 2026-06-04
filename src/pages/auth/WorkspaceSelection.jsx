@@ -1402,6 +1402,13 @@ export default function WorkspaceSelection() {
 
   const handleCreateWorkspace = useCallback(async () => {
     if (creatingWorkspace) return
+    console.log('[Workspace Create] start', {
+      currentUserExists: Boolean(auth?.currentUser),
+      authUid: auth?.currentUser?.uid || '',
+      userUid: user?.uid || '',
+      emailVerified,
+      selectedBusinessType: onboardingForm.businessType || '',
+    })
     if (!emailVerified) {
       setCreateMessage('Please verify your email before creating a workspace.')
       navigate(getAuthRouteState({ ...user, emailVerifiedCustom: accountData?.emailVerifiedCustom }).route)
@@ -1462,7 +1469,29 @@ export default function WorkspaceSelection() {
       const existingWorkspaceId = cleanString(existingAccount?.workspaceId)
       const workspaceRef = existingWorkspaceId ? doc(db, 'workspaces', existingWorkspaceId) : doc(db, 'workspaces', uid)
       const workspaceId = workspaceRef.id
+      const workspaceSnap = await getDoc(workspaceRef)
+      const workspaceExists = workspaceSnap.exists()
       const isFirstUserProfile = !userSnap.exists()
+      const authUid = auth?.currentUser?.uid || ''
+
+      console.log('[Workspace Create] auth uid', {
+        currentUserExists: Boolean(auth?.currentUser),
+        authUid,
+        userUid: uid,
+        uidMatchesAuth: authUid === uid,
+      })
+      console.log('[Workspace Create] workspaceId', {
+        workspaceId,
+        existingWorkspaceId,
+        ownerId: uid,
+        ownerMatchesAuth: uid === authUid,
+        createdBy: uid,
+        createdByMatchesAuth: uid === authUid,
+      })
+      console.log('[Workspace Setup] existing workspace', {
+        workspaceId,
+        exists: workspaceExists,
+      })
 
       const primaryBusinessType = businessTypeId
       const allowedBusinessTypes = [businessTypeId]
@@ -1515,6 +1544,34 @@ export default function WorkspaceSelection() {
         isTrialActive: true,
         trialDays: CRM_TRIAL_DAYS,
       }
+      const userOnboardingUpdatePayload = {
+        businessType: businessTypeId,
+        selectedBusinessType: businessTypeId,
+        currentBusinessType: businessTypeId,
+        primaryBusinessType,
+        allowedBusinessTypes,
+        specialModuleAccess: false,
+        allModulesAccess: false,
+        selectedWorkspace,
+        trialBusinessType: businessTypeId,
+        enabledModules,
+        selectedFeatures,
+        onboardingCompleted: true,
+        workspaceName,
+        company: workspaceName,
+        companyName: workspaceName,
+        ownerName,
+        country,
+        currency,
+        phone,
+        address,
+        preferredLanguage,
+        academicYear,
+        classesRange,
+        monthlyFeeSetup,
+        updatedAt: now,
+        lastLoginAt: now,
+      }
       const userPayload = isFirstUserProfile
         ? {
             ...baseUserPayload,
@@ -1523,8 +1580,19 @@ export default function WorkspaceSelection() {
             createdBy: uid,
             isAdmin: false,
           }
-        : baseUserPayload
-      const workspacePayload = {
+        : userOnboardingUpdatePayload
+      const workspaceOnboardingUpdatePayload = {
+        businessType: businessTypeId,
+        currentBusinessType: businessTypeId,
+        selectedBusinessType: businessTypeId,
+        selectedWorkspace,
+        allowedBusinessTypes,
+        enabledModules,
+        onboardingCompleted: true,
+        updatedAt: now,
+        lastAccessedAt: now,
+      }
+      const workspaceCreatePayload = {
         ownerId: uid,
         userId: workspaceId,
         workspaceId,
@@ -1569,6 +1637,7 @@ export default function WorkspaceSelection() {
         updatedAt: now,
         lastAccessedAt: now,
       }
+      const workspacePayload = workspaceExists ? workspaceOnboardingUpdatePayload : workspaceCreatePayload
       const ownerMembership = {
         uid,
         staffId: uid,
@@ -1587,27 +1656,83 @@ export default function WorkspaceSelection() {
         updatedAt: now,
         updatedBy: uid,
       }
+      const ownerPermissionPayload = {
+        ...workspacePermissionDefaults('owner'),
+        ownerId: uid,
+        userId: uid,
+        staffId: uid,
+        workspaceId,
+        role: 'owner',
+        updatedAt: now,
+        updatedBy: uid,
+      }
+
+      console.log('[Workspace Create] payload', {
+        userPath: `users/${uid}`,
+        workspacePath: `workspaces/${workspaceId}`,
+        workspaceExists,
+        staffPath: `workspaces/${workspaceId}/staff/${uid}`,
+        teamMemberPath: `workspaces/${workspaceId}/teamMembers/${uid}`,
+        permissionPath: `workspaces/${workspaceId}/permissions/${uid}`,
+        userPayload,
+        userOnboardingUpdatePayload,
+        workspacePayload,
+        workspaceOnboardingUpdatePayload,
+        workspaceCreatePayload,
+        ownerMembership,
+        ownerPermissionPayload,
+      })
+      if (workspaceExists) {
+        console.log('[Workspace Setup] onboarding update payload', workspaceOnboardingUpdatePayload)
+      }
 
       await setDoc(userRef, userPayload, { merge: true })
+      console.log('[Workspace Create] firestore write success', {
+        path: `users/${uid}`,
+        workspaceId,
+        ownerId: uid,
+        createdBy: uid,
+      })
       await setDoc(workspaceRef, workspacePayload, { merge: true })
-      await Promise.all([
+      console.log('[Workspace Create] firestore write success', {
+        path: `workspaces/${workspaceId}`,
+        workspaceId,
+        ownerId: uid,
+        createdBy: uid,
+        mode: workspaceExists ? 'onboarding-update' : 'workspace-create',
+      })
+      if (workspaceExists) {
+        console.log('[Workspace Setup] onboarding update success', {
+          workspaceId,
+          selectedWorkspace,
+          businessType: businessTypeId,
+        })
+      }
+      const membershipWrites = [
         setDoc(doc(db, 'workspaces', workspaceId, 'staff', uid), ownerMembership, { merge: true }),
         setDoc(doc(db, 'workspaces', workspaceId, 'teamMembers', uid), ownerMembership, { merge: true }),
-        setDoc(
+      ]
+      if (uid !== workspaceId) {
+        membershipWrites.push(setDoc(
           doc(db, 'workspaces', workspaceId, 'permissions', uid),
-          {
-            ...workspacePermissionDefaults('owner'),
-            ownerId: uid,
-            userId: uid,
-            staffId: uid,
-            workspaceId,
-            role: 'owner',
-            updatedAt: now,
-            updatedBy: uid,
-          },
+          ownerPermissionPayload,
           { merge: true },
-        ),
-      ])
+        ))
+      } else {
+        console.log('[Workspace Setup] skip owner permissions doc', {
+          path: `workspaces/${workspaceId}/permissions/${uid}`,
+          reason: 'owner inherits workspace manager access',
+        })
+      }
+      await Promise.all(membershipWrites)
+      console.log('[Workspace Create] firestore write success', {
+        path: uid === workspaceId
+          ? `workspaces/${workspaceId}/staff|teamMembers/${uid}`
+          : `workspaces/${workspaceId}/staff|teamMembers|permissions/${uid}`,
+        workspaceId,
+        ownerId: uid,
+        createdBy: uid,
+      })
       saveSelectedWorkspace(uid, selectedWorkspace)
       console.log('[Onboarding] saved workspace module', {
         workspaceId,
@@ -1624,8 +1749,8 @@ export default function WorkspaceSelection() {
         .catch((analyticsError) => {
           console.warn('[Onboarding] onboarding_completed analytics failed', { error: analyticsError?.message || analyticsError })
         })
-      setAccountData(userPayload)
-      setWorkspaceData(workspacePayload)
+      setAccountData((current) => (isFirstUserProfile ? userPayload : { ...(current || {}), ...userPayload }))
+      setWorkspaceData((current) => (workspaceExists ? { ...(current || {}), ...workspaceOnboardingUpdatePayload } : workspaceCreatePayload))
       setCreateOpen(false)
       setSelectedLanguage(preferredLanguage)
       setSelectedRegion(country)
@@ -1633,6 +1758,12 @@ export default function WorkspaceSelection() {
       console.log('[Onboarding] redirect target', { redirectTarget })
       navigate(redirectTarget)
     } catch (error) {
+      console.error('[Workspace Create] firestore write fail', {
+        code: error?.code,
+        message: error?.message,
+      })
+      console.error('[Workspace Create] error.code', error?.code)
+      console.error('[Workspace Create] error.message', error?.message)
       setCreateMessage(onboardingErrorMessage(error))
     } finally {
       setCreatingWorkspace(false)
