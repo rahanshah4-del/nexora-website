@@ -252,7 +252,9 @@ function PaymentPortalModal({ action, invoice, busy, onClose, onSubmit }) {
 
   useEffect(() => {
     if (!open) return
-    const amount = Number(invoice?.total ?? invoice?.totalUsd ?? 0) || 0
+    const total = Number(invoice?.total ?? invoice?.totalUsd ?? 0) || 0
+    const paid = Number(invoice?.amountPaid ?? invoice?.partialPaidAmount ?? 0) || 0
+    const amount = Math.max(total - paid, 0)
     Promise.resolve().then(() =>
       setDraft({
         ...blankPayment,

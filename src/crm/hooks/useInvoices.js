@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { arrayUnion, collection, doc, getDoc, serverTimestamp, writeBatch } from 'firebase/firestore'
+import { arrayUnion, collection, doc, getDoc, getDocs, query, serverTimestamp, where, writeBatch } from 'firebase/firestore'
 import { db } from '../lib/firebase.js'
 import { createUserDoc, fetchWorkspaceCollectionPage, listenToWorkspaceCollection, patchUserDoc, removeUserDoc, workspaceCollectionPath } from '../lib/firestore.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
@@ -171,6 +171,7 @@ function hasUnsafeBusinessStatus(patch) {
 
 const DEFAULT_INVOICE_LIST_LIMIT = 50
 const PAYMENT_LIST_LIMIT = 100
+const PAYMENT_EPSILON = 0.005
 
 function safeInvoiceListLimit(limitCount) {
   const next = Number(limitCount)
@@ -184,6 +185,164 @@ function mergeInvoicePages(currentRows, nextRows) {
     ...(currentRows || []),
     ...(nextRows || []).filter((invoice) => !seen.has(invoice.id)),
   ]
+}
+
+function invoiceTotalAmount(invoice = {}) {
+  return Math.max(toNumber(invoice.total ?? invoice.totalUsd, 0), 0)
+}
+
+function invoicePaidAmount(invoice = {}) {
+  return Math.min(Math.max(toNumber(invoice.amountPaid ?? invoice.partialPaidAmount, 0), 0), invoiceTotalAmount(invoice))
+}
+
+function invoiceRemainingBalance(invoice = {}) {
+  return calculateBalanceDue(invoiceTotalAmount(invoice), invoicePaidAmount(invoice))
+}
+
+function paymentLimitMessage(remainingBalance, currency = 'PKR') {
+  return `Payment amount cannot exceed remaining invoice balance (${remainingBalance.toFixed(2)} ${currency}).`
+}
+
+function isOverpayment(amount, remainingBalance) {
+  return toNumber(amount, 0) - toNumber(remainingBalance, 0) > PAYMENT_EPSILON
+}
+
+async function recordOverpaymentAttempt({
+  workspaceId,
+  invoice,
+  amount,
+  remainingBalance,
+  paymentMethod,
+  businessType,
+  userId,
+  userDoc,
+  firebaseUser,
+  module = 'Invoices',
+}) {
+  const attemptedAmount = Math.max(toNumber(amount, 0), 0)
+  const safeRemaining = Math.max(toNumber(remainingBalance, 0), 0)
+  const overpaymentAmount = Math.max(attemptedAmount - safeRemaining, 0)
+  const recordedAt = new Date().toISOString()
+  const entry = {
+    amount: attemptedAmount,
+    attemptedAmount,
+    appliedAmount: 0,
+    remainingBalance: safeRemaining,
+    overpaymentAmount,
+    paymentMethod,
+    status: 'overpayment_rejected',
+    recordedBy: userId,
+    recordedAt,
+  }
+
+  const tasks = []
+  if (workspaceId && invoice?.id) {
+    tasks.push(
+      patchUserDoc(
+        workspaceId,
+        'invoices',
+        invoice.id,
+        {
+          paymentHistory: arrayUnion(entry),
+          updatedAt: serverTimestamp(),
+        },
+        { businessType },
+      ).catch(() => null),
+    )
+  }
+  tasks.push(
+    logActivity({
+      workspaceId,
+      userId,
+      businessType,
+      ...userActivityInfo(userDoc, firebaseUser),
+      action: 'Overpayment rejected',
+      module,
+      description: `${invoice?.invoiceNumber || invoice?.id || 'Invoice'} payment attempt exceeded the remaining balance.`,
+      targetId: invoice?.id || '',
+      targetName: invoice?.invoiceNumber || invoice?.id || '',
+      metadata: {
+        attemptedAmount,
+        appliedAmount: 0,
+        remainingBalance: safeRemaining,
+        overpaymentAmount,
+        paymentMethod,
+        currency: invoice?.currency || 'PKR',
+      },
+    }).catch(() => null),
+  )
+
+  await Promise.all(tasks)
+}
+
+function addSnapshotDocs(target, snap) {
+  snap.docs.forEach((row) => {
+    if (!target.has(row.ref.path)) target.set(row.ref.path, row)
+  })
+}
+
+async function fetchInvoiceFinanceDocs(workspaceId, invoice = {}) {
+  if (!db || !workspaceId || !invoice?.id) return { payments: [], transactions: [] }
+  const invoiceKeys = Array.from(new Set([invoice.id, invoice.invoiceNumber].map((value) => String(value || '').trim()).filter(Boolean)))
+  const payments = new Map()
+  const transactions = new Map()
+  const paymentRef = collection(db, workspaceCollectionPath(workspaceId, 'payments'))
+  const transactionRef = collection(db, workspaceCollectionPath(workspaceId, 'accountTransactions'))
+
+  await Promise.all(
+    invoiceKeys.flatMap((key) => [
+      getDocs(query(paymentRef, where('invoiceId', '==', key))).then((snap) => addSnapshotDocs(payments, snap)),
+      getDocs(query(paymentRef, where('invoiceNumber', '==', key))).then((snap) => addSnapshotDocs(payments, snap)),
+      getDocs(query(transactionRef, where('invoiceId', '==', key))).then((snap) => addSnapshotDocs(transactions, snap)),
+      getDocs(query(transactionRef, where('relatedId', '==', key))).then((snap) => addSnapshotDocs(transactions, snap)),
+    ]),
+  )
+
+  return {
+    payments: Array.from(payments.values()),
+    transactions: Array.from(transactions.values()),
+  }
+}
+
+async function cancelInvoiceFinanceDocs({ batch, workspaceId, invoice, now, userId }) {
+  const linked = await fetchInvoiceFinanceDocs(workspaceId, invoice)
+  const reversal = {
+    invoiceId: invoice?.id || '',
+    invoiceNumber: invoice?.invoiceNumber || '',
+    reason: 'Invoice marked unpaid',
+  }
+
+  linked.payments.forEach((paymentDoc) => {
+    batch.update(paymentDoc.ref, {
+      status: 'cancelled',
+      paymentStatus: 'cancelled',
+      approvalStatus: 'cancelled',
+      cancelledAt: now,
+      reversedAt: now,
+      cancelledBy: userId,
+      reversedBy: userId,
+      reversal,
+      updatedAt: now,
+    })
+  })
+
+  linked.transactions.forEach((transactionDoc) => {
+    batch.update(transactionDoc.ref, {
+      status: 'cancelled',
+      approvalStatus: 'cancelled',
+      cancelledAt: now,
+      reversedAt: now,
+      cancelledBy: userId,
+      reversedBy: userId,
+      reversal,
+      updatedAt: now,
+    })
+  })
+
+  return {
+    payments: linked.payments.length,
+    transactions: linked.transactions.length,
+  }
 }
 
 export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT } = {}) {
@@ -496,8 +655,32 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT } = {}) {
         const invoice = invoices.find((item) => item.id === id)
         if (!invoice) return { ok: false, error: 'Invoice not found' }
         if (getInvoiceStatus(invoice) === 'paid') return { ok: false, error: 'This invoice is already paid.' }
+        const total = invoiceTotalAmount(invoice)
+        const currentPaid = invoicePaidAmount(invoice)
+        const remainingBalance = invoiceRemainingBalance(invoice)
+        const paymentMethod = options.paymentMethod || 'Manual Approval'
+        const requestedAmount = toNumber(options.amount ?? remainingBalance, remainingBalance)
+        if (remainingBalance <= PAYMENT_EPSILON) return { ok: false, error: 'This invoice has no remaining balance.' }
+        if (!Number.isFinite(requestedAmount) || requestedAmount <= 0) return { ok: false, error: 'Enter a valid payment amount' }
+        if (isOverpayment(requestedAmount, remainingBalance)) {
+          await recordOverpaymentAttempt({
+            workspaceId,
+            invoice,
+            amount: requestedAmount,
+            remainingBalance,
+            paymentMethod,
+            businessType,
+            userId,
+            userDoc,
+            firebaseUser,
+          })
+          return { ok: false, error: paymentLimitMessage(remainingBalance, invoice.currency || 'PKR') }
+        }
+        if (requestedAmount + PAYMENT_EPSILON < remainingBalance) {
+          return { ok: false, error: 'Amount is less than the remaining balance. Use partial payment instead.' }
+        }
+        const appliedAmount = remainingBalance
         try {
-          const paymentMethod = options.paymentMethod || 'Manual Approval'
           const now = serverTimestamp()
           const batch = writeBatch(db)
           const invoiceRef = doc(db, workspaceCollectionPath(workspaceId, 'invoices'), id)
@@ -511,13 +694,15 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT } = {}) {
             paidAt: now,
             approvedBy: userId,
             approvedAt: now,
-            amountPaid: invoice.total,
-            partialPaidAmount: invoice.total,
+            amountPaid: total,
+            partialPaidAmount: total,
             balanceDue: 0,
             lastPaymentAt: now,
             lastPaymentDate: now,
             paymentHistory: arrayUnion({
-              amount: invoice.total,
+              amount: appliedAmount,
+              attemptedAmount: requestedAmount,
+              appliedAmount,
               paymentMethod,
               status: 'paid',
               recordedBy: userId,
@@ -532,9 +717,11 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT } = {}) {
             invoiceId: id,
             invoiceNumber: invoice.invoiceNumber || id,
             customerName: invoice.customerName || '',
-            amount: invoice.total,
-            amountPaid: invoice.total,
-            amountUsd: invoice.total,
+            amount: appliedAmount,
+            amountPaid: appliedAmount,
+            amountUsd: appliedAmount,
+            appliedAmount,
+            attemptedAmount: requestedAmount,
             currency: invoice.currency || 'PKR',
             paymentMethod,
             paymentStatus: 'paid',
@@ -555,7 +742,7 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT } = {}) {
             transactionId,
             type: 'income',
             source: 'invoice',
-            amount: invoice.total,
+            amount: total,
             currency: invoice.currency || 'PKR',
             method: paymentMethod,
             status: 'approved',
@@ -576,8 +763,9 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT } = {}) {
             createdAt: now,
             updatedAt: now,
             metadata: {
-              oldValue: { status: invoice.status, paymentStatus: invoice.paymentStatus, amountPaid: invoice.amountPaid || 0 },
-              newValue: { status: 'paid', paymentStatus: 'paid', amountPaid: invoice.total },
+              oldValue: { status: invoice.status, paymentStatus: invoice.paymentStatus, amountPaid: currentPaid },
+              newValue: { status: 'paid', paymentStatus: 'paid', amountPaid: total },
+              appliedAmount,
             },
           })
           await batch.commit()
@@ -588,8 +776,8 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT } = {}) {
             paidAt: new Date().toISOString(),
             approvedBy: userId,
             approvedAt: new Date().toISOString(),
-            amountPaid: invoice.total,
-            partialPaidAmount: invoice.total,
+            amountPaid: total,
+            partialPaidAmount: total,
             balanceDue: 0,
             lastPaymentAt: new Date().toISOString(),
             lastPaymentDate: new Date().toISOString(),
@@ -607,11 +795,13 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT } = {}) {
             targetId: id,
             targetName: invoice.invoiceNumber || id,
             metadata: {
-              amount: invoice.total,
+              amount: appliedAmount,
+              appliedAmount,
+              attemptedAmount: requestedAmount,
               currency: invoice.currency,
               paymentMethod,
-              oldValue: { status: invoice.status, paymentStatus: invoice.paymentStatus, amountPaid: invoice.amountPaid || 0 },
-              newValue: { status: 'paid', paymentStatus: 'paid', amountPaid: invoice.total },
+              oldValue: { status: invoice.status, paymentStatus: invoice.paymentStatus, amountPaid: currentPaid },
+              newValue: { status: 'paid', paymentStatus: 'paid', amountPaid: total },
             },
           })
           await logActivity({
@@ -625,11 +815,12 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT } = {}) {
             targetId: id,
             targetName: invoice.invoiceNumber || id,
             metadata: {
-              amount: invoice.total,
+              amount: total,
+              appliedAmount,
               currency: invoice.currency,
               paymentMethod,
-              oldValue: { status: invoice.status, paymentStatus: invoice.paymentStatus, amountPaid: invoice.amountPaid || 0 },
-              newValue: { status: 'paid', paymentStatus: 'paid', amountPaid: invoice.total },
+              oldValue: { status: invoice.status, paymentStatus: invoice.paymentStatus, amountPaid: currentPaid },
+              newValue: { status: 'paid', paymentStatus: 'paid', amountPaid: total },
             },
           })
           return { ok: true }
@@ -690,11 +881,29 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT } = {}) {
         if (getInvoiceStatus(invoice) === 'paid') return { ok: false, error: 'This invoice is already paid.' }
         const amount = Number(options.amount || 0)
         if (!Number.isFinite(amount) || amount <= 0) return { ok: false, error: 'Enter a valid partial payment amount' }
+        const currentPaid = invoicePaidAmount(invoice)
+        const remainingBalance = invoiceRemainingBalance(invoice)
+        const paymentMethod = options.paymentMethod || 'Manual Approval'
+        if (remainingBalance <= PAYMENT_EPSILON) return { ok: false, error: 'This invoice has no remaining balance.' }
+        if (isOverpayment(amount, remainingBalance)) {
+          await recordOverpaymentAttempt({
+            workspaceId,
+            invoice,
+            amount,
+            remainingBalance,
+            paymentMethod,
+            businessType,
+            userId,
+            userDoc,
+            firebaseUser,
+          })
+          return { ok: false, error: paymentLimitMessage(remainingBalance, invoice.currency || 'PKR') }
+        }
+        const appliedAmount = Math.min(amount, remainingBalance)
         try {
-          const currentPaid = toNumber(invoice.amountPaid ?? invoice.partialPaidAmount, 0)
-          const nextPaid = Math.min(invoice.total, currentPaid + amount)
-          const fullyPaid = nextPaid >= invoice.total
-          const paymentMethod = options.paymentMethod || 'Manual Approval'
+          const nextPaid = Math.min(invoiceTotalAmount(invoice), currentPaid + appliedAmount)
+          const total = invoiceTotalAmount(invoice)
+          const fullyPaid = calculateBalanceDue(total, nextPaid) <= PAYMENT_EPSILON
           const now = serverTimestamp()
           const batch = writeBatch(db)
           const invoiceRef = doc(db, workspaceCollectionPath(workspaceId, 'invoices'), id)
@@ -707,14 +916,16 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT } = {}) {
             requiresApproval: fullyPaid ? false : invoice.requiresApproval ?? true,
             amountPaid: nextPaid,
             partialPaidAmount: nextPaid,
-            balanceDue: calculateBalanceDue(invoice.total, nextPaid),
+            balanceDue: calculateBalanceDue(total, nextPaid),
             paidAt: fullyPaid ? now : invoice.paidAt || null,
             approvedBy: fullyPaid ? userId : invoice.approvedBy || null,
             approvedAt: fullyPaid ? now : invoice.approvedAt || null,
             lastPaymentAt: now,
             lastPaymentDate: now,
             paymentHistory: arrayUnion({
-              amount,
+              amount: appliedAmount,
+              attemptedAmount: amount,
+              appliedAmount,
               paymentMethod,
               status: fullyPaid ? 'paid' : 'partial_paid',
               recordedBy: userId,
@@ -729,8 +940,10 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT } = {}) {
             invoiceId: id,
             invoiceNumber: invoice.invoiceNumber || id,
             customerName: invoice.customerName || '',
-            amount,
-            amountUsd: amount,
+            amount: appliedAmount,
+            amountUsd: appliedAmount,
+            appliedAmount,
+            attemptedAmount: amount,
             currency: invoice.currency || 'PKR',
             paymentMethod,
             paymentStatus: fullyPaid ? 'paid' : 'partial_paid',
@@ -752,7 +965,7 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT } = {}) {
               transactionId,
               type: 'income',
               source: 'invoice',
-              amount: invoice.total,
+              amount: total,
               currency: invoice.currency || 'PKR',
               method: paymentMethod,
               status: 'approved',
@@ -774,7 +987,7 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT } = {}) {
               updatedAt: now,
               metadata: {
                 oldValue: { status: invoice.status, paymentStatus: invoice.paymentStatus, amountPaid: currentPaid },
-                newValue: { status: 'paid', paymentStatus: 'paid', amountPaid: invoice.total },
+                newValue: { status: 'paid', paymentStatus: 'paid', amountPaid: total },
               },
             })
           }
@@ -785,7 +998,7 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT } = {}) {
             requiresApproval: fullyPaid ? false : invoice.requiresApproval ?? true,
             amountPaid: nextPaid,
             partialPaidAmount: nextPaid,
-            balanceDue: calculateBalanceDue(invoice.total, nextPaid),
+            balanceDue: calculateBalanceDue(total, nextPaid),
             paidAt: fullyPaid ? new Date().toISOString() : invoice.paidAt || null,
             approvedBy: fullyPaid ? userId : invoice.approvedBy || null,
             approvedAt: fullyPaid ? new Date().toISOString() : invoice.approvedAt || null,
@@ -801,11 +1014,13 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT } = {}) {
             ...userActivityInfo(userDoc, firebaseUser),
             action: fullyPaid ? 'Invoice paid' : 'Partial payment recorded',
             module: 'Invoices',
-            description: `${amount} ${invoice.currency || 'PKR'} was recorded for ${invoice.invoiceNumber || id}.`,
+            description: `${appliedAmount} ${invoice.currency || 'PKR'} was recorded for ${invoice.invoiceNumber || id}.`,
             targetId: id,
             targetName: invoice.invoiceNumber || id,
             metadata: {
-              amount,
+              amount: appliedAmount,
+              appliedAmount,
+              attemptedAmount: amount,
               currency: invoice.currency,
               paymentMethod,
               fullyPaid,
@@ -825,11 +1040,11 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT } = {}) {
               targetId: id,
               targetName: invoice.invoiceNumber || id,
               metadata: {
-                amount: invoice.total,
+                amount: total,
                 currency: invoice.currency,
                 paymentMethod,
                 oldValue: { status: invoice.status, paymentStatus: invoice.paymentStatus, amountPaid: currentPaid },
-                newValue: { status: 'paid', paymentStatus: 'paid', amountPaid: invoice.total },
+                newValue: { status: 'paid', paymentStatus: 'paid', amountPaid: total },
               },
             })
           }
@@ -1004,27 +1219,75 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT } = {}) {
       },
       async markInvoiceUnpaid(id) {
         if (!permissions.canRecordPayment) return { ok: false, error: 'Only owner, admin, or accountant can record invoice payments.' }
-        await patchUserDoc(workspaceId, 'invoices', id, {
-          ...(permissions.canEditAllInvoiceFields ? { status: 'sent' } : {}),
-          paymentStatus: 'pending',
-          amountPaid: 0,
-          partialPaidAmount: 0,
-          balanceDue: invoices.find((item) => item.id === id)?.total || 0,
-          paidAt: null,
-          lastPaymentAt: null,
-          lastPaymentDate: null,
-        }, { businessType })
-        patchLoadedInvoice(id, {
-          ...(permissions.canEditAllInvoiceFields ? { status: 'sent' } : {}),
-          paymentStatus: 'pending',
-          amountPaid: 0,
-          partialPaidAmount: 0,
-          balanceDue: invoices.find((item) => item.id === id)?.total || 0,
-          paidAt: null,
-          lastPaymentAt: null,
-          lastPaymentDate: null,
-        })
-        return { ok: true }
+        if (!userId || !workspaceId) return { ok: false, error: 'Please login first' }
+        if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now' }
+        const invoice = invoices.find((item) => item.id === id)
+        if (!invoice) return { ok: false, error: 'Invoice not found' }
+        try {
+          const total = invoiceTotalAmount(invoice)
+          const paidBefore = invoicePaidAmount(invoice)
+          const now = serverTimestamp()
+          const batch = writeBatch(db)
+          const reversed = await cancelInvoiceFinanceDocs({
+            batch,
+            workspaceId,
+            invoice,
+            now,
+            userId,
+          })
+          batch.update(doc(db, workspaceCollectionPath(workspaceId, 'invoices'), id), {
+            ...(permissions.canEditAllInvoiceFields ? { status: 'sent' } : {}),
+            paymentStatus: 'pending',
+            amountPaid: 0,
+            partialPaidAmount: 0,
+            balanceDue: total,
+            paidAt: null,
+            lastPaymentAt: null,
+            lastPaymentDate: null,
+            paymentHistory: arrayUnion({
+              amount: paidBefore,
+              appliedAmount: 0,
+              status: 'payment_reversed',
+              reversedPayments: reversed.payments,
+              reversedTransactions: reversed.transactions,
+              recordedBy: userId,
+              recordedAt: new Date().toISOString(),
+            }),
+            updatedAt: now,
+          })
+          await batch.commit()
+          patchLoadedInvoice(id, {
+            ...(permissions.canEditAllInvoiceFields ? { status: 'sent' } : {}),
+            paymentStatus: 'pending',
+            amountPaid: 0,
+            partialPaidAmount: 0,
+            balanceDue: total,
+            paidAt: null,
+            lastPaymentAt: null,
+            lastPaymentDate: null,
+          })
+          await logActivity({
+            workspaceId,
+            userId,
+            businessType,
+            ...userActivityInfo(userDoc, firebaseUser),
+            action: 'Invoice payment reversed',
+            module: 'Invoices',
+            description: `${invoice.invoiceNumber || id} was marked unpaid and linked finance records were cancelled.`,
+            targetId: id,
+            targetName: invoice.invoiceNumber || id,
+            metadata: {
+              amount: paidBefore,
+              reversedPayments: reversed.payments,
+              reversedTransactions: reversed.transactions,
+              oldValue: { status: invoice.status, paymentStatus: invoice.paymentStatus, amountPaid: paidBefore },
+              newValue: { status: permissions.canEditAllInvoiceFields ? 'sent' : invoice.status, paymentStatus: 'pending', amountPaid: 0 },
+            },
+          })
+          return { ok: true }
+        } catch (e) {
+          return { ok: false, error: clientSafeMessage(e, 'Unable to mark invoice as unpaid.') }
+        }
       },
       async duplicateInvoice(id) {
         if (!permissions.canDuplicate) return { ok: false, error: 'You do not have permission to duplicate invoices.' }

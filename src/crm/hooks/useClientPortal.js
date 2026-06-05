@@ -28,6 +28,95 @@ function canRoleApprovePayments(userDoc) {
   return ['owner', 'admin', 'accountant'].includes(role)
 }
 
+const PAYMENT_EPSILON = 0.005
+
+function invoiceTotalAmount(invoice = {}) {
+  return Math.max(toNumber(invoice.total ?? invoice.totalUsd, 0), 0)
+}
+
+function invoicePaidAmount(invoice = {}) {
+  return Math.min(Math.max(toNumber(invoice.amountPaid ?? invoice.partialPaidAmount, 0), 0), invoiceTotalAmount(invoice))
+}
+
+function invoiceRemainingBalance(invoice = {}) {
+  return calculateBalanceDue(invoiceTotalAmount(invoice), invoicePaidAmount(invoice))
+}
+
+function isOverpayment(amount, remainingBalance) {
+  return toNumber(amount, 0) - toNumber(remainingBalance, 0) > PAYMENT_EPSILON
+}
+
+function paymentLimitMessage(remainingBalance, currency = 'PKR') {
+  return `Payment amount cannot exceed remaining invoice balance (${remainingBalance.toFixed(2)} ${currency}).`
+}
+
+async function recordOverpaymentAttempt({
+  workspaceId,
+  invoice,
+  amount,
+  remainingBalance,
+  paymentMethod,
+  businessType,
+  userId,
+  userDoc,
+  firebaseUser,
+}) {
+  const attemptedAmount = Math.max(toNumber(amount, 0), 0)
+  const safeRemaining = Math.max(toNumber(remainingBalance, 0), 0)
+  const overpaymentAmount = Math.max(attemptedAmount - safeRemaining, 0)
+  const recordedAt = new Date().toISOString()
+  const entry = {
+    amount: attemptedAmount,
+    attemptedAmount,
+    appliedAmount: 0,
+    remainingBalance: safeRemaining,
+    overpaymentAmount,
+    paymentMethod,
+    status: 'overpayment_rejected',
+    recordedBy: userId,
+    recordedAt,
+  }
+
+  const tasks = []
+  if (workspaceId && invoice?.id) {
+    tasks.push(
+      patchUserDoc(
+        workspaceId,
+        'invoices',
+        invoice.id,
+        {
+          paymentHistory: arrayUnion(entry),
+          updatedAt: serverTimestamp(),
+        },
+        { businessType },
+      ).catch(() => null),
+    )
+  }
+  tasks.push(
+    logActivity({
+      workspaceId,
+      userId,
+      businessType,
+      ...userActivityInfo(userDoc, firebaseUser),
+      action: 'Overpayment rejected',
+      module: 'Client Portal',
+      description: `${invoice?.invoiceNumber || invoice?.id || 'Invoice'} payment attempt exceeded the remaining balance.`,
+      targetId: invoice?.id || '',
+      targetName: invoice?.invoiceNumber || invoice?.id || '',
+      metadata: {
+        attemptedAmount,
+        appliedAmount: 0,
+        remainingBalance: safeRemaining,
+        overpaymentAmount,
+        paymentMethod,
+        currency: invoice?.currency || 'PKR',
+      },
+    }).catch(() => null),
+  )
+
+  await Promise.all(tasks)
+}
+
 function normalizeClient(client) {
   return {
     id: client.id,
@@ -443,10 +532,28 @@ export function useClientPortal() {
           invoice.clientId ||
           clients.find((client) => client.email && client.email === invoice.customerEmail)?.id ||
           ''
+        const currentPaid = invoicePaidAmount(invoice)
+        const remainingBalance = invoiceRemainingBalance(invoice)
+        if (remainingBalance <= PAYMENT_EPSILON) return { ok: false, error: 'This invoice has no remaining balance.' }
+        if (isOverpayment(amount, remainingBalance)) {
+          await recordOverpaymentAttempt({
+            workspaceId,
+            invoice,
+            amount,
+            remainingBalance,
+            paymentMethod,
+            businessType,
+            userId,
+            userDoc,
+            firebaseUser,
+          })
+          return { ok: false, error: paymentLimitMessage(remainingBalance, payload.currency || invoice.currency || 'PKR') }
+        }
+        const appliedAmount = Math.min(amount, remainingBalance)
         try {
-          const currentPaid = toNumber(invoice.amountPaid ?? invoice.partialPaidAmount, 0)
-          const nextPaid = Math.min(invoice.total, currentPaid + amount)
-          const fullyPaid = calculateBalanceDue(invoice.total, nextPaid) <= 0
+          const total = invoiceTotalAmount(invoice)
+          const nextPaid = Math.min(total, currentPaid + appliedAmount)
+          const fullyPaid = calculateBalanceDue(total, nextPaid) <= PAYMENT_EPSILON
           const now = serverTimestamp()
           const batch = writeBatch(db)
           const stockAdjusted = fullyPaid ? await addInventoryAdjustments(batch, workspaceId, invoice, now, businessType) : false
@@ -461,15 +568,17 @@ export function useClientPortal() {
             approvedAt: now,
             amountPaid: nextPaid,
             partialPaidAmount: nextPaid,
-            balanceDue: calculateBalanceDue(invoice.total, nextPaid),
+            balanceDue: calculateBalanceDue(total, nextPaid),
             ...(stockAdjusted ? { inventoryAdjustedAt: now } : {}),
           })
           batch.set(doc(db, workspaceCollectionPath(workspaceId, 'payments'), `client-invoice-${invoiceId}-${Date.now()}`), {
             invoiceId,
             clientId,
             customerName: invoice.customerName || '',
-            amount,
-            amountUsd: amount,
+            amount: appliedAmount,
+            amountUsd: appliedAmount,
+            appliedAmount,
+            attemptedAmount: amount,
             currency: payload.currency || invoice.currency || 'PKR',
             paymentMethod,
             transactionId,
@@ -499,10 +608,10 @@ export function useClientPortal() {
             module: 'Client Portal',
             description: fullyPaid
               ? `${invoice.invoiceNumber || invoiceId} was marked as paid.`
-              : `${amount} ${payload.currency || invoice.currency || 'PKR'} was recorded for ${invoice.invoiceNumber || invoiceId}.`,
+              : `${appliedAmount} ${payload.currency || invoice.currency || 'PKR'} was recorded for ${invoice.invoiceNumber || invoiceId}.`,
             targetId: invoiceId,
             targetName: invoice.invoiceNumber || invoiceId,
-            metadata: { amount, currency: payload.currency || invoice.currency || 'PKR', paymentMethod, clientId },
+            metadata: { amount: appliedAmount, appliedAmount, attemptedAmount: amount, currency: payload.currency || invoice.currency || 'PKR', paymentMethod, clientId },
           })
           return { ok: true }
         } catch (e) {
@@ -525,6 +634,23 @@ export function useClientPortal() {
           invoice.clientId ||
           clients.find((client) => client.email && client.email === invoice.customerEmail)?.id ||
           ''
+        const remainingBalance = invoiceRemainingBalance(invoice)
+        if (remainingBalance <= PAYMENT_EPSILON) return { ok: false, error: 'This invoice has no remaining balance.' }
+        if (isOverpayment(amount, remainingBalance)) {
+          await recordOverpaymentAttempt({
+            workspaceId,
+            invoice,
+            amount,
+            remainingBalance,
+            paymentMethod,
+            businessType,
+            userId,
+            userDoc,
+            firebaseUser,
+          })
+          return { ok: false, error: paymentLimitMessage(remainingBalance, payload.currency || invoice.currency || 'PKR') }
+        }
+        const appliedAmount = Math.min(amount, remainingBalance)
         try {
           await patchUserDoc(workspaceId, 'invoices', invoiceId, {
             status: statusValue(invoice.status, 'pending') === 'overdue' ? 'overdue' : 'pending',
@@ -537,8 +663,10 @@ export function useClientPortal() {
             invoiceId,
             clientId,
             customerName: invoice.customerName || '',
-            amount,
-            amountUsd: amount,
+            amount: appliedAmount,
+            amountUsd: appliedAmount,
+            appliedAmount,
+            attemptedAmount: amount,
             currency: payload.currency || invoice.currency || 'PKR',
             paymentMethod,
             transactionId,
@@ -559,7 +687,7 @@ export function useClientPortal() {
             description: `${invoice.invoiceNumber || invoiceId} payment reference is pending verification.`,
             targetId: invoiceId,
             targetName: invoice.invoiceNumber || invoiceId,
-            metadata: { amount, currency: payload.currency || invoice.currency || 'PKR', paymentMethod, clientId },
+            metadata: { amount: appliedAmount, appliedAmount, attemptedAmount: amount, currency: payload.currency || invoice.currency || 'PKR', paymentMethod, clientId },
           })
           return { ok: true }
         } catch (e) {

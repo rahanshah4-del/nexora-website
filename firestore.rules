@@ -691,6 +691,58 @@ service cloud.firestore {
       ]);
     }
 
+    function reversalMetadataSafe() {
+      return request.resource.data.reversal is map
+        && request.resource.data.reversal.invoiceId is string
+        && request.resource.data.reversal.invoiceId.size() <= 160
+        && request.resource.data.reversal.invoiceNumber is string
+        && request.resource.data.reversal.invoiceNumber.size() <= 160
+        && request.resource.data.reversal.reason is string
+        && request.resource.data.reversal.reason.size() <= 160;
+    }
+
+    function paymentReversalFieldsTouched() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+        'status',
+        'paymentStatus',
+        'approvalStatus',
+        'cancelledAt',
+        'reversedAt',
+        'cancelledBy',
+        'reversedBy',
+        'reversal',
+        'updatedAt',
+      ])
+      && request.resource.data.status in ['cancelled', 'canceled']
+      && request.resource.data.paymentStatus in ['cancelled', 'canceled']
+      && request.resource.data.approvalStatus in ['cancelled', 'canceled']
+      && request.resource.data.cancelledAt is timestamp
+      && request.resource.data.reversedAt is timestamp
+      && request.resource.data.cancelledBy == request.auth.uid
+      && request.resource.data.reversedBy == request.auth.uid
+      && reversalMetadataSafe();
+    }
+
+    function accountTransactionReversalFieldsTouched() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+        'status',
+        'approvalStatus',
+        'cancelledAt',
+        'reversedAt',
+        'cancelledBy',
+        'reversedBy',
+        'reversal',
+        'updatedAt',
+      ])
+      && request.resource.data.status in ['cancelled', 'canceled']
+      && request.resource.data.approvalStatus in ['cancelled', 'canceled']
+      && request.resource.data.cancelledAt is timestamp
+      && request.resource.data.reversedAt is timestamp
+      && request.resource.data.cancelledBy == request.auth.uid
+      && request.resource.data.reversedBy == request.auth.uid
+      && reversalMetadataSafe();
+    }
+
     function upgradeApprovalFieldsTouched() {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
         'status',
@@ -984,7 +1036,8 @@ service cloud.firestore {
           || canReadClientPortalPayment(workspaceId);
         allow create: if workspaceHasWriteAccess(workspaceId) && ((isPaymentApprover(workspaceId) && workspaceCreateMetadata(workspaceId)) || canSubmitPaymentReference(workspaceId));
         allow update: if workspaceHasWriteAccess(workspaceId) && ((isWorkspaceManager(workspaceId) && !paymentApprovalFieldsTouched() && workspaceUpdateScopeSafe(workspaceId))
-          || (isPaymentApprover(workspaceId) && paymentApprovalFieldsTouched() && isOpenApprovalResource() && workspaceUpdateScopeSafe(workspaceId)));
+          || (isPaymentApprover(workspaceId) && paymentApprovalFieldsTouched() && isOpenApprovalResource() && workspaceUpdateScopeSafe(workspaceId))
+          || (isPaymentApprover(workspaceId) && paymentReversalFieldsTouched() && workspaceUpdateScopeSafe(workspaceId)));
         allow delete: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId);
       }
 
@@ -1001,7 +1054,8 @@ service cloud.firestore {
         allow read: if staffPermission(workspaceId, 'reports') || isPaymentApprover(workspaceId);
         allow create: if workspaceHasWriteAccess(workspaceId) && isPaymentApprover(workspaceId) && accountTransactionCreateScope(workspaceId);
         allow update: if workspaceHasWriteAccess(workspaceId) && ((isWorkspaceManager(workspaceId) && !accountTransactionApprovalFieldsTouched() && workspaceUpdateScopeSafe(workspaceId))
-          || (isPaymentApprover(workspaceId) && accountTransactionApprovalFieldsTouched() && isOpenApprovalResource() && workspaceUpdateScopeSafe(workspaceId)));
+          || (isPaymentApprover(workspaceId) && accountTransactionApprovalFieldsTouched() && isOpenApprovalResource() && workspaceUpdateScopeSafe(workspaceId))
+          || (isPaymentApprover(workspaceId) && accountTransactionReversalFieldsTouched() && workspaceUpdateScopeSafe(workspaceId)));
         allow delete: if workspaceHasWriteAccess(workspaceId) && isActiveSelf(workspaceId);
       }
 

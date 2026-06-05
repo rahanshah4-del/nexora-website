@@ -101,7 +101,7 @@ function PaymentActionModal({ action, invoice, busy, schoolMode = false, onClose
                     <Input
                       className="mt-1"
                       inputMode="decimal"
-                      value={action === 'partial' ? draft.amount : total}
+                      value={action === 'partial' ? draft.amount : balance}
                       disabled={action !== 'partial'}
                       onChange={(event) => setDraft((current) => ({ ...current, amount: event.target.value }))}
                     />
@@ -120,7 +120,7 @@ function PaymentActionModal({ action, invoice, busy, schoolMode = false, onClose
                   disabled={busy}
                   onClick={(event) => {
                     event.preventDefault()
-                    onConfirm?.({ ...draft, amount: action === 'partial' ? Number(draft.amount || 0) : total })
+                    onConfirm?.({ ...draft, amount: action === 'partial' ? Number(draft.amount || 0) : balance })
                   }}
                 >
                   {busy ? 'Saving...' : action === 'reject' ? (schoolMode ? 'Cancel Fee Bill' : 'Cancel Invoice') : action === 'partial' ? (schoolMode ? 'Record Partial Fee' : 'Record Partial Payment') : 'Mark as Paid'}
