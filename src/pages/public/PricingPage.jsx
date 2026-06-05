@@ -16,19 +16,24 @@ const yearlyDiscount = 0.8
 
 const pricingPlans = [
   {
-    name: 'Basic',
-    label: 'Basic Plan',
-    monthly: 2999,
-    description: 'For small teams starting with CRM and core operations.',
-    features: ['CRM Module', 'Up to 2 Users', '5GB Storage', 'Email Support', 'Basic Reports'],
+    name: 'Free Forever',
+    label: 'Free Forever',
+    priceLabel: 'Rs 0',
+    priceNote: 'No credit card required',
+    description: 'For founders and small teams that want to keep Nexora running after the trial.',
+    features: ['1 workspace', '1 user', '50 customers', '20 leads', '10 invoices/month', 'Basic CRM', 'Basic dashboard'],
+    ctaLabel: 'Start Free Trial',
+    ctaTo: '/signup',
   },
   {
-    name: 'Business',
-    label: 'Business Plan',
+    name: 'Standard',
+    label: 'Paid Standard',
     monthly: 5999,
-    description: 'For growing businesses that need more modules and controls.',
-    features: ['All Basic Features', 'CRM + One ERP/POS Module', 'Up to 5 Users', '20GB Storage', 'Priority Support', 'Advanced Reports'],
+    description: 'For growing businesses that need unlimited records, team controls and support.',
+    features: ['More users', 'Unlimited customers/leads/invoices', 'Reports', 'Analytics', 'Team management', 'Support tickets', 'Priority support'],
     featured: true,
+    ctaLabel: 'Upgrade When Business Grows',
+    ctaTo: '/signup',
   },
   {
     name: 'Enterprise',
@@ -36,31 +41,40 @@ const pricingPlans = [
     custom: true,
     description: 'For organizations that need custom modules, users and integrations.',
     features: ['All Business Features', 'Unlimited Users', 'Custom Integrations', 'Dedicated Support', 'Custom Development', 'SLA Options'],
+    ctaLabel: 'Book Demo',
+    ctaTo: '/contact',
   },
 ]
 
 const comparisonRows = [
-  ['CRM, leads and customers', true, true, true],
-  ['Invoices and basic reports', true, true, true],
-  ['School ERP, Property ERP or POS module', false, true, true],
-  ['WhatsApp CRM workflows', false, 'Add-on', true],
-  ['Advanced KPI dashboards', false, true, true],
+  ['Workspace included', '1', true, true],
+  ['Users included', '1', 'More users', 'Unlimited'],
+  ['Customers', '50', 'Unlimited', 'Unlimited'],
+  ['Leads', '20', 'Unlimited', 'Unlimited'],
+  ['Invoices', '10/month', 'Unlimited', 'Unlimited'],
+  ['Basic CRM and dashboard', true, true, true],
+  ['Reports and analytics', false, true, true],
+  ['Team management', false, true, true],
+  ['Support tickets', false, true, true],
+  ['Priority support', false, true, true],
   ['Custom integrations', false, false, true],
-  ['Dedicated onboarding support', false, true, true],
   ['Enterprise SLA', false, false, true],
 ]
 
 const faqs = [
+  ['Is Free Forever really free?', 'Yes. After the trial, you can continue on Free Forever with 1 workspace, 1 user, Basic CRM and starter limits.'],
+  ['Do I need a credit card to start?', 'No. Nexora lets you start a free trial without a credit card, then continue free or upgrade when ready.'],
+  ['When should I upgrade to Standard?', 'Upgrade when your team needs more users, unlimited customers, unlimited leads, unlimited invoices, reports, analytics and support tickets.'],
   ['Can I start with one module?', 'Yes. You can start with CRM or the solution you need most, then upgrade as your operations grow.'],
   ['Do yearly plans save money?', 'Yes. Yearly billing applies a 20% saving compared with monthly billing.'],
   ['Can I request a custom plan?', 'Yes. Enterprise plans are tailored for larger teams, custom workflows and integrations.'],
-  ['Is onboarding included?', 'Business and Enterprise plans include guided setup support so your team can launch faster.'],
+  ['Is onboarding included?', 'Standard and Enterprise plans include guided setup support so your team can launch faster.'],
 ]
 
 const highlightCards = [
-  ['Cloud based', 'Secure access for desktop, web and mobile-ready workflows.', HiOutlineCloud],
-  ['Role controlled', 'Give every team member only the access they need.', HiOutlineShieldCheck],
-  ['Reports ready', 'Turn daily activity into dashboard and export-ready insight.', HiOutlineDocumentChartBar],
+  ['Start safely', 'Try Nexora without a credit card and continue Free Forever after trial.', HiOutlineCloud],
+  ['Scale clearly', 'Upgrade to Standard when users, records, reports and support needs grow.', HiOutlineShieldCheck],
+  ['Sell with confidence', 'CRM, invoices, analytics and support are packaged around business growth.', HiOutlineDocumentChartBar],
 ]
 
 function formatPrice(amount) {
@@ -69,14 +83,15 @@ function formatPrice(amount) {
 
 function getPrice(plan, billingCycle) {
   if (plan.custom) return 'Custom Pricing'
-  if (billingCycle === 'yearly') return `PKR ${formatPrice(Math.round(plan.monthly * 12 * yearlyDiscount))}`
-  return `PKR ${formatPrice(plan.monthly)}`
+  if (plan.priceLabel) return plan.priceLabel
+  if (billingCycle === 'yearly') return `Rs ${formatPrice(Math.round(plan.monthly * 12 * yearlyDiscount))}`
+  return `Rs ${formatPrice(plan.monthly)}`
 }
 
 function renderComparisonValue(value) {
   if (value === true) return <HiOutlineCheckCircle className="mx-auto text-2xl text-blue-600" />
   if (value === false) return <span className="text-sm font-bold text-slate-300">-</span>
-  return <span className="text-xs font-extrabold text-blue-700">{value}</span>
+  return <span className="text-center text-xs font-extrabold text-blue-700">{value}</span>
 }
 
 export default function PricingPage() {
@@ -92,11 +107,23 @@ export default function PricingPage() {
             Nexora Pricing
           </span>
           <h1 className="website-hero-heading mx-auto mt-6 max-w-5xl text-[2.85rem] font-black leading-[0.98] tracking-tight text-slate-950 sm:text-[4.4rem] lg:text-[5.7rem]">
-            Plans built for every stage of <span className="marker-highlight marker-highlight-blue">business growth.</span>
+            Start free, stay free, then upgrade when <span className="marker-highlight marker-highlight-blue">business grows.</span>
           </h1>
           <p className="mx-auto mt-6 max-w-3xl text-base leading-8 text-slate-600 sm:text-lg">
-            Choose CRM, ERP, POS and reporting access in a clear subscription model, with support for small teams and enterprise deployments.
+            Try Nexora with no credit card, continue Free Forever after the trial, and move to Standard when your team needs unlimited growth tools.
           </p>
+          <div className="mx-auto mt-7 grid max-w-4xl gap-3 text-left sm:grid-cols-3">
+            {[
+              ['Start Free Trial', 'Explore Nexora with guided CRM, invoices and dashboards.'],
+              ['Continue Free Forever', 'Keep 1 workspace, 1 user and starter CRM limits after trial.'],
+              ['Upgrade When Ready', 'Unlock unlimited records, teams, reports and support tickets.'],
+            ].map(([title, text]) => (
+              <div key={title} className="rounded-[1.2rem] border border-blue-100 bg-white/85 p-4 shadow-[0_22px_58px_-46px_rgba(37,99,235,0.38)]">
+                <p className="text-sm font-black text-slate-950">{title}</p>
+                <p className="mt-2 text-xs leading-5 text-slate-600">{text}</p>
+              </div>
+            ))}
+          </div>
 
           <div className="mt-8 inline-flex rounded-full border border-slate-200 bg-white p-1 shadow-[0_18px_46px_-34px_rgba(15,23,42,0.45)]">
             {['monthly', 'yearly'].map((cycle) => (
@@ -136,7 +163,7 @@ export default function PricingPage() {
                 <p className="mt-3 text-center text-sm leading-6 text-slate-500">{plan.description}</p>
                 <div className="mt-6 text-center">
                   <p className="text-3xl font-black text-slate-950 sm:text-4xl">{getPrice(plan, billingCycle)}</p>
-                  {!plan.custom && <p className="mt-1 text-sm text-slate-500">/{billingCycle === 'monthly' ? 'month' : 'year'}</p>}
+                  {!plan.custom && <p className="mt-1 text-sm text-slate-500">{plan.priceNote || `/${billingCycle === 'monthly' ? 'month' : 'year'}`}</p>}
                 </div>
 
                 <div className="mt-7 flex-1 space-y-3">
@@ -149,14 +176,14 @@ export default function PricingPage() {
                 </div>
 
                 <Link
-                  to={plan.custom ? '/contact' : '/signup'}
+                  to={plan.ctaTo}
                   className={`mt-8 inline-flex min-h-12 items-center justify-center rounded-full border px-5 text-sm font-extrabold transition duration-200 ease-out hover:-translate-y-0.5 ${
                     plan.featured
                       ? 'border-slate-950 bg-slate-950 text-white hover:bg-blue-700'
                       : 'border-slate-200 bg-white text-slate-950 hover:border-blue-300 hover:text-blue-600'
                   }`}
                 >
-                  {plan.custom ? 'Contact Sales' : 'Start Free Trial'}
+                  {plan.ctaLabel}
                 </Link>
               </article>
             ))}
@@ -185,28 +212,30 @@ export default function PricingPage() {
               Feature comparison
             </h2>
             <p className="mx-auto mt-5 max-w-2xl text-base leading-8 text-slate-600">
-              Compare core capability across Basic, Business and Enterprise plans.
+              Compare the Free Forever starter plan with Standard and Enterprise growth packages.
             </p>
           </div>
 
-          <div className="mt-10 overflow-hidden rounded-[1.65rem] border border-slate-200 bg-white shadow-[0_28px_80px_-54px_rgba(15,23,42,0.4)]">
-            <div className="grid grid-cols-[1.4fr_0.75fr_0.85fr_0.9fr] border-b border-slate-100 bg-slate-950 text-white">
-              {['Feature', 'Basic', 'Business', 'Enterprise'].map((header) => (
-                <div key={header} className="px-3 py-4 text-xs font-black uppercase tracking-[0.14em] sm:px-5">
-                  {header}
-                </div>
-              ))}
-            </div>
-            {comparisonRows.map(([feature, basic, business, enterprise]) => (
-              <div key={feature} className="grid grid-cols-[1.4fr_0.75fr_0.85fr_0.9fr] border-b border-slate-100 last:border-b-0">
-                <div className="px-3 py-4 text-sm font-bold text-slate-800 sm:px-5">{feature}</div>
-                {[basic, business, enterprise].map((value, index) => (
-                  <div key={`${feature}-${index}`} className="grid place-items-center border-l border-slate-100 px-2 py-4 text-center">
-                    {renderComparisonValue(value)}
+          <div className="mt-10 overflow-x-auto rounded-[1.65rem] border border-slate-200 bg-white shadow-[0_28px_80px_-54px_rgba(15,23,42,0.4)]">
+            <div className="min-w-[46rem]">
+              <div className="grid grid-cols-[1.35fr_0.8fr_0.95fr_0.9fr] border-b border-slate-100 bg-slate-950 text-white">
+                {['Feature', 'Free Forever', 'Standard', 'Enterprise'].map((header) => (
+                  <div key={header} className="px-3 py-4 text-xs font-black uppercase tracking-[0.14em] sm:px-5">
+                    {header}
                   </div>
                 ))}
               </div>
-            ))}
+              {comparisonRows.map(([feature, free, standard, enterprise]) => (
+                <div key={feature} className="grid grid-cols-[1.35fr_0.8fr_0.95fr_0.9fr] border-b border-slate-100 last:border-b-0">
+                  <div className="px-3 py-4 text-sm font-bold text-slate-800 sm:px-5">{feature}</div>
+                  {[free, standard, enterprise].map((value, index) => (
+                    <div key={`${feature}-${index}`} className="grid place-items-center border-l border-slate-100 px-2 py-4 text-center">
+                      {renderComparisonValue(value)}
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -235,15 +264,20 @@ export default function PricingPage() {
               <HiOutlineChartBarSquare className="text-3xl" />
               <HiOutlineChatBubbleLeftRight className="text-3xl" />
             </div>
-            <h2 className="text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">Start your free trial with Nexora.</h2>
+            <h2 className="text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">Start free today. Keep growing on your terms.</h2>
             <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
-              Launch with the right plan, then scale into more modules as your business grows.
+              Start a free trial with no credit card, continue Free Forever after trial, or upgrade to Standard when your team needs unlimited capacity.
             </p>
           </div>
-          <Link to="/signup" className="premium-button-primary">
-            Start Free Trial
-            <HiOutlineArrowRight className="text-lg" />
-          </Link>
+          <div className="flex flex-col gap-3 min-[420px]:flex-row">
+            <Link to="/signup" className="premium-button-primary">
+              Start Free Trial
+              <HiOutlineArrowRight className="text-lg" />
+            </Link>
+            <Link to="/contact" className="premium-button-secondary">
+              Book Demo
+            </Link>
+          </div>
         </div>
       </section>
     </PublicPageShell>

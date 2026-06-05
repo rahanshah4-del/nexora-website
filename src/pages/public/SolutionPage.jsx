@@ -324,6 +324,44 @@ function SoftwareMockup({ page }) {
   )
 }
 
+function GrowthPathStrip() {
+  const steps = [
+    {
+      title: 'Start Free Trial',
+      text: 'Explore Nexora with real workflows, CRM tools, invoices and dashboards. No credit card required.',
+      icon: HiOutlinePlayCircle,
+    },
+    {
+      title: 'Continue Free Forever',
+      text: 'Keep 1 workspace, 1 user, 50 customers, 20 leads, 10 invoices/month, Basic CRM and a Basic dashboard.',
+      icon: HiOutlineShieldCheck,
+    },
+    {
+      title: 'Upgrade When Business Grows',
+      text: 'Move to Standard for Rs 5,999/month with more users, unlimited records, reports, analytics, team management and support tickets.',
+      icon: HiOutlineChartBarSquare,
+    },
+  ]
+
+  return (
+    <section data-reveal className="bg-white px-5 pb-4 sm:px-6 lg:px-8">
+      <div className="mx-auto -mt-8 grid max-w-7xl gap-4 rounded-[1.8rem] border border-blue-100 bg-white/95 p-4 shadow-[0_28px_90px_-64px_rgba(37,99,235,0.42)] sm:p-5 lg:grid-cols-3">
+        {steps.map(({ title, text, icon: Icon }) => (
+          <article key={title} className="flex min-w-0 gap-4 rounded-[1.35rem] bg-[linear-gradient(180deg,#f8fbff_0%,#ffffff_100%)] p-4">
+            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-blue-50 text-blue-700">
+              <Icon className="text-2xl" />
+            </span>
+            <div className="min-w-0">
+              <h3 className="text-base font-black text-slate-950">{title}</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-600">{text}</p>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  )
+}
+
 export default function SolutionPage() {
   const { solutionSlug } = useParams()
   const page = solutionPages[solutionSlug]
@@ -349,6 +387,9 @@ export default function SolutionPage() {
               <span className="marker-highlight marker-highlight-blue">{page.headlineHighlight}</span>
             </h1>
             <p className="mt-6 text-base leading-8 text-slate-600 sm:text-lg">{page.description}</p>
+            <p className="mt-4 rounded-2xl border border-blue-100 bg-white/80 px-4 py-3 text-sm font-bold leading-6 text-slate-700 shadow-[0_18px_54px_-44px_rgba(37,99,235,0.32)]">
+              Start with a free trial, continue Free Forever after trial, then upgrade to Standard when your users, records and reports need more room.
+            </p>
             <div className="mt-8 flex flex-col justify-center gap-3 min-[390px]:flex-row lg:justify-start">
               <Link to="/signup" className="premium-button-primary">
                 Start Free Trial
@@ -364,6 +405,8 @@ export default function SolutionPage() {
           <SoftwareMockup page={page} />
         </div>
       </section>
+
+      <GrowthPathStrip />
 
       <section data-reveal className="bg-white py-16 sm:py-20 lg:py-24">
         <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
@@ -461,7 +504,7 @@ export default function SolutionPage() {
           <div>
             <h2 className="text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">Ready to see {page.productName} in action?</h2>
             <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
-              Start free or book a guided demo with a Nexora product specialist.
+              Start a free trial with no credit card, stay on Free Forever after trial, or book a guided demo before upgrading to Standard.
             </p>
           </div>
           <div className="flex flex-col gap-3 min-[420px]:flex-row">
