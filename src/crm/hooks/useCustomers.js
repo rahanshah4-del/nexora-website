@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { db } from '../lib/firebase.js'
-import { createUserDoc, listenToWorkspaceCollection } from '../lib/firestore.js'
+import { createUserDoc, fetchWorkspaceCollectionPage, listenToWorkspaceCollection } from '../lib/firestore.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 import { useUser } from './useUser.js'
 import { clientSafeMessage } from '../utils/messages.js'
@@ -21,12 +21,126 @@ function normalizeCustomer(c) {
   }
 }
 
-export function useCustomers() {
+const DEFAULT_CUSTOMER_LIST_LIMIT = 100
+const CUSTOMER_PAGE_LIMIT = 50
+
+function safeCustomerListLimit(limitCount) {
+  const next = Number(limitCount)
+  if (!Number.isFinite(next) || next <= 0) return DEFAULT_CUSTOMER_LIST_LIMIT
+  return Math.floor(next)
+}
+
+function safeCustomerPageLimit(limitCount) {
+  const next = Number(limitCount)
+  if (!Number.isFinite(next) || next <= 0) return CUSTOMER_PAGE_LIMIT
+  return Math.min(CUSTOMER_PAGE_LIMIT, Math.floor(next))
+}
+
+function mergeCustomerPages(currentRows, nextRows) {
+  const seen = new Set((currentRows || []).map((customer) => customer.id))
+  return [
+    ...(currentRows || []),
+    ...(nextRows || []).filter((customer) => !seen.has(customer.id)),
+  ]
+}
+
+export function useCustomers({ limitCount = DEFAULT_CUSTOMER_LIST_LIMIT, paginated = false } = {}) {
   const { userId, workspaceId, businessType, userDoc, firebaseUser } = useUser()
+  const customerListLimit = safeCustomerListLimit(limitCount)
+  const customerPageLimit = safeCustomerPageLimit(limitCount)
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
+  const [paginationLoading, setPaginationLoading] = useState(false)
+  const [hasMoreCustomers, setHasMoreCustomers] = useState(false)
+  const [customerPage, setCustomerPage] = useState(0)
   const [source, setSource] = useState(db ? 'firestore' : 'none')
   const [error, setError] = useState('')
+  const customerCursorRef = useRef(null)
+  const customerRequestRef = useRef(0)
+
+  const loadCustomerPage = useCallback(async ({ reset = false } = {}) => {
+    if (!db) {
+      setRows([])
+      setSource('none')
+      setError('Secure Cloud Sync is not available right now.')
+      setLoading(false)
+      setPaginationLoading(false)
+      return { ok: false }
+    }
+    if (!workspaceId) {
+      setRows([])
+      customerCursorRef.current = null
+      setHasMoreCustomers(false)
+      setCustomerPage(0)
+      setSource('firestore')
+      setError('')
+      setLoading(false)
+      setPaginationLoading(false)
+      return { ok: true }
+    }
+
+    const requestId = ++customerRequestRef.current
+    if (reset) {
+      customerCursorRef.current = null
+      setRows([])
+      setHasMoreCustomers(false)
+      setCustomerPage(0)
+      setLoading(true)
+    } else {
+      setPaginationLoading(true)
+    }
+
+    try {
+      const page = await fetchWorkspaceCollectionPage({
+        workspaceId,
+        collectionName: 'customers',
+        businessType,
+        orderByField: 'createdAt',
+        orderDirection: 'desc',
+        limitCount: customerPageLimit,
+        startAfterDoc: reset ? null : customerCursorRef.current,
+      })
+      if (requestId !== customerRequestRef.current) return { ok: false }
+
+      const nextRows = (Array.isArray(page.rows) ? page.rows : []).map(normalizeCustomer)
+      setRows((currentRows) => (reset ? nextRows : mergeCustomerPages(currentRows, nextRows)))
+      customerCursorRef.current = page.lastDoc
+      setHasMoreCustomers(page.hasMore)
+      setCustomerPage((currentPage) => (reset ? 1 : currentPage + 1))
+      setSource('firestore')
+      setError('')
+      console.log(reset ? '[Customers] first page loaded' : '[Customers] next page loaded', {
+        count: page.size,
+        pageSize: customerPageLimit,
+        hasMore: page.hasMore,
+      })
+      console.log('[Customers] pagination cursor', {
+        cursorId: page.lastDoc?.id || null,
+        hasCursor: Boolean(page.lastDoc),
+      })
+      return { ok: true }
+    } catch (err) {
+      if (requestId !== customerRequestRef.current) return { ok: false }
+      setError(clientSafeMessage(err, 'Unable to load customers.'))
+      if (reset) setRows([])
+      setSource('firestore')
+      return { ok: false, error: clientSafeMessage(err, 'Unable to load customers.') }
+    } finally {
+      if (requestId === customerRequestRef.current) {
+        if (reset) setLoading(false)
+        else setPaginationLoading(false)
+      }
+    }
+  }, [businessType, customerPageLimit, workspaceId])
+
+  const loadMoreCustomers = useCallback(async () => {
+    if (loading || paginationLoading || !hasMoreCustomers) return { ok: true }
+    return loadCustomerPage({ reset: false })
+  }, [hasMoreCustomers, loadCustomerPage, loading, paginationLoading])
+
+  const prependLoadedCustomer = useCallback((customer) => {
+    setRows((currentRows) => [normalizeCustomer(customer), ...currentRows])
+  }, [])
 
   useEffect(() => {
     if (!db) {
@@ -35,18 +149,32 @@ export function useCustomers() {
         setSource('none')
         setError('Secure Cloud Sync is not available right now.')
         setLoading(false)
+        setPaginationLoading(false)
+        setHasMoreCustomers(false)
+        setCustomerPage(0)
       })
       return
     }
     if (!workspaceId) {
       Promise.resolve().then(() => {
         setRows([])
+        customerCursorRef.current = null
+        setHasMoreCustomers(false)
+        setCustomerPage(0)
         setSource('firestore')
         setError('')
         setLoading(false)
+        setPaginationLoading(false)
       })
       return
     }
+    if (paginated) {
+      loadCustomerPage({ reset: true })
+      return () => {
+        customerRequestRef.current += 1
+      }
+    }
+
     Promise.resolve().then(() => {
       setLoading(true)
       setSource('firestore')
@@ -56,7 +184,7 @@ export function useCustomers() {
       workspaceId,
       collectionName: 'customers',
       businessType,
-      limitCount: 100,
+      limitCount: customerListLimit,
       onData(data) {
         setRows((Array.isArray(data) ? data : []).map(normalizeCustomer))
         setLoading(false)
@@ -68,12 +196,17 @@ export function useCustomers() {
       },
     })
     return () => unsub?.()
-  }, [businessType, workspaceId])
+  }, [businessType, customerListLimit, loadCustomerPage, paginated, workspaceId])
 
   const api = useMemo(
     () => ({
       customers: rows,
       loading,
+      paginationLoading,
+      hasMoreCustomers,
+      customerPage,
+      customerPageSize: paginated ? customerPageLimit : customerListLimit,
+      loadMoreCustomers,
       source,
       error,
       async createCustomer(payload) {
@@ -100,6 +233,21 @@ export function useCustomers() {
             notes,
             createdBy: userId,
           }, { businessType })
+          if (paginated) {
+            prependLoadedCustomer({
+              id: ref.id,
+              ...payload,
+              name,
+              email,
+              phone,
+              company,
+              customerType: customerType || 'General',
+              status: status || 'Active',
+              notes,
+              createdBy: userId,
+              createdAt: new Date().toISOString(),
+            })
+          }
           await logActivity({
             workspaceId,
             userId,
@@ -118,7 +266,7 @@ export function useCustomers() {
         }
       },
     }),
-    [rows, loading, source, error, businessType, firebaseUser, userDoc, userId, workspaceId],
+    [rows, loading, paginationLoading, hasMoreCustomers, customerPage, customerPageLimit, customerListLimit, loadMoreCustomers, source, error, businessType, firebaseUser, userDoc, userId, workspaceId, paginated, prependLoadedCustomer],
   )
 
   return api

@@ -154,6 +154,11 @@ export default function InvoicesPage() {
     payments,
     stats,
     loading,
+    paginationLoading,
+    hasMoreInvoices,
+    invoicePage,
+    invoicePageSize,
+    loadMoreInvoices,
     source,
     error,
     canApprovePayments,
@@ -477,7 +482,7 @@ export default function InvoicesPage() {
       </section>
 
       <div className="flex items-center justify-between">
-        <Badge variant={source === 'firestore' ? 'success' : 'default'}>{loading ? 'Loading...' : source === 'firestore' ? 'Live Sync' : 'No data yet'}</Badge>
+        <Badge variant={source === 'firestore' ? 'success' : 'default'}>{loading ? 'Loading...' : source === 'firestore' ? 'Cloud Sync' : 'No data yet'}</Badge>
         {error ? <Badge variant="danger">{isSchool ? 'Unable to load fee records' : 'Unable to load invoices'}</Badge> : null}
       </div>
 
@@ -488,10 +493,15 @@ export default function InvoicesPage() {
           <div>
             <p className="text-lg font-black tracking-tight text-slate-950">{isSchool ? 'Fee Records' : 'Invoice List'}</p>
             <p className="mt-1 text-sm text-slate-500">
-              {filteredInvoices.length} of {invoices.length} {isSchool ? 'fee records' : 'invoices'} shown
+              {filteredInvoices.length} of {invoices.length} loaded {isSchool ? 'fee records' : 'invoices'} shown
             </p>
           </div>
-          <Badge variant="purple">ERP Billing</Badge>
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="purple">ERP Billing</Badge>
+            <Badge variant="default">
+              Page {Math.max(invoicePage, loading ? 0 : 1)} · {invoicePageSize} per load
+            </Badge>
+          </div>
         </div>
         <div className="mt-4">
           {loading ? (
@@ -501,6 +511,17 @@ export default function InvoicesPage() {
               <div>
                 <p className="text-sm font-bold text-slate-700">{isSchool ? 'No fee records found' : 'No invoices found'}</p>
                 <p className="mt-1 text-xs text-slate-500">{isSchool ? 'Create a fee bill or adjust your filters.' : 'Create a new invoice or adjust your filters.'}</p>
+                {hasMoreInvoices ? (
+                  <Button
+                    className="mt-4 h-10 rounded-xl"
+                    variant="subtle"
+                    type="button"
+                    disabled={paginationLoading}
+                    onClick={() => loadMoreInvoices()}
+                  >
+                    {paginationLoading ? 'Loading...' : `Load more ${isSchool ? 'fee records' : 'invoices'}`}
+                  </Button>
+                ) : null}
               </div>
             </div>
           ) : (
@@ -513,6 +534,26 @@ export default function InvoicesPage() {
               onAction={runInvoiceAction}
             />
           )}
+          {!loading ? (
+            <div className="mt-4 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
+              <span className="font-semibold">
+                {invoices.length} {isSchool ? 'fee records' : 'invoices'} loaded from recent pages
+              </span>
+              {hasMoreInvoices ? (
+                <Button
+                  className="h-10 rounded-xl"
+                  variant="subtle"
+                  type="button"
+                  disabled={paginationLoading}
+                  onClick={() => loadMoreInvoices()}
+                >
+                  {paginationLoading ? 'Loading...' : `Load more ${isSchool ? 'fee records' : 'invoices'}`}
+                </Button>
+              ) : (
+                <Badge variant="success">All loaded</Badge>
+              )}
+            </div>
+          ) : null}
         </div>
       </Card>
 

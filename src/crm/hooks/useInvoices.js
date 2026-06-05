@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { arrayUnion, collection, doc, getDoc, serverTimestamp, writeBatch } from 'firebase/firestore'
 import { db } from '../lib/firebase.js'
-import { createUserDoc, listenToWorkspaceCollection, patchUserDoc, removeUserDoc, workspaceCollectionPath } from '../lib/firestore.js'
+import { createUserDoc, fetchWorkspaceCollectionPage, listenToWorkspaceCollection, patchUserDoc, removeUserDoc, workspaceCollectionPath } from '../lib/firestore.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 import { useUser } from './useUser.js'
 import { clientSafeMessage } from '../utils/messages.js'
@@ -169,14 +169,131 @@ function hasUnsafeBusinessStatus(patch) {
   return Object.prototype.hasOwnProperty.call(patch || {}, 'status') && !['draft', 'pending'].includes(statusValue(patch.status, 'pending'))
 }
 
-export function useInvoices() {
+const DEFAULT_INVOICE_LIST_LIMIT = 50
+const PAYMENT_LIST_LIMIT = 100
+
+function safeInvoiceListLimit(limitCount) {
+  const next = Number(limitCount)
+  if (!Number.isFinite(next) || next <= 0) return DEFAULT_INVOICE_LIST_LIMIT
+  return Math.min(DEFAULT_INVOICE_LIST_LIMIT, Math.floor(next))
+}
+
+function mergeInvoicePages(currentRows, nextRows) {
+  const seen = new Set((currentRows || []).map((invoice) => invoice.id))
+  return [
+    ...(currentRows || []),
+    ...(nextRows || []).filter((invoice) => !seen.has(invoice.id)),
+  ]
+}
+
+export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT } = {}) {
   const { userId, workspaceId, businessType, role, userDoc, firebaseUser } = useUser()
   const workspaceAccess = useWorkspaceAccess()
+  const invoiceListLimit = safeInvoiceListLimit(limitCount)
   const [invoices, setInvoices] = useState([])
   const [payments, setPayments] = useState([])
   const [loading, setLoading] = useState(true)
+  const [paginationLoading, setPaginationLoading] = useState(false)
+  const [hasMoreInvoices, setHasMoreInvoices] = useState(false)
+  const [invoicePage, setInvoicePage] = useState(0)
   const [source, setSource] = useState(db ? 'firestore' : 'none')
   const [error, setError] = useState('')
+  const invoiceCursorRef = useRef(null)
+  const invoiceRequestRef = useRef(0)
+
+  const loadInvoicePage = useCallback(async ({ reset = false } = {}) => {
+    if (!db) {
+      setInvoices([])
+      setSource('none')
+      setError('Secure Cloud Sync is not available right now.')
+      setLoading(false)
+      setPaginationLoading(false)
+      return { ok: false }
+    }
+    if (!workspaceId) {
+      setInvoices([])
+      invoiceCursorRef.current = null
+      setHasMoreInvoices(false)
+      setInvoicePage(0)
+      setSource('firestore')
+      setError('')
+      setLoading(false)
+      setPaginationLoading(false)
+      return { ok: true }
+    }
+
+    const requestId = ++invoiceRequestRef.current
+    if (reset) {
+      invoiceCursorRef.current = null
+      setInvoices([])
+      setHasMoreInvoices(false)
+      setInvoicePage(0)
+      setLoading(true)
+    } else {
+      setPaginationLoading(true)
+    }
+
+    try {
+      const page = await fetchWorkspaceCollectionPage({
+        workspaceId,
+        collectionName: 'invoices',
+        businessType,
+        orderByField: 'createdAt',
+        orderDirection: 'desc',
+        limitCount: invoiceListLimit,
+        startAfterDoc: reset ? null : invoiceCursorRef.current,
+      })
+      if (requestId !== invoiceRequestRef.current) return { ok: false }
+
+      const nextRows = (Array.isArray(page.rows) ? page.rows : []).map(normalizeInvoice)
+      setInvoices((currentRows) => (reset ? nextRows : mergeInvoicePages(currentRows, nextRows)))
+      invoiceCursorRef.current = page.lastDoc
+      setHasMoreInvoices(page.hasMore)
+      setInvoicePage((currentPage) => (reset ? 1 : currentPage + 1))
+      setSource('firestore')
+      setError('')
+      console.log(reset ? '[Invoices] first page loaded' : '[Invoices] next page loaded', {
+        count: page.size,
+        pageSize: invoiceListLimit,
+        hasMore: page.hasMore,
+      })
+      console.log('[Invoices] pagination cursor', {
+        cursorId: page.lastDoc?.id || null,
+        hasCursor: Boolean(page.lastDoc),
+      })
+      return { ok: true }
+    } catch (err) {
+      if (requestId !== invoiceRequestRef.current) return { ok: false }
+      setError(clientSafeMessage(err, 'Unable to load invoices.'))
+      if (reset) setInvoices([])
+      setSource('firestore')
+      return { ok: false, error: clientSafeMessage(err, 'Unable to load invoices.') }
+    } finally {
+      if (requestId === invoiceRequestRef.current) {
+        if (reset) setLoading(false)
+        else setPaginationLoading(false)
+      }
+    }
+  }, [businessType, invoiceListLimit, workspaceId])
+
+  const loadMoreInvoices = useCallback(async () => {
+    if (loading || paginationLoading || !hasMoreInvoices) return { ok: true }
+    return loadInvoicePage({ reset: false })
+  }, [hasMoreInvoices, loadInvoicePage, loading, paginationLoading])
+
+  const patchLoadedInvoice = useCallback((id, patch) => {
+    setInvoices((currentRows) =>
+      currentRows.map((invoice) => (invoice.id === id ? normalizeInvoice({ ...invoice, ...patch }) : invoice)),
+    )
+  }, [])
+
+  const prependLoadedInvoice = useCallback((invoice) => {
+    setInvoices((currentRows) => [normalizeInvoice(invoice), ...currentRows])
+  }, [])
+
+  const removeLoadedInvoice = useCallback((id) => {
+    setInvoices((currentRows) => currentRows.filter((invoice) => invoice.id !== id))
+  }, [])
 
   useEffect(() => {
     if (!db) {
@@ -186,6 +303,9 @@ export function useInvoices() {
         setSource('none')
         setError('Secure Cloud Sync is not available right now.')
         setLoading(false)
+        setPaginationLoading(false)
+        setHasMoreInvoices(false)
+        setInvoicePage(0)
       })
       return
     }
@@ -193,36 +313,23 @@ export function useInvoices() {
       Promise.resolve().then(() => {
         setInvoices([])
         setPayments([])
+        invoiceCursorRef.current = null
+        setHasMoreInvoices(false)
+        setInvoicePage(0)
         setSource('firestore')
         setError('')
         setLoading(false)
+        setPaginationLoading(false)
       })
       return
     }
 
-    Promise.resolve().then(() => setLoading(true))
-    const unsubInv = listenToWorkspaceCollection({
-      workspaceId,
-      collectionName: 'invoices',
-      businessType,
-      limitCount: 100,
-      onData(rows) {
-        setInvoices((Array.isArray(rows) ? rows : []).map(normalizeInvoice))
-        setSource('firestore')
-        setLoading(false)
-      },
-      onError(err) {
-        setError(clientSafeMessage(err, 'Unable to load invoices.'))
-        setInvoices([])
-        setSource('firestore')
-        setLoading(false)
-      },
-    })
+    loadInvoicePage({ reset: true })
     const unsubPay = listenToWorkspaceCollection({
       workspaceId,
       collectionName: 'payments',
       businessType,
-      limitCount: 100,
+      limitCount: PAYMENT_LIST_LIMIT,
       onData(rows) {
         setPayments((Array.isArray(rows) ? rows : []).map(normalizePayment))
       },
@@ -231,10 +338,10 @@ export function useInvoices() {
       },
     })
     return () => {
-      unsubInv?.()
+      invoiceRequestRef.current += 1
       unsubPay?.()
     }
-  }, [businessType, workspaceId])
+  }, [businessType, invoiceListLimit, loadInvoicePage, workspaceId])
 
   const stats = useMemo(() => {
     const byStatus = (status) => invoices.filter((i) => getInvoiceStatus(i) === status).length
@@ -262,6 +369,11 @@ export function useInvoices() {
       invoices,
       payments,
       loading,
+      paginationLoading,
+      hasMoreInvoices,
+      invoicePage,
+      invoicePageSize: invoiceListLimit,
+      loadMoreInvoices,
       source,
       error,
       stats,
@@ -354,6 +466,12 @@ export function useInvoices() {
             totalUsd: invoice.total,
           }
           const ref = await createUserDoc(workspaceId, 'invoices', docPayload, { businessType })
+          prependLoadedInvoice({
+            id: ref.id,
+            ...docPayload,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          })
           await logActivity({
             workspaceId,
             userId,
@@ -463,6 +581,21 @@ export function useInvoices() {
             },
           })
           await batch.commit()
+          patchLoadedInvoice(id, {
+            paymentStatus: 'paid',
+            approvalStatus: 'approved',
+            requiresApproval: false,
+            paidAt: new Date().toISOString(),
+            approvedBy: userId,
+            approvedAt: new Date().toISOString(),
+            amountPaid: invoice.total,
+            partialPaidAmount: invoice.total,
+            balanceDue: 0,
+            lastPaymentAt: new Date().toISOString(),
+            lastPaymentDate: new Date().toISOString(),
+            ...(canEditAllInvoiceFields ? { status: 'paid', lastPaymentBy: userId } : {}),
+            ...(stockAdjusted ? { inventoryAdjustedAt: new Date().toISOString() } : {}),
+          })
           await logActivity({
             workspaceId,
             userId,
@@ -519,6 +652,14 @@ export function useInvoices() {
             rejectedAt: serverTimestamp(),
             rejectedBy: userId,
           }, { businessType })
+          patchLoadedInvoice(id, {
+            paymentStatus: 'rejected',
+            status: 'rejected',
+            approvalStatus: 'rejected',
+            requiresApproval: false,
+            rejectedAt: new Date().toISOString(),
+            rejectedBy: userId,
+          })
           await logActivity({
             workspaceId,
             userId,
@@ -638,6 +779,21 @@ export function useInvoices() {
             })
           }
           await batch.commit()
+          patchLoadedInvoice(id, {
+            paymentStatus: fullyPaid ? 'paid' : 'partial_paid',
+            approvalStatus: fullyPaid ? 'approved' : invoice.approvalStatus || 'pending',
+            requiresApproval: fullyPaid ? false : invoice.requiresApproval ?? true,
+            amountPaid: nextPaid,
+            partialPaidAmount: nextPaid,
+            balanceDue: calculateBalanceDue(invoice.total, nextPaid),
+            paidAt: fullyPaid ? new Date().toISOString() : invoice.paidAt || null,
+            approvedBy: fullyPaid ? userId : invoice.approvedBy || null,
+            approvedAt: fullyPaid ? new Date().toISOString() : invoice.approvedAt || null,
+            lastPaymentAt: new Date().toISOString(),
+            lastPaymentDate: new Date().toISOString(),
+            ...(canEditAllInvoiceFields ? { status: fullyPaid ? 'paid' : 'partial_paid', lastPaymentBy: userId } : {}),
+            ...(stockAdjusted ? { inventoryAdjustedAt: new Date().toISOString() } : {}),
+          })
           await logActivity({
             workspaceId,
             userId,
@@ -709,9 +865,12 @@ export function useInvoices() {
         }
 
         if (!Object.keys(safePatch).length) return { ok: false, error: 'No permitted invoice fields to update.' }
-        setInvoices((prev) => prev.map((i) => (i.id === id ? { ...i, ...safePatch } : i)))
-        if (!db || !workspaceId || source !== 'firestore') return { ok: true }
+        if (!db || !workspaceId || source !== 'firestore') {
+          patchLoadedInvoice(id, safePatch)
+          return { ok: true }
+        }
         await patchUserDoc(workspaceId, 'invoices', id, safePatch, { businessType })
+        patchLoadedInvoice(id, safePatch)
         return { ok: true }
       },
       async sendForApproval(id) {
@@ -779,6 +938,19 @@ export function useInvoices() {
             updatedAt: now,
           }, { merge: true })
           await batch.commit()
+          patchLoadedInvoice(id, {
+            status: 'pending_approval',
+            approvalStatus: 'pending',
+            paymentStatus: invoice.amountPaid > 0 ? 'partial_paid' : 'pending',
+            requiresApproval: true,
+            ...approvalMeta,
+            amount,
+            approvalAmount: amount,
+            approvalCustomerName: customerName,
+            approvalRecordId,
+            submittedForApprovalBy: userId,
+            submittedForApprovalAt: new Date().toISOString(),
+          })
           await logActivity({
             workspaceId,
             userId,
@@ -806,6 +978,13 @@ export function useInvoices() {
           approvedBy: userId,
           approvedAt: serverTimestamp(),
         }, { businessType })
+        patchLoadedInvoice(id, {
+          status: 'approved',
+          approvalStatus: 'approved',
+          requiresApproval: false,
+          approvedBy: userId,
+          approvedAt: new Date().toISOString(),
+        })
         return { ok: true }
       },
       async markInvoiceSent(id) {
@@ -816,6 +995,11 @@ export function useInvoices() {
           sentAt: serverTimestamp(),
           sentBy: userId,
         }, { businessType })
+        patchLoadedInvoice(id, {
+          status: 'sent',
+          sentAt: new Date().toISOString(),
+          sentBy: userId,
+        })
         return { ok: true }
       },
       async markInvoiceUnpaid(id) {
@@ -830,6 +1014,16 @@ export function useInvoices() {
           lastPaymentAt: null,
           lastPaymentDate: null,
         }, { businessType })
+        patchLoadedInvoice(id, {
+          ...(permissions.canEditAllInvoiceFields ? { status: 'sent' } : {}),
+          paymentStatus: 'pending',
+          amountPaid: 0,
+          partialPaidAmount: 0,
+          balanceDue: invoices.find((item) => item.id === id)?.total || 0,
+          paidAt: null,
+          lastPaymentAt: null,
+          lastPaymentDate: null,
+        })
         return { ok: true }
       },
       async duplicateInvoice(id) {
@@ -856,7 +1050,13 @@ export function useInvoices() {
             duplicatedFrom: id,
           }
           delete payload.id
-          await createUserDoc(workspaceId, 'invoices', payload, { businessType })
+          const ref = await createUserDoc(workspaceId, 'invoices', payload, { businessType })
+          prependLoadedInvoice({
+            id: ref.id,
+            ...payload,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          })
           return { ok: true }
         } catch (e) {
           return { ok: false, error: clientSafeMessage(e, 'Unable to duplicate invoice.') }
@@ -866,10 +1066,11 @@ export function useInvoices() {
         if (!permissions.canDelete) return { ok: false, error: 'Only owner or admin can delete invoices.' }
         if (!workspaceId) return { ok: false, error: 'Please login first' }
         await removeUserDoc(workspaceId, 'invoices', id)
+        removeLoadedInvoice(id)
         return { ok: true }
       },
     }),
-    [invoices, payments, loading, source, error, stats, canApprovePayments, permissions, businessType, firebaseUser, userDoc, userId, workspaceId],
+    [invoices, payments, loading, paginationLoading, hasMoreInvoices, invoicePage, invoiceListLimit, loadMoreInvoices, source, error, stats, canApprovePayments, permissions, businessType, firebaseUser, userDoc, userId, workspaceId, patchLoadedInvoice, prependLoadedInvoice, removeLoadedInvoice],
   )
 
   return api

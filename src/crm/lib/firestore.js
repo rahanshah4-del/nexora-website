@@ -1,4 +1,4 @@
-import { addDoc, collection, deleteDoc, doc, limit as queryLimit, onSnapshot, orderBy, query, serverTimestamp, updateDoc, where } from 'firebase/firestore'
+import { addDoc, collection, deleteDoc, doc, getDocs, limit as queryLimit, onSnapshot, orderBy, query, serverTimestamp, startAfter, updateDoc, where } from 'firebase/firestore'
 import { db } from './firebase.js'
 import { clientSafeMessage } from '../utils/messages.js'
 import { normalizeBusinessType } from '../data/moduleAccess.js'
@@ -126,7 +126,6 @@ export function listenToWorkspaceCollection({
   ]
   if (orderByField) constraints.push(orderBy(orderByField, orderDirection))
   if (Number.isFinite(Number(limitCount)) && Number(limitCount) > 0) {
-    // TODO: Add cursor-based pagination once list screens expose page controls.
     constraints.push(queryLimit(Math.floor(Number(limitCount))))
   }
 
@@ -141,6 +140,53 @@ export function listenToWorkspaceCollection({
       ),
     (err) => onError?.(safeError(err, 'Unable to load account data.')),
   )
+}
+
+export async function fetchWorkspaceCollectionPage({
+  workspaceId,
+  collectionName,
+  businessType,
+  orderByField = 'createdAt',
+  orderDirection = 'desc',
+  limitCount = 50,
+  whereFilters = [],
+  startAfterDoc = null,
+} = {}) {
+  if (!workspaceId || !collectionName) {
+    return { rows: [], lastDoc: null, hasMore: false, size: 0 }
+  }
+
+  const ref = collectionRef(workspaceCollectionPath(workspaceId, collectionName))
+  if (!ref) {
+    return { rows: [], lastDoc: null, hasMore: false, size: 0 }
+  }
+
+  const normalizedBusinessType = normalizeBusinessType(businessType)
+  const pageLimit = Number.isFinite(Number(limitCount)) && Number(limitCount) > 0
+    ? Math.floor(Number(limitCount))
+    : 50
+  const constraints = [
+    ...(normalizedBusinessType ? [where('businessType', '==', normalizedBusinessType)] : []),
+    ...whereFilters.map(whereConstraintFromFilter).filter(Boolean),
+  ]
+  if (orderByField) constraints.push(orderBy(orderByField, orderDirection))
+  if (startAfterDoc) constraints.push(startAfter(startAfterDoc))
+  constraints.push(queryLimit(pageLimit))
+
+  try {
+    const snap = await getDocs(query(ref, ...constraints))
+    return {
+      rows: snap.docs
+        .map((d) => ({ id: d.id, ...d.data() }))
+        .filter((row) => belongsToWorkspace(row, workspaceId))
+        .map((row) => withWorkspaceFallback(row.id, row, workspaceId)),
+      lastDoc: snap.docs.at(-1) || null,
+      hasMore: snap.docs.length === pageLimit,
+      size: snap.docs.length,
+    }
+  } catch (error) {
+    throw safeError(error, 'Unable to load account data.')
+  }
 }
 
 export function subscribeOwnedCollection(path, userId, onData, onError, ownerField = 'userId', options = {}) {

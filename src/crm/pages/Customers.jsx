@@ -21,7 +21,7 @@ function formatDate(value) {
 }
 
 export default function CustomersPage() {
-  const customersApi = useCustomers()
+  const customersApi = useCustomers({ paginated: true, limitCount: 50 })
   const { businessType } = useUser()
   const [createOpen, setCreateOpen] = useState(false)
   const [toast, setToast] = useState(null)
@@ -129,10 +129,18 @@ export default function CustomersPage() {
       <Card className="p-5">
         <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
           <Input placeholder={isSchool ? 'Search students or parents' : 'Search customers...'} value={search} onChange={(e) => setSearch(e.target.value)} />
-          <Badge variant={customersApi.source === 'firestore' ? 'success' : 'default'}>
-            {customersApi.loading ? 'Loading…' : customersApi.source === 'firestore' ? 'Live Sync' : 'No data yet'}
-          </Badge>
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant={customersApi.source === 'firestore' ? 'success' : 'default'}>
+              {customersApi.loading ? 'Loading...' : customersApi.source === 'firestore' ? 'Cloud Sync' : 'No data yet'}
+            </Badge>
+            <Badge variant="default">
+              Page {Math.max(customersApi.customerPage, customersApi.loading ? 0 : 1)} · {customersApi.customerPageSize} per load
+            </Badge>
+          </div>
         </div>
+        <p className="mt-3 text-sm font-semibold text-slate-500">
+          {filteredCustomers.length} of {customersApi.customers.length} loaded {isSchool ? 'students' : 'customers'} shown
+        </p>
         {customersApi.error ? <p className="mt-3 text-sm font-semibold text-rose-700">{customersApi.error}</p> : null}
         <div className="mt-4">
           {customersApi.loading ? (
@@ -142,13 +150,48 @@ export default function CustomersPage() {
           ) : filteredCustomers.length ? (
             <Table columns={columns} rows={filteredCustomers} />
           ) : (
-            <EmptyState
-              title={isSchool ? 'No students yet' : 'No customers yet'}
-              description={isSchool ? 'No student records yet. Add a student to begin.' : 'No account data yet. Add a customer to begin.'}
-              actionLabel={isSchool ? 'Add Student' : 'Add Customer'}
-              onAction={() => setCreateOpen(true)}
-            />
+            <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-5">
+              <EmptyState
+                title={isSchool ? 'No students yet' : 'No customers yet'}
+                description={isSchool ? 'No student records yet. Add a student to begin.' : 'No account data yet. Add a customer to begin.'}
+                actionLabel={isSchool ? 'Add Student' : 'Add Customer'}
+                onAction={() => setCreateOpen(true)}
+              />
+              {customersApi.hasMoreCustomers ? (
+                <div className="mt-4 flex justify-center">
+                  <Button
+                    className="rounded-2xl"
+                    variant="subtle"
+                    type="button"
+                    disabled={customersApi.paginationLoading}
+                    onClick={() => customersApi.loadMoreCustomers()}
+                  >
+                    {customersApi.paginationLoading ? 'Loading...' : `Load more ${isSchool ? 'students' : 'customers'}`}
+                  </Button>
+                </div>
+              ) : null}
+            </div>
           )}
+          {!customersApi.loading ? (
+            <div className="mt-4 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
+              <span className="font-semibold">
+                {customersApi.customers.length} {isSchool ? 'students' : 'customers'} loaded from recent pages
+              </span>
+              {customersApi.hasMoreCustomers ? (
+                <Button
+                  className="rounded-2xl"
+                  variant="subtle"
+                  type="button"
+                  disabled={customersApi.paginationLoading}
+                  onClick={() => customersApi.loadMoreCustomers()}
+                >
+                  {customersApi.paginationLoading ? 'Loading...' : `Load more ${isSchool ? 'students' : 'customers'}`}
+                </Button>
+              ) : (
+                <Badge variant="success">All loaded</Badge>
+              )}
+            </div>
+          ) : null}
         </div>
       </Card>
 

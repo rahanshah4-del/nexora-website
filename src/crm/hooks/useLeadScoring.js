@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { db } from '../lib/firebase.js'
-import { listenToWorkspaceCollection } from '../lib/firestore.js'
+import { fetchWorkspaceCollectionPage, listenToWorkspaceCollection } from '../lib/firestore.js'
 import { useUser } from './useUser.js'
 import { clientSafeMessage } from '../utils/messages.js'
 
@@ -74,12 +74,126 @@ export function computeLeadScore(lead) {
   }
 }
 
-export function useLeadScoring() {
+const DEFAULT_LEAD_LIST_LIMIT = 100
+const LEAD_PAGE_LIMIT = 50
+
+function safeLeadListLimit(limitCount) {
+  const next = Number(limitCount)
+  if (!Number.isFinite(next) || next <= 0) return DEFAULT_LEAD_LIST_LIMIT
+  return Math.floor(next)
+}
+
+function safeLeadPageLimit(limitCount) {
+  const next = Number(limitCount)
+  if (!Number.isFinite(next) || next <= 0) return LEAD_PAGE_LIMIT
+  return Math.min(LEAD_PAGE_LIMIT, Math.floor(next))
+}
+
+function mergeLeadPages(currentRows, nextRows) {
+  const seen = new Set((currentRows || []).map((lead) => lead.id))
+  return [
+    ...(currentRows || []),
+    ...(nextRows || []).filter((lead) => !seen.has(lead.id)),
+  ]
+}
+
+export function useLeadScoring({ limitCount = DEFAULT_LEAD_LIST_LIMIT, paginated = false } = {}) {
   const { workspaceId, businessType } = useUser()
+  const leadListLimit = safeLeadListLimit(limitCount)
+  const leadPageLimit = safeLeadPageLimit(limitCount)
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
+  const [paginationLoading, setPaginationLoading] = useState(false)
+  const [hasMoreLeads, setHasMoreLeads] = useState(false)
+  const [leadPage, setLeadPage] = useState(0)
   const [source, setSource] = useState(db ? 'firestore' : 'none')
   const [error, setError] = useState('')
+  const leadCursorRef = useRef(null)
+  const leadRequestRef = useRef(0)
+
+  const loadLeadPage = useCallback(async ({ reset = false } = {}) => {
+    if (!db) {
+      setRows([])
+      setSource('none')
+      setError('Secure Cloud Sync is not available right now.')
+      setLoading(false)
+      setPaginationLoading(false)
+      return { ok: false }
+    }
+    if (!workspaceId) {
+      setRows([])
+      leadCursorRef.current = null
+      setHasMoreLeads(false)
+      setLeadPage(0)
+      setSource('firestore')
+      setError('')
+      setLoading(false)
+      setPaginationLoading(false)
+      return { ok: true }
+    }
+
+    const requestId = ++leadRequestRef.current
+    if (reset) {
+      leadCursorRef.current = null
+      setRows([])
+      setHasMoreLeads(false)
+      setLeadPage(0)
+      setLoading(true)
+    } else {
+      setPaginationLoading(true)
+    }
+
+    try {
+      const page = await fetchWorkspaceCollectionPage({
+        workspaceId,
+        collectionName: 'leads',
+        businessType,
+        orderByField: 'createdAt',
+        orderDirection: 'desc',
+        limitCount: leadPageLimit,
+        startAfterDoc: reset ? null : leadCursorRef.current,
+      })
+      if (requestId !== leadRequestRef.current) return { ok: false }
+
+      const nextRows = Array.isArray(page.rows) ? page.rows : []
+      setRows((currentRows) => (reset ? nextRows : mergeLeadPages(currentRows, nextRows)))
+      leadCursorRef.current = page.lastDoc
+      setHasMoreLeads(page.hasMore)
+      setLeadPage((currentPage) => (reset ? 1 : currentPage + 1))
+      setSource('firestore')
+      setError('')
+      console.log(reset ? '[Leads] first page loaded' : '[Leads] next page loaded', {
+        count: page.size,
+        pageSize: leadPageLimit,
+        hasMore: page.hasMore,
+      })
+      console.log('[Leads] pagination cursor', {
+        cursorId: page.lastDoc?.id || null,
+        hasCursor: Boolean(page.lastDoc),
+      })
+      return { ok: true }
+    } catch (err) {
+      if (requestId !== leadRequestRef.current) return { ok: false }
+      setError(clientSafeMessage(err, 'Unable to load leads.'))
+      if (reset) setRows([])
+      setSource('firestore')
+      return { ok: false, error: clientSafeMessage(err, 'Unable to load leads.') }
+    } finally {
+      if (requestId === leadRequestRef.current) {
+        if (reset) setLoading(false)
+        else setPaginationLoading(false)
+      }
+    }
+  }, [businessType, leadPageLimit, workspaceId])
+
+  const loadMoreLeads = useCallback(async () => {
+    if (loading || paginationLoading || !hasMoreLeads) return { ok: true }
+    return loadLeadPage({ reset: false })
+  }, [hasMoreLeads, loadLeadPage, loading, paginationLoading])
+
+  const prependLead = useCallback((lead) => {
+    setRows((currentRows) => [lead, ...currentRows])
+  }, [])
 
   useEffect(() => {
     if (!db) {
@@ -88,17 +202,30 @@ export function useLeadScoring() {
         setSource('none')
         setError('Secure Cloud Sync is not available right now.')
         setLoading(false)
+        setPaginationLoading(false)
+        setHasMoreLeads(false)
+        setLeadPage(0)
       })
       return
     }
     if (!workspaceId) {
       Promise.resolve().then(() => {
         setRows([])
+        leadCursorRef.current = null
+        setHasMoreLeads(false)
+        setLeadPage(0)
         setSource('firestore')
         setError('')
         setLoading(false)
+        setPaginationLoading(false)
       })
       return
+    }
+    if (paginated) {
+      loadLeadPage({ reset: true })
+      return () => {
+        leadRequestRef.current += 1
+      }
     }
 
     Promise.resolve().then(() => setLoading(true))
@@ -106,7 +233,7 @@ export function useLeadScoring() {
       workspaceId,
       collectionName: 'leads',
       businessType,
-      limitCount: 100,
+      limitCount: leadListLimit,
       onData(data) {
         setRows(Array.isArray(data) ? data : [])
         setSource('firestore')
@@ -120,7 +247,7 @@ export function useLeadScoring() {
       },
     })
     return () => unsub()
-  }, [businessType, workspaceId])
+  }, [businessType, leadListLimit, loadLeadPage, paginated, workspaceId])
 
   const scored = useMemo(
     () =>
@@ -131,5 +258,16 @@ export function useLeadScoring() {
     [rows],
   )
 
-  return { leads: scored, loading, source, error }
+  return {
+    leads: scored,
+    loading,
+    paginationLoading,
+    hasMoreLeads,
+    leadPage,
+    leadPageSize: paginated ? leadPageLimit : leadListLimit,
+    loadMoreLeads,
+    prependLead,
+    source,
+    error,
+  }
 }

@@ -21,7 +21,7 @@ import { supportedCurrencies } from '../data/currency.js'
 import { normalizeBusinessType } from '../data/moduleAccess.js'
 import { useBusinessSettings } from '../hooks/useBusinessSettings.js'
 import { usePreferences } from '../hooks/usePreferences.js'
-import { useReports } from '../hooks/useReports.js'
+import { REPORT_SECTION_OPTIONS, useReports } from '../hooks/useReports.js'
 import { useUser } from '../hooks/useUser.js'
 import {
   calculateApprovedExpenses,
@@ -279,7 +279,6 @@ function ReportQrCode({ payload }) {
 }
 
 export default function ReportsPage() {
-  const reports = useReports()
   const { profile, currency: preferredCurrency } = usePreferences()
   const businessSettingsApi = useBusinessSettings()
   const { userDoc, firebaseUser, workspaceId, businessType, plan } = useUser()
@@ -289,9 +288,14 @@ export default function ReportsPage() {
     endDate: '',
     currency: preferredCurrency,
   })
+  const [reportSection, setReportSection] = useState('overview')
+  const [detailedReportLoaded, setDetailedReportLoaded] = useState(false)
   const [notice, setNotice] = useState('')
 
   const activeWindow = useMemo(() => dateWindow(filters), [filters])
+  const detailLimit = detailedReportLoaded ? 250 : 100
+  const reports = useReports({ section: reportSection, limitCount: detailLimit, dateWindow: activeWindow })
+  const selectedReportSectionLabel = REPORT_SECTION_OPTIONS.find((item) => item.value === reportSection)?.label || 'Overview'
 
   const reportData = useMemo(() => {
     const filtered = (list) => (Array.isArray(list) ? list.filter((item) => withinDateWindow(item, activeWindow)) : [])
@@ -394,6 +398,11 @@ export default function ReportsPage() {
   const customerRows = reportData.customers.slice(0, 8)
   const activityRows = reportData.activityLogs.slice(0, 8)
   const staffRows = reportData.staff.slice(0, 8)
+  const ticketRows = reportData.tickets.slice(0, 8)
+  const showFinanceSections = reportSection === 'overview' || reportSection === 'finance'
+  const showSalesSections = reportSection === 'overview' || reportSection === 'sales'
+  const showActivitySections = reportSection === 'activity'
+  const showSupportSections = reportSection === 'support'
 
   function showNotice(message) {
     setNotice(message)
@@ -491,12 +500,13 @@ export default function ReportsPage() {
         <div className="flex flex-wrap gap-2">
           <Badge variant={reports.loading ? 'warning' : 'success'}>{reports.loading ? 'Loading' : 'Live data'}</Badge>
           <Badge variant="default">Plan: {plan || 'Free'}</Badge>
+          <Badge variant="info">{selectedReportSectionLabel} - {reports.limitCount} recent rows</Badge>
           <Badge variant="purple">Updated: {reports.lastUpdatedLabel}</Badge>
         </div>
       </div>
 
       <Card className="no-print p-4 sm:p-5">
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[1fr_1fr_1fr_auto_auto_auto] xl:items-end">
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5 xl:items-end">
           <div>
             <label className="text-xs font-semibold text-slate-600">Date filter</label>
             <Select className="mt-1.5" value={filters.range} onChange={(event) => setFilters((current) => ({ ...current, range: event.target.value }))}>
@@ -537,6 +547,35 @@ export default function ReportsPage() {
               ))}
             </Select>
           </div>
+          <div>
+            <label className="text-xs font-semibold text-slate-600">Report section</label>
+            <Select
+              className="mt-1.5"
+              value={reportSection}
+              onChange={(event) => {
+                setReportSection(event.target.value)
+                setDetailedReportLoaded(false)
+              }}
+            >
+              {REPORT_SECTION_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </Select>
+          </div>
+        </div>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <Button
+            variant={detailedReportLoaded ? 'subtle' : 'primary'}
+            className="h-10 rounded-2xl"
+            type="button"
+            disabled={detailedReportLoaded}
+            onClick={() => setDetailedReportLoaded(true)}
+          >
+            <HiOutlineChartBar className="h-4 w-4" />
+            {detailedReportLoaded ? 'Detailed loaded' : 'Load detailed report'}
+          </Button>
           <Button variant="subtle" className="h-10 rounded-2xl" type="button" onClick={printReport}>
             <HiOutlinePrinter className="h-4 w-4" />
             Print Report
@@ -663,102 +702,125 @@ export default function ReportsPage() {
               <SummaryRow label="Revenue" value={formatMoney(reportData.totalRevenueUsd, filters.currency)} />
               <SummaryRow label="Approved expenses" value={formatMoney(reportData.expensesUsd, filters.currency)} />
               <SummaryRow label="Profit" value={formatMoney(reportData.profitUsd, filters.currency)} />
-              <SummaryRow label="Support tickets" value={`${reportData.tickets.length} total / ${reportData.openTickets.length} open`} />
-              <SummaryRow label="Follow-up completion" value={`${reportData.completedTasks.length} completed / ${reportData.tasks.length} tasks`} />
-              <SummaryRow label="Activity events" value={String(reportData.activityLogs.length)} />
-              <SummaryRow label="Team members" value={String(reportData.staff.length)} />
+              {showSupportSections ? <SummaryRow label="Support tickets" value={`${reportData.tickets.length} total / ${reportData.openTickets.length} open`} /> : null}
+              {showActivitySections ? <SummaryRow label="Follow-up completion" value={`${reportData.completedTasks.length} completed / ${reportData.tasks.length} tasks`} /> : null}
+              {showActivitySections ? <SummaryRow label="Activity events" value={String(reportData.activityLogs.length)} /> : null}
+              {showActivitySections ? <SummaryRow label="Team members" value={String(reportData.staff.length)} /> : null}
               <SummaryRow label="Sync status" value={reports.source === 'firestore' ? 'Live Sync' : 'No data yet'} />
             </div>
           </ReportSection>
 
-          <ReportSection title="Revenue and invoices" badge="Finance">
+          {showFinanceSections ? (
+            <ReportSection title="Revenue and invoices" badge="Finance">
+              <DataTable
+                rows={invoiceRows}
+                empty="Create invoices to generate finance reports."
+                columns={[
+                  { key: 'invoiceNumber', label: 'Invoice', render: (row) => safeText(row.invoiceNumber || row.id) },
+                  { key: 'customerName', label: 'Customer', render: (row) => safeText(row.customerName) },
+                  { key: 'status', label: 'Status', render: (row) => <Badge variant={String(row.status).toLowerCase() === 'paid' ? 'success' : 'warning'}>{safeText(row.status, 'Pending')}</Badge> },
+                  { key: 'total', label: 'Total', render: (row) => formatMoney(invoiceValue(row), filters.currency) },
+                  { key: 'dueDate', label: 'Due', render: (row) => safeText(row.dueDate, 'No date') },
+                ]}
+              />
+            </ReportSection>
+          ) : null}
+        </div>
+
+        {showFinanceSections ? (
+          <ReportSection title="Expenses and profit" badge="Profit">
+            <div className="mb-4 grid gap-3 sm:grid-cols-3">
+              <SummaryRow label="Revenue" value={formatMoney(reportData.totalRevenueUsd, filters.currency)} />
+              <SummaryRow label="Expenses" value={formatMoney(reportData.expensesUsd, filters.currency)} />
+              <SummaryRow label="Profit" value={formatMoney(reportData.profitUsd, filters.currency)} />
+            </div>
             <DataTable
-              rows={invoiceRows}
-              empty="Create invoices to generate finance reports."
+              rows={expenseRows}
+              empty="Approved expenses will appear here once submitted and reviewed."
               columns={[
-                { key: 'invoiceNumber', label: 'Invoice', render: (row) => safeText(row.invoiceNumber || row.id) },
-                { key: 'customerName', label: 'Customer', render: (row) => safeText(row.customerName) },
-                { key: 'status', label: 'Status', render: (row) => <Badge variant={String(row.status).toLowerCase() === 'paid' ? 'success' : 'warning'}>{safeText(row.status, 'Pending')}</Badge> },
-                { key: 'total', label: 'Total', render: (row) => formatMoney(invoiceValue(row), filters.currency) },
-                { key: 'dueDate', label: 'Due', render: (row) => safeText(row.dueDate, 'No date') },
+                { key: 'title', label: 'Expense', render: (row) => safeText(row.title || row.name || row.category, 'Expense') },
+                { key: 'category', label: 'Category', render: (row) => safeText(row.category, 'General') },
+                { key: 'approvalStatus', label: 'Status', render: (row) => safeText(row.approvalStatus || row.status, 'Pending') },
+                { key: 'amount', label: 'Amount', render: (row) => formatMoney(expenseValue(row), filters.currency) },
               ]}
             />
           </ReportSection>
-        </div>
+        ) : null}
 
-        <ReportSection title="Expenses and profit" badge="Profit">
-          <div className="mb-4 grid gap-3 sm:grid-cols-3">
-            <SummaryRow label="Revenue" value={formatMoney(reportData.totalRevenueUsd, filters.currency)} />
-            <SummaryRow label="Expenses" value={formatMoney(reportData.expensesUsd, filters.currency)} />
-            <SummaryRow label="Profit" value={formatMoney(reportData.profitUsd, filters.currency)} />
+        {showSalesSections ? (
+          <div className="grid gap-5 xl:grid-cols-2">
+            <ReportSection title="Leads report" badge="Leads">
+              <DataTable
+                rows={leadRows}
+                empty="Add leads to see score and pipeline quality."
+                columns={[
+                  { key: 'name', label: 'Lead', render: (row) => safeText(row.name || row.customerName || row.company) },
+                  { key: 'priority', label: 'Priority', render: (row) => safeText(row.priority || row.scoreType, 'No score yet') },
+                  { key: 'score', label: 'Score', render: (row) => `${safeNumber(row.score)}%` },
+                  { key: 'dealValue', label: 'Value', render: (row) => formatMoney(dealValue(row), filters.currency) },
+                ]}
+              />
+            </ReportSection>
+
+            <ReportSection title="Customer report" badge="Customers">
+              <DataTable
+                rows={customerRows}
+                empty="Add customers to build a customer report."
+                columns={[
+                  { key: 'name', label: 'Customer', render: (row) => safeText(row.name) },
+                  { key: 'company', label: 'Company', render: (row) => safeText(row.company) },
+                  { key: 'status', label: 'Status', render: (row) => safeText(row.status, 'Active') },
+                  { key: 'spendUsd', label: 'Spend', render: (row) => formatMoney(row.spendUsd ?? row.spend, filters.currency) },
+                ]}
+              />
+            </ReportSection>
           </div>
-          <DataTable
-            rows={expenseRows}
-            empty="Approved expenses will appear here once submitted and reviewed."
-            columns={[
-              { key: 'title', label: 'Expense', render: (row) => safeText(row.title || row.name || row.category, 'Expense') },
-              { key: 'category', label: 'Category', render: (row) => safeText(row.category, 'General') },
-              { key: 'approvalStatus', label: 'Status', render: (row) => safeText(row.approvalStatus || row.status, 'Pending') },
-              { key: 'amount', label: 'Amount', render: (row) => formatMoney(expenseValue(row), filters.currency) },
-            ]}
-          />
-        </ReportSection>
+        ) : null}
 
-        <div className="grid gap-5 xl:grid-cols-2">
-          <ReportSection title="Leads report" badge="Leads">
+        {showActivitySections ? (
+          <div className="grid gap-5 xl:grid-cols-2">
+            <ReportSection title="Activity report" badge="Activity">
+              <DataTable
+                rows={activityRows}
+                empty="Activity will appear after users perform workspace actions."
+                columns={[
+                  { key: 'module', label: 'Module', render: (row) => safeText(row.module, 'System') },
+                  { key: 'action', label: 'Action', render: (row) => safeText(row.action) },
+                  { key: 'userName', label: 'User', render: (row) => safeText(row.userName || row.userEmail, 'Workspace user') },
+                  { key: 'createdAt', label: 'Date', render: (row) => formatDate(row.createdAt || row.updatedAt) },
+                ]}
+              />
+            </ReportSection>
+
+            <ReportSection title="Staff/team report" badge="Team">
+              <DataTable
+                rows={staffRows}
+                empty="Create staff members in Team Management to see team reporting."
+                columns={[
+                  { key: 'name', label: 'Name', render: (row) => safeText(row.name) },
+                  { key: 'email', label: 'Email', render: (row) => safeText(row.email, 'No email yet') },
+                  { key: 'role', label: 'Role', render: (row) => safeText(row.role, 'staff') },
+                  { key: 'status', label: 'Status', render: (row) => safeText(row.status, 'Active') },
+                ]}
+              />
+            </ReportSection>
+          </div>
+        ) : null}
+
+        {showSupportSections ? (
+          <ReportSection title="Support report" badge="Support">
             <DataTable
-              rows={leadRows}
-              empty="Add leads to see score and pipeline quality."
+              rows={ticketRows}
+              empty="Support tickets will appear here when support access is enabled."
               columns={[
-                { key: 'name', label: 'Lead', render: (row) => safeText(row.name || row.customerName || row.company) },
-                { key: 'priority', label: 'Priority', render: (row) => safeText(row.priority || row.scoreType, 'No score yet') },
-                { key: 'score', label: 'Score', render: (row) => `${safeNumber(row.score)}%` },
-                { key: 'dealValue', label: 'Value', render: (row) => formatMoney(dealValue(row), filters.currency) },
+                { key: 'ticketNumber', label: 'Ticket', render: (row) => safeText(row.ticketNumber || row.id) },
+                { key: 'customerName', label: 'Customer', render: (row) => safeText(row.customerName || row.customerEmail) },
+                { key: 'subject', label: 'Subject', render: (row) => safeText(row.subject || row.message) },
+                { key: 'status', label: 'Status', render: (row) => safeText(row.status, 'Open') },
               ]}
             />
           </ReportSection>
-
-          <ReportSection title="Customer report" badge="Customers">
-            <DataTable
-              rows={customerRows}
-              empty="Add customers to build a customer report."
-              columns={[
-                { key: 'name', label: 'Customer', render: (row) => safeText(row.name) },
-                { key: 'company', label: 'Company', render: (row) => safeText(row.company) },
-                { key: 'status', label: 'Status', render: (row) => safeText(row.status, 'Active') },
-                { key: 'spendUsd', label: 'Spend', render: (row) => formatMoney(row.spendUsd ?? row.spend, filters.currency) },
-              ]}
-            />
-          </ReportSection>
-        </div>
-
-        <div className="grid gap-5 xl:grid-cols-2">
-          <ReportSection title="Activity report" badge="Activity">
-            <DataTable
-              rows={activityRows}
-              empty="Activity will appear after users perform workspace actions."
-              columns={[
-                { key: 'module', label: 'Module', render: (row) => safeText(row.module, 'System') },
-                { key: 'action', label: 'Action', render: (row) => safeText(row.action) },
-                { key: 'userName', label: 'User', render: (row) => safeText(row.userName || row.userEmail, 'Workspace user') },
-                { key: 'createdAt', label: 'Date', render: (row) => formatDate(row.createdAt || row.updatedAt) },
-              ]}
-            />
-          </ReportSection>
-
-          <ReportSection title="Staff/team report" badge="Team">
-            <DataTable
-              rows={staffRows}
-              empty="Create staff members in Team Management to see team reporting."
-              columns={[
-                { key: 'name', label: 'Name', render: (row) => safeText(row.name) },
-                { key: 'email', label: 'Email', render: (row) => safeText(row.email, 'No email yet') },
-                { key: 'role', label: 'Role', render: (row) => safeText(row.role, 'staff') },
-                { key: 'status', label: 'Status', render: (row) => safeText(row.status, 'Active') },
-              ]}
-            />
-          </ReportSection>
-        </div>
+        ) : null}
 
         <Card className="print-break-inside-avoid p-5">
           <div className="grid gap-5 md:grid-cols-[1fr_260px] md:items-end">

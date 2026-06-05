@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { db } from '../lib/firebase.js'
-import { createUserDoc, patchUserDoc, removeUserDoc, subscribeUserCollection } from '../lib/firestore.js'
+import { createUserDoc, listenToWorkspaceCollection, patchUserDoc, removeUserDoc, subscribeUserCollection } from '../lib/firestore.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 import { useUser } from './useUser.js'
 import { clientSafeMessage } from '../utils/messages.js'
@@ -28,8 +28,15 @@ function normalizeExpense(expense) {
   }
 }
 
-export function useExpenses() {
+function safeRecentLimit(limitCount) {
+  const next = Number(limitCount)
+  if (!Number.isFinite(next) || next <= 0) return null
+  return Math.floor(next)
+}
+
+export function useExpenses({ limitCount = null } = {}) {
   const { userId, workspaceId, businessType, userDoc, firebaseUser } = useUser()
+  const recentLimit = safeRecentLimit(limitCount)
   const [expenses, setExpenses] = useState([])
   const [loading, setLoading] = useState(true)
   const [source, setSource] = useState(db ? 'firestore' : 'none')
@@ -61,23 +68,29 @@ export function useExpenses() {
       setError('')
     })
 
-    const unsub = subscribeUserCollection(
-      workspaceId,
-      'expenses',
-      (rows) => {
-        setExpenses((Array.isArray(rows) ? rows : []).map(normalizeExpense))
-        setLoading(false)
-      },
-      (err) => {
-        setError(clientSafeMessage(err, 'Unable to load expenses.'))
-        setExpenses([])
-        setLoading(false)
-      },
-      { businessType },
-    )
+    const handleRows = (rows) => {
+      setExpenses((Array.isArray(rows) ? rows : []).map(normalizeExpense))
+      setLoading(false)
+    }
+    const handleError = (err) => {
+      setError(clientSafeMessage(err, 'Unable to load expenses.'))
+      setExpenses([])
+      setLoading(false)
+    }
+
+    const unsub = recentLimit
+      ? listenToWorkspaceCollection({
+          workspaceId,
+          collectionName: 'expenses',
+          businessType,
+          limitCount: recentLimit,
+          onData: handleRows,
+          onError: handleError,
+        })
+      : subscribeUserCollection(workspaceId, 'expenses', handleRows, handleError, { businessType })
 
     return () => unsub?.()
-  }, [businessType, workspaceId])
+  }, [businessType, recentLimit, workspaceId])
 
   return useMemo(
     () => ({

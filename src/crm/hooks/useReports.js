@@ -1,45 +1,92 @@
 import { useEffect, useMemo, useState } from 'react'
 import { db } from '../lib/firebase.js'
-import { subscribeOwnedCollection, subscribeUserCollection } from '../lib/firestore.js'
+import { listenToWorkspaceCollection } from '../lib/firestore.js'
 import { useWorkspaceAccess } from './useWorkspaceAccess.js'
 import { clientSafeMessage } from '../utils/messages.js'
 import { calculateApprovedExpenses, calculateProfit, calculateRevenue, getInvoiceStatus, isPaidRecord, paymentValue } from '../lib/calculations.js'
 
-const REPORT_WORKSPACE_COLLECTIONS = [
-  'leads',
-  'pipelines',
-  'customers',
+const SUPPORT_TICKET_COLLECTION = 'supportTickets'
+
+export const REPORT_SECTION_OPTIONS = [
+  { value: 'overview', label: 'Overview' },
+  { value: 'finance', label: 'Finance' },
+  { value: 'sales', label: 'Sales & customers' },
+  { value: 'activity', label: 'Activity & team' },
+  { value: 'support', label: 'Support' },
+]
+
+const REPORT_SECTION_COLLECTIONS = {
+  overview: ['invoices', 'payments', 'expenses', 'customers', 'leads'],
+  finance: ['invoices', 'payments', 'expenses'],
+  sales: ['leads', 'pipelines', 'customers'],
+  activity: ['activityLogs', 'tasks', 'teamMembers', 'staff'],
+  support: [SUPPORT_TICKET_COLLECTION],
+}
+
+const COLLECTIONS = Array.from(
+  new Set(Object.values(REPORT_SECTION_COLLECTIONS).flat()),
+)
+
+const DEFAULT_DETAIL_LIMIT = 100
+const MAX_DETAIL_LIMIT = 250
+const EMPTY_META = [
   'clients',
   'products',
-  'invoices',
-  'payments',
-  'expenses',
   'accountTransactions',
-  'tasks',
-  'teamMembers',
   'branches',
   'reports',
   'subscriptions',
-  'activityLogs',
-  'staff',
+  'notifications',
 ]
 
-const SUPPORT_TICKET_COLLECTION = 'supportTickets'
-const WORKSPACE_COLLECTIONS = [...REPORT_WORKSPACE_COLLECTIONS, SUPPORT_TICKET_COLLECTION]
+// TODO: Replace recent-row listeners with reportSummaries/{businessType}/months/{yyyyMM}.
+function emptyReportData() {
+  return Object.fromEntries([...COLLECTIONS, ...EMPTY_META].map((k) => [k, []]))
+}
 
-const OWNED_COLLECTIONS = [
-  { path: 'notifications', field: 'userId' },
-]
-const COLLECTIONS = [...WORKSPACE_COLLECTIONS, ...OWNED_COLLECTIONS.map((item) => item.path)]
+function safeSection(section) {
+  return REPORT_SECTION_COLLECTIONS[section] ? section : 'overview'
+}
 
-function toDateValue(value) {
-  if (!value) return null
-  if (typeof value === 'string' || typeof value === 'number') {
-    const d = new Date(value)
-    return Number.isNaN(d.getTime()) ? null : d
+function safeLimit(limitCount) {
+  const next = Number(limitCount)
+  if (!Number.isFinite(next) || next <= 0) return DEFAULT_DETAIL_LIMIT
+  return Math.min(Math.floor(next), MAX_DETAIL_LIMIT)
+}
+
+function validDate(value) {
+  return value instanceof Date && !Number.isNaN(value.getTime())
+}
+
+function dateWhereFilters(dateWindow) {
+  const filters = []
+  if (validDate(dateWindow?.start)) filters.push(['createdAt', '>=', dateWindow.start])
+  if (validDate(dateWindow?.end)) filters.push(['createdAt', '<=', dateWindow.end])
+  return filters
+}
+
+function dateWindowLabel(dateWindow) {
+  return {
+    start: validDate(dateWindow?.start) ? dateWindow.start.toISOString() : null,
+    end: validDate(dateWindow?.end) ? dateWindow.end.toISOString() : null,
   }
-  if (typeof value?.toDate === 'function') return value.toDate()
-  return null
+}
+
+function collectionsForSection(section, canReadSupportTickets) {
+  const selectedSection = safeSection(section)
+  if (selectedSection === 'support' && !canReadSupportTickets) return []
+  if (selectedSection !== 'support') {
+    return REPORT_SECTION_COLLECTIONS[selectedSection].filter((item) => item !== SUPPORT_TICKET_COLLECTION)
+  }
+  return REPORT_SECTION_COLLECTIONS[selectedSection]
+}
+
+function markLoadedOnce({ loaded, expectedLoads, path, setLoading, section, collections, reported }) {
+  loaded.add(path)
+  if (loaded.size !== expectedLoads || reported.current) return
+  reported.current = true
+  setLoading(false)
+  console.log('[Reports] collections loaded', { section, collections })
 }
 
 function latestAt(list) {
@@ -50,6 +97,16 @@ function latestAt(list) {
     if (!best || d.getTime() > best.getTime()) best = d
   }
   return best
+}
+
+function toDateValue(value) {
+  if (!value) return null
+  if (typeof value === 'string' || typeof value === 'number') {
+    const d = new Date(value)
+    return Number.isNaN(d.getTime()) ? null : d
+  }
+  if (typeof value?.toDate === 'function') return value.toDate()
+  return null
 }
 
 function fmtDate(d) {
@@ -70,18 +127,22 @@ function isActiveSub(s) {
   return (s.planStatus || s.status || '').toLowerCase() === 'active'
 }
 
-export function useReports() {
+export function useReports({ section = 'overview', limitCount = DEFAULT_DETAIL_LIMIT, dateWindow = null } = {}) {
   const access = useWorkspaceAccess()
-  const { userId, workspaceId, businessType } = access
+  const { workspaceId, businessType } = access
   const canReadReports = access.isAdmin || access.hasPermission('reports')
   const canReadSupportTickets = access.hasModulePermission('support', 'view')
-  const workspaceCollections = useMemo(
-    () => (canReadSupportTickets ? WORKSPACE_COLLECTIONS : REPORT_WORKSPACE_COLLECTIONS),
-    [canReadSupportTickets],
+  const selectedSection = safeSection(section)
+  const detailLimit = safeLimit(limitCount)
+  const collectionPlan = useMemo(
+    () => collectionsForSection(selectedSection, canReadSupportTickets),
+    [canReadSupportTickets, selectedSection],
   )
-  const [data, setData] = useState(() =>
-    Object.fromEntries(COLLECTIONS.map((k) => [k, []])),
+  const dateFilters = useMemo(
+    () => dateWhereFilters(dateWindow),
+    [dateWindow?.end, dateWindow?.start],
   )
+  const [data, setData] = useState(emptyReportData)
   const [loading, setLoading] = useState(true)
   const [source, setSource] = useState(db ? 'firestore' : 'none')
   const [error, setError] = useState('')
@@ -89,16 +150,18 @@ export function useReports() {
   useEffect(() => {
     if (!db) {
       Promise.resolve().then(() => {
-        setData(Object.fromEntries(COLLECTIONS.map((k) => [k, []])))
+        console.log('[Reports] idle', { reason: 'no-db', section: selectedSection })
+        setData(emptyReportData())
         setLoading(false)
         setSource('none')
         setError('Secure Cloud Sync is not available right now.')
       })
       return
     }
-    if (!userId || !workspaceId) {
+    if (!workspaceId) {
       Promise.resolve().then(() => {
-        setData(Object.fromEntries(COLLECTIONS.map((k) => [k, []])))
+        console.log('[Reports] idle', { reason: 'no-workspace', section: selectedSection })
+        setData(emptyReportData())
         setLoading(false)
         setSource('firestore')
         setError('')
@@ -108,6 +171,7 @@ export function useReports() {
 
     if (access.loading) {
       Promise.resolve().then(() => {
+        console.log('[Reports] idle', { reason: 'access-loading', section: selectedSection })
         setLoading(true)
         setSource('firestore')
         setError('')
@@ -117,7 +181,8 @@ export function useReports() {
 
     if (!canReadReports) {
       Promise.resolve().then(() => {
-        setData(Object.fromEntries(COLLECTIONS.map((k) => [k, []])))
+        console.log('[Reports] idle', { reason: 'missing-reports-permission', section: selectedSection })
+        setData(emptyReportData())
         setLoading(false)
         setSource('firestore')
         setError('Reports permission is not enabled for this staff account.')
@@ -128,58 +193,60 @@ export function useReports() {
     Promise.resolve().then(() => {
       setLoading(true)
       setSource('firestore')
-      setError('')
-      if (!canReadSupportTickets) {
-        setData((prev) => ({ ...prev, [SUPPORT_TICKET_COLLECTION]: [] }))
-      }
+      setError(selectedSection === 'support' && !canReadSupportTickets ? 'Support report permission is not enabled for this staff account.' : '')
+      setData(emptyReportData())
+      console.log('[Reports] loading section', {
+        section: selectedSection,
+        collections: collectionPlan,
+        limitCount: detailLimit,
+        dateWindow: dateWindowLabel(dateWindow),
+      })
     })
 
     const loaded = new Set()
-    const expectedLoads = workspaceCollections.length + OWNED_COLLECTIONS.length
-    const workspaceUnsubs = workspaceCollections.map((path) =>
-      subscribeUserCollection(
+    const reported = { current: false }
+    const expectedLoads = collectionPlan.length
+    if (!expectedLoads) {
+      Promise.resolve().then(() => {
+        setLoading(false)
+        console.log('[Reports] collections loaded', { section: selectedSection, collections: [] })
+      })
+      return () => {}
+    }
+
+    const unsubs = collectionPlan.map((path) => {
+      console.log('[Reports] limited query', {
+        section: selectedSection,
+        collection: path,
+        orderBy: 'createdAt',
+        direction: 'desc',
+        limitCount: detailLimit,
+        whereFilters: dateFilters.map(([field, op]) => `${field} ${op}`),
+      })
+      return listenToWorkspaceCollection({
         workspaceId,
-        path,
-        (rows) => {
+        collectionName: path,
+        businessType,
+        orderByField: 'createdAt',
+        orderDirection: 'desc',
+        limitCount: detailLimit,
+        whereFilters: dateFilters,
+        onData(rows) {
           setData((prev) => ({ ...prev, [path]: Array.isArray(rows) ? rows : [] }))
-          loaded.add(path)
-          if (loaded.size === expectedLoads) setLoading(false)
+          markLoadedOnce({ loaded, expectedLoads, path, setLoading, section: selectedSection, collections: collectionPlan, reported })
         },
-        (err) => {
+        onError(err) {
           setError(clientSafeMessage(err, 'Unable to load reports data.'))
           setData((prev) => ({ ...prev, [path]: [] }))
-          loaded.add(path)
-          if (loaded.size === expectedLoads) setLoading(false)
+          markLoadedOnce({ loaded, expectedLoads, path, setLoading, section: selectedSection, collections: collectionPlan, reported })
         },
-        { businessType },
-      ),
-    )
-    const ownedUnsubs = OWNED_COLLECTIONS.map(({ path, field }) => {
-      const shouldFilterByBusiness = path === 'notifications'
-      return subscribeOwnedCollection(
-        path,
-        field === 'workspaceId' ? workspaceId : userId,
-        (rows) => {
-          setData((prev) => ({ ...prev, [path]: Array.isArray(rows) ? rows : [] }))
-          loaded.add(path)
-          if (loaded.size === expectedLoads) setLoading(false)
-        },
-        (err) => {
-          setError(clientSafeMessage(err, 'Unable to load reports data.'))
-          setData((prev) => ({ ...prev, [path]: [] }))
-          loaded.add(path)
-          if (loaded.size === expectedLoads) setLoading(false)
-        },
-        field,
-        shouldFilterByBusiness ? { businessType } : {},
-      )
+      })
     })
-    const unsubs = [...workspaceUnsubs, ...ownedUnsubs]
 
     return () => {
       unsubs.forEach((u) => u?.())
     }
-  }, [access.loading, businessType, canReadReports, canReadSupportTickets, userId, workspaceCollections, workspaceId])
+  }, [access.loading, businessType, canReadReports, canReadSupportTickets, collectionPlan, dateFilters, dateWindow, detailLimit, selectedSection, workspaceId])
 
   const computed = useMemo(() => {
     const leads = data.leads
@@ -264,7 +331,11 @@ export function useReports() {
       loading,
       source,
       error,
+      section: selectedSection,
+      loadedCollections: collectionPlan,
+      limitCount: detailLimit,
+      canReadSupportTickets,
     }),
-    [data, computed, loading, source, error],
+    [canReadSupportTickets, collectionPlan, data, computed, detailLimit, error, loading, selectedSection, source],
   )
 }

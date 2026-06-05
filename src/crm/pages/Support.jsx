@@ -17,7 +17,7 @@ import { useWorkspaceAccess } from '../hooks/useWorkspaceAccess.js'
 
 export default function SupportPage() {
   const { profile } = usePreferences()
-  const support = useSupportTickets()
+  const support = useSupportTickets({ paginated: true, limitCount: 50 })
   const access = useWorkspaceAccess()
   const canCreateSupportTicket = access.hasModulePermission('support', 'create')
   const canEditSupportTicket = access.hasModulePermission('support', 'edit')
@@ -55,7 +55,10 @@ export default function SupportPage() {
         right={
           <div className="flex items-center gap-2">
             <Badge variant={support.source === 'firestore' ? 'success' : 'default'}>
-              {support.loading ? 'Loading…' : support.source === 'firestore' ? 'Live Sync' : 'No data yet'}
+              {support.loading ? 'Loading...' : support.source === 'firestore' ? 'Cloud Sync' : 'No data yet'}
+            </Badge>
+            <Badge variant="default">
+              Page {Math.max(support.ticketPage, support.loading ? 0 : 1)} · {support.ticketPageSize} per load
             </Badge>
             {canCreateSupportTicket ? (
               <Button className="rounded-2xl" onClick={() => setCreateOpen(true)} type="button">
@@ -84,6 +87,9 @@ export default function SupportPage() {
           <option value="Closed">Closed</option>
         </Select>
       </div>
+      <p className="mt-3 text-sm font-semibold text-slate-500">
+        {filtered.length} of {support.tickets.length} loaded tickets shown
+      </p>
 
       <div className="mt-4">
         {support.loading ? (
@@ -99,8 +105,41 @@ export default function SupportPage() {
         ) : (
           <div className="rounded-2xl px-3 py-10 text-center text-sm text-slate-600 dark:text-slate-300">
             No tickets found.
+            {support.hasMoreTickets ? (
+              <div className="mt-4">
+                <Button
+                  className="rounded-2xl"
+                  variant="subtle"
+                  type="button"
+                  disabled={support.paginationLoading}
+                  onClick={() => support.loadMoreTickets()}
+                >
+                  {support.paginationLoading ? 'Loading...' : 'Load more tickets'}
+                </Button>
+              </div>
+            ) : null}
           </div>
         )}
+        {!support.loading ? (
+          <div className="mt-4 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
+            <span className="font-semibold">
+              {support.tickets.length} tickets loaded from recent pages
+            </span>
+            {support.hasMoreTickets ? (
+              <Button
+                className="rounded-2xl"
+                variant="subtle"
+                type="button"
+                disabled={support.paginationLoading}
+                onClick={() => support.loadMoreTickets()}
+              >
+                {support.paginationLoading ? 'Loading...' : 'Load more tickets'}
+              </Button>
+            ) : (
+              <Badge variant="success">All loaded</Badge>
+            )}
+          </div>
+        ) : null}
       </div>
 
       <TicketModal

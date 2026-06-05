@@ -10,7 +10,7 @@ import ActivityLogTable from '../components/activity/ActivityLogTable.jsx'
 import ActivityTimeline from '../components/activity/ActivityTimeline.jsx'
 
 export default function ActivityLogsPage() {
-  const api = useActivityLogs()
+  const api = useActivityLogs({ paginated: true, limitCount: 50 })
   const [filters, setFilters] = useState({ query: '', user: 'All', module: 'All', action: 'All', from: '', to: '' })
 
   const users = useMemo(() => Array.from(new Set(api.logs.map((l) => l.userName).filter(Boolean))).sort(), [api.logs])
@@ -51,9 +51,14 @@ export default function ActivityLogsPage() {
       />
 
       <div className="mb-4 flex items-center justify-between gap-3">
-        <Badge variant={api.source === 'firestore' ? 'success' : 'default'}>
-          {api.loading ? 'Loading…' : api.source === 'firestore' ? 'Live Sync' : 'No data yet'}
-        </Badge>
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant={api.source === 'firestore' ? 'success' : 'default'}>
+            {api.loading ? 'Loading...' : api.source === 'firestore' ? 'Cloud Sync' : 'No data yet'}
+          </Badge>
+          <Badge variant="default">
+            Page {Math.max(api.logPage, api.loading ? 0 : 1)} · {api.logPageSize} per load
+          </Badge>
+        </div>
         {api.error ? <Badge variant="danger">Error</Badge> : null}
       </div>
 
@@ -75,6 +80,10 @@ export default function ActivityLogsPage() {
           />
         </div>
       </Card>
+
+      <p className="mt-4 text-sm font-semibold text-slate-500">
+        {filtered.length} of {api.logs.length} loaded activity logs shown
+      </p>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-3">
         <Card className="p-5 lg:col-span-1">
@@ -108,6 +117,26 @@ export default function ActivityLogsPage() {
           </div>
           <div className="mt-4">
             <ActivityLogTable rows={filtered} loading={api.loading} />
+            {!api.loading ? (
+              <div className="mt-4 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
+                <span className="font-semibold">
+                  {api.logs.length} logs loaded from recent pages
+                </span>
+                {api.hasMoreLogs ? (
+                  <Button
+                    className="rounded-2xl"
+                    variant="subtle"
+                    type="button"
+                    disabled={api.paginationLoading}
+                    onClick={() => api.loadMoreLogs()}
+                  >
+                    {api.paginationLoading ? 'Loading...' : 'Load more logs'}
+                  </Button>
+                ) : (
+                  <Badge variant="success">All loaded</Badge>
+                )}
+              </div>
+            ) : null}
           </div>
         </Card>
       </div>

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { memo, useMemo } from 'react'
+import { memo, useEffect, useMemo } from 'react'
 import {
   HiOutlineBolt,
   HiOutlineChartBar,
@@ -20,7 +20,6 @@ import { useInvoices } from '../hooks/useInvoices.js'
 import { useCustomers } from '../hooks/useCustomers.js'
 import { useLeadScoring } from '../hooks/useLeadScoring.js'
 import { useActivityLogs } from '../hooks/useActivityLogs.js'
-import { usePipelineDeals } from '../hooks/usePipelineDeals.js'
 import { useSupportTickets } from '../hooks/useSupportTickets.js'
 import { useExpenses } from '../hooks/useExpenses.js'
 import { useUser } from '../hooks/useUser.js'
@@ -225,15 +224,16 @@ const DataRow = memo(function DataRow({ label, value, badge }) {
   )
 })
 
+const DASHBOARD_RECENT_LIMIT = 50
+
 export default function DashboardHomePage() {
   const currency = 'PKR'
-  const invoicesApi = useInvoices()
-  const customersApi = useCustomers()
-  const leadsApi = useLeadScoring()
-  const activityApi = useActivityLogs()
-  const pipelineApi = usePipelineDeals()
-  const ticketsApi = useSupportTickets()
-  const expensesApi = useExpenses()
+  const invoicesApi = useInvoices({ limitCount: DASHBOARD_RECENT_LIMIT })
+  const customersApi = useCustomers({ limitCount: DASHBOARD_RECENT_LIMIT })
+  const leadsApi = useLeadScoring({ limitCount: DASHBOARD_RECENT_LIMIT })
+  const activityApi = useActivityLogs({ limitCount: DASHBOARD_RECENT_LIMIT })
+  const ticketsApi = useSupportTickets({ limitCount: DASHBOARD_RECENT_LIMIT })
+  const expensesApi = useExpenses({ limitCount: DASHBOARD_RECENT_LIMIT })
   const { businessType } = useUser()
   const isSchool = normalizeBusinessType(businessType) === 'School ERP'
 
@@ -242,7 +242,6 @@ export default function DashboardHomePage() {
     customersApi.loading ||
     leadsApi.loading ||
     activityApi.loading ||
-    pipelineApi.loading ||
     ticketsApi.loading ||
     expensesApi.loading
 
@@ -255,8 +254,8 @@ export default function DashboardHomePage() {
   const openTickets = useMemo(() => ticketsApi.tickets.filter(isOpenTicket), [ticketsApi.tickets])
   const hotLeads = useMemo(() => leadsApi.leads.filter((lead) => safeCount(lead.score) >= 80), [leadsApi.leads])
   const activeLeads = useMemo(() => leadsApi.leads.filter(isActivePipelineItem), [leadsApi.leads])
-  const activePipelineDeals = useMemo(() => pipelineApi.deals.filter(isActivePipelineItem), [pipelineApi.deals])
 
+  // TODO: Replace recent-row calculations with workspaces/{workspaceId}/dashboardSummary/{businessType}.
   const dashboardStats = useMemo(
     () =>
       getDashboardStats({
@@ -274,8 +273,8 @@ export default function DashboardHomePage() {
     [pendingInvoices],
   )
   const pipelineValuePkr = useMemo(
-    () => calculatePipelineValue({ leads: leadsApi.leads, deals: pipelineApi.deals }),
-    [leadsApi.leads, pipelineApi.deals],
+    () => calculatePipelineValue({ leads: leadsApi.leads, deals: [] }),
+    [leadsApi.leads],
   )
 
   const conversionRate = useMemo(() => calculateConversionRate(leadsApi.leads), [leadsApi.leads])
@@ -283,7 +282,6 @@ export default function DashboardHomePage() {
     customersApi.customers.length ||
     invoicesApi.invoices.length ||
     leadsApi.leads.length ||
-    pipelineApi.deals.length ||
     ticketsApi.tickets.length ||
     expensesApi.expenses.length
 
@@ -410,6 +408,48 @@ export default function DashboardHomePage() {
     ],
     [currency, dashboardStats.expenses, dashboardStats.profit, dashboardStats.totalCustomers, isSchool, openTickets.length, pendingRevenueUsd],
   )
+
+  useEffect(() => {
+    console.log('[Dashboard] loading', {
+      loading,
+      limitCount: DASHBOARD_RECENT_LIMIT,
+      collections: ['invoices', 'payments', 'customers', 'leads', 'activityLogs', 'supportTickets', 'expenses'],
+    })
+  }, [loading])
+
+  useEffect(() => {
+    if (loading) return
+    console.log('[Dashboard] recent data loaded', {
+      invoices: invoicesApi.invoices.length,
+      payments: invoicesApi.payments.length,
+      customers: customersApi.customers.length,
+      leads: leadsApi.leads.length,
+      activityLogs: activityApi.logs.length,
+      supportTickets: ticketsApi.tickets.length,
+      expenses: expensesApi.expenses.length,
+    })
+  }, [
+    activityApi.logs.length,
+    customersApi.customers.length,
+    expensesApi.expenses.length,
+    invoicesApi.invoices.length,
+    invoicesApi.payments.length,
+    leadsApi.leads.length,
+    loading,
+    ticketsApi.tickets.length,
+  ])
+
+  useEffect(() => {
+    if (loading) return
+    console.log('[Dashboard] summary ready', {
+      source: 'recent-limited-data',
+      futureSummaryDoc: 'workspaces/{workspaceId}/dashboardSummary/{businessType}',
+      totalRevenueUsd,
+      customers: dashboardStats.totalCustomers,
+      activeLeads: dashboardStats.activeLeads,
+      openTickets: openTickets.length,
+    })
+  }, [dashboardStats.activeLeads, dashboardStats.totalCustomers, loading, openTickets.length, totalRevenueUsd])
 
   return (
     <div className="crm-dashboard-page min-w-0 space-y-5">
@@ -550,10 +590,10 @@ export default function DashboardHomePage() {
           <div className="mt-5 space-y-4">
             {leadsApi.loading ? (
               <LoadingBlock lines={4} />
-            ) : activeLeads.length || activePipelineDeals.length ? (
+            ) : activeLeads.length ? (
               <>
                 <ProgressRow label="Hot leads" value={hotLeads.length} max={leadsApi.leads.length} tone="bg-violet-500" />
-                <ProgressRow label="Pipeline deals" value={activePipelineDeals.length} max={Math.max(10, activePipelineDeals.length)} tone="bg-sky-500" />
+                <ProgressRow label="Active leads" value={activeLeads.length} max={Math.max(10, leadsApi.leads.length)} tone="bg-sky-500" />
                 <DataRow
                   label="Pipeline value"
                   value={formatCurrency(pipelineValuePkr, currency)}
