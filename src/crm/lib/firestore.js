@@ -1,4 +1,4 @@
-import { addDoc, collection, deleteDoc, doc, onSnapshot, query, serverTimestamp, updateDoc, where } from 'firebase/firestore'
+import { addDoc, collection, deleteDoc, doc, limit as queryLimit, onSnapshot, orderBy, query, serverTimestamp, updateDoc, where } from 'firebase/firestore'
 import { db } from './firebase.js'
 import { clientSafeMessage } from '../utils/messages.js'
 import { normalizeBusinessType } from '../data/moduleAccess.js'
@@ -74,6 +74,70 @@ export function subscribeUserCollection(userId, path, onData, onError, options =
           .filter((row) => belongsToWorkspace(row, userId))
           .filter((row) => belongsToBusiness(row, businessType))
           .map((row) => withWorkspaceFallback(row.id, row, userId)),
+      ),
+    (err) => onError?.(safeError(err, 'Unable to load account data.')),
+  )
+}
+
+function whereConstraintFromFilter(filter) {
+  if (!filter) return null
+  if (Array.isArray(filter)) {
+    const [fieldPath, opStr = '==', value] = filter
+    if (!fieldPath || typeof value === 'undefined') return null
+    return where(fieldPath, opStr, value)
+  }
+  if (filter.field) {
+    if (typeof filter.value === 'undefined') return null
+    return where(filter.field, filter.op || '==', filter.value)
+  }
+  return filter
+}
+
+export function listenToWorkspaceCollection({
+  workspaceId,
+  collectionName,
+  businessType,
+  orderByField = 'createdAt',
+  orderDirection = 'desc',
+  limitCount = 100,
+  whereFilters = [],
+  onData,
+  onError,
+} = {}) {
+  if (!workspaceId || !collectionName) {
+    onData?.([])
+    return () => {}
+  }
+
+  const normalizedBusinessType = normalizeBusinessType(businessType)
+  if (!normalizedBusinessType) {
+    return subscribeUserCollection(workspaceId, collectionName, onData, onError, { businessType })
+  }
+
+  const ref = collectionRef(workspaceCollectionPath(workspaceId, collectionName))
+  if (!ref) {
+    onData?.([])
+    return () => {}
+  }
+
+  const constraints = [
+    where('businessType', '==', normalizedBusinessType),
+    ...whereFilters.map(whereConstraintFromFilter).filter(Boolean),
+  ]
+  if (orderByField) constraints.push(orderBy(orderByField, orderDirection))
+  if (Number.isFinite(Number(limitCount)) && Number(limitCount) > 0) {
+    // TODO: Add cursor-based pagination once list screens expose page controls.
+    constraints.push(queryLimit(Math.floor(Number(limitCount))))
+  }
+
+  return onSnapshot(
+    query(ref, ...constraints),
+    (snap) =>
+      onData?.(
+        snap.docs
+          .map((d) => ({ id: d.id, ...d.data() }))
+          .filter((row) => belongsToWorkspace(row, workspaceId))
+          .map((row) => withWorkspaceFallback(row.id, row, workspaceId)),
       ),
     (err) => onError?.(safeError(err, 'Unable to load account data.')),
   )

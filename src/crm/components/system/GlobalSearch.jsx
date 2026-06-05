@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
+  limit as firestoreLimit,
+  onSnapshot,
+  orderBy,
+  query as firestoreQuery,
+} from 'firebase/firestore'
+import {
   HiOutlineArrowTopRightOnSquare,
   HiOutlineClock,
   HiOutlineDocumentChartBar,
@@ -12,21 +18,22 @@ import {
 } from 'react-icons/hi2'
 import { useNavigate } from 'react-router-dom'
 import { useOnClickOutside } from '../../hooks/useOnClickOutside.js'
-import { useAccountTransactions } from '../../hooks/useAccountTransactions.js'
-import { useCustomers } from '../../hooks/useCustomers.js'
-import { useExpenses } from '../../hooks/useExpenses.js'
-import { useInvoices } from '../../hooks/useInvoices.js'
-import { useLeadScoring } from '../../hooks/useLeadScoring.js'
-import { useProducts } from '../../hooks/useProducts.js'
-import { useReports } from '../../hooks/useReports.js'
 import { useUser } from '../../hooks/useUser.js'
 import { businessModuleKeys, normalizeBusinessType } from '../../data/moduleAccess.js'
 import { cn } from '../../utils/cn.js'
+import { belongsToBusiness, collectionRef, workspaceCollectionPath } from '../../lib/firestore.js'
 
 const RECENTS_KEY = 'nexora_global_search_recent_v1'
+const SEARCH_COLLECTION_LIMIT = 50
+const emptySearchRows = { customers: [], leads: [], invoices: [] }
+const searchCollections = [
+  { key: 'customers', moduleKey: 'customers', path: 'customers' },
+  { key: 'leads', moduleKey: 'leads', path: 'leads' },
+  { key: 'invoices', moduleKey: 'invoices', path: 'invoices' },
+]
 
 const placeholders = {
-  'General CRM': 'Search customers, leads, invoices, reports...',
+  'General CRM': 'Search customers, leads, invoices...',
   'School ERP': 'Search students, fees, classes, teachers...',
   'Property ERP': 'Search tenants, properties, rent records...',
   'Restaurant POS': 'Search customers, menu items, bills...',
@@ -68,20 +75,21 @@ function resultLimit(rows, query) {
   return rows.filter((row) => matches(row, query)).slice(0, 24)
 }
 
+function recentCollectionQuery(workspaceId, path) {
+  const ref = collectionRef(workspaceCollectionPath(workspaceId, path))
+  return ref ? firestoreQuery(ref, orderBy('createdAt', 'desc'), firestoreLimit(SEARCH_COLLECTION_LIMIT)) : null
+}
+
 export default function GlobalSearch({ className }) {
   const navigate = useNavigate()
   const rootRef = useRef(null)
   const inputRef = useRef(null)
-  const { businessType } = useUser()
-  const customersApi = useCustomers()
-  const invoicesApi = useInvoices()
-  const leadsApi = useLeadScoring()
-  const productsApi = useProducts()
-  const expensesApi = useExpenses()
-  const accountsApi = useAccountTransactions()
-  const reportsApi = useReports()
+  const { businessType, workspaceId } = useUser()
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState(false)
+  const [searchRows, setSearchRows] = useState(emptySearchRows)
+  const [searchLoading, setSearchLoading] = useState(false)
+  const [searchError, setSearchError] = useState('')
   const [recents, setRecents] = useState(() => readRecents())
 
   useOnClickOutside(rootRef, () => setOpen(false))
@@ -101,21 +109,102 @@ export default function GlobalSearch({ className }) {
 
   const placeholder = placeholders[normalizeBusinessType(businessType)] || placeholders['General CRM']
   const allowedModules = useMemo(() => new Set(businessModuleKeys(businessType)), [businessType])
+  const normalizedQuery = query.trim().toLowerCase()
+  const shouldLoadSearchData = open || normalizedQuery.length >= 2
+  const activeSearchCollections = useMemo(
+    () => searchCollections.filter((item) => allowedModules.has(item.moduleKey)),
+    [allowedModules],
+  )
+
+  useEffect(() => {
+    if (!shouldLoadSearchData) {
+      console.log('[GlobalSearch] idle', { open, queryLength: normalizedQuery.length })
+    }
+  }, [normalizedQuery.length, open, shouldLoadSearchData])
+
+  useEffect(() => {
+    if (shouldLoadSearchData) {
+      console.log('[GlobalSearch] activated', { open, queryLength: normalizedQuery.length })
+    }
+  }, [normalizedQuery.length, open, shouldLoadSearchData])
+
+  useEffect(() => {
+    if (!shouldLoadSearchData) {
+      setSearchLoading(false)
+      setSearchError('')
+      return undefined
+    }
+
+    if (!workspaceId || !activeSearchCollections.length) {
+      setSearchRows(emptySearchRows)
+      setSearchLoading(false)
+      setSearchError('')
+      return undefined
+    }
+
+    console.log('[GlobalSearch] loading collections', {
+      collections: activeSearchCollections.map((item) => item.path),
+      limit: SEARCH_COLLECTION_LIMIT,
+    })
+
+    setSearchLoading(true)
+    setSearchError('')
+    setSearchRows(emptySearchRows)
+
+    const loaded = new Set()
+    const markLoaded = (key) => {
+      loaded.add(key)
+      if (loaded.size >= activeSearchCollections.length) setSearchLoading(false)
+    }
+
+    const unsubscribers = activeSearchCollections.map((item) => {
+      const searchQuery = recentCollectionQuery(workspaceId, item.path)
+      if (!searchQuery) {
+        markLoaded(item.key)
+        return () => {}
+      }
+
+      return onSnapshot(
+        searchQuery,
+        (snap) => {
+          const rows = snap.docs
+            .map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }))
+            .filter((row) => belongsToBusiness(row, businessType))
+          setSearchRows((current) => ({ ...current, [item.key]: rows }))
+          markLoaded(item.key)
+        },
+        (error) => {
+          console.warn('[GlobalSearch] collection load failed', {
+            collection: item.path,
+            code: error?.code,
+            message: error?.message,
+          })
+          setSearchRows((current) => ({ ...current, [item.key]: [] }))
+          setSearchError('Some search data is unavailable for this account.')
+          markLoaded(item.key)
+        },
+      )
+    })
+
+    return () => {
+      unsubscribers.forEach((unsubscribe) => unsubscribe?.())
+    }
+  }, [activeSearchCollections, businessType, shouldLoadSearchData, workspaceId])
 
   const allResults = useMemo(() => {
-    const customers = !allowedModules.has('customers') ? [] : customersApi.customers.map((customer) =>
+    const customers = !allowedModules.has('customers') ? [] : searchRows.customers.map((customer) =>
       makeResult({
         id: customer.id,
         type: normalizeBusinessType(businessType) === 'School ERP' ? 'Students/Customers' : 'Customers',
-        title: customer.name,
-        subtitle: safeText(customer.company, customer.email, customer.phone),
+        title: customer.name || customer.studentName || customer.customerName,
+        subtitle: safeText(customer.company, customer.className, customer.email, customer.phone),
         route: '/app/customers',
         icon: HiOutlineUserGroup,
         keywords: safeText(customer.customerType, customer.status),
       }),
     )
 
-    const invoices = !allowedModules.has('invoices') ? [] : invoicesApi.invoices.map((invoice) =>
+    const invoices = !allowedModules.has('invoices') ? [] : searchRows.invoices.map((invoice) =>
       makeResult({
         id: invoice.id,
         type: normalizeBusinessType(businessType) === 'School ERP' ? 'Invoices/Fees' : 'Invoices',
@@ -126,7 +215,7 @@ export default function GlobalSearch({ className }) {
       }),
     )
 
-    const leads = !allowedModules.has('leads') ? [] : leadsApi.leads.map((lead) =>
+    const leads = !allowedModules.has('leads') ? [] : searchRows.leads.map((lead) =>
       makeResult({
         id: lead.id,
         type: 'Leads',
@@ -137,75 +226,15 @@ export default function GlobalSearch({ className }) {
       }),
     )
 
-    const products = !allowedModules.has('products') ? [] : productsApi.products.map((product) =>
-      makeResult({
-        id: product.id,
-        type: normalizeBusinessType(businessType) === 'Restaurant POS' ? 'Products/Menu' : 'Products',
-        title: product.name,
-        subtitle: safeText(product.sku, product.category, product.brand, product.status),
-        route: '/app/products',
-        icon: HiOutlineSquares2X2,
-      }),
-    )
-
-    const expenses = !allowedModules.has('expenses') ? [] : expensesApi.expenses.map((expense) =>
-      makeResult({
-        id: expense.id,
-        type: 'Expenses',
-        title: expense.title,
-        subtitle: safeText(expense.category, expense.paymentMethod, expense.status, expense.currency, expense.amount),
-        route: '/app/expenses',
-        icon: HiOutlineDocumentText,
-      }),
-    )
-
-    const accounts = !allowedModules.has('accounts') ? [] : accountsApi.transactions.map((transaction) =>
-      makeResult({
-        id: transaction.id,
-        type: 'Accounts',
-        title: transaction.title,
-        subtitle: safeText(transaction.type, transaction.method, transaction.status, transaction.currency, transaction.amount),
-        route: '/app/accounts',
-        icon: HiOutlineDocumentChartBar,
-      }),
-    )
-
-    const reports = [
-      makeResult({
-        id: 'reports-overview',
-        type: 'Reports',
-        title: 'Reports overview',
-        subtitle: safeText('Revenue', 'expenses', 'profit', 'customers', 'leads', reportsApi.lastUpdatedLabel),
-        route: '/app/reports',
-        icon: HiOutlineDocumentChartBar,
-      }),
-      ...(reportsApi.data?.reports || []).map((report) =>
-        makeResult({
-          id: report.id,
-          type: 'Reports',
-          title: report.title || report.name || report.type || 'Report',
-          subtitle: safeText(report.description, report.category, report.status),
-          route: '/app/reports',
-          icon: HiOutlineDocumentChartBar,
-        }),
-      ),
-    ]
-
-    return [...customers, ...invoices, ...leads, ...products, ...expenses, ...accounts, ...reports]
+    return [...customers, ...invoices, ...leads]
   }, [
-    accountsApi.transactions,
     allowedModules,
     businessType,
-    customersApi.customers,
-    expensesApi.expenses,
-    invoicesApi.invoices,
-    leadsApi.leads,
-    productsApi.products,
-    reportsApi.data?.reports,
-    reportsApi.lastUpdatedLabel,
+    searchRows.customers,
+    searchRows.invoices,
+    searchRows.leads,
   ])
 
-  const normalizedQuery = query.trim().toLowerCase()
   const results = useMemo(() => resultLimit(allResults, normalizedQuery), [allResults, normalizedQuery])
 
   const quickActions = useMemo(
@@ -313,11 +342,16 @@ export default function GlobalSearch({ className }) {
                     )
                   })}
                 </div>
+              ) : searchLoading ? (
+                <div className="rounded-2xl px-3 py-8 text-center text-sm text-slate-600 dark:text-slate-300">
+                  Loading search results...
+                </div>
               ) : (
                 <div className="rounded-2xl px-3 py-8 text-center text-sm text-slate-600 dark:text-slate-300">
                   No results found.
                 </div>
               )}
+              {searchError ? <p className="px-3 pb-2 text-xs font-semibold text-amber-700">{searchError}</p> : null}
             </div>
           ) : (
             <div className="grid gap-3 p-1 md:grid-cols-[0.9fr_1.1fr]">

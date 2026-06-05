@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { db } from '../lib/firebase.js'
-import { createUserDoc, subscribeUserCollection } from '../lib/firestore.js'
+import { createUserDoc, listenToWorkspaceCollection } from '../lib/firestore.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 import { useUser } from './useUser.js'
 import { clientSafeMessage } from '../utils/messages.js'
@@ -52,20 +52,21 @@ export function useCustomers() {
       setSource('firestore')
       setError('')
     })
-    const unsub = subscribeUserCollection(
+    const unsub = listenToWorkspaceCollection({
       workspaceId,
-      'customers',
-      (data) => {
+      collectionName: 'customers',
+      businessType,
+      limitCount: 100,
+      onData(data) {
         setRows((Array.isArray(data) ? data : []).map(normalizeCustomer))
         setLoading(false)
       },
-      (err) => {
+      onError(err) {
         setError(clientSafeMessage(err, 'Unable to load customers.'))
         setRows([])
         setLoading(false)
       },
-      { businessType },
-    )
+    })
     return () => unsub?.()
   }, [businessType, workspaceId])
 

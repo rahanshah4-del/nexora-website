@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { arrayUnion, collection, doc, getDoc, serverTimestamp, writeBatch } from 'firebase/firestore'
 import { db } from '../lib/firebase.js'
-import { createUserDoc, patchUserDoc, removeUserDoc, subscribeUserCollection, workspaceCollectionPath } from '../lib/firestore.js'
+import { createUserDoc, listenToWorkspaceCollection, patchUserDoc, removeUserDoc, workspaceCollectionPath } from '../lib/firestore.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 import { useUser } from './useUser.js'
 import { clientSafeMessage } from '../utils/messages.js'
@@ -201,29 +201,35 @@ export function useInvoices() {
     }
 
     Promise.resolve().then(() => setLoading(true))
-    const unsubInv = subscribeUserCollection(
+    const unsubInv = listenToWorkspaceCollection({
       workspaceId,
-      'invoices',
-      (rows) => {
+      collectionName: 'invoices',
+      businessType,
+      limitCount: 100,
+      onData(rows) {
         setInvoices((Array.isArray(rows) ? rows : []).map(normalizeInvoice))
         setSource('firestore')
         setLoading(false)
       },
-      (err) => {
+      onError(err) {
         setError(clientSafeMessage(err, 'Unable to load invoices.'))
         setInvoices([])
         setSource('firestore')
         setLoading(false)
       },
-      { businessType },
-    )
-    const unsubPay = subscribeUserCollection(
+    })
+    const unsubPay = listenToWorkspaceCollection({
       workspaceId,
-      'payments',
-      (rows) => setPayments((Array.isArray(rows) ? rows : []).map(normalizePayment)),
-      () => setPayments([]),
-      { businessType },
-    )
+      collectionName: 'payments',
+      businessType,
+      limitCount: 100,
+      onData(rows) {
+        setPayments((Array.isArray(rows) ? rows : []).map(normalizePayment))
+      },
+      onError() {
+        setPayments([])
+      },
+    })
     return () => {
       unsubInv?.()
       unsubPay?.()

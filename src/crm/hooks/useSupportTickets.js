@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { db } from '../lib/firebase.js'
-import { createUserDoc, patchUserDoc, subscribeUserCollection } from '../lib/firestore.js'
+import { createUserDoc, listenToWorkspaceCollection, patchUserDoc } from '../lib/firestore.js'
 import { useUser } from './useUser.js'
 import { useWorkspaceAccess } from './useWorkspaceAccess.js'
 import { clientSafeMessage } from '../utils/messages.js'
@@ -76,22 +76,23 @@ export function useSupportTickets() {
     Promise.resolve().then(() => setLoading(true))
     Promise.resolve().then(() => setError(''))
 
-    const unsub = subscribeUserCollection(
+    const unsub = listenToWorkspaceCollection({
       workspaceId,
-      'supportTickets',
-      (rows) => {
+      collectionName: 'supportTickets',
+      businessType,
+      limitCount: 100,
+      onData(rows) {
         setTickets((Array.isArray(rows) ? rows : []).map(normalizeTicket))
         setSource('firestore')
         setLoading(false)
       },
-      (err) => {
+      onError(err) {
         setError(clientSafeMessage(err, 'Unable to load support tickets.'))
         setTickets([])
         setSource('firestore')
         setLoading(false)
       },
-      { businessType },
-    )
+    })
 
     return () => unsub?.()
   }, [access.loading, businessType, canReadSupportTickets, workspaceId])

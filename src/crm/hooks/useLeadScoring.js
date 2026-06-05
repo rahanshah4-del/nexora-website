@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { db } from '../lib/firebase.js'
-import { subscribeUserCollection } from '../lib/firestore.js'
+import { listenToWorkspaceCollection } from '../lib/firestore.js'
 import { useUser } from './useUser.js'
 import { clientSafeMessage } from '../utils/messages.js'
 
@@ -102,22 +102,23 @@ export function useLeadScoring() {
     }
 
     Promise.resolve().then(() => setLoading(true))
-    const unsub = subscribeUserCollection(
+    const unsub = listenToWorkspaceCollection({
       workspaceId,
-      'leads',
-      (data) => {
+      collectionName: 'leads',
+      businessType,
+      limitCount: 100,
+      onData(data) {
         setRows(Array.isArray(data) ? data : [])
         setSource('firestore')
         setLoading(false)
       },
-      (err) => {
+      onError(err) {
         setError(clientSafeMessage(err, 'Unable to load leads.'))
         setRows([])
         setSource('firestore')
         setLoading(false)
       },
-      { businessType },
-    )
+    })
     return () => unsub()
   }, [businessType, workspaceId])
 
