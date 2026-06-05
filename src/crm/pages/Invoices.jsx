@@ -25,7 +25,6 @@ import PrintableInvoice from '../components/print/PrintableInvoice.jsx'
 import { useUser } from '../hooks/useUser.js'
 import { formatCurrency } from '../utils/format.js'
 import { exportCsv, exportExcel } from '../lib/exporters.js'
-import { exportInvoicePdf } from '../lib/invoicePdf.js'
 import { invoiceIssueDate, statusBadge } from '../lib/invoiceHelpers.js'
 import { getEmailServiceError, sendInvoiceEmail } from '../lib/emailService.js'
 import { resolveWorkspaceName } from '../../lib/workspaceName.js'
@@ -284,6 +283,7 @@ export default function InvoicesPage() {
       return
     }
     try {
+      const { exportInvoicePdf } = await import('../lib/invoicePdf.js')
       await exportInvoicePdf({ invoice, company, payments, businessType })
     } catch (error) {
       showToast({ tone: 'error', message: error?.message || (isSchool ? 'Unable to export fee bill PDF' : 'Unable to export invoice PDF') }, 2800)

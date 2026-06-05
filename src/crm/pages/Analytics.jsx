@@ -1,17 +1,26 @@
 import { motion } from 'framer-motion'
-import { useState } from 'react'
+import { Suspense, lazy, useState } from 'react'
 import PageHeader from '../components/ui/PageHeader.jsx'
 import Button from '../components/ui/Button.jsx'
 import DateRangeFilter from '../components/analytics/DateRangeFilter.jsx'
 import KPICards from '../components/analytics/KPICards.jsx'
-import RevenueChart from '../components/analytics/RevenueChart.jsx'
-import SalesGrowthChart from '../components/analytics/SalesGrowthChart.jsx'
-import ConversionChart from '../components/analytics/ConversionChart.jsx'
-import LeadSourceChart from '../components/analytics/LeadSourceChart.jsx'
 import TopStaffTable from '../components/analytics/TopStaffTable.jsx'
 import Card from '../components/ui/Card.jsx'
 import Badge from '../components/ui/Badge.jsx'
 import { useAnalytics } from '../hooks/useAnalytics.js'
+
+const RevenueChart = lazy(() => import('../components/analytics/RevenueChart.jsx'))
+const SalesGrowthChart = lazy(() => import('../components/analytics/SalesGrowthChart.jsx'))
+const ConversionChart = lazy(() => import('../components/analytics/ConversionChart.jsx'))
+const LeadSourceChart = lazy(() => import('../components/analytics/LeadSourceChart.jsx'))
+
+function ChartFallback() {
+  return (
+    <Card className="grid min-h-80 place-items-center p-5 text-sm font-semibold text-slate-500">
+      Loading chart...
+    </Card>
+  )
+}
 
 export default function AnalyticsPage() {
   const [range, setRange] = useState('30d')
@@ -47,13 +56,21 @@ export default function AnalyticsPage() {
       <KPICards kpis={analytics.kpis} />
 
       <div className="grid min-w-0 grid-cols-1 gap-5 xl:grid-cols-2">
-        <RevenueChart data={analytics.monthlyRevenue} />
-        <SalesGrowthChart data={analytics.salesGrowth} />
+        <Suspense fallback={<ChartFallback />}>
+          <RevenueChart data={analytics.monthlyRevenue} />
+        </Suspense>
+        <Suspense fallback={<ChartFallback />}>
+          <SalesGrowthChart data={analytics.salesGrowth} />
+        </Suspense>
       </div>
 
       <div className="grid min-w-0 grid-cols-1 gap-5 xl:grid-cols-2">
-        <ConversionChart data={analytics.conversion} />
-        <LeadSourceChart data={analytics.leadSources} />
+        <Suspense fallback={<ChartFallback />}>
+          <ConversionChart data={analytics.conversion} />
+        </Suspense>
+        <Suspense fallback={<ChartFallback />}>
+          <LeadSourceChart data={analytics.leadSources} />
+        </Suspense>
       </div>
 
       <div className="grid min-w-0 grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,1.95fr)]">

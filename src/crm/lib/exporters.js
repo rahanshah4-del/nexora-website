@@ -1,6 +1,3 @@
-import { jsPDF } from 'jspdf'
-import autoTable from 'jspdf-autotable'
-
 function escapeCell(value) {
   const text = value === null || value === undefined ? '' : String(value)
   return `"${text.replaceAll('"', '""')}"`
@@ -42,7 +39,16 @@ function exportValue(column, row) {
   return typeof column.value === 'function' ? column.value(row) : row[column.key]
 }
 
-export function exportPdf(filename = 'nexora-export.pdf', columns = [], rows = [], title = 'Nexora Export') {
+async function loadPdfExportDeps() {
+  const [{ jsPDF }, autoTableModule] = await Promise.all([
+    import('jspdf'),
+    import('jspdf-autotable'),
+  ])
+  return { jsPDF, autoTable: autoTableModule.default }
+}
+
+export async function exportPdf(filename = 'nexora-export.pdf', columns = [], rows = [], title = 'Nexora Export') {
+  const { jsPDF, autoTable } = await loadPdfExportDeps()
   const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' })
   const safeFilename = filename.endsWith('.pdf') ? filename : `${filename}.pdf`
 

@@ -1,9 +1,6 @@
 import { Component, Suspense, lazy } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import UpgradeBusiness from './pages/UpgradeBusiness.jsx'
-import MarketingRoute from './pages/public/MarketingRoute.jsx'
-import PricingPage from './pages/public/PricingPage.jsx'
-import SolutionPage from './pages/public/SolutionPage.jsx'
 import Login from './pages/auth/Login.jsx'
 import Signup from './pages/auth/Signup.jsx'
 import VerifyEmail from './pages/auth/VerifyEmail.jsx'
@@ -12,11 +9,14 @@ import CrmRequireAuth from './crm/components/auth/RequireAuth.jsx'
 import PageLoader from './crm/components/ui/PageLoader.jsx'
 import RootRequireAuth from './layouts/RequireAuth.jsx'
 import RequireAdmin from './layouts/RequireAdmin.jsx'
-import DashboardLayout from './crm/layouts/DashboardLayout.jsx'
-import CRMProviders from './crm/CRMProviders.jsx'
-import AdminLayout from './layouts/AdminLayout.jsx'
 import AnalyticsTracker from './components/AnalyticsTracker.jsx'
 
+const MarketingRoute = lazy(() => import('./pages/public/MarketingRoute.jsx'))
+const PricingPage = lazy(() => import('./pages/public/PricingPage.jsx'))
+const SolutionPage = lazy(() => import('./pages/public/SolutionPage.jsx'))
+const DashboardLayout = lazy(() => import('./crm/layouts/DashboardLayout.jsx'))
+const CRMProviders = lazy(() => import('./crm/CRMProviders.jsx'))
+const AdminLayout = lazy(() => import('./layouts/AdminLayout.jsx'))
 const DashboardHomePage = lazy(() => import('./crm/pages/DashboardHome.jsx'))
 const RestaurantPOSPage = lazy(() => import('./crm/pages/RestaurantPOS.jsx'))
 const ClientPortalPage = lazy(() => import('./crm/pages/ClientPortal.jsx'))
@@ -104,7 +104,9 @@ function AdminControlCentreRoute() {
 function AdminUpgradeRequestsRoute() {
   return (
     <RequireAdmin>
-      <AdminLayout />
+      <LazyPage>
+        <AdminLayout />
+      </LazyPage>
     </RequireAdmin>
   )
 }
@@ -114,12 +116,12 @@ export default function AppRouter() {
     <>
       <AnalyticsTracker />
       <Routes>
-        <Route path="/" element={<MarketingRoute />} />
-        <Route path="/features" element={<MarketingRoute sectionId="services" />} />
-        <Route path="/pricing" element={<PricingPage />} />
-        <Route path="/contact" element={<MarketingRoute sectionId="contact" />} />
-        <Route path="/industries" element={<MarketingRoute sectionId="products" />} />
-        <Route path="/solutions/:solutionSlug" element={<SolutionPage />} />
+        <Route path="/" element={<LazyPage><MarketingRoute /></LazyPage>} />
+        <Route path="/features" element={<LazyPage><MarketingRoute sectionId="services" /></LazyPage>} />
+        <Route path="/pricing" element={<LazyPage><PricingPage /></LazyPage>} />
+        <Route path="/contact" element={<LazyPage><MarketingRoute sectionId="contact" /></LazyPage>} />
+        <Route path="/industries" element={<LazyPage><MarketingRoute sectionId="products" /></LazyPage>} />
+        <Route path="/solutions/:solutionSlug" element={<LazyPage><SolutionPage /></LazyPage>} />
 
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
@@ -132,11 +134,13 @@ export default function AppRouter() {
       <Route
         path="/app"
         element={
-          <CRMProviders>
-            <CrmRequireAuth>
-              <DashboardLayout />
-            </CrmRequireAuth>
-          </CRMProviders>
+          <LazyPage>
+            <CRMProviders>
+              <CrmRequireAuth>
+                <DashboardLayout />
+              </CrmRequireAuth>
+            </CRMProviders>
+          </LazyPage>
         }
       >
         <Route index element={<Navigate to="/app/dashboard" replace />} />

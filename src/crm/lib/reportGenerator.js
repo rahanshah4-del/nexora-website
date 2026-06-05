@@ -1,6 +1,3 @@
-import QRCode from 'qrcode'
-import { jsPDF } from 'jspdf'
-import autoTable from 'jspdf-autotable'
 import { reportFileName, safePrintText } from './printDocuments.js'
 
 function esc(value) {
@@ -87,7 +84,17 @@ function addDataUrlImage(doc, dataUrl, x, y, width, height) {
   }
 }
 
+async function loadReportPdfDeps() {
+  const [{ default: QRCode }, { jsPDF }, autoTableModule] = await Promise.all([
+    import('qrcode'),
+    import('jspdf'),
+    import('jspdf-autotable'),
+  ])
+  return { QRCode, jsPDF, autoTable: autoTableModule.default }
+}
+
 export async function exportReportPdf(report) {
+  const { QRCode, jsPDF, autoTable } = await loadReportPdfDeps()
   const qrDataUrl = await QRCode.toDataURL(JSON.stringify(report.qrPayload), {
     errorCorrectionLevel: 'M',
     margin: 1,

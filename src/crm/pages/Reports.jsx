@@ -1,6 +1,5 @@
 import { motion } from 'framer-motion'
 import { useEffect, useMemo, useState } from 'react'
-import QRCode from 'qrcode'
 import {
   HiOutlineArrowDownTray,
   HiOutlineBuildingOffice2,
@@ -257,12 +256,15 @@ function ReportQrCode({ payload }) {
 
   useEffect(() => {
     let active = true
-    QRCode.toDataURL(value, {
-      errorCorrectionLevel: 'M',
-      margin: 1,
-      width: 132,
-      color: { dark: '#0f172a', light: '#ffffff' },
-    })
+    import('qrcode')
+      .then(({ default: QRCode }) =>
+        QRCode.toDataURL(value, {
+          errorCorrectionLevel: 'M',
+          margin: 1,
+          width: 132,
+          color: { dark: '#0f172a', light: '#ffffff' },
+        }),
+      )
       .then((dataUrl) => {
         if (active) setSrc(dataUrl)
       })

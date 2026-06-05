@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react'
-import QRCode from 'qrcode'
 import { buildInvoiceQrPayload } from '../../lib/invoiceQr.js'
 
 export default function InvoiceQrCode({ invoice, totals, className = '' }) {
@@ -8,12 +7,15 @@ export default function InvoiceQrCode({ invoice, totals, className = '' }) {
 
   useEffect(() => {
     let active = true
-    QRCode.toDataURL(qrValue, {
-      errorCorrectionLevel: 'M',
-      margin: 1,
-      width: 160,
-      color: { dark: '#0f172a', light: '#ffffff' },
-    })
+    import('qrcode')
+      .then(({ default: QRCode }) =>
+        QRCode.toDataURL(qrValue, {
+          errorCorrectionLevel: 'M',
+          margin: 1,
+          width: 160,
+          color: { dark: '#0f172a', light: '#ffffff' },
+        }),
+      )
       .then((dataUrl) => {
         if (active) setSrc(dataUrl)
       })

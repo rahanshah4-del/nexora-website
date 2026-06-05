@@ -1,6 +1,3 @@
-import QRCode from 'qrcode'
-import { jsPDF } from 'jspdf'
-import autoTable from 'jspdf-autotable'
 import { buildInvoiceQrPayload } from './invoiceQr.js'
 import { dateLabel, invoiceIssueDate, statusBadge } from './invoiceHelpers.js'
 import {
@@ -28,12 +25,22 @@ function addDataUrlImage(doc, dataUrl, x, y, width, height) {
   }
 }
 
+async function loadInvoicePdfDeps() {
+  const [{ default: QRCode }, { jsPDF }, autoTableModule] = await Promise.all([
+    import('qrcode'),
+    import('jspdf'),
+    import('jspdf-autotable'),
+  ])
+  return { QRCode, jsPDF, autoTable: autoTableModule.default }
+}
+
 export async function exportInvoicePdf({
   invoice = {},
   company = {},
   payments = [],
   businessType,
 } = {}) {
+  const { QRCode, jsPDF, autoTable } = await loadInvoicePdfDeps()
   const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' })
   const pageWidth = doc.internal.pageSize.getWidth()
   const margin = 40
