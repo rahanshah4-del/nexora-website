@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion'
 import { Link, useNavigate } from 'react-router-dom'
 import { useMemo, useState } from 'react'
-import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
+import { GoogleAuthProvider, signInWithPopup, updateProfile } from 'firebase/auth'
 import Button from '../components/ui/Button.jsx'
 import Card from '../components/ui/Card.jsx'
 import Input from '../components/ui/Input.jsx'
@@ -18,18 +18,29 @@ export default function LoginPage() {
   const navigate = useNavigate()
   const { login, signup, busy, error, setError } = useAuth()
   const [mode, setMode] = useState('login') // login | signup
+  const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [googleBusy, setGoogleBusy] = useState(false)
   const [info, setInfo] = useState('')
 
-  const canSubmit = useMemo(() => email.trim() && password.trim() && !busy, [email, password, busy])
+  const canSubmit = useMemo(
+    () => email.trim() && password.trim() && (mode === 'login' || fullName.trim()) && !busy,
+    [email, fullName, mode, password, busy],
+  )
 
   async function onSubmit() {
     setError('')
     setInfo('')
-    const ok = mode === 'signup' ? await signup(email.trim(), password) : await login(email.trim(), password)
-    if (ok) navigate('/workspace')
+    const trimmedFullName = fullName.trim()
+    if (mode === 'signup' && !trimmedFullName) {
+      setError('Enter your full name before you continue.')
+      return
+    }
+    const ok = mode === 'signup'
+      ? await signup(email.trim(), password, { fullName: trimmedFullName })
+      : await login(email.trim(), password)
+    if (ok) navigate(mode === 'signup' ? '/verify-email' : '/workspace')
   }
 
   async function onGoogle() {
@@ -39,11 +50,38 @@ export default function LoginPage() {
       setError('Google Sign In is not available right now.')
       return
     }
+    const trimmedFullName = fullName.trim()
+    if (mode === 'signup' && !trimmedFullName) {
+      setError('Enter your full name before you continue.')
+      return
+    }
     setGoogleBusy(true)
     try {
       const provider = new GoogleAuthProvider()
       const result = await signInWithPopup(auth, provider)
-      await ensureUserWorkspace(result.user, { provider: 'google' })
+      if (mode === 'signup' && trimmedFullName) {
+        await updateProfile(result.user, { displayName: trimmedFullName }).catch((profileError) => {
+          console.warn('[User Profile] displayName update failed', { code: profileError?.code || '', message: profileError?.message || '' })
+        })
+        console.log('[User Profile] fullName', trimmedFullName)
+        console.log('[User Profile] displayName', trimmedFullName)
+        console.log('[User Profile] profile source', 'signup.fullName')
+      }
+      ensureUserWorkspace(result.user, { provider: 'google', ...(trimmedFullName ? { fullName: trimmedFullName } : {}) })
+        .then((workspaceResult) => {
+          console.log('[Auth Flow] workspace ensure success', {
+            source: 'crm-google-login',
+            uid: result.user?.uid || '',
+            workspaceId: workspaceResult?.workspaceId || '',
+          })
+        })
+        .catch((workspaceError) => {
+          console.warn('[Auth Flow] workspace ensure failed', {
+            source: 'crm-google-login',
+            code: workspaceError?.code || '',
+            message: workspaceError?.message || String(workspaceError || ''),
+          })
+        })
       navigate('/workspace')
     } catch (err) {
       setError(clientSafeMessage(err, 'Google Sign In failed. Please try again.'))
@@ -156,6 +194,20 @@ export default function LoginPage() {
               <Button variant="subtle" className="h-11 w-full rounded-2xl" onClick={onGoogle} type="button" disabled={googleBusy || busy}>
                 {googleBusy ? 'Connecting…' : 'Continue with Google'}
               </Button>
+
+              {mode === 'signup' ? (
+                <div>
+                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Full Name</label>
+                  <Input
+                    className="mt-1"
+                    type="text"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    autoComplete="name"
+                    required
+                  />
+                </div>
+              ) : null}
 
               <div>
                 <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Email</label>

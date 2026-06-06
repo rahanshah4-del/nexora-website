@@ -9,9 +9,11 @@ import Badge from '../components/ui/Badge.jsx'
 import Button from '../components/ui/Button.jsx'
 import PageLoader from '../components/ui/PageLoader.jsx'
 import {
+  businessWorkspaceForSelection,
   businessWorkspaceForType,
   isDeveloperOwnerAccount,
   moduleByRoute,
+  normalizeBusinessType,
   routeAllowedByBusinessType,
   routeAllowedByPlan,
 } from '../data/moduleAccess.js'
@@ -257,6 +259,7 @@ export default function DashboardLayout() {
     isStaff,
     workspaceId,
     businessType,
+    businessWorkspaceId,
     allowedBusinessTypes,
     specialModuleAccess,
     allModulesAccess,
@@ -269,6 +272,7 @@ export default function DashboardLayout() {
     trialEndsAt,
     isBlocked,
     firebaseUser,
+    workspaceDoc,
   } = useUser()
   const workspaceAccess = useWorkspaceAccess()
   const navigate = useNavigate()
@@ -281,7 +285,17 @@ export default function DashboardLayout() {
   const hasActiveAccess = Boolean(hasActiveWorkspaceSubscription || isTrialActive)
   const billingRenewalRoute = location.pathname === '/app/subscriptions' || location.pathname.startsWith('/app/subscriptions/')
   const developerOverride = isDeveloperOwnerAccount(userDoc, firebaseUser)
-  const lockedWorkspaceId = businessWorkspaceForType(userDoc?.selectedBusinessType || userDoc?.businessType).id
+  const workspaceOnboardingCompleted = userDoc?.onboardingCompleted === true || workspaceDoc?.onboardingCompleted === true
+  const workspaceOnboardingResolved = Boolean(userDoc || workspaceDoc)
+  const lockedWorkspaceId = businessWorkspaceId || businessWorkspaceForType(
+    userDoc?.selectedWorkspace ||
+      workspaceDoc?.selectedWorkspace ||
+      userDoc?.selectedBusinessType ||
+      userDoc?.businessType ||
+      workspaceDoc?.selectedBusinessType ||
+      workspaceDoc?.businessType ||
+      businessType,
+  ).id
   const teamOverride = workspaceAccess.isAdmin || workspaceAccess.hasPermission('settingsAccess')
   const crmAccessBlocked =
     ready &&
@@ -336,7 +350,7 @@ export default function DashboardLayout() {
     !isOwnerAdmin &&
     !workspaceAccess.hasModulePermission(currentModule.key, 'view')
   const mobileBlocked = ready && isAuthenticated && isMobileScreen
-  const onboardingOpen = Boolean(ready && userId && !userLoading && !isStaff && userDoc?.onboardingCompleted !== true)
+  const onboardingOpen = Boolean(ready && userId && !userLoading && !isStaff && workspaceOnboardingResolved && !workspaceOnboardingCompleted)
 
   useEffect(() => {
     console.log('[Role Access] role', workspaceAccess.role)
@@ -344,6 +358,102 @@ export default function DashboardLayout() {
     console.log('[Role Access] isStaff', workspaceAccess.isStaff)
     console.log('[Role Access] allowed modules', allowedModules)
   }, [allowedModules, isOwnerAdmin, workspaceAccess.isStaff, workspaceAccess.role])
+
+  useEffect(() => {
+    if (!ready || userLoading) return
+    console.log('[Workspace State]', {
+      source: 'DashboardLayout',
+      userId: userId || '',
+      workspaceId: workspaceId || '',
+      userDocExists: Boolean(userDoc),
+      workspaceDocExists: Boolean(workspaceDoc),
+      userOnboardingCompleted: userDoc?.onboardingCompleted === true,
+      workspaceOnboardingCompleted: workspaceDoc?.onboardingCompleted === true,
+      onboardingCompleted: workspaceOnboardingCompleted,
+      onboardingResolved: workspaceOnboardingResolved,
+      selectedWorkspace: userDoc?.selectedWorkspace || workspaceDoc?.selectedWorkspace || '',
+      selectedBusinessType: userDoc?.selectedBusinessType || workspaceDoc?.selectedBusinessType || '',
+      currentBusinessType: userDoc?.currentBusinessType || workspaceDoc?.currentBusinessType || '',
+      businessType,
+      allowedBusinessTypes,
+      enabledModules: Array.isArray(userDoc?.enabledModules) ? userDoc.enabledModules : workspaceDoc?.enabledModules || [],
+      lockedWorkspaceId,
+    })
+    console.log('[Workspace Access]', {
+      source: 'DashboardLayout',
+      selectedWorkspace,
+      lockedWorkspaceId,
+      businessWorkspaceId,
+      businessType,
+      allowedBusinessTypes,
+      allModulesAccess,
+      specialModuleAccess,
+    })
+    console.log('[Business Type]', {
+      source: 'DashboardLayout',
+      businessType,
+      lockedWorkspaceId,
+      businessWorkspaceId,
+    })
+    console.log('[Current Business Type]', {
+      source: 'DashboardLayout',
+      userCurrentBusinessType: userDoc?.currentBusinessType || '',
+      workspaceCurrentBusinessType: workspaceDoc?.currentBusinessType || '',
+      resolvedBusinessType: businessType,
+    })
+    console.log('[Selected Workspace]', {
+      source: 'DashboardLayout',
+      selectedWorkspace,
+      userSelectedWorkspace: userDoc?.selectedWorkspace || '',
+      workspaceSelectedWorkspace: workspaceDoc?.selectedWorkspace || '',
+      lockedWorkspaceId,
+    })
+    console.log('[Workspace Route Decision]', {
+      source: 'DashboardLayout',
+      path: location.pathname,
+      lockedWorkspaceId,
+      businessWorkspaceId,
+      businessType,
+      routeBusinessBlocked,
+      routePermissionBlocked,
+      routePlanBlocked,
+      onboardingOpen,
+    })
+    console.log('[Workspace Wizard Reason]', {
+      open: onboardingOpen,
+      reason: onboardingOpen
+        ? !userDoc && !workspaceDoc
+          ? 'missing_user_and_workspace_docs'
+          : 'onboarding_not_completed'
+        : workspaceOnboardingCompleted
+          ? 'onboarding_completed'
+          : 'not_ready_or_staff',
+      userOnboardingCompleted: userDoc?.onboardingCompleted === true,
+      workspaceOnboardingCompleted: workspaceDoc?.onboardingCompleted === true,
+      workspaceOnboardingResolved,
+    })
+  }, [
+    allowedBusinessTypes,
+    businessType,
+    businessWorkspaceId,
+    location.pathname,
+    lockedWorkspaceId,
+    onboardingOpen,
+    ready,
+    routeBusinessBlocked,
+    routePermissionBlocked,
+    routePlanBlocked,
+    selectedWorkspace,
+    allModulesAccess,
+    specialModuleAccess,
+    userDoc,
+    userId,
+    userLoading,
+    workspaceDoc,
+    workspaceId,
+    workspaceOnboardingCompleted,
+    workspaceOnboardingResolved,
+  ])
 
   useEffect(() => {
     const media = window.matchMedia?.('(max-width: 767px)')
@@ -381,11 +491,89 @@ export default function DashboardLayout() {
 
   const selectWorkspace = useCallback((workspace) => {
     if (!userId || !isValidWorkspace(workspace)) return
-    if (!developerOverride && workspace !== lockedWorkspaceId) {
+    const targetRoute = workspaceRoute(workspace)
+    const selectedBusiness = businessWorkspaceForSelection(workspace)
+    const selectedBusinessType = normalizeBusinessType(selectedBusiness?.type)
+    const normalizedAllowedBusinessTypes = Array.isArray(allowedBusinessTypes)
+      ? allowedBusinessTypes.map(normalizeBusinessType)
+      : []
+    const workspaceAllowed =
+      developerOverride ||
+      workspace === lockedWorkspaceId ||
+      allModulesAccess ||
+      normalizedAllowedBusinessTypes.includes(selectedBusinessType)
+    console.log('[Module Click]', {
+      source: 'DashboardLayout',
+      workspace,
+      selectedBusinessType,
+      lockedWorkspaceId,
+    })
+    console.log('[Workspace Access]', {
+      source: 'DashboardLayout.selectWorkspace',
+      workspaceAllowed,
+      developerOverride,
+      allModulesAccess,
+      specialModuleAccess,
+      allowedBusinessTypes: normalizedAllowedBusinessTypes,
+      lockedWorkspaceId,
+      selectedBusinessType,
+    })
+    console.log('[Business Type]', {
+      source: 'DashboardLayout.selectWorkspace',
+      selectedBusinessType,
+      currentBusinessType: businessType,
+    })
+    console.log('[Current Business Type]', {
+      source: 'DashboardLayout.selectWorkspace',
+      workspaceCurrentBusinessType: workspaceDoc?.currentBusinessType || '',
+      userCurrentBusinessType: userDoc?.currentBusinessType || '',
+      nextBusinessType: selectedBusinessType,
+    })
+    console.log('[Selected Workspace]', {
+      source: 'DashboardLayout.selectWorkspace',
+      workspace,
+      lockedWorkspaceId,
+      currentSelectedWorkspace: selectedWorkspace,
+    })
+    console.log('[Route Target]', {
+      source: 'DashboardLayout.selectWorkspace',
+      selectedWorkspace: workspace,
+      businessType: selectedBusinessType,
+      target: targetRoute,
+    })
+    if (!workspaceAllowed) {
+      console.log('[Workspace Module Open]', {
+        source: 'DashboardLayout',
+        workspace,
+        lockedWorkspaceId,
+        blocked: true,
+        reason: 'workspace_not_allowed',
+      })
+      console.log('[Navigation Blocked]', {
+        source: 'DashboardLayout.selectWorkspace',
+        reason: 'workspace_not_allowed',
+        workspace,
+        lockedWorkspaceId,
+        selectedBusinessType,
+        target: '/workspace',
+      })
       setProductModalOpen(false)
       navigate('/workspace', { replace: true })
       return
     }
+    console.log('[Workspace Module Open]', {
+      source: 'DashboardLayout',
+      workspace,
+      lockedWorkspaceId,
+      route: targetRoute,
+      blocked: false,
+    })
+    console.log('[Navigation Attempt]', {
+      source: 'DashboardLayout.selectWorkspace',
+      selectedWorkspace: workspace,
+      businessType: selectedBusinessType,
+      target: targetRoute,
+    })
     saveSelectedWorkspace(userId, workspace)
     setSelectedWorkspace(workspace)
     setProductModalOpen(false)
@@ -396,8 +584,23 @@ export default function DashboardLayout() {
     persistedKeyRef.current = `${nextSession.sessionId}:${nextSession.selectedWorkspace}:${nextSession.planType}:${nextSession.trialStatus}`
     persistWorkspaceSession(nextSession).catch(() => {})
 
-    navigate(workspaceRoute(workspace), { replace: true })
-  }, [developerOverride, lockedWorkspaceId, markModalSeen, navigate, user, userDoc, userId, workspaceId])
+    navigate(targetRoute, { replace: true })
+  }, [
+    allowedBusinessTypes,
+    allModulesAccess,
+    businessType,
+    developerOverride,
+    lockedWorkspaceId,
+    markModalSeen,
+    navigate,
+    selectedWorkspace,
+    specialModuleAccess,
+    user,
+    userDoc,
+    userId,
+    workspaceDoc,
+    workspaceId,
+  ])
 
   const continueLastWorkspace = useCallback(() => {
     const workspace = developerOverride ? selectedWorkspace || readSelectedWorkspace(userId) || 'general-crm' : lockedWorkspaceId

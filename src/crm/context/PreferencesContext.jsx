@@ -9,8 +9,8 @@ const defaultState = {
   plan: 'Free', // Free | Business
   profile: {
     companyName: 'NEXORA SOLUTIONS',
-    ownerName: 'Admin User',
-    email: 'admin@nexora.solutions',
+    ownerName: 'Nexora User',
+    email: '',
     phone: '+92 300 0000000',
     address: '',
     country: 'Pakistan',

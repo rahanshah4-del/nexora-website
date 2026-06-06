@@ -13,11 +13,7 @@ export function shouldShowWorkspaceSelection(profile, workspace) {
 export function getAuthRouteState(user) {
   const verified = isUserCustomVerified(user)
   const onboardingCompleted = user?.onboardingCompleted === true
-  const route = !verified
-    ? VERIFY_EMAIL_ROUTE
-    : onboardingCompleted
-      ? CRM_DASHBOARD_ROUTE
-      : WORKSPACE_ROUTE
+  const route = !verified ? VERIFY_EMAIL_ROUTE : WORKSPACE_ROUTE
 
   const state = {
     verified,

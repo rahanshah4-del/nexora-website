@@ -31,7 +31,7 @@ import { clientSafeMessage } from '../../lib/errorHandler.js'
 import { trackAnalyticsEvent } from '../../lib/analyticsTracking.js'
 import { getCustomEmailVerificationStatus } from '../../lib/emailVerificationService.js'
 import { createPasswordResetLink, passwordResetEmail, sendWorkerEmail } from '../../lib/transactionalEmail.js'
-import { getPostLoginRoute } from '../../lib/authRouteState.js'
+import { VERIFY_EMAIL_ROUTE, WORKSPACE_ROUTE } from '../../lib/authRouteState.js'
 
 const modules = [
   { name: 'CRM', detail: 'Customer Relationship Management', icon: HiOutlineUserGroup, color: 'bg-blue-600' },
@@ -55,6 +55,25 @@ const footerBadges = [
 ]
 
 const languageOptions = ['English', 'Urdu', 'Arabic', 'Hindi']
+
+function ensureWorkspaceInBackground(user, options = {}) {
+  ensureUserWorkspace(user, options)
+    .then((workspaceResult) => {
+      console.log('[Auth Flow] workspace ensure success', {
+        source: options.source || 'login',
+        uid: user?.uid || '',
+        workspaceId: workspaceResult?.workspaceId || '',
+      })
+    })
+    .catch((error) => {
+      console.warn('[Auth Flow] workspace ensure failed', {
+        source: options.source || 'login',
+        uid: user?.uid || '',
+        code: error?.code || '',
+        message: error?.message || String(error || ''),
+      })
+    })
+}
 
 function BrandLogo({ dark = false }) {
   return (
@@ -138,26 +157,24 @@ export default function Login() {
         return
       }
 
-      const customVerified = await getCustomEmailVerificationStatus(user)
+      const customVerified = user.emailVerified === true ? true : await getCustomEmailVerificationStatus(user)
       if (!user.emailVerified && !customVerified) {
-        if (!cancelled) setExistingUserRoute(getPostLoginRoute({ ...user, emailVerifiedCustom: false }))
+        console.log('[Auth Flow] route decision', { source: 'login-existing-user', route: VERIFY_EMAIL_ROUTE })
+        if (!cancelled) setExistingUserRoute(VERIFY_EMAIL_ROUTE)
         return
       }
 
-      const workspaceResult = await ensureUserWorkspace(user)
+      ensureWorkspaceInBackground(user, { source: 'login-existing-user' })
+      console.log('[Auth Flow] route decision', { source: 'login-existing-user', route: WORKSPACE_ROUTE })
       if (!cancelled) {
-        setExistingUserRoute(getPostLoginRoute({
-          ...user,
-          emailVerifiedCustom: customVerified,
-          onboardingCompleted: workspaceResult?.onboardingCompleted,
-        }))
+        setExistingUserRoute(WORKSPACE_ROUTE)
       }
     }
 
     resolveExistingUserRoute().catch((err) => {
       if (!cancelled) {
         console.error('[Post Login Route]', { error: err?.message || err })
-        setExistingUserRoute('/workspace')
+        setExistingUserRoute(VERIFY_EMAIL_ROUTE)
       }
     })
 
@@ -180,24 +197,29 @@ export default function Login() {
 
     setSubmitting(true)
     try {
-      await trackAnalyticsEvent('login_started', { email: email.trim().toLowerCase(), page: '/login' })
+      const loginEmail = email.trim().toLowerCase()
+      trackAnalyticsEvent('login_started', { email: loginEmail, page: '/login' })
+        .catch((analyticsError) => {
+          console.warn('[Login] login_started analytics failed', { error: analyticsError?.message || analyticsError })
+        })
       const credentials = await signInWithEmailAndPassword(auth, email.trim(), password)
-      const customVerified = await getCustomEmailVerificationStatus(credentials.user)
+      const customVerified = credentials.user.emailVerified === true ? true : await getCustomEmailVerificationStatus(credentials.user)
       console.log('[Login Verification Gate]', {
         firebaseEmailVerified: credentials.user.emailVerified,
         customVerified,
       })
       if (!credentials.user.emailVerified && !customVerified) {
-        navigate('/verify-email', { replace: true })
+        console.log('[Auth Flow] route decision', { source: 'login-submit', route: VERIFY_EMAIL_ROUTE })
+        navigate(VERIFY_EMAIL_ROUTE, { replace: true })
         return
       }
-      const workspaceResult = await ensureUserWorkspace(credentials.user, { provider: 'password' })
-      await trackAnalyticsEvent('login_completed', { userId: credentials.user.uid, email: credentials.user.email || email.trim().toLowerCase(), page: '/login', status: 'success' })
-      navigate(getPostLoginRoute({
-        ...credentials.user,
-        emailVerifiedCustom: customVerified,
-        onboardingCompleted: workspaceResult?.onboardingCompleted,
-      }), { replace: true })
+      ensureWorkspaceInBackground(credentials.user, { provider: 'password', source: 'login-submit' })
+      trackAnalyticsEvent('login_completed', { userId: credentials.user.uid, email: credentials.user.email || loginEmail, page: '/login', status: 'success' })
+        .catch((analyticsError) => {
+          console.warn('[Login] login_completed analytics failed', { error: analyticsError?.message || analyticsError })
+        })
+      console.log('[Auth Flow] route decision', { source: 'login-submit', route: WORKSPACE_ROUTE })
+      navigate(WORKSPACE_ROUTE, { replace: true })
     } catch (err) {
       await trackAnalyticsEvent('login_failed', { email: email.trim().toLowerCase(), page: '/login', status: err?.code || 'failed' })
       setError(clientSafeMessage(err, 'Unable to sign in. Please verify your credentials.', { context: 'Login with email' }))
@@ -218,15 +240,18 @@ export default function Login() {
     setGoogleLoading(true)
     try {
       const provider = new GoogleAuthProvider()
-      await trackAnalyticsEvent('login_started', { page: '/login', buttonLabel: 'Google sign in' })
+      trackAnalyticsEvent('login_started', { page: '/login', buttonLabel: 'Google sign in' })
+        .catch((analyticsError) => {
+          console.warn('[Login] google login_started analytics failed', { error: analyticsError?.message || analyticsError })
+        })
       const result = await signInWithPopup(auth, provider)
-      const workspaceResult = await ensureUserWorkspace(result.user, { provider: 'google' })
-      await trackAnalyticsEvent('login_completed', { userId: result.user.uid, email: result.user.email || '', page: '/login', status: 'google' })
-      navigate(getPostLoginRoute({
-        ...result.user,
-        emailVerifiedCustom: true,
-        onboardingCompleted: workspaceResult?.onboardingCompleted,
-      }), { replace: true })
+      ensureWorkspaceInBackground(result.user, { provider: 'google', source: 'google-login' })
+      trackAnalyticsEvent('login_completed', { userId: result.user.uid, email: result.user.email || '', page: '/login', status: 'google' })
+        .catch((analyticsError) => {
+          console.warn('[Login] google login_completed analytics failed', { error: analyticsError?.message || analyticsError })
+        })
+      console.log('[Auth Flow] route decision', { source: 'google-login', route: WORKSPACE_ROUTE })
+      navigate(WORKSPACE_ROUTE, { replace: true })
     } catch (err) {
       await trackAnalyticsEvent('login_failed', { page: '/login', status: err?.code || 'google_failed' })
       setError(clientSafeMessage(err, 'Google sign-in failed. Please try again.', { context: 'Login with Google' }))

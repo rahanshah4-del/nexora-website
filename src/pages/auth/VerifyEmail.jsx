@@ -10,6 +10,7 @@ import { trackAnalyticsEvent } from '../../lib/analyticsTracking.js'
 import NexoraLogo from '../../components/brand/NexoraLogo.jsx'
 import Toast from '../../crm/components/ui/Toast.jsx'
 import { getPostVerificationRoute } from '../../lib/authRouteState.js'
+import { queueWelcomeEmailAfterVerification } from '../../lib/welcomeEmailDelivery.js'
 
 function logFullOtpError(error) {
   console.error('[OTP email full error]', {
@@ -63,6 +64,9 @@ function timestampMs() {
 export default function VerifyEmail() {
   const { user, loading } = useAuth()
   const navigate = useNavigate()
+  const userId = user?.uid || ''
+  const userEmail = user?.email || ''
+  const firebaseEmailVerified = user?.emailVerified === true
   const [checking, setChecking] = useState(false)
   const [sending, setSending] = useState(false)
   const [message, setMessage] = useState('')
@@ -76,14 +80,39 @@ export default function VerifyEmail() {
     window.setTimeout(() => setToast(null), timeout)
   }
 
+  function queueWelcomeEmail(currentUser, source) {
+    queueWelcomeEmailAfterVerification(currentUser, { source })
+      .then((result) => {
+        if (result?.skipped) {
+          return
+        }
+        if (!result?.ok) {
+          console.warn('[Auth Flow] welcome email failed', { uid: currentUser?.uid || '', error: result?.error })
+        }
+      })
+      .catch((welcomeError) => {
+        console.warn('[Auth Flow] welcome email failed', { uid: currentUser?.uid || '', error: welcomeError?.message || welcomeError })
+      })
+  }
+
   useEffect(() => {
     let cancelled = false
 
     async function redirectIfVerified() {
-      if (loading || !user) return
+      if (loading || !userId) return
       try {
-        const customVerified = await getCustomEmailVerificationStatus(user)
-        const route = getPostVerificationRoute({ ...user, emailVerifiedCustom: customVerified })
+        const customVerified = await getCustomEmailVerificationStatus({
+          uid: userId,
+          email: userEmail,
+          emailVerified: firebaseEmailVerified,
+        })
+        const route = getPostVerificationRoute({
+          uid: userId,
+          email: userEmail,
+          emailVerified: firebaseEmailVerified,
+          emailVerifiedCustom: customVerified,
+        })
+        console.log('[Auth Flow] route decision', { source: 'verify-auto-check', route })
         if (!cancelled && route === '/workspace') {
           navigate(route, { replace: true })
         }
@@ -96,7 +125,7 @@ export default function VerifyEmail() {
     return () => {
       cancelled = true
     }
-  }, [loading, navigate, user])
+  }, [firebaseEmailVerified, loading, navigate, userEmail, userId])
 
   if (!loading && !user) return <Navigate to="/login" replace />
   const handleRefreshStatus = async () => {
@@ -111,12 +140,18 @@ export default function VerifyEmail() {
       const verified = currentUser.emailVerified || customVerified
       if (verified) {
         const workspaceResult = await ensureUserWorkspace(currentUser, { provider: 'password' })
+        console.log('[Auth Flow] workspace ensure success', {
+          source: 'refresh-status',
+          uid: currentUser.uid,
+          workspaceId: workspaceResult?.workspaceId || '',
+        })
         console.log('[Verify] workspace bootstrap result', workspaceResult)
         trackAnalyticsEvent('signup_completed', { userId: currentUser.uid, email: currentUser.email || '', page: '/verify-email', status: 'email_verified_custom' })
           .catch((analyticsError) => {
             console.warn('[Verify] signup_completed analytics failed', { error: analyticsError?.message || analyticsError })
           })
         const route = getPostVerificationRoute({ ...currentUser, emailVerifiedCustom: customVerified })
+        console.log('[Auth Flow] route decision', { source: 'refresh-status', route })
         console.log('[OTP Verify] redirect timing', {
           source: 'refresh-status',
           elapsedMs: Math.round(timestampMs() - redirectStartedAt),
@@ -164,34 +199,6 @@ export default function VerifyEmail() {
     }
   }
 
-  const handleSendTestOtp = async () => {
-    const currentUser = auth?.currentUser || user
-    if (!currentUser?.email) return
-    setSending(true)
-    setMessage('')
-    setError('')
-    try {
-      const emailResult = await sendCustomVerificationEmail(currentUser, { clientName: currentUser.displayName || 'Test User' })
-      const nextMessage = emailResult.ok
-        ? 'Test OTP email sent. Network should show nexora-email-api.rahanshah4.workers.dev/send-email.'
-        : emailResult.error || 'Could not send test OTP email right now.'
-      if (emailResult.ok) {
-        setMessage(nextMessage)
-        showToast({ tone: 'success', message: 'Test OTP sent.' })
-      } else {
-        setError(nextMessage)
-        showToast({ tone: 'error', message: nextMessage })
-      }
-    } catch (err) {
-      logFullOtpError(err)
-      const nextError = clientSafeMessage(err, 'Could not send test OTP email right now.', { context: 'Send test OTP verification' })
-      setError(nextError)
-      showToast({ tone: 'error', message: nextError })
-    } finally {
-      setSending(false)
-    }
-  }
-
   const handleVerifyOtp = async () => {
     const currentUser = auth?.currentUser || user
     if (!currentUser?.email) return
@@ -200,20 +207,28 @@ export default function VerifyEmail() {
     setMessage('')
     setError('')
     try {
+      console.log('[Auth Flow] verify start', { uid: currentUser.uid, email: currentUser.email || '' })
       const result = await verifyCustomEmailOtp(currentUser, otp)
       if (!result.ok) {
         setError(result.error || 'Invalid verification code.')
         showToast({ tone: 'error', message: result.error || 'Invalid verification code.' })
         return
       }
+      console.log('[Auth Flow] verify success', { uid: currentUser.uid, email: currentUser.email || '' })
       const workspaceResult = await ensureUserWorkspace(currentUser, { provider: 'password' })
+      console.log('[Auth Flow] workspace ensure success', {
+        source: 'otp-submit',
+        uid: currentUser.uid,
+        workspaceId: workspaceResult?.workspaceId || '',
+      })
       console.log('[Verify] workspace bootstrap result', workspaceResult)
       trackAnalyticsEvent('signup_completed', { userId: currentUser.uid, email: currentUser.email || '', page: '/verify-email', status: 'email_verified_custom' })
         .catch((analyticsError) => {
           console.warn('[Verify] signup_completed analytics failed', { error: analyticsError?.message || analyticsError })
-        })
+      })
       showToast({ tone: 'success', message: 'Email verified successfully.' })
       const route = getPostVerificationRoute({ ...currentUser, emailVerifiedCustom: true })
+      console.log('[Auth Flow] route decision', { source: 'otp-submit', route })
       console.log('[OTP Verify] redirect timing', {
         source: 'otp-submit',
         elapsedMs: Math.round(timestampMs() - redirectStartedAt),
@@ -222,6 +237,7 @@ export default function VerifyEmail() {
         route,
       })
       console.log('[Verify] redirect', route)
+      queueWelcomeEmail(currentUser, 'otp-submit')
       navigate(route, { replace: true })
     } catch (err) {
       logFullOtpError(err)
@@ -319,10 +335,6 @@ export default function VerifyEmail() {
 
           <button type="button" onClick={handleRefreshStatus} disabled={checking} className="mt-4 text-sm font-semibold text-sky-700 transition hover:text-sky-900">
             {checking ? 'Checking...' : 'Refresh verification status'}
-          </button>
-
-          <button type="button" onClick={handleSendTestOtp} disabled={sending} className="ml-4 mt-4 text-sm font-semibold text-violet-700 transition hover:text-violet-900">
-            {sending ? 'Sending...' : 'Send test OTP'}
           </button>
 
           <div className="mt-5 flex flex-wrap gap-4">

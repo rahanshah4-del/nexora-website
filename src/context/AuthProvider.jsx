@@ -4,6 +4,7 @@ import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore'
 import { AuthContext } from './auth-context.js'
 import { auth, db } from '../lib/firebase.js'
 import { ensureUserWorkspace } from '../lib/accountProvisioning.js'
+import { getCustomEmailVerificationStatus } from '../lib/emailVerificationService.js'
 import { isBackendAdminEmail, isPlatformAdminDoc } from '../lib/roles.js'
 import { reportTechnicalError } from '../lib/errorHandler.js'
 
@@ -58,7 +59,9 @@ export default function AuthProvider({ children }) {
   useEffect(() => {
     if (!auth) return undefined
 
-    const unsubscribe = onAuthStateChanged(auth, async (nextUser) => {
+    let cancelled = false
+    const unsubscribe = onAuthStateChanged(auth, (nextUser) => {
+      if (cancelled) return
       setUser(nextUser)
       if (!nextUser) {
         setRole('user')
@@ -67,33 +70,47 @@ export default function AuthProvider({ children }) {
         return
       }
 
-      setLoading(true)
-      try {
-        if (isBackendAdminEmail(nextUser.email)) {
-          setRole('super_admin')
-          setIsAdmin(true)
-        } else if (nextUser.emailVerified) {
-          await ensureUserWorkspace(nextUser)
-          const nextRole = await fetchUserRole(nextUser)
-          setRole(nextRole.role)
-          setIsAdmin(nextRole.isAdmin)
-        } else {
-          await ensureUserWorkspace(nextUser, { allowUnverifiedProfile: true })
-          const nextRole = await fetchUserRole(nextUser)
-          setRole(nextRole.role)
-          setIsAdmin(nextRole.isAdmin)
-        }
-        await updateClientPresence(nextUser, { login: true, online: true })
-      } catch (error) {
-        reportTechnicalError(error, 'Auth workspace bootstrap')
-        setRole('user')
-        setIsAdmin(isBackendAdminEmail(nextUser.email))
-      } finally {
+      if (isBackendAdminEmail(nextUser.email)) {
+        setRole('super_admin')
+        setIsAdmin(true)
         setLoading(false)
+        return
       }
+
+      setRole('user')
+      setIsAdmin(false)
+      setLoading(false)
+
+      Promise.resolve()
+        .then(async () => {
+          const customVerified = nextUser.emailVerified === true ? true : await getCustomEmailVerificationStatus(nextUser)
+          if (!customVerified) return
+          const workspaceResult = await ensureUserWorkspace(nextUser)
+          console.log('[Auth Flow] workspace ensure success', {
+            source: 'auth-provider',
+            uid: nextUser.uid,
+            workspaceId: workspaceResult?.workspaceId || '',
+          })
+          const nextRole = await fetchUserRole(nextUser)
+          if (!cancelled) {
+            setRole(nextRole.role)
+            setIsAdmin(nextRole.isAdmin)
+          }
+          await updateClientPresence(nextUser, { login: true, online: true })
+        })
+        .catch((error) => {
+          reportTechnicalError(error, 'Auth workspace bootstrap')
+          if (!cancelled) {
+            setRole('user')
+            setIsAdmin(isBackendAdminEmail(nextUser.email))
+          }
+        })
     })
 
-    return () => unsubscribe()
+    return () => {
+      cancelled = true
+      unsubscribe()
+    }
   }, [])
 
   useEffect(() => {

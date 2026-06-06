@@ -1,4 +1,4 @@
-import { deleteDoc, doc, getDoc, serverTimestamp, setDoc, Timestamp } from 'firebase/firestore'
+import { deleteDoc, doc, getDoc, getDocFromServer, serverTimestamp, setDoc, Timestamp } from 'firebase/firestore'
 import { db } from './firebase.js'
 import { EMAIL_WORKER_URL, sendWorkerEmail } from './transactionalEmail.js'
 
@@ -60,6 +60,21 @@ function toDate(value) {
   return Number.isNaN(date.getTime()) ? null : date
 }
 
+function withTimeout(promise, ms, label) {
+  let timeoutId = null
+  const timeoutPromise = new Promise((_, reject) => {
+    timeoutId = globalThis.setTimeout(() => {
+      const error = new Error(`Timed out loading ${label}`)
+      error.code = 'server-read-timeout'
+      reject(error)
+    }, ms)
+  })
+
+  return Promise.race([promise, timeoutPromise]).finally(() => {
+    if (timeoutId) globalThis.clearTimeout(timeoutId)
+  })
+}
+
 export function getEmailVerificationServiceError() {
   if (!db) return 'Verification email sent. Please check inbox/spam.'
   return null
@@ -68,6 +83,7 @@ export function getEmailVerificationServiceError() {
 export async function sendCustomVerificationEmail(user, options = {}) {
   const to = clean(user?.email)
   const uid = clean(user?.uid)
+  console.log('[Auth Flow] otp send start', { uid, email: to })
   console.log('[OTP email] currentUser', { uid, email: to })
   if (!uid || !to) return { ok: false, error: 'Email address is missing.' }
   if (!db) return sendVerificationNoticeOnly(user, options)
@@ -123,6 +139,7 @@ export async function sendCustomVerificationEmail(user, options = {}) {
     console.log('[OTP email] Worker response body', result.response || null)
 
     if (!result.ok) return { ok: false, error: `Email worker failed: ${result.error || 'Could not send verification email right now.'}` }
+    console.log('[Auth Flow] otp send success', { uid, email: to })
     return { ok: true, provider: 'worker', otp: true, message: 'Verification email sent. Please check inbox/spam.' }
   } catch (error) {
     console.error(technicalLogPrefix, 'OTP verification email failed.')
@@ -221,6 +238,22 @@ export async function verifyCustomEmailOtp(user, otp) {
 
 export async function getCustomEmailVerificationStatus(user) {
   if (!db || !user?.uid) return false
-  const snap = await getDoc(doc(db, 'users', user.uid))
-  return snap.exists() && snap.data()?.emailVerifiedCustom === true
+  const ref = doc(db, 'users', user.uid)
+  try {
+    const snap = await withTimeout(getDocFromServer(ref), 6000, `users/${user.uid}`)
+    console.log('[VerifyEmail] server verification status', {
+      uid: user.uid,
+      exists: snap.exists(),
+      emailVerifiedCustom: snap.exists() && snap.data()?.emailVerifiedCustom === true,
+    })
+    return snap.exists() && snap.data()?.emailVerifiedCustom === true
+  } catch (error) {
+    console.warn('[VerifyEmail] server verification status fallback', {
+      uid: user.uid,
+      code: error?.code || '',
+      message: error?.message || String(error || ''),
+    })
+    const snap = await getDoc(ref)
+    return snap.exists() && snap.data()?.emailVerifiedCustom === true
+  }
 }

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { AiOutlineGoogle } from 'react-icons/ai'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
-import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
+import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, updateProfile } from 'firebase/auth'
 import { auth, db } from '../../lib/firebase.js'
 import { createSignupUserProfile, ensureUserWorkspace } from '../../lib/accountProvisioning.js'
 import useAuth from '../../context/useAuth.js'
@@ -10,7 +10,6 @@ import { motion } from 'framer-motion'
 import { clientSafeMessage } from '../../lib/errorHandler.js'
 import { sendCustomVerificationEmail } from '../../lib/emailVerificationService.js'
 import { trackAnalyticsEvent } from '../../lib/analyticsTracking.js'
-import { sendWorkerEmail, welcomeEmail } from '../../lib/transactionalEmail.js'
 
 export default function Signup() {
   const { user, loading } = useAuth()
@@ -27,8 +26,8 @@ export default function Signup() {
   const [info, setInfo] = useState('')
   const [verificationSent, setVerificationSent] = useState(false)
 
-  if (!loading && user && !verificationSent) {
-    return <Navigate to="/workspace" replace />
+  if (!loading && user && !verificationSent && !submitting && !googleLoading) {
+    return <Navigate to={user.emailVerified ? '/workspace' : '/verify-email'} replace />
   }
 
   const handleSubmit = async (event) => {
@@ -45,6 +44,12 @@ export default function Signup() {
       return
     }
 
+    const trimmedFullName = fullName.trim()
+    if (!trimmedFullName) {
+      setError('Enter your full name before you continue.')
+      return
+    }
+
     if (password !== confirmPassword) {
       setError('Passwords must match before you continue.')
       return
@@ -52,44 +57,43 @@ export default function Signup() {
 
     setSubmitting(true)
     try {
-      await trackAnalyticsEvent('signup_started', { email: email.trim().toLowerCase(), phone: phone.trim(), page: '/signup' })
+      const signupEmail = email.trim().toLowerCase()
+      console.log('[Auth Flow] signup start', { email: signupEmail })
+      await trackAnalyticsEvent('signup_started', { email: signupEmail, phone: phone.trim(), page: '/signup' })
       const credentials = await createUserWithEmailAndPassword(auth, email.trim(), password)
       const userRecord = credentials.user
+      await updateProfile(userRecord, { displayName: trimmedFullName }).catch((profileError) => {
+        console.warn('[User Profile] displayName update failed', { code: profileError?.code || '', message: profileError?.message || '' })
+      })
+      console.log('[User Profile] fullName', trimmedFullName)
+      console.log('[User Profile] displayName', trimmedFullName)
+      console.log('[User Profile] profile source', 'signup.fullName')
       try {
-        await createSignupUserProfile(userRecord)
+        await createSignupUserProfile(userRecord, {
+          fullName: trimmedFullName,
+          company: company.trim(),
+          email: signupEmail,
+          phone: phone.trim(),
+          provider: 'password',
+        })
+        console.log('[Auth Flow] profile created', { uid: userRecord.uid, email: signupEmail })
       } catch {
         setError('Account profile could not be created. Please try again.')
         return
       }
-      await ensureUserWorkspace(userRecord, {
-        fullName: fullName.trim(),
-        company: company.trim(),
-        email: email.trim().toLowerCase(),
-        phone: phone.trim(),
-        provider: 'password',
-        allowUnverifiedProfile: true,
-      })
       const emailResult = await sendCustomVerificationEmail(userRecord)
       if (!emailResult.ok) {
         setError(emailResult.error || 'Could not send verification email right now.')
         return
       }
-      const welcome = welcomeEmail({ name: fullName.trim() || userRecord.displayName || 'there' })
-      sendWorkerEmail({ to: userRecord.email || email.trim().toLowerCase(), ...welcome })
-        .then((welcomeResult) => {
-          if (!welcomeResult.ok) {
-            console.warn('[Signup] welcome email failed', { error: welcomeResult.error })
-          }
-        })
-        .catch((welcomeError) => {
-          console.warn('[Signup] welcome email failed', { error: welcomeError?.message || welcomeError })
-        })
       setVerificationSent(true)
       setInfo('Verification email sent. Please check your inbox and continue to verification.')
-      trackAnalyticsEvent('signup_completed', { userId: userRecord.uid, email: email.trim().toLowerCase(), phone: phone.trim(), page: '/signup', status: 'verification_sent' })
+      trackAnalyticsEvent('signup_completed', { userId: userRecord.uid, email: signupEmail, phone: phone.trim(), page: '/signup', status: 'verification_sent' })
         .catch((analyticsError) => {
           console.warn('[Signup] signup_completed analytics failed', { error: analyticsError?.message || analyticsError })
         })
+      console.log('[Auth Flow] route decision', { source: 'signup', route: '/verify-email' })
+      navigate('/verify-email', { replace: true })
     } catch (err) {
       setError(clientSafeMessage(err, 'Unable to create account. Please try again.', { context: 'Signup with email' }))
     } finally {
@@ -110,6 +114,12 @@ export default function Signup() {
       return
     }
 
+    const trimmedFullName = fullName.trim()
+    if (!trimmedFullName) {
+      setError('Enter your full name before you continue.')
+      return
+    }
+
     setGoogleLoading(true)
     try {
       const provider = new GoogleAuthProvider()
@@ -118,8 +128,14 @@ export default function Signup() {
       const signedUser = result.user
 
       if (signedUser?.uid) {
+        await updateProfile(signedUser, { displayName: trimmedFullName }).catch((profileError) => {
+          console.warn('[User Profile] displayName update failed', { code: profileError?.code || '', message: profileError?.message || '' })
+        })
+        console.log('[User Profile] fullName', trimmedFullName)
+        console.log('[User Profile] displayName', trimmedFullName)
+        console.log('[User Profile] profile source', 'signup.fullName')
         await ensureUserWorkspace(signedUser, {
-          fullName: signedUser.displayName || fullName.trim(),
+          fullName: trimmedFullName,
           company: company.trim(),
           email: signedUser.email || email.trim().toLowerCase(),
           phone: phone.trim(),
@@ -253,6 +269,7 @@ export default function Signup() {
                       <input
                         type="text"
                         required
+                        autoComplete="name"
                         value={fullName}
                         onChange={(event) => setFullName(event.target.value)}
                         className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100"

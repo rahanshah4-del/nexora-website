@@ -24,12 +24,16 @@ function userDisplayName(user, fallback = '') {
   return cleanString(fallback) || cleanString(user?.displayName) || cleanString(user?.email?.split('@')?.[0]) || 'Nexora User'
 }
 
+function explicitProfileName(user, overrides = {}) {
+  return cleanString(overrides.fullName) || cleanString(overrides.name) || cleanString(user?.displayName)
+}
+
 function isPasswordOnlyUser(user, provider) {
   const providers = Array.isArray(user?.providerData) ? user.providerData.map((item) => item?.providerId).filter(Boolean) : []
   return provider === 'password' || providers.includes('password')
 }
 
-export async function createSignupUserProfile(user) {
+export async function createSignupUserProfile(user, overrides = {}) {
   if (!db || !user?.uid) {
     const error = new Error(!db ? 'Firestore is not initialized.' : 'Firebase Auth user is missing uid.')
     console.error('[Signup Provisioning] fail', {
@@ -41,9 +45,20 @@ export async function createSignupUserProfile(user) {
 
   const userRef = doc(db, 'users', user.uid)
   const now = serverTimestamp()
+  const fullName = userDisplayName(user, overrides.fullName || overrides.name)
+  const email = (cleanString(overrides.email) || cleanString(user.email)).toLowerCase()
+  console.log('[User Profile] fullName', fullName)
+  console.log('[User Profile] displayName', fullName)
+  console.log('[User Profile] profile source', cleanString(overrides.fullName) ? 'signup.fullName' : cleanString(user?.displayName) ? 'firebase.displayName' : 'email_prefix')
   const payload = removeUndefinedFields({
     uid: user.uid,
-    email: user.email,
+    email,
+    fullName,
+    displayName: fullName,
+    name: fullName,
+    company: cleanString(overrides.company),
+    phone: cleanString(overrides.phone),
+    provider: cleanString(overrides.provider) || user?.providerData?.[0]?.providerId || 'password',
     createdBy: user.uid,
     createdAt: now,
     updatedAt: now,
@@ -105,6 +120,10 @@ export async function ensureUserWorkspace(user, overrides = {}) {
   const trialEndsAt = addDays(new Date(), BUSINESS_TRIAL_DAYS)
   const email = (cleanString(overrides.email) || cleanString(user.email)).toLowerCase()
   const fullName = userDisplayName(user, overrides.fullName || overrides.name)
+  const explicitName = explicitProfileName(user, overrides)
+  console.log('[User Profile] fullName', explicitName || fullName)
+  console.log('[User Profile] displayName', explicitName || fullName)
+  console.log('[User Profile] profile source', explicitName ? 'explicit_full_name' : cleanString(user?.displayName) ? 'firebase.displayName' : 'email_prefix')
   const company = cleanString(overrides.company)
   const hasBusinessSelection = Boolean(cleanString(overrides.businessType))
   const businessType = hasBusinessSelection ? normalizeBusinessType(overrides.businessType) : ''
@@ -148,6 +167,7 @@ export async function ensureUserWorkspace(user, overrides = {}) {
       userId: uid,
       workspaceId: canCreateWorkspace ? uid : '',
       fullName,
+      displayName: fullName,
       name: fullName,
       company,
       email,
@@ -198,9 +218,10 @@ export async function ensureUserWorkspace(user, overrides = {}) {
       updatedAt: now,
       lastLoginAt: now,
     }
-    if (fullName) {
-      update.fullName = fullName
-      update.name = fullName
+    if (explicitName) {
+      update.fullName = explicitName
+      update.displayName = explicitName
+      update.name = explicitName
     }
     if (company) update.company = company
     if (cleanString(overrides.phone)) update.phone = cleanString(overrides.phone)

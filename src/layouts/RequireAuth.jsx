@@ -9,16 +9,45 @@ export default function RequireAuth() {
   const { user, loading } = useAuth()
   const [customVerified, setCustomVerified] = useState(null)
   const [checkingCustom, setCheckingCustom] = useState(true)
+  const userId = user?.uid || ''
+  const userEmail = user?.email || ''
+  const firebaseEmailVerified = user?.emailVerified === true
 
   useEffect(() => {
     let cancelled = false
-    if (!user?.uid || user.emailVerified) {
+    let timeoutId = null
+
+    if (loading) {
+      return () => {
+        cancelled = true
+      }
+    }
+
+    if (!userId) {
       setCustomVerified(false)
       setCheckingCustom(false)
-      return undefined
+      return () => {
+        cancelled = true
+      }
     }
+
+    if (firebaseEmailVerified) {
+      setCustomVerified(true)
+      setCheckingCustom(false)
+      return () => {
+        cancelled = true
+      }
+    }
+
     setCheckingCustom(true)
-    getCustomEmailVerificationStatus(user)
+    timeoutId = window.setTimeout(() => {
+      if (cancelled) return
+      console.warn('[RequireAuth Gate] verification check timeout', { uid: userId, path: location.pathname })
+      setCustomVerified(false)
+      setCheckingCustom(false)
+    }, 8000)
+
+    getCustomEmailVerificationStatus({ uid: userId, email: userEmail, emailVerified: false })
       .then((verified) => {
         if (!cancelled) setCustomVerified(verified)
       })
@@ -26,14 +55,17 @@ export default function RequireAuth() {
         if (!cancelled) setCustomVerified(false)
       })
       .finally(() => {
+        if (timeoutId) window.clearTimeout(timeoutId)
         if (!cancelled) setCheckingCustom(false)
       })
+
     return () => {
       cancelled = true
+      if (timeoutId) window.clearTimeout(timeoutId)
     }
-  }, [user])
+  }, [firebaseEmailVerified, loading, userEmail, userId])
 
-  if (loading || checkingCustom) {
+  if (loading || (userId && checkingCustom)) {
     return <PageLoader stage="auth" />
   }
 
@@ -41,11 +73,11 @@ export default function RequireAuth() {
     return <Navigate to="/login" replace state={{ from: location.pathname }} />
   }
 
-  const verified = user.emailVerified === true || customVerified === true
+  const verified = firebaseEmailVerified || customVerified === true
   const nextRedirect = !verified && location.pathname !== '/verify-email' ? '/verify-email' : null
   console.log('[RequireAuth Gate]', {
     path: location.pathname,
-    firebaseEmailVerified: user?.emailVerified,
+    firebaseEmailVerified,
     customVerified,
     nextRedirect,
   })

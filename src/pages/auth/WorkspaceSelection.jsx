@@ -26,7 +26,7 @@ import {
 import { FiLogOut } from 'react-icons/fi'
 import { useNavigate } from 'react-router-dom'
 import { signOut } from 'firebase/auth'
-import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore'
+import { doc, getDoc, getDocFromCache, getDocFromServer, serverTimestamp, setDoc } from 'firebase/firestore'
 import logoUrl from '../../assets/logo/nexora-logo.svg'
 import useAuth from '../../context/useAuth.js'
 import { auth, db } from '../../lib/firebase.js'
@@ -35,6 +35,7 @@ import { workspacePermissionDefaults } from '../../lib/roles.js'
 import { normalizeWorkspaceName, resolveWorkspaceName, saveStoredWorkspaceName } from '../../lib/workspaceName.js'
 import {
   businessWorkspaceCatalog,
+  businessWorkspaceForId,
   businessWorkspaceForType,
   businessTypes,
   getRecommendedModules,
@@ -47,7 +48,8 @@ import { saveSelectedWorkspace } from '../../crm/lib/workspaceSession.js'
 import { clientSafeMessage, reportTechnicalError } from '../../lib/errorHandler.js'
 import { sendCustomVerificationEmail } from '../../lib/emailVerificationService.js'
 import { trackAnalyticsEvent } from '../../lib/analyticsTracking.js'
-import { getAuthRouteState, isUserCustomVerified, shouldShowWorkspaceSelection } from '../../lib/authRouteState.js'
+import { VERIFY_EMAIL_ROUTE, getAuthRouteState, isUserCustomVerified, shouldShowWorkspaceSelection } from '../../lib/authRouteState.js'
+import { resolveProfileDisplay } from '../../lib/profileDisplay.js'
 
 const workspaceIconMap = {
   'General CRM': { icon: HiOutlineUserGroup, iconTone: 'bg-blue-50 text-blue-600', color: 'bg-blue-600' },
@@ -140,6 +142,115 @@ const sampleNotifications = [
 
 function cleanString(value) {
   return typeof value === 'string' ? value.trim() : ''
+}
+
+function firstCleanString(...values) {
+  for (const value of values) {
+    if (Array.isArray(value)) {
+      const nested = firstCleanString(...value)
+      if (nested) return nested
+      continue
+    }
+    const cleaned = cleanString(value)
+    if (cleaned) return cleaned
+  }
+  return ''
+}
+
+function withTimeout(promise, ms, label) {
+  let timeoutId = null
+  const timeoutPromise = new Promise((_, reject) => {
+    timeoutId = globalThis.setTimeout(() => {
+      const error = new Error(`Timed out loading ${label}`)
+      error.code = 'server-read-timeout'
+      reject(error)
+    }, ms)
+  })
+
+  return Promise.race([promise, timeoutPromise]).finally(() => {
+    if (timeoutId) globalThis.clearTimeout(timeoutId)
+  })
+}
+
+function missingDocSnapshot(path) {
+  return {
+    exists: () => false,
+    data: () => null,
+    id: path.split('/').pop() || '',
+  }
+}
+
+async function getFreshDoc(ref, path) {
+  try {
+    const snap = await withTimeout(getDocFromServer(ref), 6000, path)
+    console.log('[Workspace Read] server success', { path, exists: snap.exists() })
+    return snap
+  } catch (error) {
+    console.warn('[Workspace Read] server fallback', {
+      path,
+      code: error?.code || '',
+      message: error?.message || String(error || ''),
+    })
+    try {
+      const snap = await withTimeout(getDocFromCache(ref), 1500, `${path} cache`)
+      console.log('[Workspace Read] cache fallback result', { path, exists: snap.exists() })
+      return snap
+    } catch (cacheError) {
+      console.warn('[Workspace Read] cache fallback failed', {
+        path,
+        code: cacheError?.code || '',
+        message: cacheError?.message || String(cacheError || ''),
+      })
+      return missingDocSnapshot(path)
+    }
+  }
+}
+
+function resolveSavedWorkspaceModule({ accountData, workspaceData, onboardingCompleted }) {
+  const workspaceIdSource = firstCleanString(workspaceData?.selectedWorkspace, accountData?.selectedWorkspace)
+  const workspaceFromId = workspaceIdSource ? businessWorkspaceForId(workspaceIdSource) : null
+  const allowedBusinessTypeSource = firstCleanString(workspaceData?.allowedBusinessTypes, accountData?.allowedBusinessTypes)
+  const businessTypeSource = firstCleanString(
+    workspaceFromId?.type,
+    workspaceData?.primaryBusinessType,
+    accountData?.primaryBusinessType,
+    workspaceData?.selectedBusinessType,
+    workspaceData?.currentBusinessType,
+    workspaceData?.businessType,
+    accountData?.selectedBusinessType,
+    accountData?.currentBusinessType,
+    accountData?.businessType,
+    allowedBusinessTypeSource,
+  )
+  const businessType = businessTypeSource ? normalizeBusinessType(businessTypeSource) : ''
+  const catalogWorkspace = workspaceFromId || (businessType ? businessWorkspaceForType(businessType) : null)
+  const selectedWorkspace = workspaceIdSource || cleanString(catalogWorkspace?.id)
+  const allowedBusinessTypes = Array.from(new Set([
+    businessType,
+    ...(Array.isArray(workspaceData?.allowedBusinessTypes) ? workspaceData.allowedBusinessTypes : []),
+    ...(Array.isArray(accountData?.allowedBusinessTypes) ? accountData.allowedBusinessTypes : []),
+  ].filter(Boolean).map(normalizeBusinessType)))
+  const complete = Boolean(businessType && selectedWorkspace)
+  const recoveredFromModuleFields = complete && !onboardingCompleted
+
+  return {
+    businessType,
+    selectedWorkspace,
+    allowedBusinessTypes,
+    complete,
+    stale: !complete,
+    source: !complete && !onboardingCompleted
+      ? 'onboarding_incomplete'
+      : recoveredFromModuleFields
+        ? 'recovered_business_fields'
+        : workspaceFromId
+          ? 'selectedWorkspace'
+          : businessTypeSource === allowedBusinessTypeSource
+            ? 'allowedBusinessTypes'
+            : businessTypeSource
+              ? 'businessType'
+              : 'missing_saved_module',
+  }
 }
 
 function onboardingModuleSelection(workspaceOrType) {
@@ -667,6 +778,7 @@ function SettingsModal({
           </span>
           <div className="min-w-0">
             <p className="truncate text-sm font-bold text-slate-950">{profile.name}</p>
+            <p className="truncate text-xs font-semibold text-slate-700">{profile.roleLabel}</p>
             <p className="truncate text-xs text-slate-500">{profile.email}</p>
           </div>
         </div>
@@ -774,6 +886,8 @@ export default function WorkspaceSelection() {
   const [accountData, setAccountData] = useState(null)
   const [workspaceData, setWorkspaceData] = useState(null)
   const [accountLoading, setAccountLoading] = useState(true)
+  const [accountReadDone, setAccountReadDone] = useState(false)
+  const [workspaceReadDone, setWorkspaceReadDone] = useState(false)
   const [workspaceNameDraft, setWorkspaceNameDraft] = useState('')
   const [workspaceNameSaving, setWorkspaceNameSaving] = useState(false)
   const [workspaceNameMessage, setWorkspaceNameMessage] = useState('')
@@ -798,25 +912,117 @@ export default function WorkspaceSelection() {
   useEffect(() => {
     let cancelled = false
     setAccountLoading(true)
+    setAccountReadDone(false)
+    setWorkspaceReadDone(false)
 
     async function loadAccount() {
       if (!db || !user?.uid) {
         if (!cancelled) {
           setAccountData(null)
           setWorkspaceData(null)
+          setAccountReadDone(true)
+          setWorkspaceReadDone(true)
           setAccountLoading(false)
         }
         return
       }
 
-      const userSnap = await getDoc(doc(db, 'users', user.uid))
+      const userPath = `users/${user.uid}`
+      const userRef = doc(db, 'users', user.uid)
+      console.log('[Workspace Loading] waitingFor', {
+        waitingFor: 'accountData',
+        userPath,
+        authReady: Boolean(user?.uid),
+        accountLoaded: false,
+        workspaceLoaded: false,
+        loadingFlag: 'accountLoading',
+      })
+      const userSnap = await getFreshDoc(userRef, userPath)
+      if (!cancelled) setAccountReadDone(true)
       const nextAccount = userSnap.exists() ? userSnap.data() : null
       const workspaceId = cleanString(nextAccount?.workspaceId) || user.uid
-      const workspaceSnap = await getDoc(doc(db, 'workspaces', workspaceId))
+      const workspacePath = `workspaces/${workspaceId}`
+      console.log('[Workspace Loading] accountLoaded', {
+        accountLoaded: true,
+        userExists: userSnap.exists(),
+        workspaceId,
+      })
+      console.log('[Workspace Loading] waitingFor', {
+        waitingFor: 'workspaceData',
+        workspacePath,
+        authReady: Boolean(user?.uid),
+        accountLoaded: true,
+        workspaceLoaded: false,
+        loadingFlag: 'accountLoading',
+      })
+      const workspaceSnap = await getFreshDoc(doc(db, 'workspaces', workspaceId), workspacePath)
+      if (!cancelled) setWorkspaceReadDone(true)
+      const nextWorkspace = workspaceSnap.exists() ? workspaceSnap.data() : null
+      console.log('[Workspace Loading] workspaceLoaded', {
+        workspaceLoaded: true,
+        workspaceExists: workspaceSnap.exists(),
+        workspaceId,
+      })
+
+      console.log('[Workspace Read]', {
+        userPath,
+        workspacePath,
+        userExists: userSnap.exists(),
+        workspaceExists: workspaceSnap.exists(),
+        user: {
+          onboardingCompleted: nextAccount?.onboardingCompleted === true,
+          selectedWorkspace: cleanString(nextAccount?.selectedWorkspace),
+          selectedBusinessType: cleanString(nextAccount?.selectedBusinessType),
+          currentBusinessType: cleanString(nextAccount?.currentBusinessType),
+          businessType: cleanString(nextAccount?.businessType),
+          allowedBusinessTypes: Array.isArray(nextAccount?.allowedBusinessTypes) ? nextAccount.allowedBusinessTypes : [],
+          enabledModules: Array.isArray(nextAccount?.enabledModules) ? nextAccount.enabledModules : [],
+        },
+        workspace: {
+          onboardingCompleted: nextWorkspace?.onboardingCompleted === true,
+          selectedWorkspace: cleanString(nextWorkspace?.selectedWorkspace),
+          selectedBusinessType: cleanString(nextWorkspace?.selectedBusinessType),
+          currentBusinessType: cleanString(nextWorkspace?.currentBusinessType),
+          businessType: cleanString(nextWorkspace?.businessType),
+          allowedBusinessTypes: Array.isArray(nextWorkspace?.allowedBusinessTypes) ? nextWorkspace.allowedBusinessTypes : [],
+          enabledModules: Array.isArray(nextWorkspace?.enabledModules) ? nextWorkspace.enabledModules : [],
+        },
+      })
+      console.log('[Workspace Debug] user doc', {
+        uid: user.uid,
+        exists: userSnap.exists(),
+        workspaceId,
+        emailVerifiedCustom: nextAccount?.emailVerifiedCustom === true,
+        onboardingCompleted: nextAccount?.onboardingCompleted === true,
+        selectedBusinessType: cleanString(nextAccount?.selectedBusinessType),
+        currentBusinessType: cleanString(nextAccount?.currentBusinessType),
+        businessType: cleanString(nextAccount?.businessType),
+        selectedWorkspace: cleanString(nextAccount?.selectedWorkspace),
+        allowedBusinessTypes: Array.isArray(nextAccount?.allowedBusinessTypes) ? nextAccount.allowedBusinessTypes : [],
+        enabledModules: Array.isArray(nextAccount?.enabledModules) ? nextAccount.enabledModules : [],
+      })
+      console.log('[Workspace Debug] workspace doc', {
+        workspaceId,
+        exists: workspaceSnap.exists(),
+        onboardingCompleted: nextWorkspace?.onboardingCompleted === true,
+        selectedBusinessType: cleanString(nextWorkspace?.selectedBusinessType),
+        currentBusinessType: cleanString(nextWorkspace?.currentBusinessType),
+        businessType: cleanString(nextWorkspace?.businessType),
+        selectedWorkspace: cleanString(nextWorkspace?.selectedWorkspace),
+        allowedBusinessTypes: Array.isArray(nextWorkspace?.allowedBusinessTypes) ? nextWorkspace.allowedBusinessTypes : [],
+        enabledModules: Array.isArray(nextWorkspace?.enabledModules) ? nextWorkspace.enabledModules : [],
+      })
 
       if (!cancelled) {
         setAccountData(nextAccount)
-        setWorkspaceData(workspaceSnap.exists() ? workspaceSnap.data() : null)
+        setWorkspaceData(nextWorkspace)
+        console.log('[Workspace Loading] loadingFlag', {
+          loadingFlag: 'accountLoading',
+          value: false,
+          accountLoaded: true,
+          workspaceLoaded: true,
+          waitingFor: 'none',
+        })
         setAccountLoading(false)
       }
     }
@@ -826,6 +1032,17 @@ export default function WorkspaceSelection() {
       if (!cancelled) {
         setAccountData(null)
         setWorkspaceData(null)
+        setAccountReadDone(true)
+        setWorkspaceReadDone(true)
+        console.log('[Workspace Loading] loadingFlag', {
+          loadingFlag: 'accountLoading',
+          value: false,
+          accountLoaded: true,
+          workspaceLoaded: true,
+          waitingFor: 'load_error_recovered',
+          code: error?.code || '',
+          message: error?.message || String(error || ''),
+        })
         setAccountLoading(false)
       }
     })
@@ -835,16 +1052,85 @@ export default function WorkspaceSelection() {
     }
   }, [user?.uid])
 
+  useEffect(() => {
+    const waitingFor = authLoading
+      ? 'auth'
+      : accountLoading && !accountReadDone
+        ? 'accountData'
+        : accountLoading && !workspaceReadDone
+          ? 'workspaceData'
+          : accountLoading
+            ? 'state_commit'
+            : 'none'
+
+    console.log('[Workspace Loading] progress', {
+      progress: authLoading ? 20 : accountLoading ? 50 : 100,
+      stage: authLoading ? 'auth' : accountLoading ? 'workspace' : 'ready',
+    })
+    console.log('[Workspace Loading] waitingFor', {
+      waitingFor,
+    })
+    console.log('[Workspace Loading] authReady', {
+      authReady: !authLoading && Boolean(user?.uid),
+      authLoading,
+      uid: user?.uid || '',
+    })
+    console.log('[Workspace Loading] accountLoaded', {
+      accountLoaded: accountReadDone,
+      accountDocExists: Boolean(accountData),
+    })
+    console.log('[Workspace Loading] workspaceLoaded', {
+      workspaceLoaded: workspaceReadDone,
+      workspaceDocExists: Boolean(workspaceData),
+    })
+    console.log('[Workspace Loading] loadingFlag', {
+      loadingFlag: authLoading ? 'authLoading' : accountLoading ? 'accountLoading' : 'none',
+      authLoading,
+      accountLoading,
+    })
+  }, [accountData, accountLoading, accountReadDone, authLoading, user?.uid, workspaceData, workspaceReadDone])
+
+  useEffect(() => {
+    if (authLoading || accountLoading || !user?.uid) return
+    if (emailVerified) return
+
+    console.log('[Workspace Route Decision]', {
+      source: 'WorkspaceSelection',
+      path: '/workspace',
+      decision: 'redirect_verify_email',
+      reason: 'email_not_verified',
+    })
+    console.log('[Navigation Blocked]', {
+      source: 'WorkspaceSelection',
+      reason: 'email_not_verified',
+      target: VERIFY_EMAIL_ROUTE,
+    })
+    navigate(VERIFY_EMAIL_ROUTE, { replace: true })
+  }, [accountLoading, authLoading, emailVerified, navigate, user?.uid])
+
   const onboardingCompleted = workspaceData?.onboardingCompleted === true || accountData?.onboardingCompleted === true
+  const savedWorkspaceModule = useMemo(
+    () => resolveSavedWorkspaceModule({ accountData, workspaceData, onboardingCompleted }),
+    [accountData, onboardingCompleted, workspaceData],
+  )
 
   const profile = useMemo(() => {
-    const email = cleanString(accountData?.email) || cleanString(user?.email) || 'No email available'
-    const name =
-      cleanString(accountData?.fullName) ||
-      cleanString(accountData?.name) ||
-      cleanString(user?.displayName) ||
-      cleanString(email.split('@')[0]) ||
-      'Nexora User'
+    const displayProfile = resolveProfileDisplay({
+      firebaseUser: user,
+      userDoc: accountData,
+      preferenceProfile: null,
+    })
+    console.log('[Profile Display] auth email', displayProfile.authEmail)
+    console.log('[Profile Display] user doc email', displayProfile.userDocEmail)
+    console.log('[Profile Display] final display email', displayProfile.displayEmail)
+    console.log('[Profile Display] final display name', displayProfile.displayName)
+    console.log('[User Profile] fullName', displayProfile.fullName)
+    console.log('[User Profile] displayName', displayProfile.rawDisplayName || displayProfile.displayName)
+    console.log('[User Profile] profile source', displayProfile.profileSource)
+    const email = displayProfile.displayEmail === 'No email' ? 'No email available' : displayProfile.displayEmail
+    const name = displayProfile.displayName
+    const role = cleanString(accountData?.role) || 'owner'
+    const roleLabel = `${role.charAt(0).toUpperCase()}${role.slice(1)}`
     const plan = cleanString(workspaceData?.plan) || cleanString(accountData?.plan) || 'Free'
     const status = cleanString(workspaceData?.planStatus) || cleanString(accountData?.planStatus) || 'trial'
     const trialEndsAt = resolveTrialEnd(workspaceData, accountData, user)
@@ -865,16 +1151,15 @@ export default function WorkspaceSelection() {
       userId: user?.uid,
       fallback: 'Nexora CRM',
     })
-    const profileBusinessTypeSource = onboardingCompleted
-      ? cleanString(workspaceData?.selectedBusinessType || workspaceData?.businessType || accountData?.selectedBusinessType || accountData?.businessType)
-      : ''
+    const profileBusinessTypeSource = savedWorkspaceModule.businessType
 
     return {
       name,
       email,
       emailVerified,
       initials: initialsFor(name, email),
-      role: cleanString(accountData?.role) || 'owner',
+      role,
+      roleLabel,
       workspaceName,
       planLabel: `${packageName}${statusLabel ? ` · ${statusLabel}` : ''}`,
       trialShortLabel: isTrial ? countdown.label : '',
@@ -884,39 +1169,16 @@ export default function WorkspaceSelection() {
       workspaceId: cleanString(workspaceData?.workspaceId) || cleanString(accountData?.workspaceId) || user?.uid || '',
       businessType: profileBusinessTypeSource ? normalizeBusinessType(profileBusinessTypeSource) : '',
     }
-  }, [accountData, emailVerified, nowMs, onboardingCompleted, user, workspaceData])
+  }, [accountData, emailVerified, nowMs, onboardingCompleted, savedWorkspaceModule.businessType, user, workspaceData])
 
-  const configuredBusinessTypeSource = onboardingCompleted
-    ? cleanString(
-        workspaceData?.selectedBusinessType ||
-          workspaceData?.businessType ||
-          accountData?.selectedBusinessType ||
-          accountData?.businessType,
-      )
-    : ''
-  const configuredBusinessType = configuredBusinessTypeSource ? normalizeBusinessType(configuredBusinessTypeSource) : ''
-  const configuredSelectedWorkspace = onboardingCompleted
-    ? cleanString(workspaceData?.selectedWorkspace) || cleanString(accountData?.selectedWorkspace)
-    : ''
-  const workspaceFullyConfigured = Boolean(onboardingCompleted && configuredBusinessType && configuredSelectedWorkspace)
+  const configuredBusinessType = savedWorkspaceModule.businessType
+  const configuredSelectedWorkspace = savedWorkspaceModule.selectedWorkspace
+  const recoveredWorkspaceModule = savedWorkspaceModule.complete && savedWorkspaceModule.source === 'recovered_business_fields'
+  const workspaceFullyConfigured = Boolean((onboardingCompleted || recoveredWorkspaceModule) && savedWorkspaceModule.complete)
   const hasCrmWorkspace = workspaceFullyConfigured
   const developerOverride = isDeveloperOwnerAccount(accountData, user)
-  const lockedBusinessTypeSource = onboardingCompleted
-    ? cleanString(workspaceData?.primaryBusinessType) ||
-      cleanString(accountData?.primaryBusinessType) ||
-      cleanString(workspaceData?.selectedBusinessType) ||
-      cleanString(workspaceData?.businessType) ||
-      cleanString(accountData?.selectedBusinessType) ||
-      cleanString(accountData?.businessType)
-    : ''
-  const lockedBusinessType = lockedBusinessTypeSource ? normalizeBusinessType(lockedBusinessTypeSource) : ''
-  const workspaceAllowedBusinessTypes = onboardingCompleted
-    ? Array.from(new Set([
-        lockedBusinessType,
-        ...(Array.isArray(workspaceData?.allowedBusinessTypes) ? workspaceData.allowedBusinessTypes : []),
-        ...(Array.isArray(accountData?.allowedBusinessTypes) ? accountData.allowedBusinessTypes : []),
-      ].filter(Boolean).map(normalizeBusinessType)))
-    : []
+  const lockedBusinessType = configuredBusinessType
+  const workspaceAllowedBusinessTypes = savedWorkspaceModule.allowedBusinessTypes
   const allModulesAccess = onboardingCompleted && (workspaceData?.allModulesAccess === true || accountData?.allModulesAccess === true)
   const specialModuleAccess = onboardingCompleted && (allModulesAccess || workspaceData?.specialModuleAccess === true || accountData?.specialModuleAccess === true)
   const allowedWorkspaceTypes = developerOverride || allModulesAccess
@@ -927,24 +1189,28 @@ export default function WorkspaceSelection() {
         ? [lockedBusinessType]
         : []
   const hasModuleLock = !developerOverride && hasCrmWorkspace && Boolean(lockedBusinessType)
-  const onboardingSelectionMode = !developerOverride && !onboardingCompleted
+  const shouldFilterModules = !developerOverride && workspaceFullyConfigured && allowedWorkspaceTypes.length > 0
+  const onboardingSelectionMode = !developerOverride && (!workspaceFullyConfigured || savedWorkspaceModule.stale)
   const moduleLockMessage = 'This module is not enabled for your account. Contact Nexora support.'
   const needsWorkspaceOnboarding = !authLoading && !accountLoading && Boolean(user?.uid) && !hasCrmWorkspace
   const visibleModuleAccess = useMemo(
     () =>
-      hasModuleLock
+      shouldFilterModules
         ? moduleAccess.filter((workspace) => allowedWorkspaceTypes.includes(normalizeBusinessType(workspace.type)))
         : moduleAccess,
-    [allowedWorkspaceTypes, hasModuleLock],
+    [allowedWorkspaceTypes, shouldFilterModules],
   )
   const visibleWorkspaces = useMemo(
     () => {
-      const sourceWorkspaces = hasModuleLock
+      const sourceWorkspaces = shouldFilterModules
         ? workspaces.filter((workspace) => allowedWorkspaceTypes.includes(normalizeBusinessType(workspace.type)))
         : workspaces
 
       return sourceWorkspaces.map((workspace) => {
-        const selected = Boolean(lockedBusinessType) && workspace.type === (lockedBusinessType || profile.businessType)
+        const selected = Boolean(lockedBusinessType) && (
+          workspace.id === configuredSelectedWorkspace ||
+          workspace.type === (lockedBusinessType || profile.businessType)
+        )
         return workspace.active
           ? {
               ...workspace,
@@ -960,7 +1226,7 @@ export default function WorkspaceSelection() {
           : { ...workspace, selected }
       })
     },
-    [allowedWorkspaceTypes, hasModuleLock, lockedBusinessType, onboardingSelectionMode, profile.businessType, profile.planLabel, profile.trialExpired, profile.trialShortLabel, profile.workspaceId],
+    [allowedWorkspaceTypes, configuredSelectedWorkspace, lockedBusinessType, onboardingSelectionMode, profile.businessType, profile.planLabel, profile.trialExpired, profile.trialShortLabel, profile.workspaceId, shouldFilterModules],
   )
   const notificationCount = sampleNotifications.length
   const mustSelectModuleFirst = !developerOverride && !lockedBusinessType
@@ -989,6 +1255,64 @@ export default function WorkspaceSelection() {
       onboardingCompleted,
     })
     console.log('[WorkspaceSelection] route decision', { decision })
+    console.log('[Workspace Debug] verified state', {
+      firebaseEmailVerified: user?.emailVerified === true,
+      emailVerifiedCustom,
+      emailVerified,
+    })
+    console.log('[Workspace Debug] onboarding state', {
+      onboardingCompleted,
+      configuredBusinessType,
+      configuredSelectedWorkspace,
+      workspaceFullyConfigured,
+      savedModuleSource: savedWorkspaceModule.source,
+      savedModuleStale: savedWorkspaceModule.stale,
+      recoveredWorkspaceModule,
+      hasCrmWorkspace,
+      hasModuleLock,
+      shouldFilterModules,
+    })
+    console.log('[Workspace State]', {
+      source: 'WorkspaceSelection',
+      uid: user?.uid || '',
+      onboardingCompleted,
+      selectedWorkspace: configuredSelectedWorkspace,
+      selectedBusinessType: configuredBusinessType,
+      currentBusinessType: cleanString(workspaceData?.currentBusinessType) || cleanString(accountData?.currentBusinessType),
+      businessType: configuredBusinessType,
+      allowedBusinessTypes: allowedWorkspaceTypes,
+      enabledModules: Array.isArray(workspaceData?.enabledModules) ? workspaceData.enabledModules : accountData?.enabledModules || [],
+      workspaceFullyConfigured,
+      recoveredWorkspaceModule,
+    })
+    console.log('[Workspace Route Decision]', {
+      source: 'WorkspaceSelection',
+      path: '/workspace',
+      decision,
+      needsWorkspaceOnboarding,
+      onboardingSelectionMode,
+      hasModuleLock,
+      lockedBusinessType,
+    })
+    console.log('[Workspace Wizard Reason]', {
+      open: onboardingSelectionMode,
+      reason: onboardingSelectionMode
+        ? savedWorkspaceModule.stale
+          ? 'saved_module_fields_missing'
+          : 'onboarding_not_completed'
+        : 'onboarding_completed',
+      savedModuleSource: savedWorkspaceModule.source,
+      savedModuleStale: savedWorkspaceModule.stale,
+    })
+    console.log('[Workspace Debug] available modules', {
+      allowedWorkspaceTypes,
+      visibleModules: visibleModuleAccess.map((workspace) => workspace.type),
+      visibleWorkspaces: visibleWorkspaces.map((workspace) => ({
+        id: workspace.id,
+        type: workspace.type,
+        selected: workspace.selected,
+      })),
+    })
     console.log('[Onboarding] state', {
       route: '/workspace',
       showWorkspaceSelection: true,
@@ -1008,8 +1332,19 @@ export default function WorkspaceSelection() {
     configuredSelectedWorkspace,
     emailVerified,
     emailVerifiedCustom,
+    hasCrmWorkspace,
+    hasModuleLock,
+    lockedBusinessType,
+    needsWorkspaceOnboarding,
     onboardingCompleted,
+    onboardingSelectionMode,
+    recoveredWorkspaceModule,
+    savedWorkspaceModule.source,
+    savedWorkspaceModule.stale,
+    shouldFilterModules,
     user?.uid,
+    visibleModuleAccess,
+    visibleWorkspaces,
     workspaceData,
     workspaceFullyConfigured,
   ])
@@ -1168,8 +1503,50 @@ export default function WorkspaceSelection() {
   }, [accountData?.workspaceId, profile.workspaceName, user?.uid, workspaceData, workspaceNameDraft])
 
   const handleSelectBusinessWorkspace = useCallback(async (workspace) => {
-    if (businessTypeSaving) return
+    console.log('[Module Click]', {
+      source: 'WorkspaceSelection',
+      workspaceId: workspace?.id || '',
+      workspaceType: workspace?.type || '',
+      workspaceActive: workspace?.active !== false,
+      businessTypeSaving: businessTypeSaving || '',
+    })
+    console.log('[Workspace Module Click]', {
+      source: 'WorkspaceSelection',
+      workspaceId: workspace?.id || '',
+      workspaceType: workspace?.type || '',
+      workspaceActive: workspace?.active !== false,
+      businessTypeSaving: businessTypeSaving || '',
+      accountLoading,
+      authLoading,
+    })
+    if (businessTypeSaving) {
+      console.log('[Navigation Blocked]', {
+        source: 'WorkspaceSelection',
+        reason: 'module_save_in_progress',
+        workspaceType: workspace?.type || '',
+      })
+      console.log('[Workspace Navigate Failed]', {
+        source: 'WorkspaceSelection',
+        reason: 'module_save_in_progress',
+        workspaceType: workspace?.type || '',
+      })
+      return
+    }
     if (!emailVerified) {
+      console.log('[Workspace Debug] navigation blocked reason', {
+        reason: 'email_not_verified',
+        target: VERIFY_EMAIL_ROUTE,
+      })
+      console.log('[Navigation Blocked]', {
+        source: 'WorkspaceSelection',
+        reason: 'email_not_verified',
+        target: VERIFY_EMAIL_ROUTE,
+      })
+      console.log('[Workspace Navigate Failed]', {
+        source: 'WorkspaceSelection',
+        reason: 'email_not_verified',
+        target: VERIFY_EMAIL_ROUTE,
+      })
       setCreateMessage('Please verify your email before creating a workspace.')
       navigate(getAuthRouteState({ ...user, emailVerifiedCustom: accountData?.emailVerifiedCustom }).route)
       return
@@ -1179,6 +1556,20 @@ export default function WorkspaceSelection() {
     const workspaceId = cleanString(workspaceData?.workspaceId) || cleanString(accountData?.workspaceId) || uid
     const availableWorkspace = workspace?.active !== false && workspace?.type
     if (!availableWorkspace) {
+      console.log('[Workspace Debug] navigation blocked reason', {
+        reason: 'module_not_available',
+        module: workspace?.type || workspace?.id || '',
+      })
+      console.log('[Navigation Blocked]', {
+        source: 'WorkspaceSelection',
+        reason: 'module_not_available',
+        module: workspace?.type || workspace?.id || '',
+      })
+      console.log('[Workspace Navigate Failed]', {
+        source: 'WorkspaceSelection',
+        reason: 'module_not_available',
+        module: workspace?.type || workspace?.id || '',
+      })
       setCreateMessage('This module is coming soon.')
       return
     }
@@ -1191,10 +1582,85 @@ export default function WorkspaceSelection() {
       redirectTarget,
     } = onboardingModuleSelection(workspace)
     const businessType = businessTypeLabel
-    if (hasModuleLock && !allowedWorkspaceTypes.includes(businessType)) {
+    const selectedBusinessType = normalizeBusinessType(businessType)
+    const moduleAllowedForAccount =
+      developerOverride ||
+      allModulesAccess ||
+      allowedWorkspaceTypes.includes(selectedBusinessType)
+    console.log('[Workspace Access]', {
+      source: 'WorkspaceSelection',
+      moduleAllowedForAccount,
+      developerOverride,
+      allModulesAccess,
+      specialModuleAccess,
+      hasModuleLock,
+      hasCrmWorkspace,
+      onboardingCompleted,
+      allowedWorkspaceTypes,
+      visibleWorkspaces: visibleWorkspaces.map((item) => ({ id: item.id, type: item.type, selected: item.selected })),
+    })
+    console.log('[Business Type]', {
+      source: 'WorkspaceSelection',
+      requestedBusinessType: selectedBusinessType,
+      configuredBusinessType,
+      lockedBusinessType,
+    })
+    console.log('[Current Business Type]', {
+      source: 'WorkspaceSelection',
+      accountCurrentBusinessType: cleanString(accountData?.currentBusinessType),
+      workspaceCurrentBusinessType: cleanString(workspaceData?.currentBusinessType),
+      nextCurrentBusinessType: businessTypeId,
+    })
+    console.log('[Selected Workspace]', {
+      source: 'WorkspaceSelection',
+      configuredSelectedWorkspace,
+      nextSelectedWorkspace: selectedWorkspace,
+      savedAllowedBusinessTypes: workspaceAllowedBusinessTypes,
+    })
+    console.log('[Route Target]', {
+      source: 'WorkspaceSelection',
+      selectedWorkspace,
+      businessType: selectedBusinessType,
+      target: redirectTarget,
+    })
+    if (workspaceFullyConfigured && !moduleAllowedForAccount) {
+      console.log('[Workspace Debug] navigation blocked reason', {
+        reason: 'module_not_allowed',
+        businessType,
+        allowedWorkspaceTypes,
+      })
+      console.log('[Navigation Blocked]', {
+        source: 'WorkspaceSelection',
+        reason: 'module_not_allowed',
+        businessType: selectedBusinessType,
+        allowedWorkspaceTypes,
+      })
+      console.log('[Workspace Navigate Failed]', {
+        source: 'WorkspaceSelection',
+        reason: 'module_not_allowed',
+        businessType: selectedBusinessType,
+        allowedWorkspaceTypes,
+      })
       setCreateMessage(moduleLockMessage)
       return
     }
+    console.log('[Workspace Debug] selected module', {
+      source: 'workspace-card',
+      businessType,
+      businessTypeId,
+      selectedWorkspace,
+      hasModuleLock,
+      hasCrmWorkspace,
+    })
+    console.log('[Workspace Module Open]', {
+      source: 'WorkspaceSelection',
+      businessType,
+      businessTypeId,
+      selectedWorkspace,
+      hasModuleLock,
+      hasCrmWorkspace,
+      redirectTarget,
+    })
     console.log('[Onboarding] selected module', {
       source: 'workspace-card',
       businessType,
@@ -1202,7 +1668,58 @@ export default function WorkspaceSelection() {
       selectedWorkspace,
       redirectTarget,
     })
+    const opensSavedModule =
+      workspaceFullyConfigured &&
+      moduleAllowedForAccount &&
+      (developerOverride || hasModuleLock || hasCrmWorkspace || allModulesAccess || specialModuleAccess)
+    if (opensSavedModule) {
+      if (uid) saveSelectedWorkspace(uid, selectedWorkspace)
+      console.log('[Workspace Debug] redirect target', {
+        mode: 'open_saved_module',
+        currentPath: '/workspace',
+        selectedWorkspace,
+        redirectTarget,
+      })
+      console.log('[Onboarding] redirect target', { redirectTarget })
+      console.log('[Workspace Route Decision]', {
+        source: 'WorkspaceSelection',
+        mode: 'open_saved_module',
+        selectedWorkspace,
+        redirectTarget,
+      })
+      console.log('[Navigation Attempt]', {
+        source: 'WorkspaceSelection',
+        selectedWorkspace,
+        currentPath: '/workspace',
+        target: redirectTarget,
+      })
+      console.log('[Workspace Navigate]', {
+        source: 'WorkspaceSelection',
+        selectedWorkspace,
+        target: redirectTarget,
+        mode: 'open_saved_module',
+      })
+      navigate(redirectTarget)
+      return
+    }
     if (!developerOverride && !lockedBusinessType) {
+      console.log('[Workspace Debug] navigation blocked reason', {
+        reason: 'onboarding_required_missing_saved_module',
+        businessType,
+        selectedWorkspace,
+      })
+      console.log('[Navigation Blocked]', {
+        source: 'WorkspaceSelection',
+        reason: 'onboarding_required_missing_saved_module',
+        businessType: selectedBusinessType,
+        selectedWorkspace,
+      })
+      console.log('[Workspace Navigate Failed]', {
+        source: 'WorkspaceSelection',
+        reason: 'onboarding_required_missing_saved_module',
+        businessType: selectedBusinessType,
+        selectedWorkspace,
+      })
       setCreateMessage('')
       setOnboardingForm((current) => ({
         ...current,
@@ -1216,6 +1733,23 @@ export default function WorkspaceSelection() {
       return
     }
     if (!hasCrmWorkspace && !workspaceData && !accountData?.workspaceId) {
+      console.log('[Workspace Debug] navigation blocked reason', {
+        reason: 'workspace_missing_before_module_open',
+        businessType,
+        selectedWorkspace,
+      })
+      console.log('[Navigation Blocked]', {
+        source: 'WorkspaceSelection',
+        reason: 'workspace_missing_before_module_open',
+        businessType: selectedBusinessType,
+        selectedWorkspace,
+      })
+      console.log('[Workspace Navigate Failed]', {
+        source: 'WorkspaceSelection',
+        reason: 'workspace_missing_before_module_open',
+        businessType: selectedBusinessType,
+        selectedWorkspace,
+      })
       setCreateMessage('Create your company workspace first.')
       setOnboardingForm((current) => ({
         ...current,
@@ -1225,7 +1759,25 @@ export default function WorkspaceSelection() {
       return
     }
     if (!uid || !workspaceId) {
+      console.log('[Workspace Debug] navigation blocked reason', {
+        reason: 'missing_uid_or_workspace_id',
+        uid: uid || '',
+        workspaceId: workspaceId || '',
+      })
+      console.log('[Workspace Debug] redirect target', { redirectTarget })
       console.log('[Onboarding] redirect target', { redirectTarget })
+      console.log('[Navigation Attempt]', {
+        source: 'WorkspaceSelection',
+        reason: 'missing_uid_or_workspace_id_fallback',
+        selectedWorkspace,
+        target: redirectTarget,
+      })
+      console.log('[Workspace Navigate]', {
+        source: 'WorkspaceSelection',
+        reason: 'missing_uid_or_workspace_id_fallback',
+        selectedWorkspace,
+        target: redirectTarget,
+      })
       navigate(redirectTarget)
       return
     }
@@ -1309,6 +1861,30 @@ export default function WorkspaceSelection() {
           }
 
       console.log(workspaceExists ? '[WorkspaceSelection] update payload' : '[WorkspaceSelection] create payload', workspacePayload)
+      console.log('[Workspace Write]', {
+        source: 'WorkspaceSelection.select',
+        userPath: `users/${uid}`,
+        workspacePath: `workspaces/${workspaceId}`,
+        workspaceExists,
+        user: {
+          onboardingCompleted: true,
+          selectedWorkspace,
+          selectedBusinessType: businessTypeId,
+          currentBusinessType: businessTypeId,
+          businessType: businessTypeId,
+          allowedBusinessTypes: [businessTypeId],
+          enabledModules,
+        },
+        workspace: {
+          onboardingCompleted: true,
+          selectedWorkspace,
+          selectedBusinessType: businessTypeId,
+          currentBusinessType: businessTypeId,
+          businessType: businessTypeId,
+          allowedBusinessTypes: [businessTypeId],
+          enabledModules,
+        },
+      })
 
       await Promise.all([
         setDoc(
@@ -1354,6 +1930,30 @@ export default function WorkspaceSelection() {
           console.warn('[Onboarding] onboarding_completed analytics failed', { error: analyticsError?.message || analyticsError })
         })
       console.log('[Onboarding] redirect target', { redirectTarget })
+      console.log('[Navigation Attempt]', {
+        source: 'WorkspaceSelection',
+        selectedWorkspace,
+        currentPath: '/workspace',
+        target: redirectTarget,
+      })
+      console.log('[Workspace Navigate]', {
+        source: 'WorkspaceSelection',
+        selectedWorkspace,
+        target: redirectTarget,
+        mode: workspaceExists ? 'saved_module_after_update' : 'saved_module_after_create',
+      })
+      console.log('[Workspace Debug] redirect target', {
+        mode: workspaceExists ? 'saved_module_after_update' : 'saved_module_after_create',
+        currentPath: '/workspace',
+        selectedWorkspace,
+        redirectTarget,
+      })
+      console.log('[Workspace Route Decision]', {
+        source: 'WorkspaceSelection',
+        mode: workspaceExists ? 'saved_module_after_update' : 'saved_module_after_create',
+        selectedWorkspace,
+        redirectTarget,
+      })
       navigate(redirectTarget)
     } catch (error) {
       console.error('[WorkspaceSelection] workspace save fail', {
@@ -1361,13 +1961,36 @@ export default function WorkspaceSelection() {
         code: error?.code,
         message: error?.message,
       })
+      console.log('[Workspace Debug] navigation blocked reason', {
+        reason: 'workspace_save_failed',
+        code: error?.code || '',
+        message: error?.message || '',
+      })
+      console.log('[Navigation Blocked]', {
+        source: 'WorkspaceSelection',
+        reason: 'workspace_save_failed',
+        code: error?.code || '',
+        message: error?.message || '',
+      })
+      console.log('[Workspace Navigate Failed]', {
+        source: 'WorkspaceSelection',
+        reason: 'workspace_save_failed',
+        code: error?.code || '',
+        message: error?.message || '',
+      })
       setCreateMessage(clientSafeMessage(error, 'Could not save business type right now.', { context: 'Business workspace selection' }))
     } finally {
       setBusinessTypeSaving('')
     }
   }, [
     accountData?.workspaceId,
+    accountData?.currentBusinessType,
+    allModulesAccess,
+    accountLoading,
+    authLoading,
     businessTypeSaving,
+    configuredBusinessType,
+    configuredSelectedWorkspace,
     emailVerified,
     hasCrmWorkspace,
     hasModuleLock,
@@ -1376,7 +1999,13 @@ export default function WorkspaceSelection() {
     lockedBusinessType,
     moduleLockMessage,
     navigate,
+    onboardingCompleted,
+    specialModuleAccess,
     user?.uid,
+    visibleWorkspaces,
+    workspaceFullyConfigured,
+    workspaceAllowedBusinessTypes,
+    workspaceData?.currentBusinessType,
     workspaceData,
     workspaceData?.ownerId,
     workspaceData?.workspaceId,
@@ -1501,6 +2130,7 @@ export default function WorkspaceSelection() {
         userId: uid,
         workspaceId,
         fullName: ownerName,
+        displayName: ownerName,
         name: ownerName,
         email,
         role: 'owner',
@@ -1646,6 +2276,7 @@ export default function WorkspaceSelection() {
         workspaceId,
         name: ownerName,
         fullName: ownerName,
+        displayName: ownerName,
         email,
         phone,
         role: 'owner',
@@ -1685,6 +2316,30 @@ export default function WorkspaceSelection() {
       if (workspaceExists) {
         console.log('[Workspace Setup] onboarding update payload', workspaceOnboardingUpdatePayload)
       }
+      console.log('[Workspace Write]', {
+        source: 'WorkspaceSelection.create',
+        userPath: `users/${uid}`,
+        workspacePath: `workspaces/${workspaceId}`,
+        workspaceExists,
+        user: {
+          onboardingCompleted: true,
+          selectedWorkspace,
+          selectedBusinessType: businessTypeId,
+          currentBusinessType: businessTypeId,
+          businessType: businessTypeId,
+          allowedBusinessTypes,
+          enabledModules,
+        },
+        workspace: {
+          onboardingCompleted: true,
+          selectedWorkspace,
+          selectedBusinessType: businessTypeId,
+          currentBusinessType: businessTypeId,
+          businessType: businessTypeId,
+          allowedBusinessTypes,
+          enabledModules,
+        },
+      })
 
       await setDoc(userRef, userPayload, { merge: true })
       console.log('[Workspace Create] firestore write success', {
@@ -1806,7 +2461,8 @@ export default function WorkspaceSelection() {
                       <span className="block truncate text-sm font-bold text-white">{authLoading ? 'Loading...' : profile.name}</span>
                       {profile.emailVerified ? <HiOutlineCheckCircle className="h-4 w-4 shrink-0 text-emerald-300" /> : null}
                     </span>
-                    <span className="mt-0.5 block truncate text-xs capitalize text-slate-300">{profile.role}</span>
+                    <span className="mt-0.5 block truncate text-xs text-slate-300">{profile.roleLabel}</span>
+                    <span className="mt-0.5 block truncate text-[11px] text-slate-400">{profile.email}</span>
                   </span>
                   <HiOutlineChevronDown className="h-4 w-4 shrink-0 text-slate-300" />
                 </span>
@@ -1818,6 +2474,7 @@ export default function WorkspaceSelection() {
                     <p className="truncate text-sm font-bold">{profile.name}</p>
                     {profile.emailVerified ? <HiOutlineCheckCircle className="h-4 w-4 shrink-0 text-emerald-600" /> : null}
                   </div>
+                  <p className="mt-0.5 truncate text-xs font-semibold text-slate-700">{profile.roleLabel}</p>
                   <p className="mt-0.5 truncate text-xs text-slate-500">{profile.email}</p>
                   <div className="mt-2 flex flex-wrap items-center gap-2">
                     <VerificationBadge verified={profile.emailVerified} />

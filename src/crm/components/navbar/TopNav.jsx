@@ -19,6 +19,7 @@ import GlobalSearch from '../system/GlobalSearch.jsx'
 import { packageNameForPlan } from '../../data/moduleAccess.js'
 import { resolveWorkspaceName } from '../../../lib/workspaceName.js'
 import { goToWorkspace } from '../../../lib/workspaceNavigation.js'
+import { resolveProfileDisplay } from '../../../lib/profileDisplay.js'
 
 function formatTrialDate(value) {
   const date = typeof value?.toDate === 'function' ? value.toDate() : value instanceof Date ? value : value ? new Date(value) : null
@@ -71,9 +72,24 @@ function TopNav({ onOpenSidebar, onSwitchProduct }) {
   const profileSummary = useMemo(
     () => {
       const planStatus = isTrialExpired ? 'expired' : userDoc?.planStatus || 'trial'
+      const roleValue = String(role || 'owner').trim() || 'owner'
+      const roleLabel = `${roleValue.charAt(0).toUpperCase()}${roleValue.slice(1)}`
+      const displayProfile = resolveProfileDisplay({
+        firebaseUser,
+        userDoc,
+        preferenceProfile: profile,
+      })
+      console.log('[Profile Display] auth email', displayProfile.authEmail)
+      console.log('[Profile Display] user doc email', displayProfile.userDocEmail)
+      console.log('[Profile Display] final display email', displayProfile.displayEmail)
+      console.log('[Profile Display] final display name', displayProfile.displayName)
+      console.log('[User Profile] fullName', displayProfile.fullName)
+      console.log('[User Profile] displayName', displayProfile.rawDisplayName || displayProfile.displayName)
+      console.log('[User Profile] profile source', displayProfile.profileSource)
       return {
-        displayName: userDoc?.fullName || userDoc?.name || profile.ownerName || firebaseUser?.displayName || 'Nexora User',
-        displayEmail: userDoc?.email || profile.email || firebaseUser?.email || 'No email',
+        displayName: displayProfile.displayName,
+        displayEmail: displayProfile.displayEmail,
+        roleLabel,
         emailVerified: Boolean(firebaseUser?.emailVerified || userDoc?.emailVerified),
         workspaceName: resolveWorkspaceName({
           accountData: userDoc,
@@ -95,6 +111,7 @@ function TopNav({ onOpenSidebar, onSwitchProduct }) {
       profile.companyName,
       profile.email,
       profile.ownerName,
+      role,
       trialDaysRemaining,
       trialEndsAt,
       userDoc,
@@ -193,7 +210,10 @@ function TopNav({ onOpenSidebar, onSwitchProduct }) {
                       {profileSummary.displayName}
                     </p>
                     <p className="truncate text-xs font-medium text-slate-500 dark:text-slate-300">
-                      {profileSummary.workspaceName}
+                      {profileSummary.roleLabel}
+                    </p>
+                    <p className="truncate text-[11px] font-medium text-slate-400 dark:text-slate-400">
+                      {profileSummary.displayEmail}
                     </p>
                   </div>
                 </button>
@@ -208,8 +228,9 @@ function TopNav({ onOpenSidebar, onSwitchProduct }) {
                       ) : (
                         <Avatar name={profileSummary.displayName} className="h-12 w-12 shrink-0 rounded-2xl" />
                       )}
-      <div className="min-w-0">
+                      <div className="min-w-0">
                         <p className="truncate text-sm font-semibold text-slate-950">{profileSummary.displayName}</p>
+                        <p className="truncate text-xs font-semibold capitalize text-slate-700">{profileSummary.roleLabel}</p>
                         <p className="truncate text-xs text-slate-500">{profileSummary.displayEmail}</p>
                       </div>
                     </div>

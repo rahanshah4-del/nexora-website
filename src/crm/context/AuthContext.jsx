@@ -4,13 +4,13 @@ import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
   signOut,
+  updateProfile,
 } from 'firebase/auth'
 import { doc, getDoc } from 'firebase/firestore'
 import { auth, getFirebaseEnvHint } from '../lib/firebase.js'
 import { db } from '../lib/firebase.js'
 import { createSignupUserProfile, ensureUserWorkspace } from '../../lib/accountProvisioning.js'
 import { sendCustomVerificationEmail } from '../../lib/emailVerificationService.js'
-import { sendWorkerEmail, welcomeEmail } from '../../lib/transactionalEmail.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 import { clientSafeMessage } from '../utils/messages.js'
 
@@ -43,7 +43,21 @@ export function AuthProvider({ children }) {
     setBusy(true)
     try {
       const credentials = await signInWithEmailAndPassword(auth, email, password)
-      await ensureUserWorkspace(credentials.user, { email, provider: 'password' })
+      ensureUserWorkspace(credentials.user, { email, provider: 'password' })
+        .then((workspaceResult) => {
+          console.log('[Auth Flow] workspace ensure success', {
+            source: 'crm-login',
+            uid: credentials.user?.uid || '',
+            workspaceId: workspaceResult?.workspaceId || '',
+          })
+        })
+        .catch((workspaceError) => {
+          console.warn('[Auth Flow] workspace ensure failed', {
+            source: 'crm-login',
+            code: workspaceError?.code || '',
+            message: workspaceError?.message || String(workspaceError || ''),
+          })
+        })
       return true
     } catch (e) {
       setError(clientSafeMessage(e, 'Login failed. Please check your email and password.'))
@@ -53,33 +67,40 @@ export function AuthProvider({ children }) {
     }
   }, [])
 
-  const signup = useCallback(async (email, password) => {
+  const signup = useCallback(async (email, password, options = {}) => {
     setError('')
     if (!auth) {
       setError(getFirebaseEnvHint() || 'Secure Cloud Sync is not available right now.')
       return false
     }
+    const fullName = String(options.fullName || '').trim()
+    if (!fullName) {
+      setError('Enter your full name before you continue.')
+      return false
+    }
     setBusy(true)
     try {
+      console.log('[Auth Flow] signup start', { email })
       const credentials = await createUserWithEmailAndPassword(auth, email, password)
+      await updateProfile(credentials.user, { displayName: fullName }).catch((profileError) => {
+        console.warn('[User Profile] displayName update failed', { code: profileError?.code || '', message: profileError?.message || '' })
+      })
+      console.log('[User Profile] fullName', fullName)
+      console.log('[User Profile] displayName', fullName)
+      console.log('[User Profile] profile source', 'signup.fullName')
       try {
-        await createSignupUserProfile(credentials.user)
+        await createSignupUserProfile(credentials.user, { fullName, email, provider: 'password' })
+        console.log('[Auth Flow] profile created', { uid: credentials.user.uid, email })
       } catch {
         setError('Account profile could not be created. Please try again.')
         return false
       }
-      await ensureUserWorkspace(credentials.user, { email, provider: 'password' })
       if (!credentials.user.emailVerified) {
         const emailResult = await sendCustomVerificationEmail(credentials.user)
         if (!emailResult.ok) {
           setError(emailResult.error || 'Could not send verification email right now.')
           return false
         }
-      }
-      const welcome = welcomeEmail({ name: credentials.user.displayName || 'there' })
-      const welcomeResult = await sendWorkerEmail({ to: credentials.user.email || email, ...welcome })
-      if (!welcomeResult.ok) {
-        setError(`Account created, but welcome email failed: ${welcomeResult.error}`)
       }
       return true
     } catch (e) {

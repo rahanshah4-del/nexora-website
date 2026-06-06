@@ -25,6 +25,8 @@ const UserContext = createContext(null)
 
 const defaultUserDoc = {
   name: 'Nexora User',
+  fullName: 'Nexora User',
+  displayName: 'Nexora User',
   email: 'user@nexora.solutions',
   plan: 'Free',
   role: 'owner', // owner | admin | staff
@@ -94,6 +96,11 @@ export function UserProvider({ children }) {
       (snap) => {
         if (!snap.exists()) {
           const currentProfile = profileRef.current
+          const authEmail = user.email || currentProfile.email || defaultUserDoc.email
+          const authDisplayName = user.displayName || authEmail?.split('@')?.[0] || defaultUserDoc.name
+          console.log('[User Profile] fullName', authDisplayName)
+          console.log('[User Profile] displayName', authDisplayName)
+          console.log('[User Profile] profile source', user.displayName ? 'firebase.displayName' : 'email_prefix')
           setDoc(
             ref,
             {
@@ -102,9 +109,10 @@ export function UserProvider({ children }) {
               ownerId: user.uid,
               userId: user.uid,
               workspaceId: user.uid,
-              name: currentProfile.ownerName || user.displayName || user.email?.split('@')?.[0] || defaultUserDoc.name,
-              fullName: currentProfile.ownerName || user.displayName || '',
-              email: currentProfile.email || user.email || defaultUserDoc.email,
+              name: authDisplayName,
+              fullName: authDisplayName,
+              displayName: authDisplayName,
+              email: authEmail,
               provider: user.providerData?.[0]?.providerId || 'password',
               role: 'owner',
               createdAt: serverTimestamp(),
@@ -161,17 +169,47 @@ export function UserProvider({ children }) {
   const allModulesAccess = workspaceDoc?.allModulesAccess === true || userDoc?.allModulesAccess === true
   const specialModuleAccess = allModulesAccess || workspaceDoc?.specialModuleAccess === true || userDoc?.specialModuleAccess === true
   const lockedBusinessType =
-    userDoc?.primaryBusinessType || workspaceDoc?.primaryBusinessType || userDoc?.selectedBusinessType || userDoc?.businessType || workspaceDoc?.selectedBusinessType || workspaceDoc?.businessType
-  const requestedBusinessType = normalizeBusinessType(userDoc?.selectedBusinessType || userDoc?.currentBusinessType || userDoc?.businessType)
+    workspaceDoc?.primaryBusinessType ||
+    workspaceDoc?.selectedBusinessType ||
+    workspaceDoc?.currentBusinessType ||
+    workspaceDoc?.businessType ||
+    userDoc?.primaryBusinessType ||
+    userDoc?.selectedBusinessType ||
+    userDoc?.currentBusinessType ||
+    userDoc?.businessType
+  const requestedBusinessType = normalizeBusinessType(
+    workspaceDoc?.selectedBusinessType ||
+      workspaceDoc?.currentBusinessType ||
+      workspaceDoc?.businessType ||
+      userDoc?.selectedBusinessType ||
+      userDoc?.currentBusinessType ||
+      userDoc?.businessType,
+  )
   const requestedBusinessAllowed = allModulesAccess || allowedBusinessTypes.includes(requestedBusinessType) || requestedBusinessType === normalizeBusinessType(lockedBusinessType)
+  const storedBusinessWorkspace = businessWorkspaceForSelection(selectedBusinessWorkspace)
+  const storedBusinessType = normalizeBusinessType(storedBusinessWorkspace?.type)
+  const storedBusinessAllowed = Boolean(selectedBusinessWorkspace) && (
+    allModulesAccess ||
+    allowedBusinessTypes.includes(storedBusinessType) ||
+    storedBusinessType === normalizeBusinessType(lockedBusinessType)
+  )
   const selectedBusiness = businessWorkspaceForSelection(
     developerOverride
       ? selectedBusinessWorkspace || userDoc?.selectedWorkspace || userDoc?.selectedBusinessType || userDoc?.businessType
+      : storedBusinessAllowed
+        ? selectedBusinessWorkspace
       : specialModuleAccess && requestedBusinessAllowed
         ? requestedBusinessType
-        : lockedBusinessType || userDoc?.selectedWorkspace,
+        : workspaceDoc?.selectedWorkspace || lockedBusinessType || userDoc?.selectedWorkspace,
   )
-  const businessType = normalizeBusinessType(selectedBusiness?.type || userDoc?.selectedBusinessType || userDoc?.businessType)
+  const businessType = normalizeBusinessType(
+    selectedBusiness?.type ||
+      lockedBusinessType ||
+      workspaceDoc?.selectedBusinessType ||
+      workspaceDoc?.businessType ||
+      userDoc?.selectedBusinessType ||
+      userDoc?.businessType,
+  )
   const businessWorkspaceId = selectedBusiness?.id || businessWorkspaceForType(businessType).id
   const staffId = userDoc?.staffId || user?.uid || null
   const isPlatformAdmin = isPlatformAdminDoc({ email: user?.email || '' })
@@ -194,6 +232,87 @@ export function UserProvider({ children }) {
     console.log('[Role Access] isOwnerAdmin', isAdmin)
     console.log('[Role Access] isStaff', isStaff)
   }, [isAdmin, isStaff, role])
+
+  useEffect(() => {
+    if (loading) return
+    console.log('[Workspace Read]', {
+      source: 'UserContext',
+      userPath: user?.uid ? `users/${user.uid}` : '',
+      workspacePath: workspaceId ? `workspaces/${workspaceId}` : '',
+      user: {
+        onboardingCompleted: userDoc?.onboardingCompleted === true,
+        selectedWorkspace: userDoc?.selectedWorkspace || '',
+        selectedBusinessType: userDoc?.selectedBusinessType || '',
+        currentBusinessType: userDoc?.currentBusinessType || '',
+        businessType: userDoc?.businessType || '',
+        allowedBusinessTypes: Array.isArray(userDoc?.allowedBusinessTypes) ? userDoc.allowedBusinessTypes : [],
+        enabledModules: Array.isArray(userDoc?.enabledModules) ? userDoc.enabledModules : [],
+      },
+      workspace: {
+        onboardingCompleted: workspaceDoc?.onboardingCompleted === true,
+        selectedWorkspace: workspaceDoc?.selectedWorkspace || '',
+        selectedBusinessType: workspaceDoc?.selectedBusinessType || '',
+        currentBusinessType: workspaceDoc?.currentBusinessType || '',
+        businessType: workspaceDoc?.businessType || '',
+        allowedBusinessTypes: Array.isArray(workspaceDoc?.allowedBusinessTypes) ? workspaceDoc.allowedBusinessTypes : [],
+        enabledModules: Array.isArray(workspaceDoc?.enabledModules) ? workspaceDoc.enabledModules : [],
+      },
+      resolved: {
+        businessType,
+        businessWorkspaceId,
+        allowedBusinessTypes,
+        lockedBusinessType: normalizeBusinessType(lockedBusinessType),
+      },
+    })
+    console.log('[Workspace Access]', {
+      source: 'UserContext',
+      selectedBusinessWorkspace,
+      storedBusinessType,
+      storedBusinessAllowed,
+      requestedBusinessType,
+      requestedBusinessAllowed,
+      allModulesAccess,
+      specialModuleAccess,
+      allowedBusinessTypes,
+    })
+    console.log('[Business Type]', {
+      source: 'UserContext',
+      businessType,
+      lockedBusinessType: normalizeBusinessType(lockedBusinessType),
+      requestedBusinessType,
+      storedBusinessType,
+    })
+    console.log('[Current Business Type]', {
+      source: 'UserContext',
+      workspaceCurrentBusinessType: workspaceDoc?.currentBusinessType || '',
+      userCurrentBusinessType: userDoc?.currentBusinessType || '',
+      resolvedBusinessType: businessType,
+    })
+    console.log('[Selected Workspace]', {
+      source: 'UserContext',
+      selectedBusinessWorkspace,
+      selectedBusinessWorkspaceId: businessWorkspaceId,
+      workspaceSelectedWorkspace: workspaceDoc?.selectedWorkspace || '',
+      userSelectedWorkspace: userDoc?.selectedWorkspace || '',
+    })
+  }, [
+    allowedBusinessTypes,
+    allModulesAccess,
+    businessType,
+    businessWorkspaceId,
+    loading,
+    lockedBusinessType,
+    requestedBusinessAllowed,
+    requestedBusinessType,
+    selectedBusinessWorkspace,
+    specialModuleAccess,
+    storedBusinessAllowed,
+    storedBusinessType,
+    user?.uid,
+    userDoc,
+    workspaceDoc,
+    workspaceId,
+  ])
 
   useEffect(() => {
     if (!ready || !db || !user?.uid || loading || !workspaceId) {
