@@ -17,12 +17,15 @@ export default function AdminLogin() {
   useEffect(() => {
     if (authState?.loading) return
     if (!authState?.user) return
+    console.log('[Admin Auth] route guard email:', authState.user.email)
     if (isBackendAdminEmail(authState.user.email)) {
+      console.log('[Admin Auth] allowed')
       navigate('/admin/control-centre', { replace: true })
       return
     }
+    console.log('[Admin Auth] blocked')
     signOut(auth).catch(() => {})
-    setError('Access denied. Backend admin account required.')
+    setError('Only backend admin can access this panel.')
   }, [authState?.loading, authState?.user, navigate])
 
   async function handleSubmit(event) {
@@ -37,11 +40,14 @@ export default function AdminLogin() {
     setLoading(true)
     try {
       const credentials = await signInWithEmailAndPassword(auth, email.trim(), password)
+      console.log('[Admin Auth] login email:', credentials.user.email)
       if (!isBackendAdminEmail(credentials.user.email)) {
+        console.log('[Admin Auth] blocked')
         await signOut(auth)
-        setError('Access denied. Backend admin account required.')
+        setError('Only backend admin can access this panel.')
         return
       }
+      console.log('[Admin Auth] allowed')
       navigate('/admin/control-centre', { replace: true })
     } catch (err) {
       setError(clientSafeMessage(err, 'Unable to sign in to backend.', { context: 'Backend admin login' }))

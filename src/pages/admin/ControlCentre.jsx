@@ -562,6 +562,7 @@ export default function ControlCentre() {
   const [userFilter, setUserFilter] = useState('all')
   const [settingsDraft, setSettingsDraft] = useState(defaultPlatformSettings)
   const backendAdminAllowed = isBackendAdminEmail(user?.email)
+  console.log('[Admin Auth] ControlCentre admin check:', user?.email, backendAdminAllowed ? 'allowed' : 'blocked')
 
   const liveUsers = useMemo(() => mergePresence(data.users, data.clientSessions, data.userPresence), [data.users, data.clientSessions, data.userPresence])
   const onlineUsers = useMemo(() => liveUsers.filter(isOnline), [liveUsers])

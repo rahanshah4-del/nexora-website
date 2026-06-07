@@ -84,6 +84,11 @@ export function UserProvider({ children }) {
     if (provisionedUserRef.current !== user.uid) {
       provisionedUserRef.current = user.uid
       const currentProfile = profileRef.current
+      console.log('[Auth Isolation] profile source', {
+        uid: user.uid,
+        email: user.email || '',
+        fullName: currentProfile.ownerName || user.displayName || '',
+      })
       ensureUserWorkspace(user, {
         fullName: currentProfile.ownerName,
         email: currentProfile.email || user.email || '',
@@ -331,6 +336,12 @@ export function UserProvider({ children }) {
         setWorkspaceDoc(data)
         setWorkspaceOwnerId(data ? String(data?.ownerId || '') : '')
         setWorkspaceAccessDenied(false)
+        console.log('[Auth Isolation] workspace validated', {
+          uid: user?.uid || '',
+          workspaceId,
+          workspaceOwnerId: data?.ownerId || '',
+          ownerMatchesUser: !data || data.ownerId === user?.uid || data.ownerId === workspaceId,
+        })
         if (data) ensureWorkspaceAccessFields(workspaceId, data.ownerId || user.uid).catch(() => {})
       },
       (error) => {

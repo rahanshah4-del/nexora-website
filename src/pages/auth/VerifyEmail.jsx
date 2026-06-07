@@ -11,6 +11,7 @@ import NexoraLogo from '../../components/brand/NexoraLogo.jsx'
 import Toast from '../../crm/components/ui/Toast.jsx'
 import { getPostVerificationRoute } from '../../lib/authRouteState.js'
 import { queueWelcomeEmailAfterVerification } from '../../lib/welcomeEmailDelivery.js'
+import { clearAllUserCache } from '../../lib/authIsolation.js'
 
 function logFullOtpError(error) {
   console.error('[OTP email full error]', {
@@ -114,6 +115,7 @@ export default function VerifyEmail() {
         })
         console.log('[Auth Flow] route decision', { source: 'verify-auto-check', route })
         if (!cancelled && route === '/workspace') {
+          console.log('[OTP Flow] already verified redirect', { source: 'verify-auto-check', route })
           navigate(route, { replace: true })
         }
       } catch (err) {
@@ -131,7 +133,6 @@ export default function VerifyEmail() {
   const handleRefreshStatus = async () => {
     const currentUser = auth?.currentUser || user
     if (!currentUser) return
-    const redirectStartedAt = timestampMs()
     setChecking(true)
     setMessage('')
     setError('')
@@ -139,28 +140,28 @@ export default function VerifyEmail() {
       const customVerified = await getCustomEmailVerificationStatus(currentUser)
       const verified = currentUser.emailVerified || customVerified
       if (verified) {
-        const workspaceResult = await ensureUserWorkspace(currentUser, { provider: 'password' })
-        console.log('[Auth Flow] workspace ensure success', {
-          source: 'refresh-status',
-          uid: currentUser.uid,
-          workspaceId: workspaceResult?.workspaceId || '',
-        })
-        console.log('[Verify] workspace bootstrap result', workspaceResult)
+        console.log('[OTP Flow] already verified redirect', { uid: currentUser.uid, source: 'refresh-status' })
+        const route = getPostVerificationRoute({ ...currentUser, emailVerifiedCustom: customVerified })
+        console.log('[OTP Flow] route to workspace', { source: 'refresh-status', route })
+        navigate(route, { replace: true })
+
+        // Background tasks — do not block redirect
+        console.log('[OTP Flow] background tasks started', { source: 'refresh-status' })
+        ensureUserWorkspace(currentUser, { provider: 'password' })
+          .then((workspaceResult) => {
+            console.log('[Auth Flow] workspace ensure success', {
+              source: 'refresh-status',
+              uid: currentUser.uid,
+              workspaceId: workspaceResult?.workspaceId || '',
+            })
+          })
+          .catch((bgError) => {
+            console.log('[OTP Flow] background task failed', { source: 'refresh-status', error: bgError?.message || bgError })
+          })
         trackAnalyticsEvent('signup_completed', { userId: currentUser.uid, email: currentUser.email || '', page: '/verify-email', status: 'email_verified_custom' })
           .catch((analyticsError) => {
             console.warn('[Verify] signup_completed analytics failed', { error: analyticsError?.message || analyticsError })
           })
-        const route = getPostVerificationRoute({ ...currentUser, emailVerifiedCustom: customVerified })
-        console.log('[Auth Flow] route decision', { source: 'refresh-status', route })
-        console.log('[OTP Verify] redirect timing', {
-          source: 'refresh-status',
-          elapsedMs: Math.round(timestampMs() - redirectStartedAt),
-          workspaceId: workspaceResult?.workspaceId || '',
-          onboardingCompleted: workspaceResult?.onboardingCompleted === true,
-          route,
-        })
-        console.log('[Verify] redirect', route)
-        navigate(route, { replace: true })
         return
       }
       setMessage('Not verified yet. Enter the 6 digit code from your email, or send a new code.')
@@ -169,6 +170,7 @@ export default function VerifyEmail() {
       setError(clientSafeMessage(err, 'Could not refresh verification status. Please try again.', { context: 'Refresh email verification' }))
     } finally {
       setChecking(false)
+      console.log('[OTP Flow] loading cleared', { source: 'refresh-status' })
     }
   }
 
@@ -202,43 +204,44 @@ export default function VerifyEmail() {
   const handleVerifyOtp = async () => {
     const currentUser = auth?.currentUser || user
     if (!currentUser?.email) return
-    const redirectStartedAt = timestampMs()
     setChecking(true)
     setMessage('')
     setError('')
     try {
-      console.log('[Auth Flow] verify start', { uid: currentUser.uid, email: currentUser.email || '' })
+      console.log('[OTP Flow] verify click', { uid: currentUser.uid, email: currentUser.email || '' })
       const result = await verifyCustomEmailOtp(currentUser, otp)
       if (!result.ok) {
         setError(result.error || 'Invalid verification code.')
         showToast({ tone: 'error', message: result.error || 'Invalid verification code.' })
         return
       }
-      console.log('[Auth Flow] verify success', { uid: currentUser.uid, email: currentUser.email || '' })
-      const workspaceResult = await ensureUserWorkspace(currentUser, { provider: 'password' })
-      console.log('[Auth Flow] workspace ensure success', {
-        source: 'otp-submit',
-        uid: currentUser.uid,
-        workspaceId: workspaceResult?.workspaceId || '',
-      })
-      console.log('[Verify] workspace bootstrap result', workspaceResult)
+      console.log('[OTP Flow] otp validated', { uid: currentUser.uid })
+      console.log('[OTP Flow] verification flag updated')
+
+      showToast({ tone: 'success', message: 'Email verified successfully.' })
+
+      const route = getPostVerificationRoute({ ...currentUser, emailVerifiedCustom: true })
+      console.log('[OTP Flow] route to workspace', { source: 'otp-submit', route })
+      navigate(route, { replace: true })
+
+      // Background tasks — do not block redirect
+      console.log('[OTP Flow] background tasks started', { source: 'otp-submit' })
+      ensureUserWorkspace(currentUser, { provider: 'password' })
+        .then((workspaceResult) => {
+          console.log('[Auth Flow] workspace ensure success', {
+            source: 'otp-submit',
+            uid: currentUser.uid,
+            workspaceId: workspaceResult?.workspaceId || '',
+          })
+        })
+        .catch((bgError) => {
+          console.log('[OTP Flow] background task failed', { source: 'otp-submit', error: bgError?.message || bgError })
+        })
       trackAnalyticsEvent('signup_completed', { userId: currentUser.uid, email: currentUser.email || '', page: '/verify-email', status: 'email_verified_custom' })
         .catch((analyticsError) => {
           console.warn('[Verify] signup_completed analytics failed', { error: analyticsError?.message || analyticsError })
-      })
-      showToast({ tone: 'success', message: 'Email verified successfully.' })
-      const route = getPostVerificationRoute({ ...currentUser, emailVerifiedCustom: true })
-      console.log('[Auth Flow] route decision', { source: 'otp-submit', route })
-      console.log('[OTP Verify] redirect timing', {
-        source: 'otp-submit',
-        elapsedMs: Math.round(timestampMs() - redirectStartedAt),
-        workspaceId: workspaceResult?.workspaceId || '',
-        onboardingCompleted: workspaceResult?.onboardingCompleted === true,
-        route,
-      })
-      console.log('[Verify] redirect', route)
+        })
       queueWelcomeEmail(currentUser, 'otp-submit')
-      navigate(route, { replace: true })
     } catch (err) {
       logFullOtpError(err)
       const nextError = clientSafeMessage(err, 'Could not verify code right now.', { context: 'Verify custom email OTP' })
@@ -246,16 +249,30 @@ export default function VerifyEmail() {
       showToast({ tone: 'error', message: nextError })
     } finally {
       setChecking(false)
+      console.log('[OTP Flow] loading cleared', { source: 'otp-submit' })
     }
   }
 
   const handleLeaveVerification = async () => {
     const currentUser = auth?.currentUser || user
+    const currentUid = currentUser?.uid || ''
+    console.log('[Auth Isolation] logout uid', currentUid)
     console.log('[VerifyEmail] switch account')
     setLeaving(true)
     setError('')
     try {
+      // Clear all user-scoped caches BEFORE signOut
+      clearAllUserCache(currentUid)
+      clearLocalAuthWorkspaceState(currentUid)
+
       if (auth) await signOut(auth)
+
+      // Verify auth state is null after signOut
+      if (auth?.currentUser) {
+        console.warn('[Auth Isolation] auth.currentUser still set after signOut', { uid: auth.currentUser.uid })
+        await signOut(auth)
+      }
+      console.log('[Auth Isolation] auth.currentUser after signOut', auth?.currentUser)
       console.log('[VerifyEmail] signed out')
     } catch (err) {
       logFullOtpError(err)
@@ -263,8 +280,7 @@ export default function VerifyEmail() {
       setLeaving(false)
       return
     }
-    clearLocalAuthWorkspaceState(currentUser?.uid)
-    trackAnalyticsEvent('logout', { userId: currentUser?.uid || '', email: currentUser?.email || '', page: '/verify-email' })
+    trackAnalyticsEvent('logout', { userId: currentUid, email: currentUser?.email || '', page: '/verify-email' })
       .catch((analyticsError) => {
         console.warn('[VerifyEmail] logout analytics failed', { error: analyticsError?.message || analyticsError })
       })
@@ -272,36 +288,27 @@ export default function VerifyEmail() {
     navigate('/login', { replace: true })
   }
 
+  console.log('[VerifyEmail UI] compact mode', { uid: userId, email: userEmail })
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-10 text-slate-950">
       {toast ? <Toast tone={toast.tone} message={toast.message} onClose={() => setToast(null)} /> : null}
-      <section className="mx-auto flex min-h-[calc(100vh-5rem)] max-w-xl items-center">
-        <div className="w-full rounded-[2rem] border border-slate-200 bg-white p-7 shadow-[0_28px_85px_-44px_rgba(15,23,42,0.38)] sm:p-9">
+      <section className="mx-auto flex min-h-[calc(100vh-5rem)] max-w-sm items-center">
+        <div className="w-full rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_12px_40px_-20px_rgba(15,23,42,0.25)] sm:p-7">
           <NexoraLogo compact />
-          <div className="mt-8">
-            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-sky-600">Check your inbox</p>
-            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950">Verify your account</h1>
-            <p className="mt-3 text-sm leading-6 text-slate-600">
-              Enter the 6 digit verification code sent to <span className="font-semibold text-slate-900">{user?.email}</span>.
+          <div className="mt-5">
+            <h1 className="text-xl font-bold tracking-tight text-slate-950">Verify your email</h1>
+            <p className="mt-2 text-sm leading-5 text-slate-500">
+              Enter the 6-digit code sent to <span className="font-semibold text-slate-900">{user?.email}</span>.
             </p>
-            <p className="mt-2 text-sm leading-6 text-slate-500">
-              If you don&apos;t see the verification email, please check your Spam, Junk, Promotions, or Updates folder.
-            </p>
-            <p className="mt-2 text-sm leading-6 text-slate-500">
-              Email na mile to Spam/Junk folder bhi check karein.
+            <p className="mt-1.5 text-xs leading-5 text-slate-400">
+              Check your Spam or Junk folder if you don&apos;t see it.
             </p>
           </div>
 
-          <div className="mt-6 grid gap-3 text-sm">
-            <div className="rounded-2xl bg-slate-50 px-4 py-3 font-semibold text-slate-700">1. Check your inbox</div>
-            <div className="rounded-2xl bg-slate-50 px-4 py-3 font-semibold text-slate-700">2. Copy the 6 digit code</div>
-            <div className="rounded-2xl bg-slate-50 px-4 py-3 font-semibold text-slate-700">3. Verify account</div>
-          </div>
+          {message ? <div className="mt-4 rounded-xl border border-sky-200 bg-sky-50 px-4 py-2.5 text-sm font-medium text-sky-700">{message}</div> : null}
+          {error ? <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-medium text-rose-700">{error}</div> : null}
 
-          {message ? <div className="mt-5 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm font-medium text-sky-700">{message}</div> : null}
-          {error ? <div className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">{error}</div> : null}
-
-          <div className="mt-6">
+          <div className="mt-5">
             <label className="text-sm font-semibold text-slate-700" htmlFor="verification-otp">Verification code</label>
             <input
               id="verification-otp"
@@ -309,17 +316,17 @@ export default function VerifyEmail() {
               maxLength={6}
               value={otp}
               onChange={(event) => setOtp(event.target.value.replace(/[^\d]/g, '').slice(0, 6))}
-              className="mt-2 h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-center text-lg font-black tracking-[0.35em] text-slate-950 outline-none focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
+              className="mt-1.5 h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-center text-lg font-black tracking-[0.35em] text-slate-950 outline-none focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
               placeholder="000000"
             />
           </div>
 
-          <div className="mt-6 grid gap-3 sm:grid-cols-2">
+          <div className="mt-4 grid gap-2.5 sm:grid-cols-2">
             <button
               type="button"
               onClick={handleVerifyOtp}
               disabled={checking || otp.length !== 6}
-              className="flex h-12 items-center justify-center rounded-2xl bg-slate-950 px-4 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex h-11 items-center justify-center rounded-xl bg-slate-950 px-4 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {checking ? 'Verifying...' : 'Verify Code'}
             </button>
@@ -327,17 +334,17 @@ export default function VerifyEmail() {
               type="button"
               onClick={handleResend}
               disabled={sending}
-              className="flex h-12 items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {sending ? 'Sending...' : 'Resend Verification Email'}
+              {sending ? 'Sending...' : 'Resend Code'}
             </button>
           </div>
 
-          <button type="button" onClick={handleRefreshStatus} disabled={checking} className="mt-4 text-sm font-semibold text-sky-700 transition hover:text-sky-900">
-            {checking ? 'Checking...' : 'Refresh verification status'}
+          <button type="button" onClick={handleRefreshStatus} disabled={checking} className="mt-3 text-sm font-semibold text-sky-700 transition hover:text-sky-900">
+            {checking ? 'Checking...' : 'Refresh status'}
           </button>
 
-          <div className="mt-5 flex flex-wrap gap-4">
+          <div className="mt-4 flex flex-wrap gap-3">
             <button type="button" onClick={handleLeaveVerification} disabled={leaving} className="text-sm font-semibold text-slate-500 transition hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60">
               {leaving ? 'Signing out...' : 'Sign in with another account'}
             </button>

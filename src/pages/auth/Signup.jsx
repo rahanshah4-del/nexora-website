@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { AiOutlineGoogle } from 'react-icons/ai'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, updateProfile } from 'firebase/auth'
+import { doc, getDoc } from 'firebase/firestore'
 import { auth, db } from '../../lib/firebase.js'
 import { createSignupUserProfile, ensureUserWorkspace } from '../../lib/accountProvisioning.js'
 import useAuth from '../../context/useAuth.js'
@@ -10,6 +11,18 @@ import { motion } from 'framer-motion'
 import { clientSafeMessage } from '../../lib/errorHandler.js'
 import { sendCustomVerificationEmail } from '../../lib/emailVerificationService.js'
 import { trackAnalyticsEvent } from '../../lib/analyticsTracking.js'
+
+function normalizePhone(raw) {
+  if (!raw) return ''
+  let cleaned = raw.replace(/[\s\-\(\)\.]/g, '')
+  if (cleaned.startsWith('00')) {
+    cleaned = '+' + cleaned.slice(2)
+  }
+  if (!cleaned.startsWith('+') && !cleaned.startsWith('0')) {
+    cleaned = '+' + cleaned
+  }
+  return cleaned
+}
 
 export default function Signup() {
   const { user, loading } = useAuth()
@@ -50,6 +63,15 @@ export default function Signup() {
       return
     }
 
+    const trimmedPhone = phone.trim()
+    if (!trimmedPhone) {
+      setError('Enter your phone number before you continue.')
+      return
+    }
+
+    const normalizedPhone = normalizePhone(trimmedPhone)
+    console.log('[Phone Check] normalized phone', { raw: trimmedPhone, normalized: normalizedPhone })
+
     if (password !== confirmPassword) {
       setError('Passwords must match before you continue.')
       return
@@ -58,8 +80,39 @@ export default function Signup() {
     setSubmitting(true)
     try {
       const signupEmail = email.trim().toLowerCase()
+
+      // Check duplicate phone before creating account
+      if (db) {
+        console.log('[Phone Check] normalized phone', { normalizedPhone })
+        try {
+          const phoneRegistryRef = doc(db, 'phoneRegistry', normalizedPhone)
+          const phoneRegistrySnap = await getDoc(phoneRegistryRef)
+          console.log('[Phone Check] query result', { exists: phoneRegistrySnap.exists() })
+          if (phoneRegistrySnap.exists()) {
+            console.log('[Phone Check] duplicate found', { normalizedPhone, userId: phoneRegistrySnap.data()?.userId || '' })
+            setError('This phone number is already registered.')
+            setSubmitting(false)
+            return
+          }
+          console.log('[Phone Check] duplicate found', false)
+        } catch (phoneCheckError) {
+          console.error('[Phone Check] firestore error')
+          console.error(phoneCheckError?.code)
+          console.error(phoneCheckError?.message)
+          console.error('[Phone Check] firestore error full', {
+            code: phoneCheckError?.code || '',
+            message: phoneCheckError?.message || '',
+            name: phoneCheckError?.name || '',
+            stack: phoneCheckError?.stack || '',
+          })
+          setError('Unable to validate phone number. Contact support.')
+          setSubmitting(false)
+          return
+        }
+      }
+
       console.log('[Auth Flow] signup start', { email: signupEmail })
-      await trackAnalyticsEvent('signup_started', { email: signupEmail, phone: phone.trim(), page: '/signup' })
+      await trackAnalyticsEvent('signup_started', { email: signupEmail, phone: trimmedPhone, page: '/signup' })
       const credentials = await createUserWithEmailAndPassword(auth, email.trim(), password)
       const userRecord = credentials.user
       await updateProfile(userRecord, { displayName: trimmedFullName }).catch((profileError) => {
@@ -73,7 +126,8 @@ export default function Signup() {
           fullName: trimmedFullName,
           company: company.trim(),
           email: signupEmail,
-          phone: phone.trim(),
+          phone: trimmedPhone,
+          phoneNormalized: normalizedPhone,
           provider: 'password',
         })
         console.log('[Auth Flow] profile created', { uid: userRecord.uid, email: signupEmail })
@@ -120,6 +174,41 @@ export default function Signup() {
       return
     }
 
+    const trimmedPhone = phone.trim()
+    if (!trimmedPhone) {
+      setError('Enter your phone number before you continue.')
+      return
+    }
+
+    const normalizedPhone = normalizePhone(trimmedPhone)
+    console.log('[Phone Check] normalized phone', { raw: trimmedPhone, normalized: normalizedPhone })
+
+    // Check duplicate phone before Google signup
+    console.log('[Phone Check] normalized phone', { normalizedPhone })
+    try {
+      const phoneRegistryRef = doc(db, 'phoneRegistry', normalizedPhone)
+      const phoneRegistrySnap = await getDoc(phoneRegistryRef)
+      console.log('[Phone Check] query result', { exists: phoneRegistrySnap.exists() })
+      if (phoneRegistrySnap.exists()) {
+        console.log('[Phone Check] duplicate found', { normalizedPhone, userId: phoneRegistrySnap.data()?.userId || '' })
+        setError('This phone number is already registered.')
+        return
+      }
+      console.log('[Phone Check] duplicate found', false)
+    } catch (phoneCheckError) {
+      console.error('[Phone Check] firestore error')
+      console.error(phoneCheckError?.code)
+      console.error(phoneCheckError?.message)
+      console.error('[Phone Check] firestore error full', {
+        code: phoneCheckError?.code || '',
+        message: phoneCheckError?.message || '',
+        name: phoneCheckError?.name || '',
+        stack: phoneCheckError?.stack || '',
+      })
+      setError('Unable to validate phone number. Contact support.')
+      return
+    }
+
     setGoogleLoading(true)
     try {
       const provider = new GoogleAuthProvider()
@@ -138,7 +227,8 @@ export default function Signup() {
           fullName: trimmedFullName,
           company: company.trim(),
           email: signedUser.email || email.trim().toLowerCase(),
-          phone: phone.trim(),
+          phone: trimmedPhone,
+          phoneNormalized: normalizedPhone,
           provider: 'google',
         })
       }
@@ -306,6 +396,7 @@ export default function Signup() {
                       <span>Phone number</span>
                       <input
                         type="tel"
+                        required
                         value={phone}
                         onChange={(event) => setPhone(event.target.value)}
                         className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100"

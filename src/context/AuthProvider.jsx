@@ -62,6 +62,14 @@ export default function AuthProvider({ children }) {
     let cancelled = false
     const unsubscribe = onAuthStateChanged(auth, (nextUser) => {
       if (cancelled) return
+      console.log('[Auth Isolation] auth state changed', {
+        uid: nextUser?.uid || 'none',
+        email: nextUser?.email || '',
+        emailVerified: nextUser?.emailVerified === true,
+      })
+      if (nextUser) {
+        console.log('[Auth Isolation] login uid', nextUser.uid)
+      }
       setUser(nextUser)
       if (!nextUser) {
         setRole('user')

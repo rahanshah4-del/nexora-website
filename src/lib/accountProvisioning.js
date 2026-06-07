@@ -20,6 +20,18 @@ function removeUndefinedFields(payload) {
   return Object.fromEntries(Object.entries(payload).filter(([, value]) => value !== undefined && value !== null))
 }
 
+function normalizePhone(raw) {
+  if (!raw) return ''
+  let cleaned = raw.replace(/[\s\-\(\)\.]/g, '')
+  if (cleaned.startsWith('00')) {
+    cleaned = '+' + cleaned.slice(2)
+  }
+  if (!cleaned.startsWith('+') && !cleaned.startsWith('0')) {
+    cleaned = '+' + cleaned
+  }
+  return cleaned
+}
+
 function userDisplayName(user, fallback = '') {
   return cleanString(fallback) || cleanString(user?.displayName) || cleanString(user?.email?.split('@')?.[0]) || 'Nexora User'
 }
@@ -47,6 +59,8 @@ export async function createSignupUserProfile(user, overrides = {}) {
   const now = serverTimestamp()
   const fullName = userDisplayName(user, overrides.fullName || overrides.name)
   const email = (cleanString(overrides.email) || cleanString(user.email)).toLowerCase()
+  const phoneRaw = cleanString(overrides.phone)
+  const phoneNormalized = cleanString(overrides.phoneNormalized) || normalizePhone(phoneRaw)
   console.log('[User Profile] fullName', fullName)
   console.log('[User Profile] displayName', fullName)
   console.log('[User Profile] profile source', cleanString(overrides.fullName) ? 'signup.fullName' : cleanString(user?.displayName) ? 'firebase.displayName' : 'email_prefix')
@@ -57,7 +71,8 @@ export async function createSignupUserProfile(user, overrides = {}) {
     displayName: fullName,
     name: fullName,
     company: cleanString(overrides.company),
-    phone: cleanString(overrides.phone),
+    phone: phoneRaw,
+    phoneNormalized,
     provider: cleanString(overrides.provider) || user?.providerData?.[0]?.providerId || 'password',
     createdBy: user.uid,
     createdAt: now,
@@ -97,6 +112,26 @@ export async function createSignupUserProfile(user, overrides = {}) {
     if (!snap.exists()) {
       throw new Error('Signup profile was not created')
     }
+
+    // Register phone number to prevent duplicates — best-effort, do not block signup
+    if (phoneNormalized) {
+      try {
+        await setDoc(doc(db, 'phoneRegistry', phoneNormalized), {
+          userId: user.uid,
+          phoneNormalized,
+          createdAt: now,
+        })
+        console.log('[Phone Registry] created', { phoneNormalized, userId: user.uid })
+      } catch (registryError) {
+        console.warn('[Phone Registry] write failed (non-blocking)', {
+          phoneNormalized,
+          userId: user.uid,
+          code: registryError?.code || '',
+          message: registryError?.message || '',
+        })
+      }
+    }
+
     console.log('[Signup] user profile created')
     console.log('[Signup Provisioning] success', { path: `users/${user.uid}`, exists: snap.exists() })
     return { id: snap.id, ...snap.data() }
@@ -119,6 +154,8 @@ export async function ensureUserWorkspace(user, overrides = {}) {
   const now = serverTimestamp()
   const trialEndsAt = addDays(new Date(), BUSINESS_TRIAL_DAYS)
   const email = (cleanString(overrides.email) || cleanString(user.email)).toLowerCase()
+  const phoneRaw = cleanString(overrides.phone)
+  const phoneNormalized = cleanString(overrides.phoneNormalized) || normalizePhone(phoneRaw)
   const fullName = userDisplayName(user, overrides.fullName || overrides.name)
   const explicitName = explicitProfileName(user, overrides)
   console.log('[User Profile] fullName', explicitName || fullName)
@@ -171,7 +208,8 @@ export async function ensureUserWorkspace(user, overrides = {}) {
       name: fullName,
       company,
       email,
-      phone: cleanString(overrides.phone),
+      phone: phoneRaw,
+      phoneNormalized,
       ...(hasBusinessSelection
         ? {
             businessType,
@@ -205,6 +243,23 @@ export async function ensureUserWorkspace(user, overrides = {}) {
       updatedAt: now,
       lastLoginAt: now,
     })
+      if (phoneNormalized) {
+        try {
+          await setDoc(doc(db, 'phoneRegistry', phoneNormalized), {
+            userId: uid,
+            phoneNormalized,
+            createdAt: now,
+          })
+          console.log('[Phone Registry] created', { phoneNormalized, userId: uid })
+        } catch (registryError) {
+          console.warn('[Phone Registry] write failed (non-blocking)', {
+            phoneNormalized,
+            userId: uid,
+            code: registryError?.code || '',
+            message: registryError?.message || '',
+          })
+        }
+      }
   } else {
     const update = {
       uid,
@@ -224,13 +279,35 @@ export async function ensureUserWorkspace(user, overrides = {}) {
       update.name = explicitName
     }
     if (company) update.company = company
-    if (cleanString(overrides.phone)) update.phone = cleanString(overrides.phone)
+    if (phoneRaw) update.phone = phoneRaw
+    if (phoneNormalized) update.phoneNormalized = phoneNormalized
     if (cleanString(overrides.businessType)) {
       update.businessType = businessType
       update.selectedFeatures = selectedFeatures
       update.enabledModules = enabledModules
     }
     await setDoc(userRef, update, { merge: true })
+    if (phoneNormalized) {
+      try {
+        const phoneRegRef = doc(db, 'phoneRegistry', phoneNormalized)
+        const phoneRegSnap = await getDoc(phoneRegRef)
+        if (!phoneRegSnap.exists()) {
+          await setDoc(phoneRegRef, {
+            userId: uid,
+            phoneNormalized,
+            createdAt: now,
+          })
+          console.log('[Phone Registry] created (existing user)', { phoneNormalized, userId: uid })
+        }
+      } catch (registryError) {
+        console.warn('[Phone Registry] write failed (non-blocking)', {
+          phoneNormalized,
+          userId: uid,
+          code: registryError?.code || '',
+          message: registryError?.message || '',
+        })
+      }
+    }
   }
 
   if (!canCreateWorkspace) {

@@ -29,6 +29,7 @@ function amountLabel(item = {}) {
 export default function UpgradeRequests() {
   const { user } = useAuth()
   const backendAdminAllowed = isBackendAdminEmail(user?.email)
+  console.log('[Admin Auth] UpgradeRequests admin check:', user?.email, backendAdminAllowed ? 'allowed' : 'blocked')
   const firebaseEnabled = Boolean(db)
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(() => firebaseEnabled)

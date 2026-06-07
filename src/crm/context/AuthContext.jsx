@@ -13,6 +13,7 @@ import { createSignupUserProfile, ensureUserWorkspace } from '../../lib/accountP
 import { sendCustomVerificationEmail } from '../../lib/emailVerificationService.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 import { clientSafeMessage } from '../utils/messages.js'
+import { clearAllUserCache } from '../../lib/authIsolation.js'
 
 const AuthContext = createContext(null)
 
@@ -28,7 +29,16 @@ export function AuthProvider({ children }) {
       return
     }
     const unsub = onAuthStateChanged(auth, (u) => {
-      setUser(u ?? null)
+      const nextUser = u ?? null
+      console.log('[Auth Isolation] auth state changed', {
+        uid: nextUser?.uid || 'none',
+        email: nextUser?.email || '',
+        emailVerified: nextUser?.emailVerified === true,
+      })
+      if (nextUser) {
+        console.log('[Auth Isolation] login uid', nextUser.uid)
+      }
+      setUser(nextUser)
       setReady(true)
     })
     return () => unsub()
@@ -115,6 +125,10 @@ export function AuthProvider({ children }) {
     setError('')
     if (!auth) return true
     setBusy(true)
+    const currentUid = user?.uid || ''
+
+    console.log('[Auth Isolation] logout uid', currentUid)
+
     try {
       if (user?.uid && db) {
         try {
@@ -138,7 +152,22 @@ export function AuthProvider({ children }) {
           // Logout should never be blocked by audit logging.
         }
       }
+
+      // Clear all user-scoped caches BEFORE signOut
+      clearAllUserCache(currentUid)
+
+      // Sign out from Firebase
       await signOut(auth)
+
+      // Verify auth state is null after signOut
+      const currentUser = auth.currentUser
+      if (currentUser) {
+        console.warn('[Auth Isolation] auth.currentUser still set after signOut', { uid: currentUser.uid })
+        // Force a second signOut if needed
+        await signOut(auth)
+      }
+      console.log('[Auth Isolation] auth.currentUser after signOut', auth.currentUser)
+
       // `onAuthStateChanged` will set `user` to null.
       return true
     } catch (e) {

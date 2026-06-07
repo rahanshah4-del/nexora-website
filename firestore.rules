@@ -34,7 +34,7 @@ service cloud.firestore {
 
     function isBackendAdmin() {
       return signedIn()
-        && request.auth.token.email == 'rahanshah2@gmail.com';
+        && request.auth.token.email == 'admin@nexora.com';
     }
 
     function isBackendAdminEmail() {
@@ -941,6 +941,15 @@ service cloud.firestore {
             && request.resource.data.ownerId == resource.data.ownerId);
         allow delete: if isAdmin();
       }
+    }
+
+    match /phoneRegistry/{phoneNormalized} {
+      allow read: if true;
+      allow create: if signedIn()
+        && request.resource.data.phoneNormalized == phoneNormalized
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.createdAt is timestamp;
+      allow update, delete: if isAdmin();
     }
 
     match /workspaces/{workspaceId} {
