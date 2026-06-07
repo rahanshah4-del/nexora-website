@@ -6,11 +6,48 @@ import NotificationItem from './NotificationItem.jsx'
 
 export default function NotificationHistory({ enabled, api }) {
   const [tab, setTab] = useState('all')
+  const [selected, setSelected] = useState(() => new Set())
 
   const filtered = useMemo(() => {
     if (tab === 'unread') return api.items.filter((n) => !n.read)
     return api.items
   }, [api.items, tab])
+
+  const readCount = useMemo(() => api.items.filter((n) => n.read).length, [api.items])
+  const selectedCount = useMemo(
+    () => filtered.filter((n) => selected.has(n.id)).length,
+    [filtered, selected],
+  )
+
+  function toggleSelect(id) {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  function clearSelection() {
+    setSelected(new Set())
+  }
+
+  async function handleMarkSelected() {
+    await api.markSelectedRead(Array.from(selected))
+    clearSelection()
+  }
+
+  async function handleDeleteAllRead() {
+    if (!window.confirm('Delete all read notifications? This cannot be undone.')) return
+    await api.deleteAllRead()
+    clearSelection()
+  }
+
+  async function handleClearAll() {
+    if (!window.confirm('Clear ALL notifications? This permanently removes every notification and cannot be undone.')) return
+    await api.clearAll()
+    clearSelection()
+  }
 
   return (
     <Card className="p-5">
@@ -58,20 +95,38 @@ export default function NotificationHistory({ enabled, api }) {
           <Button
             variant="subtle"
             className="rounded-2xl"
-            disabled={!enabled || !api.items.length}
+            disabled={!enabled || !api.unreadCount}
             onClick={() => api.markAllRead()}
             type="button"
           >
             Mark all read
           </Button>
           <Button
-            variant="ghost"
+            variant="subtle"
             className="rounded-2xl"
-            disabled={!enabled || !api.items.length}
-            onClick={() => api.clearAll()}
+            disabled={!enabled || !selectedCount}
+            onClick={handleMarkSelected}
             type="button"
           >
-            Clear
+            Mark selected read{selectedCount ? ` (${selectedCount})` : ''}
+          </Button>
+          <Button
+            variant="ghost"
+            className="rounded-2xl"
+            disabled={!enabled || !readCount}
+            onClick={handleDeleteAllRead}
+            type="button"
+          >
+            Delete all read
+          </Button>
+          <Button
+            variant="ghost"
+            className="rounded-2xl text-rose-600 hover:bg-rose-500/10 dark:text-rose-300"
+            disabled={!enabled || !api.items.length}
+            onClick={handleClearAll}
+            type="button"
+          >
+            Clear all
           </Button>
         </div>
       </div>
@@ -81,7 +136,15 @@ export default function NotificationHistory({ enabled, api }) {
           <div className="rounded-2xl px-3 py-10 text-center text-sm text-slate-600 dark:text-slate-300">Loading…</div>
         ) : filtered.length ? (
           filtered.map((n) => (
-            <NotificationItem key={n.id} item={n} disabled={!enabled} onClick={() => api.markAsRead(n.id)} />
+            <NotificationItem
+              key={n.id}
+              item={n}
+              disabled={!enabled}
+              selected={selected.has(n.id)}
+              onToggleSelect={toggleSelect}
+              onMarkRead={(id) => api.markAsRead(id)}
+              onDelete={(id) => api.deleteOne(id)}
+            />
           ))
         ) : (
           <div className="rounded-2xl px-3 py-10 text-center text-sm text-slate-600 dark:text-slate-300">

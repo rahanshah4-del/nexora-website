@@ -1155,6 +1155,38 @@ service cloud.firestore {
           && (isAdmin() || (isWorkspaceMember(workspaceId) && resource.data.userId == request.auth.uid));
       }
 
+      // --- Inventory (Retail / POS) ---
+      // Stock lives in /products (reused). These collections add the inventory
+      // ledger, categories, suppliers, and purchase orders. Same access model as
+      // /products: staff with invoices/reports can read; managers/owners write.
+      match /inventoryTransactions/{transactionId} {
+        allow read: if staffPermission(workspaceId, 'invoices') || staffPermission(workspaceId, 'reports');
+        allow create: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId) && workspaceCreateMetadata(workspaceId);
+        allow update: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId) && workspaceUpdateScopeSafe(workspaceId);
+        allow delete: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId);
+      }
+
+      match /categories/{categoryId} {
+        allow read: if staffPermission(workspaceId, 'invoices') || staffPermission(workspaceId, 'reports');
+        allow create: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId) && workspaceCreateMetadata(workspaceId);
+        allow update: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId) && workspaceUpdateScopeSafe(workspaceId);
+        allow delete: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId);
+      }
+
+      match /suppliers/{supplierId} {
+        allow read: if staffPermission(workspaceId, 'invoices') || staffPermission(workspaceId, 'reports');
+        allow create: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId) && workspaceCreateMetadata(workspaceId);
+        allow update: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId) && workspaceUpdateScopeSafe(workspaceId);
+        allow delete: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId);
+      }
+
+      match /purchases/{purchaseId} {
+        allow read: if staffPermission(workspaceId, 'invoices') || staffPermission(workspaceId, 'reports');
+        allow create: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId) && workspaceCreateMetadata(workspaceId);
+        allow update: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId) && workspaceUpdateScopeSafe(workspaceId);
+        allow delete: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId);
+      }
+
       match /{document=**} {
         allow read, write: if isAdmin();
       }

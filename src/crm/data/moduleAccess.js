@@ -184,7 +184,7 @@ export const moduleCatalog = [
   { key: 'notifications', label: 'Notifications', route: '/app/notifications', minPlan: 'Basic' },
   { key: 'reports', label: 'Reports', route: '/app/reports', minPlan: 'Basic' },
   { key: 'settings', label: 'Settings', route: '/app/settings', alwaysEnabled: true },
-  { key: 'inventory', label: 'Inventory', route: '/app/coming-soon/inventory', comingSoon: true },
+  { key: 'inventory', label: 'Inventory', route: '/app/inventory', minPlan: 'Basic' },
   { key: 'pos', label: 'POS', route: '/app/coming-soon/pos', comingSoon: true },
   { key: 'cashRegister', label: 'Cash Register', route: '/app/coming-soon/cash-register', comingSoon: true },
   { key: 'purchases', label: 'Purchases', route: '/app/coming-soon/purchases', comingSoon: true },

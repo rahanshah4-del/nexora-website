@@ -10,6 +10,7 @@ const DashboardHomePage = lazy(() => import('./pages/DashboardHome.jsx'))
 const RestaurantPOSPage = lazy(() => import('./pages/RestaurantPOS.jsx'))
 const CustomersPage = lazy(() => import('./pages/Customers.jsx'))
 const ProductsPage = lazy(() => import('./pages/Products.jsx'))
+const InventoryPage = lazy(() => import('./pages/Inventory.jsx'))
 const LeadsPage = lazy(() => import('./pages/Leads.jsx'))
 const PipelinePage = lazy(() => import('./pages/SalesPipeline.jsx'))
 const AnalyticsPage = lazy(() => import('./pages/Analytics.jsx'))
@@ -66,6 +67,7 @@ export default function App() {
             <Route path="/app/restaurant-pos" element={<RestaurantPOSPage />} />
             <Route path="/app/customers" element={gated(<CustomersPage />)} />
             <Route path="/app/products" element={gated(<ProductsPage />)} />
+            <Route path="/app/inventory" element={gated(<InventoryPage />)} />
             <Route path="/app/leads" element={gated(<LeadsPage />)} />
             <Route path="/app/leads/scoring" element={gated(<LeadScoringPage />)} />
             <Route path="/app/pipeline" element={gated(<PipelinePage />)} />

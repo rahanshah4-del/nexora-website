@@ -308,7 +308,7 @@ export default function GlobalSearch({ className }) {
       </div>
 
       {open ? (
-        <div className="glass absolute left-0 top-[calc(100%+0.75rem)] z-[60] w-full max-w-[min(26rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-white/70 bg-white/95 p-2 shadow-[0_24px_70px_-44px_rgba(15,23,42,0.7)] dark:border-white/10 dark:bg-slate-950/95">
+        <div className="glass absolute left-0 top-full z-[70] mt-2.5 w-full max-w-[min(26rem,calc(100vw_-_1.5rem))] overflow-hidden rounded-2xl border border-white/70 bg-white/95 p-2 shadow-[0_24px_70px_-44px_rgba(15,23,42,0.7)] dark:border-white/10 dark:bg-slate-950/95">
           <div className="flex items-center justify-between gap-3 px-2 py-2">
             <div>
               <p className="text-sm font-semibold text-slate-950 dark:text-white">Global Search</p>

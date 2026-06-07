@@ -38,6 +38,48 @@ import { formatCompact, formatCurrency, formatPercentValue, toFiniteNumber } fro
 import { cn } from '../utils/cn.js'
 import { normalizeBusinessType } from '../data/moduleAccess.js'
 
+// Dashboard hero title/subtitle per business type (module). Falls back to a
+// generic label for any unknown type. Only affects the hero header text.
+const DASHBOARD_HERO = {
+  'General CRM': {
+    title: 'CRM Command Center',
+    subtitle: 'Manage customers, leads, invoices, and sales pipeline in one workspace.',
+  },
+  'School ERP': {
+    title: 'School ERP Command Center',
+    subtitle: 'Manage students, fees, attendance, classes, and academic reports.',
+  },
+  'Retail / POS': {
+    title: 'Retail POS Command Center',
+    subtitle: 'Track sales, products, inventory, customers, and daily revenue.',
+  },
+  'Restaurant POS': {
+    title: 'Restaurant POS Command Center',
+    subtitle: 'Manage orders, tables, menu, kitchen flow, and restaurant sales.',
+  },
+  'Property ERP': {
+    title: 'Property ERP Command Center',
+    subtitle: 'Manage tenants, rent, properties, leases, and maintenance.',
+  },
+  'WhatsApp CRM': {
+    title: 'WhatsApp CRM Command Center',
+    subtitle: 'Manage WhatsApp leads, reminders, follow-ups, and customer conversations.',
+  },
+}
+
+const DASHBOARD_HERO_FALLBACK = {
+  title: 'Business Command Center',
+  subtitle: 'Manage your customers, sales, and revenue in one clean workspace view.',
+}
+
+function dashboardHero(businessType) {
+  // Honor a raw "Fleet" workspace label even though it normalizes to a base type.
+  if (String(businessType || '').toLowerCase().includes('fleet')) {
+    return { title: 'Fleet Command Center', subtitle: 'Track vehicles, trips, fuel, drivers, and fleet expenses.' }
+  }
+  return DASHBOARD_HERO[normalizeBusinessType(businessType)] || DASHBOARD_HERO_FALLBACK
+}
+
 function dateFromValue(value) {
   if (!value) return null
   if (typeof value?.toDate === 'function') return value.toDate()
@@ -236,6 +278,7 @@ export default function DashboardHomePage() {
   const expensesApi = useExpenses({ limitCount: DASHBOARD_RECENT_LIMIT })
   const { businessType } = useUser()
   const isSchool = normalizeBusinessType(businessType) === 'School ERP'
+  const hero = dashboardHero(businessType)
 
   const loading =
     invoicesApi.loading ||
@@ -460,10 +503,10 @@ export default function DashboardHomePage() {
             <div className="min-w-0">
               <Badge variant="purple">Executive Overview</Badge>
               <h1 className="mt-4 max-w-2xl text-2xl font-semibold tracking-tight text-slate-950 dark:text-white sm:text-3xl">
-                CRM command center
+                {hero.title}
               </h1>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500 dark:text-slate-300">
-                {isSchool ? 'Students, fee collection, pending fees, expenses, and school readiness in one clean workspace view.' : 'Revenue, customers, leads, invoices, and support health in one clean workspace view.'}
+                {hero.subtitle}
               </p>
             </div>
             <div className="grid min-w-0 gap-2 sm:grid-cols-2 lg:w-[22rem]">

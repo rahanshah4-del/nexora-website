@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { limit, onSnapshot, query, updateDoc, where, writeBatch, doc } from 'firebase/firestore'
+import { deleteDoc, limit, onSnapshot, query, updateDoc, where, writeBatch, doc } from 'firebase/firestore'
 import { db } from '../lib/firebase.js'
 import { useUser } from './useUser.js'
 import { clientSafeMessage } from '../utils/messages.js'
@@ -144,6 +144,37 @@ export function useNotifications() {
             businessType: normalizeBusinessType(businessType),
           }),
         )
+        await batch.commit()
+      },
+      async markSelectedRead(ids = []) {
+        const idSet = new Set((Array.isArray(ids) ? ids : []).filter(Boolean))
+        if (!idSet.size) return
+        setItems((prev) => prev.map((n) => (idSet.has(n.id) ? { ...n, read: true } : n)))
+        if (!db || source !== 'firestore') return
+        const batch = writeBatch(db)
+        items
+          .filter((n) => idSet.has(n.id) && !n.read)
+          .forEach((n) =>
+            batch.update(doc(db, workspaceCollectionPath(workspaceId, 'notifications'), n.id), {
+              read: true,
+              businessType: normalizeBusinessType(businessType),
+            }),
+          )
+        await batch.commit()
+      },
+      async deleteOne(id) {
+        if (!id) return
+        setItems((prev) => prev.filter((n) => n.id !== id))
+        if (!db || source !== 'firestore') return
+        await deleteDoc(doc(db, workspaceCollectionPath(workspaceId, 'notifications'), id))
+      },
+      async deleteAllRead() {
+        const readItems = items.filter((n) => n.read)
+        if (!readItems.length) return
+        setItems((prev) => prev.filter((n) => !n.read))
+        if (!db || source !== 'firestore') return
+        const batch = writeBatch(db)
+        readItems.forEach((n) => batch.delete(doc(db, workspaceCollectionPath(workspaceId, 'notifications'), n.id)))
         await batch.commit()
       },
       async clearAll() {

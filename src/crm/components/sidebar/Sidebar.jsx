@@ -87,7 +87,13 @@ const SidebarNavItem = memo(function SidebarNavItem({ item, collapsed, onNavigat
   return (
     <NavLink
       to={item.to}
-      onClick={onNavigate}
+      onClick={() => {
+        if (item.to === '/app/inventory') {
+          console.log('[Inventory Route] clicked')
+          console.log('[Inventory Route] target', item.to)
+        }
+        onNavigate?.()
+      }}
       className={({ isActive }) =>
         cn(
           'focus-ring group relative flex items-center rounded-xl text-[13px] font-semibold transition-colors duration-150 ease-out',

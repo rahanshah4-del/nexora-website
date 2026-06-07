@@ -15,7 +15,6 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import NotificationBell from '../notifications/NotificationBell.jsx'
 import BranchSwitcher from '../system/BranchSwitcher.jsx'
 import OfflineStatus from '../system/OfflineStatus.jsx'
-import GlobalSearch from '../system/GlobalSearch.jsx'
 import { packageNameForPlan } from '../../data/moduleAccess.js'
 import { resolveWorkspaceName } from '../../../lib/workspaceName.js'
 import { goToWorkspace } from '../../../lib/workspaceNavigation.js'
@@ -149,10 +148,6 @@ function TopNav({ onOpenSidebar, onSwitchProduct }) {
               <span className="mt-1.5 block h-0.5 w-5 rounded bg-current opacity-70" />
             </span>
           </button>
-
-          <div className="order-3 hidden w-full min-w-0 lg:block xl:order-none xl:w-auto xl:flex-[0_1_320px] 2xl:flex-[0_1_360px]">
-            <GlobalSearch />
-          </div>
 
           <div className="ml-auto flex min-w-0 flex-1 items-center justify-end gap-1.5 sm:gap-2 xl:flex-none">
             <div className="hidden shrink-0 items-center gap-2 2xl:flex">
@@ -290,10 +285,6 @@ function TopNav({ onOpenSidebar, onSwitchProduct }) {
               )}
             </Dropdown>
           </div>
-        </div>
-
-        <div className="mx-auto w-full max-w-[1440px] px-0 pb-3 pt-2 md:hidden">
-          <GlobalSearch className="max-w-none" />
         </div>
       </header>
     </>

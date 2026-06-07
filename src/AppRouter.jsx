@@ -22,6 +22,7 @@ const RestaurantPOSPage = lazy(() => import('./crm/pages/RestaurantPOS.jsx'))
 const ClientPortalPage = lazy(() => import('./crm/pages/ClientPortal.jsx'))
 const CustomersPage = lazy(() => import('./crm/pages/Customers.jsx'))
 const ProductsPage = lazy(() => import('./crm/pages/Products.jsx'))
+const InventoryPage = lazy(() => import('./crm/pages/Inventory.jsx'))
 const LeadsPage = lazy(() => import('./crm/pages/Leads.jsx'))
 const LeadScoringPage = lazy(() => import('./crm/pages/LeadScoring.jsx'))
 const AIAssistantPage = lazy(() => import('./crm/pages/AIAssistant.jsx'))
@@ -83,6 +84,57 @@ class InvoiceRouteBoundary extends Component {
 
 function LazyPage({ children }) {
   return <Suspense fallback={<PageLoader />}>{children}</Suspense>
+}
+
+class InventoryRouteBoundary extends Component {
+  state = { hasError: false }
+
+  static getDerivedStateFromError() {
+    return { hasError: true }
+  }
+
+  componentDidCatch(error) {
+    console.error('[Inventory Route] render error', error)
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <section className="rounded-[1.35rem] border border-rose-200 bg-white p-5 shadow-sm">
+          <p className="text-lg font-black tracking-tight text-slate-950">Inventory could not load</p>
+          <p className="mt-2 text-sm leading-6 text-slate-600">
+            The inventory module hit a display error. Reload the page or return to the CRM dashboard.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button
+              type="button"
+              className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-bold text-white"
+              onClick={() => window.location.reload()}
+            >
+              Reload Inventory
+            </button>
+            <a className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700" href="/app/dashboard">
+              Back to Dashboard
+            </a>
+          </div>
+        </section>
+      )
+    }
+
+    return this.props.children
+  }
+}
+
+function InventoryRoute() {
+  console.log('[Inventory Route] module access', { path: '/app/inventory' })
+  console.log('[Inventory Route] gated result', 'allowed (DashboardLayout guards passed)')
+  return (
+    <InventoryRouteBoundary>
+      <LazyPage>
+        <InventoryPage />
+      </LazyPage>
+    </InventoryRouteBoundary>
+  )
 }
 
 function UpgradeRouteGuard() {
@@ -149,6 +201,7 @@ export default function AppRouter() {
         <Route path="client-portal" element={<LazyPage><ClientPortalPage /></LazyPage>} />
         <Route path="customers" element={<LazyPage><CustomersPage /></LazyPage>} />
         <Route path="products" element={<LazyPage><ProductsPage /></LazyPage>} />
+        <Route path="inventory" element={<InventoryRoute />} />
         <Route path="leads" element={<LazyPage><LeadsPage /></LazyPage>} />
         <Route path="leads/scoring" element={<LazyPage><LeadScoringPage /></LazyPage>} />
         <Route path="ai-assistant" element={<LazyPage><AIAssistantPage /></LazyPage>} />
