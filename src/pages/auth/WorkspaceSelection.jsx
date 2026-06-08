@@ -159,6 +159,16 @@ function firstCleanString(...values) {
   return ''
 }
 
+function workspaceSetupPayloadKeys(payload) {
+  return Object.keys(payload || {})
+}
+
+function assertNonEmptyWorkspaceSetupPayload(payload) {
+  if (workspaceSetupPayloadKeys(payload).length === 0) {
+    throw new Error('Workspace setup payload is empty. Please select module again.')
+  }
+}
+
 function withTimeout(promise, ms, label) {
   let timeoutId = null
   const timeoutPromise = new Promise((_, reject) => {
@@ -671,13 +681,32 @@ function formInputClass() {
   return 'mt-1.5 h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100'
 }
 
-function OnboardingModal({ creating, message, form, onChange, onCreate, onClose, canClose, businessTypeLocked = false }) {
+const WIZARD_STEPS = ['Business Type', 'Business Details', 'Confirm & Create']
+
+function SetupWizard({ creating, message, form, onChange, onCreate, onClose, canClose, businessTypeLocked = false }) {
+  const [step, setStep] = useState(() => (cleanString(form.businessType) ? 1 : 0))
   const rawBusinessType = cleanString(form.businessType)
   const businessType = rawBusinessType ? normalizeBusinessType(rawBusinessType) : ''
   const isSchoolErp = businessType === 'School ERP'
-  const workspaceTitle = businessType ? (isSchoolErp ? 'Setup School ERP Workspace' : `Setup ${businessType} Workspace`) : 'Setup Workspace'
-  const nameLabel = isSchoolErp ? 'School Name' : 'Company / Business Name'
-  const namePlaceholder = isSchoolErp ? 'Your school name' : 'Your company name'
+  const nameLabel = isSchoolErp ? 'School Name' : 'Workspace / Business Name'
+  const namePlaceholder = isSchoolErp ? 'Your school name' : 'Your business name'
+
+  const businessOptions = businessTypes.map((type) => ({
+    type,
+    ...(workspaceIconMap[businessWorkspaceForType(type)?.type] || workspaceIconMap['General CRM']),
+    description: businessWorkspaceForType(type)?.description || '',
+  }))
+
+  const detailsValid = Boolean(cleanString(form.companyName))
+  const canContinueStep0 = Boolean(businessType)
+
+  const goNext = () => setStep((current) => Math.min(current + 1, WIZARD_STEPS.length - 1))
+  const goBack = () => setStep((current) => Math.max(current - 1, 0))
+
+  const handlePickType = (type) => {
+    onChange('businessType', type)
+    setStep(1)
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 px-3 py-4 backdrop-blur-sm sm:px-5">
@@ -685,146 +714,173 @@ function OnboardingModal({ creating, message, form, onChange, onCreate, onClose,
         initial={{ opacity: 0, y: 14, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.2, ease: 'easeOut' }}
-        className="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-2xl shadow-slate-950/25"
+        className="flex max-h-[92vh] w-full max-w-xl flex-col overflow-hidden rounded-2xl border border-white/60 bg-white shadow-2xl shadow-slate-950/25"
       >
-        <div className="border-b border-slate-100 bg-slate-950 px-5 py-4 text-white sm:px-6">
+        {/* Header with step indicator */}
+        <div className="border-b border-slate-100 px-5 py-4 sm:px-6">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
-              <p className="text-xs font-black uppercase tracking-[0.2em] text-blue-200">Workspace onboarding</p>
-              <h2 className="mt-1 text-xl font-black tracking-tight sm:text-2xl">{workspaceTitle}</h2>
-              <p className="mt-2 max-w-xl text-sm leading-6 text-slate-300">
-                Set up one {businessType || 'selected module'} workspace first. Your 7-day Basic trial starts when this is saved.
-              </p>
+              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-blue-600">Workspace Setup</p>
+              <h2 className="mt-0.5 text-lg font-extrabold tracking-tight text-slate-950 sm:text-xl">
+                {WIZARD_STEPS[step]}
+              </h2>
             </div>
             {canClose ? (
               <button
                 type="button"
                 onClick={onClose}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-300 transition hover:bg-white/10 hover:text-white"
-                aria-label="Close onboarding"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                aria-label="Close setup"
               >
                 <HiOutlineXMark className="h-5 w-5" />
               </button>
             ) : null}
           </div>
+          <div className="mt-3 flex items-center gap-2">
+            {WIZARD_STEPS.map((label, index) => (
+              <div key={label} className="flex flex-1 items-center gap-2">
+                <span
+                  className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold transition ${
+                    index < step
+                      ? 'bg-emerald-500 text-white'
+                      : index === step
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-slate-100 text-slate-400'
+                  }`}
+                >
+                  {index < step ? <HiOutlineCheckCircle className="h-4 w-4" /> : index + 1}
+                </span>
+                {index < WIZARD_STEPS.length - 1 ? (
+                  <span className={`h-0.5 flex-1 rounded-full ${index < step ? 'bg-emerald-400' : 'bg-slate-100'}`} />
+                ) : null}
+              </div>
+            ))}
+          </div>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <FieldLabel label={nameLabel}>
-              <input
-                value={form.companyName}
-                onChange={(event) => onChange('companyName', event.target.value)}
-                className={formInputClass()}
-                placeholder={namePlaceholder}
-              />
-            </FieldLabel>
-            <FieldLabel label="Owner Name">
-              <input
-                value={form.ownerName}
-                onChange={(event) => onChange('ownerName', event.target.value)}
-                className={formInputClass()}
-                placeholder="Owner full name"
-              />
-            </FieldLabel>
-            <FieldLabel label="Business Type">
-              <select
-                value={form.businessType}
-                onChange={(event) => onChange('businessType', event.target.value)}
-                disabled={businessTypeLocked}
-                className={`${formInputClass()} ${businessTypeLocked ? 'cursor-not-allowed bg-slate-100 text-slate-500' : ''}`}
-              >
-                <option value="" disabled>
-                  Select business module
-                </option>
-                {businessTypes.map((type) => (
-                  <option key={type} value={type}>
-                    {type}
-                  </option>
-                ))}
-              </select>
-            </FieldLabel>
-            <FieldLabel label="Country">
-              <select value={form.country} onChange={(event) => onChange('country', event.target.value)} className={formInputClass()}>
-                {regionOptions.map((country) => (
-                  <option key={country} value={country}>
-                    {country}
-                  </option>
-                ))}
-              </select>
-            </FieldLabel>
-            <FieldLabel label="Currency">
-              <select value={form.currency} onChange={(event) => onChange('currency', event.target.value)} className={formInputClass()}>
-                {currencyOptions.map((currency) => (
-                  <option key={currency} value={currency}>
-                    {currency}
-                  </option>
-                ))}
-              </select>
-            </FieldLabel>
-            <FieldLabel label="Preferred Language">
-              <select value={form.language} onChange={(event) => onChange('language', event.target.value)} className={formInputClass()}>
-                {languageOptions.map((language) => (
-                  <option key={language} value={language}>
-                    {language}
-                  </option>
-                ))}
-              </select>
-            </FieldLabel>
-            <FieldLabel label="Phone">
-              <input
-                value={form.phone}
-                onChange={(event) => onChange('phone', event.target.value)}
-                className={formInputClass()}
-                placeholder="+92 300 0000000"
-              />
-            </FieldLabel>
-            <FieldLabel label="Email">
-              <input
-                type="email"
-                value={form.email}
-                onChange={(event) => onChange('email', event.target.value)}
-                className={formInputClass()}
-                placeholder="owner@company.com"
-              />
-            </FieldLabel>
-            <FieldLabel label="Address">
-              <textarea
-                value={form.address}
-                onChange={(event) => onChange('address', event.target.value)}
-                className="mt-1.5 min-h-[92px] w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 sm:col-span-2"
-                placeholder="Office or business address"
-              />
-            </FieldLabel>
-            {isSchoolErp ? (
-              <>
-                <FieldLabel label="Academic Year">
-                  <input
-                    value={form.academicYear}
-                    onChange={(event) => onChange('academicYear', event.target.value)}
-                    className={formInputClass()}
-                    placeholder="2026-2027"
-                  />
-                </FieldLabel>
-                <FieldLabel label="Classes Range">
-                  <input
-                    value={form.classesRange}
-                    onChange={(event) => onChange('classesRange', event.target.value)}
-                    className={formInputClass()}
-                    placeholder="Nursery to Grade 10"
-                  />
-                </FieldLabel>
-                <FieldLabel label="Monthly Fee Setup Optional">
-                  <input
-                    value={form.monthlyFeeSetup}
-                    onChange={(event) => onChange('monthlyFeeSetup', event.target.value)}
-                    className={formInputClass()}
-                    placeholder="Example: 5000 PKR per month"
-                  />
-                </FieldLabel>
-              </>
-            ) : null}
-          </div>
+          {/* Step 1: Choose Business Type */}
+          {step === 0 ? (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {businessOptions.map((option) => {
+                const Icon = option.icon
+                const selected = option.type === businessType
+                return (
+                  <button
+                    type="button"
+                    key={option.type}
+                    onClick={() => handlePickType(option.type)}
+                    className={`flex items-start gap-3 rounded-xl border p-3 text-left transition ${
+                      selected ? 'border-blue-500 bg-blue-50/60 ring-1 ring-blue-100' : 'border-slate-200 bg-white hover:border-slate-300'
+                    }`}
+                  >
+                    <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${option.iconTone}`}>
+                      <Icon className="h-5 w-5" />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-sm font-bold text-slate-900">{option.type}</span>
+                      <span className="mt-0.5 block text-xs leading-4 text-slate-500">{option.description}</span>
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          ) : null}
+
+          {/* Step 2: Business Details */}
+          {step === 1 ? (
+            <div className="grid gap-4 sm:grid-cols-2">
+              <FieldLabel label={nameLabel}>
+                <input
+                  value={form.companyName}
+                  onChange={(event) => onChange('companyName', event.target.value)}
+                  className={formInputClass()}
+                  placeholder={namePlaceholder}
+                  autoFocus
+                />
+              </FieldLabel>
+              <FieldLabel label="Business Type">
+                <select
+                  value={form.businessType}
+                  onChange={(event) => onChange('businessType', event.target.value)}
+                  disabled={businessTypeLocked}
+                  className={`${formInputClass()} ${businessTypeLocked ? 'cursor-not-allowed bg-slate-100 text-slate-500' : ''}`}
+                >
+                  <option value="" disabled>Select business module</option>
+                  {businessTypes.map((type) => (
+                    <option key={type} value={type}>{type}</option>
+                  ))}
+                </select>
+              </FieldLabel>
+              <FieldLabel label="Country">
+                <select value={form.country} onChange={(event) => onChange('country', event.target.value)} className={formInputClass()}>
+                  {regionOptions.map((country) => (
+                    <option key={country} value={country}>{country}</option>
+                  ))}
+                </select>
+              </FieldLabel>
+              <FieldLabel label="Currency">
+                <select value={form.currency} onChange={(event) => onChange('currency', event.target.value)} className={formInputClass()}>
+                  {currencyOptions.map((currency) => (
+                    <option key={currency} value={currency}>{currency}</option>
+                  ))}
+                </select>
+              </FieldLabel>
+              <FieldLabel label="Preferred Language">
+                <select value={form.language} onChange={(event) => onChange('language', event.target.value)} className={formInputClass()}>
+                  {languageOptions.map((language) => (
+                    <option key={language} value={language}>{language}</option>
+                  ))}
+                </select>
+              </FieldLabel>
+              <FieldLabel label="Phone">
+                <input value={form.phone} onChange={(event) => onChange('phone', event.target.value)} className={formInputClass()} placeholder="+92 300 0000000" />
+              </FieldLabel>
+              <FieldLabel label="Address">
+                <textarea
+                  value={form.address}
+                  onChange={(event) => onChange('address', event.target.value)}
+                  className="mt-1.5 min-h-[80px] w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 sm:col-span-2"
+                  placeholder="Office or business address"
+                />
+              </FieldLabel>
+              {isSchoolErp ? (
+                <>
+                  <FieldLabel label="Academic Year">
+                    <input value={form.academicYear} onChange={(event) => onChange('academicYear', event.target.value)} className={formInputClass()} placeholder="2026-2027" />
+                  </FieldLabel>
+                  <FieldLabel label="Classes Range">
+                    <input value={form.classesRange} onChange={(event) => onChange('classesRange', event.target.value)} className={formInputClass()} placeholder="Nursery to Grade 10" />
+                  </FieldLabel>
+                </>
+              ) : null}
+            </div>
+          ) : null}
+
+          {/* Step 3: Confirm & Create */}
+          {step === 2 ? (
+            <div className="space-y-4">
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <DetailRow label="Business Type" value={businessType || '—'} />
+                <DetailRow label="Workspace Name" value={cleanString(form.companyName) || '—'} />
+                <DetailRow label="Country" value={cleanString(form.country) || '—'} />
+                <DetailRow label="Currency" value={cleanString(form.currency) || '—'} />
+                <DetailRow label="Language" value={cleanString(form.language) || '—'} />
+                {cleanString(form.phone) ? <DetailRow label="Phone" value={form.phone} /> : null}
+              </div>
+              <div className="flex items-start gap-3 rounded-xl border border-blue-100 bg-blue-50 p-4">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white">
+                  <HiOutlineCheckCircle className="h-5 w-5" />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-blue-900">Your 7-day free trial starts after create</p>
+                  <p className="mt-0.5 text-xs leading-5 text-blue-700">
+                    A Basic trial workspace is activated instantly. No demo data, no card required.
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : null}
 
           {message ? (
             <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800">
@@ -833,18 +889,45 @@ function OnboardingModal({ creating, message, form, onChange, onCreate, onClose,
           ) : null}
         </div>
 
-        <div className="flex flex-col gap-3 border-t border-slate-100 bg-slate-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-          <p className="text-xs font-semibold leading-5 text-slate-500">
-            Creates an active Basic trial workspace without demo data.
-          </p>
+        {/* Footer navigation */}
+        <div className="flex items-center justify-between gap-3 border-t border-slate-100 bg-slate-50 px-5 py-4 sm:px-6">
           <button
             type="button"
-            disabled={creating}
-            onClick={onCreate}
-            className="flex h-11 w-full items-center justify-center rounded-lg bg-blue-600 px-5 text-sm font-black text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-65 sm:w-auto"
+            onClick={step === 0 ? onClose : goBack}
+            disabled={creating || (step === 0 && !canClose)}
+            className="flex h-11 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {creating ? 'Creating...' : 'Create Workspace'}
+            <HiOutlineChevronRight className="h-4 w-4 rotate-180" />
+            {step === 0 ? 'Cancel' : 'Back'}
           </button>
+
+          {step < WIZARD_STEPS.length - 1 ? (
+            <button
+              type="button"
+              onClick={goNext}
+              disabled={(step === 0 && !canContinueStep0) || (step === 1 && !detailsValid)}
+              className="flex h-11 items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-5 text-sm font-bold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Continue
+              <HiOutlineChevronRight className="h-4 w-4" />
+            </button>
+          ) : (
+            <button
+              type="button"
+              disabled={creating}
+              onClick={onCreate}
+              className="flex h-11 items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 text-sm font-black text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-65"
+            >
+              {creating ? (
+                <>
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                  Creating…
+                </>
+              ) : (
+                'Create Workspace'
+              )}
+            </button>
+          )}
         </div>
       </motion.section>
     </div>
@@ -1002,9 +1085,19 @@ export default function WorkspaceSelection() {
   const [verificationSending, setVerificationSending] = useState(false)
   const [verificationMessage, setVerificationMessage] = useState('')
   const [businessTypeSaving, setBusinessTypeSaving] = useState('')
+  const [selectedBusinessType, setSelectedBusinessType] = useState('')
 
   const emailVerifiedCustom = accountData?.emailVerifiedCustom === true
-  const emailVerified = isUserCustomVerified({ ...user, emailVerifiedCustom })
+  const emailVerifiedRaw = isUserCustomVerified({ ...user, emailVerifiedCustom })
+  // Latch verification: once a user is known-verified, an optimistic accountData
+  // replace during workspace create (which may omit emailVerifiedCustom) must not
+  // transiently flip this false and trigger the /verify-email redirect. That
+  // redirect was the real "auto logout" source on workspace setup.
+  const [verifiedLatch, setVerifiedLatch] = useState(false)
+  useEffect(() => {
+    if (emailVerifiedRaw) setVerifiedLatch(true)
+  }, [emailVerifiedRaw])
+  const emailVerified = emailVerifiedRaw || verifiedLatch
 
   useEffect(() => {
     console.log('[Auth Isolation] login uid', user?.uid || 'none')
@@ -1017,6 +1110,7 @@ export default function WorkspaceSelection() {
   }, [user?.uid, user?.email, user?.emailVerified, authLoading])
 
   useEffect(() => {
+    console.log('WORKSPACE BUILD VERSION 2026-06-08-A')
     console.log('[WorkspaceSelection] mounted')
   }, [])
 
@@ -1071,6 +1165,7 @@ export default function WorkspaceSelection() {
         userExists: userSnap.exists(),
         workspaceId,
       })
+      console.log('[LOGIN STEP 5] Read workspace doc', { workspacePath, workspaceId })
       console.log('[Workspace Loading] waitingFor', {
         waitingFor: 'workspaceData',
         workspacePath,
@@ -1082,6 +1177,11 @@ export default function WorkspaceSelection() {
       const workspaceSnap = await getFreshDoc(doc(db, 'workspaces', workspaceId), workspacePath)
       if (!cancelled) setWorkspaceReadDone(true)
       const nextWorkspace = workspaceSnap.exists() ? workspaceSnap.data() : null
+      console.log('[LOGIN STEP 6] Workspace doc success', {
+        workspacePath,
+        workspaceExists: workspaceSnap.exists(),
+        workspaceId,
+      })
       console.log('[Workspace Loading] workspaceLoaded', {
         workspaceLoaded: true,
         workspaceExists: workspaceSnap.exists(),
@@ -1228,6 +1328,12 @@ export default function WorkspaceSelection() {
       source: 'WorkspaceSelection',
       reason: 'email_not_verified',
       target: VERIFY_EMAIL_ROUTE,
+    })
+    console.warn('[Auto Logout Source]', {
+      file: 'WorkspaceSelection.jsx',
+      reason: 'email_not_verified_redirect_verify_email',
+      uid: auth.currentUser?.uid,
+      route: window.location.pathname,
     })
     navigate(VERIFY_EMAIL_ROUTE, { replace: true })
   }, [accountLoading, authLoading, emailVerified, navigate, user?.uid])
@@ -1510,6 +1616,7 @@ export default function WorkspaceSelection() {
 
   const handleOnboardingFieldChange = useCallback((field, value) => {
     setOnboardingForm((current) => ({ ...current, [field]: value }))
+    if (field === 'businessType') setSelectedBusinessType(value ? normalizeBusinessType(value) : '')
     if (field === 'language') setSelectedLanguage(value)
     if (field === 'country') setSelectedRegion(value)
   }, [])
@@ -1518,6 +1625,10 @@ export default function WorkspaceSelection() {
     if (loggingOut) return
 
     const currentUid = user?.uid || ''
+    console.log('[Auth Logout Source] file', 'WorkspaceSelection.jsx')
+    console.log('[Auth Logout Source] reason', 'user_initiated_logout')
+    console.log('[Auth Logout Source] current uid', currentUid)
+    console.log('[Auth Logout Source] current route', '/workspace')
     console.log('[Auth Isolation] logout uid', currentUid)
 
     setLoggingOut(true)
@@ -1887,6 +1998,7 @@ export default function WorkspaceSelection() {
         selectedWorkspace,
       })
       setCreateMessage('')
+      setSelectedBusinessType(selectedBusinessType)
       setOnboardingForm((current) => ({
         ...current,
         businessType,
@@ -1917,6 +2029,7 @@ export default function WorkspaceSelection() {
         selectedWorkspace,
       })
       setCreateMessage('Create your company workspace first.')
+      setSelectedBusinessType(selectedBusinessType)
       setOnboardingForm((current) => ({
         ...current,
         businessType,
@@ -2196,14 +2309,16 @@ export default function WorkspaceSelection() {
   }, [accountData?.emailVerifiedCustom, emailVerified, hasModuleLock, moduleLockMessage, mustSelectModuleFirst, navigate, user])
 
   const handleCreateWorkspace = useCallback(async () => {
+    console.log('HANDLE_CREATE_WORKSPACE_ENTERED')
     if (creatingWorkspace) return
-    console.log('[Workspace Create] start', {
+    console.log('[Workspace Setup] start', {
       currentUserExists: Boolean(auth?.currentUser),
       authUid: auth?.currentUser?.uid || '',
       userUid: user?.uid || '',
       emailVerified,
       selectedBusinessType: onboardingForm.businessType || '',
     })
+    console.log('[Workspace Setup] selected business type', selectedBusinessType || onboardingForm.businessType || '')
     if (!emailVerified) {
       setCreateMessage('Please verify your email before creating a workspace.')
       navigate(getAuthRouteState({ ...user, emailVerifiedCustom: accountData?.emailVerifiedCustom }).route)
@@ -2216,17 +2331,34 @@ export default function WorkspaceSelection() {
 
     setCreatingWorkspace(true)
     setCreateMessage('')
+    // Hoisted so the [Workspace Create Failed] log in catch can report the exact target + payload.
+    let workspaceId = ''
+    let payload = null
+    let actualWrite = null
     try {
-      const uid = user.uid
-      const email = cleanString(onboardingForm.email || user.email).toLowerCase()
+      const setupData = onboardingForm
+      const rawSetupBusinessType = cleanString(selectedBusinessType) || cleanString(setupData.businessType)
+      if (!rawSetupBusinessType) {
+        setCreateMessage('Please select a business type first')
+        return
+      }
+      // Validate the live auth session before any write (spec: auth.currentUser, uid, email, workspaceId === uid).
+      const authUser = auth?.currentUser
+      if (!authUser || !authUser.uid) {
+        setCreateMessage('Your session expired. Please refresh and sign in again.')
+        return
+      }
+      const uid = authUser.uid
+      const authEmail = cleanString(authUser.email).toLowerCase()
+      if (!authEmail) {
+        setCreateMessage('Your account email is missing. Please sign in again.')
+        return
+      }
+      const email = cleanString(onboardingForm.email || authUser.email).toLowerCase()
       const ownerName = cleanString(onboardingForm.ownerName) || cleanString(user.displayName) || cleanString(email.split('@')[0])
       const companyName = cleanString(onboardingForm.companyName)
       if (!companyName || !ownerName || !email) {
         setCreateMessage('Company name, owner name, and email are required.')
-        return
-      }
-      if (!cleanString(onboardingForm.businessType)) {
-        setCreateMessage('Select a business module before saving your workspace.')
         return
       }
 
@@ -2239,8 +2371,59 @@ export default function WorkspaceSelection() {
         enabledModules,
         selectedFeatures,
         redirectTarget,
-      } = onboardingModuleSelection(onboardingForm.businessType)
+      } = onboardingModuleSelection(rawSetupBusinessType)
       const businessType = businessTypeLabel
+      const selectedModuleBusinessType = normalizeBusinessType(
+        cleanString(selectedBusinessType) || cleanString(businessTypeId) || cleanString(setupData.businessType),
+      )
+      if (!selectedModuleBusinessType) {
+        setCreateMessage('Please select a business type first')
+        return
+      }
+      const selectedModuleWorkspace = selectedModuleBusinessType
+      const selectedModuleList = [selectedModuleBusinessType]
+      const prepareActualWrite = (writeType, path, writePayload) => {
+        const payloadKeys = workspaceSetupPayloadKeys(writePayload)
+        actualWrite = {
+          writeType,
+          path,
+          selectedBusinessType: selectedModuleBusinessType,
+          payloadKeys,
+          payload: writePayload,
+        }
+        console.log('[Workspace Actual Write]', actualWrite)
+        assertNonEmptyWorkspaceSetupPayload(writePayload)
+        return writePayload
+      }
+      const performWorkspaceSetupWrite = async (writeType, path, ref, writePayload) => {
+        const preparedPayload = prepareActualWrite(writeType, path, writePayload)
+        try {
+          await setDoc(ref, preparedPayload, { merge: true })
+          console.log('[Workspace Write Success]', { path })
+        } catch (error) {
+          console.error('[Workspace Write Failed]', {
+            path,
+            code: error?.code || '',
+            message: error?.message || '',
+          })
+          throw error
+        }
+      }
+      const performWorkspacePreRead = async (path, ref) => {
+        console.log('[Workspace Pre-Read]', path)
+        try {
+          const snapshot = await getDoc(ref)
+          console.log('[Workspace Pre-Read Success]', path)
+          return snapshot
+        } catch (error) {
+          console.error('[Workspace Pre-Read Failed]', {
+            path,
+            code: error?.code || '',
+            message: error?.message || '',
+          })
+          throw error
+        }
+      }
       console.log('[Onboarding] selected module', {
         source: 'workspace-modal',
         businessType,
@@ -2259,12 +2442,13 @@ export default function WorkspaceSelection() {
       const now = serverTimestamp()
       const trialEndsAt = addDays(new Date(), CRM_TRIAL_DAYS)
       const userRef = doc(db, 'users', uid)
-      const userSnap = await getDoc(userRef)
+      const userSnap = await performWorkspacePreRead(`users/${uid}`, userRef)
       const existingAccount = userSnap.exists() ? userSnap.data() : null
       const existingWorkspaceId = cleanString(existingAccount?.workspaceId)
-      const workspaceRef = existingWorkspaceId ? doc(db, 'workspaces', existingWorkspaceId) : doc(db, 'workspaces', uid)
-      const workspaceId = workspaceRef.id
-      const workspaceSnap = await getDoc(workspaceRef)
+      // Spec: the first owner workspace is always keyed by uid (workspaceId === uid).
+      const workspaceRef = doc(db, 'workspaces', uid)
+      workspaceId = workspaceRef.id
+      const workspaceSnap = await performWorkspacePreRead(`workspaces/${workspaceId}`, workspaceRef)
       const workspaceExists = workspaceSnap.exists()
       const isFirstUserProfile = !userSnap.exists()
       const authUid = auth?.currentUser?.uid || ''
@@ -2287,9 +2471,29 @@ export default function WorkspaceSelection() {
         workspaceId,
         exists: workspaceExists,
       })
+      console.log('[Workspace Create] auth email', {
+        userEmail: user?.email || '',
+        onboardingFormEmail: onboardingForm.email || '',
+        authCurrentUserEmail: auth?.currentUser?.email || '',
+      })
+      console.log('[Workspace Create] auth currentUser exists', {
+        currentUserExists: Boolean(auth?.currentUser),
+        currentUserUid: auth?.currentUser?.uid || '',
+        userUid: user?.uid || '',
+      })
+      console.log('[Workspace Create] getIdTokenResult claims', {
+        userUid: user?.uid || '',
+        emailVerified: user?.emailVerified === true,
+      })
+      console.log('[Workspace Create] doc exists', {
+        userDocExists: userSnap.exists(),
+        workspaceDocExists: workspaceSnap.exists(),
+        workspaceId,
+        isFirstUserProfile,
+      })
 
-      const primaryBusinessType = businessTypeId
-      const allowedBusinessTypes = [businessTypeId]
+      const primaryBusinessType = selectedModuleBusinessType
+      const allowedBusinessTypes = [selectedModuleBusinessType]
       const baseUserPayload = {
         uid,
         ownerId: uid,
@@ -2301,16 +2505,16 @@ export default function WorkspaceSelection() {
         email,
         role: 'owner',
         status: 'active',
-        businessType: businessTypeId,
-        selectedBusinessType: businessTypeId,
-        currentBusinessType: businessTypeId,
+        businessType: selectedModuleBusinessType,
+        selectedBusinessType: selectedModuleBusinessType,
+        currentBusinessType: selectedModuleBusinessType,
         primaryBusinessType,
         allowedBusinessTypes,
         specialModuleAccess: false,
         allModulesAccess: false,
-        selectedWorkspace,
-        trialBusinessType: businessTypeId,
-        enabledModules,
+        selectedWorkspace: selectedModuleWorkspace,
+        trialBusinessType: selectedModuleBusinessType,
+        enabledModules: selectedModuleList,
         selectedFeatures,
         onboardingCompleted: true,
         workspaceName,
@@ -2327,6 +2531,7 @@ export default function WorkspaceSelection() {
         monthlyFeeSetup,
         updatedAt: now,
         lastLoginAt: now,
+        lastAccessedAt: now,
       }
       const trialUserFields = {
         plan: 'Basic',
@@ -2336,21 +2541,21 @@ export default function WorkspaceSelection() {
         trialStartAt: now,
         trialStartedAt: now,
         trialEndsAt,
-        trialBusinessType: businessTypeId,
+        trialBusinessType: selectedModuleBusinessType,
         isTrialActive: true,
         trialDays: CRM_TRIAL_DAYS,
       }
       const userOnboardingUpdatePayload = {
-        businessType: businessTypeId,
-        selectedBusinessType: businessTypeId,
-        currentBusinessType: businessTypeId,
+        businessType: selectedModuleBusinessType,
+        selectedBusinessType: selectedModuleBusinessType,
+        currentBusinessType: selectedModuleBusinessType,
         primaryBusinessType,
         allowedBusinessTypes,
         specialModuleAccess: false,
         allModulesAccess: false,
-        selectedWorkspace,
-        trialBusinessType: businessTypeId,
-        enabledModules,
+        selectedWorkspace: selectedModuleWorkspace,
+        trialBusinessType: selectedModuleBusinessType,
+        enabledModules: selectedModuleList,
         selectedFeatures,
         onboardingCompleted: true,
         workspaceName,
@@ -2367,6 +2572,7 @@ export default function WorkspaceSelection() {
         monthlyFeeSetup,
         updatedAt: now,
         lastLoginAt: now,
+        lastAccessedAt: now,
       }
       const userPayload = isFirstUserProfile
         ? {
@@ -2377,63 +2583,79 @@ export default function WorkspaceSelection() {
             isAdmin: false,
           }
         : userOnboardingUpdatePayload
+      // Existing workspace: update ONLY the safe module fields (spec step 4).
+      // Protected fields (ownerId, userId, createdBy, createdAt, plan, planStatus,
+      // subscriptionStatus, billingCycle, trial*, isTrialActive) are NOT sent.
       const workspaceOnboardingUpdatePayload = {
-        businessType: businessTypeId,
-        currentBusinessType: businessTypeId,
-        selectedBusinessType: businessTypeId,
-        selectedWorkspace,
+        primaryBusinessType: selectedModuleBusinessType,
+        businessType: selectedModuleBusinessType,
+        selectedBusinessType: selectedModuleBusinessType,
+        currentBusinessType: selectedModuleBusinessType,
+        selectedWorkspace: selectedModuleWorkspace,
         allowedBusinessTypes,
-        enabledModules,
+        enabledModules: selectedModuleList,
         onboardingCompleted: true,
         updatedAt: now,
         lastAccessedAt: now,
       }
+      // New workspace: safe create payload only (spec step 3). workspaceId === uid.
       const workspaceCreatePayload = {
-        ownerId: uid,
-        userId: workspaceId,
         workspaceId,
-        name: workspaceName,
-        workspaceName,
-        company: workspaceName,
-        companyName: workspaceName,
-        ownerName,
-        email,
-        phone,
-        address,
-        country,
-        currency,
-        preferredLanguage,
-        academicYear,
-        classesRange,
-        monthlyFeeSetup,
+        ownerId: uid,
+        userId: uid,
+        createdBy: uid,
+        ownerEmail: authEmail,
+        email: authEmail,
+        primaryBusinessType: selectedModuleBusinessType,
+        businessType: selectedModuleBusinessType,
+        selectedBusinessType: selectedModuleBusinessType,
+        currentBusinessType: selectedModuleBusinessType,
+        selectedWorkspace: selectedModuleWorkspace,
+        allowedBusinessTypes,
+        enabledModules: selectedModuleList,
+        onboardingCompleted: true,
         plan: 'Basic',
         planStatus: 'trial',
         subscriptionStatus: 'trial',
-        status: 'active',
         billingCycle: 'monthly',
-        trialDays: CRM_TRIAL_DAYS,
         trialStartAt: now,
         trialStartedAt: now,
         trialEndsAt,
         isTrialActive: true,
-        businessType: businessTypeId,
-        selectedBusinessType: businessTypeId,
-        currentBusinessType: businessTypeId,
-        primaryBusinessType,
-        allowedBusinessTypes,
-        specialModuleAccess: false,
-        allModulesAccess: false,
-        selectedWorkspace,
-        trialBusinessType: businessTypeId,
-        enabledModules,
-        selectedFeatures,
-        onboardingCompleted: true,
         createdAt: now,
-        createdBy: uid,
         updatedAt: now,
         lastAccessedAt: now,
       }
       const workspacePayload = workspaceExists ? workspaceOnboardingUpdatePayload : workspaceCreatePayload
+      payload = workspacePayload
+      console.log('[Workspace Setup Payload Final]', {
+        selectedModuleBusinessType,
+        payloadKeys: Object.keys(payload),
+        payload,
+      })
+      console.log('[Workspace Setup] create mode', workspaceExists ? 'update-existing-safe' : 'create-new')
+      console.log('[Workspace Setup] payload keys', Object.keys(workspacePayload))
+      console.log('[Workspace Setup] onboarding module payload fields', {
+        primaryBusinessType: workspaceOnboardingUpdatePayload.primaryBusinessType,
+        businessType: workspaceOnboardingUpdatePayload.businessType,
+        allowedBusinessTypes: workspaceOnboardingUpdatePayload.allowedBusinessTypes,
+      })
+      console.log('[Workspace Create Rules] uid/workspaceId match', {
+        uid,
+        workspaceId,
+        match: uid === workspaceId,
+        ownerId: uid,
+        userId: uid,
+        createdBy: uid,
+      })
+      console.log('[Workspace Create Permission Fix]', {
+        // Existing workspace -> onboarding flip authorized by ownerFirstOnboardingUpdateSafe
+        // (owner-only, onboardingCompleted false->true, safe module fields only, no active
+        // subscription required). New workspace -> create rule + hasSafeTrialPlan.
+        mode: workspaceExists ? 'onboarding-update' : 'workspace-create',
+        authorizingRule: workspaceExists ? 'ownerFirstOnboardingUpdateSafe' : 'workspaceCreate+hasSafeTrialPlan',
+        workspaceId,
+      })
       const ownerMembership = {
         uid,
         staffId: uid,
@@ -2489,32 +2711,55 @@ export default function WorkspaceSelection() {
         workspaceExists,
         user: {
           onboardingCompleted: true,
-          selectedWorkspace,
-          selectedBusinessType: businessTypeId,
-          currentBusinessType: businessTypeId,
-          businessType: businessTypeId,
+          selectedWorkspace: selectedModuleWorkspace,
+          selectedBusinessType: selectedModuleBusinessType,
+          currentBusinessType: selectedModuleBusinessType,
+          businessType: selectedModuleBusinessType,
           allowedBusinessTypes,
-          enabledModules,
+          enabledModules: selectedModuleList,
         },
         workspace: {
           onboardingCompleted: true,
-          selectedWorkspace,
-          selectedBusinessType: businessTypeId,
-          currentBusinessType: businessTypeId,
-          businessType: businessTypeId,
+          selectedWorkspace: selectedModuleWorkspace,
+          selectedBusinessType: selectedModuleBusinessType,
+          currentBusinessType: selectedModuleBusinessType,
+          businessType: selectedModuleBusinessType,
           allowedBusinessTypes,
-          enabledModules,
+          enabledModules: selectedModuleList,
         },
       })
 
-      await setDoc(userRef, userPayload, { merge: true })
+      console.log('[Workspace Create] create payload keys', {
+        userPayloadKeys: Object.keys(userPayload),
+        workspacePayloadKeys: Object.keys(workspacePayload),
+        isFirstUserProfile,
+        workspaceExists,
+      })
+      console.log('[Workspace Create] update payload keys', {
+        userPayloadKeys: Object.keys(userPayload),
+        workspacePayloadKeys: Object.keys(workspacePayload),
+        mode: workspaceExists ? 'onboarding-update' : 'workspace-create',
+      })
+      console.log('[Workspace Create Rules] create allowed payload keys', {
+        workspacePayloadKeys: Object.keys(workspacePayload),
+        mode: workspaceExists ? 'onboarding-update' : 'workspace-create',
+      })
+
+      console.log('WORKSPACE_WRITE_1_USERS')
+      await performWorkspaceSetupWrite('userProfileSetup', `users/${uid}`, userRef, userPayload)
       console.log('[Workspace Create] firestore write success', {
         path: `users/${uid}`,
         workspaceId,
         ownerId: uid,
         createdBy: uid,
       })
-      await setDoc(workspaceRef, workspacePayload, { merge: true })
+      console.log('WORKSPACE_WRITE_2_WORKSPACE')
+      await performWorkspaceSetupWrite(
+        workspaceExists ? 'workspaceOnboardingUpdate' : 'workspaceCreate',
+        `workspaces/${workspaceId}`,
+        workspaceRef,
+        workspacePayload,
+      )
       console.log('[Workspace Create] firestore write success', {
         path: `workspaces/${workspaceId}`,
         workspaceId,
@@ -2525,27 +2770,46 @@ export default function WorkspaceSelection() {
       if (workspaceExists) {
         console.log('[Workspace Setup] onboarding update success', {
           workspaceId,
-          selectedWorkspace,
-          businessType: businessTypeId,
+          selectedWorkspace: selectedModuleWorkspace,
+          businessType: selectedModuleBusinessType,
         })
       }
-      const membershipWrites = [
-        setDoc(doc(db, 'workspaces', workspaceId, 'staff', uid), ownerMembership, { merge: true }),
-        setDoc(doc(db, 'workspaces', workspaceId, 'teamMembers', uid), ownerMembership, { merge: true }),
-      ]
+      const staffPath = `workspaces/${workspaceId}/staff/${uid}`
+      const teamMemberPath = `workspaces/${workspaceId}/teamMembers/${uid}`
+      console.log('WORKSPACE_WRITE_3_STAFF')
+      await performWorkspaceSetupWrite(
+        'ownerStaffMembership',
+        staffPath,
+        doc(db, 'workspaces', workspaceId, 'staff', uid),
+        ownerMembership,
+      )
+      console.log('WORKSPACE_WRITE_4_TEAMMEMBER')
+      await performWorkspaceSetupWrite(
+        'ownerTeamMembership',
+        teamMemberPath,
+        doc(db, 'workspaces', workspaceId, 'teamMembers', uid),
+        ownerMembership,
+      )
       if (uid !== workspaceId) {
-        membershipWrites.push(setDoc(
+        const permissionPath = `workspaces/${workspaceId}/permissions/${uid}`
+        console.log('WORKSPACE_WRITE_5_PERMISSION')
+        await performWorkspaceSetupWrite(
+          'ownerPermission',
+          permissionPath,
           doc(db, 'workspaces', workspaceId, 'permissions', uid),
           ownerPermissionPayload,
-          { merge: true },
-        ))
+        )
+        console.log('[Workspace Create] permission doc created', {
+          path: permissionPath,
+          uid,
+          workspaceId,
+        })
       } else {
-        console.log('[Workspace Setup] skip owner permissions doc', {
+        console.log('[Workspace Create] permission doc skipped', {
           path: `workspaces/${workspaceId}/permissions/${uid}`,
-          reason: 'owner inherits workspace manager access',
+          reason: 'owner inherits workspace manager access (uid === workspaceId)',
         })
       }
-      await Promise.all(membershipWrites)
       console.log('[Workspace Create] firestore write success', {
         path: uid === workspaceId
           ? `workspaces/${workspaceId}/staff|teamMembers/${uid}`
@@ -2554,120 +2818,215 @@ export default function WorkspaceSelection() {
         ownerId: uid,
         createdBy: uid,
       })
+      const localUserPayload = {
+        uid,
+        ownerId: uid,
+        userId: uid,
+        workspaceId,
+        ...userPayload,
+        primaryBusinessType: selectedModuleBusinessType,
+        businessType: selectedModuleBusinessType,
+        selectedBusinessType: selectedModuleBusinessType,
+        currentBusinessType: selectedModuleBusinessType,
+        selectedWorkspace: selectedModuleWorkspace,
+        allowedBusinessTypes,
+        enabledModules: selectedModuleList,
+        selectedFeatures,
+        onboardingCompleted: true,
+        lastAccessedAt: now,
+      }
+      const localWorkspacePayload = {
+        workspaceId,
+        ownerId: uid,
+        userId: workspaceId,
+        ...workspacePayload,
+        primaryBusinessType: selectedModuleBusinessType,
+        businessType: selectedModuleBusinessType,
+        selectedBusinessType: selectedModuleBusinessType,
+        currentBusinessType: selectedModuleBusinessType,
+        selectedWorkspace: selectedModuleWorkspace,
+        allowedBusinessTypes,
+        enabledModules: selectedModuleList,
+        selectedFeatures,
+        onboardingCompleted: true,
+        updatedAt: now,
+        lastAccessedAt: now,
+      }
+      setCreateMessage('')
+      console.log('[Workspace Setup Error Cleared]', {
+        workspaceId,
+        selectedBusinessType: selectedModuleBusinessType,
+      })
+      setAccountData((current) => {
+        // Preserve emailVerifiedCustom across the optimistic replace so the
+        // /verify-email redirect effect never sees a transient unverified state.
+        const preservedVerification = (current || {}).emailVerifiedCustom === true ? { emailVerifiedCustom: true } : {}
+        return { ...(current || {}), ...localUserPayload, ...preservedVerification }
+      })
+      setWorkspaceData((current) => ({ ...(current || {}), ...localWorkspacePayload }))
+      setCreateOpen(false)
+      setSelectedBusinessType(selectedModuleBusinessType)
+      setSelectedLanguage(preferredLanguage)
+      setSelectedRegion(country)
+      console.log('[Workspace Setup Local State Updated]', {
+        workspaceId,
+        onboardingCompleted: true,
+        selectedWorkspace: selectedModuleWorkspace,
+        currentBusinessType: selectedModuleBusinessType,
+        businessType: selectedModuleBusinessType,
+      })
       saveSelectedWorkspace(uid, selectedWorkspace)
+      console.log('[Workspace Setup] create success', {
+        workspaceId,
+        ownerId: uid,
+        createdBy: uid,
+        mode: workspaceExists ? 'update-existing-safe' : 'create-new',
+      })
+      console.log('[Workspace Setup Success]', {
+        workspaceId,
+        selectedWorkspace: selectedModuleWorkspace,
+        selectedBusinessType: selectedModuleBusinessType,
+        redirectTarget,
+      })
+      console.log('[Workspace Create Success]', {
+        workspaceId,
+        ownerId: uid,
+        createdBy: uid,
+        mode: workspaceExists ? 'onboarding-update' : 'workspace-create',
+      })
       console.log('[Onboarding] saved workspace module', {
         workspaceId,
-        businessType: businessTypeId,
+        businessType: selectedModuleBusinessType,
         businessTypeLabel: businessType,
-        selectedWorkspace,
-        enabledModules,
+        selectedWorkspace: selectedModuleWorkspace,
+        enabledModules: selectedModuleList,
       })
-      trackAnalyticsEvent('workspace_selected', { userId: uid, email, phone, workspaceId, businessType: businessTypeId, moduleName: businessType, page: '/workspace' })
+      trackAnalyticsEvent('workspace_selected', { userId: uid, email, phone, workspaceId, businessType: selectedModuleBusinessType, moduleName: businessType, page: '/workspace' })
         .catch((analyticsError) => {
           console.warn('[Onboarding] workspace_selected analytics failed', { error: analyticsError?.message || analyticsError })
         })
-      trackAnalyticsEvent('onboarding_completed', { userId: uid, email, phone, workspaceId, businessType: businessTypeId, moduleName: businessType, page: '/workspace' })
+      trackAnalyticsEvent('onboarding_completed', { userId: uid, email, phone, workspaceId, businessType: selectedModuleBusinessType, moduleName: businessType, page: '/workspace' })
         .catch((analyticsError) => {
           console.warn('[Onboarding] onboarding_completed analytics failed', { error: analyticsError?.message || analyticsError })
         })
-      setAccountData((current) => (isFirstUserProfile ? userPayload : { ...(current || {}), ...userPayload }))
-      setWorkspaceData((current) => (workspaceExists ? { ...(current || {}), ...workspaceOnboardingUpdatePayload } : workspaceCreatePayload))
-      setCreateOpen(false)
-      setSelectedLanguage(preferredLanguage)
-      setSelectedRegion(country)
-      setCreateMessage('')
       console.log('[Onboarding] redirect target', { redirectTarget })
-      navigate(redirectTarget)
+      console.log('[Workspace Setup Navigate]', {
+        target: redirectTarget,
+        workspaceId,
+        selectedWorkspace: selectedModuleWorkspace,
+        currentBusinessType: selectedModuleBusinessType,
+      })
+      navigate(redirectTarget, {
+        replace: true,
+        state: {
+          workspaceSetupCompleted: true,
+          workspaceId,
+          selectedWorkspace: selectedModuleWorkspace,
+          currentBusinessType: selectedModuleBusinessType,
+        },
+      })
     } catch (error) {
-      console.error('[Workspace Create] firestore write fail', {
+      if (!actualWrite) console.error('PRE_WRITE_EXCEPTION', error)
+      console.error('[Workspace Setup] create failed code', error?.code)
+      console.error('[Workspace Setup] create failed message', error?.message)
+      console.error('[Workspace Create Failed]', {
         code: error?.code,
         message: error?.message,
+        stack: error?.stack,
+        uid: auth.currentUser?.uid,
+        email: auth.currentUser?.email,
+        workspaceId,
+        payloadKeys: workspaceSetupPayloadKeys(actualWrite?.payload || payload),
+        payload: actualWrite?.payload || payload,
+        actualWrite,
       })
-      console.error('[Workspace Create] error.code', error?.code)
-      console.error('[Workspace Create] error.message', error?.message)
+      // Workspace create failure must NEVER sign the user out or redirect. Show
+      // the error only and keep the session so the user can retry.
+      console.log('[Workspace Setup] create failed but user kept signed in')
+      console.log('[Workspace Setup] user kept signed in', {
+        uid: auth.currentUser?.uid || '',
+        signedIn: Boolean(auth.currentUser),
+        route: '/workspace',
+        code: error?.code || '',
+      })
       setCreateMessage(onboardingErrorMessage(error))
     } finally {
       setCreatingWorkspace(false)
     }
-  }, [creatingWorkspace, emailVerified, navigate, onboardingForm, user])
+  }, [creatingWorkspace, emailVerified, navigate, onboardingForm, selectedBusinessType, user, accountData?.emailVerifiedCustom])
 
   if (authLoading) return <PageLoader stage="auth" />
   if (accountLoading) return <PageLoader stage="workspace" businessType={profile.businessType || onboardingForm.businessType} />
 
   return (
-    <main className="min-h-screen overflow-x-clip bg-slate-50 text-slate-950">
-      <div className="flex min-h-screen flex-col lg:flex-row">
+    <main className="relative min-h-screen overflow-x-clip bg-slate-50 text-slate-950">
+      {/* Ambient light/glass background */}
+      <div className="pointer-events-none fixed inset-0">
+        <div className="absolute inset-x-0 top-0 h-96 bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.12),_transparent_45%),radial-gradient(circle_at_78%_6%,_rgba(129,140,248,0.12),_transparent_42%)]" />
+        <div className="absolute -right-32 top-24 h-96 w-96 rounded-full bg-gradient-to-br from-sky-300/15 to-violet-300/12 blur-3xl" />
+      </div>
+
+      <div className="relative flex min-h-screen flex-col lg:flex-row">
         <aside
-          className={`bg-[#061a35] text-white transition-all duration-300 ease-in-out ${
-            sidebarOpen
-              ? 'translate-x-0'
-              : '-translate-x-full'
-          } lg:fixed lg:inset-y-0 lg:left-0 ${
-            sidebarCollapsed ? 'lg:w-[68px]' : 'lg:w-[250px]'
-          } ${
-            sidebarCollapsed ? 'lg:translate-x-0' : 'lg:translate-x-0'
+          className={`border-r border-white/60 bg-white/80 text-slate-900 backdrop-blur-xl transition-all duration-300 ease-in-out ${
+            sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          } lg:fixed lg:inset-y-0 lg:left-0 lg:translate-x-0 ${
+            sidebarCollapsed ? 'lg:w-[68px]' : 'lg:w-[260px]'
           } lg:overflow-y-auto ${
-            sidebarOpen ? 'fixed inset-y-0 left-0 z-30 w-[250px]' : 'lg:z-20'
+            sidebarOpen ? 'fixed inset-y-0 left-0 z-30 w-[260px]' : 'lg:z-20'
           }`}
           aria-label="Workspace sidebar"
         >
           <div className="flex min-h-full flex-col px-4 py-5">
-            {/* Close button for mobile overlay */}
             <button
               type="button"
               onClick={() => setSidebarOpen(false)}
-              className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-lg text-slate-300 hover:bg-white/10 hover:text-white lg:hidden"
+              className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 lg:hidden"
               aria-label="Close sidebar"
             >
               <HiOutlineXMark className="h-5 w-5" />
             </button>
 
-            <div className="flex items-center justify-center">
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-2">
-                  <img src={logoUrl} alt="Nexora" className="h-10 w-10 rounded-xl flex-shrink-0" />
-                  {!sidebarCollapsed ? (
-                    <p className="text-2xl font-extrabold tracking-[0.08em] text-white transition-opacity duration-200">NEXORA</p>
-                  ) : null}
+            <div className="flex items-center justify-center gap-2">
+              <img src={logoUrl} alt="Nexora" className="h-10 w-10 shrink-0 rounded-xl" />
+              {!sidebarCollapsed ? (
+                <div className="text-center">
+                  <p className="text-xl font-extrabold tracking-[0.08em] text-slate-950">NEXORA</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.26em] text-slate-400">Business Suite</p>
                 </div>
-                {!sidebarCollapsed && (
-                  <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.26em] text-slate-300">
-                    Business Suite
-                  </p>
-                )}
-              </div>
+              ) : null}
             </div>
 
-            <div className={`relative ${sidebarCollapsed ? 'mt-6' : 'mt-6'}`}>
+            <div className="relative mt-6">
               <button
                 type="button"
                 onClick={() => setProfileOpen((open) => !open)}
-                className={`w-full rounded-lg border border-white/10 bg-white/[0.04] text-left transition hover:bg-white/[0.07] ${
+                className={`w-full rounded-xl border border-slate-200 bg-white text-left shadow-sm transition hover:border-slate-300 ${
                   sidebarCollapsed ? 'flex justify-center p-2' : 'p-3'
                 }`}
                 aria-expanded={profileOpen}
                 title={sidebarCollapsed ? `${profile.name}\n${profile.roleLabel}\n${profile.email}` : undefined}
               >
                 <span className="flex items-center gap-3">
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-extrabold text-white">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-sky-600 to-indigo-600 text-sm font-extrabold text-white">
                     {profile.initials}
                   </span>
                   {!sidebarCollapsed && (
                     <span className="min-w-0 flex-1">
                       <span className="flex min-w-0 items-center gap-1.5">
-                        <span className="block truncate text-sm font-bold text-white">{authLoading ? 'Loading...' : profile.name}</span>
-                        {profile.emailVerified ? <HiOutlineCheckCircle className="h-4 w-4 shrink-0 text-emerald-300" /> : null}
+                        <span className="block truncate text-sm font-bold text-slate-900">{authLoading ? 'Loading...' : profile.name}</span>
+                        {profile.emailVerified ? <HiOutlineCheckCircle className="h-4 w-4 shrink-0 text-emerald-500" /> : null}
                       </span>
-                      <span className="mt-0.5 block truncate text-xs text-slate-300">{profile.roleLabel}</span>
+                      <span className="mt-0.5 block truncate text-xs text-slate-500">{profile.roleLabel}</span>
                       <span className="mt-0.5 block truncate text-[11px] text-slate-400">{profile.email}</span>
                     </span>
                   )}
-                  {!sidebarCollapsed && <HiOutlineChevronDown className="h-4 w-4 shrink-0 text-slate-300" />}
+                  {!sidebarCollapsed && <HiOutlineChevronDown className="h-4 w-4 shrink-0 text-slate-400" />}
                 </span>
               </button>
 
               {profileOpen ? (
-                <div className="absolute left-0 right-0 top-full z-40 mt-2 rounded-lg border border-white/10 bg-white p-3 text-slate-900 shadow-xl shadow-slate-950/25">
+                <div className="absolute left-0 right-0 top-full z-40 mt-2 rounded-xl border border-slate-200 bg-white p-3 text-slate-900 shadow-xl shadow-slate-950/15">
                   <div className="flex min-w-0 items-center gap-2">
                     <p className="truncate text-sm font-bold">{profile.name}</p>
                     {profile.emailVerified ? <HiOutlineCheckCircle className="h-4 w-4 shrink-0 text-emerald-600" /> : null}
@@ -2716,27 +3075,23 @@ export default function WorkspaceSelection() {
             </div>
 
             {!sidebarCollapsed && (
-            <div className="mt-3 rounded-lg border border-white/10 bg-white/[0.04] p-3">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">Package</p>
-                  <p className="mt-1 truncate text-xs font-bold text-white">{profile.planLabel}</p>
-                  {profile.trialShortLabel ? (
-                    <p className="mt-1 text-[11px] font-semibold text-slate-300">{profile.trialShortLabel}</p>
-                  ) : null}
-                </div>
+              <div className="mt-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+                <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">Package</p>
+                <p className="mt-1 truncate text-xs font-bold text-slate-900">{profile.planLabel}</p>
+                {profile.trialShortLabel ? (
+                  <p className="mt-1 text-[11px] font-semibold text-slate-500">{profile.trialShortLabel}</p>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={handleUpgradePlan}
+                  className="mt-3 flex h-9 w-full items-center justify-center rounded-lg bg-gradient-to-r from-blue-600 to-violet-600 text-xs font-bold text-white shadow-sm transition hover:from-blue-700 hover:to-violet-700"
+                >
+                  Upgrade Plan
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={handleUpgradePlan}
-                className="mt-3 flex h-9 w-full items-center justify-center rounded-lg bg-gradient-to-r from-blue-600 to-violet-600 text-xs font-bold text-white shadow-sm transition hover:from-blue-700 hover:to-violet-700"
-              >
-                Upgrade Plan
-              </button>
-            </div>
             )}
 
-            <nav className={`${sidebarCollapsed ? 'mt-4 space-y-2' : 'mt-4 space-y-2'}`}>
+            <nav className="mt-4 space-y-2">
               <SidebarItem
                 icon={HiOutlineSquares2X2}
                 label="Enter Workspace"
@@ -2761,21 +3116,19 @@ export default function WorkspaceSelection() {
                 } ${
                   createDisabled
                     ? 'cursor-not-allowed text-slate-400 opacity-80'
-                    : 'text-slate-200 hover:bg-white/7 hover:text-white'
+                    : 'text-slate-700 hover:bg-slate-100'
                 }`}
               >
-                <span className={`flex h-5 w-5 items-center justify-center rounded bg-white/15 ${sidebarCollapsed ? 'h-7 w-7' : ''}`}>
+                <span className={`flex items-center justify-center rounded bg-sky-100 text-sky-600 ${sidebarCollapsed ? 'h-7 w-7' : 'h-5 w-5'}`}>
                   <HiOutlinePlus className={`${sidebarCollapsed ? 'h-5 w-5' : 'h-4 w-4'}`} />
                 </span>
                 {!sidebarCollapsed && 'Create New Workspace'}
               </button>
             </nav>
 
-            <div className="mt-4 border-t border-white/10 pt-4">
+            <div className="mt-4 border-t border-slate-200 pt-4">
               {!sidebarCollapsed ? (
-                <p className="px-2 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">
-                  Your Module Access
-                </p>
+                <p className="px-2 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">Your Module Access</p>
               ) : null}
               <div className={`${sidebarCollapsed ? 'space-y-2' : 'mt-3 space-y-2'}`}>
                 {visibleModuleAccess.map((module) => {
@@ -2792,10 +3145,10 @@ export default function WorkspaceSelection() {
                         const workspace = businessWorkspaceForType(module.type)
                         if (canOpenModule) handleSelectBusinessWorkspace(workspace)
                       }}
-                      className={`flex h-9 w-full items-center gap-3 rounded-lg px-2 text-left text-[13px] font-semibold ${
+                      className={`flex h-9 w-full items-center gap-3 rounded-lg px-2 text-left text-[13px] font-semibold transition ${
                         sidebarCollapsed ? 'justify-center' : ''
                       } ${
-                        module.active ? 'text-white' : 'text-slate-300 opacity-75'
+                        module.active ? 'text-slate-700 hover:bg-slate-100' : 'text-slate-400 opacity-75'
                       }`}
                       aria-disabled={module.disabled ? 'true' : undefined}
                     >
@@ -2804,18 +3157,14 @@ export default function WorkspaceSelection() {
                       </span>
                       {!sidebarCollapsed && <span className="truncate">{module.name}</span>}
                       {!sidebarCollapsed && module.disabled ? (
-                        <span className="ml-auto shrink-0 rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-bold text-slate-300">
-                          Soon
-                        </span>
+                        <span className="ml-auto shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-500">Soon</span>
                       ) : null}
                     </button>
                   )
                 })}
               </div>
               {!sidebarCollapsed && hasModuleLock ? (
-                <p className="mt-3 px-2 text-xs font-semibold leading-5 text-slate-300">
-                  {moduleLockMessage}
-                </p>
+                <p className="mt-3 px-2 text-xs font-semibold leading-5 text-slate-500">{moduleLockMessage}</p>
               ) : null}
             </div>
 
@@ -2825,22 +3174,22 @@ export default function WorkspaceSelection() {
               <button
                 type="button"
                 title={sidebarCollapsed ? 'Need Help? Contact our support team' : undefined}
-                className={`flex w-full items-center rounded-lg border border-white/10 bg-white/[0.04] text-left ${
+                className={`flex w-full items-center rounded-xl border border-slate-200 bg-white text-left shadow-sm ${
                   sidebarCollapsed ? 'justify-center p-2' : 'justify-between p-3'
                 }`}
               >
                 <span className={`flex min-w-0 items-center gap-3 ${sidebarCollapsed ? 'justify-center' : ''}`}>
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/20">
-                    <HiOutlineChatBubbleLeftRight className="h-5 w-5 text-slate-200" />
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-slate-200 text-sky-600">
+                    <HiOutlineChatBubbleLeftRight className="h-5 w-5" />
                   </span>
                   {!sidebarCollapsed && (
                     <span className="min-w-0">
-                      <span className="block truncate text-xs font-bold text-white">Need Help?</span>
-                      <span className="block truncate text-[11px] text-slate-300">Contact our support team</span>
+                      <span className="block truncate text-xs font-bold text-slate-900">Need Help?</span>
+                      <span className="block truncate text-[11px] text-slate-500">Contact our support team</span>
                     </span>
                   )}
                 </span>
-                {!sidebarCollapsed && <HiOutlineChevronRight className="h-4 w-4 shrink-0 text-slate-300" />}
+                {!sidebarCollapsed && <HiOutlineChevronRight className="h-4 w-4 shrink-0 text-slate-400" />}
               </button>
             </div>
           </div>
@@ -2857,10 +3206,10 @@ export default function WorkspaceSelection() {
 
         <section
           className={`min-w-0 flex-1 overflow-x-clip transition-all duration-300 ease-in-out ${
-            sidebarCollapsed ? 'lg:ml-[68px]' : 'lg:ml-[250px]'
+            sidebarCollapsed ? 'lg:ml-[68px]' : 'lg:ml-[260px]'
           }`}
         >
-          <header className="sticky top-0 z-20 flex h-[76px] items-center justify-between border-b border-slate-200 bg-white px-5 lg:px-6">
+          <header className="sticky top-0 z-20 flex h-[76px] items-center justify-between border-b border-white/60 bg-white/80 px-5 backdrop-blur-xl lg:px-6">
             <div className="flex min-w-0 items-center gap-5">
               <button
                 type="button"
@@ -2912,9 +3261,7 @@ export default function WorkspaceSelection() {
                 </button>
                 {languageOpen ? (
                   <div className="absolute right-0 top-full z-30 mt-2 w-56 rounded-lg border border-slate-200 bg-white p-2 text-sm shadow-xl shadow-slate-950/10">
-                    <p className="px-2 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">
-                      Language
-                    </p>
+                    <p className="px-2 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">Language</p>
                     <div className="space-y-1">
                       {languageOptions.map((language) => (
                         <button
@@ -2932,9 +3279,7 @@ export default function WorkspaceSelection() {
                         </button>
                       ))}
                     </div>
-                    <p className="mt-2 border-t border-slate-100 px-2 pb-1 pt-2 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">
-                      Region
-                    </p>
+                    <p className="mt-2 border-t border-slate-100 px-2 pb-1 pt-2 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">Region</p>
                     <div className="space-y-1">
                       {regionOptions.map((region) => (
                         <button
@@ -2970,54 +3315,34 @@ export default function WorkspaceSelection() {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.28, ease: 'easeOut' }}
-              className="relative min-h-[150px] rounded-lg border border-slate-200 bg-gradient-to-r from-blue-50 via-sky-50 to-blue-50 px-7 py-6 shadow-sm"
+              className="relative overflow-hidden rounded-2xl border border-white/60 bg-gradient-to-r from-sky-50 via-white to-indigo-50 px-7 py-6 shadow-sm"
             >
-              <div className="max-w-[520px]">
-                <h2 className="text-2xl font-extrabold tracking-tight text-slate-950">Welcome back, {profile.name.split(' ')[0]}.</h2>
-                <p className="mt-3 max-w-sm text-sm leading-6 text-slate-600">
-                  Select a workspace to access your business data and modules.
+              <div className="max-w-[560px]">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="text-2xl font-extrabold tracking-tight text-slate-950">Welcome back, {profile.name.split(' ')[0]}.</h2>
+                  <VerificationBadge verified={profile.emailVerified} />
+                </div>
+                <p className="mt-3 max-w-md text-sm leading-6 text-slate-600">
+                  {needsWorkspaceOnboarding
+                    ? 'Choose a business module below to set up your workspace and start your 7-day trial.'
+                    : 'Select a workspace to access your business data and modules.'}
                 </p>
-              </div>
-
-              <div className="pointer-events-none absolute bottom-0 right-8 hidden h-[145px] w-[360px] lg:block">
-                <div className="absolute bottom-2 right-28 h-16 w-16 rounded-full bg-blue-600 shadow-[0_18px_35px_-22px_rgba(37,99,235,0.9)]" />
-                <div className="absolute bottom-0 right-0 h-24 w-16 rounded-t-full bg-gradient-to-b from-emerald-200 to-slate-100" />
-                <div className="absolute bottom-3 right-36 h-14 w-14 rounded-b-3xl rounded-t-lg bg-gradient-to-b from-blue-700 to-blue-500" />
-                <div className="absolute bottom-4 right-40 h-5 w-10 rounded-full border-4 border-blue-700" />
-                <div className="absolute bottom-0 right-44 h-4 w-20 rounded-full bg-slate-300/60 blur-sm" />
-                <div className="absolute bottom-0 right-3 h-4 w-28 rounded-full bg-slate-300/50 blur-sm" />
-                <div className="absolute bottom-5 right-11 h-14 w-12 rounded-b-lg bg-slate-200" />
-                <div className="absolute bottom-[70px] right-10 h-16 w-3 rotate-[-18deg] rounded-full bg-emerald-300" />
-                <div className="absolute bottom-[72px] right-23 h-16 w-3 rotate-[24deg] rounded-full bg-emerald-300" />
-                <div className="absolute bottom-[72px] right-16 h-20 w-3 rounded-full bg-emerald-400" />
-                <div className="absolute bottom-6 right-52 h-[110px] w-[150px] rounded-t-lg border-[10px] border-slate-800 bg-white shadow-xl">
-                  <div className="grid h-full grid-cols-[42px_1fr] gap-2 bg-slate-50 p-2">
-                    <div className="space-y-1.5">
-                      <span className="block h-2 rounded bg-slate-200" />
-                      <span className="block h-2 rounded bg-blue-100" />
-                      <span className="block h-2 rounded bg-slate-200" />
-                      <span className="block h-2 rounded bg-slate-200" />
-                    </div>
-                    <div className="space-y-2">
-                      <span className="block h-2 rounded bg-slate-200" />
-                      <div className="flex items-end gap-1">
-                        <span className="h-8 w-2 rounded bg-blue-500" />
-                        <span className="h-12 w-2 rounded bg-blue-600" />
-                        <span className="h-6 w-2 rounded bg-blue-300" />
-                        <span className="h-10 w-2 rounded bg-blue-500" />
-                      </div>
-                    </div>
-                  </div>
+                <div className="mt-4 flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-500">
+                  <span className="rounded-full bg-white/70 px-2.5 py-1 text-slate-700 shadow-sm">{profile.workspaceName}</span>
+                  <span className="rounded-full bg-white/70 px-2.5 py-1 text-slate-700 shadow-sm">{profile.planLabel}</span>
+                  {profile.trialShortLabel ? (
+                    <span className={`rounded-full px-2.5 py-1 shadow-sm ${profile.trialExpired ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'}`}>
+                      {profile.trialShortLabel}
+                    </span>
+                  ) : null}
                 </div>
               </div>
             </motion.section>
 
             {profile.trialShortLabel ? (
               <div
-                className={`mt-4 flex flex-col gap-3 rounded-lg border px-4 py-3 sm:flex-row sm:items-center sm:justify-between ${
-                  profile.trialExpired
-                    ? 'border-red-200 bg-red-50 text-red-800'
-                    : 'border-blue-100 bg-blue-50 text-blue-800'
+                className={`mt-4 flex flex-col gap-3 rounded-xl border px-4 py-3 sm:flex-row sm:items-center sm:justify-between ${
+                  profile.trialExpired ? 'border-red-200 bg-red-50 text-red-800' : 'border-blue-100 bg-blue-50 text-blue-800'
                 }`}
               >
                 <div className="min-w-0">
@@ -3040,7 +3365,7 @@ export default function WorkspaceSelection() {
 
             <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <h2 className="text-lg font-bold text-slate-950">
-                {workspaceView === 'all' ? 'All Workspaces' : 'Your Workspaces'}
+                {needsWorkspaceOnboarding ? 'Choose Your Workspace' : workspaceView === 'all' ? 'All Workspaces' : 'Your Workspaces'}
               </h2>
               <div className="flex items-center gap-3">
                 <label className="relative block w-full sm:w-[270px]">
@@ -3056,7 +3381,7 @@ export default function WorkspaceSelection() {
                     type="button"
                     onClick={() => setViewMode('grid')}
                     className={`flex h-9 w-9 items-center justify-center rounded-md transition ${
-                      viewMode === 'grid' ? 'border border-blue-300 text-blue-600 bg-blue-50' : 'text-slate-400 hover:text-slate-700'
+                      viewMode === 'grid' ? 'border border-blue-300 bg-blue-50 text-blue-600' : 'text-slate-400 hover:text-slate-700'
                     }`}
                     aria-label="Grid view"
                     title="Grid View"
@@ -3067,7 +3392,7 @@ export default function WorkspaceSelection() {
                     type="button"
                     onClick={() => setViewMode('list')}
                     className={`flex h-9 w-9 items-center justify-center rounded-md transition ${
-                      viewMode === 'list' ? 'border border-blue-300 text-blue-600 bg-blue-50' : 'text-slate-400 hover:text-slate-700'
+                      viewMode === 'list' ? 'border border-blue-300 bg-blue-50 text-blue-600' : 'text-slate-400 hover:text-slate-700'
                     }`}
                     aria-label="List view"
                     title="List View"
@@ -3110,7 +3435,7 @@ export default function WorkspaceSelection() {
               </div>
             )}
 
-            <section className="mt-5 grid gap-4 rounded-lg border border-slate-200 bg-white px-5 py-4 shadow-sm sm:grid-cols-2 xl:grid-cols-4">
+            <section className="mt-5 grid gap-4 rounded-2xl border border-white/60 bg-white/80 px-5 py-4 shadow-sm backdrop-blur-xl sm:grid-cols-2 xl:grid-cols-4">
               {featureStrip.map((feature) => {
                 const Icon = feature.icon
 
@@ -3135,7 +3460,7 @@ export default function WorkspaceSelection() {
         </section>
       </div>
       {createOpen ? (
-        <OnboardingModal
+        <SetupWizard
           creating={creatingWorkspace}
           message={createMessage}
           form={onboardingForm}

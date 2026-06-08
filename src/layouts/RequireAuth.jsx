@@ -4,6 +4,10 @@ import useAuth from '../context/useAuth.js'
 import PageLoader from '../crm/components/ui/PageLoader.jsx'
 import { getCustomEmailVerificationStatus } from '../lib/emailVerificationService.js'
 
+// Gate for /verify-email and /workspace. It only routes — it never signs the
+// user out. A bounded verification check (8s) falls through to "not verified"
+// so a slow/offline read bounces the user to /verify-email rather than
+// stranding them on a spinner.
 export default function RequireAuth() {
   const location = useLocation()
   const { user, loading } = useAuth()
@@ -23,6 +27,7 @@ export default function RequireAuth() {
       }
     }
 
+    // No user, or already verified via Firebase: resolve synchronously.
     if (!userId) {
       setCustomVerified(false)
       setCheckingCustom(false)
@@ -30,7 +35,6 @@ export default function RequireAuth() {
         cancelled = true
       }
     }
-
     if (firebaseEmailVerified) {
       setCustomVerified(true)
       setCheckingCustom(false)
@@ -39,10 +43,10 @@ export default function RequireAuth() {
       }
     }
 
+    // Otherwise check the custom verification flag, bounded by a timeout.
     setCheckingCustom(true)
     timeoutId = window.setTimeout(() => {
       if (cancelled) return
-      console.warn('[RequireAuth Gate] verification check timeout', { uid: userId, path: location.pathname })
       setCustomVerified(false)
       setCheckingCustom(false)
     }, 8000)
@@ -74,15 +78,7 @@ export default function RequireAuth() {
   }
 
   const verified = firebaseEmailVerified || customVerified === true
-  const nextRedirect = !verified && location.pathname !== '/verify-email' ? '/verify-email' : null
-  console.log('[RequireAuth Gate]', {
-    path: location.pathname,
-    firebaseEmailVerified,
-    customVerified,
-    nextRedirect,
-  })
-
-  if (nextRedirect) {
+  if (!verified && location.pathname !== '/verify-email') {
     return <Navigate to="/verify-email" replace state={{ from: location.pathname }} />
   }
 

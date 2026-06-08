@@ -359,6 +359,35 @@ service cloud.firestore {
         && (!request.resource.data.keys().hasAny(['userId']) || request.resource.data.userId == workspaceId);
     }
 
+    // Minimal allowance: let the owner complete their FIRST workspace onboarding
+    // (onboardingCompleted false -> true) on their own workspace (workspaceId == uid),
+    // touching only safe module fields. Protected billing/trial/ownership fields are
+    // excluded by hasOnly, so this cannot escalate plan, trial, or identity.
+    function ownerFirstOnboardingUpdateSafe(workspaceId) {
+      return activeSignedIn()
+        && request.auth.uid == workspaceId
+        && resource.data.onboardingCompleted != true
+        && request.resource.data.onboardingCompleted == true
+        && request.resource.data.allowedBusinessTypes is list
+        && request.resource.data.allowedBusinessTypes.size() == 1
+        && request.resource.data.primaryBusinessType is string
+        && request.resource.data.allowedBusinessTypes[0] == request.resource.data.primaryBusinessType
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'businessType',
+          'selectedBusinessType',
+          'currentBusinessType',
+          'selectedWorkspace',
+          'primaryBusinessType',
+          'allowedBusinessTypes',
+          'specialModuleAccess',
+          'allModulesAccess',
+          'enabledModules',
+          'onboardingCompleted',
+          'updatedAt',
+          'lastAccessedAt'
+        ]);
+    }
+
     function hasSafeTrialPlan() {
       return (!request.resource.data.keys().hasAny(['plan']) || request.resource.data.plan in ['Basic'])
         && (!request.resource.data.keys().hasAny(['planStatus']) || request.resource.data.planStatus in ['trial', 'Free Plan', 'Basic Trial', 'inactive'])
@@ -398,6 +427,7 @@ service cloud.firestore {
         ])
         || (
           resource.data.onboardingCompleted != true
+          && request.resource.data.keys().hasAll(['specialModuleAccess', 'allModulesAccess', 'primaryBusinessType', 'allowedBusinessTypes'])
           && request.resource.data.specialModuleAccess == false
           && request.resource.data.allModulesAccess == false
           && request.resource.data.allowedBusinessTypes is list
@@ -961,8 +991,9 @@ service cloud.firestore {
           && request.resource.data.createdBy == request.auth.uid
           && request.resource.data.createdAt is timestamp
           && hasSafeTrialPlan());
-      allow read: if isWorkspaceMember(workspaceId) || isAdmin();
+      allow read: if request.auth.uid == workspaceId || isWorkspaceMember(workspaceId) || isAdmin();
       allow update: if isAdmin()
+        || ownerFirstOnboardingUpdateSafe(workspaceId)
         || (workspaceHasActiveSubscription(workspaceId)
           && workspaceOwnerMatches(workspaceId)
           && protectedAccountFieldsUnchanged()

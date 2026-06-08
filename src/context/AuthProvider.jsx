@@ -3,24 +3,19 @@ import { onAuthStateChanged } from 'firebase/auth'
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore'
 import { AuthContext } from './auth-context.js'
 import { auth, db } from '../lib/firebase.js'
-import { ensureUserWorkspace } from '../lib/accountProvisioning.js'
-import { getCustomEmailVerificationStatus } from '../lib/emailVerificationService.js'
-import { isBackendAdminEmail, isPlatformAdminDoc } from '../lib/roles.js'
+import { isBackendAdminEmail } from '../lib/roles.js'
 import { reportTechnicalError } from '../lib/errorHandler.js'
 
-async function fetchUserRole(user) {
-  if (!db || !user?.uid) return { role: 'user', isAdmin: false }
-  const snap = await getDoc(doc(db, 'users', user.uid))
-  const data = snap.exists() ? snap.data() : null
-  const role = typeof data?.role === 'string' ? data.role : 'user'
-  const isAdmin = isPlatformAdminDoc({ email: user.email || '' })
-  return { role, isAdmin }
-}
-
+// AuthProvider is intentionally limited to AUTHENTICATION STATE ONLY.
+// It must NOT create workspaces, run account provisioning, read verification
+// status, or sign the user out on any downstream error. Workspace provisioning
+// is owned by the post-verification flow (VerifyEmail) and the CRM context.
+// Presence below is a best-effort write to the user's own doc and never affects
+// auth state or navigation.
 async function updateClientPresence(user, options = {}) {
   if (!db || !user?.uid || isBackendAdminEmail(user.email)) return
   const userRef = doc(db, 'users', user.uid)
-  let existing = {}
+  let existing
   try {
     const snap = await getDoc(userRef)
     existing = snap.exists() ? snap.data() : {}
@@ -38,9 +33,6 @@ async function updateClientPresence(user, options = {}) {
       isOnline: options.online !== false,
       lastActiveAt: serverTimestamp(),
       ...(options.login ? { lastLoginAt: serverTimestamp(), loginAt: serverTimestamp() } : {}),
-      currentWorkspaceId: existing.currentWorkspaceId || existing.workspaceId || existing.ownerId || user.uid,
-      currentBusinessType: existing.currentBusinessType || existing.selectedBusinessType || existing.businessType || '',
-      selectedBusinessType: existing.selectedBusinessType || existing.currentBusinessType || existing.businessType || '',
       device: typeof navigator !== 'undefined' ? navigator.platform || '' : '',
       browser: typeof navigator !== 'undefined' ? navigator.userAgent || '' : '',
       updatedAt: serverTimestamp(),
@@ -62,57 +54,22 @@ export default function AuthProvider({ children }) {
     let cancelled = false
     const unsubscribe = onAuthStateChanged(auth, (nextUser) => {
       if (cancelled) return
-      console.log('[Auth Isolation] auth state changed', {
-        uid: nextUser?.uid || 'none',
-        email: nextUser?.email || '',
-        emailVerified: nextUser?.emailVerified === true,
-      })
-      if (nextUser) {
-        console.log('[Auth Isolation] login uid', nextUser.uid)
-      }
+
       setUser(nextUser)
+
       if (!nextUser) {
+        // Signed out: reset derived state only. No redirects, no provisioning.
         setRole('user')
         setIsAdmin(false)
         setLoading(false)
         return
       }
 
-      if (isBackendAdminEmail(nextUser.email)) {
-        setRole('super_admin')
-        setIsAdmin(true)
-        setLoading(false)
-        return
-      }
-
-      setRole('user')
-      setIsAdmin(false)
+      // Admin detection is synchronous (email-based) — no Firestore needed.
+      const backendAdmin = isBackendAdminEmail(nextUser.email)
+      setRole(backendAdmin ? 'super_admin' : 'user')
+      setIsAdmin(backendAdmin)
       setLoading(false)
-
-      Promise.resolve()
-        .then(async () => {
-          const customVerified = nextUser.emailVerified === true ? true : await getCustomEmailVerificationStatus(nextUser)
-          if (!customVerified) return
-          const workspaceResult = await ensureUserWorkspace(nextUser)
-          console.log('[Auth Flow] workspace ensure success', {
-            source: 'auth-provider',
-            uid: nextUser.uid,
-            workspaceId: workspaceResult?.workspaceId || '',
-          })
-          const nextRole = await fetchUserRole(nextUser)
-          if (!cancelled) {
-            setRole(nextRole.role)
-            setIsAdmin(nextRole.isAdmin)
-          }
-          await updateClientPresence(nextUser, { login: true, online: true })
-        })
-        .catch((error) => {
-          reportTechnicalError(error, 'Auth workspace bootstrap')
-          if (!cancelled) {
-            setRole('user')
-            setIsAdmin(isBackendAdminEmail(nextUser.email))
-          }
-        })
     })
 
     return () => {
@@ -121,6 +78,7 @@ export default function AuthProvider({ children }) {
     }
   }, [])
 
+  // Best-effort presence. Errors here must never bubble to auth state.
   useEffect(() => {
     if (!user || isBackendAdminEmail(user.email)) return undefined
 

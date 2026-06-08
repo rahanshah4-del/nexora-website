@@ -577,7 +577,7 @@ function App({ initialSectionId = '' }) {
         </section>
 
         <section id="about" data-reveal className="bg-white px-5 pb-16 pt-2 sm:px-6 sm:pb-20 lg:px-8 lg:pb-24">
-          <div className="mx-auto grid max-w-7xl gap-6 rounded-[2rem] border border-blue-100 bg-[linear-gradient(135deg,#eff6ff_0%,#ffffff_64%,#f8fafc_100%)] p-4 shadow-[0_30px_90px_-62px_rgba(37,99,235,0.42)] lg:grid-cols-[1.1fr_1fr] lg:p-5">
+          <div className="mx-auto flex max-w-7xl flex-col gap-6 rounded-[2rem] border border-blue-100 bg-[linear-gradient(135deg,#eff6ff_0%,#ffffff_64%,#f8fafc_100%)] p-4 shadow-[0_30px_90px_-62px_rgba(37,99,235,0.42)] lg:p-5">
             <div className="rounded-[1.5rem] border border-blue-100 bg-white p-6 shadow-sm">
               <p className="text-xl font-black text-slate-950">Trusted by 500+ Businesses</p>
               <p className="mt-2 text-sm text-slate-600">Across Pakistan</p>
@@ -590,12 +590,15 @@ function App({ initialSectionId = '' }) {
               </div>
             </div>
 
-	            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-	              {stats.map((stat) => (
-	                <div key={stat.label} className="flex min-h-32 flex-col items-center justify-center rounded-[1.5rem] border border-blue-100 bg-white p-5 text-center shadow-sm">
-	                  <p className="text-3xl font-black text-blue-600 sm:text-4xl">{stat.value}</p>
-	                  <p className="mt-2 text-sm font-medium text-slate-700">{stat.label}</p>
-	                </div>
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+              {stats.map((stat) => (
+                <div
+                  key={stat.label}
+                  className="flex min-h-32 min-w-0 flex-col items-center justify-center overflow-hidden rounded-[1.5rem] border border-blue-100 bg-white p-5 text-center shadow-sm"
+                >
+                  <p className="whitespace-nowrap text-3xl font-black text-blue-600 sm:text-4xl">{stat.value}</p>
+                  <p className="mt-2 break-normal text-sm font-medium text-slate-700">{stat.label}</p>
+                </div>
               ))}
             </div>
           </div>

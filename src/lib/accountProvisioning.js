@@ -147,7 +147,31 @@ export async function createSignupUserProfile(user, overrides = {}) {
   }
 }
 
-export async function ensureUserWorkspace(user, overrides = {}) {
+// In-flight de-duplication: AuthProvider, Login, VerifyEmail, and the CRM
+// AuthContext can each request provisioning for the same uid at nearly the same
+// moment. Without a guard those concurrent writers race on workspaces/{uid},
+// which is the root cause of "workspace creation sometimes fails". Returning the
+// same in-flight promise for a uid serializes them into a single write.
+const inFlightWorkspaceEnsures = new Map()
+
+export function ensureUserWorkspace(user, overrides = {}) {
+  if (!db || !user?.uid) return Promise.resolve(null)
+
+  const uid = user.uid
+  const existing = inFlightWorkspaceEnsures.get(uid)
+  if (existing) {
+    console.log('[Workspace Bootstrap] reused in-flight ensure', { uid })
+    return existing
+  }
+
+  const promise = ensureUserWorkspaceInternal(user, overrides).finally(() => {
+    inFlightWorkspaceEnsures.delete(uid)
+  })
+  inFlightWorkspaceEnsures.set(uid, promise)
+  return promise
+}
+
+async function ensureUserWorkspaceInternal(user, overrides = {}) {
   if (!db || !user?.uid) return null
 
   const uid = user.uid
@@ -338,6 +362,9 @@ export async function ensureUserWorkspace(user, overrides = {}) {
       trialStartedAt: now,
       trialEndsAt,
       isTrialActive: true,
+      specialModuleAccess: false,
+      allModulesAccess: false,
+      primaryBusinessType: '',
       ...(hasBusinessSelection
         ? {
             businessType,

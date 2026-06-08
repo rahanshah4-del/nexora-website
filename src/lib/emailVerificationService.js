@@ -253,7 +253,20 @@ export async function getCustomEmailVerificationStatus(user) {
       code: error?.code || '',
       message: error?.message || String(error || ''),
     })
-    const snap = await getDoc(ref)
-    return snap.exists() && snap.data()?.emailVerifiedCustom === true
+    // The cache fallback MUST stay bounded. An unbounded getDoc here hangs
+    // forever when the device is offline with no cached user doc, which strands
+    // the login spinner ("Signing In..." never completes). Time-box it and
+    // default to "not verified" — RequireAuth owns the not-verified bounce.
+    try {
+      const snap = await withTimeout(getDoc(ref), 4000, `users/${user.uid} cache`)
+      return snap.exists() && snap.data()?.emailVerifiedCustom === true
+    } catch (fallbackError) {
+      console.warn('[VerifyEmail] verification status unavailable', {
+        uid: user.uid,
+        code: fallbackError?.code || '',
+        message: fallbackError?.message || String(fallbackError || ''),
+      })
+      return false
+    }
   }
 }
