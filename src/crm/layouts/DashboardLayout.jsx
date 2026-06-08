@@ -456,6 +456,19 @@ export default function DashboardLayout() {
   ])
 
   useEffect(() => {
+    if (!ready || userLoading) return
+    if (normalizeBusinessType(businessType) !== 'Retail / POS') return
+    console.log('[Retail POS Access]', {
+      source: 'DashboardLayout',
+      businessType: normalizeBusinessType(businessType),
+      lockedWorkspaceId,
+      accessPlan,
+      developerOverride,
+      path: location.pathname,
+    })
+  }, [accessPlan, businessType, developerOverride, location.pathname, lockedWorkspaceId, ready, userLoading])
+
+  useEffect(() => {
     const media = window.matchMedia?.('(max-width: 767px)')
     if (!media) return undefined
 

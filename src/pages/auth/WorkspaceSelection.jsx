@@ -89,6 +89,19 @@ const currencyOptions = ['PKR', 'INR', 'BDT', 'AED', 'SAR', 'USD', 'EUR']
 const CRM_TRIAL_DAYS = 7
 const CRM_DASHBOARD_ROUTE = '/app/dashboard'
 
+function logAutoLogoutTrace(functionName, reason) {
+  console.warn('[AUTO LOGOUT TRACE]', {
+    file: 'src/pages/auth/WorkspaceSelection.jsx',
+    function: functionName,
+    reason,
+    route: window.location.pathname,
+    uid: auth?.currentUser?.uid,
+    email: auth?.currentUser?.email,
+    time: new Date().toISOString(),
+    stack: new Error().stack,
+  })
+}
+
 function onboardingErrorMessage(error) {
   const raw = String(error?.message || error || '')
   const code = String(error?.code || '')
@@ -1638,6 +1651,7 @@ export default function WorkspaceSelection() {
         clearAllUserCache(currentUid)
 
         // Force Firebase to fully sign out
+        logAutoLogoutTrace('handleLogout', 'user_initiated_logout')
         await signOut(auth)
 
         // Verify auth state is null after signOut
@@ -1645,6 +1659,7 @@ export default function WorkspaceSelection() {
         if (currentUser) {
           console.warn('[Auth Isolation] auth.currentUser still set after signOut', { uid: currentUser.uid })
           // Force a second signOut if needed
+          logAutoLogoutTrace('handleLogout', 'user_initiated_logout_retry_current_user_still_set')
           await signOut(auth)
         }
         console.log('[Auth Isolation] auth.currentUser after signOut', auth.currentUser)

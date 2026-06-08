@@ -137,6 +137,18 @@ function InventoryRoute() {
   )
 }
 
+function RetailPosRoute() {
+  console.log('[Retail POS Route] module access', { path: '/app/pos', module: 'pos' })
+  console.log('[Retail POS Route] gated result', 'allowed (DashboardLayout guards passed)')
+  return (
+    <InvoiceRouteBoundary>
+      <LazyPage>
+        <InvoiceCreatePage />
+      </LazyPage>
+    </InvoiceRouteBoundary>
+  )
+}
+
 function UpgradeRouteGuard() {
   const location = useLocation()
   const cameFromUpgrade = Boolean(location.state?.fromUpgradeBusiness)
@@ -202,6 +214,7 @@ export default function AppRouter() {
         <Route path="customers" element={<LazyPage><CustomersPage /></LazyPage>} />
         <Route path="products" element={<LazyPage><ProductsPage /></LazyPage>} />
         <Route path="inventory" element={<InventoryRoute />} />
+        <Route path="pos" element={<RetailPosRoute />} />
         <Route path="leads" element={<LazyPage><LeadsPage /></LazyPage>} />
         <Route path="leads/scoring" element={<LazyPage><LeadScoringPage /></LazyPage>} />
         <Route path="ai-assistant" element={<LazyPage><AIAssistantPage /></LazyPage>} />

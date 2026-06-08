@@ -120,6 +120,16 @@ function TopNav({ onOpenSidebar, onSwitchProduct }) {
   const handleLogout = useCallback(
     async (close) => {
       if (busy) return
+      console.warn('[AUTO LOGOUT TRACE]', {
+        file: 'src/crm/components/navbar/TopNav.jsx',
+        function: 'handleLogout',
+        reason: 'user_clicked_topnav_logout',
+        route: window.location.pathname,
+        uid: firebaseUser?.uid,
+        email: firebaseUser?.email,
+        time: new Date().toISOString(),
+        stack: new Error().stack,
+      })
       const ok = await logout()
       close()
       if (ok) {
@@ -128,7 +138,7 @@ function TopNav({ onOpenSidebar, onSwitchProduct }) {
         navigate('/login', { replace: true })
       }
     },
-    [busy, logout, navigate],
+    [busy, firebaseUser?.email, firebaseUser?.uid, logout, navigate],
   )
 
   return (

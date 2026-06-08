@@ -55,6 +55,13 @@ export default function AuthProvider({ children }) {
     const unsubscribe = onAuthStateChanged(auth, (nextUser) => {
       if (cancelled) return
 
+      console.warn('[AUTH STATE CHANGED]', {
+        uid: nextUser?.uid || 'none',
+        email: nextUser?.email || '',
+        route: window.location.pathname,
+        time: new Date().toISOString(),
+      })
+
       setUser(nextUser)
 
       if (!nextUser) {

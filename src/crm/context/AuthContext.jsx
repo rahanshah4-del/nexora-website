@@ -7,7 +7,7 @@ import {
   updateProfile,
 } from 'firebase/auth'
 import { doc, getDoc } from 'firebase/firestore'
-import { auth, getFirebaseEnvHint } from '../lib/firebase.js'
+import { auth, authPersistenceReady, getFirebaseEnvHint } from '../lib/firebase.js'
 import { db } from '../lib/firebase.js'
 import { createSignupUserProfile, ensureUserWorkspace } from '../../lib/accountProvisioning.js'
 import { sendCustomVerificationEmail } from '../../lib/emailVerificationService.js'
@@ -16,6 +16,19 @@ import { clientSafeMessage } from '../utils/messages.js'
 import { clearAllUserCache } from '../../lib/authIsolation.js'
 
 const AuthContext = createContext(null)
+
+function logAutoLogoutTrace(functionName, reason) {
+  console.warn('[AUTO LOGOUT TRACE]', {
+    file: 'src/crm/context/AuthContext.jsx',
+    function: functionName,
+    reason,
+    route: window.location.pathname,
+    uid: auth?.currentUser?.uid,
+    email: auth?.currentUser?.email,
+    time: new Date().toISOString(),
+    stack: new Error().stack,
+  })
+}
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
@@ -30,6 +43,12 @@ export function AuthProvider({ children }) {
     }
     const unsub = onAuthStateChanged(auth, (u) => {
       const nextUser = u ?? null
+      console.warn('[AUTH STATE CHANGED]', {
+        uid: nextUser?.uid || 'none',
+        email: nextUser?.email || '',
+        route: window.location.pathname,
+        time: new Date().toISOString(),
+      })
       console.log('[Auth Isolation] auth state changed', {
         uid: nextUser?.uid || 'none',
         email: nextUser?.email || '',
@@ -52,6 +71,7 @@ export function AuthProvider({ children }) {
     }
     setBusy(true)
     try {
+      await authPersistenceReady
       const credentials = await signInWithEmailAndPassword(auth, email, password)
       ensureUserWorkspace(credentials.user, { email, provider: 'password' })
         .then((workspaceResult) => {
@@ -91,6 +111,7 @@ export function AuthProvider({ children }) {
     setBusy(true)
     try {
       console.log('[Auth Flow] signup start', { email })
+      await authPersistenceReady
       const credentials = await createUserWithEmailAndPassword(auth, email, password)
       await updateProfile(credentials.user, { displayName: fullName }).catch((profileError) => {
         console.warn('[User Profile] displayName update failed', { code: profileError?.code || '', message: profileError?.message || '' })
@@ -157,6 +178,7 @@ export function AuthProvider({ children }) {
       clearAllUserCache(currentUid)
 
       // Sign out from Firebase
+      logAutoLogoutTrace('logout', 'user_initiated_logout')
       await signOut(auth)
 
       // Verify auth state is null after signOut
@@ -164,6 +186,7 @@ export function AuthProvider({ children }) {
       if (currentUser) {
         console.warn('[Auth Isolation] auth.currentUser still set after signOut', { uid: currentUser.uid })
         // Force a second signOut if needed
+        logAutoLogoutTrace('logout', 'user_initiated_logout_retry_current_user_still_set')
         await signOut(auth)
       }
       console.log('[Auth Isolation] auth.currentUser after signOut', auth.currentUser)

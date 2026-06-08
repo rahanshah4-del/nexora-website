@@ -99,6 +99,16 @@ export default function SettingsPage() {
   }
 
   async function handleLogout() {
+    console.warn('[AUTO LOGOUT TRACE]', {
+      file: 'src/crm/pages/Settings.jsx',
+      function: 'handleLogout',
+      reason: 'user_clicked_settings_logout',
+      route: window.location.pathname,
+      uid: firebaseUser?.uid,
+      email: firebaseUser?.email,
+      time: new Date().toISOString(),
+      stack: new Error().stack,
+    })
     const ok = await logout()
     if (ok) navigate('/login', { replace: true })
   }

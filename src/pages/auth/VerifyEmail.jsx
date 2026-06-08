@@ -18,6 +18,19 @@ import { clearAllUserCache } from '../../lib/authIsolation.js'
 const OTP_LENGTH = 6
 const RESEND_COOLDOWN_SECONDS = 45
 
+function logAutoLogoutTrace(functionName, reason) {
+  console.warn('[AUTO LOGOUT TRACE]', {
+    file: 'src/pages/auth/VerifyEmail.jsx',
+    function: functionName,
+    reason,
+    route: window.location.pathname,
+    uid: auth?.currentUser?.uid,
+    email: auth?.currentUser?.email,
+    time: new Date().toISOString(),
+    stack: new Error().stack,
+  })
+}
+
 function clearLocalAuthWorkspaceState(userId) {
   if (typeof window === 'undefined') return
 
@@ -283,8 +296,14 @@ export default function VerifyEmail() {
     try {
       clearAllUserCache(currentUid)
       clearLocalAuthWorkspaceState(currentUid)
-      if (auth) await signOut(auth)
-      if (auth?.currentUser) await signOut(auth)
+      if (auth) {
+        logAutoLogoutTrace('handleLeaveVerification', 'user_clicked_leave_verification')
+        await signOut(auth)
+      }
+      if (auth?.currentUser) {
+        logAutoLogoutTrace('handleLeaveVerification', 'user_clicked_leave_verification_retry_current_user_still_set')
+        await signOut(auth)
+      }
     } catch (err) {
       setError(clientSafeMessage(err, 'Could not sign out. Please try again.', { context: 'Leave email verification' }))
       setLeaving(false)

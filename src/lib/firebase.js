@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from 'firebase/app'
-import { getAuth } from 'firebase/auth'
+import { browserLocalPersistence, getAuth, setPersistence } from 'firebase/auth'
 import { getFirestore } from 'firebase/firestore'
 import { getStorage } from 'firebase/storage'
 import { getAnalytics, isSupported as analyticsIsSupported } from 'firebase/analytics'
@@ -45,6 +45,15 @@ if (missingFirebaseAuthEnvVars.length) {
 
 export const app = hasAuthConfig ? (getApps()[0] ?? initializeApp(firebaseConfig)) : null
 export const auth = app ? getAuth(app) : null
+export const authPersistenceReady = auth
+  ? setPersistence(auth, browserLocalPersistence).catch((error) => {
+      console.warn('[Firebase Auth] persistence setup failed', {
+        mode: 'browserLocalPersistence',
+        code: error?.code || '',
+        message: error?.message || '',
+      })
+    })
+  : Promise.resolve()
 export const firestoreDb = app ? getFirestore(app) : null
 export const db = firestoreDb
 export const storage = app && hasStorageConfig ? getStorage(app) : null

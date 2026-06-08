@@ -71,6 +71,16 @@ async function createSecondaryAuthUser(email, password) {
 
   try {
     const credentials = await createUserWithEmailAndPassword(secondaryAuth, email, password)
+    console.warn('[AUTO LOGOUT TRACE]', {
+      file: 'src/crm/hooks/useStaffPermissions.js',
+      function: 'createSecondaryAuthUser',
+      reason: 'secondary_auth_cleanup_after_staff_user_create',
+      route: window.location.pathname,
+      uid: secondaryAuth?.currentUser?.uid,
+      email: secondaryAuth?.currentUser?.email,
+      time: new Date().toISOString(),
+      stack: new Error().stack,
+    })
     await signOut(secondaryAuth).catch(() => {})
     return { ok: true, uid: credentials.user.uid }
   } catch (error) {

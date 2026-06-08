@@ -1,8 +1,8 @@
 import { useContext, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { signInWithEmailAndPassword, signOut } from 'firebase/auth'
+import { signInWithEmailAndPassword } from 'firebase/auth'
 import { AuthContext } from '../../context/auth-context.js'
-import { auth } from '../../lib/firebase.js'
+import { auth, authPersistenceReady } from '../../lib/firebase.js'
 import { isBackendAdminEmail } from '../../lib/roles.js'
 import { clientSafeMessage } from '../../lib/errorHandler.js'
 
@@ -24,7 +24,6 @@ export default function AdminLogin() {
       return
     }
     console.log('[Admin Auth] blocked')
-    signOut(auth).catch(() => {})
     setError('Only backend admin can access this panel.')
   }, [authState?.loading, authState?.user, navigate])
 
@@ -39,11 +38,11 @@ export default function AdminLogin() {
 
     setLoading(true)
     try {
+      await authPersistenceReady
       const credentials = await signInWithEmailAndPassword(auth, email.trim(), password)
       console.log('[Admin Auth] login email:', credentials.user.email)
       if (!isBackendAdminEmail(credentials.user.email)) {
         console.log('[Admin Auth] blocked')
-        await signOut(auth)
         setError('Only backend admin can access this panel.')
         return
       }

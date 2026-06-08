@@ -11,7 +11,7 @@ import {
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
 import { motion } from 'framer-motion'
-import { auth } from '../../lib/firebase.js'
+import { auth, authPersistenceReady } from '../../lib/firebase.js'
 import useAuth from '../../context/useAuth.js'
 import NexoraLogo from '../../components/brand/NexoraLogo.jsx'
 import { clientSafeMessage } from '../../lib/errorHandler.js'
@@ -51,6 +51,7 @@ export default function Login() {
       const loginEmail = email.trim().toLowerCase()
       trackAnalyticsEvent('login_started', { email: loginEmail, page: '/login' }).catch(() => {})
       console.log('[LOGIN STEP 1] Firebase auth start', { email: loginEmail })
+      await authPersistenceReady
       const credentials = await signInWithEmailAndPassword(auth, email.trim(), password)
       console.log('[LOGIN STEP 2] Firebase auth success', { uid: credentials.user.uid })
       console.log('[LOGIN STEP 3] Read users doc', { uid: credentials.user.uid })
@@ -88,6 +89,7 @@ export default function Login() {
     try {
       const provider = new GoogleAuthProvider()
       trackAnalyticsEvent('login_started', { page: '/login', buttonLabel: 'Google sign in' }).catch(() => {})
+      await authPersistenceReady
       const result = await signInWithPopup(auth, provider)
       trackAnalyticsEvent('login_completed', { userId: result.user.uid, email: result.user.email || '', page: '/login', status: 'google' }).catch(() => {})
       navigate(WORKSPACE_ROUTE, { replace: true })

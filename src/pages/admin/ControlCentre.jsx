@@ -846,6 +846,16 @@ export default function ControlCentre() {
   }
 
   async function handleLogout() {
+    console.warn('[AUTO LOGOUT TRACE]', {
+      file: 'src/pages/admin/ControlCentre.jsx',
+      function: 'handleLogout',
+      reason: 'admin_user_initiated_logout',
+      route: window.location.pathname,
+      uid: auth?.currentUser?.uid,
+      email: auth?.currentUser?.email,
+      time: new Date().toISOString(),
+      stack: new Error().stack,
+    })
     await signOut(auth)
     navigate('/admin/login', { replace: true })
   }

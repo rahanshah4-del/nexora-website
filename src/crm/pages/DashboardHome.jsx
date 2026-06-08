@@ -494,6 +494,19 @@ export default function DashboardHomePage() {
     })
   }, [dashboardStats.activeLeads, dashboardStats.totalCustomers, loading, openTickets.length, totalRevenueUsd])
 
+  useEffect(() => {
+    if (loading) return
+    if (normalizeBusinessType(businessType) !== 'Retail / POS') return
+    console.log('[Retail POS Dashboard Loaded]', {
+      source: 'DashboardHome',
+      businessType: normalizeBusinessType(businessType),
+      invoices: invoicesApi.invoices.length,
+      customers: customersApi.customers.length,
+      expenses: expensesApi.expenses.length,
+      totalRevenueUsd,
+    })
+  }, [businessType, customersApi.customers.length, expensesApi.expenses.length, invoicesApi.invoices.length, loading, totalRevenueUsd])
+
   return (
     <div className="crm-dashboard-page min-w-0 space-y-5">
       <section className="grid min-w-0 gap-4 lg:grid-cols-12">

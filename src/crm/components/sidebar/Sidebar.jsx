@@ -6,7 +6,7 @@ import { memo, useCallback, useMemo } from 'react'
 import { useUser } from '../../hooks/useUser.js'
 import { useWorkspaceAccess } from '../../hooks/useWorkspaceAccess.js'
 import logoUrl from '../../../assets/logo/nexora-logo.svg'
-import { businessWorkspaceForType, isDeveloperOwnerAccount, selectedModulesForSidebar } from '../../data/moduleAccess.js'
+import { businessWorkspaceForType, isDeveloperOwnerAccount, normalizeBusinessType, selectedModulesForSidebar } from '../../data/moduleAccess.js'
 import { resolveWorkspaceName } from '../../../lib/workspaceName.js'
 import { HiOutlineSquares2X2 } from 'react-icons/hi2'
 
@@ -51,6 +51,31 @@ const orderedSidebarItems = [
   ...priorityRoutes.map((route) => navItems.find((item) => item.to === route)).filter(Boolean),
   ...navItems.filter((item) => !priorityRoutes.includes(item.to)),
 ]
+
+// Retail / POS workspace only: explicit leading sidebar order by module key.
+// Items not listed here keep their current relative order; Settings always stays last.
+const RETAIL_POS_SIDEBAR_ORDER = [
+  'dashboard',
+  'pos',
+  'customers',
+  'inventory',
+  'invoices',
+  'expenses',
+  'accounts',
+  'accountStatements',
+  'team',
+]
+
+function orderRetailPosSidebar(items) {
+  const rankFor = (item) => {
+    if (item.key === 'settings') return Number.MAX_SAFE_INTEGER
+    const index = RETAIL_POS_SIDEBAR_ORDER.indexOf(item.key)
+    // Unlisted items sort after the explicit block but before Settings,
+    // preserving their existing relative order via the original index.
+    return index === -1 ? RETAIL_POS_SIDEBAR_ORDER.length + items.indexOf(item) : index
+  }
+  return [...items].sort((a, b) => rankFor(a) - rankFor(b))
+}
 
 const SidebarNavItem = memo(function SidebarNavItem({ item, collapsed, onNavigate }) {
   const Icon = item.icon || HiOutlineSquares2X2
@@ -162,7 +187,7 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
       teamOverride: access.isAdmin || access.hasPermission('settingsAccess'),
     })
     const allowedRoutes = new Set(modules.map((module) => module.route))
-    return modules.map((module) => {
+    const items = modules.map((module) => {
       const navItem = orderedSidebarItems.find((item) => item.to === module.route)
       return {
         ...(navItem || module),
@@ -176,6 +201,7 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
       if (item.to === '/app/team' && !developerOverride && !access.isAdmin && !access.hasModulePermission('team', 'view')) return false
       return allowedRoutes.has(item.to) || item.comingSoon
     })
+    return normalizeBusinessType(businessType) === 'Retail / POS' ? orderRetailPosSidebar(items) : items
   }, [access, accessPlan, businessType, developerOverride, userDoc?.enabledModules, userDoc?.onboardingCompleted])
 
   const handleSwitchProduct = useCallback(() => {
