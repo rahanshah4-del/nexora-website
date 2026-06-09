@@ -1227,6 +1227,39 @@ service cloud.firestore {
         allow delete: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId);
       }
 
+      // --- Property ERP (Maintenance & Contracts) ---
+      // Workspace-isolated. Owners/admins have full access (isWorkspaceManager);
+      // managers/staff gain access only when granted the matching module
+      // permission. Scope/ownership are pinned by the same metadata helpers used
+      // across CRM collections, so no cross-workspace access is possible.
+      match /propertyMaintenance/{maintenanceId} {
+        allow read: if isWorkspaceManager(workspaceId)
+          || staffPermission(workspaceId, 'module.maintenance.view')
+          || staffPermission(workspaceId, 'reports');
+        allow create: if workspaceHasWriteAccess(workspaceId)
+          && (isWorkspaceManager(workspaceId) || staffPermission(workspaceId, 'module.maintenance.create'))
+          && workspaceCreateMetadata(workspaceId);
+        allow update: if workspaceHasWriteAccess(workspaceId)
+          && (isWorkspaceManager(workspaceId) || staffPermission(workspaceId, 'module.maintenance.edit'))
+          && workspaceUpdateScopeSafe(workspaceId);
+        allow delete: if workspaceHasWriteAccess(workspaceId)
+          && (isWorkspaceManager(workspaceId) || staffPermission(workspaceId, 'module.maintenance.delete'));
+      }
+
+      match /propertyContracts/{contractId} {
+        allow read: if isWorkspaceManager(workspaceId)
+          || staffPermission(workspaceId, 'module.contracts.view')
+          || staffPermission(workspaceId, 'reports');
+        allow create: if workspaceHasWriteAccess(workspaceId)
+          && (isWorkspaceManager(workspaceId) || staffPermission(workspaceId, 'module.contracts.create'))
+          && workspaceCreateMetadata(workspaceId);
+        allow update: if workspaceHasWriteAccess(workspaceId)
+          && (isWorkspaceManager(workspaceId) || staffPermission(workspaceId, 'module.contracts.edit'))
+          && workspaceUpdateScopeSafe(workspaceId);
+        allow delete: if workspaceHasWriteAccess(workspaceId)
+          && (isWorkspaceManager(workspaceId) || staffPermission(workspaceId, 'module.contracts.delete'));
+      }
+
       match /{document=**} {
         allow read, write: if isAdmin();
       }

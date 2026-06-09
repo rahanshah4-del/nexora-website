@@ -12,6 +12,12 @@ import {
   HiOutlineSparkles,
   HiOutlineTicket,
   HiOutlineUserGroup,
+  HiOutlineBanknotes,
+  HiOutlineCalendarDays,
+  HiOutlineClipboardDocumentCheck,
+  HiOutlineExclamationTriangle,
+  HiOutlineWrenchScrewdriver,
+  HiOutlineChatBubbleLeftRight,
 } from 'react-icons/hi2'
 import Card from '../components/ui/Card.jsx'
 import Badge from '../components/ui/Badge.jsx'
@@ -22,6 +28,11 @@ import { useLeadScoring } from '../hooks/useLeadScoring.js'
 import { useActivityLogs } from '../hooks/useActivityLogs.js'
 import { useSupportTickets } from '../hooks/useSupportTickets.js'
 import { useExpenses } from '../hooks/useExpenses.js'
+import { useMaintenance } from '../hooks/useMaintenance.js'
+import { useContracts } from '../hooks/useContracts.js'
+import { useWhatsappContacts } from '../hooks/useWhatsappContacts.js'
+import { useWhatsappLeads } from '../hooks/useWhatsappLeads.js'
+import { useWhatsappFollowUps } from '../hooks/useWhatsappFollowUps.js'
 import { useUser } from '../hooks/useUser.js'
 import {
   calculateConversionRate,
@@ -37,6 +48,8 @@ import {
 import { formatCompact, formatCurrency, formatPercentValue, toFiniteNumber } from '../utils/format.js'
 import { cn } from '../utils/cn.js'
 import { normalizeBusinessType } from '../data/moduleAccess.js'
+import { contractStats, maintenanceStats } from '../lib/propertyCalculations.js'
+import { contactStats, followUpStats, leadStats } from '../lib/whatsappManual.js'
 
 // Dashboard hero title/subtitle per business type (module). Falls back to a
 // generic label for any unknown type. Only affects the hero header text.
@@ -278,6 +291,30 @@ export default function DashboardHomePage() {
   const expensesApi = useExpenses({ limitCount: DASHBOARD_RECENT_LIMIT })
   const { businessType } = useUser()
   const isSchool = normalizeBusinessType(businessType) === 'School ERP'
+  const isProperty = normalizeBusinessType(businessType) === 'Property ERP'
+  const maintenanceApi = useMaintenance({ enabled: isProperty })
+  const contractsApi = useContracts({ enabled: isProperty })
+  const propertyStats = useMemo(
+    () => ({
+      maintenance: maintenanceStats(maintenanceApi.requests),
+      contracts: contractStats(contractsApi.contracts),
+    }),
+    [maintenanceApi.requests, contractsApi.contracts],
+  )
+  const propertyLoading = isProperty && (maintenanceApi.loading || contractsApi.loading)
+  const isWhatsapp = normalizeBusinessType(businessType) === 'WhatsApp CRM'
+  const whatsappContactsApi = useWhatsappContacts({ enabled: isWhatsapp })
+  const whatsappLeadsApi = useWhatsappLeads({ enabled: isWhatsapp })
+  const whatsappFollowUpsApi = useWhatsappFollowUps({ enabled: isWhatsapp })
+  const whatsappStats = useMemo(
+    () => ({
+      contacts: contactStats(whatsappContactsApi.contacts),
+      leads: leadStats(whatsappLeadsApi.leads),
+      followUps: followUpStats(whatsappFollowUpsApi.followUps),
+    }),
+    [whatsappContactsApi.contacts, whatsappLeadsApi.leads, whatsappFollowUpsApi.followUps],
+  )
+  const whatsappLoading = isWhatsapp && (whatsappContactsApi.loading || whatsappLeadsApi.loading || whatsappFollowUpsApi.loading)
   const hero = dashboardHero(businessType)
 
   const loading =
@@ -587,6 +624,158 @@ export default function DashboardHomePage() {
           <MetricCard key={kpi.label} {...kpi} />
         ))}
       </section>
+
+      {isProperty ? (
+        <section className="min-w-0 space-y-4">
+          <div className="flex min-w-0 items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Property ERP</p>
+              <h2 className="mt-1 text-base font-semibold tracking-tight text-slate-950 dark:text-white">Leasing &amp; maintenance overview</h2>
+            </div>
+            <Badge variant={propertyLoading ? 'default' : 'success'}>{propertyLoading ? 'Syncing' : 'Live Sync'}</Badge>
+          </div>
+          <div className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <MetricCard
+              icon={HiOutlineClipboardDocumentCheck}
+              label="Active Contracts"
+              value={formatCompact(propertyStats.contracts.active)}
+              helper={`${formatCompact(propertyStats.contracts.draft)} draft`}
+              tone="emerald"
+              loading={propertyLoading}
+            />
+            <MetricCard
+              icon={HiOutlineCalendarDays}
+              label="Expiring Contracts"
+              value={formatCompact(propertyStats.contracts.expiringSoon)}
+              helper="Within next 30 days"
+              tone="violet"
+              loading={propertyLoading}
+            />
+            <MetricCard
+              icon={HiOutlineBanknotes}
+              label="Monthly Rent Expected"
+              value={formatCurrency(propertyStats.contracts.monthlyRentExpected, currency)}
+              helper="From active leases"
+              tone="sky"
+              loading={propertyLoading}
+            />
+            <MetricCard
+              icon={HiOutlineWrenchScrewdriver}
+              label="Open Maintenance"
+              value={formatCompact(propertyStats.maintenance.pending)}
+              helper={`${formatCompact(propertyStats.maintenance.completed)} completed`}
+              tone="cyan"
+              loading={propertyLoading}
+            />
+            <MetricCard
+              icon={HiOutlineExclamationTriangle}
+              label="Overdue Maintenance"
+              value={formatCompact(propertyStats.maintenance.overdue)}
+              helper="Past due date, still open"
+              tone="violet"
+              loading={propertyLoading}
+            />
+            <MetricCard
+              icon={HiOutlineCurrencyDollar}
+              label="Pending Maintenance Cost"
+              value={formatCurrency(propertyStats.maintenance.pendingCost, currency)}
+              helper="Unpaid balance on open jobs"
+              tone="sky"
+              loading={propertyLoading}
+            />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              to="/app/contracts"
+              className="focus-ring inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors duration-100 hover:bg-sky-700"
+            >
+              <HiOutlineClipboardDocumentCheck className="h-4 w-4" /> Manage contracts
+            </Link>
+            <Link
+              to="/app/maintenance"
+              className="focus-ring inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-colors duration-100 hover:border-sky-200"
+            >
+              <HiOutlineWrenchScrewdriver className="h-4 w-4" /> Maintenance board
+            </Link>
+          </div>
+        </section>
+      ) : null}
+
+      {isWhatsapp ? (
+        <section className="min-w-0 space-y-4">
+          <div className="flex min-w-0 items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">WhatsApp CRM</p>
+              <h2 className="mt-1 text-base font-semibold tracking-tight text-slate-950 dark:text-white">Conversations &amp; lead overview</h2>
+            </div>
+            <Badge variant={whatsappLoading ? 'default' : 'success'}>{whatsappLoading ? 'Syncing' : 'Manual Mode'}</Badge>
+          </div>
+          <div className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <MetricCard
+              icon={HiOutlineUserGroup}
+              label="Contacts"
+              value={formatCompact(whatsappStats.contacts.total)}
+              helper={`${formatCompact(whatsappStats.contacts.customers)} customers`}
+              tone="emerald"
+              loading={whatsappLoading}
+            />
+            <MetricCard
+              icon={HiOutlineSparkles}
+              label="Open Leads"
+              value={formatCompact(whatsappStats.leads.open)}
+              helper={`${formatCompact(whatsappStats.leads.won)} won`}
+              tone="violet"
+              loading={whatsappLoading}
+            />
+            <MetricCard
+              icon={HiOutlineCurrencyDollar}
+              label="Pipeline Value"
+              value={formatCurrency(whatsappStats.leads.pipelineValue, currency)}
+              helper="Open WhatsApp leads"
+              tone="sky"
+              loading={whatsappLoading}
+            />
+            <MetricCard
+              icon={HiOutlineCalendarDays}
+              label="Follow-ups Due Today"
+              value={formatCompact(whatsappStats.followUps.dueToday)}
+              helper={`${formatCompact(whatsappStats.followUps.pending)} pending`}
+              tone="cyan"
+              loading={whatsappLoading}
+            />
+            <MetricCard
+              icon={HiOutlineExclamationTriangle}
+              label="Overdue Follow-ups"
+              value={formatCompact(whatsappStats.followUps.overdue)}
+              helper="Past due, still open"
+              tone="violet"
+              loading={whatsappLoading}
+            />
+            <MetricCard
+              icon={HiOutlineCheckCircle}
+              label="Active Contacts"
+              value={formatCompact(whatsappStats.contacts.active)}
+              helper={`${formatCompact(whatsappStats.contacts.blocked)} blocked`}
+              tone="sky"
+              loading={whatsappLoading}
+            />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              to="/app/whatsapp-inbox"
+              className="focus-ring inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors duration-100 hover:bg-emerald-700"
+            >
+              <HiOutlineChatBubbleLeftRight className="h-4 w-4" /> Open inbox
+            </Link>
+            <Link
+              to="/app/whatsapp-leads"
+              className="focus-ring inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-colors duration-100 hover:border-emerald-200"
+            >
+              <HiOutlineUserGroup className="h-4 w-4" /> Manage leads
+            </Link>
+          </div>
+        </section>
+      ) : null}
 
       <section className="grid min-w-0 gap-5 lg:grid-cols-12">
         <Card className="rounded-[1.6rem] p-5 lg:col-span-7">

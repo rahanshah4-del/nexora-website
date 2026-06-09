@@ -18,6 +18,8 @@ import {
   HiOutlineChatBubbleLeftRight,
   HiOutlineUserGroup,
   HiOutlineUsers,
+  HiOutlineWrenchScrewdriver,
+  HiOutlineClipboardDocumentCheck,
 } from 'react-icons/hi2'
 
 export const navItems = [
@@ -43,6 +45,12 @@ export const navItems = [
   { label: 'Enterprise Analytics', to: '/app/analytics', icon: HiOutlineChartBarSquare },
   { label: 'Notifications', to: '/app/notifications', icon: HiOutlineBell },
   { label: 'Reports', to: '/app/reports', icon: HiOutlineDocumentChartBar },
+  { label: 'Maintenance', to: '/app/maintenance', icon: HiOutlineWrenchScrewdriver },
+  { label: 'Contracts', to: '/app/contracts', icon: HiOutlineClipboardDocumentCheck },
+  { label: 'WhatsApp Inbox', to: '/app/whatsapp-inbox', icon: HiOutlineChatBubbleLeftRight },
+  { label: 'WhatsApp Leads', to: '/app/whatsapp-leads', icon: HiOutlineUserGroup },
+  { label: 'WhatsApp Follow-Ups', to: '/app/whatsapp-followups', icon: HiOutlineBell },
+  { label: 'WhatsApp Templates', to: '/app/whatsapp-templates', icon: HiOutlineDocumentText },
   { label: 'Settings', to: '/app/settings', icon: HiOutlineCog6Tooth },
 ]
 

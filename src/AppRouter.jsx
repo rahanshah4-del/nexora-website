@@ -43,6 +43,12 @@ const NotificationsPage = lazy(() => import('./crm/pages/Notifications.jsx'))
 const ApprovalsPage = lazy(() => import('./crm/pages/Approvals.jsx'))
 const ReportsPage = lazy(() => import('./crm/pages/Reports.jsx'))
 const SettingsPage = lazy(() => import('./crm/pages/Settings.jsx'))
+const MaintenancePage = lazy(() => import('./crm/pages/Maintenance.jsx'))
+const ContractsPage = lazy(() => import('./crm/pages/Contracts.jsx'))
+const WhatsappInboxPage = lazy(() => import('./crm/pages/WhatsappInbox.jsx'))
+const WhatsappLeadsPage = lazy(() => import('./crm/pages/WhatsappLeads.jsx'))
+const WhatsappFollowUpsPage = lazy(() => import('./crm/pages/WhatsappFollowUps.jsx'))
+const WhatsappTemplatesPage = lazy(() => import('./crm/pages/WhatsappTemplates.jsx'))
 const UpgradeRequests = lazy(() => import('./pages/admin/UpgradeRequests.jsx'))
 const ControlCentrePage = lazy(() => import('./pages/admin/ControlCentre.jsx'))
 const AdminLogin = lazy(() => import('./pages/admin/AdminLogin.jsx'))
@@ -234,6 +240,12 @@ export default function AppRouter() {
         <Route path="notifications" element={<LazyPage><NotificationsPage /></LazyPage>} />
         <Route path="approvals" element={<LazyPage><ApprovalsPage /></LazyPage>} />
         <Route path="reports" element={<LazyPage><ReportsPage /></LazyPage>} />
+        <Route path="maintenance" element={<LazyPage><MaintenancePage /></LazyPage>} />
+        <Route path="contracts" element={<LazyPage><ContractsPage /></LazyPage>} />
+        <Route path="whatsapp-inbox" element={<LazyPage><WhatsappInboxPage /></LazyPage>} />
+        <Route path="whatsapp-leads" element={<LazyPage><WhatsappLeadsPage /></LazyPage>} />
+        <Route path="whatsapp-followups" element={<LazyPage><WhatsappFollowUpsPage /></LazyPage>} />
+        <Route path="whatsapp-templates" element={<LazyPage><WhatsappTemplatesPage /></LazyPage>} />
         <Route path="settings" element={<LazyPage><SettingsPage /></LazyPage>} />
         <Route path="coming-soon/:moduleId" element={<LazyPage><DashboardHomePage /></LazyPage>} />
       </Route>
