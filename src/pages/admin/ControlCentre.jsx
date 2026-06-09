@@ -60,6 +60,10 @@ import {
   upgradeApprovedEmail,
   upgradeRejectedEmail,
 } from '../../lib/transactionalEmail.js'
+import {
+  WHATSAPP_TRIAL_DAYS,
+  WHATSAPP_TRIAL_MESSAGE_LIMIT,
+} from '../../crm/lib/whatsappApiTrial.js'
 import { buildApprovedSubscriptionPayload } from '../../lib/subscriptionApproval.js'
 
 export class ControlCentreErrorBoundary extends Component {
@@ -959,6 +963,53 @@ export default function ControlCentre() {
     await logActivity(action, { uid, email: userEmail(row), update })
   }
 
+  // WhatsApp API trial controls — writes the workspace-isolated config doc at
+  // workspaces/{workspaceId}/whatsappSettings/config. Token material is never
+  // written here; only trial policy fields are managed by the admin.
+  async function updateWhatsappTrial(row, patch, action = 'whatsapp_trial_updated') {
+    const workspaceId = row.workspaceId || row.id
+    const payload = {
+      ...patch,
+      workspaceId,
+      updatedAt: serverTimestamp(),
+      updatedBy: user?.uid || '',
+      updatedByEmail: user?.email || '',
+    }
+    await setDoc(doc(db, 'workspaces', workspaceId, 'whatsappSettings', 'config'), payload, { merge: true })
+    await logActivity(action, { workspaceId, email: userEmail(row), patch })
+  }
+
+  function enableWhatsappTrial(row) {
+    const startedAt = new Date()
+    const endsAt = new Date(startedAt.getTime())
+    endsAt.setDate(endsAt.getDate() + WHATSAPP_TRIAL_DAYS)
+    return updateWhatsappTrial(
+      row,
+      {
+        whatsappApiTrialEnabled: true,
+        whatsappApiMode: 'trial-api',
+        whatsappTrialMessageLimit: WHATSAPP_TRIAL_MESSAGE_LIMIT,
+        whatsappTrialMessagesUsed: 0,
+        whatsappTrialStartedAt: startedAt,
+        whatsappTrialEndsAt: endsAt,
+        whatsappApiEnabledBy: user?.email || user?.uid || 'admin',
+      },
+      'whatsapp_trial_enabled',
+    )
+  }
+
+  function setWhatsappApiMode(row, mode) {
+    return updateWhatsappTrial(
+      row,
+      {
+        whatsappApiMode: mode,
+        whatsappApiTrialEnabled: mode === 'trial-api',
+        whatsappApiEnabledBy: user?.email || user?.uid || 'admin',
+      },
+      'whatsapp_api_mode_changed',
+    )
+  }
+
   async function approveUpgrade(row) {
     if (!backendAdminAllowed) throw new Error('Backend admin access required.')
     const workspaceId = row.workspaceId || row.ownerId || row.userId
@@ -1156,6 +1207,22 @@ export default function ControlCentre() {
           <ShellButton onClick={() => runAction(`trial-reminder-${row.id}`, () => sendTrialReminder(row), 'Trial reminder email sent.')}>Send Trial Reminder</ShellButton>
           <ShellButton onClick={() => runAction(`paid-${row.id}`, () => markWorkspacePaid(row))}>Mark Paid</ShellButton>
           <ShellButton onClick={() => navigator.clipboard?.writeText(row.workspaceId || row.id)}>Copy Workspace ID</ShellButton>
+          <ShellButton onClick={() => runAction(`wa-trial-${row.id}`, () => enableWhatsappTrial(row), 'WhatsApp API trial enabled.')}>Enable WA Trial</ShellButton>
+          <select
+            className="rounded-xl border border-emerald-200 bg-white px-3 py-2 text-xs font-bold text-emerald-800"
+            defaultValue=""
+            onChange={(event) => {
+              const mode = event.target.value
+              event.target.value = ''
+              if (!mode) return
+              runAction(`wa-mode-${row.id}`, () => setWhatsappApiMode(row, mode), `WhatsApp API mode set to ${mode}.`)
+            }}
+          >
+            <option value="">WhatsApp Mode…</option>
+            <option value="manual">Manual</option>
+            <option value="trial-api">Trial API</option>
+            <option value="paid-api">Paid API</option>
+          </select>
         </div>
       ),
     },

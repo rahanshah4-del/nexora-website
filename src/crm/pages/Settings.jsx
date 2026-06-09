@@ -1,10 +1,11 @@
 import { motion } from 'framer-motion'
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   HiOutlineArrowRightOnRectangle,
   HiOutlineBuildingOffice2,
   HiOutlineCheckCircle,
+  HiOutlineChatBubbleLeftRight,
 } from 'react-icons/hi2'
 import Button from '../components/ui/Button.jsx'
 import Card from '../components/ui/Card.jsx'
@@ -17,10 +18,12 @@ import { supportedCurrencies } from '../data/currency.js'
 import { usePreferences } from '../hooks/usePreferences.js'
 import { useBusinessSettings } from '../hooks/useBusinessSettings.js'
 import { useWorkspaceAccess } from '../hooks/useWorkspaceAccess.js'
+import { useWhatsappSettings } from '../hooks/useWhatsappSettings.js'
 import { useUser } from '../hooks/useUser.js'
 import { useAuth } from '../hooks/useAuth.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
-import { packageNameForPlan } from '../data/moduleAccess.js'
+import { packageNameForPlan, normalizeBusinessType } from '../data/moduleAccess.js'
+import { whatsappCapabilities, whatsappTrialStatus } from '../lib/whatsappApiTrial.js'
 
 function Field({ label, children, className = '' }) {
   return (
@@ -28,6 +31,140 @@ function Field({ label, children, className = '' }) {
       <label className="text-xs font-semibold text-slate-600 dark:text-slate-200">{label}</label>
       <div className="mt-1.5">{children}</div>
     </div>
+  )
+}
+
+// Workspace WhatsApp API settings — trial status, message usage, days remaining,
+// single-number connection, webhook verification, and an upgrade path. Shown only
+// for the WhatsApp CRM workspace. Never reads or writes Meta token material.
+function WhatsappApiCard() {
+  const { config, loading, canManage, saveConfig, connectNumber, verifyWebhook } = useWhatsappSettings({ enabled: true })
+  const status = whatsappTrialStatus(config)
+  const caps = whatsappCapabilities(config)
+  const [phone, setPhone] = useState('')
+  const [note, setNote] = useState('')
+  const [busy, setBusy] = useState('')
+
+  useEffect(() => {
+    setPhone(config.connectedNumber || '')
+  }, [config.connectedNumber])
+
+  const modeVariant = caps.isPaid ? 'success' : caps.isTrial ? 'info' : 'default'
+
+  async function run(key, fn) {
+    setBusy(key)
+    setNote('')
+    const res = await fn()
+    setBusy('')
+    setNote(res?.ok ? 'Saved' : res?.error || 'Action failed')
+    window.setTimeout(() => setNote(''), 2200)
+  }
+
+  return (
+    <Card className="p-5">
+      <div className="flex items-start justify-between gap-3 border-b border-slate-200/80 pb-4">
+        <div className="flex items-center gap-3">
+          <span className="grid h-10 w-10 place-items-center rounded-2xl bg-emerald-50 text-emerald-700">
+            <HiOutlineChatBubbleLeftRight className="text-xl" />
+          </span>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-slate-950 dark:text-white">WhatsApp API</p>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-300">Trial access status and connection.</p>
+          </div>
+        </div>
+        <Badge variant={modeVariant}>{status.label}</Badge>
+      </div>
+
+      {/* Trial status + usage */}
+      <div className="mt-4 grid gap-3">
+        <div className="grid grid-cols-2 gap-3">
+          <div className="rounded-2xl border border-emerald-100 bg-emerald-50/50 p-3">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-700/70">Status</p>
+            <p className="mt-1 text-sm font-semibold text-slate-950">{status.active ? 'Active' : caps.isManual ? 'Manual mode' : 'Inactive'}</p>
+          </div>
+          <div className="rounded-2xl border border-emerald-100 bg-emerald-50/50 p-3">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-700/70">Trial Days Left</p>
+            <p className="mt-1 text-sm font-semibold text-slate-950">{caps.isPaid ? 'Unlimited' : caps.isTrial ? `${status.daysRemaining} days` : '—'}</p>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200/80 p-3">
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-semibold text-slate-600">Message usage</span>
+            <span className="font-semibold text-slate-950">
+              {caps.isPaid ? `${status.messagesUsed} sent` : `${status.messagesUsed} / ${status.messageLimit}`}
+            </span>
+          </div>
+          {!caps.isPaid ? (
+            <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
+              <div
+                className={`h-full rounded-full ${status.usagePercent >= 100 ? 'bg-rose-500' : 'bg-emerald-500'}`}
+                style={{ width: `${status.usagePercent}%` }}
+              />
+            </div>
+          ) : null}
+        </div>
+      </div>
+
+      {/* One WhatsApp Business number */}
+      <div className="mt-4 space-y-2">
+        <Field label="WhatsApp Business Number">
+          <div className="flex gap-2">
+            <Input
+              value={phone}
+              onChange={(event) => setPhone(event.target.value)}
+              placeholder="e.g. 9230..."
+              readOnly={!canManage || caps.isManual}
+            />
+            <Button
+              variant="subtle"
+              className="shrink-0 rounded-2xl"
+              type="button"
+              disabled={!canManage || caps.isManual || busy === 'connect'}
+              onClick={() => run('connect', () => connectNumber(phone))}
+            >
+              {busy === 'connect' ? 'Saving…' : 'Connect'}
+            </Button>
+          </div>
+        </Field>
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant={config.webhookVerified ? 'success' : 'default'}>
+            {config.webhookVerified ? 'Webhook verified' : 'Webhook not verified'}
+          </Badge>
+          <Button
+            variant="ghost"
+            className="rounded-2xl text-xs"
+            type="button"
+            disabled={!canManage || !config.connectedNumber || busy === 'verify'}
+            onClick={() => run('verify', () => verifyWebhook())}
+          >
+            {busy === 'verify' ? 'Verifying…' : 'Verify webhook'}
+          </Button>
+          {note ? <span className="text-xs font-semibold text-slate-500">{note}</span> : null}
+        </div>
+      </div>
+
+      {/* Trial restrictions */}
+      {caps.isTrial ? (
+        <div className="mt-4 rounded-2xl border border-amber-100 bg-amber-50/70 p-3 text-xs leading-5 text-amber-900">
+          <p className="font-semibold">Trial limits</p>
+          <p className="mt-1">One number · up to {status.messageLimit} messages · no broadcasts, bulk sending, or AI automation.</p>
+        </div>
+      ) : null}
+
+      {/* Upgrade */}
+      {!caps.isPaid ? (
+        <Link
+          to="/app/subscriptions"
+          className="focus-ring mt-4 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-br from-emerald-500 to-green-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-transform duration-100 hover:scale-[1.01]"
+        >
+          Upgrade for full WhatsApp API
+        </Link>
+      ) : null}
+
+      {loading ? <p className="mt-3 text-xs text-slate-400">Loading WhatsApp settings…</p> : null}
+      {!canManage ? <p className="mt-3 text-xs text-slate-400">View access only — ask an admin to change WhatsApp settings.</p> : null}
+    </Card>
   )
 }
 
@@ -323,6 +460,7 @@ export default function SettingsPage() {
         </div>
 
         <div className="min-w-0 space-y-5">
+          {normalizeBusinessType(businessType) === 'WhatsApp CRM' ? <WhatsappApiCard /> : null}
           <Card className="p-5">
             <div className="flex items-start gap-3">
               <span className="grid h-10 w-10 place-items-center rounded-2xl bg-rose-50 text-rose-700">

@@ -1260,6 +1260,12 @@ service cloud.firestore {
           && (isWorkspaceManager(workspaceId) || staffPermission(workspaceId, 'module.contracts.delete'));
       }
 
+      match /whatsappSettings/{docId} {
+        allow read: if isWorkspaceMember(workspaceId) || isAdmin();
+        allow write: if isAdmin()
+          || (workspaceHasWriteAccess(workspaceId) && workspaceOwnerMatches(workspaceId));
+      }
+
       match /{document=**} {
         allow read, write: if isAdmin();
       }

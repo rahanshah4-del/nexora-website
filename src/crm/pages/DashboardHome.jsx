@@ -33,6 +33,7 @@ import { useContracts } from '../hooks/useContracts.js'
 import { useWhatsappContacts } from '../hooks/useWhatsappContacts.js'
 import { useWhatsappLeads } from '../hooks/useWhatsappLeads.js'
 import { useWhatsappFollowUps } from '../hooks/useWhatsappFollowUps.js'
+import WhatsappDashboard from '../components/dashboard/WhatsappDashboard.jsx'
 import { useUser } from '../hooks/useUser.js'
 import {
   calculateConversionRate,
@@ -544,6 +545,21 @@ export default function DashboardHomePage() {
     })
   }, [businessType, customersApi.customers.length, expensesApi.expenses.length, invoicesApi.invoices.length, loading, totalRevenueUsd])
 
+  // WhatsApp CRM gets a dedicated, green-themed dashboard instead of the shared
+  // CRM layout. All hooks above still run; only the rendered output differs.
+  if (isWhatsapp) {
+    return (
+      <WhatsappDashboard
+        stats={whatsappStats}
+        contacts={whatsappContactsApi.contacts}
+        leads={whatsappLeadsApi.leads}
+        followUps={whatsappFollowUpsApi.followUps}
+        loading={whatsappLoading}
+        businessTitle={hero.title}
+      />
+    )
+  }
+
   return (
     <div className="crm-dashboard-page min-w-0 space-y-5">
       <section className="grid min-w-0 gap-4 lg:grid-cols-12">
@@ -696,82 +712,6 @@ export default function DashboardHomePage() {
               className="focus-ring inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-colors duration-100 hover:border-sky-200"
             >
               <HiOutlineWrenchScrewdriver className="h-4 w-4" /> Maintenance board
-            </Link>
-          </div>
-        </section>
-      ) : null}
-
-      {isWhatsapp ? (
-        <section className="min-w-0 space-y-4">
-          <div className="flex min-w-0 items-center justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">WhatsApp CRM</p>
-              <h2 className="mt-1 text-base font-semibold tracking-tight text-slate-950 dark:text-white">Conversations &amp; lead overview</h2>
-            </div>
-            <Badge variant={whatsappLoading ? 'default' : 'success'}>{whatsappLoading ? 'Syncing' : 'Manual Mode'}</Badge>
-          </div>
-          <div className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-            <MetricCard
-              icon={HiOutlineUserGroup}
-              label="Contacts"
-              value={formatCompact(whatsappStats.contacts.total)}
-              helper={`${formatCompact(whatsappStats.contacts.customers)} customers`}
-              tone="emerald"
-              loading={whatsappLoading}
-            />
-            <MetricCard
-              icon={HiOutlineSparkles}
-              label="Open Leads"
-              value={formatCompact(whatsappStats.leads.open)}
-              helper={`${formatCompact(whatsappStats.leads.won)} won`}
-              tone="violet"
-              loading={whatsappLoading}
-            />
-            <MetricCard
-              icon={HiOutlineCurrencyDollar}
-              label="Pipeline Value"
-              value={formatCurrency(whatsappStats.leads.pipelineValue, currency)}
-              helper="Open WhatsApp leads"
-              tone="sky"
-              loading={whatsappLoading}
-            />
-            <MetricCard
-              icon={HiOutlineCalendarDays}
-              label="Follow-ups Due Today"
-              value={formatCompact(whatsappStats.followUps.dueToday)}
-              helper={`${formatCompact(whatsappStats.followUps.pending)} pending`}
-              tone="cyan"
-              loading={whatsappLoading}
-            />
-            <MetricCard
-              icon={HiOutlineExclamationTriangle}
-              label="Overdue Follow-ups"
-              value={formatCompact(whatsappStats.followUps.overdue)}
-              helper="Past due, still open"
-              tone="violet"
-              loading={whatsappLoading}
-            />
-            <MetricCard
-              icon={HiOutlineCheckCircle}
-              label="Active Contacts"
-              value={formatCompact(whatsappStats.contacts.active)}
-              helper={`${formatCompact(whatsappStats.contacts.blocked)} blocked`}
-              tone="sky"
-              loading={whatsappLoading}
-            />
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Link
-              to="/app/whatsapp-inbox"
-              className="focus-ring inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors duration-100 hover:bg-emerald-700"
-            >
-              <HiOutlineChatBubbleLeftRight className="h-4 w-4" /> Open inbox
-            </Link>
-            <Link
-              to="/app/whatsapp-leads"
-              className="focus-ring inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-colors duration-100 hover:border-emerald-200"
-            >
-              <HiOutlineUserGroup className="h-4 w-4" /> Manage leads
             </Link>
           </div>
         </section>

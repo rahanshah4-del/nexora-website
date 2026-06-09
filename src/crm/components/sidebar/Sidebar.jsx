@@ -77,6 +77,44 @@ function orderRetailPosSidebar(items) {
   return [...items].sort((a, b) => rankFor(a) - rankFor(b))
 }
 
+// WhatsApp CRM workspace only: dedicated WhatsApp-first sidebar. Only the keys
+// below are shown (everything else — invoices, expenses, accounts, account
+// statements, approvals, notifications, generic leads/follow-ups/support — is
+// hidden so the sidebar reads as a dedicated WhatsApp CRM, not General CRM).
+// The list is also the display order. Settings always stays last.
+const WHATSAPP_CRM_SIDEBAR_ORDER = [
+  'dashboard',
+  'whatsappInbox',
+  'whatsappLeads',
+  'customers',
+  'whatsappFollowUps',
+  'whatsappTemplates',
+  'campaigns', // Broadcast Campaigns (Coming Soon)
+  'autoReplies', // Coming Soon — kept in place near messaging tools
+  'reports',
+  'team',
+  'settings',
+]
+
+// WhatsApp CRM relabels: present the WhatsApp-specific modules with the concise
+// labels the dedicated CRM uses, without touching the shared module catalog.
+const WHATSAPP_CRM_SIDEBAR_LABELS = {
+  whatsappInbox: 'WhatsApp Inbox',
+  whatsappLeads: 'WhatsApp Leads',
+  whatsappFollowUps: 'Follow-Ups',
+  whatsappTemplates: 'Templates',
+  campaigns: 'Broadcast Campaigns',
+  team: 'Team Management',
+}
+
+function orderWhatsappCrmSidebar(items) {
+  const allowed = new Set(WHATSAPP_CRM_SIDEBAR_ORDER)
+  return items
+    .filter((item) => allowed.has(item.key))
+    .map((item) => ({ ...item, label: WHATSAPP_CRM_SIDEBAR_LABELS[item.key] || item.label }))
+    .sort((a, b) => WHATSAPP_CRM_SIDEBAR_ORDER.indexOf(a.key) - WHATSAPP_CRM_SIDEBAR_ORDER.indexOf(b.key))
+}
+
 const SidebarNavItem = memo(function SidebarNavItem({ item, collapsed, onNavigate }) {
   const Icon = item.icon || HiOutlineSquares2X2
   const label = item.label || compactLabels[item.to]
@@ -201,7 +239,10 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
       if (item.to === '/app/team' && !developerOverride && !access.isAdmin && !access.hasModulePermission('team', 'view')) return false
       return allowedRoutes.has(item.to) || item.comingSoon
     })
-    return normalizeBusinessType(businessType) === 'Retail / POS' ? orderRetailPosSidebar(items) : items
+    const normalizedType = normalizeBusinessType(businessType)
+    if (normalizedType === 'Retail / POS') return orderRetailPosSidebar(items)
+    if (normalizedType === 'WhatsApp CRM') return orderWhatsappCrmSidebar(items)
+    return items
   }, [access, accessPlan, businessType, developerOverride, userDoc?.enabledModules, userDoc?.onboardingCompleted])
 
   const handleSwitchProduct = useCallback(() => {
