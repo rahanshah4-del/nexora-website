@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   HiOutlineBell,
   HiOutlineBuildingOffice2,
+  HiOutlineChatBubbleLeftRight,
   HiOutlineChartBarSquare,
   HiOutlineCheckBadge,
   HiOutlineCog6Tooth,
@@ -19,6 +20,7 @@ import {
 } from 'react-icons/hi2'
 import {
   collection,
+  collectionGroup,
   doc,
   limit,
   onSnapshot,
@@ -63,7 +65,15 @@ import {
 import {
   WHATSAPP_TRIAL_DAYS,
   WHATSAPP_TRIAL_MESSAGE_LIMIT,
+  normalizeWhatsappConfig,
+  whatsappTrialStatus,
 } from '../../crm/lib/whatsappApiTrial.js'
+import { useWhatsappPricing } from '../../crm/hooks/useWhatsappPricing.js'
+import {
+  SUPPORTED_PRICING_CURRENCIES,
+  defaultWhatsappPricing,
+  formatPricingAmount,
+} from '../../crm/lib/whatsappPricing.js'
 import { buildApprovedSubscriptionPayload } from '../../lib/subscriptionApproval.js'
 
 export class ControlCentreErrorBoundary extends Component {
@@ -132,6 +142,7 @@ const navGroups = [
       ['upgrades', 'Upgrade Requests', HiOutlineCheckBadge],
       ['transactions', 'Transactions', HiOutlineCurrencyDollar],
       ['plans', 'Plans', HiOutlineCreditCard],
+      ['whatsappPricing', 'WhatsApp Pricing', HiOutlineChatBubbleLeftRight],
       ['moduleAccess', 'Module Access', HiOutlineShieldCheck],
       ['visitorAnalytics', 'Visitor Analytics', HiOutlineChartBarSquare],
     ],
@@ -326,6 +337,7 @@ function useControlCentreData() {
     platformSettings: [],
     analyticsEvents: [],
     userSessions: [],
+    whatsappSettings: [],
     loading: Boolean(db),
     error: '',
     sourceErrors: {},
@@ -353,6 +365,7 @@ function useControlCentreData() {
       platformSettings: [],
       analyticsEvents: [],
       userSessions: [],
+      whatsappSettings: [],
     }
     const expected = Object.keys(cache).length
     const loaded = new Set()
@@ -396,6 +409,24 @@ function useControlCentreData() {
         return () => {}
       }
     }
+    // Collection-group listener — reads a subcollection across all workspaces
+    // (e.g. workspaces/{id}/whatsappSettings/config) for per-workspace status.
+    const listenGroup = (key, groupId, rowLimit = 500) => {
+      try {
+        return onSnapshot(
+          query(collectionGroup(db, groupId), limit(rowLimit)),
+          (snap) => setRows(key, snap.docs.map(normalizeSnapDoc)),
+          (error) => {
+            setRows(key, [])
+            fail(key, error)
+          },
+        )
+      } catch (error) {
+        setRows(key, [])
+        fail(key, error)
+        return () => {}
+      }
+    }
 
     const unsubscribers = [
       listen('users', 'users', 500),
@@ -413,6 +444,7 @@ function useControlCentreData() {
       listen('platformSettings', 'platformSettings', 20),
       listen('analyticsEvents', 'analyticsEvents', 1000),
       listen('userSessions', 'userSessions', 500),
+      listenGroup('whatsappSettings', 'whatsappSettings', 500),
     ]
 
     return () => unsubscribers.forEach((unsubscribe) => unsubscribe?.())
@@ -565,6 +597,8 @@ export default function ControlCentre() {
   const [workspacePlanFilter, setWorkspacePlanFilter] = useState('all')
   const [userFilter, setUserFilter] = useState('all')
   const [settingsDraft, setSettingsDraft] = useState(defaultPlatformSettings)
+  const whatsappPricingApi = useWhatsappPricing({ enabled: true })
+  const [whatsappPricingDraft, setWhatsappPricingDraft] = useState(defaultWhatsappPricing)
   const backendAdminAllowed = isBackendAdminEmail(user?.email)
   console.log('[Admin Auth] ControlCentre admin check:', user?.email, backendAdminAllowed ? 'allowed' : 'blocked')
 
@@ -582,9 +616,26 @@ export default function ControlCentre() {
     return map
   }, [data.workspaces])
 
+  // Per-workspace WhatsApp config (from the whatsappSettings collection group).
+  // Keyed by workspaceId stored on the doc, falling back to its parent path.
+  const whatsappByWorkspace = useMemo(() => {
+    const map = new Map()
+    ;(data.whatsappSettings || []).forEach((row) => {
+      const fromPath = String(row.path || '').split('/')[1] || ''
+      const workspaceId = row.workspaceId || fromPath
+      if (workspaceId) map.set(workspaceId, normalizeWhatsappConfig(row))
+    })
+    return map
+  }, [data.whatsappSettings])
+
   useEffect(() => {
     setSettingsDraft(platformSettings)
   }, [platformSettings])
+
+  // Keep the editable WhatsApp pricing draft in sync with the live document.
+  useEffect(() => {
+    setWhatsappPricingDraft(whatsappPricingApi.pricing)
+  }, [whatsappPricingApi.pricing])
 
   const payments = data.platformPayments
   const stats = useMemo(() => {
@@ -876,6 +927,28 @@ export default function ControlCentre() {
     await logActivity('platform_settings_saved', { defaultCurrency: payload.defaultCurrency, trialDays: payload.trialDays, maintenanceMode: payload.maintenanceMode })
   }
 
+  // Save the global WhatsApp CRM pricing (settings/whatsappPricing).
+  async function saveWhatsappPricing() {
+    const meta = { updatedBy: user?.uid || '', updatedByEmail: user?.email || '' }
+    const res = await whatsappPricingApi.savePricing(whatsappPricingDraft, meta)
+    if (!res?.ok) throw new Error(res?.error || 'Unable to save WhatsApp pricing.')
+    await logActivity('whatsapp_pricing_saved', {
+      setupFee: Number(whatsappPricingDraft.setupFee),
+      monthlyFee: Number(whatsappPricingDraft.monthlyFee),
+      trialDays: Number(whatsappPricingDraft.trialDays),
+      currency: whatsappPricingDraft.currency,
+    })
+  }
+
+  // Reset WhatsApp CRM pricing back to the canonical defaults.
+  async function resetWhatsappPricing() {
+    const meta = { updatedBy: user?.uid || '', updatedByEmail: user?.email || '' }
+    const res = await whatsappPricingApi.resetPricing(meta)
+    if (!res?.ok) throw new Error(res?.error || 'Unable to reset WhatsApp pricing.')
+    setWhatsappPricingDraft(defaultWhatsappPricing())
+    await logActivity('whatsapp_pricing_reset', {})
+  }
+
   async function sendReset(row) {
     const email = userEmail(row)
     if (!auth || !email) throw new Error('Client email is missing.')
@@ -1007,6 +1080,68 @@ export default function ControlCentre() {
         whatsappApiEnabledBy: user?.email || user?.uid || 'admin',
       },
       'whatsapp_api_mode_changed',
+    )
+  }
+
+  // Mark the webhook verified and promote the connection to connected. Token
+  // material is never written here — only non-secret status fields.
+  function verifyWhatsappConnection(row) {
+    return updateWhatsappTrial(
+      row,
+      {
+        connectionStatus: 'connected',
+        verificationStatus: 'verified',
+        webhookStatus: 'verified',
+        webhookVerified: true,
+        lastVerificationAt: new Date(),
+        lastWebhookAt: new Date(),
+      },
+      'whatsapp_webhook_verified',
+    )
+  }
+
+  // Turn off API access (back to manual click-to-WhatsApp). Keeps usage history.
+  function disableWhatsappApi(row) {
+    return updateWhatsappTrial(
+      row,
+      { whatsappApiMode: 'manual', whatsappApiTrialEnabled: false },
+      'whatsapp_api_disabled',
+    )
+  }
+
+  // Clear the connection (non-secret fields) while keeping trial/usage history.
+  function disconnectWhatsapp(row) {
+    return updateWhatsappTrial(
+      row,
+      {
+        status: 'disconnected',
+        connectionStatus: 'disconnected',
+        verificationStatus: '',
+        webhookStatus: 'disconnected',
+        webhookVerified: false,
+        phoneNumberId: '',
+        businessAccountId: '',
+        connectedNumber: '',
+        connectedNumberLabel: '',
+        displayName: '',
+        businessName: '',
+      },
+      'whatsapp_disconnected',
+    )
+  }
+
+  // Reset just the connection status back to a clean not-connected state.
+  function resetWhatsappConnection(row) {
+    return updateWhatsappTrial(
+      row,
+      {
+        status: 'not_connected',
+        connectionStatus: 'not_connected',
+        verificationStatus: '',
+        webhookStatus: '',
+        webhookVerified: false,
+      },
+      'whatsapp_connection_reset',
     )
   }
 
@@ -1189,6 +1324,33 @@ export default function ControlCentre() {
     { key: 'lastActiveAt', label: 'Last Active', render: (row) => dateTimeLabel(row.lastActiveAt || row.lastAccessedAt || workspacesById.get(row.ownerId || row.userId || row.id)?.lastActiveAt) },
     { key: 'createdAt', label: 'Created', render: (row) => dateLabel(row.createdAt) },
     {
+      key: 'whatsapp',
+      label: 'WhatsApp',
+      render: (row) => {
+        const wa = whatsappByWorkspace.get(row.workspaceId || row.id)
+        if (!wa) return <span className="text-xs text-slate-400">Not configured</span>
+        const waStatus = whatsappTrialStatus(wa)
+        const apiEnabled = wa.whatsappApiMode === 'paid-api' || (wa.whatsappApiMode === 'trial-api' && wa.whatsappApiTrialEnabled)
+        return (
+          <div className="min-w-[16rem] space-y-1 text-xs">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="rounded-full bg-emerald-50 px-2 py-0.5 font-bold capitalize text-emerald-700 ring-1 ring-emerald-100">{waStatus.label}</span>
+              <Status value={wa.connectionStatus || 'not connected'} />
+            </div>
+            <p><span className="font-semibold text-slate-500">Business:</span> {wa.businessName || wa.displayName || '—'}</p>
+            <p><span className="font-semibold text-slate-500">Number:</span> {wa.connectedNumber || '—'}</p>
+            <p><span className="font-semibold text-slate-500">Phone Number ID:</span> {wa.phoneNumberId || '—'}</p>
+            <p><span className="font-semibold text-slate-500">WABA ID:</span> {wa.businessAccountId || '—'}</p>
+            <p><span className="font-semibold text-slate-500">API Enabled:</span> {apiEnabled ? 'Yes' : 'No'}</p>
+            <p><span className="font-semibold text-slate-500">Trial Msgs:</span> {wa.whatsappTrialMessagesUsed} / {wa.whatsappTrialMessageLimit}</p>
+            <p><span className="font-semibold text-slate-500">Webhook:</span> {wa.webhookStatus || (wa.webhookVerified ? 'verified' : 'pending')}</p>
+            <p><span className="font-semibold text-slate-500">Last Webhook:</span> {dateTimeLabel(wa.lastWebhookAt) || '—'}</p>
+            <p><span className="font-semibold text-slate-500">Connected:</span> {dateTimeLabel(wa.connectedAt) || '—'}</p>
+          </div>
+        )
+      },
+    },
+    {
       key: 'actions',
       label: 'Actions',
       render: (row) => (
@@ -1223,6 +1385,10 @@ export default function ControlCentre() {
             <option value="trial-api">Trial API</option>
             <option value="paid-api">Paid API</option>
           </select>
+          <ShellButton onClick={() => runAction(`wa-verify-${row.id}`, () => verifyWhatsappConnection(row), 'WhatsApp connection marked verified.')}>WA Verify</ShellButton>
+          <ShellButton onClick={() => runAction(`wa-disable-${row.id}`, () => disableWhatsappApi(row), 'WhatsApp API disabled (manual mode).')}>WA Disable API</ShellButton>
+          <ShellButton onClick={() => runAction(`wa-disconnect-${row.id}`, () => disconnectWhatsapp(row), 'WhatsApp Business disconnected.')}>WA Disconnect</ShellButton>
+          <ShellButton onClick={() => runAction(`wa-reset-${row.id}`, () => resetWhatsappConnection(row), 'WhatsApp connection status reset.')}>WA Reset Status</ShellButton>
         </div>
       ),
     },
@@ -1873,6 +2039,77 @@ export default function ControlCentre() {
     )
   }
 
+  function WhatsappPricing() {
+    const draft = whatsappPricingDraft
+    const currency = draft.currency || 'PKR'
+    const setField = (field, value) => setWhatsappPricingDraft((current) => ({ ...current, [field]: value }))
+    const numberField = (field, value) => setField(field, value === '' ? '' : Math.max(0, Math.floor(Number(value) || 0)))
+
+    return (
+      <div className="space-y-4">
+        <Panel
+          title="WhatsApp CRM Pricing Management"
+          action={<ShellButton>Firestore: settings/whatsappPricing</ShellButton>}
+        >
+          {whatsappPricingApi.error ? (
+            <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700">{whatsappPricingApi.error}</div>
+          ) : null}
+          <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+            <label className="text-xs font-bold text-slate-600">
+              Setup Fee
+              <input type="number" min="0" className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" value={draft.setupFee} onChange={(event) => numberField('setupFee', event.target.value)} />
+            </label>
+            <label className="text-xs font-bold text-slate-600">
+              Monthly Fee
+              <input type="number" min="0" className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" value={draft.monthlyFee} onChange={(event) => numberField('monthlyFee', event.target.value)} />
+            </label>
+            <label className="text-xs font-bold text-slate-600">
+              Trial Days
+              <input type="number" min="0" className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" value={draft.trialDays} onChange={(event) => numberField('trialDays', event.target.value)} />
+            </label>
+            <label className="text-xs font-bold text-slate-600">
+              Trial Message Limit
+              <input type="number" min="0" className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" value={draft.trialMessageLimit} onChange={(event) => numberField('trialMessageLimit', event.target.value)} />
+            </label>
+            <label className="text-xs font-bold text-slate-600">
+              Currency
+              <select className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" value={currency} onChange={(event) => setField('currency', event.target.value)}>
+                {SUPPORTED_PRICING_CURRENCIES.map((code) => <option key={code}>{code}</option>)}
+              </select>
+            </label>
+            <label className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2 text-xs font-bold text-slate-700 lg:mt-5">
+              Meta Billing Notice Enabled
+              <input type="checkbox" checked={draft.metaBillingEnabled !== false} onChange={(event) => setField('metaBillingEnabled', event.target.checked)} />
+            </label>
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <ShellButton onClick={() => runAction('whatsapp-pricing-save', saveWhatsappPricing, 'WhatsApp pricing saved.')}>Save Pricing</ShellButton>
+            <ShellButton onClick={() => runAction('whatsapp-pricing-reset', resetWhatsappPricing, 'WhatsApp pricing reset to defaults.')}>Reset to Defaults</ShellButton>
+          </div>
+        </Panel>
+
+        <Panel title="Current Public Pricing" action={<ShellButton>Live Preview</ShellButton>}>
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {[
+              ['One-Time Setup Fee', formatPricingAmount(draft.setupFee, currency)],
+              ['Monthly Subscription', `${formatPricingAmount(draft.monthlyFee, currency)} / mo`],
+              ['Trial Duration', `${Number(draft.trialDays) || 0} Days`],
+              ['Trial Message Limit', `${Number(draft.trialMessageLimit) || 0} Messages`],
+            ].map(([label, value]) => (
+              <div key={label} className="rounded-2xl border border-emerald-100 bg-emerald-50/60 p-4">
+                <p className="text-[11px] font-black uppercase tracking-[0.12em] text-emerald-700/80">{label}</p>
+                <p className="mt-1 text-lg font-black text-slate-950">{value}</p>
+              </div>
+            ))}
+          </div>
+          <p className="mt-3 text-xs font-semibold text-slate-500">
+            Currency: {currency} · Meta billing notice: {draft.metaBillingEnabled !== false ? 'Shown' : 'Hidden'} · Last updated: {dateTimeLabel(whatsappPricingApi.pricing.lastUpdatedAt) || '—'}
+          </p>
+        </Panel>
+      </div>
+    )
+  }
+
   function Settings() {
     return (
       <div className="space-y-4">
@@ -2127,6 +2364,7 @@ export default function ControlCentre() {
     upgrades: <Panel title="Upgrade Requests" action={<ShellButton>Firestore: upgradeRequests</ShellButton>}><AdminTable rows={upgradeRows} columns={upgradeColumns} emptyTitle="No upgrade requests found" /></Panel>,
     transactions: <Transactions />,
     plans: <Plans />,
+    whatsappPricing: <WhatsappPricing />,
     moduleAccess: <ModuleAccess />,
     visitorAnalytics: <VisitorAnalytics />,
     announcements: <Announcements />,

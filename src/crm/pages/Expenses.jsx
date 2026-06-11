@@ -5,6 +5,7 @@ import Button from '../components/ui/Button.jsx'
 import Card from '../components/ui/Card.jsx'
 import Input from '../components/ui/Input.jsx'
 import PageHeader from '../components/ui/PageHeader.jsx'
+import PageSearch from '../components/ui/PageSearch.jsx'
 import Select from '../components/ui/Select.jsx'
 import Table from '../components/ui/Table.jsx'
 import Toast from '../components/ui/Toast.jsx'
@@ -169,6 +170,17 @@ export default function ExpensesPage() {
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [toast, setToast] = useState(null)
   const [busy, setBusy] = useState(false)
+  const [search, setSearch] = useState('')
+
+  const filteredExpenses = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return expensesApi.expenses
+    return expensesApi.expenses.filter((expense) =>
+      [expense.title, expense.category, expense.paidBy, expense.paymentMethod, expense.status, expense.approvalStatus, expense.notes, String(expense.amount)].some((value) =>
+        String(value || '').toLowerCase().includes(q),
+      ),
+    )
+  }, [expensesApi.expenses, search])
 
   const stats = useMemo(() => {
     const total = expensesApi.expenses.reduce((sum, expense) => sum + toFiniteNumber(expense.amount), 0)
@@ -350,12 +362,25 @@ export default function ExpensesPage() {
           </div>
 
           <div className="mt-4">
+            <PageSearch
+              className="sm:max-w-md"
+              value={search}
+              onChange={setSearch}
+              placeholder="Search expenses by title, category, method..."
+              resultCount={filteredExpenses.length}
+              totalCount={expensesApi.expenses.length}
+            />
+          </div>
+
+          <div className="mt-4">
             {expensesApi.loading ? (
               <div className="grid min-h-[14rem] place-items-center text-sm text-slate-600 dark:text-slate-300">
                 Loading expenses...
               </div>
+            ) : filteredExpenses.length ? (
+              <Table columns={columns} rows={filteredExpenses} />
             ) : expensesApi.expenses.length ? (
-              <Table columns={columns} rows={expensesApi.expenses} />
+              <EmptyState title="No matching expenses" description="Try a different search term." />
             ) : (
               <EmptyState title="No expenses yet" description="Add your first record to track profit accurately." />
             )}

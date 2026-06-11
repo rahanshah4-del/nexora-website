@@ -12,6 +12,7 @@ import Button from '../components/ui/Button.jsx'
 import Card from '../components/ui/Card.jsx'
 import Input from '../components/ui/Input.jsx'
 import PageHeader from '../components/ui/PageHeader.jsx'
+import PageSearch from '../components/ui/PageSearch.jsx'
 import Select from '../components/ui/Select.jsx'
 import Table from '../components/ui/Table.jsx'
 import Toast from '../components/ui/Toast.jsx'
@@ -122,6 +123,7 @@ export default function ContractsPage() {
   const [terminateReason, setTerminateReason] = useState('')
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [filter, setFilter] = useState('All')
+  const [search, setSearch] = useState('')
   const [toast, setToast] = useState(null)
   const [busy, setBusy] = useState(false)
 
@@ -133,9 +135,17 @@ export default function ContractsPage() {
   )
 
   const filteredRows = useMemo(() => {
-    if (filter === 'All') return rows
-    return rows.filter((row) => row.displayStatus === filter)
-  }, [filter, rows])
+    let list = filter === 'All' ? rows : rows.filter((row) => row.displayStatus === filter)
+    const q = search.trim().toLowerCase()
+    if (q) {
+      list = list.filter((row) =>
+        [row.tenantName, row.propertyName, row.unit, row.reference, row.displayStatus].some((value) =>
+          String(value || '').toLowerCase().includes(q),
+        ),
+      )
+    }
+    return list
+  }, [filter, search, rows])
 
   function showToast(tone, message, delay = 2200) {
     setToast({ tone, message })
@@ -369,12 +379,22 @@ export default function ContractsPage() {
             <p className="text-sm font-semibold text-slate-900 dark:text-white">Contract history</p>
             <p className="text-xs text-slate-600 dark:text-slate-300">All lease agreements for this workspace.</p>
           </div>
-          <div className="w-44">
-            <Select value={filter} onChange={(e) => setFilter(e.target.value)}>
-              {STATUS_FILTERS.map((f) => (
-                <option key={f}>{f}</option>
-              ))}
-            </Select>
+          <div className="flex w-full flex-wrap items-start gap-3 sm:w-auto">
+            <PageSearch
+              className="w-full sm:w-72"
+              value={search}
+              onChange={setSearch}
+              placeholder="Search by tenant, property, unit..."
+              resultCount={filteredRows.length}
+              totalCount={rows.length}
+            />
+            <div className="w-44 shrink-0">
+              <Select value={filter} onChange={(e) => setFilter(e.target.value)}>
+                {STATUS_FILTERS.map((f) => (
+                  <option key={f}>{f}</option>
+                ))}
+              </Select>
+            </div>
           </div>
         </div>
 

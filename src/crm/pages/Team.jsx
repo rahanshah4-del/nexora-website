@@ -5,6 +5,7 @@ import PageHeader from '../components/ui/PageHeader.jsx'
 import Badge from '../components/ui/Badge.jsx'
 import Button from '../components/ui/Button.jsx'
 import Input from '../components/ui/Input.jsx'
+import PageSearch from '../components/ui/PageSearch.jsx'
 import Select from '../components/ui/Select.jsx'
 import TeamMembersTable from '../components/team/TeamMembersTable.jsx'
 import { useTeamMembers } from '../hooks/useTeamMembers.js'
@@ -460,6 +461,16 @@ export default function TeamPage() {
   const { members, loading, source, error, permissionKeys, addMember, updateMember, deleteMember } = useTeamMembers()
   const [toast, setToast] = useState(null)
   const [tab, setTab] = useState('members')
+  const [memberSearch, setMemberSearch] = useState('')
+  const filteredMembers = useMemo(() => {
+    const q = memberSearch.trim().toLowerCase()
+    if (!q) return members
+    return members.filter((member) =>
+      [member.name, member.email, member.role, member.status, member.username].some((value) =>
+        String(value || '').toLowerCase().includes(q),
+      ),
+    )
+  }, [members, memberSearch])
   const modulePermissions = useMemo(
     () =>
       permissionModuleDefinitions({
@@ -571,8 +582,18 @@ export default function TeamPage() {
             </Card>
           ) : (
             <Card className="p-5">
+              <div className="mb-4">
+                <PageSearch
+                  className="sm:max-w-md"
+                  value={memberSearch}
+                  onChange={setMemberSearch}
+                  placeholder="Search team by name, email, role..."
+                  resultCount={filteredMembers.length}
+                  totalCount={members.length}
+                />
+              </div>
               <TeamMembersTable
-                members={members}
+                members={filteredMembers}
                 permissionKeys={permissionKeys}
                 ownerId={workspaceDoc?.ownerId || workspaceId || userId}
                 currentUserId={userId}

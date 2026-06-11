@@ -33,6 +33,8 @@ import { useContracts } from '../hooks/useContracts.js'
 import { useWhatsappContacts } from '../hooks/useWhatsappContacts.js'
 import { useWhatsappLeads } from '../hooks/useWhatsappLeads.js'
 import { useWhatsappFollowUps } from '../hooks/useWhatsappFollowUps.js'
+import { useWhatsappTemplates } from '../hooks/useWhatsappTemplates.js'
+import { useWhatsappSettings } from '../hooks/useWhatsappSettings.js'
 import WhatsappDashboard from '../components/dashboard/WhatsappDashboard.jsx'
 import { useUser } from '../hooks/useUser.js'
 import {
@@ -50,14 +52,14 @@ import { formatCompact, formatCurrency, formatPercentValue, toFiniteNumber } fro
 import { cn } from '../utils/cn.js'
 import { normalizeBusinessType } from '../data/moduleAccess.js'
 import { contractStats, maintenanceStats } from '../lib/propertyCalculations.js'
-import { contactStats, followUpStats, leadStats } from '../lib/whatsappManual.js'
+import { contactStats, followUpStats, leadStats, templateStats } from '../lib/whatsappManual.js'
 
 // Dashboard hero title/subtitle per business type (module). Falls back to a
 // generic label for any unknown type. Only affects the hero header text.
 const DASHBOARD_HERO = {
   'General CRM': {
-    title: 'CRM Command Center',
-    subtitle: 'Manage customers, leads, invoices, and sales pipeline in one workspace.',
+    title: 'Nexora Sales Hub',
+    subtitle: 'Manage leads, customers, sales, invoices, follow-ups, and business growth from one workspace.',
   },
   'School ERP': {
     title: 'School ERP Command Center',
@@ -290,7 +292,7 @@ export default function DashboardHomePage() {
   const activityApi = useActivityLogs({ limitCount: DASHBOARD_RECENT_LIMIT })
   const ticketsApi = useSupportTickets({ limitCount: DASHBOARD_RECENT_LIMIT })
   const expensesApi = useExpenses({ limitCount: DASHBOARD_RECENT_LIMIT })
-  const { businessType } = useUser()
+  const { businessType, workspaceDoc, userDoc } = useUser()
   const isSchool = normalizeBusinessType(businessType) === 'School ERP'
   const isProperty = normalizeBusinessType(businessType) === 'Property ERP'
   const maintenanceApi = useMaintenance({ enabled: isProperty })
@@ -307,15 +309,24 @@ export default function DashboardHomePage() {
   const whatsappContactsApi = useWhatsappContacts({ enabled: isWhatsapp })
   const whatsappLeadsApi = useWhatsappLeads({ enabled: isWhatsapp })
   const whatsappFollowUpsApi = useWhatsappFollowUps({ enabled: isWhatsapp })
+  const whatsappTemplatesApi = useWhatsappTemplates({ enabled: isWhatsapp })
+  const whatsappSettingsApi = useWhatsappSettings({ enabled: isWhatsapp })
   const whatsappStats = useMemo(
     () => ({
       contacts: contactStats(whatsappContactsApi.contacts),
       leads: leadStats(whatsappLeadsApi.leads),
       followUps: followUpStats(whatsappFollowUpsApi.followUps),
+      templates: templateStats(whatsappTemplatesApi.templates),
     }),
-    [whatsappContactsApi.contacts, whatsappLeadsApi.leads, whatsappFollowUpsApi.followUps],
+    [whatsappContactsApi.contacts, whatsappLeadsApi.leads, whatsappFollowUpsApi.followUps, whatsappTemplatesApi.templates],
   )
-  const whatsappLoading = isWhatsapp && (whatsappContactsApi.loading || whatsappLeadsApi.loading || whatsappFollowUpsApi.loading)
+  const whatsappLoading =
+    isWhatsapp &&
+    (whatsappContactsApi.loading ||
+      whatsappLeadsApi.loading ||
+      whatsappFollowUpsApi.loading ||
+      whatsappTemplatesApi.loading ||
+      whatsappSettingsApi.loading)
   const hero = dashboardHero(businessType)
 
   const loading =
@@ -554,8 +565,11 @@ export default function DashboardHomePage() {
         contacts={whatsappContactsApi.contacts}
         leads={whatsappLeadsApi.leads}
         followUps={whatsappFollowUpsApi.followUps}
+        templates={whatsappTemplatesApi.templates}
+        config={whatsappSettingsApi.config}
         loading={whatsappLoading}
         businessTitle={hero.title}
+        workspaceName={workspaceDoc?.name || userDoc?.workspaceName || userDoc?.company || ''}
       />
     )
   }

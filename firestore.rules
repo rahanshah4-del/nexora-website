@@ -1266,6 +1266,22 @@ service cloud.firestore {
           || (workspaceHasWriteAccess(workspaceId) && workspaceOwnerMatches(workspaceId));
       }
 
+      // WhatsApp inbox sync (Embedded Signup / Coexistence). Conversations and
+      // messages are workspace-isolated: any member may read, owners/managers may
+      // write, and the backend (service account) may sync inbound events. Manual
+      // mode does not use these collections, so existing manual inbox is unaffected.
+      match /whatsappConversations/{conversationId} {
+        allow read: if isWorkspaceMember(workspaceId) || isAdmin();
+        allow write: if isAdmin()
+          || (workspaceHasWriteAccess(workspaceId) && workspaceOwnerMatches(workspaceId));
+      }
+
+      match /whatsappMessages/{messageId} {
+        allow read: if isWorkspaceMember(workspaceId) || isAdmin();
+        allow write: if isAdmin()
+          || (workspaceHasWriteAccess(workspaceId) && workspaceOwnerMatches(workspaceId));
+      }
+
       match /{document=**} {
         allow read, write: if isAdmin();
       }
@@ -1346,6 +1362,14 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Global WhatsApp CRM pricing & integration config (settings/whatsappPricing).
+    // Publicly readable so pricing can render on the WhatsApp CRM settings/info
+    // pages; writable only by backend admins. Scoped to the single doc id.
+    match /settings/{docId} {
+      allow read: if docId == 'whatsappPricing';
+      allow write: if isAdmin() && docId == 'whatsappPricing';
+    }
+
     match /analyticsEvents/{eventId} {
       allow create: if analyticsEventFieldsSafe();
       allow read, update, delete: if isBackendAdmin();
@@ -1403,6 +1427,24 @@ service cloud.firestore {
 
     match /{path=**}/supportTickets/{ticketId} {
       allow read, write: if isBackendAdmin();
+    }
+
+    // Collection-group read so the backend Control Centre can list per-workspace
+    // WhatsApp settings. Per-workspace owner/admin reads and writes are governed
+    // by the workspaces/{workspaceId}/whatsappSettings rule and are unaffected.
+    match /{path=**}/whatsappSettings/{docId} {
+      allow read: if isBackendAdmin();
+    }
+
+    // Collection-group reads so the backend can audit per-workspace WhatsApp
+    // conversations and messages. Per-workspace member reads/writes remain
+    // governed by the workspaces/{workspaceId} rules above.
+    match /{path=**}/whatsappConversations/{docId} {
+      allow read: if isBackendAdmin();
+    }
+
+    match /{path=**}/whatsappMessages/{docId} {
+      allow read: if isBackendAdmin();
     }
 
     match /notifications/{notificationId} {

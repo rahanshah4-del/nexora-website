@@ -1,0 +1,21 @@
+name = "nexora-whatsapp-api"
+main = "src/index.js"
+compatibility_date = "2026-06-02"
+
+# Non-secret configuration. Set real values per environment.
+#   FIREBASE_PROJECT_ID   - used to validate Firebase ID tokens (aud / iss).
+#   META_APP_ID           - public Meta App ID (not a secret).
+#   META_GRAPH_VERSION    - Graph API version, e.g. v21.0.
+#   ALLOWED_ORIGINS       - comma-separated browser origins allowed to call /api.
+[vars]
+FIREBASE_PROJECT_ID = ""
+META_APP_ID = ""
+META_GRAPH_VERSION = "v21.0"
+ALLOWED_ORIGINS = "https://nexorasolution.online,http://localhost:5173"
+
+# Secrets — configure with `wrangler secret put <NAME>`; NEVER commit real values:
+#   META_APP_SECRET          - verifies inbound webhook signatures + token exchange.
+#   WHATSAPP_VERIFY_TOKEN    - the hub.verify_token Meta echoes back during setup.
+# Meta access / permanent tokens obtained from the code exchange are stored only
+# in the secret store (or a bound KV namespace) and are NEVER returned to the
+# browser or written to Firestore.

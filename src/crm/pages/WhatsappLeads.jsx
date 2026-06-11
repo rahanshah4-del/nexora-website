@@ -13,6 +13,7 @@ import Button from '../components/ui/Button.jsx'
 import Card from '../components/ui/Card.jsx'
 import PageHeader from '../components/ui/PageHeader.jsx'
 import Select from '../components/ui/Select.jsx'
+import PageSearch from '../components/ui/PageSearch.jsx'
 import Table from '../components/ui/Table.jsx'
 import Toast from '../components/ui/Toast.jsx'
 import EmptyState from '../components/system/EmptyState.jsx'
@@ -79,15 +80,24 @@ export default function WhatsappLeadsPage() {
   const [draft, setDraft] = useState(blankLead)
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [filter, setFilter] = useState('All')
+  const [search, setSearch] = useState('')
   const [toast, setToast] = useState(null)
   const [busy, setBusy] = useState(false)
 
   const stats = useMemo(() => leadStats(api.leads), [api.leads])
 
   const filtered = useMemo(() => {
-    if (filter === 'All') return api.leads
-    return api.leads.filter((row) => row.stage === filter)
-  }, [filter, api.leads])
+    let rows = filter === 'All' ? api.leads : api.leads.filter((row) => row.stage === filter)
+    const q = search.trim().toLowerCase()
+    if (q) {
+      rows = rows.filter((row) =>
+        [row.name, row.phone, row.email, row.company, row.stage, row.source].some((value) =>
+          String(value || '').toLowerCase().includes(q),
+        ),
+      )
+    }
+    return rows
+  }, [filter, search, api.leads])
 
   function showToast(tone, message, delay = 2200) {
     setToast({ tone, message })
@@ -249,12 +259,22 @@ export default function WhatsappLeadsPage() {
             <p className="text-sm font-semibold text-slate-900 dark:text-white">Lead pipeline</p>
             <p className="text-xs text-slate-600 dark:text-slate-300">All WhatsApp leads for this workspace.</p>
           </div>
-          <div className="w-44">
-            <Select value={filter} onChange={(e) => setFilter(e.target.value)}>
-              {STAGE_FILTERS.map((f) => (
-                <option key={f}>{f}</option>
-              ))}
-            </Select>
+          <div className="flex w-full flex-wrap items-start gap-3 sm:w-auto">
+            <PageSearch
+              className="w-full sm:w-72"
+              value={search}
+              onChange={setSearch}
+              placeholder="Search leads by name, phone, email..."
+              resultCount={filtered.length}
+              totalCount={api.leads.length}
+            />
+            <div className="w-44 shrink-0">
+              <Select value={filter} onChange={(e) => setFilter(e.target.value)}>
+                {STAGE_FILTERS.map((f) => (
+                  <option key={f}>{f}</option>
+                ))}
+              </Select>
+            </div>
           </div>
         </div>
 

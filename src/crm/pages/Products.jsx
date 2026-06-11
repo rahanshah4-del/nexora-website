@@ -295,6 +295,7 @@ export default function ProductsPage() {
               className="h-10 rounded-xl pl-9"
               value={query}
               onChange={(event) => { setQuery(event.target.value); setPage(1) }}
+              placeholder="Search products by name, SKU, category..."
               aria-label="Search products"
             />
           </div>

@@ -9,7 +9,9 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "worker:deploy": "wrangler deploy --config workers/nexora-email-api/wrangler.toml",
-    "worker:secret": "wrangler secret put RESEND_API_KEY --config workers/nexora-email-api/wrangler.toml"
+    "worker:secret": "wrangler secret put RESEND_API_KEY --config workers/nexora-email-api/wrangler.toml",
+    "whatsapp:deploy": "wrangler deploy --config workers/nexora-whatsapp-api/wrangler.toml",
+    "whatsapp:secret": "wrangler secret put META_APP_SECRET --config workers/nexora-whatsapp-api/wrangler.toml && wrangler secret put WHATSAPP_VERIFY_TOKEN --config workers/nexora-whatsapp-api/wrangler.toml"
   },
   "dependencies": {
     "firebase": "^12.0.0",

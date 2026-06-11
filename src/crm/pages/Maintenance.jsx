@@ -11,6 +11,7 @@ import Badge from '../components/ui/Badge.jsx'
 import Button from '../components/ui/Button.jsx'
 import Card from '../components/ui/Card.jsx'
 import PageHeader from '../components/ui/PageHeader.jsx'
+import PageSearch from '../components/ui/PageSearch.jsx'
 import Select from '../components/ui/Select.jsx'
 import Table from '../components/ui/Table.jsx'
 import Toast from '../components/ui/Toast.jsx'
@@ -99,17 +100,26 @@ export default function MaintenancePage() {
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [cancelTarget, setCancelTarget] = useState(null)
   const [filter, setFilter] = useState('All')
+  const [search, setSearch] = useState('')
   const [toast, setToast] = useState(null)
   const [busy, setBusy] = useState(false)
 
   const stats = useMemo(() => maintenanceStats(maintenanceApi.requests), [maintenanceApi.requests])
 
   const filteredRequests = useMemo(() => {
-    const rows = maintenanceApi.requests
-    if (filter === 'All') return rows
-    if (filter === 'Overdue') return rows.filter((row) => isMaintenanceOverdue(row))
-    return rows.filter((row) => row.status === filter)
-  }, [filter, maintenanceApi.requests])
+    let rows = maintenanceApi.requests
+    if (filter === 'Overdue') rows = rows.filter((row) => isMaintenanceOverdue(row))
+    else if (filter !== 'All') rows = rows.filter((row) => row.status === filter)
+    const q = search.trim().toLowerCase()
+    if (q) {
+      rows = rows.filter((row) =>
+        [row.title, row.tenantName, row.unit, row.assignedTo, row.priority, row.status, row.category].some((value) =>
+          String(value || '').toLowerCase().includes(q),
+        ),
+      )
+    }
+    return rows
+  }, [filter, search, maintenanceApi.requests])
 
   function showToast(tone, message, delay = 2200) {
     setToast({ tone, message })
@@ -330,12 +340,22 @@ export default function MaintenancePage() {
               <p className="text-sm font-semibold text-slate-900 dark:text-white">Maintenance history</p>
               <p className="text-xs text-slate-600 dark:text-slate-300">All logged requests for this workspace.</p>
             </div>
-            <div className="w-40">
-              <Select value={filter} onChange={(e) => setFilter(e.target.value)}>
-                {STATUS_FILTERS.map((f) => (
-                  <option key={f}>{f}</option>
-                ))}
-              </Select>
+            <div className="flex w-full flex-wrap items-start gap-3 sm:w-auto">
+              <PageSearch
+                className="w-full sm:w-64"
+                value={search}
+                onChange={setSearch}
+                placeholder="Search by title, tenant, unit..."
+                resultCount={filteredRequests.length}
+                totalCount={maintenanceApi.requests.length}
+              />
+              <div className="w-40 shrink-0">
+                <Select value={filter} onChange={(e) => setFilter(e.target.value)}>
+                  {STATUS_FILTERS.map((f) => (
+                    <option key={f}>{f}</option>
+                  ))}
+                </Select>
+              </div>
             </div>
           </div>
 

@@ -13,6 +13,7 @@ import Button from '../components/ui/Button.jsx'
 import Card from '../components/ui/Card.jsx'
 import PageHeader from '../components/ui/PageHeader.jsx'
 import Select from '../components/ui/Select.jsx'
+import PageSearch from '../components/ui/PageSearch.jsx'
 import Table from '../components/ui/Table.jsx'
 import Toast from '../components/ui/Toast.jsx'
 import EmptyState from '../components/system/EmptyState.jsx'
@@ -70,18 +71,27 @@ export default function WhatsappFollowUpsPage() {
   const [draft, setDraft] = useState(blankFollowUp)
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [filter, setFilter] = useState('All')
+  const [search, setSearch] = useState('')
   const [toast, setToast] = useState(null)
   const [busy, setBusy] = useState(false)
 
   const stats = useMemo(() => followUpStats(api.followUps), [api.followUps])
 
   const filtered = useMemo(() => {
-    const rows = api.followUps
-    if (filter === 'All') return rows
-    if (filter === 'Overdue') return rows.filter((row) => isFollowUpOverdue(row))
-    if (filter === 'Due Today') return rows.filter((row) => isFollowUpDueToday(row))
-    return rows.filter((row) => row.status === filter)
-  }, [filter, api.followUps])
+    let rows = api.followUps
+    if (filter === 'Overdue') rows = rows.filter((row) => isFollowUpOverdue(row))
+    else if (filter === 'Due Today') rows = rows.filter((row) => isFollowUpDueToday(row))
+    else if (filter !== 'All') rows = rows.filter((row) => row.status === filter)
+    const q = search.trim().toLowerCase()
+    if (q) {
+      rows = rows.filter((row) =>
+        [row.title, row.contactName, row.phone, row.priority, row.status, row.assignedTo, row.notes].some((value) =>
+          String(value || '').toLowerCase().includes(q),
+        ),
+      )
+    }
+    return rows
+  }, [filter, search, api.followUps])
 
   function showToast(tone, message, delay = 2200) {
     setToast({ tone, message })
@@ -230,12 +240,22 @@ export default function WhatsappFollowUpsPage() {
             <p className="text-sm font-semibold text-slate-900 dark:text-white">Follow-up reminders</p>
             <p className="text-xs text-slate-600 dark:text-slate-300">Manual reminders for this workspace.</p>
           </div>
-          <div className="w-44">
-            <Select value={filter} onChange={(e) => setFilter(e.target.value)}>
-              {STATUS_FILTERS.map((f) => (
-                <option key={f}>{f}</option>
-              ))}
-            </Select>
+          <div className="flex w-full flex-wrap items-start gap-3 sm:w-auto">
+            <PageSearch
+              className="w-full sm:w-72"
+              value={search}
+              onChange={setSearch}
+              placeholder="Search follow-ups by title, contact, agent..."
+              resultCount={filtered.length}
+              totalCount={api.followUps.length}
+            />
+            <div className="w-44 shrink-0">
+              <Select value={filter} onChange={(e) => setFilter(e.target.value)}>
+                {STATUS_FILTERS.map((f) => (
+                  <option key={f}>{f}</option>
+                ))}
+              </Select>
+            </div>
           </div>
         </div>
 

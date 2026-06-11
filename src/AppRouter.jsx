@@ -49,6 +49,7 @@ const WhatsappInboxPage = lazy(() => import('./crm/pages/WhatsappInbox.jsx'))
 const WhatsappLeadsPage = lazy(() => import('./crm/pages/WhatsappLeads.jsx'))
 const WhatsappFollowUpsPage = lazy(() => import('./crm/pages/WhatsappFollowUps.jsx'))
 const WhatsappTemplatesPage = lazy(() => import('./crm/pages/WhatsappTemplates.jsx'))
+const WhatsappConnectPage = lazy(() => import('./crm/pages/WhatsappConnect.jsx'))
 const UpgradeRequests = lazy(() => import('./pages/admin/UpgradeRequests.jsx'))
 const ControlCentrePage = lazy(() => import('./pages/admin/ControlCentre.jsx'))
 const AdminLogin = lazy(() => import('./pages/admin/AdminLogin.jsx'))
@@ -246,6 +247,7 @@ export default function AppRouter() {
         <Route path="whatsapp-leads" element={<LazyPage><WhatsappLeadsPage /></LazyPage>} />
         <Route path="whatsapp-followups" element={<LazyPage><WhatsappFollowUpsPage /></LazyPage>} />
         <Route path="whatsapp-templates" element={<LazyPage><WhatsappTemplatesPage /></LazyPage>} />
+        <Route path="whatsapp-connect" element={<LazyPage><WhatsappConnectPage /></LazyPage>} />
         <Route path="settings" element={<LazyPage><SettingsPage /></LazyPage>} />
         <Route path="coming-soon/:moduleId" element={<LazyPage><DashboardHomePage /></LazyPage>} />
       </Route>

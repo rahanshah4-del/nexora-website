@@ -3,13 +3,13 @@ import { AnimatePresence } from 'framer-motion'
 import Badge from '../components/ui/Badge.jsx'
 import Button from '../components/ui/Button.jsx'
 import Card from '../components/ui/Card.jsx'
-import Input from '../components/ui/Input.jsx'
+import PageSearch from '../components/ui/PageSearch.jsx'
 import PageHeader from '../components/ui/PageHeader.jsx'
 import FollowUpBoard from '../components/followups/FollowUpBoard.jsx'
 import FollowUpCalendar from '../components/followups/FollowUpCalendar.jsx'
 import { useFollowUps } from '../hooks/useFollowUps.js'
 import FollowUpModal from '../components/followups/FollowUpModal.jsx'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import Toast from '../components/ui/Toast.jsx'
 import { useWorkspaceAccess } from '../hooks/useWorkspaceAccess.js'
 
@@ -57,12 +57,32 @@ function DeleteConfirmModal({ task, onClose, onConfirm }) {
 
 export default function FollowUpsPage() {
   const followups = useFollowUps()
-  const { grouped, loading, source, error } = followups
+  const { grouped, tasks = [], loading, source, error } = followups
   const access = useWorkspaceAccess()
   const [createOpen, setCreateOpen] = useState(false)
   const [editingTask, setEditingTask] = useState(null)
   const [deletingTask, setDeletingTask] = useState(null)
   const [toast, setToast] = useState(null)
+  const [search, setSearch] = useState('')
+
+  const filteredGrouped = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return grouped
+    const next = {}
+    for (const [bucket, list] of Object.entries(grouped || {})) {
+      next[bucket] = (list || []).filter((task) =>
+        [task.customerName, task.title, task.notes, task.priority, task.status, task.assignedTo, task.phone].some((value) =>
+          String(value || '').toLowerCase().includes(q),
+        ),
+      )
+    }
+    return next
+  }, [grouped, search])
+
+  const filteredCount = useMemo(
+    () => Object.values(filteredGrouped || {}).reduce((sum, list) => sum + (list?.length || 0), 0),
+    [filteredGrouped],
+  )
   const canCreate = access.canEditFollowUps
   const canEdit = access.canEditFollowUps
   const canDelete = access.canDeleteFollowUps
@@ -110,9 +130,15 @@ export default function FollowUpsPage() {
             <Badge variant={source === 'firestore' ? 'success' : 'default'}>{loading ? 'Loading…' : source === 'firestore' ? 'Live Sync' : 'No data yet'}</Badge>
           </div>
 
-          <div className="mt-4 grid gap-3 md:grid-cols-2">
-            <Input placeholder="Search tasks..." />
-            <Input placeholder="Filter by priority/status..." />
+          <div className="mt-4">
+            <PageSearch
+              value={search}
+              onChange={setSearch}
+              placeholder="Search tasks by customer, title, priority, status..."
+              resultCount={filteredCount}
+              totalCount={tasks.length}
+              className="sm:max-w-md"
+            />
           </div>
 
           {error ? (
@@ -128,7 +154,7 @@ export default function FollowUpsPage() {
               </div>
             ) : (
               <FollowUpBoard
-                grouped={grouped}
+                grouped={filteredGrouped}
                 canEdit={canEdit}
                 canDelete={canDelete}
                 onEdit={(task) => setEditingTask(task)}

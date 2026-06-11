@@ -24,6 +24,8 @@ import { useAuth } from '../hooks/useAuth.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 import { packageNameForPlan, normalizeBusinessType } from '../data/moduleAccess.js'
 import { whatsappCapabilities, whatsappTrialStatus } from '../lib/whatsappApiTrial.js'
+import ConnectWhatsappModal from '../components/whatsapp/ConnectWhatsappModal.jsx'
+import ConfirmDialog from '../components/whatsapp/ConfirmDialog.jsx'
 
 function Field({ label, children, className = '' }) {
   return (
@@ -34,31 +36,95 @@ function Field({ label, children, className = '' }) {
   )
 }
 
+function connectionStatusLabel(value) {
+  const raw = String(value || '').trim()
+  if (!raw || raw === 'not_connected') return 'Not connected'
+  return raw.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase())
+}
+
+function StatRow({ label, value }) {
+  return (
+    <div className="flex items-center justify-between gap-3 py-1.5 text-xs">
+      <span className="font-semibold text-slate-500 dark:text-slate-400">{label}</span>
+      <span className="min-w-0 truncate text-right font-semibold text-slate-950 dark:text-white">{value}</span>
+    </div>
+  )
+}
+
 // Workspace WhatsApp API settings — trial status, message usage, days remaining,
-// single-number connection, webhook verification, and an upgrade path. Shown only
-// for the WhatsApp CRM workspace. Never reads or writes Meta token material.
+// WhatsApp Business connection (display name, number, Meta IDs), webhook status,
+// and Connect / Test / Disconnect actions. Shown only for the WhatsApp CRM
+// workspace. Never reads or writes Meta token material.
 function WhatsappApiCard() {
-  const { config, loading, canManage, saveConfig, connectNumber, verifyWebhook } = useWhatsappSettings({ enabled: true })
+  const { config, loading, canManage, saveConnection, testConnection, disconnect } = useWhatsappSettings({ enabled: true })
   const status = whatsappTrialStatus(config)
   const caps = whatsappCapabilities(config)
-  const [phone, setPhone] = useState('')
-  const [note, setNote] = useState('')
+  const [modalOpen, setModalOpen] = useState(false)
+  const [confirmOpen, setConfirmOpen] = useState(false)
   const [busy, setBusy] = useState('')
+  const [note, setNote] = useState('')
 
-  useEffect(() => {
-    setPhone(config.connectedNumber || '')
-  }, [config.connectedNumber])
+  function flash(message) {
+    setNote(message)
+    window.setTimeout(() => setNote(''), 2800)
+  }
+
+  function openConnect() {
+    console.log('[WhatsApp Connect] opened')
+    setNote('')
+    setModalOpen(true)
+  }
+
+  async function handleSave(details) {
+    setBusy('save')
+    const res = await saveConnection(details)
+    setBusy('')
+    if (!res?.ok) {
+      if (res?.code === 'validation_failed') console.log('[WhatsApp Connect] validation failed', res.error)
+      return res
+    }
+    console.log('[WhatsApp Connect] saved')
+    setModalOpen(false)
+    flash('WhatsApp Business details saved. Backend verification required.')
+    return res
+  }
+
+  async function handleTest() {
+    setBusy('test')
+    const res = await testConnection()
+    setBusy('')
+    if (!res?.ok) {
+      if (res?.code === 'validation_failed') console.log('[WhatsApp Connect] validation failed', res.error)
+      flash(res?.error || 'Test connection failed.')
+      return
+    }
+    console.log('[WhatsApp Connect] test ready')
+    flash('WhatsApp Business details saved. Backend verification required.')
+  }
+
+  async function handleDisconnect() {
+    setBusy('disconnect')
+    const res = await disconnect()
+    setBusy('')
+    setConfirmOpen(false)
+    if (!res?.ok) {
+      flash(res?.error || 'Unable to disconnect.')
+      return
+    }
+    console.log('[WhatsApp Connect] disconnected')
+    flash('WhatsApp Business disconnected.')
+  }
 
   const modeVariant = caps.isPaid ? 'success' : caps.isTrial ? 'info' : 'default'
-
-  async function run(key, fn) {
-    setBusy(key)
-    setNote('')
-    const res = await fn()
-    setBusy('')
-    setNote(res?.ok ? 'Saved' : res?.error || 'Action failed')
-    window.setTimeout(() => setNote(''), 2200)
-  }
+  const hasConnection = Boolean(config.connectedNumber || config.phoneNumberId || config.businessAccountId)
+  const connStatusVariant = config.connectionStatus === 'test_ready'
+    ? 'success'
+    : config.connectionStatus === 'disconnected'
+      ? 'danger'
+      : config.connectionStatus === 'pending_verification'
+        ? 'warning'
+        : 'default'
+  const webhookVariant = config.webhookStatus === 'disconnected' ? 'danger' : config.webhookStatus === 'pending' ? 'warning' : config.webhookVerified ? 'success' : 'default'
 
   return (
     <Card className="p-5">
@@ -68,8 +134,8 @@ function WhatsappApiCard() {
             <HiOutlineChatBubbleLeftRight className="text-xl" />
           </span>
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-slate-950 dark:text-white">WhatsApp API</p>
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-300">Trial access status and connection.</p>
+            <p className="text-sm font-semibold text-slate-950 dark:text-white">WhatsApp Business</p>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-300">Connection, trial status, and message usage.</p>
           </div>
         </div>
         <Badge variant={modeVariant}>{status.label}</Badge>
@@ -79,8 +145,8 @@ function WhatsappApiCard() {
       <div className="mt-4 grid gap-3">
         <div className="grid grid-cols-2 gap-3">
           <div className="rounded-2xl border border-emerald-100 bg-emerald-50/50 p-3">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-700/70">Status</p>
-            <p className="mt-1 text-sm font-semibold text-slate-950">{status.active ? 'Active' : caps.isManual ? 'Manual mode' : 'Inactive'}</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-700/70">Connection</p>
+            <p className="mt-1 text-sm font-semibold text-slate-950">{connectionStatusLabel(config.connectionStatus)}</p>
           </div>
           <div className="rounded-2xl border border-emerald-100 bg-emerald-50/50 p-3">
             <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-700/70">Trial Days Left</p>
@@ -106,43 +172,66 @@ function WhatsappApiCard() {
         </div>
       </div>
 
-      {/* One WhatsApp Business number */}
-      <div className="mt-4 space-y-2">
-        <Field label="WhatsApp Business Number">
-          <div className="flex gap-2">
-            <Input
-              value={phone}
-              onChange={(event) => setPhone(event.target.value)}
-              placeholder="e.g. 9230..."
-              readOnly={!canManage || caps.isManual}
-            />
-            <Button
-              variant="subtle"
-              className="shrink-0 rounded-2xl"
-              type="button"
-              disabled={!canManage || caps.isManual || busy === 'connect'}
-              onClick={() => run('connect', () => connectNumber(phone))}
-            >
-              {busy === 'connect' ? 'Saving…' : 'Connect'}
-            </Button>
-          </div>
-        </Field>
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge variant={config.webhookVerified ? 'success' : 'default'}>
-            {config.webhookVerified ? 'Webhook verified' : 'Webhook not verified'}
-          </Badge>
-          <Button
-            variant="ghost"
-            className="rounded-2xl text-xs"
-            type="button"
-            disabled={!canManage || !config.connectedNumber || busy === 'verify'}
-            onClick={() => run('verify', () => verifyWebhook())}
-          >
-            {busy === 'verify' ? 'Verifying…' : 'Verify webhook'}
-          </Button>
-          {note ? <span className="text-xs font-semibold text-slate-500">{note}</span> : null}
+      {/* Connection details */}
+      <div className="mt-4 rounded-2xl border border-slate-200/80 p-3">
+        <div className="mb-1 flex items-center justify-between">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">Business connection</p>
+          <Badge variant={connStatusVariant}>{connectionStatusLabel(config.connectionStatus)}</Badge>
+        </div>
+        <StatRow label="API Mode" value={status.label} />
+        <StatRow label="Business Name" value={config.displayName || '—'} />
+        <StatRow label="Connected Number" value={config.connectedNumber || '—'} />
+        <StatRow label="Phone Number ID" value={config.phoneNumberId || '—'} />
+        <StatRow label="Business Account ID" value={config.businessAccountId || '—'} />
+        <div className="flex items-center justify-between gap-3 py-1.5 text-xs">
+          <span className="font-semibold text-slate-500 dark:text-slate-400">Webhook Status</span>
+          <Badge variant={webhookVariant}>{config.webhookStatus ? connectionStatusLabel(config.webhookStatus) : config.webhookVerified ? 'Verified' : 'Pending'}</Badge>
         </div>
       </div>
+
+      {/* Actions */}
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <Link
+          to="/app/whatsapp-connect"
+          className="focus-ring inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
+        >
+          {hasConnection ? 'Manage Connection' : 'Connect WhatsApp'}
+        </Link>
+        <Button
+          variant="subtle"
+          className="rounded-2xl"
+          type="button"
+          disabled={!canManage}
+          onClick={openConnect}
+        >
+          Edit Details
+        </Button>
+        <Button
+          variant="subtle"
+          className="rounded-2xl"
+          type="button"
+          disabled={!canManage || busy === 'test'}
+          onClick={handleTest}
+        >
+          {busy === 'test' ? 'Testing…' : 'Test Connection'}
+        </Button>
+        {hasConnection ? (
+          <Button
+            variant="ghost"
+            className="rounded-2xl text-rose-700 hover:bg-rose-50"
+            type="button"
+            disabled={!canManage || busy === 'disconnect'}
+            onClick={() => setConfirmOpen(true)}
+          >
+            Disconnect
+          </Button>
+        ) : null}
+        {note ? <span className="text-xs font-semibold text-slate-500">{note}</span> : null}
+      </div>
+
+      <p className="mt-3 rounded-2xl border border-sky-100 bg-sky-50/60 p-2.5 text-[11px] leading-5 text-sky-900">
+        Access token will be configured securely from Nexora backend.
+      </p>
 
       {/* Trial restrictions */}
       {caps.isTrial ? (
@@ -164,6 +253,25 @@ function WhatsappApiCard() {
 
       {loading ? <p className="mt-3 text-xs text-slate-400">Loading WhatsApp settings…</p> : null}
       {!canManage ? <p className="mt-3 text-xs text-slate-400">View access only — ask an admin to change WhatsApp settings.</p> : null}
+
+      <ConnectWhatsappModal
+        open={modalOpen}
+        config={config}
+        busy={busy === 'save'}
+        onSave={handleSave}
+        onClose={() => setModalOpen(false)}
+      />
+      <ConfirmDialog
+        open={confirmOpen}
+        badge="Disconnect"
+        tone="danger"
+        title="Disconnect WhatsApp Business?"
+        message="This clears the connected number and Meta IDs. Message usage history is kept. You can reconnect anytime."
+        confirmLabel="Disconnect"
+        busy={busy === 'disconnect'}
+        onConfirm={handleDisconnect}
+        onClose={() => setConfirmOpen(false)}
+      />
     </Card>
   )
 }
@@ -485,6 +593,7 @@ export default function SettingsPage() {
           </Card>
         </div>
       </div>
+
     </motion.div>
   )
 }

@@ -4,6 +4,7 @@ import Badge from '../components/ui/Badge.jsx'
 import Button from '../components/ui/Button.jsx'
 import Card from '../components/ui/Card.jsx'
 import PageHeader from '../components/ui/PageHeader.jsx'
+import PageSearch from '../components/ui/PageSearch.jsx'
 import Select from '../components/ui/Select.jsx'
 import Table from '../components/ui/Table.jsx'
 import EmptyState from '../components/system/EmptyState.jsx'
@@ -55,6 +56,7 @@ export default function AccountStatementsPage() {
   const invoicesApi = useInvoices()
   const expensesApi = useExpenses()
   const [filters, setFilters] = useState({ range: 'month', type: 'all', user: 'all', status: 'all' })
+  const [search, setSearch] = useState('')
 
   const rows = useMemo(() => {
     const transactionRows = accounts.transactions.map((transaction) => ({
@@ -102,6 +104,15 @@ export default function AccountStatementsPage() {
   }, [accounts.transactions, expensesApi.expenses, filters, invoicesApi.invoices])
 
   const users = useMemo(() => Array.from(new Set(rows.map((row) => row.user).filter(Boolean))), [rows])
+  const visibleRows = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return rows
+    return rows.filter((row) =>
+      [row.label, row.source, row.type, row.status, row.user].some((value) =>
+        String(value || '').toLowerCase().includes(q),
+      ),
+    )
+  }, [rows, search])
   const summary = useMemo(
     () =>
       calculateFinanceSummary({
@@ -188,6 +199,16 @@ export default function AccountStatementsPage() {
       </div>
 
       <Card className="p-5">
+        <div className="mb-3">
+          <PageSearch
+            className="sm:max-w-md"
+            value={search}
+            onChange={setSearch}
+            placeholder="Search statements by label, source, user..."
+            resultCount={visibleRows.length}
+            totalCount={rows.length}
+          />
+        </div>
         <div className="grid gap-3 md:grid-cols-4">
           <Select value={filters.range} onChange={(event) => setFilters((current) => ({ ...current, range: event.target.value }))}>
             <option value="today">Today</option>
@@ -221,8 +242,10 @@ export default function AccountStatementsPage() {
         <div className="mt-4">
           {accounts.loading || invoicesApi.loading || expensesApi.loading ? (
             <div className="grid min-h-[14rem] place-items-center text-sm text-slate-600 dark:text-slate-300">Loading statements...</div>
+          ) : visibleRows.length ? (
+            <Table columns={columns} rows={visibleRows} />
           ) : rows.length ? (
-            <Table columns={columns} rows={rows} />
+            <EmptyState title="No matching records" description="Try a different search term." />
           ) : (
             <EmptyState title="No statement records yet" description="Income, expenses, and account transactions will appear here." />
           )}

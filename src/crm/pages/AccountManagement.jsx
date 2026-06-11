@@ -6,6 +6,7 @@ import Button from '../components/ui/Button.jsx'
 import Card from '../components/ui/Card.jsx'
 import Input from '../components/ui/Input.jsx'
 import PageHeader from '../components/ui/PageHeader.jsx'
+import PageSearch from '../components/ui/PageSearch.jsx'
 import Select from '../components/ui/Select.jsx'
 import Table from '../components/ui/Table.jsx'
 import Toast from '../components/ui/Toast.jsx'
@@ -134,6 +135,7 @@ export default function AccountManagementPage() {
   const [filters, setFilters] = useState({ type: 'all', status: 'all', method: 'all', dateRange: 'all' })
   const [drafts, setDrafts] = useState(actionDefaults)
   const [confirmRequest, setConfirmRequest] = useState(null)
+  const [txnSearch, setTxnSearch] = useState('')
 
   const summary = useMemo(
     () =>
@@ -189,6 +191,16 @@ export default function AccountManagementPage() {
       return true
     })
   }, [accounts.transactions, filters])
+
+  const visibleTransactions = useMemo(() => {
+    const q = txnSearch.trim().toLowerCase()
+    if (!q) return filteredTransactions
+    return filteredTransactions.filter((transaction) =>
+      [transaction.title, transaction.description, transaction.type, transaction.method, transaction.status, transaction.approvalStatus, transaction.party, transaction.reference, transaction.createdBy].some((value) =>
+        String(value || '').toLowerCase().includes(q),
+      ),
+    )
+  }, [filteredTransactions, txnSearch])
 
   const revenueSources = useMemo(() => {
     const paymentRows = invoicesApi.payments
@@ -540,6 +552,17 @@ export default function AccountManagementPage() {
             <Badge variant={accounts.source === 'firestore' ? 'success' : 'default'}>{loading ? 'Loading...' : 'Live Sync'}</Badge>
           </div>
 
+          <div className="mt-4">
+            <PageSearch
+              className="sm:max-w-md"
+              value={txnSearch}
+              onChange={setTxnSearch}
+              placeholder="Search transactions by type, method, status..."
+              resultCount={visibleTransactions.length}
+              totalCount={filteredTransactions.length}
+            />
+          </div>
+
           <div className="mt-4 grid gap-3 md:grid-cols-4">
             <div>
               <FieldLabel>Type</FieldLabel>
@@ -584,8 +607,10 @@ export default function AccountManagementPage() {
           <div className="mt-4">
             {loading ? (
               <div className="grid min-h-[14rem] place-items-center text-sm text-slate-600 dark:text-slate-300">Loading account data...</div>
+            ) : visibleTransactions.length ? (
+              <Table columns={transactionColumns} rows={visibleTransactions} />
             ) : filteredTransactions.length ? (
-              <Table columns={transactionColumns} rows={filteredTransactions} />
+              <EmptyState title="No matching transactions" description="Try a different search term." />
             ) : (
               <EmptyState title="No transactions yet" description="Approved payments and account actions will appear here." />
             )}

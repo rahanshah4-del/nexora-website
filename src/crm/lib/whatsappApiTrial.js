@@ -16,6 +16,25 @@
 
 export const WHATSAPP_API_MODES = ['manual', 'trial-api', 'paid-api']
 
+// Lifecycle of a workspace's WhatsApp Business connection. Mirrored on the
+// frontend status UIs (Dashboard, Settings, Connect wizard, Control Centre).
+export const WHATSAPP_CONNECTION_STATUSES = [
+  'not_connected',
+  'pending_verification',
+  'connected',
+  'failed',
+  'disconnected',
+]
+
+// Embedded Signup / Coexistence verification sub-states (QR / code handshake).
+export const WHATSAPP_VERIFICATION_STATUSES = [
+  'waiting',
+  'qr_pending',
+  'code_pending',
+  'verified',
+  'failed',
+]
+
 export const WHATSAPP_TRIAL_DAYS = 7
 export const WHATSAPP_TRIAL_MESSAGE_LIMIT = 50
 export const WHATSAPP_TRIAL_MAX_NUMBERS = 1
@@ -84,6 +103,22 @@ export function defaultWhatsappConfig() {
     connectedNumber: '',
     connectedNumberLabel: '',
     webhookVerified: false,
+    // Connect-wizard metadata (non-secret). Token material is never stored here;
+    // webhookVerifyLabel is a human label/reference only, not the verify token.
+    displayName: '',
+    businessName: '',
+    phoneNumberId: '',
+    businessAccountId: '',
+    webhookVerifyLabel: '',
+    status: '',
+    connectionStatus: '',
+    verificationStatus: '',
+    webhookStatus: '',
+    webhookUrl: '',
+    templateStatus: '',
+    connectedAt: null,
+    lastVerificationAt: null,
+    lastWebhookAt: null,
     updatedAt: null,
   }
 }
@@ -105,6 +140,20 @@ export function normalizeWhatsappConfig(record = {}) {
     connectedNumber: String(safe.connectedNumber || ''),
     connectedNumberLabel: String(safe.connectedNumberLabel || ''),
     webhookVerified: Boolean(safe.webhookVerified),
+    displayName: String(safe.displayName || ''),
+    businessName: String(safe.businessName || ''),
+    phoneNumberId: String(safe.phoneNumberId || ''),
+    businessAccountId: String(safe.businessAccountId || ''),
+    webhookVerifyLabel: String(safe.webhookVerifyLabel || ''),
+    status: String(safe.status || ''),
+    connectionStatus: String(safe.connectionStatus || ''),
+    verificationStatus: String(safe.verificationStatus || ''),
+    webhookStatus: String(safe.webhookStatus || ''),
+    webhookUrl: String(safe.webhookUrl || ''),
+    templateStatus: String(safe.templateStatus || ''),
+    connectedAt: safe.connectedAt || null,
+    lastVerificationAt: safe.lastVerificationAt || null,
+    lastWebhookAt: safe.lastWebhookAt || null,
     updatedAt: safe.updatedAt || null,
   }
 }

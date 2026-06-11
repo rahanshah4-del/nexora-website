@@ -222,9 +222,9 @@ export const businessWorkspaceCatalog = [
   {
     id: 'general-crm',
     type: 'General CRM',
-    title: 'General CRM',
+    title: 'Nexora Sales Hub',
     route: '/app/dashboard',
-    description: 'Customer, sales, billing, approvals, team, and reporting workflows.',
+    description: 'Manage leads, customers, sales, invoices, follow-ups, and business growth from one workspace.',
     modules: [
       'dashboard',
       'customers',
@@ -458,6 +458,10 @@ export function businessWorkspaceForId(id) {
 
 export function businessWorkspaceForSelection(value) {
   return businessWorkspaceForId(value) || businessWorkspaceForType(value)
+}
+
+export function labelForBusinessType(type) {
+  return businessWorkspaceForType(type).title
 }
 
 export function businessModuleKeys(type) {

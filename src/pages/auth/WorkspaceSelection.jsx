@@ -15,6 +15,7 @@ import {
   HiOutlineGlobeAlt,
   HiOutlineHomeModern,
   HiOutlineInformationCircle,
+  HiOutlineLifebuoy,
   HiOutlineMagnifyingGlass,
   HiOutlineBars3,
   HiOutlinePlus,
@@ -32,6 +33,7 @@ import useAuth from '../../context/useAuth.js'
 import { auth, db } from '../../lib/firebase.js'
 import PageLoader from '../../crm/components/ui/PageLoader.jsx'
 import { workspacePermissionDefaults } from '../../lib/roles.js'
+import { openSupportChat } from '../../lib/supportChat.js'
 import { normalizeWorkspaceName, resolveWorkspaceName, saveStoredWorkspaceName } from '../../lib/workspaceName.js'
 import {
   businessWorkspaceCatalog,
@@ -3186,26 +3188,54 @@ export default function WorkspaceSelection() {
             <SidebarItem icon={HiOutlineCog6Tooth} label="Settings" muted onClick={() => setSettingsOpen(true)} collapsed={sidebarCollapsed} />
 
             <div className="mt-auto pt-6">
-              <button
-                type="button"
-                title={sidebarCollapsed ? 'Need Help? Contact our support team' : undefined}
-                className={`flex w-full items-center rounded-xl border border-slate-200 bg-white text-left shadow-sm ${
-                  sidebarCollapsed ? 'justify-center p-2' : 'justify-between p-3'
-                }`}
-              >
-                <span className={`flex min-w-0 items-center gap-3 ${sidebarCollapsed ? 'justify-center' : ''}`}>
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-slate-200 text-sky-600">
-                    <HiOutlineChatBubbleLeftRight className="h-5 w-5" />
-                  </span>
-                  {!sidebarCollapsed && (
-                    <span className="min-w-0">
-                      <span className="block truncate text-xs font-bold text-slate-900">Need Help?</span>
-                      <span className="block truncate text-[11px] text-slate-500">Contact our support team</span>
+              {sidebarCollapsed ? (
+                <button
+                  type="button"
+                  onClick={openSupportChat}
+                  title="Need Help? Chat with Nexora Support"
+                  aria-label="Open live chat with Nexora Support"
+                  className="flex w-full items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 p-2.5 text-white shadow-sm transition hover:shadow-md hover:brightness-105"
+                >
+                  <HiOutlineLifebuoy className="h-5 w-5" />
+                </button>
+              ) : (
+                <div className="group overflow-hidden rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-green-50 p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-emerald-900/40 dark:from-emerald-950/30 dark:via-slate-900 dark:to-green-950/20">
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 text-white shadow-[0_10px_24px_-12px_rgba(16,185,129,0.85)]">
+                      <HiOutlineLifebuoy className="h-6 w-6" />
                     </span>
-                  )}
-                </span>
-                {!sidebarCollapsed && <HiOutlineChevronRight className="h-4 w-4 shrink-0 text-slate-400" />}
-              </button>
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-white/80 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:border-emerald-800 dark:bg-slate-900/70 dark:text-emerald-300">
+                      <span className="relative flex h-1.5 w-1.5">
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                      </span>
+                      Support Online
+                    </span>
+                  </div>
+                  <p className="mt-3 text-sm font-bold text-slate-900 dark:text-white">Need Help?</p>
+                  <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">Chat with Nexora Support</p>
+                  <p className="mt-1.5 text-[11px] leading-5 text-slate-500 dark:text-slate-400">
+                    Get assistance with CRM setup, WhatsApp integration, billing and onboarding.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={openSupportChat}
+                    className="group/btn mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 px-3 py-2 text-xs font-bold text-white shadow-sm transition hover:from-emerald-600 hover:to-green-700"
+                  >
+                    Open Live Chat
+                    <HiOutlineArrowRight className="h-4 w-4 transition-transform duration-200 group-hover/btn:translate-x-1" />
+                  </button>
+                  <button
+                    type="button"
+                    disabled
+                    title="Support Center — coming soon"
+                    className="mt-2 flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white/70 px-3 py-2 text-xs font-semibold text-slate-400 dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-500"
+                  >
+                    Support Center
+                    <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[9px] font-bold text-slate-400 dark:bg-slate-800 dark:text-slate-500">Coming Soon</span>
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </aside>

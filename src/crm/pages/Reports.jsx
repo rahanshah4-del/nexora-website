@@ -35,6 +35,7 @@ import {
 import { convertFromUsd } from '../utils/currency.js'
 import { formatCurrency } from '../utils/format.js'
 import { buildReportId, exportReportCsv, exportReportExcel, exportReportPdf } from '../lib/reportGenerator.js'
+import WhatsappReports from '../components/reports/WhatsappReports.jsx'
 
 const NEXORA_LOGO = '/nexora-logo.jpg'
 
@@ -280,7 +281,7 @@ function ReportQrCode({ payload }) {
   return <img src={src} alt="Report QR code" className="h-24 w-24 rounded-2xl border border-slate-200 bg-white p-1" />
 }
 
-export default function ReportsPage() {
+function GenericReports() {
   const { profile, currency: preferredCurrency } = usePreferences()
   const businessSettingsApi = useBusinessSettings()
   const { userDoc, firebaseUser, workspaceId, businessType, plan } = useUser()
@@ -847,4 +848,14 @@ export default function ReportsPage() {
       </section>
     </motion.div>
   )
+}
+
+// Route by business type: WhatsApp CRM gets dedicated WhatsApp-only reports;
+// every other business type keeps the existing generic workspace reports.
+export default function ReportsPage() {
+  const { businessType } = useUser()
+  if (normalizeBusinessType(businessType) === 'WhatsApp CRM') {
+    return <WhatsappReports />
+  }
+  return <GenericReports />
 }
