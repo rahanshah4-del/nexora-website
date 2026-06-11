@@ -27,6 +27,11 @@ const LeadsPage = lazy(() => import('./crm/pages/Leads.jsx'))
 const LeadScoringPage = lazy(() => import('./crm/pages/LeadScoring.jsx'))
 const AIAssistantPage = lazy(() => import('./crm/pages/AIAssistant.jsx'))
 const PipelinePage = lazy(() => import('./crm/pages/SalesPipeline.jsx'))
+const DealsPage = lazy(() => import('./crm/pages/Deals.jsx'))
+const SalesTasksPage = lazy(() => import('./crm/pages/SalesTasks.jsx'))
+const SalesActivitiesPage = lazy(() => import('./crm/pages/SalesActivities.jsx'))
+const QuotationsPage = lazy(() => import('./crm/pages/Quotations.jsx'))
+const ProductsServicesPage = lazy(() => import('./crm/pages/ProductsServices.jsx'))
 const FollowUpsPage = lazy(() => import('./crm/pages/FollowUps.jsx'))
 const TeamPage = lazy(() => import('./crm/pages/Team.jsx'))
 const HRDashboardPage = lazy(() => import('./crm/pages/HRDashboard.jsx'))
@@ -226,6 +231,11 @@ export default function AppRouter() {
         <Route path="leads/scoring" element={<LazyPage><LeadScoringPage /></LazyPage>} />
         <Route path="ai-assistant" element={<LazyPage><AIAssistantPage /></LazyPage>} />
         <Route path="pipeline" element={<LazyPage><PipelinePage /></LazyPage>} />
+        <Route path="deals" element={<LazyPage><DealsPage /></LazyPage>} />
+        <Route path="tasks" element={<LazyPage><SalesTasksPage /></LazyPage>} />
+        <Route path="activities" element={<LazyPage><SalesActivitiesPage /></LazyPage>} />
+        <Route path="quotations" element={<LazyPage><QuotationsPage /></LazyPage>} />
+        <Route path="products-services" element={<LazyPage><ProductsServicesPage /></LazyPage>} />
         <Route path="follow-ups" element={<LazyPage><FollowUpsPage /></LazyPage>} />
         <Route path="team" element={<LazyPage><TeamPage /></LazyPage>} />
         <Route path="hr" element={<LazyPage><HRDashboardPage /></LazyPage>} />

@@ -11,6 +11,7 @@ import { db } from '../../lib/firebase.js'
 import {
   businessTypes,
   getRecommendedModules,
+  labelForBusinessType,
   labelForBusinessModule,
   moduleCatalog,
   normalizeBusinessType,
@@ -145,7 +146,7 @@ export default function OnboardingWizard({ open, onComplete }) {
                   >
                     {businessTypes.map((type) => (
                       <option key={type} value={type}>
-                        {type}
+                        {labelForBusinessType(type)}
                       </option>
                     ))}
                   </Select>

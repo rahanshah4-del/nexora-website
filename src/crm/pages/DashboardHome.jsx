@@ -53,6 +53,8 @@ import { cn } from '../utils/cn.js'
 import { normalizeBusinessType } from '../data/moduleAccess.js'
 import { contractStats, maintenanceStats } from '../lib/propertyCalculations.js'
 import { contactStats, followUpStats, leadStats, templateStats } from '../lib/whatsappManual.js'
+import { useSalesHubCollection } from '../hooks/useSalesHubCollection.js'
+import { calculateDealMetrics, calculatePipelineMetrics, calculateProductMetrics, calculateTaskMetrics, safeNumber } from '../lib/salesCalculations.js'
 
 // Dashboard hero title/subtitle per business type (module). Falls back to a
 // generic label for any unknown type. Only affects the hero header text.
@@ -306,6 +308,11 @@ export default function DashboardHomePage() {
   )
   const propertyLoading = isProperty && (maintenanceApi.loading || contractsApi.loading)
   const isWhatsapp = normalizeBusinessType(businessType) === 'WhatsApp CRM'
+  const isSalesHub = normalizeBusinessType(businessType) === 'General CRM'
+  const salesDealsApi = useSalesHubCollection('salesDeals', { enabled: isSalesHub })
+  const salesTasksApi = useSalesHubCollection('salesTasks', { enabled: isSalesHub })
+  const salesQuotesApi = useSalesHubCollection('salesQuotes', { enabled: isSalesHub })
+  const salesProductsApi = useSalesHubCollection('salesProducts', { enabled: isSalesHub })
   const whatsappContactsApi = useWhatsappContacts({ enabled: isWhatsapp })
   const whatsappLeadsApi = useWhatsappLeads({ enabled: isWhatsapp })
   const whatsappFollowUpsApi = useWhatsappFollowUps({ enabled: isWhatsapp })
@@ -328,6 +335,22 @@ export default function DashboardHomePage() {
       whatsappTemplatesApi.loading ||
       whatsappSettingsApi.loading)
   const hero = dashboardHero(businessType)
+  const salesDealMetrics = useMemo(() => calculateDealMetrics(salesDealsApi.rows), [salesDealsApi.rows])
+  const salesPipelineMetrics = useMemo(() => calculatePipelineMetrics(salesDealsApi.rows), [salesDealsApi.rows])
+  const salesTaskMetrics = useMemo(() => calculateTaskMetrics(salesTasksApi.rows), [salesTasksApi.rows])
+  const salesProductMetrics = useMemo(() => calculateProductMetrics(salesProductsApi.rows), [salesProductsApi.rows])
+  const salesQuoteMetrics = useMemo(() => ({
+    pending: salesQuotesApi.rows.filter((row) => ['Draft', 'Sent'].includes(row.status)).length,
+    accepted: salesQuotesApi.rows.filter((row) => row.status === 'Accepted').length,
+    byStatus: ['Draft', 'Sent', 'Accepted', 'Rejected', 'Expired'].map((status) => ({
+      label: status,
+      value: salesQuotesApi.rows.filter((row) => row.status === status).length,
+    })),
+  }), [salesQuotesApi.rows])
+  const salesStageBreakdown = useMemo(() => {
+    const stages = ['New Lead', 'Contacted', 'Qualified', 'Proposal', 'Negotiation', 'Won', 'Lost']
+    return stages.map((stage) => ({ label: stage, value: salesDealsApi.rows.filter((deal) => deal.stage === stage).length }))
+  }, [salesDealsApi.rows])
 
   const loading =
     invoicesApi.loading ||
@@ -654,6 +677,59 @@ export default function DashboardHomePage() {
           <MetricCard key={kpi.label} {...kpi} />
         ))}
       </section>
+
+      {isSalesHub ? (
+        <section className="min-w-0 space-y-4">
+          <div className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
+            <MetricCard icon={HiOutlineChartBar} label="Expected Revenue" value={formatCurrency(salesDealMetrics.expectedRevenue, currency)} helper="Weighted deal forecast" loading={salesDealsApi.loading} />
+            <MetricCard icon={HiOutlineCurrencyDollar} label="Won Revenue" value={formatCurrency(salesDealMetrics.wonValue, currency)} helper="Closed won deals" tone="emerald" loading={salesDealsApi.loading} />
+            <MetricCard icon={HiOutlineExclamationTriangle} label="Lost Revenue" value={formatCurrency(salesDealMetrics.lostValue, currency)} helper="Closed lost deals" tone="violet" loading={salesDealsApi.loading} />
+            <MetricCard icon={HiOutlineClock} label="Overdue Tasks" value={formatCompact(salesTaskMetrics.overdueTasks)} helper={`${salesTaskMetrics.completionRate}% completion rate`} tone="cyan" loading={salesTasksApi.loading} />
+            <MetricCard icon={HiOutlineDocumentText} label="Pending Quotations" value={formatCompact(salesQuoteMetrics.pending)} helper={`${salesQuoteMetrics.accepted} accepted`} tone="sky" loading={salesQuotesApi.loading} />
+          </div>
+          <div className="grid min-w-0 gap-4 lg:grid-cols-3">
+            <Card className="rounded-[1.6rem] p-5">
+              <SectionTitle eyebrow="Forecast" title="Revenue Forecast" />
+              <div className="mt-4 space-y-3">
+                <DataRow label="Pipeline Value" value={formatCurrency(salesPipelineMetrics.pipelineValue, currency)} />
+                <DataRow label="Weighted Pipeline" value={formatCurrency(salesPipelineMetrics.weightedPipeline, currency)} />
+                <DataRow label="Open Deals" value={formatCompact(salesDealMetrics.openDeals)} />
+                <DataRow label="Catalog Avg Price" value={formatCurrency(salesProductMetrics.averagePrice, currency)} />
+              </div>
+            </Card>
+            <Card className="rounded-[1.6rem] p-5">
+              <SectionTitle eyebrow="Pipeline" title="Stage Breakdown" />
+              <div className="mt-4">
+                <MiniBars data={salesStageBreakdown} color="bg-blue-600" />
+              </div>
+            </Card>
+            <Card className="rounded-[1.6rem] p-5">
+              <SectionTitle eyebrow="Quotations" title="Status Breakdown" />
+              <div className="mt-4">
+                <MiniBars data={salesQuoteMetrics.byStatus} color="bg-emerald-500" />
+              </div>
+            </Card>
+          </div>
+          <div className="grid min-w-0 gap-4 lg:grid-cols-2">
+            <Card className="rounded-[1.6rem] p-5">
+              <SectionTitle eyebrow="Lead Conversion" title="Sales Funnel" />
+              <div className="mt-4 space-y-3">
+                <ProgressRow label="Leads" value={leadsApi.leads.length} max={Math.max(1, leadsApi.leads.length)} tone="bg-sky-500" />
+                <ProgressRow label="Qualified Deals" value={salesDealsApi.rows.filter((deal) => ['Qualified', 'Proposal', 'Negotiation', 'Won'].includes(deal.stage)).length} max={Math.max(1, leadsApi.leads.length || salesDealsApi.rows.length)} tone="bg-blue-600" />
+                <ProgressRow label="Won Deals" value={salesDealMetrics.wonDeals} max={Math.max(1, salesDealsApi.rows.length)} tone="bg-emerald-500" />
+              </div>
+            </Card>
+            <Card className="rounded-[1.6rem] p-5">
+              <SectionTitle eyebrow="Tasks" title="Priority Breakdown" />
+              <div className="mt-4 space-y-3">
+                {['High', 'Medium', 'Low'].map((priority) => (
+                  <ProgressRow key={priority} label={priority} value={salesTasksApi.rows.filter((task) => task.priority === priority).length} max={Math.max(1, safeNumber(salesTasksApi.rows.length))} tone={priority === 'High' ? 'bg-rose-500' : priority === 'Medium' ? 'bg-amber-500' : 'bg-sky-500'} />
+                ))}
+              </div>
+            </Card>
+          </div>
+        </section>
+      ) : null}
 
       {isProperty ? (
         <section className="min-w-0 space-y-4">

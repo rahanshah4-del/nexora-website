@@ -15,7 +15,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import NotificationBell from '../notifications/NotificationBell.jsx'
 import BranchSwitcher from '../system/BranchSwitcher.jsx'
 import OfflineStatus from '../system/OfflineStatus.jsx'
-import { packageNameForPlan } from '../../data/moduleAccess.js'
+import { labelForBusinessType, packageNameForPlan } from '../../data/moduleAccess.js'
 import { resolveWorkspaceName } from '../../../lib/workspaceName.js'
 import { goToWorkspace } from '../../../lib/workspaceNavigation.js'
 import { resolveProfileDisplay } from '../../../lib/profileDisplay.js'
@@ -68,6 +68,7 @@ function TopNav({ onOpenSidebar, onSwitchProduct }) {
   const navigate = useNavigate()
   const location = useLocation()
   const [toast, setToast] = useState(null)
+  const businessTypeLabel = labelForBusinessType(businessType)
   const profileSummary = useMemo(
     () => {
       const planStatus = isTrialExpired ? 'expired' : userDoc?.planStatus || 'trial'
@@ -167,9 +168,9 @@ function TopNav({ onOpenSidebar, onSwitchProduct }) {
             <Badge
               variant="info"
               className="hidden h-9 max-w-[18rem] shrink-0 items-center truncate px-3 font-semibold lg:inline-flex"
-              title={`Current Business: ${businessType}`}
+              title={`Current Business: ${businessTypeLabel}`}
             >
-              <span className="truncate">Current Business: {businessType}</span>
+              <span className="truncate">Current Business: {businessTypeLabel}</span>
             </Badge>
             <Badge
               variant={isTrialExpired ? 'danger' : isTrialActive ? 'warning' : 'success'}

@@ -6,13 +6,13 @@ import { useWorkspaceAccess } from '../../hooks/useWorkspaceAccess.js'
 
 export default function FeatureGate({ children }) {
   const { pathname } = useLocation()
-  const { accessPlan, firebaseUser, userDoc } = useUser()
+  const { accessPlan, businessType, firebaseUser, userDoc } = useUser()
   const access = useWorkspaceAccess()
   const module = moduleByRoute(pathname)
   const developerOverride = isDeveloperOwnerAccount(userDoc, firebaseUser)
   const teamOverride = access.isAdmin || access.hasPermission('settingsAccess')
 
-  if (!routeAllowedByPlan(pathname, accessPlan, { developerOverride, teamOverride })) {
+  if (!routeAllowedByPlan(pathname, accessPlan, { developerOverride, teamOverride, businessType })) {
     return (
       <FeatureLockedModal
         title={module?.label || 'Paid Package Feature'}

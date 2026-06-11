@@ -16,6 +16,7 @@ import {
 } from '../lib/platformPlans.js'
 import { trackAnalyticsEvent } from '../lib/analyticsTracking.js'
 import { sendWorkerEmail, upgradeRequestReceivedEmail } from '../lib/transactionalEmail.js'
+import { labelForBusinessType } from '../crm/data/moduleAccess.js'
 
 function Section({ children, className = '' }) {
   return <section className={`mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 ${className}`}>{children}</section>
@@ -240,6 +241,7 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
   const workspaceId = userDoc?.workspaceId || workspaceDoc?.id || user?.uid || ''
   const workspaceName = workspaceDoc?.workspaceName || workspaceDoc?.companyName || workspaceDoc?.businessName || userDoc?.workspaceName || 'Nexora Workspace'
   const businessType = workspaceDoc?.selectedBusinessType || workspaceDoc?.businessType || userDoc?.selectedBusinessType || userDoc?.businessType || ''
+  const businessTypeLabel = businessType ? labelForBusinessType(businessType) : ''
   const currency = selectedPlan?.currency || platformSettings.defaultCurrency || DEFAULT_SAAS_CURRENCY
   const selectedAmount = billingCycle === 'yearly' ? selectedPlan?.yearlyPrice : selectedPlan?.monthlyPrice
   const requestedPlan = selectedPlan?.name || ''
@@ -431,7 +433,7 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
               <p className="mt-3 text-2xl font-black">{currentPlan}</p>
               <p className="mt-2 text-sm font-semibold text-slate-200">{workspaceName}</p>
               <div className="mt-4 flex flex-wrap gap-2">
-                <Badge tone="violet">{businessType || 'Workspace'}</Badge>
+                <Badge tone="violet">{businessTypeLabel || 'Workspace'}</Badge>
                 <Badge tone="green">{workspaceDoc?.subscriptionStatus || 'trial'}</Badge>
               </div>
             </Panel>

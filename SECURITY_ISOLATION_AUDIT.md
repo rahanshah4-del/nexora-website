@@ -79,7 +79,7 @@ The shared CRM Firestore helper now enforces:
 
 Business modules:
 
-- General CRM
+- Nexora Sales Hub
 - School ERP
 - Retail / POS
 - Property ERP

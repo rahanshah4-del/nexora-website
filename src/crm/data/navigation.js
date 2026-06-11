@@ -20,6 +20,8 @@ import {
   HiOutlineUsers,
   HiOutlineWrenchScrewdriver,
   HiOutlineClipboardDocumentCheck,
+  HiOutlineCalendarDays,
+  HiOutlineCurrencyDollar,
 } from 'react-icons/hi2'
 
 export const navItems = [
@@ -29,6 +31,11 @@ export const navItems = [
   { label: 'Products', to: '/app/products', icon: HiOutlineSquares2X2 },
   { label: 'POS Billing', to: '/app/pos', icon: HiOutlineShoppingCart },
   { label: 'Leads', to: '/app/leads', icon: HiOutlineUserGroup },
+  { label: 'Deals', to: '/app/deals', icon: HiOutlineCurrencyDollar },
+  { label: 'Tasks & Follow-Ups', to: '/app/tasks', icon: HiOutlineCalendarDays },
+  { label: 'Activities', to: '/app/activities', icon: HiOutlineChartBarSquare },
+  { label: 'Quotations', to: '/app/quotations', icon: HiOutlineDocumentText },
+  { label: 'Products & Services', to: '/app/products-services', icon: HiOutlineSquares2X2 },
   { label: 'AI Lead Scoring', to: '/app/leads/scoring', icon: HiOutlineSparkles },
   { label: 'AI Assistant', to: '/app/ai-assistant', icon: HiOutlineChatBubbleLeftRight },
   { label: 'Sales Pipeline', to: '/app/pipeline', icon: HiOutlineRectangleStack },

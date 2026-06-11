@@ -76,6 +76,14 @@ function DealDrawer({ open, deal, onClose, onSave, onDelete }) {
                     />
                   </div>
                   <div>
+                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Lead</label>
+                    <Input className="mt-1" value={draft.leadName || ''} onChange={(e) => setDraft((d) => ({ ...d, leadName: e.target.value }))} />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Owner</label>
+                    <Input className="mt-1" value={draft.owner || ''} onChange={(e) => setDraft((d) => ({ ...d, owner: e.target.value }))} />
+                  </div>
+                  <div>
                     <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Stage</label>
                     <Select className="mt-1" value={draft.stage} onChange={(e) => setDraft((d) => ({ ...d, stage: e.target.value }))}>
                       {pipelineStages.map((s) => (
@@ -91,6 +99,18 @@ function DealDrawer({ open, deal, onClose, onSave, onDelete }) {
                       <option>High</option>
                       <option>Medium</option>
                       <option>Low</option>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Source</label>
+                    <Input className="mt-1" value={draft.source || ''} onChange={(e) => setDraft((d) => ({ ...d, source: e.target.value }))} />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Status</label>
+                    <Select className="mt-1" value={draft.status || 'Open'} onChange={(e) => setDraft((d) => ({ ...d, status: e.target.value }))}>
+                      <option>Open</option>
+                      <option>Won</option>
+                      <option>Lost</option>
                     </Select>
                   </div>
                   <div>

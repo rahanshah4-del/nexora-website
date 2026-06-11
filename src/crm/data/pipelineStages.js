@@ -1,9 +1,9 @@
 export const pipelineStages = [
   'New Lead',
-  'Interested',
-  'Meeting',
+  'Contacted',
+  'Qualified',
+  'Proposal',
   'Negotiation',
-  'Paid',
-  'Completed',
+  'Won',
   'Lost',
 ]

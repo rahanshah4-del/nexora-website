@@ -1,6 +1,6 @@
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore'
 import { db } from './firebase.js'
-import { accessPlanForUser, businessWorkspaceCatalog, businessWorkspaceForId, businessWorkspaceForSelection, businessWorkspaceForType } from '../data/moduleAccess.js'
+import { accessPlanForUser, businessWorkspaceCatalog, businessWorkspaceForId, businessWorkspaceForSelection, businessWorkspaceForType, labelForBusinessType } from '../data/moduleAccess.js'
 
 export const SELECTED_WORKSPACE_KEY = 'selectedWorkspace'
 export const SELECTED_WORKSPACE_USER_KEY = 'selectedWorkspaceUserId'
@@ -12,9 +12,9 @@ export function isValidWorkspace(workspace) {
 }
 
 export function workspaceLabel(workspace) {
-  if (workspace === 'crm') return 'General CRM'
+  if (workspace === 'crm') return 'Nexora Sales Hub'
   const business = businessWorkspaceForId(workspace)
-  if (business) return business.title
+  if (business) return labelForBusinessType(business.type)
   return 'Not selected'
 }
 

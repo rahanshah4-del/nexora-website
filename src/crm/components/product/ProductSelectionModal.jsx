@@ -14,10 +14,10 @@ import { useNavigate } from 'react-router-dom'
 import logoUrl from '../../../assets/logo/nexora-logo.svg'
 import { cn } from '../../utils/cn.js'
 import { formatSessionTime, isValidWorkspace, workspaceLabel } from '../../lib/workspaceSession.js'
-import { businessWorkspaceCatalog, labelForBusinessModule, moduleCatalog, packageNameForPlan } from '../../data/moduleAccess.js'
+import { businessWorkspaceCatalog, labelForBusinessModule, labelForBusinessType, moduleCatalog, packageNameForPlan } from '../../data/moduleAccess.js'
 
 const accentMap = {
-  'general-crm': 'from-indigo-500 to-violet-600',
+  'general-crm': 'from-sky-500 via-blue-600 to-indigo-700',
   'retail-pos': 'from-amber-500 to-orange-600',
   'school-erp': 'from-emerald-500 to-teal-600',
   'property-erp': 'from-violet-500 to-fuchsia-600',
@@ -37,8 +37,8 @@ const iconMap = {
 const products = businessWorkspaceCatalog.map((workspace) => ({
   id: workspace.id,
   type: workspace.type,
-  title: workspace.title,
-  button: `Open ${workspace.title}`,
+  title: labelForBusinessType(workspace.type),
+  button: `Open ${labelForBusinessType(workspace.type)}`,
   icon: iconMap[workspace.id] || HiOutlineSquares2X2,
   accent: accentMap[workspace.id] || accentMap['general-crm'],
   features: workspace.modules

@@ -321,7 +321,7 @@ export default function DashboardLayout() {
     !userLoading &&
     Boolean(userDoc) &&
     Boolean(currentModule) &&
-    !routeAllowedByPlan(location.pathname, accessPlan, { developerOverride, teamOverride })
+    !routeAllowedByPlan(location.pathname, accessPlan, { developerOverride, teamOverride, businessType })
   const routeBusinessBlocked =
     ready &&
     isAuthenticated &&

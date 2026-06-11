@@ -10,6 +10,11 @@ import Button from '../components/ui/Button.jsx'
 import { useMemo, useState } from 'react'
 import DealModal from '../components/pipeline/DealModal.jsx'
 import Toast from '../components/ui/Toast.jsx'
+import PageSearch from '../components/ui/PageSearch.jsx'
+import Select from '../components/ui/Select.jsx'
+import { calculatePipelineMetrics } from '../lib/salesCalculations.js'
+import { formatCurrency } from '../utils/format.js'
+import { pipelineStages } from '../data/pipelineStages.js'
 
 const COLORS = ['#6366f1', '#a855f7', '#3b82f6', '#22c55e', '#f59e0b']
 
@@ -31,15 +36,28 @@ export default function PipelinePage() {
   const { deals, source, loading, error, moveDeal, saveDeal, deleteDeal } = pipelineApi
   const [createOpen, setCreateOpen] = useState(false)
   const [toast, setToast] = useState(null)
+  const [query, setQuery] = useState('')
+  const [stageFilter, setStageFilter] = useState('all')
+
+  const filteredDeals = useMemo(() => {
+    const needle = query.trim().toLowerCase()
+    return deals.filter((deal) => {
+      const matchesSearch = !needle || [deal.title, deal.customerName, deal.leadName, deal.owner, deal.priority, deal.notes].join(' ').toLowerCase().includes(needle)
+      const matchesStage = stageFilter === 'all' || deal.stage === stageFilter
+      return matchesSearch && matchesStage
+    })
+  }, [deals, query, stageFilter])
+
+  const metrics = useMemo(() => calculatePipelineMetrics(deals), [deals])
 
   const breakdown = useMemo(() => {
     const map = new Map()
-    for (const d of deals) {
+    for (const d of filteredDeals) {
       const s = d.stage || 'Unknown'
       map.set(s, (map.get(s) || 0) + 1)
     }
     return Array.from(map.entries()).map(([stage, value]) => ({ stage, value }))
-  }, [deals])
+  }, [filteredDeals])
 
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
@@ -53,6 +71,22 @@ export default function PipelinePage() {
           </Button>
         }
       />
+
+      <div className="mb-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+        {[
+          ['Pipeline Value', formatCurrency(metrics.pipelineValue, 'PKR')],
+          ['Weighted Pipeline', formatCurrency(metrics.weightedPipeline, 'PKR')],
+          ['Won Value', formatCurrency(metrics.wonValue, 'PKR')],
+          ['Lost Value', formatCurrency(metrics.lostValue, 'PKR')],
+          ['Average Deal', formatCurrency(metrics.averageDealValue, 'PKR')],
+          ['Conversion Rate', `${metrics.conversionRate}%`],
+        ].map(([label, value]) => (
+          <Card key={label} className="p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">{label}</p>
+            <p className="mt-2 truncate text-xl font-semibold text-slate-950 dark:text-white">{value}</p>
+          </Card>
+        ))}
+      </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="p-5 lg:col-span-2">
@@ -114,6 +148,20 @@ export default function PipelinePage() {
           </div>
 
           <div className="mt-4">
+            <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <PageSearch
+                value={query}
+                onChange={setQuery}
+                placeholder="Search deals by title, customer, owner, priority..."
+                resultCount={filteredDeals.length}
+                totalCount={deals.length}
+                className="lg:w-96"
+              />
+              <Select value={stageFilter} onChange={(event) => setStageFilter(event.target.value)} className="lg:w-56">
+                <option value="all">All stages</option>
+                {pipelineStages.map((stage) => <option key={stage} value={stage}>{stage}</option>)}
+              </Select>
+            </div>
             {error ? (
               <div className="mb-3 rounded-2xl border border-rose-500/20 bg-rose-500/10 p-3 text-sm text-rose-800 dark:text-rose-200">
                 {error}
@@ -123,8 +171,8 @@ export default function PipelinePage() {
               <div className="grid min-h-[12rem] place-items-center text-sm text-slate-600 dark:text-slate-300">
                 Loading deals…
               </div>
-            ) : deals.length ? (
-              <KanbanBoard deals={deals} onMove={moveDeal} onSave={saveDeal} onDelete={deleteDeal} />
+            ) : filteredDeals.length ? (
+              <KanbanBoard deals={filteredDeals} onMove={moveDeal} onSave={saveDeal} onDelete={deleteDeal} />
             ) : (
               <EmptyState title="No deals yet" description="Add a deal to start using the pipeline board." />
             )}

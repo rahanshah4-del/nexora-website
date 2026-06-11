@@ -14,10 +14,11 @@ import Badge from '../components/ui/Badge.jsx'
 import Button from '../components/ui/Button.jsx'
 import Card from '../components/ui/Card.jsx'
 import Input from '../components/ui/Input.jsx'
+import PageHeader from '../components/ui/PageHeader.jsx'
 import Select from '../components/ui/Select.jsx'
 import PrintableReport from '../components/print/PrintableReport.jsx'
 import { supportedCurrencies } from '../data/currency.js'
-import { normalizeBusinessType } from '../data/moduleAccess.js'
+import { labelForBusinessType, normalizeBusinessType } from '../data/moduleAccess.js'
 import { useBusinessSettings } from '../hooks/useBusinessSettings.js'
 import { usePreferences } from '../hooks/usePreferences.js'
 import { REPORT_SECTION_OPTIONS, useReports } from '../hooks/useReports.js'
@@ -36,6 +37,8 @@ import { convertFromUsd } from '../utils/currency.js'
 import { formatCurrency } from '../utils/format.js'
 import { buildReportId, exportReportCsv, exportReportExcel, exportReportPdf } from '../lib/reportGenerator.js'
 import WhatsappReports from '../components/reports/WhatsappReports.jsx'
+import { useSalesHubCollection } from '../hooks/useSalesHubCollection.js'
+import { calculateDealMetrics, calculatePipelineMetrics, calculateProductMetrics, calculateTaskMetrics } from '../lib/salesCalculations.js'
 
 const NEXORA_LOGO = '/nexora-logo.jpg'
 
@@ -417,6 +420,7 @@ function GenericReports() {
   }
 
   const activeBusinessType = normalizeBusinessType(businessType)
+  const activeBusinessTypeLabel = labelForBusinessType(activeBusinessType)
   const reportTitle = reportLabelByBusiness[activeBusinessType] || 'Workspace Report'
   const dateRangeLabel = filters.range === 'custom'
     ? `${filters.startDate || 'Start'} to ${filters.endDate || 'End'}`
@@ -444,7 +448,7 @@ function GenericReports() {
       title: reportTitle,
       workspaceId,
       workspaceName: branding.companyName,
-      businessType: activeBusinessType,
+      businessType: activeBusinessTypeLabel,
       dateRange: dateRangeLabel,
       generatedBy: branding.ownerName,
       generatedAt,
@@ -474,7 +478,7 @@ function GenericReports() {
         netAmount: reportData.profitUsd,
       },
     }
-  }, [activeBusinessType, branding, businessSettingsApi.settings.reportPrefix, dateRangeLabel, filters.currency, reportData, reportTitle, workspaceId])
+  }, [activeBusinessType, activeBusinessTypeLabel, branding, businessSettingsApi.settings.reportPrefix, dateRangeLabel, filters.currency, reportData, reportTitle, workspaceId])
 
   return (
     <motion.div
@@ -850,12 +854,93 @@ function GenericReports() {
   )
 }
 
+function SalesHubReports() {
+  const dealsApi = useSalesHubCollection('salesDeals')
+  const tasksApi = useSalesHubCollection('salesTasks')
+  const quotesApi = useSalesHubCollection('salesQuotes')
+  const productsApi = useSalesHubCollection('salesProducts')
+  const dealMetrics = calculateDealMetrics(dealsApi.rows)
+  const pipelineMetrics = calculatePipelineMetrics(dealsApi.rows)
+  const taskMetrics = calculateTaskMetrics(tasksApi.rows)
+  const productMetrics = calculateProductMetrics(productsApi.rows)
+  const reports = [
+    ['Sales Report', dealMetrics.wonValue],
+    ['Pipeline Report', pipelineMetrics.pipelineValue],
+    ['Deals Report', dealMetrics.totalDeals],
+    ['Lead Conversion Report', `${pipelineMetrics.conversionRate}%`],
+    ['Customer Report', 'Use Customers module'],
+    ['Quotation Report', quotesApi.rows.length],
+    ['Invoice Report', 'Use Invoices module'],
+    ['Expense Report', 'Use Expenses module'],
+    ['Team Performance Report', `${taskMetrics.completionRate}% completion`],
+    ['Forecast Report', dealMetrics.forecastRevenue],
+  ]
+
+  function exportCsv() {
+    const csv = ['Report,Value', ...reports.map(([name, value]) => `${name},${value}`)].join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'nexora-sales-hub-reports.csv'
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
+      <PageHeader
+        title="Sales Hub Reports"
+        subtitle="Sales, pipeline, deals, lead conversion, customer, quotation, invoice, expense, team performance, and forecast reports."
+        right={
+          <>
+            <Button className="rounded-2xl" type="button" onClick={() => window.print()}><HiOutlinePrinter className="h-4 w-4" />Print / PDF</Button>
+            <Button variant="subtle" className="rounded-2xl" type="button" onClick={exportCsv}><HiOutlineArrowDownTray className="h-4 w-4" />Export Excel CSV</Button>
+          </>
+        }
+      />
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        {reports.map(([name, value]) => (
+          <Card key={name} className="p-4">
+            <p className="text-sm font-semibold text-slate-950 dark:text-white">{name}</p>
+            <p className="mt-3 truncate text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">
+              {typeof value === 'number' ? formatCurrency(value, 'PKR') : value}
+            </p>
+          </Card>
+        ))}
+      </div>
+      <Card className="mt-4 p-5">
+        <p className="text-sm font-semibold text-slate-950 dark:text-white">Calculation Summary</p>
+        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <DataPill label="Expected Revenue" value={formatCurrency(dealMetrics.expectedRevenue, 'PKR')} />
+          <DataPill label="Weighted Pipeline" value={formatCurrency(pipelineMetrics.weightedPipeline, 'PKR')} />
+          <DataPill label="Overdue Tasks" value={taskMetrics.overdueTasks} />
+          <DataPill label="Catalog Margin" value={`${productMetrics.marginPercent}%`} />
+        </div>
+      </Card>
+    </motion.div>
+  )
+}
+
+function DataPill({ label, value }) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900">
+      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">{label}</p>
+      <p className="mt-2 text-sm font-semibold text-slate-950 dark:text-white">{value}</p>
+    </div>
+  )
+}
+
 // Route by business type: WhatsApp CRM gets dedicated WhatsApp-only reports;
-// every other business type keeps the existing generic workspace reports.
+// Sales Hub gets enterprise Sales Hub reports; every other business type keeps
+// the existing generic workspace reports.
 export default function ReportsPage() {
   const { businessType } = useUser()
   if (normalizeBusinessType(businessType) === 'WhatsApp CRM') {
     return <WhatsappReports />
+  }
+  if (normalizeBusinessType(businessType) === 'General CRM') {
+    return <SalesHubReports />
   }
   return <GenericReports />
 }

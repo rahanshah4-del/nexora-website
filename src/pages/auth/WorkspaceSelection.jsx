@@ -42,6 +42,7 @@ import {
   businessTypes,
   getRecommendedModules,
   isDeveloperOwnerAccount,
+  labelForBusinessType,
   labelForBusinessModule,
   normalizeBusinessType,
   packageNameForPlan,
@@ -56,7 +57,7 @@ import { resolveProfileDisplay } from '../../lib/profileDisplay.js'
 import { clearAllUserCache } from '../../lib/authIsolation.js'
 
 const workspaceIconMap = {
-  'General CRM': { icon: HiOutlineUserGroup, iconTone: 'bg-blue-50 text-blue-600', color: 'bg-blue-600' },
+  'General CRM': { icon: HiOutlineUserGroup, iconTone: 'bg-gradient-to-br from-sky-500 via-blue-600 to-indigo-700 text-white shadow-sm shadow-blue-500/25', color: 'bg-gradient-to-br from-sky-500 via-blue-600 to-indigo-700' },
   'Retail / POS': { icon: HiOutlineBriefcase, iconTone: 'bg-orange-50 text-orange-500', color: 'bg-amber-500' },
   'School ERP': { icon: HiOutlineBuildingLibrary, iconTone: 'bg-emerald-50 text-emerald-600', color: 'bg-emerald-500' },
   'Property ERP': { icon: HiOutlineHomeModern, iconTone: 'bg-violet-50 text-violet-600', color: 'bg-violet-600' },
@@ -438,6 +439,7 @@ function WorkspaceCard({ workspace, index, emailVerified, selected, saving, onSe
   const navigate = useNavigate()
   const Icon = workspace.icon
   const disabled = !workspace.active
+  const businessTypeLabel = labelForBusinessType(workspace.type)
 
   return (
     <motion.article
@@ -450,7 +452,7 @@ function WorkspaceCard({ workspace, index, emailVerified, selected, saving, onSe
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-3">
-          <span className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full ${workspace.iconTone}`}>
+          <span className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl ${workspace.iconTone}`}>
             <Icon className="h-7 w-7" />
           </span>
           <div className="min-w-0 pt-0.5">
@@ -458,7 +460,7 @@ function WorkspaceCard({ workspace, index, emailVerified, selected, saving, onSe
               <h2 className="truncate text-[15px] font-bold leading-5 text-slate-950">{workspace.name}</h2>
               {selected && emailVerified ? <VerificationBadge verified compact /> : null}
             </div>
-            <p className="mt-1 text-xs text-slate-500">Business type: {workspace.type}</p>
+            <p className="mt-1 text-xs text-slate-500">Business type: {businessTypeLabel}</p>
             {workspace.plan ? (
               <p className="mt-1 text-xs text-slate-500">
                 Plan:{' '}
@@ -522,6 +524,7 @@ function WorkspaceCard({ workspace, index, emailVerified, selected, saving, onSe
 function WorkspaceListRow({ workspace, index, emailVerified, selected, saving, onSelect }) {
   const Icon = workspace.icon
   const disabled = !workspace.active
+  const businessTypeLabel = labelForBusinessType(workspace.type)
 
   return (
     <motion.div
@@ -532,7 +535,7 @@ function WorkspaceListRow({ workspace, index, emailVerified, selected, saving, o
         selected ? 'border-blue-500 ring-1 ring-blue-100' : 'border-slate-200'
       }`}
     >
-      <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${workspace.iconTone}`}>
+      <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${workspace.iconTone}`}>
         <Icon className="h-6 w-6" />
       </span>
 
@@ -541,7 +544,7 @@ function WorkspaceListRow({ workspace, index, emailVerified, selected, saving, o
           <h3 className="truncate text-sm font-bold leading-5 text-slate-950">{workspace.name}</h3>
           {selected && emailVerified ? <VerificationBadge verified compact /> : null}
         </div>
-        <p className="mt-0.5 truncate text-xs text-slate-500">Business type: {workspace.type}</p>
+        <p className="mt-0.5 truncate text-xs text-slate-500">Business type: {businessTypeLabel}</p>
       </div>
 
       <div className="flex shrink-0 flex-col items-start gap-1.5 sm:w-[150px]">
@@ -708,6 +711,7 @@ function SetupWizard({ creating, message, form, onChange, onCreate, onClose, can
 
   const businessOptions = businessTypes.map((type) => ({
     type,
+    label: labelForBusinessType(type),
     ...(workspaceIconMap[businessWorkspaceForType(type)?.type] || workspaceIconMap['General CRM']),
     description: businessWorkspaceForType(type)?.description || '',
   }))
@@ -793,7 +797,7 @@ function SetupWizard({ creating, message, form, onChange, onCreate, onClose, can
                       <Icon className="h-5 w-5" />
                     </span>
                     <span className="min-w-0">
-                      <span className="block text-sm font-bold text-slate-900">{option.type}</span>
+                      <span className="block text-sm font-bold text-slate-900">{option.label}</span>
                       <span className="mt-0.5 block text-xs leading-4 text-slate-500">{option.description}</span>
                     </span>
                   </button>
@@ -823,7 +827,7 @@ function SetupWizard({ creating, message, form, onChange, onCreate, onClose, can
                 >
                   <option value="" disabled>Select business module</option>
                   {businessTypes.map((type) => (
-                    <option key={type} value={type}>{type}</option>
+                    <option key={type} value={type}>{labelForBusinessType(type)}</option>
                   ))}
                 </select>
               </FieldLabel>
@@ -876,7 +880,7 @@ function SetupWizard({ creating, message, form, onChange, onCreate, onClose, can
           {step === 2 ? (
             <div className="space-y-4">
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                <DetailRow label="Business Type" value={businessType || '—'} />
+                <DetailRow label="Business Type" value={businessType ? labelForBusinessType(businessType) : '—'} />
                 <DetailRow label="Workspace Name" value={cleanString(form.companyName) || '—'} />
                 <DetailRow label="Country" value={cleanString(form.country) || '—'} />
                 <DetailRow label="Currency" value={cleanString(form.currency) || '—'} />

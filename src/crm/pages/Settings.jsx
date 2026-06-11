@@ -22,7 +22,7 @@ import { useWhatsappSettings } from '../hooks/useWhatsappSettings.js'
 import { useUser } from '../hooks/useUser.js'
 import { useAuth } from '../hooks/useAuth.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
-import { packageNameForPlan, normalizeBusinessType } from '../data/moduleAccess.js'
+import { labelForBusinessType, packageNameForPlan, normalizeBusinessType } from '../data/moduleAccess.js'
 import { whatsappCapabilities, whatsappTrialStatus } from '../lib/whatsappApiTrial.js'
 import ConnectWhatsappModal from '../components/whatsapp/ConnectWhatsappModal.jsx'
 import ConfirmDialog from '../components/whatsapp/ConfirmDialog.jsx'
@@ -288,6 +288,7 @@ export default function SettingsPage() {
   const [error, setError] = useState('')
   const fileRef = useRef(null)
   const packageName = packageNameForPlan(plan)
+  const businessTypeLabel = labelForBusinessType(businessType)
   const canManageSettings = access.canManageSettings
   const viewOnlyMessage = 'You have view access only. Contact your workspace administrator to modify settings.'
 
@@ -327,7 +328,7 @@ export default function SettingsPage() {
       ...userActivityInfo(userDoc, firebaseUser),
       action: 'Settings/profile updated',
       module: 'Settings',
-      description: `${businessType} profile and business settings were updated.`,
+      description: `${businessTypeLabel} profile and business settings were updated.`,
       targetId: userId || '',
       targetName: draft.businessName || draft.companyName || draft.ownerName || 'Profile',
       metadata: { businessName: businessPatch.businessName, businessType, ownerName: draft.ownerName || '', currency },
@@ -404,7 +405,7 @@ export default function SettingsPage() {
                     {saved ? <HiOutlineCheckCircle className="text-lg text-emerald-500" /> : null}
                   </div>
                   <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-300">
-                    Owner and contact details for the current {businessType} module.
+                    Owner and contact details for the current {businessTypeLabel} module.
                   </p>
                 </div>
               </div>
@@ -485,7 +486,7 @@ export default function SettingsPage() {
               </Field>
               <Field label="Business Type">
                 <Input
-                  value={businessType}
+                  value={businessTypeLabel}
                   disabled
                   placeholder="Current module"
                 />

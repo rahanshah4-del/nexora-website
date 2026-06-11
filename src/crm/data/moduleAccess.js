@@ -165,9 +165,14 @@ export const moduleCatalog = [
   { key: 'customers', label: 'Customers', route: '/app/customers', minPlan: 'Basic' },
   { key: 'products', label: 'Products / Services', route: '/app/products', minPlan: 'Business' },
   { key: 'leads', label: 'Leads', route: '/app/leads', minPlan: 'Basic' },
+  { key: 'deals', label: 'Deals', route: '/app/deals', minPlan: 'Basic' },
+  { key: 'tasks', label: 'Tasks & Follow-Ups', route: '/app/tasks', minPlan: 'Basic' },
+  { key: 'activities', label: 'Activities', route: '/app/activities', minPlan: 'Basic' },
+  { key: 'quotations', label: 'Quotations', route: '/app/quotations', minPlan: 'Basic' },
+  { key: 'salesProducts', label: 'Products & Services', route: '/app/products-services', minPlan: 'Basic' },
   { key: 'aiLeadScoring', label: 'AI Lead Scoring', route: '/app/leads/scoring', minPlan: 'Business' },
   { key: 'aiAssistant', label: 'AI Assistant', route: '/app/ai-assistant', minPlan: 'Business' },
-  { key: 'salesPipeline', label: 'Sales Pipeline', route: '/app/pipeline', minPlan: 'Business' },
+  { key: 'salesPipeline', label: 'Sales Pipeline', route: '/app/pipeline', minPlan: 'Basic' },
   { key: 'followUps', label: 'Follow-Up Automation', route: '/app/follow-ups', minPlan: 'Business' },
   { key: 'team', label: 'Team Management', route: '/app/team', minPlan: 'Business' },
   { key: 'hr', label: 'HR Dashboard', route: '/app/hr', minPlan: 'Business' },
@@ -218,6 +223,27 @@ export const businessTypes = [
 
 export const coreFinanceModules = ['invoices', 'payments', 'expenses', 'accounts', 'reports']
 
+const salesHubSidebarCoreModules = new Set([
+  'dashboard',
+  'salesPipeline',
+  'leads',
+  'customers',
+  'deals',
+  'tasks',
+  'activities',
+  'quotations',
+  'invoices',
+  'salesProducts',
+  'expenses',
+  'accounts',
+  'accountStatements',
+  'team',
+  'reports',
+  'notifications',
+  'approvals',
+  'settings',
+])
+
 export const businessWorkspaceCatalog = [
   {
     id: 'general-crm',
@@ -225,17 +251,26 @@ export const businessWorkspaceCatalog = [
     title: 'Nexora Sales Hub',
     route: '/app/dashboard',
     description: 'Manage leads, customers, sales, invoices, follow-ups, and business growth from one workspace.',
+    labels: {
+      salesPipeline: 'Pipeline',
+    },
     modules: [
       'dashboard',
       'customers',
       'products',
       'leads',
       'salesPipeline',
+      'deals',
+      'tasks',
+      'activities',
+      'quotations',
+      'salesProducts',
       'followUps',
       'invoices',
       'payments',
       'expenses',
       'accounts',
+      'accountStatements',
       'reports',
       'approvals',
       'team',
@@ -491,6 +526,11 @@ export const legacyPermissionAliases = {
   customers: ['customerManagement'],
   leads: ['leadsManagement'],
   salesPipeline: ['deals', 'pipeline', 'salesPipeline'],
+  deals: ['deals', 'pipeline', 'salesPipeline'],
+  tasks: ['followUpEdit', 'followUpDelete'],
+  activities: ['activityLogs'],
+  quotations: ['reports', 'viewReports'],
+  salesProducts: ['products', 'inventory'],
   followUps: ['followUpEdit', 'followUpDelete'],
   team: ['manageTeam', 'teamManagement', 'settingsAccess'],
   hr: ['hrDashboard'],
@@ -575,6 +615,7 @@ export function routeAllowedByPlan(route, plan, options = {}) {
   if (options?.developerOverride) return true
   const module = moduleByRoute(route)
   if (!module || module.alwaysEnabled) return true
+  if (normalizeBusinessType(options?.businessType) === 'General CRM' && salesHubSidebarCoreModules.has(module.key)) return true
   if (module.key === 'team' && options?.teamOverride) return true
   return hasPlanAccess(plan, module.minPlan)
 }
@@ -611,13 +652,14 @@ export function selectedModulesForSidebar({ enabledModules, onboardingCompleted,
   }
 
   const businessKeys = businessModuleKeys(businessType)
+  const isSalesHub = normalizeBusinessType(businessType) === 'General CRM'
   const selected = new Set(onboardingCompleted ? businessKeys : Array.isArray(enabledModules) && enabledModules.length ? enabledModules : businessKeys)
   return moduleCatalog.filter((module) => {
     if (module.key === 'subscriptions') return false
     if (module.key === 'payments') return false
     if (module.alwaysEnabled) return selected.has(module.key) || businessKeys.includes(module.key)
     if (module.comingSoon) return businessKeys.includes(module.key)
-    if (!moduleAllowedByPlan(module.key, plan) && !(module.key === 'team' && teamOverride)) return false
+    if (!moduleAllowedByPlan(module.key, plan) && !(module.key === 'team' && teamOverride) && !(isSalesHub && salesHubSidebarCoreModules.has(module.key))) return false
     if (module.key === 'accountStatements') return businessKeys.includes('accounts')
     if (coreFinanceModules.includes(module.key) || module.key === 'approvals') return businessKeys.includes(module.key)
     return selected.has(module.key) && businessKeys.includes(module.key)

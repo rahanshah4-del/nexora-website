@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import NexoraLogo from '../../../components/brand/NexoraLogo.jsx'
+import { labelForBusinessType } from '../../data/moduleAccess.js'
 
 const messages = [
   'Loading your workspace...',
@@ -106,7 +107,7 @@ export default function PageLoader({ stage = 'dashboard', businessType = 'Genera
                     : 'bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-slate-300'
                 }`}
               >
-                {type}
+                {type === 'General CRM' ? labelForBusinessType(type) : type}
               </div>
             ))}
           </div>

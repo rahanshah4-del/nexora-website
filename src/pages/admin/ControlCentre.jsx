@@ -31,6 +31,7 @@ import {
   writeBatch,
 } from 'firebase/firestore'
 import { signOut } from 'firebase/auth'
+import { labelForBusinessType } from '../../crm/data/moduleAccess.js'
 import {
   Area,
   AreaChart,
@@ -208,6 +209,11 @@ function workspaceBusinessType(row = {}) {
 function normalizeAdminBusinessType(type) {
   const value = String(type || '').trim().toLowerCase()
   return modules.find((module) => module.toLowerCase() === value) || modules.find((module) => value && module.toLowerCase().includes(value)) || 'General CRM'
+}
+
+function displayAdminBusinessType(type) {
+  const value = String(type || '').trim()
+  return value ? labelForBusinessType(normalizeAdminBusinessType(value)) : '-'
 }
 
 function moduleAccessForWorkspace(row = {}) {
@@ -784,7 +790,7 @@ export default function ControlCentre() {
       const key = workspaceBusinessType(workspace)
       counts.set(key, (counts.get(key) || 0) + 1)
     })
-    return Array.from(counts.entries()).map(([name, value]) => ({ name, value }))
+    return Array.from(counts.entries()).map(([name, value]) => ({ name: displayAdminBusinessType(name), value }))
   }, [data.workspaces])
 
   const revenueTrend = useMemo(() => {
@@ -1317,7 +1323,7 @@ export default function ControlCentre() {
     { key: 'workspaceId', label: 'Workspace ID', render: (row) => <span className="font-mono text-xs">{row.workspaceId || row.id}</span> },
     { key: 'workspace', label: 'Workspace Name', render: (row) => <div><p className="font-black text-slate-900">{workspaceName(row)}</p><p className="text-xs text-slate-500">{row.ownerId || row.userId || row.uid || row.id}</p></div> },
     { key: 'email', label: 'Client Email', render: (row) => userEmail(row) || '-' },
-    { key: 'module', label: 'Business Type', render: (row) => workspaceBusinessType(row) },
+    { key: 'module', label: 'Business Type', render: (row) => displayAdminBusinessType(workspaceBusinessType(row)) },
     { key: 'plan', label: 'Plan', render: (row) => row.plan || row.selectedPlan || 'Basic' },
     { key: 'status', label: 'Status', render: (row) => <Status value={workspaceStatusForDisplay(row)} /> },
     { key: 'trialEndsAt', label: 'Trial Ends', render: (row) => dateLabel(row.trialEndsAt || row.subscriptionExpiresAt) },
@@ -1428,7 +1434,7 @@ export default function ControlCentre() {
     { key: 'email', label: 'Email', render: (row) => userEmail(row) || '-' },
     { key: 'uid', label: 'UID', render: (row) => <span className="font-mono text-xs">{row.uid || row.id}</span> },
     { key: 'workspace', label: 'Workspace', render: (row) => row.workspaceName || row.currentWorkspaceId || row.workspaceId || '-' },
-    { key: 'businessType', label: 'Module', render: (row) => row.currentBusinessType || row.selectedBusinessType || row.businessType || '-' },
+    { key: 'businessType', label: 'Module', render: (row) => displayAdminBusinessType(row.currentBusinessType || row.selectedBusinessType || row.businessType) },
     { key: 'login', label: 'Login Time', render: (row) => dateTimeLabel(row.lastLoginAt || row.loginAt) },
     { key: 'active', label: 'Last Active', render: (row) => dateTimeLabel(row.lastActiveAt) },
     { key: 'device', label: 'Device / Browser', render: (row) => row.device || row.browser || row.userAgent || '-' },
@@ -1554,7 +1560,7 @@ export default function ControlCentre() {
                 <div key={row.id} className="flex items-center justify-between gap-3 rounded-xl border border-slate-100 p-3">
                   <div className="min-w-0">
                     <p className="truncate text-sm font-black text-slate-900">{userEmail(row) || userName(row)}</p>
-                    <p className="text-xs text-slate-500">{row.currentBusinessType || row.businessType || '-'} · {dateTimeLabel(row.lastActiveAt)}</p>
+                    <p className="text-xs text-slate-500">{displayAdminBusinessType(row.currentBusinessType || row.businessType)} · {dateTimeLabel(row.lastActiveAt)}</p>
                   </div>
                   <Status value="online" />
                 </div>
@@ -1747,7 +1753,7 @@ export default function ControlCentre() {
     const columns = [
       { key: 'client', label: 'Client', render: (row) => <div><p className="font-black text-slate-900">{userEmail(row) || '-'}</p><p className="text-xs text-slate-500">{row.ownerId || row.userId || row.uid || '-'}</p></div> },
       { key: 'workspace', label: 'Workspace', render: (row) => <div><p className="font-black text-slate-900">{workspaceName(row)}</p><p className="text-xs text-slate-500">{row.workspaceId || row.id}</p></div> },
-      { key: 'primary', label: 'Primary Module', render: (row) => moduleAccessForWorkspace(row).primary },
+      { key: 'primary', label: 'Primary Module', render: (row) => displayAdminBusinessType(moduleAccessForWorkspace(row).primary) },
       { key: 'plan', label: 'Plan', render: (row) => row.plan || row.selectedPlan || 'Basic' },
       { key: 'status', label: 'Status', render: (row) => <Status value={row.status || row.subscriptionStatus || row.planStatus || 'active'} /> },
       {
@@ -1764,7 +1770,7 @@ export default function ControlCentre() {
                   return (
                     <label key={module} className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold ${isPrimary ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-slate-200 bg-slate-50 text-slate-700'}`}>
                       <input id={id} type="checkbox" defaultChecked={access.allowed.includes(module)} disabled={isPrimary} />
-                      <span>{module}{isPrimary ? ' · primary' : ''}</span>
+                      <span>{displayAdminBusinessType(module)}{isPrimary ? ' · primary' : ''}</span>
                     </label>
                   )
                 })}
@@ -1902,7 +1908,7 @@ export default function ControlCentre() {
           </select>
           <select className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold" value={announcementDraft.businessType} onChange={(event) => setAnnouncementDraft((current) => ({ ...current, businessType: event.target.value }))}>
             <option value="">Select businessType</option>
-            {modules.map((module) => <option key={module}>{module}</option>)}
+            {modules.map((module) => <option key={module} value={module}>{displayAdminBusinessType(module)}</option>)}
           </select>
           <label className="text-xs font-bold text-slate-600">
             Schedule
@@ -2297,7 +2303,7 @@ export default function ControlCentre() {
               { key: 'login', label: 'Last Active', render: (row) => dateTimeLabel(row.lastActiveAt) },
               { key: 'duration', label: 'Total Session Duration', render: (row) => `${Math.round(Number(row.sessionDurationMs || 0) / 1000)}s` },
               { key: 'workspace', label: 'Workspace', render: (row) => row.workspaceId || '-' },
-              { key: 'module', label: 'Module', render: (row) => row.businessType || '-' },
+              { key: 'module', label: 'Module', render: (row) => displayAdminBusinessType(row.businessType) },
               { key: 'device', label: 'Device', render: (row) => `${row.deviceType || '-'} · ${row.browser || '-'} · ${row.os || '-'}` },
             ]}
           />

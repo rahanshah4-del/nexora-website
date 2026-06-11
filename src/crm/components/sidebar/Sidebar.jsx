@@ -6,7 +6,7 @@ import { memo, useCallback, useMemo } from 'react'
 import { useUser } from '../../hooks/useUser.js'
 import { useWorkspaceAccess } from '../../hooks/useWorkspaceAccess.js'
 import logoUrl from '../../../assets/logo/nexora-logo.svg'
-import { businessWorkspaceForType, isDeveloperOwnerAccount, normalizeBusinessType, selectedModulesForSidebar } from '../../data/moduleAccess.js'
+import { isDeveloperOwnerAccount, labelForBusinessType, normalizeBusinessType, selectedModulesForSidebar } from '../../data/moduleAccess.js'
 import { resolveWorkspaceName } from '../../../lib/workspaceName.js'
 import { HiOutlineSquares2X2 } from 'react-icons/hi2'
 
@@ -51,6 +51,35 @@ const orderedSidebarItems = [
   ...priorityRoutes.map((route) => navItems.find((item) => item.to === route)).filter(Boolean),
   ...navItems.filter((item) => !priorityRoutes.includes(item.to)),
 ]
+
+const SALES_HUB_SIDEBAR_ORDER = [
+  'dashboard',
+  'salesPipeline',
+  'leads',
+  'customers',
+  'deals',
+  'tasks',
+  'activities',
+  'quotations',
+  'invoices',
+  'salesProducts',
+  'expenses',
+  'accounts',
+  'accountStatements',
+  'team',
+  'reports',
+  'notifications',
+  'approvals',
+  'settings',
+]
+
+function orderSalesHubSidebar(items) {
+  return [...items].sort((a, b) => {
+    const aIndex = SALES_HUB_SIDEBAR_ORDER.indexOf(a.key)
+    const bIndex = SALES_HUB_SIDEBAR_ORDER.indexOf(b.key)
+    return (aIndex === -1 ? 999 : aIndex) - (bIndex === -1 ? 999 : bIndex)
+  })
+}
 
 // Retail / POS workspace only: explicit leading sidebar order by module key.
 // Items not listed here keep their current relative order; Settings always stays last.
@@ -204,7 +233,7 @@ function Brand({ collapsed, workspaceName, businessTitle }) {
 function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollapse, onSwitchProduct }) {
   const { accessPlan, businessType, userDoc, userId, firebaseUser } = useUser()
   const access = useWorkspaceAccess()
-  const businessWorkspace = businessWorkspaceForType(businessType)
+  const businessTitle = labelForBusinessType(businessType)
   const developerOverride = isDeveloperOwnerAccount(userDoc, firebaseUser)
   const workspaceName = useMemo(
     () =>
@@ -240,6 +269,7 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
       return allowedRoutes.has(item.to) || item.comingSoon
     })
     const normalizedType = normalizeBusinessType(businessType)
+    if (normalizedType === 'General CRM') return orderSalesHubSidebar(items)
     if (normalizedType === 'Retail / POS') return orderRetailPosSidebar(items)
     if (normalizedType === 'WhatsApp CRM') return orderWhatsappCrmSidebar(items)
     return items
@@ -252,11 +282,11 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
 
   const content = useMemo(() => (
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
-      <Brand collapsed={collapsed} workspaceName={workspaceName} businessTitle={businessWorkspace.title} />
+      <Brand collapsed={collapsed} workspaceName={workspaceName} businessTitle={businessTitle} />
       <div className={`mt-1 px-2 ${collapsed ? 'hidden' : ''}`}>
         <div className="rounded-[0.95rem] border border-slate-200/70 bg-slate-50/80 px-2.5 py-1.5">
           <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-slate-400">Workspace</p>
-          <p className="mt-0.5 truncate text-[11px] font-semibold text-slate-700">{businessWorkspace.title}</p>
+          <p className="mt-0.5 truncate text-[11px] font-semibold text-slate-700">{businessTitle}</p>
         </div>
       </div>
 
@@ -280,7 +310,7 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
         </div>
       )}
     </div>
-  ), [collapsed, handleSwitchProduct, onNavigate, sidebarItems, workspaceName])
+  ), [businessTitle, collapsed, handleSwitchProduct, onNavigate, sidebarItems, workspaceName])
 
   if (!mobile) {
     return (
