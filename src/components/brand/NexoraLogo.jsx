@@ -21,7 +21,7 @@ export default function NexoraLogo({ className = '', compact = false, hideText =
       </div>
       {!hideText && (
         <div className={`min-w-0 ${textClassName}`}>
-          <p className="truncate text-sm font-semibold uppercase tracking-[0.18em] text-slate-950">NEXORA</p>
+          <p className="truncate text-sm font-semibold uppercase tracking-[0.18em] text-slate-950">NEXORA SOLUTION</p>
           <p className="truncate text-[0.65rem] uppercase tracking-[0.2em] text-slate-500">
             Software & Systems Studio
           </p>

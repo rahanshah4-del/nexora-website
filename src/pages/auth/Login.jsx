@@ -152,7 +152,7 @@ export default function Login() {
 
           <div className="mt-6">
             <h1 className="text-2xl font-bold tracking-tight text-slate-950">Welcome back</h1>
-            <p className="mt-1.5 text-sm text-slate-500">Sign in to your Nexora Solutions account.</p>
+            <p className="mt-1.5 text-sm text-slate-500">Sign in to your Nexora Solution account.</p>
           </div>
 
           {error ? (
@@ -269,6 +269,9 @@ export default function Login() {
           </div>
         </motion.div>
       </section>
+      <p className="relative -mt-6 text-center text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+        NEXORA SOLUTION — All rights reserved 2019-2026.
+      </p>
     </main>
   )
 }

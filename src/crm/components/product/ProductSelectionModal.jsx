@@ -257,7 +257,7 @@ function ProductSelectionModal({
             <div className="relative mt-5 flex flex-col gap-3 border-t border-slate-200/70 pt-4 text-sm text-slate-500 dark:border-white/10 dark:text-slate-300 sm:flex-row sm:items-center sm:justify-between">
               <span className="inline-flex items-center gap-2">
                 <HiOutlineSparkles className="h-4 w-4 text-sky-600" />
-                Powered by Nexora Solutions
+                NEXORA SOLUTION — All rights reserved 2019-2026.
               </span>
               <button
                 type="button"

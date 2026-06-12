@@ -191,7 +191,7 @@ export default function InvoicesPage() {
 
   const company = useMemo(
     () => ({
-      name: businessSettings.businessName || resolveWorkspaceName({ accountData: userDoc, userId, fallback: userDoc?.company || 'Nexora Solutions' }),
+      name: businessSettings.businessName || resolveWorkspaceName({ accountData: userDoc, userId, fallback: userDoc?.company || 'Nexora Solution' }),
       email: businessSettings.email || userDoc?.email || '',
       phone: businessSettings.phone || userDoc?.phone || '',
       address: businessSettings.address || userDoc?.companyAddress || userDoc?.address || '',

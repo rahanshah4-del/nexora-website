@@ -97,9 +97,26 @@ service cloud.firestore {
     function profileWorkspaceMatches(workspaceId) {
       return profileExists()
         && (
-          profile().workspaceId == workspaceId
+          request.auth.uid == workspaceId
+          || profile().workspaceId == workspaceId
           || profile().ownerId == workspaceId
           || profile().userId == workspaceId
+          || profile().uid == workspaceId
+          || (profile().workspaceIds is list && workspaceId in profile().workspaceIds)
+          || (profile().workspaces is list && workspaceId in profile().workspaces)
+        );
+    }
+
+    function directWorkspaceOwner(workspaceId) {
+      return activeSignedIn()
+        && workspaceExists(workspaceId)
+        && !workspaceBlockedStatus(workspaceId)
+        && (
+          request.auth.uid == workspaceId
+          || workspaceDoc(workspaceId).ownerId == request.auth.uid
+          || workspaceDoc(workspaceId).createdBy == request.auth.uid
+          || workspaceDoc(workspaceId).userId == request.auth.uid
+          || workspaceDoc(workspaceId).uid == request.auth.uid
         );
     }
 
@@ -107,11 +124,19 @@ service cloud.firestore {
       return activeSignedIn()
         && !workspaceBlockedStatus(workspaceId)
         && (
-          request.auth.uid == workspaceId
-          || (exists(/databases/$(database)/documents/workspaces/$(workspaceId))
-            && get(/databases/$(database)/documents/workspaces/$(workspaceId)).data.ownerId == request.auth.uid)
+          directWorkspaceOwner(workspaceId)
           || (profileWorkspaceMatches(workspaceId) && isOwnerRole(memberRole()))
+          || (profileWorkspaceMatches(workspaceId) && isAdminRole(memberRole()))
         );
+    }
+
+    function isWorkspaceOwner(workspaceId) {
+      return workspaceOwnerMatches(workspaceId);
+    }
+
+    function resourceOwnerMatches() {
+      return activeSignedIn()
+        && resource.data.ownerId == request.auth.uid;
     }
 
     function isWorkspaceMember(workspaceId) {
@@ -170,7 +195,10 @@ service cloud.firestore {
     }
 
     function workspaceHasWriteAccess(workspaceId) {
-      return isAdmin() || workspaceHasActiveSubscription(workspaceId);
+      return isAdmin()
+        || workspaceOwnerMatches(workspaceId)
+        || (isWorkspaceMember(workspaceId) && (isOwnerRole(memberRole()) || isAdminRole(memberRole())))
+        || workspaceHasActiveSubscription(workspaceId);
     }
 
     function ownsTargetWorkspace(workspaceId) {
@@ -184,17 +212,70 @@ service cloud.firestore {
       return isOwnerRole(role)
         || isAdminRole(role)
         || (isManagerRole(role)
-          && key in ['followUpEdit', 'followUpDelete', 'customerManagement', 'leadsManagement', 'invoices', 'reports'])
-        || (isSalesRole(role) && key in ['invoices'])
+          && key in [
+            'followUpEdit',
+            'followUpDelete',
+            'customerManagement',
+            'leadsManagement',
+            'invoices',
+            'reports',
+            'module.salesPipeline.view',
+            'module.salesPipeline.create',
+            'module.salesPipeline.edit',
+            'module.deals.view',
+            'module.deals.create',
+            'module.deals.edit',
+            'module.tasks.view',
+            'module.tasks.create',
+            'module.tasks.edit',
+            'module.activities.view',
+            'module.activities.create',
+            'module.activities.edit',
+            'module.quotations.view',
+            'module.quotations.create',
+            'module.quotations.edit',
+            'module.salesProducts.view',
+            'module.salesProducts.create',
+            'module.salesProducts.edit'
+          ])
+        || (isSalesRole(role)
+          && key in [
+            'followUpEdit',
+            'customerManagement',
+            'leadsManagement',
+            'invoices',
+            'reports',
+            'module.salesPipeline.view',
+            'module.salesPipeline.create',
+            'module.salesPipeline.edit',
+            'module.deals.view',
+            'module.deals.create',
+            'module.deals.edit',
+            'module.tasks.view',
+            'module.tasks.create',
+            'module.tasks.edit',
+            'module.activities.view',
+            'module.activities.create',
+            'module.activities.edit',
+            'module.quotations.view',
+            'module.quotations.create',
+            'module.quotations.edit',
+            'module.salesProducts.view',
+            'module.salesProducts.create',
+            'module.salesProducts.edit'
+          ])
         || (isSupportRole(role) && key in ['support'])
         || (isAccountantRole(role) && key in ['invoices', 'reports']);
     }
 
     function isWorkspaceManager(workspaceId) {
       return isAdmin()
-        || (workspaceHasActiveSubscription(workspaceId)
-          && (workspaceOwnerMatches(workspaceId)
-            || (isWorkspaceMember(workspaceId) && (isOwnerRole(memberRole()) || isAdminRole(memberRole())))));
+        || workspaceOwnerMatches(workspaceId)
+        || (isWorkspaceMember(workspaceId) && (isOwnerRole(memberRole()) || isAdminRole(memberRole())));
+    }
+
+    function isWorkspaceAdmin(workspaceId) {
+      return isWorkspaceManager(workspaceId);
     }
 
     function isPaymentApprover(workspaceId) {
@@ -206,6 +287,8 @@ service cloud.firestore {
 
     function staffPermission(workspaceId, key) {
       return isAdmin()
+        || workspaceOwnerMatches(workspaceId)
+        || (isWorkspaceMember(workspaceId) && (isOwnerRole(memberRole()) || isAdminRole(memberRole())))
         || (workspaceHasActiveSubscription(workspaceId)
           && (isWorkspaceManager(workspaceId)
             || (isWorkspaceMember(workspaceId)
@@ -216,7 +299,25 @@ service cloud.firestore {
     }
 
     function hasWorkspaceCrmReadAccess(workspaceId) {
-      return isAdmin() || (workspaceHasActiveSubscription(workspaceId) && isWorkspaceMember(workspaceId));
+      return isAdmin()
+        || workspaceOwnerMatches(workspaceId)
+        || isWorkspaceMember(workspaceId)
+        || (workspaceHasActiveSubscription(workspaceId) && isWorkspaceMember(workspaceId));
+    }
+
+    function workspaceHasReadAccess(workspaceId) {
+      return hasWorkspaceCrmReadAccess(workspaceId);
+    }
+
+    function salesHubRoleAccess(workspaceId) {
+      return isAdmin()
+        || workspaceOwnerMatches(workspaceId)
+        || (isWorkspaceMember(workspaceId)
+          && (isOwnerRole(memberRole())
+            || isAdminRole(memberRole())
+            || isManagerRole(memberRole())
+            || isSalesRole(memberRole())
+            || memberRole() in ['staff', 'Staff', 'STAFF']));
     }
 
     function hasWorkspaceBillingReadAccess(workspaceId) {
@@ -1025,10 +1126,10 @@ service cloud.firestore {
       }
 
       match /customers/{customerId} {
-        allow read: if staffPermission(workspaceId, 'customerManagement') || staffPermission(workspaceId, 'reports');
-        allow create: if workspaceHasWriteAccess(workspaceId) && staffPermission(workspaceId, 'customerManagement') && workspaceCreateMetadata(workspaceId);
-        allow update: if workspaceHasWriteAccess(workspaceId) && staffPermission(workspaceId, 'customerManagement') && workspaceUpdateScopeSafe(workspaceId);
-        allow delete: if workspaceHasWriteAccess(workspaceId) && staffPermission(workspaceId, 'customerManagement');
+        allow read: if resourceOwnerMatches() || salesHubRoleAccess(workspaceId) || staffPermission(workspaceId, 'customerManagement') || staffPermission(workspaceId, 'reports');
+        allow create: if workspaceHasWriteAccess(workspaceId) && (salesHubRoleAccess(workspaceId) || staffPermission(workspaceId, 'customerManagement')) && workspaceCreateMetadata(workspaceId);
+        allow update: if workspaceHasWriteAccess(workspaceId) && (resourceOwnerMatches() || salesHubRoleAccess(workspaceId) || staffPermission(workspaceId, 'customerManagement')) && workspaceUpdateScopeSafe(workspaceId);
+        allow delete: if workspaceHasWriteAccess(workspaceId) && (resourceOwnerMatches() || salesHubRoleAccess(workspaceId) || staffPermission(workspaceId, 'customerManagement'));
       }
 
       match /clients/{clientId} {
@@ -1049,10 +1150,10 @@ service cloud.firestore {
       }
 
       match /leads/{leadId} {
-        allow read: if staffPermission(workspaceId, 'leadsManagement') || staffPermission(workspaceId, 'reports');
-        allow create: if workspaceHasWriteAccess(workspaceId) && staffPermission(workspaceId, 'leadsManagement') && workspaceCreateMetadata(workspaceId);
-        allow update: if workspaceHasWriteAccess(workspaceId) && staffPermission(workspaceId, 'leadsManagement') && workspaceUpdateScopeSafe(workspaceId);
-        allow delete: if workspaceHasWriteAccess(workspaceId) && staffPermission(workspaceId, 'leadsManagement');
+        allow read: if resourceOwnerMatches() || salesHubRoleAccess(workspaceId) || staffPermission(workspaceId, 'leadsManagement') || staffPermission(workspaceId, 'reports');
+        allow create: if workspaceHasWriteAccess(workspaceId) && (salesHubRoleAccess(workspaceId) || staffPermission(workspaceId, 'leadsManagement')) && workspaceCreateMetadata(workspaceId);
+        allow update: if workspaceHasWriteAccess(workspaceId) && (resourceOwnerMatches() || salesHubRoleAccess(workspaceId) || staffPermission(workspaceId, 'leadsManagement')) && workspaceUpdateScopeSafe(workspaceId);
+        allow delete: if workspaceHasWriteAccess(workspaceId) && (resourceOwnerMatches() || salesHubRoleAccess(workspaceId) || staffPermission(workspaceId, 'leadsManagement'));
       }
 
       match /invoices/{invoiceId} {
@@ -1107,82 +1208,113 @@ service cloud.firestore {
       }
 
       match /salesDeals/{dealId} {
-        allow read: if staffPermission(workspaceId, 'reports')
+        allow read: if resourceOwnerMatches()
+          || salesHubRoleAccess(workspaceId)
+          || staffPermission(workspaceId, 'reports')
           || staffPermission(workspaceId, 'leadsManagement')
           || staffPermission(workspaceId, 'module.salesPipeline.view')
           || staffPermission(workspaceId, 'module.deals.view');
         allow create: if workspaceHasWriteAccess(workspaceId)
-          && (staffPermission(workspaceId, 'leadsManagement')
+          && (salesHubRoleAccess(workspaceId)
+            || staffPermission(workspaceId, 'leadsManagement')
             || staffPermission(workspaceId, 'module.salesPipeline.create')
             || staffPermission(workspaceId, 'module.deals.create'))
           && workspaceCreateMetadata(workspaceId);
         allow update: if workspaceHasWriteAccess(workspaceId)
-          && (staffPermission(workspaceId, 'leadsManagement')
+          && (resourceOwnerMatches()
+            || salesHubRoleAccess(workspaceId)
+            || staffPermission(workspaceId, 'leadsManagement')
             || staffPermission(workspaceId, 'module.salesPipeline.edit')
             || staffPermission(workspaceId, 'module.deals.edit'))
           && workspaceUpdateScopeSafe(workspaceId);
         allow delete: if workspaceHasWriteAccess(workspaceId)
-          && (isWorkspaceManager(workspaceId)
+          && (resourceOwnerMatches()
+            || salesHubRoleAccess(workspaceId)
+            || isWorkspaceManager(workspaceId)
             || staffPermission(workspaceId, 'module.salesPipeline.delete')
             || staffPermission(workspaceId, 'module.deals.delete'));
       }
 
       match /salesTasks/{taskId} {
-        allow read: if staffPermission(workspaceId, 'reports')
+        allow read: if resourceOwnerMatches()
+          || salesHubRoleAccess(workspaceId)
+          || staffPermission(workspaceId, 'reports')
           || staffPermission(workspaceId, 'followUpEdit')
           || staffPermission(workspaceId, 'module.tasks.view');
         allow create: if workspaceHasWriteAccess(workspaceId)
-          && (staffPermission(workspaceId, 'followUpEdit') || staffPermission(workspaceId, 'module.tasks.create'))
+          && (salesHubRoleAccess(workspaceId) || staffPermission(workspaceId, 'followUpEdit') || staffPermission(workspaceId, 'module.tasks.create'))
           && workspaceCreateMetadata(workspaceId);
         allow update: if workspaceHasWriteAccess(workspaceId)
-          && (staffPermission(workspaceId, 'followUpEdit') || staffPermission(workspaceId, 'module.tasks.edit'))
+          && (resourceOwnerMatches() || salesHubRoleAccess(workspaceId) || staffPermission(workspaceId, 'followUpEdit') || staffPermission(workspaceId, 'module.tasks.edit'))
           && workspaceUpdateScopeSafe(workspaceId);
         allow delete: if workspaceHasWriteAccess(workspaceId)
-          && (isWorkspaceManager(workspaceId)
+          && (resourceOwnerMatches()
+            || salesHubRoleAccess(workspaceId)
+            || isWorkspaceManager(workspaceId)
             || staffPermission(workspaceId, 'followUpDelete')
             || staffPermission(workspaceId, 'module.tasks.delete'));
       }
 
       match /salesQuotes/{quoteId} {
-        allow read: if staffPermission(workspaceId, 'reports')
+        allow read: if resourceOwnerMatches()
+          || salesHubRoleAccess(workspaceId)
+          || staffPermission(workspaceId, 'reports')
           || staffPermission(workspaceId, 'invoices')
           || staffPermission(workspaceId, 'module.quotations.view');
         allow create: if workspaceHasWriteAccess(workspaceId)
-          && (staffPermission(workspaceId, 'invoices') || staffPermission(workspaceId, 'module.quotations.create'))
+          && (salesHubRoleAccess(workspaceId) || staffPermission(workspaceId, 'invoices') || staffPermission(workspaceId, 'module.quotations.create'))
           && workspaceCreateMetadata(workspaceId);
         allow update: if workspaceHasWriteAccess(workspaceId)
-          && (staffPermission(workspaceId, 'invoices') || staffPermission(workspaceId, 'module.quotations.edit'))
+          && (resourceOwnerMatches() || salesHubRoleAccess(workspaceId) || staffPermission(workspaceId, 'invoices') || staffPermission(workspaceId, 'module.quotations.edit'))
           && workspaceUpdateScopeSafe(workspaceId);
         allow delete: if workspaceHasWriteAccess(workspaceId)
-          && (isWorkspaceManager(workspaceId) || staffPermission(workspaceId, 'module.quotations.delete'));
+          && (resourceOwnerMatches() || salesHubRoleAccess(workspaceId) || isWorkspaceManager(workspaceId) || staffPermission(workspaceId, 'module.quotations.delete'));
       }
 
       match /salesProducts/{productId} {
-        allow read: if staffPermission(workspaceId, 'reports')
+        allow read: if resourceOwnerMatches()
+          || salesHubRoleAccess(workspaceId)
+          || staffPermission(workspaceId, 'reports')
           || staffPermission(workspaceId, 'invoices')
           || staffPermission(workspaceId, 'module.salesProducts.view');
         allow create: if workspaceHasWriteAccess(workspaceId)
-          && (isWorkspaceManager(workspaceId) || staffPermission(workspaceId, 'module.salesProducts.create'))
+          && (salesHubRoleAccess(workspaceId) || isWorkspaceManager(workspaceId) || staffPermission(workspaceId, 'module.salesProducts.create'))
           && workspaceCreateMetadata(workspaceId);
         allow update: if workspaceHasWriteAccess(workspaceId)
-          && (isWorkspaceManager(workspaceId) || staffPermission(workspaceId, 'module.salesProducts.edit'))
+          && (resourceOwnerMatches() || salesHubRoleAccess(workspaceId) || isWorkspaceManager(workspaceId) || staffPermission(workspaceId, 'module.salesProducts.edit'))
           && workspaceUpdateScopeSafe(workspaceId);
         allow delete: if workspaceHasWriteAccess(workspaceId)
-          && (isWorkspaceManager(workspaceId) || staffPermission(workspaceId, 'module.salesProducts.delete'));
+          && (resourceOwnerMatches() || salesHubRoleAccess(workspaceId) || isWorkspaceManager(workspaceId) || staffPermission(workspaceId, 'module.salesProducts.delete'));
       }
 
       match /salesActivities/{activityId} {
-        allow read: if staffPermission(workspaceId, 'reports')
+        allow read: if resourceOwnerMatches()
+          || salesHubRoleAccess(workspaceId)
+          || staffPermission(workspaceId, 'reports')
           || staffPermission(workspaceId, 'leadsManagement')
           || staffPermission(workspaceId, 'module.activities.view');
         allow create: if workspaceHasWriteAccess(workspaceId)
-          && (staffPermission(workspaceId, 'leadsManagement') || staffPermission(workspaceId, 'module.activities.create'))
+          && (salesHubRoleAccess(workspaceId) || staffPermission(workspaceId, 'leadsManagement') || staffPermission(workspaceId, 'module.activities.create'))
           && workspaceCreateMetadata(workspaceId);
         allow update: if workspaceHasWriteAccess(workspaceId)
-          && (staffPermission(workspaceId, 'leadsManagement') || staffPermission(workspaceId, 'module.activities.edit'))
+          && (resourceOwnerMatches() || salesHubRoleAccess(workspaceId) || staffPermission(workspaceId, 'leadsManagement') || staffPermission(workspaceId, 'module.activities.edit'))
           && workspaceUpdateScopeSafe(workspaceId);
         allow delete: if workspaceHasWriteAccess(workspaceId)
-          && (isWorkspaceManager(workspaceId) || staffPermission(workspaceId, 'module.activities.delete'));
+          && (resourceOwnerMatches() || salesHubRoleAccess(workspaceId) || isWorkspaceManager(workspaceId) || staffPermission(workspaceId, 'module.activities.delete'));
+      }
+
+      match /salesInvoices/{invoiceId} {
+        allow read: if resourceOwnerMatches() || salesHubRoleAccess(workspaceId) || staffPermission(workspaceId, 'invoices') || staffPermission(workspaceId, 'reports');
+        allow create: if workspaceHasWriteAccess(workspaceId) && (salesHubRoleAccess(workspaceId) || staffPermission(workspaceId, 'invoices')) && workspaceCreateMetadata(workspaceId);
+        allow update: if workspaceHasWriteAccess(workspaceId) && (resourceOwnerMatches() || salesHubRoleAccess(workspaceId) || staffPermission(workspaceId, 'invoices')) && workspaceUpdateScopeSafe(workspaceId);
+        allow delete: if workspaceHasWriteAccess(workspaceId) && (resourceOwnerMatches() || salesHubRoleAccess(workspaceId) || isWorkspaceManager(workspaceId));
+      }
+
+      match /salesExpenses/{expenseId} {
+        allow read: if resourceOwnerMatches() || salesHubRoleAccess(workspaceId) || staffPermission(workspaceId, 'reports');
+        allow create: if workspaceHasWriteAccess(workspaceId) && salesHubRoleAccess(workspaceId) && workspaceCreateMetadata(workspaceId);
+        allow update: if workspaceHasWriteAccess(workspaceId) && (resourceOwnerMatches() || salesHubRoleAccess(workspaceId)) && workspaceUpdateScopeSafe(workspaceId);
+        allow delete: if workspaceHasWriteAccess(workspaceId) && (resourceOwnerMatches() || salesHubRoleAccess(workspaceId) || isWorkspaceManager(workspaceId));
       }
 
       match /supportTickets/{ticketId} {

@@ -22,7 +22,7 @@ function shell({ title, preview = '', body }) {
     <div style="margin:0;background:#f8fafc;padding:28px 14px;font-family:Inter,Arial,sans-serif;color:#0f172a">
       <div style="margin:0 auto;max-width:640px;overflow:hidden;border:1px solid #e2e8f0;border-radius:18px;background:#ffffff">
         <div style="background:#0f172a;padding:26px 28px;color:#ffffff">
-          <p style="margin:0 0 8px;font-size:12px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:#bae6fd">Nexora Solutions</p>
+          <p style="margin:0 0 8px;font-size:12px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:#bae6fd">Nexora Solution</p>
           <h1 style="margin:0;font-size:24px;line-height:1.25">${escapeHtml(title)}</h1>
           ${preview ? `<p style="margin:10px 0 0;font-size:14px;line-height:1.6;color:#cbd5e1">${escapeHtml(preview)}</p>` : ''}
         </div>
@@ -133,7 +133,7 @@ export function welcomeEmail({ name = 'there' } = {}) {
                               <tr>
                                 <td width="48" height="48" align="center" style="width:48px;height:48px;border-radius:16px;background:#ffffff;color:#4f46e5;font-size:24px;font-weight:900;line-height:48px;">N</td>
                                 <td style="padding-left:14px;">
-                                  <div style="font-size:21px;line-height:24px;font-weight:900;letter-spacing:3px;color:#ffffff;">NEXORA</div>
+                                  <div style="font-size:21px;line-height:24px;font-weight:900;letter-spacing:2px;color:#ffffff;">NEXORA SOLUTION</div>
                                   <div style="font-size:11px;line-height:16px;font-weight:700;letter-spacing:2px;color:#dbeafe;text-transform:uppercase;">Business Suite</div>
                                 </td>
                               </tr>
@@ -293,7 +293,7 @@ export function welcomeEmail({ name = 'there' } = {}) {
                     <td style="padding:24px 28px 30px;background:#0b1220;text-align:center;">
                       <div style="font-size:16px;line-height:22px;font-weight:900;color:#ffffff;">Nexora Business Suite</div>
                       <div style="margin-top:8px;font-size:13px;line-height:22px;color:#cbd5e1;">CRM &bull; ERP &bull; POS &bull; Invoicing &bull; Reports</div>
-                      <div style="margin-top:12px;font-size:12px;line-height:20px;color:#94a3b8;">Nexora Solutions &mdash; Empowering Businesses Digitally</div>
+                      <div style="margin-top:12px;font-size:12px;line-height:20px;color:#94a3b8;">Nexora Solution &mdash; All rights reserved 2019-2026.</div>
                     </td>
                   </tr>
                 </table>
@@ -360,7 +360,7 @@ export function upgradeApprovedEmail({ name = 'there', plan = 'your plan' } = {}
       body: [
         paragraph(`Hi ${name || 'there'},`),
         paragraph(`Your upgrade to ${plan} has been approved. Your workspace access has been updated.`),
-        paragraph('Thank you for choosing Nexora Solutions.'),
+        paragraph('Thank you for choosing Nexora Solution.'),
       ].join(''),
     }),
   }

@@ -117,11 +117,11 @@ export default function LoginPage() {
       <div className="relative z-10 w-full max-w-md">
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="grid h-11 w-11 place-items-center rounded-2xl bg-nexora-gradient text-white shadow-glow">
-              <span className="text-sm font-bold tracking-tight">N</span>
+            <div className="grid h-11 w-11 place-items-center overflow-hidden rounded-2xl bg-slate-950 shadow-glow">
+              <img src="/nexora-brand-logo.png" alt="Nexora Solution logo" className="h-full w-full object-cover" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-slate-900 dark:text-white">NEXORA SOLUTIONS</p>
+              <p className="text-sm font-semibold text-slate-900 dark:text-white">NEXORA SOLUTION</p>
               <p className="text-xs text-slate-600 dark:text-slate-300">Business Suite Workspace</p>
             </div>
           </div>
@@ -259,7 +259,7 @@ export default function LoginPage() {
         </motion.div>
 
         <p className="mt-6 text-center text-xs text-slate-500 dark:text-slate-400">
-          By signing in you agree to our <Link className="underline" to="/login">terms</Link>.
+          NEXORA SOLUTION — All rights reserved 2019-2026.
         </p>
       </div>
     </div>

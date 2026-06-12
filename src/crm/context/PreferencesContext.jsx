@@ -8,7 +8,7 @@ const defaultState = {
   currency: 'PKR',
   plan: 'Free', // Free | Business
   profile: {
-    companyName: 'NEXORA SOLUTIONS',
+    companyName: 'NEXORA SOLUTION',
     ownerName: 'Nexora User',
     email: '',
     phone: '+92 300 0000000',

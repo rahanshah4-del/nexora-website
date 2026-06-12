@@ -42,10 +42,10 @@ function MobileAppAccessBlock() {
         <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-slate-950 text-white shadow-lg shadow-slate-950/15">
           <span className="text-lg font-semibold">N</span>
         </div>
-        <p className="mt-4 text-sm font-semibold uppercase tracking-[0.18em] text-sky-700">NEXORA CRM</p>
+        <p className="mt-4 text-sm font-semibold uppercase tracking-[0.18em] text-sky-700">NEXORA SOLUTION</p>
         <h1 className="mt-2 text-xl font-semibold tracking-tight text-slate-950">Desktop workspace required</h1>
         <p className="mt-3 text-sm leading-7 text-slate-600">
-          NEXORA Business Suite is designed for desktop and tablet management. Please open on laptop/desktop for full CRM access.
+          NEXORA SOLUTION is designed for desktop and tablet management. Please open on laptop/desktop for full CRM access.
         </p>
         <div className="mt-6 grid gap-2">
           <a
@@ -273,6 +273,9 @@ export default function DashboardLayout() {
     isBlocked,
     firebaseUser,
     workspaceDoc,
+    isAdmin: userIsAdmin,
+    isOwner: userIsOwner,
+    role: userRole,
   } = useUser()
   const workspaceAccess = useWorkspaceAccess()
   const navigate = useNavigate()
@@ -280,6 +283,13 @@ export default function DashboardLayout() {
   const persistedKeyRef = useRef('')
 
   const toggleCollapse = useCallback(() => setCollapsed((c) => !c), [])
+
+  useEffect(() => {
+    const collapseForFocusedPage = () => setCollapsed(true)
+    window.addEventListener('nexora:collapse-sidebar', collapseForFocusedPage)
+    return () => window.removeEventListener('nexora:collapse-sidebar', collapseForFocusedPage)
+  }, [])
+
   const userId = user?.uid ?? null
   const isAuthenticated = Boolean(userId)
   const hasActiveAccess = Boolean(hasActiveWorkspaceSubscription || isTrialActive)
@@ -307,7 +317,24 @@ export default function DashboardLayout() {
     !billingRenewalRoute
   const accountBlocked = ready && isAuthenticated && !userLoading && Boolean(userDoc) && isBlocked
   const currentModule = moduleByRoute(location.pathname)
-  const isOwnerAdmin = workspaceAccess.isAdmin
+  const isOwnerAdmin = Boolean(developerOverride || userIsOwner || userIsAdmin || workspaceAccess.isAdmin)
+  const normalizedBusinessType = normalizeBusinessType(businessType)
+  const restaurantScaleRoutes = new Set([
+    '/app/orders',
+    '/app/orders-kot',
+    '/app/menu-management',
+    '/app/customers',
+    '/app/tables',
+    '/app/kitchen-display',
+    '/app/bills',
+    '/app/expenses',
+    '/app/settings',
+  ])
+  const restaurantDashboardRoute = location.pathname === '/app/dashboard' && normalizedBusinessType === 'Restaurant POS'
+  const isCompactPosRoute = location.pathname === '/app/orders'
+  const restaurantPosScaled =
+    normalizedBusinessType === 'Restaurant POS' &&
+    (restaurantScaleRoutes.has(location.pathname) || restaurantDashboardRoute)
   const allowedModules = useMemo(
     () =>
       workspaceAccess.permissionKeys
@@ -321,6 +348,7 @@ export default function DashboardLayout() {
     !userLoading &&
     Boolean(userDoc) &&
     Boolean(currentModule) &&
+    !isOwnerAdmin &&
     !routeAllowedByPlan(location.pathname, accessPlan, { developerOverride, teamOverride, businessType })
   const routeBusinessBlocked =
     ready &&
@@ -328,6 +356,7 @@ export default function DashboardLayout() {
     !userLoading &&
     Boolean(userDoc) &&
     Boolean(currentModule) &&
+    !isOwnerAdmin &&
     !routeAllowedByBusinessType(location.pathname, businessType, {
       developerOverride,
       allowedBusinessTypes,
@@ -345,6 +374,7 @@ export default function DashboardLayout() {
     !userLoading &&
     Boolean(userDoc) &&
     Boolean(currentModule) &&
+    !workspaceAccess.loading &&
     !developerOverride &&
     currentModule.key !== 'settings' &&
     !isOwnerAdmin &&
@@ -358,6 +388,61 @@ export default function DashboardLayout() {
     console.log('[Role Access] isStaff', workspaceAccess.isStaff)
     console.log('[Role Access] allowed modules', allowedModules)
   }, [allowedModules, isOwnerAdmin, workspaceAccess.isStaff, workspaceAccess.role])
+
+  useEffect(() => {
+    if (!ready || userLoading || !currentModule) return
+    const permissionKey = `module.${currentModule.key}.view`
+    const base = {
+      source: 'DashboardLayout',
+      path: location.pathname,
+      role: userRole || workspaceAccess.role || '',
+      workspaceId: workspaceId || '',
+      moduleKey: currentModule.key,
+      permissionKey,
+      isOwnerAdmin,
+      userIsOwner,
+      userIsAdmin,
+      workspaceAccessAdmin: workspaceAccess.isAdmin,
+      accessPlan,
+      businessType,
+    }
+    if (routePermissionBlocked) {
+      console.warn('[Sales Hub Access Denied]', {
+        ...base,
+        denialReason: workspaceAccess.loading ? 'permissions_loading' : 'missing_module_view_permission',
+      })
+    }
+    if (routePlanBlocked) {
+      console.warn('[Sales Hub Access Denied]', {
+        ...base,
+        denialReason: 'plan_restriction',
+      })
+    }
+    if (routeBusinessBlocked) {
+      console.warn('[Sales Hub Access Denied]', {
+        ...base,
+        denialReason: 'business_type_restriction',
+      })
+    }
+  }, [
+    accessPlan,
+    businessType,
+    currentModule,
+    isOwnerAdmin,
+    location.pathname,
+    ready,
+    routeBusinessBlocked,
+    routePermissionBlocked,
+    routePlanBlocked,
+    userIsAdmin,
+    userIsOwner,
+    userLoading,
+    userRole,
+    workspaceAccess.isAdmin,
+    workspaceAccess.loading,
+    workspaceAccess.role,
+    workspaceId,
+  ])
 
   useEffect(() => {
     if (!ready || userLoading) return
@@ -687,11 +772,18 @@ export default function DashboardLayout() {
           collapsed ? 'lg:ml-[72px]' : 'lg:ml-[236px]'
         }`}
       >
-        <TopNav collapsed={collapsed} onOpenSidebar={() => setMobileOpen(true)} onSwitchProduct={openProductSwitcher} />
+        {isCompactPosRoute ? null : (
+          <TopNav collapsed={collapsed} onOpenSidebar={() => setMobileOpen(true)} onSwitchProduct={openProductSwitcher} />
+        )}
 
-        <main className="crm-main min-w-0 flex-1 overflow-x-clip px-3 pb-5 pt-4 print:p-0 sm:px-5 lg:px-6 lg:pb-6 lg:pt-5">
-          <div className="mx-auto w-full max-w-[1440px] min-w-0 print:max-w-none">
+        <main className={`crm-main min-w-0 flex-1 overflow-x-clip print:p-0 ${
+          isCompactPosRoute ? 'px-3 pb-3 pt-2 sm:px-4 lg:px-4 lg:pb-3 lg:pt-2' : 'px-3 pb-5 pt-4 sm:px-5 lg:px-6 lg:pb-6 lg:pt-5'
+        }`}>
+          <div className={`mx-auto w-full max-w-[1440px] min-w-0 print:max-w-none ${restaurantPosScaled ? 'restaurant-pos-scale' : ''}`}>
             <Outlet />
+            <p className="mt-6 pb-1 text-center text-xs font-semibold uppercase tracking-[0.16em] text-slate-400 print:hidden">
+              NEXORA SOLUTION — All rights reserved 2019-2026.
+            </p>
           </div>
         </main>
       </div>

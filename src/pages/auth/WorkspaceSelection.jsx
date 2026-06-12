@@ -3012,7 +3012,7 @@ export default function WorkspaceSelection() {
               <img src={logoUrl} alt="Nexora" className="h-10 w-10 shrink-0 rounded-xl" />
               {!sidebarCollapsed ? (
                 <div className="text-center">
-                  <p className="text-xl font-extrabold tracking-[0.08em] text-slate-950">NEXORA</p>
+                  <p className="text-xl font-extrabold tracking-[0.08em] text-slate-950">NEXORA SOLUTION</p>
                   <p className="text-[10px] font-semibold uppercase tracking-[0.26em] text-slate-400">Business Suite</p>
                 </div>
               ) : null}
@@ -3503,7 +3503,7 @@ export default function WorkspaceSelection() {
             </section>
 
             <footer className="py-6 text-center text-xs font-medium text-slate-500">
-              © 2025 Nexora Solutions. All rights reserved.
+              NEXORA SOLUTION — All rights reserved 2019-2026.
             </footer>
           </div>
         </section>

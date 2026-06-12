@@ -106,6 +106,33 @@ function orderRetailPosSidebar(items) {
   return [...items].sort((a, b) => rankFor(a) - rankFor(b))
 }
 
+const RESTAURANT_POS_SIDEBAR_ORDER = [
+  'dashboard',
+  'ordersKot',
+  'orders',
+  'menuManagement',
+  'customers',
+  'tables',
+  'kitchenDisplay',
+  'invoices',
+  'expenses',
+  'accounts',
+  'accountStatements',
+  'team',
+  'approvals',
+  'notifications',
+  'reports',
+  'settings',
+]
+
+function orderRestaurantPosSidebar(items) {
+  return [...items].sort((a, b) => {
+    const aIndex = RESTAURANT_POS_SIDEBAR_ORDER.indexOf(a.key)
+    const bIndex = RESTAURANT_POS_SIDEBAR_ORDER.indexOf(b.key)
+    return (aIndex === -1 ? 999 : aIndex) - (bIndex === -1 ? 999 : bIndex)
+  })
+}
+
 // WhatsApp CRM workspace only: dedicated WhatsApp-first sidebar. Only the keys
 // below are shown (everything else — invoices, expenses, accounts, account
 // statements, approvals, notifications, generic leads/follow-ups/support — is
@@ -222,8 +249,8 @@ function Brand({ collapsed, workspaceName, businessTitle }) {
       </div>
       {!collapsed ? (
         <div className="min-w-0 leading-tight">
-          <p className="truncate text-sm font-semibold tracking-tight text-slate-950">{businessTitle}</p>
-          <p className="truncate text-[10px] font-medium text-slate-500">{workspaceName}</p>
+          <p className="truncate text-sm font-semibold tracking-tight text-slate-950">NEXORA SOLUTION</p>
+          <p className="truncate text-[10px] font-medium text-slate-500">{businessTitle} / {workspaceName}</p>
         </div>
       ) : null}
     </div>
@@ -231,10 +258,11 @@ function Brand({ collapsed, workspaceName, businessTitle }) {
 }
 
 function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollapse, onSwitchProduct }) {
-  const { accessPlan, businessType, userDoc, userId, firebaseUser } = useUser()
+  const { accessPlan, businessType, userDoc, userId, firebaseUser, isAdmin: userIsAdmin, isOwner: userIsOwner, workspaceId, role } = useUser()
   const access = useWorkspaceAccess()
   const businessTitle = labelForBusinessType(businessType)
   const developerOverride = isDeveloperOwnerAccount(userDoc, firebaseUser)
+  const ownerAdminBypass = Boolean(developerOverride || userIsOwner || userIsAdmin || access.isAdmin)
   const workspaceName = useMemo(
     () =>
       resolveWorkspaceName({
@@ -264,16 +292,37 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
         comingSoon: module.comingSoon,
       }
     }).filter((item) => {
-      if (!developerOverride && access.isStaff && !access.hasModulePermission(item.key, 'view')) return false
-      if (item.to === '/app/team' && !developerOverride && !access.isAdmin && !access.hasModulePermission('team', 'view')) return false
+      if (!ownerAdminBypass && access.isStaff && !access.hasModulePermission(item.key, 'view')) {
+        console.warn('[Sales Hub Access Denied]', {
+          source: 'Sidebar',
+          role: role || access.role || '',
+          workspaceId: workspaceId || '',
+          moduleKey: item.key,
+          permissionKey: `module.${item.key}.view`,
+          denialReason: 'sidebar_missing_module_view_permission',
+        })
+        return false
+      }
+      if (item.to === '/app/team' && !ownerAdminBypass && !access.hasModulePermission('team', 'view')) {
+        console.warn('[Sales Hub Access Denied]', {
+          source: 'Sidebar',
+          role: role || access.role || '',
+          workspaceId: workspaceId || '',
+          moduleKey: 'team',
+          permissionKey: 'module.team.view',
+          denialReason: 'sidebar_missing_team_view_permission',
+        })
+        return false
+      }
       return allowedRoutes.has(item.to) || item.comingSoon
     })
     const normalizedType = normalizeBusinessType(businessType)
     if (normalizedType === 'General CRM') return orderSalesHubSidebar(items)
     if (normalizedType === 'Retail / POS') return orderRetailPosSidebar(items)
+    if (normalizedType === 'Restaurant POS') return orderRestaurantPosSidebar(items)
     if (normalizedType === 'WhatsApp CRM') return orderWhatsappCrmSidebar(items)
     return items
-  }, [access, accessPlan, businessType, developerOverride, userDoc?.enabledModules, userDoc?.onboardingCompleted])
+  }, [access, accessPlan, businessType, developerOverride, ownerAdminBypass, role, userDoc?.enabledModules, userDoc?.onboardingCompleted, workspaceId])
 
   const handleSwitchProduct = useCallback(() => {
     onNavigate?.()

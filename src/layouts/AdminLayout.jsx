@@ -15,7 +15,7 @@ export default function AdminLayout() {
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
             <Link to="/app/dashboard" className="text-sm font-semibold tracking-wide text-white">
-              NEXORA Admin
+              NEXORA SOLUTION Admin
             </Link>
             <span className="hidden text-xs text-slate-400 sm:inline">Business Suite</span>
           </div>

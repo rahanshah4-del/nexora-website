@@ -8,6 +8,11 @@ import FeatureGate from './components/auth/FeatureGate.jsx'
 const LoginPage = lazy(() => import('./pages/Login.jsx'))
 const DashboardHomePage = lazy(() => import('./pages/DashboardHome.jsx'))
 const RestaurantPOSPage = lazy(() => import('./pages/RestaurantPOS.jsx'))
+const RestaurantOrdersPage = lazy(() => import('./pages/RestaurantOrders.jsx'))
+const RestaurantMenuManagementPage = lazy(() => import('./pages/RestaurantMenuManagement.jsx'))
+const RestaurantTablesPage = lazy(() => import('./pages/RestaurantTables.jsx'))
+const RestaurantOrdersKotPage = lazy(() => import('./pages/RestaurantOrdersKot.jsx'))
+const RestaurantKitchenDisplayPage = lazy(() => import('./pages/RestaurantKitchenDisplay.jsx'))
 const CustomersPage = lazy(() => import('./pages/Customers.jsx'))
 const ProductsPage = lazy(() => import('./pages/Products.jsx'))
 const InventoryPage = lazy(() => import('./pages/Inventory.jsx'))
@@ -65,6 +70,11 @@ export default function App() {
             <Route path="/app" element={<Navigate to="/app/dashboard" replace />} />
             <Route path="/app/dashboard" element={<DashboardHomePage />} />
             <Route path="/app/restaurant-pos" element={<RestaurantPOSPage />} />
+            <Route path="/app/orders" element={<RestaurantOrdersPage />} />
+            <Route path="/app/menu-management" element={<RestaurantMenuManagementPage />} />
+            <Route path="/app/tables" element={<RestaurantTablesPage />} />
+            <Route path="/app/orders-kot" element={<RestaurantOrdersKotPage />} />
+            <Route path="/app/kitchen-display" element={<RestaurantKitchenDisplayPage />} />
             <Route path="/app/customers" element={gated(<CustomersPage />)} />
             <Route path="/app/products" element={gated(<ProductsPage />)} />
             <Route path="/app/inventory" element={gated(<InventoryPage />)} />

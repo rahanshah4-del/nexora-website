@@ -188,7 +188,7 @@ export async function exportReportPdf(report) {
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(8)
     doc.setTextColor('#64748b')
-    doc.text(safePrintText(branding.receiptFooter, 'Powered by Nexora Solutions'), margin, pageHeight - 24)
+    doc.text(safePrintText(branding.receiptFooter, 'NEXORA SOLUTION — All rights reserved 2019-2026.'), margin, pageHeight - 24)
     doc.text(`Page ${page} of ${pageCount}`, pageWidth - margin, pageHeight - 24, { align: 'right' })
   }
 

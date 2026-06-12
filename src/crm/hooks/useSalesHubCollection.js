@@ -14,7 +14,7 @@ function normalizeRow(row = {}) {
 }
 
 export function useSalesHubCollection(collectionName, options = {}) {
-  const { workspaceId, businessType, userId } = useUser()
+  const { workspaceId, businessType, userId, role } = useUser()
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
   const [source, setSource] = useState(db ? 'firestore' : 'none')
@@ -63,14 +63,22 @@ export function useSalesHubCollection(collectionName, options = {}) {
         setLoading(false)
       },
       (err) => {
+        console.warn('[Sales Hub Firestore Read Failed]', {
+          currentUserUid: userId || '',
+          role: role || '',
+          workspaceId: workspaceId || '',
+          collectionPath: workspaceId ? `workspaces/${workspaceId}/${collectionName}` : '',
+          collectionName,
+          firestoreErrorCode: err?.code || err?.originalError?.code || 'unknown',
+        })
         setError(clientSafeMessage(err, `Unable to load ${collectionName}.`))
         setRows([])
         setLoading(false)
       },
-      { businessType },
+      { businessType, diagnostics: { currentUserUid: userId, role } },
     )
     return () => unsubscribe?.()
-  }, [businessType, collectionName, enabled, normalize, workspaceId])
+  }, [businessType, collectionName, enabled, normalize, role, userId, workspaceId])
 
   return useMemo(
     () => ({
@@ -84,7 +92,7 @@ export function useSalesHubCollection(collectionName, options = {}) {
         const message = validate(payload)
         if (message) return { ok: false, error: message }
         try {
-          const ref = await createUserDoc(workspaceId, collectionName, { ...payload, createdBy: userId }, { businessType })
+          const ref = await createUserDoc(workspaceId, collectionName, { ...payload, createdBy: userId }, { businessType, diagnostics: { currentUserUid: userId, role } })
           return { ok: true, id: ref.id }
         } catch (error) {
           return { ok: false, error: clientSafeMessage(error, `Unable to save ${collectionName}.`) }
@@ -97,7 +105,7 @@ export function useSalesHubCollection(collectionName, options = {}) {
         const message = validate(payload)
         if (message) return { ok: false, error: message }
         try {
-          await patchUserDoc(workspaceId, collectionName, id, payload, { businessType })
+          await patchUserDoc(workspaceId, collectionName, id, payload, { businessType, diagnostics: { currentUserUid: userId, role } })
           return { ok: true }
         } catch (error) {
           return { ok: false, error: clientSafeMessage(error, `Unable to update ${collectionName}.`) }
@@ -108,13 +116,13 @@ export function useSalesHubCollection(collectionName, options = {}) {
         if (!workspaceId || !userId) return { ok: false, error: 'Please login first' }
         if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now' }
         try {
-          await removeUserDoc(workspaceId, collectionName, id)
+          await removeUserDoc(workspaceId, collectionName, id, { diagnostics: { currentUserUid: userId, role } })
           return { ok: true }
         } catch (error) {
           return { ok: false, error: clientSafeMessage(error, `Unable to delete ${collectionName}.`) }
         }
       },
     }),
-    [businessType, collectionName, error, loading, rows, source, userId, validate, workspaceId],
+    [businessType, collectionName, error, loading, role, rows, source, userId, validate, workspaceId],
   )
 }

@@ -4,7 +4,23 @@ import { clientSafeMessage } from '../utils/messages.js'
 import { normalizeBusinessType } from '../data/moduleAccess.js'
 
 function safeError(error, fallback) {
-  return new Error(clientSafeMessage(error, fallback, { context: fallback }))
+  const next = new Error(clientSafeMessage(error, fallback, { context: fallback }))
+  next.code = error?.code || ''
+  next.originalError = error
+  return next
+}
+
+function logFirestoreAccessError(error, details = {}) {
+  console.warn('[Firestore Access Error]', {
+    currentUserUid: details.currentUserUid || details.userId || '',
+    role: details.role || '',
+    workspaceId: details.workspaceId || details.userId || '',
+    collectionPath: details.collectionPath || '',
+    collectionName: details.collectionName || '',
+    operation: details.operation || 'read',
+    firestoreErrorCode: error?.code || error?.originalError?.code || 'unknown',
+    message: error?.message || '',
+  })
 }
 
 function belongsToWorkspace(data, workspaceId) {
@@ -59,7 +75,8 @@ export function subscribeCollection(path, onData, onError) {
 }
 
 export function subscribeUserCollection(userId, path, onData, onError, options = {}) {
-  const ref = userId ? collectionRef(workspaceCollectionPath(userId, path)) : null
+  const collectionPath = workspaceCollectionPath(userId, path)
+  const ref = userId ? collectionRef(collectionPath) : null
   const businessType = normalizeBusinessType(options?.businessType)
   if (!ref) {
     onData([])
@@ -75,7 +92,10 @@ export function subscribeUserCollection(userId, path, onData, onError, options =
           .filter((row) => belongsToBusiness(row, businessType))
           .map((row) => withWorkspaceFallback(row.id, row, userId)),
       ),
-    (err) => onError?.(safeError(err, 'Unable to load account data.')),
+    (err) => {
+      logFirestoreAccessError(err, { ...options.diagnostics, userId, workspaceId: userId, collectionName: path, collectionPath, operation: 'read' })
+      onError?.(safeError(err, 'Unable to load account data.'))
+    },
   )
 }
 
@@ -101,6 +121,7 @@ export function listenToWorkspaceCollection({
   orderDirection = 'desc',
   limitCount = 100,
   whereFilters = [],
+  diagnostics = {},
   onData,
   onError,
 } = {}) {
@@ -114,7 +135,8 @@ export function listenToWorkspaceCollection({
     return subscribeUserCollection(workspaceId, collectionName, onData, onError, { businessType })
   }
 
-  const ref = collectionRef(workspaceCollectionPath(workspaceId, collectionName))
+  const collectionPath = workspaceCollectionPath(workspaceId, collectionName)
+  const ref = collectionRef(collectionPath)
   if (!ref) {
     onData?.([])
     return () => {}
@@ -138,7 +160,10 @@ export function listenToWorkspaceCollection({
           .filter((row) => belongsToWorkspace(row, workspaceId))
           .map((row) => withWorkspaceFallback(row.id, row, workspaceId)),
       ),
-    (err) => onError?.(safeError(err, 'Unable to load account data.')),
+    (err) => {
+      logFirestoreAccessError(err, { ...diagnostics, workspaceId, collectionName, collectionPath, operation: 'read' })
+      onError?.(safeError(err, 'Unable to load account data.'))
+    },
   )
 }
 
@@ -151,12 +176,14 @@ export async function fetchWorkspaceCollectionPage({
   limitCount = 50,
   whereFilters = [],
   startAfterDoc = null,
+  diagnostics = {},
 } = {}) {
   if (!workspaceId || !collectionName) {
     return { rows: [], lastDoc: null, hasMore: false, size: 0 }
   }
 
-  const ref = collectionRef(workspaceCollectionPath(workspaceId, collectionName))
+  const collectionPath = workspaceCollectionPath(workspaceId, collectionName)
+  const ref = collectionRef(collectionPath)
   if (!ref) {
     return { rows: [], lastDoc: null, hasMore: false, size: 0 }
   }
@@ -185,6 +212,7 @@ export async function fetchWorkspaceCollectionPage({
       size: snap.docs.length,
     }
   } catch (error) {
+    logFirestoreAccessError(error, { ...diagnostics, workspaceId, collectionName, collectionPath, operation: 'read_page' })
     throw safeError(error, 'Unable to load account data.')
   }
 }
@@ -220,7 +248,8 @@ export async function createDoc(path, payload) {
 
 export async function createUserDoc(userId, path, payload, options = {}) {
   if (!db || !userId) throw new Error('Workspace not configured')
-  const ref = collectionRef(workspaceCollectionPath(userId, path))
+  const collectionPath = workspaceCollectionPath(userId, path)
+  const ref = collectionRef(collectionPath)
   if (!ref) throw new Error('Workspace not configured')
   const businessType = normalizeBusinessType(options?.businessType || payload.businessType)
   try {
@@ -235,6 +264,7 @@ export async function createUserDoc(userId, path, payload, options = {}) {
       updatedAt: serverTimestamp(),
     })
   } catch (error) {
+    logFirestoreAccessError(error, { ...options.diagnostics, userId, workspaceId: userId, collectionName: path, collectionPath, operation: 'create' })
     throw safeError(error, 'Unable to save account data.')
   }
 }
@@ -251,6 +281,7 @@ export async function patchDoc(path, id, patch) {
 
 export async function patchUserDoc(userId, path, id, patch, options = {}) {
   if (!db || !userId) throw new Error('Workspace not configured')
+  const collectionPath = workspaceCollectionPath(userId, path)
   const ref = doc(db, workspaceDocPath(userId, path, id))
   const businessType = normalizeBusinessType(options?.businessType || patch.businessType)
   try {
@@ -263,6 +294,7 @@ export async function patchUserDoc(userId, path, id, patch, options = {}) {
       updatedAt: serverTimestamp(),
     })
   } catch (error) {
+    logFirestoreAccessError(error, { ...options.diagnostics, userId, workspaceId: userId, collectionName: path, collectionPath, operation: 'update' })
     throw safeError(error, 'Unable to update account data.')
   }
 }
@@ -277,12 +309,14 @@ export async function removeDoc(path, id) {
   }
 }
 
-export async function removeUserDoc(userId, path, id) {
+export async function removeUserDoc(userId, path, id, options = {}) {
   if (!db || !userId) throw new Error('Workspace not configured')
+  const collectionPath = workspaceCollectionPath(userId, path)
   const ref = doc(db, workspaceDocPath(userId, path, id))
   try {
     return await deleteDoc(ref)
   } catch (error) {
+    logFirestoreAccessError(error, { ...options.diagnostics, userId, workspaceId: userId, collectionName: path, collectionPath, operation: 'delete' })
     throw safeError(error, 'Unable to remove account data.')
   }
 }

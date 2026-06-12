@@ -45,7 +45,7 @@ function mergeCustomerPages(currentRows, nextRows) {
 }
 
 export function useCustomers({ limitCount = DEFAULT_CUSTOMER_LIST_LIMIT, paginated = false } = {}) {
-  const { userId, workspaceId, businessType, userDoc, firebaseUser } = useUser()
+  const { userId, workspaceId, businessType, userDoc, firebaseUser, role } = useUser()
   const customerListLimit = safeCustomerListLimit(limitCount)
   const customerPageLimit = safeCustomerPageLimit(limitCount)
   const [rows, setRows] = useState([])
@@ -99,6 +99,7 @@ export function useCustomers({ limitCount = DEFAULT_CUSTOMER_LIST_LIMIT, paginat
         orderDirection: 'desc',
         limitCount: customerPageLimit,
         startAfterDoc: reset ? null : customerCursorRef.current,
+        diagnostics: { currentUserUid: userId, role },
       })
       if (requestId !== customerRequestRef.current) return { ok: false }
 
@@ -121,6 +122,14 @@ export function useCustomers({ limitCount = DEFAULT_CUSTOMER_LIST_LIMIT, paginat
       return { ok: true }
     } catch (err) {
       if (requestId !== customerRequestRef.current) return { ok: false }
+      console.warn('[Sales Hub Firestore Read Failed]', {
+        currentUserUid: userId || '',
+        role: role || '',
+        workspaceId: workspaceId || '',
+        collectionPath: workspaceId ? `workspaces/${workspaceId}/customers` : '',
+        collectionName: 'customers',
+        firestoreErrorCode: err?.code || err?.originalError?.code || 'unknown',
+      })
       setError(clientSafeMessage(err, 'Unable to load customers.'))
       if (reset) setRows([])
       setSource('firestore')
@@ -131,7 +140,7 @@ export function useCustomers({ limitCount = DEFAULT_CUSTOMER_LIST_LIMIT, paginat
         else setPaginationLoading(false)
       }
     }
-  }, [businessType, customerPageLimit, workspaceId])
+  }, [businessType, customerPageLimit, role, userId, workspaceId])
 
   const loadMoreCustomers = useCallback(async () => {
     if (loading || paginationLoading || !hasMoreCustomers) return { ok: true }
@@ -185,18 +194,27 @@ export function useCustomers({ limitCount = DEFAULT_CUSTOMER_LIST_LIMIT, paginat
       collectionName: 'customers',
       businessType,
       limitCount: customerListLimit,
+      diagnostics: { currentUserUid: userId, role },
       onData(data) {
         setRows((Array.isArray(data) ? data : []).map(normalizeCustomer))
         setLoading(false)
       },
       onError(err) {
+        console.warn('[Sales Hub Firestore Read Failed]', {
+          currentUserUid: userId || '',
+          role: role || '',
+          workspaceId: workspaceId || '',
+          collectionPath: workspaceId ? `workspaces/${workspaceId}/customers` : '',
+          collectionName: 'customers',
+          firestoreErrorCode: err?.code || err?.originalError?.code || 'unknown',
+        })
         setError(clientSafeMessage(err, 'Unable to load customers.'))
         setRows([])
         setLoading(false)
       },
     })
     return () => unsub?.()
-  }, [businessType, customerListLimit, loadCustomerPage, paginated, workspaceId])
+  }, [businessType, customerListLimit, loadCustomerPage, paginated, role, userId, workspaceId])
 
   const api = useMemo(
     () => ({
@@ -232,7 +250,7 @@ export function useCustomers({ limitCount = DEFAULT_CUSTOMER_LIST_LIMIT, paginat
             status: status || 'Active',
             notes,
             createdBy: userId,
-          }, { businessType })
+          }, { businessType, diagnostics: { currentUserUid: userId, role } })
           if (paginated) {
             prependLoadedCustomer({
               id: ref.id,
@@ -266,7 +284,7 @@ export function useCustomers({ limitCount = DEFAULT_CUSTOMER_LIST_LIMIT, paginat
         }
       },
     }),
-    [rows, loading, paginationLoading, hasMoreCustomers, customerPage, customerPageLimit, customerListLimit, loadMoreCustomers, source, error, businessType, firebaseUser, userDoc, userId, workspaceId, paginated, prependLoadedCustomer],
+    [rows, loading, paginationLoading, hasMoreCustomers, customerPage, customerPageLimit, customerListLimit, loadMoreCustomers, source, error, businessType, firebaseUser, role, userDoc, userId, workspaceId, paginated, prependLoadedCustomer],
   )
 
   return api

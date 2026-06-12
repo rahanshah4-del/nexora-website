@@ -88,7 +88,7 @@ export default function PublicFooter() {
         </div>
 
         <p className="mt-10 border-t border-white/10 pt-6 text-center text-sm text-blue-100">
-          © {new Date().getFullYear()} Nexora Solutions. All rights reserved.
+          NEXORA SOLUTION — All rights reserved 2019-2026.
         </p>
       </div>
     </footer>

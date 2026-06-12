@@ -150,13 +150,50 @@ export function useWorkspaceAccess() {
       canAccessHr: isAdmin || Boolean(permissions.hrDashboard),
       permissionKeys: currentPermissionKeys,
       hasModulePermission(moduleKey, action = 'view') {
+        const permissionKey = modulePermissionKey(moduleKey, action)
+        if (isOwner || isAdmin) return true
         if (moduleKey === 'support') {
-          return isAdmin || Boolean(permissions.support || permissions[modulePermissionKey(moduleKey, action)])
+          const allowed = Boolean(permissions.support || permissions[permissionKey])
+          if (!allowed) {
+            console.warn('[Sales Hub Access Denied]', {
+              source: 'useWorkspaceAccess.hasModulePermission',
+              role,
+              workspaceId,
+              permissionKey,
+              moduleKey,
+              action,
+              denialReason: 'missing_support_or_module_permission',
+            })
+          }
+          return allowed
         }
-        return isAdmin || Boolean(permissions[modulePermissionKey(moduleKey, action)])
+        const allowed = Boolean(permissions[permissionKey])
+        if (!allowed) {
+          console.warn('[Sales Hub Access Denied]', {
+            source: 'useWorkspaceAccess.hasModulePermission',
+            role,
+            workspaceId,
+            permissionKey,
+            moduleKey,
+            action,
+            denialReason: 'missing_module_permission',
+          })
+        }
+        return allowed
       },
       hasPermission(key) {
-        return isAdmin || Boolean(permissions[key])
+        if (isOwner || isAdmin) return true
+        const allowed = Boolean(permissions[key])
+        if (!allowed) {
+          console.warn('[Sales Hub Access Denied]', {
+            source: 'useWorkspaceAccess.hasPermission',
+            role,
+            workspaceId,
+            permissionKey: key,
+            denialReason: 'missing_legacy_permission',
+          })
+        }
+        return allowed
       },
     }),
     [businessType, currentPermissionKeys, explicitPermissions, isAccountant, isAdmin, isManager, isOwner, isStaff, loading, permissions, role, staffId, userId, workspaceId],

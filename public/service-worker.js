@@ -1,5 +1,18 @@
-const CACHE_NAME = 'nexora-pwa-v3'
-const CACHE_URLS = ['/', '/nexora-logo.jpg', '/nexora-logo.png', '/index.html']
+const CACHE_NAME = 'nexora-pwa-v6'
+const CACHE_URLS = [
+  '/',
+  '/index.html',
+  '/favicon.ico',
+  '/favicon.svg',
+  '/favicon-16x16.png',
+  '/favicon-32x32.png',
+  '/favicon-48x48.png',
+  '/favicon-64x64.png',
+  '/apple-touch-icon.png',
+  '/android-chrome-192x192.png',
+  '/android-chrome-512x512.png',
+  '/nexora-brand-logo.png',
+]
 const OFFLINE_HTML = '<!doctype html><html><body><h1>Nexora is offline</h1><p>Please reconnect and try again.</p></body></html>'
 
 self.addEventListener('install', (event) => {

@@ -61,7 +61,7 @@ export async function exportInvoicePdf({
   doc.setTextColor('#0f172a')
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(18)
-  doc.text(safePrintText(company.name, 'Nexora Solutions'), margin, 48)
+  doc.text(safePrintText(company.name, 'Nexora Solution'), margin, 48)
   doc.setFontSize(26)
   doc.text(documentLabel.toUpperCase(), pageWidth - margin, 48, { align: 'right' })
 
@@ -87,7 +87,7 @@ export async function exportInvoicePdf({
     head: [['Bill From', 'Bill To', 'Document Dates']],
     body: [[
       [
-        safePrintText(company.name, 'Nexora Solutions'),
+        safePrintText(company.name, 'Nexora Solution'),
         safePrintText(company.address),
         safePrintText(company.phone, ''),
         safePrintText(company.email, ''),

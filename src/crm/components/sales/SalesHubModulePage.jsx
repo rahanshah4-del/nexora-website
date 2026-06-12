@@ -110,7 +110,7 @@ function RecordModal({ config, record, onClose, onSave }) {
   )
 }
 
-export default function SalesHubModulePage({ config, api, metrics = [], chart, renderExtra }) {
+export default function SalesHubModulePage({ config, api, metrics = [], chart, renderExtra, renderModal }) {
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState('all')
   const [editing, setEditing] = useState(null)
@@ -134,12 +134,17 @@ export default function SalesHubModulePage({ config, api, metrics = [], chart, r
     window.setTimeout(() => setToast(null), 2200)
   }
 
-  async function saveRecord(draft) {
+  async function saveRecord(draft, action) {
     const res = draft.id ? await api.updateRow(draft.id, config.sanitize(draft)) : await api.createRow(config.sanitize(draft))
     if (res.ok) {
       showToast('success', `${config.single} saved`)
-      setModalOpen(false)
-      setEditing(null)
+      if (action === 'createOpen' && !draft.id) {
+        setModalOpen(false)
+        setEditing({ ...config.sanitize(draft), id: res.id })
+      } else {
+        setModalOpen(false)
+        setEditing(null)
+      }
     } else {
       showToast('error', res.error || `Unable to save ${config.single.toLowerCase()}`)
     }
@@ -231,7 +236,17 @@ export default function SalesHubModulePage({ config, api, metrics = [], chart, r
 
       {renderExtra ? renderExtra({ rows, filteredRows }) : null}
 
-      {modalOpen || editing ? <RecordModal config={config} record={editing} onClose={() => { setModalOpen(false); setEditing(null) }} onSave={saveRecord} /> : null}
+      {modalOpen || editing ? (
+        (renderModal || config.renderModal) ? (
+          (renderModal || config.renderModal)({
+            record: editing,
+            onClose: () => { setModalOpen(false); setEditing(null) },
+            onSave: saveRecord,
+          })
+        ) : (
+          <RecordModal config={config} record={editing} onClose={() => { setModalOpen(false); setEditing(null) }} onSave={saveRecord} />
+        )
+      ) : null}
 
       <AnimatePresence>
         {deleting ? (

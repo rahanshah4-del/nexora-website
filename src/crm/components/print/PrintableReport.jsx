@@ -41,7 +41,7 @@ function cellValue(column, row) {
 
 export default function PrintableReport({ report = {}, className = '' }) {
   const branding = report.branding || {}
-  const logo = branding.logoUrl || branding.logo || '/nexora-logo.jpg'
+  const logo = branding.logoUrl || branding.logo || '/nexora-brand-logo.png'
   const summary = Array.isArray(report.summary) ? report.summary : []
   const tables = Array.isArray(report.tables) ? report.tables : []
 
@@ -143,7 +143,7 @@ export default function PrintableReport({ report = {}, className = '' }) {
 
       <footer className="print-avoid-break mt-6 border-t border-slate-200 pt-4 text-xs text-slate-600">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <span>{safePrintText(branding.receiptFooter, 'Powered by Nexora Solutions')}</span>
+          <span>{safePrintText(branding.receiptFooter, 'NEXORA SOLUTION — All rights reserved 2019-2026.')}</span>
           <span>Report ID: {safePrintText(report.reportId)}</span>
           <span>{safePrintText(report.businessType)}</span>
         </div>

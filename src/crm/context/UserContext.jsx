@@ -226,7 +226,13 @@ export function UserProvider({ children }) {
   const accountStatus = workspaceBlocked ? 'blocked' : staffStatus || userStatus || 'active'
   const isBlocked = workspaceBlocked || blockedStatuses.includes(userStatus) || blockedStatuses.includes(staffStatus)
   const ownsWorkspace = Boolean(
-    user?.uid && (user.uid === workspaceId || user.uid === userDoc?.ownerId || user.uid === workspaceOwnerId),
+    user?.uid && (
+      user.uid === workspaceId ||
+      user.uid === userDoc?.ownerId ||
+      user.uid === workspaceOwnerId ||
+      user.uid === workspaceDoc?.ownerId ||
+      user.uid === workspaceDoc?.createdBy
+    ),
   )
   const isOwner = role === 'owner' || ownsWorkspace
   const isAdmin = isOwner || role === 'admin'
@@ -236,7 +242,18 @@ export function UserProvider({ children }) {
     console.log('[Role Access] role', role)
     console.log('[Role Access] isOwnerAdmin', isAdmin)
     console.log('[Role Access] isStaff', isStaff)
-  }, [isAdmin, isStaff, role])
+    console.log('[Permission Debug]', {
+      currentWorkspaceId: workspaceId || '',
+      currentWorkspaceOwnerId: workspaceDoc?.ownerId || workspaceOwnerId || '',
+      currentWorkspaceCreatedBy: workspaceDoc?.createdBy || '',
+      uid: user?.uid || '',
+      role,
+      isOwner,
+      isAdmin,
+      collectionPathCustomers: workspaceId ? `workspaces/${workspaceId}/customers` : '',
+      collectionPathLeads: workspaceId ? `workspaces/${workspaceId}/leads` : '',
+    })
+  }, [isAdmin, isOwner, isStaff, role, user?.uid, workspaceDoc?.createdBy, workspaceDoc?.ownerId, workspaceId, workspaceOwnerId])
 
   useEffect(() => {
     if (loading) return
@@ -253,10 +270,13 @@ export function UserProvider({ children }) {
         allowedBusinessTypes: Array.isArray(userDoc?.allowedBusinessTypes) ? userDoc.allowedBusinessTypes : [],
         enabledModules: Array.isArray(userDoc?.enabledModules) ? userDoc.enabledModules : [],
       },
-      workspace: {
-        onboardingCompleted: workspaceDoc?.onboardingCompleted === true,
-        selectedWorkspace: workspaceDoc?.selectedWorkspace || '',
-        selectedBusinessType: workspaceDoc?.selectedBusinessType || '',
+        workspace: {
+          onboardingCompleted: workspaceDoc?.onboardingCompleted === true,
+          id: workspaceId || '',
+          ownerId: workspaceDoc?.ownerId || '',
+          createdBy: workspaceDoc?.createdBy || '',
+          selectedWorkspace: workspaceDoc?.selectedWorkspace || '',
+          selectedBusinessType: workspaceDoc?.selectedBusinessType || '',
         currentBusinessType: workspaceDoc?.currentBusinessType || '',
         businessType: workspaceDoc?.businessType || '',
         allowedBusinessTypes: Array.isArray(workspaceDoc?.allowedBusinessTypes) ? workspaceDoc.allowedBusinessTypes : [],

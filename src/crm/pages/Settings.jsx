@@ -26,6 +26,8 @@ import { labelForBusinessType, packageNameForPlan, normalizeBusinessType } from 
 import { whatsappCapabilities, whatsappTrialStatus } from '../lib/whatsappApiTrial.js'
 import ConnectWhatsappModal from '../components/whatsapp/ConnectWhatsappModal.jsx'
 import ConfirmDialog from '../components/whatsapp/ConfirmDialog.jsx'
+import { RestaurantBillPreview, RestaurantKotPreview } from '../components/restaurant/RestaurantPrintPreview.jsx'
+import { buildBillPrintData, buildKotPrintData, calculateRestaurantBill } from '../lib/restaurantPosCalculations.js'
 
 function Field({ label, children, className = '' }) {
   return (
@@ -276,6 +278,286 @@ function WhatsappApiCard() {
   )
 }
 
+function RestaurantPosSettingsCard({ draft, setDraft, canManageSettings, onSaveSettings }) {
+  const restaurantSettings = draft.restaurantPos || {}
+  const [printSettingsOpen, setPrintSettingsOpen] = useState(false)
+  const [printPreviewType, setPrintPreviewType] = useState('')
+  const [printNote, setPrintNote] = useState('')
+  const sampleRows = [
+    { item: { id: 'sample-burger', name: 'Signature Burger', price: 749, discountType: 'none', discountValue: 0 }, qty: 2, note: 'Extra sauce' },
+    { item: { id: 'sample-drink', name: 'Mint Margarita', price: 399, discountType: 'percentage', discountValue: 10 }, qty: 1, note: 'No ice' },
+  ]
+  const sampleTotals = calculateRestaurantBill(sampleRows, {
+    discount: 100,
+    serviceCharges: restaurantSettings.serviceChargePercentage || 5,
+    tax: restaurantSettings.taxPercentage || 5,
+    serviceChargeEnabled: restaurantSettings.enableServiceCharge !== false,
+    taxEnabled: restaurantSettings.enableTax !== false,
+  })
+  const sampleSettings = {
+    restaurantName: restaurantSettings.restaurantName || draft.businessName || 'Nexora Restaurant',
+    address: restaurantSettings.address || `${draft.city || 'City'}, ${draft.country || 'Pakistan'}`,
+    phone: restaurantSettings.phone || draft.phone || '',
+    taxNumber: restaurantSettings.taxNumber || '',
+    footerMessage: restaurantSettings.footerMessage || draft.receiptFooter || 'Thank you for dining with us',
+    showLogo: restaurantSettings.showLogo !== false,
+    logoUrl: restaurantSettings.logoUrl || restaurantSettings.logoDataUrl || '',
+    enableBillQr: Boolean(restaurantSettings.enableBillQr),
+    enableKotQr: Boolean(restaurantSettings.enableKotQr),
+    qrValue: restaurantSettings.qrValue || 'https://nexora.app',
+  }
+  const billPreview = buildBillPrintData({
+    restaurantName: sampleSettings.restaurantName,
+    orderNumber: '#45268',
+    billNumber: 'BILL-45268',
+    orderType: 'Dine-in',
+    table: 'T-04',
+    customerName: 'Walk-in Guest',
+    customerPhone: '0300 1234567',
+    rows: sampleTotals.rows,
+    totals: sampleTotals,
+    paidAmount: sampleTotals.total,
+    paymentMethod: 'Cash',
+    settings: sampleSettings,
+  })
+  const kotPreview = buildKotPrintData({
+    restaurantName: sampleSettings.restaurantName,
+    orderNumber: '#45268',
+    kotNumber: 'KOT-45268',
+    orderType: 'Dine-in',
+    table: 'T-04',
+    rows: sampleTotals.rows,
+    notes: 'Serve hot',
+    priority: 'Normal',
+    settings: sampleSettings,
+  })
+
+  function updateRestaurantSetting(key, value) {
+    setDraft((current) => ({
+      ...current,
+      restaurantPos: {
+        ...(current.restaurantPos || {}),
+        [key]: value,
+      },
+    }))
+  }
+
+  function handleLogoFile(event) {
+    const file = event.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => updateRestaurantSetting('logoDataUrl', String(reader.result || ''))
+    reader.readAsDataURL(file)
+  }
+
+  async function savePrintSettings() {
+    setPrintNote('Saving print settings...')
+    await onSaveSettings?.()
+    setPrintNote('Print settings saved.')
+  }
+
+  return (
+    <>
+    <Card className="p-5">
+      <div className="flex items-start justify-between gap-3 border-b border-slate-200/80 pb-4">
+        <div>
+          <p className="text-sm font-semibold text-slate-950 dark:text-white">Restaurant POS Settings</p>
+          <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-300">Printer, kitchen display, tax, and service defaults.</p>
+        </div>
+        <Badge variant="warning">Restaurant</Badge>
+      </div>
+
+      <div className="mt-4 space-y-5">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Print Templates</p>
+          <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-slate-950">Bill & KOT Print Settings</p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">Logo, receipt details, QR, printers, and auto-print defaults.</p>
+              </div>
+              <Button
+                type="button"
+                className="rounded-2xl"
+                onClick={() => {
+                  setPrintPreviewType('')
+                  setPrintNote('')
+                  setPrintSettingsOpen(true)
+                }}
+              >
+                Bill & KOT Print Settings
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Printer Settings</p>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <Field label="Bill printer name">
+              <Input value={restaurantSettings.billPrinterName || ''} onChange={(event) => updateRestaurantSetting('billPrinterName', event.target.value)} placeholder="Front Counter 58mm" readOnly={!canManageSettings} />
+            </Field>
+            <Field label="Kitchen printer name">
+              <Input value={restaurantSettings.kitchenPrinterName || ''} onChange={(event) => updateRestaurantSetting('kitchenPrinterName', event.target.value)} placeholder="Kitchen KOT Printer" readOnly={!canManageSettings} />
+            </Field>
+            <Field label="Paper size">
+              <Select value={restaurantSettings.paperSize || '58mm'} onChange={(event) => updateRestaurantSetting('paperSize', event.target.value)} disabled={!canManageSettings}>
+                <option>58mm</option>
+                <option>80mm</option>
+              </Select>
+            </Field>
+            <ToggleSetting label="Auto print bill" checked={Boolean(restaurantSettings.autoPrintBill)} onChange={(value) => updateRestaurantSetting('autoPrintBill', value)} disabled={!canManageSettings} />
+            <ToggleSetting label="Auto print KOT" checked={Boolean(restaurantSettings.autoPrintKot)} onChange={(value) => updateRestaurantSetting('autoPrintKot', value)} disabled={!canManageSettings} />
+            <div className="flex gap-2 sm:col-span-2">
+              <Button type="button" variant="subtle" className="flex-1 rounded-2xl" disabled={!canManageSettings}>Test Bill Print</Button>
+              <Button type="button" variant="subtle" className="flex-1 rounded-2xl" disabled={!canManageSettings}>Test KOT Print</Button>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Kitchen Display Settings</p>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <ToggleSetting label="Enable kitchen display" checked={restaurantSettings.enableKitchenDisplay !== false} onChange={(value) => updateRestaurantSetting('enableKitchenDisplay', value)} disabled={!canManageSettings} />
+            <ToggleSetting label="Show pending column" checked={restaurantSettings.showPendingColumn !== false} onChange={(value) => updateRestaurantSetting('showPendingColumn', value)} disabled={!canManageSettings} />
+            <ToggleSetting label="Show preparing column" checked={restaurantSettings.showPreparingColumn !== false} onChange={(value) => updateRestaurantSetting('showPreparingColumn', value)} disabled={!canManageSettings} />
+            <ToggleSetting label="Show ready column" checked={restaurantSettings.showReadyColumn !== false} onChange={(value) => updateRestaurantSetting('showReadyColumn', value)} disabled={!canManageSettings} />
+            <Field label="Auto refresh seconds">
+              <Input type="number" min="0" value={restaurantSettings.autoRefreshSeconds || '10'} onChange={(event) => updateRestaurantSetting('autoRefreshSeconds', Math.max(0, Number(event.target.value) || 0))} readOnly={!canManageSettings} />
+            </Field>
+            <ToggleSetting label="Sound alert" checked={Boolean(restaurantSettings.soundAlert)} onChange={(value) => updateRestaurantSetting('soundAlert', value)} disabled={!canManageSettings} />
+            <ToggleSetting label="Large kitchen cards" checked={Boolean(restaurantSettings.largeKitchenCards)} onChange={(value) => updateRestaurantSetting('largeKitchenCards', value)} disabled={!canManageSettings} />
+          </div>
+        </div>
+
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Tax & Service Settings</p>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <Field label="Tax percentage">
+              <Input type="number" min="0" value={restaurantSettings.taxPercentage || '5'} onChange={(event) => updateRestaurantSetting('taxPercentage', Math.max(0, Number(event.target.value) || 0))} readOnly={!canManageSettings} />
+            </Field>
+            <Field label="Service charge percentage">
+              <Input type="number" min="0" value={restaurantSettings.serviceChargePercentage || '5'} onChange={(event) => updateRestaurantSetting('serviceChargePercentage', Math.max(0, Number(event.target.value) || 0))} readOnly={!canManageSettings} />
+            </Field>
+            <ToggleSetting label="Enable tax" checked={restaurantSettings.enableTax !== false} onChange={(value) => updateRestaurantSetting('enableTax', value)} disabled={!canManageSettings} />
+            <ToggleSetting label="Enable service charge" checked={restaurantSettings.enableServiceCharge !== false} onChange={(value) => updateRestaurantSetting('enableServiceCharge', value)} disabled={!canManageSettings} />
+          </div>
+        </div>
+      </div>
+    </Card>
+    {printSettingsOpen ? (
+      <div className="fixed inset-0 z-[90] grid place-items-center bg-slate-950/45 px-3 py-4 backdrop-blur-sm">
+        <div className="max-h-[calc(100dvh-2rem)] w-full max-w-5xl overflow-hidden rounded-[1.25rem] border border-slate-200 bg-white shadow-2xl">
+          <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-4 py-3 sm:px-5">
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Restaurant POS</p>
+              <h2 className="mt-1 text-lg font-black text-slate-950">Bill & KOT Print Settings</h2>
+              <p className="mt-1 text-xs text-slate-500">Configure receipt template, printers, QR, and auto-print settings.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setPrintSettingsOpen(false)}
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-slate-200 text-sm font-black text-slate-500 hover:bg-slate-50"
+              aria-label="Close print settings"
+            >
+              x
+            </button>
+          </div>
+
+          <div className="grid max-h-[calc(100dvh-10rem)] gap-4 overflow-y-auto px-4 py-4 lg:grid-cols-[minmax(0,1fr)_300px] sm:px-5">
+            <div className="min-w-0 space-y-4">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Field label="Restaurant logo">
+                  <div className="flex items-center gap-3">
+                    <div className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 text-xs font-black text-slate-900">
+                      {sampleSettings.logoUrl ? <img src={sampleSettings.logoUrl} alt="Restaurant logo preview" className="h-full w-full object-cover" /> : 'NX'}
+                    </div>
+                    <Input type="file" accept="image/*" onChange={handleLogoFile} disabled={!canManageSettings} />
+                  </div>
+                </Field>
+                <Field label="Logo URL">
+                  <Input value={restaurantSettings.logoUrl || ''} onChange={(event) => updateRestaurantSetting('logoUrl', event.target.value)} placeholder="https://..." readOnly={!canManageSettings} />
+                </Field>
+                <ToggleSetting label="Show logo" checked={restaurantSettings.showLogo !== false} onChange={(value) => updateRestaurantSetting('showLogo', value)} disabled={!canManageSettings} />
+                <Field label="Restaurant name">
+                  <Input value={restaurantSettings.restaurantName || ''} onChange={(event) => updateRestaurantSetting('restaurantName', event.target.value)} placeholder={draft.businessName || 'Nexora Restaurant'} readOnly={!canManageSettings} />
+                </Field>
+                <Field label="Address">
+                  <Input value={restaurantSettings.address || ''} onChange={(event) => updateRestaurantSetting('address', event.target.value)} placeholder="Restaurant address" readOnly={!canManageSettings} />
+                </Field>
+                <Field label="Phone">
+                  <Input value={restaurantSettings.phone || ''} onChange={(event) => updateRestaurantSetting('phone', event.target.value)} placeholder="Restaurant phone" readOnly={!canManageSettings} />
+                </Field>
+                <Field label="Tax number">
+                  <Input value={restaurantSettings.taxNumber || ''} onChange={(event) => updateRestaurantSetting('taxNumber', event.target.value)} placeholder="NTN / VAT / GST number" readOnly={!canManageSettings} />
+                </Field>
+                <Field label="Footer message">
+                  <Input value={restaurantSettings.footerMessage || ''} onChange={(event) => updateRestaurantSetting('footerMessage', event.target.value)} placeholder="Thank you for dining with us" readOnly={!canManageSettings} />
+                </Field>
+                <ToggleSetting label="Enable QR on Bill" checked={Boolean(restaurantSettings.enableBillQr)} onChange={(value) => updateRestaurantSetting('enableBillQr', value)} disabled={!canManageSettings} />
+                <ToggleSetting label="Enable QR on KOT" checked={Boolean(restaurantSettings.enableKotQr)} onChange={(value) => updateRestaurantSetting('enableKotQr', value)} disabled={!canManageSettings} />
+                <Field label="QR text/value" className="sm:col-span-2">
+                  <Input value={restaurantSettings.qrValue || ''} onChange={(event) => updateRestaurantSetting('qrValue', event.target.value)} placeholder="Order tracking URL, UPI, JazzCash, or custom text" readOnly={!canManageSettings} />
+                </Field>
+                <Field label="Paper size">
+                  <Select value={restaurantSettings.paperSize || '58mm'} onChange={(event) => updateRestaurantSetting('paperSize', event.target.value)} disabled={!canManageSettings}>
+                    <option>58mm</option>
+                    <option>80mm</option>
+                  </Select>
+                </Field>
+                <Field label="Bill printer name">
+                  <Input value={restaurantSettings.billPrinterName || ''} onChange={(event) => updateRestaurantSetting('billPrinterName', event.target.value)} placeholder="Front Counter 58mm" readOnly={!canManageSettings} />
+                </Field>
+                <Field label="KOT printer name">
+                  <Input value={restaurantSettings.kitchenPrinterName || ''} onChange={(event) => updateRestaurantSetting('kitchenPrinterName', event.target.value)} placeholder="Kitchen KOT Printer" readOnly={!canManageSettings} />
+                </Field>
+                <ToggleSetting label="Auto print Bill" checked={Boolean(restaurantSettings.autoPrintBill)} onChange={(value) => updateRestaurantSetting('autoPrintBill', value)} disabled={!canManageSettings} />
+                <ToggleSetting label="Auto print KOT" checked={Boolean(restaurantSettings.autoPrintKot)} onChange={(value) => updateRestaurantSetting('autoPrintKot', value)} disabled={!canManageSettings} />
+              </div>
+              {printNote ? <p className="rounded-xl bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">{printNote}</p> : null}
+            </div>
+
+            <div className="min-w-0 rounded-2xl border border-slate-200 bg-slate-50 p-3">
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">Preview</p>
+              <div className="mt-3 max-h-[58vh] overflow-y-auto">
+                {printPreviewType === 'bill' ? <RestaurantBillPreview data={billPreview} /> : null}
+                {printPreviewType === 'kot' ? <RestaurantKotPreview data={kotPreview} /> : null}
+                {!printPreviewType ? (
+                  <div className="grid min-h-64 place-items-center rounded-2xl border border-dashed border-slate-200 bg-white p-4 text-center">
+                    <div>
+                      <p className="text-sm font-semibold text-slate-950">No preview selected</p>
+                      <p className="mt-1 text-xs text-slate-500">Click Preview Bill or Preview KOT to open a live receipt preview.</p>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col-reverse gap-2 border-t border-slate-100 bg-slate-50 px-4 py-3 sm:flex-row sm:flex-wrap sm:justify-end sm:px-5">
+            <Button type="button" variant="subtle" onClick={() => setPrintSettingsOpen(false)}>Close</Button>
+            <Button type="button" variant="subtle" disabled={!canManageSettings}>Test Bill Print</Button>
+            <Button type="button" variant="subtle" disabled={!canManageSettings}>Test KOT Print</Button>
+            <Button type="button" variant="subtle" onClick={() => setPrintPreviewType('bill')}>Preview Bill</Button>
+            <Button type="button" variant="subtle" onClick={() => setPrintPreviewType('kot')}>Preview KOT</Button>
+            <Button type="button" onClick={savePrintSettings} disabled={!canManageSettings}>Save Settings</Button>
+          </div>
+        </div>
+      </div>
+    ) : null}
+    </>
+  )
+}
+
+function ToggleSetting({ label, checked, onChange, disabled }) {
+  return (
+    <label className="flex min-w-0 items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2.5">
+      <span className="text-sm font-semibold text-slate-700">{label}</span>
+      <input type="checkbox" checked={checked} disabled={disabled} onChange={(event) => onChange(event.target.checked)} className="h-4 w-4 accent-slate-950" />
+    </label>
+  )
+}
+
 export default function SettingsPage() {
   const navigate = useNavigate()
   const { plan, userId, workspaceId, userDoc, firebaseUser } = useUser()
@@ -314,6 +596,7 @@ export default function SettingsPage() {
       receiptFooter: draft.receiptFooter || '',
       signatureUrl: draft.signatureUrl || '',
       themeColor: draft.themeColor || '#2563eb',
+      restaurantPos: draft.restaurantPos || {},
     }
     const res = await saveSettings(businessPatch)
     if (!res.ok) {
@@ -570,6 +853,9 @@ export default function SettingsPage() {
 
         <div className="min-w-0 space-y-5">
           {normalizeBusinessType(businessType) === 'WhatsApp CRM' ? <WhatsappApiCard /> : null}
+          {normalizeBusinessType(businessType) === 'Restaurant POS' ? (
+            <RestaurantPosSettingsCard draft={draft} setDraft={setDraft} canManageSettings={canManageSettings} onSaveSettings={onSaveProfile} />
+          ) : null}
           <Card className="p-5">
             <div className="flex items-start gap-3">
               <span className="grid h-10 w-10 place-items-center rounded-2xl bg-rose-50 text-rose-700">

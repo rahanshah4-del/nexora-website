@@ -18,6 +18,11 @@ import {
   HiOutlineExclamationTriangle,
   HiOutlineWrenchScrewdriver,
   HiOutlineChatBubbleLeftRight,
+  HiOutlineComputerDesktop,
+  HiOutlinePresentationChartBar,
+  HiOutlineReceiptPercent,
+  HiOutlineShoppingBag,
+  HiOutlineTableCells,
 } from 'react-icons/hi2'
 import Card from '../components/ui/Card.jsx'
 import Badge from '../components/ui/Badge.jsx'
@@ -55,6 +60,8 @@ import { contractStats, maintenanceStats } from '../lib/propertyCalculations.js'
 import { contactStats, followUpStats, leadStats, templateStats } from '../lib/whatsappManual.js'
 import { useSalesHubCollection } from '../hooks/useSalesHubCollection.js'
 import { calculateDealMetrics, calculatePipelineMetrics, calculateProductMetrics, calculateTaskMetrics, safeNumber } from '../lib/salesCalculations.js'
+import { restaurantDashboardMetrics, formatRestaurantCurrency } from '../lib/restaurantPosCalculations.js'
+import { loadRestaurantOrders } from '../data/restaurantOrders.js'
 
 // Dashboard hero title/subtitle per business type (module). Falls back to a
 // generic label for any unknown type. Only affects the hero header text.
@@ -286,6 +293,107 @@ const DataRow = memo(function DataRow({ label, value, badge }) {
 
 const DASHBOARD_RECENT_LIMIT = 50
 
+const restaurantQuickActions = [
+  { title: 'New Order', detail: 'Start dine-in or takeaway', to: '/app/orders', icon: HiOutlineShoppingBag },
+  { title: 'Open KOT', detail: 'Kitchen ticket queue', to: '/app/orders-kot', icon: HiOutlineClipboardDocumentCheck },
+  { title: 'Floor View', detail: 'Tables and occupancy', to: '/app/tables', icon: HiOutlineTableCells },
+  { title: 'Kitchen Display', detail: 'Live prep lanes', to: '/app/kitchen-display', icon: HiOutlineComputerDesktop },
+  { title: 'Create Bill', detail: 'Checkout and invoice', to: '/app/invoices/create', icon: HiOutlineReceiptPercent },
+]
+
+function RestaurantDashboard({ workspaceName }) {
+  const savedOrders = useMemo(() => loadRestaurantOrders(), [])
+  const today = new Date().toISOString().slice(0, 10)
+  const todayOrders = savedOrders.filter((order) => String(order.createdAt || '').slice(0, 10) === today)
+  const tableRows = Array.from(new Set(todayOrders.map((order) => order.table).filter(Boolean))).map((table) => ({ status: 'occupied', table }))
+  const restaurantMetrics = restaurantDashboardMetrics({
+    cartRows: todayOrders.flatMap((order) => order.cartRows || []),
+    tables: tableRows,
+    kotRows: todayOrders.map((order) => ({ status: String(order.orderStatus || '').toLowerCase() })),
+    bills: todayOrders.map((order) => ({ status: String(order.paymentStatus || '').toLowerCase() })),
+  })
+  const pendingKot = todayOrders.filter((order) => String(order.orderStatus || '').toLowerCase() === 'pending').length
+  const preparingKot = todayOrders.filter((order) => String(order.orderStatus || '').toLowerCase() === 'preparing').length
+  const readyKot = todayOrders.filter((order) => String(order.orderStatus || '').toLowerCase() === 'ready').length
+  const restaurantStats = [
+    { label: 'Today Orders', value: formatCompact(restaurantMetrics.todayOrders), helper: 'Dine-in, takeaway, and delivery', icon: HiOutlineShoppingBag, tone: 'sky' },
+    { label: 'Active KOT', value: formatCompact(restaurantMetrics.activeKot), helper: 'Kitchen tickets in progress', icon: HiOutlineClipboardDocumentCheck, tone: 'violet' },
+    { label: 'Occupied Tables', value: `${restaurantMetrics.occupiedTables} / ${restaurantMetrics.totalTables}`, helper: 'Live floor occupancy', icon: HiOutlineTableCells, tone: 'cyan' },
+    { label: 'Today Sales', value: formatRestaurantCurrency(restaurantMetrics.todaySales), helper: 'Collected restaurant revenue', icon: HiOutlineCurrencyDollar, tone: 'emerald' },
+    { label: 'Pending Bills', value: formatCompact(restaurantMetrics.pendingBills), helper: 'Open checks awaiting payment', icon: HiOutlineReceiptPercent, tone: 'violet' },
+    { label: 'Kitchen Ready', value: formatCompact(restaurantMetrics.kitchenReady), helper: 'Orders ready to serve', icon: HiOutlineCheckCircle, tone: 'sky' },
+  ]
+
+  return (
+    <div className="min-w-0 space-y-5">
+      <section className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <Card className="relative rounded-[1.6rem] border-slate-200/80 bg-white/90 p-5 sm:p-6">
+          <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-amber-400 via-rose-400 to-sky-400" />
+          <div className="flex min-w-0 flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+            <div className="min-w-0">
+              <Badge variant="warning">Restaurant POS</Badge>
+              <h1 className="mt-4 max-w-3xl text-2xl font-semibold tracking-tight text-slate-950 dark:text-white sm:text-3xl">
+                Restaurant Command Center
+              </h1>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500 dark:text-slate-300">
+                Manage orders, KOT flow, floor occupancy, kitchen readiness, bills, and daily sales from one restaurant workspace.
+              </p>
+            </div>
+            <div className="grid h-16 w-16 shrink-0 place-items-center rounded-[1.35rem] bg-slate-950 text-white shadow-lg shadow-slate-950/15">
+              <HiOutlinePresentationChartBar className="h-8 w-8" />
+            </div>
+          </div>
+          <div className="mt-5 grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-5">
+            {restaurantQuickActions.map((action) => (
+              <QuickAction key={action.title} {...action} />
+            ))}
+          </div>
+        </Card>
+
+        <Card className="rounded-[1.6rem] p-5">
+          <SectionTitle eyebrow="Live Shift" title={workspaceName || 'Restaurant floor'} action={<Badge variant="success">Live</Badge>} />
+          <div className="mt-5 space-y-3">
+            <DataRow label="Current service" value={todayOrders.length ? 'Active' : 'No orders'} badge="Live from saved orders" />
+            <DataRow label="Occupied tables" value={restaurantMetrics.occupiedTables} badge="From dine-in orders" />
+            <DataRow label="Avg prep time" value="0 min" badge="Updates when prep time is saved" />
+            <DataRow label="Ready handoff" value={readyKot} badge="Serve now" />
+          </div>
+        </Card>
+      </section>
+
+      <section className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {restaurantStats.map((stat) => (
+          <MetricCard key={stat.label} {...stat} />
+        ))}
+      </section>
+
+      <section className="grid min-w-0 gap-5 lg:grid-cols-12">
+        <Card className="rounded-[1.6rem] p-5 lg:col-span-7">
+          <SectionTitle eyebrow="Kitchen Flow" title="KOT status lanes" action={<Link to="/app/orders-kot" className="text-xs font-semibold text-sky-700 hover:text-sky-900">Open KOT</Link>} />
+          <div className="mt-5 grid min-w-0 gap-3 md:grid-cols-3">
+            {[
+              ['Pending', pendingKot, 'bg-amber-500'],
+              ['Preparing', preparingKot, 'bg-sky-500'],
+              ['Ready', readyKot, 'bg-emerald-500'],
+            ].map(([label, value, tone]) => (
+              <ProgressRow key={label} label={label} value={value} max={12} tone={tone} />
+            ))}
+          </div>
+        </Card>
+        <Card className="rounded-[1.6rem] p-5 lg:col-span-5">
+          <SectionTitle eyebrow="Floor View" title="Table occupancy" action={<Link to="/app/tables" className="text-xs font-semibold text-sky-700 hover:text-sky-900">Floor view</Link>} />
+          <div className="mt-5 space-y-3">
+            <DataRow label="Occupied" value={restaurantMetrics.occupiedTables} badge="Active dine-in tables" />
+            <DataRow label="Reserved" value="0" badge="No saved reservations" />
+            <DataRow label="Cleaning" value="0" badge="No saved cleaning state" />
+            <DataRow label="Available" value="0" badge="Use floor view to manage tables" />
+          </div>
+        </Card>
+      </section>
+    </div>
+  )
+}
+
 export default function DashboardHomePage() {
   const currency = 'PKR'
   const invoicesApi = useInvoices({ limitCount: DASHBOARD_RECENT_LIMIT })
@@ -308,6 +416,7 @@ export default function DashboardHomePage() {
   )
   const propertyLoading = isProperty && (maintenanceApi.loading || contractsApi.loading)
   const isWhatsapp = normalizeBusinessType(businessType) === 'WhatsApp CRM'
+  const isRestaurant = normalizeBusinessType(businessType) === 'Restaurant POS'
   const isSalesHub = normalizeBusinessType(businessType) === 'General CRM'
   const salesDealsApi = useSalesHubCollection('salesDeals', { enabled: isSalesHub })
   const salesTasksApi = useSalesHubCollection('salesTasks', { enabled: isSalesHub })
@@ -595,6 +704,10 @@ export default function DashboardHomePage() {
         workspaceName={workspaceDoc?.name || userDoc?.workspaceName || userDoc?.company || ''}
       />
     )
+  }
+
+  if (isRestaurant) {
+    return <RestaurantDashboard workspaceName={workspaceDoc?.name || userDoc?.workspaceName || userDoc?.company || ''} />
   }
 
   return (

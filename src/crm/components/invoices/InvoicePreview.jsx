@@ -74,7 +74,7 @@ export default function InvoicePreview({
             <div className="flex items-center gap-3">
               <img src={company.logoUrl} alt="Business logo" className="h-12 w-12 rounded-2xl border border-slate-200 bg-white object-contain p-1" />
               <div className="min-w-0">
-                <p className="truncate text-base font-black text-slate-950">{company?.name || 'Nexora Solutions'}</p>
+                <p className="truncate text-base font-black text-slate-950">{company?.name || 'Nexora Solution'}</p>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-500">Business Billing</p>
               </div>
             </div>
@@ -95,7 +95,7 @@ export default function InvoicePreview({
       <div className={contactGridClass}>
         <div className="min-w-0">
           <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">From</p>
-          <p className="mt-2 font-bold text-slate-950">{company?.name || 'Nexora Solutions'}</p>
+          <p className="mt-2 font-bold text-slate-950">{company?.name || 'Nexora Solution'}</p>
           <p className="mt-1 leading-6 text-slate-600">{company?.address || '123 Business Avenue, Suite 100, Lahore, Pakistan'}</p>
           <p className="text-slate-600">Phone: {company?.phone || '+92 300 1234567'}</p>
           <p className="text-slate-600">Email: {company?.email || 'info@nexora.com'}</p>

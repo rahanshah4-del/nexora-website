@@ -432,7 +432,7 @@ export default function WhatsappReports() {
       dateRange,
       generatedBy: userDoc?.fullName || userDoc?.name || firebaseUser?.email || 'Workspace Owner',
       generatedAt,
-      branding: { logo: '/nexora-logo.jpg', logoUrl: '', receiptFooter: 'Powered by Nexora Solutions' },
+      branding: { logo: '/nexora-brand-logo.png', logoUrl: '', receiptFooter: 'NEXORA SOLUTION — All rights reserved 2019-2026.' },
       summary: [
         { label: 'Total Contacts', value: String(stats.contacts.total) },
         { label: 'Active Contacts', value: String(stats.contacts.active) },

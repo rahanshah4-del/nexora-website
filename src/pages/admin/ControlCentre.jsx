@@ -117,12 +117,12 @@ const moduleColors = ['#7c3aed', '#3b82f6', '#f59e0b', '#ef4444', '#14b8a6', '#0
 const paidSubscriptionStatuses = ['active', 'paid', 'approved', 'current']
 const defaultPlatformSettings = {
   ...defaultSaasPlatformSettings,
-  systemName: 'Nexora Solutions',
+  systemName: 'Nexora Solution',
   defaultCurrency: DEFAULT_SAAS_CURRENCY,
   trialDays: 7,
   supportEmail: 'support@nexorasolution.online',
   maintenanceMode: false,
-  emailSenderName: 'Nexora Solutions',
+  emailSenderName: 'Nexora Solution',
   emailReplyTo: 'support@nexorasolution.online',
   featureFlags: {
     announcements: true,
@@ -2387,7 +2387,7 @@ export default function ControlCentre() {
         <div className="flex items-center gap-3 px-1">
           <img src={logoUrl} alt="Nexora" className="h-11 w-11 rounded-xl bg-white object-contain p-1.5" />
           <div>
-            <p className="text-2xl font-black tracking-wide">NEXORA</p>
+            <p className="text-2xl font-black tracking-wide">NEXORA SOLUTION</p>
             <p className="text-xs text-slate-300">SaaS Owner Admin Panel</p>
           </div>
         </div>

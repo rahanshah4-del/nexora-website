@@ -98,7 +98,7 @@ function mergeLeadPages(currentRows, nextRows) {
 }
 
 export function useLeadScoring({ limitCount = DEFAULT_LEAD_LIST_LIMIT, paginated = false } = {}) {
-  const { workspaceId, businessType } = useUser()
+  const { userId, workspaceId, businessType, role } = useUser()
   const leadListLimit = safeLeadListLimit(limitCount)
   const leadPageLimit = safeLeadPageLimit(limitCount)
   const [rows, setRows] = useState([])
@@ -152,6 +152,7 @@ export function useLeadScoring({ limitCount = DEFAULT_LEAD_LIST_LIMIT, paginated
         orderDirection: 'desc',
         limitCount: leadPageLimit,
         startAfterDoc: reset ? null : leadCursorRef.current,
+        diagnostics: { currentUserUid: userId, role },
       })
       if (requestId !== leadRequestRef.current) return { ok: false }
 
@@ -174,6 +175,14 @@ export function useLeadScoring({ limitCount = DEFAULT_LEAD_LIST_LIMIT, paginated
       return { ok: true }
     } catch (err) {
       if (requestId !== leadRequestRef.current) return { ok: false }
+      console.warn('[Sales Hub Firestore Read Failed]', {
+        currentUserUid: userId || '',
+        role: role || '',
+        workspaceId: workspaceId || '',
+        collectionPath: workspaceId ? `workspaces/${workspaceId}/leads` : '',
+        collectionName: 'leads',
+        firestoreErrorCode: err?.code || err?.originalError?.code || 'unknown',
+      })
       setError(clientSafeMessage(err, 'Unable to load leads.'))
       if (reset) setRows([])
       setSource('firestore')
@@ -184,7 +193,7 @@ export function useLeadScoring({ limitCount = DEFAULT_LEAD_LIST_LIMIT, paginated
         else setPaginationLoading(false)
       }
     }
-  }, [businessType, leadPageLimit, workspaceId])
+  }, [businessType, leadPageLimit, role, userId, workspaceId])
 
   const loadMoreLeads = useCallback(async () => {
     if (loading || paginationLoading || !hasMoreLeads) return { ok: true }
@@ -234,12 +243,21 @@ export function useLeadScoring({ limitCount = DEFAULT_LEAD_LIST_LIMIT, paginated
       collectionName: 'leads',
       businessType,
       limitCount: leadListLimit,
+      diagnostics: { currentUserUid: userId, role },
       onData(data) {
         setRows(Array.isArray(data) ? data : [])
         setSource('firestore')
         setLoading(false)
       },
       onError(err) {
+        console.warn('[Sales Hub Firestore Read Failed]', {
+          currentUserUid: userId || '',
+          role: role || '',
+          workspaceId: workspaceId || '',
+          collectionPath: workspaceId ? `workspaces/${workspaceId}/leads` : '',
+          collectionName: 'leads',
+          firestoreErrorCode: err?.code || err?.originalError?.code || 'unknown',
+        })
         setError(clientSafeMessage(err, 'Unable to load leads.'))
         setRows([])
         setSource('firestore')
@@ -247,7 +265,7 @@ export function useLeadScoring({ limitCount = DEFAULT_LEAD_LIST_LIMIT, paginated
       },
     })
     return () => unsub()
-  }, [businessType, leadListLimit, loadLeadPage, paginated, workspaceId])
+  }, [businessType, leadListLimit, loadLeadPage, paginated, role, userId, workspaceId])
 
   const scored = useMemo(
     () =>

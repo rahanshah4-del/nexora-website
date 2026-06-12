@@ -19,6 +19,11 @@ const CRMProviders = lazy(() => import('./crm/CRMProviders.jsx'))
 const AdminLayout = lazy(() => import('./layouts/AdminLayout.jsx'))
 const DashboardHomePage = lazy(() => import('./crm/pages/DashboardHome.jsx'))
 const RestaurantPOSPage = lazy(() => import('./crm/pages/RestaurantPOS.jsx'))
+const RestaurantOrdersPage = lazy(() => import('./crm/pages/RestaurantOrders.jsx'))
+const RestaurantMenuManagementPage = lazy(() => import('./crm/pages/RestaurantMenuManagement.jsx'))
+const RestaurantTablesPage = lazy(() => import('./crm/pages/RestaurantTables.jsx'))
+const RestaurantOrdersKotPage = lazy(() => import('./crm/pages/RestaurantOrdersKot.jsx'))
+const RestaurantKitchenDisplayPage = lazy(() => import('./crm/pages/RestaurantKitchenDisplay.jsx'))
 const ClientPortalPage = lazy(() => import('./crm/pages/ClientPortal.jsx'))
 const CustomersPage = lazy(() => import('./crm/pages/Customers.jsx'))
 const ProductsPage = lazy(() => import('./crm/pages/Products.jsx'))
@@ -222,6 +227,11 @@ export default function AppRouter() {
         <Route index element={<Navigate to="/app/dashboard" replace />} />
         <Route path="dashboard" element={<LazyPage><DashboardHomePage /></LazyPage>} />
         <Route path="restaurant-pos" element={<LazyPage><RestaurantPOSPage /></LazyPage>} />
+        <Route path="orders" element={<LazyPage><RestaurantOrdersPage /></LazyPage>} />
+        <Route path="menu-management" element={<LazyPage><RestaurantMenuManagementPage /></LazyPage>} />
+        <Route path="tables" element={<LazyPage><RestaurantTablesPage /></LazyPage>} />
+        <Route path="orders-kot" element={<LazyPage><RestaurantOrdersKotPage /></LazyPage>} />
+        <Route path="kitchen-display" element={<LazyPage><RestaurantKitchenDisplayPage /></LazyPage>} />
         <Route path="client-portal" element={<LazyPage><ClientPortalPage /></LazyPage>} />
         <Route path="customers" element={<LazyPage><CustomersPage /></LazyPage>} />
         <Route path="products" element={<LazyPage><ProductsPage /></LazyPage>} />

@@ -2,12 +2,23 @@ import { motion } from 'framer-motion'
 import { useEffect, useMemo, useState } from 'react'
 import {
   HiOutlineArrowDownTray,
+  HiOutlineBanknotes,
   HiOutlineBuildingOffice2,
+  HiOutlineBuildingStorefront,
+  HiOutlineCalculator,
   HiOutlineCalendarDays,
   HiOutlineChartBar,
+  HiOutlineChartPie,
+  HiOutlineCheckCircle,
+  HiOutlineClock,
   HiOutlineCurrencyDollar,
   HiOutlineDocumentText,
+  HiOutlineFire,
   HiOutlinePrinter,
+  HiOutlineReceiptPercent,
+  HiOutlineShoppingBag,
+  HiOutlineTableCells,
+  HiOutlineTruck,
   HiOutlineUserGroup,
 } from 'react-icons/hi2'
 import Badge from '../components/ui/Badge.jsx'
@@ -39,8 +50,11 @@ import { buildReportId, exportReportCsv, exportReportExcel, exportReportPdf } fr
 import WhatsappReports from '../components/reports/WhatsappReports.jsx'
 import { useSalesHubCollection } from '../hooks/useSalesHubCollection.js'
 import { calculateDealMetrics, calculatePipelineMetrics, calculateProductMetrics, calculateTaskMetrics } from '../lib/salesCalculations.js'
+import { loadRestaurantCustomers } from '../data/restaurantCustomers.js'
+import { loadRestaurantOrders } from '../data/restaurantOrders.js'
+import { finalItemPrice, formatRestaurantCurrency } from '../lib/restaurantPosCalculations.js'
 
-const NEXORA_LOGO = '/nexora-logo.jpg'
+const NEXORA_LOGO = '/nexora-brand-logo.png'
 
 const reportLabelByBusiness = {
   'General CRM': 'Sales Report',
@@ -843,7 +857,7 @@ function GenericReports() {
             </div>
           </div>
           <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-4 text-xs text-slate-500">
-            <span>{branding.receiptFooter || 'Powered by Nexora Solutions'}</span>
+            <span>{branding.receiptFooter || 'NEXORA SOLUTION — All rights reserved 2019-2026.'}</span>
             <span>Module: {activeBusinessType}</span>
             <span><HiOutlineCalendarDays className="mr-1 inline h-4 w-4" />{reportDate}</span>
             <span><HiOutlineBuildingOffice2 className="mr-1 inline h-4 w-4" />{branding.companyName}</span>
@@ -931,6 +945,513 @@ function DataPill({ label, value }) {
   )
 }
 
+const restaurantReportRanges = [
+  { value: 'today', label: 'Today' },
+  { value: 'yesterday', label: 'Yesterday' },
+  { value: 'week', label: 'This Week' },
+  { value: 'month', label: 'This Month' },
+  { value: 'custom', label: 'Custom date range' },
+]
+
+const restaurantOrderTypes = ['All', 'Dine-in', 'Takeaway', 'Delivery']
+const restaurantPaymentMethods = ['All', 'Cash', 'Card', 'JazzCash', 'Easypaisa', 'Bank', 'Due']
+
+function RestaurantReports() {
+  const customers = useMemo(() => loadRestaurantCustomers(), [])
+  const [filters, setFilters] = useState({
+    range: 'today',
+    startDate: '',
+    endDate: '',
+    orderType: 'All',
+    paymentMethod: 'All',
+  })
+
+  const reportOrders = useMemo(() => loadRestaurantOrders(), [])
+  const windowRange = useMemo(() => restaurantDateWindow(filters), [filters])
+  const orders = useMemo(
+    () =>
+      reportOrders.filter((order) => {
+        const orderDate = new Date(order.createdAt)
+        const inDate = (!windowRange.start || orderDate >= windowRange.start) && (!windowRange.end || orderDate <= windowRange.end)
+        const inType = filters.orderType === 'All' || order.orderType === filters.orderType
+        const inPayment = filters.paymentMethod === 'All' || order.paymentMethod === filters.paymentMethod
+        return inDate && inType && inPayment
+      }),
+    [filters.orderType, filters.paymentMethod, reportOrders, windowRange],
+  )
+
+  const report = useMemo(() => buildRestaurantReport(orders, customers), [customers, orders])
+
+  function updateFilter(key, value) {
+    setFilters((current) => ({ ...current, [key]: value }))
+  }
+
+  return (
+    <>
+    <motion.div className="no-print" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
+      <PageHeader
+        title="Restaurant POS Reports"
+        subtitle="Sales, KOT, table, customer, expense, profit, and daily closing reports for restaurant operations."
+        right={
+          <>
+            <Button type="button" className="rounded-2xl" onClick={() => window.print()}>
+              <HiOutlinePrinter className="h-4 w-4" />
+              Print A4 Report
+            </Button>
+            <Button type="button" variant="subtle" className="rounded-2xl">
+              <HiOutlineArrowDownTray className="h-4 w-4" />
+              Export PDF
+            </Button>
+            <Button type="button" variant="subtle" className="rounded-2xl">
+              <HiOutlineDocumentText className="h-4 w-4" />
+              Export Excel
+            </Button>
+          </>
+        }
+      />
+
+      <Card className="mb-4 p-4">
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[1.2fr_1fr_1fr_1fr_1fr]">
+          <div>
+            <label className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Report Range</label>
+            <Select className="mt-1" value={filters.range} onChange={(event) => updateFilter('range', event.target.value)}>
+              {restaurantReportRanges.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+            </Select>
+          </div>
+          <div>
+            <label className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Start Date</label>
+            <Input className="mt-1" type="date" value={filters.startDate} onChange={(event) => updateFilter('startDate', event.target.value)} disabled={filters.range !== 'custom'} />
+          </div>
+          <div>
+            <label className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">End Date</label>
+            <Input className="mt-1" type="date" value={filters.endDate} onChange={(event) => updateFilter('endDate', event.target.value)} disabled={filters.range !== 'custom'} />
+          </div>
+          <div>
+            <label className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Order Type</label>
+            <Select className="mt-1" value={filters.orderType} onChange={(event) => updateFilter('orderType', event.target.value)}>
+              {restaurantOrderTypes.map((item) => <option key={item}>{item}</option>)}
+            </Select>
+          </div>
+          <div>
+            <label className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Payment Method</label>
+            <Select className="mt-1" value={filters.paymentMethod} onChange={(event) => updateFilter('paymentMethod', event.target.value)}>
+              {restaurantPaymentMethods.map((item) => <option key={item}>{item}</option>)}
+            </Select>
+          </div>
+        </div>
+      </Card>
+
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
+        <MetricCard icon={HiOutlineCurrencyDollar} label="Total Sales" value={formatRestaurantCurrency(report.totalSales)} helper="Gross restaurant order value" tone="emerald" />
+        <MetricCard icon={HiOutlineShoppingBag} label="Total Orders" value={report.totalOrders} helper="Filtered dine-in, takeaway, and delivery orders" tone="sky" />
+        <MetricCard icon={HiOutlineBanknotes} label="Paid Amount" value={formatRestaurantCurrency(report.paidAmount)} helper="Cash, card, wallet, and bank received" tone="emerald" />
+        <MetricCard icon={HiOutlineReceiptPercent} label="Due Amount" value={formatRestaurantCurrency(report.dueAmount)} helper="Unpaid or partial customer balance" tone="amber" />
+        <MetricCard icon={HiOutlineChartBar} label="Avg Order Value" value={formatRestaurantCurrency(report.averageOrderValue)} helper="Sales divided by completed orders" tone="violet" />
+        <MetricCard icon={HiOutlineCalculator} label="Discounts" value={formatRestaurantCurrency(report.discounts)} helper="Item and bill discounts applied" tone="amber" />
+        <MetricCard icon={HiOutlineChartPie} label="Tax Collected" value={formatRestaurantCurrency(report.tax)} helper="Tax from filtered orders" tone="sky" />
+        <MetricCard icon={HiOutlineBuildingStorefront} label="Service Charges" value={formatRestaurantCurrency(report.serviceCharges)} helper="Service charges from restaurant bills" tone="violet" />
+        <MetricCard icon={HiOutlineCheckCircle} label="Cancelled Orders" value={report.cancelledOrders} helper="Orders cancelled in selected range" tone="amber" />
+        <MetricCard icon={HiOutlineFire} label="Estimated Profit" value={formatRestaurantCurrency(report.estimatedProfit)} helper="Net sales minus item cost and expenses" tone="emerald" />
+      </div>
+
+      <div className="mt-4 grid gap-4 xl:grid-cols-2">
+        <ReportSection title="Sales Breakdown" badge="Sales">
+          <div className="grid gap-2 sm:grid-cols-2">
+            <SummaryRow label="Dine-in sales" value={formatRestaurantCurrency(report.salesByType['Dine-in'])} />
+            <SummaryRow label="Takeaway sales" value={formatRestaurantCurrency(report.salesByType.Takeaway)} />
+            <SummaryRow label="Delivery sales" value={formatRestaurantCurrency(report.salesByType.Delivery)} />
+            <SummaryRow label="Cash sales" value={formatRestaurantCurrency(report.salesByPayment.Cash)} />
+            <SummaryRow label="Online/Card sales" value={formatRestaurantCurrency(report.onlineSales)} />
+            <SummaryRow label="Due/partial payment sales" value={formatRestaurantCurrency(report.duePartialSales)} />
+          </div>
+        </ReportSection>
+
+        <ReportSection title="Expense & Profit" badge="Profit">
+          <div className="grid gap-2 sm:grid-cols-2">
+            <SummaryRow label="Total expenses" value={formatRestaurantCurrency(report.totalExpenses)} />
+            <SummaryRow label="Gross sales" value={formatRestaurantCurrency(report.grossSales)} />
+            <SummaryRow label="Net sales" value={formatRestaurantCurrency(report.netSales)} />
+            <SummaryRow label="Estimated profit" value={formatRestaurantCurrency(report.estimatedProfit)} />
+            <SummaryRow label="Profit after discount/tax/service" value={formatRestaurantCurrency(report.profitAfterAdjustments)} />
+          </div>
+        </ReportSection>
+      </div>
+
+      <div className="mt-4 grid gap-4 xl:grid-cols-2">
+        <ReportSection title="Item Reports" badge="Menu">
+          <DataTable
+            rows={report.itemRows}
+            empty="Menu item sales will appear here when orders are created."
+            columns={[
+              { key: 'name', label: 'Item' },
+              { key: 'quantity', label: 'Qty Sold' },
+              { key: 'revenue', label: 'Revenue', render: (row) => formatRestaurantCurrency(row.revenue) },
+              { key: 'discount', label: 'Discount', render: (row) => formatRestaurantCurrency(row.discount) },
+              { key: 'rank', label: 'Movement' },
+            ]}
+          />
+        </ReportSection>
+
+        <ReportSection title="KOT / Kitchen Reports" badge="Kitchen">
+          <div className="grid gap-2 sm:grid-cols-2">
+            <SummaryRow label="Total KOT" value={report.kot.total} />
+            <SummaryRow label="Pending KOT" value={report.kot.pending} />
+            <SummaryRow label="Preparing KOT" value={report.kot.preparing} />
+            <SummaryRow label="Ready KOT" value={report.kot.ready} />
+            <SummaryRow label="Served KOT" value={report.kot.served} />
+            <SummaryRow label="Average preparation time" value={`${report.kot.averagePreparationTime} min`} />
+          </div>
+        </ReportSection>
+      </div>
+
+      <div className="mt-4 grid gap-4 xl:grid-cols-2">
+        <ReportSection title="Table Reports" badge="Floor">
+          <DataTable
+            rows={report.tableRows}
+            empty="Table-wise sales will appear here for dine-in orders."
+            columns={[
+              { key: 'table', label: 'Table' },
+              { key: 'orders', label: 'Orders' },
+              { key: 'sales', label: 'Sales', render: (row) => formatRestaurantCurrency(row.sales) },
+              { key: 'status', label: 'Status' },
+            ]}
+          />
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            <SummaryRow label="Occupied tables" value={report.occupiedTables} />
+            <SummaryRow label="Most used table" value={report.mostUsedTable || 'No data yet'} />
+          </div>
+        </ReportSection>
+
+        <ReportSection title="Customer Reports" badge="Customers">
+          <div className="grid gap-2 sm:grid-cols-2">
+            <SummaryRow label="New customers" value={report.newCustomers} />
+            <SummaryRow label="Repeat customers" value={report.repeatCustomers} />
+            <SummaryRow label="Customers with due balance" value={report.customersWithDue} />
+            <SummaryRow label="Customer order history" value={`${report.customerOrderHistory} tracked orders`} />
+          </div>
+          <div className="mt-3">
+            <DataTable
+              rows={report.customerRows}
+              empty="Customer history appears after customer orders are saved."
+              columns={[
+                { key: 'name', label: 'Customer' },
+                { key: 'orders', label: 'Orders' },
+                { key: 'paid', label: 'Paid', render: (row) => formatRestaurantCurrency(row.paid) },
+                { key: 'due', label: 'Due', render: (row) => formatRestaurantCurrency(row.due) },
+              ]}
+            />
+          </div>
+        </ReportSection>
+      </div>
+
+      <ReportSection title="Daily Closing Report" badge="Closing">
+        <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+          <SummaryRow label="Opening cash" value={formatRestaurantCurrency(report.closing.openingCash)} />
+          <SummaryRow label="Cash received" value={formatRestaurantCurrency(report.closing.cashReceived)} />
+          <SummaryRow label="Online received" value={formatRestaurantCurrency(report.closing.onlineReceived)} />
+          <SummaryRow label="Due payments" value={formatRestaurantCurrency(report.closing.duePayments)} />
+          <SummaryRow label="Expenses" value={formatRestaurantCurrency(report.closing.expenses)} />
+          <SummaryRow label="Closing cash" value={formatRestaurantCurrency(report.closing.closingCash)} />
+          <SummaryRow label="Difference / shortage" value={formatRestaurantCurrency(report.closing.difference)} />
+          <SummaryRow label="58mm summary" value="Ready to print" />
+        </div>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Button type="button" variant="subtle" className="rounded-2xl"><HiOutlinePrinter className="h-4 w-4" />58mm Daily Closing</Button>
+          <Button type="button" variant="subtle" className="rounded-2xl"><HiOutlineTruck className="h-4 w-4" />Delivery Collection Summary</Button>
+        </div>
+      </ReportSection>
+    </motion.div>
+    <RestaurantPrintableReport report={report} filters={filters} />
+    </>
+  )
+}
+
+function RestaurantPrintableReport({ report, filters }) {
+  const generatedAt = new Date().toLocaleString()
+  return (
+    <article className="print-only print-document mx-auto bg-white text-slate-950">
+      <header className="print-avoid-break border-b-2 border-slate-950 pb-4">
+        <div className="flex items-start justify-between gap-6">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">NEXORA SOLUTION</p>
+            <h1 className="mt-2 text-3xl font-black tracking-tight">Restaurant POS Report</h1>
+            <p className="mt-2 text-sm text-slate-600">
+              Range: {filters.range} / Order type: {filters.orderType} / Payment: {filters.paymentMethod}
+            </p>
+          </div>
+          <div className="text-right text-xs text-slate-600">
+            <p className="font-bold text-slate-950">Generated</p>
+            <p>{generatedAt}</p>
+          </div>
+        </div>
+      </header>
+
+      <section className="print-avoid-break mt-5 grid grid-cols-3 gap-3 text-sm">
+        <PrintMetric label="Total Sales" value={formatRestaurantCurrency(report.totalSales)} />
+        <PrintMetric label="Total Orders" value={report.totalOrders} />
+        <PrintMetric label="Paid Amount" value={formatRestaurantCurrency(report.paidAmount)} />
+        <PrintMetric label="Due Amount" value={formatRestaurantCurrency(report.dueAmount)} />
+        <PrintMetric label="Discounts" value={formatRestaurantCurrency(report.discounts)} />
+        <PrintMetric label="Tax Collected" value={formatRestaurantCurrency(report.tax)} />
+        <PrintMetric label="Service Charges" value={formatRestaurantCurrency(report.serviceCharges)} />
+        <PrintMetric label="Cancelled Orders" value={report.cancelledOrders} />
+        <PrintMetric label="Average Order Value" value={formatRestaurantCurrency(report.averageOrderValue)} />
+      </section>
+
+      <section className="print-avoid-break mt-5 grid grid-cols-2 gap-4">
+        <PrintBox title="Sales Breakdown" rows={[
+          ['Dine-in sales', formatRestaurantCurrency(report.salesByType['Dine-in'])],
+          ['Takeaway sales', formatRestaurantCurrency(report.salesByType.Takeaway)],
+          ['Delivery sales', formatRestaurantCurrency(report.salesByType.Delivery)],
+          ['Cash sales', formatRestaurantCurrency(report.salesByPayment.Cash)],
+          ['Online/Card sales', formatRestaurantCurrency(report.onlineSales)],
+          ['Due/partial sales', formatRestaurantCurrency(report.duePartialSales)],
+        ]} />
+        <PrintBox title="Daily Closing" rows={[
+          ['Opening cash', formatRestaurantCurrency(report.closing.openingCash)],
+          ['Cash received', formatRestaurantCurrency(report.closing.cashReceived)],
+          ['Online received', formatRestaurantCurrency(report.closing.onlineReceived)],
+          ['Due payments', formatRestaurantCurrency(report.closing.duePayments)],
+          ['Expenses', formatRestaurantCurrency(report.closing.expenses)],
+          ['Closing cash', formatRestaurantCurrency(report.closing.closingCash)],
+        ]} />
+      </section>
+
+      <PrintTable
+        title="Top / Low Selling Items"
+        rows={report.itemRows}
+        columns={[
+          ['Item', (row) => row.name],
+          ['Qty', (row) => row.quantity],
+          ['Revenue', (row) => formatRestaurantCurrency(row.revenue)],
+          ['Discount', (row) => formatRestaurantCurrency(row.discount)],
+          ['Movement', (row) => row.rank],
+        ]}
+      />
+      <PrintTable
+        title="Table-wise Sales"
+        rows={report.tableRows}
+        columns={[
+          ['Table', (row) => row.table],
+          ['Orders', (row) => row.orders],
+          ['Sales', (row) => formatRestaurantCurrency(row.sales)],
+          ['Status', (row) => row.status],
+        ]}
+      />
+      <PrintTable
+        title="Customer Summary"
+        rows={report.customerRows}
+        columns={[
+          ['Customer', (row) => row.name],
+          ['Orders', (row) => row.orders],
+          ['Paid', (row) => formatRestaurantCurrency(row.paid)],
+          ['Due', (row) => formatRestaurantCurrency(row.due)],
+        ]}
+      />
+
+      <footer className="print-avoid-break mt-6 border-t border-slate-200 pt-4 text-xs font-semibold text-slate-500">
+        NEXORA SOLUTION - All rights reserved 2019-2026.
+      </footer>
+    </article>
+  )
+}
+
+function PrintMetric({ label, value }) {
+  return (
+    <div className="rounded-xl border border-slate-200 p-3">
+      <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">{label}</p>
+      <p className="mt-1 text-base font-black text-slate-950">{value}</p>
+    </div>
+  )
+}
+
+function PrintBox({ title, rows }) {
+  return (
+    <div className="rounded-xl border border-slate-200 p-3">
+      <p className="text-sm font-black text-slate-950">{title}</p>
+      <div className="mt-2 space-y-1 text-xs">
+        {rows.map(([label, value]) => (
+          <div key={label} className="flex justify-between gap-3 border-t border-slate-100 pt-1">
+            <span className="text-slate-600">{label}</span>
+            <b>{value}</b>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function PrintTable({ title, rows, columns }) {
+  return (
+    <section className="mt-5">
+      <p className="text-sm font-black text-slate-950">{title}</p>
+      <table className="mt-2 w-full border-collapse text-left text-xs">
+        <thead className="bg-slate-950 text-white">
+          <tr>{columns.map(([label]) => <th key={label} className="px-2 py-2">{label}</th>)}</tr>
+        </thead>
+        <tbody>
+          {rows.length ? rows.slice(0, 18).map((row, index) => (
+            <tr key={row.id || index} className="border-b border-slate-200">
+              {columns.map(([label, value]) => <td key={label} className="px-2 py-2">{value(row)}</td>)}
+            </tr>
+          )) : (
+            <tr><td className="px-2 py-3 text-slate-500" colSpan={columns.length}>No saved restaurant data yet.</td></tr>
+          )}
+        </tbody>
+      </table>
+    </section>
+  )
+}
+
+function restaurantDateWindow(filters) {
+  const now = new Date()
+  if (filters.range === 'today') return { start: startOfDay(now), end: endOfDay(now) }
+  if (filters.range === 'yesterday') {
+    const yesterday = new Date(now)
+    yesterday.setDate(now.getDate() - 1)
+    return { start: startOfDay(yesterday), end: endOfDay(yesterday) }
+  }
+  if (filters.range === 'week') {
+    const start = startOfDay(now)
+    const day = start.getDay() || 7
+    start.setDate(start.getDate() - day + 1)
+    return { start, end: endOfDay(now) }
+  }
+  if (filters.range === 'custom') {
+    return {
+      start: filters.startDate ? startOfDay(new Date(filters.startDate)) : null,
+      end: filters.endDate ? endOfDay(new Date(filters.endDate)) : null,
+    }
+  }
+  const start = startOfDay(now)
+  start.setDate(1)
+  return { start, end: endOfDay(now) }
+}
+
+function buildRestaurantReport(orders, customers) {
+  const onlineMethods = new Set(['Card', 'JazzCash', 'Easypaisa', 'Bank'])
+  const base = {
+    'Dine-in': 0,
+    Takeaway: 0,
+    Delivery: 0,
+  }
+  const salesByType = { ...base }
+  const salesByPayment = { Cash: 0, Card: 0, JazzCash: 0, Easypaisa: 0, Bank: 0, Due: 0 }
+  const itemMap = new Map()
+  const tableMap = new Map()
+  const customerMap = new Map()
+  let totalSales = 0
+  let paidAmount = 0
+  let dueAmount = 0
+  let discounts = 0
+  let tax = 0
+  let serviceCharges = 0
+  let itemCost = 0
+  let cancelledOrders = 0
+
+  orders.forEach((order) => {
+    const isCancelled = String(order.orderStatus || '').toLowerCase() === 'cancelled'
+    const total = order.totals.total
+    if (!isCancelled) totalSales += total
+    paidAmount += order.paidAmount
+    dueAmount += order.dueAmount
+    discounts += order.totals.discount
+    tax += order.totals.tax
+    serviceCharges += order.totals.serviceCharges
+    salesByType[order.orderType] = safeNumber(salesByType[order.orderType]) + (isCancelled ? 0 : total)
+    salesByPayment[order.paymentMethod] = safeNumber(salesByPayment[order.paymentMethod]) + (isCancelled ? 0 : total)
+    if (isCancelled) cancelledOrders += 1
+
+    order.cartRows.forEach((row) => {
+      const item = row.item
+      const quantity = Math.max(0, Number(row.qty || row.quantity || 0))
+      const current = itemMap.get(item.id) || { id: item.id, name: item.name, quantity: 0, revenue: 0, discount: 0 }
+      const unitPrice = finalItemPrice(item)
+      current.quantity += quantity
+      current.revenue += isCancelled ? 0 : unitPrice * quantity
+      current.discount += Math.max(0, safeNumber(item.price) - unitPrice) * quantity
+      itemMap.set(item.id, current)
+      itemCost += isCancelled ? 0 : safeNumber(item.costPrice) * quantity
+    })
+
+    if (order.table) {
+      const current = tableMap.get(order.table) || { id: order.table, table: order.table, orders: 0, sales: 0, status: 'available' }
+      current.orders += 1
+      current.sales += isCancelled ? 0 : total
+      current.status = String(order.orderStatus || '').toLowerCase() === 'served' ? 'occupied' : order.orderStatus
+      tableMap.set(order.table, current)
+    }
+
+    const customer = customers.find((item) => item.id === order.customerId)
+    const key = order.customerId || 'walk-in'
+    const current = customerMap.get(key) || { id: key, name: customer?.name || 'Walk-in Guest', orders: 0, paid: 0, due: 0 }
+    current.orders += 1
+    current.paid += isCancelled ? 0 : order.paidAmount
+    current.due += isCancelled ? 0 : order.dueAmount + safeNumber(customer?.creditBalance)
+    customerMap.set(key, current)
+  })
+
+  const totalExpenses = 18500
+  const netSales = Math.max(0, totalSales - discounts)
+  const estimatedProfit = Math.max(0, netSales - itemCost - totalExpenses)
+  const itemRows = Array.from(itemMap.values())
+    .sort((a, b) => b.quantity - a.quantity)
+    .map((row, index, rows) => ({ ...row, rank: index < 3 ? 'Top selling' : index >= rows.length - 2 ? 'Low selling' : 'Steady' }))
+
+  const kot = {
+    total: orders.length,
+    pending: orders.filter((order) => String(order.orderStatus || '').toLowerCase() === 'pending').length,
+    preparing: orders.filter((order) => String(order.orderStatus || '').toLowerCase() === 'preparing').length,
+    ready: orders.filter((order) => String(order.orderStatus || '').toLowerCase() === 'ready').length,
+    served: orders.filter((order) => String(order.orderStatus || '').toLowerCase() === 'served').length,
+    averagePreparationTime: orders.length ? Math.round(orders.reduce((sum, order) => sum + safeNumber(order.prepTime), 0) / orders.length) : 0,
+  }
+  const tableRows = Array.from(tableMap.values()).sort((a, b) => b.orders - a.orders)
+  const customerRows = Array.from(customerMap.values()).sort((a, b) => b.orders - a.orders)
+  const cashReceived = orders.filter((order) => order.paymentMethod === 'Cash').reduce((sum, order) => sum + order.paidAmount, 0)
+  const onlineReceived = orders.filter((order) => onlineMethods.has(order.paymentMethod)).reduce((sum, order) => sum + order.paidAmount, 0)
+
+  return {
+    totalSales,
+    grossSales: totalSales + discounts,
+    netSales,
+    totalOrders: orders.length,
+    paidAmount,
+    dueAmount,
+    discounts,
+    tax,
+    serviceCharges,
+    cancelledOrders,
+    averageOrderValue: orders.length ? totalSales / orders.length : 0,
+    salesByType,
+    salesByPayment,
+    onlineSales: Array.from(onlineMethods).reduce((sum, method) => sum + safeNumber(salesByPayment[method]), 0),
+    duePartialSales: orders.filter((order) => ['due', 'partial'].includes(String(order.paymentStatus || '').toLowerCase())).reduce((sum, order) => sum + order.totals.total, 0),
+    itemRows,
+    kot,
+    occupiedTables: tableRows.filter((row) => row.status === 'occupied').length,
+    mostUsedTable: tableRows[0]?.table || '',
+    tableRows,
+    newCustomers: customerRows.filter((row) => row.orders === 1 && row.id !== 'cust-walkin').length,
+    repeatCustomers: customerRows.filter((row) => row.orders > 1 && row.id !== 'cust-walkin').length,
+    customersWithDue: customerRows.filter((row) => row.due > 0).length,
+    customerOrderHistory: customerRows.reduce((sum, row) => sum + row.orders, 0),
+    customerRows,
+    totalExpenses,
+    estimatedProfit,
+    profitAfterAdjustments: Math.max(0, totalSales - itemCost - totalExpenses),
+    closing: {
+      openingCash: 25000,
+      cashReceived,
+      onlineReceived,
+      duePayments: dueAmount,
+      expenses: totalExpenses,
+      closingCash: 25000 + cashReceived - totalExpenses,
+      difference: 0,
+    },
+  }
+}
+
 // Route by business type: WhatsApp CRM gets dedicated WhatsApp-only reports;
 // Sales Hub gets enterprise Sales Hub reports; every other business type keeps
 // the existing generic workspace reports.
@@ -941,6 +1462,9 @@ export default function ReportsPage() {
   }
   if (normalizeBusinessType(businessType) === 'General CRM') {
     return <SalesHubReports />
+  }
+  if (normalizeBusinessType(businessType) === 'Restaurant POS') {
+    return <RestaurantReports />
   }
   return <GenericReports />
 }

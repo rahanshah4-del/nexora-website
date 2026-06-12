@@ -48,7 +48,7 @@ export default function PrintableInvoice({
   const customerName = invoice.customerName || invoice.studentName || invoice.tenantName || invoice.clientName
   const customerAddress = invoice.customerAddress || invoice.billingAddress || invoice.tenantAddress || invoice.studentAddress
   const customerTaxId = invoice.customerTaxId || invoice.customerNtn || invoice.tenantTaxId || invoice.cnic
-  const companyName = company.name || 'Nexora Solutions'
+  const companyName = company.name || 'Nexora Solution'
 
   const partyFields = [
     [partyLabel, customerName],
