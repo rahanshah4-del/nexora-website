@@ -9,10 +9,10 @@ import {
   HiOutlinePlus,
   HiOutlineScissors,
   HiOutlineSparkles,
-  HiOutlineSquares2X2,
   HiOutlineTrash,
   HiOutlineWrenchScrewdriver,
 } from 'react-icons/hi2'
+import { GiRoundTable } from 'react-icons/gi'
 import Badge from '../components/ui/Badge.jsx'
 import Button from '../components/ui/Button.jsx'
 import Card from '../components/ui/Card.jsx'
@@ -52,13 +52,20 @@ const restaurantTablesStorageKey = 'nexora.restaurant.tables.v1'
 
 function normalizeFloors(value) {
   const storedFloors = Array.isArray(value) ? value : []
-  return initialFloors.map((floor) => {
+  const normalizedInitial = initialFloors.map((floor) => {
     const stored = storedFloors.find((item) => item?.name === floor.name)
     return {
       ...floor,
       tables: Array.isArray(stored?.tables) ? stored.tables : [],
     }
   })
+  const customFloors = storedFloors
+    .filter((item) => item?.name && !initialFloors.some((floor) => floor.name === item.name))
+    .map((item) => ({
+      name: item.name,
+      tables: Array.isArray(item.tables) ? item.tables : [],
+    }))
+  return [...normalizedInitial, ...customFloors]
 }
 
 function loadRestaurantFloors() {
@@ -80,7 +87,8 @@ function syncFloorsWithActiveOrders(floors) {
   const activeOrders = loadRestaurantOrders().filter((order) =>
     order.table &&
     order.orderType === 'Dine-in' &&
-    !['cancelled'].includes(String(order.orderStatus || '').toLowerCase()),
+    !['cancelled', 'completed', 'closed'].includes(String(order.orderStatus || '').toLowerCase()) &&
+    String(order.paymentStatus || '').toLowerCase() !== 'paid',
   )
   if (!activeOrders.length) return floors
   const orderByTable = new Map(activeOrders.map((order) => [order.table, order]))
@@ -119,6 +127,12 @@ export default function RestaurantTablesPage() {
   const [tableModalOpen, setTableModalOpen] = useState(false)
   const [editingTable, setEditingTable] = useState(null)
   const [tableForm, setTableForm] = useState(blankTable)
+  const [areaModalOpen, setAreaModalOpen] = useState(false)
+  const [areaName, setAreaName] = useState('')
+  const [mergeOpen, setMergeOpen] = useState(false)
+  const [mergeTargetId, setMergeTargetId] = useState('')
+  const [splitOpen, setSplitOpen] = useState(false)
+  const [splitForm, setSplitForm] = useState({ id: '', seats: '2' })
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [warning, setWarning] = useState('')
 
@@ -142,6 +156,12 @@ export default function RestaurantTablesPage() {
       count: allTables.filter((table) => table.status === status).length,
     }))
   }, [floors])
+  const mergeOptions = useMemo(
+    () => floors
+      .flatMap((area) => area.tables)
+      .filter((table) => selectedTable && table.id !== selectedTable.id && table.status !== 'occupied' && !table.order),
+    [floors, selectedTable],
+  )
 
   function openTableModal(table = null) {
     setWarning('')
@@ -158,6 +178,42 @@ export default function RestaurantTablesPage() {
 
   function updateTableForm(field, value) {
     setTableForm((current) => ({ ...current, [field]: value }))
+  }
+
+  function openAreaModal() {
+    setWarning('')
+    setAreaName(activeFloor)
+    setAreaModalOpen(true)
+  }
+
+  function closeAreaModal() {
+    setAreaModalOpen(false)
+    setAreaName('')
+  }
+
+  function saveAreaName() {
+    const nextName = areaName.trim()
+    if (!nextName) {
+      setWarning('Area name is required.')
+      return
+    }
+    if (nextName !== activeFloor && floors.some((area) => area.name === nextName)) {
+      setWarning('This area name already exists.')
+      return
+    }
+    setFloors((current) =>
+      current.map((area) => (
+        area.name === activeFloor
+          ? {
+              ...area,
+              name: nextName,
+              tables: area.tables.map((table) => ({ ...table, floor: nextName })),
+            }
+          : area
+      )),
+    )
+    setActiveFloor(nextName)
+    closeAreaModal()
   }
 
   function saveTable() {
@@ -211,6 +267,99 @@ export default function RestaurantTablesPage() {
         tables: area.tables.map((row) => (row.id === table.id ? { ...row, status, server: status === 'available' ? 'Open' : row.server } : row)),
       })),
     )
+  }
+
+  function openMergeModal() {
+    if (!selectedTable) return
+    setWarning('')
+    setMergeTargetId(mergeOptions[0]?.id || '')
+    setMergeOpen(true)
+  }
+
+  function confirmMerge() {
+    if (!selectedTable || !mergeTargetId) {
+      setWarning('Select a table to merge.')
+      return
+    }
+    const target = floors.flatMap((area) => area.tables).find((table) => table.id === mergeTargetId)
+    if (!target) {
+      setWarning('Merge target table not found.')
+      return
+    }
+    if (target.order || target.status === 'occupied') {
+      setWarning(`Cannot merge ${target.id}; it has an active order.`)
+      setMergeOpen(false)
+      return
+    }
+    setFloors((current) =>
+      current.map((area) => ({
+        ...area,
+        tables: area.tables
+          .filter((table) => table.id !== target.id)
+          .map((table) => (
+            table.id === selectedTable.id
+              ? {
+                  ...table,
+                  seats: Math.max(1, Number(table.seats || 0) + Number(target.seats || 0)),
+                  notes: [table.notes, `Merged with ${target.id}`].filter(Boolean).join(' | '),
+                  server: table.server || target.server,
+                }
+              : table
+          )),
+      })),
+    )
+    setMergeOpen(false)
+    setMergeTargetId('')
+    setWarning(`Merged ${target.id} into ${selectedTable.id}.`)
+  }
+
+  function openSplitModal() {
+    if (!selectedTable) return
+    setWarning('')
+    setSplitForm({ id: `${selectedTable.id}-A`, seats: String(Math.max(1, Math.floor(Number(selectedTable.seats || 2) / 2))) })
+    setSplitOpen(true)
+  }
+
+  function confirmSplit() {
+    if (!selectedTable) return
+    const id = splitForm.id.trim()
+    if (!id) {
+      setWarning('New split table name is required.')
+      return
+    }
+    if (floors.flatMap((area) => area.tables).some((table) => table.id === id)) {
+      setWarning('A table with this name already exists.')
+      return
+    }
+    const splitSeats = Math.max(1, Number(splitForm.seats) || 1)
+    setFloors((current) =>
+      current.map((area) => {
+        if (area.name !== selectedTable.floor) return area
+        const newTable = {
+          ...blankTable,
+          id,
+          seats: splitSeats,
+          floor: area.name,
+          status: 'available',
+          server: 'Open',
+          notes: `Split from ${selectedTable.id}`,
+        }
+        return {
+          ...area,
+          tables: area.tables.map((table) => (
+            table.id === selectedTable.id
+              ? {
+                  ...table,
+                  seats: Math.max(1, Number(table.seats || 1) - splitSeats),
+                  notes: [table.notes, `Split to ${id}`].filter(Boolean).join(' | '),
+                }
+              : table
+          )).concat(newTable),
+        }
+      }),
+    )
+    setSelectedTableId(id)
+    setSplitOpen(false)
   }
 
   function openOrder(table = selectedTable) {
@@ -276,7 +425,13 @@ export default function RestaurantTablesPage() {
                 </button>
               ))}
             </div>
-            <Badge variant="info">{floor.tables.length} tables</Badge>
+            <div className="flex items-center gap-2">
+              <Button type="button" variant="subtle" className="h-9 px-3 text-xs" onClick={openAreaModal}>
+                <HiOutlinePencilSquare className="h-3.5 w-3.5" />
+                Edit Area
+              </Button>
+              <Badge variant="info">{floor.tables.length} tables</Badge>
+            </div>
           </div>
 
           <div className="mt-5 grid min-w-0 auto-rows-[188px] grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -298,7 +453,9 @@ export default function RestaurantTablesPage() {
                         <p className="text-lg font-black tracking-tight">{table.id}</p>
                         <p className="mt-1 text-xs font-semibold opacity-75">{table.seats} seats • {table.floor}</p>
                       </div>
-                      <HiOutlineSquares2X2 className="h-6 w-6 shrink-0 opacity-70" />
+                      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white/65 shadow-sm ring-1 ring-black/5">
+                        <GiRoundTable className="h-5 w-5 opacity-80" />
+                      </span>
                     </div>
                     <div className="mt-3 min-w-0">
                       <p className="truncate text-sm font-semibold">{meta.label}</p>
@@ -359,11 +516,11 @@ export default function RestaurantTablesPage() {
                 <HiOutlineWrenchScrewdriver className="h-4 w-4" />
                 Mark Cleaning
               </Button>
-              <Button type="button" variant="subtle" className="w-full">
+              <Button type="button" variant="subtle" className="w-full" onClick={openMergeModal}>
                 <HiOutlineArrowsRightLeft className="h-4 w-4" />
                 Merge Table
               </Button>
-              <Button type="button" variant="subtle" className="w-full">
+              <Button type="button" variant="subtle" className="w-full" onClick={openSplitModal}>
                 <HiOutlineScissors className="h-4 w-4" />
                 Split Table
               </Button>
@@ -412,7 +569,7 @@ export default function RestaurantTablesPage() {
               </Field>
               <Field label="Floor/area">
                 <Select value={tableForm.floor} onChange={(event) => updateTableForm('floor', event.target.value)}>
-                  {floorAreas.map((area) => <option key={area}>{area}</option>)}
+                  {floors.map((area) => <option key={area.name}>{area.name}</option>)}
                 </Select>
               </Field>
               <Field label="Status">
@@ -427,6 +584,85 @@ export default function RestaurantTablesPage() {
             <div className="flex flex-col-reverse gap-2 border-t border-slate-100 bg-slate-50 px-4 py-3 sm:flex-row sm:justify-end sm:px-5">
               <Button type="button" variant="subtle" onClick={closeTableModal}>Cancel</Button>
               <Button type="button" onClick={saveTable}>{editingTable ? 'Save Table' : 'Add Table'}</Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {areaModalOpen ? (
+        <div className="fixed inset-0 z-[82] grid place-items-center bg-slate-950/45 px-3 py-4 backdrop-blur-sm">
+          <div className="w-full max-w-md overflow-hidden rounded-[1.25rem] border border-slate-200 bg-white shadow-2xl">
+            <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-4 py-3 sm:px-5">
+              <div className="min-w-0">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Floor Area</p>
+                <h2 className="mt-1 text-lg font-black text-slate-950">Edit Area</h2>
+              </div>
+              <button type="button" onClick={closeAreaModal} className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-slate-200 text-sm font-black text-slate-500 hover:bg-slate-50" aria-label="Close area modal">x</button>
+            </div>
+            <div className="px-4 py-4 sm:px-5">
+              <Field label="Area / floor name">
+                <Input value={areaName} onChange={(event) => setAreaName(event.target.value)} placeholder="Ground Floor" />
+              </Field>
+              <p className="mt-2 text-xs text-slate-500">This updates the area tab and all tables inside this area.</p>
+            </div>
+            <div className="flex flex-col-reverse gap-2 border-t border-slate-100 bg-slate-50 px-4 py-3 sm:flex-row sm:justify-end sm:px-5">
+              <Button type="button" variant="subtle" onClick={closeAreaModal}>Cancel</Button>
+              <Button type="button" onClick={saveAreaName}>Save Area</Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {mergeOpen ? (
+        <div className="fixed inset-0 z-[84] grid place-items-center bg-slate-950/45 px-3 py-4 backdrop-blur-sm">
+          <div className="w-full max-w-md overflow-hidden rounded-[1.25rem] border border-slate-200 bg-white shadow-2xl">
+            <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-4 py-3 sm:px-5">
+              <div className="min-w-0">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Merge Table</p>
+                <h2 className="mt-1 text-lg font-black text-slate-950">Merge into {selectedTable?.id}</h2>
+              </div>
+              <button type="button" onClick={() => setMergeOpen(false)} className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-slate-200 text-sm font-black text-slate-500 hover:bg-slate-50" aria-label="Close merge modal">x</button>
+            </div>
+            <div className="px-4 py-4 sm:px-5">
+              <Field label="Select table to merge">
+                <Select value={mergeTargetId} onChange={(event) => setMergeTargetId(event.target.value)}>
+                  {mergeOptions.length ? mergeOptions.map((table) => (
+                    <option key={table.id} value={table.id}>{table.id} - {table.seats} seats - {table.floor}</option>
+                  )) : <option value="">No free tables available</option>}
+                </Select>
+              </Field>
+              <p className="mt-2 text-xs text-slate-500">Target table seats will be added to {selectedTable?.id}; target table will be removed from layout.</p>
+            </div>
+            <div className="flex flex-col-reverse gap-2 border-t border-slate-100 bg-slate-50 px-4 py-3 sm:flex-row sm:justify-end sm:px-5">
+              <Button type="button" variant="subtle" onClick={() => setMergeOpen(false)}>Cancel</Button>
+              <Button type="button" onClick={confirmMerge}>Merge Table</Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {splitOpen ? (
+        <div className="fixed inset-0 z-[84] grid place-items-center bg-slate-950/45 px-3 py-4 backdrop-blur-sm">
+          <div className="w-full max-w-md overflow-hidden rounded-[1.25rem] border border-slate-200 bg-white shadow-2xl">
+            <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-4 py-3 sm:px-5">
+              <div className="min-w-0">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Split Table</p>
+                <h2 className="mt-1 text-lg font-black text-slate-950">Split {selectedTable?.id}</h2>
+              </div>
+              <button type="button" onClick={() => setSplitOpen(false)} className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-slate-200 text-sm font-black text-slate-500 hover:bg-slate-50" aria-label="Close split modal">x</button>
+            </div>
+            <div className="grid gap-3 px-4 py-4 sm:grid-cols-2 sm:px-5">
+              <Field label="New table name">
+                <Input value={splitForm.id} onChange={(event) => setSplitForm((current) => ({ ...current, id: event.target.value }))} placeholder="T-01A" />
+              </Field>
+              <Field label="Seats to split">
+                <Input type="number" min="1" value={splitForm.seats} onChange={(event) => setSplitForm((current) => ({ ...current, seats: event.target.value }))} placeholder="2" />
+              </Field>
+              <p className="sm:col-span-2 text-xs text-slate-500">A new available table will be created in the same area. The current table seat count will be reduced.</p>
+            </div>
+            <div className="flex flex-col-reverse gap-2 border-t border-slate-100 bg-slate-50 px-4 py-3 sm:flex-row sm:justify-end sm:px-5">
+              <Button type="button" variant="subtle" onClick={() => setSplitOpen(false)}>Cancel</Button>
+              <Button type="button" onClick={confirmSplit}>Split Table</Button>
             </div>
           </div>
         </div>

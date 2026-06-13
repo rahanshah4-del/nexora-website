@@ -133,6 +133,32 @@ function orderRestaurantPosSidebar(items) {
   })
 }
 
+const TRANSPORT_RENTAL_SIDEBAR_ORDER = [
+  'fleetDashboard',
+  'transportVehicles',
+  'transportBookings',
+  'transportCustomers',
+  'transportPayments',
+  'expenses',
+  'accounts',
+  'accountStatements',
+  'reports',
+  'team',
+  'notifications',
+  'settings',
+]
+
+function orderTransportRentalSidebar(items) {
+  // Transport workspace uses the Fleet Dashboard as its home; hide the generic dashboard entry.
+  return [...items]
+    .filter((item) => item.key !== 'dashboard')
+    .sort((a, b) => {
+      const aIndex = TRANSPORT_RENTAL_SIDEBAR_ORDER.indexOf(a.key)
+      const bIndex = TRANSPORT_RENTAL_SIDEBAR_ORDER.indexOf(b.key)
+      return (aIndex === -1 ? 999 : aIndex) - (bIndex === -1 ? 999 : bIndex)
+    })
+}
+
 // WhatsApp CRM workspace only: dedicated WhatsApp-first sidebar. Only the keys
 // below are shown (everything else — invoices, expenses, accounts, account
 // statements, approvals, notifications, generic leads/follow-ups/support — is
@@ -320,6 +346,7 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
     if (normalizedType === 'General CRM') return orderSalesHubSidebar(items)
     if (normalizedType === 'Retail / POS') return orderRetailPosSidebar(items)
     if (normalizedType === 'Restaurant POS') return orderRestaurantPosSidebar(items)
+    if (normalizedType === 'Transport / Rental') return orderTransportRentalSidebar(items)
     if (normalizedType === 'WhatsApp CRM') return orderWhatsappCrmSidebar(items)
     return items
   }, [access, accessPlan, businessType, developerOverride, ownerAdminBypass, role, userDoc?.enabledModules, userDoc?.onboardingCompleted, workspaceId])

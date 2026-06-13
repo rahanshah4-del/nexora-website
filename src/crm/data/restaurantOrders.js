@@ -27,13 +27,21 @@ export function clearRestaurantOrders() {
   window.localStorage.removeItem(restaurantOrdersStorageKey)
 }
 
+export function getNextRestaurantOrderNumber(seed = 45265) {
+  const maxOrderNumber = readStoredOrders().reduce((max, order) => {
+    const numeric = Number(String(order?.orderNumber || '').replace(/[^0-9]/g, ''))
+    return Number.isFinite(numeric) ? Math.max(max, numeric) : max
+  }, seed)
+  return `#${maxOrderNumber + 1}`
+}
+
 export function upsertRestaurantOrder(order) {
-  if (!order?.orderNumber) return loadRestaurantOrders()
-  const orders = loadRestaurantOrders()
+  if (!order?.orderNumber) return []
+  const orders = readStoredOrders()
   const nextOrder = normalizeRestaurantOrder(order)
-  const exists = orders.some((row) => row.orderNumber === nextOrder.orderNumber)
+  const exists = orders.some((row) => row?.orderNumber === nextOrder.orderNumber)
   const nextOrders = exists
-    ? orders.map((row) => (row.orderNumber === nextOrder.orderNumber ? { ...row, ...nextOrder } : row))
+    ? orders.map((row) => (row?.orderNumber === nextOrder.orderNumber ? { ...row, ...nextOrder } : row))
     : [nextOrder, ...orders]
   saveRestaurantOrders(nextOrders)
   return nextOrders
@@ -73,6 +81,8 @@ export function normalizeRestaurantOrder(order = {}) {
     paidAmount,
     prepTime: Math.max(0, Number(order.prepTime || 0) || 0),
     notes: order.notes || '',
+    cancelReason: order.cancelReason || '',
+    cancelledAt: order.cancelledAt || '',
     createdAt,
     date: Number.isNaN(createdDate.getTime()) ? '' : createdDate.toISOString().slice(0, 10),
     time: Number.isNaN(createdDate.getTime()) ? '' : createdDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),

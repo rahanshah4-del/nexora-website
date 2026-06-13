@@ -10,8 +10,7 @@ import Badge from '../components/ui/Badge.jsx'
 import Button from '../components/ui/Button.jsx'
 import Card from '../components/ui/Card.jsx'
 import PageHeader from '../components/ui/PageHeader.jsx'
-
-const initialOrders = []
+import { loadRestaurantOrders, upsertRestaurantOrder } from '../data/restaurantOrders.js'
 
 const columns = [
   { key: 'pending', label: 'Pending', icon: HiOutlineClock, next: 'preparing', action: 'Start' },
@@ -25,8 +24,28 @@ const badgeByStatus = {
   ready: 'success',
 }
 
+function kitchenOrderFromSavedOrder(order) {
+  const status = String(order.orderStatus || '').toLowerCase()
+  return {
+    id: order.kotNumber || order.orderNumber,
+    orderNumber: order.orderNumber,
+    status: ['pending', 'preparing', 'ready'].includes(status) ? status : 'pending',
+    table: order.table ? `Table ${order.table}` : order.orderType,
+    station: order.orderType || 'Kitchen',
+    elapsed: order.time || 'Now',
+    items: (order.cartRows || []).map((row) => `${row.qty || row.quantity || 1}x ${row.item?.name || 'Menu item'}`),
+    raw: order,
+  }
+}
+
+function loadKitchenOrders() {
+  return loadRestaurantOrders()
+    .filter((order) => ['pending', 'preparing', 'ready'].includes(String(order.orderStatus || '').toLowerCase()))
+    .map(kitchenOrderFromSavedOrder)
+}
+
 export default function RestaurantKitchenDisplayPage() {
-  const [orders, setOrders] = useState(initialOrders)
+  const [orders, setOrders] = useState(() => loadKitchenOrders())
 
   const groupedOrders = useMemo(
     () => columns.map((column) => ({
@@ -37,7 +56,15 @@ export default function RestaurantKitchenDisplayPage() {
   )
 
   function updateStatus(orderId, nextStatus) {
-    setOrders((current) => current.map((order) => (order.id === orderId ? { ...order, status: nextStatus } : order)))
+    setOrders((current) =>
+      current
+        .map((order) => {
+          if (order.id !== orderId) return order
+          upsertRestaurantOrder({ ...order.raw, orderStatus: nextStatus })
+          return { ...order, status: nextStatus, raw: { ...order.raw, orderStatus: nextStatus } }
+        })
+        .filter((order) => order.status !== 'served'),
+    )
   }
 
   return (
@@ -51,9 +78,9 @@ export default function RestaurantKitchenDisplayPage() {
         title="Kitchen Display"
         subtitle="Live kitchen queue with pending, preparing, and ready order lanes."
         right={
-          <Button type="button" variant="subtle">
+          <Button type="button" variant="subtle" onClick={() => setOrders(loadKitchenOrders())}>
             <HiOutlineArrowPath className="h-4 w-4" />
-            Auto-refresh On
+            Refresh KOT
           </Button>
         }
       />

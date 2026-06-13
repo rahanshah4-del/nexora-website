@@ -40,6 +40,7 @@ import { useWhatsappLeads } from '../hooks/useWhatsappLeads.js'
 import { useWhatsappFollowUps } from '../hooks/useWhatsappFollowUps.js'
 import { useWhatsappTemplates } from '../hooks/useWhatsappTemplates.js'
 import { useWhatsappSettings } from '../hooks/useWhatsappSettings.js'
+import { useBusinessSettings } from '../hooks/useBusinessSettings.js'
 import WhatsappDashboard from '../components/dashboard/WhatsappDashboard.jsx'
 import { useUser } from '../hooks/useUser.js'
 import {
@@ -61,7 +62,9 @@ import { contactStats, followUpStats, leadStats, templateStats } from '../lib/wh
 import { useSalesHubCollection } from '../hooks/useSalesHubCollection.js'
 import { calculateDealMetrics, calculatePipelineMetrics, calculateProductMetrics, calculateTaskMetrics, safeNumber } from '../lib/salesCalculations.js'
 import { restaurantDashboardMetrics, formatRestaurantCurrency } from '../lib/restaurantPosCalculations.js'
+import { isWithinRestaurantBusinessDay, formatRestaurantBusinessWindow } from '../lib/restaurantBusinessDay.js'
 import { loadRestaurantOrders } from '../data/restaurantOrders.js'
+import { normalizeInvoiceOrders } from '../data/restaurantInvoiceOrders.js'
 
 // Dashboard hero title/subtitle per business type (module). Falls back to a
 // generic label for any unknown type. Only affects the hero header text.
@@ -302,24 +305,33 @@ const restaurantQuickActions = [
 ]
 
 function RestaurantDashboard({ workspaceName }) {
+  const { invoices } = useInvoices({ limitCount: 50 })
+  const { settings } = useBusinessSettings()
   const savedOrders = useMemo(() => loadRestaurantOrders(), [])
-  const today = new Date().toISOString().slice(0, 10)
-  const todayOrders = savedOrders.filter((order) => String(order.createdAt || '').slice(0, 10) === today)
-  const tableRows = Array.from(new Set(todayOrders.map((order) => order.table).filter(Boolean))).map((table) => ({ status: 'occupied', table }))
+  const invoiceOrders = useMemo(() => normalizeInvoiceOrders(invoices), [invoices])
+  const todaySimpleOrders = savedOrders.filter((order) => isWithinRestaurantBusinessDay(order.createdAt || order.date, settings))
+  const todayInvoiceOrders = invoiceOrders.filter((order) => isWithinRestaurantBusinessDay(order.createdAt || order.date, settings))
+  const todayOrders = [...todaySimpleOrders, ...todayInvoiceOrders]
+  const businessDayLabel = formatRestaurantBusinessWindow(settings)
+  const tableRows = Array.from(new Set(todaySimpleOrders.map((order) => order.table).filter(Boolean))).map((table) => ({ status: 'occupied', table }))
   const restaurantMetrics = restaurantDashboardMetrics({
     cartRows: todayOrders.flatMap((order) => order.cartRows || []),
     tables: tableRows,
-    kotRows: todayOrders.map((order) => ({ status: String(order.orderStatus || '').toLowerCase() })),
+    kotRows: todaySimpleOrders.map((order) => ({ status: String(order.orderStatus || '').toLowerCase() })),
     bills: todayOrders.map((order) => ({ status: String(order.paymentStatus || '').toLowerCase() })),
   })
-  const pendingKot = todayOrders.filter((order) => String(order.orderStatus || '').toLowerCase() === 'pending').length
-  const preparingKot = todayOrders.filter((order) => String(order.orderStatus || '').toLowerCase() === 'preparing').length
-  const readyKot = todayOrders.filter((order) => String(order.orderStatus || '').toLowerCase() === 'ready').length
+  const todayRestaurantSales = todayOrders
+    .filter((order) => String(order.orderStatus || '').toLowerCase() !== 'cancelled')
+    .reduce((sum, order) => sum + Number(order.total || order.totals?.total || 0), 0)
+  const pendingKot = todaySimpleOrders.filter((order) => String(order.orderStatus || '').toLowerCase() === 'pending').length
+  const preparingKot = todaySimpleOrders.filter((order) => String(order.orderStatus || '').toLowerCase() === 'preparing').length
+  const readyKot = todaySimpleOrders.filter((order) => String(order.orderStatus || '').toLowerCase() === 'ready').length
   const restaurantStats = [
-    { label: 'Today Orders', value: formatCompact(restaurantMetrics.todayOrders), helper: 'Dine-in, takeaway, and delivery', icon: HiOutlineShoppingBag, tone: 'sky' },
+    { label: 'Today Orders', value: formatCompact(todaySimpleOrders.length), helper: `Business day: ${businessDayLabel}`, icon: HiOutlineShoppingBag, tone: 'sky' },
+    { label: 'Invoice Orders', value: formatCompact(todayInvoiceOrders.length), helper: 'A4 invoice bills in business day', icon: HiOutlineDocumentText, tone: 'violet' },
     { label: 'Active KOT', value: formatCompact(restaurantMetrics.activeKot), helper: 'Kitchen tickets in progress', icon: HiOutlineClipboardDocumentCheck, tone: 'violet' },
     { label: 'Occupied Tables', value: `${restaurantMetrics.occupiedTables} / ${restaurantMetrics.totalTables}`, helper: 'Live floor occupancy', icon: HiOutlineTableCells, tone: 'cyan' },
-    { label: 'Today Sales', value: formatRestaurantCurrency(restaurantMetrics.todaySales), helper: 'Collected restaurant revenue', icon: HiOutlineCurrencyDollar, tone: 'emerald' },
+    { label: 'Today Sales', value: formatRestaurantCurrency(todayRestaurantSales), helper: 'Simple + invoice order revenue', icon: HiOutlineCurrencyDollar, tone: 'emerald' },
     { label: 'Pending Bills', value: formatCompact(restaurantMetrics.pendingBills), helper: 'Open checks awaiting payment', icon: HiOutlineReceiptPercent, tone: 'violet' },
     { label: 'Kitchen Ready', value: formatCompact(restaurantMetrics.kitchenReady), helper: 'Orders ready to serve', icon: HiOutlineCheckCircle, tone: 'sky' },
   ]

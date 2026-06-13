@@ -14,6 +14,7 @@ import {
   HiOutlineCurrencyDollar,
   HiOutlineDocumentText,
   HiOutlineFire,
+  HiOutlineKey,
   HiOutlinePrinter,
   HiOutlineReceiptPercent,
   HiOutlineShoppingBag,
@@ -46,13 +47,30 @@ import {
 } from '../lib/calculations.js'
 import { convertFromUsd } from '../utils/currency.js'
 import { formatCurrency } from '../utils/format.js'
+import { cn } from '../utils/cn.js'
 import { buildReportId, exportReportCsv, exportReportExcel, exportReportPdf } from '../lib/reportGenerator.js'
 import WhatsappReports from '../components/reports/WhatsappReports.jsx'
 import { useSalesHubCollection } from '../hooks/useSalesHubCollection.js'
 import { calculateDealMetrics, calculatePipelineMetrics, calculateProductMetrics, calculateTaskMetrics } from '../lib/salesCalculations.js'
 import { loadRestaurantCustomers } from '../data/restaurantCustomers.js'
 import { loadRestaurantOrders } from '../data/restaurantOrders.js'
+import { normalizeInvoiceOrders } from '../data/restaurantInvoiceOrders.js'
+import { useInvoices } from '../hooks/useInvoices.js'
 import { finalItemPrice, formatRestaurantCurrency } from '../lib/restaurantPosCalculations.js'
+import { loadTransportBookings } from '../data/transportBookings.js'
+import { loadTransportVehicles } from '../data/transportVehicles.js'
+import { loadTransportCustomers } from '../data/transportCustomers.js'
+import { loadTransportPayments } from '../data/transportPayments.js'
+import {
+  buildTransportFinanceSummary,
+  formatTransportCurrency,
+  formatTransportSignedCurrency,
+  isTransportRefundPayment,
+} from '../lib/transportCalculations.js'
+import {
+  restaurantBusinessDayWindow,
+  restaurantPreviousBusinessDayWindow,
+} from '../lib/restaurantBusinessDay.js'
 
 const NEXORA_LOGO = '/nexora-brand-logo.png'
 
@@ -953,10 +971,13 @@ const restaurantReportRanges = [
   { value: 'custom', label: 'Custom date range' },
 ]
 
-const restaurantOrderTypes = ['All', 'Dine-in', 'Takeaway', 'Delivery']
-const restaurantPaymentMethods = ['All', 'Cash', 'Card', 'JazzCash', 'Easypaisa', 'Bank', 'Due']
+const restaurantOrderTypes = ['All', 'Dine-in', 'Takeaway', 'Delivery', 'Invoice Order']
+const restaurantPaymentMethods = ['All', 'Cash', 'Card', 'JazzCash', 'Easypaisa', 'Bank', 'Due', 'Invoice']
 
 function RestaurantReports() {
+  const { invoices } = useInvoices({ limitCount: 50 })
+  const businessSettingsApi = useBusinessSettings()
+  const settings = businessSettingsApi.settings || {}
   const customers = useMemo(() => loadRestaurantCustomers(), [])
   const [filters, setFilters] = useState({
     range: 'today',
@@ -966,8 +987,8 @@ function RestaurantReports() {
     paymentMethod: 'All',
   })
 
-  const reportOrders = useMemo(() => loadRestaurantOrders(), [])
-  const windowRange = useMemo(() => restaurantDateWindow(filters), [filters])
+  const reportOrders = useMemo(() => [...loadRestaurantOrders(), ...normalizeInvoiceOrders(invoices)], [invoices])
+  const windowRange = useMemo(() => restaurantDateWindow(filters, settings), [filters, settings])
   const orders = useMemo(
     () =>
       reportOrders.filter((order) => {
@@ -991,7 +1012,7 @@ function RestaurantReports() {
     <motion.div className="no-print" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
       <PageHeader
         title="Restaurant POS Reports"
-        subtitle="Sales, KOT, table, customer, expense, profit, and daily closing reports for restaurant operations."
+        subtitle={`Sales, KOT, table, customer, expense, profit, and daily closing reports. Today follows restaurant timing: ${(settings.restaurantPos?.openingTime || '16:00')} to ${(settings.restaurantPos?.closingTime || '03:00')}.`}
         right={
           <>
             <Button type="button" className="rounded-2xl" onClick={() => window.print()}>
@@ -1043,7 +1064,8 @@ function RestaurantReports() {
 
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
         <MetricCard icon={HiOutlineCurrencyDollar} label="Total Sales" value={formatRestaurantCurrency(report.totalSales)} helper="Gross restaurant order value" tone="emerald" />
-        <MetricCard icon={HiOutlineShoppingBag} label="Total Orders" value={report.totalOrders} helper="Filtered dine-in, takeaway, and delivery orders" tone="sky" />
+        <MetricCard icon={HiOutlineShoppingBag} label="Simple Orders" value={report.simpleOrders} helper="POS dine-in, takeaway, delivery" tone="sky" />
+        <MetricCard icon={HiOutlineDocumentText} label="Invoice Orders" value={report.invoiceOrders} helper="A4 invoice bills in this range" tone="violet" />
         <MetricCard icon={HiOutlineBanknotes} label="Paid Amount" value={formatRestaurantCurrency(report.paidAmount)} helper="Cash, card, wallet, and bank received" tone="emerald" />
         <MetricCard icon={HiOutlineReceiptPercent} label="Due Amount" value={formatRestaurantCurrency(report.dueAmount)} helper="Unpaid or partial customer balance" tone="amber" />
         <MetricCard icon={HiOutlineChartBar} label="Avg Order Value" value={formatRestaurantCurrency(report.averageOrderValue)} helper="Sales divided by completed orders" tone="violet" />
@@ -1060,6 +1082,8 @@ function RestaurantReports() {
             <SummaryRow label="Dine-in sales" value={formatRestaurantCurrency(report.salesByType['Dine-in'])} />
             <SummaryRow label="Takeaway sales" value={formatRestaurantCurrency(report.salesByType.Takeaway)} />
             <SummaryRow label="Delivery sales" value={formatRestaurantCurrency(report.salesByType.Delivery)} />
+            <SummaryRow label="Simple order sales" value={formatRestaurantCurrency(report.simpleOrderSales)} />
+            <SummaryRow label="Invoice order sales" value={formatRestaurantCurrency(report.invoiceOrderSales)} />
             <SummaryRow label="Cash sales" value={formatRestaurantCurrency(report.salesByPayment.Cash)} />
             <SummaryRow label="Online/Card sales" value={formatRestaurantCurrency(report.onlineSales)} />
             <SummaryRow label="Due/partial payment sales" value={formatRestaurantCurrency(report.duePartialSales)} />
@@ -1188,7 +1212,8 @@ function RestaurantPrintableReport({ report, filters }) {
 
       <section className="print-avoid-break mt-5 grid grid-cols-3 gap-3 text-sm">
         <PrintMetric label="Total Sales" value={formatRestaurantCurrency(report.totalSales)} />
-        <PrintMetric label="Total Orders" value={report.totalOrders} />
+        <PrintMetric label="Simple Orders" value={report.simpleOrders} />
+        <PrintMetric label="Invoice Orders" value={report.invoiceOrders} />
         <PrintMetric label="Paid Amount" value={formatRestaurantCurrency(report.paidAmount)} />
         <PrintMetric label="Due Amount" value={formatRestaurantCurrency(report.dueAmount)} />
         <PrintMetric label="Discounts" value={formatRestaurantCurrency(report.discounts)} />
@@ -1203,6 +1228,8 @@ function RestaurantPrintableReport({ report, filters }) {
           ['Dine-in sales', formatRestaurantCurrency(report.salesByType['Dine-in'])],
           ['Takeaway sales', formatRestaurantCurrency(report.salesByType.Takeaway)],
           ['Delivery sales', formatRestaurantCurrency(report.salesByType.Delivery)],
+          ['Simple order sales', formatRestaurantCurrency(report.simpleOrderSales)],
+          ['Invoice order sales', formatRestaurantCurrency(report.invoiceOrderSales)],
           ['Cash sales', formatRestaurantCurrency(report.salesByPayment.Cash)],
           ['Online/Card sales', formatRestaurantCurrency(report.onlineSales)],
           ['Due/partial sales', formatRestaurantCurrency(report.duePartialSales)],
@@ -1303,13 +1330,11 @@ function PrintTable({ title, rows, columns }) {
   )
 }
 
-function restaurantDateWindow(filters) {
+function restaurantDateWindow(filters, settings = {}) {
   const now = new Date()
-  if (filters.range === 'today') return { start: startOfDay(now), end: endOfDay(now) }
+  if (filters.range === 'today') return restaurantBusinessDayWindow(settings, now)
   if (filters.range === 'yesterday') {
-    const yesterday = new Date(now)
-    yesterday.setDate(now.getDate() - 1)
-    return { start: startOfDay(yesterday), end: endOfDay(yesterday) }
+    return restaurantPreviousBusinessDayWindow(settings, now)
   }
   if (filters.range === 'week') {
     const start = startOfDay(now)
@@ -1348,11 +1373,16 @@ function buildRestaurantReport(orders, customers) {
   let serviceCharges = 0
   let itemCost = 0
   let cancelledOrders = 0
+  let simpleOrderSales = 0
+  let invoiceOrderSales = 0
 
   orders.forEach((order) => {
     const isCancelled = String(order.orderStatus || '').toLowerCase() === 'cancelled'
+    const isInvoiceOrder = order.sourceKind === 'invoice'
     const total = order.totals.total
     if (!isCancelled) totalSales += total
+    if (!isCancelled && isInvoiceOrder) invoiceOrderSales += total
+    if (!isCancelled && !isInvoiceOrder) simpleOrderSales += total
     paidAmount += order.paidAmount
     dueAmount += order.dueAmount
     discounts += order.totals.discount
@@ -1416,6 +1446,10 @@ function buildRestaurantReport(orders, customers) {
     grossSales: totalSales + discounts,
     netSales,
     totalOrders: orders.length,
+    simpleOrders: orders.filter((order) => order.sourceKind !== 'invoice').length,
+    invoiceOrders: orders.filter((order) => order.sourceKind === 'invoice').length,
+    simpleOrderSales,
+    invoiceOrderSales,
     paidAmount,
     dueAmount,
     discounts,
@@ -1452,6 +1486,651 @@ function buildRestaurantReport(orders, customers) {
   }
 }
 
+const transportReportTemplates = [
+  {
+    id: 'fleet-summary',
+    name: 'Fleet Summary',
+    label: 'Operations + utilization',
+    description: 'Best for daily fleet overview, active rentals, vehicle status, and top vehicles.',
+  },
+  {
+    id: 'rental-ledger',
+    name: 'Rental Ledger',
+    label: 'Bookings + dues',
+    description: 'Best for booking list, customer balances, due follow-up, and payment status.',
+  },
+  {
+    id: 'financial-closing',
+    name: 'Financial Closing',
+    label: 'Revenue + payments',
+    description: 'Best for cash/card/bank totals, dues, deposits, and closing summary.',
+  },
+]
+
+function TransportReports() {
+  const businessSettingsApi = useBusinessSettings()
+  const settings = businessSettingsApi.settings || {}
+  const savedTemplate = settings.transportRental?.reportTemplate || 'fleet-summary'
+  const [selectedTemplate, setSelectedTemplate] = useState(savedTemplate)
+  const [filters, setFilters] = useState({
+    range: 'month',
+    startDate: '',
+    endDate: '',
+  })
+  const [notice, setNotice] = useState('')
+  const vehicles = useMemo(() => loadTransportVehicles(), [])
+  const allBookings = useMemo(() => loadTransportBookings(), [])
+  const customers = useMemo(() => loadTransportCustomers(), [])
+  const allPayments = useMemo(() => loadTransportPayments(), [])
+  const activeWindow = useMemo(() => dateWindow(filters), [filters])
+  const dateRangeLabel = filters.range === 'custom'
+    ? `${filters.startDate || 'Start'} to ${filters.endDate || 'End'}`
+    : rangeOptions.find((option) => option.value === filters.range)?.label || 'This month'
+  const bookings = useMemo(
+    () => allBookings.filter((booking) => withinDateWindow(booking, activeWindow)),
+    [activeWindow, allBookings],
+  )
+  const payments = useMemo(
+    () => allPayments.filter((payment) => withinDateWindow(payment, activeWindow)),
+    [activeWindow, allPayments],
+  )
+  const report = useMemo(() => buildTransportReport({ vehicles, bookings, customers, payments }), [vehicles, bookings, customers, payments])
+  const template = transportReportTemplates.find((item) => item.id === selectedTemplate) || transportReportTemplates[0]
+  const pdfReport = useMemo(
+    () => buildTransportPdfReport({
+      template,
+      report,
+      settings,
+      dateRangeLabel,
+      workspaceId: settings.workspaceId || '',
+    }),
+    [dateRangeLabel, report, settings, template],
+  )
+
+  useEffect(() => {
+    setSelectedTemplate(savedTemplate)
+  }, [savedTemplate])
+
+  async function saveTemplate() {
+    const res = await businessSettingsApi.saveSettings({
+      transportRental: {
+        ...(settings.transportRental || {}),
+        reportTemplate: selectedTemplate,
+      },
+    })
+    setNotice(res.ok ? 'Report template saved.' : res.error || 'Unable to save template.')
+    window.setTimeout(() => setNotice(''), 2200)
+  }
+
+  async function generatePdf() {
+    try {
+      await exportReportPdf(pdfReport)
+      setNotice('PDF report generated.')
+    } catch (error) {
+      setNotice(error.message || 'Unable to generate PDF report.')
+    }
+    window.setTimeout(() => setNotice(''), 2200)
+  }
+
+  return (
+    <motion.div className="min-w-0 space-y-5" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
+      {notice ? (
+        <div className="no-print fixed right-4 top-4 z-[70] rounded-2xl border border-cyan-200 bg-white px-4 py-3 text-sm font-semibold text-cyan-800 shadow-sm">
+          {notice}
+        </div>
+      ) : null}
+
+      <PageHeader
+        title="Transport / Rental Reports"
+        subtitle="Choose a professional report template for fleet, bookings, dues, and rental revenue."
+        right={(
+          <>
+            <Button type="button" variant="subtle" className="rounded-2xl" onClick={saveTemplate}>
+              <HiOutlineCheckCircle className="h-4 w-4" />
+              Save Template
+            </Button>
+            <Button type="button" className="rounded-2xl bg-cyan-600 hover:bg-cyan-700" onClick={generatePdf}>
+              <HiOutlineDocumentText className="h-4 w-4" />
+              Generate PDF
+            </Button>
+          </>
+        )}
+      />
+
+      <Card className="no-print p-4 sm:p-5">
+        <div className="grid gap-3 md:grid-cols-4 md:items-end">
+          <div>
+            <label className="text-xs font-semibold text-slate-600">Date Filter</label>
+            <Select className="mt-1.5" value={filters.range} onChange={(event) => setFilters((current) => ({ ...current, range: event.target.value }))}>
+              {rangeOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+            </Select>
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-slate-600">Start Date</label>
+            <Input
+              className="mt-1.5"
+              type="date"
+              disabled={filters.range !== 'custom'}
+              value={filters.startDate}
+              onChange={(event) => setFilters((current) => ({ ...current, startDate: event.target.value }))}
+            />
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-slate-600">End Date</label>
+            <Input
+              className="mt-1.5"
+              type="date"
+              disabled={filters.range !== 'custom'}
+              value={filters.endDate}
+              onChange={(event) => setFilters((current) => ({ ...current, endDate: event.target.value }))}
+            />
+          </div>
+          <Button type="button" variant="subtle" className="h-10 rounded-2xl" onClick={() => window.print()}>
+            <HiOutlinePrinter className="h-4 w-4" />
+            Print Template
+          </Button>
+        </div>
+        <p className="mt-3 text-xs font-semibold text-slate-500">
+          PDF is generated from the selected report template and filtered data. It does not use a screen capture.
+        </p>
+      </Card>
+
+      <Card className="no-print overflow-hidden rounded-[1.6rem] border-cyan-100 bg-gradient-to-br from-cyan-50 via-white to-sky-50 p-5">
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-cyan-700">Template Settings</p>
+            <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">Advanced transport report templates</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              Client can select one default template. Printing uses the selected design, not a screenshot of the screen.
+            </p>
+          </div>
+          <div className="grid gap-3 md:grid-cols-3">
+            {transportReportTemplates.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setSelectedTemplate(item.id)}
+                className={cn(
+                  'min-w-0 rounded-2xl border p-4 text-left transition',
+                  selectedTemplate === item.id
+                    ? 'border-cyan-300 bg-white shadow-sm ring-2 ring-cyan-100'
+                    : 'border-slate-200 bg-white/70 hover:border-cyan-200 hover:bg-white',
+                )}
+              >
+                <span className="inline-flex rounded-full bg-cyan-50 px-2 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-cyan-700">{item.label}</span>
+                <p className="mt-3 text-sm font-black text-slate-950">{item.name}</p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">{item.description}</p>
+              </button>
+            ))}
+          </div>
+        </div>
+      </Card>
+
+      <div className="no-print grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <MetricCard icon={HiOutlineTruck} label="Total Fleet" value={report.totalVehicles} helper={`${report.availableVehicles} available now`} tone="sky" />
+        <MetricCard icon={HiOutlineKey} label="Active Rentals" value={report.activeBookings} helper={`${report.reservedBookings} reserved`} tone="amber" />
+        <MetricCard icon={HiOutlineBanknotes} label="Net Revenue" value={formatTransportCurrency(report.totalRevenue)} helper={`${formatTransportCurrency(report.totalRefunds)} refunded`} tone="emerald" />
+        <MetricCard icon={HiOutlineUserGroup} label="Customers" value={report.totalCustomers} helper={`${report.dueCustomers} with dues`} tone="violet" />
+      </div>
+
+      <section className="no-print">
+        <TransportTemplatePreview template={template} report={report} settings={settings} dateRangeLabel={dateRangeLabel} />
+      </section>
+
+      <section className="print-only">
+        <TransportPrintableTemplate template={template} report={report} settings={settings} dateRangeLabel={dateRangeLabel} />
+      </section>
+    </motion.div>
+  )
+}
+
+function buildTransportReport({ vehicles = [], bookings = [], customers = [], payments = [] } = {}) {
+  const activeBookings = bookings.filter((booking) => booking.status === 'active')
+  const reservedBookings = bookings.filter((booking) => booking.status === 'reserved')
+  const returnedBookings = bookings.filter((booking) => booking.status === 'returned')
+  const cancelledBookings = bookings.filter((booking) => booking.status === 'cancelled')
+  const finance = buildTransportFinanceSummary({ bookings, payments })
+  const liveBookings = finance.activeBookings
+  const totalRevenue = finance.netCollected
+  const bookingRevenue = finance.activeBookingValue
+  const paidAmount = finance.paidAmount
+  const outstandingDues = finance.outstandingDues
+  const securityDeposits = liveBookings.reduce((sum, booking) => sum + safeNumber(booking.securityDeposit), 0)
+  const driverCharges = liveBookings.reduce((sum, booking) => sum + safeNumber(booking.totals?.driverCharges || booking.driverRate * booking.units), 0)
+  const methodRows = Object.values(finance.activePayments.filter((payment) => !isTransportRefundPayment(payment)).reduce((map, payment) => {
+    const method = payment.method || 'Cash'
+    map[method] = map[method] || { method, count: 0, amount: 0 }
+    map[method].count += 1
+    map[method].amount += safeNumber(payment.amount)
+    return map
+  }, {})).sort((a, b) => b.amount - a.amount)
+  const refundRows = payments.filter((payment) => isTransportRefundPayment(payment))
+  const cancelledRows = cancelledBookings.map((booking) => ({
+    ...booking,
+    refundAmount: safeNumber(booking.refundAmount),
+    refundMethod: booking.refundMethod || refundRows.find((payment) => payment.bookingNumber === booking.bookingNumber)?.method || '',
+  }))
+  const vehicleRows = vehicles.map((vehicle) => {
+    const vehicleBookings = bookings.filter((booking) => booking.vehicleId === vehicle.id && booking.status !== 'cancelled')
+    return {
+      ...vehicle,
+      bookings: vehicleBookings.length,
+      revenue: vehicleBookings.reduce((sum, booking) => sum + safeNumber(booking.total), 0),
+      due: vehicleBookings.reduce((sum, booking) => sum + safeNumber(booking.dueAmount), 0),
+    }
+  }).sort((a, b) => b.revenue - a.revenue)
+  const customerRows = customers.map((customer) => ({
+    ...customer,
+    due: safeNumber(customer.creditBalance),
+    paid: safeNumber(customer.paidAmount),
+    bookings: Array.isArray(customer.bookingHistory) ? customer.bookingHistory.length : 0,
+  })).sort((a, b) => b.due - a.due)
+
+  return {
+    totalVehicles: vehicles.length,
+    availableVehicles: vehicles.filter((vehicle) => vehicle.status === 'available').length,
+    rentedVehicles: vehicles.filter((vehicle) => vehicle.status === 'rented').length,
+    maintenanceVehicles: vehicles.filter((vehicle) => vehicle.status === 'maintenance').length,
+    totalBookings: bookings.length,
+    activeBookings: activeBookings.length,
+    reservedBookings: reservedBookings.length,
+    returnedBookings: returnedBookings.length,
+    cancelledBookings: cancelledBookings.length,
+    totalCustomers: customers.length,
+    dueCustomers: customerRows.filter((customer) => customer.due > 0).length,
+    totalRevenue,
+    bookingRevenue,
+    paidAmount,
+    outstandingDues,
+    grossCollected: finance.grossCollected,
+    totalRefunds: finance.totalRefunds,
+    cancelledRefunds: finance.cancelledRefunds,
+    cancelledBookingValue: finance.cancelledBookingValue,
+    cancelledPaidAmount: finance.cancelledPaidAmount,
+    securityDeposits,
+    driverCharges,
+    utilization: vehicles.length ? Math.round(((activeBookings.length + reservedBookings.length) / vehicles.length) * 100) : 0,
+    methodRows,
+    vehicleRows,
+    customerRows,
+    bookingRows: bookings,
+    paymentRows: payments,
+    activePaymentRows: finance.activePayments,
+    refundRows,
+    cancelledRows,
+  }
+}
+
+function buildTransportPdfReport({ template, report, settings = {}, dateRangeLabel = 'This month', workspaceId = '' } = {}) {
+  const reportId = buildReportId(settings.reportPrefix || 'TRP')
+  const companyName = settings.businessName || settings.transportRental?.companyName || 'Nexora Transport'
+  const generatedAt = new Date().toLocaleString()
+  const common = {
+    reportId,
+    title: `${template.name} Report`,
+    workspaceId,
+    workspaceName: companyName,
+    businessType: 'Transport / Rental',
+    dateRange: dateRangeLabel,
+    generatedBy: settings.ownerName || companyName,
+    generatedAt,
+    branding: {
+      companyName,
+      businessName: companyName,
+      logo: settings.logoUrl || NEXORA_LOGO,
+      logoUrl: settings.logoUrl || '',
+      receiptFooter: settings.transportRental?.reportFooter || 'NEXORA SOLUTION - All rights reserved 2019-2026.',
+    },
+    qrPayload: {
+      reportId,
+      businessType: 'Transport / Rental',
+      template: template.id,
+      dateRange: dateRangeLabel,
+      generatedAt,
+      totalRevenue: report.totalRevenue,
+      grossCollected: report.grossCollected,
+      totalRefunds: report.totalRefunds,
+      outstandingDues: report.outstandingDues,
+    },
+  }
+
+  if (template.id === 'rental-ledger') {
+    return {
+      ...common,
+      summary: [
+        { label: 'Total bookings', value: report.totalBookings },
+        { label: 'Active bookings', value: report.activeBookings },
+        { label: 'Returned bookings', value: report.returnedBookings },
+        { label: 'Cancelled bookings', value: report.cancelledBookings },
+        { label: 'Paid amount', value: formatTransportCurrency(report.paidAmount) },
+        { label: 'Outstanding dues', value: formatTransportCurrency(report.outstandingDues) },
+        { label: 'Refunded', value: formatTransportCurrency(report.totalRefunds) },
+      ],
+      tables: [
+        {
+          title: 'Booking Ledger',
+          columns: [
+            { label: 'Booking', value: (row) => row.bookingNumber },
+            { label: 'Customer', value: (row) => row.customer },
+            { label: 'Vehicle', value: (row) => row.vehicleName },
+            { label: 'Pickup', value: (row) => row.pickupDate },
+            { label: 'Return', value: (row) => row.returnDate },
+            { label: 'Status', value: (row) => row.status },
+            { label: 'Total', value: (row) => formatTransportCurrency(row.total) },
+            { label: 'Due', value: (row) => formatTransportCurrency(row.dueAmount) },
+            { label: 'Refund', value: (row) => row.refundAmount > 0 ? formatTransportCurrency(row.refundAmount) : '-' },
+          ],
+          rows: report.bookingRows,
+        },
+        {
+          title: 'Cancelled & Refunded Bookings',
+          columns: [
+            { label: 'Booking', value: (row) => row.bookingNumber },
+            { label: 'Customer', value: (row) => row.customer },
+            { label: 'Vehicle', value: (row) => row.vehicleName },
+            { label: 'Paid', value: (row) => formatTransportCurrency(row.advancePaid) },
+            { label: 'Refunded', value: (row) => row.refundAmount > 0 ? formatTransportCurrency(row.refundAmount) : '-' },
+            { label: 'Reason', value: (row) => row.cancelReason || '-' },
+          ],
+          rows: report.cancelledRows,
+        },
+        {
+          title: 'Customer Balance',
+          columns: [
+            { label: 'Customer', value: (row) => row.name },
+            { label: 'Phone', value: (row) => row.phone },
+            { label: 'Bookings', value: (row) => row.bookings },
+            { label: 'Paid', value: (row) => formatTransportCurrency(row.paid) },
+            { label: 'Due', value: (row) => formatTransportCurrency(row.due) },
+          ],
+          rows: report.customerRows,
+        },
+      ],
+    }
+  }
+
+  if (template.id === 'financial-closing') {
+    return {
+      ...common,
+      summary: [
+        { label: 'Net collected', value: formatTransportCurrency(report.totalRevenue) },
+        { label: 'Gross active collected', value: formatTransportCurrency(report.grossCollected) },
+        { label: 'Refunded amount', value: formatTransportCurrency(report.totalRefunds) },
+        { label: 'Active booking value', value: formatTransportCurrency(report.bookingRevenue) },
+        { label: 'Cancelled booking value', value: formatTransportCurrency(report.cancelledBookingValue) },
+        { label: 'Paid amount', value: formatTransportCurrency(report.paidAmount) },
+        { label: 'Outstanding dues', value: formatTransportCurrency(report.outstandingDues) },
+        { label: 'Security deposits', value: formatTransportCurrency(report.securityDeposits) },
+        { label: 'Driver charges', value: formatTransportCurrency(report.driverCharges) },
+      ],
+      tables: [
+        {
+          title: 'Payment Methods',
+          columns: [
+            { label: 'Method', value: (row) => row.method },
+            { label: 'Count', value: (row) => row.count },
+            { label: 'Amount', value: (row) => formatTransportCurrency(row.amount) },
+          ],
+          rows: report.methodRows,
+        },
+        {
+          title: 'Refund Ledger',
+          columns: [
+            { label: 'Payment', value: (row) => row.id },
+            { label: 'Booking', value: (row) => row.bookingNumber },
+            { label: 'Customer', value: (row) => row.customer },
+            { label: 'Method', value: (row) => row.method },
+            { label: 'Refund', value: (row) => formatTransportCurrency(row.amount) },
+            { label: 'Date', value: (row) => row.date },
+          ],
+          rows: report.refundRows,
+        },
+        {
+          title: 'Payment Ledger',
+          columns: [
+            { label: 'Payment', value: (row) => row.id },
+            { label: 'Booking', value: (row) => row.bookingNumber },
+            { label: 'Customer', value: (row) => row.customer },
+            { label: 'Method', value: (row) => row.method },
+            { label: 'Type', value: (row) => row.type },
+            { label: 'Amount', value: (row) => isTransportRefundPayment(row) ? formatTransportSignedCurrency(-row.amount) : formatTransportCurrency(row.amount) },
+            { label: 'Date', value: (row) => row.date },
+          ],
+          rows: report.paymentRows,
+        },
+      ],
+    }
+  }
+
+  return {
+    ...common,
+    summary: [
+      { label: 'Total fleet', value: report.totalVehicles },
+      { label: 'Available vehicles', value: report.availableVehicles },
+      { label: 'Rented vehicles', value: report.rentedVehicles },
+      { label: 'Maintenance vehicles', value: report.maintenanceVehicles },
+      { label: 'Active/reserved', value: report.activeBookings + report.reservedBookings },
+      { label: 'Utilization', value: `${report.utilization}%` },
+      { label: 'Revenue', value: formatTransportCurrency(report.totalRevenue) },
+      { label: 'Outstanding dues', value: formatTransportCurrency(report.outstandingDues) },
+    ],
+    tables: [
+      {
+        title: 'Fleet Performance',
+        columns: [
+          { label: 'Vehicle', value: (row) => `${row.name} (${row.registration})` },
+          { label: 'Category', value: (row) => row.category },
+          { label: 'Status', value: (row) => row.status },
+          { label: 'Bookings', value: (row) => row.bookings },
+          { label: 'Revenue', value: (row) => formatTransportCurrency(row.revenue) },
+          { label: 'Due', value: (row) => formatTransportCurrency(row.due) },
+        ],
+        rows: report.vehicleRows,
+      },
+    ],
+  }
+}
+
+function TransportTemplatePreview({ template, report, settings, dateRangeLabel }) {
+  return (
+    <Card className="overflow-hidden rounded-[1.6rem] p-0">
+      <div className="border-b border-slate-200 bg-slate-950 px-5 py-4 text-white">
+        <p className="text-xs font-black uppercase tracking-[0.2em] text-cyan-200">Selected Template</p>
+        <h2 className="mt-1 text-xl font-black">{template.name}</h2>
+      </div>
+      <div className="p-5">
+        <TransportPrintableTemplate template={template} report={report} settings={settings} dateRangeLabel={dateRangeLabel} preview />
+      </div>
+    </Card>
+  )
+}
+
+function TransportPrintableTemplate({ template, report, settings, dateRangeLabel, preview = false }) {
+  const companyName = settings.businessName || settings.transportRental?.companyName || 'Nexora Transport'
+  const generatedAt = new Date().toLocaleString()
+  return (
+    <div className={cn('mx-auto bg-white text-slate-950', preview ? 'max-w-5xl rounded-2xl border border-slate-200 p-5 shadow-sm' : 'print-report-page p-8')}>
+      <div className="flex items-start justify-between gap-4 border-b-2 border-slate-950 pb-4">
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-700">Transport / Rental</p>
+          <h1 className="mt-1 text-2xl font-black uppercase tracking-tight">{companyName}</h1>
+          <p className="mt-1 text-xs font-semibold text-slate-500">{settings.address || 'Fleet, bookings, payments, and customer dues report'}</p>
+        </div>
+        <div className="text-right">
+          <p className="text-sm font-black">{template.name}</p>
+          <p className="mt-1 text-xs font-semibold text-slate-600">Range: {dateRangeLabel}</p>
+          <p className="mt-1 text-xs text-slate-500">{generatedAt}</p>
+          <p className="mt-2 rounded-full bg-slate-950 px-3 py-1 text-xs font-black text-white">Powered by Nexora</p>
+        </div>
+      </div>
+
+      {template.id === 'fleet-summary' ? <TransportFleetTemplate report={report} /> : null}
+      {template.id === 'rental-ledger' ? <TransportLedgerTemplate report={report} /> : null}
+      {template.id === 'financial-closing' ? <TransportFinancialTemplate report={report} /> : null}
+
+      <div className="mt-6 flex items-center justify-between border-t border-slate-200 pt-3 text-[11px] font-semibold text-slate-500">
+        <span>{settings.transportRental?.reportFooter || 'NEXORA SOLUTION'}</span>
+        <span>ALL RIGHTS RESERVED 2019-2026</span>
+      </div>
+    </div>
+  )
+}
+
+function TransportFleetTemplate({ report }) {
+  return (
+    <div className="mt-5 space-y-5">
+      <div className="grid gap-3 md:grid-cols-4">
+        <ReportMiniStat label="Fleet" value={report.totalVehicles} />
+        <ReportMiniStat label="Available" value={report.availableVehicles} />
+        <ReportMiniStat label="Active/Reserved" value={report.activeBookings + report.reservedBookings} />
+        <ReportMiniStat label="Utilization" value={`${report.utilization}%`} />
+      </div>
+      <ReportTable
+        title="Top Vehicles"
+        rows={report.vehicleRows.slice(0, 8)}
+        columns={[
+          ['Vehicle', (row) => `${row.name} (${row.registration})`],
+          ['Status', (row) => row.status],
+          ['Bookings', (row) => row.bookings],
+          ['Revenue', (row) => formatTransportCurrency(row.revenue)],
+          ['Due', (row) => formatTransportCurrency(row.due)],
+        ]}
+      />
+    </div>
+  )
+}
+
+function TransportLedgerTemplate({ report }) {
+  return (
+    <div className="mt-5 space-y-5">
+      <div className="grid gap-3 md:grid-cols-4">
+        <ReportMiniStat label="Bookings" value={report.totalBookings} />
+        <ReportMiniStat label="Active" value={report.activeBookings} />
+        <ReportMiniStat label="Returned" value={report.returnedBookings} />
+        <ReportMiniStat label="Cancelled" value={report.cancelledBookings} />
+      </div>
+      <ReportTable
+        title="Booking Ledger"
+        rows={report.bookingRows}
+        columns={[
+          ['Booking', (row) => row.bookingNumber],
+          ['Customer', (row) => row.customer],
+          ['Vehicle', (row) => row.vehicleName],
+          ['Status', (row) => row.status],
+          ['Total', (row) => formatTransportCurrency(row.total)],
+          ['Due', (row) => formatTransportCurrency(row.dueAmount)],
+          ['Refund', (row) => row.refundAmount > 0 ? formatTransportCurrency(row.refundAmount) : '-'],
+        ]}
+      />
+      <ReportTable
+        title="Cancelled / Refunded Bookings"
+        rows={report.cancelledRows}
+        columns={[
+          ['Booking', (row) => row.bookingNumber],
+          ['Customer', (row) => row.customer],
+          ['Paid', (row) => formatTransportCurrency(row.advancePaid)],
+          ['Refunded', (row) => row.refundAmount > 0 ? formatTransportCurrency(row.refundAmount) : '-'],
+          ['Reason', (row) => row.cancelReason || '-'],
+        ]}
+      />
+      <ReportTable
+        title="Customers With Balance"
+        rows={report.customerRows.slice(0, 8)}
+        columns={[
+          ['Customer', (row) => row.name],
+          ['Phone', (row) => row.phone],
+          ['Bookings', (row) => row.bookings],
+          ['Paid', (row) => formatTransportCurrency(row.paid)],
+          ['Due', (row) => formatTransportCurrency(row.due)],
+        ]}
+      />
+    </div>
+  )
+}
+
+function TransportFinancialTemplate({ report }) {
+  return (
+    <div className="mt-5 space-y-5">
+      <div className="grid gap-3 md:grid-cols-4">
+        <ReportMiniStat label="Net Collected" value={formatTransportCurrency(report.totalRevenue)} />
+        <ReportMiniStat label="Gross Active" value={formatTransportCurrency(report.grossCollected)} />
+        <ReportMiniStat label="Refunded" value={formatTransportCurrency(report.totalRefunds)} />
+        <ReportMiniStat label="Outstanding" value={formatTransportCurrency(report.outstandingDues)} />
+      </div>
+      <div className="grid gap-5 lg:grid-cols-2">
+        <ReportTable
+          title="Payment Methods"
+          rows={report.methodRows}
+          columns={[
+            ['Method', (row) => row.method],
+            ['Count', (row) => row.count],
+            ['Amount', (row) => formatTransportCurrency(row.amount)],
+          ]}
+        />
+        <ReportTable
+          title="Refund Ledger"
+          rows={report.refundRows}
+          columns={[
+            ['Payment', (row) => row.id],
+            ['Booking', (row) => row.bookingNumber],
+            ['Customer', (row) => row.customer],
+            ['Method', (row) => row.method],
+            ['Refund', (row) => formatTransportCurrency(row.amount)],
+          ]}
+        />
+        <div className="rounded-2xl border border-slate-200 p-4">
+          <p className="text-sm font-black uppercase tracking-[0.16em] text-slate-500">Closing Summary</p>
+          <div className="mt-4 space-y-2 text-sm">
+            <SummaryRow label="Gross active collected" value={formatTransportCurrency(report.grossCollected)} />
+            <SummaryRow label="Refunded amount" value={formatTransportCurrency(report.totalRefunds)} />
+            <SummaryRow label="Paid amount" value={formatTransportCurrency(report.paidAmount)} />
+            <SummaryRow label="Due amount" value={formatTransportCurrency(report.outstandingDues)} />
+            <SummaryRow label="Driver charges" value={formatTransportCurrency(report.driverCharges)} />
+            <SummaryRow label="Net collected" value={formatTransportCurrency(report.totalRevenue)} />
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function ReportMiniStat({ label, value }) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+      <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">{label}</p>
+      <p className="mt-1 text-lg font-black text-slate-950">{value}</p>
+    </div>
+  )
+}
+
+function ReportTable({ title, rows = [], columns = [] }) {
+  return (
+    <div className="overflow-hidden rounded-2xl border border-slate-200">
+      <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
+        <p className="text-sm font-black uppercase tracking-[0.14em] text-slate-600">{title}</p>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="min-w-full text-left text-xs">
+          <thead className="bg-white text-slate-500">
+            <tr>
+              {columns.map(([label]) => <th key={label} className="border-b border-slate-200 px-3 py-2 font-black uppercase tracking-[0.12em]">{label}</th>)}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.length ? rows.map((row, index) => (
+              <tr key={row.id || row.bookingNumber || row.name || index} className="border-b border-slate-100 last:border-0">
+                {columns.map(([label, render]) => <td key={label} className="px-3 py-2 font-semibold text-slate-700">{render(row)}</td>)}
+              </tr>
+            )) : (
+              <tr><td colSpan={columns.length} className="px-3 py-4 text-center font-semibold text-slate-400">No data yet</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
 // Route by business type: WhatsApp CRM gets dedicated WhatsApp-only reports;
 // Sales Hub gets enterprise Sales Hub reports; every other business type keeps
 // the existing generic workspace reports.
@@ -1465,6 +2144,9 @@ export default function ReportsPage() {
   }
   if (normalizeBusinessType(businessType) === 'Restaurant POS') {
     return <RestaurantReports />
+  }
+  if (normalizeBusinessType(businessType) === 'Transport / Rental') {
+    return <TransportReports />
   }
   return <GenericReports />
 }

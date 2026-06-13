@@ -274,8 +274,8 @@ async function addInventoryAdjustments(batch, workspaceId, invoice, now, busines
 }
 
 export function useApprovals() {
-  const { userId, workspaceId, businessType, role, userDoc, firebaseUser } = useUser()
-  const canApprove = canApproveFinance(userDoc?.role || role)
+  const { userId, workspaceId, businessType, role, userDoc, firebaseUser, isAdmin, isOwner } = useUser()
+  const canApprove = Boolean(isOwner || isAdmin || canApproveFinance(userDoc?.role || role))
   const canApproveSubscription = false
   const [invoices, setInvoices] = useState([])
   const [approvalRecords, setApprovalRecords] = useState([])
@@ -314,8 +314,23 @@ export function useApprovals() {
       loaded += 1
       if (loaded >= expectedLoads) setLoading(false)
     }
-    function onError(err) {
-      setError(clientSafeMessage(err, 'Unable to load approvals.'))
+    function onCollectionError(collectionName, critical = false) {
+      return (err) => {
+        console.warn('[Approval Center] collection read failed', {
+          collectionName,
+          workspaceId,
+          role: userDoc?.role || role || '',
+          businessType,
+          code: err?.code || '',
+          message: err?.message || '',
+        })
+        if (critical) setError(clientSafeMessage(err, 'Unable to load invoice approvals.'))
+        markLoaded()
+      }
+    }
+
+    function onCriticalError(err) {
+      setError(clientSafeMessage(err, 'Unable to load invoice approvals.'))
       setLoading(false)
     }
 
@@ -327,7 +342,7 @@ export function useApprovals() {
         setInvoices(rows.filter(isApprovalInvoice))
         markLoaded()
       },
-      onError,
+      onCriticalError,
     )
 
     const unsubApprovalRecords = subscribeWorkspaceCollection(
@@ -338,7 +353,7 @@ export function useApprovals() {
         setApprovalRecords(rows.filter(isApprovalRecord))
         markLoaded()
       },
-      onError,
+      onCollectionError('approvals'),
     )
 
     const unsubPayments = subscribeWorkspaceCollection(
@@ -349,7 +364,7 @@ export function useApprovals() {
         setPayments(rows.filter(isApprovalPayment))
         markLoaded()
       },
-      onError,
+      onCollectionError('payments'),
     )
 
     const unsubTeam = subscribeWorkspaceCollection(
@@ -360,7 +375,7 @@ export function useApprovals() {
         setTeamMembers(rows.filter(isApprovalRecord))
         markLoaded()
       },
-      onError,
+      onCollectionError('teamMembers'),
     )
 
     const unsubClients = subscribeWorkspaceCollection(
@@ -371,7 +386,7 @@ export function useApprovals() {
         setClients(rows.filter(isApprovalRecord))
         markLoaded()
       },
-      onError,
+      onCollectionError('clients'),
     )
 
     const unsubExpenses = subscribeWorkspaceCollection(
@@ -382,7 +397,7 @@ export function useApprovals() {
         setExpenses(rows.filter(isApprovalRecord))
         markLoaded()
       },
-      onError,
+      onCollectionError('expenses'),
     )
 
     const unsubAccountTransactions = subscribeWorkspaceCollection(
@@ -393,7 +408,7 @@ export function useApprovals() {
         setAccountTransactions(rows.filter(isApprovalRecord))
         markLoaded()
       },
-      onError,
+      onCollectionError('accountTransactions'),
     )
 
     return () => {

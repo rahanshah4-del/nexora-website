@@ -19,6 +19,7 @@ import {
   HiOutlinePlus,
   HiOutlinePrinter,
   HiOutlineReceiptPercent,
+  HiOutlineXCircle,
 } from 'react-icons/hi2'
 import Badge from '../components/ui/Badge.jsx'
 import Button from '../components/ui/Button.jsx'
@@ -32,7 +33,7 @@ import {
   saveRestaurantCustomers,
 } from '../data/restaurantCustomers.js'
 import { hasRestaurantOffer, loadRestaurantMenuCategories, loadRestaurantMenuItems } from '../data/restaurantMenu.js'
-import { loadRestaurantOrders, upsertRestaurantOrder } from '../data/restaurantOrders.js'
+import { getNextRestaurantOrderNumber, loadRestaurantOrders, upsertRestaurantOrder } from '../data/restaurantOrders.js'
 import {
   buildBillPrintData,
   buildBillPrintTemplate,
@@ -51,6 +52,7 @@ const initialQuickBill = {
   customerName: '',
   customerPhone: '',
   tableNumber: '',
+  outsideTableName: '',
   deliveryAddress: '',
   riderNotes: '',
   paymentMethod: 'Cash',
@@ -64,6 +66,29 @@ const initialQuickBill = {
 }
 
 const restaurantTablesStorageKey = 'nexora.restaurant.tables.v1'
+const outsideTablePrefix = 'Outside '
+
+function isOutsideTable(tableId = '') {
+  const normalized = String(tableId).trim().toLowerCase()
+  return normalized.startsWith('out-') || normalized.startsWith(outsideTablePrefix.toLowerCase())
+}
+
+function getOutsideTableId(orderNumber = '', preferredName = '') {
+  const customName = String(preferredName || '').trim()
+  if (customName) return customName
+  const floors = loadRestaurantFloors()
+  const tableNumbers = floors
+    .flatMap((floor) => (Array.isArray(floor?.tables) ? floor.tables : []))
+    .map((table) => String(table?.id || '').match(/^Outside\s+(\d+)$/i)?.[1])
+    .filter(Boolean)
+    .map(Number)
+  const orderNumbers = loadRestaurantOrders()
+    .map((order) => String(order?.table || '').match(/^Outside\s+(\d+)$/i)?.[1])
+    .filter(Boolean)
+    .map(Number)
+  const nextNumber = Math.max(0, ...tableNumbers, ...orderNumbers) + 1
+  return `${outsideTablePrefix}${nextNumber}`
+}
 
 function loadRestaurantTableOptions() {
   if (typeof window === 'undefined') return []
@@ -128,23 +153,82 @@ function releaseRestaurantTableOrder(tableId) {
   const nextFloors = floors.map((floor) => ({
     ...floor,
     tables: Array.isArray(floor?.tables)
-      ? floor.tables.map((table) => (
-        table?.id === tableId
-          ? {
-              ...table,
-              status: 'available',
-              order: '',
-              orderNumber: '',
-              kotNumber: '',
-              billNumber: '',
-              total: '',
-              customer: '',
-              server: 'Open',
-            }
-          : table
-      ))
+      ? floor.tables
+              .filter((table) => !(table?.id === tableId && (table?.temporaryOutside || isOutsideTable(table?.id))))
+          .map((table) => (
+            table?.id === tableId
+              ? {
+                  ...table,
+                  status: 'available',
+                  order: '',
+                  orderNumber: '',
+                  kotNumber: '',
+                  billNumber: '',
+                  total: '',
+                  customer: '',
+                  server: 'Open',
+                }
+              : table
+          ))
       : [],
   }))
+  saveRestaurantFloors(nextFloors)
+}
+
+function ensureOutsideTableOrder(tableId, order) {
+  if (!tableId) return
+  const floors = loadRestaurantFloors()
+  const fallbackFloors = floors.length ? floors : [{ name: 'Outdoor/VIP', tables: [] }]
+  let found = false
+  const nextFloors = fallbackFloors.map((floor, index) => {
+    const shouldUseFloor = floor.name === 'Outdoor/VIP' || (!fallbackFloors.some((item) => item.name === 'Outdoor/VIP') && index === fallbackFloors.length - 1)
+    const tables = Array.isArray(floor.tables) ? floor.tables : []
+    if (tables.some((table) => table.id === tableId)) {
+      found = true
+      return {
+        ...floor,
+        tables: tables.map((table) => (
+          table.id === tableId
+            ? {
+                ...table,
+                status: 'occupied',
+                order: order.orderNumber,
+                orderNumber: order.orderNumber,
+                kotNumber: order.kotNumber,
+                billNumber: order.billNumber,
+                total: formatRestaurantCurrency(order.totals?.total || 0),
+                customer: order.customerName || order.customer || 'Walk-in Guest',
+              }
+            : table
+        )),
+      }
+    }
+    if (!found && shouldUseFloor) {
+      found = true
+      return {
+        ...floor,
+        tables: [
+          ...tables,
+          {
+            id: tableId,
+            seats: 1,
+            floor: floor.name,
+            status: 'occupied',
+            server: 'Outside',
+            notes: 'Temporary outside/no-table order',
+            temporaryOutside: true,
+            order: order.orderNumber,
+            orderNumber: order.orderNumber,
+            kotNumber: order.kotNumber,
+            billNumber: order.billNumber,
+            total: formatRestaurantCurrency(order.totals?.total || 0),
+            customer: order.customerName || order.customer || 'Walk-in Guest',
+          },
+        ],
+      }
+    }
+    return floor
+  })
   saveRestaurantFloors(nextFloors)
 }
 const orderModes = [
@@ -155,14 +239,6 @@ const orderModes = [
 ]
 
 const ordersPageExtraMenuItems = []
-
-function getNextRestaurantOrderNumber() {
-  const maxOrderNumber = loadRestaurantOrders().reduce((max, order) => {
-    const numeric = Number(String(order.orderNumber || '').replace(/[^0-9]/g, ''))
-    return Number.isFinite(numeric) ? Math.max(max, numeric) : max
-  }, 45265)
-  return `#${maxOrderNumber + 1}`
-}
 
 const categoryIconMap = {
   BBQ: GiBarbecue,
@@ -209,7 +285,22 @@ function MenuImagePlaceholder({ item }) {
 export default function RestaurantOrdersPage() {
   const location = useLocation()
   const { settings } = useBusinessSettings()
-  const restaurantPrintSettings = settings?.restaurantPos || {}
+  const restaurantPrintSettings = {
+    restaurantName: settings?.restaurantPos?.restaurantName || settings?.businessName || 'Nexora Restaurant',
+    legalName: settings?.restaurantPos?.legalName || settings?.businessName || '',
+    branchName: settings?.restaurantPos?.branchName || '',
+    branchCode: settings?.restaurantPos?.branchCode || '',
+    address: settings?.restaurantPos?.address || settings?.address || '',
+    phone: settings?.restaurantPos?.phone || settings?.phone || '',
+    whatsappPhone: settings?.restaurantPos?.whatsappPhone || '',
+    taxNumber: settings?.restaurantPos?.taxNumber || settings?.taxNumber || '',
+    salesTaxNumber: settings?.restaurantPos?.salesTaxNumber || '',
+    fbrPosId: settings?.restaurantPos?.fbrPosId || '',
+    foodLicenseNumber: settings?.restaurantPos?.foodLicenseNumber || '',
+    footerMessage: settings?.restaurantPos?.footerMessage || settings?.receiptFooter || '',
+    logoUrl: settings?.restaurantPos?.logoUrl || settings?.restaurantPos?.logoDataUrl || settings?.logoUrl || '',
+    ...(settings?.restaurantPos || {}),
+  }
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState('All Menu')
   const [cart, setCart] = useState(initialCart)
@@ -224,6 +315,10 @@ export default function RestaurantOrdersPage() {
   const [paymentOpen, setPaymentOpen] = useState(false)
   const [paymentDetails, setPaymentDetails] = useState({ method: 'Cash', amount: '', note: '' })
   const [orderNumber, setOrderNumber] = useState(() => getNextRestaurantOrderNumber())
+  const [ordersVersion, setOrdersVersion] = useState(0)
+  const [cancelOpen, setCancelOpen] = useState(false)
+  const [cancelReason, setCancelReason] = useState('')
+  const [cancelError, setCancelError] = useState('')
   const [menuItems] = useState(() => [...loadRestaurantMenuItems(), ...ordersPageExtraMenuItems])
   const [menuCategories] = useState(() => loadRestaurantMenuCategories())
   const [tableOptions] = useState(() => loadRestaurantTableOptions())
@@ -263,6 +358,7 @@ export default function RestaurantOrdersPage() {
       ...current,
       orderType: existingOrder.orderType || current.orderType,
       tableNumber: existingOrder.table || table || current.tableNumber,
+      outsideTableName: isOutsideTable(existingOrder.table || table || '') ? existingOrder.table || table : current.outsideTableName,
       paymentMethod: existingOrder.paymentMethod || current.paymentMethod,
       paidAmount: existingOrder.paidAmount ? String(existingOrder.paidAmount) : current.paidAmount,
       customerName: existingOrder.customer || existingOrder.customerName || current.customerName,
@@ -311,18 +407,40 @@ export default function RestaurantOrdersPage() {
       .filter((customer) => [customer.name, customer.phone].filter(Boolean).some((value) => String(value).toLowerCase().includes(needle)))
       .slice(0, 4)
   }, [customerSearch, restaurantCustomers])
+  const currentSavedOrder = useMemo(() => {
+    const savedOrders = loadRestaurantOrders()
+    return (
+      savedOrders.find((order) => order.orderNumber === orderNumber) ||
+      savedOrders.find(
+        (order) =>
+          quickBill.tableNumber &&
+          order.table === quickBill.tableNumber &&
+          String(order.orderStatus || '').toLowerCase() !== 'cancelled',
+      ) ||
+      null
+    )
+  }, [orderNumber, ordersVersion, quickBill.tableNumber])
+  const canCancelCurrentOrder = Boolean(
+    currentSavedOrder &&
+    String(currentSavedOrder.orderStatus || '').toLowerCase() !== 'cancelled',
+  )
   const paidAmount = quickBill.paymentMethod === 'Due' ? 0 : Math.max(0, Number(quickBill.paidAmount || 0))
   const effectivePaidAmount = quickBill.paidAmount === '' && quickBill.paymentMethod !== 'Due' ? total : paidAmount
   const dueAmount = Math.max(0, total - effectivePaidAmount)
   const changeAmount = Math.max(0, effectivePaidAmount - total)
   const paymentDueForOrder = Math.max(0, total - Math.min(effectivePaidAmount, total))
 
+  function resolvedOrderTable() {
+    if (quickBill.orderType !== 'Dine-in' && !isOutsideTable(quickBill.tableNumber)) return ''
+    return quickBill.tableNumber || getOutsideTableId(orderNumber, quickBill.outsideTableName)
+  }
+
   function billContext() {
     return {
       orderNumber,
       kotNumber: `KOT-${orderNumber.replace(/^#/, '')}`,
       billNumber: `BILL-${orderNumber.replace(/^#/, '')}`,
-      table: quickBill.orderType === 'Dine-in' ? quickBill.tableNumber : '',
+      table: resolvedOrderTable(),
       orderType: quickBill.orderType,
       customerName: selectedCustomer?.name || 'Walk-in Guest',
       customerPhone: selectedCustomer?.phone || quickBill.customerPhone || '',
@@ -351,15 +469,19 @@ export default function RestaurantOrdersPage() {
       setFlowMessage('Add at least one menu item before saving.')
       return false
     }
-    if (quickBill.orderType !== 'Dine-in' || quickBill.tableNumber) return true
-    setFlowMessage('Select a table before sending a dine-in order.')
-    return false
+    if (quickBill.orderType === 'Dine-in' && !quickBill.tableNumber) {
+      setFlowMessage(`No table selected. System will save this as ${getOutsideTableId(orderNumber, quickBill.outsideTableName)}.`)
+    }
+    return true
   }
 
   function saveOrderRecord(orderStatus = 'served') {
     const paymentStatus = dueAmount ? (effectivePaidAmount > 0 ? 'partial' : 'due') : 'paid'
+    const context = billContext()
+    const tableForOrder = context.table
     const orderPayload = {
-      ...billContext(),
+      ...context,
+      table: tableForOrder,
       customerId: selectedCustomerId,
       customer: selectedCustomer?.name || 'Walk-in Guest',
       phone: selectedCustomer?.phone || quickBill.customerPhone || '',
@@ -367,9 +489,13 @@ export default function RestaurantOrdersPage() {
       paymentStatus,
     }
     upsertRestaurantOrder(orderPayload)
-    if (orderPayload.orderType === 'Dine-in' && orderPayload.table) {
+    setOrdersVersion((current) => current + 1)
+    if (orderPayload.table) {
       if (orderStatus === 'served' && paymentStatus === 'paid') {
         releaseRestaurantTableOrder(orderPayload.table)
+      } else if (isOutsideTable(orderPayload.table) || !tableOptions.includes(orderPayload.table)) {
+        ensureOutsideTableOrder(orderPayload.table, orderPayload)
+        setQuickBill((current) => ({ ...current, tableNumber: orderPayload.table }))
       } else {
         updateRestaurantTableOrder(orderPayload.table, orderPayload)
       }
@@ -501,15 +627,18 @@ export default function RestaurantOrdersPage() {
       orderStatus: 'served',
       paymentStatus: nextPaymentStatus,
     })
-    if (context.orderType === 'Dine-in' && context.table) {
+    setOrdersVersion((current) => current + 1)
+    if (context.table) {
       if (nextPaymentStatus === 'paid') {
         releaseRestaurantTableOrder(context.table)
       } else {
-        updateRestaurantTableOrder(context.table, {
+        const tablePayload = {
           ...context,
           customer: selectedCustomer?.name || 'Walk-in Guest',
           paymentStatus: nextPaymentStatus,
-        })
+        }
+        if (isOutsideTable(context.table) || !tableOptions.includes(context.table)) ensureOutsideTableOrder(context.table, tablePayload)
+        else updateRestaurantTableOrder(context.table, tablePayload)
       }
     }
     updateCustomerPaymentBalance(paid)
@@ -548,7 +677,8 @@ export default function RestaurantOrdersPage() {
       orderStatus: 'served',
       paymentStatus: 'paid',
     })
-    if (context.orderType === 'Dine-in' && context.table) {
+    setOrdersVersion((current) => current + 1)
+    if (context.table) {
       releaseRestaurantTableOrder(context.table)
     }
     setRestaurantCustomers((current) =>
@@ -559,6 +689,7 @@ export default function RestaurantOrdersPage() {
         paymentMethod,
       }),
     )
+    setPrintPreview(null)
     prepareNextOrderAfterPaid()
     setFlowMessage('Bill paid and saved. Ready for next bill.')
     setBillingActionStatus({ type: 'payment', status: 'success', message: 'Paid. Next bill ready' })
@@ -600,7 +731,7 @@ export default function RestaurantOrdersPage() {
           message: quickBill.printBill ? 'Bill saved & printed. New order ready' : 'Bill saved. New order ready',
         })
       }
-    }, 450)
+    }, 80)
   }
 
   function savePrintKot() {
@@ -618,7 +749,7 @@ export default function RestaurantOrdersPage() {
         status: 'success',
         message: quickBill.printKot ? 'KOT saved & printed. New order ready' : 'KOT saved. New order ready',
       })
-    }, 450)
+    }, 80)
   }
 
   function newOrder() {
@@ -640,6 +771,37 @@ export default function RestaurantOrdersPage() {
     setBillingActionStatus(null)
     setPaymentOpen(false)
     setPaymentDetails({ method: 'Cash', amount: '', note: '' })
+  }
+
+  function openCancelOrder() {
+    if (!canCancelCurrentOrder) {
+      setFlowMessage(currentSavedOrder ? 'This order is already cancelled.' : 'Save this order first before cancelling it.')
+      return
+    }
+    setCancelReason('')
+    setCancelError('')
+    setCancelOpen(true)
+  }
+
+  function confirmCancelOrder() {
+    if (!currentSavedOrder) return
+    if (!cancelReason.trim()) {
+      setCancelError('Cancel reason is required.')
+      return
+    }
+    upsertRestaurantOrder({
+      ...currentSavedOrder,
+      orderStatus: 'cancelled',
+      paymentStatus: 'cancelled',
+      cancelReason: cancelReason.trim(),
+      cancelledAt: new Date().toISOString(),
+    })
+    if (currentSavedOrder.table) releaseRestaurantTableOrder(currentSavedOrder.table)
+    setOrdersVersion((current) => current + 1)
+    setCancelOpen(false)
+    prepareNextOrderAfterSave()
+    setFlowMessage(`Order cancelled. Reason: ${cancelReason.trim()}`)
+    setBillingActionStatus({ type: 'cancel', status: 'success', message: 'Order cancelled. New order ready' })
   }
 
   function addItem(itemId) {
@@ -695,7 +857,7 @@ export default function RestaurantOrdersPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
       >
-        <div className="grid h-full min-w-0 gap-3 xl:grid-cols-[minmax(0,1fr)_370px] 2xl:grid-cols-[minmax(0,1fr)_390px]">
+        <div className="grid h-full min-w-0 gap-3 xl:grid-cols-[minmax(0,1fr)_430px] 2xl:grid-cols-[minmax(0,1fr)_460px]">
         <Card className="flex min-h-0 flex-col rounded-[1.15rem] p-2.5 xl:h-full xl:overflow-hidden">
           <div className="flex min-w-0 shrink-0 flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
             <div className="min-w-0">
@@ -729,23 +891,45 @@ export default function RestaurantOrdersPage() {
             </div>
 
             {quickBill.orderType === 'Dine-in' ? (
-              <div className="flex min-w-0 gap-1.5 overflow-x-auto pb-0.5">
-                {tableOptions.slice(0, 8).map((table) => (
+              <div className="space-y-1.5">
+                <div className="flex min-w-0 gap-1.5 overflow-x-auto pb-0.5">
+                  {tableOptions.slice(0, 8).map((table) => (
+                    <button
+                      key={table}
+                      type="button"
+                      onClick={() => updateQuickBill('tableNumber', table)}
+                      className={cn(
+                        'min-w-24 shrink-0 rounded-xl border px-3.5 py-2.5 text-left transition',
+                        quickBill.tableNumber === table
+                          ? 'border-sky-400 bg-sky-50 text-sky-800 shadow-sm'
+                          : 'border-slate-200 bg-white text-slate-600 hover:border-sky-200',
+                      )}
+                    >
+                      <span className="block text-sm font-black">{table}</span>
+                      <span className="mt-0.5 block text-[10.5px] font-semibold uppercase tracking-[0.08em] text-slate-400">Available</span>
+                    </button>
+                  ))}
+                </div>
+                <div className="grid gap-1.5 rounded-xl border border-dashed border-slate-200 bg-slate-50 p-1.5 sm:grid-cols-[minmax(0,1fr)_auto]">
+                  <input
+                    value={quickBill.outsideTableName}
+                    onChange={(event) => updateQuickBill('outsideTableName', event.target.value)}
+                    className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-xs font-semibold outline-none focus:border-sky-300"
+                    placeholder={`No table? custom name or auto ${getOutsideTableId(orderNumber)}`}
+                  />
                   <button
-                    key={table}
                     type="button"
-                    onClick={() => updateQuickBill('tableNumber', table)}
+                    onClick={() => updateQuickBill('tableNumber', getOutsideTableId(orderNumber, quickBill.outsideTableName))}
                     className={cn(
-                      'min-w-16 shrink-0 rounded-xl border px-2.5 py-2 text-left transition',
-                      quickBill.tableNumber === table
-                        ? 'border-sky-400 bg-sky-50 text-sky-800 shadow-sm'
-                        : 'border-slate-200 bg-white text-slate-600 hover:border-sky-200',
+                      'h-8 rounded-lg px-3 text-xs font-black transition',
+                      isOutsideTable(quickBill.tableNumber)
+                        ? 'bg-sky-700 text-white'
+                        : 'bg-white text-slate-700 ring-1 ring-slate-200 hover:text-sky-700',
                     )}
                   >
-                    <span className="block text-xs font-black">{table}</span>
-                    <span className="mt-0.5 block text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-400">Available</span>
+                    Use {quickBill.outsideTableName.trim() || getOutsideTableId(orderNumber)}
                   </button>
-                ))}
+                </div>
               </div>
             ) : null}
 
@@ -1020,11 +1204,11 @@ export default function RestaurantOrdersPage() {
               <Button
                 type="button"
                 className="h-8 px-2 text-xs"
-                onClick={savePrintKot}
+                onClick={saveKot}
                 disabled={billingActionStatus?.status === 'loading'}
               >
                 <HiOutlineReceiptPercent className="h-3.5 w-3.5" />
-                Save / Print KOT
+                Save Table KOT
               </Button>
             </div>
             <button
@@ -1044,6 +1228,17 @@ export default function RestaurantOrdersPage() {
             >
               Payment Details {paymentDueForOrder > 0 ? `(${formatRestaurantCurrency(paymentDueForOrder)})` : ''}
             </button>
+            {canCancelCurrentOrder ? (
+              <button
+                type="button"
+                onClick={openCancelOrder}
+                disabled={billingActionStatus?.status === 'loading'}
+                className="mt-1 inline-flex h-7 w-full items-center justify-center gap-1.5 rounded-lg border border-rose-100 bg-rose-50 text-[11px] font-black text-rose-700 transition hover:bg-rose-100 disabled:pointer-events-none disabled:opacity-60"
+              >
+                <HiOutlineXCircle className="h-3.5 w-3.5" />
+                Cancel Order
+              </button>
+            ) : null}
             <button
               type="button"
               className="mt-1 w-full text-center text-[11px] font-semibold text-sky-700 hover:text-sky-900"
@@ -1140,6 +1335,60 @@ export default function RestaurantOrdersPage() {
                 Print Bill
               </Button>
               <Button type="button">Save Bill</Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {cancelOpen ? (
+        <div className="fixed inset-0 z-[86] grid place-items-center bg-slate-950/45 px-3 py-4 backdrop-blur-sm">
+          <div className="w-full max-w-md overflow-hidden rounded-[1.25rem] border border-slate-200 bg-white shadow-2xl">
+            <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-4 py-3">
+              <div className="min-w-0">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-rose-600">Cancel Order</p>
+                <h2 className="mt-1 text-lg font-black text-slate-950">{currentSavedOrder?.orderNumber || orderNumber}</h2>
+                <p className="mt-1 text-xs font-semibold text-slate-500">
+                  Reason ke bina order cancel nahi hoga.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setCancelOpen(false)}
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-slate-200 text-sm font-black text-slate-500 hover:bg-slate-50"
+                aria-label="Close cancel order"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="space-y-3 px-4 py-4">
+              <Field label="Cancel Reason">
+                <textarea
+                  value={cancelReason}
+                  onChange={(event) => {
+                    setCancelReason(event.target.value)
+                    setCancelError('')
+                  }}
+                  className="min-h-24 w-full resize-none rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-rose-300"
+                  placeholder="Example: customer left, wrong order, duplicate order..."
+                />
+              </Field>
+              {cancelError ? <p className="text-xs font-semibold text-rose-600">{cancelError}</p> : null}
+              <div className="rounded-xl border border-rose-100 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-800">
+                OK karne ke baad order cancelled ho jayega aur linked table / OUT side holder free ho jayega.
+              </div>
+            </div>
+
+            <div className="grid gap-2 border-t border-slate-100 bg-slate-50 px-4 py-3 sm:grid-cols-2">
+              <Button type="button" variant="subtle" onClick={() => setCancelOpen(false)}>Back</Button>
+              <button
+                type="button"
+                onClick={confirmCancelOrder}
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-rose-600 px-3 text-sm font-black text-white shadow-sm transition hover:bg-rose-700"
+              >
+                <HiOutlineXCircle className="h-4 w-4" />
+                OK, Cancel Order
+              </button>
             </div>
           </div>
         </div>

@@ -204,6 +204,11 @@ export const moduleCatalog = [
   { key: 'tables', label: 'Tables', route: '/app/tables', minPlan: 'Basic' },
   { key: 'ordersKot', label: 'Orders/KOT', route: '/app/orders-kot', minPlan: 'Basic' },
   { key: 'kitchenDisplay', label: 'Kitchen Display', route: '/app/kitchen-display', minPlan: 'Basic' },
+  { key: 'fleetDashboard', label: 'Fleet Dashboard', route: '/app/transport-dashboard', minPlan: 'Basic' },
+  { key: 'transportVehicles', label: 'Vehicles', route: '/app/transport/vehicles', minPlan: 'Basic' },
+  { key: 'transportBookings', label: 'Bookings & Rentals', route: '/app/transport/bookings', minPlan: 'Basic' },
+  { key: 'transportCustomers', label: 'Rental Customers', route: '/app/transport/customers', minPlan: 'Basic' },
+  { key: 'transportPayments', label: 'Rental Payments', route: '/app/transport/payments', minPlan: 'Basic' },
   { key: 'whatsappInbox', label: 'WhatsApp Inbox', route: '/app/whatsapp-inbox', minPlan: 'Basic' },
   { key: 'whatsappLeads', label: 'WhatsApp Leads', route: '/app/whatsapp-leads', minPlan: 'Basic' },
   { key: 'whatsappFollowUps', label: 'WhatsApp Follow-Ups', route: '/app/whatsapp-followups', minPlan: 'Basic' },
@@ -220,6 +225,7 @@ export const businessTypes = [
   'School ERP',
   'Property ERP',
   'Restaurant POS',
+  'Transport / Rental',
   'WhatsApp CRM',
 ]
 
@@ -386,6 +392,31 @@ export const businessWorkspaceCatalog = [
     ],
   },
   {
+    id: 'transport-rental',
+    type: 'Transport / Rental',
+    title: 'Transport / Rental',
+    route: '/app/transport-dashboard',
+    description: 'Manage your fleet, rental bookings, customers, payments, and dues from one workspace.',
+    labels: {
+      customers: 'Rental Customers',
+    },
+    modules: [
+      'dashboard',
+      'fleetDashboard',
+      'transportVehicles',
+      'transportBookings',
+      'transportCustomers',
+      'transportPayments',
+      'expenses',
+      'accounts',
+      'accountStatements',
+      'reports',
+      'team',
+      'notifications',
+      'settings',
+    ],
+  },
+  {
     id: 'whatsapp-crm',
     type: 'WhatsApp CRM',
     title: 'WhatsApp CRM',
@@ -427,8 +458,7 @@ const businessTypeAliases = {
   'Retail / Inventory': 'Retail / POS',
   'Inventory / Pharma': 'Retail / POS',
   'Healthcare / Hospital': 'General CRM',
-  'Transport / Rental': 'General CRM',
-  'Transport / Logistics': 'General CRM',
+  'Transport / Logistics': 'Transport / Rental',
   'Software Agency': 'General CRM',
   'Custom Enterprise': 'General CRM',
 }
@@ -505,7 +535,8 @@ export function labelForBusinessType(type) {
 
 export function businessModuleKeys(type) {
   const workspace = businessWorkspaceForType(type)
-  return Array.from(new Set([...workspace.modules, 'dashboard', 'approvals']))
+  const forcedModules = normalizeBusinessType(type) === 'Transport / Rental' ? ['dashboard'] : ['dashboard', 'approvals']
+  return Array.from(new Set([...workspace.modules, ...forcedModules]))
 }
 
 export function labelForBusinessModule(moduleKey, type) {

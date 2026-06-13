@@ -24,6 +24,11 @@ const RestaurantMenuManagementPage = lazy(() => import('./crm/pages/RestaurantMe
 const RestaurantTablesPage = lazy(() => import('./crm/pages/RestaurantTables.jsx'))
 const RestaurantOrdersKotPage = lazy(() => import('./crm/pages/RestaurantOrdersKot.jsx'))
 const RestaurantKitchenDisplayPage = lazy(() => import('./crm/pages/RestaurantKitchenDisplay.jsx'))
+const TransportDashboardPage = lazy(() => import('./crm/pages/TransportDashboard.jsx'))
+const TransportVehiclesPage = lazy(() => import('./crm/pages/TransportVehicles.jsx'))
+const TransportBookingsPage = lazy(() => import('./crm/pages/TransportBookings.jsx'))
+const TransportCustomersPage = lazy(() => import('./crm/pages/TransportCustomers.jsx'))
+const TransportPaymentsPage = lazy(() => import('./crm/pages/TransportPayments.jsx'))
 const ClientPortalPage = lazy(() => import('./crm/pages/ClientPortal.jsx'))
 const CustomersPage = lazy(() => import('./crm/pages/Customers.jsx'))
 const ProductsPage = lazy(() => import('./crm/pages/Products.jsx'))
@@ -232,6 +237,11 @@ export default function AppRouter() {
         <Route path="tables" element={<LazyPage><RestaurantTablesPage /></LazyPage>} />
         <Route path="orders-kot" element={<LazyPage><RestaurantOrdersKotPage /></LazyPage>} />
         <Route path="kitchen-display" element={<LazyPage><RestaurantKitchenDisplayPage /></LazyPage>} />
+        <Route path="transport-dashboard" element={<LazyPage><TransportDashboardPage /></LazyPage>} />
+        <Route path="transport/vehicles" element={<LazyPage><TransportVehiclesPage /></LazyPage>} />
+        <Route path="transport/bookings" element={<LazyPage><TransportBookingsPage /></LazyPage>} />
+        <Route path="transport/customers" element={<LazyPage><TransportCustomersPage /></LazyPage>} />
+        <Route path="transport/payments" element={<LazyPage><TransportPaymentsPage /></LazyPage>} />
         <Route path="client-portal" element={<LazyPage><ClientPortalPage /></LazyPage>} />
         <Route path="customers" element={<LazyPage><CustomersPage /></LazyPage>} />
         <Route path="products" element={<LazyPage><ProductsPage /></LazyPage>} />

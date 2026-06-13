@@ -75,6 +75,10 @@ export default function RestaurantMenuManagementPage() {
   const [categories, setCategories] = useState(() => loadRestaurantMenuCategories())
   const [newCategory, setNewCategory] = useState('')
   const [viewMode, setViewMode] = useState('list')
+  const [categoryModalOpen, setCategoryModalOpen] = useState(false)
+  const [editingCategory, setEditingCategory] = useState('')
+  const [categoryName, setCategoryName] = useState('')
+  const [confirmAction, setConfirmAction] = useState(null)
 
   useEffect(() => {
     saveRestaurantMenuItems(items)
@@ -142,8 +146,20 @@ export default function RestaurantMenuManagementPage() {
     setItems((current) => current.map((row) => (row.id === item.id ? { ...row, status: row.status === 'Active' ? 'Inactive' : 'Active' } : row)))
   }
 
-  function deleteItem(item) {
+  function deleteItemNow(item) {
     setItems((current) => current.filter((row) => row.id !== item.id))
+  }
+
+  function requestDeleteItem(item, afterDelete) {
+    setConfirmAction({
+      title: 'Delete menu item?',
+      message: `${item.name} will be removed from the menu. This action cannot be undone.`,
+      confirmLabel: 'OK, Delete',
+      onConfirm: () => {
+        deleteItemNow(item)
+        afterDelete?.()
+      },
+    })
   }
 
   function addCategory() {
@@ -152,6 +168,57 @@ export default function RestaurantMenuManagementPage() {
     setCategories((current) => (current.some((item) => item.toLowerCase() === label.toLowerCase()) ? current : [...current, label]))
     setCategory(label)
     setNewCategory('')
+  }
+
+  function openCategoryModal() {
+    if (category === 'All Menu') return
+    setEditingCategory(category)
+    setCategoryName(category)
+    setCategoryModalOpen(true)
+  }
+
+  function closeCategoryModal() {
+    setCategoryModalOpen(false)
+    setEditingCategory('')
+    setCategoryName('')
+  }
+
+  function saveCategoryEdit() {
+    const nextName = categoryName.trim()
+    if (!editingCategory || !nextName || editingCategory === 'All Menu') return
+    const duplicate = categories.some((item) => item.toLowerCase() === nextName.toLowerCase() && item !== editingCategory)
+    if (duplicate) return
+    setCategories((current) => current.map((item) => (item === editingCategory ? nextName : item)))
+    setItems((current) => current.map((item) => (item.category === editingCategory ? { ...item, category: nextName } : item)))
+    if (category === editingCategory) setCategory(nextName)
+    if (form.category === editingCategory) setForm((current) => ({ ...current, category: nextName }))
+    closeCategoryModal()
+  }
+
+  function requestRemoveCategory(targetCategory = category) {
+    if (!targetCategory || targetCategory === 'All Menu') return
+    const fallbackCategory = categories.find((item) => item !== 'All Menu' && item !== targetCategory) || 'Burgers'
+    const affectedItems = items.filter((item) => item.category === targetCategory).length
+    setConfirmAction({
+      title: 'Remove category?',
+      message: affectedItems
+        ? `${targetCategory} has ${affectedItems} item(s). They will move to ${fallbackCategory}.`
+        : `${targetCategory} will be removed from category filters.`,
+      confirmLabel: 'OK, Remove',
+      onConfirm: () => {
+        setCategories((current) => current.filter((item) => item !== targetCategory))
+        setItems((current) => current.map((item) => (item.category === targetCategory ? { ...item, category: fallbackCategory } : item)))
+        if (category === targetCategory) setCategory('All Menu')
+        if (form.category === targetCategory) setForm((current) => ({ ...current, category: fallbackCategory }))
+        closeCategoryModal()
+      },
+    })
+  }
+
+  function confirmPendingAction() {
+    const action = confirmAction
+    setConfirmAction(null)
+    action?.onConfirm?.()
   }
 
   return (
@@ -214,11 +281,19 @@ export default function RestaurantMenuManagementPage() {
               </button>
             </div>
           </div>
-          <div className="mt-3 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
+          <div className="mt-3 grid gap-2 lg:grid-cols-[minmax(0,1fr)_auto_auto_auto]">
             <Input value={newCategory} onChange={(event) => setNewCategory(event.target.value)} placeholder="Create category e.g. BBQ, Pizza, Desserts" />
             <Button type="button" variant="subtle" onClick={addCategory}>
               <HiOutlinePlus className="h-4 w-4" />
               Add Category
+            </Button>
+            <Button type="button" variant="subtle" disabled={category === 'All Menu'} onClick={openCategoryModal}>
+              <HiOutlinePencilSquare className="h-4 w-4" />
+              Edit Category
+            </Button>
+            <Button type="button" variant="subtle" disabled={category === 'All Menu'} onClick={() => requestRemoveCategory(category)}>
+              <HiOutlineTrash className="h-4 w-4" />
+              Remove Category
             </Button>
           </div>
         </Card>
@@ -273,7 +348,7 @@ export default function RestaurantMenuManagementPage() {
                   <Button type="button" variant="subtle" className="h-8 px-2.5 text-xs" onClick={() => toggleItem(item)} title={item.status === 'Active' ? 'Disable item' : 'Enable item'}>
                     <HiOutlineNoSymbol className="h-4 w-4" />
                   </Button>
-                  <Button type="button" variant="subtle" className="h-8 px-2.5 text-xs" onClick={() => deleteItem(item)} title="Delete item">
+                  <Button type="button" variant="subtle" className="h-8 px-2.5 text-xs" onClick={() => requestDeleteItem(item)} title="Delete item">
                     <HiOutlineTrash className="h-4 w-4" />
                   </Button>
                 </div>
@@ -318,7 +393,7 @@ export default function RestaurantMenuManagementPage() {
                           <Button type="button" variant="subtle" className="h-8 px-2.5 text-xs" onClick={() => openModal(item)}><HiOutlinePencilSquare className="h-4 w-4" />Edit</Button>
                           <Button type="button" variant="subtle" className="h-8 px-2.5 text-xs" onClick={() => duplicateItem(item)} title="Duplicate item"><HiOutlineDocumentDuplicate className="h-4 w-4" /></Button>
                           <Button type="button" variant="subtle" className="h-8 px-2.5 text-xs" onClick={() => toggleItem(item)} title={item.status === 'Active' ? 'Disable item' : 'Enable item'}><HiOutlineNoSymbol className="h-4 w-4" /></Button>
-                          <Button type="button" variant="subtle" className="h-8 px-2.5 text-xs" onClick={() => deleteItem(item)} title="Delete item"><HiOutlineTrash className="h-4 w-4" /></Button>
+                          <Button type="button" variant="subtle" className="h-8 px-2.5 text-xs" onClick={() => requestDeleteItem(item)} title="Delete item"><HiOutlineTrash className="h-4 w-4" /></Button>
                         </div>
                       </td>
                     </tr>
@@ -444,14 +519,56 @@ export default function RestaurantMenuManagementPage() {
                 <HiOutlineNoSymbol className="h-4 w-4" />
                 {editingItem?.status === 'Active' ? 'Disable Item' : 'Enable Item'}
               </Button>
-              <Button type="button" variant="subtle" disabled={!editingItem} onClick={() => {
-                if (editingItem) deleteItem(editingItem)
-                closeModal()
-              }}>
+              <Button type="button" variant="subtle" disabled={!editingItem} onClick={() => editingItem && requestDeleteItem(editingItem, closeModal)}>
                 <HiOutlineTrash className="h-4 w-4" />
                 Delete Item
               </Button>
               <Button type="button" onClick={saveItem}>Save Item</Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {categoryModalOpen ? (
+        <div className="fixed inset-0 z-[90] grid place-items-center bg-slate-950/45 px-3 py-4 backdrop-blur-sm">
+          <div className="w-full max-w-md overflow-hidden rounded-[1.15rem] border border-slate-200 bg-white shadow-2xl">
+            <div className="border-b border-slate-100 px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Menu Category</p>
+              <h2 className="mt-1 text-lg font-black text-slate-950">Edit Category</h2>
+            </div>
+            <div className="space-y-3 px-4 py-4">
+              <Field label="Category name">
+                <Input value={categoryName} onChange={(event) => setCategoryName(event.target.value)} placeholder="Category name" />
+              </Field>
+              <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800">
+                Removing a category asks for confirmation first. Existing items are moved to another category.
+              </div>
+            </div>
+            <div className="flex flex-col-reverse gap-2 border-t border-slate-100 bg-slate-50 px-4 py-3 sm:flex-row sm:justify-end">
+              <Button type="button" variant="subtle" onClick={closeCategoryModal}>Cancel</Button>
+              <Button type="button" variant="subtle" onClick={() => requestRemoveCategory(editingCategory)}>
+                <HiOutlineTrash className="h-4 w-4" />
+                Remove
+              </Button>
+              <Button type="button" onClick={saveCategoryEdit}>Save Category</Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {confirmAction ? (
+        <div className="fixed inset-0 z-[100] grid place-items-center bg-slate-950/50 px-3 py-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm overflow-hidden rounded-[1.15rem] border border-slate-200 bg-white shadow-2xl">
+            <div className="px-4 py-4">
+              <div className="mx-auto grid h-11 w-11 place-items-center rounded-full bg-rose-50 text-rose-600">
+                <HiOutlineTrash className="h-5 w-5" />
+              </div>
+              <h2 className="mt-3 text-center text-lg font-black text-slate-950">{confirmAction.title}</h2>
+              <p className="mt-2 text-center text-sm leading-6 text-slate-500">{confirmAction.message}</p>
+            </div>
+            <div className="grid grid-cols-2 gap-2 border-t border-slate-100 bg-slate-50 px-4 py-3">
+              <Button type="button" variant="subtle" onClick={() => setConfirmAction(null)}>Cancel</Button>
+              <Button type="button" onClick={confirmPendingAction}>{confirmAction.confirmLabel || 'OK'}</Button>
             </div>
           </div>
         </div>

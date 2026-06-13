@@ -155,9 +155,13 @@ export function buildBillPrintTemplate(input = {}) {
   const itemLines = data.rows.map((row) => `${row.quantity} x ${row.item?.name || row.name} @ ${formatRestaurantCurrency(row.unitPrice)}\n${formatRestaurantCurrency(row.lineTotal)}`).join('\n')
   return [
     data.restaurantName,
+    [settings.branchName, settings.branchCode].filter(Boolean).join(' - '),
     settings.address,
     settings.phone || data.phone,
     settings.taxNumber ? `Tax: ${settings.taxNumber}` : '',
+    settings.salesTaxNumber ? `STRN: ${settings.salesTaxNumber}` : '',
+    settings.fbrPosId ? `POS ID: ${settings.fbrPosId}` : '',
+    settings.foodLicenseNumber ? `Food License: ${settings.foodLicenseNumber}` : '',
     '58mm BILL',
     `Order: ${data.orderNumber}`,
     `Bill: ${data.billNumber}`,
@@ -189,6 +193,7 @@ export function buildKotPrintTemplate(input = {}) {
   return [
     'KITCHEN COPY',
     data.restaurantName,
+    [settings.branchName, settings.branchCode].filter(Boolean).join(' - '),
     `KOT: ${data.kotNumber}`,
     `Order: ${data.orderNumber}`,
     `Type/Table: ${data.orderType} / ${data.table || '-'}`,

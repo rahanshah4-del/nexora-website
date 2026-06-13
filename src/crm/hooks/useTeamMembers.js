@@ -15,8 +15,21 @@ function normalizeMember(m) {
 
 const OWNER_PROTECTION_MESSAGE = 'Workspace owner cannot be disabled or downgraded.'
 
+function logTeamPermissionIssue(error, details = {}) {
+  console.warn('[Team Management Permission Debug]', {
+    currentUserUid: details.userId || '',
+    role: details.role || '',
+    workspaceId: details.workspaceId || '',
+    collectionPath: details.collectionPath || '',
+    operation: details.operation || '',
+    firestoreErrorCode: error?.code || error?.originalError?.code || 'unknown',
+    message: error?.message || '',
+  })
+}
+
 export function useTeamMembers() {
   const { userId, workspaceId, businessType, userDoc, workspaceDoc, firebaseUser, accessPlan } = useUser()
+  const currentRole = String(userDoc?.role || workspaceDoc?.role || '')
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
   const [source, setSource] = useState('firestore')
@@ -52,6 +65,13 @@ export function useTeamMembers() {
         setLoading(false)
       },
       (err) => {
+        logTeamPermissionIssue(err, {
+          userId,
+          role: currentRole,
+          workspaceId,
+          collectionPath: `workspaces/${workspaceId}/teamMembers`,
+          operation: 'read',
+        })
         setError(clientSafeMessage(err, 'Unable to load team members.'))
         setRows([])
         setSource('firestore')
@@ -111,6 +131,13 @@ export function useTeamMembers() {
           })
           return { ok: true }
         } catch (e) {
+          logTeamPermissionIssue(e, {
+            userId,
+            role: currentRole,
+            workspaceId,
+            collectionPath: `workspaces/${workspaceId}/teamMembers`,
+            operation: 'create',
+          })
           return { ok: false, error: clientSafeMessage(e, 'Unable to add team member.') }
         }
       },
@@ -132,20 +159,31 @@ export function useTeamMembers() {
         if (!db || !workspaceId || !userId || source !== 'firestore') {
           return { ok: true, ...(isOwnerSelf ? { message: OWNER_PROTECTION_MESSAGE } : {}) }
         }
-        await patchUserDoc(workspaceId, 'teamMembers', id, safePatch, { businessType })
-        await logActivity({
-          workspaceId,
-          userId,
-          businessType,
-          ...userActivityInfo(userDoc, firebaseUser),
-          action: 'Staff updated',
-          module: 'Team',
-          description: `${member?.name || 'Team member'} was updated.`,
-          targetId: id,
-          targetName: member?.name || id,
-          metadata: safePatch,
-        })
-        return { ok: true, ...(isOwnerSelf ? { message: OWNER_PROTECTION_MESSAGE } : {}) }
+        try {
+          await patchUserDoc(workspaceId, 'teamMembers', id, safePatch, { businessType })
+          await logActivity({
+            workspaceId,
+            userId,
+            businessType,
+            ...userActivityInfo(userDoc, firebaseUser),
+            action: 'Staff updated',
+            module: 'Team',
+            description: `${member?.name || 'Team member'} was updated.`,
+            targetId: id,
+            targetName: member?.name || id,
+            metadata: safePatch,
+          })
+          return { ok: true, ...(isOwnerSelf ? { message: OWNER_PROTECTION_MESSAGE } : {}) }
+        } catch (e) {
+          logTeamPermissionIssue(e, {
+            userId,
+            role: currentRole,
+            workspaceId,
+            collectionPath: `workspaces/${workspaceId}/teamMembers/${id}`,
+            operation: 'update',
+          })
+          return { ok: false, error: clientSafeMessage(e, 'Unable to update team member.') }
+        }
       },
       async deleteMember(id) {
         const member = rows.find((item) => item.id === id)
@@ -172,11 +210,18 @@ export function useTeamMembers() {
           })
           return { ok: true }
         } catch (e) {
+          logTeamPermissionIssue(e, {
+            userId,
+            role: currentRole,
+            workspaceId,
+            collectionPath: `workspaces/${workspaceId}/teamMembers/${id}`,
+            operation: 'delete',
+          })
           return { ok: false, error: clientSafeMessage(e, 'Unable to delete team member.') }
         }
       },
     }),
-    [rows, loading, source, error, accessPlan, businessType, firebaseUser, userDoc, userId, workspaceDoc, workspaceId],
+    [rows, loading, source, error, accessPlan, businessType, currentRole, firebaseUser, userDoc, userId, workspaceDoc, workspaceId],
   )
 
   return api

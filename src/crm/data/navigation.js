@@ -21,13 +21,14 @@ import {
   HiOutlineClipboardDocumentCheck,
   HiOutlineCalendarDays,
   HiOutlineCurrencyDollar,
-  HiOutlineTableCells,
   HiOutlineComputerDesktop,
   HiOutlineReceiptPercent,
   HiOutlineClipboardDocumentList,
   HiOutlinePresentationChartBar,
   HiOutlineSquaresPlus,
+  HiOutlineTruck,
 } from 'react-icons/hi2'
+import { GiRoundTable } from 'react-icons/gi'
 
 export const navItems = [
   { label: 'Dashboard', to: '/app/dashboard', icon: HiOutlinePresentationChartBar },
@@ -43,9 +44,14 @@ export const navItems = [
   { label: 'Activities', to: '/app/activities', icon: HiOutlineChartBarSquare },
   { label: 'Quotations', to: '/app/quotations', icon: HiOutlineDocumentText },
   { label: 'Products & Services', to: '/app/products-services', icon: HiOutlineSquares2X2 },
-  { label: 'Tables / Floor View', to: '/app/tables', icon: HiOutlineTableCells },
+  { label: 'Tables / Floor View', to: '/app/tables', icon: GiRoundTable },
   { label: 'Orders/KOT', to: '/app/orders-kot', icon: HiOutlineClipboardDocumentList },
   { label: 'Kitchen Display', to: '/app/kitchen-display', icon: HiOutlineComputerDesktop },
+  { label: 'Fleet Dashboard', to: '/app/transport-dashboard', icon: HiOutlinePresentationChartBar },
+  { label: 'Vehicles', to: '/app/transport/vehicles', icon: HiOutlineTruck },
+  { label: 'Bookings & Rentals', to: '/app/transport/bookings', icon: HiOutlineClipboardDocumentList },
+  { label: 'Rental Customers', to: '/app/transport/customers', icon: HiOutlineUserGroup },
+  { label: 'Rental Payments', to: '/app/transport/payments', icon: HiOutlineBanknotes },
   { label: 'AI Lead Scoring', to: '/app/leads/scoring', icon: HiOutlineSparkles },
   { label: 'AI Assistant', to: '/app/ai-assistant', icon: HiOutlineChatBubbleLeftRight },
   { label: 'Sales Pipeline', to: '/app/pipeline', icon: HiOutlineRectangleStack },

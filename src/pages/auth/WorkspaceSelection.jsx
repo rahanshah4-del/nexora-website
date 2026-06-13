@@ -20,6 +20,7 @@ import {
   HiOutlineBars3,
   HiOutlinePlus,
   HiOutlineSquares2X2,
+  HiOutlineTruck,
   HiOutlineUserGroup,
   HiOutlineUsers,
   HiOutlineXMark,
@@ -62,6 +63,7 @@ const workspaceIconMap = {
   'School ERP': { icon: HiOutlineBuildingLibrary, iconTone: 'bg-emerald-50 text-emerald-600', color: 'bg-emerald-500' },
   'Property ERP': { icon: HiOutlineHomeModern, iconTone: 'bg-violet-50 text-violet-600', color: 'bg-violet-600' },
   'Restaurant POS': { icon: HiOutlineBuildingOffice2, iconTone: 'bg-rose-50 text-rose-600', color: 'bg-rose-500' },
+  'Transport / Rental': { icon: HiOutlineTruck, iconTone: 'bg-cyan-50 text-cyan-600', color: 'bg-cyan-500' },
   'WhatsApp CRM': { icon: HiOutlineChatBubbleLeftRight, iconTone: 'bg-green-50 text-green-600', color: 'bg-green-500' },
 }
 

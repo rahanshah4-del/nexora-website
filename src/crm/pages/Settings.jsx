@@ -6,6 +6,8 @@ import {
   HiOutlineBuildingOffice2,
   HiOutlineCheckCircle,
   HiOutlineChatBubbleLeftRight,
+  HiOutlineDocumentText,
+  HiOutlineTruck,
 } from 'react-icons/hi2'
 import Button from '../components/ui/Button.jsx'
 import Card from '../components/ui/Card.jsx'
@@ -296,9 +298,16 @@ function RestaurantPosSettingsCard({ draft, setDraft, canManageSettings, onSaveS
   })
   const sampleSettings = {
     restaurantName: restaurantSettings.restaurantName || draft.businessName || 'Nexora Restaurant',
+    legalName: restaurantSettings.legalName || draft.businessName || '',
+    branchName: restaurantSettings.branchName || '',
+    branchCode: restaurantSettings.branchCode || '',
     address: restaurantSettings.address || `${draft.city || 'City'}, ${draft.country || 'Pakistan'}`,
     phone: restaurantSettings.phone || draft.phone || '',
+    whatsappPhone: restaurantSettings.whatsappPhone || '',
     taxNumber: restaurantSettings.taxNumber || '',
+    salesTaxNumber: restaurantSettings.salesTaxNumber || '',
+    fbrPosId: restaurantSettings.fbrPosId || '',
+    foodLicenseNumber: restaurantSettings.foodLicenseNumber || '',
     footerMessage: restaurantSettings.footerMessage || draft.receiptFooter || 'Thank you for dining with us',
     showLogo: restaurantSettings.showLogo !== false,
     logoUrl: restaurantSettings.logoUrl || restaurantSettings.logoDataUrl || '',
@@ -558,6 +567,283 @@ function ToggleSetting({ label, checked, onChange, disabled }) {
   )
 }
 
+function RestaurantWorkspaceInfo({ draft, setDraft, canManageSettings }) {
+  const restaurantSettings = draft.restaurantPos || {}
+  function updateRestaurantSetting(key, value) {
+    setDraft((current) => ({
+      ...current,
+      restaurantPos: {
+        ...(current.restaurantPos || {}),
+        [key]: value,
+      },
+    }))
+  }
+
+  return (
+    <div className="mt-6 rounded-3xl border border-amber-100 bg-amber-50/50 p-4">
+      <div className="flex flex-col gap-2 border-b border-amber-100 pb-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-sm font-black text-slate-950">Restaurant workspace details</p>
+          <p className="mt-1 text-xs leading-5 text-slate-600">
+            These values are used on restaurant bills, KOT, counters, reports, and closing templates.
+          </p>
+        </div>
+        <Badge variant="warning">Restaurant POS</Badge>
+      </div>
+
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <Field label="Restaurant Display Name">
+          <Input
+            value={restaurantSettings.restaurantName || draft.businessName || ''}
+            onChange={(event) => {
+              updateRestaurantSetting('restaurantName', event.target.value)
+              setDraft((current) => ({ ...current, businessName: event.target.value, companyName: event.target.value }))
+            }}
+            placeholder="Restaurant name printed on bills"
+            readOnly={!canManageSettings}
+          />
+        </Field>
+        <Field label="Legal Company Name">
+          <Input
+            value={restaurantSettings.legalName || ''}
+            onChange={(event) => updateRestaurantSetting('legalName', event.target.value)}
+            placeholder="Registered company / owner name"
+            readOnly={!canManageSettings}
+          />
+        </Field>
+        <Field label="Branch / Outlet Name">
+          <Input
+            value={restaurantSettings.branchName || ''}
+            onChange={(event) => updateRestaurantSetting('branchName', event.target.value)}
+            placeholder="Main Branch, DHA, Mall Road..."
+            readOnly={!canManageSettings}
+          />
+        </Field>
+        <Field label="Branch Code">
+          <Input
+            value={restaurantSettings.branchCode || ''}
+            onChange={(event) => updateRestaurantSetting('branchCode', event.target.value)}
+            placeholder="BR-001"
+            readOnly={!canManageSettings}
+          />
+        </Field>
+        <Field label="Restaurant Address" className="sm:col-span-2">
+          <Input
+            value={restaurantSettings.address || draft.address || ''}
+            onChange={(event) => {
+              updateRestaurantSetting('address', event.target.value)
+              setDraft((current) => ({ ...current, address: event.target.value }))
+            }}
+            placeholder="Full address for bill and KOT"
+            readOnly={!canManageSettings}
+          />
+        </Field>
+        <Field label="Restaurant Phone">
+          <Input
+            value={restaurantSettings.phone || draft.phone || ''}
+            onChange={(event) => {
+              updateRestaurantSetting('phone', event.target.value)
+              setDraft((current) => ({ ...current, phone: event.target.value }))
+            }}
+            placeholder="Counter phone"
+            readOnly={!canManageSettings}
+          />
+        </Field>
+        <Field label="WhatsApp / Delivery Phone">
+          <Input
+            value={restaurantSettings.whatsappPhone || ''}
+            onChange={(event) => updateRestaurantSetting('whatsappPhone', event.target.value)}
+            placeholder="Delivery / WhatsApp number"
+            readOnly={!canManageSettings}
+          />
+        </Field>
+        <Field label="NTN / VAT / GST Number">
+          <Input
+            value={restaurantSettings.taxNumber || draft.taxNumber || ''}
+            onChange={(event) => {
+              updateRestaurantSetting('taxNumber', event.target.value)
+              setDraft((current) => ({ ...current, taxNumber: event.target.value }))
+            }}
+            placeholder="Tax registration number"
+            readOnly={!canManageSettings}
+          />
+        </Field>
+        <Field label="STRN / Sales Tax Reg">
+          <Input
+            value={restaurantSettings.salesTaxNumber || ''}
+            onChange={(event) => updateRestaurantSetting('salesTaxNumber', event.target.value)}
+            placeholder="Sales tax registration"
+            readOnly={!canManageSettings}
+          />
+        </Field>
+        <Field label="FBR POS ID">
+          <Input
+            value={restaurantSettings.fbrPosId || ''}
+            onChange={(event) => updateRestaurantSetting('fbrPosId', event.target.value)}
+            placeholder="FBR / POS integration ID"
+            readOnly={!canManageSettings}
+          />
+        </Field>
+        <Field label="Food License No.">
+          <Input
+            value={restaurantSettings.foodLicenseNumber || ''}
+            onChange={(event) => updateRestaurantSetting('foodLicenseNumber', event.target.value)}
+            placeholder="Food authority license"
+            readOnly={!canManageSettings}
+          />
+        </Field>
+        <Field label="Order Prefix">
+          <Input
+            value={restaurantSettings.orderPrefix || ''}
+            onChange={(event) => updateRestaurantSetting('orderPrefix', event.target.value)}
+            placeholder="ORD"
+            readOnly={!canManageSettings}
+          />
+        </Field>
+        <Field label="Bill Prefix">
+          <Input
+            value={restaurantSettings.billPrefix || draft.invoicePrefix || ''}
+            onChange={(event) => {
+              updateRestaurantSetting('billPrefix', event.target.value)
+              setDraft((current) => ({ ...current, invoicePrefix: event.target.value }))
+            }}
+            placeholder="BILL"
+            readOnly={!canManageSettings}
+          />
+        </Field>
+        <Field label="KOT Prefix">
+          <Input
+            value={restaurantSettings.kotPrefix || ''}
+            onChange={(event) => updateRestaurantSetting('kotPrefix', event.target.value)}
+            placeholder="KOT"
+            readOnly={!canManageSettings}
+          />
+        </Field>
+        <Field label="Business Day Opening Time">
+          <Input
+            type="time"
+            value={restaurantSettings.openingTime || '16:00'}
+            onChange={(event) => updateRestaurantSetting('openingTime', event.target.value)}
+            readOnly={!canManageSettings}
+          />
+        </Field>
+        <Field label="Business Day Closing Time">
+          <Input
+            type="time"
+            value={restaurantSettings.closingTime || '03:00'}
+            onChange={(event) => updateRestaurantSetting('closingTime', event.target.value)}
+            readOnly={!canManageSettings}
+          />
+        </Field>
+        <div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-xs font-semibold leading-5 text-amber-800 md:col-span-2">
+          Orders after midnight and before closing time are counted in the previous restaurant business day.
+          Example: 4:00 PM opening and 3:00 AM closing keeps late-night sales in the same day report.
+        </div>
+        <Field label="Default Dining Area">
+          <Select
+            value={restaurantSettings.defaultDiningArea || 'Ground Floor'}
+            onChange={(event) => updateRestaurantSetting('defaultDiningArea', event.target.value)}
+            disabled={!canManageSettings}
+          >
+            <option>Ground Floor</option>
+            <option>Family Hall</option>
+            <option>Outdoor/VIP</option>
+            <option>Delivery Counter</option>
+          </Select>
+        </Field>
+        <Field label="Cash Drawer Name">
+          <Input
+            value={restaurantSettings.cashDrawerName || ''}
+            onChange={(event) => updateRestaurantSetting('cashDrawerName', event.target.value)}
+            placeholder="Main Cash Counter"
+            readOnly={!canManageSettings}
+          />
+        </Field>
+        <Field label="Bank Account / IBAN" className="sm:col-span-2">
+          <Input
+            value={restaurantSettings.bankAccount || ''}
+            onChange={(event) => updateRestaurantSetting('bankAccount', event.target.value)}
+            placeholder="Bank account for card/bank payments"
+            readOnly={!canManageSettings}
+          />
+        </Field>
+        <Field label="JazzCash Account">
+          <Input
+            value={restaurantSettings.jazzCashAccount || ''}
+            onChange={(event) => updateRestaurantSetting('jazzCashAccount', event.target.value)}
+            placeholder="JazzCash merchant/account"
+            readOnly={!canManageSettings}
+          />
+        </Field>
+        <Field label="Easypaisa Account">
+          <Input
+            value={restaurantSettings.easypaisaAccount || ''}
+            onChange={(event) => updateRestaurantSetting('easypaisaAccount', event.target.value)}
+            placeholder="Easypaisa merchant/account"
+            readOnly={!canManageSettings}
+          />
+        </Field>
+      </div>
+    </div>
+  )
+}
+
+function TransportReportSettingsCard({ draft, setDraft, canManageSettings }) {
+  const transportSettings = draft.transportRental || {}
+
+  function updateTransportSetting(key, value) {
+    setDraft((current) => ({
+      ...current,
+      transportRental: {
+        ...(current.transportRental || {}),
+        [key]: value,
+      },
+    }))
+  }
+
+  return (
+    <Card className="p-5">
+      <div className="flex items-start gap-3">
+        <span className="grid h-10 w-10 place-items-center rounded-2xl bg-cyan-50 text-cyan-700">
+          <HiOutlineTruck className="text-xl" />
+        </span>
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-slate-950 dark:text-white">Transport Report Template Settings</p>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-300">Select the default advanced report template for Transport / Rental reports.</p>
+        </div>
+      </div>
+      <div className="mt-4 space-y-4">
+        <Field label="Default Report Template">
+          <Select
+            value={transportSettings.reportTemplate || 'fleet-summary'}
+            onChange={(event) => updateTransportSetting('reportTemplate', event.target.value)}
+            disabled={!canManageSettings}
+          >
+            <option value="fleet-summary">Fleet Summary - operations and utilization</option>
+            <option value="rental-ledger">Rental Ledger - bookings, dues, customers</option>
+            <option value="financial-closing">Financial Closing - revenue and payments</option>
+          </Select>
+        </Field>
+        <Field label="Report Footer">
+          <Input
+            value={transportSettings.reportFooter || ''}
+            onChange={(event) => updateTransportSetting('reportFooter', event.target.value)}
+            placeholder="Fleet report prepared by Nexora Solution"
+            readOnly={!canManageSettings}
+          />
+        </Field>
+        <Link
+          to="/app/reports"
+          className="inline-flex items-center gap-2 rounded-2xl border border-cyan-200 bg-cyan-50 px-3 py-2 text-xs font-black text-cyan-700 hover:bg-cyan-100"
+        >
+          <HiOutlineDocumentText className="h-4 w-4" />
+          Open Report Templates
+        </Link>
+      </div>
+    </Card>
+  )
+}
+
 export default function SettingsPage() {
   const navigate = useNavigate()
   const { plan, userId, workspaceId, userDoc, firebaseUser } = useUser()
@@ -597,6 +883,7 @@ export default function SettingsPage() {
       signatureUrl: draft.signatureUrl || '',
       themeColor: draft.themeColor || '#2563eb',
       restaurantPos: draft.restaurantPos || {},
+      transportRental: draft.transportRental || {},
     }
     const res = await saveSettings(businessPatch)
     if (!res.ok) {
@@ -744,6 +1031,9 @@ export default function SettingsPage() {
             </div>
           </Card>
 
+          {normalizeBusinessType(businessType) === 'Restaurant POS' ? (
+            <RestaurantWorkspaceInfo draft={draft} setDraft={setDraft} canManageSettings={canManageSettings} />
+          ) : (
           <Card id="business-profile" className="scroll-mt-28 p-5 sm:p-6">
             <div className="flex items-start justify-between gap-3 border-b border-slate-200/80 pb-5">
               <div className="flex items-center gap-3">
@@ -849,12 +1139,16 @@ export default function SettingsPage() {
               </Field>
             </div>
           </Card>
+          )}
         </div>
 
         <div className="min-w-0 space-y-5">
           {normalizeBusinessType(businessType) === 'WhatsApp CRM' ? <WhatsappApiCard /> : null}
           {normalizeBusinessType(businessType) === 'Restaurant POS' ? (
             <RestaurantPosSettingsCard draft={draft} setDraft={setDraft} canManageSettings={canManageSettings} onSaveSettings={onSaveProfile} />
+          ) : null}
+          {normalizeBusinessType(businessType) === 'Transport / Rental' ? (
+            <TransportReportSettingsCard draft={draft} setDraft={setDraft} canManageSettings={canManageSettings} />
           ) : null}
           <Card className="p-5">
             <div className="flex items-start gap-3">

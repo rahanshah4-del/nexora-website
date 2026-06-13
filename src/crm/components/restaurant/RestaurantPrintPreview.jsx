@@ -21,8 +21,22 @@ function ReceiptHeader({ data, type }) {
     <div className="text-center">
       <PrintLogo settings={settings} />
       <p className="text-[15px] font-black uppercase tracking-wide text-slate-950">{receiptText(data.restaurantName || settings.restaurantName, 'Nexora Restaurant')}</p>
+      {settings.branchName || settings.branchCode ? (
+        <p className="mt-0.5 text-[10px] font-bold leading-4 text-slate-600">
+          {[settings.branchName, settings.branchCode].filter(Boolean).join(' · ')}
+        </p>
+      ) : null}
       <p className="mt-1 text-[10px] leading-4 text-slate-500">{receiptText(settings.address || data.address, 'Restaurant address')}</p>
       <p className="text-[10px] leading-4 text-slate-500">{receiptText(settings.phone || data.phone, 'Phone')} {settings.taxNumber ? ` | Tax ${settings.taxNumber}` : ''}</p>
+      {settings.salesTaxNumber || settings.fbrPosId || settings.foodLicenseNumber ? (
+        <p className="text-[9px] leading-3 text-slate-500">
+          {[
+            settings.salesTaxNumber ? `STRN ${settings.salesTaxNumber}` : '',
+            settings.fbrPosId ? `POS ${settings.fbrPosId}` : '',
+            settings.foodLicenseNumber ? `Food ${settings.foodLicenseNumber}` : '',
+          ].filter(Boolean).join(' | ')}
+        </p>
+      ) : null}
       <div className="my-2 border-t border-dashed border-slate-300" />
       <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-950">{type === 'kot' ? 'Kitchen Copy' : '58mm Bill'}</p>
     </div>

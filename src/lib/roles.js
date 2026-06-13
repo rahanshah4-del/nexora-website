@@ -2,6 +2,7 @@ export const workspaceRoles = ['owner', 'admin', 'accountant', 'manager', 'suppo
 export const platformAdminRoles = ['platform_admin', 'super_admin']
 export const backendAdminEmails = [
   'admin@nexora.com',
+  'rahanshah2@gmail.com',
 ]
 export const developerAdminEmail = backendAdminEmails[0]
 

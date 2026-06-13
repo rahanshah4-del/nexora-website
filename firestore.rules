@@ -6,64 +6,40 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function profile() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
-    }
-
-    function profileExists() {
+    function backendAdmin() {
       return signedIn()
-        && exists(/databases/$(database)/documents/users/$(request.auth.uid));
+        && request.auth.token.email in ['admin@nexora.com', 'rahanshah2@gmail.com'];
     }
 
-    function isBlockedProfile() {
-      return profileExists()
-        && profile().status in ['blocked', 'disabled', 'inactive', 'Blocked', 'Disabled', 'Inactive'];
+    function userDoc(uid) {
+      return get(/databases/$(database)/documents/users/$(uid)).data;
     }
 
-    function activeSignedIn() {
-      return signedIn() && !isBlockedProfile();
+    function hasUserDoc() {
+      return signedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid));
     }
 
-    function isSelf(userId) {
-      return signedIn() && request.auth.uid == userId;
-    }
-
-    function isActiveSelf(userId) {
-      return activeSignedIn() && request.auth.uid == userId;
-    }
-
-    function isBackendAdmin() {
-      return signedIn()
-        && request.auth.token.email == 'admin@nexora.com';
-    }
-
-    function isBackendAdminEmail() {
-      return isBackendAdmin();
-    }
-
-    function isAdmin() {
-      // TODO: Replace this backend email allowlist with Firebase custom claims for platform_admin.
-      return isBackendAdmin();
-    }
-
-    function memberWorkspaceId() {
-      return profile().workspaceId;
-    }
-
-    function memberRole() {
-      return profile().role;
+    function userStatusActive() {
+      return !hasUserDoc()
+        || !(userDoc(request.auth.uid).status in ['blocked', 'Blocked', 'BLOCKED', 'disabled', 'Disabled', 'DISABLED', 'inactive', 'Inactive', 'INACTIVE']);
     }
 
     function workspaceDoc(workspaceId) {
       return get(/databases/$(database)/documents/workspaces/$(workspaceId)).data;
     }
 
-    function workspaceBlockedStatus(workspaceId) {
-      return exists(/databases/$(database)/documents/workspaces/$(workspaceId))
-        && (
-          workspaceDoc(workspaceId).status in ['blocked', 'Blocked', 'BLOCKED', 'inactive', 'Inactive', 'INACTIVE']
-          || workspaceDoc(workspaceId).accountStatus in ['blocked', 'Blocked', 'BLOCKED']
-        );
+    function workspaceExists(workspaceId) {
+      return exists(/databases/$(database)/documents/workspaces/$(workspaceId));
+    }
+
+    function workspaceActive(workspaceId) {
+      return workspaceExists(workspaceId)
+        && !(workspaceDoc(workspaceId).status in ['blocked', 'Blocked', 'BLOCKED', 'disabled', 'Disabled', 'DISABLED', 'inactive', 'Inactive', 'INACTIVE'])
+        && !(workspaceDoc(workspaceId).accountStatus in ['blocked', 'Blocked', 'BLOCKED', 'disabled', 'Disabled', 'DISABLED', 'inactive', 'Inactive', 'INACTIVE']);
+    }
+
+    function activeSignedIn() {
+      return signedIn() && userStatusActive();
     }
 
     function isOwnerRole(role) {
@@ -74,432 +50,121 @@ service cloud.firestore {
       return role in ['admin', 'Admin', 'ADMIN'];
     }
 
-    function isAccountantRole(role) {
-      return role in ['accountant', 'Accountant', 'ACCOUNTANT'];
-    }
-
     function isManagerRole(role) {
       return role in ['manager', 'Manager', 'MANAGER'];
     }
 
     function isSalesRole(role) {
-      return role in ['sales', 'Sales', 'SALES', 'sales staff', 'Sales Staff', 'SALES STAFF'];
+      return role in ['sales', 'Sales', 'SALES', 'sales staff', 'Sales Staff', 'STAFF', 'staff', 'Staff'];
     }
 
-    function isSupportRole(role) {
-      return role in ['support', 'Support', 'SUPPORT', 'support agent', 'Support Agent', 'SUPPORT AGENT'];
-    }
-
-    function permissionDocId() {
-      return profile().staffId is string ? profile().staffId : request.auth.uid;
+    function isAccountantRole(role) {
+      return role in ['accountant', 'Accountant', 'ACCOUNTANT'];
     }
 
     function profileWorkspaceMatches(workspaceId) {
-      return profileExists()
+      return hasUserDoc()
         && (
           request.auth.uid == workspaceId
-          || profile().workspaceId == workspaceId
-          || profile().ownerId == workspaceId
-          || profile().userId == workspaceId
-          || profile().uid == workspaceId
-          || (profile().workspaceIds is list && workspaceId in profile().workspaceIds)
-          || (profile().workspaces is list && workspaceId in profile().workspaces)
+          || userDoc(request.auth.uid).workspaceId == workspaceId
+          || userDoc(request.auth.uid).ownerId == workspaceId
+          || userDoc(request.auth.uid).companyId == workspaceId
+          || userDoc(request.auth.uid).userId == workspaceId
+          || (userDoc(request.auth.uid).workspaceIds is list && workspaceId in userDoc(request.auth.uid).workspaceIds)
+          || (userDoc(request.auth.uid).workspaces is list && workspaceId in userDoc(request.auth.uid).workspaces)
         );
     }
 
-    function directWorkspaceOwner(workspaceId) {
+    function workspaceOwner(workspaceId) {
       return activeSignedIn()
-        && workspaceExists(workspaceId)
-        && !workspaceBlockedStatus(workspaceId)
+        && workspaceActive(workspaceId)
         && (
           request.auth.uid == workspaceId
           || workspaceDoc(workspaceId).ownerId == request.auth.uid
           || workspaceDoc(workspaceId).createdBy == request.auth.uid
           || workspaceDoc(workspaceId).userId == request.auth.uid
           || workspaceDoc(workspaceId).uid == request.auth.uid
+          || (profileWorkspaceMatches(workspaceId) && isOwnerRole(userDoc(request.auth.uid).role))
         );
     }
 
-    function workspaceOwnerMatches(workspaceId) {
-      return activeSignedIn()
-        && !workspaceBlockedStatus(workspaceId)
-        && (
-          directWorkspaceOwner(workspaceId)
-          || (profileWorkspaceMatches(workspaceId) && isOwnerRole(memberRole()))
-          || (profileWorkspaceMatches(workspaceId) && isAdminRole(memberRole()))
-        );
-    }
-
-    function isWorkspaceOwner(workspaceId) {
-      return workspaceOwnerMatches(workspaceId);
-    }
-
-    function resourceOwnerMatches() {
-      return activeSignedIn()
-        && resource.data.ownerId == request.auth.uid;
-    }
-
-    function isWorkspaceMember(workspaceId) {
-      return activeSignedIn()
-        && !workspaceBlockedStatus(workspaceId)
-        && (
-          profileWorkspaceMatches(workspaceId)
-          || workspaceOwnerMatches(workspaceId)
-        );
-    }
-
-    function isBlockedWorkspaceMember(workspaceId) {
-      return workspaceBlockedStatus(workspaceId)
-        || (profileExists()
+    function workspaceAdmin(workspaceId) {
+      return backendAdmin()
+        || workspaceOwner(workspaceId)
+        || (
+          activeSignedIn()
+          && workspaceActive(workspaceId)
           && profileWorkspaceMatches(workspaceId)
-          && profile().status in ['blocked', 'disabled', 'inactive', 'Blocked', 'Disabled', 'Inactive']);
-    }
-
-    function workspaceExists(workspaceId) {
-      return exists(/databases/$(database)/documents/workspaces/$(workspaceId));
-    }
-
-    function workspaceSubscriptionActive(workspaceId) {
-      return workspaceExists(workspaceId)
-        && !workspaceBlockedStatus(workspaceId)
-        && (
-          workspaceDoc(workspaceId).subscriptionStatus in ['active', 'paid', 'approved', 'current']
-          || workspaceDoc(workspaceId).planStatus in ['active', 'paid', 'approved', 'current']
-        )
-        && workspaceDoc(workspaceId).subscriptionExpiresAt is timestamp
-        && workspaceDoc(workspaceId).nextBillingDate is timestamp
-        && workspaceDoc(workspaceId).subscriptionExpiresAt >= request.time
-        && workspaceDoc(workspaceId).nextBillingDate >= request.time
-        && (
-          !workspaceDoc(workspaceId).keys().hasAny(['expiresAt'])
-          || (
-            workspaceDoc(workspaceId).expiresAt is timestamp
-            && workspaceDoc(workspaceId).expiresAt == workspaceDoc(workspaceId).subscriptionExpiresAt
-          )
+          && isAdminRole(userDoc(request.auth.uid).role)
         );
     }
 
-    function workspaceTrialActive(workspaceId) {
-      return workspaceExists(workspaceId)
-        && !workspaceBlockedStatus(workspaceId)
-        && (
-          workspaceDoc(workspaceId).subscriptionStatus in ['trial', 'free trial']
-          || workspaceDoc(workspaceId).planStatus in ['trial', 'free trial']
-          || workspaceDoc(workspaceId).isTrialActive == true
-        )
-        && workspaceDoc(workspaceId).trialEndsAt >= request.time;
+    function workspaceMember(workspaceId) {
+      return workspaceAdmin(workspaceId)
+        || (
+          activeSignedIn()
+          && workspaceActive(workspaceId)
+          && profileWorkspaceMatches(workspaceId)
+        );
     }
 
-    function workspaceHasActiveSubscription(workspaceId) {
-      return workspaceSubscriptionActive(workspaceId) || workspaceTrialActive(workspaceId);
+    function memberRole() {
+      return hasUserDoc() ? userDoc(request.auth.uid).role : '';
     }
 
-    function workspaceHasWriteAccess(workspaceId) {
-      return isAdmin()
-        || workspaceOwnerMatches(workspaceId)
-        || (isWorkspaceMember(workspaceId) && (isOwnerRole(memberRole()) || isAdminRole(memberRole())))
-        || workspaceHasActiveSubscription(workspaceId);
+    function permissionDocId() {
+      return hasUserDoc() && userDoc(request.auth.uid).staffId is string
+        ? userDoc(request.auth.uid).staffId
+        : request.auth.uid;
     }
 
-    function ownsTargetWorkspace(workspaceId) {
-      return activeSignedIn()
-        && workspaceId is string
-        && exists(/databases/$(database)/documents/workspaces/$(workspaceId))
-        && workspaceDoc(workspaceId).ownerId == request.auth.uid;
+    function permissionDoc(workspaceId) {
+      return get(/databases/$(database)/documents/workspaces/$(workspaceId)/permissions/$(permissionDocId())).data;
     }
 
-    function roleHasPermission(role, key) {
-      return isOwnerRole(role)
-        || isAdminRole(role)
-        || (isManagerRole(role)
-          && key in [
-            'followUpEdit',
-            'followUpDelete',
-            'customerManagement',
-            'leadsManagement',
-            'invoices',
-            'reports',
-            'module.salesPipeline.view',
-            'module.salesPipeline.create',
-            'module.salesPipeline.edit',
-            'module.deals.view',
-            'module.deals.create',
-            'module.deals.edit',
-            'module.tasks.view',
-            'module.tasks.create',
-            'module.tasks.edit',
-            'module.activities.view',
-            'module.activities.create',
-            'module.activities.edit',
-            'module.quotations.view',
-            'module.quotations.create',
-            'module.quotations.edit',
-            'module.salesProducts.view',
-            'module.salesProducts.create',
-            'module.salesProducts.edit'
-          ])
-        || (isSalesRole(role)
-          && key in [
-            'followUpEdit',
-            'customerManagement',
-            'leadsManagement',
-            'invoices',
-            'reports',
-            'module.salesPipeline.view',
-            'module.salesPipeline.create',
-            'module.salesPipeline.edit',
-            'module.deals.view',
-            'module.deals.create',
-            'module.deals.edit',
-            'module.tasks.view',
-            'module.tasks.create',
-            'module.tasks.edit',
-            'module.activities.view',
-            'module.activities.create',
-            'module.activities.edit',
-            'module.quotations.view',
-            'module.quotations.create',
-            'module.quotations.edit',
-            'module.salesProducts.view',
-            'module.salesProducts.create',
-            'module.salesProducts.edit'
-          ])
-        || (isSupportRole(role) && key in ['support'])
-        || (isAccountantRole(role) && key in ['invoices', 'reports']);
+    function hasPermission(workspaceId, key) {
+      return workspaceAdmin(workspaceId)
+        || (
+          workspaceMember(workspaceId)
+          && exists(/databases/$(database)/documents/workspaces/$(workspaceId)/permissions/$(permissionDocId()))
+          && permissionDoc(workspaceId)[key] == true
+        );
     }
 
-    function isWorkspaceManager(workspaceId) {
-      return isAdmin()
-        || workspaceOwnerMatches(workspaceId)
-        || (isWorkspaceMember(workspaceId) && (isOwnerRole(memberRole()) || isAdminRole(memberRole())));
+    function canManageWorkspace(workspaceId) {
+      return workspaceAdmin(workspaceId)
+        || (workspaceMember(workspaceId) && isManagerRole(memberRole()));
     }
 
-    function isWorkspaceAdmin(workspaceId) {
-      return isWorkspaceManager(workspaceId);
+    function canWriteSales(workspaceId) {
+      return workspaceAdmin(workspaceId)
+        || (workspaceMember(workspaceId) && (isManagerRole(memberRole()) || isSalesRole(memberRole())))
+        || hasPermission(workspaceId, 'leadsManagement')
+        || hasPermission(workspaceId, 'customerManagement')
+        || hasPermission(workspaceId, 'invoices');
     }
 
-    function isPaymentApprover(workspaceId) {
-      return isAdmin()
-        || (workspaceHasActiveSubscription(workspaceId)
-          && (workspaceOwnerMatches(workspaceId)
-            || (isWorkspaceMember(workspaceId) && (isOwnerRole(memberRole()) || isAdminRole(memberRole()) || isAccountantRole(memberRole())))));
+    function canWriteAccounting(workspaceId) {
+      return workspaceAdmin(workspaceId)
+        || (workspaceMember(workspaceId) && (isManagerRole(memberRole()) || isAccountantRole(memberRole())))
+        || hasPermission(workspaceId, 'invoices')
+        || hasPermission(workspaceId, 'reports');
     }
 
-    function staffPermission(workspaceId, key) {
-      return isAdmin()
-        || workspaceOwnerMatches(workspaceId)
-        || (isWorkspaceMember(workspaceId) && (isOwnerRole(memberRole()) || isAdminRole(memberRole())))
-        || (workspaceHasActiveSubscription(workspaceId)
-          && (isWorkspaceManager(workspaceId)
-            || (isWorkspaceMember(workspaceId)
-              && (
-                roleHasPermission(memberRole(), key)
-                || get(/databases/$(database)/documents/workspaces/$(workspaceId)/permissions/$(permissionDocId())).data[key] == true
-              ))));
-    }
-
-    function hasWorkspaceCrmReadAccess(workspaceId) {
-      return isAdmin()
-        || workspaceOwnerMatches(workspaceId)
-        || isWorkspaceMember(workspaceId)
-        || (workspaceHasActiveSubscription(workspaceId) && isWorkspaceMember(workspaceId));
-    }
-
-    function workspaceHasReadAccess(workspaceId) {
-      return hasWorkspaceCrmReadAccess(workspaceId);
-    }
-
-    function salesHubRoleAccess(workspaceId) {
-      return isAdmin()
-        || workspaceOwnerMatches(workspaceId)
-        || (isWorkspaceMember(workspaceId)
-          && (isOwnerRole(memberRole())
-            || isAdminRole(memberRole())
-            || isManagerRole(memberRole())
-            || isSalesRole(memberRole())
-            || memberRole() in ['staff', 'Staff', 'STAFF']));
-    }
-
-    function hasWorkspaceBillingReadAccess(workspaceId) {
-      return isAdmin() || isWorkspaceMember(workspaceId);
-    }
-
-    function supportTicketReadPermission(workspaceId) {
-      return staffPermission(workspaceId, 'support')
-        || staffPermission(workspaceId, 'module.support.view');
-    }
-
-    function supportTicketCreatePermission(workspaceId) {
-      return staffPermission(workspaceId, 'support')
-        || staffPermission(workspaceId, 'module.support.create');
-    }
-
-    function supportTicketEditPermission(workspaceId) {
-      return staffPermission(workspaceId, 'support')
-        || staffPermission(workspaceId, 'module.support.edit');
-    }
-
-    function supportTicketDeletePermission(workspaceId) {
-      return staffPermission(workspaceId, 'support')
-        || staffPermission(workspaceId, 'module.support.delete');
-    }
-
-    function isOpenStatus(value) {
-      return value in ['pending', 'pending_approval', 'pending_verification', 'pending_partial', 'partial_pending', 'partial', 'requested', 'invited'];
-    }
-
-    function isBlockedOwnerStatus(value) {
-      return value in ['blocked', 'disabled', 'inactive', 'Blocked', 'Disabled', 'Inactive'];
-    }
-
-    function isOwnerMemberResource(workspaceId, memberId) {
-      return memberId == workspaceId
-        || memberId == workspaceDoc(workspaceId).ownerId
-        || resource.data.userId == workspaceDoc(workspaceId).ownerId
-        || resource.data.uid == workspaceDoc(workspaceId).ownerId
-        || resource.data.staffId == workspaceDoc(workspaceId).ownerId
-        || isOwnerRole(resource.data.role);
-    }
-
-    function isOwnerMemberTarget(workspaceId, memberId) {
-      return memberId == workspaceId
-        || memberId == workspaceDoc(workspaceId).ownerId
-        || request.resource.data.userId == workspaceDoc(workspaceId).ownerId
-        || request.resource.data.uid == workspaceDoc(workspaceId).ownerId
-        || request.resource.data.staffId == workspaceDoc(workspaceId).ownerId
-        || isOwnerRole(request.resource.data.role);
-    }
-
-    function ownerRoleUnchanged(workspaceId, memberId) {
-      return !isOwnerMemberResource(workspaceId, memberId)
-        || isOwnerRole(request.resource.data.role);
-    }
-
-    function ownerStatusSafe(workspaceId, memberId) {
-      return !isOwnerMemberTarget(workspaceId, memberId)
-        || !request.resource.data.keys().hasAny(['status'])
-        || !isBlockedOwnerStatus(request.resource.data.status);
-    }
-
-    function ownerMemberCreateSafe(workspaceId, memberId) {
-      return !isOwnerMemberTarget(workspaceId, memberId)
-        || (isOwnerRole(request.resource.data.role) && ownerStatusSafe(workspaceId, memberId));
-    }
-
-    function ownerMemberUpdateSafe(workspaceId, memberId) {
-      return ownerRoleUnchanged(workspaceId, memberId)
-        && ownerStatusSafe(workspaceId, memberId);
-    }
-
-    function isOwnerPermissionDoc(workspaceId, permissionId) {
-      return permissionId == workspaceId
-        || permissionId == workspaceDoc(workspaceId).ownerId;
-    }
-
-    function isOpenApprovalResource() {
-      return resource.data.requiresApproval == true
-        || isOpenStatus(resource.data.approvalStatus)
-        || isOpenStatus(resource.data.paymentStatus)
-        || isOpenStatus(resource.data.status);
-    }
-
-    function workspaceCreateMetadata(workspaceId) {
+    function safeCreate(workspaceId) {
       return request.resource.data.workspaceId == workspaceId
         && request.resource.data.createdBy == request.auth.uid
-        && request.resource.data.createdAt is timestamp
         && (!request.resource.data.keys().hasAny(['ownerId']) || request.resource.data.ownerId == workspaceId || request.resource.data.ownerId == workspaceDoc(workspaceId).ownerId);
     }
 
-    function workspaceUpdateScopeSafe(workspaceId) {
+    function safeUpdate(workspaceId) {
       return (!request.resource.data.keys().hasAny(['workspaceId']) || request.resource.data.workspaceId == workspaceId)
         && (!resource.data.keys().hasAny(['workspaceId']) || request.resource.data.workspaceId == resource.data.workspaceId)
         && (!request.resource.data.keys().hasAny(['ownerId']) || request.resource.data.ownerId == workspaceId || request.resource.data.ownerId == workspaceDoc(workspaceId).ownerId)
         && (!resource.data.keys().hasAny(['ownerId']) || request.resource.data.ownerId == resource.data.ownerId);
     }
 
-    function hasOwnScope(userId) {
-      return request.resource.data.userId == userId
-        && request.resource.data.ownerId == userId
-        && request.resource.data.workspaceId == userId;
-    }
-
-    function userIdentityScopeSafe(userId) {
-      return (!request.resource.data.keys().hasAny(['uid']) || request.resource.data.uid == userId)
-        && (!resource.data.keys().hasAny(['uid']) || request.resource.data.uid == resource.data.uid)
-        && (!resource.data.keys().hasAny(['email']) || request.resource.data.email == resource.data.email)
-        && (!request.resource.data.keys().hasAny(['userId']) || request.resource.data.userId == userId)
-        && (!resource.data.keys().hasAny(['userId']) || request.resource.data.userId == resource.data.userId)
-        && (
-          (resource.data.keys().hasAny(['workspaceId']) && request.resource.data.workspaceId == resource.data.workspaceId)
-          || (resource.data.keys().hasAny(['workspaceId']) && ownsTargetWorkspace(request.resource.data.workspaceId))
-          || (!resource.data.keys().hasAny(['workspaceId'])
-            && (!request.resource.data.keys().hasAny(['workspaceId'])
-              || request.resource.data.workspaceId == userId
-              || ownsTargetWorkspace(request.resource.data.workspaceId)
-              || (resource.data.ownerId is string && request.resource.data.workspaceId == resource.data.ownerId)))
-        )
-        && (
-          (resource.data.keys().hasAny(['ownerId']) && request.resource.data.ownerId == resource.data.ownerId)
-          || (resource.data.keys().hasAny(['ownerId']) && ownsTargetWorkspace(request.resource.data.workspaceId) && request.resource.data.ownerId == request.resource.data.workspaceId)
-          || (!resource.data.keys().hasAny(['ownerId'])
-            && (!request.resource.data.keys().hasAny(['ownerId'])
-              || request.resource.data.ownerId == userId
-              || (ownsTargetWorkspace(request.resource.data.workspaceId) && request.resource.data.ownerId == request.resource.data.workspaceId)
-              || (resource.data.workspaceId is string && request.resource.data.ownerId == resource.data.workspaceId)))
-        )
-        && (
-          (resource.data.keys().hasAny(['staffId']) && request.resource.data.staffId == resource.data.staffId)
-          || (!resource.data.keys().hasAny(['staffId'])
-            && (!request.resource.data.keys().hasAny(['staffId']) || request.resource.data.staffId == userId))
-        );
-    }
-
-    function workspaceAccountScopeSafe(workspaceId) {
-      return (!request.resource.data.keys().hasAny(['workspaceId']) || request.resource.data.workspaceId == workspaceId)
-        && (!request.resource.data.keys().hasAny(['ownerId']) || request.resource.data.ownerId == workspaceId || request.resource.data.ownerId == workspaceDoc(workspaceId).ownerId)
-        && (!request.resource.data.keys().hasAny(['userId']) || request.resource.data.userId == workspaceId);
-    }
-
-    // Minimal allowance: let the owner complete their FIRST workspace onboarding
-    // (onboardingCompleted false -> true) on their own workspace (workspaceId == uid),
-    // touching only safe module fields. Protected billing/trial/ownership fields are
-    // excluded by hasOnly, so this cannot escalate plan, trial, or identity.
-    function ownerFirstOnboardingUpdateSafe(workspaceId) {
-      return activeSignedIn()
-        && request.auth.uid == workspaceId
-        && resource.data.onboardingCompleted != true
-        && request.resource.data.onboardingCompleted == true
-        && request.resource.data.allowedBusinessTypes is list
-        && request.resource.data.allowedBusinessTypes.size() == 1
-        && request.resource.data.primaryBusinessType is string
-        && request.resource.data.allowedBusinessTypes[0] == request.resource.data.primaryBusinessType
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-          'businessType',
-          'selectedBusinessType',
-          'currentBusinessType',
-          'selectedWorkspace',
-          'primaryBusinessType',
-          'allowedBusinessTypes',
-          'specialModuleAccess',
-          'allModulesAccess',
-          'enabledModules',
-          'onboardingCompleted',
-          'updatedAt',
-          'lastAccessedAt'
-        ]);
-    }
-
-    function hasSafeTrialPlan() {
-      return (!request.resource.data.keys().hasAny(['plan']) || request.resource.data.plan in ['Basic'])
-        && (!request.resource.data.keys().hasAny(['planStatus']) || request.resource.data.planStatus in ['trial', 'Free Plan', 'Basic Trial', 'inactive'])
-        && (!request.resource.data.keys().hasAny(['subscriptionStatus']) || request.resource.data.subscriptionStatus == 'trial')
-        && (!request.resource.data.keys().hasAny(['role']) || request.resource.data.role in ['owner', 'user'])
-        && (!request.resource.data.keys().hasAny(['status']) || request.resource.data.status in ['active', 'Active'])
-        && (!request.resource.data.keys().hasAny(['trialDays']) || request.resource.data.trialDays == 7)
-        && (!request.resource.data.keys().hasAny(['isAdmin']) || request.resource.data.isAdmin == false);
-    }
-
-    function protectedAccountFieldsUnchanged() {
+    function protectedWorkspaceFieldsUnchanged() {
       return !request.resource.data.diff(resource.data).affectedKeys().hasAny([
         'plan',
         'planStatus',
@@ -507,7 +172,6 @@ service cloud.firestore {
         'billingCycle',
         'role',
         'isAdmin',
-        'upgradedAt',
         'trialStartAt',
         'trialStartedAt',
         'trialEndsAt',
@@ -516,1177 +180,310 @@ service cloud.firestore {
         'nextBillingDate',
         'subscriptionStartedAt',
         'subscriptionExpiresAt',
-        'emailVerifiedCustom',
-        'emailVerifiedCustomAt',
-      ])
-      && (
-        !request.resource.data.diff(resource.data).affectedKeys().hasAny([
-          'allowedBusinessTypes',
-          'primaryBusinessType',
-          'specialModuleAccess',
-          'allModulesAccess',
-        ])
-        || (
-          resource.data.onboardingCompleted != true
-          && request.resource.data.keys().hasAll(['specialModuleAccess', 'allModulesAccess', 'primaryBusinessType', 'allowedBusinessTypes'])
-          && request.resource.data.specialModuleAccess == false
-          && request.resource.data.allModulesAccess == false
-          && request.resource.data.allowedBusinessTypes is list
-          && request.resource.data.allowedBusinessTypes.size() == 1
-          && request.resource.data.primaryBusinessType is string
-          && request.resource.data.allowedBusinessTypes[0] == request.resource.data.primaryBusinessType
-        )
-      );
-    }
-
-    function planApprovalFieldsTouched() {
-      return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-        'plan',
-        'planStatus',
-        'subscriptionStatus',
-        'billingCycle',
-        'billingCurrency',
-        'nextBillingDate',
-        'expiresAt',
-        'paidAt',
-        'subscriptionStartedAt',
-        'subscriptionExpiresAt',
-        'isTrialActive',
-        'upgradedAt',
-        'updatedAt',
+        'expiresAt'
       ]);
     }
 
-    function verificationEmailMatches(data) {
-      return data.otpEmail == request.auth.token.email
-        || data.otpEmail == resource.data.email
-        || data.otpEmail == request.resource.data.email;
+    function ownerMemberTarget(workspaceId, memberId) {
+      return memberId == workspaceId
+        || memberId == workspaceDoc(workspaceId).ownerId
+        || request.resource.data.uid == workspaceDoc(workspaceId).ownerId
+        || request.resource.data.staffId == workspaceDoc(workspaceId).ownerId
+        || isOwnerRole(request.resource.data.role);
     }
 
-    function validPendingOtpDoc(userId) {
-      return exists(/databases/$(database)/documents/users/$(userId)/verification/otp)
-        && get(/databases/$(database)/documents/users/$(userId)/verification/otp).data.otpHash is string
-        && get(/databases/$(database)/documents/users/$(userId)/verification/otp).data.otpExpiresAt is timestamp
-        && get(/databases/$(database)/documents/users/$(userId)/verification/otp).data.otpExpiresAt >= request.time
-        && verificationEmailMatches(get(/databases/$(database)/documents/users/$(userId)/verification/otp).data);
+    function ownerMemberResource(workspaceId, memberId) {
+      return memberId == workspaceId
+        || memberId == workspaceDoc(workspaceId).ownerId
+        || resource.data.uid == workspaceDoc(workspaceId).ownerId
+        || resource.data.staffId == workspaceDoc(workspaceId).ownerId
+        || isOwnerRole(resource.data.role);
     }
 
-    function customEmailVerificationFieldsTouched() {
-      return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-        'emailVerifiedCustom',
-        'emailVerifiedCustomAt',
-        'updatedAt'
-      ]);
+    function ownerMemberWriteSafe(workspaceId, memberId) {
+      return (!ownerMemberTarget(workspaceId, memberId) || (isOwnerRole(request.resource.data.role) && !(request.resource.data.status in ['blocked', 'disabled', 'inactive', 'Blocked', 'Disabled', 'Inactive'])))
+        && (!ownerMemberResource(workspaceId, memberId) || isOwnerRole(request.resource.data.role));
     }
 
-    function validCustomEmailVerificationUpdate(userId) {
-      return request.auth != null
-        && request.auth.uid == userId
-        && customEmailVerificationFieldsTouched()
-        && request.resource.data.emailVerifiedCustom == true
-        && request.resource.data.emailVerifiedCustomAt is timestamp
-        && request.resource.data.updatedAt is timestamp
-        && validPendingOtpDoc(userId);
-    }
+    match /users/{uid} {
+      allow create: if signedIn() && request.auth.uid == uid;
+      allow read: if backendAdmin() || (signedIn() && request.auth.uid == uid);
+      allow update: if backendAdmin()
+        || (signedIn()
+          && request.auth.uid == uid
+          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['isAdmin', 'plan', 'planStatus', 'subscriptionStatus']));
+      allow delete: if backendAdmin();
 
-    function verificationOtpWriteSafe(userId, docId) {
-      return request.auth != null
-        && request.auth.uid == userId
-        && docId == 'otp'
-        && request.resource.data.keys().hasOnly([
-          'otpHash',
-          'otpExpiresAt',
-          'otpSentAt',
-          'otpEmail',
-          'attempts',
-          'createdAt',
-          'updatedAt'
-        ])
-        && request.resource.data.otpHash is string
-        && request.resource.data.otpExpiresAt is timestamp
-        && request.resource.data.otpExpiresAt > request.time
-        && request.resource.data.otpSentAt is timestamp
-        && request.resource.data.otpEmail is string
-        && request.resource.data.otpEmail == request.auth.token.email
-        && request.resource.data.attempts is int
-        && request.resource.data.createdAt is timestamp
-        && request.resource.data.updatedAt is timestamp;
-    }
-
-    function analyticsEventFieldsSafe() {
-      return request.resource.data.keys().hasOnly([
-        'eventType',
-        'page',
-        'buttonLabel',
-        'moduleName',
-        'userId',
-        'email',
-        'phone',
-        'workspaceId',
-        'businessType',
-        'status',
-        'sessionId',
-        'visitorId',
-        'referrer',
-        'deviceType',
-        'browser',
-        'os',
-        'country',
-        'userAgent',
-        'sessionDurationMs',
-        'timestamp',
-        'createdAt'
-      ])
-      && request.resource.data.eventType is string
-      && request.resource.data.sessionId is string
-      && request.resource.data.visitorId is string
-      && request.resource.data.createdAt is timestamp;
-    }
-
-    function userSessionFieldsSafe() {
-      return request.resource.data.keys().hasOnly([
-        'sessionId',
-        'visitorId',
-        'userId',
-        'email',
-        'phone',
-        'workspaceId',
-        'businessType',
-        'deviceType',
-        'browser',
-        'os',
-        'userAgent',
-        'startedAt',
-        'lastActiveAt',
-        'lastEventType',
-        'sessionDurationMs'
-      ])
-      && request.resource.data.sessionId is string
-      && request.resource.data.visitorId is string
-      && request.resource.data.lastActiveAt is timestamp;
-    }
-
-    function paymentApprovalFieldsTouched() {
-      return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-        'paymentStatus',
-        'approvalStatus',
-        'status',
-        'requiresApproval',
-        'paidAt',
-        'approvedBy',
-        'approvedAt',
-        'amountPaid',
-        'partialPaidAmount',
-        'balanceDue',
-        'paymentHistory',
-        'lastPaymentAt',
-        'lastPaymentDate',
-        'lastPaymentBy',
-        'submittedForApprovalBy',
-        'submittedForApprovalAt',
-        'sentAt',
-        'sentBy',
-        'rejectedAt',
-        'rejectedBy',
-        'cancelledAt',
-        'paidAt',
-        'updatedAt',
-        'ownerId',
-        'userId',
-        'workspaceId',
-      ]);
-    }
-
-    function invoiceCreatePaymentApprovalFieldsSafe(workspaceId) {
-      return isPaymentApprover(workspaceId)
-        || (
-          (!request.resource.data.keys().hasAny(['status']) || !(request.resource.data.status in ['paid', 'Paid', 'PAID', 'approved', 'Approved', 'APPROVED']))
-          && (!request.resource.data.keys().hasAny(['paymentStatus']) || request.resource.data.paymentStatus in ['pending', 'Pending', 'PENDING', 'draft', 'Draft', 'DRAFT'])
-          && (!request.resource.data.keys().hasAny(['approvalStatus']) || request.resource.data.approvalStatus in ['pending', 'Pending', 'PENDING', 'draft', 'Draft', 'DRAFT'])
-          && (!request.resource.data.keys().hasAny(['amountPaid']) || request.resource.data.amountPaid == 0)
-          && (!request.resource.data.keys().hasAny(['partialPaidAmount']) || request.resource.data.partialPaidAmount == 0)
-          && (!request.resource.data.keys().hasAny(['balanceDue']) || request.resource.data.balanceDue == request.resource.data.total)
-          && (!request.resource.data.keys().hasAny(['paidAt']) || request.resource.data.paidAt == null)
-          && (!request.resource.data.keys().hasAny(['approvedAt']) || request.resource.data.approvedAt == null)
-          && (!request.resource.data.keys().hasAny(['lastPaymentAt']) || request.resource.data.lastPaymentAt == null)
-          && (!request.resource.data.keys().hasAny(['lastPaymentDate']) || request.resource.data.lastPaymentDate == null)
-          && (!request.resource.data.keys().hasAny(['paymentHistory']) || (request.resource.data.paymentHistory is list && request.resource.data.paymentHistory.size() == 0))
-        );
-    }
-
-    function invoiceBusinessEditFieldsTouched() {
-      return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-        'customerName',
-        'customerEmail',
-        'customerPhone',
-        'customerTaxId',
-        'customerAddress',
-        'customerNotes',
-        'items',
-        'subtotal',
-        'subtotalUsd',
-        'discount',
-        'discountTotal',
-        'tax',
-        'taxableAmount',
-        'taxRate',
-        'taxAmount',
-        'taxTotal',
-        'roundOff',
-        'total',
-        'totalUsd',
-        'amountInWords',
-        'notes',
-        'terms',
-        'dueDate',
-        'issueDate',
-        'invoiceDate',
-        'paymentTerms',
-        'template',
-        'attachmentName',
-        'signatureName',
-        'status',
-        'updatedAt'
-      ]);
-    }
-
-    function invoiceBusinessStatusSafe() {
-      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status'])
-        || request.resource.data.status in ['draft', 'Draft', 'DRAFT', 'pending', 'Pending', 'PENDING'];
-    }
-
-    function isDraftInvoice() {
-      return resource.data.status in ['draft', 'Draft', 'DRAFT']
-        || resource.data.paymentStatus in ['draft', 'Draft', 'DRAFT'];
-    }
-
-    function invoiceBusinessEditSafe(workspaceId) {
-      return workspaceUpdateScopeSafe(workspaceId)
-        && invoiceBusinessEditFieldsTouched()
-        && invoiceBusinessStatusSafe();
-    }
-
-    function invoicePaymentEditSafe(workspaceId) {
-      return workspaceUpdateScopeSafe(workspaceId)
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-          'amountPaid',
-          'partialPaidAmount',
-          'balanceDue',
-          'paymentStatus',
-          'approvalStatus',
-          'requiresApproval',
-          'paidAt',
-          'approvedAt',
-          'approvedBy',
-          'paymentHistory',
-          'lastPaymentAt',
-          'lastPaymentDate',
-          'updatedAt'
-        ]);
-    }
-
-    function canCreateBusinessInvoice(workspaceId) {
-      return isWorkspaceManager(workspaceId)
-        || (isWorkspaceMember(workspaceId) && (isManagerRole(memberRole()) || isSalesRole(memberRole())));
-    }
-
-    function paymentReferenceFieldsTouched() {
-      return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-        'paymentStatus',
-        'status',
-        'paymentSubmittedAt',
-        'paymentSubmittedBy',
-        'lastPaymentReference',
-        'ownerId',
-        'userId',
-        'workspaceId',
-        'updatedAt',
-      ])
-      && request.resource.data.paymentStatus == 'pending_verification'
-      && request.resource.data.paymentSubmittedBy == request.auth.uid;
-    }
-
-    function approvalStatusFieldsTouched() {
-      return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-        'status',
-        'approvalStatus',
-        'approvedBy',
-        'approvedAt',
-        'paidAt',
-        'rejectedBy',
-        'rejectedAt',
-        'ownerId',
-        'userId',
-        'workspaceId',
-        'updatedAt',
-      ]);
-    }
-
-    function reversalMetadataSafe() {
-      return request.resource.data.reversal is map
-        && request.resource.data.reversal.invoiceId is string
-        && request.resource.data.reversal.invoiceId.size() <= 160
-        && request.resource.data.reversal.invoiceNumber is string
-        && request.resource.data.reversal.invoiceNumber.size() <= 160
-        && request.resource.data.reversal.reason is string
-        && request.resource.data.reversal.reason.size() <= 160;
-    }
-
-    function paymentReversalFieldsTouched() {
-      return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-        'status',
-        'paymentStatus',
-        'approvalStatus',
-        'cancelledAt',
-        'reversedAt',
-        'cancelledBy',
-        'reversedBy',
-        'reversal',
-        'updatedAt',
-      ])
-      && request.resource.data.status in ['cancelled', 'canceled']
-      && request.resource.data.paymentStatus in ['cancelled', 'canceled']
-      && request.resource.data.approvalStatus in ['cancelled', 'canceled']
-      && request.resource.data.cancelledAt is timestamp
-      && request.resource.data.reversedAt is timestamp
-      && request.resource.data.cancelledBy == request.auth.uid
-      && request.resource.data.reversedBy == request.auth.uid
-      && reversalMetadataSafe();
-    }
-
-    function accountTransactionReversalFieldsTouched() {
-      return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-        'status',
-        'approvalStatus',
-        'cancelledAt',
-        'reversedAt',
-        'cancelledBy',
-        'reversedBy',
-        'reversal',
-        'updatedAt',
-      ])
-      && request.resource.data.status in ['cancelled', 'canceled']
-      && request.resource.data.approvalStatus in ['cancelled', 'canceled']
-      && request.resource.data.cancelledAt is timestamp
-      && request.resource.data.reversedAt is timestamp
-      && request.resource.data.cancelledBy == request.auth.uid
-      && request.resource.data.reversedBy == request.auth.uid
-      && reversalMetadataSafe();
-    }
-
-    function upgradeApprovalFieldsTouched() {
-      return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-        'status',
-        'approvalStatus',
-        'paymentStatus',
-        'currency',
-        'approvedBy',
-        'approvedByEmail',
-        'approvedAt',
-        'rejectedBy',
-        'rejectedByEmail',
-        'rejectionReason',
-        'rejectedAt',
-        'subscriptionExpiresAt',
-        'nextBillingDate',
-        'updatedAt',
-      ]);
-    }
-
-    function validUpgradeRequestPaymentEvidence() {
-      return request.resource.data.amount is number
-        && request.resource.data.amount > 0
-        && (
-          (
-            request.resource.data.keys().hasAny(['transactionId'])
-            && request.resource.data.transactionId is string
-            && request.resource.data.transactionId.size() > 0
-          )
-          || (
-            request.resource.data.keys().hasAny(['paymentProof'])
-            && request.resource.data.paymentProof is string
-            && request.resource.data.paymentProof.size() > 0
-          )
-        );
-    }
-
-    function accountTransactionCreateScope(workspaceId) {
-      return (request.resource.data.ownerId == workspaceId || request.resource.data.ownerId == workspaceDoc(workspaceId).ownerId)
-        && request.resource.data.userId == workspaceId
-        && request.resource.data.workspaceId == workspaceId
-        && request.resource.data.createdBy == request.auth.uid
-        && request.resource.data.createdAt is timestamp;
-    }
-
-    function accountTransactionApprovalFieldsTouched() {
-      return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-        'status',
-        'approvalStatus',
-        'requiresApproval',
-        'approvedBy',
-        'approvedAt',
-        'rejectedBy',
-        'rejectedAt',
-        'ownerId',
-        'userId',
-        'workspaceId',
-        'updatedAt',
-      ]);
-    }
-
-    function canReadClientPortalInvoice(workspaceId) {
-      return workspaceHasActiveSubscription(workspaceId)
-        && isWorkspaceMember(workspaceId)
-        && (
-          resource.data.customerEmail == profile().email
-          || resource.data.clientId == request.auth.uid
-          || resource.data.createdBy == request.auth.uid
-          || isSelf(workspaceId)
-        );
-    }
-
-    function canReadClientPortalPayment(workspaceId) {
-      return workspaceHasActiveSubscription(workspaceId)
-        && isWorkspaceMember(workspaceId)
-        && (
-          resource.data.submittedBy == request.auth.uid
-          || resource.data.approvedBy == request.auth.uid
-          || resource.data.clientId == request.auth.uid
-          || isSelf(workspaceId)
-        );
-    }
-
-    function canSubmitPaymentReference(workspaceId) {
-      return isWorkspaceMember(workspaceId)
-        && request.resource.data.paymentStatus == 'pending_verification'
-        && request.resource.data.submittedBy == request.auth.uid
-        && (request.resource.data.ownerId == workspaceId || request.resource.data.ownerId == workspaceDoc(workspaceId).ownerId)
-        && request.resource.data.userId == workspaceId
-        && request.resource.data.workspaceId == workspaceId
-        && request.resource.data.createdBy == request.auth.uid
-        && request.resource.data.createdAt is timestamp;
-    }
-
-    function isCreatingStaffUser(userId) {
-      return activeSignedIn()
-        && request.resource.data.uid == userId
-        && request.resource.data.userId == userId
-        && request.resource.data.workspaceId is string
-        && userId != request.resource.data.workspaceId
-        && userId != workspaceDoc(request.resource.data.workspaceId).ownerId
-        && request.resource.data.ownerId == request.resource.data.workspaceId
-        && request.resource.data.createdBy == request.auth.uid
-        && request.resource.data.createdAt is timestamp
-        && request.resource.data.role in ['staff', 'manager', 'admin', 'accountant']
-        && isWorkspaceManager(request.resource.data.workspaceId);
-    }
-
-    function safeFirstSignupProfileCreate(userId) {
-      return request.auth != null
-        && request.auth.uid == userId
-        && request.resource.data.uid == userId
-        && request.resource.data.email == request.auth.token.email
-        && request.resource.data.createdBy == userId
-        && request.resource.data.createdAt is timestamp
-        && request.resource.data.updatedAt is timestamp
-        && request.resource.data.emailVerifiedCustom == false
-        && request.resource.data.role in ['owner', 'user']
-        && request.resource.data.status in ['active', 'Active']
-        && (
-          !request.resource.data.keys().hasAny(['isAdmin'])
-          || request.resource.data.isAdmin == false
-        )
-        && request.resource.data.keys().hasOnly([
-          'uid',
-          'email',
-          'role',
-          'status',
-          'createdBy',
-          'createdAt',
-          'updatedAt',
-          'emailVerifiedCustom',
-          'workspaceId',
-          'ownerId',
-          'userId',
-          'plan',
-          'planStatus',
-          'subscriptionStatus',
-          'trialDays',
-          'isAdmin',
-          'allowedBusinessTypes',
-          'primaryBusinessType',
-          'specialModuleAccess',
-          'allModulesAccess'
-        ]);
-    }
-
-    function validSessionScope(userId) {
-      return request.resource.data.userId == userId
-        && request.resource.data.workspaceId is string
-        && (request.resource.data.ownerId == request.resource.data.workspaceId || request.resource.data.ownerId == workspaceDoc(request.resource.data.workspaceId).ownerId)
-        && (
-          request.resource.data.workspaceId == userId
-          || (activeSignedIn() && memberWorkspaceId() == request.resource.data.workspaceId)
-          || ownsTargetWorkspace(request.resource.data.workspaceId)
-        );
-    }
-
-    match /users/{userId} {
-      allow create: if isAdmin()
-        || isCreatingStaffUser(userId)
-        || safeFirstSignupProfileCreate(userId)
-        || (isActiveSelf(userId)
-          && request.resource.data.uid == userId
-          && hasOwnScope(userId)
-          && request.resource.data.createdBy == userId
-          && request.resource.data.createdAt is timestamp
-          && hasSafeTrialPlan());
-      allow read: if isSelf(userId) || isAdmin();
-      allow update: if validCustomEmailVerificationUpdate(userId);
-      allow update: if isAdmin()
-        || (isActiveSelf(userId) && protectedAccountFieldsUnchanged() && userIdentityScopeSafe(userId))
-        || (activeSignedIn()
-          && resource.data.workspaceId is string
-          && isAdmin()
-          && planApprovalFieldsTouched());
-      allow delete: if isAdmin();
-
-      match /verification/{docId} {
-        allow read, delete: if request.auth != null
-          && request.auth.uid == userId
-          && docId == 'otp';
-        allow create, update: if verificationOtpWriteSafe(userId, docId);
-      }
-
-      match /sessions/{sessionId} {
-        allow create: if isActiveSelf(userId)
-          && validSessionScope(userId)
-          && request.resource.data.createdBy == userId
-          && request.resource.data.createdAt is timestamp;
-        allow read: if isSelf(userId) || isAdmin();
-        allow update: if isAdmin()
-          || (isActiveSelf(userId)
-            && validSessionScope(userId)
-            && request.resource.data.userId == resource.data.userId
-            && request.resource.data.workspaceId == resource.data.workspaceId
-            && request.resource.data.ownerId == resource.data.ownerId);
-        allow delete: if isAdmin();
+      match /{subPath=**} {
+        allow read, write: if backendAdmin() || (signedIn() && request.auth.uid == uid);
       }
     }
 
-    match /phoneRegistry/{phoneNormalized} {
-      allow read: if true;
-      allow create: if signedIn()
-        && request.resource.data.phoneNormalized == phoneNormalized
-        && request.resource.data.userId == request.auth.uid
-        && request.resource.data.createdAt is timestamp;
-      allow update, delete: if isAdmin();
+    match /phoneRegistry/{phoneId} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if backendAdmin();
     }
 
     match /workspaces/{workspaceId} {
-      allow create: if isAdmin()
-        || (activeSignedIn()
-          && request.resource.data.ownerId == request.auth.uid
-          && request.resource.data.userId == workspaceId
-          && request.resource.data.workspaceId == workspaceId
-          && request.resource.data.createdBy == request.auth.uid
-          && request.resource.data.createdAt is timestamp
-          && hasSafeTrialPlan());
-      allow read: if request.auth.uid == workspaceId || isWorkspaceMember(workspaceId) || isAdmin();
-      allow update: if isAdmin()
-        || ownerFirstOnboardingUpdateSafe(workspaceId)
-        || (workspaceHasActiveSubscription(workspaceId)
-          && workspaceOwnerMatches(workspaceId)
-          && protectedAccountFieldsUnchanged()
-          && workspaceAccountScopeSafe(workspaceId));
-      allow delete: if isAdmin();
+      allow create: if activeSignedIn()
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.workspaceId == workspaceId
+        && request.resource.data.createdBy == request.auth.uid;
+      allow read: if workspaceMember(workspaceId);
+      allow update: if backendAdmin()
+        || (workspaceAdmin(workspaceId) && protectedWorkspaceFieldsUnchanged());
+      allow delete: if backendAdmin();
 
-      match /tasks/{taskId} {
-        allow read: if hasWorkspaceCrmReadAccess(workspaceId);
-        allow create: if workspaceHasWriteAccess(workspaceId) && staffPermission(workspaceId, 'followUpEdit') && workspaceCreateMetadata(workspaceId);
-        allow update: if workspaceHasWriteAccess(workspaceId) && staffPermission(workspaceId, 'followUpEdit') && workspaceUpdateScopeSafe(workspaceId);
-        allow delete: if workspaceHasWriteAccess(workspaceId) && staffPermission(workspaceId, 'followUpDelete');
+      match /permissions/{staffId} {
+        allow read: if workspaceAdmin(workspaceId) || (workspaceMember(workspaceId) && staffId == permissionDocId());
+        allow create, update, delete: if canManageWorkspace(workspaceId) && staffId != workspaceId && staffId != workspaceDoc(workspaceId).ownerId;
       }
 
       match /staff/{staffId} {
-        allow read: if isWorkspaceManager(workspaceId)
-          || staffPermission(workspaceId, 'reports')
-          || (workspaceHasActiveSubscription(workspaceId)
-            && isWorkspaceMember(workspaceId)
-            && (resource.data.userId == request.auth.uid || resource.data.staffId == permissionDocId()));
-        allow create: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId) && workspaceCreateMetadata(workspaceId) && ownerMemberCreateSafe(workspaceId, staffId);
-        allow update: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId) && workspaceUpdateScopeSafe(workspaceId) && ownerMemberUpdateSafe(workspaceId, staffId);
-        allow delete: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId) && !isOwnerMemberResource(workspaceId, staffId);
-      }
-
-      match /permissions/{staffId} {
-        allow read: if isWorkspaceManager(workspaceId)
-          || (workspaceHasActiveSubscription(workspaceId) && isWorkspaceMember(workspaceId) && staffId == permissionDocId());
-        allow create, update, delete: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId) && !isOwnerPermissionDoc(workspaceId, staffId);
-      }
-
-      match /customers/{customerId} {
-        allow read: if resourceOwnerMatches() || salesHubRoleAccess(workspaceId) || staffPermission(workspaceId, 'customerManagement') || staffPermission(workspaceId, 'reports');
-        allow create: if workspaceHasWriteAccess(workspaceId) && (salesHubRoleAccess(workspaceId) || staffPermission(workspaceId, 'customerManagement')) && workspaceCreateMetadata(workspaceId);
-        allow update: if workspaceHasWriteAccess(workspaceId) && (resourceOwnerMatches() || salesHubRoleAccess(workspaceId) || staffPermission(workspaceId, 'customerManagement')) && workspaceUpdateScopeSafe(workspaceId);
-        allow delete: if workspaceHasWriteAccess(workspaceId) && (resourceOwnerMatches() || salesHubRoleAccess(workspaceId) || staffPermission(workspaceId, 'customerManagement'));
-      }
-
-      match /clients/{clientId} {
-        allow read: if isWorkspaceManager(workspaceId) || isPaymentApprover(workspaceId) || staffPermission(workspaceId, 'reports');
-        allow create: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId) && workspaceCreateMetadata(workspaceId);
-        allow update: if workspaceHasWriteAccess(workspaceId) && (
-          (isWorkspaceManager(workspaceId) && workspaceUpdateScopeSafe(workspaceId))
-          || (isPaymentApprover(workspaceId) && approvalStatusFieldsTouched() && isOpenApprovalResource() && workspaceUpdateScopeSafe(workspaceId))
-        );
-        allow delete: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId);
-      }
-
-      match /products/{productId} {
-        allow read: if staffPermission(workspaceId, 'invoices') || staffPermission(workspaceId, 'reports');
-        allow create: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId) && workspaceCreateMetadata(workspaceId);
-        allow update: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId) && workspaceUpdateScopeSafe(workspaceId);
-        allow delete: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId);
-      }
-
-      match /leads/{leadId} {
-        allow read: if resourceOwnerMatches() || salesHubRoleAccess(workspaceId) || staffPermission(workspaceId, 'leadsManagement') || staffPermission(workspaceId, 'reports');
-        allow create: if workspaceHasWriteAccess(workspaceId) && (salesHubRoleAccess(workspaceId) || staffPermission(workspaceId, 'leadsManagement')) && workspaceCreateMetadata(workspaceId);
-        allow update: if workspaceHasWriteAccess(workspaceId) && (resourceOwnerMatches() || salesHubRoleAccess(workspaceId) || staffPermission(workspaceId, 'leadsManagement')) && workspaceUpdateScopeSafe(workspaceId);
-        allow delete: if workspaceHasWriteAccess(workspaceId) && (resourceOwnerMatches() || salesHubRoleAccess(workspaceId) || staffPermission(workspaceId, 'leadsManagement'));
-      }
-
-      match /invoices/{invoiceId} {
-        allow read: if staffPermission(workspaceId, 'invoices')
-          || staffPermission(workspaceId, 'reports')
-          || isPaymentApprover(workspaceId)
-          || canReadClientPortalInvoice(workspaceId);
-        allow create: if workspaceHasWriteAccess(workspaceId) && canCreateBusinessInvoice(workspaceId) && workspaceCreateMetadata(workspaceId) && invoiceCreatePaymentApprovalFieldsSafe(workspaceId);
-        allow update: if workspaceHasWriteAccess(workspaceId) && ((isWorkspaceManager(workspaceId) && workspaceUpdateScopeSafe(workspaceId))
-          || (isManagerRole(memberRole()) && isWorkspaceMember(workspaceId) && invoiceBusinessEditSafe(workspaceId))
-          || (isSalesRole(memberRole()) && isWorkspaceMember(workspaceId) && isDraftInvoice() && invoiceBusinessEditSafe(workspaceId))
-          || (isPaymentApprover(workspaceId) && invoicePaymentEditSafe(workspaceId))
-          || (isWorkspaceMember(workspaceId) && paymentReferenceFieldsTouched() && isOpenApprovalResource() && workspaceUpdateScopeSafe(workspaceId)));
-        allow delete: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId);
-      }
-
-      match /payments/{paymentId} {
-        allow read: if staffPermission(workspaceId, 'invoices')
-          || staffPermission(workspaceId, 'reports')
-          || isPaymentApprover(workspaceId)
-          || canReadClientPortalPayment(workspaceId);
-        allow create: if workspaceHasWriteAccess(workspaceId) && ((isPaymentApprover(workspaceId) && workspaceCreateMetadata(workspaceId)) || canSubmitPaymentReference(workspaceId));
-        allow update: if workspaceHasWriteAccess(workspaceId) && ((isWorkspaceManager(workspaceId) && !paymentApprovalFieldsTouched() && workspaceUpdateScopeSafe(workspaceId))
-          || (isPaymentApprover(workspaceId) && paymentApprovalFieldsTouched() && isOpenApprovalResource() && workspaceUpdateScopeSafe(workspaceId))
-          || (isPaymentApprover(workspaceId) && paymentReversalFieldsTouched() && workspaceUpdateScopeSafe(workspaceId)));
-        allow delete: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId);
-      }
-
-      match /expenses/{expenseId} {
-        allow read: if staffPermission(workspaceId, 'reports') || isPaymentApprover(workspaceId);
-        allow create: if workspaceHasWriteAccess(workspaceId) && (isWorkspaceManager(workspaceId) || isPaymentApprover(workspaceId))
-          && accountTransactionCreateScope(workspaceId);
-        allow update: if workspaceHasWriteAccess(workspaceId) && ((isWorkspaceManager(workspaceId) && !approvalStatusFieldsTouched() && workspaceUpdateScopeSafe(workspaceId))
-          || (isPaymentApprover(workspaceId) && approvalStatusFieldsTouched() && isOpenApprovalResource() && workspaceUpdateScopeSafe(workspaceId)));
-        allow delete: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId);
-      }
-
-      match /accountTransactions/{transactionId} {
-        allow read: if staffPermission(workspaceId, 'reports') || isPaymentApprover(workspaceId);
-        allow create: if workspaceHasWriteAccess(workspaceId) && isPaymentApprover(workspaceId) && accountTransactionCreateScope(workspaceId);
-        allow update: if workspaceHasWriteAccess(workspaceId) && ((isWorkspaceManager(workspaceId) && !accountTransactionApprovalFieldsTouched() && workspaceUpdateScopeSafe(workspaceId))
-          || (isPaymentApprover(workspaceId) && accountTransactionApprovalFieldsTouched() && isOpenApprovalResource() && workspaceUpdateScopeSafe(workspaceId))
-          || (isPaymentApprover(workspaceId) && accountTransactionReversalFieldsTouched() && workspaceUpdateScopeSafe(workspaceId)));
-        allow delete: if workspaceHasWriteAccess(workspaceId) && isActiveSelf(workspaceId);
-      }
-
-      match /pipelines/{dealId} {
-        allow read: if staffPermission(workspaceId, 'reports') || staffPermission(workspaceId, 'leadsManagement');
-        allow create: if workspaceHasWriteAccess(workspaceId) && staffPermission(workspaceId, 'leadsManagement') && workspaceCreateMetadata(workspaceId);
-        allow update: if workspaceHasWriteAccess(workspaceId) && staffPermission(workspaceId, 'leadsManagement') && workspaceUpdateScopeSafe(workspaceId);
-        allow delete: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId);
-      }
-
-      match /salesDeals/{dealId} {
-        allow read: if resourceOwnerMatches()
-          || salesHubRoleAccess(workspaceId)
-          || staffPermission(workspaceId, 'reports')
-          || staffPermission(workspaceId, 'leadsManagement')
-          || staffPermission(workspaceId, 'module.salesPipeline.view')
-          || staffPermission(workspaceId, 'module.deals.view');
-        allow create: if workspaceHasWriteAccess(workspaceId)
-          && (salesHubRoleAccess(workspaceId)
-            || staffPermission(workspaceId, 'leadsManagement')
-            || staffPermission(workspaceId, 'module.salesPipeline.create')
-            || staffPermission(workspaceId, 'module.deals.create'))
-          && workspaceCreateMetadata(workspaceId);
-        allow update: if workspaceHasWriteAccess(workspaceId)
-          && (resourceOwnerMatches()
-            || salesHubRoleAccess(workspaceId)
-            || staffPermission(workspaceId, 'leadsManagement')
-            || staffPermission(workspaceId, 'module.salesPipeline.edit')
-            || staffPermission(workspaceId, 'module.deals.edit'))
-          && workspaceUpdateScopeSafe(workspaceId);
-        allow delete: if workspaceHasWriteAccess(workspaceId)
-          && (resourceOwnerMatches()
-            || salesHubRoleAccess(workspaceId)
-            || isWorkspaceManager(workspaceId)
-            || staffPermission(workspaceId, 'module.salesPipeline.delete')
-            || staffPermission(workspaceId, 'module.deals.delete'));
-      }
-
-      match /salesTasks/{taskId} {
-        allow read: if resourceOwnerMatches()
-          || salesHubRoleAccess(workspaceId)
-          || staffPermission(workspaceId, 'reports')
-          || staffPermission(workspaceId, 'followUpEdit')
-          || staffPermission(workspaceId, 'module.tasks.view');
-        allow create: if workspaceHasWriteAccess(workspaceId)
-          && (salesHubRoleAccess(workspaceId) || staffPermission(workspaceId, 'followUpEdit') || staffPermission(workspaceId, 'module.tasks.create'))
-          && workspaceCreateMetadata(workspaceId);
-        allow update: if workspaceHasWriteAccess(workspaceId)
-          && (resourceOwnerMatches() || salesHubRoleAccess(workspaceId) || staffPermission(workspaceId, 'followUpEdit') || staffPermission(workspaceId, 'module.tasks.edit'))
-          && workspaceUpdateScopeSafe(workspaceId);
-        allow delete: if workspaceHasWriteAccess(workspaceId)
-          && (resourceOwnerMatches()
-            || salesHubRoleAccess(workspaceId)
-            || isWorkspaceManager(workspaceId)
-            || staffPermission(workspaceId, 'followUpDelete')
-            || staffPermission(workspaceId, 'module.tasks.delete'));
-      }
-
-      match /salesQuotes/{quoteId} {
-        allow read: if resourceOwnerMatches()
-          || salesHubRoleAccess(workspaceId)
-          || staffPermission(workspaceId, 'reports')
-          || staffPermission(workspaceId, 'invoices')
-          || staffPermission(workspaceId, 'module.quotations.view');
-        allow create: if workspaceHasWriteAccess(workspaceId)
-          && (salesHubRoleAccess(workspaceId) || staffPermission(workspaceId, 'invoices') || staffPermission(workspaceId, 'module.quotations.create'))
-          && workspaceCreateMetadata(workspaceId);
-        allow update: if workspaceHasWriteAccess(workspaceId)
-          && (resourceOwnerMatches() || salesHubRoleAccess(workspaceId) || staffPermission(workspaceId, 'invoices') || staffPermission(workspaceId, 'module.quotations.edit'))
-          && workspaceUpdateScopeSafe(workspaceId);
-        allow delete: if workspaceHasWriteAccess(workspaceId)
-          && (resourceOwnerMatches() || salesHubRoleAccess(workspaceId) || isWorkspaceManager(workspaceId) || staffPermission(workspaceId, 'module.quotations.delete'));
-      }
-
-      match /salesProducts/{productId} {
-        allow read: if resourceOwnerMatches()
-          || salesHubRoleAccess(workspaceId)
-          || staffPermission(workspaceId, 'reports')
-          || staffPermission(workspaceId, 'invoices')
-          || staffPermission(workspaceId, 'module.salesProducts.view');
-        allow create: if workspaceHasWriteAccess(workspaceId)
-          && (salesHubRoleAccess(workspaceId) || isWorkspaceManager(workspaceId) || staffPermission(workspaceId, 'module.salesProducts.create'))
-          && workspaceCreateMetadata(workspaceId);
-        allow update: if workspaceHasWriteAccess(workspaceId)
-          && (resourceOwnerMatches() || salesHubRoleAccess(workspaceId) || isWorkspaceManager(workspaceId) || staffPermission(workspaceId, 'module.salesProducts.edit'))
-          && workspaceUpdateScopeSafe(workspaceId);
-        allow delete: if workspaceHasWriteAccess(workspaceId)
-          && (resourceOwnerMatches() || salesHubRoleAccess(workspaceId) || isWorkspaceManager(workspaceId) || staffPermission(workspaceId, 'module.salesProducts.delete'));
-      }
-
-      match /salesActivities/{activityId} {
-        allow read: if resourceOwnerMatches()
-          || salesHubRoleAccess(workspaceId)
-          || staffPermission(workspaceId, 'reports')
-          || staffPermission(workspaceId, 'leadsManagement')
-          || staffPermission(workspaceId, 'module.activities.view');
-        allow create: if workspaceHasWriteAccess(workspaceId)
-          && (salesHubRoleAccess(workspaceId) || staffPermission(workspaceId, 'leadsManagement') || staffPermission(workspaceId, 'module.activities.create'))
-          && workspaceCreateMetadata(workspaceId);
-        allow update: if workspaceHasWriteAccess(workspaceId)
-          && (resourceOwnerMatches() || salesHubRoleAccess(workspaceId) || staffPermission(workspaceId, 'leadsManagement') || staffPermission(workspaceId, 'module.activities.edit'))
-          && workspaceUpdateScopeSafe(workspaceId);
-        allow delete: if workspaceHasWriteAccess(workspaceId)
-          && (resourceOwnerMatches() || salesHubRoleAccess(workspaceId) || isWorkspaceManager(workspaceId) || staffPermission(workspaceId, 'module.activities.delete'));
-      }
-
-      match /salesInvoices/{invoiceId} {
-        allow read: if resourceOwnerMatches() || salesHubRoleAccess(workspaceId) || staffPermission(workspaceId, 'invoices') || staffPermission(workspaceId, 'reports');
-        allow create: if workspaceHasWriteAccess(workspaceId) && (salesHubRoleAccess(workspaceId) || staffPermission(workspaceId, 'invoices')) && workspaceCreateMetadata(workspaceId);
-        allow update: if workspaceHasWriteAccess(workspaceId) && (resourceOwnerMatches() || salesHubRoleAccess(workspaceId) || staffPermission(workspaceId, 'invoices')) && workspaceUpdateScopeSafe(workspaceId);
-        allow delete: if workspaceHasWriteAccess(workspaceId) && (resourceOwnerMatches() || salesHubRoleAccess(workspaceId) || isWorkspaceManager(workspaceId));
-      }
-
-      match /salesExpenses/{expenseId} {
-        allow read: if resourceOwnerMatches() || salesHubRoleAccess(workspaceId) || staffPermission(workspaceId, 'reports');
-        allow create: if workspaceHasWriteAccess(workspaceId) && salesHubRoleAccess(workspaceId) && workspaceCreateMetadata(workspaceId);
-        allow update: if workspaceHasWriteAccess(workspaceId) && (resourceOwnerMatches() || salesHubRoleAccess(workspaceId)) && workspaceUpdateScopeSafe(workspaceId);
-        allow delete: if workspaceHasWriteAccess(workspaceId) && (resourceOwnerMatches() || salesHubRoleAccess(workspaceId) || isWorkspaceManager(workspaceId));
-      }
-
-      match /supportTickets/{ticketId} {
-        allow read: if supportTicketReadPermission(workspaceId);
-        allow create: if workspaceHasWriteAccess(workspaceId) && supportTicketCreatePermission(workspaceId) && workspaceCreateMetadata(workspaceId);
-        allow update: if workspaceHasWriteAccess(workspaceId) && supportTicketEditPermission(workspaceId) && workspaceUpdateScopeSafe(workspaceId);
-        allow delete: if workspaceHasWriteAccess(workspaceId) && supportTicketDeletePermission(workspaceId);
-      }
-
-      match /subscriptions/{subscriptionId} {
-        allow read: if hasWorkspaceBillingReadAccess(workspaceId);
-        allow create: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId) && workspaceCreateMetadata(workspaceId);
-        allow update, delete: if isAdmin();
-      }
-
-      match /activityLogs/{logId} {
-        allow read: if staffPermission(workspaceId, 'reports');
-        allow create: if workspaceHasWriteAccess(workspaceId)
-          && (isActiveSelf(workspaceId) || isWorkspaceMember(workspaceId))
-          && request.resource.data.userId == request.auth.uid
-          && request.resource.data.ownerId == workspaceId
-          && request.resource.data.workspaceId == workspaceId
-          && request.resource.data.createdBy == request.auth.uid
-          && request.resource.data.createdAt is timestamp;
-        allow update, delete: if false;
+        allow read: if workspaceAdmin(workspaceId) || (workspaceMember(workspaceId) && staffId == permissionDocId());
+        allow create, update: if canManageWorkspace(workspaceId) && safeUpdate(workspaceId) && ownerMemberWriteSafe(workspaceId, staffId);
+        allow delete: if canManageWorkspace(workspaceId) && !ownerMemberResource(workspaceId, staffId);
       }
 
       match /teamMembers/{memberId} {
-        allow read: if staffPermission(workspaceId, 'reports')
-          || staffPermission(workspaceId, 'settingsAccess')
-          || isPaymentApprover(workspaceId);
-        allow create: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId) && workspaceCreateMetadata(workspaceId) && ownerMemberCreateSafe(workspaceId, memberId);
-        allow update: if workspaceHasWriteAccess(workspaceId) && ((isWorkspaceManager(workspaceId) && workspaceUpdateScopeSafe(workspaceId))
-          || (isPaymentApprover(workspaceId) && approvalStatusFieldsTouched() && isOpenApprovalResource() && workspaceUpdateScopeSafe(workspaceId))) && ownerMemberUpdateSafe(workspaceId, memberId);
-        allow delete: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId) && !isOwnerMemberResource(workspaceId, memberId);
-      }
-
-      match /branches/{branchId} {
-        allow read: if hasWorkspaceCrmReadAccess(workspaceId);
-        allow create: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId) && workspaceCreateMetadata(workspaceId);
-        allow update: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId) && workspaceUpdateScopeSafe(workspaceId);
-        allow delete: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId);
-      }
-
-      match /reports/{reportId} {
-        allow read: if staffPermission(workspaceId, 'reports');
-        allow create: if workspaceHasWriteAccess(workspaceId) && staffPermission(workspaceId, 'reports') && workspaceCreateMetadata(workspaceId);
-        allow update, delete: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId);
-      }
-
-      match /businessSettings/{businessTypeId} {
-        allow read: if hasWorkspaceCrmReadAccess(workspaceId);
-        allow create: if workspaceHasWriteAccess(workspaceId)
-          && (isWorkspaceManager(workspaceId) || staffPermission(workspaceId, 'settingsAccess'))
-          && request.resource.data.workspaceId == workspaceId;
-        allow update: if workspaceHasWriteAccess(workspaceId)
-          && (isWorkspaceManager(workspaceId) || staffPermission(workspaceId, 'settingsAccess'))
-          && resource.data.workspaceId == workspaceId
-          && request.resource.data.workspaceId == workspaceId;
-        allow delete: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId);
-      }
-
-      match /hr/{employeeId} {
-        allow read: if staffPermission(workspaceId, 'hrDashboard');
-        allow write: if workspaceHasWriteAccess(workspaceId) && staffPermission(workspaceId, 'hrDashboard');
+        allow read: if workspaceMember(workspaceId);
+        allow create, update: if canManageWorkspace(workspaceId) && safeUpdate(workspaceId) && ownerMemberWriteSafe(workspaceId, memberId);
+        allow delete: if canManageWorkspace(workspaceId) && !ownerMemberResource(workspaceId, memberId);
       }
 
       match /teamPermissions/{permissionId} {
-        allow read: if staffPermission(workspaceId, 'settingsAccess') || isWorkspaceManager(workspaceId);
-        allow create, update, delete: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId);
+        allow read: if workspaceMember(workspaceId);
+        allow create, update, delete: if canManageWorkspace(workspaceId);
       }
 
-      match /notifications/{notificationId} {
-        allow create: if workspaceHasWriteAccess(workspaceId)
-          && isWorkspaceMember(workspaceId)
-          && request.resource.data.userId == request.auth.uid
+      match /businessSettings/{settingId} {
+        allow read: if workspaceMember(workspaceId);
+        allow create, update, delete: if workspaceAdmin(workspaceId) || hasPermission(workspaceId, 'settingsAccess');
+      }
+
+      match /whatsappSettings/{settingId} {
+        allow read: if workspaceMember(workspaceId);
+        allow create, update, delete: if workspaceAdmin(workspaceId) || hasPermission(workspaceId, 'settingsAccess');
+      }
+
+      match /customers/{docId} {
+        allow read: if workspaceMember(workspaceId);
+        allow create: if canWriteSales(workspaceId) && safeCreate(workspaceId);
+        allow update: if canWriteSales(workspaceId) && safeUpdate(workspaceId);
+        allow delete: if canManageWorkspace(workspaceId);
+      }
+
+      match /leads/{docId} {
+        allow read: if workspaceMember(workspaceId);
+        allow create: if canWriteSales(workspaceId) && safeCreate(workspaceId);
+        allow update: if canWriteSales(workspaceId) && safeUpdate(workspaceId);
+        allow delete: if canManageWorkspace(workspaceId);
+      }
+
+      match /salesDeals/{docId} {
+        allow read: if workspaceMember(workspaceId);
+        allow create: if canWriteSales(workspaceId) && safeCreate(workspaceId);
+        allow update: if canWriteSales(workspaceId) && safeUpdate(workspaceId);
+        allow delete: if canManageWorkspace(workspaceId);
+      }
+
+      match /salesTasks/{docId} {
+        allow read: if workspaceMember(workspaceId);
+        allow create: if canWriteSales(workspaceId) && safeCreate(workspaceId);
+        allow update: if canWriteSales(workspaceId) && safeUpdate(workspaceId);
+        allow delete: if canManageWorkspace(workspaceId);
+      }
+
+      match /salesActivities/{docId} {
+        allow read: if workspaceMember(workspaceId);
+        allow create: if canWriteSales(workspaceId) && safeCreate(workspaceId);
+        allow update: if canWriteSales(workspaceId) && safeUpdate(workspaceId);
+        allow delete: if canManageWorkspace(workspaceId);
+      }
+
+      match /salesQuotes/{docId} {
+        allow read: if workspaceMember(workspaceId);
+        allow create: if canWriteSales(workspaceId) && safeCreate(workspaceId);
+        allow update: if canWriteSales(workspaceId) && safeUpdate(workspaceId);
+        allow delete: if canManageWorkspace(workspaceId);
+      }
+
+      match /salesProducts/{docId} {
+        allow read: if workspaceMember(workspaceId);
+        allow create: if canWriteSales(workspaceId) && safeCreate(workspaceId);
+        allow update: if canWriteSales(workspaceId) && safeUpdate(workspaceId);
+        allow delete: if canManageWorkspace(workspaceId);
+      }
+
+      match /salesInvoices/{docId} {
+        allow read: if workspaceMember(workspaceId);
+        allow create: if canWriteAccounting(workspaceId) && safeCreate(workspaceId);
+        allow update: if canWriteAccounting(workspaceId) && safeUpdate(workspaceId);
+        allow delete: if canManageWorkspace(workspaceId);
+      }
+
+      match /salesExpenses/{docId} {
+        allow read: if workspaceMember(workspaceId);
+        allow create: if canWriteAccounting(workspaceId) && safeCreate(workspaceId);
+        allow update: if canWriteAccounting(workspaceId) && safeUpdate(workspaceId);
+        allow delete: if canManageWorkspace(workspaceId);
+      }
+
+      match /orders/{docId} {
+        allow read: if workspaceMember(workspaceId);
+        allow create: if workspaceMember(workspaceId) && safeCreate(workspaceId);
+        allow update: if workspaceMember(workspaceId) && safeUpdate(workspaceId);
+        allow delete: if canManageWorkspace(workspaceId);
+      }
+
+      match /menuItems/{docId} {
+        allow read: if workspaceMember(workspaceId);
+        allow create: if canManageWorkspace(workspaceId) && safeCreate(workspaceId);
+        allow update: if canManageWorkspace(workspaceId) && safeUpdate(workspaceId);
+        allow delete: if canManageWorkspace(workspaceId);
+      }
+
+      match /tables/{docId} {
+        allow read: if workspaceMember(workspaceId);
+        allow create: if canManageWorkspace(workspaceId) && safeCreate(workspaceId);
+        allow update: if workspaceMember(workspaceId) && safeUpdate(workspaceId);
+        allow delete: if canManageWorkspace(workspaceId);
+      }
+
+      match /kot/{docId} {
+        allow read: if workspaceMember(workspaceId);
+        allow create: if workspaceMember(workspaceId) && safeCreate(workspaceId);
+        allow update: if workspaceMember(workspaceId) && safeUpdate(workspaceId);
+        allow delete: if canManageWorkspace(workspaceId);
+      }
+
+      match /bills/{docId} {
+        allow read: if workspaceMember(workspaceId);
+        allow create: if workspaceMember(workspaceId) && safeCreate(workspaceId);
+        allow update: if canWriteAccounting(workspaceId) && safeUpdate(workspaceId);
+        allow delete: if canManageWorkspace(workspaceId);
+      }
+
+      match /restaurantSettings/{docId} {
+        allow read: if workspaceMember(workspaceId);
+        allow create, update, delete: if workspaceAdmin(workspaceId) || hasPermission(workspaceId, 'settingsAccess');
+      }
+
+      match /reports/{docId} {
+        allow read: if workspaceMember(workspaceId) || hasPermission(workspaceId, 'reports');
+        allow create: if workspaceMember(workspaceId) && safeCreate(workspaceId);
+        allow update, delete: if canManageWorkspace(workspaceId);
+      }
+
+      match /invoices/{docId} {
+        allow read: if workspaceMember(workspaceId);
+        allow create: if canWriteAccounting(workspaceId) && safeCreate(workspaceId);
+        allow update: if canWriteAccounting(workspaceId) && safeUpdate(workspaceId);
+        allow delete: if canManageWorkspace(workspaceId);
+      }
+
+      match /payments/{docId} {
+        allow read: if workspaceMember(workspaceId);
+        allow create: if canWriteAccounting(workspaceId) && safeCreate(workspaceId);
+        allow update: if canWriteAccounting(workspaceId) && safeUpdate(workspaceId);
+        allow delete: if canManageWorkspace(workspaceId);
+      }
+
+      match /expenses/{docId} {
+        allow read: if workspaceMember(workspaceId);
+        allow create: if canWriteAccounting(workspaceId) && safeCreate(workspaceId);
+        allow update: if canWriteAccounting(workspaceId) && safeUpdate(workspaceId);
+        allow delete: if canManageWorkspace(workspaceId);
+      }
+
+      match /accountTransactions/{docId} {
+        allow read: if workspaceMember(workspaceId);
+        allow create: if canWriteAccounting(workspaceId) && safeCreate(workspaceId);
+        allow update: if canWriteAccounting(workspaceId) && safeUpdate(workspaceId);
+        allow delete: if canManageWorkspace(workspaceId);
+      }
+
+      match /activityLogs/{docId} {
+        allow read: if workspaceMember(workspaceId);
+        allow create: if workspaceMember(workspaceId)
           && request.resource.data.workspaceId == workspaceId
-          && request.resource.data.createdBy == request.auth.uid
-          && request.resource.data.createdAt is timestamp;
-        allow read: if isAdmin()
-          || (workspaceHasActiveSubscription(workspaceId) && isWorkspaceMember(workspaceId) && resource.data.userId == request.auth.uid);
-        allow update: if workspaceHasWriteAccess(workspaceId)
-          && (isAdmin()
-            || (isWorkspaceMember(workspaceId)
-              && resource.data.userId == request.auth.uid
-              && request.resource.data.userId == resource.data.userId
-              && request.resource.data.workspaceId == workspaceId));
-        allow delete: if workspaceHasWriteAccess(workspaceId)
-          && (isAdmin() || (isWorkspaceMember(workspaceId) && resource.data.userId == request.auth.uid));
+          && request.resource.data.createdBy == request.auth.uid;
+        allow update, delete: if false;
       }
 
-      // --- Inventory (Retail / POS) ---
-      // Stock lives in /products (reused). These collections add the inventory
-      // ledger, categories, suppliers, and purchase orders. Same access model as
-      // /products: staff with invoices/reports can read; managers/owners write.
-      match /inventoryTransactions/{transactionId} {
-        allow read: if staffPermission(workspaceId, 'invoices') || staffPermission(workspaceId, 'reports');
-        allow create: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId) && workspaceCreateMetadata(workspaceId);
-        allow update: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId) && workspaceUpdateScopeSafe(workspaceId);
-        allow delete: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId);
+      match /notifications/{docId} {
+        allow read: if workspaceMember(workspaceId);
+        allow create, update, delete: if workspaceMember(workspaceId);
       }
 
-      match /categories/{categoryId} {
-        allow read: if staffPermission(workspaceId, 'invoices') || staffPermission(workspaceId, 'reports');
-        allow create: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId) && workspaceCreateMetadata(workspaceId);
-        allow update: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId) && workspaceUpdateScopeSafe(workspaceId);
-        allow delete: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId);
-      }
-
-      match /suppliers/{supplierId} {
-        allow read: if staffPermission(workspaceId, 'invoices') || staffPermission(workspaceId, 'reports');
-        allow create: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId) && workspaceCreateMetadata(workspaceId);
-        allow update: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId) && workspaceUpdateScopeSafe(workspaceId);
-        allow delete: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId);
-      }
-
-      match /purchases/{purchaseId} {
-        allow read: if staffPermission(workspaceId, 'invoices') || staffPermission(workspaceId, 'reports');
-        allow create: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId) && workspaceCreateMetadata(workspaceId);
-        allow update: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId) && workspaceUpdateScopeSafe(workspaceId);
-        allow delete: if workspaceHasWriteAccess(workspaceId) && isWorkspaceManager(workspaceId);
-      }
-
-      // --- Property ERP (Maintenance & Contracts) ---
-      // Workspace-isolated. Owners/admins have full access (isWorkspaceManager);
-      // managers/staff gain access only when granted the matching module
-      // permission. Scope/ownership are pinned by the same metadata helpers used
-      // across CRM collections, so no cross-workspace access is possible.
-      match /propertyMaintenance/{maintenanceId} {
-        allow read: if isWorkspaceManager(workspaceId)
-          || staffPermission(workspaceId, 'module.maintenance.view')
-          || staffPermission(workspaceId, 'reports');
-        allow create: if workspaceHasWriteAccess(workspaceId)
-          && (isWorkspaceManager(workspaceId) || staffPermission(workspaceId, 'module.maintenance.create'))
-          && workspaceCreateMetadata(workspaceId);
-        allow update: if workspaceHasWriteAccess(workspaceId)
-          && (isWorkspaceManager(workspaceId) || staffPermission(workspaceId, 'module.maintenance.edit'))
-          && workspaceUpdateScopeSafe(workspaceId);
-        allow delete: if workspaceHasWriteAccess(workspaceId)
-          && (isWorkspaceManager(workspaceId) || staffPermission(workspaceId, 'module.maintenance.delete'));
-      }
-
-      match /propertyContracts/{contractId} {
-        allow read: if isWorkspaceManager(workspaceId)
-          || staffPermission(workspaceId, 'module.contracts.view')
-          || staffPermission(workspaceId, 'reports');
-        allow create: if workspaceHasWriteAccess(workspaceId)
-          && (isWorkspaceManager(workspaceId) || staffPermission(workspaceId, 'module.contracts.create'))
-          && workspaceCreateMetadata(workspaceId);
-        allow update: if workspaceHasWriteAccess(workspaceId)
-          && (isWorkspaceManager(workspaceId) || staffPermission(workspaceId, 'module.contracts.edit'))
-          && workspaceUpdateScopeSafe(workspaceId);
-        allow delete: if workspaceHasWriteAccess(workspaceId)
-          && (isWorkspaceManager(workspaceId) || staffPermission(workspaceId, 'module.contracts.delete'));
-      }
-
-      match /whatsappSettings/{docId} {
-        allow read: if isWorkspaceMember(workspaceId) || isAdmin();
-        allow write: if isAdmin()
-          || (workspaceHasWriteAccess(workspaceId) && workspaceOwnerMatches(workspaceId));
-      }
-
-      // WhatsApp inbox sync (Embedded Signup / Coexistence). Conversations and
-      // messages are workspace-isolated: any member may read, owners/managers may
-      // write, and the backend (service account) may sync inbound events. Manual
-      // mode does not use these collections, so existing manual inbox is unaffected.
-      match /whatsappConversations/{conversationId} {
-        allow read: if isWorkspaceMember(workspaceId) || isAdmin();
-        allow write: if isAdmin()
-          || (workspaceHasWriteAccess(workspaceId) && workspaceOwnerMatches(workspaceId));
-      }
-
-      match /whatsappMessages/{messageId} {
-        allow read: if isWorkspaceMember(workspaceId) || isAdmin();
-        allow write: if isAdmin()
-          || (workspaceHasWriteAccess(workspaceId) && workspaceOwnerMatches(workspaceId));
-      }
-
-      match /{document=**} {
-        allow read, write: if isAdmin();
+      match /{collectionName}/{docId} {
+        allow read: if workspaceMember(workspaceId);
+        allow create: if workspaceMember(workspaceId) && safeCreate(workspaceId);
+        allow update: if workspaceMember(workspaceId) && safeUpdate(workspaceId);
+        allow delete: if canManageWorkspace(workspaceId);
       }
     }
 
     match /upgradeRequests/{requestId} {
-      allow create: if activeSignedIn()
-        && request.resource.data.userId == request.auth.uid
-        && request.resource.data.workspaceId is string
-        && request.resource.data.ownerId is string
-        && isWorkspaceMember(request.resource.data.workspaceId)
-        && request.resource.data.ownerId == workspaceDoc(request.resource.data.workspaceId).ownerId
-        && request.resource.data.createdBy == request.auth.uid
-        && request.resource.data.createdAt is timestamp
-        && request.resource.data.approvalStatus == 'pending'
-        && request.resource.data.paymentStatus == 'pending'
-        && validUpgradeRequestPaymentEvidence();
-      allow read: if isAdmin()
-        || (activeSignedIn() && resource.data.userId == request.auth.uid)
-        || (activeSignedIn()
-          && resource.data.workspaceId is string
-          && (isPaymentApprover(resource.data.workspaceId) || staffPermission(resource.data.workspaceId, 'reports')));
-      allow update: if isAdmin()
-        && upgradeApprovalFieldsTouched()
-        && (
-          isOpenStatus(resource.data.approvalStatus)
-          || isOpenStatus(resource.data.paymentStatus)
-        );
-      allow delete: if isAdmin();
+      allow create: if activeSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow read: if backendAdmin() || (activeSignedIn() && resource.data.userId == request.auth.uid);
+      allow update, delete: if backendAdmin();
     }
 
-    match /subscriptions/{subscriptionId} {
-      allow read, write: if isAdmin();
-    }
-
-    match /payments/{paymentId} {
-      allow read, write: if isAdmin();
-    }
-
-    match /invoices/{invoiceId} {
-      allow read, write: if isAdmin();
-    }
-
-    match /approvals/{approvalId} {
-      allow read, write: if isAdmin();
-    }
-
-    match /activityLogs/{logId} {
-      allow read, write: if isAdmin();
-    }
-
-    match /platformPayments/{paymentId} {
-      allow read, write: if isAdmin();
-    }
-
-    match /platformSubscriptions/{subscriptionId} {
-      allow read, write: if isAdmin();
-    }
-
-    match /backendActivityLogs/{logId} {
-      allow read, write: if isAdmin();
-    }
-
-    match /supportTickets/{ticketId} {
-      allow read, write: if isAdmin();
-    }
-
-    match /clientSessions/{sessionId} {
-      allow read, write: if isAdmin();
-    }
-
-    match /userPresence/{presenceId} {
-      allow read, write: if isAdmin();
-    }
-
-    match /platformSettings/{settingId} {
+    match /platformSettings/{docId} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if backendAdmin();
     }
 
-    // Global WhatsApp CRM pricing & integration config (settings/whatsappPricing).
-    // Publicly readable so pricing can render on the WhatsApp CRM settings/info
-    // pages; writable only by backend admins. Scoped to the single doc id.
-    match /settings/{docId} {
-      allow read: if docId == 'whatsappPricing';
-      allow write: if isAdmin() && docId == 'whatsappPricing';
-    }
-
-    match /analyticsEvents/{eventId} {
-      allow create: if analyticsEventFieldsSafe();
-      allow read, update, delete: if isBackendAdmin();
-    }
-
-    match /userSessions/{sessionId} {
-      allow create, update: if userSessionFieldsSafe();
-      allow read, delete: if isBackendAdmin();
-    }
-
-    match /plans/{planId} {
-      allow read, write: if isAdmin();
-    }
-
-    match /platformPlans/{planId} {
+    match /platformPlans/{docId} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if backendAdmin();
     }
 
-    match /backendStaff/{staffId} {
-      allow read, write: if isAdmin();
+    match /whatsappPricing/{docId} {
+      allow read: if true;
+      allow write: if backendAdmin();
     }
 
-    match /announcements/{announcementId} {
-      allow read, write: if isAdmin();
+    match /platformPayments/{docId} {
+      allow read, write: if backendAdmin();
     }
 
-    match /featureFlags/{flagId} {
-      allow read, write: if isAdmin();
+    match /platformSubscriptions/{docId} {
+      allow read, write: if backendAdmin();
     }
 
-    match /emailTemplates/{templateId} {
-      allow read, write: if isAdmin();
+    match /announcements/{docId} {
+      allow read: if true;
+      allow write: if backendAdmin();
     }
 
-    match /{path=**}/subscriptions/{subscriptionId} {
-      allow read, write: if isBackendAdmin();
+    match /supportTickets/{docId} {
+      allow create: if activeSignedIn();
+      allow read, update, delete: if backendAdmin() || (activeSignedIn() && resource.data.createdBy == request.auth.uid);
     }
 
-    match /{path=**}/payments/{paymentId} {
-      allow read, write: if isBackendAdmin();
+    match /backendStaff/{docId} {
+      allow read, write: if backendAdmin();
     }
 
-    match /{path=**}/invoices/{invoiceId} {
-      allow read, write: if isBackendAdmin();
+    match /backendActivityLogs/{docId} {
+      allow read, write: if backendAdmin();
     }
 
-    match /{path=**}/approvals/{approvalId} {
-      allow read, write: if isBackendAdmin();
+    match /analyticsEvents/{docId} {
+      allow create: if true;
+      allow read, update, delete: if backendAdmin();
     }
 
-    match /{path=**}/activityLogs/{logId} {
-      allow read, write: if isBackendAdmin();
-    }
-
-    match /{path=**}/supportTickets/{ticketId} {
-      allow read, write: if isBackendAdmin();
-    }
-
-    // Collection-group read so the backend Control Centre can list per-workspace
-    // WhatsApp settings. Per-workspace owner/admin reads and writes are governed
-    // by the workspaces/{workspaceId}/whatsappSettings rule and are unaffected.
-    match /{path=**}/whatsappSettings/{docId} {
-      allow read: if isBackendAdmin();
-    }
-
-    // Collection-group reads so the backend can audit per-workspace WhatsApp
-    // conversations and messages. Per-workspace member reads/writes remain
-    // governed by the workspaces/{workspaceId} rules above.
-    match /{path=**}/whatsappConversations/{docId} {
-      allow read: if isBackendAdmin();
-    }
-
-    match /{path=**}/whatsappMessages/{docId} {
-      allow read: if isBackendAdmin();
-    }
-
-    match /notifications/{notificationId} {
-      allow create: if activeSignedIn()
-        && request.resource.data.workspaceId is string
-        && workspaceHasWriteAccess(request.resource.data.workspaceId)
-        && request.resource.data.userId == request.auth.uid
-        && request.resource.data.workspaceId == memberWorkspaceId()
-        && request.resource.data.createdBy == request.auth.uid
-        && request.resource.data.createdAt is timestamp;
-      allow read: if isAdmin()
-        || (activeSignedIn()
-          && resource.data.workspaceId is string
-          && workspaceHasActiveSubscription(resource.data.workspaceId)
-          && resource.data.userId == request.auth.uid);
-      allow update: if isAdmin()
-        || (activeSignedIn()
-          && resource.data.workspaceId is string
-          && workspaceHasWriteAccess(resource.data.workspaceId)
-          && resource.data.userId == request.auth.uid
-          && request.resource.data.userId == resource.data.userId
-          && request.resource.data.workspaceId == resource.data.workspaceId);
-      allow delete: if isAdmin()
-        || (activeSignedIn()
-          && resource.data.workspaceId is string
-          && workspaceHasWriteAccess(resource.data.workspaceId)
-          && resource.data.userId == request.auth.uid);
+    match /userSessions/{docId} {
+      allow create: if activeSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow read, update, delete: if backendAdmin() || (activeSignedIn() && resource.data.userId == request.auth.uid);
     }
 
     match /{document=**} {
-      allow read, write: if false;
+      allow read, write: if backendAdmin();
     }
   }
 }

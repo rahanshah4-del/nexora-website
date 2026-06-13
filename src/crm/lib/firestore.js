@@ -252,11 +252,14 @@ export async function createUserDoc(userId, path, payload, options = {}) {
   const ref = collectionRef(collectionPath)
   if (!ref) throw new Error('Workspace not configured')
   const businessType = normalizeBusinessType(options?.businessType || payload.businessType)
+  const recordUserId = path === 'teamMembers'
+    ? (payload.userId || payload.uid || payload.staffId || payload.email || '')
+    : userId
   try {
     return await addDoc(ref, {
       ...payload,
       ownerId: payload.ownerId || userId,
-      userId,
+      userId: recordUserId || userId,
       workspaceId: userId,
       businessType,
       createdBy: payload.createdBy || payload.submittedBy || userId,
@@ -284,11 +287,14 @@ export async function patchUserDoc(userId, path, id, patch, options = {}) {
   const collectionPath = workspaceCollectionPath(userId, path)
   const ref = doc(db, workspaceDocPath(userId, path, id))
   const businessType = normalizeBusinessType(options?.businessType || patch.businessType)
+  const recordUserId = path === 'teamMembers'
+    ? (patch.userId || patch.uid || patch.staffId || id)
+    : userId
   try {
     return await updateDoc(ref, {
       ...patch,
       ownerId: patch.ownerId || userId,
-      userId,
+      userId: recordUserId || userId,
       workspaceId: userId,
       businessType,
       updatedAt: serverTimestamp(),
