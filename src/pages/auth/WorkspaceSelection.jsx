@@ -50,7 +50,8 @@ import {
 } from '../../crm/data/moduleAccess.js'
 import { saveSelectedWorkspace } from '../../crm/lib/workspaceSession.js'
 import { clientSafeMessage, reportTechnicalError } from '../../lib/errorHandler.js'
-import { sendCustomVerificationEmail } from '../../lib/emailVerificationService.js'
+import { getCustomEmailVerificationStatus, sendCustomVerificationEmail } from '../../lib/emailVerificationService.js'
+import { queueWelcomeEmailForModule } from '../../lib/welcomeEmailDelivery.js'
 import { trackAnalyticsEvent } from '../../lib/analyticsTracking.js'
 import { VERIFY_EMAIL_ROUTE, getAuthRouteState, isUserCustomVerified, shouldShowWorkspaceSelection } from '../../lib/authRouteState.js'
 import { resolveProfileDisplay } from '../../lib/profileDisplay.js'
@@ -1339,25 +1340,42 @@ export default function WorkspaceSelection() {
     if (authLoading || accountLoading || !user?.uid) return
     if (emailVerified) return
 
-    console.log('[Workspace Route Decision]', {
-      source: 'WorkspaceSelection',
-      path: '/workspace',
-      decision: 'redirect_verify_email',
-      reason: 'email_not_verified',
+    // `accountData` can be a stale/cache read for a freshly OTP-verified account.
+    // Redirecting on that stale value fought RootRequireAuth (which reads the
+    // verification flag from the server) and caused a /workspace <-> /verify-email
+    // redirect loop (the "screen blinking" + never showing workspaces). Confirm
+    // with the SAME authoritative server check before bouncing.
+    let cancelled = false
+    getCustomEmailVerificationStatus({
+      uid: user.uid,
+      email: user.email || '',
+      emailVerified: user.emailVerified === true,
     })
-    console.log('[Navigation Blocked]', {
-      source: 'WorkspaceSelection',
-      reason: 'email_not_verified',
-      target: VERIFY_EMAIL_ROUTE,
-    })
-    console.warn('[Auto Logout Source]', {
-      file: 'WorkspaceSelection.jsx',
-      reason: 'email_not_verified_redirect_verify_email',
-      uid: auth.currentUser?.uid,
-      route: window.location.pathname,
-    })
-    navigate(VERIFY_EMAIL_ROUTE, { replace: true })
-  }, [accountLoading, authLoading, emailVerified, navigate, user?.uid])
+      .then((verified) => {
+        if (cancelled) return
+        if (verified) {
+          // Server confirms verified — latch it so the redirect never fires.
+          setVerifiedLatch(true)
+          return
+        }
+        console.log('[Workspace Route Decision]', {
+          source: 'WorkspaceSelection',
+          path: '/workspace',
+          decision: 'redirect_verify_email',
+          reason: 'email_not_verified_confirmed',
+        })
+        navigate(VERIFY_EMAIL_ROUTE, { replace: true })
+      })
+      .catch(() => {
+        // Read failed — do NOT loop. The route gate (RootRequireAuth) already
+        // enforced verification to reach /workspace, so latch and continue.
+        if (!cancelled) setVerifiedLatch(true)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [accountLoading, authLoading, emailVerified, navigate, user?.uid, user?.email, user?.emailVerified])
 
   const onboardingCompleted = workspaceData?.onboardingCompleted === true || accountData?.onboardingCompleted === true
   const savedWorkspaceModule = useMemo(
@@ -2223,6 +2241,22 @@ export default function WorkspaceSelection() {
         selectedWorkspace,
         enabledModules,
       })
+
+      // Module-tailored welcome email — fires once the client picks a business
+      // module so the email content matches their selection. Background task:
+      // must never block navigation; the delivery helper guards against
+      // duplicates so switching modules later won't resend it.
+      queueWelcomeEmailForModule(
+        { uid, email: user?.email || '', displayName: user?.displayName || '' },
+        { businessType, source: 'module_selection' },
+      )
+        .then((result) => {
+          if (result?.skipped || result?.ok) return
+          console.warn('[Welcome Email] module welcome send failed', { uid, error: result?.error })
+        })
+        .catch((welcomeError) => {
+          console.warn('[Welcome Email] module welcome send failed', { uid, error: welcomeError?.message || welcomeError })
+        })
       trackAnalyticsEvent('workspace_selected', { userId: uid, email: user?.email || '', workspaceId, businessType: businessTypeId, moduleName: businessType, page: '/workspace' })
         .catch((analyticsError) => {
           console.warn('[Onboarding] workspace_selected analytics failed', { error: analyticsError?.message || analyticsError })

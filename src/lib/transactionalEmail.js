@@ -41,6 +41,152 @@ function money(amount, currency = 'PKR') {
   return `${currency} ${Number.isFinite(value) ? value.toLocaleString() : '0'}`
 }
 
+const NEXORA_LOGO_URL = 'https://nexorasolution.online/nexora-brand-logo.png'
+const NEXORA_WORKSPACE_URL = 'https://nexorasolution.online/workspace'
+const NEXORA_UPGRADE_URL = 'https://nexorasolution.online/upgrade-business'
+
+// Modern branded email wrapper — logo header (gradient), optional status badge,
+// title/subtitle, body, a "Need help?" block, and footer. Mirrors the welcome
+// email styling so all transactional emails feel consistent.
+function modernEmailShell({
+  accent = '#2563eb',
+  accentGradient = 'linear-gradient(135deg,#1d4ed8 0%,#5b21b6 55%,#7c3aed 100%)',
+  badge = '',
+  title,
+  subtitle = '',
+  body,
+}) {
+  const supportEmail = 'support@nexorasolution.online'
+  const whatsapp = '03194329754'
+  return `
+    <!doctype html>
+    <html>
+      <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>${escapeHtml(title)}</title>
+      </head>
+      <body style="margin:0;padding:0;background:#f4f7fb;font-family:Arial,Helvetica,sans-serif;color:#111827;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;background:#f4f7fb;margin:0;padding:0;">
+          <tr>
+            <td align="center" style="padding:28px 12px;">
+              <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:600px;background:#ffffff;border-radius:24px;overflow:hidden;border:1px solid #dbeafe;box-shadow:0 18px 45px rgba(15,23,42,0.10);">
+                <tr>
+                  <td style="background:${accent};background-image:${accentGradient};padding:30px 30px 28px;color:#ffffff;">
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                      <tr>
+                        <td width="46" height="46" align="center" style="width:46px;height:46px;border-radius:14px;background:#ffffff;padding:4px;"><img src="${NEXORA_LOGO_URL}" width="38" height="38" alt="Nexora" style="display:block;width:38px;height:38px;border-radius:11px;object-fit:contain;" /></td>
+                        <td style="padding-left:13px;">
+                          <div style="font-size:19px;line-height:22px;font-weight:900;letter-spacing:1.5px;color:#ffffff;">NEXORA SOLUTION</div>
+                          <div style="font-size:10px;line-height:15px;font-weight:700;letter-spacing:2px;color:#e0e7ff;text-transform:uppercase;">Business Suite</div>
+                        </td>
+                      </tr>
+                    </table>
+                    ${badge ? `<div style="margin:22px 0 0;">${badge}</div>` : ''}
+                    <h1 style="margin:${badge ? '12' : '24'}px 0 6px;font-size:27px;line-height:34px;font-weight:900;color:#ffffff;">${escapeHtml(title)}</h1>
+                    ${subtitle ? `<p style="margin:0;font-size:15px;line-height:24px;color:#eef2ff;font-weight:600;">${escapeHtml(subtitle)}</p>` : ''}
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:28px 30px 6px;background:#ffffff;">${body}</td>
+                </tr>
+                <tr>
+                  <td style="padding:4px 30px 26px;background:#ffffff;">
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;border-radius:16px;background:#f8fafc;border:1px solid #e2e8f0;">
+                      <tr>
+                        <td style="padding:18px 20px;">
+                          <div style="font-size:15px;line-height:22px;font-weight:900;color:#0f172a;margin-bottom:8px;">Need help?</div>
+                          <p style="margin:0 0 6px;font-size:13px;line-height:20px;color:#475569;">WhatsApp: <a href="https://wa.me/923194329754" style="color:#2563eb;text-decoration:none;font-weight:800;">${whatsapp}</a></p>
+                          <p style="margin:0;font-size:13px;line-height:20px;color:#475569;">Email: <a href="mailto:${supportEmail}" style="color:#2563eb;text-decoration:none;font-weight:800;">${supportEmail}</a></p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:22px 28px 26px;background:#0b1220;text-align:center;">
+                    <div style="font-size:15px;line-height:21px;font-weight:900;color:#ffffff;">Nexora Business Suite</div>
+                    <div style="margin-top:7px;font-size:12px;line-height:20px;color:#cbd5e1;">CRM &bull; ERP &bull; POS &bull; Invoicing &bull; Reports</div>
+                    <div style="margin-top:10px;font-size:11px;line-height:18px;color:#94a3b8;">Nexora Solution &mdash; All rights reserved 2019-2026.</div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+    </html>
+  `
+}
+
+function statusPill(text, bg = 'rgba(255,255,255,0.2)', color = '#ffffff') {
+  return `<span style="display:inline-block;background:${bg};color:${color};font-size:12px;font-weight:900;letter-spacing:.5px;text-transform:uppercase;padding:7px 13px;border-radius:999px;">${escapeHtml(text)}</span>`
+}
+
+// rows: array of [label, value]; falsy rows or empty values are skipped.
+function detailsCard(heading, rows) {
+  const cleanRows = rows.filter((row) => row && row[1] !== '' && row[1] != null)
+  const bodyRows = cleanRows
+    .map(([label, value], index) => {
+      const border = index < cleanRows.length - 1 ? 'border-bottom:1px solid #e6ebf2;' : ''
+      return `
+                          <tr>
+                            <td style="padding:11px 0;font-size:13px;line-height:19px;color:#64748b;font-weight:600;${border}">${escapeHtml(label)}</td>
+                            <td style="padding:11px 0;font-size:14px;line-height:19px;color:#0f172a;font-weight:800;text-align:right;${border}">${escapeHtml(value)}</td>
+                          </tr>`
+    })
+    .join('')
+  return `
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;border-radius:16px;background:#f8fafc;border:1px solid #e2e8f0;margin:2px 0 18px;">
+                      <tr>
+                        <td style="padding:8px 20px 12px;">
+                          ${heading ? `<div style="font-size:12px;line-height:18px;font-weight:900;color:#1e3a8a;text-transform:uppercase;letter-spacing:1px;margin:12px 0 2px;">${escapeHtml(heading)}</div>` : ''}
+                          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">${bodyRows}</table>
+                        </td>
+                      </tr>
+                    </table>`
+}
+
+function calloutBox(label, text, bg = '#fef2f2', border = '#fecaca', labelColor = '#b91c1c') {
+  return `
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;border-radius:14px;background:${bg};border:1px solid ${border};margin:2px 0 18px;">
+                      <tr>
+                        <td style="padding:16px 18px;">
+                          <div style="font-size:12px;font-weight:900;letter-spacing:.5px;text-transform:uppercase;color:${labelColor};margin-bottom:6px;">${escapeHtml(label)}</div>
+                          <div style="font-size:14px;line-height:21px;color:#334155;font-weight:600;">${escapeHtml(text)}</div>
+                        </td>
+                      </tr>
+                    </table>`
+}
+
+function ctaButton(label, href) {
+  return `
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                      <tr>
+                        <td align="center" style="padding:6px 0 16px;">
+                          <a href="${escapeHtml(href)}" style="display:block;width:100%;max-width:320px;border-radius:14px;background:#2563eb;background-image:linear-gradient(135deg,#2563eb,#7c3aed);color:#ffffff;text-decoration:none;font-size:16px;line-height:20px;font-weight:900;padding:15px 0;text-align:center;">${escapeHtml(label)}</a>
+                        </td>
+                      </tr>
+                    </table>`
+}
+
+function greetingLine(name) {
+  return `<p style="margin:0 0 8px;font-size:17px;line-height:25px;font-weight:800;color:#0f172a;">Hi ${escapeHtml(name || 'there')},</p>`
+}
+
+function leadParagraph(html) {
+  return `<p style="margin:0 0 18px;font-size:15px;line-height:24px;color:#475569;">${html}</p>`
+}
+
+function noteParagraph(html) {
+  return `<p style="margin:0 0 4px;font-size:13px;line-height:20px;color:#64748b;">${html}</p>`
+}
+
+function titleCase(value) {
+  const text = clean(value)
+  return text ? text.charAt(0).toUpperCase() + text.slice(1) : ''
+}
+
 export async function sendWorkerEmail({ to, subject, html, type, data }) {
   const payload = {
     to: clean(to),
@@ -99,12 +245,126 @@ export async function createPasswordResetLink(email) {
   return { ok: true, link: `${window.location.origin}/login?email=${encodeURIComponent(to)}` }
 }
 
-export function welcomeEmail({ name = 'there' } = {}) {
+// Per-module welcome content. Keyed by a normalized module slug so the email
+// matches whatever business type the client selected during onboarding.
+const WELCOME_TRIAL_CARD = {
+  bg: '#e0f2fe',
+  color: '#0369a1',
+  icon: '&#127873;',
+  title: '7-Day Trial Activated',
+  desc: 'Explore Nexora Business Suite with secure cloud access.',
+}
+
+const WELCOME_MODULE_CONTENT = {
+  general: {
+    intro: 'Your Nexora Sales Hub is ready to help you manage leads, customers, invoices, reports, and business growth from one secure cloud platform.',
+    features: [
+      { bg: '#dbeafe', color: '#1d4ed8', icon: '&#128202;', title: 'CRM Dashboard Ready', desc: 'Track leads, customers, tasks, and daily business activity.' },
+      { bg: '#dcfce7', color: '#15803d', icon: '&#128101;', title: 'Customer Management Ready', desc: 'Organize customer profiles, follow-ups, and sales records.' },
+      { bg: '#fef3c7', color: '#b45309', icon: '&#129534;', title: 'Invoice System Ready', desc: 'Create professional invoices and monitor payment progress.' },
+      { bg: '#ede9fe', color: '#6d28d9', icon: '&#128200;', title: 'Reports & Analytics Ready', desc: 'Understand revenue, expenses, invoices, and performance trends.' },
+    ],
+  },
+  retail: {
+    intro: 'Your Retail / POS workspace is ready to help you run billing, inventory, customers, and store reports from one secure cloud platform.',
+    features: [
+      { bg: '#dbeafe', color: '#1d4ed8', icon: '&#127978;', title: 'Retail Dashboard Ready', desc: 'Get a live view of daily sales and store activity.' },
+      { bg: '#dcfce7', color: '#15803d', icon: '&#128230;', title: 'Inventory Management Ready', desc: 'Track stock, products, and low-stock alerts.' },
+      { bg: '#fef3c7', color: '#b45309', icon: '&#129534;', title: 'POS Billing Ready', desc: 'Fast checkout with professional invoices and receipts.' },
+      { bg: '#ede9fe', color: '#6d28d9', icon: '&#128200;', title: 'Sales Reports Ready', desc: 'Understand revenue, expenses, and store performance.' },
+    ],
+  },
+  school: {
+    intro: 'Your School ERP workspace is ready to help you manage students, fees, payments, and school reports from one secure cloud platform.',
+    features: [
+      { bg: '#dbeafe', color: '#1d4ed8', icon: '&#127891;', title: 'School Dashboard Ready', desc: 'Manage students, staff, and daily school operations.' },
+      { bg: '#dcfce7', color: '#15803d', icon: '&#128101;', title: 'Students & Parents Ready', desc: 'Organize student and parent profiles and records.' },
+      { bg: '#fef3c7', color: '#b45309', icon: '&#128179;', title: 'Fees & Billing Ready', desc: 'Collect fees and monitor payment progress.' },
+      { bg: '#ede9fe', color: '#6d28d9', icon: '&#128200;', title: 'Reports Ready', desc: 'Track fees, expenses, and school performance.' },
+    ],
+  },
+  property: {
+    intro: 'Your Property ERP workspace is ready to help you manage tenants, rent, maintenance, and property finance from one secure cloud platform.',
+    features: [
+      { bg: '#dbeafe', color: '#1d4ed8', icon: '&#127970;', title: 'Property Dashboard Ready', desc: 'Manage properties, units, and daily operations.' },
+      { bg: '#dcfce7', color: '#15803d', icon: '&#128273;', title: 'Tenants & Owners Ready', desc: 'Organize tenant and owner profiles and records.' },
+      { bg: '#fef3c7', color: '#b45309', icon: '&#129534;', title: 'Rent & Billing Ready', desc: 'Create rent invoices and monitor payments.' },
+      { bg: '#ede9fe', color: '#6d28d9', icon: '&#128295;', title: 'Maintenance & Contracts Ready', desc: 'Track maintenance requests and rental agreements.' },
+    ],
+  },
+  restaurant: {
+    intro: 'Your Restaurant POS workspace is ready to help you manage menu, tables, orders, bills, and reports from one secure cloud platform.',
+    features: [
+      { bg: '#dbeafe', color: '#1d4ed8', icon: '&#127869;&#65039;', title: 'Restaurant Dashboard Ready', desc: 'Manage orders, tables, and daily operations.' },
+      { bg: '#dcfce7', color: '#15803d', icon: '&#128203;', title: 'Menu Management Ready', desc: 'Add menu items, categories, and pricing.' },
+      { bg: '#fef3c7', color: '#b45309', icon: '&#129681;', title: 'Tables & Orders Ready', desc: 'Floor view, KOT, and kitchen display.' },
+      { bg: '#ede9fe', color: '#6d28d9', icon: '&#129534;', title: 'Bills & Payments Ready', desc: 'Fast billing with professional invoices.' },
+    ],
+  },
+  transport: {
+    intro: 'Your Transport / Rental workspace is ready to help you manage your fleet, bookings, customers, and payments from one secure cloud platform.',
+    features: [
+      { bg: '#dbeafe', color: '#1d4ed8', icon: '&#128666;', title: 'Fleet Dashboard Ready', desc: 'Manage vehicles and daily fleet operations.' },
+      { bg: '#dcfce7', color: '#15803d', icon: '&#128663;', title: 'Vehicles & Bookings Ready', desc: 'Track fleet and rental bookings.' },
+      { bg: '#fef3c7', color: '#b45309', icon: '&#128101;', title: 'Rental Customers Ready', desc: 'Organize customer profiles and dues.' },
+      { bg: '#ede9fe', color: '#6d28d9', icon: '&#128179;', title: 'Payments Ready', desc: 'Track payments and pending dues.' },
+    ],
+  },
+  whatsapp: {
+    intro: 'Your WhatsApp CRM workspace is ready to help you manage chats, leads, follow-ups, and automated messaging from one secure cloud platform.',
+    features: [
+      { bg: '#dbeafe', color: '#1d4ed8', icon: '&#128172;', title: 'WhatsApp Inbox Ready', desc: 'Manage chats and customer conversations.' },
+      { bg: '#dcfce7', color: '#15803d', icon: '&#128101;', title: 'Leads & Customers Ready', desc: 'Organize profiles and follow-ups.' },
+      { bg: '#fef3c7', color: '#b45309', icon: '&#128232;', title: 'Templates & Auto-Replies Ready', desc: 'Set up automated messaging and campaigns.' },
+      { bg: '#ede9fe', color: '#6d28d9', icon: '&#129534;', title: 'Invoices & Finance Ready', desc: 'Billing, payments, and reports.' },
+    ],
+  },
+}
+
+const WELCOME_MODULE_ALIASES = {
+  'general crm': 'general', 'general-crm': 'general', 'nexora sales hub': 'general', general: 'general',
+  'retail / pos': 'retail', 'retail/pos': 'retail', 'retail pos': 'retail', 'retail-pos': 'retail', retail: 'retail', pos: 'retail',
+  'school erp': 'school', 'school-erp': 'school', school: 'school',
+  'property erp': 'property', 'property-erp': 'property', property: 'property',
+  'restaurant pos': 'restaurant', 'restaurant-pos': 'restaurant', restaurant: 'restaurant',
+  'transport / rental': 'transport', 'transport/rental': 'transport', 'transport rental': 'transport', 'transport-rental': 'transport', transport: 'transport', rental: 'transport',
+  'whatsapp crm': 'whatsapp', 'whatsapp-crm': 'whatsapp', whatsapp: 'whatsapp',
+}
+
+function welcomeModuleKey(businessType) {
+  const value = String(businessType || '').trim().toLowerCase()
+  return WELCOME_MODULE_ALIASES[value] || 'general'
+}
+
+function welcomeFeatureCardHtml(feature, isLast) {
+  return `
+                        <tr>
+                          <td style="padding:0 0 ${isLast ? '0' : '10px'};">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border:1px solid #e2e8f0;border-radius:16px;background:#ffffff;">
+                              <tr>
+                                <td width="54" style="padding:14px 0 14px 16px;vertical-align:top;"><div style="width:38px;height:38px;border-radius:13px;background:${feature.bg};color:${feature.color};text-align:center;line-height:38px;font-size:19px;font-weight:900;">${feature.icon}</div></td>
+                                <td style="padding:14px 16px 14px 10px;">
+                                  <div style="font-size:15px;line-height:21px;font-weight:900;color:#0f172a;">${escapeHtml(feature.title)}</div>
+                                  <div style="font-size:13px;line-height:20px;color:#64748b;">${escapeHtml(feature.desc)}</div>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>`
+}
+
+export function welcomeEmail({ name = 'there', businessType = '' } = {}) {
   const safeName = escapeHtml(name || 'there')
   const workspaceUrl = 'https://nexorasolution.online/workspace'
   const supportEmail = 'support@nexorasolution.online'
   const website = 'nexorasolution.online'
   const whatsapp = '03194329754'
+  const moduleContent = WELCOME_MODULE_CONTENT[welcomeModuleKey(businessType)] || WELCOME_MODULE_CONTENT.general
+  const introText = escapeHtml(moduleContent.intro)
+  const welcomeCards = [...moduleContent.features, WELCOME_TRIAL_CARD]
+  const featureCardsHtml = welcomeCards
+    .map((feature, index) => welcomeFeatureCardHtml(feature, index === welcomeCards.length - 1))
+    .join('')
 
   return {
     subject: 'Welcome to Nexora Business Suite',
@@ -131,7 +391,7 @@ export function welcomeEmail({ name = 'there' } = {}) {
                           <td style="vertical-align:middle;">
                             <table role="presentation" cellspacing="0" cellpadding="0" border="0">
                               <tr>
-                                <td width="48" height="48" align="center" style="width:48px;height:48px;border-radius:16px;background:#ffffff;color:#4f46e5;font-size:24px;font-weight:900;line-height:48px;">N</td>
+                                <td width="48" height="48" align="center" style="width:48px;height:48px;border-radius:16px;background:#ffffff;padding:4px;"><img src="https://nexorasolution.online/nexora-brand-logo.png" width="40" height="40" alt="Nexora" style="display:block;width:40px;height:40px;border-radius:12px;object-fit:contain;" /></td>
                                 <td style="padding-left:14px;">
                                   <div style="font-size:21px;line-height:24px;font-weight:900;letter-spacing:2px;color:#ffffff;">NEXORA SOLUTION</div>
                                   <div style="font-size:11px;line-height:16px;font-weight:700;letter-spacing:2px;color:#dbeafe;text-transform:uppercase;">Business Suite</div>
@@ -149,7 +409,7 @@ export function welcomeEmail({ name = 'there' } = {}) {
                   <tr>
                     <td style="padding:30px 30px 8px;background:#ffffff;">
                       <p style="margin:0 0 12px;font-size:18px;line-height:28px;font-weight:800;color:#0f172a;">Hi ${safeName},</p>
-                      <p style="margin:0;font-size:15px;line-height:25px;color:#475569;">Your Nexora workspace is ready to help you manage customers, invoices, reports, and operations from one secure cloud platform.</p>
+                      <p style="margin:0;font-size:15px;line-height:25px;color:#475569;">${introText}</p>
                     </td>
                   </tr>
 
@@ -179,72 +439,7 @@ export function welcomeEmail({ name = 'there' } = {}) {
                   <tr>
                     <td style="padding:18px 30px 4px;background:#ffffff;">
                       <h2 style="margin:0 0 14px;font-size:22px;line-height:30px;font-weight:900;color:#0f172a;">Your workspace tools are ready</h2>
-                      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
-                        <tr>
-                          <td style="padding:0 0 10px;">
-                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border:1px solid #e2e8f0;border-radius:16px;background:#ffffff;">
-                              <tr>
-                                <td width="54" style="padding:14px 0 14px 16px;vertical-align:top;"><div style="width:38px;height:38px;border-radius:13px;background:#dbeafe;color:#1d4ed8;text-align:center;line-height:38px;font-size:12px;font-weight:900;">CRM</div></td>
-                                <td style="padding:14px 16px 14px 10px;">
-                                  <div style="font-size:15px;line-height:21px;font-weight:900;color:#0f172a;">CRM Dashboard Ready</div>
-                                  <div style="font-size:13px;line-height:20px;color:#64748b;">Track leads, customers, tasks, and daily business activity.</div>
-                                </td>
-                              </tr>
-                            </table>
-                          </td>
-                        </tr>
-                        <tr>
-                          <td style="padding:0 0 10px;">
-                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border:1px solid #e2e8f0;border-radius:16px;background:#ffffff;">
-                              <tr>
-                                <td width="54" style="padding:14px 0 14px 16px;vertical-align:top;"><div style="width:38px;height:38px;border-radius:13px;background:#dcfce7;color:#15803d;text-align:center;line-height:38px;font-size:12px;font-weight:900;">CUS</div></td>
-                                <td style="padding:14px 16px 14px 10px;">
-                                  <div style="font-size:15px;line-height:21px;font-weight:900;color:#0f172a;">Customer Management Ready</div>
-                                  <div style="font-size:13px;line-height:20px;color:#64748b;">Organize customer profiles, follow-ups, and sales records.</div>
-                                </td>
-                              </tr>
-                            </table>
-                          </td>
-                        </tr>
-                        <tr>
-                          <td style="padding:0 0 10px;">
-                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border:1px solid #e2e8f0;border-radius:16px;background:#ffffff;">
-                              <tr>
-                                <td width="54" style="padding:14px 0 14px 16px;vertical-align:top;"><div style="width:38px;height:38px;border-radius:13px;background:#fef3c7;color:#b45309;text-align:center;line-height:38px;font-size:12px;font-weight:900;">INV</div></td>
-                                <td style="padding:14px 16px 14px 10px;">
-                                  <div style="font-size:15px;line-height:21px;font-weight:900;color:#0f172a;">Invoice System Ready</div>
-                                  <div style="font-size:13px;line-height:20px;color:#64748b;">Create professional invoices and monitor payment progress.</div>
-                                </td>
-                              </tr>
-                            </table>
-                          </td>
-                        </tr>
-                        <tr>
-                          <td style="padding:0 0 10px;">
-                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border:1px solid #e2e8f0;border-radius:16px;background:#ffffff;">
-                              <tr>
-                                <td width="54" style="padding:14px 0 14px 16px;vertical-align:top;"><div style="width:38px;height:38px;border-radius:13px;background:#ede9fe;color:#6d28d9;text-align:center;line-height:38px;font-size:12px;font-weight:900;">BI</div></td>
-                                <td style="padding:14px 16px 14px 10px;">
-                                  <div style="font-size:15px;line-height:21px;font-weight:900;color:#0f172a;">Reports &amp; Analytics Ready</div>
-                                  <div style="font-size:13px;line-height:20px;color:#64748b;">Understand revenue, expenses, invoices, and performance trends.</div>
-                                </td>
-                              </tr>
-                            </table>
-                          </td>
-                        </tr>
-                        <tr>
-                          <td style="padding:0;">
-                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border:1px solid #e2e8f0;border-radius:16px;background:#ffffff;">
-                              <tr>
-                                <td width="54" style="padding:14px 0 14px 16px;vertical-align:top;"><div style="width:38px;height:38px;border-radius:13px;background:#e0f2fe;color:#0369a1;text-align:center;line-height:38px;font-size:12px;font-weight:900;">7D</div></td>
-                                <td style="padding:14px 16px 14px 10px;">
-                                  <div style="font-size:15px;line-height:21px;font-weight:900;color:#0f172a;">7-Day Trial Activated</div>
-                                  <div style="font-size:13px;line-height:20px;color:#64748b;">Explore Nexora Business Suite with secure cloud access.</div>
-                                </td>
-                              </tr>
-                            </table>
-                          </td>
-                        </tr>
+                      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">${featureCardsHtml}
                       </table>
                     </td>
                   </tr>
@@ -336,48 +531,103 @@ export function trialExpiryReminderEmail({ name = 'there', workspaceName = 'your
   }
 }
 
-export function upgradeRequestReceivedEmail({ name = 'there', plan = 'your selected plan', amount = 0, currency = 'PKR' } = {}) {
+export function upgradeRequestReceivedEmail({
+  name = 'there',
+  plan = 'your selected plan',
+  amount = 0,
+  currency = 'PKR',
+  billingCycle = '',
+  paymentMethod = '',
+  transactionId = '',
+  paymentDate = '',
+  workspaceName = '',
+} = {}) {
+  const body = [
+    greetingLine(name),
+    leadParagraph(
+      `Thank you! We&rsquo;ve received your payment for the <strong style="color:#0f172a;">${escapeHtml(plan)}</strong> plan. Our team is reviewing your details and your workspace will be upgraded shortly &mdash; usually within a few hours.`,
+    ),
+    detailsCard('Payment Summary', [
+      ['Plan', plan],
+      ['Billing Cycle', titleCase(billingCycle)],
+      ['Amount Paid', money(amount, currency)],
+      ['Payment Method', paymentMethod],
+      ['Transaction ID', transactionId],
+      ['Payment Date', paymentDate],
+      ['Workspace', workspaceName],
+    ]),
+    noteParagraph(
+      'You&rsquo;ll receive another email as soon as your upgrade is approved and active. No further action is needed right now.',
+    ),
+  ].join('')
   return {
-    subject: 'Upgrade request received',
-    html: shell({
-      title: 'Upgrade request received',
-      preview: 'Your payment details were submitted for review.',
-      body: [
-        paragraph(`Hi ${name || 'there'},`),
-        paragraph(`We received your upgrade request for ${plan}. Our team will review your payment details and update your workspace shortly.`),
-        paragraph(`Submitted amount: ${money(amount, currency)}.`),
-      ].join(''),
+    subject: 'Payment received — your upgrade is under review',
+    html: modernEmailShell({
+      badge: statusPill('Payment Received'),
+      title: 'We received your payment',
+      subtitle: 'Your upgrade request is under review.',
+      body,
     }),
   }
 }
 
-export function upgradeApprovedEmail({ name = 'there', plan = 'your plan' } = {}) {
+export function upgradeApprovedEmail({
+  name = 'there',
+  plan = 'your plan',
+  amount = 0,
+  currency = 'PKR',
+  billingCycle = '',
+  workspaceName = '',
+} = {}) {
+  const body = [
+    greetingLine(name),
+    leadParagraph(
+      `Great news &mdash; your upgrade to <strong style="color:#0f172a;">${escapeHtml(plan)}</strong> has been approved and your workspace is now active. All premium features for your plan are unlocked.`,
+    ),
+    detailsCard('Subscription Details', [
+      ['Plan', plan],
+      ['Billing Cycle', titleCase(billingCycle)],
+      Number(amount) > 0 ? ['Amount Paid', money(amount, currency)] : null,
+      ['Workspace', workspaceName],
+      ['Status', 'Active'],
+    ]),
+    ctaButton('Open My Workspace', NEXORA_WORKSPACE_URL),
+    noteParagraph('Thank you for choosing Nexora Solution. Questions? Just reach out using the details below.'),
+  ].join('')
   return {
-    subject: 'Your Nexora upgrade was approved',
-    html: shell({
+    subject: 'Your Nexora upgrade is approved',
+    html: modernEmailShell({
+      accent: '#15803d',
+      accentGradient: 'linear-gradient(135deg,#047857 0%,#15803d 55%,#0e7490 100%)',
+      badge: statusPill('Approved'),
       title: 'Upgrade approved',
-      preview: 'Your workspace plan is now active.',
-      body: [
-        paragraph(`Hi ${name || 'there'},`),
-        paragraph(`Your upgrade to ${plan} has been approved. Your workspace access has been updated.`),
-        paragraph('Thank you for choosing Nexora Solution.'),
-      ].join(''),
+      subtitle: 'Your workspace plan is now active.',
+      body,
     }),
   }
 }
 
-export function upgradeRejectedEmail({ name = 'there', reason = '' } = {}) {
+export function upgradeRejectedEmail({ name = 'there', reason = '', plan = '' } = {}) {
+  const body = [
+    greetingLine(name),
+    leadParagraph(
+      `We reviewed your upgrade request${plan ? ` for <strong style="color:#0f172a;">${escapeHtml(plan)}</strong>` : ''}, but we couldn&rsquo;t approve it this time.`,
+    ),
+    reason ? calloutBox('Reason', reason) : '',
+    leadParagraph(
+      'Please re-submit your payment details with a clear receipt, or contact our team and we&rsquo;ll help you complete the upgrade.',
+    ),
+    ctaButton('Re-submit Payment', NEXORA_UPGRADE_URL),
+  ].join('')
   return {
-    subject: 'Upgrade request update',
-    html: shell({
-      title: 'Upgrade request rejected',
-      preview: 'Your upgrade request needs attention.',
-      body: [
-        paragraph(`Hi ${name || 'there'},`),
-        paragraph('Your upgrade request was rejected after review.'),
-        reason ? paragraph(`Reason: ${reason}`) : '',
-        paragraph('Please submit corrected payment details or contact support for help.'),
-      ].join(''),
+    subject: 'Action needed on your upgrade request',
+    html: modernEmailShell({
+      accent: '#b91c1c',
+      accentGradient: 'linear-gradient(135deg,#b91c1c 0%,#9f1239 55%,#7c2d12 100%)',
+      badge: statusPill('Action Needed'),
+      title: 'Your upgrade needs attention',
+      subtitle: 'We could not approve your request yet.',
+      body,
     }),
   }
 }

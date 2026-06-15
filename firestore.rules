@@ -220,7 +220,12 @@ service cloud.firestore {
     }
 
     match /phoneRegistry/{phoneId} {
-      allow read: if signedIn();
+      // Single-doc reads are public so the signup form can check phone
+      // uniqueness BEFORE the user is authenticated. `get` only reveals whether
+      // a phone you already know is taken; `list` (bulk enumeration) stays
+      // admin-only to prevent harvesting the registry.
+      allow get: if true;
+      allow list: if backendAdmin();
       allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
       allow update, delete: if backendAdmin();
     }
@@ -230,7 +235,15 @@ service cloud.firestore {
         && request.resource.data.ownerId == request.auth.uid
         && request.resource.data.workspaceId == workspaceId
         && request.resource.data.createdBy == request.auth.uid;
-      allow read: if workspaceMember(workspaceId);
+      // The owner can always read their OWN workspace doc (workspaces/{uid}),
+      // even if it doesn't exist yet (brand-new account, pre-onboarding) or is
+      // blocked. This prevents a permission-denied read from being mistaken for
+      // "account blocked", and lets the app read an explicit blocked status to
+      // show the proper screen. Subcollections still require workspaceMember
+      // (active), so a blocked workspace's DATA stays protected.
+      allow read: if backendAdmin()
+        || (signedIn() && request.auth.uid == workspaceId)
+        || workspaceMember(workspaceId);
       allow update: if backendAdmin()
         || (workspaceAdmin(workspaceId) && protectedWorkspaceFieldsUnchanged());
       allow delete: if backendAdmin();

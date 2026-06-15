@@ -15,7 +15,6 @@ const MarketingRoute = lazy(() => import('./pages/public/MarketingRoute.jsx'))
 const PricingPage = lazy(() => import('./pages/public/PricingPage.jsx'))
 const SolutionPage = lazy(() => import('./pages/public/SolutionPage.jsx'))
 const DashboardLayout = lazy(() => import('./crm/layouts/DashboardLayout.jsx'))
-const CRMProviders = lazy(() => import('./crm/CRMProviders.jsx'))
 const AdminLayout = lazy(() => import('./layouts/AdminLayout.jsx'))
 const DashboardHomePage = lazy(() => import('./crm/pages/DashboardHome.jsx'))
 const RestaurantPOSPage = lazy(() => import('./crm/pages/RestaurantPOS.jsx'))
@@ -221,11 +220,9 @@ export default function AppRouter() {
         path="/app"
         element={
           <LazyPage>
-            <CRMProviders>
-              <CrmRequireAuth>
-                <DashboardLayout />
-              </CrmRequireAuth>
-            </CRMProviders>
+            <CrmRequireAuth>
+              <DashboardLayout />
+            </CrmRequireAuth>
           </LazyPage>
         }
       >

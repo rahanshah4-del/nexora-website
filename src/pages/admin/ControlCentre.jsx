@@ -1224,7 +1224,14 @@ export default function ControlCentre() {
     }, { merge: true })
     const email = userEmail(row)
     if (email) {
-      const template = upgradeApprovedEmail({ name: row.senderName || row.ownerName || row.displayName || 'there', plan })
+      const template = upgradeApprovedEmail({
+        name: row.senderName || row.ownerName || row.displayName || 'there',
+        plan,
+        amount: amountValue(row),
+        currency,
+        billingCycle: row.billingCycle || '',
+        workspaceName: row.workspaceName || row.companyName || '',
+      })
       const sent = await sendWorkerEmail({ to: email, ...template })
       if (!sent.ok) throw new Error(sent.error)
     }
@@ -1247,7 +1254,11 @@ export default function ControlCentre() {
     })
     const email = userEmail(row)
     if (email) {
-      const template = upgradeRejectedEmail({ name: row.senderName || row.ownerName || row.displayName || 'there', reason: row.rejectionReason || row.reason || '' })
+      const template = upgradeRejectedEmail({
+        name: row.senderName || row.ownerName || row.displayName || 'there',
+        reason: row.rejectionReason || row.reason || '',
+        plan: row.requestedPlan || row.selectedPlan || row.plan || '',
+      })
       const sent = await sendWorkerEmail({ to: email, ...template })
       if (!sent.ok) throw new Error(sent.error)
     }

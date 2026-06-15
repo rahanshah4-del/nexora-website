@@ -26,3 +26,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Email preview artifacts (local only)
+welcome-email-preview.html
+upgrade-email-preview.html

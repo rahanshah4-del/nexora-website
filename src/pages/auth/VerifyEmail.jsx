@@ -12,7 +12,6 @@ import { trackAnalyticsEvent } from '../../lib/analyticsTracking.js'
 import NexoraLogo from '../../components/brand/NexoraLogo.jsx'
 import Toast from '../../crm/components/ui/Toast.jsx'
 import { getPostVerificationRoute } from '../../lib/authRouteState.js'
-import { queueWelcomeEmailAfterVerification } from '../../lib/welcomeEmailDelivery.js'
 import { clearAllUserCache } from '../../lib/authIsolation.js'
 
 const OTP_LENGTH = 6
@@ -101,8 +100,10 @@ export default function VerifyEmail() {
   }, [])
 
   const runBackgroundProvisioning = useCallback((currentUser, source) => {
-    // Workspace + welcome email are strictly background tasks (req #8) — they
-    // must never block navigation and must never sign the user out on failure.
+    // Workspace ensure is a strictly background task (req #8) — it must never
+    // block navigation and must never sign the user out on failure. The welcome
+    // email is intentionally NOT sent here; it goes out once the client selects
+    // a business module on /workspace, so the email matches their selection.
     ensureUserWorkspace(currentUser, { provider: 'password' })
       .then((workspaceResult) => {
         console.log('[Auth Flow] workspace ensure success', {
@@ -113,15 +114,6 @@ export default function VerifyEmail() {
       })
       .catch((bgError) => {
         console.warn('[OTP Flow] background workspace ensure failed', { source, error: bgError?.message || bgError })
-      })
-
-    queueWelcomeEmailAfterVerification(currentUser, { source })
-      .then((result) => {
-        if (result?.skipped || result?.ok) return
-        console.warn('[Auth Flow] welcome email failed', { uid: currentUser?.uid || '', error: result?.error })
-      })
-      .catch((welcomeError) => {
-        console.warn('[Auth Flow] welcome email failed', { uid: currentUser?.uid || '', error: welcomeError?.message || welcomeError })
       })
 
     trackAnalyticsEvent('signup_completed', { userId: currentUser.uid, email: currentUser.email || '', page: '/verify-email', status: 'email_verified_custom' })

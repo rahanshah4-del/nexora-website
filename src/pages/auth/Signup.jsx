@@ -120,9 +120,14 @@ export default function Signup() {
       }
       return true
     } catch (phoneError) {
-      console.error('[Phone Check] firestore error', { code: phoneError?.code || '', message: phoneError?.message || '' })
-      setError('Unable to validate phone number. Contact support.')
-      return false
+      // A read failure here (transient/network/rules) must never block a
+      // legitimate signup. The uniqueness check is best-effort — the registry
+      // doc is still written after the account is created. Log and proceed.
+      console.warn('[Phone Check] uniqueness read failed, proceeding', {
+        code: phoneError?.code || '',
+        message: phoneError?.message || '',
+      })
+      return true
     }
   }
 

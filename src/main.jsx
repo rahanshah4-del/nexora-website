@@ -5,14 +5,17 @@ import './index.css'
 import AppRouter from './AppRouter.jsx'
 import AuthProvider from './context/AuthProvider.jsx'
 import AppErrorBoundary from './components/AppErrorBoundary.jsx'
+import CRMProviders from './crm/CRMProviders.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>
       <AuthProvider>
-        <AppErrorBoundary>
-          <AppRouter />
-        </AppErrorBoundary>
+        <CRMProviders>
+          <AppErrorBoundary>
+            <AppRouter />
+          </AppErrorBoundary>
+        </CRMProviders>
       </AuthProvider>
     </BrowserRouter>
   </StrictMode>,

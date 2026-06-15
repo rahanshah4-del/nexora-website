@@ -265,7 +265,14 @@ export default function AdminUpgradeRequestsPage() {
       await batch.commit()
       const to = r.clientEmail || r.email || r.ownerEmail || r.userEmail || ''
       if (to) {
-        const template = upgradeApprovedEmail({ name: r.senderName || r.userName || r.ownerName || 'there', plan: requestedPlan })
+        const template = upgradeApprovedEmail({
+          name: r.senderName || r.userName || r.ownerName || 'there',
+          plan: requestedPlan,
+          amount: r.amount || r.amountPaid || 0,
+          currency: r.currency || 'PKR',
+          billingCycle: r.billingCycle || '',
+          workspaceName: r.workspaceName || '',
+        })
         const sent = await sendWorkerEmail({ to, ...template })
         setToast(sent.ok
           ? { tone: 'success', message: 'Approved. User plan updated and email sent.' }
@@ -292,7 +299,11 @@ export default function AdminUpgradeRequestsPage() {
       await batch.commit()
       const to = r.clientEmail || r.email || r.ownerEmail || r.userEmail || ''
       if (to) {
-        const template = upgradeRejectedEmail({ name: r.senderName || r.userName || r.ownerName || 'there', reason: r.rejectionReason || r.reason || '' })
+        const template = upgradeRejectedEmail({
+          name: r.senderName || r.userName || r.ownerName || 'there',
+          reason: r.rejectionReason || r.reason || '',
+          plan: r.requestedPlan || r.selectedPlan || r.plan || '',
+        })
         const sent = await sendWorkerEmail({ to, ...template })
         setToast(sent.ok
           ? { tone: 'success', message: 'Request rejected and email sent.' }

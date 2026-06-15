@@ -387,6 +387,11 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
         plan: requestedPlan,
         amount: paidAmount,
         currency,
+        billingCycle: payload.billingCycle || '',
+        paymentMethod: payload.paymentMethod || '',
+        transactionId: payload.transactionId || '',
+        paymentDate: payload.paymentDate || '',
+        workspaceName: payload.workspaceName || '',
       })
       const emailResult = await sendWorkerEmail({ to: payload.email, ...emailTemplate })
       await trackAnalyticsEvent('upgrade_request_submitted', {

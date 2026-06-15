@@ -24,7 +24,11 @@ function resolveWelcomeName({ user, data, options, email }) {
   return candidates.find((candidate) => candidate && candidate.toLowerCase() !== prefix.toLowerCase()) || prefix
 }
 
-export async function queueWelcomeEmailAfterVerification(user, options = {}) {
+// Sends the one-time welcome email. The duplicate guard (welcomeEmailSent /
+// welcomeEmailQueuedAt) ensures it only ever goes out once per account, even if
+// the client later switches modules. The email body is tailored to the business
+// type the client selected during onboarding.
+export async function queueWelcomeEmailForModule(user, options = {}) {
   const uid = clean(user?.uid)
   const to = clean(user?.email || options.email).toLowerCase()
   if (!db || !uid || !to) return { ok: false, error: 'Welcome email cannot be queued without a verified user.' }
@@ -41,20 +45,27 @@ export async function queueWelcomeEmailAfterVerification(user, options = {}) {
     return { ok: true, skipped: true, reason: 'already_queued_or_sent' }
   }
 
-  const source = clean(options.source) || 'otp_verification'
+  const source = clean(options.source) || 'module_selection'
+  const businessType =
+    clean(options.businessType) ||
+    clean(data?.businessType) ||
+    clean(data?.selectedBusinessType) ||
+    clean(data?.currentBusinessType)
   await setDoc(
     userRef,
     {
       welcomeEmailQueuedAt: serverTimestamp(),
       welcomeEmailQueuedSource: source,
+      welcomeEmailBusinessType: businessType,
       updatedAt: serverTimestamp(),
     },
     { merge: true },
   )
-  console.log('[Welcome Email] queued', { uid, to, source })
+  console.log('[Welcome Email] queued', { uid, to, source, businessType })
 
   const template = welcomeEmail({
     name: resolveWelcomeName({ user, data, options, email: to }),
+    businessType,
   })
   const result = await sendWorkerEmail({ to, ...template })
   if (result.ok === true) {
