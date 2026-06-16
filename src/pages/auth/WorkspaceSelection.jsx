@@ -50,7 +50,7 @@ import {
 } from '../../crm/data/moduleAccess.js'
 import { saveSelectedWorkspace } from '../../crm/lib/workspaceSession.js'
 import { clientSafeMessage, reportTechnicalError } from '../../lib/errorHandler.js'
-import { getCustomEmailVerificationStatus, sendCustomVerificationEmail } from '../../lib/emailVerificationService.js'
+import { sendCustomVerificationEmail } from '../../lib/emailVerificationService.js'
 import { queueWelcomeEmailForModule } from '../../lib/welcomeEmailDelivery.js'
 import { trackAnalyticsEvent } from '../../lib/analyticsTracking.js'
 import { VERIFY_EMAIL_ROUTE, getAuthRouteState, isUserCustomVerified, shouldShowWorkspaceSelection } from '../../lib/authRouteState.js'
@@ -1336,46 +1336,16 @@ export default function WorkspaceSelection() {
     })
   }, [accountData, accountLoading, accountReadDone, authLoading, user?.uid, workspaceData, workspaceReadDone])
 
+  // Verification is OWNED by the route gate (RootRequireAuth). It only renders
+  // /workspace AFTER confirming the user is verified, so by the time this
+  // component mounts the user IS verified. We therefore latch verified locally
+  // and NEVER navigate to /verify-email from here. The previous version re-read
+  // verification and bounced on a stale/cache "false", which fought the gate and
+  // produced the /workspace <-> /verify-email redirect loop ("screen blinking").
   useEffect(() => {
     if (authLoading || accountLoading || !user?.uid) return
-    if (emailVerified) return
-
-    // `accountData` can be a stale/cache read for a freshly OTP-verified account.
-    // Redirecting on that stale value fought RootRequireAuth (which reads the
-    // verification flag from the server) and caused a /workspace <-> /verify-email
-    // redirect loop (the "screen blinking" + never showing workspaces). Confirm
-    // with the SAME authoritative server check before bouncing.
-    let cancelled = false
-    getCustomEmailVerificationStatus({
-      uid: user.uid,
-      email: user.email || '',
-      emailVerified: user.emailVerified === true,
-    })
-      .then((verified) => {
-        if (cancelled) return
-        if (verified) {
-          // Server confirms verified — latch it so the redirect never fires.
-          setVerifiedLatch(true)
-          return
-        }
-        console.log('[Workspace Route Decision]', {
-          source: 'WorkspaceSelection',
-          path: '/workspace',
-          decision: 'redirect_verify_email',
-          reason: 'email_not_verified_confirmed',
-        })
-        navigate(VERIFY_EMAIL_ROUTE, { replace: true })
-      })
-      .catch(() => {
-        // Read failed — do NOT loop. The route gate (RootRequireAuth) already
-        // enforced verification to reach /workspace, so latch and continue.
-        if (!cancelled) setVerifiedLatch(true)
-      })
-
-    return () => {
-      cancelled = true
-    }
-  }, [accountLoading, authLoading, emailVerified, navigate, user?.uid, user?.email, user?.emailVerified])
+    setVerifiedLatch(true)
+  }, [accountLoading, authLoading, user?.uid])
 
   const onboardingCompleted = workspaceData?.onboardingCompleted === true || accountData?.onboardingCompleted === true
   const savedWorkspaceModule = useMemo(

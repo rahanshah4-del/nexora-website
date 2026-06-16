@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nexora-pwa-v6'
+const CACHE_NAME = 'nexora-pwa-v7'
 const CACHE_URLS = [
   '/',
   '/index.html',

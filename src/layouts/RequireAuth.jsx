@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import useAuth from '../context/useAuth.js'
 import PageLoader from '../crm/components/ui/PageLoader.jsx'
-import { getCustomEmailVerificationStatus } from '../lib/emailVerificationService.js'
+import { getCustomEmailVerificationStatus, readVerifiedFlag } from '../lib/emailVerificationService.js'
 
 // Gate for /verify-email and /workspace. It only routes — it never signs the
 // user out. A bounded verification check (8s) falls through to "not verified"
@@ -77,7 +77,13 @@ export default function RequireAuth() {
     return <Navigate to="/login" replace state={{ from: location.pathname }} />
   }
 
-  const verified = firebaseEmailVerified || customVerified === true
+  // Read the sticky flag SYNCHRONOUSLY on every render. The async effect above
+  // resolves `customVerified` only once (its deps don't include the route), so a
+  // flag set AFTER it resolved (by VerifyEmail / OTP success / another gate's
+  // server read) would otherwise be missed — leaving this gate stuck on a stale
+  // "not verified" and bouncing /workspace -> /verify-email forever (the blink
+  // loop). Honoring the flag here lets a positive verification win immediately.
+  const verified = firebaseEmailVerified || customVerified === true || readVerifiedFlag(userId)
   if (!verified && location.pathname !== '/verify-email') {
     return <Navigate to="/verify-email" replace state={{ from: location.pathname }} />
   }
