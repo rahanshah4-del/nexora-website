@@ -5,6 +5,35 @@ import { EMAIL_WORKER_URL, sendWorkerEmail } from './transactionalEmail.js'
 const OTP_TTL_MINUTES = 10
 const technicalLogPrefix = '[Nexora email verification]'
 
+// Sticky verification flag. Once a user is known-verified (OTP success, or a
+// successful server read), we cache it locally so every gate
+// (RootRequireAuth / VerifyEmail / WorkspaceSelection) agrees instantly instead
+// of re-querying Firestore and occasionally disagreeing — which caused the
+// /workspace <-> /verify-email redirect loop ("screen blinking"). It is only
+// ever written when verification is positively confirmed, so it can never be a
+// false "verified".
+function verifiedFlagKey(uid) {
+  return `nexora:emailVerifiedCustom:${uid}`
+}
+
+export function readVerifiedFlag(uid) {
+  if (!uid || typeof window === 'undefined') return false
+  try {
+    return window.localStorage.getItem(verifiedFlagKey(uid)) === 'true'
+  } catch {
+    return false
+  }
+}
+
+export function markVerifiedFlag(uid) {
+  if (!uid || typeof window === 'undefined') return
+  try {
+    window.localStorage.setItem(verifiedFlagKey(uid), 'true')
+  } catch {
+    // Storage may be unavailable (private mode) — non-fatal.
+  }
+}
+
 function logFullOtpError(error) {
   console.error('[OTP email full error]', {
     message: error?.message,
@@ -215,6 +244,9 @@ export async function verifyCustomEmailOtp(user, otp) {
     try {
       await setDoc(userRef, parentPayload, { merge: true })
       console.log('[Verify] verification flags updated')
+      // Cache verified state locally so all route gates agree immediately and
+      // don't bounce between /workspace and /verify-email.
+      markVerifiedFlag(uid)
     } catch (error) {
       logVerifyOperationFailure('update_parent', error, userDocPath, Object.keys(parentPayload))
       throw error
@@ -238,15 +270,21 @@ export async function verifyCustomEmailOtp(user, otp) {
 
 export async function getCustomEmailVerificationStatus(user) {
   if (!db || !user?.uid) return false
+  // Firebase-native verified, or locally cached "verified" — return instantly so
+  // gates stay consistent (no Firestore round-trip, no loop).
+  if (user?.emailVerified === true) return true
+  if (readVerifiedFlag(user.uid)) return true
   const ref = doc(db, 'users', user.uid)
   try {
     const snap = await withTimeout(getDocFromServer(ref), 6000, `users/${user.uid}`)
+    const verified = snap.exists() && snap.data()?.emailVerifiedCustom === true
     console.log('[VerifyEmail] server verification status', {
       uid: user.uid,
       exists: snap.exists(),
-      emailVerifiedCustom: snap.exists() && snap.data()?.emailVerifiedCustom === true,
+      emailVerifiedCustom: verified,
     })
-    return snap.exists() && snap.data()?.emailVerifiedCustom === true
+    if (verified) markVerifiedFlag(user.uid)
+    return verified
   } catch (error) {
     console.warn('[VerifyEmail] server verification status fallback', {
       uid: user.uid,
