@@ -2198,15 +2198,13 @@ export default function WorkspaceSelection() {
       )
       // Race-safe: if the background bootstrap created workspaces/{uid} between
       // our read and this write, our create payload's protected fields (plan/
-      // trial/status) would fail the UPDATE rule (permission-denied). Recover by
-      // retrying with the safe update payload (no protected fields).
-      const workspaceWritePromise = setDoc(workspaceRef, workspacePayload, { merge: true }).catch(async (wsError) => {
-        if (!workspaceExists && wsError?.code === 'permission-denied') {
-          const recheckSnap = await getDoc(workspaceRef)
-          if (recheckSnap.exists()) {
-            console.warn('[WorkspaceSelection] create raced with bootstrap; retrying as safe update', { workspaceId })
-            return setDoc(workspaceRef, workspaceUpdatePayload, { merge: true })
-          }
+      // trial/status) fail the UPDATE rule (permission-denied). The pre-read can
+      // be a cached "not exists", so retry unconditionally on permission-denied
+      // with an identity + safe-module payload valid for BOTH create and update.
+      const workspaceWritePromise = setDoc(workspaceRef, workspacePayload, { merge: true }).catch((wsError) => {
+        if (wsError?.code === 'permission-denied') {
+          console.warn('[WorkspaceSelection] workspace write denied; retrying with safe identity payload', { workspaceId })
+          return setDoc(workspaceRef, { ...workspaceUpdatePayload, ownerId: uid, workspaceId, userId: workspaceId, createdBy: uid }, { merge: true })
         }
         throw wsError
       })
@@ -2797,26 +2795,22 @@ export default function WorkspaceSelection() {
           workspacePayload,
         )
       } catch (workspaceWriteError) {
-        // Race: the background bootstrap (ensureUserWorkspace) can create
-        // workspaces/{uid} between our pre-read and this write. Our create
-        // payload carries protected fields (plan/trial/status...), which the
-        // UPDATE rule rejects (protectedWorkspaceFieldsUnchanged) once the doc
-        // already exists — surfacing as "could not create your first workspace"
-        // that mysteriously works after a refresh. Recover by re-reading and
-        // retrying with the SAFE onboarding-update payload (no protected fields).
-        if (!workspaceExists && workspaceWriteError?.code === 'permission-denied') {
-          const recheckSnap = await getDoc(workspaceRef)
-          if (recheckSnap.exists()) {
-            console.warn('[Workspace Setup] create raced with bootstrap; retrying as safe update', { workspaceId })
-            await performWorkspaceSetupWrite(
-              'workspaceOnboardingUpdateRetry',
-              `workspaces/${workspaceId}`,
-              workspaceRef,
-              workspaceOnboardingUpdatePayload,
-            )
-          } else {
-            throw workspaceWriteError
-          }
+        // A permission-denied here almost always means workspaces/{uid} already
+        // exists (the background bootstrap, ensureUserWorkspace, created it after
+        // our pre-read) so our create payload's protected fields (plan/trial/
+        // status...) were rejected by the UPDATE rule — the "could not create
+        // your first workspace" error that only clears after a refresh. The
+        // pre-read can itself be a cached "not exists", so we DON'T trust a
+        // re-read. Retry once with an identity + safe-module payload that
+        // satisfies BOTH the create and update rules (no protected fields).
+        if (workspaceWriteError?.code === 'permission-denied') {
+          console.warn('[Workspace Setup] workspace write denied; retrying with safe identity payload', { workspaceId })
+          await performWorkspaceSetupWrite(
+            'workspaceSafeRetry',
+            `workspaces/${workspaceId}`,
+            workspaceRef,
+            { ...workspaceOnboardingUpdatePayload, ownerId: uid, userId: uid, workspaceId, createdBy: uid },
+          )
         } else {
           throw workspaceWriteError
         }
