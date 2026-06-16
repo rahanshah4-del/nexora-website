@@ -20,8 +20,10 @@ service cloud.firestore {
     }
 
     function userStatusActive() {
+      // Safe field access — a missing `status` field would otherwise raise an
+      // evaluation error that denies the request (see workspaceActive).
       return !hasUserDoc()
-        || !(userDoc(request.auth.uid).status in ['blocked', 'Blocked', 'BLOCKED', 'disabled', 'Disabled', 'DISABLED', 'inactive', 'Inactive', 'INACTIVE']);
+        || !(userDoc(request.auth.uid).get('status', 'active') in ['blocked', 'Blocked', 'BLOCKED', 'disabled', 'Disabled', 'DISABLED', 'inactive', 'Inactive', 'INACTIVE']);
     }
 
     function workspaceDoc(workspaceId) {
@@ -33,9 +35,14 @@ service cloud.firestore {
     }
 
     function workspaceActive(workspaceId) {
+      // Use .get(field, default) — accessing a field that does not exist on the
+      // document raises an evaluation error that DENIES the whole rule. Bootstrap
+      // -created trial workspaces have no `accountStatus` (and may lack `status`),
+      // which silently broke every workspace update + member-gated subcollection
+      // write (the "could not create your first workspace" permission error).
       return workspaceExists(workspaceId)
-        && !(workspaceDoc(workspaceId).status in ['blocked', 'Blocked', 'BLOCKED', 'disabled', 'Disabled', 'DISABLED', 'inactive', 'Inactive', 'INACTIVE'])
-        && !(workspaceDoc(workspaceId).accountStatus in ['blocked', 'Blocked', 'BLOCKED', 'disabled', 'Disabled', 'DISABLED', 'inactive', 'Inactive', 'INACTIVE']);
+        && !(workspaceDoc(workspaceId).get('status', 'active') in ['blocked', 'Blocked', 'BLOCKED', 'disabled', 'Disabled', 'DISABLED', 'inactive', 'Inactive', 'INACTIVE'])
+        && !(workspaceDoc(workspaceId).get('accountStatus', 'active') in ['blocked', 'Blocked', 'BLOCKED', 'disabled', 'Disabled', 'DISABLED', 'inactive', 'Inactive', 'INACTIVE']);
     }
 
     function activeSignedIn() {
