@@ -2176,33 +2176,41 @@ export default function WorkspaceSelection() {
         },
       })
 
-      await Promise.all([
-        setDoc(
-          doc(db, 'users', uid),
-          {
-            businessType: businessTypeId,
-            currentBusinessType: businessTypeId,
-            selectedBusinessType: businessTypeId,
-            primaryBusinessType: businessTypeId,
-            allowedBusinessTypes: [businessTypeId],
-            specialModuleAccess: false,
-            allModulesAccess: false,
-            selectedWorkspace,
-            workspaceId,
-            ownerId: uid,
-            enabledModules,
-            selectedFeatures,
-            onboardingCompleted: true,
-            updatedAt: now,
-          },
-          { merge: true },
-        ),
-        setDoc(
-          workspaceRef,
-          workspacePayload,
-          { merge: true },
-        ),
-      ])
+      const userWritePromise = setDoc(
+        doc(db, 'users', uid),
+        {
+          businessType: businessTypeId,
+          currentBusinessType: businessTypeId,
+          selectedBusinessType: businessTypeId,
+          primaryBusinessType: businessTypeId,
+          allowedBusinessTypes: [businessTypeId],
+          specialModuleAccess: false,
+          allModulesAccess: false,
+          selectedWorkspace,
+          workspaceId,
+          ownerId: uid,
+          enabledModules,
+          selectedFeatures,
+          onboardingCompleted: true,
+          updatedAt: now,
+        },
+        { merge: true },
+      )
+      // Race-safe: if the background bootstrap created workspaces/{uid} between
+      // our read and this write, our create payload's protected fields (plan/
+      // trial/status) would fail the UPDATE rule (permission-denied). Recover by
+      // retrying with the safe update payload (no protected fields).
+      const workspaceWritePromise = setDoc(workspaceRef, workspacePayload, { merge: true }).catch(async (wsError) => {
+        if (!workspaceExists && wsError?.code === 'permission-denied') {
+          const recheckSnap = await getDoc(workspaceRef)
+          if (recheckSnap.exists()) {
+            console.warn('[WorkspaceSelection] create raced with bootstrap; retrying as safe update', { workspaceId })
+            return setDoc(workspaceRef, workspaceUpdatePayload, { merge: true })
+          }
+        }
+        throw wsError
+      })
+      await Promise.all([userWritePromise, workspaceWritePromise])
       console.log('[WorkspaceSelection] workspace save success', { workspaceId, workspaceExists })
       console.log('[Onboarding] saved workspace module', {
         workspaceId,
@@ -2781,12 +2789,38 @@ export default function WorkspaceSelection() {
         createdBy: uid,
       })
       console.log('WORKSPACE_WRITE_2_WORKSPACE')
-      await performWorkspaceSetupWrite(
-        workspaceExists ? 'workspaceOnboardingUpdate' : 'workspaceCreate',
-        `workspaces/${workspaceId}`,
-        workspaceRef,
-        workspacePayload,
-      )
+      try {
+        await performWorkspaceSetupWrite(
+          workspaceExists ? 'workspaceOnboardingUpdate' : 'workspaceCreate',
+          `workspaces/${workspaceId}`,
+          workspaceRef,
+          workspacePayload,
+        )
+      } catch (workspaceWriteError) {
+        // Race: the background bootstrap (ensureUserWorkspace) can create
+        // workspaces/{uid} between our pre-read and this write. Our create
+        // payload carries protected fields (plan/trial/status...), which the
+        // UPDATE rule rejects (protectedWorkspaceFieldsUnchanged) once the doc
+        // already exists — surfacing as "could not create your first workspace"
+        // that mysteriously works after a refresh. Recover by re-reading and
+        // retrying with the SAFE onboarding-update payload (no protected fields).
+        if (!workspaceExists && workspaceWriteError?.code === 'permission-denied') {
+          const recheckSnap = await getDoc(workspaceRef)
+          if (recheckSnap.exists()) {
+            console.warn('[Workspace Setup] create raced with bootstrap; retrying as safe update', { workspaceId })
+            await performWorkspaceSetupWrite(
+              'workspaceOnboardingUpdateRetry',
+              `workspaces/${workspaceId}`,
+              workspaceRef,
+              workspaceOnboardingUpdatePayload,
+            )
+          } else {
+            throw workspaceWriteError
+          }
+        } else {
+          throw workspaceWriteError
+        }
+      }
       console.log('[Workspace Create] firestore write success', {
         path: `workspaces/${workspaceId}`,
         workspaceId,
@@ -2928,6 +2962,21 @@ export default function WorkspaceSelection() {
         selectedWorkspace: selectedModuleWorkspace,
         enabledModules: selectedModuleList,
       })
+      // Module-tailored welcome email. The wizard is the primary onboarding
+      // path, so it must send the welcome email too (previously only the card
+      // -select path did, so wizard users never got it). Background task — never
+      // blocks navigation; the delivery helper de-dupes so it won't resend.
+      queueWelcomeEmailForModule(
+        { uid, email, displayName: user?.displayName || ownerName || '' },
+        { businessType, source: 'workspace_wizard' },
+      )
+        .then((result) => {
+          if (result?.skipped || result?.ok) return
+          console.warn('[Welcome Email] wizard welcome send failed', { uid, error: result?.error })
+        })
+        .catch((welcomeError) => {
+          console.warn('[Welcome Email] wizard welcome send failed', { uid, error: welcomeError?.message || welcomeError })
+        })
       trackAnalyticsEvent('workspace_selected', { userId: uid, email, phone, workspaceId, businessType: selectedModuleBusinessType, moduleName: businessType, page: '/workspace' })
         .catch((analyticsError) => {
           console.warn('[Onboarding] workspace_selected analytics failed', { error: analyticsError?.message || analyticsError })
