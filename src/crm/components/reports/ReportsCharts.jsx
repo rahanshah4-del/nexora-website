@@ -2,7 +2,6 @@ import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianG
 import Card from '../ui/Card.jsx'
 import Badge from '../ui/Badge.jsx'
 import EmptyState from '../system/EmptyState.jsx'
-import { convertFromUsd } from '../../utils/currency.js'
 import { formatCurrency } from '../../utils/format.js'
 
 function toDateValue(value) {
@@ -41,7 +40,7 @@ export default function ReportsCharts({ invoices, leads, teamMembers, tickets, s
     const rows = Array.from(map.entries())
       .sort((a, b) => a[0].localeCompare(b[0]))
       .slice(-8)
-      .map(([k, usd]) => ({ month: k, revenue: convertFromUsd(usd, currency) }))
+      .map(([k, amount]) => ({ month: k, revenue: amount }))
     return rows
   })()
 

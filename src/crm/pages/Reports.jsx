@@ -45,7 +45,6 @@ import {
   isPaidRecord,
   paymentValue,
 } from '../lib/calculations.js'
-import { convertFromUsd } from '../utils/currency.js'
 import { formatCurrency } from '../utils/format.js'
 import { cn } from '../utils/cn.js'
 import { buildReportId, exportReportCsv, exportReportExcel, exportReportPdf } from '../lib/reportGenerator.js'
@@ -164,8 +163,12 @@ function formatDate(value) {
   return new Intl.DateTimeFormat('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).format(date)
 }
 
-function formatMoney(usdValue, currency) {
-  return formatCurrency(convertFromUsd(safeNumber(usdValue), currency), currency)
+function formatMoney(value, currency) {
+  // Amounts are already stored/aggregated in the workspace currency (e.g. PKR) —
+  // the same values the Dashboard formats directly. Do NOT run convertFromUsd
+  // here: that multiplied by the FX rate (~278.5) and inflated revenue (3000 ->
+  // 835,500). Format the raw value to match the Dashboard.
+  return formatCurrency(safeNumber(value), currency)
 }
 
 function percent(part, total) {

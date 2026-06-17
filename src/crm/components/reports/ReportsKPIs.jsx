@@ -1,6 +1,5 @@
 import Card from '../ui/Card.jsx'
 import Badge from '../ui/Badge.jsx'
-import { convertFromUsd } from '../../utils/currency.js'
 import { formatCurrency } from '../../utils/format.js'
 
 function KPI({ label, value, badge }) {
@@ -20,7 +19,7 @@ function KPI({ label, value, badge }) {
 export default function ReportsKPIs({ kpis, currency }) {
   return (
     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-      <KPI label="Total Revenue" value={formatCurrency(convertFromUsd(kpis.totalRevenueUsd, currency), currency)} badge="Finance" />
+      <KPI label="Total Revenue" value={formatCurrency(kpis.totalRevenueUsd, currency)} badge="Finance" />
       <KPI label="Total Leads" value={kpis.totalLeads} badge="Customers" />
       <KPI label="Pending Invoices" value={kpis.pendingInvoices} badge="Billing" />
       <KPI label="Open Tickets" value={kpis.openTickets} badge="Support" />

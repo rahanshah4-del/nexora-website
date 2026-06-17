@@ -2,7 +2,6 @@ import Card from '../ui/Card.jsx'
 import Badge from '../ui/Badge.jsx'
 import RevenueAreaChart from '../charts/RevenueAreaChart.jsx'
 import { usePreferences } from '../../hooks/usePreferences.js'
-import { convertFromUsd } from '../../utils/currency.js'
 import { toFiniteNumber } from '../../utils/format.js'
 import ChartEmptyState from './ChartEmptyState.jsx'
 
@@ -13,7 +12,8 @@ export default function RevenueChart({ data = [] }) {
     .map((d) => ({
       ...d,
       month: d.month || '—',
-      revenue: convertFromUsd(toFiniteNumber(d.revenueUsd), displayCurrency),
+      // Already in workspace currency — no FX conversion (matches Dashboard).
+      revenue: toFiniteNumber(d.revenueUsd),
       _currency: displayCurrency,
     }))
     .filter((d) => d.revenue > 0)
