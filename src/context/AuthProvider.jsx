@@ -5,6 +5,7 @@ import { AuthContext } from './auth-context.js'
 import { auth, db } from '../lib/firebase.js'
 import { isBackendAdminEmail } from '../lib/roles.js'
 import { reportTechnicalError } from '../lib/errorHandler.js'
+import { clearAllUserCache } from '../lib/authIsolation.js'
 
 // AuthProvider is intentionally limited to AUTHENTICATION STATE ONLY.
 // It must NOT create workspaces, run account provisioning, read verification
@@ -61,6 +62,27 @@ export default function AuthProvider({ children }) {
         route: window.location.pathname,
         time: new Date().toISOString(),
       })
+
+      // Account-switch isolation: if a DIFFERENT uid signs in within the same
+      // browser session, wipe the previous account's cached view and hard-reload
+      // so no stale in-memory/localStorage data (revenue totals, workspace,
+      // lists) from account A can ever surface under account B. After the reload
+      // the stored uid matches, so this never loops.
+      if (nextUser?.uid) {
+        try {
+          const ACTIVE_UID_KEY = 'nexora:activeUid'
+          const prevUid = window.localStorage.getItem(ACTIVE_UID_KEY)
+          window.localStorage.setItem(ACTIVE_UID_KEY, nextUser.uid)
+          if (prevUid && prevUid !== nextUser.uid) {
+            console.warn('[AUTH ISOLATION] account switch detected, hard reload', { prevUid, nextUid: nextUser.uid })
+            clearAllUserCache(prevUid)
+            window.location.reload()
+            return
+          }
+        } catch {
+          // localStorage unavailable (private mode) — non-fatal.
+        }
+      }
 
       setUser(nextUser)
 
