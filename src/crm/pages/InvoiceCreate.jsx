@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   HiOutlineArrowLeft,
@@ -130,6 +130,20 @@ export default function InvoiceCreatePage() {
     },
     [canCreatePaidInvoices, isSchool],
   )
+
+  // School ERP fee bills should default to "Pending" so creating one routes it
+  // straight to the Approval Center (a Draft never goes for approval). Runs once
+  // after businessType loads and only if the user hasn't changed the status yet.
+  const schoolDefaultApplied = useRef(false)
+  useEffect(() => {
+    if (schoolDefaultApplied.current || !businessType) return
+    schoolDefaultApplied.current = true
+    if (isSchool) {
+      setInvoice((prev) =>
+        String(prev.status || '').trim().toLowerCase() === 'draft' ? { ...prev, status: 'Pending' } : prev,
+      )
+    }
+  }, [businessType, isSchool])
 
   const totals = useMemo(() => calculateInvoiceDraft(invoice), [invoice])
   useEffect(() => {
