@@ -147,186 +147,192 @@ export default function Login() {
   }
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-slate-50 text-slate-950">
-      <div className="grid min-h-screen lg:grid-cols-2">
+    <main className="relative min-h-screen overflow-hidden bg-slate-950 text-slate-950">
+      {/* Ambient animated backdrop */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -left-32 -top-32 h-[28rem] w-[28rem] rounded-full bg-sky-600/25 blur-[120px]" />
+        <div className="absolute -right-32 top-1/3 h-[26rem] w-[26rem] rounded-full bg-violet-600/25 blur-[120px]" />
+        <div className="absolute bottom-0 left-1/3 h-[24rem] w-[24rem] rounded-full bg-indigo-600/20 blur-[120px]" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:46px_46px] [mask-image:radial-gradient(ellipse_at_center,black,transparent_75%)]" />
+      </div>
+
+      <div className="relative grid min-h-screen lg:grid-cols-[1.05fr_0.95fr]">
         {/* Brand + modules showcase — desktop only */}
-        <aside className="relative hidden overflow-hidden bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 lg:flex lg:flex-col lg:justify-between lg:p-12">
-          <div className="pointer-events-none absolute inset-0">
-            <div className="absolute -left-24 top-10 h-72 w-72 rounded-full bg-sky-500/20 blur-3xl" />
-            <div className="absolute -right-10 bottom-10 h-80 w-80 rounded-full bg-violet-500/20 blur-3xl" />
-          </div>
+        <aside className="relative hidden flex-col justify-between p-10 xl:p-14 lg:flex">
+          <NexoraLogo />
 
-          <div className="relative">
-            <NexoraLogo />
-            <h2 className="mt-12 max-w-md text-3xl font-black leading-tight tracking-tight text-white xl:text-4xl">
-              One platform for every business you run.
+          <div className="max-w-lg">
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-sky-300 backdrop-blur">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-sky-400" />
+              All-in-one business suite
+            </span>
+            <h2 className="mt-6 text-4xl font-black leading-[1.1] tracking-tight text-white xl:text-5xl">
+              Run every business<br />from one workspace.
             </h2>
-            <p className="mt-4 max-w-md text-sm leading-6 text-slate-300">
-              CRM, Restaurant POS, Retail, School &amp; Property ERP, Transport and WhatsApp — manage them all from a single Nexora workspace.
+            <p className="mt-5 max-w-md text-sm leading-7 text-slate-400">
+              CRM, Restaurant POS, Retail, School &amp; Property ERP, Transport and WhatsApp — unified, secure, real-time.
             </p>
+
+            <div className="mt-9 flex flex-wrap gap-2.5">
+              {LOGIN_MODULES.map((module, index) => (
+                <motion.div
+                  key={module.name}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.35, delay: 0.05 * index, ease: 'easeOut' }}
+                  className="group flex items-center gap-2.5 rounded-full border border-white/10 bg-white/[0.04] py-1.5 pl-1.5 pr-4 backdrop-blur-sm transition hover:border-white/25 hover:bg-white/10"
+                >
+                  <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${module.tone}`}>
+                    <module.icon className="h-4 w-4" />
+                  </span>
+                  <span className="text-[13px] font-semibold text-slate-200">{module.name}</span>
+                </motion.div>
+              ))}
+            </div>
           </div>
 
-          <div className="relative mt-10 grid grid-cols-2 gap-3">
-            {LOGIN_MODULES.map((module) => (
-              <div
-                key={module.name}
-                className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-sm transition hover:border-white/20 hover:bg-white/10"
-              >
-                <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${module.tone}`}>
-                  <module.icon className="h-5 w-5" />
-                </span>
-                <span className="truncate text-sm font-semibold text-slate-100">{module.name}</span>
-              </div>
-            ))}
-          </div>
-
-          <p className="relative mt-10 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-600">
             Nexora Solution — All rights reserved 2019-2026.
           </p>
         </aside>
 
         {/* Sign-in form */}
-        <section className="relative flex min-h-screen flex-col px-4 py-8">
-          <div className="pointer-events-none absolute inset-0 lg:hidden">
-            <div className="absolute inset-x-0 top-0 h-96 bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.16),_transparent_45%),radial-gradient(circle_at_72%_8%,_rgba(129,140,248,0.16),_transparent_42%)]" />
-            <div className="absolute -right-24 top-24 h-80 w-80 rounded-full bg-gradient-to-br from-sky-300/25 to-violet-300/20 blur-3xl" />
-          </div>
+        <section className="relative flex min-h-screen flex-col items-center justify-center px-5 py-10">
+          <motion.div
+            initial={{ opacity: 0, y: 18, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.45, ease: 'easeOut' }}
+            className="w-full max-w-[22rem] rounded-3xl border border-white/15 bg-white/95 p-6 shadow-[0_40px_120px_-40px_rgba(2,6,23,0.9)] backdrop-blur-2xl"
+          >
+            {/* Logo on mobile (left panel hidden) */}
+            <div className="mb-5 flex items-center justify-between lg:hidden">
+              <NexoraLogo compact />
+              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
+                Sign in
+              </span>
+            </div>
 
-          <div className="relative mx-auto flex w-full max-w-md flex-1 items-center justify-center">
-            <motion.div
-          initial={{ opacity: 0, y: 16, scale: 0.98 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 0.4, ease: 'easeOut' }}
-          className="w-full overflow-hidden rounded-[1.75rem] border border-white/60 bg-white/80 p-7 shadow-[0_30px_80px_-40px_rgba(15,23,42,0.45)] backdrop-blur-xl sm:p-8"
-        >
-          <div className="flex items-center justify-between">
-            <NexoraLogo compact />
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
-              Sign in
-            </span>
-          </div>
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 to-indigo-600 text-white shadow-lg shadow-indigo-600/30">
+              <HiOutlineLockClosed className="h-5 w-5" />
+            </div>
+            <h1 className="mt-4 text-[22px] font-black tracking-tight text-slate-950">Welcome back</h1>
+            <p className="mt-1 text-[13px] text-slate-500">Sign in to your Nexora Solution account.</p>
 
-          <div className="mt-6">
-            <h1 className="text-2xl font-bold tracking-tight text-slate-950">Welcome back</h1>
-            <p className="mt-1.5 text-sm text-slate-500">Sign in to your Nexora Solution account.</p>
-          </div>
+            {error ? (
+              <motion.div
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2 text-[13px] font-medium text-rose-700"
+              >
+                {error}
+              </motion.div>
+            ) : null}
+            {info ? (
+              <motion.div
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-4 rounded-xl border border-sky-200 bg-sky-50 px-3.5 py-2 text-[13px] font-medium text-sky-700"
+              >
+                {info}
+              </motion.div>
+            ) : null}
 
-          {error ? (
-            <motion.div
-              initial={{ opacity: 0, y: -4 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mt-5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-medium text-rose-700"
-            >
-              {error}
-            </motion.div>
-          ) : null}
-          {info ? (
-            <motion.div
-              initial={{ opacity: 0, y: -4 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mt-5 rounded-xl border border-sky-200 bg-sky-50 px-4 py-2.5 text-sm font-medium text-sky-700"
-            >
-              {info}
-            </motion.div>
-          ) : null}
+            <form className="mt-5 space-y-3.5" onSubmit={onSubmit}>
+              <label className="block space-y-1 text-[13px] text-slate-700">
+                <span className="font-semibold">Email address</span>
+                <div className="relative">
+                  <HiOutlineUser className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50/80 pl-10 pr-3.5 text-[13px] text-slate-900 outline-none transition focus:border-sky-400 focus:bg-white focus:ring-4 focus:ring-sky-100"
+                    placeholder="you@example.com"
+                    autoComplete="email"
+                  />
+                </div>
+              </label>
 
-          <form className="mt-6 space-y-4" onSubmit={onSubmit}>
-            <label className="block space-y-1.5 text-sm text-slate-700">
-              <span className="font-medium">Email address</span>
-              <div className="relative">
-                <HiOutlineUser className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                  className="h-12 w-full rounded-xl border border-slate-200 bg-white/70 pl-11 pr-4 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
-                  placeholder="you@example.com"
-                  autoComplete="email"
-                />
-              </div>
-            </label>
+              <label className="block space-y-1 text-[13px] text-slate-700">
+                <span className="font-semibold">Password</span>
+                <div className="relative">
+                  <HiOutlineLockClosed className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-slate-400" />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50/80 pl-10 pr-10 text-[13px] text-slate-900 outline-none transition focus:border-sky-400 focus:bg-white focus:ring-4 focus:ring-sky-100"
+                    placeholder="Enter your password"
+                    autoComplete="current-password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((visible) => !visible)}
+                    className="absolute right-2.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? <HiOutlineEyeSlash className="h-[18px] w-[18px]" /> : <HiOutlineEye className="h-[18px] w-[18px]" />}
+                  </button>
+                </div>
+              </label>
 
-            <label className="block space-y-1.5 text-sm text-slate-700">
-              <span className="font-medium">Password</span>
-              <div className="relative">
-                <HiOutlineLockClosed className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  className="h-12 w-full rounded-xl border border-slate-200 bg-white/70 pl-11 pr-11 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
-                  placeholder="Enter your password"
-                  autoComplete="current-password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((visible) => !visible)}
-                  className="absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100"
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
-                >
-                  {showPassword ? <HiOutlineEyeSlash className="h-5 w-5" /> : <HiOutlineEye className="h-5 w-5" />}
+              <div className="flex justify-end">
+                <button type="button" onClick={handlePasswordReset} className="text-[13px] font-semibold text-sky-700 transition hover:text-sky-900">
+                  Forgot password?
                 </button>
               </div>
-            </label>
 
-            <div className="flex justify-end">
-              <button type="button" onClick={handlePasswordReset} className="text-sm font-semibold text-sky-700 transition hover:text-sky-900">
-                Forgot password?
+              <button
+                type="submit"
+                disabled={submitting}
+                className="group flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-600 to-indigo-600 text-[13px] font-bold text-white shadow-lg shadow-indigo-600/25 transition hover:brightness-110 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {submitting ? (
+                  <>
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                    Signing in…
+                  </>
+                ) : (
+                  <>
+                    Sign in
+                    <HiOutlineArrowRight className="h-[18px] w-[18px] transition group-hover:translate-x-0.5" />
+                  </>
+                )}
               </button>
+            </form>
+
+            <div className="my-4 flex items-center gap-3 text-[11px] text-slate-400">
+              <span className="h-px flex-1 bg-slate-200" />
+              <span className="uppercase tracking-wide">or</span>
+              <span className="h-px flex-1 bg-slate-200" />
             </div>
 
             <button
-              type="submit"
-              disabled={submitting}
-              className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-600 to-indigo-600 text-sm font-bold text-white shadow-lg shadow-sky-600/20 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+              type="button"
+              onClick={handleGoogleSignIn}
+              disabled={googleLoading}
+              className="flex h-11 w-full items-center justify-center gap-2.5 rounded-xl border border-slate-200 bg-white text-[13px] font-semibold text-slate-900 transition hover:bg-slate-50 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {submitting ? (
-                <>
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-                  Signing in…
-                </>
-              ) : (
-                <>
-                  Sign in
-                  <HiOutlineArrowRight className="h-5 w-5" />
-                </>
-              )}
+              <AiOutlineGoogle className="h-[18px] w-[18px] text-slate-700" />
+              {googleLoading ? 'Connecting…' : 'Continue with Google'}
             </button>
-          </form>
 
-          <div className="my-5 flex items-center gap-3 text-xs text-slate-400">
-            <span className="h-px flex-1 bg-slate-200" />
-            <span>or continue with</span>
-            <span className="h-px flex-1 bg-slate-200" />
-          </div>
+            <p className="mt-5 text-center text-[13px] text-slate-500">
+              Don&apos;t have an account?{' '}
+              <Link to="/signup" className="font-bold text-slate-900 hover:text-slate-700">
+                Create account
+              </Link>
+            </p>
 
-          <button
-            type="button"
-            onClick={handleGoogleSignIn}
-            disabled={googleLoading}
-            className="flex w-full items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <AiOutlineGoogle className="h-5 w-5 text-slate-700" />
-            {googleLoading ? 'Connecting with Google…' : 'Continue with Google'}
-          </button>
+            <div className="mt-4 flex items-center justify-center gap-1.5 text-[11px] text-slate-400">
+              <HiOutlineShieldCheck className="h-4 w-4 text-emerald-500" />
+              Enterprise-grade security · Your data is safe
+            </div>
+          </motion.div>
 
-          <p className="mt-6 text-center text-sm text-slate-500">
-            Don&apos;t have an account?{' '}
-            <Link to="/signup" className="font-semibold text-slate-900 hover:text-slate-700">
-              Create account
-            </Link>
-          </p>
-
-          <div className="mt-5 flex items-center justify-center gap-2 text-xs text-slate-400">
-            <HiOutlineShieldCheck className="h-4 w-4 text-emerald-500" />
-            Enterprise-grade security · Your data is safe
-          </div>
-            </motion.div>
-          </div>
-
-          <p className="relative mt-6 text-center text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+          <p className="mt-6 text-center text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 lg:hidden">
             NEXORA SOLUTION — All rights reserved 2019-2026.
           </p>
         </section>
