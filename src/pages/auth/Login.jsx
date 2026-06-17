@@ -29,13 +29,13 @@ import { VERIFY_EMAIL_ROUTE, WORKSPACE_ROUTE } from '../../lib/authRouteState.js
 
 // Modules showcased on the sign-in panel — mirrors the workspace catalog.
 const LOGIN_MODULES = [
-  { name: 'General CRM', icon: HiOutlineUserGroup, tone: 'bg-sky-500/20 text-sky-300' },
-  { name: 'Restaurant POS', icon: HiOutlineBuildingStorefront, tone: 'bg-rose-500/20 text-rose-300' },
-  { name: 'Retail / POS', icon: HiOutlineShoppingBag, tone: 'bg-amber-500/20 text-amber-300' },
-  { name: 'School ERP', icon: HiOutlineAcademicCap, tone: 'bg-emerald-500/20 text-emerald-300' },
-  { name: 'Property ERP', icon: HiOutlineHomeModern, tone: 'bg-violet-500/20 text-violet-300' },
-  { name: 'Transport / Rental', icon: HiOutlineTruck, tone: 'bg-cyan-500/20 text-cyan-300' },
-  { name: 'WhatsApp CRM', icon: HiOutlineChatBubbleLeftRight, tone: 'bg-green-500/20 text-green-300' },
+  { name: 'General CRM', icon: HiOutlineUserGroup, tone: 'bg-gradient-to-br from-sky-400 to-blue-600 shadow-lg shadow-blue-500/30' },
+  { name: 'Restaurant POS', icon: HiOutlineBuildingStorefront, tone: 'bg-gradient-to-br from-rose-400 to-pink-600 shadow-lg shadow-rose-500/30' },
+  { name: 'Retail / POS', icon: HiOutlineShoppingBag, tone: 'bg-gradient-to-br from-amber-400 to-orange-600 shadow-lg shadow-amber-500/30' },
+  { name: 'School ERP', icon: HiOutlineAcademicCap, tone: 'bg-gradient-to-br from-emerald-400 to-green-600 shadow-lg shadow-emerald-500/30' },
+  { name: 'Property ERP', icon: HiOutlineHomeModern, tone: 'bg-gradient-to-br from-violet-400 to-purple-600 shadow-lg shadow-violet-500/30' },
+  { name: 'Transport / Rental', icon: HiOutlineTruck, tone: 'bg-gradient-to-br from-cyan-400 to-teal-600 shadow-lg shadow-cyan-500/30' },
+  { name: 'WhatsApp CRM', icon: HiOutlineChatBubbleLeftRight, tone: 'bg-gradient-to-br from-green-400 to-emerald-600 shadow-lg shadow-green-500/30' },
 ]
 
 export default function Login() {
@@ -147,29 +147,33 @@ export default function Login() {
   }
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-slate-950 text-slate-950">
-      {/* Ambient animated backdrop */}
+    <main className="relative min-h-screen overflow-hidden bg-[#070b1a] text-slate-950">
+      {/* Ambient animated backdrop — vivid aurora */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -left-32 -top-32 h-[28rem] w-[28rem] rounded-full bg-sky-600/25 blur-[120px]" />
-        <div className="absolute -right-32 top-1/3 h-[26rem] w-[26rem] rounded-full bg-violet-600/25 blur-[120px]" />
-        <div className="absolute bottom-0 left-1/3 h-[24rem] w-[24rem] rounded-full bg-indigo-600/20 blur-[120px]" />
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:46px_46px] [mask-image:radial-gradient(ellipse_at_center,black,transparent_75%)]" />
+        <div className="absolute inset-0 bg-gradient-to-br from-sky-600/30 via-indigo-700/20 to-fuchsia-700/25" />
+        <div className="absolute -left-40 -top-40 h-[34rem] w-[34rem] rounded-full bg-sky-500/50 blur-[130px]" />
+        <div className="absolute right-[-10rem] top-1/4 h-[30rem] w-[30rem] rounded-full bg-fuchsia-500/45 blur-[130px]" />
+        <div className="absolute bottom-[-8rem] left-1/3 h-[28rem] w-[28rem] rounded-full bg-indigo-500/45 blur-[130px]" />
+        <div className="absolute left-1/2 top-1/2 h-[22rem] w-[22rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-violet-500/30 blur-[110px]" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:46px_46px] [mask-image:radial-gradient(ellipse_at_center,black,transparent_75%)]" />
       </div>
 
       <div className="relative grid min-h-screen lg:grid-cols-[1.05fr_0.95fr]">
         {/* Brand + modules showcase — desktop only */}
         <aside className="relative hidden flex-col justify-between p-10 xl:p-14 lg:flex">
-          <NexoraLogo />
+          <NexoraLogo size="lg" invert />
 
           <div className="max-w-lg">
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-sky-300 backdrop-blur">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-sky-400" />
+            <span className="inline-flex items-center gap-2 rounded-full border border-sky-400/30 bg-sky-400/10 px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-sky-200 backdrop-blur">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-sky-300 shadow-[0_0_10px_2px_rgba(56,189,248,0.8)]" />
               All-in-one business suite
             </span>
-            <h2 className="mt-6 text-4xl font-black leading-[1.1] tracking-tight text-white xl:text-5xl">
-              Run every business<br />from one workspace.
+            <h2 className="mt-6 text-4xl font-black leading-[1.1] tracking-tight xl:text-5xl">
+              <span className="text-white">Run every business</span>
+              <br />
+              <span className="bg-gradient-to-r from-sky-300 via-violet-300 to-fuchsia-300 bg-clip-text text-transparent">from one workspace.</span>
             </h2>
-            <p className="mt-5 max-w-md text-sm leading-7 text-slate-400">
+            <p className="mt-5 max-w-md text-sm leading-7 text-slate-300">
               CRM, Restaurant POS, Retail, School &amp; Property ERP, Transport and WhatsApp — unified, secure, real-time.
             </p>
 
@@ -180,18 +184,18 @@ export default function Login() {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.35, delay: 0.05 * index, ease: 'easeOut' }}
-                  className="group flex items-center gap-2.5 rounded-full border border-white/10 bg-white/[0.04] py-1.5 pl-1.5 pr-4 backdrop-blur-sm transition hover:border-white/25 hover:bg-white/10"
+                  className="group flex items-center gap-2.5 rounded-full border border-white/15 bg-white/[0.07] py-1.5 pl-1.5 pr-4 backdrop-blur-md transition hover:border-white/30 hover:bg-white/15"
                 >
-                  <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${module.tone}`}>
+                  <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white ${module.tone}`}>
                     <module.icon className="h-4 w-4" />
                   </span>
-                  <span className="text-[13px] font-semibold text-slate-200">{module.name}</span>
+                  <span className="text-[13px] font-semibold text-white">{module.name}</span>
                 </motion.div>
               ))}
             </div>
           </div>
 
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-600">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
             Nexora Solution — All rights reserved 2019-2026.
           </p>
         </aside>
@@ -206,13 +210,13 @@ export default function Login() {
           >
             {/* Logo on mobile (left panel hidden) */}
             <div className="mb-5 flex items-center justify-between lg:hidden">
-              <NexoraLogo compact />
+              <NexoraLogo size="lg" />
               <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
                 Sign in
               </span>
             </div>
 
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 to-indigo-600 text-white shadow-lg shadow-indigo-600/30">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 via-indigo-600 to-fuchsia-600 text-white shadow-lg shadow-indigo-600/40">
               <HiOutlineLockClosed className="h-5 w-5" />
             </div>
             <h1 className="mt-4 text-[22px] font-black tracking-tight text-slate-950">Welcome back</h1>
@@ -287,7 +291,7 @@ export default function Login() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="group flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-600 to-indigo-600 text-[13px] font-bold text-white shadow-lg shadow-indigo-600/25 transition hover:brightness-110 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+                className="group flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 via-indigo-600 to-fuchsia-600 bg-[length:200%_auto] text-[13px] font-bold text-white shadow-lg shadow-indigo-600/35 transition hover:bg-right hover:brightness-110 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {submitting ? (
                   <>
