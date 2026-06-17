@@ -201,25 +201,25 @@ export default function Login() {
         </aside>
 
         {/* Sign-in form */}
-        <section className="relative flex min-h-screen flex-col items-center justify-center px-5 py-10">
+        <section className="relative flex min-h-screen flex-col items-center overflow-y-auto px-4 py-6 sm:px-5 sm:py-10">
           <motion.div
             initial={{ opacity: 0, y: 18, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.45, ease: 'easeOut' }}
-            className="w-full max-w-[22rem] rounded-3xl border border-white/15 bg-white/95 p-6 shadow-[0_40px_120px_-40px_rgba(2,6,23,0.9)] backdrop-blur-2xl"
+            className="my-auto w-full max-w-sm rounded-3xl border border-white/15 bg-white/95 p-5 shadow-[0_40px_120px_-40px_rgba(2,6,23,0.9)] backdrop-blur-2xl sm:p-6"
           >
-            {/* Logo on mobile (left panel hidden) */}
-            <div className="mb-5 flex items-center justify-between lg:hidden">
-              <NexoraLogo size="lg" />
-              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
+            {/* Logo on mobile (left panel hidden) — compact so it never overlaps */}
+            <div className="mb-4 flex items-center justify-between gap-2 lg:hidden">
+              <NexoraLogo compact className="min-w-0" />
+              <span className="shrink-0 rounded-full bg-slate-100 px-2 py-1 text-[9px] font-bold uppercase tracking-[0.18em] text-slate-500">
                 Sign in
               </span>
             </div>
 
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 via-indigo-600 to-fuchsia-600 text-white shadow-lg shadow-indigo-600/40">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 via-indigo-600 to-fuchsia-600 text-white shadow-lg shadow-indigo-600/40">
               <HiOutlineLockClosed className="h-5 w-5" />
             </div>
-            <h1 className="mt-4 text-[22px] font-black tracking-tight text-slate-950">Welcome back</h1>
+            <h1 className="mt-3.5 text-xl font-black tracking-tight text-slate-950 sm:text-[22px]">Welcome back</h1>
             <p className="mt-1 text-[13px] text-slate-500">Sign in to your Nexora Solution account.</p>
 
             {error ? (
@@ -336,7 +336,7 @@ export default function Login() {
             </div>
           </motion.div>
 
-          <p className="mt-6 text-center text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 lg:hidden">
+          <p className="mt-5 shrink-0 px-4 text-center text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500 lg:hidden">
             NEXORA SOLUTION — All rights reserved 2019-2026.
           </p>
         </section>
