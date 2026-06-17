@@ -55,6 +55,7 @@ import { loadRestaurantCustomers } from '../data/restaurantCustomers.js'
 import { loadRestaurantOrders } from '../data/restaurantOrders.js'
 import { normalizeInvoiceOrders } from '../data/restaurantInvoiceOrders.js'
 import { useInvoices } from '../hooks/useInvoices.js'
+import { useExpenses } from '../hooks/useExpenses.js'
 import { finalItemPrice, formatRestaurantCurrency } from '../lib/restaurantPosCalculations.js'
 import { loadTransportBookings } from '../data/transportBookings.js'
 import { loadTransportVehicles } from '../data/transportVehicles.js'
@@ -981,6 +982,7 @@ function RestaurantReports() {
   const { invoices } = useInvoices({ limitCount: 50 })
   const businessSettingsApi = useBusinessSettings()
   const settings = businessSettingsApi.settings || {}
+  const expensesApi = useExpenses({ limitCount: 200 })
   const customers = useMemo(() => loadRestaurantCustomers(), [])
   const [filters, setFilters] = useState({
     range: 'today',
@@ -1004,7 +1006,28 @@ function RestaurantReports() {
     [filters.orderType, filters.paymentMethod, reportOrders, windowRange],
   )
 
-  const report = useMemo(() => buildRestaurantReport(orders, customers), [customers, orders])
+  // Real approved expenses within the selected date window (no fake 18500).
+  const windowExpenses = useMemo(() => {
+    const approved = calculateApprovedExpenses(
+      (expensesApi.expenses || []).filter((expense) => {
+        const date = toDateValue(expense.createdAt || expense.date)
+        if (windowRange.start && (!date || date < windowRange.start)) return false
+        if (windowRange.end && (!date || date > windowRange.end)) return false
+        return true
+      }),
+    )
+    return approved
+  }, [expensesApi.expenses, windowRange])
+
+  // Opening cash from the business cash-drawer setting (no fake 25000).
+  const openingCash = safeNumber(
+    settings.openingCash ?? settings.cashDrawerOpening ?? settings.openingBalance ?? settings.cashInHand ?? 0,
+  )
+
+  const report = useMemo(
+    () => buildRestaurantReport(orders, customers, { openingCash, expenses: windowExpenses }),
+    [customers, orders, openingCash, windowExpenses],
+  )
 
   function updateFilter(key, value) {
     setFilters((current) => ({ ...current, [key]: value }))
@@ -1356,7 +1379,12 @@ function restaurantDateWindow(filters, settings = {}) {
   return { start, end: endOfDay(now) }
 }
 
-function buildRestaurantReport(orders, customers) {
+function buildRestaurantReport(orders, customers, options = {}) {
+  // openingCash + expenses come from real workspace data (business settings cash
+  // drawer + approved expenses). They used to be hardcoded (25000 / 18500),
+  // which showed fake cash figures on brand-new accounts.
+  const openingCash = Math.max(0, safeNumber(options.openingCash))
+  const realExpenses = Math.max(0, safeNumber(options.expenses))
   const onlineMethods = new Set(['Card', 'JazzCash', 'Easypaisa', 'Bank'])
   const base = {
     'Dine-in': 0,
@@ -1424,7 +1452,7 @@ function buildRestaurantReport(orders, customers) {
     customerMap.set(key, current)
   })
 
-  const totalExpenses = 18500
+  const totalExpenses = realExpenses
   const netSales = Math.max(0, totalSales - discounts)
   const estimatedProfit = Math.max(0, netSales - itemCost - totalExpenses)
   const itemRows = Array.from(itemMap.values())
@@ -1478,12 +1506,12 @@ function buildRestaurantReport(orders, customers) {
     estimatedProfit,
     profitAfterAdjustments: Math.max(0, totalSales - itemCost - totalExpenses),
     closing: {
-      openingCash: 25000,
+      openingCash,
       cashReceived,
       onlineReceived,
       duePayments: dueAmount,
       expenses: totalExpenses,
-      closingCash: 25000 + cashReceived - totalExpenses,
+      closingCash: openingCash + cashReceived - totalExpenses,
       difference: 0,
     },
   }

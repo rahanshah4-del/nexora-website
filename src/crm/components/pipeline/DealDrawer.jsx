@@ -7,7 +7,6 @@ import Card from '../ui/Card.jsx'
 import Input from '../ui/Input.jsx'
 import Select from '../ui/Select.jsx'
 import { pipelineStages } from '../../data/pipelineStages.js'
-import { convertFromUsd } from '../../utils/currency.js'
 import { formatCurrency } from '../../utils/format.js'
 import { usePreferences } from '../../hooks/usePreferences.js'
 
@@ -19,7 +18,7 @@ function DealDrawer({ open, deal, onClose, onSave, onDelete }) {
     Promise.resolve().then(() => setDraft(deal))
   }, [deal])
 
-  const value = draft?.dealValueUsd ? convertFromUsd(draft.dealValueUsd, currency) : 0
+  const value = draft?.dealValueUsd ? Number(draft.dealValueUsd) || 0 : 0
 
   return (
     <AnimatePresence>

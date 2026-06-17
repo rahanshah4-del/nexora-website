@@ -1,13 +1,13 @@
 import Badge from '../ui/Badge.jsx'
 import Card from '../ui/Card.jsx'
-import { convertFromUsd } from '../../utils/currency.js'
 import { formatCurrency } from '../../utils/format.js'
 import { usePreferences } from '../../hooks/usePreferences.js'
 
 export default function AIInsightCards({ insights }) {
   const { currency } = usePreferences()
 
-  const expected = formatCurrency(convertFromUsd(insights.expectedRevenueUsd, currency), currency)
+  // Already in workspace currency — no FX conversion (matches Dashboard).
+  const expected = formatCurrency(insights.expectedRevenueUsd, currency)
 
   return (
     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
