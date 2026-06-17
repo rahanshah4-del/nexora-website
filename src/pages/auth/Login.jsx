@@ -1,12 +1,19 @@
 import { useState } from 'react'
 import { AiOutlineGoogle } from 'react-icons/ai'
 import {
+  HiOutlineAcademicCap,
   HiOutlineArrowRight,
+  HiOutlineBuildingStorefront,
+  HiOutlineChatBubbleLeftRight,
   HiOutlineEye,
   HiOutlineEyeSlash,
+  HiOutlineHomeModern,
   HiOutlineLockClosed,
   HiOutlineShieldCheck,
+  HiOutlineShoppingBag,
+  HiOutlineTruck,
   HiOutlineUser,
+  HiOutlineUserGroup,
 } from 'react-icons/hi2'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
@@ -19,6 +26,17 @@ import { trackAnalyticsEvent } from '../../lib/analyticsTracking.js'
 import { getCustomEmailVerificationStatus } from '../../lib/emailVerificationService.js'
 import { createPasswordResetLink, passwordResetEmail, sendWorkerEmail } from '../../lib/transactionalEmail.js'
 import { VERIFY_EMAIL_ROUTE, WORKSPACE_ROUTE } from '../../lib/authRouteState.js'
+
+// Modules showcased on the sign-in panel — mirrors the workspace catalog.
+const LOGIN_MODULES = [
+  { name: 'General CRM', icon: HiOutlineUserGroup, tone: 'bg-sky-500/20 text-sky-300' },
+  { name: 'Restaurant POS', icon: HiOutlineBuildingStorefront, tone: 'bg-rose-500/20 text-rose-300' },
+  { name: 'Retail / POS', icon: HiOutlineShoppingBag, tone: 'bg-amber-500/20 text-amber-300' },
+  { name: 'School ERP', icon: HiOutlineAcademicCap, tone: 'bg-emerald-500/20 text-emerald-300' },
+  { name: 'Property ERP', icon: HiOutlineHomeModern, tone: 'bg-violet-500/20 text-violet-300' },
+  { name: 'Transport / Rental', icon: HiOutlineTruck, tone: 'bg-cyan-500/20 text-cyan-300' },
+  { name: 'WhatsApp CRM', icon: HiOutlineChatBubbleLeftRight, tone: 'bg-green-500/20 text-green-300' },
+]
 
 export default function Login() {
   const { user, loading } = useAuth()
@@ -129,15 +147,53 @@ export default function Login() {
   }
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-slate-50 px-4 py-10 text-slate-950">
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute inset-x-0 top-0 h-96 bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.16),_transparent_45%),radial-gradient(circle_at_72%_8%,_rgba(129,140,248,0.16),_transparent_42%)]" />
-        <div className="absolute -right-24 top-24 h-80 w-80 rounded-full bg-gradient-to-br from-sky-300/25 to-violet-300/20 blur-3xl" />
-        <div className="absolute -left-24 bottom-0 h-80 w-80 rounded-full bg-gradient-to-tr from-cyan-200/25 to-slate-200/20 blur-3xl" />
-      </div>
+    <main className="relative min-h-screen overflow-hidden bg-slate-50 text-slate-950">
+      <div className="grid min-h-screen lg:grid-cols-2">
+        {/* Brand + modules showcase — desktop only */}
+        <aside className="relative hidden overflow-hidden bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 lg:flex lg:flex-col lg:justify-between lg:p-12">
+          <div className="pointer-events-none absolute inset-0">
+            <div className="absolute -left-24 top-10 h-72 w-72 rounded-full bg-sky-500/20 blur-3xl" />
+            <div className="absolute -right-10 bottom-10 h-80 w-80 rounded-full bg-violet-500/20 blur-3xl" />
+          </div>
 
-      <section className="relative mx-auto flex min-h-[calc(100vh-5rem)] max-w-md items-center justify-center">
-        <motion.div
+          <div className="relative">
+            <NexoraLogo />
+            <h2 className="mt-12 max-w-md text-3xl font-black leading-tight tracking-tight text-white xl:text-4xl">
+              One platform for every business you run.
+            </h2>
+            <p className="mt-4 max-w-md text-sm leading-6 text-slate-300">
+              CRM, Restaurant POS, Retail, School &amp; Property ERP, Transport and WhatsApp — manage them all from a single Nexora workspace.
+            </p>
+          </div>
+
+          <div className="relative mt-10 grid grid-cols-2 gap-3">
+            {LOGIN_MODULES.map((module) => (
+              <div
+                key={module.name}
+                className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-sm transition hover:border-white/20 hover:bg-white/10"
+              >
+                <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${module.tone}`}>
+                  <module.icon className="h-5 w-5" />
+                </span>
+                <span className="truncate text-sm font-semibold text-slate-100">{module.name}</span>
+              </div>
+            ))}
+          </div>
+
+          <p className="relative mt-10 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+            Nexora Solution — All rights reserved 2019-2026.
+          </p>
+        </aside>
+
+        {/* Sign-in form */}
+        <section className="relative flex min-h-screen flex-col px-4 py-8">
+          <div className="pointer-events-none absolute inset-0 lg:hidden">
+            <div className="absolute inset-x-0 top-0 h-96 bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.16),_transparent_45%),radial-gradient(circle_at_72%_8%,_rgba(129,140,248,0.16),_transparent_42%)]" />
+            <div className="absolute -right-24 top-24 h-80 w-80 rounded-full bg-gradient-to-br from-sky-300/25 to-violet-300/20 blur-3xl" />
+          </div>
+
+          <div className="relative mx-auto flex w-full max-w-md flex-1 items-center justify-center">
+            <motion.div
           initial={{ opacity: 0, y: 16, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.4, ease: 'easeOut' }}
@@ -267,11 +323,14 @@ export default function Login() {
             <HiOutlineShieldCheck className="h-4 w-4 text-emerald-500" />
             Enterprise-grade security · Your data is safe
           </div>
-        </motion.div>
-      </section>
-      <p className="relative -mt-6 text-center text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-        NEXORA SOLUTION — All rights reserved 2019-2026.
-      </p>
+            </motion.div>
+          </div>
+
+          <p className="relative mt-6 text-center text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+            NEXORA SOLUTION — All rights reserved 2019-2026.
+          </p>
+        </section>
+      </div>
     </main>
   )
 }
