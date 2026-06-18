@@ -11,6 +11,19 @@ service cloud.firestore {
         && request.auth.token.email in ['admin@nexora.com', 'rahanshah2@gmail.com'];
     }
 
+    function marketingAdmin() {
+      return backendAdmin()
+        || (
+          signedIn()
+          && request.auth.token.email_verified != false
+          && (
+            request.auth.token.admin == true
+            || request.auth.token.owner == true
+            || request.auth.token.role in ['admin', 'Admin', 'ADMIN', 'owner', 'Owner', 'OWNER']
+          )
+        );
+    }
+
     function userDoc(uid) {
       return get(/databases/$(database)/documents/users/$(uid)).data;
     }
@@ -472,6 +485,18 @@ service cloud.firestore {
 
     match /platformSubscriptions/{docId} {
       allow read, write: if backendAdmin();
+    }
+
+    match /marketingSubscribers/{docId} {
+      allow read, write: if marketingAdmin();
+    }
+
+    match /marketingCampaigns/{docId} {
+      allow read, write: if marketingAdmin();
+    }
+
+    match /marketingEmailLogs/{docId} {
+      allow read, write: if marketingAdmin();
     }
 
     match /announcements/{docId} {

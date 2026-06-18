@@ -28,7 +28,7 @@ function corsHeaders(request) {
   return {
     'Access-Control-Allow-Origin': allowedOrigin,
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Max-Age': '86400',
   }
 }
@@ -591,16 +591,171 @@ async function fetchResendWithTimeout(payload, apiKey) {
   }
 }
 
+// ----------------------------------------------------------------------------
+// Marketing campaign sending (admin-gated, batched). Keys stay server-side.
+// ----------------------------------------------------------------------------
+
+const DEFAULT_PROJECT_ID = 'nexora-business-suite'
+const DEFAULT_ADMIN_EMAILS = ['admin@nexora.com', 'rahanshah2@gmail.com']
+const FIREBASE_JWKS_URL = 'https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com'
+
+function base64UrlDecode(input) {
+  const padded = input.replace(/-/g, '+').replace(/_/g, '/')
+  const pad = padded.length % 4 ? '='.repeat(4 - (padded.length % 4)) : ''
+  return atob(padded + pad)
+}
+
+function base64UrlToBytes(input) {
+  const binary = base64UrlDecode(input)
+  const bytes = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i)
+  return bytes
+}
+
+// Verify a Firebase ID token (RS256) and return its payload, or throw.
+async function verifyFirebaseIdToken(idToken, projectId) {
+  const parts = String(idToken || '').split('.')
+  if (parts.length !== 3) throw new Error('Malformed token')
+  const [headerB64, payloadB64, sigB64] = parts
+  const header = JSON.parse(base64UrlDecode(headerB64))
+  const payload = JSON.parse(base64UrlDecode(payloadB64))
+
+  if (payload.aud !== projectId) throw new Error('Invalid audience')
+  if (payload.iss !== `https://securetoken.google.com/${projectId}`) throw new Error('Invalid issuer')
+  if (!payload.exp || payload.exp * 1000 < Date.now()) throw new Error('Token expired')
+  if (!payload.sub) throw new Error('Invalid subject')
+
+  const jwks = await (await fetch(FIREBASE_JWKS_URL)).json()
+  const jwk = (jwks.keys || []).find((key) => key.kid === header.kid)
+  if (!jwk) throw new Error('Signing key not found')
+
+  const cryptoKey = await crypto.subtle.importKey(
+    'jwk',
+    jwk,
+    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+    false,
+    ['verify'],
+  )
+  const valid = await crypto.subtle.verify(
+    'RSASSA-PKCS1-v1_5',
+    cryptoKey,
+    base64UrlToBytes(sigB64),
+    new TextEncoder().encode(`${headerB64}.${payloadB64}`),
+  )
+  if (!valid) throw new Error('Invalid signature')
+  return payload
+}
+
+function marketingFrom(env) {
+  const name = getString(env.FROM_NAME) || 'Nexora Solution'
+  const email = getString(env.FROM_EMAIL) || 'support@nexorasolution.online'
+  return `${name} <${email}>`
+}
+
+function chunk(list, size) {
+  const out = []
+  for (let i = 0; i < list.length; i += size) out.push(list.slice(i, i + size))
+  return out
+}
+
+// Send a marketing campaign in batches; returns per-recipient results.
+async function sendMarketingCampaign(request, env) {
+  const projectId = getString(env.FIREBASE_PROJECT_ID) || DEFAULT_PROJECT_ID
+  const adminEmails = new Set(
+    (getString(env.ADMIN_EMAILS) ? env.ADMIN_EMAILS.split(',') : DEFAULT_ADMIN_EMAILS).map((value) =>
+      String(value).trim().toLowerCase(),
+    ),
+  )
+
+  if (!ALLOWED_ORIGINS.has(request.headers.get('Origin') || '')) {
+    return jsonResponse(request, { success: false, error: 'Origin not allowed' }, 403)
+  }
+  if (!env.RESEND_API_KEY) {
+    return jsonResponse(request, { success: false, error: 'RESEND_API_KEY missing' }, 500)
+  }
+
+  // Admin gate: verify the caller's Firebase ID token + email allowlist.
+  const authHeader = request.headers.get('Authorization') || ''
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : ''
+  let claims
+  try {
+    claims = await verifyFirebaseIdToken(token, projectId)
+  } catch (error) {
+    return jsonResponse(request, { success: false, error: `Unauthorized: ${error?.message || 'invalid token'}` }, 401)
+  }
+  const email = String(claims.email || '').toLowerCase()
+  if (!claims.email_verified || !adminEmails.has(email)) {
+    return jsonResponse(request, { success: false, error: 'Forbidden: admin access required' }, 403)
+  }
+
+  let body
+  try {
+    body = await request.json()
+  } catch {
+    return jsonResponse(request, { success: false, error: 'Invalid JSON body.' }, 400)
+  }
+
+  const subject = getString(body?.subject)
+  const html = getString(body?.bodyHtml) || getString(body?.html)
+  const text = getString(body?.bodyText) || getString(body?.text)
+  if (!subject || !html) {
+    return jsonResponse(request, { success: false, error: 'subject and bodyHtml are required.' }, 400)
+  }
+
+  // Test mode: single recipient, no batching.
+  const testEmail = getString(body?.testEmail)
+  const recipients = testEmail
+    ? [{ email: testEmail }]
+    : (Array.isArray(body?.recipients) ? body.recipients : [])
+        .map((item) => (typeof item === 'string' ? { email: item } : item))
+        .filter((item) => getString(item?.email) && getString(item?.status || 'subscribed') !== 'unsubscribed')
+
+  if (!recipients.length) {
+    return jsonResponse(request, { success: false, error: 'No valid recipients.' }, 400)
+  }
+
+  const from = marketingFrom(env)
+  const batchSize = Math.min(Math.max(Number(body?.batchSize) || 20, 1), 50)
+  const results = []
+  for (const group of chunk(recipients, batchSize)) {
+    // eslint-disable-next-line no-await-in-loop
+    const settled = await Promise.all(
+      group.map(async (recipient) => {
+        const to = getString(recipient.email)
+        try {
+          const response = await fetchResendWithTimeout({ from, to, subject, html, text: text || undefined }, env.RESEND_API_KEY)
+          if (!response.ok) {
+            const data = await response.json().catch(() => null)
+            return { email: to, status: 'failed', error: getErrorMessage(data) }
+          }
+          return { email: to, status: 'sent', error: '' }
+        } catch (error) {
+          return { email: to, status: 'failed', error: error?.message || 'send failed' }
+        }
+      }),
+    )
+    results.push(...settled)
+  }
+
+  const sentCount = results.filter((r) => r.status === 'sent').length
+  const failedCount = results.length - sentCount
+  return jsonResponse(request, { success: true, test: Boolean(testEmail), sentCount, failedCount, results })
+}
+
 export default {
   async fetch(request, env) {
     try {
       const url = new URL(request.url)
 
-      if (request.method === 'OPTIONS' && url.pathname === '/send-email') {
+      if (request.method === 'OPTIONS' && (url.pathname === '/send-email' || url.pathname === '/send-marketing')) {
         return new Response(null, {
           status: 204,
           headers: corsHeaders(request),
         })
+      }
+
+      if (request.method === 'POST' && url.pathname === '/send-marketing') {
+        return sendMarketingCampaign(request, env)
       }
 
       if (request.method === 'GET' && url.pathname === '/health') {

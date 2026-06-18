@@ -76,6 +76,7 @@ import {
   formatPricingAmount,
 } from '../../crm/lib/whatsappPricing.js'
 import { buildApprovedSubscriptionPayload } from '../../lib/subscriptionApproval.js'
+import EmailMarketing from './EmailMarketing.jsx'
 
 export class ControlCentreErrorBoundary extends Component {
   state = { error: null }
@@ -151,6 +152,7 @@ const navGroups = [
   {
     label: 'Communication',
     items: [
+      ['emailMarketing', 'Email Marketing', HiOutlineEnvelope],
       ['announcements', 'Announcements', HiOutlineMegaphone],
       ['support', 'Support Tickets', HiOutlineLifebuoy],
     ],
@@ -2384,6 +2386,7 @@ export default function ControlCentre() {
     whatsappPricing: <WhatsappPricing />,
     moduleAccess: <ModuleAccess />,
     visitorAnalytics: <VisitorAnalytics />,
+    emailMarketing: <EmailMarketing embedded />,
     announcements: <Announcements />,
     support: <SupportTickets />,
     settings: <Settings />,
@@ -2407,12 +2410,15 @@ export default function ControlCentre() {
             <div key={group.label}>
               <p className="px-2 text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">{group.label}</p>
               <div className="mt-2 space-y-1">
-                {group.items.map(([key, label, Icon]) => (
-                  <button key={key} type="button" onClick={() => setActiveTab(key)} className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold transition ${activeTab === key ? 'bg-gradient-to-r from-blue-600 to-violet-600 text-white shadow-lg shadow-violet-950/30' : 'text-slate-200 hover:bg-white/10'}`}>
-                    <Icon className="h-5 w-5" />
-                    <span className="truncate">{label}</span>
-                  </button>
-                ))}
+                {group.items.map(([key, label, Icon]) => {
+                  const active = activeTab === key
+                  return (
+                    <button key={key} type="button" onClick={() => setActiveTab(key)} className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold transition ${active ? 'bg-gradient-to-r from-blue-600 to-violet-600 text-white shadow-lg shadow-violet-950/30' : 'text-slate-200 hover:bg-white/10'}`}>
+                      <Icon className="h-5 w-5" />
+                      <span className="truncate">{label}</span>
+                    </button>
+                  )
+                })}
               </div>
             </div>
           ))}
