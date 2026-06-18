@@ -37,7 +37,10 @@
     "globals": "^17.6.0",
     "postcss": "^8.5.15",
     "tailwindcss": "^3.4.4",
-    "vite": "^8.0.12",
-    "wrangler": "^4.97.0"
+    "vite": "8.0.13",
+    "wrangler": "4.97.0"
+  },
+  "overrides": {
+    "esbuild": "0.27.3"
   }
 }

@@ -5,7 +5,11 @@ const DEFAULT_LOGIN_URL = `${SITE_URL}/login`
 const RESEND_TIMEOUT_MS = 10000
 const ALLOWED_ORIGINS = new Set([
   'https://nexorasolution.online',
+  'https://www.nexorasolution.online',
+  'https://nexora-business-suite.web.app',
+  'https://nexora-business-suite.firebaseapp.com',
   'http://localhost:5173',
+  'http://localhost:5174',
 ])
 
 const BRAND = {
