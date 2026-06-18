@@ -7,6 +7,7 @@
 import {
   addDoc,
   collection,
+  collectionGroup,
   doc,
   getDocs,
   limit as fsLimit,
@@ -37,7 +38,7 @@ export const MODULE_OPTIONS = [
 ]
 
 export const AUDIENCE_OPTIONS = [
-  { value: 'all', label: 'All subscribers' },
+  { value: 'all', label: 'All contacts' },
   { value: 'lead', label: 'Leads' },
   { value: 'website', label: 'Website signups' },
   { value: 'trial', label: 'Trial users' },
@@ -48,6 +49,106 @@ export const AUDIENCE_OPTIONS = [
 
 function clean(value) {
   return typeof value === 'string' ? value.trim() : ''
+}
+
+function lower(value) {
+  return clean(value).toLowerCase()
+}
+
+function firstString(...values) {
+  return values.map(clean).find(Boolean) || ''
+}
+
+function moduleFromValue(value) {
+  const text = lower(value)
+  if (text.includes('restaurant') || text.includes('pos')) return 'restaurant'
+  if (text.includes('transport') || text.includes('fleet')) return 'transport'
+  if (text.includes('school') || text.includes('erp')) return 'school'
+  if (text.includes('property') || text.includes('real estate')) return 'property'
+  if (text.includes('crm') || text.includes('sales')) return 'crm'
+  return ''
+}
+
+function isTrialContact(row = {}) {
+  return row.isTrialActive === true
+    || ['trial', 'free_trial'].includes(lower(row.subscriptionStatus || row.planStatus || row.status))
+    || Boolean(row.trialEndsAt || row.trialStartedAt || row.trialStartAt)
+}
+
+function normalizeContact(row = {}, fallback = {}) {
+  const email = lower(firstString(row.email, row.userEmail, row.clientEmail, row.ownerEmail, row.contactEmail, row.customerEmail))
+  if (!email) return null
+  const source = lower(fallback.source || row.source || row.type || row.leadSource) || 'manual'
+  const moduleInterest = moduleFromValue(
+    firstString(
+      fallback.moduleInterest,
+      row.moduleInterest,
+      row.businessType,
+      row.selectedBusinessType,
+      row.primaryBusinessType,
+      row.currentBusinessType,
+      row.module,
+      row.product,
+      row.planName,
+    ),
+  ) || 'crm'
+  return {
+    id: fallback.id || row.id || email,
+    email,
+    name: firstString(row.name, row.fullName, row.displayName, row.clientName, row.customerName, row.companyName, row.workspaceName, row.businessName),
+    phone: firstString(row.phone, row.phoneNumber, row.mobile, row.whatsapp),
+    source,
+    moduleInterest,
+    status: lower(row.status || fallback.status || 'subscribed'),
+    createdAt: row.createdAt || row.createdOn || row.signupAt || null,
+    origin: fallback.origin || source,
+  }
+}
+
+function mergeContacts(groups) {
+  const unsubscribedEmails = new Set()
+  groups.flat().forEach((contact) => {
+    if (contact?.email && lower(contact.status) === 'unsubscribed') unsubscribedEmails.add(contact.email)
+  })
+  const map = new Map()
+  groups.flat().forEach((contact) => {
+    if (!contact?.email || unsubscribedEmails.has(contact.email)) return
+    const existing = map.get(contact.email)
+    if (!existing) {
+      map.set(contact.email, contact)
+      return
+    }
+    map.set(contact.email, {
+      ...existing,
+      ...contact,
+      name: existing.name || contact.name,
+      phone: existing.phone || contact.phone,
+      moduleInterest: existing.moduleInterest !== 'crm' ? existing.moduleInterest : contact.moduleInterest || existing.moduleInterest,
+      source: existing.source === 'manual' ? contact.source || existing.source : existing.source,
+      origin: [existing.origin, contact.origin].filter(Boolean).join(', '),
+    })
+  })
+  return Array.from(map.values())
+}
+
+async function safeDocs(collectionName, max = 1000) {
+  if (!db) return []
+  try {
+    const snap = await getDocs(query(collection(db, collectionName), fsLimit(max)))
+    return snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+  } catch {
+    return []
+  }
+}
+
+async function safeGroupDocs(groupName, max = 1000) {
+  if (!db) return []
+  try {
+    const snap = await getDocs(query(collectionGroup(db, groupName), fsLimit(max)))
+    return snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+  } catch {
+    return []
+  }
 }
 
 // ---- Subscribers ---------------------------------------------------------
@@ -67,6 +168,31 @@ export async function listSubscribers({ module = 'all', max = 1000 } = {}) {
       .map((d) => ({ id: d.id, ...d.data() }))
       .filter((row) => module === 'all' || row.moduleInterest === module)
   }
+}
+
+export async function listMarketingContacts({ module = 'all', max = 1000 } = {}) {
+  if (!db) return []
+  const [subscribers, users, workspaces, upgradeRequests, leads, customers] = await Promise.all([
+    listSubscribers({ module: 'all', max }),
+    safeDocs('users', max),
+    safeDocs('workspaces', max),
+    safeDocs('upgradeRequests', max),
+    safeGroupDocs('leads', max),
+    safeGroupDocs('customers', max),
+  ])
+
+  const contacts = mergeContacts([
+    subscribers.map((row) => normalizeContact(row, { source: row.source || 'manual', origin: 'marketingSubscribers' })),
+    users.map((row) => normalizeContact(row, { source: isTrialContact(row) ? 'trial' : 'client', origin: 'users' })),
+    workspaces.map((row) => normalizeContact(row, { source: isTrialContact(row) ? 'trial' : 'client', origin: 'workspaces' })),
+    upgradeRequests.map((row) => normalizeContact(row, { source: 'client', origin: 'upgradeRequests' })),
+    leads.map((row) => normalizeContact(row, { source: 'lead', origin: 'leads' })),
+    customers.map((row) => normalizeContact(row, { source: 'client', origin: 'customers' })),
+  ])
+    .filter(Boolean)
+    .filter((contact) => module === 'all' || contact.moduleInterest === module)
+
+  return contacts.sort((a, b) => clean(b.createdAt?.seconds || b.createdAt || '').localeCompare(clean(a.createdAt?.seconds || a.createdAt || '')))
 }
 
 export async function addSubscriber({ email, name, phone, source = 'manual', moduleInterest = 'crm' }) {
@@ -104,6 +230,7 @@ function matchesAudience(subscriber, audienceType) {
   const source = clean(subscriber.source)
   if (audienceType === 'lead') return ['lead', 'leads', 'website'].includes(source)
   if (audienceType === 'client') return ['client', 'clients', 'crm'].includes(source)
+  if (audienceType === 'trial') return ['trial', 'trial_user', 'trial users'].includes(source)
   return source === audienceType
 }
 

@@ -25,6 +25,70 @@ function clean(value) {
   return typeof value === 'string' ? value.trim() : ''
 }
 
+function lower(value) {
+  return clean(value).toLowerCase()
+}
+
+function firstString(...values) {
+  return values.map(clean).find(Boolean) || ''
+}
+
+function moduleFromValue(value) {
+  const text = lower(value)
+  if (text.includes('restaurant') || text.includes('pos')) return 'restaurant'
+  if (text.includes('transport') || text.includes('fleet')) return 'transport'
+  if (text.includes('school') || text.includes('erp')) return 'school'
+  if (text.includes('property') || text.includes('real estate')) return 'property'
+  if (text.includes('crm') || text.includes('sales')) return 'crm'
+  return ''
+}
+
+function isTrialRecipient(row = {}) {
+  return row.isTrialActive === true
+    || ['trial', 'free_trial'].includes(lower(row.subscriptionStatus || row.planStatus || row.status))
+    || Boolean(row.trialEndsAt || row.trialStartedAt || row.trialStartAt)
+}
+
+function normalizeRecipient(row = {}, fallback = {}) {
+  const email = lower(firstString(row.email, row.userEmail, row.clientEmail, row.ownerEmail, row.contactEmail, row.customerEmail))
+  if (!email) return null
+  const source = lower(fallback.source || row.source || row.type || row.leadSource) || 'manual'
+  const moduleInterest = moduleFromValue(
+    firstString(
+      fallback.moduleInterest,
+      row.moduleInterest,
+      row.businessType,
+      row.selectedBusinessType,
+      row.primaryBusinessType,
+      row.currentBusinessType,
+      row.module,
+      row.product,
+      row.planName,
+    ),
+  ) || 'crm'
+  return {
+    email,
+    name: firstString(row.name, row.fullName, row.displayName, row.clientName, row.customerName, row.companyName, row.workspaceName, row.businessName),
+    source,
+    moduleInterest,
+    status: lower(row.status || fallback.status || 'subscribed'),
+  }
+}
+
+function mergeRecipients(groups) {
+  const unsubscribedEmails = new Set()
+  groups.flat().forEach((recipient) => {
+    if (recipient?.email && lower(recipient.status) === 'unsubscribed') unsubscribedEmails.add(recipient.email)
+  })
+  const map = new Map()
+  groups.flat().forEach((recipient) => {
+    if (!recipient?.email || unsubscribedEmails.has(recipient.email)) return
+    const existing = map.get(recipient.email)
+    map.set(recipient.email, existing ? { ...existing, ...recipient, name: existing.name || recipient.name } : recipient)
+  })
+  return Array.from(map.values())
+}
+
 function sender() {
   return `${FROM_NAME} <${FROM_EMAIL}>`
 }
@@ -85,29 +149,37 @@ async function fetchRecipients({ audienceType, selectedModule, testEmail }) {
     return [{ email: testEmail, name: 'Test recipient', source: 'test', moduleInterest: selectedModule, status: 'subscribed' }]
   }
 
-  const snap = await db.collection('marketingSubscribers').where('status', '==', 'subscribed').get()
-  const seen = new Set()
-  return snap.docs
-    .map((doc) => ({ id: doc.id, ...doc.data() }))
-    .map((subscriber) => ({
-      email: clean(subscriber.email).toLowerCase(),
-      name: clean(subscriber.name),
-      source: clean(subscriber.source),
-      moduleInterest: clean(subscriber.moduleInterest),
-      status: clean(subscriber.status || 'subscribed'),
-    }))
+  const [subscribersSnap, usersSnap, workspacesSnap, upgradesSnap, leadsSnap, customersSnap] = await Promise.all([
+    db.collection('marketingSubscribers').limit(5000).get(),
+    db.collection('users').limit(5000).get(),
+    db.collection('workspaces').limit(5000).get(),
+    db.collection('upgradeRequests').limit(2000).get(),
+    db.collectionGroup('leads').limit(5000).get(),
+    db.collectionGroup('customers').limit(5000).get(),
+  ])
+
+  return mergeRecipients([
+    subscribersSnap.docs.map((doc) => normalizeRecipient(doc.data(), { source: doc.data().source || 'manual' })),
+    usersSnap.docs.map((doc) => {
+      const row = doc.data()
+      return normalizeRecipient(row, { source: isTrialRecipient(row) ? 'trial' : 'client' })
+    }),
+    workspacesSnap.docs.map((doc) => {
+      const row = doc.data()
+      return normalizeRecipient(row, { source: isTrialRecipient(row) ? 'trial' : 'client' })
+    }),
+    upgradesSnap.docs.map((doc) => normalizeRecipient(doc.data(), { source: 'client' })),
+    leadsSnap.docs.map((doc) => normalizeRecipient(doc.data(), { source: 'lead' })),
+    customersSnap.docs.map((doc) => normalizeRecipient(doc.data(), { source: 'client' })),
+  ])
     .filter((subscriber) => subscriber.email && subscriber.status !== 'unsubscribed')
     .filter((subscriber) => selectedModule === 'all' || subscriber.moduleInterest === selectedModule)
     .filter((subscriber) => {
       if (audienceType === 'all') return true
       if (audienceType === 'lead') return ['lead', 'leads', 'website'].includes(subscriber.source)
       if (audienceType === 'client') return ['client', 'clients', 'crm'].includes(subscriber.source)
+      if (audienceType === 'trial') return ['trial', 'trial_user', 'trial users'].includes(subscriber.source)
       return subscriber.source === audienceType
-    })
-    .filter((subscriber) => {
-      if (seen.has(subscriber.email)) return false
-      seen.add(subscriber.email)
-      return true
     })
 }
 

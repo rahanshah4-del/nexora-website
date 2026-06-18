@@ -32,7 +32,7 @@ export const MARKETING_TEMPLATES = [
   {
     id: 'restaurant_promo',
     name: 'Restaurant POS promotion',
-    subject: 'Run your restaurant smarter with Nexora Restaurant POS 🍽️',
+    subject: 'Run your restaurant smarter with Nexora Restaurant POS',
     bodyHtml: wrap(
       'Faster orders. Happier guests.',
       'Hi {{name}}, manage dine-in, takeaway, KOT, tables and billing from one screen with <b>Nexora Restaurant POS</b>. Start your free trial today.',
@@ -43,7 +43,7 @@ export const MARKETING_TEMPLATES = [
   {
     id: 'transport_promo',
     name: 'Transport ERP promotion',
-    subject: 'Fleet, bookings & payments in one place — Nexora Transport 🚚',
+    subject: 'Fleet, bookings and payments in one place with Nexora Transport',
     bodyHtml: wrap(
       'Command your entire fleet.',
       'Hi {{name}}, track vehicles, bookings, drivers and payments with <b>Nexora Transport ERP</b>. Cut paperwork, grow margins.',
@@ -54,7 +54,7 @@ export const MARKETING_TEMPLATES = [
   {
     id: 'crm_promo',
     name: 'CRM promotion',
-    subject: 'Close more deals with Nexora CRM 📈',
+    subject: 'Close more deals with Nexora CRM',
     bodyHtml: wrap(
       'Every lead, deal and follow-up — organized.',
       'Hi {{name}}, capture leads, manage pipelines, send invoices and never miss a follow-up with <b>Nexora CRM</b>.',
@@ -65,7 +65,7 @@ export const MARKETING_TEMPLATES = [
   {
     id: 'school_promo',
     name: 'School ERP promotion',
-    subject: 'Run your school effortlessly with Nexora School ERP 🎓',
+    subject: 'Run your school effortlessly with Nexora School ERP',
     bodyHtml: wrap(
       'Fees, students, staff & reports — handled.',
       'Hi {{name}}, manage admissions, fee collection, attendance and reports in one secure <b>Nexora School ERP</b> workspace.',
@@ -76,7 +76,7 @@ export const MARKETING_TEMPLATES = [
   {
     id: 'trial_reminder',
     name: 'Trial reminder',
-    subject: 'Your Nexora free trial is waiting ⏳',
+    subject: 'Your Nexora free trial is waiting',
     bodyHtml: wrap(
       'Pick up where you left off.',
       'Hi {{name}}, your Nexora trial is still active. Finish setting up your workspace and explore every module before it ends.',
@@ -88,7 +88,7 @@ export const MARKETING_TEMPLATES = [
   {
     id: 'payment_reminder',
     name: 'Payment reminder',
-    subject: 'Friendly reminder: your Nexora payment is due 💳',
+    subject: 'Friendly reminder: your Nexora payment is due',
     bodyHtml: wrap(
       'Keep your workspace active.',
       'Hi {{name}}, this is a friendly reminder that a payment is due on your Nexora account. Renew now to avoid any interruption.',
@@ -96,5 +96,77 @@ export const MARKETING_TEMPLATES = [
       'https://nexorasolution.online/upgrade-business',
     ),
     bodyText: text(['Hi {{name}},', 'A payment is due on your Nexora account. Renew: https://nexorasolution.online/upgrade-business']),
+  },
+  {
+    id: 'lead_nurture',
+    name: 'Lead follow-up',
+    subject: 'Still exploring business software? Nexora can help',
+    bodyHtml: wrap(
+      'Turn interest into a working system.',
+      'Hi {{name}}, thanks for checking out Nexora. Our team can help you choose the right module, set up your workspace and migrate your daily workflow into one dashboard.',
+      'Talk to Nexora',
+      'https://nexorasolution.online/contact',
+    ),
+    bodyText: text(['Hi {{name}},', 'Thanks for checking out Nexora. We can help you choose the right module and set up your workspace.', 'Contact: https://nexorasolution.online/contact']),
+  },
+  {
+    id: 'trial_activation',
+    name: 'Trial activation guide',
+    subject: 'Your Nexora trial setup checklist',
+    bodyHtml: wrap(
+      'Get value from your trial today.',
+      'Hi {{name}}, complete your profile, add your first customer, create a sample invoice and explore reports. These steps help you see how Nexora fits your business before upgrading.',
+      'Open workspace',
+      'https://nexorasolution.online/workspace',
+    ),
+    bodyText: text(['Hi {{name}},', 'Complete your profile, add a customer, create a sample invoice and explore reports.', 'Open workspace: https://nexorasolution.online/workspace']),
+  },
+  {
+    id: 'inactive_trial',
+    name: 'Inactive trial winback',
+    subject: 'Need help finishing your Nexora setup?',
+    bodyHtml: wrap(
+      'We can set it up with you.',
+      'Hi {{name}}, your trial is still available. If setup felt busy, reply to this email and our team can guide you through module selection, staff access and first invoice/report setup.',
+      'Resume setup',
+      'https://nexorasolution.online/workspace',
+    ),
+    bodyText: text(['Hi {{name}},', 'Your trial is still available. Our team can help with module selection, staff access and first setup.', 'Resume: https://nexorasolution.online/workspace']),
+  },
+  {
+    id: 'client_upgrade',
+    name: 'Client upgrade offer',
+    subject: 'Unlock more Nexora modules for your business',
+    bodyHtml: wrap(
+      'Scale beyond one workflow.',
+      'Hi {{name}}, your Nexora workspace can grow with extra modules, advanced reports, staff controls and priority support. Upgrade when you are ready to centralize more operations.',
+      'View upgrade options',
+      'https://nexorasolution.online/upgrade-business',
+    ),
+    bodyText: text(['Hi {{name}},', 'Unlock more Nexora modules, advanced reports, staff controls and priority support.', 'Upgrade: https://nexorasolution.online/upgrade-business']),
+  },
+  {
+    id: 'property_promo',
+    name: 'Property ERP promotion',
+    subject: 'Manage properties, contracts and payments with Nexora',
+    bodyHtml: wrap(
+      'Property operations in one place.',
+      'Hi {{name}}, Nexora Property ERP helps you organize tenants, contracts, maintenance, invoices and payments without scattered files or spreadsheets.',
+      'Explore Property ERP',
+      'https://nexorasolution.online/solutions/property',
+    ),
+    bodyText: text(['Hi {{name}},', 'Organize tenants, contracts, maintenance, invoices and payments with Nexora Property ERP.']),
+  },
+  {
+    id: 'support_checkin',
+    name: 'Customer success check-in',
+    subject: 'How is your Nexora workspace going?',
+    bodyHtml: wrap(
+      'A quick check-in from Nexora.',
+      'Hi {{name}}, we wanted to check if your workspace is running smoothly. If you need help with reports, staff permissions, invoices or module setup, our team is ready to assist.',
+      'Contact support',
+      'https://nexorasolution.online/contact',
+    ),
+    bodyText: text(['Hi {{name}},', 'We wanted to check if your workspace is running smoothly. Contact us for help with reports, permissions, invoices or setup.']),
   },
 ]

@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import {
   addSubscriber,
   filterRecipients,
+  listMarketingContacts,
   listCampaigns,
-  listSubscribers,
   sendCampaign,
   sendTestEmail,
   setSubscriberStatus,
@@ -52,7 +52,7 @@ export default function EmailMarketing({ embedded = false }) {
   async function refreshSubscribers() {
     setLoadingSubs(true)
     try {
-      setSubscribers(await listSubscribers({ module: moduleFilter }))
+      setSubscribers(await listMarketingContacts({ module: moduleFilter }))
     } catch (error) {
       notify(error?.message || 'Could not load subscribers.')
     } finally {
@@ -158,7 +158,7 @@ export default function EmailMarketing({ embedded = false }) {
           <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
             <div className="rounded-2xl border border-slate-200 bg-white p-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <h2 className="text-sm font-bold text-slate-700">Subscribers ({subscribers.length})</h2>
+                <h2 className="text-sm font-bold text-slate-700">Audience contacts ({subscribers.length})</h2>
                 <div className="flex items-center gap-2">
                   <select value={moduleFilter} onChange={(e) => setModuleFilter(e.target.value)} className="h-9 rounded-lg border border-slate-200 px-2 text-[13px] font-medium">
                     {MODULE_OPTIONS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
@@ -175,16 +175,20 @@ export default function EmailMarketing({ embedded = false }) {
                     {loadingSubs ? (
                       <tr><td colSpan={6} className="py-6 text-center text-slate-400">Loading…</td></tr>
                     ) : subscribers.length === 0 ? (
-                      <tr><td colSpan={6} className="py-6 text-center text-slate-400">No subscribers yet.</td></tr>
+                      <tr><td colSpan={6} className="py-6 text-center text-slate-400">No contacts found for this module.</td></tr>
                     ) : subscribers.map((s) => (
                       <tr key={s.id} className="border-t border-slate-100">
                         <td className="py-2 font-medium text-slate-800">{s.email}</td>
                         <td className="text-slate-600">{s.name || '—'}</td>
                         <td className="text-slate-600">{s.moduleInterest || '—'}</td>
-                        <td className="text-slate-600">{s.source || '—'}</td>
+                        <td className="text-slate-600">{s.source || s.origin || '—'}</td>
                         <td><StatusBadge status={s.status} /></td>
                         <td className="text-right">
-                          <button type="button" onClick={() => handleUnsubscribe(s)} className="text-[12px] font-bold text-blue-700 hover:underline">{s.status === 'unsubscribed' ? 'Re-subscribe' : 'Unsubscribe'}</button>
+                          {s.origin === 'marketingSubscribers' || !s.origin ? (
+                            <button type="button" onClick={() => handleUnsubscribe(s)} className="text-[12px] font-bold text-blue-700 hover:underline">{s.status === 'unsubscribed' ? 'Re-subscribe' : 'Unsubscribe'}</button>
+                          ) : (
+                            <span className="text-[12px] font-semibold text-slate-400">Synced</span>
+                          )}
                         </td>
                       </tr>
                     ))}
