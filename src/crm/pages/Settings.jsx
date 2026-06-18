@@ -1,12 +1,13 @@
 import { motion } from 'framer-motion'
 import { useEffect, useRef, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import {
-  HiOutlineArrowRightOnRectangle,
   HiOutlineBuildingOffice2,
   HiOutlineCheckCircle,
   HiOutlineChatBubbleLeftRight,
   HiOutlineDocumentText,
+  HiOutlinePaintBrush,
+  HiOutlinePrinter,
   HiOutlineTruck,
 } from 'react-icons/hi2'
 import Button from '../components/ui/Button.jsx'
@@ -22,14 +23,21 @@ import { useBusinessSettings } from '../hooks/useBusinessSettings.js'
 import { useWorkspaceAccess } from '../hooks/useWorkspaceAccess.js'
 import { useWhatsappSettings } from '../hooks/useWhatsappSettings.js'
 import { useUser } from '../hooks/useUser.js'
-import { useAuth } from '../hooks/useAuth.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
-import { labelForBusinessType, packageNameForPlan, normalizeBusinessType } from '../data/moduleAccess.js'
+import { labelForBusinessType, normalizeBusinessType } from '../data/moduleAccess.js'
 import { whatsappCapabilities, whatsappTrialStatus } from '../lib/whatsappApiTrial.js'
 import ConnectWhatsappModal from '../components/whatsapp/ConnectWhatsappModal.jsx'
 import ConfirmDialog from '../components/whatsapp/ConfirmDialog.jsx'
 import { RestaurantBillPreview, RestaurantKotPreview } from '../components/restaurant/RestaurantPrintPreview.jsx'
 import { buildBillPrintData, buildKotPrintData, calculateRestaurantBill } from '../lib/restaurantPosCalculations.js'
+import {
+  defaultPrinterSettings,
+  loadStoredUsbDeviceInfo,
+  normalizePrinterSettings,
+  printThermalText,
+  requestThermalPrinter,
+  webUsbSupported,
+} from '../lib/printerService.js'
 
 function Field({ label, children, className = '' }) {
   return (
@@ -52,6 +60,444 @@ function StatRow({ label, value }) {
       <span className="font-semibold text-slate-500 dark:text-slate-400">{label}</span>
       <span className="min-w-0 truncate text-right font-semibold text-slate-950 dark:text-white">{value}</span>
     </div>
+  )
+}
+
+function moduleSettingsCopy(businessType) {
+  const normalized = normalizeBusinessType(businessType)
+  if (normalized === 'School ERP') {
+    return {
+      badge: 'School ERP',
+      title: 'School / Campus setup',
+      subtitle: 'These details print on fee bills, school reports, attendance PDFs, receipts, and vouchers.',
+      nameLabel: 'School / Campus Name',
+      namePlaceholder: 'Nexora School',
+      taxLabel: 'Registration / NTN',
+      invoicePrefixLabel: 'Fee Bill Prefix',
+      invoicePrefixPlaceholder: 'FEE',
+      reportPrefixPlaceholder: 'SCH',
+      footerPlaceholder: 'Prepared by school administration',
+      addressLabel: 'Campus Address',
+      phoneLabel: 'School Phone',
+    }
+  }
+  if (normalized === 'Restaurant POS') {
+    return {
+      badge: 'Restaurant POS',
+      title: 'Restaurant workspace setup',
+      subtitle: 'These details print on bills, KOT, closing reports, receipts, and vouchers.',
+      nameLabel: 'Restaurant / Outlet Name',
+      namePlaceholder: 'Nexora Restaurant',
+      taxLabel: 'NTN / VAT / GST Number',
+      invoicePrefixLabel: 'Bill Prefix',
+      invoicePrefixPlaceholder: 'BILL',
+      reportPrefixPlaceholder: 'RPT',
+      footerPlaceholder: 'Thank you for dining with us',
+      addressLabel: 'Restaurant Address',
+      phoneLabel: 'Restaurant Phone',
+    }
+  }
+  if (normalized === 'Transport / Rental') {
+    return {
+      badge: 'Transport',
+      title: 'Transport company setup',
+      subtitle: 'These details print on rental bills, fleet reports, payment slips, and vouchers.',
+      nameLabel: 'Transport Company Name',
+      namePlaceholder: 'Nexora Transport',
+      taxLabel: 'NTN / Registration Number',
+      invoicePrefixLabel: 'Rental Invoice Prefix',
+      invoicePrefixPlaceholder: 'TRN',
+      reportPrefixPlaceholder: 'TRP',
+      footerPlaceholder: 'Fleet report prepared by Nexora Solution',
+      addressLabel: 'Office / Yard Address',
+      phoneLabel: 'Dispatch Phone',
+    }
+  }
+  if (normalized === 'Property ERP') {
+    return {
+      badge: 'Property ERP',
+      title: 'Property business setup',
+      subtitle: 'These details print on rent bills, owner reports, tenant statements, contracts, and vouchers.',
+      nameLabel: 'Property Business Name',
+      namePlaceholder: 'Nexora Properties',
+      taxLabel: 'NTN / Registration Number',
+      invoicePrefixLabel: 'Rent Bill Prefix',
+      invoicePrefixPlaceholder: 'RENT',
+      reportPrefixPlaceholder: 'PRP',
+      footerPlaceholder: 'Property statement prepared by Nexora Solution',
+      addressLabel: 'Office Address',
+      phoneLabel: 'Office Phone',
+    }
+  }
+  if (normalized === 'WhatsApp CRM') {
+    return {
+      badge: 'WhatsApp CRM',
+      title: 'WhatsApp CRM workspace setup',
+      subtitle: 'These details appear on reports, customer summaries, campaign exports, and vouchers.',
+      nameLabel: 'Business Display Name',
+      namePlaceholder: 'Nexora WhatsApp CRM',
+      taxLabel: 'Registration / Tax Number',
+      invoicePrefixLabel: 'Invoice Prefix',
+      invoicePrefixPlaceholder: 'INV',
+      reportPrefixPlaceholder: 'WAP',
+      footerPlaceholder: 'Generated by Nexora WhatsApp CRM',
+      addressLabel: 'Business Address',
+      phoneLabel: 'Business Phone',
+    }
+  }
+  return {
+    badge: 'Sales Hub',
+    title: 'Company / Workspace setup',
+    subtitle: 'These details print on invoices, reports, account statements, receipts, and vouchers.',
+    nameLabel: 'Company / Workspace Name',
+    namePlaceholder: 'Nexora Solution',
+    taxLabel: 'NTN / Tax ID',
+    invoicePrefixLabel: 'Invoice Prefix',
+    invoicePrefixPlaceholder: 'INV',
+    reportPrefixPlaceholder: 'RPT',
+    footerPlaceholder: 'Thank you for your business',
+    addressLabel: 'Business Address',
+    phoneLabel: 'Business Phone',
+  }
+}
+
+function WorkspaceSetupCard({ businessType, draft, setDraft, currency, setCurrency, canManageSettings }) {
+  const copy = moduleSettingsCopy(businessType)
+  const normalized = normalizeBusinessType(businessType)
+  const themeColor = draft.themeColor || '#2563eb'
+  const documentTargets = normalized === 'Restaurant POS'
+    ? ['Bill', 'KOT', 'Closing Report', 'Voucher']
+    : normalized === 'School ERP'
+      ? ['Fee Bill', 'Attendance PDF', 'Report', 'Voucher']
+      : normalized === 'Transport / Rental'
+        ? ['Rental Bill', 'Fleet Report', 'Payment Slip', 'Voucher']
+        : normalized === 'Property ERP'
+          ? ['Rent Bill', 'Contract', 'Owner Report', 'Voucher']
+          : ['Invoice', 'Report', 'Statement', 'Voucher']
+
+  function patch(values) {
+    setDraft((current) => ({ ...current, ...values }))
+  }
+
+  return (
+    <Card id="business-profile" className="scroll-mt-28 overflow-hidden p-0">
+      <div className="border-b border-slate-200 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 p-5 text-white sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <Badge variant="info">{copy.badge}</Badge>
+            <h2 className="mt-3 text-xl font-black tracking-tight">{copy.title}</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">{copy.subtitle}</p>
+          </div>
+          <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-white/10 text-white">
+            <HiOutlineBuildingOffice2 className="h-7 w-7" />
+          </div>
+        </div>
+        <div className="mt-5 grid gap-2 sm:grid-cols-4">
+          {documentTargets.map((target) => (
+            <div key={target} className="rounded-2xl border border-white/10 bg-white/10 px-3 py-2">
+              <p className="text-xs font-bold text-slate-200">{target}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid gap-5 p-5 sm:p-6 xl:grid-cols-[1fr_280px]">
+        <div className="min-w-0 space-y-5">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">Brand identity</p>
+            <div className="mt-3 grid gap-4 sm:grid-cols-2">
+              <Field label={copy.nameLabel} className="sm:col-span-2">
+                <Input
+                  value={draft.businessName || draft.companyName || draft.schoolName || ''}
+                  onChange={(event) => {
+                    const value = event.target.value
+                    patch({
+                      businessName: value,
+                      companyName: value,
+                      schoolName: normalized === 'School ERP' ? value : draft.schoolName,
+                    })
+                  }}
+                  placeholder={copy.namePlaceholder}
+                  readOnly={!canManageSettings}
+                />
+              </Field>
+              <Field label={copy.addressLabel} className="sm:col-span-2">
+                <Input value={draft.address || ''} onChange={(event) => patch({ address: event.target.value })} placeholder="Full address for printable documents" readOnly={!canManageSettings} />
+              </Field>
+              <Field label={copy.phoneLabel}>
+                <Input value={draft.phone || ''} onChange={(event) => patch({ phone: event.target.value })} placeholder="+92..." readOnly={!canManageSettings} />
+              </Field>
+              <Field label="Email">
+                <Input value={draft.email || ''} onChange={(event) => patch({ email: event.target.value })} placeholder="support@example.com" readOnly={!canManageSettings} />
+              </Field>
+              <Field label={copy.taxLabel}>
+                <Input value={draft.taxNumber || ''} onChange={(event) => patch({ taxNumber: event.target.value })} placeholder={copy.taxLabel} readOnly={!canManageSettings} />
+              </Field>
+              <Field label="Currency">
+                <Select value={currency} onChange={(event) => setCurrency(event.target.value)} disabled={!canManageSettings}>
+                  {supportedCurrencies.map((item) => (
+                    <option key={item.code} value={item.code}>
+                      {item.label}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+            </div>
+          </div>
+
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">Document numbering & footer</p>
+            <div className="mt-3 grid gap-4 sm:grid-cols-2">
+              <Field label={copy.invoicePrefixLabel}>
+                <Input value={draft.invoicePrefix || ''} onChange={(event) => patch({ invoicePrefix: event.target.value })} placeholder={copy.invoicePrefixPlaceholder} readOnly={!canManageSettings} />
+              </Field>
+              <Field label="Report Prefix">
+                <Input value={draft.reportPrefix || ''} onChange={(event) => patch({ reportPrefix: event.target.value })} placeholder={copy.reportPrefixPlaceholder} readOnly={!canManageSettings} />
+              </Field>
+              <Field label="Receipt / Voucher Footer" className="sm:col-span-2">
+                <Input value={draft.receiptFooter || ''} onChange={(event) => patch({ receiptFooter: event.target.value })} placeholder={copy.footerPlaceholder} readOnly={!canManageSettings} />
+              </Field>
+            </div>
+          </div>
+
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">Visual branding</p>
+            <div className="mt-3 grid gap-4 sm:grid-cols-2">
+              <Field label="Theme Color">
+                <Input type="color" value={themeColor} onChange={(event) => patch({ themeColor: event.target.value })} disabled={!canManageSettings} />
+              </Field>
+              <Field label="Logo URL">
+                <Input value={draft.logoUrl || ''} onChange={(event) => patch({ logoUrl: event.target.value })} placeholder="https://..." readOnly={!canManageSettings} />
+              </Field>
+              <Field label="Authorized Signature URL" className="sm:col-span-2">
+                <Input value={draft.signatureUrl || ''} onChange={(event) => patch({ signatureUrl: event.target.value })} placeholder="https://..." readOnly={!canManageSettings} />
+              </Field>
+            </div>
+          </div>
+        </div>
+
+        <div className="min-w-0 space-y-3">
+          <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+            <div className="flex items-center gap-3">
+              <div className="grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-2xl border border-slate-200 bg-white text-sm font-black text-slate-900">
+                {draft.logoUrl || draft.avatarDataUrl ? <img src={draft.logoUrl || draft.avatarDataUrl} alt="Brand preview" className="h-full w-full object-contain p-1" /> : 'NX'}
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-black text-slate-950">{draft.businessName || draft.companyName || copy.namePlaceholder}</p>
+                <p className="truncate text-xs font-semibold text-slate-500">{businessType}</p>
+              </div>
+            </div>
+            <div className="mt-4 space-y-2 text-xs font-semibold text-slate-600">
+              <p className="truncate">{draft.address || copy.addressLabel}</p>
+              <p className="truncate">{draft.phone || copy.phoneLabel}</p>
+              <p className="truncate">{draft.email || 'email@example.com'}</p>
+              <p className="truncate">{draft.taxNumber || copy.taxLabel}</p>
+            </div>
+            <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-3">
+              <div className="flex items-center gap-2">
+                <HiOutlinePaintBrush className="h-4 w-4" style={{ color: themeColor }} />
+                <p className="text-xs font-black text-slate-900">Document Preview</p>
+              </div>
+              <div className="mt-3 h-2 rounded-full" style={{ backgroundColor: themeColor }} />
+              <p className="mt-3 text-xs font-semibold text-slate-500">{draft.receiptFooter || copy.footerPlaceholder}</p>
+            </div>
+          </div>
+          <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-3 text-xs font-semibold leading-5 text-emerald-800">
+            Saved values are shared with invoices, reports, account statements, receipt footers, and printable vouchers.
+          </div>
+        </div>
+      </div>
+    </Card>
+  )
+}
+
+function PrinterConnectionSettingsCard({ businessType, draft, setDraft, canManageSettings, onSaveSettings }) {
+  const printer = normalizePrinterSettings(draft.printerSettings)
+  const [note, setNote] = useState('')
+  const [testing, setTesting] = useState(false)
+  const storedDevice = loadStoredUsbDeviceInfo()
+  const normalized = normalizeBusinessType(businessType)
+  const moduleLabel = labelForBusinessType(businessType)
+  const thermalUse =
+    normalized === 'Restaurant POS'
+      ? 'Bills, KOT, receipts'
+      : normalized === 'School ERP'
+        ? 'Fee vouchers, attendance summaries'
+        : normalized === 'Transport / Rental'
+          ? 'Booking slips, payment receipts'
+          : 'Receipts and compact vouchers'
+
+  function patchPrinter(patch) {
+    setDraft((current) => ({
+      ...current,
+      printerSettings: {
+        ...defaultPrinterSettings,
+        ...(current.printerSettings || {}),
+        ...patch,
+      },
+    }))
+  }
+
+  async function connectUsbPrinter() {
+    if (!canManageSettings) return
+    setNote('Opening Chrome USB printer selector...')
+    const res = await requestThermalPrinter()
+    if (!res.ok) {
+      setNote(res.error || 'Printer connection failed.')
+      return
+    }
+    patchPrinter(res.settings)
+    setNote('USB thermal printer connected. Save changes to use it across this module.')
+  }
+
+  async function testPrint(paperSize = '58mm') {
+    if (!canManageSettings) return
+    setTesting(true)
+    setNote(paperSize === '58mm' ? 'Sending test slip to direct thermal printer...' : 'Opening browser print test for A4...')
+    if (paperSize === '58mm' && printer.mode === 'direct') {
+      const res = await printThermalText(
+        [
+          'NEXORA SOLUTION',
+          `${moduleLabel} Printer Test`,
+          `Paper: ${printer.receiptPaperSize || '58mm'}`,
+          `Time: ${new Date().toLocaleString()}`,
+          'Printer connection is ready.',
+        ].join('\n'),
+        printer,
+      )
+      setTesting(false)
+      setNote(res.ok ? 'Test slip sent successfully.' : res.error || 'Direct print failed.')
+      return
+    }
+    const popup = window.open('', '_blank', 'width=820,height=900')
+    if (popup) {
+      popup.document.write(`<!doctype html><html><head><title>Nexora Printer Test</title><style>@page{size:A4;margin:14mm}body{font-family:Arial,sans-serif;color:#0f172a}.doc{border:1px solid #e2e8f0;border-radius:18px;padding:24px}h1{margin:0;font-size:26px}.meta{margin-top:14px;color:#475569}</style></head><body><section class="doc"><h1>Nexora Printer Test</h1><p class="meta">${moduleLabel} · ${new Date().toLocaleString()}</p><p>This A4 printer will use Chrome print when direct silent printing is not available.</p></section></body></html>`)
+      popup.document.close()
+      popup.focus()
+      popup.print()
+      setNote('A4 test sent to browser print.')
+    } else {
+      setNote('Allow pop-ups to print A4 test.')
+    }
+    setTesting(false)
+  }
+
+  async function saveAndClose() {
+    setNote('Saving printer settings...')
+    await onSaveSettings?.()
+    setNote('Printer settings saved.')
+  }
+
+  return (
+    <Card id="printer-settings" className="scroll-mt-28 overflow-hidden p-0">
+      <div className="border-b border-slate-200 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 p-5 text-white">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-cyan-200">Printer Connection</p>
+            <h2 className="mt-2 text-xl font-black tracking-tight">A4 + 58mm printing</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-300">
+              Configure printers for invoices, reports, vouchers, receipts, and module documents.
+            </p>
+          </div>
+          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white/10 text-cyan-200 ring-1 ring-white/15">
+            <HiOutlinePrinter className="h-6 w-6" />
+          </span>
+        </div>
+      </div>
+
+      <div className="space-y-4 p-5">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field label="Print mode">
+            <Select value={printer.mode} onChange={(event) => patchPrinter({ mode: event.target.value })} disabled={!canManageSettings}>
+              <option value="browser">Chrome print fallback</option>
+              <option value="direct">Direct printer first</option>
+            </Select>
+          </Field>
+          <Field label="Connection type">
+            <Select value={printer.connectionType} onChange={(event) => patchPrinter({ connectionType: event.target.value })} disabled={!canManageSettings}>
+              <option value="webusb">WebUSB thermal</option>
+              <option value="browser">Browser only</option>
+              <option value="native_bridge">Native bridge placeholder</option>
+            </Select>
+          </Field>
+          <Field label="Default A4 printer name">
+            <Input value={printer.a4PrinterName || ''} onChange={(event) => patchPrinter({ a4PrinterName: event.target.value })} placeholder="Office A4 Printer" readOnly={!canManageSettings} />
+          </Field>
+          <Field label="58mm thermal printer name">
+            <Input value={printer.thermalPrinterName || ''} onChange={(event) => patchPrinter({ thermalPrinterName: event.target.value })} placeholder="Counter Thermal 58mm" readOnly={!canManageSettings} />
+          </Field>
+          <Field label="Default document size">
+            <Select value={printer.defaultPaperSize || 'a4'} onChange={(event) => patchPrinter({ defaultPaperSize: event.target.value })} disabled={!canManageSettings}>
+              <option value="a4">A4</option>
+              <option value="58mm">58mm thermal</option>
+            </Select>
+          </Field>
+          <Field label="Receipt/KOT size">
+            <Select value={printer.receiptPaperSize || '58mm'} onChange={(event) => patchPrinter({ receiptPaperSize: event.target.value })} disabled={!canManageSettings}>
+              <option value="58mm">58mm</option>
+              <option value="a4">A4</option>
+            </Select>
+          </Field>
+        </div>
+
+        <div className="grid gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3 sm:grid-cols-2">
+          <Field label="USB Vendor ID">
+            <Input value={printer.webUsbVendorId || ''} onChange={(event) => patchPrinter({ webUsbVendorId: event.target.value })} placeholder="Auto-filled after connect" readOnly={!canManageSettings} />
+          </Field>
+          <Field label="USB Product ID">
+            <Input value={printer.webUsbProductId || ''} onChange={(event) => patchPrinter({ webUsbProductId: event.target.value })} placeholder="Auto-filled after connect" readOnly={!canManageSettings} />
+          </Field>
+          <Field label="USB Interface">
+            <Input type="number" min="0" value={printer.webUsbInterface ?? 0} onChange={(event) => patchPrinter({ webUsbInterface: Math.max(0, Number(event.target.value) || 0) })} readOnly={!canManageSettings} />
+          </Field>
+          <Field label="USB Endpoint">
+            <Input type="number" min="1" value={printer.webUsbEndpoint ?? 1} onChange={(event) => patchPrinter({ webUsbEndpoint: Math.max(1, Number(event.target.value) || 1) })} readOnly={!canManageSettings} />
+          </Field>
+        </div>
+
+        <div className="grid gap-2 text-xs font-semibold text-slate-600">
+          <label className="flex items-center gap-2">
+            <input type="checkbox" checked={Boolean(printer.autoPrintInvoices)} onChange={(event) => patchPrinter({ autoPrintInvoices: event.target.checked })} disabled={!canManageSettings} />
+            Auto print invoices / fee bills after save
+          </label>
+          <label className="flex items-center gap-2">
+            <input type="checkbox" checked={Boolean(printer.autoPrintReports)} onChange={(event) => patchPrinter({ autoPrintReports: event.target.checked })} disabled={!canManageSettings} />
+            Auto print reports when print action is used
+          </label>
+          <label className="flex items-center gap-2">
+            <input type="checkbox" checked={Boolean(printer.autoPrintReceipts)} onChange={(event) => patchPrinter({ autoPrintReceipts: event.target.checked })} disabled={!canManageSettings} />
+            Auto print payment receipts
+          </label>
+        </div>
+
+        <div className="rounded-2xl border border-indigo-100 bg-indigo-50 p-3 text-xs leading-5 text-indigo-900">
+          <p className="font-black">Module use: {thermalUse}</p>
+          <p className="mt-1">
+            Direct 58mm print needs Chrome/Edge WebUSB permission. A4 silent printing requires kiosk/native bridge, otherwise Chrome print dialog opens.
+          </p>
+          <p className="mt-1 font-semibold">
+            Status: {webUsbSupported() ? 'WebUSB available' : 'WebUSB unavailable'}{storedDevice ? ` · Last USB: ${storedDevice.productName || storedDevice.vendorId}` : ''}
+          </p>
+        </div>
+
+        {note ? <p className="rounded-xl bg-slate-900 px-3 py-2 text-xs font-semibold text-white">{note}</p> : null}
+
+        <div className="flex flex-wrap gap-2">
+          <Button type="button" variant="subtle" className="rounded-2xl" onClick={connectUsbPrinter} disabled={!canManageSettings || !webUsbSupported()}>
+            Connect 58mm USB
+          </Button>
+          <Button type="button" variant="subtle" className="rounded-2xl" onClick={() => testPrint('58mm')} disabled={!canManageSettings || testing}>
+            Test 58mm
+          </Button>
+          <Button type="button" variant="subtle" className="rounded-2xl" onClick={() => testPrint('a4')} disabled={!canManageSettings || testing}>
+            Test A4
+          </Button>
+          <Button type="button" className="rounded-2xl" onClick={saveAndClose} disabled={!canManageSettings}>
+            Save Printer
+          </Button>
+        </div>
+      </div>
+    </Card>
   )
 }
 
@@ -845,9 +1291,7 @@ function TransportReportSettingsCard({ draft, setDraft, canManageSettings }) {
 }
 
 export default function SettingsPage() {
-  const navigate = useNavigate()
-  const { plan, userId, workspaceId, userDoc, firebaseUser } = useUser()
-  const { logout, busy } = useAuth()
+  const { userId, workspaceId, userDoc, firebaseUser } = useUser()
   const { currency, setCurrency, profile, setProfile } = usePreferences()
   const { settings, businessType, saveSettings } = useBusinessSettings()
   const access = useWorkspaceAccess()
@@ -855,7 +1299,6 @@ export default function SettingsPage() {
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
   const fileRef = useRef(null)
-  const packageName = packageNameForPlan(plan)
   const businessTypeLabel = labelForBusinessType(businessType)
   const canManageSettings = access.canManageSettings
   const viewOnlyMessage = 'You have view access only. Contact your workspace administrator to modify settings.'
@@ -871,6 +1314,8 @@ export default function SettingsPage() {
     }
     const businessPatch = {
       businessName: draft.businessName || draft.companyName || '',
+      companyName: draft.businessName || draft.companyName || '',
+      schoolName: normalizeBusinessType(businessType) === 'School ERP' ? (draft.schoolName || draft.businessName || draft.companyName || '') : draft.schoolName || '',
       logoUrl: draft.logoUrl || draft.avatarDataUrl || '',
       address: draft.address || '',
       phone: draft.phone || '',
@@ -882,8 +1327,32 @@ export default function SettingsPage() {
       receiptFooter: draft.receiptFooter || '',
       signatureUrl: draft.signatureUrl || '',
       themeColor: draft.themeColor || '#2563eb',
-      restaurantPos: draft.restaurantPos || {},
-      transportRental: draft.transportRental || {},
+      printerSettings: {
+        ...defaultPrinterSettings,
+        ...(draft.printerSettings || {}),
+      },
+      restaurantPos: {
+        ...(draft.restaurantPos || {}),
+        ...(normalizeBusinessType(businessType) === 'Restaurant POS'
+          ? {
+              restaurantName: draft.restaurantPos?.restaurantName || draft.businessName || draft.companyName || '',
+              address: draft.restaurantPos?.address || draft.address || '',
+              phone: draft.restaurantPos?.phone || draft.phone || '',
+              taxNumber: draft.restaurantPos?.taxNumber || draft.taxNumber || '',
+              footerMessage: draft.restaurantPos?.footerMessage || draft.receiptFooter || '',
+              logoUrl: draft.restaurantPos?.logoUrl || draft.logoUrl || '',
+            }
+          : {}),
+      },
+      transportRental: {
+        ...(draft.transportRental || {}),
+        ...(normalizeBusinessType(businessType) === 'Transport / Rental'
+          ? {
+              companyName: draft.transportRental?.companyName || draft.businessName || draft.companyName || '',
+              reportFooter: draft.transportRental?.reportFooter || draft.receiptFooter || '',
+            }
+          : {}),
+      },
     }
     const res = await saveSettings(businessPatch)
     if (!res.ok) {
@@ -914,21 +1383,6 @@ export default function SettingsPage() {
     reader.readAsDataURL(file)
   }
 
-  async function handleLogout() {
-    console.warn('[AUTO LOGOUT TRACE]', {
-      file: 'src/crm/pages/Settings.jsx',
-      function: 'handleLogout',
-      reason: 'user_clicked_settings_logout',
-      route: window.location.pathname,
-      uid: firebaseUser?.uid,
-      email: firebaseUser?.email,
-      time: new Date().toISOString(),
-      stack: new Error().stack,
-    })
-    const ok = await logout()
-    if (ok) navigate('/login', { replace: true })
-  }
-
   return (
     <motion.div
       className="min-w-0 space-y-5"
@@ -938,7 +1392,7 @@ export default function SettingsPage() {
     >
       <PageHeader
         title="Settings"
-        subtitle="Profile, company/workspace information, and logout."
+        subtitle="Profile and company/workspace information."
         right={
           <div className="flex flex-wrap items-center gap-2">
             {saved ? <Badge variant="success">Saved</Badge> : null}
@@ -1034,115 +1488,25 @@ export default function SettingsPage() {
           {normalizeBusinessType(businessType) === 'Restaurant POS' ? (
             <RestaurantWorkspaceInfo draft={draft} setDraft={setDraft} canManageSettings={canManageSettings} />
           ) : (
-          <Card id="business-profile" className="scroll-mt-28 p-5 sm:p-6">
-            <div className="flex items-start justify-between gap-3 border-b border-slate-200/80 pb-5">
-              <div className="flex items-center gap-3">
-                <span className="grid h-10 w-10 place-items-center rounded-2xl bg-sky-50 text-sky-700">
-                  <HiOutlineBuildingOffice2 className="text-xl" />
-                </span>
-                <div>
-                  <p className="text-sm font-semibold text-slate-950 dark:text-white">Company / Workspace info</p>
-                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-300">Module-isolated company details for invoices and reports.</p>
-                </div>
-              </div>
-              <Badge variant={plan === 'Business' ? 'success' : 'default'}>{packageName}</Badge>
-            </div>
-
-            <div className="mt-5 grid gap-4 sm:grid-cols-2">
-              <Field label="Company Name" className="sm:col-span-2">
-                <Input
-	                  value={draft.businessName || draft.companyName || ''}
-	                  onChange={(event) => setDraft((current) => ({ ...current, businessName: event.target.value, companyName: event.target.value }))}
-	                  placeholder="Company name"
-	                  readOnly={!canManageSettings}
-	                />
-              </Field>
-              <Field label="Business Type">
-                <Input
-                  value={businessTypeLabel}
-                  disabled
-                  placeholder="Current module"
-                />
-              </Field>
-              <Field label="Currency">
-                <Select value={currency} onChange={(event) => setCurrency(event.target.value)} disabled={!canManageSettings}>
-                  {supportedCurrencies.map((item) => (
-                    <option key={item.code} value={item.code}>
-                      {item.label}
-                    </option>
-                  ))}
-                </Select>
-              </Field>
-              <Field label="Address" className="sm:col-span-2">
-                <Input
-	                  value={draft.address || ''}
-	                  onChange={(event) => setDraft((current) => ({ ...current, address: event.target.value }))}
-	                  placeholder="Business address for printable reports"
-	                  readOnly={!canManageSettings}
-	                />
-              </Field>
-              <Field label="Tax Number">
-                <Input
-	                  value={draft.taxNumber || ''}
-	                  onChange={(event) => setDraft((current) => ({ ...current, taxNumber: event.target.value }))}
-	                  placeholder="NTN / Tax ID"
-	                  readOnly={!canManageSettings}
-	                />
-              </Field>
-              <Field label="Invoice Prefix">
-                <Input
-	                  value={draft.invoicePrefix || ''}
-	                  onChange={(event) => setDraft((current) => ({ ...current, invoicePrefix: event.target.value }))}
-	                  placeholder="INV"
-	                  readOnly={!canManageSettings}
-	                />
-              </Field>
-              <Field label="Report Prefix">
-                <Input
-	                  value={draft.reportPrefix || ''}
-	                  onChange={(event) => setDraft((current) => ({ ...current, reportPrefix: event.target.value }))}
-	                  placeholder="RPT"
-	                  readOnly={!canManageSettings}
-	                />
-              </Field>
-              <Field label="Theme Color">
-                <Input
-	                  type="color"
-	                  value={draft.themeColor || '#2563eb'}
-	                  onChange={(event) => setDraft((current) => ({ ...current, themeColor: event.target.value }))}
-	                  disabled={!canManageSettings}
-	                />
-              </Field>
-              <Field label="Receipt Footer" className="sm:col-span-2">
-                <Input
-	                  value={draft.receiptFooter || ''}
-	                  onChange={(event) => setDraft((current) => ({ ...current, receiptFooter: event.target.value }))}
-	                  placeholder="Thank you for your business"
-	                  readOnly={!canManageSettings}
-	                />
-              </Field>
-              <Field label="Country">
-                <Input
-	                  value={draft.country}
-	                  onChange={(event) => setDraft((current) => ({ ...current, country: event.target.value }))}
-	                  placeholder="Country"
-	                  readOnly={!canManageSettings}
-	                />
-              </Field>
-              <Field label="City">
-                <Input
-	                  value={draft.city}
-	                  onChange={(event) => setDraft((current) => ({ ...current, city: event.target.value }))}
-	                  placeholder="City"
-	                  readOnly={!canManageSettings}
-	                />
-              </Field>
-            </div>
-          </Card>
+            <WorkspaceSetupCard
+              businessType={businessType}
+              draft={draft}
+              setDraft={setDraft}
+              currency={currency}
+              setCurrency={setCurrency}
+              canManageSettings={canManageSettings}
+            />
           )}
         </div>
 
         <div className="min-w-0 space-y-5">
+          <PrinterConnectionSettingsCard
+            businessType={businessType}
+            draft={draft}
+            setDraft={setDraft}
+            canManageSettings={canManageSettings}
+            onSaveSettings={onSaveProfile}
+          />
           {normalizeBusinessType(businessType) === 'WhatsApp CRM' ? <WhatsappApiCard /> : null}
           {normalizeBusinessType(businessType) === 'Restaurant POS' ? (
             <RestaurantPosSettingsCard draft={draft} setDraft={setDraft} canManageSettings={canManageSettings} onSaveSettings={onSaveProfile} />
@@ -1150,28 +1514,6 @@ export default function SettingsPage() {
           {normalizeBusinessType(businessType) === 'Transport / Rental' ? (
             <TransportReportSettingsCard draft={draft} setDraft={setDraft} canManageSettings={canManageSettings} />
           ) : null}
-          <Card className="p-5">
-            <div className="flex items-start gap-3">
-              <span className="grid h-10 w-10 place-items-center rounded-2xl bg-rose-50 text-rose-700">
-                <HiOutlineArrowRightOnRectangle className="text-xl" />
-              </span>
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-slate-950 dark:text-white">Logout</p>
-                <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-300">
-                  End this CRM session and return to login.
-                </p>
-              </div>
-            </div>
-            <Button
-              variant="subtle"
-              className="mt-5 w-full rounded-2xl text-rose-700 hover:bg-rose-50"
-              type="button"
-              disabled={busy}
-              onClick={handleLogout}
-            >
-              {busy ? 'Logging out…' : 'Logout'}
-            </Button>
-          </Card>
         </div>
       </div>
 

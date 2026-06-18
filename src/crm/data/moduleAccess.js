@@ -183,11 +183,12 @@ export const moduleCatalog = [
   { key: 'accountStatements', label: 'Account Statements', route: '/app/accounts/statements', minPlan: 'Basic' },
   { key: 'approvals', label: 'Approval Center', route: '/app/approvals', alwaysEnabled: true },
   { key: 'subscriptions', label: 'Subscriptions', route: '/app/subscriptions', alwaysEnabled: true },
-  { key: 'support', label: 'Support Tickets', route: '/app/support', minPlan: 'Business' },
+  { key: 'support', label: 'Support Tickets', route: '/app/support', minPlan: 'Basic' },
   { key: 'activity', label: 'Activity Logs', route: '/app/activity-logs', minPlan: 'Business' },
   { key: 'analytics', label: 'Advanced Analytics', route: '/app/analytics', minPlan: 'Business' },
   { key: 'notifications', label: 'Notifications', route: '/app/notifications', minPlan: 'Basic' },
   { key: 'reports', label: 'Reports', route: '/app/reports', minPlan: 'Basic' },
+  { key: 'schoolReports', label: 'School Reports Center', route: '/app/school-reports', minPlan: 'Basic' },
   { key: 'maintenance', label: 'Maintenance', route: '/app/maintenance', minPlan: 'Business' },
   { key: 'contracts', label: 'Contracts', route: '/app/contracts', minPlan: 'Business' },
   { key: 'settings', label: 'Settings', route: '/app/settings', alwaysEnabled: true },
@@ -198,7 +199,7 @@ export const moduleCatalog = [
   { key: 'cashRegister', label: 'Cash Register', route: '/app/coming-soon/cash-register', comingSoon: true },
   { key: 'purchases', label: 'Purchases', route: '/app/coming-soon/purchases', comingSoon: true },
   { key: 'suppliers', label: 'Suppliers', route: '/app/coming-soon/suppliers', comingSoon: true },
-  { key: 'attendance', label: 'Attendance', route: '/app/coming-soon/attendance', comingSoon: true },
+  { key: 'attendance', label: 'Attendance', route: '/app/attendance', minPlan: 'Basic' },
   { key: 'exams', label: 'Exams', route: '/app/coming-soon/exams', comingSoon: true },
   { key: 'classes', label: 'Classes', route: '/app/coming-soon/classes', comingSoon: true },
   { key: 'tables', label: 'Tables', route: '/app/tables', minPlan: 'Basic' },
@@ -318,10 +319,13 @@ export const businessWorkspaceCatalog = [
     labels: {
       customers: 'Students/Parents',
       invoices: 'Fees/Billing',
+      reports: 'School Reports Center',
+      schoolReports: 'School Reports Center',
     },
     modules: [
       'dashboard',
       'customers',
+      'attendance',
       'invoices',
       'payments',
       'expenses',
@@ -427,7 +431,6 @@ export const businessWorkspaceCatalog = [
       'customers',
       'leads',
       'followUps',
-      'support',
       'invoices',
       'payments',
       'expenses',
@@ -585,6 +588,7 @@ export const legacyPermissionAliases = {
   analytics: ['analytics', 'reports'],
   notifications: ['notifications'],
   reports: ['reports', 'viewReports'],
+  schoolReports: ['reports', 'viewReports'],
   settings: ['settingsAccess'],
 }
 
@@ -672,6 +676,8 @@ export function routeAllowedByBusinessType(route, type, options = {}) {
   ].filter(Boolean))).map(normalizeBusinessType)
   return allowedTypes.some((businessType) => {
     if (module.key === 'accountStatements') return businessModuleKeys(businessType).includes('accounts')
+    if (module.key === 'schoolReports') return normalizeBusinessType(businessType) === 'School ERP'
+    if (module.key === 'support') return true
     return businessModuleKeys(businessType).includes(module.key)
   })
 }
@@ -693,7 +699,9 @@ export function selectedModulesForSidebar({ enabledModules, onboardingCompleted,
 
   const businessKeys = businessModuleKeys(businessType)
   const isSalesHub = normalizeBusinessType(businessType) === 'General CRM'
+  const isSchoolErp = normalizeBusinessType(businessType) === 'School ERP'
   const selected = new Set(onboardingCompleted ? businessKeys : Array.isArray(enabledModules) && enabledModules.length ? enabledModules : businessKeys)
+  if (isSchoolErp) selected.add('reports')
   return moduleCatalog.filter((module) => {
     if (module.key === 'subscriptions') return false
     if (module.key === 'payments') return false

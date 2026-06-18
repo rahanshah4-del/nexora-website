@@ -13,6 +13,7 @@ import {
   HiOutlineTicket,
   HiOutlineUserGroup,
   HiOutlineBanknotes,
+  HiOutlineAcademicCap,
   HiOutlineCalendarDays,
   HiOutlineClipboardDocumentCheck,
   HiOutlineExclamationTriangle,
@@ -23,6 +24,7 @@ import {
   HiOutlineReceiptPercent,
   HiOutlineShoppingBag,
   HiOutlineTableCells,
+  HiOutlineDocumentChartBar,
 } from 'react-icons/hi2'
 import Card from '../components/ui/Card.jsx'
 import Badge from '../components/ui/Badge.jsx'
@@ -171,14 +173,36 @@ const LoadingBlock = memo(function LoadingBlock({ lines = 4, className = '' }) {
   )
 })
 
-const MetricCard = memo(function MetricCard({ icon: Icon, label, value, helper, tone = 'sky', loading = false }) {
-  const toneMap = {
-    sky: 'border-sky-200 bg-sky-50 text-sky-700',
-    violet: 'border-violet-200 bg-violet-50 text-violet-700',
-    cyan: 'border-cyan-200 bg-cyan-50 text-cyan-700',
-    emerald: 'border-emerald-200 bg-emerald-50 text-emerald-700',
-  }
+const hdToneMap = {
+  sky: 'from-sky-500 via-blue-600 to-indigo-600 border-sky-200 shadow-sky-500/25',
+  violet: 'from-violet-500 via-fuchsia-600 to-purple-700 border-violet-200 shadow-violet-500/25',
+  cyan: 'from-cyan-400 via-sky-500 to-blue-600 border-cyan-200 shadow-cyan-500/25',
+  emerald: 'from-emerald-500 via-teal-500 to-cyan-600 border-emerald-200 shadow-emerald-500/25',
+  amber: 'from-amber-400 via-orange-500 to-rose-500 border-amber-200 shadow-orange-500/25',
+  rose: 'from-rose-500 via-pink-600 to-fuchsia-700 border-rose-200 shadow-rose-500/25',
+  slate: 'from-slate-700 via-slate-900 to-indigo-950 border-slate-300 shadow-slate-500/25',
+}
 
+function hdToneForText(text = '') {
+  const value = String(text).toLowerCase()
+  if (value.includes('fee') || value.includes('bill') || value.includes('invoice') || value.includes('revenue') || value.includes('payment') || value.includes('account')) return hdToneMap.amber
+  if (value.includes('student') || value.includes('teacher') || value.includes('attendance') || value.includes('team') || value.includes('customer')) return hdToneMap.violet
+  if (value.includes('report') || value.includes('dashboard') || value.includes('analytic') || value.includes('profit')) return hdToneMap.sky
+  if (value.includes('support') || value.includes('whatsapp') || value.includes('parent')) return hdToneMap.emerald
+  if (value.includes('order') || value.includes('kot') || value.includes('kitchen') || value.includes('table')) return hdToneMap.rose
+  if (value.includes('expense') || value.includes('maintenance') || value.includes('lost') || value.includes('overdue')) return hdToneMap.slate
+  return hdToneMap.cyan
+}
+
+function HdDashboardIcon({ icon: Icon, tone = hdToneMap.sky, className = 'h-10 w-10', iconClassName = 'h-5 w-5' }) {
+  return (
+    <span className={cn('nexora-hd-icon bg-gradient-to-br shadow-md', className, tone)}>
+      <Icon className={iconClassName} />
+    </span>
+  )
+}
+
+const MetricCard = memo(function MetricCard({ icon: Icon, label, value, helper, tone = 'sky', loading = false }) {
   return (
     <div className="min-w-0">
       <Card className="h-full rounded-[1.5rem] p-4">
@@ -191,9 +215,7 @@ const MetricCard = memo(function MetricCard({ icon: Icon, label, value, helper, 
               <p className="mt-2 truncate text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">{value}</p>
               <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-500 dark:text-slate-300">{helper}</p>
             </div>
-            <div className={cn('grid h-10 w-10 shrink-0 place-items-center rounded-2xl border', toneMap[tone])}>
-              <Icon className="h-5 w-5" />
-            </div>
+            <HdDashboardIcon icon={Icon} tone={hdToneMap[tone] || hdToneForText(label)} />
           </div>
         )}
       </Card>
@@ -248,9 +270,7 @@ const QuickAction = memo(function QuickAction({ to, icon: Icon, title, detail })
       to={to}
       className="group flex min-w-0 items-center gap-3 rounded-[1.15rem] border border-slate-100 bg-white/70 p-3 transition-colors duration-100 hover:border-sky-100 hover:bg-white dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
     >
-      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-slate-950 text-white transition-colors duration-100 group-hover:bg-sky-700">
-        <Icon className="h-5 w-5" />
-      </span>
+      <HdDashboardIcon icon={Icon} tone={hdToneForText(`${title} ${detail} ${to}`)} />
       <span className="min-w-0">
         <span className="block truncate text-sm font-semibold text-slate-950 dark:text-white">{title}</span>
         <span className="block truncate text-xs text-slate-500 dark:text-slate-300">{detail}</span>
@@ -351,9 +371,7 @@ function RestaurantDashboard({ workspaceName }) {
                 Manage orders, KOT flow, floor occupancy, kitchen readiness, bills, and daily sales from one restaurant workspace.
               </p>
             </div>
-            <div className="grid h-16 w-16 shrink-0 place-items-center rounded-[1.35rem] bg-slate-950 text-white shadow-lg shadow-slate-950/15">
-              <HiOutlinePresentationChartBar className="h-8 w-8" />
-            </div>
+            <HdDashboardIcon icon={HiOutlinePresentationChartBar} tone={hdToneMap.amber} className="h-16 w-16 rounded-[1.35rem]" iconClassName="h-8 w-8" />
           </div>
           <div className="mt-5 grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-5">
             {restaurantQuickActions.map((action) => (
@@ -399,6 +417,246 @@ function RestaurantDashboard({ workspaceName }) {
             <DataRow label="Reserved" value="0" badge="No saved reservations" />
             <DataRow label="Cleaning" value="0" badge="No saved cleaning state" />
             <DataRow label="Available" value="0" badge="Use floor view to manage tables" />
+          </div>
+        </Card>
+      </section>
+    </div>
+  )
+}
+
+function SchoolDashboard({
+  workspaceName,
+  loading,
+  students,
+  invoices,
+  paidInvoices,
+  paidPayments,
+  pendingInvoices,
+  expenses,
+  revenueSeries,
+  invoiceRows,
+  activityItems,
+  activityLoading,
+  invoicesLoading,
+  customersLoading,
+  totalRevenue,
+  pendingRevenue,
+  currency,
+}) {
+  const classRows = useMemo(() => {
+    const map = new Map()
+    students.forEach((student) => {
+      const label = [student.className || student.class || student.grade, student.section].filter(Boolean).join(' - ') || 'Unassigned'
+      map.set(label, (map.get(label) || 0) + 1)
+    })
+    return Array.from(map.entries())
+      .map(([label, value]) => ({ label, value }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 6)
+  }, [students])
+  const feeBase = Math.max(1, totalRevenue + pendingRevenue)
+  const collectionPct = Math.round((totalRevenue / feeBase) * 100)
+  const outstandingRows = pendingInvoices.slice(0, 4)
+  const recentStudents = students.slice(0, 5)
+
+  const schoolStats = [
+    {
+      icon: HiOutlineUserGroup,
+      label: 'Total Students',
+      value: formatCompact(students.length),
+      helper: 'Student and parent profiles',
+      tone: 'cyan',
+      loading: customersLoading,
+    },
+    {
+      icon: HiOutlineBanknotes,
+      label: 'Fee Collection',
+      value: formatCurrency(totalRevenue, currency),
+      helper: `${formatCompact(paidPayments.length || paidInvoices.length)} paid records`,
+      tone: 'emerald',
+      loading: invoicesLoading,
+    },
+    {
+      icon: HiOutlineClock,
+      label: 'Pending Fees',
+      value: formatCurrency(pendingRevenue, currency),
+      helper: `${formatCompact(pendingInvoices.length)} fee bills pending`,
+      tone: 'violet',
+      loading: invoicesLoading,
+    },
+    {
+      icon: HiOutlineDocumentText,
+      label: 'Fee Bills',
+      value: formatCompact(invoices.length),
+      helper: 'Total billing records',
+      tone: 'sky',
+      loading: invoicesLoading,
+    },
+  ]
+
+  return (
+    <div className="min-w-0 space-y-5">
+      <section className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <Card className="relative overflow-hidden rounded-[1.6rem] border-slate-200/80 bg-white p-5 shadow-sm sm:p-6">
+          <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-indigo-500 via-sky-400 to-emerald-400" />
+          <div className="relative flex min-w-0 flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div className="min-w-0">
+              <Badge variant="info">School ERP</Badge>
+              <h1 className="mt-4 max-w-3xl text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">
+                {workspaceName || 'Nexora School'} Dashboard
+              </h1>
+              <p className="mt-2 max-w-3xl text-sm font-medium leading-6 text-slate-500">
+                Students, attendance, fees, staff, and reporting in one school-focused command center.
+              </p>
+              <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <QuickAction to="/app/customers" icon={HiOutlineUserGroup} title="Students" detail="Profiles & parents" />
+                <QuickAction to="/app/attendance" icon={HiOutlineCalendarDays} title="Attendance" detail="Mark daily status" />
+                <QuickAction to="/app/invoices" icon={HiOutlineBanknotes} title="Fees" detail="Billing & dues" />
+                <QuickAction to="/app/school-reports" icon={HiOutlineDocumentChartBar} title="Reports" detail="PDF & 58mm print" />
+              </div>
+            </div>
+            <HdDashboardIcon icon={HiOutlineAcademicCap} tone={hdToneMap.violet} className="h-20 w-20 rounded-[1.55rem]" iconClassName="h-10 w-10" />
+          </div>
+        </Card>
+
+        <Card className="rounded-[1.6rem] border-slate-200/80 bg-gradient-to-br from-slate-950 to-indigo-950 p-5 text-white shadow-sm">
+          <SectionTitle
+            eyebrow="Today"
+            title="School pulse"
+            action={<Badge variant={loading ? 'default' : 'success'}>{loading ? 'Syncing' : 'Live'}</Badge>}
+          />
+          <div className="mt-5 space-y-3">
+            <div className="rounded-[1.15rem] border border-white/10 bg-white/10 p-3">
+              <p className="text-xs font-bold text-slate-300">Collection rate</p>
+              <p className="mt-1 text-3xl font-black">{collectionPct}%</p>
+              <div className="mt-3 h-2 rounded-full bg-white/10">
+                <div className="h-2 rounded-full bg-emerald-400" style={{ width: `${collectionPct}%` }} />
+              </div>
+            </div>
+            <DataRow label="Paid fee bills" value={formatCompact(paidInvoices.length)} badge="Closed fees" />
+            <DataRow label="Pending fee bills" value={formatCompact(pendingInvoices.length)} badge="Needs follow-up" />
+            <DataRow label="Expenses" value={formatCurrency(expenses.reduce((sum, row) => sum + toFiniteNumber(row.amount ?? row.total), 0), currency)} badge="School operations" />
+          </div>
+        </Card>
+      </section>
+
+      <section className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {schoolStats.map((stat) => (
+          <MetricCard key={stat.label} {...stat} />
+        ))}
+      </section>
+
+      <section className="grid min-w-0 gap-5 lg:grid-cols-12">
+        <Card className="rounded-[1.6rem] p-5 lg:col-span-7">
+          <SectionTitle
+            eyebrow="Fees"
+            title="Monthly collection trend"
+            action={<Badge variant="info">{formatCurrency(totalRevenue, currency)}</Badge>}
+          />
+          <div className="mt-5">
+            {invoicesLoading ? <LoadingBlock lines={5} className="min-h-44" /> : <MiniBars data={revenueSeries} color="bg-indigo-500" />}
+          </div>
+        </Card>
+
+        <Card className="rounded-[1.6rem] p-5 lg:col-span-5">
+          <SectionTitle
+            eyebrow="Classes"
+            title="Student distribution"
+            action={<Link to="/app/customers" className="text-xs font-semibold text-sky-700 hover:text-sky-900">Manage students</Link>}
+          />
+          <div className="mt-5 space-y-3">
+            {customersLoading ? (
+              <LoadingBlock lines={4} />
+            ) : classRows.length ? (
+              classRows.map((row, index) => (
+                <ProgressRow key={row.label} label={row.label} value={row.value} max={Math.max(1, students.length)} tone={index % 3 === 0 ? 'bg-indigo-500' : index % 3 === 1 ? 'bg-sky-500' : 'bg-emerald-500'} />
+              ))
+            ) : (
+              <InlineEmpty title="No classes yet" description="Add student class details to activate this view." />
+            )}
+          </div>
+        </Card>
+      </section>
+
+      <section className="grid min-w-0 gap-5 lg:grid-cols-12">
+        <Card className="rounded-[1.6rem] p-5 lg:col-span-4">
+          <SectionTitle eyebrow="Students" title="Recent admissions" action={<Link to="/app/customers" className="text-xs font-semibold text-sky-700 hover:text-sky-900">View all</Link>} />
+          <div className="mt-5 space-y-3">
+            {customersLoading ? (
+              <LoadingBlock lines={4} />
+            ) : recentStudents.length ? (
+              recentStudents.map((student) => (
+                <DataRow
+                  key={student.id}
+                  label={safeText(student.studentName || student.name, 'Student')}
+                  value={safeText(student.status, 'Active')}
+                  badge={[student.className || student.class || student.grade, student.section].filter(Boolean).join(' - ') || student.parentName || 'Student profile'}
+                />
+              ))
+            ) : (
+              <InlineEmpty title="No students yet" description="Create student profiles to activate the School ERP dashboard." />
+            )}
+          </div>
+        </Card>
+
+        <Card className="rounded-[1.6rem] p-5 lg:col-span-4">
+          <SectionTitle eyebrow="Fees" title="Billing status" action={<Link to="/app/invoices" className="text-xs font-semibold text-sky-700 hover:text-sky-900">Manage fees</Link>} />
+          <div className="mt-5 space-y-3">
+            {invoicesLoading ? (
+              <LoadingBlock lines={4} />
+            ) : invoices.length ? (
+              invoiceRows.map(([label, value, badge]) => <DataRow key={label} label={label} value={value} badge={badge} />)
+            ) : (
+              <InlineEmpty title="No fee bills yet" description="Create fee bills to track collection, dues, and reports." />
+            )}
+          </div>
+        </Card>
+
+        <Card className="rounded-[1.6rem] p-5 lg:col-span-4">
+          <SectionTitle eyebrow="Attendance & Reports" title="Daily operations" />
+          <div className="mt-5 grid gap-3">
+            <QuickAction to="/app/attendance" icon={HiOutlineCalendarDays} title="Mark Attendance" detail="Students and staff" />
+            <QuickAction to="/app/school-reports?report=student_attendance" icon={HiOutlineDocumentChartBar} title="Student Attendance Report" detail="Preview and PDF" />
+            <QuickAction to="/app/school-reports?report=pending_fee" icon={HiOutlineClock} title="Pending Fee Report" detail="Track outstanding dues" />
+            <QuickAction to="/app/school-reports?report=fee_collection" icon={HiOutlineBanknotes} title="Fee Collection Report" detail="Export PDF or print" />
+          </div>
+        </Card>
+      </section>
+
+      <section className="grid min-w-0 gap-5 lg:grid-cols-12">
+        <Card className="rounded-[1.6rem] p-5 lg:col-span-5">
+          <SectionTitle eyebrow="Pending Dues" title="Fee follow-up list" action={<Link to="/app/school-reports?report=pending_fee" className="text-xs font-semibold text-sky-700 hover:text-sky-900">Open report</Link>} />
+          <div className="mt-5 space-y-3">
+            {invoicesLoading ? (
+              <LoadingBlock lines={4} />
+            ) : outstandingRows.length ? (
+              outstandingRows.map((invoice) => (
+                <DataRow
+                  key={invoice.id}
+                  label={safeText(invoice.studentName || invoice.customerName || invoice.name, 'Student')}
+                  value={formatCurrency(invoiceBalanceDue(invoice), currency)}
+                  badge={safeText(invoice.invoiceNumber || invoice.status, 'Pending fee')}
+                />
+              ))
+            ) : (
+              <InlineEmpty title="No pending fees" description="Outstanding dues will appear here when fee bills are unpaid." />
+            )}
+          </div>
+        </Card>
+
+        <Card className="rounded-[1.6rem] p-5 lg:col-span-4">
+          <SectionTitle eyebrow="Academic Admin" title="Quick modules" />
+          <div className="mt-5 grid gap-3">
+            <QuickAction to="/app/team" icon={HiOutlineAcademicCap} title="Teachers & Staff" detail="Team management" />
+            <QuickAction to="/app/notifications" icon={HiOutlineChatBubbleLeftRight} title="Parent Updates" detail="Notifications" />
+            <QuickAction to="/app/accounts" icon={HiOutlineCurrencyDollar} title="Accounts" detail="School finance" />
+          </div>
+        </Card>
+
+        <Card className="rounded-[1.6rem] p-5 lg:col-span-3">
+          <SectionTitle eyebrow="Timeline" title="Recent activity" action={<Badge variant="default">{formatCompact(activityItems.length)}</Badge>} />
+          <div className="mt-5">
+            {activityLoading ? <LoadingBlock lines={4} /> : <ActivityList items={activityItems} />}
           </div>
         </Card>
       </section>
@@ -720,6 +978,30 @@ export default function DashboardHomePage() {
 
   if (isRestaurant) {
     return <RestaurantDashboard workspaceName={workspaceDoc?.name || userDoc?.workspaceName || userDoc?.company || ''} />
+  }
+
+  if (isSchool) {
+    return (
+      <SchoolDashboard
+        workspaceName={workspaceDoc?.name || userDoc?.workspaceName || userDoc?.company || ''}
+        loading={loading}
+        students={customersApi.customers}
+        invoices={invoicesApi.invoices}
+        paidInvoices={paidInvoices}
+        paidPayments={paidPayments}
+        pendingInvoices={pendingInvoices}
+        expenses={expensesApi.expenses}
+        revenueSeries={revenueSeries}
+        invoiceRows={invoiceRows}
+        activityItems={activityItems}
+        activityLoading={activityApi.loading}
+        invoicesLoading={invoicesApi.loading}
+        customersLoading={customersApi.loading}
+        totalRevenue={totalRevenueUsd}
+        pendingRevenue={pendingRevenueUsd}
+        currency={currency}
+      />
+    )
   }
 
   return (
@@ -1105,9 +1387,7 @@ export default function DashboardHomePage() {
           <div className="mt-5 space-y-3">
             {summaryRows.map((item) => (
               <div key={item.label} className="flex items-center gap-3 rounded-[1.15rem] border border-slate-100 bg-white/65 p-3 dark:border-white/10 dark:bg-white/5">
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-slate-100">
-                  <item.icon className="h-5 w-5" />
-                </span>
+                <HdDashboardIcon icon={item.icon} tone={hdToneForText(item.label)} />
                 <div className="min-w-0">
                   <p className="truncate text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">{item.label}</p>
                   <p className="mt-1 truncate text-sm font-semibold text-slate-950 dark:text-white">{item.value}</p>

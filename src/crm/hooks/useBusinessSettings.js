@@ -19,6 +19,21 @@ export const defaultBusinessSettings = {
   receiptFooter: '',
   signatureUrl: '',
   themeColor: '#2563eb',
+  printerSettings: {
+    mode: 'browser',
+    defaultPaperSize: 'a4',
+    receiptPaperSize: '58mm',
+    a4PrinterName: '',
+    thermalPrinterName: '',
+    connectionType: 'webusb',
+    autoPrintInvoices: false,
+    autoPrintReports: false,
+    autoPrintReceipts: false,
+    webUsbVendorId: '',
+    webUsbProductId: '',
+    webUsbInterface: 0,
+    webUsbEndpoint: 1,
+  },
 }
 
 export function businessSettingsId(businessType) {

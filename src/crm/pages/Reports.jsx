@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import { useEffect, useMemo, useState } from 'react'
+import { Navigate } from 'react-router-dom'
 import {
   HiOutlineArrowDownTray,
   HiOutlineBanknotes,
@@ -71,6 +72,7 @@ import {
   restaurantBusinessDayWindow,
   restaurantPreviousBusinessDayWindow,
 } from '../lib/restaurantBusinessDay.js'
+import { directPrinterAvailable, printThermalText } from '../lib/printerService.js'
 
 const NEXORA_LOGO = '/nexora-brand-logo.png'
 
@@ -451,7 +453,26 @@ function GenericReports() {
     window.setTimeout(() => setNotice(''), 2200)
   }
 
-  function printReport() {
+  async function printReport() {
+    if (directPrinterAvailable(businessSettingsApi.settings)) {
+      const directText = [
+        reportExport.workspaceName || 'NEXORA SOLUTION',
+        reportExport.title || reportTitle,
+        `Range: ${reportExport.dateRange || dateRangeLabel}`,
+        `Generated: ${reportExport.generatedAt}`,
+        `Revenue: ${formatMoney(reportData.totalRevenueUsd, filters.currency)}`,
+        `Expenses: ${formatMoney(reportData.expensesUsd, filters.currency)}`,
+        `Profit: ${formatMoney(reportData.profitUsd, filters.currency)}`,
+        `Invoices: ${reportData.invoices.length}`,
+        `Customers: ${reportData.customers.length}`,
+      ].join('\n')
+      const res = await printThermalText(directText, businessSettingsApi.settings)
+      if (res.ok) {
+        showNotice('Sent to connected printer.')
+        return
+      }
+      if (res.error) showNotice(`${res.error} Using Chrome print.`)
+    }
     window.setTimeout(() => window.print(), 180)
   }
 
@@ -2175,6 +2196,9 @@ export default function ReportsPage() {
   }
   if (normalizeBusinessType(businessType) === 'Restaurant POS') {
     return <RestaurantReports />
+  }
+  if (normalizeBusinessType(businessType) === 'School ERP') {
+    return <Navigate to="/app/school-reports" replace />
   }
   if (normalizeBusinessType(businessType) === 'Transport / Rental') {
     return <TransportReports />

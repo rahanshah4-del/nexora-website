@@ -44,6 +44,7 @@ import {
   formatRestaurantCurrency,
 } from '../lib/restaurantPosCalculations.js'
 import { useBusinessSettings } from '../hooks/useBusinessSettings.js'
+import { directPrinterAvailable, printThermalText } from '../lib/printerService.js'
 
 const initialCart = []
 
@@ -464,6 +465,13 @@ export default function RestaurantOrdersPage() {
     setPrintPreview({ title: '58mm KOT Preview', type: 'kot', data: buildKotPrintData(billContext()) })
   }
 
+  async function sendRestaurantThermal(content) {
+    if (!content || !directPrinterAvailable(settings)) return false
+    const res = await printThermalText(content, settings)
+    if (!res.ok && res.error) setFlowMessage(`${res.error} Showing print preview.`)
+    return Boolean(res.ok)
+  }
+
   function hasRequiredTable() {
     if (!cartRows.length) {
       setFlowMessage('Add at least one menu item before saving.')
@@ -502,7 +510,7 @@ export default function RestaurantOrdersPage() {
     }
   }
 
-  function quickBillFlow() {
+  async function quickBillFlow() {
     if (!hasRequiredTable()) return
     const context = billContext()
     const outputs = [
@@ -514,7 +522,7 @@ export default function RestaurantOrdersPage() {
         ? `Saved order. ${quickBill.printKot ? 'KOT sent to kitchen printer. ' : ''}${quickBill.printBill ? 'Bill sent to counter printer.' : ''}`
         : 'Saved order without printing.',
     )
-    if (outputs.length) {
+    if (outputs.length && !(await sendRestaurantThermal(outputs.join('\n\n\n')))) {
       setPrintPreview({
         title: quickBill.printKot && quickBill.printBill ? 'Quick Bill + KOT Preview' : quickBill.printKot ? '58mm KOT Preview' : '58mm Bill Preview',
         content: outputs.join('\n\n\n'),
@@ -712,10 +720,12 @@ export default function RestaurantOrdersPage() {
   function savePrintBill() {
     if (!hasRequiredTable()) return
     setBillingActionStatus({ type: 'bill', status: 'loading', message: 'Generating bill...' })
-    window.setTimeout(() => {
+    window.setTimeout(async () => {
       saveBillRecord()
       if (quickBill.printBill) {
-        setPrintPreview({ title: '58mm Bill Preview', type: 'bill', data: buildBillPrintData(billContext()) })
+        const context = billContext()
+        const printed = await sendRestaurantThermal(buildBillPrintTemplate(context))
+        if (!printed) setPrintPreview({ title: '58mm Bill Preview', type: 'bill', data: buildBillPrintData(context) })
       }
       setFlowMessage('')
       setBillingActionStatus({
@@ -737,9 +747,11 @@ export default function RestaurantOrdersPage() {
   function savePrintKot() {
     if (!hasRequiredTable()) return
     setBillingActionStatus({ type: 'kot', status: 'loading', message: 'Generating KOT...' })
-    window.setTimeout(() => {
+    window.setTimeout(async () => {
       if (quickBill.printKot) {
-        setPrintPreview({ title: '58mm KOT Preview', type: 'kot', data: buildKotPrintData(billContext()) })
+        const context = billContext()
+        const printed = await sendRestaurantThermal(buildKotPrintTemplate(context))
+        if (!printed) setPrintPreview({ title: '58mm KOT Preview', type: 'kot', data: buildKotPrintData(context) })
       }
       saveOrderRecord('pending')
       prepareNextOrderAfterSave()

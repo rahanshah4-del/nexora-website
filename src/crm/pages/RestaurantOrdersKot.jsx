@@ -30,6 +30,7 @@ import {
   isWithinRestaurantBusinessDay,
   restaurantBusinessDateKey,
 } from '../lib/restaurantBusinessDay.js'
+import { directPrinterAvailable, printThermalText } from '../lib/printerService.js'
 
 const filters = ['Today', 'Pending', 'Preparing', 'Served', 'Paid', 'Due', 'Cancelled']
 const restaurantTablesStorageKey = 'nexora.restaurant.tables.v1'
@@ -256,39 +257,49 @@ export default function RestaurantOrdersKotPage() {
     }
   }, [savedOrders, settings])
 
-  function billPreview(order) {
+  async function billPreview(order) {
     if (order.sourceKind === 'invoice') {
       setPreview({ title: `${order.billNumber} A4 Invoice`, size: 'a4', order })
       return
     }
+    const content = buildBillPrintTemplate({
+      orderNumber: order.billNumber,
+      table: order.table,
+      orderType: order.orderType,
+      rows: order.cartRows || [],
+      totals: order.totals || { subtotal: order.total, discount: 0, serviceCharges: 0, tax: 0, total: order.total },
+      paymentMethod: order.paymentStatus,
+      notes: order.notes,
+    })
+    if (directPrinterAvailable(settings)) {
+      const printed = await printThermalText(content, settings)
+      if (printed.ok) return
+    }
     setPreview({
       title: `${order.billNumber} 58mm Bill`,
-      content: buildBillPrintTemplate({
-        orderNumber: order.billNumber,
-        table: order.table,
-        orderType: order.orderType,
-        rows: order.cartRows || [],
-        totals: order.totals || { subtotal: order.total, discount: 0, serviceCharges: 0, tax: 0, total: order.total },
-        paymentMethod: order.paymentStatus,
-        notes: order.notes,
-      }),
+      content,
     })
   }
 
-  function kotPreview(order) {
+  async function kotPreview(order) {
     if (order.sourceKind === 'invoice') {
       billPreview(order)
       return
     }
+    const content = buildKotPrintTemplate({
+      kotNumber: order.kotNumber,
+      table: order.table,
+      orderType: order.orderType,
+      rows: order.cartRows || [],
+      notes: order.notes,
+    })
+    if (directPrinterAvailable(settings)) {
+      const printed = await printThermalText(content, settings)
+      if (printed.ok) return
+    }
     setPreview({
       title: `${order.kotNumber} 58mm KOT`,
-      content: buildKotPrintTemplate({
-        kotNumber: order.kotNumber,
-        table: order.table,
-        orderType: order.orderType,
-        rows: order.cartRows || [],
-        notes: order.notes,
-      }),
+      content,
     })
   }
 

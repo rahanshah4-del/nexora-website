@@ -1,11 +1,20 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import {
   HiOutlineDocumentArrowDown,
   HiOutlinePrinter,
   HiOutlineEnvelope,
   HiOutlineCheckBadge,
   HiOutlineExclamationTriangle,
-  HiOutlineAdjustmentsHorizontal,
+  HiOutlineAcademicCap,
+  HiOutlineBanknotes,
+  HiOutlineCalendarDays,
+  HiOutlineChartBarSquare,
+  HiOutlineClipboardDocumentList,
+  HiOutlineCurrencyDollar,
+  HiOutlineDocumentText,
+  HiOutlineFunnel,
+  HiOutlineUserGroup,
 } from 'react-icons/hi2'
 import { FaWhatsapp } from 'react-icons/fa'
 import useAuth from '../../context/useAuth.js'
@@ -16,13 +25,15 @@ import { useCustomers } from '../hooks/useCustomers.js'
 import { useTeamMembers } from '../hooks/useTeamMembers.js'
 import { useBusinessSettings } from '../hooks/useBusinessSettings.js'
 import { formatCurrency } from '../utils/format.js'
+import { listenToWorkspaceCollection } from '../lib/firestore.js'
 import {
   SCHOOL_REPORT_DEFS,
   buildSchoolReport,
   deriveClassOptions,
   deriveStudentOptions,
 } from '../lib/schoolReports.js'
-import { SCHOOL_PDF_TEMPLATES, generateSchoolReportPdf } from '../lib/schoolReportPdf.js'
+import { SCHOOL_PDF_TEMPLATES, calculateSchoolReportPdfTotal, generateSchoolReportPdf } from '../lib/schoolReportPdf.js'
+import { buildReportThermalText, directPrinterAvailable, printThermalText } from '../lib/printerService.js'
 
 const RANGE_PRESETS = [
   { key: 'all', label: 'All time' },
@@ -65,7 +76,62 @@ function genId() {
   return `SR-${Date.now().toString(36).toUpperCase()}`
 }
 
+function validationPassFor(report, total) {
+  return report.amountKey
+    ? Math.round(Number(total || 0)) === Math.round(Number(report.calculatedTotal || 0))
+    : Number(total || 0) === Number(report.sourceCount || 0)
+}
+
+const CATEGORY_STYLES = {
+  Fees: {
+    icon: HiOutlineBanknotes,
+    tone: 'from-emerald-50 to-white border-emerald-100 text-emerald-700',
+    button: 'bg-emerald-50 text-emerald-700 border-emerald-100',
+  },
+  Collection: {
+    icon: HiOutlineChartBarSquare,
+    tone: 'from-sky-50 to-white border-sky-100 text-sky-700',
+    button: 'bg-sky-50 text-sky-700 border-sky-100',
+  },
+  Finance: {
+    icon: HiOutlineCurrencyDollar,
+    tone: 'from-amber-50 to-white border-amber-100 text-amber-700',
+    button: 'bg-amber-50 text-amber-700 border-amber-100',
+  },
+  Students: {
+    icon: HiOutlineAcademicCap,
+    tone: 'from-violet-50 to-white border-violet-100 text-violet-700',
+    button: 'bg-violet-50 text-violet-700 border-violet-100',
+  },
+  Attendance: {
+    icon: HiOutlineCalendarDays,
+    tone: 'from-rose-50 to-white border-rose-100 text-rose-700',
+    button: 'bg-rose-50 text-rose-700 border-rose-100',
+  },
+}
+
+function safePercent(value, total) {
+  if (!total) return 0
+  return Math.max(0, Math.min(100, Math.round((Number(value || 0) / Number(total || 1)) * 100)))
+}
+
+function sortNewestAttendance(rows = []) {
+  return [...rows].sort((a, b) => {
+    const aDate = toSortableTime(a.createdAt || a.punchTime || a.date)
+    const bDate = toSortableTime(b.createdAt || b.punchTime || b.date)
+    return bDate - aDate
+  })
+}
+
+function toSortableTime(value) {
+  if (!value) return 0
+  if (typeof value?.toDate === 'function') return value.toDate().getTime()
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? 0 : date.getTime()
+}
+
 export default function SchoolReportsCenter() {
+  const [searchParams] = useSearchParams()
   const { user } = useAuth()
   const { businessType, workspaceId, userDoc } = useUser()
   const businessSettingsApi = useBusinessSettings()
@@ -79,7 +145,10 @@ export default function SchoolReportsCenter() {
   const workspaceName =
     settings.companyName || settings.schoolName || userDoc?.companyName || userDoc?.workspaceName || userDoc?.fullName || 'Nexora School'
 
-  const [reportKey, setReportKey] = useState('fee_collection')
+  const requestedReportKey = searchParams.get('report')
+  const [reportKey, setReportKey] = useState(() =>
+    SCHOOL_REPORT_DEFS.some((def) => def.key === requestedReportKey) ? requestedReportKey : 'fee_collection',
+  )
   const [template, setTemplate] = useState('modern')
   const [rangeKey, setRangeKey] = useState('all')
   const [customStart, setCustomStart] = useState('')
@@ -91,6 +160,9 @@ export default function SchoolReportsCenter() {
   const [pdfTotal, setPdfTotal] = useState(0)
   const [building, setBuilding] = useState(false)
   const [toast, setToast] = useState('')
+  const [studentAttendance, setStudentAttendance] = useState([])
+  const [staffAttendance, setStaffAttendance] = useState([])
+  const [attendanceError, setAttendanceError] = useState('')
   const reportIdRef = useRef(genId())
 
   const fees = invoicesApi.invoices || []
@@ -103,6 +175,51 @@ export default function SchoolReportsCenter() {
   const classOptions = useMemo(() => deriveClassOptions({ students, fees }), [students, fees])
   const studentOptions = useMemo(() => deriveStudentOptions({ students }), [students])
 
+  useEffect(() => {
+    if (SCHOOL_REPORT_DEFS.some((def) => def.key === requestedReportKey)) {
+      setReportKey(requestedReportKey)
+    }
+  }, [requestedReportKey])
+
+  useEffect(() => {
+    if (!workspaceId) {
+      setStudentAttendance([])
+      setStaffAttendance([])
+      setAttendanceError('')
+      return undefined
+    }
+    const common = { workspaceId, businessType, orderByField: null, limitCount: 500 }
+    const unsubs = [
+      listenToWorkspaceCollection({
+        ...common,
+        collectionName: 'studentAttendance',
+        onData: (rows) => {
+          setStudentAttendance(sortNewestAttendance(rows))
+          setAttendanceError('')
+        },
+        onError: (error) => {
+          console.warn('[School Reports] student attendance load failed', error)
+          setStudentAttendance([])
+          setAttendanceError('Attendance records could not be loaded.')
+        },
+      }),
+      listenToWorkspaceCollection({
+        ...common,
+        collectionName: 'staffAttendance',
+        onData: (rows) => {
+          setStaffAttendance(sortNewestAttendance(rows))
+          setAttendanceError('')
+        },
+        onError: (error) => {
+          console.warn('[School Reports] staff attendance load failed', error)
+          setStaffAttendance([])
+          setAttendanceError('Attendance records could not be loaded.')
+        },
+      }),
+    ]
+    return () => unsubs.forEach((unsub) => unsub?.())
+  }, [businessType, workspaceId])
+
   const report = useMemo(
     () =>
       buildSchoolReport(reportKey, {
@@ -111,15 +228,43 @@ export default function SchoolReportsCenter() {
         expenses,
         students,
         staff,
-        studentAttendance: [],
-        staffAttendance: [],
+        studentAttendance,
+        staffAttendance,
         dateWindow,
         classFilter,
         studentFilter,
         approvedOnly,
         currency,
       }),
-    [reportKey, fees, payments, expenses, students, staff, dateWindow, classFilter, studentFilter, approvedOnly, currency],
+    [reportKey, fees, payments, expenses, students, staff, studentAttendance, staffAttendance, dateWindow, classFilter, studentFilter, approvedOnly, currency],
+  )
+
+  const reportValidations = useMemo(
+    () =>
+      SCHOOL_REPORT_DEFS.map((def) => {
+        const item = buildSchoolReport(def.key, {
+          fees,
+          payments,
+          expenses,
+          students,
+          staff,
+          studentAttendance,
+          staffAttendance,
+          dateWindow,
+          classFilter,
+          studentFilter,
+          approvedOnly,
+          currency,
+        })
+        const total = calculateSchoolReportPdfTotal(item)
+        return {
+          ...def,
+          report: item,
+          pdfTotal: total,
+          pass: validationPassFor(item, total),
+        }
+      }),
+    [approvedOnly, classFilter, currency, dateWindow, expenses, fees, payments, staff, staffAttendance, studentAttendance, studentFilter, students],
   )
 
   const meta = useMemo(
@@ -170,9 +315,16 @@ export default function SchoolReportsCenter() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [report, template, workspaceName, approvedOnly])
 
-  const validationPass = report.amountKey
-    ? Math.round(pdfTotal) === Math.round(report.calculatedTotal)
-    : pdfTotal === report.sourceCount
+  const validationPass = validationPassFor(report, pdfTotal)
+  const selectedValidation = reportValidations.find((item) => item.key === reportKey)
+  const validationSummary = reportValidations.reduce(
+    (summary, item) => ({
+      total: summary.total + 1,
+      passed: summary.passed + (item.pass ? 1 : 0),
+      records: summary.records + Number(item.report.sourceCount || 0),
+    }),
+    { total: 0, passed: 0, records: 0 },
+  )
 
   function showToast(message) {
     setToast(message)
@@ -197,6 +349,24 @@ export default function SchoolReportsCenter() {
     const blobUrl = doc.output('bloburl')
     const win = window.open(blobUrl)
     if (!win) showToast('Allow pop-ups to print')
+  }
+
+  async function handleThermalPrint() {
+    if (directPrinterAvailable(settings)) {
+      const direct = await printThermalText(buildReportThermalText({ report, meta, currency }), settings)
+      if (direct.ok) {
+        showToast('Sent to connected 58mm printer')
+        return
+      }
+      if (direct.error) showToast(`${direct.error} Using Chrome print.`)
+    }
+    const id = genId()
+    reportIdRef.current = id
+    const { doc } = await generateSchoolReportPdf(report, { ...meta, reportId: id }, 'thermal')
+    doc.autoPrint()
+    const blobUrl = doc.output('bloburl')
+    const win = window.open(blobUrl)
+    if (!win) showToast('Allow pop-ups to print 58mm thermal report')
   }
 
   async function shareDoc(channel) {
@@ -233,63 +403,199 @@ export default function SchoolReportsCenter() {
 
   const loading = invoicesApi.loading || expensesApi.loading || customersApi.loading
 
+  const reportByKey = useMemo(() => {
+    const map = new Map()
+    reportValidations.forEach((item) => map.set(item.key, item.report))
+    return map
+  }, [reportValidations])
+
+  const feeCollectionTotal = reportByKey.get('fee_collection')?.calculatedTotal || 0
+  const pendingFeeTotal = reportByKey.get('pending_fee')?.calculatedTotal || 0
+  const monthlyRows = reportByKey.get('monthly_collection')?.rows || []
+  const expenseRows = reportByKey.get('expense')?.rows || []
+  const attendanceRows = reportByKey.get('student_attendance')?.rows || []
+  const maxMonthlyAmount = Math.max(1, ...monthlyRows.map((row) => Number(row.amount || 0)))
+  const presentCount = attendanceRows.filter((row) => String(row.status || '').toLowerCase().includes('present')).length
+  const lateCount = attendanceRows.filter((row) => String(row.status || '').toLowerCase().includes('late')).length
+  const absentCount = Math.max(0, attendanceRows.length - presentCount - lateCount)
+  const attendancePercent = safePercent(presentCount, attendanceRows.length)
+  const expenseTotal = expenseRows.reduce((sum, row) => sum + Number(row.amount || 0), 0)
+
+  const statCards = [
+    { label: 'Total Students', value: students.length.toLocaleString(), meta: 'Active student records', icon: HiOutlineUserGroup, tone: 'from-violet-50 to-white border-violet-100 text-violet-700' },
+    { label: 'Total Teachers', value: staff.length.toLocaleString(), meta: 'Staff & teacher records', icon: HiOutlineAcademicCap, tone: 'from-emerald-50 to-white border-emerald-100 text-emerald-700' },
+    { label: 'Fee Collection', value: formatCurrency(feeCollectionTotal, currency), meta: `${reportByKey.get('fee_collection')?.sourceCount || 0} source records`, icon: HiOutlineBanknotes, tone: 'from-sky-50 to-white border-sky-100 text-sky-700' },
+    { label: 'Pending Fees', value: formatCurrency(pendingFeeTotal, currency), meta: `${reportByKey.get('pending_fee')?.sourceCount || 0} pending records`, icon: HiOutlineDocumentText, tone: 'from-rose-50 to-white border-rose-100 text-rose-700' },
+  ]
+
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 pb-24">
       {toast ? (
         <div className="fixed right-4 top-4 z-50 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-lg">{toast}</div>
       ) : null}
 
-      <header className="rounded-2xl border border-slate-200 bg-gradient-to-r from-indigo-600 to-violet-600 p-5 text-white shadow-sm">
-        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-indigo-100">School ERP</p>
-        <h1 className="mt-1 text-2xl font-black tracking-tight">Reports Center</h1>
-        <p className="mt-1 text-sm text-indigo-100">Real PDF reports · multiple templates · validated totals.</p>
+      <header className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-indigo-500">Nexora School ERP</p>
+            <h1 className="mt-1 text-2xl font-black tracking-tight text-slate-950">Reports Center</h1>
+            <p className="mt-1 text-sm font-medium text-slate-500">Advanced reports with real PDF preview, filters, WhatsApp sharing, print, and 58mm thermal output.</p>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-3">
+            <select value={rangeKey} onChange={(e) => setRangeKey(e.target.value)} className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700 outline-none focus:border-indigo-400">
+              {RANGE_PRESETS.map((r) => <option key={r.key} value={r.key}>{r.label}</option>)}
+            </select>
+            <select value={template} onChange={(e) => setTemplate(e.target.value)} className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700 outline-none focus:border-indigo-400">
+              {SCHOOL_PDF_TEMPLATES.map((t) => <option key={t.key} value={t.key}>{t.label}</option>)}
+            </select>
+            <button type="button" onClick={handleExport} className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 text-sm font-black text-white shadow-sm transition hover:bg-indigo-700">
+              <HiOutlineDocumentArrowDown className="h-5 w-5" /> Export PDF
+            </button>
+          </div>
+        </div>
       </header>
 
-      <div className="grid gap-5 lg:grid-cols-[260px_1fr]">
-        {/* Report list */}
-        <aside className="space-y-4">
-          <div className="rounded-2xl border border-slate-200 bg-white p-3">
-            <p className="px-2 pb-2 text-xs font-bold uppercase tracking-wide text-slate-500">Reports</p>
-            <div className="space-y-3">
-              {grouped.map(([group, defs]) => (
-                <div key={group}>
-                  <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">{group}</p>
-                  <div className="mt-1 space-y-0.5">
-                    {defs.map((def) => (
-                      <button
-                        key={def.key}
-                        type="button"
-                        onClick={() => setReportKey(def.key)}
-                        className={`flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-[13px] font-semibold transition ${
-                          reportKey === def.key ? 'bg-indigo-600 text-white' : 'text-slate-700 hover:bg-slate-100'
-                        }`}
-                      >
-                        {def.label}
-                      </button>
-                    ))}
-                  </div>
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {statCards.map((card) => {
+          const Icon = card.icon
+          return (
+            <div key={card.label} className={`rounded-2xl border bg-gradient-to-br p-4 shadow-sm ${card.tone}`}>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-bold text-slate-500">{card.label}</p>
+                  <p className="mt-2 text-xl font-black text-slate-950">{card.value}</p>
+                  <p className="mt-1 text-xs font-semibold text-slate-500">{card.meta}</p>
                 </div>
-              ))}
+                <span className="grid h-11 w-11 place-items-center rounded-2xl bg-white/80 shadow-sm">
+                  <Icon className="h-6 w-6" />
+                </span>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr_0.9fr]">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-black text-slate-950">Fee Collection Trend</h2>
+            <span className="text-xs font-bold text-slate-400">Monthly</span>
+          </div>
+          <div className="mt-4 flex h-44 items-end gap-3 border-b border-slate-100 px-2 pb-2">
+            {(monthlyRows.slice(-7).length ? monthlyRows.slice(-7) : [{ bucket: 'No data', amount: 0 }]).map((row) => (
+              <div key={row.bucket} className="flex flex-1 flex-col items-center gap-2">
+                <div
+                  className="w-full rounded-t-xl bg-indigo-500/80"
+                  style={{ height: `${Math.max(8, safePercent(row.amount, maxMonthlyAmount) * 1.45)}px` }}
+                  title={formatCurrency(row.amount || 0, currency)}
+                />
+                <span className="max-w-full truncate text-[10px] font-bold text-slate-400">{row.bucket}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-black text-slate-950">Attendance Overview</h2>
+            <span className="text-xs font-bold text-emerald-600">{attendancePercent}% Present</span>
+          </div>
+          <div className="mt-5 flex items-center justify-center gap-5">
+            <div
+              className="grid h-32 w-32 place-items-center rounded-full"
+              style={{ background: `conic-gradient(#22c55e ${attendancePercent}%, #f59e0b ${attendancePercent}% ${attendancePercent + safePercent(lateCount, attendanceRows.length)}%, #f43f5e 0)` }}
+            >
+              <div className="grid h-20 w-20 place-items-center rounded-full bg-white text-center shadow-inner">
+                <div>
+                  <p className="text-2xl font-black text-slate-950">{attendancePercent}%</p>
+                  <p className="text-[10px] font-bold text-slate-400">Average</p>
+                </div>
+              </div>
+            </div>
+            <div className="space-y-2 text-xs font-bold text-slate-600">
+              <p><span className="mr-2 inline-block h-2.5 w-2.5 rounded-full bg-emerald-500" /> Present ({presentCount})</p>
+              <p><span className="mr-2 inline-block h-2.5 w-2.5 rounded-full bg-amber-500" /> Late ({lateCount})</p>
+              <p><span className="mr-2 inline-block h-2.5 w-2.5 rounded-full bg-rose-500" /> Absent ({absentCount})</p>
             </div>
           </div>
-        </aside>
+        </div>
 
-        {/* Main */}
-        <section className="space-y-5">
-          {/* Filters */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-4">
-            <div className="flex items-center gap-2 text-sm font-bold text-slate-700">
-              <HiOutlineAdjustmentsHorizontal className="h-5 w-5 text-indigo-600" /> Filters
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-black text-slate-950">Expense Overview</h2>
+            <span className="text-xs font-bold text-slate-400">{formatCurrency(expenseTotal, currency)}</span>
+          </div>
+          <div className="mt-4 space-y-3">
+            {(expenseRows.slice(0, 5).length ? expenseRows.slice(0, 5) : [{ category: 'No expenses', amount: 0 }]).map((row) => (
+              <div key={`${row.category}-${row.amount}`}>
+                <div className="flex justify-between text-xs font-bold text-slate-600">
+                  <span>{row.category}</span>
+                  <span>{formatCurrency(row.amount || 0, currency)}</span>
+                </div>
+                <div className="mt-1 h-2 rounded-full bg-slate-100">
+                  <div className="h-2 rounded-full bg-sky-500" style={{ width: `${safePercent(row.amount, expenseTotal)}%` }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-base font-black text-slate-950">Report Categories</h2>
+            <p className="mt-1 text-xs font-semibold text-slate-500">Select any report, then preview, export, print, email, or share it.</p>
+          </div>
+          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">{validationSummary.passed}/{validationSummary.total} validations passed</span>
+        </div>
+        <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+          {grouped.map(([group, defs]) => {
+            const style = CATEGORY_STYLES[group] || CATEGORY_STYLES.Fees
+            const Icon = style.icon
+            return (
+              <div key={group} className={`rounded-2xl border bg-gradient-to-br p-4 ${style.tone}`}>
+                <div className="flex items-center gap-3">
+                  <span className="grid h-11 w-11 place-items-center rounded-2xl bg-white shadow-sm">
+                    <Icon className="h-6 w-6" />
+                  </span>
+                  <div>
+                    <h3 className="text-sm font-black text-slate-950">{group} Reports</h3>
+                    <p className="text-xs font-bold text-slate-400">{defs.length} reports</p>
+                  </div>
+                </div>
+                <div className="mt-4 space-y-1.5">
+                  {defs.map((def) => (
+                    <button
+                      key={def.key}
+                      type="button"
+                      onClick={() => setReportKey(def.key)}
+                      className={`flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-xs font-black transition ${
+                        reportKey === def.key ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white/70 text-slate-700 hover:bg-white'
+                      }`}
+                    >
+                      <span className="truncate">{def.label}</span>
+                      <span className={`ml-2 rounded-full border px-2 py-0.5 text-[10px] ${reportValidations.find((item) => item.key === def.key)?.pass ? style.button : 'border-rose-100 bg-rose-50 text-rose-700'}`}>
+                        {reportValidations.find((item) => item.key === def.key)?.pass ? 'PASS' : 'FAIL'}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </section>
+
+      <div className="grid gap-5 xl:grid-cols-[330px_1fr]">
+        <aside className="space-y-4">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="flex items-center gap-2 text-sm font-black text-slate-900">
+              <HiOutlineFunnel className="h-5 w-5 text-indigo-600" /> Advanced Filters
             </div>
-            <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              <label className="block text-xs font-semibold text-slate-600">
-                Date range
-                <select value={rangeKey} onChange={(e) => setRangeKey(e.target.value)} className="mt-1 h-9 w-full rounded-lg border border-slate-200 px-2 text-[13px] font-medium text-slate-800 outline-none focus:border-indigo-400">
-                  {RANGE_PRESETS.map((r) => <option key={r.key} value={r.key}>{r.label}</option>)}
-                </select>
-              </label>
+            <div className="mt-4 space-y-3">
               {rangeKey === 'custom' ? (
-                <>
+                <div className="grid grid-cols-2 gap-2">
                   <label className="block text-xs font-semibold text-slate-600">
                     From
                     <input type="date" value={customStart} onChange={(e) => setCustomStart(e.target.value)} className="mt-1 h-9 w-full rounded-lg border border-slate-200 px-2 text-[13px] text-slate-800 outline-none focus:border-indigo-400" />
@@ -298,36 +604,49 @@ export default function SchoolReportsCenter() {
                     To
                     <input type="date" value={customEnd} onChange={(e) => setCustomEnd(e.target.value)} className="mt-1 h-9 w-full rounded-lg border border-slate-200 px-2 text-[13px] text-slate-800 outline-none focus:border-indigo-400" />
                   </label>
-                </>
+                </div>
               ) : null}
               <label className="block text-xs font-semibold text-slate-600">
                 Class
-                <select value={classFilter} onChange={(e) => setClassFilter(e.target.value)} className="mt-1 h-9 w-full rounded-lg border border-slate-200 px-2 text-[13px] font-medium text-slate-800 outline-none focus:border-indigo-400">
+                <select value={classFilter} onChange={(e) => setClassFilter(e.target.value)} className="mt-1 h-10 w-full rounded-lg border border-slate-200 px-2 text-sm font-bold text-slate-800 outline-none focus:border-indigo-400">
                   {classOptions.map((c) => <option key={c} value={c}>{c === 'All' ? 'All classes' : c}</option>)}
                 </select>
               </label>
               <label className="block text-xs font-semibold text-slate-600">
                 Student
-                <select value={studentFilter} onChange={(e) => setStudentFilter(e.target.value)} className="mt-1 h-9 w-full rounded-lg border border-slate-200 px-2 text-[13px] font-medium text-slate-800 outline-none focus:border-indigo-400">
+                <select value={studentFilter} onChange={(e) => setStudentFilter(e.target.value)} className="mt-1 h-10 w-full rounded-lg border border-slate-200 px-2 text-sm font-bold text-slate-800 outline-none focus:border-indigo-400">
                   {studentOptions.map((s) => <option key={s} value={s}>{s === 'All' ? 'All students' : s}</option>)}
                 </select>
               </label>
-            </div>
-
-            <div className="mt-3 flex flex-wrap items-center gap-3">
-              {/* Approved toggle */}
-              <div className="inline-flex rounded-lg border border-slate-200 p-0.5 text-[12px] font-bold">
-                <button type="button" onClick={() => setApprovedOnly(true)} className={`rounded-md px-3 py-1.5 transition ${approvedOnly ? 'bg-emerald-600 text-white' : 'text-slate-600'}`}>Approved Only</button>
-                <button type="button" onClick={() => setApprovedOnly(false)} className={`rounded-md px-3 py-1.5 transition ${!approvedOnly ? 'bg-slate-900 text-white' : 'text-slate-600'}`}>All Records</button>
-              </div>
-              {/* Template selector */}
-              <div className="inline-flex flex-wrap gap-1.5">
-                {SCHOOL_PDF_TEMPLATES.map((t) => (
-                  <button key={t.key} type="button" onClick={() => setTemplate(t.key)} className={`rounded-lg border px-3 py-1.5 text-[12px] font-bold transition ${template === t.key ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}>{t.label}</button>
-                ))}
+              <div className="grid grid-cols-2 rounded-xl border border-slate-200 bg-slate-50 p-1 text-xs font-black">
+                <button type="button" onClick={() => setApprovedOnly(true)} className={`rounded-lg px-2 py-2 transition ${approvedOnly ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600'}`}>Approved Only</button>
+                <button type="button" onClick={() => setApprovedOnly(false)} className={`rounded-lg px-2 py-2 transition ${!approvedOnly ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600'}`}>All Records</button>
               </div>
             </div>
           </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="flex items-center gap-2 text-sm font-black text-slate-900">
+              <HiOutlineClipboardDocumentList className="h-5 w-5 text-indigo-600" /> Template Selector
+            </div>
+            <div className="mt-3 grid gap-2">
+              {SCHOOL_PDF_TEMPLATES.map((t) => (
+                <button key={t.key} type="button" onClick={() => setTemplate(t.key)} className={`rounded-xl border px-3 py-2.5 text-left text-sm font-black transition ${template === t.key ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}>
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {attendanceError ? (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">{attendanceError}</div>
+          ) : null}
+        </aside>
+
+        <section className="space-y-5">
+          {attendanceError ? (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">{attendanceError}</div>
+          ) : null}
 
           {/* Validation */}
           <div className="rounded-2xl border border-slate-200 bg-white p-4">
@@ -353,27 +672,13 @@ export default function SchoolReportsCenter() {
             </div>
           </div>
 
-          {/* Actions */}
-          <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={handleExport} className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-indigo-700">
-              <HiOutlineDocumentArrowDown className="h-5 w-5" /> Export PDF
-            </button>
-            <button type="button" onClick={handlePrint} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-50">
-              <HiOutlinePrinter className="h-5 w-5" /> Print
-            </button>
-            <button type="button" onClick={() => shareDoc('email')} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-50">
-              <HiOutlineEnvelope className="h-5 w-5" /> Email
-            </button>
-            <button type="button" onClick={() => shareDoc('whatsapp')} className="inline-flex items-center gap-2 rounded-xl border border-green-200 bg-green-50 px-4 py-2.5 text-sm font-bold text-green-700 transition hover:bg-green-100">
-              <FaWhatsapp className="h-5 w-5" /> WhatsApp
-            </button>
-          </div>
-
           {/* Preview */}
           <div className="rounded-2xl border border-slate-200 bg-white p-3">
             <div className="flex items-center justify-between px-1 pb-2">
               <p className="text-sm font-bold text-slate-700">{report.title} — Preview</p>
-              <p className="text-xs text-slate-400">{building ? 'Rendering…' : `${SCHOOL_PDF_TEMPLATES.find((t) => t.key === template)?.label}`}</p>
+              <p className="text-xs text-slate-400">
+                {building ? 'Rendering…' : `${SCHOOL_PDF_TEMPLATES.find((t) => t.key === template)?.label} · ${selectedValidation?.pass ? 'PASS' : 'FAIL'}`}
+              </p>
             </div>
             {loading ? (
               <div className="grid h-[60vh] place-items-center text-sm text-slate-400">Loading workspace data…</div>
@@ -383,7 +688,65 @@ export default function SchoolReportsCenter() {
               <div className="grid h-[60vh] place-items-center text-sm text-slate-400">Building preview…</div>
             )}
           </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-black text-slate-900">All Report Validation</p>
+                <p className="mt-1 text-xs font-semibold text-slate-500">Source count, calculated total, PDF total, and PASS/FAIL for every report.</p>
+              </div>
+              <span className={`rounded-full px-3 py-1 text-xs font-black ${validationSummary.passed === validationSummary.total ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
+                {validationSummary.passed === validationSummary.total ? 'ALL PASS' : 'CHECK FAILURES'}
+              </span>
+            </div>
+            <div className="mt-3 overflow-x-auto">
+              <table className="min-w-full text-left text-xs">
+                <thead className="bg-slate-50 text-slate-500">
+                  <tr>
+                    {['Report', 'Source records', 'Calculated total', 'PDF total', 'Validation'].map((label) => (
+                      <th key={label} className="border-b border-slate-200 px-3 py-2 font-black uppercase tracking-[0.12em]">{label}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {reportValidations.map((item) => (
+                    <tr key={item.key} className={`border-b border-slate-100 last:border-0 ${item.key === reportKey ? 'bg-indigo-50/60' : ''}`}>
+                      <td className="px-3 py-2 font-black text-slate-800">{item.report.title}</td>
+                      <td className="px-3 py-2 font-semibold text-slate-600">{item.report.sourceCount}</td>
+                      <td className="px-3 py-2 font-semibold text-slate-600">{item.report.amountKey ? formatCurrency(item.report.calculatedTotal, currency) : item.report.calculatedTotal}</td>
+                      <td className="px-3 py-2 font-semibold text-slate-600">{item.report.amountKey ? formatCurrency(item.pdfTotal, currency) : item.pdfTotal}</td>
+                      <td className="px-3 py-2">
+                        <span className={`inline-flex rounded-full px-2 py-1 text-[11px] font-black ${item.pass ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
+                          {item.pass ? 'PASS' : 'FAIL'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </section>
+      </div>
+
+      <div className="fixed bottom-4 left-1/2 z-40 w-[min(980px,calc(100vw-2rem))] -translate-x-1/2 rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-2xl backdrop-blur">
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+          <button type="button" onClick={handleExport} className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-50 px-3 py-2.5 text-sm font-black text-red-700 transition hover:bg-red-100">
+            <HiOutlineDocumentArrowDown className="h-5 w-5" /> Export PDF
+          </button>
+          <button type="button" onClick={handlePrint} className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-50 px-3 py-2.5 text-sm font-black text-slate-700 transition hover:bg-slate-100">
+            <HiOutlinePrinter className="h-5 w-5" /> Print
+          </button>
+          <button type="button" onClick={handleThermalPrint} className="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-50 px-3 py-2.5 text-sm font-black text-amber-700 transition hover:bg-amber-100">
+            <HiOutlinePrinter className="h-5 w-5" /> 58mm Thermal
+          </button>
+          <button type="button" onClick={() => shareDoc('email')} className="inline-flex items-center justify-center gap-2 rounded-xl bg-sky-50 px-3 py-2.5 text-sm font-black text-sky-700 transition hover:bg-sky-100">
+            <HiOutlineEnvelope className="h-5 w-5" /> Email
+          </button>
+          <button type="button" onClick={() => shareDoc('whatsapp')} className="inline-flex items-center justify-center gap-2 rounded-xl bg-green-50 px-3 py-2.5 text-sm font-black text-green-700 transition hover:bg-green-100">
+            <FaWhatsapp className="h-5 w-5" /> WhatsApp
+          </button>
+        </div>
       </div>
     </div>
   )

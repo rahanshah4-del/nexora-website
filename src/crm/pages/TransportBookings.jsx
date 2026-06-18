@@ -33,6 +33,8 @@ import {
 import { loadTransportVehicles } from '../data/transportVehicles.js'
 import { loadTransportCustomers, applyTransportCustomerLedger, saveTransportCustomers } from '../data/transportCustomers.js'
 import { recordTransportPayment } from '../data/transportPayments.js'
+import { useBusinessSettings } from '../hooks/useBusinessSettings.js'
+import { printHtmlDocument } from '../lib/printerService.js'
 
 const statusMeta = {
   reserved: { label: 'Reserved', badge: 'info' },
@@ -259,6 +261,7 @@ const blankForm = {
 }
 
 export default function TransportBookingsPage() {
+  const { settings: businessSettings } = useBusinessSettings()
   const [bookings, setBookings] = useState(() => loadTransportBookings())
   const [vehicles, setVehicles] = useState(() => loadTransportVehicles())
   const [customers, setCustomers] = useState(() => loadTransportCustomers())
@@ -526,13 +529,7 @@ export default function TransportBookingsPage() {
         method: refundForm.method,
         reason: cancelReason.trim(),
       })
-      const printWindow = window.open('', '_blank', 'width=420,height=720')
-      if (printWindow) {
-        printWindow.document.write(html)
-        printWindow.document.close()
-        printWindow.focus()
-        printWindow.print()
-      }
+      printHtmlDocument({ html, settings: businessSettings, paperSize: 'a4' })
     }
     setCancelTarget(null)
     setCancelReason('')
@@ -542,22 +539,12 @@ export default function TransportBookingsPage() {
 
   function printBooking(booking) {
     const html = buildBookingPrintHtml(booking)
-    const printWindow = window.open('', '_blank', 'width=420,height=720')
-    if (!printWindow) return
-    printWindow.document.write(html)
-    printWindow.document.close()
-    printWindow.focus()
-    printWindow.print()
+    printHtmlDocument({ html, settings: businessSettings, paperSize: 'a4' })
   }
 
   function printBooking58mm(booking) {
     const html = buildBooking58mmPrintHtml(booking)
-    const printWindow = window.open('', '_blank', 'width=280,height=720')
-    if (!printWindow) return
-    printWindow.document.write(html)
-    printWindow.document.close()
-    printWindow.focus()
-    printWindow.print()
+    printHtmlDocument({ html, settings: businessSettings, paperSize: '58mm' })
   }
 
   function whatsappBooking(booking) {

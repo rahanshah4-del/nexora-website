@@ -84,6 +84,7 @@ export default function SupportPage() {
           <option value="Open">Open</option>
           <option value="In Progress">In Progress</option>
           <option value="Resolved">Resolved</option>
+          <option value="Completed">Completed</option>
           <option value="Closed">Closed</option>
         </Select>
       </div>
@@ -184,6 +185,18 @@ export default function SupportPage() {
             ? { tone: 'success', message: 'Reply saved and emailed to customer' }
             : { tone: 'error', message: `Reply saved, but email failed: ${sent.error}` })
           window.setTimeout(() => setToast(null), sent.ok ? 1800 : 2800)
+        }}
+        onComplete={async (ticket) => {
+          if (!canEditSupportTicket) return
+          const res = await support.completeTicket(ticket.id)
+          if (res?.ok) {
+            setActive((current) => current?.id === ticket.id ? { ...current, status: 'Completed' } : current)
+            setToast({ tone: 'success', message: 'Ticket completed' })
+            window.setTimeout(() => setToast(null), 1600)
+          } else {
+            setToast({ tone: 'error', message: res?.error || 'Unable to complete ticket' })
+            window.setTimeout(() => setToast(null), 2400)
+          }
         }}
       />
     </motion.div>

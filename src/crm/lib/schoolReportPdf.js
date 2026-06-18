@@ -38,8 +38,12 @@ async function loadDeps() {
 }
 
 // pdfTotal is summed from the SAME rows + amount column the PDF renders.
-function computePdfTotal(report) {
+export function calculateSchoolReportPdfTotal(report) {
   if (!report.amountKey) return report.rows.length
+  if (report.pdfTotalMode === 'last-row') {
+    const lastRow = report.rows.at(-1)
+    return num(lastRow?.[report.amountKey])
+  }
   return report.rows.reduce((sum, row) => sum + num(row[report.amountKey]), 0)
 }
 
@@ -106,7 +110,7 @@ function buildA4(jsPDF, autoTable, report, meta, theme) {
       ? report.rows.map((row) => columns.map((c) => cell(c, row)))
       : [columns.map((_, i) => (i === 0 ? 'No records found' : ''))],
     foot: report.amountKey
-      ? [columns.map((c) => (c.key === report.amountKey ? `${meta.currency} ${computePdfTotal(report).toLocaleString()}` : (c.key === columns[0].key ? report.totalLabel : '')))]
+      ? [columns.map((c) => (c.key === report.amountKey ? `${meta.currency} ${calculateSchoolReportPdfTotal(report).toLocaleString()}` : (c.key === columns[0].key ? report.totalLabel : '')))]
       : undefined,
     footStyles: { fillColor: theme.headFill, textColor: theme.headText, fontStyle: 'bold' },
   })
@@ -171,7 +175,7 @@ function buildThermal(jsPDF, report, meta) {
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(7.5)
   doc.text(String(report.totalLabel), left, y)
-  doc.text(`${meta.currency} ${computePdfTotal(report).toLocaleString()}`, right, y, { align: 'right' })
+  doc.text(`${meta.currency} ${calculateSchoolReportPdfTotal(report).toLocaleString()}`, right, y, { align: 'right' })
   y += 5
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(5.5)
@@ -207,7 +211,7 @@ export async function generateSchoolReportPdf(report, meta = {}, template = 'mod
     approvedOnly: true,
     ...meta,
   }
-  const pdfTotal = computePdfTotal(report)
+  const pdfTotal = calculateSchoolReportPdfTotal(report)
   const doc =
     template === 'thermal'
       ? buildThermal(jsPDF, report, fullMeta)

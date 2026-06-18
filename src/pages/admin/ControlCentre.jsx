@@ -17,6 +17,7 @@ import {
   HiOutlineShieldCheck,
   HiOutlineUserGroup,
   HiOutlineUsers,
+  HiOutlineWrenchScrewdriver,
 } from 'react-icons/hi2'
 import {
   collection,
@@ -47,6 +48,12 @@ import { auth, firestoreDb as db } from '../../lib/firebase.js'
 import useAuth from '../../context/useAuth.js'
 import { clientSafeMessage } from '../../lib/errorHandler.js'
 import { isBackendAdminEmail } from '../../lib/roles.js'
+import {
+  defaultMaintenanceConfig,
+  maintenanceModules,
+  maintenanceTargets,
+  normalizeMaintenanceConfig,
+} from '../../lib/maintenanceMode.js'
 import logoUrl from '../../assets/logo/nexora-logo.svg'
 import {
   DEFAULT_SAAS_CURRENCY,
@@ -123,6 +130,7 @@ const defaultPlatformSettings = {
   trialDays: 7,
   supportEmail: 'support@nexorasolution.online',
   maintenanceMode: false,
+  maintenanceConfig: defaultMaintenanceConfig,
   emailSenderName: 'Nexora Solution',
   emailReplyTo: 'support@nexorasolution.online',
   featureFlags: {
@@ -160,6 +168,7 @@ const navGroups = [
   {
     label: 'System',
     items: [
+      ['maintenance', 'Maintenance Mode', HiOutlineWrenchScrewdriver],
       ['settings', 'Settings', HiOutlineCog6Tooth],
       ['logs', 'System Logs', HiOutlineCog6Tooth],
       ['roles', 'Roles & Permissions', HiOutlineShieldCheck],
@@ -444,7 +453,7 @@ function useControlCentreData() {
       listen('platformPayments', 'platformPayments', 500),
       listen('backendActivityLogs', 'backendActivityLogs', 500),
       listen('announcements', 'announcements', 200),
-      listen('supportTickets', 'supportTickets', 200),
+      listenGroup('supportTickets', 'supportTickets', 500),
       listen('plans', PLATFORM_PLAN_COLLECTION, 50),
       listen('backendStaff', 'backendStaff', 100),
       listen('clientSessions', 'clientSessions', 300),
@@ -595,7 +604,7 @@ export default function ControlCentre() {
     pinned: false,
     status: 'draft',
   })
-  const [ticketDraft, setTicketDraft] = useState({ title: '', clientEmail: '', category: 'Technical Support', priority: 'medium' })
+  const [ticketDraft, setTicketDraft] = useState({ title: '', clientEmail: '', category: 'Technical Support', priority: 'medium', workspaceId: '' })
   const [transactionStatusFilter, setTransactionStatusFilter] = useState('all')
   const [transactionPlanFilter, setTransactionPlanFilter] = useState('all')
   const [transactionMethodFilter, setTransactionMethodFilter] = useState('all')
@@ -613,7 +622,21 @@ export default function ControlCentre() {
   const liveUsers = useMemo(() => mergePresence(data.users, data.clientSessions, data.userPresence), [data.users, data.clientSessions, data.userPresence])
   const onlineUsers = useMemo(() => liveUsers.filter(isOnline), [liveUsers])
   const platformPlans = useMemo(() => mergePlatformPlans(data.plans), [data.plans])
-  const platformSettings = useMemo(() => ({ ...defaultPlatformSettings, ...(data.platformSettings[0] || {}) }), [data.platformSettings])
+  const platformSettings = useMemo(() => {
+    const liveSettings = data.platformSettings[0] || {}
+    return {
+      ...defaultPlatformSettings,
+      ...liveSettings,
+      maintenanceConfig: normalizeMaintenanceConfig(liveSettings.maintenanceConfig || {
+        enabled: liveSettings.maintenanceMode === true,
+        target: 'workspace',
+      }),
+      featureFlags: {
+        ...defaultPlatformSettings.featureFlags,
+        ...(liveSettings.featureFlags || {}),
+      },
+    }
+  }, [data.platformSettings])
   const workspacesById = useMemo(() => {
     const map = new Map()
     data.workspaces.forEach((workspace) => {
@@ -924,15 +947,18 @@ export default function ControlCentre() {
   }
 
   async function saveSettings() {
+    const maintenanceConfig = normalizeMaintenanceConfig(settingsDraft.maintenanceConfig)
     const payload = {
       ...settingsDraft,
+      maintenanceMode: maintenanceConfig.enabled,
+      maintenanceConfig,
       trialDays: Number(settingsDraft.trialDays || 7),
       updatedAt: serverTimestamp(),
       updatedBy: user?.uid || '',
       updatedByEmail: user?.email || '',
     }
     await setDoc(doc(db, 'platformSettings', 'main'), payload, { merge: true })
-    await logActivity('platform_settings_saved', { defaultCurrency: payload.defaultCurrency, trialDays: payload.trialDays, maintenanceMode: payload.maintenanceMode })
+    await logActivity('platform_settings_saved', { defaultCurrency: payload.defaultCurrency, trialDays: payload.trialDays, maintenanceMode: payload.maintenanceMode, maintenanceTarget: maintenanceConfig.target })
   }
 
   // Save the global WhatsApp CRM pricing (settings/whatsappPricing).
@@ -1990,11 +2016,20 @@ export default function ControlCentre() {
 
   function SupportTickets() {
     const ticketRows = useSearch(data.supportTickets, search, ['title', 'subject', 'clientEmail', 'email', 'workspaceName', 'category', 'status', 'priority'])
+    const workspaceOptions = data.workspaces.map((workspace) => ({
+      id: workspace.id || workspace.workspaceId || workspace.ownerId,
+      name: workspaceName(workspace),
+      email: userEmail(workspace),
+    })).filter((workspace) => workspace.id)
     return (
       <Panel title="Futuristic Support Ticket Centre" action={<ShellButton>Firestore: supportTickets</ShellButton>}>
-        <div className="mb-4 grid gap-3 lg:grid-cols-[1fr_1fr_14rem_12rem_auto]">
+        <div className="mb-4 grid gap-3 lg:grid-cols-[1fr_1fr_14rem_14rem_12rem_auto]">
           <input className="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Ticket title" value={ticketDraft.title} onChange={(event) => setTicketDraft((current) => ({ ...current, title: event.target.value }))} />
           <input className="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Client email" value={ticketDraft.clientEmail} onChange={(event) => setTicketDraft((current) => ({ ...current, clientEmail: event.target.value }))} />
+          <select className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold" value={ticketDraft.workspaceId} onChange={(event) => setTicketDraft((current) => ({ ...current, workspaceId: event.target.value }))}>
+            <option value="">Select workspace</option>
+            {workspaceOptions.map((workspace) => <option key={workspace.id} value={workspace.id}>{workspace.name}</option>)}
+          </select>
           <select className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold" value={ticketDraft.category} onChange={(event) => setTicketDraft((current) => ({ ...current, category: event.target.value }))}>
             {['Billing', 'Login', 'Workspace', 'CRM Bug', 'Feature Request', 'Technical Support'].map((category) => <option key={category}>{category}</option>)}
           </select>
@@ -2004,9 +2039,29 @@ export default function ControlCentre() {
           <ShellButton onClick={() => {
             const id = `${Date.now()}`
             runAction(`ticket-create-${id}`, async () => {
-              await setDoc(doc(db, 'supportTickets', id), { ...ticketDraft, status: 'open', conversation: [], internalNotes: '', createdAt: serverTimestamp(), createdBy: user?.uid || '', createdByEmail: user?.email || '' })
+              if (!ticketDraft.workspaceId) throw new Error('Select a workspace first.')
+              const selectedWorkspace = data.workspaces.find((workspace) => (workspace.id || workspace.workspaceId || workspace.ownerId) === ticketDraft.workspaceId) || {}
+              const payload = {
+                ...ticketDraft,
+                ticketNumber: `TCK-${id.slice(-6)}`,
+                subject: ticketDraft.title,
+                customerEmail: ticketDraft.clientEmail,
+                clientEmail: ticketDraft.clientEmail,
+                workspaceId: ticketDraft.workspaceId,
+                workspaceName: workspaceName(selectedWorkspace),
+                businessType: workspaceBusinessType(selectedWorkspace),
+                status: 'Open',
+                comments: [],
+                conversation: [],
+                internalNotes: '',
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp(),
+                createdBy: user?.uid || '',
+                createdByEmail: user?.email || '',
+              }
+              await setDoc(doc(db, 'workspaces', ticketDraft.workspaceId, 'supportTickets', id), payload)
               await logActivity('support_ticket_created', ticketDraft)
-              setTicketDraft({ title: '', clientEmail: '', category: 'Technical Support', priority: 'medium' })
+              setTicketDraft({ title: '', clientEmail: '', category: 'Technical Support', priority: 'medium', workspaceId: '' })
             }, 'Support ticket created.')
           }}>Create</ShellButton>
         </div>
@@ -2017,6 +2072,10 @@ export default function ControlCentre() {
           { key: 'status', label: 'Status', render: (row) => <Status value={row.status || 'open'} /> },
           { key: 'assigned', label: 'Assigned Staff', render: (row) => row.assignedStaff || row.assignedTo || 'Unassigned' },
           { key: 'lastReply', label: 'Last Reply', render: (row) => dateTimeLabel(row.lastReplyAt || row.updatedAt || row.createdAt) },
+          { key: 'screenshot', label: 'Screenshot', render: (row) => {
+            const url = row.screenshotUrl || row.attachmentUrl || row.attachments?.[0]?.url || ''
+            return url ? <a className="text-xs font-black text-indigo-700 underline" href={url} target="_blank" rel="noreferrer">Open screenshot</a> : <span className="text-xs text-slate-400">No screenshot</span>
+          } },
           { key: 'notes', label: 'Internal Notes', render: (row) => row.internalNotes || '-' },
           {
             key: 'conversation',
@@ -2024,8 +2083,8 @@ export default function ControlCentre() {
             render: (row) => (
               <div className="min-w-[22rem] space-y-2">
                 <div className="max-h-24 overflow-auto rounded-xl bg-slate-50 p-2 text-xs">
-                  {(row.conversation || []).slice(-3).map((item, index) => <p key={`${row.id}-${index}`}>{item.author || 'Support'}: {item.message}</p>)}
-                  {!(row.conversation || []).length ? <p>No conversation yet.</p> : null}
+                  {(row.comments || row.conversation || []).slice(-3).map((item, index) => <p key={`${row.id}-${index}`}>{item.author || 'Support'}: {item.message}</p>)}
+                  {!(row.comments || row.conversation || []).length ? <p>No conversation yet.</p> : null}
                 </div>
                 <div className="flex gap-2">
                   <input id={`reply-${row.id}`} className="w-44 rounded-xl border border-slate-200 px-3 py-2 text-xs" placeholder="Reply..." />
@@ -2033,12 +2092,11 @@ export default function ControlCentre() {
                     const input = document.getElementById(`reply-${row.id}`)
                     const message = input?.value?.trim()
                     if (!message) return
-                    const conversation = [...(row.conversation || []), { author: user?.email || 'Admin', message, createdAt: new Date().toISOString() }]
-                    runAction(`ticket-reply-${row.id}`, () => updateDoc(row.ref || doc(db, 'supportTickets', row.id), { conversation, lastReplyAt: serverTimestamp(), updatedAt: serverTimestamp() }), 'Reply saved.')
+                    const conversation = [...(row.comments || row.conversation || []), { id: `admin_${Date.now()}`, author: user?.email || 'Admin', message, createdAt: new Date().toISOString() }]
+                    runAction(`ticket-reply-${row.id}`, () => updateDoc(row.ref || doc(db, 'supportTickets', row.id), { comments: conversation, conversation, lastReplyAt: serverTimestamp(), updatedAt: serverTimestamp() }), 'Reply saved.')
                     input.value = ''
                   }}>Reply</ShellButton>
                 </div>
-                <p className="text-xs text-slate-400">Attachments placeholder ready</p>
               </div>
             ),
           },
@@ -2047,9 +2105,10 @@ export default function ControlCentre() {
             label: 'Actions',
             render: (row) => (
               <div className="flex flex-wrap gap-2">
-                <ShellButton onClick={() => runAction(`ticket-resolve-${row.id}`, () => updateDoc(row.ref || doc(db, 'supportTickets', row.id), { status: 'resolved', resolvedAt: serverTimestamp(), updatedAt: serverTimestamp() }), 'Ticket resolved.')}>Resolve</ShellButton>
-                <ShellButton onClick={() => runAction(`ticket-reopen-${row.id}`, () => updateDoc(row.ref || doc(db, 'supportTickets', row.id), { status: 'open', reopenedAt: serverTimestamp(), updatedAt: serverTimestamp() }), 'Ticket reopened.')}>Reopen</ShellButton>
-                <ShellButton onClick={() => runAction(`ticket-close-${row.id}`, () => updateDoc(row.ref || doc(db, 'supportTickets', row.id), { status: 'closed', closedAt: serverTimestamp(), updatedAt: serverTimestamp() }), 'Ticket closed.')}>Close</ShellButton>
+                <ShellButton onClick={() => runAction(`ticket-complete-${row.id}`, () => updateDoc(row.ref || doc(db, 'supportTickets', row.id), { status: 'Completed', completedAt: serverTimestamp(), resolvedAt: serverTimestamp(), updatedAt: serverTimestamp() }), 'Ticket completed.')}>Complete</ShellButton>
+                <ShellButton onClick={() => runAction(`ticket-resolve-${row.id}`, () => updateDoc(row.ref || doc(db, 'supportTickets', row.id), { status: 'Resolved', resolvedAt: serverTimestamp(), updatedAt: serverTimestamp() }), 'Ticket resolved.')}>Resolve</ShellButton>
+                <ShellButton onClick={() => runAction(`ticket-reopen-${row.id}`, () => updateDoc(row.ref || doc(db, 'supportTickets', row.id), { status: 'Open', reopenedAt: serverTimestamp(), updatedAt: serverTimestamp() }), 'Ticket reopened.')}>Reopen</ShellButton>
+                <ShellButton onClick={() => runAction(`ticket-close-${row.id}`, () => updateDoc(row.ref || doc(db, 'supportTickets', row.id), { status: 'Closed', closedAt: serverTimestamp(), updatedAt: serverTimestamp() }), 'Ticket closed.')}>Close</ShellButton>
               </div>
             ),
           },
@@ -2124,6 +2183,115 @@ export default function ControlCentre() {
           <p className="mt-3 text-xs font-semibold text-slate-500">
             Currency: {currency} · Meta billing notice: {draft.metaBillingEnabled !== false ? 'Shown' : 'Hidden'} · Last updated: {dateTimeLabel(whatsappPricingApi.pricing.lastUpdatedAt) || '—'}
           </p>
+        </Panel>
+      </div>
+    )
+  }
+
+  function MaintenanceManagement() {
+    const maintenanceDraft = normalizeMaintenanceConfig(settingsDraft.maintenanceConfig)
+    const setMaintenanceField = (field, value) => {
+      setSettingsDraft((current) => ({
+        ...current,
+        maintenanceMode: field === 'enabled' ? value : normalizeMaintenanceConfig(current.maintenanceConfig).enabled,
+        maintenanceConfig: {
+          ...normalizeMaintenanceConfig(current.maintenanceConfig),
+          [field]: value,
+        },
+      }))
+    }
+    const applyProfessionalCopy = () => {
+      setSettingsDraft((current) => {
+        const currentConfig = normalizeMaintenanceConfig(current.maintenanceConfig)
+        return {
+          ...current,
+          maintenanceConfig: {
+            ...currentConfig,
+            title: 'Scheduled maintenance in progress',
+            noticeMessage: 'Scheduled maintenance is planned for this service. Please save your work before the maintenance window begins.',
+            activeMessage: 'This service is temporarily unavailable while we complete scheduled maintenance. We are working to restore access as quickly as possible.',
+          },
+        }
+      })
+    }
+
+    return (
+      <div className="space-y-4">
+        <Panel
+          title="Maintenance Scheduler"
+          action={<ShellButton onClick={() => runAction('maintenance-save', saveSettings, 'Maintenance mode saved.')}>Save Maintenance</ShellButton>}
+        >
+          <div className="grid gap-4 lg:grid-cols-3">
+            <label className="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 p-4 text-sm font-bold text-slate-700">
+              Enable maintenance controls
+              <input type="checkbox" checked={maintenanceDraft.enabled} onChange={(event) => setMaintenanceField('enabled', event.target.checked)} />
+            </label>
+            <label className="text-xs font-bold text-slate-600">
+              Target
+              <select className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" value={maintenanceDraft.target} onChange={(event) => setMaintenanceField('target', event.target.value)}>
+                {maintenanceTargets.map((target) => <option key={target.value} value={target.value}>{target.label}</option>)}
+              </select>
+            </label>
+            <label className="text-xs font-bold text-slate-600">
+              Module
+              <select className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" value={maintenanceDraft.module} onChange={(event) => setMaintenanceField('module', event.target.value)} disabled={maintenanceDraft.target !== 'module'}>
+                {maintenanceModules.map((module) => <option key={module.value} value={module.value}>{module.label}</option>)}
+              </select>
+            </label>
+            <label className="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 p-4 text-sm font-bold text-slate-700">
+              Show advance ticker
+              <input type="checkbox" checked={maintenanceDraft.noticeEnabled} onChange={(event) => setMaintenanceField('noticeEnabled', event.target.checked)} />
+            </label>
+            <label className="text-xs font-bold text-slate-600">
+              Ticker Starts
+              <input type="datetime-local" className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" value={maintenanceDraft.noticeStartsAt || ''} onChange={(event) => setMaintenanceField('noticeStartsAt', event.target.value)} />
+            </label>
+            <label className="text-xs font-bold text-slate-600">
+              Maintenance Starts
+              <input type="datetime-local" className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" value={maintenanceDraft.startsAt || ''} onChange={(event) => setMaintenanceField('startsAt', event.target.value)} />
+            </label>
+            <label className="text-xs font-bold text-slate-600">
+              Maintenance Ends
+              <input type="datetime-local" className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" value={maintenanceDraft.endsAt || ''} onChange={(event) => setMaintenanceField('endsAt', event.target.value)} />
+            </label>
+            <label className="text-xs font-bold text-slate-600 lg:col-span-2">
+              Maintenance Title
+              <input className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" value={maintenanceDraft.title || ''} onChange={(event) => setMaintenanceField('title', event.target.value)} />
+            </label>
+          </div>
+          <div className="mt-4 grid gap-4 lg:grid-cols-2">
+            <label className="text-xs font-bold text-slate-600">
+              Advance Ticker Message
+              <textarea className="mt-1 h-28 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" value={maintenanceDraft.noticeMessage || ''} onChange={(event) => setMaintenanceField('noticeMessage', event.target.value)} />
+            </label>
+            <label className="text-xs font-bold text-slate-600">
+              Active Maintenance Message
+              <textarea className="mt-1 h-28 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" value={maintenanceDraft.activeMessage || ''} onChange={(event) => setMaintenanceField('activeMessage', event.target.value)} />
+            </label>
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <ShellButton onClick={applyProfessionalCopy}>Apply Professional Copy</ShellButton>
+            <ShellButton onClick={() => setMaintenanceField('enabled', false)}>Disable Maintenance</ShellButton>
+            <ShellButton onClick={() => runAction('maintenance-save-bottom', saveSettings, 'Maintenance mode saved.')}>Save</ShellButton>
+          </div>
+        </Panel>
+
+        <Panel title="Live Behaviour">
+          <div className="grid gap-4 lg:grid-cols-3">
+            {[
+              ['Status', maintenanceDraft.enabled ? 'Enabled' : 'Disabled'],
+              ['Target', maintenanceTargets.find((target) => target.value === maintenanceDraft.target)?.label || maintenanceDraft.target],
+              ['Module', maintenanceModules.find((module) => module.value === maintenanceDraft.module)?.label || 'All Workspace Modules'],
+            ].map(([label, value]) => (
+              <div key={label} className="rounded-2xl border border-slate-200 bg-white p-4">
+                <p className="text-[11px] font-black uppercase tracking-[0.12em] text-slate-500">{label}</p>
+                <p className="mt-1 text-lg font-black text-slate-950">{value}</p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-900">
+            Workspace ticker appears after "Ticker Starts" and before "Maintenance Starts". During the maintenance window, the selected website/workspace/module shows the active maintenance message.
+          </div>
         </Panel>
       </div>
     )
@@ -2215,8 +2383,20 @@ export default function ControlCentre() {
           <Panel title="Maintenance Mode">
             <label className="flex items-center justify-between rounded-2xl bg-slate-50 p-4 text-sm font-bold text-slate-700">
               Enable maintenance mode UI
-              <input type="checkbox" checked={Boolean(settingsDraft.maintenanceMode)} onChange={(event) => setSettingsDraft((current) => ({ ...current, maintenanceMode: event.target.checked }))} />
+              <input
+                type="checkbox"
+                checked={Boolean(normalizeMaintenanceConfig(settingsDraft.maintenanceConfig).enabled)}
+                onChange={(event) => setSettingsDraft((current) => ({
+                  ...current,
+                  maintenanceMode: event.target.checked,
+                  maintenanceConfig: {
+                    ...normalizeMaintenanceConfig(current.maintenanceConfig),
+                    enabled: event.target.checked,
+                  },
+                }))}
+              />
             </label>
+            <ShellButton className="mt-3" onClick={() => setActiveTab('maintenance')}>Open Scheduler</ShellButton>
           </Panel>
           <Panel title="Feature Flags">
             <div className="space-y-3">
@@ -2389,6 +2569,7 @@ export default function ControlCentre() {
     emailMarketing: <EmailMarketing embedded />,
     announcements: <Announcements />,
     support: <SupportTickets />,
+    maintenance: <MaintenanceManagement />,
     settings: <Settings />,
     logs: <Panel title="System Logs" action={<ShellButton>Firestore: backendActivityLogs</ShellButton>}><AdminTable rows={data.backendActivityLogs} emptyTitle="No backend activity logs found" columns={[{ key: 'admin', label: 'Admin', render: (row) => row.adminEmail || row.adminUid || '-' }, { key: 'action', label: 'Action' }, { key: 'details', label: 'Details', render: (row) => JSON.stringify(row.details || {}).slice(0, 120) }, { key: 'date', label: 'Date', render: (row) => dateTimeLabel(row.createdAt) }]} /></Panel>,
     roles: <Roles />,

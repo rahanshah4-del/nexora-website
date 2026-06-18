@@ -1,6 +1,8 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { HiOutlineChatBubbleLeftRight } from 'react-icons/hi2'
 import Header from '../../components/Header.jsx'
+import { MaintenanceBlock } from '../../components/MaintenanceMode.jsx'
+import usePlatformMaintenance from '../../hooks/usePlatformMaintenance.js'
 import PublicFooter from './PublicFooter.jsx'
 import TawkChat from './TawkChat.jsx'
 
@@ -10,6 +12,9 @@ const whatsappLeadLink = `${whatsappLink}?text=${encodeURIComponent(
 )}`
 
 export default function PublicPageShell({ children }) {
+  const maintenanceContext = useMemo(() => ({ surface: 'website' }), [])
+  const maintenance = usePlatformMaintenance(maintenanceContext)
+
   useEffect(() => {
     document.documentElement.classList.add('public-website')
     document.body.classList.add('public-website')
@@ -47,20 +52,25 @@ export default function PublicPageShell({ children }) {
 
   return (
     <div className="marketing-page page-enter min-h-screen overflow-x-hidden bg-white text-slate-950">
-      <Header />
-      <main>{children}</main>
-      <PublicFooter />
+      {maintenance.active ? <MaintenanceBlock state={maintenance} /> : null}
+      {maintenance.active ? null : (
+        <>
+          <Header />
+          <main>{children}</main>
+          <PublicFooter />
 
-      <a
-        href={whatsappLeadLink}
-        target="_blank"
-        rel="noreferrer"
-        aria-label="Chat with Nexora on WhatsApp"
-        className="fixed bottom-5 right-5 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#25d366] text-white shadow-[0_18px_38px_-22px_rgba(37,211,102,0.9)] transition hover:-translate-y-0.5 hover:bg-[#20bd5a]"
-      >
-        <HiOutlineChatBubbleLeftRight className="text-3xl" />
-      </a>
-      <TawkChat />
+          <a
+            href={whatsappLeadLink}
+            target="_blank"
+            rel="noreferrer"
+            aria-label="Chat with Nexora on WhatsApp"
+            className="fixed bottom-5 right-5 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#25d366] text-white shadow-[0_18px_38px_-22px_rgba(37,211,102,0.9)] transition hover:-translate-y-0.5 hover:bg-[#20bd5a]"
+          >
+            <HiOutlineChatBubbleLeftRight className="text-3xl" />
+          </a>
+          <TawkChat />
+        </>
+      )}
     </div>
   )
 }

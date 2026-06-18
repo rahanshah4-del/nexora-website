@@ -9,7 +9,7 @@ import Select from '../ui/Select.jsx'
 import TicketComments from './TicketComments.jsx'
 
 function statusVariant(status) {
-  if (status === 'Resolved') return 'success'
+  if (status === 'Resolved' || status === 'Completed') return 'success'
   if (status === 'In Progress') return 'info'
   if (status === 'Closed') return 'default'
   return 'warning'
@@ -22,7 +22,7 @@ function priorityVariant(priority) {
   return 'default'
 }
 
-export default function TicketDrawer({ open, ticket, onClose, onSave, onAddComment, canEdit = false, canComment = false }) {
+export default function TicketDrawer({ open, ticket, onClose, onSave, onAddComment, onComplete, canEdit = false, canComment = false }) {
   const [draft, setDraft] = useState(ticket)
 
   useEffect(() => {
@@ -33,7 +33,7 @@ export default function TicketDrawer({ open, ticket, onClose, onSave, onAddComme
     <AnimatePresence>
       {open && draft ? (
         <motion.div
-          className="fixed inset-0 z-50 bg-slate-950/45 backdrop-blur-sm"
+          className="fixed inset-0 z-[90] bg-slate-950/45 backdrop-blur-sm"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -85,6 +85,7 @@ export default function TicketDrawer({ open, ticket, onClose, onSave, onAddComme
                       <option>Open</option>
                       <option>In Progress</option>
                       <option>Resolved</option>
+                      <option>Completed</option>
                       <option>Closed</option>
                     </Select>
                   </div>
@@ -119,6 +120,22 @@ export default function TicketDrawer({ open, ticket, onClose, onSave, onAddComme
                       placeholder="Describe the issue..."
                     />
                   </div>
+                  {draft.screenshotUrl ? (
+                    <div className="sm:col-span-2">
+                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Screenshot</label>
+                      <a
+                        href={draft.screenshotUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="mt-1 block overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-slate-950"
+                      >
+                        <img src={draft.screenshotUrl} alt={draft.screenshotName || 'Ticket screenshot'} className="max-h-56 w-full object-contain bg-slate-50" />
+                        <span className="block truncate px-3 py-2 text-xs font-bold text-indigo-700 dark:text-indigo-300">
+                          {draft.screenshotName || 'Open screenshot'}
+                        </span>
+                      </a>
+                    </div>
+                  ) : null}
                 </div>
 
                 <div className="mt-5">
@@ -131,6 +148,20 @@ export default function TicketDrawer({ open, ticket, onClose, onSave, onAddComme
                   {canEdit ? (
                     <Button className="rounded-2xl" type="button" onClick={() => onSave?.(draft)}>
                       Save
+                    </Button>
+                  ) : null}
+                  {canEdit && draft.status !== 'Completed' ? (
+                    <Button
+                      variant="subtle"
+                      className="rounded-2xl text-emerald-700 hover:bg-emerald-50"
+                      type="button"
+                      onClick={() => {
+                        const next = { ...draft, status: 'Completed', completedAt: new Date().toISOString(), resolvedAt: new Date().toISOString() }
+                        setDraft(next)
+                        onComplete?.(next)
+                      }}
+                    >
+                      Complete Ticket
                     </Button>
                   ) : null}
                   <Button variant="subtle" className="rounded-2xl" type="button" onClick={onClose}>

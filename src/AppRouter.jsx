@@ -57,6 +57,7 @@ const NotificationsPage = lazy(() => import('./crm/pages/Notifications.jsx'))
 const ApprovalsPage = lazy(() => import('./crm/pages/Approvals.jsx'))
 const ReportsPage = lazy(() => import('./crm/pages/Reports.jsx'))
 const SchoolReportsCenterPage = lazy(() => import('./crm/pages/SchoolReportsCenter.jsx'))
+const AttendancePage = lazy(() => import('./crm/pages/Attendance.jsx'))
 const SettingsPage = lazy(() => import('./crm/pages/Settings.jsx'))
 const MaintenancePage = lazy(() => import('./crm/pages/Maintenance.jsx'))
 const ContractsPage = lazy(() => import('./crm/pages/Contracts.jsx'))
@@ -270,6 +271,7 @@ export default function AppRouter() {
         <Route path="approvals" element={<LazyPage><ApprovalsPage /></LazyPage>} />
         <Route path="reports" element={<LazyPage><ReportsPage /></LazyPage>} />
         <Route path="school-reports" element={<LazyPage><SchoolReportsCenterPage /></LazyPage>} />
+        <Route path="attendance" element={<LazyPage><AttendancePage /></LazyPage>} />
         <Route path="maintenance" element={<LazyPage><MaintenancePage /></LazyPage>} />
         <Route path="contracts" element={<LazyPage><ContractsPage /></LazyPage>} />
         <Route path="whatsapp-inbox" element={<LazyPage><WhatsappInboxPage /></LazyPage>} />

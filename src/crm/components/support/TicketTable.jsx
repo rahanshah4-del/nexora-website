@@ -4,7 +4,7 @@ import Button from '../ui/Button.jsx'
 import Table from '../ui/Table.jsx'
 
 function statusVariant(status) {
-  if (status === 'Resolved') return 'success'
+  if (status === 'Resolved' || status === 'Completed') return 'success'
   if (status === 'In Progress') return 'info'
   if (status === 'Closed') return 'default'
   return 'warning'
@@ -42,4 +42,3 @@ export default function TicketTable({ tickets, onOpen }) {
 
   return <Table columns={columns} rows={tickets} />
 }
-

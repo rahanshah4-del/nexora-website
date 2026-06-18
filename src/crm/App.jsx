@@ -20,6 +20,8 @@ const LeadsPage = lazy(() => import('./pages/Leads.jsx'))
 const PipelinePage = lazy(() => import('./pages/SalesPipeline.jsx'))
 const AnalyticsPage = lazy(() => import('./pages/Analytics.jsx'))
 const ReportsPage = lazy(() => import('./pages/Reports.jsx'))
+const SchoolReportsCenterPage = lazy(() => import('./pages/SchoolReportsCenter.jsx'))
+const AttendancePage = lazy(() => import('./pages/Attendance.jsx'))
 const SettingsPage = lazy(() => import('./pages/Settings.jsx'))
 const UpgradeBusinessPage = lazy(() => import('./pages/UpgradeBusiness.jsx'))
 const TeamPage = lazy(() => import('./pages/Team.jsx'))
@@ -100,6 +102,8 @@ export default function App() {
             <Route path="/app/client-portal" element={gated(<ClientPortalPage />)} />
             <Route path="/app/ai-assistant" element={gated(<AIAssistantPage />)} />
             <Route path="/app/reports" element={gated(<ReportsPage />)} />
+            <Route path="/app/school-reports" element={gated(<SchoolReportsCenterPage />)} />
+            <Route path="/app/attendance" element={gated(<AttendancePage />)} />
             <Route path="/app/settings" element={<SettingsPage />} />
             <Route path="/app/coming-soon/:module" element={<ModulePlaceholderPage />} />
             <Route path="/app/admin/upgrade-requests" element={<Navigate to="/app/dashboard" replace />} />

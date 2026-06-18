@@ -11,6 +11,7 @@ import {
   HiOutlineChatBubbleLeftRight,
   HiOutlineChevronDown,
   HiOutlineChevronRight,
+  HiOutlineClipboardDocumentList,
   HiOutlineCog6Tooth,
   HiOutlineGlobeAlt,
   HiOutlineHomeModern,
@@ -22,7 +23,6 @@ import {
   HiOutlineSquares2X2,
   HiOutlineTruck,
   HiOutlineUserGroup,
-  HiOutlineUsers,
   HiOutlineXMark,
 } from 'react-icons/hi2'
 import { FiLogOut } from 'react-icons/fi'
@@ -55,6 +55,9 @@ import { queueWelcomeEmailForModule } from '../../lib/welcomeEmailDelivery.js'
 import { trackAnalyticsEvent } from '../../lib/analyticsTracking.js'
 import { VERIFY_EMAIL_ROUTE, getAuthRouteState, isUserCustomVerified, shouldShowWorkspaceSelection } from '../../lib/authRouteState.js'
 import { resolveProfileDisplay } from '../../lib/profileDisplay.js'
+import TicketModal from '../../crm/components/support/TicketModal.jsx'
+import TicketDrawer from '../../crm/components/support/TicketDrawer.jsx'
+import { useSupportTickets } from '../../crm/hooks/useSupportTickets.js'
 
 import { clearAllUserCache } from '../../lib/authIsolation.js'
 
@@ -116,29 +119,6 @@ function onboardingErrorMessage(error) {
   }
   return clientSafeMessage(error, 'Could not create workspace right now.', { context: 'Workspace onboarding' })
 }
-
-const featureStrip = [
-  {
-    title: 'Centralized Access',
-    text: 'Access all your workspaces from one place',
-    icon: HiOutlineUsers,
-  },
-  {
-    title: 'Secure & Private',
-    text: 'Your data is 100% secure and private',
-    icon: HiOutlineCog6Tooth,
-  },
-  {
-    title: 'Multiple Modules',
-    text: 'Use only the modules you need',
-    icon: HiOutlineSquares2X2,
-  },
-  {
-    title: 'Real-time Sync',
-    text: 'All data is synced in real-time',
-    icon: HiOutlineChartBarSquare,
-  },
-]
 
 const sampleNotifications = [
   {
@@ -654,6 +634,225 @@ function CreateWorkspaceCard({ disabled, message, onOpen }) {
   )
 }
 
+function SupportTicketsWorkspaceCard({ disabled, onOpen }) {
+  return (
+    <article className="rounded-lg border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-cyan-50 p-4 shadow-[0_12px_32px_-26px_rgba(15,23,42,0.42)]">
+      <div className="flex min-h-[110px] items-center gap-4">
+        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-cyan-600 text-white shadow-sm shadow-emerald-500/20">
+          <HiOutlineLifebuoy className="h-7 w-7" />
+        </span>
+        <div className="min-w-0">
+          <h2 className="text-[15px] font-bold text-slate-950">Support Tickets</h2>
+          <p className="mt-1.5 text-sm leading-5 text-slate-600">
+            Create tickets, add screenshots, view replies, and complete support requests from your workspace.
+          </p>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={onOpen}
+        className={`mt-4 flex h-10 w-full items-center justify-center gap-3 rounded-lg border text-[13px] font-bold transition ${
+          disabled
+            ? 'cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400'
+            : 'border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700'
+        }`}
+      >
+        {disabled ? 'Create workspace first' : 'Open Support Tickets'}
+        <HiOutlineArrowRight className="h-4 w-4" />
+      </button>
+    </article>
+  )
+}
+
+function SupportTicketsListRow({ disabled, onOpen }) {
+  return (
+    <div className="flex flex-wrap items-center gap-3 rounded-lg border border-emerald-100 bg-gradient-to-r from-emerald-50 via-white to-cyan-50 px-4 py-3 shadow-[0_12px_32px_-26px_rgba(15,23,42,0.42)] sm:flex-nowrap sm:gap-4">
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-cyan-600 text-white">
+        <HiOutlineLifebuoy className="h-6 w-6" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <h3 className="text-sm font-bold leading-5 text-slate-950">Support Tickets</h3>
+        <p className="mt-0.5 truncate text-xs text-slate-600">Ticket center for screenshots, replies, and completion tracking.</p>
+      </div>
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={onOpen}
+        className={`flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg border px-4 text-[13px] font-bold transition ${
+          disabled
+            ? 'cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400'
+            : 'border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700'
+        }`}
+      >
+        {disabled ? 'Create workspace first' : 'Open Tickets'}
+        <HiOutlineArrowRight className="h-4 w-4" />
+      </button>
+    </div>
+  )
+}
+
+function ticketStatusTone(status) {
+  if (status === 'Resolved' || status === 'Completed') return 'bg-emerald-50 text-emerald-700 ring-emerald-100'
+  if (status === 'In Progress') return 'bg-sky-50 text-sky-700 ring-sky-100'
+  if (status === 'Closed') return 'bg-slate-100 text-slate-600 ring-slate-200'
+  return 'bg-amber-50 text-amber-700 ring-amber-100'
+}
+
+function WorkspaceHelpCenter({
+  open,
+  onClose,
+  profile,
+  support,
+  onCreateTicket,
+  onOpenTicket,
+  onOpenLiveChat,
+}) {
+  if (!open) return null
+
+  const visibleTickets = support.tickets.slice(0, 8)
+  const openCount = support.stats.open + support.stats.inProgress
+
+  return (
+    <div className="fixed inset-0 z-[60] bg-slate-950/45 p-3 backdrop-blur-sm sm:p-5" role="dialog" aria-modal="true">
+      <motion.section
+        initial={{ opacity: 0, y: 18, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.2, ease: 'easeOut' }}
+        className="mx-auto flex h-[min(92vh,820px)] w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-white/70 bg-white shadow-2xl shadow-slate-950/25"
+      >
+        <header className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-100 bg-gradient-to-r from-slate-950 via-slate-900 to-emerald-950 px-5 py-5 text-white sm:px-6">
+          <div className="min-w-0">
+            <p className="text-[11px] font-black uppercase tracking-[0.22em] text-emerald-200">Nexora Help Centre</p>
+            <h2 className="mt-1 text-2xl font-black tracking-tight">Support Tickets & Live Chat</h2>
+            <p className="mt-1 max-w-2xl text-sm font-medium leading-6 text-slate-200">
+              Create a ticket with screenshot, follow status, or start live chat. Nexora backend team can resolve tickets from Control Centre.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 text-white transition hover:bg-white/20"
+            aria-label="Close support centre"
+          >
+            <HiOutlineXMark className="h-5 w-5" />
+          </button>
+        </header>
+
+        <div className="grid min-h-0 flex-1 gap-0 lg:grid-cols-[320px_minmax(0,1fr)]">
+          <aside className="border-b border-slate-100 bg-slate-50 p-5 lg:border-b-0 lg:border-r">
+            <div className="rounded-2xl border border-emerald-100 bg-white p-4 shadow-sm">
+              <div className="flex items-center gap-3">
+                <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-cyan-600 text-white">
+                  <HiOutlineLifebuoy className="h-6 w-6" />
+                </span>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-black text-slate-950">{profile.workspaceName}</p>
+                  <p className="truncate text-xs font-semibold text-slate-500">{profile.email}</p>
+                </div>
+              </div>
+              <div className="mt-4 grid grid-cols-3 gap-2">
+                <div className="rounded-xl bg-slate-50 p-3 text-center">
+                  <p className="text-lg font-black text-slate-950">{support.stats.total}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">Total</p>
+                </div>
+                <div className="rounded-xl bg-amber-50 p-3 text-center">
+                  <p className="text-lg font-black text-amber-700">{openCount}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-amber-600">Open</p>
+                </div>
+                <div className="rounded-xl bg-emerald-50 p-3 text-center">
+                  <p className="text-lg font-black text-emerald-700">{support.stats.completed + support.stats.resolved}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-600">Done</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 space-y-2">
+              <button
+                type="button"
+                onClick={onCreateTicket}
+                className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 text-sm font-black text-white shadow-sm transition hover:bg-emerald-700"
+              >
+                <HiOutlinePlus className="h-5 w-5" />
+                New Ticket
+              </button>
+              <button
+                type="button"
+                onClick={onOpenLiveChat}
+                className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-black text-slate-800 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700"
+              >
+                <HiOutlineChatBubbleLeftRight className="h-5 w-5" />
+                Live Chat
+              </button>
+            </div>
+
+            <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4">
+              <p className="text-sm font-black text-slate-950">How support works</p>
+              <div className="mt-3 space-y-3 text-xs font-semibold leading-5 text-slate-600">
+                <p>1. Create ticket with issue detail and screenshot.</p>
+                <p>2. Nexora backend team reviews it in Control Centre.</p>
+                <p>3. Status changes appear here automatically.</p>
+              </div>
+            </div>
+          </aside>
+
+          <section className="min-h-0 overflow-y-auto p-5 sm:p-6">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-lg font-black text-slate-950">Ticket Board</p>
+                <p className="mt-1 text-sm font-semibold text-slate-500">Recent support requests for this workspace.</p>
+              </div>
+              <span className="inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">
+                <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                Backend synced
+              </span>
+            </div>
+
+            <div className="mt-5">
+              {support.loading ? (
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-10 text-center text-sm font-bold text-slate-500">Loading tickets...</div>
+              ) : support.error ? (
+                <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-bold text-rose-700">{support.error}</div>
+              ) : visibleTickets.length ? (
+                <div className="grid gap-3">
+                  {visibleTickets.map((ticket) => (
+                    <button
+                      type="button"
+                      key={ticket.id}
+                      onClick={() => onOpenTicket(ticket)}
+                      className="group rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:border-emerald-200 hover:shadow-md"
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="rounded-lg bg-slate-100 px-2 py-1 text-[11px] font-black text-slate-600">{ticket.ticketNumber}</span>
+                            <span className={`rounded-lg px-2 py-1 text-[11px] font-black ring-1 ${ticketStatusTone(ticket.status)}`}>{ticket.status}</span>
+                            <span className="rounded-lg bg-cyan-50 px-2 py-1 text-[11px] font-black text-cyan-700">{ticket.priority}</span>
+                          </div>
+                          <p className="mt-2 truncate text-sm font-black text-slate-950">{ticket.subject}</p>
+                          <p className="mt-1 line-clamp-2 text-xs font-semibold leading-5 text-slate-500">{ticket.message}</p>
+                        </div>
+                        <HiOutlineArrowRight className="mt-1 h-5 w-5 text-slate-300 transition group-hover:translate-x-1 group-hover:text-emerald-600" />
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-10 text-center">
+                  <HiOutlineClipboardDocumentList className="mx-auto h-10 w-10 text-slate-300" />
+                  <p className="mt-3 text-sm font-black text-slate-900">No tickets yet</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-500">Create your first support ticket or start live chat.</p>
+                </div>
+              )}
+            </div>
+          </section>
+        </div>
+      </motion.section>
+    </div>
+  )
+}
+
 function DetailRow({ label, value }) {
   return (
     <div className="flex items-start justify-between gap-4 border-b border-slate-100 py-2 last:border-b-0">
@@ -1067,6 +1266,10 @@ export default function WorkspaceSelection() {
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [supportCenterOpen, setSupportCenterOpen] = useState(false)
+  const [supportTicketCreateOpen, setSupportTicketCreateOpen] = useState(false)
+  const [activeSupportTicket, setActiveSupportTicket] = useState(null)
+  const [supportToast, setSupportToast] = useState('')
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [viewMode, setViewMode] = useState(() => {
@@ -1108,6 +1311,7 @@ export default function WorkspaceSelection() {
   const [verificationMessage, setVerificationMessage] = useState('')
   const [businessTypeSaving, setBusinessTypeSaving] = useState('')
   const [selectedBusinessType, setSelectedBusinessType] = useState('')
+  const supportTicketsApi = useSupportTickets({ limitCount: 80 })
 
   const emailVerifiedCustom = accountData?.emailVerifiedCustom === true
   const emailVerifiedRaw = isUserCustomVerified({ ...user, emailVerifiedCustom })
@@ -1675,6 +1879,14 @@ export default function WorkspaceSelection() {
     setProfileOpen(false)
     navigate('/upgrade-business', { state: { fromUpgradeBusiness: true } })
   }, [navigate])
+
+  const handleOpenSupportTickets = useCallback(() => {
+    const uid = user?.uid
+    if (uid && configuredSelectedWorkspace) saveSelectedWorkspace(uid, configuredSelectedWorkspace)
+    setSidebarOpen(false)
+    setSupportToast('')
+    setSupportCenterOpen(true)
+  }, [configuredSelectedWorkspace, user?.uid])
 
   const isDesktopViewport = useCallback(
     () => typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches,
@@ -3029,14 +3241,14 @@ export default function WorkspaceSelection() {
   if (accountLoading) return <PageLoader stage="workspace" businessType={profile.businessType || onboardingForm.businessType} />
 
   return (
-    <main className="relative min-h-screen overflow-x-clip bg-slate-50 text-slate-950">
+    <main className="relative min-h-dvh overflow-x-clip overscroll-none bg-white text-slate-950">
       {/* Ambient light/glass background */}
       <div className="pointer-events-none fixed inset-0">
         <div className="absolute inset-x-0 top-0 h-96 bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.12),_transparent_45%),radial-gradient(circle_at_78%_6%,_rgba(129,140,248,0.12),_transparent_42%)]" />
         <div className="absolute -right-32 top-24 h-96 w-96 rounded-full bg-gradient-to-br from-sky-300/15 to-violet-300/12 blur-3xl" />
       </div>
 
-      <div className="relative flex min-h-screen flex-col lg:flex-row">
+      <div className="relative flex min-h-dvh flex-col bg-slate-50 lg:flex-row">
         <aside
           className={`border-r border-white/60 bg-white/80 text-slate-900 backdrop-blur-xl transition-all duration-300 ease-in-out ${
             sidebarOpen ? 'translate-x-0' : '-translate-x-full'
@@ -3280,12 +3492,17 @@ export default function WorkspaceSelection() {
                   </button>
                   <button
                     type="button"
-                    disabled
-                    title="Support Center — coming soon"
-                    className="mt-2 flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white/70 px-3 py-2 text-xs font-semibold text-slate-400 dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-500"
+                    disabled={!hasCrmWorkspace}
+                    title={hasCrmWorkspace ? 'Open Support Ticket Center' : 'Create workspace first'}
+                    onClick={handleOpenSupportTickets}
+                    className={`mt-2 flex w-full items-center justify-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold transition dark:border-slate-700 ${
+                      hasCrmWorkspace
+                        ? 'border-emerald-200 bg-white/80 text-emerald-700 hover:border-emerald-300 hover:bg-emerald-50 dark:bg-slate-900/60 dark:text-emerald-300'
+                        : 'cursor-not-allowed border-slate-200 bg-white/70 text-slate-400 dark:bg-slate-900/40 dark:text-slate-500'
+                    }`}
                   >
                     Support Center
-                    <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[9px] font-bold text-slate-400 dark:bg-slate-800 dark:text-slate-500">Coming Soon</span>
+                    <HiOutlineArrowRight className="h-3.5 w-3.5" />
                   </button>
                 </div>
               )}
@@ -3515,6 +3732,7 @@ export default function WorkspaceSelection() {
                   />
                 ))}
                 <CreateWorkspaceCard disabled={createDisabled} message={createWorkspaceMessage} onOpen={handleOpenCreate} />
+                <SupportTicketsWorkspaceCard disabled={!hasCrmWorkspace} onOpen={handleOpenSupportTickets} />
               </div>
             ) : (
               <div className="mt-4 space-y-3">
@@ -3530,28 +3748,11 @@ export default function WorkspaceSelection() {
                   />
                 ))}
                 <CreateWorkspaceListRow disabled={createDisabled} message={createWorkspaceMessage} onOpen={handleOpenCreate} />
+                <SupportTicketsListRow disabled={!hasCrmWorkspace} onOpen={handleOpenSupportTickets} />
               </div>
             )}
 
-            <section className="mt-5 grid gap-4 rounded-2xl border border-white/60 bg-white/80 px-5 py-4 shadow-sm backdrop-blur-xl sm:grid-cols-2 xl:grid-cols-4">
-              {featureStrip.map((feature) => {
-                const Icon = feature.icon
-
-                return (
-                  <div key={feature.title} className="flex items-center gap-3">
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600">
-                      <Icon className="h-5 w-5" />
-                    </span>
-                    <div className="min-w-0">
-                      <h3 className="truncate text-xs font-bold text-blue-700">{feature.title}</h3>
-                      <p className="mt-1 text-xs leading-4 text-slate-600">{feature.text}</p>
-                    </div>
-                  </div>
-                )
-              })}
-            </section>
-
-            <footer className="py-6 text-center text-xs font-medium text-slate-500">
+            <footer className="py-4 text-center text-xs font-medium text-slate-500">
               NEXORA SOLUTION — All rights reserved 2019-2026.
             </footer>
           </div>
@@ -3568,6 +3769,42 @@ export default function WorkspaceSelection() {
           canClose={!needsWorkspaceOnboarding}
           businessTypeLocked={!developerOverride}
         />
+      ) : null}
+      <WorkspaceHelpCenter
+        open={supportCenterOpen}
+        onClose={() => setSupportCenterOpen(false)}
+        profile={profile}
+        support={supportTicketsApi}
+        onCreateTicket={() => {
+          setSupportToast('')
+          setSupportTicketCreateOpen(true)
+        }}
+        onOpenTicket={(ticket) => setActiveSupportTicket(ticket)}
+        onOpenLiveChat={() => {
+          openSupportChat()
+          setSupportToast('Live chat opened.')
+        }}
+      />
+      <TicketModal
+        open={supportTicketCreateOpen}
+        onClose={() => setSupportTicketCreateOpen(false)}
+        initialCustomer={{ name: profile.name, email: profile.email }}
+        onCreate={async (payload) => {
+          const result = await supportTicketsApi.createTicket(payload)
+          setSupportToast(result?.ok ? 'Ticket created successfully.' : result?.error || 'Could not create ticket.')
+        }}
+      />
+      <TicketDrawer
+        open={Boolean(activeSupportTicket)}
+        ticket={activeSupportTicket}
+        onClose={() => setActiveSupportTicket(null)}
+        canEdit={false}
+        canComment={false}
+      />
+      {supportCenterOpen && supportToast ? (
+        <div className="fixed bottom-5 left-1/2 z-[80] -translate-x-1/2 rounded-full bg-slate-950 px-4 py-2 text-sm font-bold text-white shadow-xl">
+          {supportToast}
+        </div>
       ) : null}
       {settingsOpen ? (
         <SettingsModal

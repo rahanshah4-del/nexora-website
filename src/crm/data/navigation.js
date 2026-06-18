@@ -34,6 +34,7 @@ export const navItems = [
   { label: 'Dashboard', to: '/app/dashboard', icon: HiOutlinePresentationChartBar },
   { label: 'Client Portal', to: '/app/client-portal', icon: HiOutlineSquares2X2 },
   { label: 'Customers', to: '/app/customers', icon: HiOutlineUsers },
+  { label: 'Attendance', to: '/app/attendance', icon: HiOutlineCalendarDays },
   { label: 'Products', to: '/app/products', icon: HiOutlineSquares2X2 },
   { label: 'POS Billing', to: '/app/pos', icon: HiOutlineShoppingCart },
   { label: 'Orders', to: '/app/orders', icon: HiOutlineReceiptPercent },

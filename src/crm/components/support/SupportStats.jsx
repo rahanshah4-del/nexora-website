@@ -16,7 +16,7 @@ export default function SupportStats({ stats }) {
       </Card>
       <Card className="p-4">
         <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">Resolved</p>
-        <p className="mt-1 text-lg font-semibold text-slate-900 dark:text-white">{stats.resolved}</p>
+        <p className="mt-1 text-lg font-semibold text-slate-900 dark:text-white">{Number(stats.resolved || 0) + Number(stats.completed || 0)}</p>
         <Badge variant="success" className="mt-2">Completed</Badge>
       </Card>
       <Card className="p-4">
@@ -27,4 +27,3 @@ export default function SupportStats({ stats }) {
     </div>
   )
 }
-

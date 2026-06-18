@@ -148,6 +148,33 @@ const TRANSPORT_RENTAL_SIDEBAR_ORDER = [
   'settings',
 ]
 
+const SCHOOL_ERP_SIDEBAR_ORDER = [
+  'dashboard',
+  'customers',
+  'attendance',
+  'invoices',
+  'expenses',
+  'accounts',
+  'accountStatements',
+  'approvals',
+  'team',
+  'notifications',
+  'reports',
+  'settings',
+]
+
+function orderSchoolErpSidebar(items) {
+  return [...items].sort((a, b) => {
+    if (a.key === 'settings') return 1
+    if (b.key === 'settings') return -1
+    const aIndex = SCHOOL_ERP_SIDEBAR_ORDER.indexOf(a.key)
+    const bIndex = SCHOOL_ERP_SIDEBAR_ORDER.indexOf(b.key)
+    const aRank = aIndex === -1 ? SCHOOL_ERP_SIDEBAR_ORDER.length + items.indexOf(a) : aIndex
+    const bRank = bIndex === -1 ? SCHOOL_ERP_SIDEBAR_ORDER.length + items.indexOf(b) : bIndex
+    return aRank - bRank
+  })
+}
+
 function orderTransportRentalSidebar(items) {
   // Transport workspace uses the Fleet Dashboard as its home; hide the generic dashboard entry.
   return [...items]
@@ -189,6 +216,44 @@ const WHATSAPP_CRM_SIDEBAR_LABELS = {
   team: 'Team Management',
 }
 
+const iconToneClasses = [
+  'border-sky-100 bg-sky-50 text-sky-700',
+  'border-violet-100 bg-violet-50 text-violet-700',
+  'border-emerald-100 bg-emerald-50 text-emerald-700',
+  'border-amber-100 bg-amber-50 text-amber-700',
+  'border-cyan-100 bg-cyan-50 text-cyan-700',
+  'border-rose-100 bg-rose-50 text-rose-700',
+  'border-lime-100 bg-lime-50 text-lime-700',
+  'border-slate-200 bg-slate-50 text-slate-700',
+]
+
+function iconToneForItem(item = {}) {
+  const text = `${item.key || ''} ${item.label || ''} ${item.to || ''}`.toLowerCase()
+  if (text.includes('setting') || text.includes('maintenance')) return iconToneClasses[7]
+  if (text.includes('whatsapp') || text.includes('support') || text.includes('notification')) return iconToneClasses[2]
+  if (text.includes('invoice') || text.includes('fee') || text.includes('account') || text.includes('payment') || text.includes('expense')) return iconToneClasses[3]
+  if (text.includes('report') || text.includes('analytic') || text.includes('dashboard')) return iconToneClasses[0]
+  if (text.includes('school') || text.includes('attendance') || text.includes('team') || text.includes('customer') || text.includes('student')) return iconToneClasses[1]
+  if (text.includes('transport') || text.includes('fleet') || text.includes('vehicle') || text.includes('booking')) return iconToneClasses[4]
+  if (text.includes('order') || text.includes('menu') || text.includes('table') || text.includes('kitchen') || text.includes('pos')) return iconToneClasses[5]
+  return iconToneClasses[Math.abs(String(item.to || item.label || '').split('').reduce((sum, char) => sum + char.charCodeAt(0), 0)) % iconToneClasses.length]
+}
+
+function HdSidebarIcon({ icon: Icon, tone, active = false, disabled = false }) {
+  return (
+    <span
+      className={cn(
+        'grid h-7 w-7 shrink-0 place-items-center rounded-xl border transition duration-150',
+        tone,
+        active ? 'border-indigo-200 bg-indigo-50 text-indigo-700 shadow-sm' : 'group-hover:border-sky-200 group-hover:bg-white group-hover:text-sky-700',
+        disabled ? 'opacity-45 grayscale' : '',
+      )}
+    >
+      <Icon className="h-[16px] w-[16px] stroke-[2.1]" />
+    </span>
+  )
+}
+
 function orderWhatsappCrmSidebar(items) {
   const allowed = new Set(WHATSAPP_CRM_SIDEBAR_ORDER)
   return items
@@ -201,6 +266,7 @@ const SidebarNavItem = memo(function SidebarNavItem({ item, collapsed, onNavigat
   const Icon = item.icon || HiOutlineSquares2X2
   const label = item.label || compactLabels[item.to]
   const disabled = Boolean(item.comingSoon)
+  const tone = iconToneForItem(item)
   const content = (
     <>
       {!disabled ? null : (
@@ -208,7 +274,7 @@ const SidebarNavItem = memo(function SidebarNavItem({ item, collapsed, onNavigat
           Soon
         </span>
       )}
-      <Icon className="h-[17px] w-[17px] shrink-0 text-slate-500 transition group-hover:text-sky-700" />
+      <HdSidebarIcon icon={Icon} tone={tone} disabled={disabled} />
       {!collapsed ? <span className="truncate pr-9">{label}</span> : null}
     </>
   )
@@ -254,12 +320,7 @@ const SidebarNavItem = memo(function SidebarNavItem({ item, collapsed, onNavigat
           {isActive && !collapsed ? (
             <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-gradient-to-b from-sky-400 to-indigo-500" />
           ) : null}
-          <Icon
-            className={cn(
-              'h-[17px] w-[17px] shrink-0 transition',
-              isActive ? 'text-sky-700' : 'text-slate-500 group-hover:text-sky-700',
-            )}
-          />
+          <HdSidebarIcon icon={Icon} tone={tone} active={isActive} />
           {!collapsed ? <span className="truncate">{label}</span> : null}
         </>
       )}
@@ -308,6 +369,7 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
       teamOverride: access.isAdmin || access.hasPermission('settingsAccess'),
     })
     const allowedRoutes = new Set(modules.map((module) => module.route))
+    const normalizedType = normalizeBusinessType(businessType)
     const items = modules.map((module) => {
       const navItem = orderedSidebarItems.find((item) => item.to === module.route)
       return {
@@ -318,6 +380,12 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
         comingSoon: module.comingSoon,
       }
     }).filter((item) => {
+      if (item.key === 'support') return false
+      const forceSchoolReports =
+        normalizedType === 'School ERP' &&
+        item.key === 'reports' &&
+        item.to === '/app/reports'
+      if (forceSchoolReports) return true
       if (!ownerAdminBypass && access.isStaff && !access.hasModulePermission(item.key, 'view')) {
         console.warn('[Sales Hub Access Denied]', {
           source: 'Sidebar',
@@ -342,9 +410,19 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
       }
       return allowedRoutes.has(item.to) || item.comingSoon
     })
-    const normalizedType = normalizeBusinessType(businessType)
+    if (!items.some((item) => item.key === 'reports')) {
+      const navItem = orderedSidebarItems.find((item) => item.to === '/app/reports')
+      items.push({
+        ...(navItem || {}),
+        key: 'reports',
+        to: '/app/reports',
+        label: normalizedType === 'School ERP' ? 'School Reports Center' : 'Reports',
+        comingSoon: false,
+      })
+    }
     if (normalizedType === 'General CRM') return orderSalesHubSidebar(items)
     if (normalizedType === 'Retail / POS') return orderRetailPosSidebar(items)
+    if (normalizedType === 'School ERP') return orderSchoolErpSidebar(items)
     if (normalizedType === 'Restaurant POS') return orderRestaurantPosSidebar(items)
     if (normalizedType === 'Transport / Rental') return orderTransportRentalSidebar(items)
     if (normalizedType === 'WhatsApp CRM') return orderWhatsappCrmSidebar(items)

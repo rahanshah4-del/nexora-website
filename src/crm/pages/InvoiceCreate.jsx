@@ -41,6 +41,7 @@ import {
   createBlankInvoice,
   money,
 } from '../lib/invoiceHelpers.js'
+import { printInvoiceToConfiguredPrinter } from '../lib/printerService.js'
 
 function StepBadge({ number }) {
   return (
@@ -330,12 +331,19 @@ export default function InvoiceCreatePage() {
     }
   }
 
-  function printDraftInvoice() {
+  async function printDraftInvoice() {
     if (!canPrintDraft) {
       showToast({ tone: 'error', message: 'You do not have permission to print invoices.' }, 2600)
       return
     }
-    setPrintInvoice(buildPrintableDraft())
+    const printable = buildPrintableDraft()
+    const direct = await printInvoiceToConfiguredPrinter({ invoice: printable, company, businessType, payments: [] }, businessSettings)
+    if (direct.ok) {
+      showToast({ tone: 'success', message: 'Sent to connected printer.' })
+      return
+    }
+    if (direct.error) showToast({ tone: 'info', message: `${direct.error} Using Chrome print.` }, 2600)
+    setPrintInvoice(printable)
     window.setTimeout(() => window.print(), 350)
   }
 

@@ -450,6 +450,13 @@ service cloud.firestore {
         allow create, update, delete: if workspaceMember(workspaceId);
       }
 
+      match /supportTickets/{docId} {
+        allow read: if backendAdmin() || workspaceMember(workspaceId);
+        allow create: if workspaceMember(workspaceId) && safeCreate(workspaceId);
+        allow update: if backendAdmin() || (workspaceMember(workspaceId) && safeUpdate(workspaceId));
+        allow delete: if backendAdmin() || canManageWorkspace(workspaceId);
+      }
+
       match /{collectionName}/{docId} {
         allow read: if workspaceMember(workspaceId);
         allow create: if workspaceMember(workspaceId) && safeCreate(workspaceId);

@@ -24,6 +24,8 @@ import {
 import { loadTransportPayments, recordTransportPayment } from '../data/transportPayments.js'
 import { loadTransportBookings, upsertTransportBooking, updateBookingStatus, syncVehiclesWithBookings } from '../data/transportBookings.js'
 import { loadTransportCustomers, applyTransportCustomerLedger, saveTransportCustomers } from '../data/transportCustomers.js'
+import { useBusinessSettings } from '../hooks/useBusinessSettings.js'
+import { printHtmlDocument } from '../lib/printerService.js'
 
 const methodMeta = {
   Cash: 'success',
@@ -165,6 +167,7 @@ function buildPayment58mmReceiptHtml(payment, booking) {
 }
 
 export default function TransportPaymentsPage() {
+  const { settings: businessSettings } = useBusinessSettings()
   const [payments, setPayments] = useState(() => loadTransportPayments())
   const [bookings, setBookings] = useState(() => loadTransportBookings())
   const [modalOpen, setModalOpen] = useState(false)
@@ -283,22 +286,12 @@ export default function TransportPaymentsPage() {
 
   function printPayment(payment) {
     const booking = bookingByNumber.get(payment.bookingNumber)
-    const printWindow = window.open('', '_blank', 'width=420,height=720')
-    if (!printWindow) return
-    printWindow.document.write(buildPaymentReceiptHtml(payment, booking))
-    printWindow.document.close()
-    printWindow.focus()
-    printWindow.print()
+    printHtmlDocument({ html: buildPaymentReceiptHtml(payment, booking), settings: businessSettings, paperSize: 'a4' })
   }
 
   function printPayment58mm(payment) {
     const booking = bookingByNumber.get(payment.bookingNumber)
-    const printWindow = window.open('', '_blank', 'width=280,height=720')
-    if (!printWindow) return
-    printWindow.document.write(buildPayment58mmReceiptHtml(payment, booking))
-    printWindow.document.close()
-    printWindow.focus()
-    printWindow.print()
+    printHtmlDocument({ html: buildPayment58mmReceiptHtml(payment, booking), settings: businessSettings, paperSize: '58mm' })
   }
 
   function whatsappPayment(payment) {

@@ -13,6 +13,7 @@ import {
   invoicePaidValue,
   invoiceValue,
   isApprovedExpense,
+  isPaidRecord,
   paymentValue,
 } from './calculations.js'
 
@@ -94,7 +95,7 @@ function yearKey(date) {
 // Each builder returns a normalized, render-agnostic report descriptor.
 // `amountKey` marks the money column the PDF generator independently sums to
 // produce `pdfTotal` for the PASS/FAIL validation badge.
-function makeReport({ key, title, subtitle, currency, columns, rows, amountKey, calculatedTotal, totalLabel, extraSummary = [] }) {
+function makeReport({ key, title, subtitle, currency, columns, rows, amountKey, calculatedTotal, totalLabel, extraSummary = [], pdfTotalMode = 'sum' }) {
   return {
     key,
     title,
@@ -103,6 +104,7 @@ function makeReport({ key, title, subtitle, currency, columns, rows, amountKey, 
     columns,
     rows,
     amountKey,
+    pdfTotalMode,
     totalLabel: totalLabel || 'Total',
     sourceCount: rows.length,
     calculatedTotal: num(calculatedTotal),
@@ -148,6 +150,7 @@ export function buildSchoolReport(reportKey, ctx) {
   const matchClass = (record) => classFilter === 'All' || studentClass(record) === classFilter
   const matchStudent = (record) =>
     studentFilter === 'All' || studentName(record) === studentFilter || record?.customerId === studentFilter || record?.studentId === studentFilter
+  const matchApprovedPayment = (payment) => (approvedOnly ? isPaidRecord(payment) || String(payment?.approvalStatus || '').toLowerCase() === 'approved' : true)
 
   switch (reportKey) {
     case 'fee_collection': {
@@ -247,7 +250,7 @@ export function buildSchoolReport(reportKey, ctx) {
       const map = new Map()
       payments
         .filter((p) => inWindow(recordDate(p, ['paidAt', 'createdAt', 'date']), dateWindow))
-        .filter((p) => String(p.paymentStatus || p.status || 'paid').toLowerCase() === 'paid')
+        .filter(matchApprovedPayment)
         .forEach((p) => {
           const k = keyFn(recordDate(p, ['paidAt', 'createdAt', 'date']))
           const current = map.get(k) || { bucket: k, count: 0, amount: 0 }
@@ -315,7 +318,7 @@ export function buildSchoolReport(reportKey, ctx) {
     case 'profit_loss': {
       const collected = payments
         .filter((p) => inWindow(recordDate(p, ['paidAt', 'createdAt', 'date']), dateWindow))
-        .filter((p) => String(p.paymentStatus || p.status || 'paid').toLowerCase() === 'paid')
+        .filter(matchApprovedPayment)
         .reduce((s, p) => s + paymentValue(p), 0)
       const totalExpenses = expenses
         .filter((e) => inWindow(recordDate(e, ['date', 'createdAt']), dateWindow))
@@ -336,6 +339,7 @@ export function buildSchoolReport(reportKey, ctx) {
         ],
         rows, amountKey: 'amount', totalLabel: 'Net Profit / Loss',
         calculatedTotal: net,
+        pdfTotalMode: 'last-row',
         extraSummary: [
           { label: 'Income', value: `${currency} ${collected.toLocaleString()}` },
           { label: 'Expense', value: `${currency} ${totalExpenses.toLocaleString()}` },

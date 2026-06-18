@@ -8,6 +8,8 @@ import OnboardingWizard from '../components/onboarding/OnboardingWizard.jsx'
 import Badge from '../components/ui/Badge.jsx'
 import Button from '../components/ui/Button.jsx'
 import PageLoader from '../components/ui/PageLoader.jsx'
+import { MaintenanceBlock } from '../../components/MaintenanceMode.jsx'
+import usePlatformMaintenance from '../../hooks/usePlatformMaintenance.js'
 import {
   businessWorkspaceForSelection,
   businessWorkspaceForType,
@@ -319,6 +321,11 @@ export default function DashboardLayout() {
   const currentModule = moduleByRoute(location.pathname)
   const isOwnerAdmin = Boolean(developerOverride || userIsOwner || userIsAdmin || workspaceAccess.isAdmin)
   const normalizedBusinessType = normalizeBusinessType(businessType)
+  const maintenanceContext = useMemo(
+    () => ({ surface: 'workspace', module: normalizedBusinessType }),
+    [normalizedBusinessType],
+  )
+  const maintenance = usePlatformMaintenance(maintenanceContext)
   const restaurantScaleRoutes = new Set([
     '/app/orders',
     '/app/orders-kot',
@@ -763,6 +770,26 @@ export default function DashboardLayout() {
     )
   }
 
+  if (maintenance.active) {
+    return (
+      <div className="nexora-bg crm-shell min-h-dvh overflow-x-clip">
+        <Sidebar collapsed={collapsed} onToggleCollapse={toggleCollapse} onSwitchProduct={openProductSwitcher} />
+        <div
+          className={`app-main relative z-10 flex min-h-dvh min-w-0 flex-col print:ml-0 ${
+            collapsed ? 'lg:ml-[72px]' : 'lg:ml-[236px]'
+          }`}
+        >
+          {isCompactPosRoute ? null : (
+            <TopNav collapsed={collapsed} onOpenSidebar={() => setMobileOpen(true)} onSwitchProduct={openProductSwitcher} />
+          )}
+          <main className="crm-main min-w-0 flex-1 overflow-x-clip px-3 pb-5 pt-4 sm:px-5 lg:px-6 lg:pb-6 lg:pt-5">
+            <MaintenanceBlock state={maintenance} compact />
+          </main>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="nexora-bg crm-shell min-h-dvh overflow-x-clip">
       <Sidebar collapsed={collapsed} onToggleCollapse={toggleCollapse} onSwitchProduct={openProductSwitcher} />
@@ -779,7 +806,7 @@ export default function DashboardLayout() {
         <main className={`crm-main min-w-0 flex-1 overflow-x-clip print:p-0 ${
           isCompactPosRoute ? 'px-3 pb-3 pt-2 sm:px-4 lg:px-4 lg:pb-3 lg:pt-2' : 'px-3 pb-5 pt-4 sm:px-5 lg:px-6 lg:pb-6 lg:pt-5'
         }`}>
-          <div className={`mx-auto w-full max-w-[1440px] min-w-0 print:max-w-none ${restaurantPosScaled ? 'restaurant-pos-scale' : ''}`}>
+          <div className="workspace-zoom-scale mx-auto w-full max-w-[1440px] min-w-0 print:max-w-none">
             <Outlet />
             <p className="mt-6 pb-1 text-center text-xs font-semibold uppercase tracking-[0.16em] text-slate-400 print:hidden">
               NEXORA SOLUTION — All rights reserved 2019-2026.

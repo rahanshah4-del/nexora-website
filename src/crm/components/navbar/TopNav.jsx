@@ -193,7 +193,9 @@ function TopNav({ onOpenSidebar, onSwitchProduct }) {
               onClick={onSwitchProduct}
               type="button"
             >
-              <HiOutlineSquares2X2 className="h-4 w-4" />
+              <span className="nexora-hd-icon h-7 w-7 rounded-xl border-cyan-200 bg-gradient-to-br from-cyan-400 via-sky-500 to-blue-600 shadow-cyan-500/25">
+                <HiOutlineSquares2X2 className="h-4 w-4" />
+              </span>
               Switch Product
             </Button>
             <NotificationBell enabled={notifications.enabled} />
@@ -279,7 +281,9 @@ function TopNav({ onOpenSidebar, onSwitchProduct }) {
                     }}
                     type="button"
                   >
-                    <HiOutlineCog6Tooth className="h-4 w-4" />
+                    <span className="nexora-hd-icon h-7 w-7 rounded-xl border-slate-300 bg-gradient-to-br from-slate-700 via-slate-900 to-indigo-950 shadow-slate-500/25">
+                      <HiOutlineCog6Tooth className="h-4 w-4" />
+                    </span>
                     Profile Settings
                   </button>
                   <div className="my-1 h-px bg-white/30 dark:bg-white/10" />
@@ -289,7 +293,9 @@ function TopNav({ onOpenSidebar, onSwitchProduct }) {
                     disabled={busy}
                     type="button"
                   >
-                    <HiOutlineArrowRightOnRectangle className="h-4 w-4" />
+                    <span className="nexora-hd-icon h-7 w-7 rounded-xl border-rose-200 bg-gradient-to-br from-rose-500 via-pink-600 to-fuchsia-700 shadow-rose-500/25">
+                      <HiOutlineArrowRightOnRectangle className="h-4 w-4" />
+                    </span>
                     {busy ? 'Logging out…' : 'Logout'}
                   </button>
                 </div>

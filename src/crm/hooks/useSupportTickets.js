@@ -1,11 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { db } from '../lib/firebase.js'
+import { getDownloadURL, ref, uploadBytes } from 'firebase/storage'
+import { db, storage } from '../lib/firebase.js'
 import { createUserDoc, fetchWorkspaceCollectionPage, listenToWorkspaceCollection, patchUserDoc } from '../lib/firestore.js'
 import { useUser } from './useUser.js'
 import { useWorkspaceAccess } from './useWorkspaceAccess.js'
 import { clientSafeMessage } from '../utils/messages.js'
 
 function normalizeTicket(t) {
+  const status = t.status || 'Open'
+  const comments = Array.isArray(t.comments) ? t.comments : Array.isArray(t.conversation) ? t.conversation : []
+  const attachments = Array.isArray(t.attachments) ? t.attachments : []
+  const screenshotUrl = t.screenshotUrl || t.attachmentUrl || attachments[0]?.url || ''
   return {
     id: t.id || t.ticketNumber,
     ticketNumber: t.ticketNumber || t.id || `TCK-${Math.floor(100 + Math.random() * 900)}`,
@@ -13,10 +18,16 @@ function normalizeTicket(t) {
     customerEmail: t.customerEmail || '',
     subject: t.subject || '—',
     message: t.message || '',
-    status: t.status || 'Open',
+    title: t.title || t.subject || '—',
+    status: status === 'resolved' ? 'Resolved' : status === 'closed' ? 'Closed' : status === 'completed' ? 'Completed' : status === 'in_progress' ? 'In Progress' : status,
     priority: t.priority || 'Low',
     assignedTo: t.assignedTo || 'Unassigned',
-    comments: Array.isArray(t.comments) ? t.comments : [],
+    category: t.category || 'Technical Support',
+    comments,
+    conversation: comments,
+    screenshotUrl,
+    screenshotName: t.screenshotName || t.attachmentName || attachments[0]?.name || '',
+    attachments,
     createdAt: t.createdAt || '—',
     updatedAt: t.updatedAt || t.createdAt || '—',
   }
@@ -46,7 +57,7 @@ function mergeTicketPages(currentRows, nextRows) {
 }
 
 export function useSupportTickets({ limitCount = DEFAULT_SUPPORT_TICKET_LIST_LIMIT, paginated = false } = {}) {
-  const { userId, workspaceId, businessType } = useUser()
+  const { userId, workspaceId, businessType, userDoc, workspaceDoc, firebaseUser } = useUser()
   const ticketListLimit = safeSupportTicketListLimit(limitCount)
   const ticketPageLimit = safeSupportTicketPageLimit(limitCount)
   const access = useWorkspaceAccess()
@@ -242,8 +253,9 @@ export function useSupportTickets({ limitCount = DEFAULT_SUPPORT_TICKET_LIST_LIM
     const open = tickets.filter((t) => t.status === 'Open').length
     const inProgress = tickets.filter((t) => t.status === 'In Progress').length
     const resolved = tickets.filter((t) => t.status === 'Resolved').length
+    const completed = tickets.filter((t) => t.status === 'Completed').length
     const closed = tickets.filter((t) => t.status === 'Closed').length
-    return { byStatus, urgent, open, inProgress, resolved, closed, total: tickets.length }
+    return { byStatus, urgent, open, inProgress, resolved, completed, closed, total: tickets.length }
   }, [tickets])
 
   const api = useMemo(
@@ -277,21 +289,53 @@ export function useSupportTickets({ limitCount = DEFAULT_SUPPORT_TICKET_LIST_LIM
           return { ok: false, error: 'Secure Cloud Sync is not available right now' }
         }
         try {
-          const ref = await createUserDoc(workspaceId, 'supportTickets', {
+          let screenshotUrl = ticket.screenshotUrl || ''
+          let screenshotName = ticket.screenshotName || ''
+          const screenshotFile = payload.screenshotFile
+          if (screenshotFile) {
+            if (!storage) return { ok: false, error: 'Screenshot upload is not configured.' }
+            if (!String(screenshotFile.type || '').startsWith('image/')) return { ok: false, error: 'Only image screenshots are supported.' }
+            if (screenshotFile.size > 4 * 1024 * 1024) return { ok: false, error: 'Screenshot must be 4MB or smaller.' }
+            const safeName = screenshotFile.name?.replaceAll(/[^\w.-]+/g, '_') || 'support-screenshot.png'
+            const objectPath = `supportTickets/${workspaceId}/${Date.now()}_${safeName}`
+            const fileRef = ref(storage, objectPath)
+            await uploadBytes(fileRef, screenshotFile, { contentType: screenshotFile.type || 'image/png' })
+            screenshotUrl = await getDownloadURL(fileRef)
+            screenshotName = screenshotFile.name || safeName
+          }
+          const workspaceName =
+            workspaceDoc?.workspaceName ||
+            workspaceDoc?.companyName ||
+            userDoc?.workspaceName ||
+            userDoc?.companyName ||
+            userDoc?.company ||
+            ''
+          const creatorEmail = firebaseUser?.email || userDoc?.email || email
+          const attachments = screenshotUrl ? [{ type: 'screenshot', url: screenshotUrl, name: screenshotName, uploadedAt: new Date().toISOString() }] : []
+          const docRef = await createUserDoc(workspaceId, 'supportTickets', {
             ticketNumber: tno,
+            title: subject,
             customerName: name,
             customerEmail: email,
+            clientEmail: email,
             subject,
             message,
             status: ticket.status || 'Open',
             priority: ticket.priority || 'Medium',
+            category: ticket.category || 'Technical Support',
             assignedTo: ticket.assignedTo || 'Unassigned',
             comments: ticket.comments || [],
+            conversation: ticket.comments || [],
+            screenshotUrl,
+            screenshotName,
+            attachments,
+            workspaceName,
+            createdByEmail: creatorEmail,
             createdBy: userId,
           }, { businessType })
           if (paginated) {
             prependLoadedTicket({
-              id: ref.id,
+              id: docRef.id,
               ticketNumber: tno,
               customerName: name,
               customerEmail: email,
@@ -301,6 +345,12 @@ export function useSupportTickets({ limitCount = DEFAULT_SUPPORT_TICKET_LIST_LIM
               priority: ticket.priority || 'Medium',
               assignedTo: ticket.assignedTo || 'Unassigned',
               comments: ticket.comments || [],
+              conversation: ticket.comments || [],
+              screenshotUrl,
+              screenshotName,
+              attachments,
+              workspaceName,
+              createdByEmail: creatorEmail,
               createdBy: userId,
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString(),
@@ -317,6 +367,18 @@ export function useSupportTickets({ limitCount = DEFAULT_SUPPORT_TICKET_LIST_LIM
         if (!db || !workspaceId || source !== 'firestore') return
         await patchUserDoc(workspaceId, 'supportTickets', id, patch, { businessType })
       },
+      async completeTicket(id) {
+        if (!canEditSupportTickets) return { ok: false, error: 'Support ticket edit permission is not enabled for this account.' }
+        const patch = { status: 'Completed', completedAt: new Date().toISOString(), resolvedAt: new Date().toISOString() }
+        setTickets((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch, updatedAt: new Date().toISOString().slice(0, 10) } : t)))
+        if (!db || !workspaceId || source !== 'firestore') return { ok: true }
+        try {
+          await patchUserDoc(workspaceId, 'supportTickets', id, patch, { businessType })
+          return { ok: true }
+        } catch (e) {
+          return { ok: false, error: clientSafeMessage(e, 'Unable to complete ticket.') }
+        }
+      },
       async addComment(id, comment) {
         if (!canEditSupportTickets) return { ok: false, error: 'Support ticket comment permission is not enabled for this account.' }
         const createdAt = new Date().toISOString().slice(0, 10)
@@ -332,14 +394,14 @@ export function useSupportTickets({ limitCount = DEFAULT_SUPPORT_TICKET_LIST_LIM
         const current = tickets.find((t) => t.id === id)
         const next = [...(current?.comments || []), nextComment]
         try {
-          await patchUserDoc(workspaceId, 'supportTickets', id, { comments: next }, { businessType })
+          await patchUserDoc(workspaceId, 'supportTickets', id, { comments: next, conversation: next }, { businessType })
           return { ok: true }
         } catch (e) {
           return { ok: false, error: clientSafeMessage(e, 'Unable to add comment.') }
         }
       },
     }),
-    [tickets, loading, paginationLoading, hasMoreTickets, ticketPage, ticketPageLimit, ticketListLimit, loadMoreTickets, source, error, stats, businessType, canCreateSupportTickets, canEditSupportTickets, userId, workspaceId, paginated, prependLoadedTicket],
+    [tickets, loading, paginationLoading, hasMoreTickets, ticketPage, ticketPageLimit, ticketListLimit, loadMoreTickets, source, error, stats, businessType, canCreateSupportTickets, canEditSupportTickets, userId, workspaceId, userDoc, workspaceDoc, firebaseUser, paginated, prependLoadedTicket],
   )
 
   return api

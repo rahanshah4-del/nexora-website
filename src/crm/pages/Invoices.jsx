@@ -30,6 +30,7 @@ import { getEmailServiceError, sendInvoiceEmail } from '../lib/emailService.js'
 import { resolveWorkspaceName } from '../../lib/workspaceName.js'
 import { normalizeBusinessType } from '../data/moduleAccess.js'
 import { invoiceActionAccess } from '../lib/invoiceAccess.js'
+import { printInvoiceToConfiguredPrinter } from '../lib/printerService.js'
 
 function PaymentActionModal({ action, invoice, busy, schoolMode = false, onClose, onConfirm }) {
   const [draft, setDraft] = useState({ amount: '', paymentMethod: 'Bank Transfer' })
@@ -266,12 +267,18 @@ export default function InvoicesPage() {
     setPaymentAction({ action, invoice })
   }
 
-  function printInvoiceDocument(invoice) {
+  async function printInvoiceDocument(invoice) {
     if (!invoice) return
     if (!invoiceActionAccess(permissions, invoice).canPrint) {
       showToast({ tone: 'error', message: 'You do not have permission to print invoices.' }, 2600)
       return
     }
+    const direct = await printInvoiceToConfiguredPrinter({ invoice, company, businessType, payments }, businessSettings)
+    if (direct.ok) {
+      showToast({ tone: 'success', message: 'Sent to connected printer.' })
+      return
+    }
+    if (direct.error) showToast({ tone: 'info', message: `${direct.error} Using Chrome print.` }, 2600)
     setPrintInvoice(invoice)
     window.setTimeout(() => window.print(), 350)
   }
