@@ -59,30 +59,51 @@
     overscroll-behavior-inline: contain;
   }
 
-  .workspace-zoom-scale,
-  .restaurant-pos-scale {
-    zoom: 0.8;
-    max-width: min(1800px, calc(100% / 0.8));
+  .crm-main .overflow-x-auto > table {
+    width: 100%;
+    min-width: max-content;
   }
 
-  @supports not (zoom: 1) {
-    .workspace-zoom-scale,
-    .restaurant-pos-scale {
-      zoom: normal;
-      width: calc(100% / 0.8);
-      max-width: calc(1440px / 0.8);
-      transform: scale(0.8);
-      transform-origin: top left;
+  .workspace-fluid-container {
+    width: min(100%, 1920px);
+    min-width: 0;
+  }
+
+  .crm-auto-grid {
+    display: grid;
+    min-width: 0;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  }
+
+  .crm-auto-grid-sm {
+    display: grid;
+    min-width: 0;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  }
+
+  .crm-auto-grid-lg {
+    display: grid;
+    min-width: 0;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  }
+
+  .crm-two-pane {
+    display: grid;
+    min-width: 0;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  @media (min-width: 1280px) {
+    .crm-two-pane {
+      grid-template-columns: minmax(0, 1fr) minmax(18rem, 23rem);
     }
   }
 
-  @media (max-width: 767px) {
-    .workspace-zoom-scale {
-      zoom: normal;
-      width: 100%;
-      max-width: 100%;
-      transform: none;
-    }
+  .crm-table-scroll {
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-inline: contain;
   }
 
   .crm-shell .backdrop-blur-sm,
@@ -134,12 +155,74 @@
   }
 
   .crm-modal-panel {
-    @apply w-[90vw] max-w-[720px] overflow-y-auto rounded-3xl;
-    max-height: 85vh;
+    @apply w-[min(100%,34rem)] max-w-[calc(100vw-1rem)] overflow-y-auto rounded-[1.45rem] border border-white/80 bg-white shadow-[0_24px_80px_-44px_rgba(15,23,42,0.45)] dark:border-white/10 dark:bg-slate-950;
+    max-height: calc(100dvh - 1rem);
   }
 
   .crm-modal-panel-wide {
-    @apply max-w-[850px];
+    @apply w-[min(100%,46rem)] max-w-[calc(100vw-1rem)];
+  }
+
+  .crm-shell .fixed.inset-0.grid.place-items-center,
+  .crm-shell .fixed.inset-0.grid.place-content-center,
+  .crm-shell .fixed.inset-0.flex.justify-center,
+  .crm-shell .fixed.inset-0.flex.items-center,
+  .crm-shell .fixed.inset-0.flex.items-start.justify-center {
+    align-items: stretch;
+    justify-content: flex-end;
+    justify-items: end;
+    place-items: stretch end;
+    padding: 0.5rem;
+  }
+
+  .crm-shell .fixed.inset-0.grid.place-items-center > *,
+  .crm-shell .fixed.inset-0.grid.place-content-center > *,
+  .crm-shell .fixed.inset-0.flex.justify-center > *,
+  .crm-shell .fixed.inset-0.flex.items-center > *,
+  .crm-shell .fixed.inset-0.flex.items-start.justify-center > * {
+    max-height: calc(100dvh - 1rem);
+    overflow-y: auto;
+  }
+
+  .crm-shell .fixed.inset-0.grid.place-items-center > :not(.crm-modal-panel):not(.print-document):not(.printable-report),
+  .crm-shell .fixed.inset-0.grid.place-content-center > :not(.crm-modal-panel):not(.print-document):not(.printable-report),
+  .crm-shell .fixed.inset-0.flex.justify-center > :not(.crm-modal-panel):not(.print-document):not(.printable-report),
+  .crm-shell .fixed.inset-0.flex.items-center > :not(.crm-modal-panel):not(.print-document):not(.printable-report),
+  .crm-shell .fixed.inset-0.flex.items-start.justify-center > :not(.crm-modal-panel):not(.print-document):not(.printable-report) {
+    width: min(100%, 34rem);
+    max-width: calc(100vw - 1rem);
+    margin-left: auto;
+  }
+
+  .crm-shell .fixed.inset-0.grid.place-items-center > .max-w-5xl,
+  .crm-shell .fixed.inset-0.grid.place-items-center > .max-w-6xl,
+  .crm-shell .fixed.inset-0.grid.place-items-center > .max-w-7xl,
+  .crm-shell .fixed.inset-0.flex.justify-center > .max-w-5xl,
+  .crm-shell .fixed.inset-0.flex.justify-center > .max-w-6xl,
+  .crm-shell .fixed.inset-0.flex.justify-center > .max-w-7xl {
+    width: min(100%, 72rem);
+  }
+
+  @media (min-width: 768px) {
+    .crm-shell .fixed.inset-0.grid.place-items-center,
+    .crm-shell .fixed.inset-0.grid.place-content-center,
+    .crm-shell .fixed.inset-0.flex.justify-center,
+    .crm-shell .fixed.inset-0.flex.items-center,
+    .crm-shell .fixed.inset-0.flex.items-start.justify-center {
+      padding: 1rem;
+    }
+
+    .crm-modal-panel {
+      max-height: calc(100dvh - 2rem);
+    }
+
+    .crm-shell .fixed.inset-0.grid.place-items-center > *,
+    .crm-shell .fixed.inset-0.grid.place-content-center > *,
+    .crm-shell .fixed.inset-0.flex.justify-center > *,
+    .crm-shell .fixed.inset-0.flex.items-center > *,
+    .crm-shell .fixed.inset-0.flex.items-start.justify-center > * {
+      max-height: calc(100dvh - 2rem);
+    }
   }
 
   .crm-dashboard-page {

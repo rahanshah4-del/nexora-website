@@ -57,13 +57,14 @@ import { loadRestaurantOrders } from '../data/restaurantOrders.js'
 import { normalizeInvoiceOrders } from '../data/restaurantInvoiceOrders.js'
 import { useInvoices } from '../hooks/useInvoices.js'
 import { useExpenses } from '../hooks/useExpenses.js'
-import { finalItemPrice, formatRestaurantCurrency } from '../lib/restaurantPosCalculations.js'
+import { formatRestaurantCurrency } from '../lib/restaurantPosCalculations.js'
+import { buildRestaurantReport } from '../lib/restaurantReports.js'
 import { loadTransportBookings } from '../data/transportBookings.js'
 import { loadTransportVehicles } from '../data/transportVehicles.js'
 import { loadTransportCustomers } from '../data/transportCustomers.js'
 import { loadTransportPayments } from '../data/transportPayments.js'
 import {
-  buildTransportFinanceSummary,
+  buildTransportReport,
   formatTransportCurrency,
   formatTransportSignedCurrency,
   isTransportRefundPayment,
@@ -1400,144 +1401,6 @@ function restaurantDateWindow(filters, settings = {}) {
   return { start, end: endOfDay(now) }
 }
 
-function buildRestaurantReport(orders, customers, options = {}) {
-  // openingCash + expenses come from real workspace data (business settings cash
-  // drawer + approved expenses). They used to be hardcoded (25000 / 18500),
-  // which showed fake cash figures on brand-new accounts.
-  const openingCash = Math.max(0, safeNumber(options.openingCash))
-  const realExpenses = Math.max(0, safeNumber(options.expenses))
-  const onlineMethods = new Set(['Card', 'JazzCash', 'Easypaisa', 'Bank'])
-  const base = {
-    'Dine-in': 0,
-    Takeaway: 0,
-    Delivery: 0,
-  }
-  const salesByType = { ...base }
-  const salesByPayment = { Cash: 0, Card: 0, JazzCash: 0, Easypaisa: 0, Bank: 0, Due: 0 }
-  const itemMap = new Map()
-  const tableMap = new Map()
-  const customerMap = new Map()
-  let totalSales = 0
-  let paidAmount = 0
-  let dueAmount = 0
-  let discounts = 0
-  let tax = 0
-  let serviceCharges = 0
-  let itemCost = 0
-  let cancelledOrders = 0
-  let simpleOrderSales = 0
-  let invoiceOrderSales = 0
-
-  orders.forEach((order) => {
-    const isCancelled = String(order.orderStatus || '').toLowerCase() === 'cancelled'
-    const isInvoiceOrder = order.sourceKind === 'invoice'
-    const total = order.totals.total
-    if (!isCancelled) totalSales += total
-    if (!isCancelled && isInvoiceOrder) invoiceOrderSales += total
-    if (!isCancelled && !isInvoiceOrder) simpleOrderSales += total
-    paidAmount += order.paidAmount
-    dueAmount += order.dueAmount
-    discounts += order.totals.discount
-    tax += order.totals.tax
-    serviceCharges += order.totals.serviceCharges
-    salesByType[order.orderType] = safeNumber(salesByType[order.orderType]) + (isCancelled ? 0 : total)
-    salesByPayment[order.paymentMethod] = safeNumber(salesByPayment[order.paymentMethod]) + (isCancelled ? 0 : total)
-    if (isCancelled) cancelledOrders += 1
-
-    order.cartRows.forEach((row) => {
-      const item = row.item
-      const quantity = Math.max(0, Number(row.qty || row.quantity || 0))
-      const current = itemMap.get(item.id) || { id: item.id, name: item.name, quantity: 0, revenue: 0, discount: 0 }
-      const unitPrice = finalItemPrice(item)
-      current.quantity += quantity
-      current.revenue += isCancelled ? 0 : unitPrice * quantity
-      current.discount += Math.max(0, safeNumber(item.price) - unitPrice) * quantity
-      itemMap.set(item.id, current)
-      itemCost += isCancelled ? 0 : safeNumber(item.costPrice) * quantity
-    })
-
-    if (order.table) {
-      const current = tableMap.get(order.table) || { id: order.table, table: order.table, orders: 0, sales: 0, status: 'available' }
-      current.orders += 1
-      current.sales += isCancelled ? 0 : total
-      current.status = String(order.orderStatus || '').toLowerCase() === 'served' ? 'occupied' : order.orderStatus
-      tableMap.set(order.table, current)
-    }
-
-    const customer = customers.find((item) => item.id === order.customerId)
-    const key = order.customerId || 'walk-in'
-    const current = customerMap.get(key) || { id: key, name: customer?.name || 'Walk-in Guest', orders: 0, paid: 0, due: 0 }
-    current.orders += 1
-    current.paid += isCancelled ? 0 : order.paidAmount
-    current.due += isCancelled ? 0 : order.dueAmount + safeNumber(customer?.creditBalance)
-    customerMap.set(key, current)
-  })
-
-  const totalExpenses = realExpenses
-  const netSales = Math.max(0, totalSales - discounts)
-  const estimatedProfit = Math.max(0, netSales - itemCost - totalExpenses)
-  const itemRows = Array.from(itemMap.values())
-    .sort((a, b) => b.quantity - a.quantity)
-    .map((row, index, rows) => ({ ...row, rank: index < 3 ? 'Top selling' : index >= rows.length - 2 ? 'Low selling' : 'Steady' }))
-
-  const kot = {
-    total: orders.length,
-    pending: orders.filter((order) => String(order.orderStatus || '').toLowerCase() === 'pending').length,
-    preparing: orders.filter((order) => String(order.orderStatus || '').toLowerCase() === 'preparing').length,
-    ready: orders.filter((order) => String(order.orderStatus || '').toLowerCase() === 'ready').length,
-    served: orders.filter((order) => String(order.orderStatus || '').toLowerCase() === 'served').length,
-    averagePreparationTime: orders.length ? Math.round(orders.reduce((sum, order) => sum + safeNumber(order.prepTime), 0) / orders.length) : 0,
-  }
-  const tableRows = Array.from(tableMap.values()).sort((a, b) => b.orders - a.orders)
-  const customerRows = Array.from(customerMap.values()).sort((a, b) => b.orders - a.orders)
-  const cashReceived = orders.filter((order) => order.paymentMethod === 'Cash').reduce((sum, order) => sum + order.paidAmount, 0)
-  const onlineReceived = orders.filter((order) => onlineMethods.has(order.paymentMethod)).reduce((sum, order) => sum + order.paidAmount, 0)
-
-  return {
-    totalSales,
-    grossSales: totalSales + discounts,
-    netSales,
-    totalOrders: orders.length,
-    simpleOrders: orders.filter((order) => order.sourceKind !== 'invoice').length,
-    invoiceOrders: orders.filter((order) => order.sourceKind === 'invoice').length,
-    simpleOrderSales,
-    invoiceOrderSales,
-    paidAmount,
-    dueAmount,
-    discounts,
-    tax,
-    serviceCharges,
-    cancelledOrders,
-    averageOrderValue: orders.length ? totalSales / orders.length : 0,
-    salesByType,
-    salesByPayment,
-    onlineSales: Array.from(onlineMethods).reduce((sum, method) => sum + safeNumber(salesByPayment[method]), 0),
-    duePartialSales: orders.filter((order) => ['due', 'partial'].includes(String(order.paymentStatus || '').toLowerCase())).reduce((sum, order) => sum + order.totals.total, 0),
-    itemRows,
-    kot,
-    occupiedTables: tableRows.filter((row) => row.status === 'occupied').length,
-    mostUsedTable: tableRows[0]?.table || '',
-    tableRows,
-    newCustomers: customerRows.filter((row) => row.orders === 1 && row.id !== 'cust-walkin').length,
-    repeatCustomers: customerRows.filter((row) => row.orders > 1 && row.id !== 'cust-walkin').length,
-    customersWithDue: customerRows.filter((row) => row.due > 0).length,
-    customerOrderHistory: customerRows.reduce((sum, row) => sum + row.orders, 0),
-    customerRows,
-    totalExpenses,
-    estimatedProfit,
-    profitAfterAdjustments: Math.max(0, totalSales - itemCost - totalExpenses),
-    closing: {
-      openingCash,
-      cashReceived,
-      onlineReceived,
-      duePayments: dueAmount,
-      expenses: totalExpenses,
-      closingCash: openingCash + cashReceived - totalExpenses,
-      difference: 0,
-    },
-  }
-}
-
 const transportReportTemplates = [
   {
     id: 'fleet-summary',
@@ -1734,83 +1597,6 @@ function TransportReports() {
       </section>
     </motion.div>
   )
-}
-
-function buildTransportReport({ vehicles = [], bookings = [], customers = [], payments = [] } = {}) {
-  const activeBookings = bookings.filter((booking) => booking.status === 'active')
-  const reservedBookings = bookings.filter((booking) => booking.status === 'reserved')
-  const returnedBookings = bookings.filter((booking) => booking.status === 'returned')
-  const cancelledBookings = bookings.filter((booking) => booking.status === 'cancelled')
-  const finance = buildTransportFinanceSummary({ bookings, payments })
-  const liveBookings = finance.activeBookings
-  const totalRevenue = finance.netCollected
-  const bookingRevenue = finance.activeBookingValue
-  const paidAmount = finance.paidAmount
-  const outstandingDues = finance.outstandingDues
-  const securityDeposits = liveBookings.reduce((sum, booking) => sum + safeNumber(booking.securityDeposit), 0)
-  const driverCharges = liveBookings.reduce((sum, booking) => sum + safeNumber(booking.totals?.driverCharges || booking.driverRate * booking.units), 0)
-  const methodRows = Object.values(finance.activePayments.filter((payment) => !isTransportRefundPayment(payment)).reduce((map, payment) => {
-    const method = payment.method || 'Cash'
-    map[method] = map[method] || { method, count: 0, amount: 0 }
-    map[method].count += 1
-    map[method].amount += safeNumber(payment.amount)
-    return map
-  }, {})).sort((a, b) => b.amount - a.amount)
-  const refundRows = payments.filter((payment) => isTransportRefundPayment(payment))
-  const cancelledRows = cancelledBookings.map((booking) => ({
-    ...booking,
-    refundAmount: safeNumber(booking.refundAmount),
-    refundMethod: booking.refundMethod || refundRows.find((payment) => payment.bookingNumber === booking.bookingNumber)?.method || '',
-  }))
-  const vehicleRows = vehicles.map((vehicle) => {
-    const vehicleBookings = bookings.filter((booking) => booking.vehicleId === vehicle.id && booking.status !== 'cancelled')
-    return {
-      ...vehicle,
-      bookings: vehicleBookings.length,
-      revenue: vehicleBookings.reduce((sum, booking) => sum + safeNumber(booking.total), 0),
-      due: vehicleBookings.reduce((sum, booking) => sum + safeNumber(booking.dueAmount), 0),
-    }
-  }).sort((a, b) => b.revenue - a.revenue)
-  const customerRows = customers.map((customer) => ({
-    ...customer,
-    due: safeNumber(customer.creditBalance),
-    paid: safeNumber(customer.paidAmount),
-    bookings: Array.isArray(customer.bookingHistory) ? customer.bookingHistory.length : 0,
-  })).sort((a, b) => b.due - a.due)
-
-  return {
-    totalVehicles: vehicles.length,
-    availableVehicles: vehicles.filter((vehicle) => vehicle.status === 'available').length,
-    rentedVehicles: vehicles.filter((vehicle) => vehicle.status === 'rented').length,
-    maintenanceVehicles: vehicles.filter((vehicle) => vehicle.status === 'maintenance').length,
-    totalBookings: bookings.length,
-    activeBookings: activeBookings.length,
-    reservedBookings: reservedBookings.length,
-    returnedBookings: returnedBookings.length,
-    cancelledBookings: cancelledBookings.length,
-    totalCustomers: customers.length,
-    dueCustomers: customerRows.filter((customer) => customer.due > 0).length,
-    totalRevenue,
-    bookingRevenue,
-    paidAmount,
-    outstandingDues,
-    grossCollected: finance.grossCollected,
-    totalRefunds: finance.totalRefunds,
-    cancelledRefunds: finance.cancelledRefunds,
-    cancelledBookingValue: finance.cancelledBookingValue,
-    cancelledPaidAmount: finance.cancelledPaidAmount,
-    securityDeposits,
-    driverCharges,
-    utilization: vehicles.length ? Math.round(((activeBookings.length + reservedBookings.length) / vehicles.length) * 100) : 0,
-    methodRows,
-    vehicleRows,
-    customerRows,
-    bookingRows: bookings,
-    paymentRows: payments,
-    activePaymentRows: finance.activePayments,
-    refundRows,
-    cancelledRows,
-  }
 }
 
 function buildTransportPdfReport({ template, report, settings = {}, dateRangeLabel = 'This month', workspaceId = '' } = {}) {

@@ -53,6 +53,7 @@ import { clientSafeMessage, reportTechnicalError } from '../../lib/errorHandler.
 import { sendCustomVerificationEmail } from '../../lib/emailVerificationService.js'
 import { queueWelcomeEmailForModule } from '../../lib/welcomeEmailDelivery.js'
 import { trackAnalyticsEvent } from '../../lib/analyticsTracking.js'
+import { LANGUAGE_OPTIONS, languageMeta, useLanguage } from '../../lib/i18n.jsx'
 import { VERIFY_EMAIL_ROUTE, getAuthRouteState, isUserCustomVerified, shouldShowWorkspaceSelection } from '../../lib/authRouteState.js'
 import { resolveProfileDisplay } from '../../lib/profileDisplay.js'
 import TicketModal from '../../crm/components/support/TicketModal.jsx'
@@ -92,7 +93,7 @@ const workspaces = businessWorkspaceCatalog.map((workspace) => ({
   ...(workspaceIconMap[workspace.type] || workspaceIconMap['General CRM']),
 }))
 
-const languageOptions = ['English', 'Urdu', 'Arabic', 'Hindi', 'Bengali']
+const languageOptions = LANGUAGE_OPTIONS.map((option) => option.label)
 const regionOptions = ['Pakistan', 'India', 'Bangladesh', 'Middle East', 'Europe']
 const currencyOptions = ['PKR', 'INR', 'BDT', 'AED', 'SAR', 'USD', 'EUR']
 const CRM_TRIAL_DAYS = 7
@@ -357,23 +358,34 @@ function VerificationBadge({ verified, compact = false }) {
 }
 
 function SidebarItem({ icon: Icon, label, active = false, muted = false, onClick, collapsed = false }) {
+  const isSettings = label === 'Settings'
   return (
     <button
       type="button"
       onClick={onClick}
       title={collapsed ? label : undefined}
-      className={`flex h-11 w-full items-center rounded-lg px-3 text-left text-[13px] font-semibold transition ${
+      className={`flex h-11 w-full items-center rounded-xl px-3 text-left text-[13px] font-semibold transition ${
         collapsed ? 'justify-center' : 'justify-between'
       } ${
         active
-          ? 'bg-blue-600 text-white shadow-[0_10px_24px_-14px_rgba(37,99,235,0.85)]'
-          : muted
-            ? 'text-slate-300 hover:bg-white/7 hover:text-white'
-            : 'text-slate-200 hover:bg-white/7 hover:text-white'
+          ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 text-white shadow-[0_14px_34px_-18px_rgba(79,70,229,0.9)]'
+          : isSettings
+            ? 'border border-indigo-100 bg-gradient-to-r from-indigo-50 via-white to-sky-50 text-indigo-700 shadow-sm hover:border-indigo-200 hover:from-indigo-100 hover:to-sky-100'
+            : muted
+              ? 'border border-slate-100 bg-slate-50 text-slate-600 hover:border-slate-200 hover:bg-white hover:text-slate-900'
+              : 'text-slate-700 hover:bg-blue-50 hover:text-blue-700'
       }`}
     >
       <span className={`flex min-w-0 items-center gap-3 ${collapsed ? 'justify-center' : ''}`}>
-        <Icon className="h-[18px] w-[18px] shrink-0" />
+        <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-lg ${
+          active
+            ? 'bg-white/18 text-white'
+            : isSettings
+              ? 'bg-gradient-to-br from-indigo-500 to-sky-500 text-white shadow-sm shadow-indigo-500/20'
+              : 'bg-blue-50 text-blue-600'
+        }`}>
+          <Icon className="h-[18px] w-[18px] shrink-0" />
+        </span>
         {!collapsed && <span className="truncate">{label}</span>}
       </span>
       {!collapsed && <HiOutlineChevronRight className="h-4 w-4 shrink-0 opacity-80" />}
@@ -864,14 +876,14 @@ function DetailRow({ label, value }) {
 
 function ModalShell({ title, onClose, children }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 px-4 py-6">
+    <div className="fixed inset-0 z-50 flex items-stretch justify-end bg-slate-950/45 p-3 backdrop-blur-sm sm:p-4">
       <motion.section
-        initial={{ opacity: 0, y: 12, scale: 0.98 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
+        initial={{ opacity: 0, x: 28 }}
+        animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.18, ease: 'easeOut' }}
-        className="w-full max-w-md rounded-lg border border-slate-200 bg-white shadow-2xl shadow-slate-950/20"
+        className="flex h-full w-full max-w-md flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-950/20"
       >
-        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+        <div className="flex items-center justify-between border-b border-slate-100 bg-gradient-to-r from-indigo-50 via-white to-sky-50 px-5 py-4">
           <h2 className="text-base font-bold text-slate-950">{title}</h2>
           <button
             type="button"
@@ -882,7 +894,9 @@ function ModalShell({ title, onClose, children }) {
             <HiOutlineXMark className="h-5 w-5" />
           </button>
         </div>
-        {children}
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          {children}
+        </div>
       </motion.section>
     </div>
   )
@@ -1170,8 +1184,12 @@ function SettingsModal({
   loggingOut,
   onClose,
 }) {
+  const { t } = useLanguage()
+  const settingsLanguageMeta = languageMeta(selectedLanguage)
+  const settingsLanguageValue = settingsLanguageMeta.code
+
   return (
-    <ModalShell title="Settings" onClose={onClose}>
+    <ModalShell title={t('settings')} onClose={onClose}>
       <div className="px-5 py-4">
         <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
           <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-extrabold text-white">
@@ -1185,15 +1203,15 @@ function SettingsModal({
         </div>
 
         <div className="mt-4 rounded-lg border border-slate-200 px-3">
-          <DetailRow label="Workspace" value={profile.workspaceName} />
-          <DetailRow label="Plan" value={profile.planLabel} />
-          <DetailRow label="Trial" value={profile.trialLabel} />
-          <DetailRow label="Language" value={selectedLanguage} />
+          <DetailRow label={t('workspace')} value={profile.workspaceName} />
+          <DetailRow label={t('plan')} value={profile.planLabel} />
+          <DetailRow label={t('trial')} value={profile.trialLabel} />
+          <DetailRow label={t('language')} value={`${settingsLanguageMeta.nativeName} (${settingsLanguageMeta.label})`} />
         </div>
 
         <div className="mt-4 rounded-lg border border-slate-200 bg-white p-3">
           <label className="block">
-            <span className="text-xs font-bold uppercase tracking-[0.1em] text-slate-400">Workspace / Company Name</span>
+            <span className="text-xs font-bold uppercase tracking-[0.1em] text-slate-400">{t('workspaceCompanyName')}</span>
             <input
               value={workspaceNameDraft}
               onChange={(event) => onWorkspaceNameChange(event.target.value)}
@@ -1208,27 +1226,27 @@ function SettingsModal({
             onClick={onSaveWorkspaceName}
             className="mt-3 flex h-10 w-full items-center justify-center rounded-lg bg-blue-600 text-sm font-bold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-65"
           >
-            {workspaceNameSaving ? 'Saving...' : 'Save Workspace Name'}
+            {workspaceNameSaving ? t('saving') : t('saveWorkspaceName')}
           </button>
         </div>
 
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           <label className="block">
-            <span className="text-xs font-bold uppercase tracking-[0.1em] text-slate-400">Language</span>
+            <span className="text-xs font-bold uppercase tracking-[0.1em] text-slate-400">{t('language')}</span>
             <select
-              value={selectedLanguage}
+              value={settingsLanguageValue}
               onChange={(event) => onLanguageChange(event.target.value)}
               className="mt-1 h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
             >
-              {languageOptions.map((language) => (
-                <option key={language} value={language}>
-                  {language}
+              {LANGUAGE_OPTIONS.map((language) => (
+                <option key={language.code} value={language.code}>
+                  {language.nativeName} - {language.label}
                 </option>
               ))}
             </select>
           </label>
           <label className="block">
-            <span className="text-xs font-bold uppercase tracking-[0.1em] text-slate-400">Region</span>
+            <span className="text-xs font-bold uppercase tracking-[0.1em] text-slate-400">{t('region')}</span>
             <select
               value={selectedRegion}
               onChange={(event) => onRegionChange(event.target.value)}
@@ -1250,7 +1268,7 @@ function SettingsModal({
           className="mt-5 flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 text-sm font-bold text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-65"
         >
           <FiLogOut className="h-4 w-4" />
-          {loggingOut ? 'Logging out...' : 'Logout'}
+          {loggingOut ? t('loggingOut') : t('logout')}
         </button>
       </div>
     </ModalShell>
@@ -1260,7 +1278,8 @@ function SettingsModal({
 export default function WorkspaceSelection() {
   const navigate = useNavigate()
   const { user, loading: authLoading } = useAuth()
-  const [selectedLanguage, setSelectedLanguage] = useState('English')
+  const { language, meta: activeLanguageMeta, setLanguage } = useLanguage()
+  const selectedLanguage = language
   const [selectedRegion, setSelectedRegion] = useState('Pakistan')
   const [languageOpen, setLanguageOpen] = useState(false)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
@@ -1830,9 +1849,9 @@ export default function WorkspaceSelection() {
   const handleOnboardingFieldChange = useCallback((field, value) => {
     setOnboardingForm((current) => ({ ...current, [field]: value }))
     if (field === 'businessType') setSelectedBusinessType(value ? normalizeBusinessType(value) : '')
-    if (field === 'language') setSelectedLanguage(value)
+    if (field === 'language') setLanguage(value)
     if (field === 'country') setSelectedRegion(value)
-  }, [])
+  }, [setLanguage])
 
   const handleLogout = useCallback(async () => {
     if (loggingOut) return
@@ -3133,7 +3152,7 @@ export default function WorkspaceSelection() {
       setWorkspaceData((current) => ({ ...(current || {}), ...localWorkspacePayload }))
       setCreateOpen(false)
       setSelectedBusinessType(selectedModuleBusinessType)
-      setSelectedLanguage(preferredLanguage)
+      setLanguage(preferredLanguage)
       setSelectedRegion(country)
       console.log('[Workspace Setup Local State Updated]', {
         workspaceId,
@@ -3571,26 +3590,26 @@ export default function WorkspaceSelection() {
                   aria-expanded={languageOpen}
                 >
                   <HiOutlineGlobeAlt className="h-5 w-5" />
-                  {selectedLanguage}
+                  {activeLanguageMeta.nativeName}
                   <HiOutlineChevronDown className="h-4 w-4" />
                 </button>
                 {languageOpen ? (
                   <div className="absolute right-0 top-full z-30 mt-2 w-56 rounded-lg border border-slate-200 bg-white p-2 text-sm shadow-xl shadow-slate-950/10">
                     <p className="px-2 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">Language</p>
                     <div className="space-y-1">
-                      {languageOptions.map((language) => (
+                      {LANGUAGE_OPTIONS.map((languageOption) => (
                         <button
-                          key={language}
+                          key={languageOption.code}
                           type="button"
                           className={`flex h-8 w-full items-center rounded-md px-2 text-left text-xs font-semibold ${
-                            selectedLanguage === language ? 'bg-blue-50 text-blue-700' : 'text-slate-700 hover:bg-slate-50'
+                            selectedLanguage === languageOption.code ? 'bg-blue-50 text-blue-700' : 'text-slate-700 hover:bg-slate-50'
                           }`}
                           onClick={() => {
-                            setSelectedLanguage(language)
+                            setLanguage(languageOption.code)
                             setLanguageOpen(false)
                           }}
                         >
-                          {language}
+                          {languageOption.nativeName} - {languageOption.label}
                         </button>
                       ))}
                     </div>
@@ -3816,7 +3835,7 @@ export default function WorkspaceSelection() {
           workspaceNameMessage={workspaceNameMessage}
           onWorkspaceNameChange={setWorkspaceNameDraft}
           onSaveWorkspaceName={handleSaveWorkspaceName}
-          onLanguageChange={setSelectedLanguage}
+          onLanguageChange={setLanguage}
           onRegionChange={setSelectedRegion}
           onLogout={handleLogout}
           loggingOut={loggingOut}

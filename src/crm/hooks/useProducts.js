@@ -59,14 +59,24 @@ function sanitizeProduct(payload) {
   }
 }
 
-export function useProducts() {
+export function useProducts(options = {}) {
   const { userId, workspaceId, businessType, userDoc, firebaseUser } = useUser()
+  const enabled = options.enabled !== false
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
   const [source, setSource] = useState(db ? 'firestore' : 'none')
   const [error, setError] = useState('')
 
   useEffect(() => {
+    if (!enabled) {
+      Promise.resolve().then(() => {
+        setProducts([])
+        setSource(db ? 'firestore' : 'none')
+        setError('')
+        setLoading(false)
+      })
+      return
+    }
     if (!db) {
       Promise.resolve().then(() => {
         setProducts([])
@@ -109,7 +119,7 @@ export function useProducts() {
     )
 
     return () => unsub?.()
-  }, [businessType, workspaceId])
+  }, [businessType, enabled, workspaceId])
 
   return useMemo(
     () => ({

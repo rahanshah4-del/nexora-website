@@ -21,7 +21,7 @@ import Card from '../components/ui/Card.jsx'
 import Button from '../components/ui/Button.jsx'
 import Badge from '../components/ui/Badge.jsx'
 import { cn } from '../utils/cn.js'
-import { buildTransportFinanceSummary, formatTransportCurrency, getTransportPaymentSignedAmount } from '../lib/transportCalculations.js'
+import { buildTransportReport, formatTransportCurrency, getTransportPaymentSignedAmount } from '../lib/transportCalculations.js'
 import { loadTransportVehicles } from '../data/transportVehicles.js'
 import { loadTransportBookings, syncVehiclesWithBookings } from '../data/transportBookings.js'
 import { loadTransportCustomers } from '../data/transportCustomers.js'
@@ -58,26 +58,26 @@ export default function TransportDashboardPage() {
 
   const metrics = useMemo(() => {
     const today = new Date().toISOString().slice(0, 10)
-    const finance = buildTransportFinanceSummary({ bookings, payments })
+    const report = buildTransportReport({ vehicles, bookings, customers, payments })
     const activeBookings = bookings.filter((booking) => booking.status === 'active')
     const reservedBookings = bookings.filter((booking) => booking.status === 'reserved')
-    const todayRevenue = finance.activePayments
+    const todayRevenue = report.activePaymentRows
       .filter((payment) => payment.date === today)
       .reduce((sum, payment) => sum + getTransportPaymentSignedAmount(payment), 0)
-    const available = vehicles.filter((vehicle) => vehicle.status === 'available').length
-    const onRent = vehicles.filter((vehicle) => vehicle.status === 'rented').length
-    const utilization = vehicles.length ? Math.round(((onRent + reservedBookings.length) / vehicles.length) * 100) : 0
     return {
-      totalVehicles: vehicles.length,
-      available,
-      onRent,
-      activeRentals: activeBookings.length,
-      reserved: reservedBookings.length,
-      customers: customers.length,
+      totalVehicles: report.totalVehicles,
+      available: report.availableVehicles,
+      onRent: report.rentedVehicles,
+      activeRentals: report.activeBookings,
+      reserved: report.reservedBookings,
+      customers: report.totalCustomers,
       todayRevenue: Math.max(0, todayRevenue),
-      totalRevenue: finance.netCollected,
-      dues: finance.outstandingDues,
-      utilization: Math.min(100, utilization),
+      totalRevenue: report.totalRevenue,
+      bookingRevenue: report.bookingRevenue,
+      paidAmount: report.paidAmount,
+      dues: report.outstandingDues,
+      totalRefunds: report.totalRefunds,
+      utilization: Math.min(100, report.utilization),
     }
   }, [vehicles, bookings, customers, payments])
 
@@ -154,14 +154,14 @@ export default function TransportDashboardPage() {
       </div>
 
       {/* Metric tiles */}
-      <div className="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="crm-auto-grid gap-3">
         <MetricTile icon={HiOutlineTruck} label="Available Now" value={metrics.available} hint={`${metrics.totalVehicles} total fleet`} gradient="from-emerald-500 to-teal-600" onClick={() => navigate('/app/transport/vehicles')} />
         <MetricTile icon={HiOutlineKey} label="Active Rentals" value={metrics.activeRentals} hint="currently checked out" gradient="from-amber-500 to-orange-600" onClick={() => navigate('/app/transport/bookings')} />
         <MetricTile icon={HiOutlineUserGroup} label="Customers" value={metrics.customers} hint="registered renters" gradient="from-sky-500 to-cyan-600" onClick={() => navigate('/app/transport/customers')} />
         <MetricTile icon={HiOutlineBanknotes} label="Today's Revenue" value={formatTransportCurrency(metrics.todayRevenue)} hint="collected today" gradient="from-fuchsia-500 to-violet-600" onClick={() => navigate('/app/transport/payments')} />
       </div>
 
-      <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="crm-two-pane gap-5">
         {/* Recent bookings */}
         <Card className="rounded-[1.35rem] p-5">
           <div className="flex items-center justify-between">
@@ -252,13 +252,13 @@ export default function TransportDashboardPage() {
       </div>
 
       {/* Top vehicles + quick actions */}
-      <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="crm-two-pane gap-5">
         <Card className="rounded-[1.35rem] p-5">
           <div className="flex items-center gap-2">
             <span className="grid h-8 w-8 place-items-center rounded-xl bg-teal-50 text-teal-600"><HiOutlineArrowTrendingUp className="h-4 w-4" /></span>
             <p className="text-sm font-black tracking-tight text-slate-950 dark:text-white">Top Performing Vehicles</p>
           </div>
-          <div className="mt-4 grid gap-2 sm:grid-cols-2">
+          <div className="crm-auto-grid-sm mt-4 gap-2">
             {topVehicles.length ? topVehicles.map((vehicle, index) => (
               <div key={`${vehicle.name}-${index}`} className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
                 <div className="flex min-w-0 items-center gap-3">

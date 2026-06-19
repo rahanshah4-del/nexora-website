@@ -41,7 +41,7 @@ export default function RestaurantPOSPage() {
         </div>
       </Card>
 
-      <div className="grid min-w-0 gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="crm-auto-grid gap-4">
         {modules.map((module) => {
           const Icon = module.icon
           return (

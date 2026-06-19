@@ -12,6 +12,7 @@ import {
   invoiceTotal,
   statusBadge,
 } from '../../lib/invoiceHelpers.js'
+import { useLanguage, tx } from '../../../lib/i18n.jsx'
 
 function normalizePreviewInvoice(invoice = {}) {
   const totals = invoice.items?.length ? calculateInvoiceDraft(invoice) : null
@@ -42,6 +43,8 @@ export default function InvoicePreview({
   id = 'invoice-print',
   className = '',
 }) {
+  const { language, meta } = useLanguage()
+  const t = (key, fallback = '') => tx(key, language, fallback)
   const { totals, status } = normalizePreviewInvoice(invoice)
   const currency = invoice.currency || 'PKR'
   const items = Array.isArray(invoice.items) && invoice.items.length ? invoice.items : []
@@ -64,6 +67,9 @@ export default function InvoicePreview({
   return (
     <article
       id={id}
+      dir={meta.dir}
+      lang={meta.htmlLang}
+      style={{ fontFamily: meta.fontFamily }}
       className={`w-full max-w-full overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-950 shadow-[0_24px_90px_-60px_rgba(79,70,229,0.6)] ${
         compact ? 'p-3 text-[10px] sm:p-4 sm:text-[11px]' : 'p-6 text-sm'
       } ${className}`}
@@ -75,13 +81,13 @@ export default function InvoicePreview({
               <img src={company.logoUrl} alt="Business logo" className="h-12 w-12 rounded-2xl border border-slate-200 bg-white object-contain p-1" />
               <div className="min-w-0">
                 <p className="truncate text-base font-black text-slate-950">{company?.name || 'Nexora Solution'}</p>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-500">Business Billing</p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-500">{t('businessBilling')}</p>
               </div>
             </div>
           ) : (
             <NexoraLogo compact textClassName="text-slate-950" />
           )}
-          <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.32em] text-slate-500">Solutions</p>
+          <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.32em] text-slate-500">{t('solutions')}</p>
         </div>
         <div className="min-w-0 text-right">
           <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
@@ -94,43 +100,43 @@ export default function InvoicePreview({
 
       <div className={contactGridClass}>
         <div className="min-w-0">
-          <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">From</p>
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">{t('from')}</p>
           <p className="mt-2 font-bold text-slate-950">{company?.name || 'Nexora Solution'}</p>
           <p className="mt-1 leading-6 text-slate-600">{company?.address || '123 Business Avenue, Suite 100, Lahore, Pakistan'}</p>
-          <p className="text-slate-600">Phone: {company?.phone || '+92 300 1234567'}</p>
-          <p className="text-slate-600">Email: {company?.email || 'info@nexora.com'}</p>
-          <p className="text-slate-600">NTN: {company?.taxId || '1234567-8'}</p>
+          <p className="text-slate-600">{t('phone')}: {company?.phone || '+92 300 1234567'}</p>
+          <p className="text-slate-600">{t('email')}: {company?.email || 'info@nexora.com'}</p>
+          <p className="text-slate-600">{t('ntn')}: {company?.taxId || '1234567-8'}</p>
         </div>
         <div className="min-w-0">
-          <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Bill To</p>
-          <p className="mt-2 font-bold text-slate-950">{invoice.customerName || 'Customer Name'}</p>
-          <p className="mt-1 leading-6 text-slate-600">{invoice.customerAddress || invoice.billingAddress || 'Customer address'}</p>
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">{t('billTo')}</p>
+          <p className="mt-2 font-bold text-slate-950">{invoice.customerName || t('customerName')}</p>
+          <p className="mt-1 leading-6 text-slate-600">{invoice.customerAddress || invoice.billingAddress || t('customerAddress')}</p>
           <p className="text-slate-600">{invoice.customerPhone || ''}</p>
           <p className="text-slate-600">{invoice.customerEmail || ''}</p>
-          <p className="text-slate-600">NTN/CNIC: {invoice.customerTaxId || invoice.customerNtn || '-'}</p>
+          <p className="text-slate-600">{t('ntnCnic')}: {invoice.customerTaxId || invoice.customerNtn || '-'}</p>
         </div>
         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 text-center">
           <InvoiceQrCode invoice={invoice} totals={totals} />
-          <p className="mt-2 text-[11px] font-semibold text-slate-500">Scan to Pay</p>
+          <p className="mt-2 text-[11px] font-semibold text-slate-500">{t('scanToPay')}</p>
         </div>
       </div>
 
       <div className="mt-6 grid gap-3 border-y border-slate-200 py-4 text-xs sm:grid-cols-4">
         <div>
-          <p className="font-bold text-slate-400">Invoice Date</p>
+          <p className="font-bold text-slate-400">{t('invoiceDate')}</p>
           <p className="mt-1 font-semibold">{dateLabel(invoiceIssueDate(invoice))}</p>
         </div>
         <div>
-          <p className="font-bold text-slate-400">Due Date</p>
+          <p className="font-bold text-slate-400">{t('dueDate')}</p>
           <p className="mt-1 font-semibold">{dateLabel(invoice.dueDate)}</p>
         </div>
         <div>
-          <p className="font-bold text-slate-400">Payment Terms</p>
-          <p className="mt-1 font-semibold">{invoice.paymentTerms || 'Net 14 Days'}</p>
+          <p className="font-bold text-slate-400">{t('paymentTerms')}</p>
+          <p className="mt-1 font-semibold">{invoice.paymentTerms || t('net14Days')}</p>
         </div>
         <div>
-          <p className="font-bold text-slate-400">Payment Method</p>
-          <p className="mt-1 font-semibold">{invoice.paymentMethod || 'Bank Transfer'}</p>
+          <p className="font-bold text-slate-400">{t('paymentMethod')}</p>
+          <p className="mt-1 font-semibold">{invoice.paymentMethod || t('bankTransfer')}</p>
         </div>
       </div>
 
@@ -151,23 +157,23 @@ export default function InvoicePreview({
           <thead className="bg-slate-50 text-slate-600">
             <tr>
               <th className={thClass}>#</th>
-              <th className={thClass}>Item / Description</th>
-              <th className={thRightClass}>Qty</th>
-              <th className={thRightClass}>Unit</th>
-              <th className={thRightClass}>Rate ({currency})</th>
-              <th className={thRightClass}>Discount</th>
-              <th className={thRightClass}>Tax</th>
-              <th className={thRightClass}>Amount ({currency})</th>
+              <th className={thClass}>{t('itemDescription')}</th>
+              <th className={thRightClass}>{t('qty')}</th>
+              <th className={thRightClass}>{t('unit')}</th>
+              <th className={thRightClass}>{t('rate')} ({currency})</th>
+              <th className={thRightClass}>{t('discount')}</th>
+              <th className={thRightClass}>{t('tax')}</th>
+              <th className={thRightClass}>{t('amount')} ({currency})</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {(items.length ? items : [{ name: 'Invoice item', quantity: 1, unit: 'Service', price: 0 }]).map((item, index) => {
+            {(items.length ? items : [{ name: t('invoiceItem'), quantity: 1, unit: 'Service', price: 0 }]).map((item, index) => {
               const line = calculateInvoiceLine(item)
               return (
                 <tr key={`${item.name || 'item'}-${index}`}>
                   <td className={`${tdClass} font-semibold`}>{index + 1}</td>
                   <td className={tdClass}>
-                    <p className="font-bold text-slate-950">{item.name || 'Invoice item'}</p>
+                    <p className="font-bold text-slate-950">{item.name || t('invoiceItem')}</p>
                     <p className="mt-1 text-[11px] text-slate-500">{item.description || item.sku || item.code || '-'}</p>
                   </td>
                   <td className={tdRightClass}>{line.quantity}</td>
@@ -185,7 +191,7 @@ export default function InvoicePreview({
 
       <div className={lowerGridClass}>
         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-          <p className="font-bold text-slate-950">Payment History</p>
+          <p className="font-bold text-slate-950">{t('paymentHistory')}</p>
           <div className="mt-4 space-y-3">
             {paymentRows.length ? (
               paymentRows.slice(0, 4).map((payment) => (
@@ -193,7 +199,7 @@ export default function InvoicePreview({
                   <span className="mt-1 h-2.5 w-2.5 rounded-full bg-emerald-500" />
                   <span className="min-w-0 flex-1">
                     <span className="block font-semibold">{dateLabel(payment.paidAt || payment.createdAt)}</span>
-                    <span className="block text-slate-500">{payment.paymentMethod || 'Payment'} received</span>
+                    <span className="block text-slate-500">{payment.paymentMethod || t('payment')} {t('received')}</span>
                   </span>
                   <span className="font-bold">{formatCurrency(payment.amount || payment.amountPaid, payment.currency || currency)}</span>
                 </div>
@@ -203,7 +209,7 @@ export default function InvoicePreview({
                 <span className="mt-1 h-2.5 w-2.5 rounded-full bg-blue-500" />
                 <span>
                   <span className="block font-semibold">{dateLabel(invoiceIssueDate(invoice))}</span>
-                  <span className="block text-slate-500">Invoice created</span>
+                  <span className="block text-slate-500">{t('invoiceCreated')}</span>
                 </span>
               </div>
             )}
@@ -212,18 +218,18 @@ export default function InvoicePreview({
 
         <div className="overflow-hidden rounded-2xl border border-slate-200">
           <div className="space-y-2 p-4 text-xs">
-            <div className="flex justify-between"><span>Subtotal</span><strong>{formatCurrency(totals.subtotal, currency)}</strong></div>
-            <div className="flex justify-between"><span>Discount</span><strong>- {formatCurrency(totals.discountTotal, currency)}</strong></div>
-            <div className="flex justify-between"><span>Taxable Amount</span><strong>{formatCurrency(totals.taxableAmount, currency)}</strong></div>
-            <div className="flex justify-between"><span>Total Tax</span><strong>+ {formatCurrency(totals.taxTotal, currency)}</strong></div>
-            <div className="flex justify-between"><span>Rounding</span><strong>{formatCurrency(totals.roundOff, currency)}</strong></div>
+            <div className="flex justify-between"><span>{t('subtotal')}</span><strong>{formatCurrency(totals.subtotal, currency)}</strong></div>
+            <div className="flex justify-between"><span>{t('discount')}</span><strong>- {formatCurrency(totals.discountTotal, currency)}</strong></div>
+            <div className="flex justify-between"><span>{t('taxableAmount')}</span><strong>{formatCurrency(totals.taxableAmount, currency)}</strong></div>
+            <div className="flex justify-between"><span>{t('totalTax')}</span><strong>+ {formatCurrency(totals.taxTotal, currency)}</strong></div>
+            <div className="flex justify-between"><span>{t('rounding')}</span><strong>{formatCurrency(totals.roundOff, currency)}</strong></div>
           </div>
           <div className="flex items-center justify-between bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-3 text-white">
-            <span className="text-sm font-bold">Grand Total</span>
+            <span className="text-sm font-bold">{t('grandTotal')}</span>
             <strong>{formatCurrency(totals.grandTotal, currency)}</strong>
           </div>
           <div className="p-4 text-xs">
-            <p className="font-bold">Amount in Words</p>
+            <p className="font-bold">{t('amountInWords')}</p>
             <p className="mt-1 text-slate-600">{totals.amountInWords}</p>
           </div>
         </div>
@@ -231,9 +237,9 @@ export default function InvoicePreview({
 
       <div className={termsGridClass}>
         <div>
-          <p className="font-bold">Terms & Conditions</p>
+          <p className="font-bold">{t('termsConditions')}</p>
           <p className="mt-2 whitespace-pre-line text-xs leading-6 text-slate-600">
-            {invoice.terms || invoice.termsConditions || 'Payment is due within the specified terms.'}
+            {invoice.terms || invoice.termsConditions || t('paymentDueText')}
           </p>
           {invoice.notes ? <p className="mt-4 text-xs leading-6 text-slate-600">{invoice.notes}</p> : null}
         </div>
@@ -245,7 +251,7 @@ export default function InvoicePreview({
               {invoice.signatureName || company?.signature || ''}
             </div>
           )}
-          <p className="mt-2 text-xs font-bold">Authorized Signature</p>
+          <p className="mt-2 text-xs font-bold">{t('authorizedSignature')}</p>
         </div>
       </div>
       {company?.footer ? (

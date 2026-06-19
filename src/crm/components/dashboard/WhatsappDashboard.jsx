@@ -461,7 +461,7 @@ function WhatsappDashboard({
       </section>
 
       {/* KPI cards */}
-      <section className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="crm-auto-grid gap-4">
         {cards.map((card) => (
           <WaMetricCard key={card.label} {...card} loading={loading} />
         ))}
@@ -735,7 +735,7 @@ function WhatsappDashboard({
       {/* Quick actions */}
       <section className="min-w-0">
         <SectionCard eyebrow="Quick Actions" title="Move work forward">
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="crm-auto-grid gap-3">
             <QuickAction to="/app/whatsapp-inbox" icon={HiOutlineInbox} title="Open Inbox" detail="Jump into conversations" />
             <QuickAction to="/app/whatsapp-leads" icon={HiOutlinePlus} title="New Lead" detail="Capture a WhatsApp lead" />
             <QuickAction to="/app/whatsapp-inbox" icon={HiOutlineUserPlus} title="New Contact" detail="Add a WhatsApp contact" />

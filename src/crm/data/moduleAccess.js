@@ -690,11 +690,14 @@ export function moduleAllowedByPlan(moduleKey, plan) {
 
 export function selectedModulesForSidebar({ enabledModules, onboardingCompleted, plan, businessType, developerOverride = false, teamOverride = false }) {
   if (developerOverride) {
-    return moduleCatalog.map((module) => ({
-      ...module,
-      comingSoon: false,
-      label: labelForBusinessModule(module.key, businessType),
-    }))
+    const normalizedType = normalizeBusinessType(businessType)
+    return moduleCatalog
+      .filter((module) => normalizedType === 'General CRM' || module.key !== 'salesPipeline')
+      .map((module) => ({
+        ...module,
+        comingSoon: false,
+        label: labelForBusinessModule(module.key, businessType),
+      }))
   }
 
   const businessKeys = businessModuleKeys(businessType)

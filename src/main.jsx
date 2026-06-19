@@ -6,15 +6,18 @@ import AppRouter from './AppRouter.jsx'
 import AuthProvider from './context/AuthProvider.jsx'
 import AppErrorBoundary from './components/AppErrorBoundary.jsx'
 import CRMProviders from './crm/CRMProviders.jsx'
+import { LanguageProvider } from './lib/i18n.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>
       <AuthProvider>
         <CRMProviders>
-          <AppErrorBoundary>
-            <AppRouter />
-          </AppErrorBoundary>
+          <LanguageProvider>
+            <AppErrorBoundary>
+              <AppRouter />
+            </AppErrorBoundary>
+          </LanguageProvider>
         </CRMProviders>
       </AuthProvider>
     </BrowserRouter>

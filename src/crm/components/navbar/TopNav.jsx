@@ -146,7 +146,7 @@ function TopNav({ onOpenSidebar, onSwitchProduct }) {
     <>
       {toast ? <Toast message={toast} onClose={() => setToast(null)} /> : null}
       <header className="sticky top-0 z-40 w-full px-3 pt-3 print:hidden sm:px-5 lg:px-6">
-        <div className="mx-auto flex min-h-[64px] w-full max-w-[1440px] min-w-0 flex-wrap items-center gap-2 rounded-[1.35rem] border border-white/70 bg-white/[0.94] px-3 py-2.5 shadow-[0_16px_48px_-40px_rgba(15,23,42,0.45)] backdrop-blur-sm transition-colors duration-200 dark:border-slate-800 dark:bg-slate-950/90 sm:gap-3 sm:px-4 xl:flex-nowrap">
+        <div className="workspace-fluid-container mx-auto flex min-h-[64px] min-w-0 flex-wrap items-center gap-2 rounded-[1.35rem] border border-white/70 bg-white/[0.94] px-3 py-2.5 shadow-[0_16px_48px_-40px_rgba(15,23,42,0.45)] backdrop-blur-sm transition-colors duration-200 dark:border-slate-800 dark:bg-slate-950/90 sm:gap-3 sm:px-4 xl:flex-nowrap">
           <button
             type="button"
             className="focus-ring inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-white/10 lg:hidden"

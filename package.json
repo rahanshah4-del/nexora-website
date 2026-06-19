@@ -6,6 +6,11 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "audit:sales-hub": "node scripts/audit-sales-hub-calculations.mjs",
+    "audit:retail-pos": "node scripts/audit-retail-pos-calculations.mjs",
+    "audit:school-erp": "node scripts/audit-school-erp-calculations.mjs",
+    "audit:restaurant-pos": "node scripts/audit-restaurant-pos-calculations.mjs",
+    "audit:transport-rental": "node scripts/audit-transport-rental-calculations.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
     "worker:deploy": "wrangler deploy --config workers/nexora-email-api/wrangler.toml",

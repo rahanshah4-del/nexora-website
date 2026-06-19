@@ -15,17 +15,26 @@ export function dealAmount(deal = {}) {
   return Math.max(0, safeNumber(deal.value ?? deal.amount ?? deal.dealValueUsd ?? deal.dealValue ?? deal.total))
 }
 
+function dealStageStatus(deal = {}) {
+  const stage = String(deal.stage || '').trim().toLowerCase()
+  const status = String(deal.status || '').trim().toLowerCase()
+  if (stage === 'won' || status === 'won') return 'won'
+  if (stage === 'lost' || status === 'lost') return 'lost'
+  return stage || status || 'open'
+}
+
 export function dealProbability(deal = {}) {
-  if (String(deal.stage || '').toLowerCase() === 'won') return 100
-  if (String(deal.stage || '').toLowerCase() === 'lost') return 0
+  const stageStatus = dealStageStatus(deal)
+  if (stageStatus === 'won') return 100
+  if (stageStatus === 'lost') return 0
   return clampPercent(deal.probability ?? deal.winProbability)
 }
 
 export function calculateDealMetrics(deals = []) {
   const rows = Array.isArray(deals) ? deals : []
-  const openDeals = rows.filter((deal) => !['won', 'lost'].includes(String(deal.stage || deal.status || '').toLowerCase()))
-  const wonDeals = rows.filter((deal) => String(deal.stage || deal.status || '').toLowerCase() === 'won')
-  const lostDeals = rows.filter((deal) => String(deal.stage || deal.status || '').toLowerCase() === 'lost')
+  const openDeals = rows.filter((deal) => !['won', 'lost'].includes(dealStageStatus(deal)))
+  const wonDeals = rows.filter((deal) => dealStageStatus(deal) === 'won')
+  const lostDeals = rows.filter((deal) => dealStageStatus(deal) === 'lost')
   const openValue = moneyRound(openDeals.reduce((sum, deal) => sum + dealAmount(deal), 0))
   const wonValue = moneyRound(wonDeals.reduce((sum, deal) => sum + dealAmount(deal), 0))
   const lostValue = moneyRound(lostDeals.reduce((sum, deal) => sum + dealAmount(deal), 0))
@@ -47,13 +56,16 @@ export function calculateDealMetrics(deals = []) {
 
 export function calculatePipelineMetrics(deals = []) {
   const rows = Array.isArray(deals) ? deals : []
-  const pipelineValue = moneyRound(rows.filter((deal) => String(deal.stage || '').toLowerCase() !== 'lost').reduce((sum, deal) => sum + dealAmount(deal), 0))
-  const weightedPipeline = moneyRound(rows.reduce((sum, deal) => sum + (dealAmount(deal) * dealProbability(deal)) / 100, 0))
-  const wonValue = moneyRound(rows.filter((deal) => String(deal.stage || '').toLowerCase() === 'won').reduce((sum, deal) => sum + dealAmount(deal), 0))
-  const lostValue = moneyRound(rows.filter((deal) => String(deal.stage || '').toLowerCase() === 'lost').reduce((sum, deal) => sum + dealAmount(deal), 0))
+  const openDeals = rows.filter((deal) => !['won', 'lost'].includes(dealStageStatus(deal)))
+  const wonDeals = rows.filter((deal) => dealStageStatus(deal) === 'won')
+  const lostDeals = rows.filter((deal) => dealStageStatus(deal) === 'lost')
+  const pipelineValue = moneyRound(openDeals.reduce((sum, deal) => sum + dealAmount(deal), 0))
+  const weightedPipeline = moneyRound(openDeals.reduce((sum, deal) => sum + (dealAmount(deal) * dealProbability(deal)) / 100, 0))
+  const wonValue = moneyRound(wonDeals.reduce((sum, deal) => sum + dealAmount(deal), 0))
+  const lostValue = moneyRound(lostDeals.reduce((sum, deal) => sum + dealAmount(deal), 0))
   const averageDealValue = rows.length ? moneyRound(rows.reduce((sum, deal) => sum + dealAmount(deal), 0) / rows.length) : 0
-  const closed = rows.filter((deal) => ['won', 'lost'].includes(String(deal.stage || '').toLowerCase())).length
-  const conversionRate = closed ? moneyRound((rows.filter((deal) => String(deal.stage || '').toLowerCase() === 'won').length / closed) * 100) : 0
+  const closed = wonDeals.length + lostDeals.length
+  const conversionRate = closed ? moneyRound((wonDeals.length / closed) * 100) : 0
   return { pipelineValue, weightedPipeline, wonValue, lostValue, averageDealValue, conversionRate }
 }
 

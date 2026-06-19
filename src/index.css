@@ -6,6 +6,7 @@
 :root {
   color-scheme: light;
   font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --nexora-language-font: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 html {
@@ -23,6 +24,21 @@ body {
   overscroll-behavior-y: auto;
   background-color: #f8fafc;
   color: #0f172a;
+  font-family: var(--nexora-language-font);
+}
+
+.nexora-i18n {
+  font-family: var(--nexora-language-font);
+}
+
+html[dir='rtl'] .nexora-i18n {
+  direction: rtl;
+  text-align: start;
+}
+
+html[data-language='ur'] .nexora-i18n,
+html[data-language='ar'] .nexora-i18n {
+  line-height: 1.85;
 }
 
 #root {

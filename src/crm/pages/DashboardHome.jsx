@@ -25,6 +25,8 @@ import {
   HiOutlineShoppingBag,
   HiOutlineTableCells,
   HiOutlineDocumentChartBar,
+  HiOutlineCube,
+  HiOutlineCircleStack,
 } from 'react-icons/hi2'
 import Card from '../components/ui/Card.jsx'
 import Badge from '../components/ui/Badge.jsx'
@@ -43,6 +45,10 @@ import { useWhatsappFollowUps } from '../hooks/useWhatsappFollowUps.js'
 import { useWhatsappTemplates } from '../hooks/useWhatsappTemplates.js'
 import { useWhatsappSettings } from '../hooks/useWhatsappSettings.js'
 import { useBusinessSettings } from '../hooks/useBusinessSettings.js'
+import { useProducts } from '../hooks/useProducts.js'
+import { useInventoryTransactions } from '../hooks/useInventoryTransactions.js'
+import { useInventoryStats } from '../hooks/useInventory.js'
+import { useSchoolAttendanceSummary } from '../hooks/useSchoolAttendanceSummary.js'
 import WhatsappDashboard from '../components/dashboard/WhatsappDashboard.jsx'
 import { useUser } from '../hooks/useUser.js'
 import {
@@ -64,6 +70,8 @@ import { contactStats, followUpStats, leadStats, templateStats } from '../lib/wh
 import { useSalesHubCollection } from '../hooks/useSalesHubCollection.js'
 import { calculateDealMetrics, calculatePipelineMetrics, calculateProductMetrics, calculateTaskMetrics, safeNumber } from '../lib/salesCalculations.js'
 import { restaurantDashboardMetrics, formatRestaurantCurrency } from '../lib/restaurantPosCalculations.js'
+import { calculateRestaurantOrderSummary } from '../lib/restaurantReports.js'
+import { calculateSchoolDashboardStats } from '../lib/schoolDashboardCalculations.js'
 import { isWithinRestaurantBusinessDay, formatRestaurantBusinessWindow } from '../lib/restaurantBusinessDay.js'
 import { loadRestaurantOrders } from '../data/restaurantOrders.js'
 import { normalizeInvoiceOrders } from '../data/restaurantInvoiceOrders.js'
@@ -340,9 +348,8 @@ function RestaurantDashboard({ workspaceName }) {
     kotRows: todaySimpleOrders.map((order) => ({ status: String(order.orderStatus || '').toLowerCase() })),
     bills: todayOrders.map((order) => ({ status: String(order.paymentStatus || '').toLowerCase() })),
   })
-  const todayRestaurantSales = todayOrders
-    .filter((order) => String(order.orderStatus || '').toLowerCase() !== 'cancelled')
-    .reduce((sum, order) => sum + Number(order.total || order.totals?.total || 0), 0)
+  const restaurantSummary = calculateRestaurantOrderSummary(todayOrders)
+  const todayRestaurantSales = restaurantSummary.totalSales
   const pendingKot = todaySimpleOrders.filter((order) => String(order.orderStatus || '').toLowerCase() === 'pending').length
   const preparingKot = todaySimpleOrders.filter((order) => String(order.orderStatus || '').toLowerCase() === 'preparing').length
   const readyKot = todaySimpleOrders.filter((order) => String(order.orderStatus || '').toLowerCase() === 'ready').length
@@ -352,13 +359,14 @@ function RestaurantDashboard({ workspaceName }) {
     { label: 'Active KOT', value: formatCompact(restaurantMetrics.activeKot), helper: 'Kitchen tickets in progress', icon: HiOutlineClipboardDocumentCheck, tone: 'violet' },
     { label: 'Occupied Tables', value: `${restaurantMetrics.occupiedTables} / ${restaurantMetrics.totalTables}`, helper: 'Live floor occupancy', icon: HiOutlineTableCells, tone: 'cyan' },
     { label: 'Today Sales', value: formatRestaurantCurrency(todayRestaurantSales), helper: 'Simple + invoice order revenue', icon: HiOutlineCurrencyDollar, tone: 'emerald' },
-    { label: 'Pending Bills', value: formatCompact(restaurantMetrics.pendingBills), helper: 'Open checks awaiting payment', icon: HiOutlineReceiptPercent, tone: 'violet' },
+    { label: 'Paid Amount', value: formatRestaurantCurrency(restaurantSummary.paidAmount), helper: 'Received payments today', icon: HiOutlineBanknotes, tone: 'emerald' },
+    { label: 'Pending Bills', value: formatCompact(restaurantMetrics.pendingBills), helper: `${formatRestaurantCurrency(restaurantSummary.dueAmount)} due`, icon: HiOutlineReceiptPercent, tone: 'violet' },
     { label: 'Kitchen Ready', value: formatCompact(restaurantMetrics.kitchenReady), helper: 'Orders ready to serve', icon: HiOutlineCheckCircle, tone: 'sky' },
   ]
 
   return (
     <div className="min-w-0 space-y-5">
-      <section className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+      <section className="crm-two-pane gap-4">
         <Card className="relative rounded-[1.6rem] border-slate-200/80 bg-white/90 p-5 sm:p-6">
           <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-amber-400 via-rose-400 to-sky-400" />
           <div className="flex min-w-0 flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
@@ -373,7 +381,7 @@ function RestaurantDashboard({ workspaceName }) {
             </div>
             <HdDashboardIcon icon={HiOutlinePresentationChartBar} tone={hdToneMap.amber} className="h-16 w-16 rounded-[1.35rem]" iconClassName="h-8 w-8" />
           </div>
-          <div className="mt-5 grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-5">
+          <div className="crm-auto-grid-sm mt-5 gap-3">
             {restaurantQuickActions.map((action) => (
               <QuickAction key={action.title} {...action} />
             ))}
@@ -391,7 +399,7 @@ function RestaurantDashboard({ workspaceName }) {
         </Card>
       </section>
 
-      <section className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <section className="crm-auto-grid gap-4">
         {restaurantStats.map((stat) => (
           <MetricCard key={stat.label} {...stat} />
         ))}
@@ -400,7 +408,7 @@ function RestaurantDashboard({ workspaceName }) {
       <section className="grid min-w-0 gap-5 lg:grid-cols-12">
         <Card className="rounded-[1.6rem] p-5 lg:col-span-7">
           <SectionTitle eyebrow="Kitchen Flow" title="KOT status lanes" action={<Link to="/app/orders-kot" className="text-xs font-semibold text-sky-700 hover:text-sky-900">Open KOT</Link>} />
-          <div className="mt-5 grid min-w-0 gap-3 md:grid-cols-3">
+          <div className="crm-auto-grid-sm mt-5 gap-3">
             {[
               ['Pending', pendingKot, 'bg-amber-500'],
               ['Preparing', preparingKot, 'bg-sky-500'],
@@ -441,6 +449,9 @@ function SchoolDashboard({
   customersLoading,
   totalRevenue,
   pendingRevenue,
+  schoolStatsSummary,
+  attendanceSummary,
+  attendanceLoading,
   currency,
 }) {
   const classRows = useMemo(() => {
@@ -454,8 +465,7 @@ function SchoolDashboard({
       .sort((a, b) => b.value - a.value)
       .slice(0, 6)
   }, [students])
-  const feeBase = Math.max(1, totalRevenue + pendingRevenue)
-  const collectionPct = Math.round((totalRevenue / feeBase) * 100)
+  const collectionPct = Math.round(schoolStatsSummary.collectionRate || 0)
   const outstandingRows = pendingInvoices.slice(0, 4)
   const recentStudents = students.slice(0, 5)
 
@@ -464,39 +474,39 @@ function SchoolDashboard({
       icon: HiOutlineUserGroup,
       label: 'Total Students',
       value: formatCompact(students.length),
-      helper: 'Student and parent profiles',
+      helper: `${formatCompact(schoolStatsSummary.activeStudents)} active profiles`,
       tone: 'cyan',
       loading: customersLoading,
     },
     {
       icon: HiOutlineBanknotes,
       label: 'Fee Collection',
-      value: formatCurrency(totalRevenue, currency),
-      helper: `${formatCompact(paidPayments.length || paidInvoices.length)} paid records`,
+      value: formatCurrency(schoolStatsSummary.collected || totalRevenue, currency),
+      helper: `${formatCompact(schoolStatsSummary.paidFeeBills || paidPayments.length || paidInvoices.length)} paid records`,
       tone: 'emerald',
       loading: invoicesLoading,
     },
     {
       icon: HiOutlineClock,
       label: 'Pending Fees',
-      value: formatCurrency(pendingRevenue, currency),
-      helper: `${formatCompact(pendingInvoices.length)} fee bills pending`,
+      value: formatCurrency(schoolStatsSummary.pending || pendingRevenue, currency),
+      helper: `${formatCompact(schoolStatsSummary.pendingFeeBills || pendingInvoices.length)} fee bills pending`,
       tone: 'violet',
       loading: invoicesLoading,
     },
     {
       icon: HiOutlineDocumentText,
-      label: 'Fee Bills',
-      value: formatCompact(invoices.length),
-      helper: 'Total billing records',
+      label: 'Attendance',
+      value: formatCompact(attendanceSummary.totalRecords),
+      helper: `${attendanceSummary.presentRate}% present rate`,
       tone: 'sky',
-      loading: invoicesLoading,
+      loading: attendanceLoading,
     },
   ]
 
   return (
     <div className="min-w-0 space-y-5">
-      <section className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+      <section className="crm-two-pane gap-4">
         <Card className="relative overflow-hidden rounded-[1.6rem] border-slate-200/80 bg-white p-5 shadow-sm sm:p-6">
           <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-indigo-500 via-sky-400 to-emerald-400" />
           <div className="relative flex min-w-0 flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
@@ -508,7 +518,7 @@ function SchoolDashboard({
               <p className="mt-2 max-w-3xl text-sm font-medium leading-6 text-slate-500">
                 Students, attendance, fees, staff, and reporting in one school-focused command center.
               </p>
-              <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="crm-auto-grid-sm mt-5 gap-3">
                 <QuickAction to="/app/customers" icon={HiOutlineUserGroup} title="Students" detail="Profiles & parents" />
                 <QuickAction to="/app/attendance" icon={HiOutlineCalendarDays} title="Attendance" detail="Mark daily status" />
                 <QuickAction to="/app/invoices" icon={HiOutlineBanknotes} title="Fees" detail="Billing & dues" />
@@ -533,14 +543,15 @@ function SchoolDashboard({
                 <div className="h-2 rounded-full bg-emerald-400" style={{ width: `${collectionPct}%` }} />
               </div>
             </div>
-            <DataRow label="Paid fee bills" value={formatCompact(paidInvoices.length)} badge="Closed fees" />
-            <DataRow label="Pending fee bills" value={formatCompact(pendingInvoices.length)} badge="Needs follow-up" />
-            <DataRow label="Expenses" value={formatCurrency(expenses.reduce((sum, row) => sum + toFiniteNumber(row.amount ?? row.total), 0), currency)} badge="School operations" />
+            <DataRow label="Paid fee bills" value={formatCompact(schoolStatsSummary.paidFeeBills)} badge="Closed fees" />
+            <DataRow label="Pending fee bills" value={formatCompact(schoolStatsSummary.pendingFeeBills)} badge="Needs follow-up" />
+            <DataRow label="Approved expenses" value={formatCurrency(schoolStatsSummary.approvedExpenses, currency)} badge="School operations" />
+            <DataRow label="Net income" value={formatCurrency(schoolStatsSummary.netIncome, currency)} badge="Collection minus approved expenses" />
           </div>
         </Card>
       </section>
 
-      <section className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <section className="crm-auto-grid gap-4">
         {schoolStats.map((stat) => (
           <MetricCard key={stat.label} {...stat} />
         ))}
@@ -614,11 +625,17 @@ function SchoolDashboard({
 
         <Card className="rounded-[1.6rem] p-5 lg:col-span-4">
           <SectionTitle eyebrow="Attendance & Reports" title="Daily operations" />
-          <div className="mt-5 grid gap-3">
-            <QuickAction to="/app/attendance" icon={HiOutlineCalendarDays} title="Mark Attendance" detail="Students and staff" />
-            <QuickAction to="/app/school-reports?report=student_attendance" icon={HiOutlineDocumentChartBar} title="Student Attendance Report" detail="Preview and PDF" />
-            <QuickAction to="/app/school-reports?report=pending_fee" icon={HiOutlineClock} title="Pending Fee Report" detail="Track outstanding dues" />
-            <QuickAction to="/app/school-reports?report=fee_collection" icon={HiOutlineBanknotes} title="Fee Collection Report" detail="Export PDF or print" />
+          <div className="mt-5 space-y-4">
+            <div className="grid gap-2 rounded-[1.2rem] border border-slate-100 bg-slate-50/80 p-3">
+              <DataRow label="Student attendance" value={formatCompact(attendanceSummary.studentRecords)} badge={`${attendanceSummary.present} present`} />
+              <DataRow label="Staff attendance" value={formatCompact(attendanceSummary.staffRecords)} badge={`${attendanceSummary.absent} absent / ${attendanceSummary.late} late`} />
+            </div>
+            <div className="grid gap-3">
+              <QuickAction to="/app/attendance" icon={HiOutlineCalendarDays} title="Mark Attendance" detail="Students and staff" />
+              <QuickAction to="/app/school-reports?report=student_attendance" icon={HiOutlineDocumentChartBar} title="Student Attendance Report" detail="Preview and PDF" />
+              <QuickAction to="/app/school-reports?report=pending_fee" icon={HiOutlineClock} title="Pending Fee Report" detail="Track outstanding dues" />
+              <QuickAction to="/app/school-reports?report=fee_collection" icon={HiOutlineBanknotes} title="Fee Collection Report" detail="Export PDF or print" />
+            </div>
           </div>
         </Card>
       </section>
@@ -675,6 +692,7 @@ export default function DashboardHomePage() {
   const { businessType, workspaceDoc, userDoc } = useUser()
   const isSchool = normalizeBusinessType(businessType) === 'School ERP'
   const isProperty = normalizeBusinessType(businessType) === 'Property ERP'
+  const schoolAttendanceApi = useSchoolAttendanceSummary({ enabled: isSchool })
   const maintenanceApi = useMaintenance({ enabled: isProperty })
   const contractsApi = useContracts({ enabled: isProperty })
   const propertyStats = useMemo(
@@ -687,7 +705,14 @@ export default function DashboardHomePage() {
   const propertyLoading = isProperty && (maintenanceApi.loading || contractsApi.loading)
   const isWhatsapp = normalizeBusinessType(businessType) === 'WhatsApp CRM'
   const isRestaurant = normalizeBusinessType(businessType) === 'Restaurant POS'
+  const isRetail = normalizeBusinessType(businessType) === 'Retail / POS'
   const isSalesHub = normalizeBusinessType(businessType) === 'General CRM'
+  const showSalesPipeline = isSalesHub
+  const showSupportMetrics = isSalesHub
+  const retailProductsApi = useProducts({ enabled: isRetail })
+  const retailTransactionsApi = useInventoryTransactions({ enabled: isRetail })
+  const retailInventoryStats = useInventoryStats(retailProductsApi.products, retailTransactionsApi.transactions)
+  const retailLoading = isRetail && (retailProductsApi.loading || retailTransactionsApi.loading)
   const salesDealsApi = useSalesHubCollection('salesDeals', { enabled: isSalesHub })
   const salesTasksApi = useSalesHubCollection('salesTasks', { enabled: isSalesHub })
   const salesQuotesApi = useSalesHubCollection('salesQuotes', { enabled: isSalesHub })
@@ -766,6 +791,25 @@ export default function DashboardHomePage() {
     () => pendingInvoices.reduce((sum, invoice) => sum + invoiceBalanceDue(invoice), 0),
     [pendingInvoices],
   )
+  const schoolStatsSummary = useMemo(
+    () =>
+      calculateSchoolDashboardStats({
+        students: customersApi.customers,
+        invoices: invoicesApi.invoices,
+        payments: invoicesApi.payments,
+        expenses: expensesApi.expenses,
+        studentAttendance: schoolAttendanceApi.studentAttendance,
+        staffAttendance: schoolAttendanceApi.staffAttendance,
+      }),
+    [
+      customersApi.customers,
+      expensesApi.expenses,
+      invoicesApi.invoices,
+      invoicesApi.payments,
+      schoolAttendanceApi.staffAttendance,
+      schoolAttendanceApi.studentAttendance,
+    ],
+  )
   const pipelineValuePkr = useMemo(
     () => calculatePipelineValue({ leads: leadsApi.leads, deals: [] }),
     [leadsApi.leads],
@@ -833,34 +877,50 @@ export default function DashboardHomePage() {
       },
       {
         icon: HiOutlineUserGroup,
-        label: isSchool ? 'Total Students' : 'Customers',
-        value: formatCompact(dashboardStats.totalCustomers),
-        helper: isSchool ? 'Active students' : 'Active customers',
+        label: isSchool ? 'Total Students' : isRetail ? 'Products' : 'Customers',
+        value: formatCompact(isRetail ? retailInventoryStats.totalProducts : dashboardStats.totalCustomers),
+        helper: isSchool ? 'Active students' : isRetail ? `${formatCompact(retailInventoryStats.trackedProducts)} stock-tracked` : 'Active customers',
         tone: 'cyan',
-        loading: customersApi.loading,
+        loading: isRetail ? retailProductsApi.loading : customersApi.loading,
       },
       {
-        icon: HiOutlineBolt,
-        label: isSchool ? 'Pending Fees' : 'Leads Pipeline',
-        value: formatCompact(dashboardStats.activeLeads),
-        helper: isSchool ? formatCurrency(pendingRevenueUsd, currency) : `${formatCompact(hotLeads.length)} high intent leads`,
+        icon: isRetail ? HiOutlineCircleStack : HiOutlineBolt,
+        label: isSchool ? 'Pending Fees' : showSalesPipeline ? 'Leads Pipeline' : isRetail ? 'Inventory Value' : 'Pending Billing',
+        value: isRetail ? formatCurrency(retailInventoryStats.inventoryValue, currency) : isSchool || !showSalesPipeline ? formatCompact(dashboardStats.pendingInvoices) : formatCompact(dashboardStats.activeLeads),
+        helper: isSchool
+          ? formatCurrency(pendingRevenueUsd, currency)
+          : showSalesPipeline
+            ? `${formatCompact(hotLeads.length)} high intent leads`
+            : isRetail
+              ? `${formatCompact(retailInventoryStats.totalStock)} units on hand`
+              : formatCurrency(pendingRevenueUsd, currency),
         tone: 'violet',
-        loading: leadsApi.loading,
+        loading: isRetail ? retailLoading : showSalesPipeline ? leadsApi.loading : invoicesApi.loading,
       },
-      {
+      showSupportMetrics ? {
         icon: HiOutlineTicket,
         label: 'Support',
         value: formatCompact(openTickets.length),
         helper: 'Open or in-progress tickets',
         tone: 'emerald',
         loading: ticketsApi.loading,
+      } : {
+        icon: isRetail ? HiOutlineExclamationTriangle : HiOutlineDocumentText,
+        label: isRetail ? 'Stock Alerts' : 'Expenses',
+        value: isRetail ? formatCompact(retailInventoryStats.lowStockCount + retailInventoryStats.outOfStockCount) : formatCurrency(dashboardStats.expenses, currency),
+        helper: isRetail ? `${formatCompact(retailInventoryStats.lowStockCount)} low / ${formatCompact(retailInventoryStats.outOfStockCount)} out` : `${formatCompact(expensesApi.expenses.length)} expense records`,
+        tone: 'emerald',
+        loading: isRetail ? retailLoading : expensesApi.loading,
       },
     ],
     [
       currency,
       customersApi.loading,
       dashboardStats.activeLeads,
+      dashboardStats.expenses,
       dashboardStats.totalCustomers,
+      expensesApi.expenses.length,
+      expensesApi.loading,
       hotLeads.length,
       invoicesApi.loading,
       leadsApi.loading,
@@ -870,6 +930,17 @@ export default function DashboardHomePage() {
       ticketsApi.loading,
       totalRevenueUsd,
       isSchool,
+      isRetail,
+      retailInventoryStats.inventoryValue,
+      retailInventoryStats.lowStockCount,
+      retailInventoryStats.outOfStockCount,
+      retailInventoryStats.totalProducts,
+      retailInventoryStats.totalStock,
+      retailInventoryStats.trackedProducts,
+      retailLoading,
+      retailProductsApi.loading,
+      showSupportMetrics,
+      showSalesPipeline,
       pendingRevenueUsd,
     ],
   )
@@ -885,22 +956,70 @@ export default function DashboardHomePage() {
 
   const healthRows = useMemo(
     () => [
-      { label: 'Customer coverage', value: customersApi.customers.length, max: Math.max(10, customersApi.customers.length), tone: 'bg-cyan-500' },
-      { label: 'Lead momentum', value: activeLeads.length, max: Math.max(10, activeLeads.length), tone: 'bg-violet-500' },
-      { label: 'Resolved support', value: Math.max(0, ticketsApi.tickets.length - openTickets.length), max: Math.max(1, ticketsApi.tickets.length), tone: 'bg-emerald-500' },
+      {
+        label: isRetail ? 'Product coverage' : 'Customer coverage',
+        value: isRetail ? retailInventoryStats.totalProducts : customersApi.customers.length,
+        max: Math.max(10, isRetail ? retailInventoryStats.totalProducts : customersApi.customers.length),
+        tone: 'bg-cyan-500',
+      },
+      {
+        label: showSalesPipeline ? 'Lead momentum' : isRetail ? 'Stock readiness' : 'Billing readiness',
+        value: showSalesPipeline ? activeLeads.length : isRetail ? retailInventoryStats.totalStock : invoicesApi.invoices.length,
+        max: Math.max(10, showSalesPipeline ? activeLeads.length : isRetail ? retailInventoryStats.totalStock : invoicesApi.invoices.length),
+        tone: 'bg-violet-500',
+      },
+      showSupportMetrics
+        ? { label: 'Resolved support', value: Math.max(0, ticketsApi.tickets.length - openTickets.length), max: Math.max(1, ticketsApi.tickets.length), tone: 'bg-emerald-500' }
+        : {
+            label: isRetail ? 'Healthy stock' : 'Expense tracking',
+            value: isRetail ? Math.max(0, retailInventoryStats.trackedProducts - retailInventoryStats.lowStockCount - retailInventoryStats.outOfStockCount) : expensesApi.expenses.length,
+            max: Math.max(10, isRetail ? retailInventoryStats.trackedProducts : expensesApi.expenses.length),
+            tone: 'bg-emerald-500',
+          },
     ],
-    [activeLeads.length, customersApi.customers.length, openTickets.length, ticketsApi.tickets.length],
+    [
+      activeLeads.length,
+      customersApi.customers.length,
+      expensesApi.expenses.length,
+      invoicesApi.invoices.length,
+      isRetail,
+      openTickets.length,
+      retailInventoryStats.lowStockCount,
+      retailInventoryStats.outOfStockCount,
+      retailInventoryStats.totalProducts,
+      retailInventoryStats.totalStock,
+      retailInventoryStats.trackedProducts,
+      showSalesPipeline,
+      showSupportMetrics,
+      ticketsApi.tickets.length,
+    ],
   )
 
   const summaryRows = useMemo(
     () => [
-      { icon: HiOutlineCheckCircle, label: isSchool ? 'Total Students' : 'Customers', value: formatCompact(dashboardStats.totalCustomers) },
+      { icon: isRetail ? HiOutlineCube : HiOutlineCheckCircle, label: isSchool ? 'Total Students' : isRetail ? 'Products' : 'Customers', value: formatCompact(isRetail ? retailInventoryStats.totalProducts : dashboardStats.totalCustomers) },
       { icon: HiOutlineClock, label: isSchool ? 'Pending Fees' : 'Pending revenue', value: formatCurrency(pendingRevenueUsd, currency) },
-      { icon: HiOutlineCurrencyDollar, label: 'Expenses', value: formatCurrency(dashboardStats.expenses, currency) },
-      { icon: HiOutlineChartBar, label: 'Profit', value: formatCurrency(dashboardStats.profit, currency) },
-      { icon: HiOutlineLifebuoy, label: 'Open support', value: formatCompact(openTickets.length) },
+      { icon: HiOutlineCurrencyDollar, label: isRetail ? 'Inventory value' : 'Expenses', value: formatCurrency(isRetail ? retailInventoryStats.inventoryValue : dashboardStats.expenses, currency) },
+      { icon: HiOutlineChartBar, label: isRetail ? 'Potential margin' : 'Profit', value: formatCurrency(isRetail ? retailInventoryStats.potentialMargin : dashboardStats.profit, currency) },
+      showSupportMetrics
+        ? { icon: HiOutlineLifebuoy, label: 'Open support', value: formatCompact(openTickets.length) }
+        : { icon: HiOutlineDocumentText, label: 'Billing records', value: formatCompact(invoicesApi.invoices.length) },
     ],
-    [currency, dashboardStats.expenses, dashboardStats.profit, dashboardStats.totalCustomers, isSchool, openTickets.length, pendingRevenueUsd],
+    [
+      currency,
+      dashboardStats.expenses,
+      dashboardStats.profit,
+      dashboardStats.totalCustomers,
+      invoicesApi.invoices.length,
+      isRetail,
+      isSchool,
+      openTickets.length,
+      pendingRevenueUsd,
+      retailInventoryStats.inventoryValue,
+      retailInventoryStats.potentialMargin,
+      retailInventoryStats.totalProducts,
+      showSupportMetrics,
+    ],
   )
 
   useEffect(() => {
@@ -999,6 +1118,9 @@ export default function DashboardHomePage() {
         customersLoading={customersApi.loading}
         totalRevenue={totalRevenueUsd}
         pendingRevenue={pendingRevenueUsd}
+        schoolStatsSummary={schoolStatsSummary}
+        attendanceSummary={schoolAttendanceApi.summary}
+        attendanceLoading={schoolAttendanceApi.loading}
         currency={currency}
       />
     )
@@ -1021,15 +1143,15 @@ export default function DashboardHomePage() {
             </div>
             <div className="grid min-w-0 gap-2 sm:grid-cols-2 lg:w-[22rem]">
               <div className="rounded-[1.15rem] border border-slate-100 bg-slate-50/80 p-3 dark:border-white/10 dark:bg-white/5">
-                <p className="text-xs font-medium text-slate-500">Pipeline value</p>
+                <p className="text-xs font-medium text-slate-500">{showSalesPipeline ? 'Pipeline value' : isRetail ? 'Inventory value' : 'Pending billing'}</p>
                 <p className="mt-1 truncate text-lg font-semibold text-slate-950 dark:text-white">
-                  {formatCurrency(pipelineValuePkr, currency)}
+                  {formatCurrency(showSalesPipeline ? pipelineValuePkr : isRetail ? retailInventoryStats.inventoryValue : pendingRevenueUsd, currency)}
                 </p>
               </div>
               <div className="rounded-[1.15rem] border border-slate-100 bg-slate-50/80 p-3 dark:border-white/10 dark:bg-white/5">
-                <p className="text-xs font-medium text-slate-500">Conversion rate</p>
+                <p className="text-xs font-medium text-slate-500">{showSalesPipeline ? 'Conversion rate' : isRetail ? 'Potential margin' : 'Paid records'}</p>
                 <p className="mt-1 truncate text-lg font-semibold text-slate-950 dark:text-white">
-                  {formatPercentValue(conversionRate)}
+                  {showSalesPipeline ? formatPercentValue(conversionRate) : isRetail ? formatCurrency(retailInventoryStats.potentialMargin, currency) : formatCompact(paidPayments.length || paidInvoices.length)}
                 </p>
               </div>
             </div>
@@ -1079,7 +1201,7 @@ export default function DashboardHomePage() {
         </Card>
       </section>
 
-      <section className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <section className="crm-auto-grid gap-4">
         {kpis.map((kpi) => (
           <MetricCard key={kpi.label} {...kpi} />
         ))}
@@ -1087,14 +1209,14 @@ export default function DashboardHomePage() {
 
       {isSalesHub ? (
         <section className="min-w-0 space-y-4">
-          <div className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
+          <div className="crm-auto-grid gap-4">
             <MetricCard icon={HiOutlineChartBar} label="Expected Revenue" value={formatCurrency(salesDealMetrics.expectedRevenue, currency)} helper="Weighted deal forecast" loading={salesDealsApi.loading} />
             <MetricCard icon={HiOutlineCurrencyDollar} label="Won Revenue" value={formatCurrency(salesDealMetrics.wonValue, currency)} helper="Closed won deals" tone="emerald" loading={salesDealsApi.loading} />
             <MetricCard icon={HiOutlineExclamationTriangle} label="Lost Revenue" value={formatCurrency(salesDealMetrics.lostValue, currency)} helper="Closed lost deals" tone="violet" loading={salesDealsApi.loading} />
             <MetricCard icon={HiOutlineClock} label="Overdue Tasks" value={formatCompact(salesTaskMetrics.overdueTasks)} helper={`${salesTaskMetrics.completionRate}% completion rate`} tone="cyan" loading={salesTasksApi.loading} />
             <MetricCard icon={HiOutlineDocumentText} label="Pending Quotations" value={formatCompact(salesQuoteMetrics.pending)} helper={`${salesQuoteMetrics.accepted} accepted`} tone="sky" loading={salesQuotesApi.loading} />
           </div>
-          <div className="grid min-w-0 gap-4 lg:grid-cols-3">
+          <div className="crm-auto-grid gap-4">
             <Card className="rounded-[1.6rem] p-5">
               <SectionTitle eyebrow="Forecast" title="Revenue Forecast" />
               <div className="mt-4 space-y-3">
@@ -1117,7 +1239,7 @@ export default function DashboardHomePage() {
               </div>
             </Card>
           </div>
-          <div className="grid min-w-0 gap-4 lg:grid-cols-2">
+          <div className="crm-auto-grid-lg gap-4">
             <Card className="rounded-[1.6rem] p-5">
               <SectionTitle eyebrow="Lead Conversion" title="Sales Funnel" />
               <div className="mt-4 space-y-3">
@@ -1147,7 +1269,7 @@ export default function DashboardHomePage() {
             </div>
             <Badge variant={propertyLoading ? 'default' : 'success'}>{propertyLoading ? 'Syncing' : 'Live Sync'}</Badge>
           </div>
-          <div className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div className="crm-auto-grid gap-4">
             <MetricCard
               icon={HiOutlineClipboardDocumentCheck}
               label="Active Contracts"
@@ -1263,30 +1385,57 @@ export default function DashboardHomePage() {
           </div>
         </Card>
 
-        <Card className="rounded-[1.6rem] p-5 lg:col-span-4">
-          <SectionTitle
-            eyebrow="Leads Pipeline"
-            title="Lead quality"
-            action={<Link to="/app/leads" className="text-xs font-semibold text-sky-700 hover:text-sky-900">Open leads</Link>}
-          />
-          <div className="mt-5 space-y-4">
-            {leadsApi.loading ? (
-              <LoadingBlock lines={4} />
-            ) : activeLeads.length ? (
-              <>
-                <ProgressRow label="Hot leads" value={hotLeads.length} max={leadsApi.leads.length} tone="bg-violet-500" />
-                <ProgressRow label="Active leads" value={activeLeads.length} max={Math.max(10, leadsApi.leads.length)} tone="bg-sky-500" />
-                <DataRow
-                  label="Pipeline value"
-                  value={formatCurrency(pipelineValuePkr, currency)}
-                  badge="Open opportunity value"
-                />
-              </>
-            ) : (
-              <InlineEmpty title="No leads yet" description="Capture leads to see scoring and pipeline movement." />
-            )}
-          </div>
-        </Card>
+        {showSalesPipeline ? (
+          <Card className="rounded-[1.6rem] p-5 lg:col-span-4">
+            <SectionTitle
+              eyebrow="Leads Pipeline"
+              title="Lead quality"
+              action={<Link to="/app/leads" className="text-xs font-semibold text-sky-700 hover:text-sky-900">Open leads</Link>}
+            />
+            <div className="mt-5 space-y-4">
+              {leadsApi.loading ? (
+                <LoadingBlock lines={4} />
+              ) : activeLeads.length ? (
+                <>
+                  <ProgressRow label="Hot leads" value={hotLeads.length} max={leadsApi.leads.length} tone="bg-violet-500" />
+                  <ProgressRow label="Active leads" value={activeLeads.length} max={Math.max(10, leadsApi.leads.length)} tone="bg-sky-500" />
+                  <DataRow
+                    label="Pipeline value"
+                    value={formatCurrency(pipelineValuePkr, currency)}
+                    badge="Open opportunity value"
+                  />
+                </>
+              ) : (
+                <InlineEmpty title="No leads yet" description="Capture leads to see scoring and pipeline movement." />
+              )}
+            </div>
+          </Card>
+        ) : (
+          <Card className="rounded-[1.6rem] p-5 lg:col-span-4">
+            <SectionTitle
+              eyebrow="Finance"
+              title="Receivables snapshot"
+              action={<Link to="/app/invoices" className="text-xs font-semibold text-sky-700 hover:text-sky-900">Open billing</Link>}
+            />
+            <div className="mt-5 space-y-4">
+              {invoicesApi.loading ? (
+                <LoadingBlock lines={4} />
+              ) : invoicesApi.invoices.length ? (
+                <>
+                  <ProgressRow label="Paid records" value={paidInvoices.length || paidPayments.length} max={Math.max(10, invoicesApi.invoices.length)} tone="bg-emerald-500" />
+                  <ProgressRow label="Pending records" value={dashboardStats.pendingInvoices} max={Math.max(10, invoicesApi.invoices.length)} tone="bg-amber-500" />
+                  <DataRow
+                    label="Pending amount"
+                    value={formatCurrency(pendingRevenueUsd, currency)}
+                    badge="Outstanding billing"
+                  />
+                </>
+              ) : (
+                <InlineEmpty title="No billing records yet" description="Create invoices or bills to see receivables here." />
+              )}
+            </div>
+          </Card>
+        )}
 
         <Card className="rounded-[1.6rem] p-5 lg:col-span-4">
           <SectionTitle
@@ -1307,26 +1456,53 @@ export default function DashboardHomePage() {
       </section>
 
       <section className="grid min-w-0 gap-5 lg:grid-cols-12">
-        <Card className="rounded-[1.6rem] p-5 lg:col-span-5">
-          <SectionTitle
-            eyebrow="Support Tickets"
-            title="Customer support"
-            action={<Link to="/app/support" className="text-xs font-semibold text-sky-700 hover:text-sky-900">Support</Link>}
-          />
-          <div className="mt-5 space-y-3">
-            {ticketsApi.loading ? (
-              <LoadingBlock lines={4} />
-            ) : ticketsApi.tickets.length ? (
-              <>
-                <DataRow label="Open tickets" value={formatCompact(openTickets.length)} badge="Needs attention" />
-                <DataRow label="Resolved tickets" value={formatCompact(Math.max(0, ticketsApi.tickets.length - openTickets.length))} badge="Completed support work" />
-                <DataRow label="Total tickets" value={formatCompact(ticketsApi.tickets.length)} badge="All support records" />
-              </>
-            ) : (
-              <InlineEmpty title="No support tickets yet" description="Support tickets will appear here once customers need help." />
-            )}
-          </div>
-        </Card>
+        {showSupportMetrics ? (
+          <Card className="rounded-[1.6rem] p-5 lg:col-span-5">
+            <SectionTitle
+              eyebrow="Support Tickets"
+              title="Customer support"
+              action={<Link to="/app/support" className="text-xs font-semibold text-sky-700 hover:text-sky-900">Support</Link>}
+            />
+            <div className="mt-5 space-y-3">
+              {ticketsApi.loading ? (
+                <LoadingBlock lines={4} />
+              ) : ticketsApi.tickets.length ? (
+                <>
+                  <DataRow label="Open tickets" value={formatCompact(openTickets.length)} badge="Needs attention" />
+                  <DataRow label="Resolved tickets" value={formatCompact(Math.max(0, ticketsApi.tickets.length - openTickets.length))} badge="Completed support work" />
+                  <DataRow label="Total tickets" value={formatCompact(ticketsApi.tickets.length)} badge="All support records" />
+                </>
+              ) : (
+                <InlineEmpty title="No support tickets yet" description="Support tickets will appear here once customers need help." />
+              )}
+            </div>
+          </Card>
+        ) : (
+          <Card className="rounded-[1.6rem] p-5 lg:col-span-5">
+            <SectionTitle
+              eyebrow="Operations"
+              title={isRetail ? 'Retail stock calculation' : 'Billing control'}
+              action={<Link to={isRetail ? '/app/inventory' : '/app/invoices'} className="text-xs font-semibold text-sky-700 hover:text-sky-900">{isRetail ? 'Inventory' : 'Billing'}</Link>}
+            />
+            <div className="mt-5 space-y-3">
+              {invoicesApi.loading || expensesApi.loading || retailLoading ? (
+                <LoadingBlock lines={4} />
+              ) : isRetail ? (
+                <>
+                  <DataRow label="Cost value" value={formatCurrency(retailInventoryStats.inventoryValue, currency)} badge={`${formatCompact(retailInventoryStats.totalStock)} units`} />
+                  <DataRow label="Retail value" value={formatCurrency(retailInventoryStats.retailValue, currency)} badge="Selling price basis" />
+                  <DataRow label="Potential margin" value={formatCurrency(retailInventoryStats.potentialMargin, currency)} badge={`${formatCompact(retailInventoryStats.lowStockCount + retailInventoryStats.outOfStockCount)} stock alerts`} />
+                </>
+              ) : (
+                <>
+                  <DataRow label="Paid records" value={formatCompact(paidInvoices.length || paidPayments.length)} badge="Collected billing" />
+                  <DataRow label="Pending records" value={formatCompact(dashboardStats.pendingInvoices)} badge={formatCurrency(pendingRevenueUsd, currency)} />
+                  <DataRow label="Expense records" value={formatCompact(expensesApi.expenses.length)} badge={formatCurrency(dashboardStats.expenses, currency)} />
+                </>
+              )}
+            </div>
+          </Card>
+        )}
 
         <Card className="rounded-[1.6rem] p-5 lg:col-span-4">
           <SectionTitle eyebrow="Quick Actions" title="Move work forward" />
@@ -1339,8 +1515,13 @@ export default function DashboardHomePage() {
               </>
             ) : (
               <>
-                <QuickAction to="/app/leads" icon={HiOutlineSparkles} title="Add lead" detail="Capture a new opportunity" />
-                <QuickAction to="/app/invoices" icon={HiOutlineDocumentText} title="Create invoice" detail="Start billing flow" />
+                {isRetail ? (
+                  <QuickAction to="/app/inventory" icon={HiOutlineCube} title="Add product" detail="Update stock catalog" />
+                ) : null}
+                {showSalesPipeline ? (
+                  <QuickAction to="/app/leads" icon={HiOutlineSparkles} title="Add lead" detail="Capture a new opportunity" />
+                ) : null}
+                <QuickAction to={isRetail ? '/app/pos' : '/app/invoices'} icon={HiOutlineDocumentText} title={isRetail ? 'POS billing' : 'Create invoice'} detail={isRetail ? 'Create a sales bill' : 'Start billing flow'} />
               </>
             )}
             <QuickAction to="/app/reports" icon={HiOutlineChartBar} title="Open reports" detail="Review performance" />
@@ -1362,9 +1543,13 @@ export default function DashboardHomePage() {
               badge={paidInvoices.length || paidPayments.length ? 'Paid records found' : isSchool ? 'Create fee bills to activate' : 'Create invoices to activate'}
             />
             <DataRow
-              label="Support loop"
-              value={formatCompact(ticketsApi.tickets.length)}
-              badge={ticketsApi.tickets.length ? 'Ticket history is live' : 'Support records are empty'}
+              label={showSupportMetrics ? 'Support loop' : 'Billing records'}
+              value={formatCompact(showSupportMetrics ? ticketsApi.tickets.length : invoicesApi.invoices.length)}
+              badge={
+                showSupportMetrics
+                  ? ticketsApi.tickets.length ? 'Ticket history is live' : 'Support records are empty'
+                  : invoicesApi.invoices.length ? 'Billing history is live' : 'Billing records are empty'
+              }
             />
           </div>
         </Card>

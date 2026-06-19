@@ -63,13 +63,22 @@ function normalizeTransaction(txn) {
   }
 }
 
-export function useInventoryTransactions() {
+export function useInventoryTransactions(options = {}) {
   const { userId, workspaceId, businessType, userDoc, firebaseUser } = useUser()
+  const enabled = options.enabled !== false
   const [transactions, setTransactions] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   useEffect(() => {
+    if (!enabled) {
+      Promise.resolve().then(() => {
+        setTransactions([])
+        setLoading(false)
+        setError('')
+      })
+      return undefined
+    }
     if (!db || !workspaceId) {
       Promise.resolve().then(() => {
         setTransactions([])
@@ -100,7 +109,7 @@ export function useInventoryTransactions() {
     )
 
     return () => unsub?.()
-  }, [businessType, workspaceId])
+  }, [businessType, enabled, workspaceId])
 
   return useMemo(
     () => ({

@@ -15,9 +15,9 @@ const TableRow = memo(function TableRow({ row, columns }) {
 
 function Table({ columns, rows, className }) {
   return (
-    <div className={cn('overflow-hidden rounded-2xl border border-slate-200/80 bg-white/80 dark:border-white/10', className)}>
-      <div className="overflow-x-auto">
-        <table className="min-w-full text-left text-sm">
+    <div className={cn('min-w-0 overflow-hidden rounded-2xl border border-slate-200/80 bg-white/80 dark:border-white/10', className)}>
+      <div className="crm-table-scroll">
+        <table className="w-full min-w-max text-left text-sm">
           <thead className="bg-slate-50 text-slate-500 dark:bg-slate-900/50 dark:text-slate-200">
             <tr>
               {columns.map((c) => (

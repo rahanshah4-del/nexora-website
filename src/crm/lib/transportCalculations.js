@@ -3,6 +3,11 @@ export function safeMoney(value) {
   return Number.isFinite(numeric) ? Math.max(0, numeric) : 0
 }
 
+export function safeNumber(value) {
+  const numeric = Number(value)
+  return Number.isFinite(numeric) ? numeric : 0
+}
+
 export function formatTransportCurrency(value) {
   return `PKR ${Math.round(safeMoney(value)).toLocaleString('en-PK')}`
 }
@@ -63,6 +68,86 @@ export function buildTransportFinanceSummary({ bookings = [], payments = [] } = 
     paidAmount: activeBookings.reduce((sum, booking) => sum + safeMoney(booking.advancePaid), 0),
     outstandingDues: activeBookings.reduce((sum, booking) => sum + safeMoney(booking.dueAmount), 0),
     cancelledPaidAmount: cancelledBookings.reduce((sum, booking) => sum + safeMoney(booking.advancePaid), 0),
+  }
+}
+
+export function buildTransportReport({ vehicles = [], bookings = [], customers = [], payments = [] } = {}) {
+  const bookingRows = Array.isArray(bookings) ? bookings : []
+  const vehicleSource = Array.isArray(vehicles) ? vehicles : []
+  const customerSource = Array.isArray(customers) ? customers : []
+  const paymentRows = Array.isArray(payments) ? payments : []
+  const activeBookings = bookingRows.filter((booking) => booking.status === 'active')
+  const reservedBookings = bookingRows.filter((booking) => booking.status === 'reserved')
+  const returnedBookings = bookingRows.filter((booking) => booking.status === 'returned')
+  const cancelledBookings = bookingRows.filter((booking) => booking.status === 'cancelled')
+  const finance = buildTransportFinanceSummary({ bookings: bookingRows, payments: paymentRows })
+  const liveBookings = finance.activeBookings
+  const securityDeposits = liveBookings.reduce((sum, booking) => sum + safeMoney(booking.securityDeposit), 0)
+  const driverCharges = liveBookings.reduce((sum, booking) => sum + safeMoney(booking.totals?.driverCharges || safeMoney(booking.driverRate) * safeNumber(booking.units)), 0)
+  const methodRows = Object.values(finance.activePayments.filter((payment) => !isTransportRefundPayment(payment)).reduce((map, payment) => {
+    const method = payment.method || 'Cash'
+    map[method] = map[method] || { method, count: 0, amount: 0 }
+    map[method].count += 1
+    map[method].amount += safeMoney(payment.amount)
+    return map
+  }, {})).sort((a, b) => b.amount - a.amount)
+  const refundRows = paymentRows.filter((payment) => isTransportRefundPayment(payment))
+  const cancelledRows = cancelledBookings.map((booking) => ({
+    ...booking,
+    refundAmount: safeMoney(booking.refundAmount),
+    refundMethod: booking.refundMethod || refundRows.find((payment) => payment.bookingNumber === booking.bookingNumber)?.method || '',
+  }))
+  const vehicleRows = vehicleSource.map((vehicle) => {
+    const vehicleBookings = bookingRows.filter((booking) => booking.vehicleId === vehicle.id && booking.status !== 'cancelled')
+    return {
+      ...vehicle,
+      bookings: vehicleBookings.length,
+      revenue: vehicleBookings.reduce((sum, booking) => sum + safeMoney(booking.total), 0),
+      due: vehicleBookings.reduce((sum, booking) => sum + safeMoney(booking.dueAmount), 0),
+    }
+  }).sort((a, b) => b.revenue - a.revenue)
+  const customerRows = customerSource.map((customer) => ({
+    ...customer,
+    due: safeMoney(customer.creditBalance),
+    paid: safeMoney(customer.paidAmount),
+    bookings: Array.isArray(customer.bookingHistory) ? customer.bookingHistory.length : 0,
+  })).sort((a, b) => b.due - a.due)
+
+  return {
+    totalVehicles: vehicleSource.length,
+    availableVehicles: vehicleSource.filter((vehicle) => vehicle.status === 'available').length,
+    rentedVehicles: vehicleSource.filter((vehicle) => vehicle.status === 'rented').length,
+    reservedVehicles: vehicleSource.filter((vehicle) => vehicle.status === 'reserved').length,
+    maintenanceVehicles: vehicleSource.filter((vehicle) => vehicle.status === 'maintenance').length,
+    totalBookings: bookingRows.length,
+    activeBookings: activeBookings.length,
+    reservedBookings: reservedBookings.length,
+    returnedBookings: returnedBookings.length,
+    cancelledBookings: cancelledBookings.length,
+    liveBookings: liveBookings.length,
+    totalCustomers: customerSource.length,
+    dueCustomers: customerRows.filter((customer) => customer.due > 0).length,
+    totalRevenue: finance.netCollected,
+    bookingRevenue: finance.activeBookingValue,
+    paidAmount: finance.paidAmount,
+    outstandingDues: finance.outstandingDues,
+    grossCollected: finance.grossCollected,
+    totalRefunds: finance.totalRefunds,
+    activeRefunds: finance.activeRefunds,
+    cancelledRefunds: finance.cancelledRefunds,
+    cancelledBookingValue: finance.cancelledBookingValue,
+    cancelledPaidAmount: finance.cancelledPaidAmount,
+    securityDeposits,
+    driverCharges,
+    utilization: vehicleSource.length ? Math.round(((activeBookings.length + reservedBookings.length) / vehicleSource.length) * 100) : 0,
+    methodRows,
+    vehicleRows,
+    customerRows,
+    bookingRows,
+    paymentRows,
+    activePaymentRows: finance.activePayments,
+    refundRows,
+    cancelledRows,
   }
 }
 

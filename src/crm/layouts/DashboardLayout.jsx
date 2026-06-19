@@ -32,42 +32,6 @@ import {
 } from '../lib/workspaceSession.js'
 import { goToWorkspace } from '../../lib/workspaceNavigation.js'
 
-function MobileAppAccessBlock() {
-  return (
-    <div className="nexora-bg grid min-h-screen place-items-center overflow-x-hidden px-4 py-8">
-      <motion.div
-        className="w-full max-w-md overflow-hidden rounded-[1.8rem] border border-white/85 bg-white/95 p-6 text-center shadow-[0_24px_80px_-48px_rgba(15,23,42,0.55)]"
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.22, ease: 'easeOut' }}
-      >
-        <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-slate-950 text-white shadow-lg shadow-slate-950/15">
-          <span className="text-lg font-semibold">N</span>
-        </div>
-        <p className="mt-4 text-sm font-semibold uppercase tracking-[0.18em] text-sky-700">NEXORA SOLUTION</p>
-        <h1 className="mt-2 text-xl font-semibold tracking-tight text-slate-950">Desktop workspace required</h1>
-        <p className="mt-3 text-sm leading-7 text-slate-600">
-          NEXORA SOLUTION is designed for desktop and tablet management. Please open on laptop/desktop for full CRM access.
-        </p>
-        <div className="mt-6 grid gap-2">
-          <a
-            href="/"
-            className="focus-ring inline-flex h-11 items-center justify-center rounded-2xl bg-slate-950 px-4 text-sm font-semibold text-white shadow-lg shadow-slate-950/15 transition hover:bg-sky-700"
-          >
-            Back to Website
-          </a>
-          <a
-            href="/downloads/nexora-business-suite-windows.exe"
-            className="focus-ring inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-sky-200 hover:text-sky-700"
-          >
-            Download Windows App
-          </a>
-        </div>
-      </motion.div>
-    </div>
-  )
-}
-
 function formatAccessDate(value) {
   const date = typeof value?.toDate === 'function' ? value.toDate() : value instanceof Date ? value : value ? new Date(value) : null
   if (!date || Number.isNaN(date.getTime())) return ''
@@ -249,9 +213,6 @@ export default function DashboardLayout() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
   const [productModalOpen, setProductModalOpen] = useState(false)
-  const [isMobileScreen, setIsMobileScreen] = useState(
-    () => window.matchMedia?.('(max-width: 767px)')?.matches === true,
-  )
   const [selectedWorkspace, setSelectedWorkspace] = useState(null)
   const [sessionInfo, setSessionInfo] = useState(null)
   const { user, ready } = useAuth()
@@ -326,22 +287,7 @@ export default function DashboardLayout() {
     [normalizedBusinessType],
   )
   const maintenance = usePlatformMaintenance(maintenanceContext)
-  const restaurantScaleRoutes = new Set([
-    '/app/orders',
-    '/app/orders-kot',
-    '/app/menu-management',
-    '/app/customers',
-    '/app/tables',
-    '/app/kitchen-display',
-    '/app/bills',
-    '/app/expenses',
-    '/app/settings',
-  ])
-  const restaurantDashboardRoute = location.pathname === '/app/dashboard' && normalizedBusinessType === 'Restaurant POS'
   const isCompactPosRoute = location.pathname === '/app/orders'
-  const restaurantPosScaled =
-    normalizedBusinessType === 'Restaurant POS' &&
-    (restaurantScaleRoutes.has(location.pathname) || restaurantDashboardRoute)
   const allowedModules = useMemo(
     () =>
       workspaceAccess.permissionKeys
@@ -386,7 +332,6 @@ export default function DashboardLayout() {
     currentModule.key !== 'settings' &&
     !isOwnerAdmin &&
     !workspaceAccess.hasModulePermission(currentModule.key, 'view')
-  const mobileBlocked = ready && isAuthenticated && isMobileScreen
   const onboardingOpen = Boolean(ready && userId && !userLoading && !isStaff && workspaceOnboardingResolved && !workspaceOnboardingCompleted)
 
   useEffect(() => {
@@ -561,10 +506,13 @@ export default function DashboardLayout() {
   }, [accessPlan, businessType, developerOverride, location.pathname, lockedWorkspaceId, ready, userLoading])
 
   useEffect(() => {
-    const media = window.matchMedia?.('(max-width: 767px)')
+    const media = window.matchMedia?.('(max-width: 1279px)')
     if (!media) return undefined
 
-    const update = (event) => setIsMobileScreen(event.matches)
+    const update = (event) => {
+      if (event.matches) setCollapsed(true)
+    }
+    if (media.matches) setCollapsed(true)
     media.addEventListener?.('change', update)
     return () => media.removeEventListener?.('change', update)
   }, [])
@@ -744,10 +692,6 @@ export default function DashboardLayout() {
     )
   }
 
-  if (mobileBlocked) {
-    return <MobileAppAccessBlock />
-  }
-
   if (routeBusinessBlocked) {
     return <BusinessModuleBlock onBackToWorkspace={backToWorkspace} />
   }
@@ -806,7 +750,7 @@ export default function DashboardLayout() {
         <main className={`crm-main min-w-0 flex-1 overflow-x-clip print:p-0 ${
           isCompactPosRoute ? 'px-3 pb-3 pt-2 sm:px-4 lg:px-4 lg:pb-3 lg:pt-2' : 'px-3 pb-5 pt-4 sm:px-5 lg:px-6 lg:pb-6 lg:pt-5'
         }`}>
-          <div className="workspace-zoom-scale mx-auto w-full max-w-[1440px] min-w-0 print:max-w-none">
+          <div className="workspace-fluid-container mx-auto min-w-0 print:max-w-none">
             <Outlet />
             <p className="mt-6 pb-1 text-center text-xs font-semibold uppercase tracking-[0.16em] text-slate-400 print:hidden">
               NEXORA SOLUTION — All rights reserved 2019-2026.
