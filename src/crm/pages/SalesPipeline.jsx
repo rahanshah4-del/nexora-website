@@ -10,6 +10,7 @@ import Button from '../components/ui/Button.jsx'
 import { useMemo, useState } from 'react'
 import DealModal from '../components/pipeline/DealModal.jsx'
 import Toast from '../components/ui/Toast.jsx'
+import { confirmAction } from '../components/ui/dialogActions.js'
 import PageSearch from '../components/ui/PageSearch.jsx'
 import Select from '../components/ui/Select.jsx'
 import { calculatePipelineMetrics } from '../lib/salesCalculations.js'
@@ -49,6 +50,12 @@ export default function PipelinePage() {
   }, [deals, query, stageFilter])
 
   const metrics = useMemo(() => calculatePipelineMetrics(deals), [deals])
+
+  async function handleDeleteDeal(deal) {
+    const label = deal?.title || 'this deal'
+    if (!await confirmAction({ title: 'Delete deal?', message: `${label} will be permanently removed from the sales pipeline.`, confirmLabel: 'Delete Deal' })) return
+    await deleteDeal(deal)
+  }
 
   const breakdown = useMemo(() => {
     const map = new Map()
@@ -172,7 +179,7 @@ export default function PipelinePage() {
                 Loading deals…
               </div>
             ) : filteredDeals.length ? (
-              <KanbanBoard deals={filteredDeals} onMove={moveDeal} onSave={saveDeal} onDelete={deleteDeal} />
+              <KanbanBoard deals={filteredDeals} onMove={moveDeal} onSave={saveDeal} onDelete={handleDeleteDeal} />
             ) : (
               <EmptyState title="No deals yet" description="Add a deal to start using the pipeline board." />
             )}

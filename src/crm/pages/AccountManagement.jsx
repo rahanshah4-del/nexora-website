@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { HiOutlineEye, HiOutlinePrinter } from 'react-icons/hi2'
 import Badge from '../components/ui/Badge.jsx'
 import Button from '../components/ui/Button.jsx'
 import Card from '../components/ui/Card.jsx'
@@ -10,18 +11,26 @@ import PageSearch from '../components/ui/PageSearch.jsx'
 import Select from '../components/ui/Select.jsx'
 import Table from '../components/ui/Table.jsx'
 import Toast from '../components/ui/Toast.jsx'
+import { confirmAction } from '../components/ui/dialogActions.js'
 import EmptyState from '../components/system/EmptyState.jsx'
 import { useAccountTransactions } from '../hooks/useAccountTransactions.js'
 import { useApprovals } from '../hooks/useApprovals.js'
+import { useBusinessSettings } from '../hooks/useBusinessSettings.js'
 import { useExpenses } from '../hooks/useExpenses.js'
 import { useInvoices } from '../hooks/useInvoices.js'
 import { useUser } from '../hooks/useUser.js'
 import {
   calculateFinanceSummary,
-  isPendingTransaction,
 } from '../lib/financeCalculations.js'
 import { financePermissions, outflowTransaction } from '../lib/financeAccess.js'
 import { getInvoiceStatus } from '../lib/calculations.js'
+import {
+  buildAccountTransactionHtml,
+  buildAccountTransactionThermalText,
+  transactionDetailRows,
+  transactionTypeLabel,
+} from '../lib/accountTransactionDocuments.js'
+import { printHtmlDocument } from '../lib/printerService.js'
 import { formatCurrency, formatCompact, toFiniteNumber } from '../utils/format.js'
 
 const actionDefaults = {
@@ -45,23 +54,15 @@ function statusBadge(status) {
 }
 
 function typeLabel(type) {
-  const map = {
-    income: 'Income',
-    expense: 'Expense Payment',
-    bank_transfer: 'Bank Transfer',
-    cash_withdrawal: 'Cash Withdrawal',
-    cash_payment: 'Cash Payment',
-    adjustment: 'Adjustment',
-  }
-  return map[String(type || '').toLowerCase()] || 'Transaction'
+  return transactionTypeLabel(type)
 }
 
 function ActionCard({ title, description, children }) {
   return (
-    <Card className="p-5">
+    <Card className="flex h-full flex-col p-5">
       <p className="text-sm font-semibold text-slate-900 dark:text-white">{title}</p>
       <p className="mt-1 text-xs leading-5 text-slate-600 dark:text-slate-300">{description}</p>
-      <div className="mt-4">{children}</div>
+      <div className="mt-4 flex flex-1 flex-col">{children}</div>
     </Card>
   )
 }
@@ -123,6 +124,61 @@ function ConfirmationModal({ request, walletBalance, canAllowNegative, busy, onC
   )
 }
 
+function TransactionDetailsModal({ transaction, onClose, onPrint }) {
+  return (
+    <AnimatePresence>
+      {transaction ? (
+        <motion.div
+          className="fixed inset-0 z-[60] grid place-items-center overflow-y-auto bg-slate-950/45 p-3 backdrop-blur-sm sm:p-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={onClose}
+          role="dialog"
+          aria-modal="true"
+        >
+          <motion.div
+            className="crm-modal-panel max-w-2xl"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 12 }}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <Card className="p-4 sm:p-5">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="text-lg font-semibold text-slate-950 dark:text-white">{transactionTypeLabel(transaction.type)}</p>
+                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{transaction.title}</p>
+                </div>
+                <Badge variant={statusBadge(transaction.approvalStatus || transaction.status).variant}>
+                  {statusBadge(transaction.approvalStatus || transaction.status).label}
+                </Badge>
+              </div>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                {transactionDetailRows(transaction).map(([label, value]) => (
+                  <div key={label} className="glass-muted min-w-0 rounded-2xl p-3">
+                    <p className="text-xs font-semibold text-slate-500">{label}</p>
+                    <p className="mt-1 break-words text-sm font-semibold text-slate-950 dark:text-white">{value}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-5 flex flex-wrap gap-2">
+                <Button type="button" className="rounded-2xl" onClick={() => onPrint(transaction, 'a4')}>
+                  <HiOutlinePrinter className="h-4 w-4" /> Print A4
+                </Button>
+                <Button type="button" variant="subtle" className="rounded-2xl" onClick={() => onPrint(transaction, '58mm')}>
+                  <HiOutlinePrinter className="h-4 w-4" /> Print 58mm
+                </Button>
+                <Button type="button" variant="ghost" className="rounded-2xl" onClick={onClose}>Close</Button>
+              </div>
+            </Card>
+          </motion.div>
+        </motion.div>
+      ) : null}
+    </AnimatePresence>
+  )
+}
+
 export default function AccountManagementPage() {
   const { role, userDoc } = useUser()
   const permissions = useMemo(() => financePermissions(userDoc?.role || role), [role, userDoc?.role])
@@ -130,12 +186,14 @@ export default function AccountManagementPage() {
   const invoicesApi = useInvoices()
   const expensesApi = useExpenses()
   const approvals = useApprovals()
+  const { settings: businessSettings } = useBusinessSettings()
   const [toast, setToast] = useState(null)
   const [busy, setBusy] = useState('')
   const [filters, setFilters] = useState({ type: 'all', status: 'all', method: 'all', dateRange: 'all' })
   const [drafts, setDrafts] = useState(actionDefaults)
   const [confirmRequest, setConfirmRequest] = useState(null)
   const [txnSearch, setTxnSearch] = useState('')
+  const [selectedTransaction, setSelectedTransaction] = useState(null)
 
   const summary = useMemo(
     () =>
@@ -150,7 +208,6 @@ export default function AccountManagementPage() {
 
   const loading = accounts.loading || invoicesApi.loading || expensesApi.loading
   const pendingApprovalCount = approvals.summary.total || summary.pendingApprovals
-  const pendingTransactions = useMemo(() => accounts.transactions.filter(isPendingTransaction), [accounts.transactions])
   const insights = useMemo(() => {
     const customerTotals = new Map()
     invoicesApi.invoices
@@ -226,8 +283,7 @@ export default function AccountManagementPage() {
     return [...paymentRows, ...transactionRows].slice(0, 6)
   }, [accounts.transactions, invoicesApi.payments])
 
-  const transactionColumns = useMemo(
-    () => [
+  const transactionColumns = [
       { key: 'title', header: 'Transaction', cell: (row) => <span className="font-semibold">{row.title}</span> },
       { key: 'type', header: 'Type', cell: (row) => <Badge variant="info">{typeLabel(row.type)}</Badge> },
       { key: 'amount', header: 'Amount', cell: (row) => <span className="font-semibold">{formatCurrency(row.amount, row.currency)}</span> },
@@ -244,31 +300,46 @@ export default function AccountManagementPage() {
       {
         key: 'actions',
         header: 'Actions',
-        cell: (row) =>
-          permissions.canDeleteTransactions ? (
+        cell: (row) => (
+          <div className="flex flex-wrap gap-2">
+            <Button variant="ghost" className="h-8 rounded-xl px-3 text-xs" type="button" onClick={() => setSelectedTransaction(row)}>
+              <HiOutlineEye className="h-4 w-4" /> View
+            </Button>
+            <Button variant="subtle" className="h-8 rounded-xl px-3 text-xs" type="button" onClick={() => printTransaction(row, 'a4')}>
+              <HiOutlinePrinter className="h-4 w-4" /> Print
+            </Button>
+            {permissions.canDeleteTransactions ? (
             <Button
               variant="subtle"
               className="h-8 rounded-xl border-rose-200 px-3 text-xs text-rose-700 hover:border-rose-300"
               type="button"
               onClick={async () => {
-                if (!window.confirm('Delete this transaction?')) return
+                if (!await confirmAction({ title: 'Delete transaction?', message: 'This transaction will be permanently removed from account history.', confirmLabel: 'Delete Transaction' })) return
                 const res = await accounts.deleteTransaction(row)
                 showToast(res?.ok ? 'success' : 'error', res?.ok ? 'Transaction deleted' : res?.error || 'Unable to delete transaction')
               }}
             >
               Delete
             </Button>
-          ) : (
-            '—'
-          ),
+            ) : null}
+          </div>
+        ),
       },
-    ],
-    [accounts, permissions.canDeleteTransactions],
-  )
+  ]
 
   function showToast(tone, message, delay = 2200) {
     setToast({ tone, message })
     window.setTimeout(() => setToast(null), delay)
+  }
+
+  async function printTransaction(transaction, paperSize = 'a4') {
+    const result = await printHtmlDocument({
+      html: buildAccountTransactionHtml(transaction, businessSettings, paperSize),
+      thermalText: paperSize === '58mm' ? buildAccountTransactionThermalText(transaction, businessSettings) : '',
+      settings: businessSettings,
+      paperSize,
+    })
+    if (!result.ok) showToast('error', result.error || 'Unable to print transaction receipt', 2600)
   }
 
   function setDraft(type, patch) {
@@ -364,21 +435,6 @@ export default function AccountManagementPage() {
     })
   }
 
-  async function handleApproval(row, action) {
-    if (!approvals.canApprove) {
-      showToast('error', 'You do not have permission to approve requests')
-      return
-    }
-    setBusy(`${action}:${row.id}`)
-    const res = action === 'approve' ? await approvals.approve(row) : await approvals.reject(row)
-    setBusy('')
-    if (res?.ok) {
-      showToast('success', action === 'approve' ? 'Approval completed' : 'Approval rejected')
-    } else {
-      showToast('error', res?.error || 'Approval action failed', 2600)
-    }
-  }
-
   const approvalColumns = [
     { key: 'type', header: 'Type', cell: (row) => <span className="font-semibold">{row.type}</span> },
     { key: 'customer', header: 'Customer/Client' },
@@ -386,25 +442,6 @@ export default function AccountManagementPage() {
     { key: 'status', header: 'Status', cell: (row) => <Badge variant="warning">{row.status || 'pending'}</Badge> },
     { key: 'submittedBy', header: 'Submitted By' },
     { key: 'dateLabel', header: 'Date' },
-    {
-      key: 'actions',
-      header: 'Actions',
-      cell: (row) => (
-        <div className="flex flex-wrap gap-2">
-          <Button className="h-8 rounded-xl px-3 text-xs" type="button" onClick={() => handleApproval(row, 'approve')}>
-            Approve
-          </Button>
-          <Button
-            variant="subtle"
-            className="h-8 rounded-xl border-rose-200 px-3 text-xs text-rose-700 hover:border-rose-300"
-            type="button"
-            onClick={() => handleApproval(row, 'reject')}
-          >
-            Reject
-          </Button>
-        </div>
-      ),
-    },
   ]
 
   if (!permissions.canViewWallet) {
@@ -442,6 +479,7 @@ export default function AccountManagementPage() {
           ['Bank Balance', summary.bankBalance],
           ['Pending Revenue', summary.pendingRevenue],
           ['Total Revenue', summary.totalRevenue],
+          ['Approval Rejected', summary.rejectedRevenue],
           ['Total Expenses', summary.totalExpenses],
           ['Pending Approvals', pendingApprovalCount, 'count'],
           ['Monthly Income', summary.monthlyIncome],
@@ -456,6 +494,37 @@ export default function AccountManagementPage() {
           </Card>
         ))}
       </div>
+
+      <Card className="mb-4 p-4">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Finance Breakdown</p>
+            <p className="mt-1 text-sm font-semibold text-slate-600">
+              Only approved/paid/completed records affect income, expenses, wallet, and profit.
+            </p>
+          </div>
+          <Badge variant="success">Approved only</Badge>
+        </div>
+        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-6">
+          {[
+            ['Invoice / Bill income', summary.revenueBreakdown?.invoiceRevenue || 0, 'Paid invoices not already covered by payments/transactions'],
+            ['Payment income', summary.revenueBreakdown?.paymentRevenue || 0, 'Paid payment records not already covered by transactions'],
+            ['Manual income', summary.revenueBreakdown?.transactionRevenue || 0, 'Approved income transactions'],
+            ['Approved expenses', summary.expenseBreakdown?.approvedExpenses || 0, 'Approved expense records'],
+            ['Expense payments', summary.expenseBreakdown?.transactionExpenses || 0, 'Approved expense/cash payment transactions'],
+            ['Withdrawals / transfers', (summary.cashOut || 0) + (summary.bankBalance || 0), 'Approved cash withdrawals + bank transfers'],
+          ].map(([label, value, helper]) => (
+            <div key={label} className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+              <p className="text-[11px] font-black uppercase tracking-[0.12em] text-slate-500">{label}</p>
+              <p className="mt-2 text-lg font-black text-slate-950 dark:text-white">{formatCurrency(value, 'PKR')}</p>
+              <p className="mt-1 text-xs font-semibold leading-5 text-slate-500">{helper}</p>
+            </div>
+          ))}
+        </div>
+        <div className="mt-4 rounded-2xl border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm font-bold text-indigo-800">
+          Wallet = Total Revenue ({formatCurrency(summary.totalRevenue, 'PKR')}) - Total Expenses ({formatCurrency(summary.totalExpenses, 'PKR')}) - Withdrawals/Transfers ({formatCurrency((summary.cashOut || 0) + (summary.bankBalance || 0), 'PKR')}) = {formatCurrency(summary.walletBalance, 'PKR')}
+        </div>
+      </Card>
 
       <div className="mb-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         <Card className="p-4">
@@ -478,44 +547,44 @@ export default function AccountManagementPage() {
 
       <div className="mb-4 grid gap-4 xl:grid-cols-4">
         <ActionCard title="Transfer to Bank" description="Move approved wallet funds to a bank account.">
-          <form className="space-y-3" onSubmit={submitBankTransfer}>
+          <form className="flex h-full flex-col gap-3" onSubmit={submitBankTransfer}>
             <Input placeholder="Amount" inputMode="decimal" value={drafts.bank_transfer.amount} onChange={(event) => setDraft('bank_transfer', { amount: event.target.value })} />
             <Input placeholder="Bank name" value={drafts.bank_transfer.bankName} onChange={(event) => setDraft('bank_transfer', { bankName: event.target.value })} />
             <Input placeholder="Account title" value={drafts.bank_transfer.accountTitle} onChange={(event) => setDraft('bank_transfer', { accountTitle: event.target.value })} />
             <Input placeholder="Account number" value={drafts.bank_transfer.accountNumber} onChange={(event) => setDraft('bank_transfer', { accountNumber: event.target.value })} />
             <Input placeholder="Notes" value={drafts.bank_transfer.notes} onChange={(event) => setDraft('bank_transfer', { notes: event.target.value })} />
-            <Button className="w-full rounded-2xl" type="submit" disabled={busy === 'bank_transfer' || !permissions.canTransferFunds}>
+            <Button className="mt-auto w-full rounded-2xl" type="submit" disabled={busy === 'bank_transfer' || !permissions.canTransferFunds}>
               {busy === 'bank_transfer' ? 'Submitting...' : 'Request Transfer'}
             </Button>
           </form>
         </ActionCard>
 
         <ActionCard title="Cash Withdrawal" description="Record a cash withdrawal request for approval.">
-          <form className="space-y-3" onSubmit={submitCashWithdrawal}>
+          <form className="flex h-full flex-col gap-3" onSubmit={submitCashWithdrawal}>
             <Input placeholder="Amount" inputMode="decimal" value={drafts.cash_withdrawal.amount} onChange={(event) => setDraft('cash_withdrawal', { amount: event.target.value })} />
             <Input placeholder="Receiver name" value={drafts.cash_withdrawal.receiverName} onChange={(event) => setDraft('cash_withdrawal', { receiverName: event.target.value })} />
             <Input placeholder="Reason" value={drafts.cash_withdrawal.reason} onChange={(event) => setDraft('cash_withdrawal', { reason: event.target.value })} />
             <Input placeholder="Notes" value={drafts.cash_withdrawal.notes} onChange={(event) => setDraft('cash_withdrawal', { notes: event.target.value })} />
-            <Button className="w-full rounded-2xl" type="submit" disabled={busy === 'cash_withdrawal' || !permissions.canTransferFunds}>
+            <Button className="mt-auto w-full rounded-2xl" type="submit" disabled={busy === 'cash_withdrawal' || !permissions.canTransferFunds}>
               {busy === 'cash_withdrawal' ? 'Submitting...' : 'Request Withdrawal'}
             </Button>
           </form>
         </ActionCard>
 
         <ActionCard title="Cash Payment" description="Submit cash paid to suppliers, staff, or vendors.">
-          <form className="space-y-3" onSubmit={submitCashPayment}>
+          <form className="flex h-full flex-col gap-3" onSubmit={submitCashPayment}>
             <Input placeholder="Amount" inputMode="decimal" value={drafts.cash_payment.amount} onChange={(event) => setDraft('cash_payment', { amount: event.target.value })} />
             <Input placeholder="Paid to" value={drafts.cash_payment.paidTo} onChange={(event) => setDraft('cash_payment', { paidTo: event.target.value })} />
             <Input placeholder="Reason" value={drafts.cash_payment.reason} onChange={(event) => setDraft('cash_payment', { reason: event.target.value })} />
             <Input placeholder="Notes" value={drafts.cash_payment.notes} onChange={(event) => setDraft('cash_payment', { notes: event.target.value })} />
-            <Button className="w-full rounded-2xl" type="submit" disabled={busy === 'cash_payment' || !permissions.canManageAccounts}>
+            <Button className="mt-auto w-full rounded-2xl" type="submit" disabled={busy === 'cash_payment' || !permissions.canManageAccounts}>
               {busy === 'cash_payment' ? 'Submitting...' : 'Submit Payment'}
             </Button>
           </form>
         </ActionCard>
 
         <ActionCard title="Pay Expense" description="Create an expense payment request connected to an expense.">
-          <form className="space-y-3" onSubmit={submitExpensePayment}>
+          <form className="flex h-full flex-col gap-3" onSubmit={submitExpensePayment}>
             <Select value={drafts.expense.expenseId} onChange={(event) => {
               const expense = expensesApi.expenses.find((item) => item.id === event.target.value)
               setDraft('expense', { expenseId: event.target.value, amount: expense ? String(expense.amount || '') : drafts.expense.amount })
@@ -535,7 +604,7 @@ export default function AccountManagementPage() {
               <option>Wallet</option>
             </Select>
             <Input placeholder="Notes" value={drafts.expense.notes} onChange={(event) => setDraft('expense', { notes: event.target.value })} />
-            <Button className="w-full rounded-2xl" type="submit" disabled={busy === 'expense' || !permissions.canManageExpenses}>
+            <Button className="mt-auto w-full rounded-2xl" type="submit" disabled={busy === 'expense' || !permissions.canManageExpenses}>
               {busy === 'expense' ? 'Submitting...' : 'Request Expense Payment'}
             </Button>
           </form>
@@ -624,13 +693,13 @@ export default function AccountManagementPage() {
                 <p className="text-sm font-semibold text-slate-900 dark:text-white">Pending Approvals</p>
                 <p className="text-xs text-slate-600 dark:text-slate-300">Finance requests waiting for review.</p>
               </div>
-              <Badge variant="warning">{formatCompact(approvals.summary.total || pendingTransactions.length)}</Badge>
+              <Badge variant="warning">{formatCompact(approvals.summary.total || summary.pendingApprovals)}</Badge>
             </div>
             <div className="mt-4">
               {approvals.loading ? (
                 <div className="grid min-h-[10rem] place-items-center text-sm text-slate-600 dark:text-slate-300">Loading approvals...</div>
-              ) : approvals.approvals.length ? (
-                <Table columns={approvalColumns} rows={approvals.approvals.slice(0, 6)} />
+              ) : approvals.pendingApprovals.length ? (
+                <Table columns={approvalColumns} rows={approvals.pendingApprovals.slice(0, 6)} />
               ) : (
                 <EmptyState title="No approvals pending" description="New payment and account requests will appear here." />
               )}
@@ -667,6 +736,11 @@ export default function AccountManagementPage() {
         onConfirm={() => {
           if (confirmRequest) createTransaction(confirmRequest.type, confirmRequest.payload)
         }}
+      />
+      <TransactionDetailsModal
+        transaction={selectedTransaction}
+        onClose={() => setSelectedTransaction(null)}
+        onPrint={printTransaction}
       />
     </motion.div>
   )

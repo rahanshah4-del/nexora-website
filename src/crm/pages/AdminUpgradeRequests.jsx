@@ -28,7 +28,7 @@ function Toast({ tone = 'success', message, onClose }) {
       ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-800 dark:text-emerald-200'
       : 'border-rose-500/20 bg-rose-500/10 text-rose-800 dark:text-rose-200'
   return (
-    <div className={`glass fixed right-4 top-4 z-[60] w-[22rem] max-w-[calc(100vw-2rem)] rounded-2xl border p-3 ${toneClass}`}>
+    <div className={`glass fixed left-1/2 top-1/2 z-[110] w-[22rem] max-w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-1/2 rounded-2xl border p-3 shadow-xl ${toneClass}`}>
       <div className="flex items-start justify-between gap-3">
         <p className="text-sm font-semibold">{message}</p>
         <button

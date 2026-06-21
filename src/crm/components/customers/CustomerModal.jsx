@@ -6,11 +6,53 @@ import Card from '../ui/Card.jsx'
 import Input from '../ui/Input.jsx'
 import Select from '../ui/Select.jsx'
 
-function CustomerModal({ open, onClose, onCreate, schoolMode = false }) {
+function CustomerModal({ open, onClose, onCreate, initialRecord = null, schoolMode = false }) {
   const [draft, setDraft] = useState(null)
 
   useEffect(() => {
     if (!open) return
+    if (initialRecord) {
+      Promise.resolve().then(() =>
+        setDraft(
+          schoolMode
+            ? {
+                name: initialRecord.name || initialRecord.studentName || '',
+                email: initialRecord.email || initialRecord.parentEmail || '',
+                phone: initialRecord.phone || initialRecord.parentPhone || '',
+                company: initialRecord.company || [initialRecord.className, initialRecord.section].filter(Boolean).join(' - '),
+                customerType: initialRecord.customerType || 'Student',
+                status: initialRecord.status || 'Active',
+                notes: initialRecord.notes || '',
+                studentName: initialRecord.studentName || initialRecord.name || '',
+                admissionNo: initialRecord.admissionNo || '',
+                rollNo: initialRecord.rollNo || '',
+                className: initialRecord.className || initialRecord.class || '',
+                section: initialRecord.section || '',
+                dateOfBirth: initialRecord.dateOfBirth || '',
+                gender: initialRecord.gender || '',
+                studentPhone: initialRecord.studentPhone || initialRecord.phone || '',
+                parentName: initialRecord.parentName || initialRecord.guardianName || '',
+                relation: initialRecord.relation || '',
+                parentPhone: initialRecord.parentPhone || initialRecord.phone || '',
+                parentEmail: initialRecord.parentEmail || initialRecord.email || '',
+                address: initialRecord.address || initialRecord.customerAddress || '',
+                monthlyFee: initialRecord.monthlyFee ?? '',
+                admissionFee: initialRecord.admissionFee ?? '',
+                discount: initialRecord.discount ?? '',
+              }
+            : {
+                name: initialRecord.name || '',
+                email: initialRecord.email || '',
+                phone: initialRecord.phone || '',
+                company: initialRecord.company || '',
+                customerType: initialRecord.customerType || 'Retail',
+                status: initialRecord.status || 'Active',
+                notes: initialRecord.notes || '',
+              },
+        ),
+      )
+      return
+    }
     Promise.resolve().then(() =>
       setDraft(
         schoolMode
@@ -50,7 +92,7 @@ function CustomerModal({ open, onClose, onCreate, schoolMode = false }) {
             },
       ),
     )
-  }, [open, schoolMode])
+  }, [initialRecord, open, schoolMode])
 
   return (
     <AnimatePresence>
@@ -75,7 +117,9 @@ function CustomerModal({ open, onClose, onCreate, schoolMode = false }) {
             <Card className="rounded-3xl p-4 sm:p-5">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-base font-semibold text-slate-900 dark:text-white">{schoolMode ? 'Add Student' : 'Add Customer'}</p>
+                  <p className="text-base font-semibold text-slate-900 dark:text-white">
+                    {initialRecord ? (schoolMode ? 'Edit Student' : 'Edit Customer') : schoolMode ? 'Add Student' : 'Add Customer'}
+                  </p>
                   <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
                     {schoolMode ? 'Creates a student and parent record using the existing customer collection.' : 'Creates a real Workspace customer record.'}
                   </p>
@@ -227,7 +271,7 @@ function CustomerModal({ open, onClose, onCreate, schoolMode = false }) {
                     )
                   }
                 >
-                  {schoolMode ? 'Create Student' : 'Create'}
+                  {initialRecord ? (schoolMode ? 'Save Student' : 'Save Customer') : schoolMode ? 'Create Student' : 'Create'}
                 </Button>
                 <Button variant="subtle" className="rounded-2xl" type="button" onClick={onClose}>
                   Cancel

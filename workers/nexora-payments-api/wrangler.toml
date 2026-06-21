@@ -1,0 +1,16 @@
+name = "nexora-payments-api"
+main = "src/index.js"
+compatibility_date = "2026-06-02"
+
+[vars]
+FIREBASE_PROJECT_ID = "nexora-business-suite"
+FIREBASE_API_KEY = "AIzaSyDOdQnY-Vjkwdl-0F7FnuVjVB-tAO-cnWc"
+APP_BASE_URL = "https://nexorasolution.online"
+ALLOWED_ORIGINS = "https://nexorasolution.online,https://www.nexorasolution.online,http://localhost:5173,http://127.0.0.1:5173"
+PKR_PER_USD = "278.2732"
+
+# Set with `wrangler secret put`; never commit values:
+# NOWPAYMENTS_API_KEY
+# NOWPAYMENTS_IPN_SECRET
+# FIREBASE_PAYMENT_SERVICE_EMAIL
+# FIREBASE_PAYMENT_SERVICE_PASSWORD

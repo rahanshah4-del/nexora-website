@@ -493,7 +493,7 @@ export default function WhatsappReports() {
   return (
     <motion.div className="min-w-0 space-y-5" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
       {notice ? (
-        <div className="no-print fixed right-4 top-4 z-[70] max-w-[calc(100vw-2rem)] rounded-2xl border border-emerald-200 bg-white px-4 py-3 text-sm font-semibold text-emerald-800 shadow-sm">
+        <div className="no-print fixed left-1/2 top-1/2 z-[110] max-w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-emerald-200 bg-white px-4 py-3 text-sm font-semibold text-emerald-800 shadow-xl">
           {notice}
         </div>
       ) : null}

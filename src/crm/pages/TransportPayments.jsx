@@ -26,6 +26,7 @@ import { loadTransportBookings, upsertTransportBooking, updateBookingStatus, syn
 import { loadTransportCustomers, applyTransportCustomerLedger, saveTransportCustomers } from '../data/transportCustomers.js'
 import { useBusinessSettings } from '../hooks/useBusinessSettings.js'
 import { printHtmlDocument } from '../lib/printerService.js'
+import { confirmAction } from '../components/ui/dialogActions.js'
 
 const methodMeta = {
   Cash: 'success',
@@ -262,12 +263,12 @@ export default function TransportPaymentsPage() {
     setPayments(loadTransportPayments())
   }
 
-  function changeBookingStatus(bookingNumber, nextStatus) {
+  async function changeBookingStatus(bookingNumber, nextStatus) {
     if (!bookingNumber) return
     const booking = bookingByNumber.get(bookingNumber)
     if (!booking) return
     if (nextStatus === 'cancelled' && booking.status !== 'cancelled') {
-      const ok = window.confirm(`Cancel ${booking.bookingNumber}? This only changes status. Refund should be processed separately if needed.`)
+      const ok = await confirmAction({ tone: 'warning', title: 'Cancel booking?', message: `Cancel ${booking.bookingNumber}? This changes booking status only; process any refund separately.`, confirmLabel: 'Cancel Booking' })
       if (!ok) return
     }
     updateBookingStatus(bookingNumber, nextStatus)
@@ -454,7 +455,7 @@ export default function TransportPaymentsPage() {
   return (
     <motion.div className="min-w-0 space-y-5" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.28 }}>
       {notice ? (
-        <div className="fixed right-4 top-4 z-[70] rounded-2xl border border-emerald-200 bg-white px-4 py-3 text-sm font-semibold text-emerald-800 shadow-sm">
+        <div className="fixed left-1/2 top-1/2 z-[110] max-w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-emerald-200 bg-white px-4 py-3 text-sm font-semibold text-emerald-800 shadow-xl">
           {notice}
         </div>
       ) : null}

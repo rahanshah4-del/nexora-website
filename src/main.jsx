@@ -7,6 +7,7 @@ import AuthProvider from './context/AuthProvider.jsx'
 import AppErrorBoundary from './components/AppErrorBoundary.jsx'
 import CRMProviders from './crm/CRMProviders.jsx'
 import { LanguageProvider } from './lib/i18n.jsx'
+import GlobalConfirmDialog from './crm/components/ui/GlobalConfirmDialog.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -16,6 +17,7 @@ createRoot(document.getElementById('root')).render(
           <LanguageProvider>
             <AppErrorBoundary>
               <AppRouter />
+              <GlobalConfirmDialog />
             </AppErrorBoundary>
           </LanguageProvider>
         </CRMProviders>

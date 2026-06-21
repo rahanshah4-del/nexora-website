@@ -1727,6 +1727,13 @@ export default function ControlCentre() {
                   {['monthly', 'yearly', 'custom'].map((cycle) => <option key={cycle}>{cycle}</option>)}
                 </select>
               </div>
+              <div className="mt-3 grid grid-cols-[1fr_1fr_auto] gap-2">
+                <input id={`crypto-monthly-${plan.id}`} className="min-w-0 rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold" inputMode="decimal" defaultValue={plan.nowPaymentsMonthlyPrice ?? ''} placeholder="Crypto monthly" />
+                <input id={`crypto-yearly-${plan.id}`} className="min-w-0 rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold" inputMode="decimal" defaultValue={plan.nowPaymentsYearlyPrice ?? ''} placeholder="Crypto yearly" />
+                <select id={`crypto-currency-${plan.id}`} className="rounded-xl border border-slate-200 px-2 py-2 text-xs font-bold" defaultValue={plan.nowPaymentsCurrency || 'USD'}>
+                  {['USD', 'EUR', 'GBP'].map((currency) => <option key={currency}>{currency}</option>)}
+                </select>
+              </div>
               <label className="mt-3 flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2 text-xs font-bold text-slate-700">
                 Enabled
                 <input id={`enabled-${plan.id}`} type="checkbox" defaultChecked={plan.enabled !== false} />
@@ -1752,6 +1759,9 @@ export default function ControlCentre() {
                 const currency = document.getElementById(`currency-${plan.id}`)?.value || DEFAULT_SAAS_CURRENCY
                 const billingCycle = document.getElementById(`cycle-${plan.id}`)?.value || 'monthly'
                 const enabled = document.getElementById(`enabled-${plan.id}`)?.checked !== false
+                const nowPaymentsMonthlyPrice = Number(document.getElementById(`crypto-monthly-${plan.id}`)?.value || 0)
+                const nowPaymentsYearlyPrice = Number(document.getElementById(`crypto-yearly-${plan.id}`)?.value || 0)
+                const nowPaymentsCurrency = document.getElementById(`crypto-currency-${plan.id}`)?.value || 'USD'
                 const features = String(document.getElementById(`features-${plan.id}`)?.value || '')
                   .split('\n')
                   .map((feature) => feature.trim())
@@ -1772,6 +1782,9 @@ export default function ControlCentre() {
                       active: enabled,
                       enabled,
                       features,
+                      nowPaymentsMonthlyPrice: nowPaymentsMonthlyPrice > 0 ? nowPaymentsMonthlyPrice : null,
+                      nowPaymentsYearlyPrice: nowPaymentsYearlyPrice > 0 ? nowPaymentsYearlyPrice : null,
+                      nowPaymentsCurrency,
                       updatedAt: serverTimestamp(),
                       updatedBy: user?.uid || '',
                     }, { merge: true })

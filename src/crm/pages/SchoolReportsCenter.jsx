@@ -431,7 +431,7 @@ export default function SchoolReportsCenter() {
   return (
     <div className="space-y-5 pb-24">
       {toast ? (
-        <div className="fixed right-4 top-4 z-50 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-lg">{toast}</div>
+        <div className="fixed left-1/2 top-1/2 z-[110] max-w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-1/2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-xl">{toast}</div>
       ) : null}
 
       <header className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">

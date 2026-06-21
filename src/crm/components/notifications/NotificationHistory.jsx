@@ -3,6 +3,7 @@ import Button from '../ui/Button.jsx'
 import Badge from '../ui/Badge.jsx'
 import Card from '../ui/Card.jsx'
 import NotificationItem from './NotificationItem.jsx'
+import { confirmAction } from '../ui/dialogActions.js'
 
 export default function NotificationHistory({ enabled, api }) {
   const [tab, setTab] = useState('all')
@@ -38,15 +39,20 @@ export default function NotificationHistory({ enabled, api }) {
   }
 
   async function handleDeleteAllRead() {
-    if (!window.confirm('Delete all read notifications? This cannot be undone.')) return
+    if (!await confirmAction({ title: 'Delete read notifications?', message: 'All read notifications will be permanently removed.', confirmLabel: 'Delete Read' })) return
     await api.deleteAllRead()
     clearSelection()
   }
 
   async function handleClearAll() {
-    if (!window.confirm('Clear ALL notifications? This permanently removes every notification and cannot be undone.')) return
+    if (!await confirmAction({ title: 'Clear all notifications?', message: 'Every notification will be permanently removed. This cannot be undone.', confirmLabel: 'Clear All' })) return
     await api.clearAll()
     clearSelection()
+  }
+
+  async function handleDeleteOne(id) {
+    if (!await confirmAction({ title: 'Delete notification?', message: 'This notification will be permanently removed.', confirmLabel: 'Delete' })) return
+    await api.deleteOne(id)
   }
 
   return (
@@ -143,7 +149,7 @@ export default function NotificationHistory({ enabled, api }) {
               selected={selected.has(n.id)}
               onToggleSelect={toggleSelect}
               onMarkRead={(id) => api.markAsRead(id)}
-              onDelete={(id) => api.deleteOne(id)}
+              onDelete={handleDeleteOne}
             />
           ))
         ) : (

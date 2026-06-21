@@ -12,6 +12,7 @@ import { financePermissions, outflowTransaction } from '../lib/financeAccess.js'
 function normalizeTransaction(transaction = {}) {
   return {
     id: transaction.id,
+    transactionId: transaction.transactionId || transaction.id,
     type: statusValue(transaction.type, 'adjustment'),
     amount: transactionAmount(transaction),
     currency: normalizeCurrency(transaction.currency),
@@ -23,8 +24,14 @@ function normalizeTransaction(transaction = {}) {
     relatedId: transaction.relatedId || transaction.invoiceId || transaction.expenseId || '',
     invoiceId: transaction.invoiceId || '',
     paymentId: transaction.paymentId || '',
+    expenseId: transaction.expenseId || '',
+    invoiceNumber: transaction.invoiceNumber || '',
+    reference: transaction.reference || transaction.receiptReference || transaction.transactionReference || '',
     customerName: transaction.customerName || '',
     createdBy: transaction.createdBy || '',
+    submittedBy: transaction.submittedBy || transaction.createdBy || '',
+    submittedByName: transaction.submittedByName || '',
+    submittedByEmail: transaction.submittedByEmail || '',
     approvedBy: transaction.approvedBy || '',
     rejectedBy: transaction.rejectedBy || '',
     createdAt: transaction.createdAt || null,
@@ -133,6 +140,7 @@ export function useAccountTransactions() {
       })
       if (duplicate) return { ok: false, error: 'A similar transaction is already pending approval.' }
       const transactionId = `${workspaceId}-${type}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+      const submitter = userActivityInfo(userDoc, firebaseUser)
       try {
         const ref = await createUserDoc(workspaceId, 'accountTransactions', {
           transactionId,
@@ -146,8 +154,11 @@ export function useAccountTransactions() {
           title,
           description: String(payload.description || payload.notes || '').trim(),
           relatedId: payload.relatedId || payload.expenseId || payload.invoiceId || '',
+          expenseId: payload.expenseId || '',
           invoiceId: payload.invoiceId || '',
+          invoiceNumber: payload.invoiceNumber || '',
           paymentId: payload.paymentId || '',
+          reference: payload.reference || payload.receiptReference || payload.transactionReference || '',
           customerName: payload.customerName || '',
           bankName: payload.bankName || '',
           accountTitle: payload.accountTitle || '',
@@ -156,6 +167,9 @@ export function useAccountTransactions() {
           paidTo: payload.paidTo || '',
           reason: payload.reason || '',
           notes: payload.notes || '',
+          submittedBy: userId,
+          submittedByName: submitter.userName,
+          submittedByEmail: submitter.userEmail,
           metadata: {
             ...(payload.metadata || {}),
             oldValue: null,

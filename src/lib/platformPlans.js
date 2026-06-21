@@ -24,6 +24,15 @@ export const defaultPaymentAccounts = {
     accountNumber: 'XXXXXXXX',
     instructions: 'Use your email or workspace ID as the payment reference.',
   },
+  nowpayments: {
+    id: 'nowpayments',
+    label: 'Crypto (NOWPayments)',
+    accountTitle: 'NOWPayments Hosted Checkout',
+    accountNumber: 'Payment link',
+    paymentUrl: 'https://nowpayments.io/payment/?iid=6260577741&source=button',
+    buttonImageUrl: 'https://nowpayments.io/images/embeds/payment-button-white.svg',
+    instructions: 'Secure crypto checkout with automatic payment verification and plan activation.',
+  },
   manual_payment: {
     id: 'manual_payment',
     label: 'Manual Payment',
@@ -147,6 +156,7 @@ export function mergePlatformSettings(settingDocs = []) {
 export function paymentMethodsFromSettings(settings = defaultPlatformSettings) {
   const accounts = settings.paymentAccounts || defaultPaymentAccounts
   return [
+    accounts.nowpayments,
     accounts.jazzcash,
     accounts.easypaisa,
     accounts.bank_transfer || accounts.bank,

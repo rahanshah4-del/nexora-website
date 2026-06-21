@@ -16,8 +16,8 @@ export const REPORT_SECTION_OPTIONS = [
 ]
 
 const REPORT_SECTION_COLLECTIONS = {
-  overview: ['invoices', 'payments', 'expenses', 'customers', 'leads'],
-  finance: ['invoices', 'payments', 'expenses'],
+  overview: ['invoices', 'payments', 'expenses', 'accountTransactions', 'customers', 'leads'],
+  finance: ['invoices', 'payments', 'expenses', 'accountTransactions'],
   sales: ['leads', 'pipelines', 'customers'],
   activity: ['activityLogs', 'tasks', 'teamMembers', 'staff'],
   support: [SUPPORT_TICKET_COLLECTION],
@@ -255,6 +255,7 @@ export function useReports({ section = 'overview', limitCount = DEFAULT_DETAIL_L
     const invoices = data.invoices
     const payments = data.payments
     const expenses = data.expenses
+    const transactions = data.accountTransactions
     const tasks = data.tasks
     const teamMembers = data.teamMembers
     const staff = data.staff
@@ -263,7 +264,7 @@ export function useReports({ section = 'overview', limitCount = DEFAULT_DETAIL_L
     const notifications = data.notifications
     const activityLogs = data.activityLogs
 
-    const totalRevenueUsd = calculateRevenue({ invoices, payments })
+    const totalRevenueUsd = calculateRevenue({ invoices, payments, transactions })
     const pendingInvoices = invoices.filter((i) => getInvoiceStatus(i) === 'pending').length
     const openTickets = tickets.filter((t) => t.status === 'Open').length
     const completedTasks = tasks.filter((t) => t.status === 'Completed').length
@@ -272,7 +273,7 @@ export function useReports({ section = 'overview', limitCount = DEFAULT_DETAIL_L
     const upgradeCount = 0
 
     const paidPaymentsUsd = payments.filter(isPaidRecord).reduce((sum, p) => sum + paymentValue(p), 0)
-    const expensesUsd = calculateApprovedExpenses(expenses)
+    const expensesUsd = calculateApprovedExpenses(expenses, transactions)
     const profitUsd = calculateProfit({ revenue: totalRevenueUsd, expenses: expensesUsd })
     const pipelineValueUsd = deals.reduce((sum, d) => sum + dealValueUsd(d), 0)
     const overdueTasks = tasks.filter((t) => t.status === 'Overdue').length

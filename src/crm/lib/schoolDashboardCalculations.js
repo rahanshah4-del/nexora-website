@@ -1,10 +1,12 @@
 import {
   calculateApprovedExpenses,
+  calculateRejectedRevenueBreakdown,
   calculateRevenue,
   getInvoiceStatus,
   invoiceBalanceDue,
   invoicePaidValue,
   isOutstandingInvoice,
+  isRejectedRecord,
 } from './calculations.js'
 
 function safeRows(rows) {
@@ -53,17 +55,25 @@ export function calculateSchoolDashboardStats({
   students = [],
   invoices = [],
   payments = [],
+  transactions = [],
   expenses = [],
   studentAttendance = [],
   staffAttendance = [],
 } = {}) {
   const invoiceRows = safeRows(invoices)
+  const activeFeeBills = invoiceRows.filter((invoice) => !isRejectedRecord(invoice))
   const activeStudents = safeRows(students).filter(activeStudent)
-  const paidFeeBills = invoiceRows.filter((invoice) => getInvoiceStatus(invoice) === 'paid')
+  const paidFeeBills = activeFeeBills.filter((invoice) => getInvoiceStatus(invoice) === 'paid')
+  const collectedFeeRecords = activeFeeBills.filter((invoice) => invoicePaidValue(invoice) > 0)
   const pendingFeeBills = invoiceRows.filter(isOutstandingInvoice)
-  const collected = calculateRevenue({ invoices: invoiceRows, payments: safeRows(payments) })
+  const collected = calculateRevenue({ invoices: invoiceRows, payments: safeRows(payments), transactions: safeRows(transactions) })
+  const rejected = calculateRejectedRevenueBreakdown({
+    invoices: invoiceRows,
+    payments: safeRows(payments),
+    transactions: safeRows(transactions),
+  }).totalRejected
   const pending = pendingFeeBills.reduce((sum, invoice) => sum + invoiceBalanceDue(invoice), 0)
-  const billed = invoiceRows.reduce((sum, invoice) => sum + invoicePaidValue(invoice) + invoiceBalanceDue(invoice), 0)
+  const billed = activeFeeBills.reduce((sum, invoice) => sum + invoicePaidValue(invoice) + invoiceBalanceDue(invoice), 0)
   const approvedExpenses = calculateApprovedExpenses(safeRows(expenses))
   const feeBase = collected + pending
   const collectionRate = feeBase > 0 ? Math.round((collected / feeBase) * 10000) / 100 : 0
@@ -73,8 +83,11 @@ export function calculateSchoolDashboardStats({
     activeStudents: activeStudents.length,
     totalFeeBills: invoiceRows.length,
     paidFeeBills: paidFeeBills.length,
+    collectedFeeRecords: collectedFeeRecords.length,
     pendingFeeBills: pendingFeeBills.length,
+    rejectedFeeBills: invoiceRows.length - activeFeeBills.length,
     collected,
+    rejected,
     pending,
     billed,
     approvedExpenses,

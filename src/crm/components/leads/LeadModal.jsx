@@ -8,24 +8,24 @@ import Select from '../ui/Select.jsx'
 
 const sources = ['Website', 'Referral', 'LinkedIn', 'Ad Campaign', 'Webinar', 'Email', 'Other']
 
-function LeadModal({ open, onClose, onCreate }) {
+function LeadModal({ open, onClose, onCreate, initialRecord = null }) {
   const [draft, setDraft] = useState(null)
 
   useEffect(() => {
     if (!open) return
     Promise.resolve().then(() =>
       setDraft({
-        name: '',
-        email: '',
-        phone: '',
-        company: '',
-        dealValue: 0,
-        status: 'New',
-        priority: 'Medium',
-        source: 'Website',
+        name: initialRecord?.name || '',
+        email: initialRecord?.email || '',
+        phone: initialRecord?.phone || '',
+        company: initialRecord?.company || '',
+        dealValue: Number(initialRecord?.dealValue || 0),
+        status: initialRecord?.status || initialRecord?.stage || 'New',
+        priority: initialRecord?.priority || 'Medium',
+        source: initialRecord?.source || 'Website',
       }),
     )
-  }, [open])
+  }, [initialRecord, open])
 
   return (
     <AnimatePresence>
@@ -50,8 +50,8 @@ function LeadModal({ open, onClose, onCreate }) {
             <Card className="p-5">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-base font-semibold text-slate-900 dark:text-white">Add New Lead</p>
-                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Creates a real Workspace lead record.</p>
+                  <p className="text-base font-semibold text-slate-900 dark:text-white">{initialRecord ? 'Edit Lead' : 'Add New Lead'}</p>
+                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{initialRecord ? 'Update lead and pipeline details.' : 'Creates a real Workspace lead record.'}</p>
                 </div>
                 <Badge variant="purple">Lead</Badge>
               </div>
@@ -124,7 +124,7 @@ function LeadModal({ open, onClose, onCreate }) {
                     onCreate?.(draft)
                   }}
                 >
-                  Create
+                  {initialRecord ? 'Save Lead' : 'Create'}
                 </Button>
                 <Button variant="subtle" className="rounded-2xl" type="button" onClick={onClose}>
                   Cancel

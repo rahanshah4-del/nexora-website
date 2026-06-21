@@ -46,6 +46,12 @@ export default function AdminLogin() {
         setError('Only backend admin can access this panel.')
         return
       }
+      await credentials.user.reload()
+      await credentials.user.getIdToken(true)
+      if (!credentials.user.emailVerified) {
+        setError('Backend admin email must be verified before access is allowed.')
+        return
+      }
       console.log('[Admin Auth] allowed')
       navigate('/admin/control-centre', { replace: true })
     } catch (err) {

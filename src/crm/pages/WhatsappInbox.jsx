@@ -17,6 +17,7 @@ import Input from '../components/ui/Input.jsx'
 import PageHeader from '../components/ui/PageHeader.jsx'
 import Select from '../components/ui/Select.jsx'
 import Toast from '../components/ui/Toast.jsx'
+import { confirmAction } from '../components/ui/dialogActions.js'
 import EmptyState from '../components/system/EmptyState.jsx'
 import ContactModal from '../components/whatsapp/ContactModal.jsx'
 import ConfirmDialog from '../components/whatsapp/ConfirmDialog.jsx'
@@ -187,6 +188,12 @@ export default function WhatsappInboxPage() {
     } else {
       showToast('error', res?.error || 'Unable to add note', 2600)
     }
+  }
+
+  async function deleteNote(note) {
+    if (!await confirmAction({ title: 'Delete note?', message: 'This contact note will be permanently removed.', confirmLabel: 'Delete Note' })) return
+    const res = await notesApi.deleteNote(note)
+    if (res?.ok === false) showToast('error', res?.error || 'Unable to delete note', 2600)
   }
 
   async function confirmDelete() {
@@ -395,7 +402,7 @@ export default function WhatsappInboxPage() {
                           <button
                             type="button"
                             className="shrink-0 text-slate-300 opacity-0 transition group-hover:opacity-100 hover:text-rose-600"
-                            onClick={() => notesApi.deleteNote(note)}
+                            onClick={() => deleteNote(note)}
                             aria-label="Delete note"
                           >
                             <HiOutlineTrash className="h-4 w-4" />

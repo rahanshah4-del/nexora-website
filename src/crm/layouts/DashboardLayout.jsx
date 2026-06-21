@@ -521,6 +521,9 @@ export default function DashboardLayout() {
     if (!ready || !userId || userLoading) return
 
     const selected = developerOverride ? readSelectedWorkspace(userId) : lockedWorkspaceId
+    if (!developerOverride && selected && readSelectedWorkspace(userId) !== selected) {
+      saveSelectedWorkspace(userId, selected)
+    }
     const nextSession = buildWorkspaceSession({ user, userDoc, selectedWorkspace: selected, workspaceId })
 
     Promise.resolve().then(() => {

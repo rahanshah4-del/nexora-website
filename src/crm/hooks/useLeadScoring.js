@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { db } from '../lib/firebase.js'
-import { fetchWorkspaceCollectionPage, listenToWorkspaceCollection } from '../lib/firestore.js'
+import { fetchWorkspaceCollectionPage, listenToWorkspaceCollection, patchUserDoc, removeUserDoc } from '../lib/firestore.js'
 import { useUser } from './useUser.js'
 import { clientSafeMessage } from '../utils/messages.js'
 
@@ -204,6 +204,54 @@ export function useLeadScoring({ limitCount = DEFAULT_LEAD_LIST_LIMIT, paginated
     setRows((currentRows) => [lead, ...currentRows])
   }, [])
 
+  const updateLead = useCallback(async (id, payload = {}) => {
+    if (!userId || !workspaceId) return { ok: false, error: 'Please login first' }
+    if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now' }
+    if (!id) return { ok: false, error: 'Lead not found' }
+
+    const name = String(payload.name || '').trim()
+    const email = String(payload.email || '').trim()
+    if (!name || !email) return { ok: false, error: 'Name and email are required' }
+
+    const patch = {
+      name,
+      email,
+      phone: String(payload.phone || '').trim(),
+      company: String(payload.company || '').trim(),
+      dealValue: Math.max(0, Number(payload.dealValue || 0)),
+      status: payload.status || 'New',
+      priority: payload.priority || 'Medium',
+      source: payload.source || 'Website',
+    }
+
+    try {
+      await patchUserDoc(workspaceId, 'leads', id, patch, {
+        businessType,
+        diagnostics: { currentUserUid: userId, role },
+      })
+      setRows((currentRows) => currentRows.map((lead) => (lead.id === id ? { ...lead, ...patch } : lead)))
+      return { ok: true }
+    } catch (error) {
+      return { ok: false, error: clientSafeMessage(error, 'Unable to update lead.') }
+    }
+  }, [businessType, role, userId, workspaceId])
+
+  const deleteLead = useCallback(async (lead) => {
+    if (!userId || !workspaceId) return { ok: false, error: 'Please login first' }
+    if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now' }
+    if (!lead?.id) return { ok: false, error: 'Lead not found' }
+
+    try {
+      await removeUserDoc(workspaceId, 'leads', lead.id, {
+        diagnostics: { currentUserUid: userId, role },
+      })
+      setRows((currentRows) => currentRows.filter((row) => row.id !== lead.id))
+      return { ok: true }
+    } catch (error) {
+      return { ok: false, error: clientSafeMessage(error, 'Unable to delete lead.') }
+    }
+  }, [role, userId, workspaceId])
+
   useEffect(() => {
     if (!db) {
       Promise.resolve().then(() => {
@@ -285,6 +333,8 @@ export function useLeadScoring({ limitCount = DEFAULT_LEAD_LIST_LIMIT, paginated
     leadPageSize: paginated ? leadPageLimit : leadListLimit,
     loadMoreLeads,
     prependLead,
+    updateLead,
+    deleteLead,
     source,
     error,
   }

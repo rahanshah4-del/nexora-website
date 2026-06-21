@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { HiOutlineArrowDownTray, HiOutlineBars3, HiOutlinePlus, HiOutlineSquares2X2 } from 'react-icons/hi2'
+import { HiOutlineArrowDownTray, HiOutlineBars3, HiOutlinePencilSquare, HiOutlinePlus, HiOutlineSquares2X2, HiOutlineTrash } from 'react-icons/hi2'
 import Button from '../components/ui/Button.jsx'
 import Card from '../components/ui/Card.jsx'
 import Input from '../components/ui/Input.jsx'
@@ -9,6 +9,7 @@ import Badge from '../components/ui/Badge.jsx'
 import { useCustomers } from '../hooks/useCustomers.js'
 import { useMemo, useState } from 'react'
 import Toast from '../components/ui/Toast.jsx'
+import { confirmAction } from '../components/ui/dialogActions.js'
 import EmptyState from '../components/system/EmptyState.jsx'
 import CustomerModal from '../components/customers/CustomerModal.jsx'
 import { useUser } from '../hooks/useUser.js'
@@ -25,6 +26,8 @@ export default function CustomersPage() {
   const customersApi = useCustomers({ paginated: true, limitCount: 50 })
   const { businessType } = useUser()
   const [createOpen, setCreateOpen] = useState(false)
+  const [editingCustomer, setEditingCustomer] = useState(null)
+  const [deletingCustomerId, setDeletingCustomerId] = useState('')
   const [toast, setToast] = useState(null)
   const [search, setSearch] = useState('')
   const isSchool = normalizeBusinessType(businessType) === 'School ERP'
@@ -63,6 +66,24 @@ export default function CustomersPage() {
     return { total: customersApi.customers.length, active, business }
   }, [customersApi.customers, isSchool])
 
+  async function handleDeleteCustomer(customer) {
+    if (!customer?.id || deletingCustomerId) return
+    const label = customer.studentName || customer.name || (isSchool ? 'student' : 'customer')
+    const recordType = isSchool ? 'student profile' : 'customer record'
+    if (!await confirmAction({ title: `Delete ${isSchool ? 'student' : 'customer'}?`, message: `Delete ${label}? This will permanently remove the ${recordType} from this workspace.`, confirmLabel: 'Delete' })) return
+
+    setDeletingCustomerId(customer.id)
+    const res = await customersApi.deleteCustomer(customer)
+    setDeletingCustomerId('')
+    if (res?.ok) {
+      setToast({ tone: 'success', message: isSchool ? 'Student deleted successfully' : 'Customer deleted successfully' })
+      window.setTimeout(() => setToast(null), 1600)
+      return
+    }
+    setToast({ tone: 'error', message: res?.error || (isSchool ? 'Failed to delete student' : 'Failed to delete customer') })
+    window.setTimeout(() => setToast(null), 2400)
+  }
+
   const columns = isSchool
     ? [
         { key: 'studentName', header: 'Student', cell: (r) => <span className="font-semibold">{r.studentName || r.name || 'Student'}</span> },
@@ -79,6 +100,31 @@ export default function CustomersPage() {
           },
         },
         { key: 'createdAt', header: 'Created', cell: (r) => formatDate(r.createdAt) },
+        {
+          key: 'actions',
+          header: 'Actions',
+          cell: (r) => (
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="subtle"
+                className="h-8 rounded-xl px-3 text-xs"
+                onClick={() => setEditingCustomer(r)}
+              >
+                <HiOutlinePencilSquare className="h-4 w-4" /> Edit
+              </Button>
+              <Button
+                type="button"
+                variant="subtle"
+                className="h-8 rounded-xl px-3 text-xs text-rose-700 hover:border-rose-200 hover:bg-rose-50"
+                disabled={deletingCustomerId === r.id}
+                onClick={() => handleDeleteCustomer(r)}
+              >
+                <HiOutlineTrash className="h-4 w-4" /> {deletingCustomerId === r.id ? 'Deleting...' : 'Delete'}
+              </Button>
+            </div>
+          ),
+        },
       ]
     : [
         { key: 'name', header: 'Name', cell: (r) => <span className="font-semibold">{r.name}</span> },
@@ -95,6 +141,31 @@ export default function CustomersPage() {
           },
         },
         { key: 'createdAt', header: 'Created', cell: (r) => formatDate(r.createdAt) },
+        {
+          key: 'actions',
+          header: 'Actions',
+          cell: (r) => (
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="subtle"
+                className="h-8 rounded-xl px-3 text-xs"
+                onClick={() => setEditingCustomer(r)}
+              >
+                <HiOutlinePencilSquare className="h-4 w-4" /> Edit
+              </Button>
+              <Button
+                type="button"
+                variant="subtle"
+                className="h-8 rounded-xl px-3 text-xs text-rose-700 hover:border-rose-200 hover:bg-rose-50 dark:text-rose-300 dark:hover:border-rose-500/40 dark:hover:bg-rose-500/10"
+                disabled={deletingCustomerId === r.id}
+                onClick={() => handleDeleteCustomer(r)}
+              >
+                <HiOutlineTrash className="h-4 w-4" /> {deletingCustomerId === r.id ? 'Deleting...' : 'Delete'}
+              </Button>
+            </div>
+          ),
+        },
       ]
 
   if (isRestaurant) return <RestaurantCustomersManager />
@@ -211,6 +282,23 @@ export default function CustomersPage() {
             setCreateOpen(false)
           } else {
             setToast({ tone: 'error', message: res?.error || 'Failed to create customer' })
+            window.setTimeout(() => setToast(null), 2400)
+          }
+        }}
+      />
+      <CustomerModal
+        open={Boolean(editingCustomer)}
+        schoolMode={isSchool}
+        initialRecord={editingCustomer}
+        onClose={() => setEditingCustomer(null)}
+        onCreate={async (payload) => {
+          const res = await customersApi.updateCustomer(editingCustomer?.id, payload)
+          if (res?.ok) {
+            setToast({ tone: 'success', message: isSchool ? 'Student updated successfully' : 'Customer updated successfully' })
+            window.setTimeout(() => setToast(null), 1600)
+            setEditingCustomer(null)
+          } else {
+            setToast({ tone: 'error', message: res?.error || (isSchool ? 'Failed to update student' : 'Failed to update customer') })
             window.setTimeout(() => setToast(null), 2400)
           }
         }}

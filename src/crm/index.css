@@ -168,10 +168,10 @@
   .crm-shell .fixed.inset-0.flex.justify-center,
   .crm-shell .fixed.inset-0.flex.items-center,
   .crm-shell .fixed.inset-0.flex.items-start.justify-center {
-    align-items: stretch;
-    justify-content: flex-end;
-    justify-items: end;
-    place-items: stretch end;
+    align-items: center;
+    justify-content: center;
+    justify-items: center;
+    place-items: center;
     padding: 0.5rem;
   }
 
@@ -192,6 +192,14 @@
     width: min(100%, 34rem);
     max-width: calc(100vw - 1rem);
     margin-left: auto;
+    margin-right: auto;
+  }
+
+  .crm-shell .fixed.right-4.top-4 {
+    left: 50%;
+    right: auto;
+    top: 50%;
+    transform: translate(-50%, -50%);
   }
 
   .crm-shell .fixed.inset-0.grid.place-items-center > .max-w-5xl,

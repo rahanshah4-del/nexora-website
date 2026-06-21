@@ -11,8 +11,11 @@ import {
   MODULE_OPTIONS,
 } from '../../lib/marketing.js'
 import { MARKETING_TEMPLATES } from '../../lib/marketingTemplates.js'
+import { confirmAction } from '../../crm/components/ui/dialogActions.js'
+import EmailInbox from './EmailInbox.jsx'
 
 const TABS = [
+  { key: 'inbox', label: 'Inbox' },
   { key: 'subscribers', label: 'Subscribers' },
   { key: 'campaign', label: 'Create Campaign' },
   { key: 'history', label: 'Campaign History' },
@@ -31,7 +34,7 @@ function StatusBadge({ status }) {
 }
 
 export default function EmailMarketing({ embedded = false }) {
-  const [tab, setTab] = useState('subscribers')
+  const [tab, setTab] = useState('inbox')
   const [toast, setToast] = useState('')
   const [busy, setBusy] = useState(false)
 
@@ -70,7 +73,6 @@ export default function EmailMarketing({ embedded = false }) {
 
   useEffect(() => {
     refreshSubscribers()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [moduleFilter])
 
   useEffect(() => {
@@ -121,7 +123,7 @@ export default function EmailMarketing({ embedded = false }) {
     if (!campaign.subject || !campaign.bodyHtml) return notify('Subject and email body are required.')
     const recipients = filterRecipients(subscribers, { audienceType: campaign.audienceType, module: campaign.module })
     if (!recipients.length) return notify('No subscribed recipients for this audience.')
-    if (!window.confirm(`Send "${campaign.subject}" to ${recipients.length} subscriber(s)?`)) return
+    if (!await confirmAction({ tone: 'warning', badge: 'Campaign', title: 'Send email campaign?', message: `Send "${campaign.subject}" to ${recipients.length} subscriber(s)?`, confirmLabel: 'Send Campaign' })) return
     setBusy(true)
     const res = await sendCampaign(campaign)
     setBusy(false)
@@ -139,7 +141,7 @@ export default function EmailMarketing({ embedded = false }) {
 
   return (
     <main className={shellClass}>
-      {toast ? <div className="fixed right-4 top-4 z-50 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-lg">{toast}</div> : null}
+      {toast ? <div className="fixed left-1/2 top-1/2 z-[110] max-w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-1/2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-xl">{toast}</div> : null}
       <div className={innerClass}>
         <header className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <p className="text-[11px] font-black uppercase tracking-[0.2em] text-blue-600">Backend Communication</p>
@@ -152,6 +154,8 @@ export default function EmailMarketing({ embedded = false }) {
             <button key={t.key} type="button" onClick={() => setTab(t.key)} className={`rounded-xl px-4 py-2 text-sm font-bold transition ${tab === t.key ? 'bg-slate-950 text-white' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-100'}`}>{t.label}</button>
           ))}
         </div>
+
+        {tab === 'inbox' ? <EmailInbox notify={notify} /> : null}
 
         {/* Subscribers */}
         {tab === 'subscribers' ? (

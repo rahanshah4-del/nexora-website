@@ -23,6 +23,7 @@ import Badge from '../components/ui/Badge.jsx'
 import Input from '../components/ui/Input.jsx'
 import Select from '../components/ui/Select.jsx'
 import Toast from '../components/ui/Toast.jsx'
+import { confirmAction } from '../components/ui/dialogActions.js'
 import EmptyState from '../components/system/EmptyState.jsx'
 import ProductModal from '../components/products/ProductModal.jsx'
 import StockMovementModal from '../components/inventory/StockMovementModal.jsx'
@@ -292,8 +293,8 @@ export default function Inventory() {
           onAdd={() => setProductModal({ open: true, product: null })}
           onEdit={(product) => setProductModal({ open: true, product })}
           onStock={(product) => setStockModal({ open: true, presetProductId: product.id, presetType: 'stock_in' })}
-          onDelete={(product) => {
-            if (window.confirm(`Delete ${product.name}? This cannot be undone.`)) {
+          onDelete={async (product) => {
+            if (await confirmAction({ title: 'Delete product?', message: `Delete ${product.name}? This cannot be undone.`, confirmLabel: 'Delete Product' })) {
               handleResult(productsApi.deleteProduct(product.id), 'Product deleted')
             }
           }}
@@ -315,8 +316,8 @@ export default function Inventory() {
           products={products}
           onAdd={() => setCategoryModal({ open: true, category: null })}
           onEdit={(category) => setCategoryModal({ open: true, category })}
-          onDelete={(category) => {
-            if (window.confirm(`Delete category ${category.name}?`)) {
+          onDelete={async (category) => {
+            if (await confirmAction({ title: 'Delete category?', message: `Delete category ${category.name}?`, confirmLabel: 'Delete Category' })) {
               handleResult(categoriesApi.deleteCategory(category.id), 'Category deleted')
             }
           }}
@@ -330,8 +331,8 @@ export default function Inventory() {
           currency={currency}
           onAdd={() => setSupplierModal({ open: true, supplier: null })}
           onEdit={(supplier) => setSupplierModal({ open: true, supplier })}
-          onDelete={(supplier) => {
-            if (window.confirm(`Delete supplier ${supplier.name}?`)) {
+          onDelete={async (supplier) => {
+            if (await confirmAction({ title: 'Delete supplier?', message: `Delete supplier ${supplier.name}?`, confirmLabel: 'Delete Supplier' })) {
               handleResult(suppliersApi.deleteSupplier(supplier.id), 'Supplier deleted')
             }
           }}
@@ -345,12 +346,12 @@ export default function Inventory() {
           onAdd={() => setPurchaseModal({ open: true, purchase: null })}
           onEdit={(purchase) => setPurchaseModal({ open: true, purchase })}
           onReceive={async (purchase) => {
-            if (window.confirm(`Receive stock for ${purchase.reference || 'this order'}? Stock will be added.`)) {
+            if (await confirmAction({ tone: 'warning', badge: 'Stock Receipt', title: 'Receive purchase stock?', message: `Receive stock for ${purchase.reference || 'this order'}? Stock will be added to inventory.`, confirmLabel: 'Receive Stock' })) {
               await handleResult(purchasesApi.receivePurchase(purchase.id, transactionsApi.recordMovement), 'Stock received')
             }
           }}
-          onDelete={(purchase) => {
-            if (window.confirm('Delete this purchase order?')) {
+          onDelete={async (purchase) => {
+            if (await confirmAction({ title: 'Delete purchase order?', message: `Delete ${purchase.reference || 'this purchase order'}? This cannot be undone.`, confirmLabel: 'Delete Order' })) {
               handleResult(purchasesApi.deletePurchase(purchase.id), 'Purchase deleted')
             }
           }}

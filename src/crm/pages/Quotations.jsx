@@ -5,6 +5,7 @@ import SalesHubModulePage from '../components/sales/SalesHubModulePage.jsx'
 import { useSalesHubCollection } from '../hooks/useSalesHubCollection.js'
 import { calculateQuoteTotals, clampPercent, safeNumber } from '../lib/salesCalculations.js'
 import { formatCurrency } from '../utils/format.js'
+import { alertAction } from '../components/ui/dialogActions.js'
 
 function parseItems(text) {
   return String(text || '')
@@ -121,7 +122,7 @@ export default function QuotationsPage() {
           <div className="mt-4 flex flex-wrap gap-2">
             <Button className="rounded-2xl" type="button" onClick={() => window.print()}>PDF Preview / Print</Button>
             <Button variant="subtle" className="rounded-2xl" type="button" onClick={() => exportQuotes(filteredRows)}>Export Excel CSV</Button>
-            <Button variant="ghost" className="rounded-2xl" type="button" onClick={() => window.alert('Select an accepted quote, then create the invoice from the existing invoice module.')}>Convert To Invoice</Button>
+            <Button variant="ghost" className="rounded-2xl" type="button" onClick={() => alertAction({ title: 'Convert quotation', message: 'Select an accepted quote, then create the invoice from the existing invoice module.' })}>Convert To Invoice</Button>
           </div>
         </Card>
       )}

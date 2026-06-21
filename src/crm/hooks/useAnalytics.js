@@ -85,6 +85,7 @@ export function useAnalytics({ dateRange = '30d' } = {}) {
   const [payments, setPayments] = useState([])
   const [customers, setCustomers] = useState([])
   const [expenses, setExpenses] = useState([])
+  const [transactions, setTransactions] = useState([])
   const [leads, setLeads] = useState([])
   const [team, setTeam] = useState([])
 
@@ -103,6 +104,7 @@ export function useAnalytics({ dateRange = '30d' } = {}) {
         setPayments([])
         setCustomers([])
         setExpenses([])
+        setTransactions([])
         setLeads([])
         setTeam([])
         setLoading(false)
@@ -121,6 +123,7 @@ export function useAnalytics({ dateRange = '30d' } = {}) {
     unsubs.push(subscribeUserCollection(workspaceId, 'payments', (d) => setPayments(d), undefined, scope))
     unsubs.push(subscribeUserCollection(workspaceId, 'customers', (d) => setCustomers(d), undefined, scope))
     unsubs.push(subscribeUserCollection(workspaceId, 'expenses', (d) => setExpenses(d), undefined, scope))
+    unsubs.push(subscribeUserCollection(workspaceId, 'accountTransactions', (d) => setTransactions(d), undefined, scope))
     unsubs.push(subscribeUserCollection(workspaceId, 'leads', (d) => setLeads(d), undefined, scope))
     unsubs.push(subscribeUserCollection(workspaceId, 'teamMembers', (d) => setTeam(d), undefined, scope))
 
@@ -150,7 +153,7 @@ export function useAnalytics({ dateRange = '30d' } = {}) {
       .sort((a, b) => (b.performanceScore ?? 0) - (a.performanceScore ?? 0))
       .slice(0, 6)
 
-    const dashboardStats = getDashboardStats({ invoices, payments, customers, leads, expenses })
+    const dashboardStats = getDashboardStats({ invoices, payments, transactions, customers, leads, expenses })
     const totalRevenueUsd = dashboardStats.totalRevenue
     const totalCustomers = dashboardStats.totalCustomers
     const activeLeads = dashboardStats.activeLeads
@@ -179,7 +182,7 @@ export function useAnalytics({ dateRange = '30d' } = {}) {
       topStaff,
       pendingInvoices,
     }
-  }, [invoices, payments, customers, expenses, leads, team])
+  }, [invoices, payments, transactions, customers, expenses, leads, team])
 
   return { ...computed, loading, source, error, dateRange }
 }

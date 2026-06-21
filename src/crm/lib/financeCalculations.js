@@ -1,117 +1,50 @@
 import {
-  calculateApprovedExpenses,
-  expenseValue,
-  getInvoiceStatus,
+  calculateExpenseBreakdown,
+  calculateRejectedRevenueBreakdown,
+  calculateRevenueBreakdown,
   invoiceBalanceDue,
-  isApprovedExpense,
   isOutstandingInvoice,
-  isPaidRecord,
-  invoiceValue,
+  isApprovedTransaction,
   normalizeCurrency,
-  paymentValue,
   statusValue,
   toNumber,
+  transactionAmount,
+  transactionStatusValue,
+  transactionTypeValue,
 } from './calculations.js'
 
-const approvedStatuses = new Set(['approved', 'paid', 'completed', 'complete', 'verified'])
 const pendingStatuses = new Set(['pending', 'pending_approval', 'pending_verification', 'requested'])
 const rejectedStatuses = new Set(['rejected', 'cancelled', 'canceled'])
-const incomeTypes = new Set(['income'])
-const expenseTypes = new Set(['expense', 'cash_payment'])
 const withdrawalTypes = new Set(['cash_withdrawal'])
 const bankTransferTypes = new Set(['bank_transfer'])
 
-function transactionStatus(transaction = {}) {
-  return statusValue(transaction.approvalStatus || transaction.status, 'pending')
-}
-
-export function transactionAmount(transaction = {}) {
-  return Math.max(toNumber(transaction.amount ?? transaction.amountPaid ?? transaction.total, 0), 0)
-}
-
-export function isApprovedTransaction(transaction = {}) {
-  return approvedStatuses.has(transactionStatus(transaction))
-}
+export { isApprovedTransaction, transactionAmount }
 
 export function isPendingTransaction(transaction = {}) {
-  return pendingStatuses.has(transactionStatus(transaction))
+  return pendingStatuses.has(transactionStatusValue(transaction))
 }
 
 export function isRejectedTransaction(transaction = {}) {
-  return rejectedStatuses.has(transactionStatus(transaction))
-}
-
-function transactionType(transaction = {}) {
-  return statusValue(transaction.type, 'adjustment')
-}
-
-function recordKeys(record = {}) {
-  return [
-    record.id,
-    record.invoiceId,
-    record.invoiceNumber,
-    record.paymentId,
-    record.relatedId,
-    record.sourceId,
-    record.reference,
-  ]
-    .map((value) => String(value || '').trim())
-    .filter(Boolean)
-}
-
-function coveredKeys(transactions = [], typeSet = incomeTypes) {
-  const keys = new Set()
-  transactions
-    .filter((transaction) => isApprovedTransaction(transaction) && typeSet.has(transactionType(transaction)))
-    .forEach((transaction) => {
-      recordKeys(transaction).forEach((key) => keys.add(key))
-    })
-  return keys
-}
-
-function isCovered(record, keys) {
-  return recordKeys(record).some((key) => keys.has(key))
+  return rejectedStatuses.has(transactionStatusValue(transaction))
 }
 
 export function calculateTotalRevenue({ invoices = [], payments = [], transactions = [] } = {}) {
-  const incomeTransactions = transactions.filter((transaction) => isApprovedTransaction(transaction) && incomeTypes.has(transactionType(transaction)))
-  const transactionRevenue = incomeTransactions.reduce((sum, transaction) => sum + transactionAmount(transaction), 0)
-  const covered = coveredKeys(incomeTransactions)
-
-  const paidPayments = payments.filter(isPaidRecord).filter((payment) => !isCovered(payment, covered))
-  const paidPaymentInvoiceKeys = new Set(paidPayments.flatMap(recordKeys))
-  const paymentRevenue = paidPayments.reduce((sum, payment) => sum + paymentValue(payment), 0)
-
-  const invoiceRevenue = invoices
-    .filter((invoice) => getInvoiceStatus(invoice) === 'paid')
-    .filter((invoice) => !isCovered(invoice, covered))
-    .filter((invoice) => !recordKeys(invoice).some((key) => paidPaymentInvoiceKeys.has(key)))
-    .reduce((sum, invoice) => sum + invoiceValue(invoice), 0)
-
-  return transactionRevenue + paymentRevenue + invoiceRevenue
+  return calculateRevenueBreakdown({ invoices, payments, transactions }).totalRevenue
 }
 
 export function calculateTotalExpenses({ expenses = [], transactions = [] } = {}) {
-  const expenseTransactions = transactions.filter((transaction) => isApprovedTransaction(transaction) && expenseTypes.has(transactionType(transaction)))
-  const covered = coveredKeys(expenseTransactions, expenseTypes)
-  const transactionExpenses = expenseTransactions.reduce((sum, transaction) => sum + transactionAmount(transaction), 0)
-  const approvedExpenses = expenses
-    .filter(isApprovedExpense)
-    .filter((expense) => !isCovered(expense, covered))
-    .reduce((sum, expense) => sum + expenseValue(expense), 0)
-
-  return transactionExpenses + approvedExpenses
+  return calculateExpenseBreakdown({ expenses, transactions }).totalExpenses
 }
 
 export function calculateBankBalance(transactions = []) {
   return transactions
-    .filter((transaction) => isApprovedTransaction(transaction) && bankTransferTypes.has(transactionType(transaction)))
+    .filter((transaction) => isApprovedTransaction(transaction) && bankTransferTypes.has(transactionTypeValue(transaction)))
     .reduce((sum, transaction) => sum + transactionAmount(transaction), 0)
 }
 
 export function calculateCashOut(transactions = []) {
   return transactions
-    .filter((transaction) => isApprovedTransaction(transaction) && withdrawalTypes.has(transactionType(transaction)))
+    .filter((transaction) => isApprovedTransaction(transaction) && withdrawalTypes.has(transactionTypeValue(transaction)))
     .reduce((sum, transaction) => sum + transactionAmount(transaction), 0)
 }
 
@@ -176,22 +109,32 @@ export function normalizeFinanceCurrency(value) {
 }
 
 export function calculateFinanceSummary({ invoices = [], payments = [], expenses = [], transactions = [], upgradeRequests = [] } = {}) {
-  const totalRevenue = calculateTotalRevenue({ invoices, payments, transactions })
-  const totalExpenses = calculateTotalExpenses({ expenses, transactions })
+  const revenueBreakdown = calculateRevenueBreakdown({ invoices, payments, transactions })
+  const rejectedRevenueBreakdown = calculateRejectedRevenueBreakdown({ invoices, payments, transactions })
+  const expenseBreakdown = calculateExpenseBreakdown({ expenses, transactions })
+  const totalRevenue = revenueBreakdown.totalRevenue
+  const totalExpenses = expenseBreakdown.totalExpenses
+  const bankBalance = calculateBankBalance(transactions)
+  const cashOut = calculateCashOut(transactions)
   const pendingRevenue = invoices
     .filter(isOutstandingInvoice)
     .reduce((sum, invoice) => sum + invoiceBalanceDue(invoice), 0)
   return {
-    walletBalance: calculateWalletBalance({ invoices, payments, expenses, transactions }),
+    walletBalance: totalRevenue - totalExpenses - bankBalance - cashOut,
     cashBalance: calculateCashBalance({ invoices, payments, expenses, transactions }),
-    bankBalance: calculateBankBalance(transactions),
+    bankBalance,
+    cashOut,
     pendingRevenue,
     totalRevenue,
+    rejectedRevenue: rejectedRevenueBreakdown.totalRejected,
     totalExpenses,
     netProfit: calculateNetProfit({ revenue: totalRevenue, expenses: totalExpenses }),
     pendingApprovals: calculatePendingApprovals({ invoices, payments, expenses, transactions, upgradeRequests }),
     monthlyIncome: calculateMonthlyIncome({ invoices, payments, transactions }),
     monthlyExpenses: calculateMonthlyExpenses({ expenses, transactions }),
-    approvedExpenses: calculateApprovedExpenses(expenses),
+    approvedExpenses: expenseBreakdown.approvedExpenses,
+    revenueBreakdown,
+    rejectedRevenueBreakdown,
+    expenseBreakdown,
   }
 }

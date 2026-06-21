@@ -37,6 +37,7 @@ import { useLeadScoring } from '../hooks/useLeadScoring.js'
 import { useActivityLogs } from '../hooks/useActivityLogs.js'
 import { useSupportTickets } from '../hooks/useSupportTickets.js'
 import { useExpenses } from '../hooks/useExpenses.js'
+import { useAccountTransactions } from '../hooks/useAccountTransactions.js'
 import { useMaintenance } from '../hooks/useMaintenance.js'
 import { useContracts } from '../hooks/useContracts.js'
 import { useWhatsappContacts } from '../hooks/useWhatsappContacts.js'
@@ -437,10 +438,7 @@ function SchoolDashboard({
   loading,
   students,
   invoices,
-  paidInvoices,
-  paidPayments,
   pendingInvoices,
-  expenses,
   revenueSeries,
   invoiceRows,
   activityItems,
@@ -448,7 +446,6 @@ function SchoolDashboard({
   invoicesLoading,
   customersLoading,
   totalRevenue,
-  pendingRevenue,
   schoolStatsSummary,
   attendanceSummary,
   attendanceLoading,
@@ -481,17 +478,25 @@ function SchoolDashboard({
     {
       icon: HiOutlineBanknotes,
       label: 'Fee Collection',
-      value: formatCurrency(schoolStatsSummary.collected || totalRevenue, currency),
-      helper: `${formatCompact(schoolStatsSummary.paidFeeBills || paidPayments.length || paidInvoices.length)} paid records`,
+      value: formatCurrency(schoolStatsSummary.collected, currency),
+      helper: `${formatCompact(schoolStatsSummary.collectedFeeRecords)} paid records`,
       tone: 'emerald',
       loading: invoicesLoading,
     },
     {
       icon: HiOutlineClock,
       label: 'Pending Fees',
-      value: formatCurrency(schoolStatsSummary.pending || pendingRevenue, currency),
+      value: formatCurrency(schoolStatsSummary.pending, currency),
       helper: `${formatCompact(schoolStatsSummary.pendingFeeBills || pendingInvoices.length)} fee bills pending`,
       tone: 'violet',
+      loading: invoicesLoading,
+    },
+    {
+      icon: HiOutlineExclamationTriangle,
+      label: 'Approval Rejected',
+      value: formatCurrency(schoolStatsSummary.rejected, currency),
+      helper: `${formatCompact(schoolStatsSummary.rejectedFeeBills)} rejected fee records`,
+      tone: 'rose',
       loading: invoicesLoading,
     },
     {
@@ -689,6 +694,7 @@ export default function DashboardHomePage() {
   const activityApi = useActivityLogs({ limitCount: DASHBOARD_RECENT_LIMIT })
   const ticketsApi = useSupportTickets({ limitCount: DASHBOARD_RECENT_LIMIT })
   const expensesApi = useExpenses({ limitCount: DASHBOARD_RECENT_LIMIT })
+  const accountsApi = useAccountTransactions()
   const { businessType, workspaceDoc, userDoc } = useUser()
   const isSchool = normalizeBusinessType(businessType) === 'School ERP'
   const isProperty = normalizeBusinessType(businessType) === 'Property ERP'
@@ -739,6 +745,7 @@ export default function DashboardHomePage() {
       whatsappTemplatesApi.loading ||
       whatsappSettingsApi.loading)
   const hero = dashboardHero(businessType)
+
   const salesDealMetrics = useMemo(() => calculateDealMetrics(salesDealsApi.rows), [salesDealsApi.rows])
   const salesPipelineMetrics = useMemo(() => calculatePipelineMetrics(salesDealsApi.rows), [salesDealsApi.rows])
   const salesTaskMetrics = useMemo(() => calculateTaskMetrics(salesTasksApi.rows), [salesTasksApi.rows])
@@ -762,7 +769,8 @@ export default function DashboardHomePage() {
     leadsApi.loading ||
     activityApi.loading ||
     ticketsApi.loading ||
-    expensesApi.loading
+    expensesApi.loading ||
+    accountsApi.loading
 
   const paidInvoices = useMemo(() => invoicesApi.invoices.filter((invoice) => getInvoiceStatus(invoice) === 'paid'), [invoicesApi.invoices])
   const paidPayments = useMemo(() => invoicesApi.payments.filter(isPaidRecord), [invoicesApi.payments])
@@ -780,11 +788,12 @@ export default function DashboardHomePage() {
       getDashboardStats({
         invoices: invoicesApi.invoices,
         payments: invoicesApi.payments,
+        transactions: accountsApi.transactions,
         customers: customersApi.customers,
         leads: leadsApi.leads,
         expenses: expensesApi.expenses,
       }),
-    [customersApi.customers, expensesApi.expenses, invoicesApi.invoices, invoicesApi.payments, leadsApi.leads],
+    [accountsApi.transactions, customersApi.customers, expensesApi.expenses, invoicesApi.invoices, invoicesApi.payments, leadsApi.leads],
   )
   const totalRevenueUsd = dashboardStats.totalRevenue
   const pendingRevenueUsd = useMemo(
@@ -797,11 +806,13 @@ export default function DashboardHomePage() {
         students: customersApi.customers,
         invoices: invoicesApi.invoices,
         payments: invoicesApi.payments,
+        transactions: accountsApi.transactions,
         expenses: expensesApi.expenses,
         studentAttendance: schoolAttendanceApi.studentAttendance,
         staffAttendance: schoolAttendanceApi.staffAttendance,
       }),
     [
+      accountsApi.transactions,
       customersApi.customers,
       expensesApi.expenses,
       invoicesApi.invoices,
@@ -918,6 +929,7 @@ export default function DashboardHomePage() {
       customersApi.loading,
       dashboardStats.activeLeads,
       dashboardStats.expenses,
+      dashboardStats.pendingInvoices,
       dashboardStats.totalCustomers,
       expensesApi.expenses.length,
       expensesApi.loading,
@@ -1106,10 +1118,7 @@ export default function DashboardHomePage() {
         loading={loading}
         students={customersApi.customers}
         invoices={invoicesApi.invoices}
-        paidInvoices={paidInvoices}
-        paidPayments={paidPayments}
         pendingInvoices={pendingInvoices}
-        expenses={expensesApi.expenses}
         revenueSeries={revenueSeries}
         invoiceRows={invoiceRows}
         activityItems={activityItems}
@@ -1117,7 +1126,6 @@ export default function DashboardHomePage() {
         invoicesLoading={invoicesApi.loading}
         customersLoading={customersApi.loading}
         totalRevenue={totalRevenueUsd}
-        pendingRevenue={pendingRevenueUsd}
         schoolStatsSummary={schoolStatsSummary}
         attendanceSummary={schoolAttendanceApi.summary}
         attendanceLoading={schoolAttendanceApi.loading}

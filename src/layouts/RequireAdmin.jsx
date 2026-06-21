@@ -1,10 +1,10 @@
-import { useContext } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { AuthContext } from '../context/auth-context.js'
 import PageLoader from '../crm/components/ui/PageLoader.jsx'
 import { isBackendAdminEmail } from '../lib/roles.js'
 
-function AccessDenied() {
+function AccessDenied({ message = 'You do not have permission to open the Nexora Backend Control Centre. Sign in with a system admin or super admin account.' }) {
   return (
     <main className="grid min-h-screen place-items-center bg-slate-50 px-4">
       <section className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-6 text-center shadow-sm">
@@ -13,7 +13,7 @@ function AccessDenied() {
         </div>
         <h1 className="mt-5 text-2xl font-black tracking-tight text-slate-950">Access denied</h1>
         <p className="mt-2 text-sm leading-6 text-slate-600">
-          You do not have permission to open the Nexora Backend Control Centre. Sign in with a system admin or super admin account.
+          {message}
         </p>
         <a
           className="mt-5 inline-flex rounded-2xl bg-slate-950 px-5 py-3 text-sm font-bold text-white"
@@ -45,13 +45,43 @@ function AuthProviderMissing() {
 export default function RequireAdmin({ children }) {
   const location = useLocation()
   const auth = useContext(AuthContext)
+  const [verifiedUid, setVerifiedUid] = useState('')
+  const [verificationError, setVerificationError] = useState('')
+
+  const user = auth?.user || null
+  const loading = auth?.loading ?? true
+  const adminAllowed = isBackendAdminEmail(user?.email)
+
+  useEffect(() => {
+    let active = true
+    if (!user?.uid || !adminAllowed) return undefined
+
+    async function refreshAdminClaims() {
+      try {
+        await user.reload()
+        await user.getIdToken(true)
+        if (!user.emailVerified) throw new Error('Backend admin email is not verified.')
+        if (active) {
+          setVerificationError('')
+          setVerifiedUid(user.uid)
+        }
+      } catch (error) {
+        if (active) {
+          setVerifiedUid('')
+          setVerificationError(error?.message || 'Could not verify the backend admin session.')
+        }
+      }
+    }
+
+    refreshAdminClaims()
+    return () => {
+      active = false
+    }
+  }, [adminAllowed, user])
 
   if (!auth) {
     return <AuthProviderMissing />
   }
-
-  const { user, isAdmin, loading } = auth
-  const adminAllowed = isBackendAdminEmail(user?.email)
 
   if (loading) {
     return <PageLoader stage="auth" />
@@ -64,6 +94,14 @@ export default function RequireAdmin({ children }) {
   if (!adminAllowed) {
     console.log('[Admin Auth] route guard blocked:', user?.email)
     return <AccessDenied />
+  }
+
+  if (verificationError) {
+    return <AccessDenied message={verificationError} />
+  }
+
+  if (verifiedUid !== user.uid) {
+    return <PageLoader stage="auth" />
   }
 
   console.log('[Admin Auth] route guard allowed:', user?.email)

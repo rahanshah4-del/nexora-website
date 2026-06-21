@@ -20,6 +20,7 @@ import Badge from '../components/ui/Badge.jsx'
 import Input from '../components/ui/Input.jsx'
 import Select from '../components/ui/Select.jsx'
 import Toast from '../components/ui/Toast.jsx'
+import { confirmAction } from '../components/ui/dialogActions.js'
 import InvoiceDetailModal from '../components/invoices/InvoiceDetailModal.jsx'
 import PrintableInvoice from '../components/print/PrintableInvoice.jsx'
 import { useUser } from '../hooks/useUser.js'
@@ -343,7 +344,11 @@ export default function InvoicesPage() {
     if (action === 'send_approval') res = await sendForApproval(invoice.id)
     if (action === 'duplicate') res = await duplicateInvoice(invoice.id)
     if (action === 'delete') {
-      if (!window.confirm(`Delete ${isSchool ? 'fee bill' : 'invoice'} ${invoice.invoiceNumber || invoice.id}?`)) return
+      if (!await confirmAction({
+        title: `Delete ${isSchool ? 'fee bill' : 'invoice'}?`,
+        message: `Delete ${isSchool ? 'fee bill' : 'invoice'} ${invoice.invoiceNumber || invoice.id}? This cannot be undone.`,
+        confirmLabel: `Delete ${isSchool ? 'Fee Bill' : 'Invoice'}`,
+      })) return
       res = await deleteInvoice(invoice.id)
     }
     if (res?.ok && !['view', 'edit', 'print', 'pdf', 'email', 'whatsapp'].includes(action)) {
@@ -368,7 +373,9 @@ export default function InvoicesPage() {
     if (res?.ok) {
       showToast({
         tone: 'success',
-        message: action === 'paid' ? (isSchool ? 'Fee bill marked as paid' : 'Invoice marked as paid') : action === 'partial' ? (isSchool ? 'Partial fee payment recorded' : 'Partial payment recorded') : (isSchool ? 'Fee bill cancelled' : 'Invoice cancelled'),
+        message: res.pendingApproval
+          ? (isSchool ? 'Fee payment approval mein bhej di gayi' : 'Payment sent for approval')
+          : action === 'paid' ? (isSchool ? 'Fee bill marked as paid' : 'Invoice marked as paid') : action === 'partial' ? (isSchool ? 'Partial fee payment recorded' : 'Partial payment recorded') : (isSchool ? 'Fee bill cancelled' : 'Invoice cancelled'),
       })
       setPaymentAction({ action: null, invoice: null })
     } else {

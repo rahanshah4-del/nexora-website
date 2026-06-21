@@ -7,10 +7,12 @@ import { useUser } from './useUser.js'
 import { clientSafeMessage } from '../utils/messages.js'
 import { useWorkspaceAccess } from './useWorkspaceAccess.js'
 import { isDraftInvoice, resolveInvoicePermissions } from '../lib/invoiceAccess.js'
+import { normalizeBusinessType } from '../data/moduleAccess.js'
 import {
   calculateBalanceDue,
   calculateInvoiceTotals,
   getInvoiceStatus,
+  isRejectedRecord,
   normalizeCurrency,
   paymentValue,
   statusValue,
@@ -52,10 +54,15 @@ function normalizePayment(payment) {
     customerName: payment.customerName || '—',
     amount: paymentValue(payment),
     amountUsd: paymentValue(payment),
+    amountPaid: toNumber(payment.amountPaid, 0),
+    appliedAmount: toNumber(payment.appliedAmount, 0),
     currency: normalizeCurrency(payment.currency),
     paymentMethod: payment.paymentMethod || 'Manual Approval',
     paymentStatus: statusValue(payment.paymentStatus || payment.status, 'pending'),
-    paidAt: payment.paidAt || payment.createdAt || null,
+    approvalStatus: statusValue(payment.approvalStatus || payment.paymentStatus || payment.status, 'pending'),
+    paidAt: payment.paidAt || null,
+    paymentSubmittedAt: payment.paymentSubmittedAt || payment.createdAt || null,
+    createdAt: payment.createdAt || null,
     reference: payment.reference || payment.invoiceNumber || '—',
   }
 }
@@ -172,6 +179,10 @@ function hasUnsafeBusinessStatus(patch) {
 const DEFAULT_INVOICE_LIST_LIMIT = 50
 const PAYMENT_LIST_LIMIT = 100
 const PAYMENT_EPSILON = 0.005
+
+function requiresSchoolFeeApproval(businessType) {
+  return normalizeBusinessType(businessType) === 'School ERP'
+}
 
 function safeInvoiceListLimit(limitCount) {
   const next = Number(limitCount)
@@ -512,10 +523,11 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT } = {}) {
     const sent = byStatus('sent')
     const partialPaid = byStatus('partial_paid')
     const overdue = byStatus('overdue')
-    const cancelled = invoices.filter((i) => ['cancelled', 'canceled', 'rejected'].includes(statusValue(i.status || i.paymentStatus, ''))).length
-    const totalAmount = invoices.reduce((sum, invoice) => sum + toNumber(invoice.total ?? invoice.totalUsd, 0), 0)
-    const paidAmount = invoices.reduce((sum, invoice) => sum + toNumber(invoice.amountPaid ?? invoice.partialPaidAmount, 0), 0)
-    const outstanding = invoices.reduce((sum, invoice) => sum + toNumber(invoice.balanceDue, calculateBalanceDue(invoice.total ?? invoice.totalUsd, invoice.amountPaid ?? invoice.partialPaidAmount)), 0)
+    const activeInvoices = invoices.filter((invoice) => !isRejectedRecord(invoice))
+    const cancelled = invoices.length - activeInvoices.length
+    const totalAmount = activeInvoices.reduce((sum, invoice) => sum + toNumber(invoice.total ?? invoice.totalUsd, 0), 0)
+    const paidAmount = activeInvoices.reduce((sum, invoice) => sum + toNumber(invoice.amountPaid ?? invoice.partialPaidAmount, 0), 0)
+    const outstanding = activeInvoices.reduce((sum, invoice) => sum + toNumber(invoice.balanceDue, calculateBalanceDue(invoice.total ?? invoice.totalUsd, invoice.amountPaid ?? invoice.partialPaidAmount)), 0)
     const collectionRate = totalAmount > 0 ? (paidAmount / totalAmount) * 100 : 0
     return { draft, pending, pendingApproval, approved, sent, partialPaid, paid, overdue, cancelled, total: invoices.length, totalAmount, paidAmount, outstanding, revenue: paidAmount, collectionRate }
   }, [invoices])
@@ -550,13 +562,18 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT } = {}) {
         if (!invoice.items.length) return { ok: false, error: 'Add at least one invoice item' }
         if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now' }
         try {
+          const schoolApprovalOnly = requiresSchoolFeeApproval(businessType)
           const initialStatus = statusValue(invoice.status, 'pending')
-          const requestedStatus = permissions.canCreatePaidInvoices && ['paid', 'approved'].includes(initialStatus)
+          const requestedStatus = schoolApprovalOnly && ['paid', 'approved', 'partial_paid'].includes(initialStatus)
+            ? 'pending'
+            : permissions.canCreatePaidInvoices && ['paid', 'approved'].includes(initialStatus)
             ? initialStatus
             : initialStatus === 'draft'
               ? 'draft'
               : 'pending'
-          const amountPaid = permissions.canCreatePaidInvoices && requestedStatus === 'paid'
+          const amountPaid = schoolApprovalOnly
+            ? 0
+            : permissions.canCreatePaidInvoices && requestedStatus === 'paid'
             ? invoice.total
             : permissions.canCreatePaidInvoices
               ? toNumber(invoice.amountPaid ?? invoice.partialPaidAmount, 0)
@@ -684,6 +701,110 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT } = {}) {
           const now = serverTimestamp()
           const batch = writeBatch(db)
           const invoiceRef = doc(db, workspaceCollectionPath(workspaceId, 'invoices'), id)
+          if (requiresSchoolFeeApproval(businessType)) {
+            const approvalMeta = approvalMetaForBusiness(businessType)
+            const paymentRef = doc(collection(db, workspaceCollectionPath(workspaceId, 'payments')))
+            const pendingPayment = {
+              id: paymentRef.id,
+              invoiceId: id,
+              invoiceNumber: invoice.invoiceNumber || id,
+              customerName: invoice.customerName || '',
+              amount: appliedAmount,
+              amountPaid: 0,
+              amountUsd: appliedAmount,
+              appliedAmount: 0,
+              requestedAmount,
+              currency: invoice.currency || 'PKR',
+              paymentMethod,
+              source: invoice.source || '',
+              seedBatchId: invoice.seedBatchId || '',
+              paymentStatus: 'pending_verification',
+              status: 'pending_verification',
+              approvalStatus: 'pending',
+              requiresApproval: true,
+              ...approvalMeta,
+              approvalAmount: appliedAmount,
+              approvalCustomerName: invoice.customerName || '',
+              ownerId: workspaceId,
+              userId: workspaceId,
+              workspaceId,
+              businessType,
+              createdBy: userId,
+              submittedForApprovalBy: userId,
+              paymentSubmittedAt: now,
+              createdAt: now,
+              updatedAt: now,
+            }
+            batch.update(invoiceRef, {
+              status: 'pending_approval',
+              paymentStatus: 'pending_verification',
+              approvalStatus: 'pending',
+              businessType,
+              requiresApproval: true,
+              ...approvalMeta,
+              approvalAmount: appliedAmount,
+              approvalCustomerName: invoice.customerName || '',
+              submittedForApprovalBy: userId,
+              submittedForApprovalAt: now,
+              lastPaymentAt: now,
+              lastPaymentDate: now,
+              paymentHistory: arrayUnion({
+                amount: appliedAmount,
+                attemptedAmount: requestedAmount,
+                appliedAmount: 0,
+                paymentMethod,
+                status: 'pending_approval',
+                approvalPaymentId: paymentRef.id,
+                recordedBy: userId,
+                recordedAt: new Date().toISOString(),
+              }),
+              updatedAt: now,
+            })
+            batch.set(paymentRef, pendingPayment)
+            await batch.commit()
+            setPayments((currentRows) => [
+              normalizePayment({
+                ...pendingPayment,
+                paymentSubmittedAt: new Date().toISOString(),
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+              }),
+              ...currentRows.filter((payment) => payment.id !== paymentRef.id),
+            ])
+            patchLoadedInvoice(id, {
+              status: 'pending_approval',
+              paymentStatus: 'pending_verification',
+              approvalStatus: 'pending',
+              requiresApproval: true,
+              ...approvalMeta,
+              approvalAmount: appliedAmount,
+              approvalCustomerName: invoice.customerName || '',
+              submittedForApprovalBy: userId,
+              submittedForApprovalAt: new Date().toISOString(),
+              lastPaymentAt: new Date().toISOString(),
+              lastPaymentDate: new Date().toISOString(),
+            })
+            await logActivity({
+              workspaceId,
+              userId,
+              businessType,
+              ...userActivityInfo(userDoc, firebaseUser),
+              action: 'Fee payment sent for approval',
+              module: 'Invoices',
+              description: `${invoice.invoiceNumber || id} fee payment was sent to Approval Center.`,
+              targetId: id,
+              targetName: invoice.invoiceNumber || id,
+              metadata: {
+                amount: appliedAmount,
+                attemptedAmount: requestedAmount,
+                currency: invoice.currency,
+                paymentMethod,
+                oldValue: { status: invoice.status, paymentStatus: invoice.paymentStatus, amountPaid: currentPaid },
+                newValue: { status: 'pending_approval', paymentStatus: 'pending_verification', amountPaid: currentPaid },
+              },
+            })
+            return { ok: true, pendingApproval: true }
+          }
           const canEditAllInvoiceFields = permissions.canEditAllInvoiceFields
           const stockAdjusted = canEditAllInvoiceFields ? await addInventoryAdjustments(batch, workspaceId, invoice, now, businessType) : false
           batch.update(invoiceRef, {
@@ -907,6 +1028,108 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT } = {}) {
           const now = serverTimestamp()
           const batch = writeBatch(db)
           const invoiceRef = doc(db, workspaceCollectionPath(workspaceId, 'invoices'), id)
+          if (requiresSchoolFeeApproval(businessType)) {
+            const approvalMeta = approvalMetaForBusiness(businessType)
+            const paymentRef = doc(collection(db, workspaceCollectionPath(workspaceId, 'payments')))
+            const pendingPayment = {
+              id: paymentRef.id,
+              invoiceId: id,
+              invoiceNumber: invoice.invoiceNumber || id,
+              customerName: invoice.customerName || '',
+              amount: appliedAmount,
+              amountPaid: 0,
+              amountUsd: appliedAmount,
+              appliedAmount: 0,
+              requestedAmount: amount,
+              currency: invoice.currency || 'PKR',
+              paymentMethod,
+              paymentStatus: 'pending_verification',
+              status: 'pending_verification',
+              approvalStatus: 'pending',
+              requiresApproval: true,
+              ...approvalMeta,
+              approvalAmount: appliedAmount,
+              approvalCustomerName: invoice.customerName || '',
+              ownerId: workspaceId,
+              userId: workspaceId,
+              workspaceId,
+              businessType,
+              createdBy: userId,
+              submittedForApprovalBy: userId,
+              paymentSubmittedAt: now,
+              createdAt: now,
+              updatedAt: now,
+            }
+            batch.update(invoiceRef, {
+              status: 'pending_approval',
+              paymentStatus: 'pending_verification',
+              approvalStatus: 'pending',
+              businessType,
+              requiresApproval: true,
+              ...approvalMeta,
+              approvalAmount: appliedAmount,
+              approvalCustomerName: invoice.customerName || '',
+              submittedForApprovalBy: userId,
+              submittedForApprovalAt: now,
+              lastPaymentAt: now,
+              lastPaymentDate: now,
+              paymentHistory: arrayUnion({
+                amount: appliedAmount,
+                attemptedAmount: amount,
+                appliedAmount: 0,
+                paymentMethod,
+                status: 'pending_approval',
+                approvalPaymentId: paymentRef.id,
+                recordedBy: userId,
+                recordedAt: new Date().toISOString(),
+              }),
+              updatedAt: now,
+            })
+            batch.set(paymentRef, pendingPayment)
+            await batch.commit()
+            setPayments((currentRows) => [
+              normalizePayment({
+                ...pendingPayment,
+                paymentSubmittedAt: new Date().toISOString(),
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+              }),
+              ...currentRows.filter((payment) => payment.id !== paymentRef.id),
+            ])
+            patchLoadedInvoice(id, {
+              status: 'pending_approval',
+              paymentStatus: 'pending_verification',
+              approvalStatus: 'pending',
+              requiresApproval: true,
+              ...approvalMeta,
+              approvalAmount: appliedAmount,
+              approvalCustomerName: invoice.customerName || '',
+              submittedForApprovalBy: userId,
+              submittedForApprovalAt: new Date().toISOString(),
+              lastPaymentAt: new Date().toISOString(),
+              lastPaymentDate: new Date().toISOString(),
+            })
+            await logActivity({
+              workspaceId,
+              userId,
+              businessType,
+              ...userActivityInfo(userDoc, firebaseUser),
+              action: 'Fee payment sent for approval',
+              module: 'Invoices',
+              description: `${appliedAmount} ${invoice.currency || 'PKR'} was sent for approval on ${invoice.invoiceNumber || id}.`,
+              targetId: id,
+              targetName: invoice.invoiceNumber || id,
+              metadata: {
+                amount: appliedAmount,
+                attemptedAmount: amount,
+                currency: invoice.currency,
+                paymentMethod,
+                oldValue: { status: invoice.status, paymentStatus: invoice.paymentStatus, amountPaid: currentPaid },
+                newValue: { status: 'pending_approval', paymentStatus: 'pending_verification', amountPaid: currentPaid },
+              },
+            })
+            return { ok: true, pendingApproval: true }
+          }
           const canEditAllInvoiceFields = permissions.canEditAllInvoiceFields
           const stockAdjusted = fullyPaid && canEditAllInvoiceFields ? await addInventoryAdjustments(batch, workspaceId, invoice, now, businessType) : false
           batch.update(invoiceRef, {
@@ -1062,7 +1285,7 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT } = {}) {
         const isManager = roleName === 'manager'
         const isSales = roleName === 'sales'
         const isAccountant = roleName === 'accountant'
-        let safePatch = {}
+        let safePatch
 
         if (isOwnerAdmin) {
           safePatch = changedPatch
@@ -1133,6 +1356,8 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT } = {}) {
             sourceCollection: 'invoices',
             sourceRoute: approvalMeta.sourceRoute,
             sourceId: id,
+            source: invoice.source || '',
+            seedBatchId: invoice.seedBatchId || '',
             invoiceId: id,
             invoiceNumber: invoice.invoiceNumber || '',
             approvalType: approvalMeta.approvalType,

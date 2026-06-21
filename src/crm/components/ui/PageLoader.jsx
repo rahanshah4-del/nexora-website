@@ -21,13 +21,14 @@ const stageProgress = {
 
 function normalizeBusinessType(value) {
   const text = String(value || '').toLowerCase()
+  if (!text) return ''
   if (text.includes('school')) return 'School ERP'
   if (text.includes('retail') || text.includes('pos')) return 'Retail POS'
   if (text.includes('property')) return 'Property ERP'
   return 'General CRM'
 }
 
-export default function PageLoader({ stage = 'dashboard', businessType = 'General CRM' }) {
+export default function PageLoader({ stage = 'dashboard', businessType = '' }) {
   const [messageIndex, setMessageIndex] = useState(0)
   const [progress, setProgress] = useState(0)
   const selectedBusinessType = useMemo(() => normalizeBusinessType(businessType), [businessType])
@@ -95,23 +96,25 @@ export default function PageLoader({ stage = 'dashboard', businessType = 'Genera
           </div>
         </div>
 
-        <div className="mt-6 rounded-2xl border border-slate-200/70 bg-white/60 p-3 dark:border-white/10 dark:bg-white/[0.06]">
-          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Selected workspace</p>
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            {businessTypes.map((type) => (
-              <div
-                key={type}
-                className={`rounded-xl px-3 py-2 text-xs font-bold transition ${
-                  type === selectedBusinessType
-                    ? 'bg-slate-950 text-white shadow-sm dark:bg-white dark:text-slate-950'
-                    : 'bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-slate-300'
-                }`}
-              >
-                {type === 'General CRM' ? labelForBusinessType(type) : type}
-              </div>
-            ))}
+        {selectedBusinessType ? (
+          <div className="mt-6 rounded-2xl border border-slate-200/70 bg-white/60 p-3 dark:border-white/10 dark:bg-white/[0.06]">
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Selected workspace</p>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              {businessTypes.map((type) => (
+                <div
+                  key={type}
+                  className={`rounded-xl px-3 py-2 text-xs font-bold transition ${
+                    type === selectedBusinessType
+                      ? 'bg-slate-950 text-white shadow-sm dark:bg-white dark:text-slate-950'
+                      : 'bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-slate-300'
+                  }`}
+                >
+                  {type === 'General CRM' ? labelForBusinessType(type) : type}
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
+        ) : null}
       </section>
     </div>
   )

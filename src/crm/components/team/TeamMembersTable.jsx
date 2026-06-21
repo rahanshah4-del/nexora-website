@@ -3,6 +3,7 @@ import Badge from '../ui/Badge.jsx'
 import Button from '../ui/Button.jsx'
 import Table from '../ui/Table.jsx'
 import TeamMemberModal from './TeamMemberModal.jsx'
+import { confirmAction } from '../ui/dialogActions.js'
 
 function statusVariant(status) {
   const value = String(status || '').toLowerCase()
@@ -64,8 +65,8 @@ export default function TeamMembersTable({ members, permissionKeys, ownerId, cur
                   variant="ghost"
                   className="rounded-xl px-3 py-2 text-xs text-rose-700 hover:bg-rose-50"
                   type="button"
-                  onClick={() => {
-                    if (window.confirm(`Delete ${r.name || 'this team member'}?`)) onDelete?.(r.id)
+                  onClick={async () => {
+                    if (await confirmAction({ title: 'Delete team member?', message: `Delete ${r.name || 'this team member'}? Their workspace access will be removed.`, confirmLabel: 'Delete Member' })) onDelete?.(r.id)
                   }}
                 >
                   Delete

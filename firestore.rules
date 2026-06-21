@@ -8,7 +8,190 @@ service cloud.firestore {
 
     function backendAdmin() {
       return signedIn()
+        && request.auth.token.email_verified == true
         && request.auth.token.email in ['admin@nexora.com', 'rahanshah2@gmail.com'];
+    }
+
+    function paymentWorker() {
+      return signedIn() && request.auth.uid == 's1CRduKudqM96Tp6g9E7XcTVzHF2';
+    }
+
+    function validPaymentRequestUpdate() {
+      return paymentWorker()
+        && resource.data.get('automaticVerification', false) == true
+        && resource.data.get('paymentMethodId', '') == 'nowpayments'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'status',
+          'approvalStatus',
+          'paymentStatus',
+          'amountPaid',
+          'paidCurrency',
+          'nowPaymentsPaymentId',
+          'lastIpnAt',
+          'autoApprovedAt',
+          'approvedAt',
+          'approvedBy',
+          'subscriptionExpiresAt',
+          'nextBillingDate',
+          'updatedAt'
+        ])
+        && request.resource.data.nowPaymentsPaymentId is string
+        && request.resource.data.nowPaymentsPaymentId.size() > 0
+        && request.resource.data.nowPaymentsPaymentId.size() <= 128
+        && request.resource.data.lastIpnAt is timestamp
+        && request.resource.data.updatedAt is timestamp
+        && (
+          (
+            request.resource.data.status == 'approved'
+            && request.resource.data.approvalStatus == 'approved'
+            && request.resource.data.paymentStatus == 'paid'
+            && request.resource.data.amountPaid is number
+            && request.resource.data.amountPaid >= 0
+            && request.resource.data.paidCurrency is string
+            && request.resource.data.paidCurrency.size() <= 20
+            && request.resource.data.autoApprovedAt is timestamp
+            && request.resource.data.approvedAt is timestamp
+            && request.resource.data.approvedBy is string
+            && request.resource.data.approvedBy.matches('^nowpayments:[A-Za-z0-9_-]+$')
+            && request.resource.data.subscriptionExpiresAt is timestamp
+            && request.resource.data.nextBillingDate is timestamp
+          )
+          ||
+          (
+            request.resource.data.status in ['waiting', 'confirming', 'confirmed', 'sending', 'partially_paid', 'failed', 'refunded', 'expired']
+            && request.resource.data.paymentStatus == request.resource.data.status
+            && request.resource.data.approvalStatus == resource.data.approvalStatus
+          )
+        );
+    }
+
+    function validPaymentSubscriptionCore() {
+      let checkoutId = request.resource.data.paymentCheckoutId;
+      let approval = getAfter(/databases/$(database)/documents/upgradeRequests/$(checkoutId)).data;
+      return paymentWorker()
+        && checkoutId is string
+        && checkoutId.matches('^[A-Za-z0-9_-]{20,120}$')
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'plan',
+          'planStatus',
+          'subscriptionStatus',
+          'billingCycle',
+          'billingCurrency',
+          'subscriptionStartedAt',
+          'subscriptionExpiresAt',
+          'nextBillingDate',
+          'expiresAt',
+          'isTrialActive',
+          'upgradedAt',
+          'approvedAt',
+          'approvedBy',
+          'approvedByEmail',
+          'paymentCheckoutId',
+          'updatedAt'
+        ])
+        && request.resource.data.plan is string
+        && request.resource.data.plan.size() > 0
+        && request.resource.data.plan.size() <= 80
+        && request.resource.data.planStatus == 'active'
+        && request.resource.data.subscriptionStatus == 'active'
+        && request.resource.data.billingCycle in ['monthly', 'yearly']
+        && request.resource.data.billingCurrency is string
+        && request.resource.data.billingCurrency.size() > 0
+        && request.resource.data.billingCurrency.size() <= 10
+        && request.resource.data.subscriptionStartedAt is timestamp
+        && request.resource.data.subscriptionStartedAt >= request.time - duration.value(5, 'm')
+        && request.resource.data.subscriptionStartedAt <= request.time + duration.value(5, 'm')
+        && request.resource.data.subscriptionExpiresAt is timestamp
+        && request.resource.data.subscriptionExpiresAt > request.resource.data.subscriptionStartedAt
+        && request.resource.data.subscriptionExpiresAt <= request.resource.data.subscriptionStartedAt + duration.value(367, 'd')
+        && request.resource.data.nextBillingDate is timestamp
+        && request.resource.data.expiresAt is timestamp
+        && request.resource.data.isTrialActive == false
+        && request.resource.data.upgradedAt is timestamp
+        && request.resource.data.approvedAt is timestamp
+        && request.resource.data.approvedBy is string
+        && request.resource.data.approvedBy.matches('^nowpayments:[A-Za-z0-9_-]+$')
+        && request.resource.data.approvedByEmail == ''
+        && request.resource.data.updatedAt is timestamp
+        && approval.get('automaticVerification', false) == true
+        && approval.get('paymentMethodId', '') == 'nowpayments'
+        && approval.status == 'approved'
+        && approval.approvalStatus == 'approved'
+        && approval.paymentStatus == 'paid'
+        && approval.approvedBy == request.resource.data.approvedBy;
+    }
+
+    function validPaymentUserUpdate(uid) {
+      let approval = getAfter(/databases/$(database)/documents/upgradeRequests/$(request.resource.data.paymentCheckoutId)).data;
+      return validPaymentSubscriptionCore() && approval.ownerId == uid;
+    }
+
+    function validPaymentWorkspaceUpdate(workspaceId) {
+      let approval = getAfter(/databases/$(database)/documents/upgradeRequests/$(request.resource.data.paymentCheckoutId)).data;
+      return validPaymentSubscriptionCore() && approval.workspaceId == workspaceId;
+    }
+
+    function validPlatformPaymentWrite() {
+      let checkoutId = request.resource.data.sourceId;
+      let approval = getAfter(/databases/$(database)/documents/upgradeRequests/$(checkoutId)).data;
+      return paymentWorker()
+        && request.resource.data.keys().hasOnly([
+          'clientEmail',
+          'workspaceId',
+          'workspaceName',
+          'plan',
+          'amount',
+          'currency',
+          'cryptoAmountPaid',
+          'cryptoCurrency',
+          'transactionId',
+          'paymentMethod',
+          'status',
+          'paymentStatus',
+          'approvedBy',
+          'approvedAt',
+          'subscriptionExpiresAt',
+          'nextBillingDate',
+          'source',
+          'sourceId',
+          'updatedAt'
+        ])
+        && checkoutId is string
+        && checkoutId.matches('^[A-Za-z0-9_-]{20,120}$')
+        && request.resource.data.workspaceId == approval.workspaceId
+        && request.resource.data.clientEmail is string
+        && request.resource.data.clientEmail.size() <= 254
+        && request.resource.data.workspaceName is string
+        && request.resource.data.workspaceName.size() <= 200
+        && request.resource.data.plan == approval.requestedPlan
+        && request.resource.data.plan is string
+        && request.resource.data.plan.size() <= 80
+        && request.resource.data.amount is number
+        && request.resource.data.amount >= 0
+        && request.resource.data.currency is string
+        && request.resource.data.currency.size() > 0
+        && request.resource.data.currency.size() <= 10
+        && request.resource.data.cryptoAmountPaid is number
+        && request.resource.data.cryptoAmountPaid >= 0
+        && request.resource.data.cryptoCurrency is string
+        && request.resource.data.cryptoCurrency.size() <= 20
+        && request.resource.data.transactionId is string
+        && request.resource.data.transactionId.size() > 0
+        && request.resource.data.transactionId.size() <= 128
+        && request.resource.data.paymentMethod == 'Crypto (NOWPayments)'
+        && request.resource.data.status == 'paid'
+        && request.resource.data.paymentStatus == 'paid'
+        && request.resource.data.approvedBy == approval.approvedBy
+        && request.resource.data.approvedAt is timestamp
+        && request.resource.data.subscriptionExpiresAt is timestamp
+        && request.resource.data.nextBillingDate is timestamp
+        && request.resource.data.source == 'nowpayments-ipn'
+        && request.resource.data.updatedAt is timestamp
+        && approval.get('automaticVerification', false) == true
+        && approval.get('paymentMethodId', '') == 'nowpayments'
+        && approval.status == 'approved'
+        && approval.approvalStatus == 'approved'
+        && approval.paymentStatus == 'paid';
     }
 
     function marketingAdmin() {
@@ -229,6 +412,7 @@ service cloud.firestore {
       allow create: if signedIn() && request.auth.uid == uid;
       allow read: if backendAdmin() || (signedIn() && request.auth.uid == uid);
       allow update: if backendAdmin()
+        || (paymentWorker() && validPaymentUserUpdate(uid))
         || (signedIn()
           && request.auth.uid == uid
           && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['isAdmin', 'plan', 'planStatus', 'subscriptionStatus']));
@@ -265,6 +449,7 @@ service cloud.firestore {
         || (signedIn() && request.auth.uid == workspaceId)
         || workspaceMember(workspaceId);
       allow update: if backendAdmin()
+        || (paymentWorker() && validPaymentWorkspaceUpdate(workspaceId))
         || (workspaceAdmin(workspaceId) && protectedWorkspaceFieldsUnchanged());
       allow delete: if backendAdmin();
 
@@ -467,8 +652,9 @@ service cloud.firestore {
 
     match /upgradeRequests/{requestId} {
       allow create: if activeSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow read: if backendAdmin() || (activeSignedIn() && resource.data.userId == request.auth.uid);
-      allow update, delete: if backendAdmin();
+      allow read: if backendAdmin() || paymentWorker() || (activeSignedIn() && resource.data.userId == request.auth.uid);
+      allow update: if backendAdmin() || validPaymentRequestUpdate();
+      allow delete: if backendAdmin();
     }
 
     match /platformSettings/{docId} {
@@ -487,7 +673,9 @@ service cloud.firestore {
     }
 
     match /platformPayments/{docId} {
-      allow read, write: if backendAdmin();
+      allow read: if backendAdmin();
+      allow create, update: if backendAdmin() || validPlatformPaymentWrite();
+      allow delete: if backendAdmin();
     }
 
     match /platformSubscriptions/{docId} {

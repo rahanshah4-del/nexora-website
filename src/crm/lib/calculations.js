@@ -1,7 +1,10 @@
 const paidStatuses = new Set(['paid', 'complete', 'completed', 'verified'])
 const rejectedStatuses = new Set(['rejected', 'cancelled', 'canceled'])
 const pendingStatuses = new Set(['pending', 'pending_verification', 'pending_partial', 'partial_pending', 'pending_approval'])
-const approvedStatuses = new Set(['approved', 'paid', 'complete', 'completed'])
+const approvedStatuses = new Set(['approved', 'paid', 'complete', 'completed', 'verified'])
+const revenueInvoiceStatuses = new Set(['approved', 'paid'])
+const incomeTransactionTypes = new Set(['income'])
+const expenseTransactionTypes = new Set(['expense', 'cash_payment'])
 const inactivePipelineStatuses = new Set(['converted', 'customer', 'won', 'lost', 'closed', 'rejected', 'paid', 'completed', 'cancelled', 'canceled'])
 const inactivePipelineTerms = Array.from(inactivePipelineStatuses)
 
@@ -116,7 +119,7 @@ export function getInvoiceStatus(invoice = {}) {
   const dueDate = invoice.dueDate ? new Date(invoice.dueDate) : null
   const approvalStatus = statusValue(invoice.approvalStatus, '')
 
-  if (rejectedStatuses.has(status) || rejectedStatuses.has(paymentStatus)) return 'rejected'
+  if (rejectedStatuses.has(status) || rejectedStatuses.has(paymentStatus) || rejectedStatuses.has(approvalStatus)) return 'rejected'
   if (paidStatuses.has(status) || paidStatuses.has(paymentStatus) || (total > 0 && balanceDue <= 0)) return 'paid'
   if (amountPaid > 0 && balanceDue > 0) return 'partial_paid'
   if (dueDate && !Number.isNaN(dueDate.getTime()) && dueDate.getTime() < Date.now()) return 'overdue'
@@ -128,13 +131,38 @@ export function getInvoiceStatus(invoice = {}) {
 }
 
 export function isPaidRecord(record = {}) {
-  return paidStatuses.has(statusValue(record.paymentStatus || record.status, ''))
+  const status = statusValue(record.paymentStatus || record.status, '')
+  const approvalStatus = statusValue(record.approvalStatus, '')
+  if (isRejectedRecord(record)) return false
+  return paidStatuses.has(status) || approvedStatuses.has(status) || approvedStatuses.has(approvalStatus)
+}
+
+export function isRejectedRecord(record = {}) {
+  return [record.status, record.paymentStatus, record.approvalStatus]
+    .map((value) => statusValue(value, ''))
+    .some((status) => rejectedStatuses.has(status))
+}
+
+export function transactionStatusValue(transaction = {}) {
+  return statusValue(transaction.approvalStatus || transaction.status, 'pending')
+}
+
+export function transactionTypeValue(transaction = {}) {
+  return statusValue(transaction.type, 'adjustment')
+}
+
+export function isApprovedTransaction(transaction = {}) {
+  return !isRejectedRecord(transaction) && approvedStatuses.has(transactionStatusValue(transaction))
+}
+
+export function transactionAmount(transaction = {}) {
+  return Math.max(toNumber(transaction.amount ?? transaction.amountPaid ?? transaction.total, 0), 0)
 }
 
 export function isApprovedExpense(expense = {}) {
   const approvalStatus = statusValue(expense.approvalStatus, '')
   const status = statusValue(expense.status, '')
-  return approvedStatuses.has(approvalStatus) || approvedStatuses.has(status)
+  return !isRejectedRecord(expense) && (approvedStatuses.has(approvalStatus) || approvedStatuses.has(status))
 }
 
 export function amountValue(record = {}) {
@@ -166,6 +194,37 @@ export function paymentValue(payment = {}) {
 
 export function expenseValue(expense = {}) {
   return Math.max(toNumber(expense.amount ?? expense.total ?? expense.amountUsd ?? expense.totalUsd, 0), 0)
+}
+
+function recordKeys(record = {}) {
+  return [
+    record.id,
+    record.invoiceId,
+    record.invoiceNumber,
+    record.paymentId,
+    record.expenseId,
+    record.relatedId,
+    record.sourceId,
+    record.reference,
+  ]
+    .map((value) => String(value || '').trim())
+    .filter(Boolean)
+}
+
+function approvedTransactionsByType(transactions = [], typeSet = incomeTransactionTypes) {
+  return transactions.filter((transaction) => isApprovedTransaction(transaction) && typeSet.has(transactionTypeValue(transaction)))
+}
+
+function coveredKeys(transactions = []) {
+  const keys = new Set()
+  transactions.forEach((transaction) => {
+    recordKeys(transaction).forEach((key) => keys.add(key))
+  })
+  return keys
+}
+
+function isCovered(record, keys) {
+  return recordKeys(record).some((key) => keys.has(key))
 }
 
 export function pipelineItemValue(item = {}) {
@@ -207,29 +266,92 @@ export function calculateConversionRate(leads = []) {
   return (convertedLeads / leads.length) * 100
 }
 
-export function calculateRevenue({ invoices = [], payments = [] } = {}) {
-  const paidPayments = payments.filter(isPaidRecord)
-  const paymentInvoiceIds = new Set(paidPayments.map((payment) => payment.invoiceId).filter(Boolean))
+export function calculateRevenueBreakdown({ invoices = [], payments = [], transactions = [] } = {}) {
+  const rejectedInvoiceKeys = coveredKeys(invoices.filter(isRejectedRecord))
+  const rejectedPaymentKeys = coveredKeys(payments.filter(isRejectedRecord))
+  const rejectedSourceKeys = new Set([...rejectedInvoiceKeys, ...rejectedPaymentKeys])
+  const incomeTransactions = approvedTransactionsByType(transactions, incomeTransactionTypes)
+    .filter((transaction) => !isCovered(transaction, rejectedSourceKeys))
+  const incomeCoveredKeys = coveredKeys(incomeTransactions)
+  const transactionRevenue = incomeTransactions.reduce((sum, transaction) => sum + transactionAmount(transaction), 0)
+
+  const paidPayments = payments
+    .filter(isPaidRecord)
+    .filter((payment) => !isCovered(payment, rejectedSourceKeys))
+    .filter((payment) => !isCovered(payment, incomeCoveredKeys))
+  const paymentInvoiceIds = new Set(paidPayments.flatMap(recordKeys))
   const paymentRevenue = paidPayments.reduce((sum, payment) => sum + paymentValue(payment), 0)
   const invoiceRevenue = invoices
-    .filter((invoice) => getInvoiceStatus(invoice) === 'paid')
-    .filter((invoice) => !paymentInvoiceIds.has(invoice.id) && !paymentInvoiceIds.has(invoice.invoiceNumber))
+    .filter((invoice) => revenueInvoiceStatuses.has(getInvoiceStatus(invoice)))
+    .filter((invoice) => !isCovered(invoice, incomeCoveredKeys))
+    .filter((invoice) => !recordKeys(invoice).some((key) => paymentInvoiceIds.has(key)))
     .reduce((sum, invoice) => sum + invoiceValue(invoice), 0)
 
-  return paymentRevenue + invoiceRevenue
+  return {
+    invoiceRevenue,
+    paymentRevenue,
+    transactionRevenue,
+    totalRevenue: invoiceRevenue + paymentRevenue + transactionRevenue,
+  }
 }
 
-export function calculateApprovedExpenses(expenses = []) {
-  return expenses.filter(isApprovedExpense).reduce((sum, expense) => sum + expenseValue(expense), 0)
+export function calculateRejectedRevenueBreakdown({ invoices = [], payments = [], transactions = [] } = {}) {
+  const rejectedIncomeTransactions = transactions
+    .filter((transaction) => incomeTransactionTypes.has(transactionTypeValue(transaction)) && isRejectedRecord(transaction))
+  const rejectedTransactionKeys = coveredKeys(rejectedIncomeTransactions)
+  const transactionRejected = rejectedIncomeTransactions.reduce((sum, transaction) => sum + transactionAmount(transaction), 0)
+
+  const rejectedPayments = payments
+    .filter(isRejectedRecord)
+    .filter((payment) => !isCovered(payment, rejectedTransactionKeys))
+  const rejectedPaymentKeys = coveredKeys(rejectedPayments)
+  const paymentRejected = rejectedPayments.reduce((sum, payment) => sum + paymentValue(payment), 0)
+
+  const invoiceRejected = invoices
+    .filter(isRejectedRecord)
+    .filter((invoice) => !isCovered(invoice, rejectedTransactionKeys))
+    .filter((invoice) => !recordKeys(invoice).some((key) => rejectedPaymentKeys.has(key)))
+    .reduce((sum, invoice) => sum + invoiceValue(invoice), 0)
+
+  return {
+    invoiceRejected,
+    paymentRejected,
+    transactionRejected,
+    totalRejected: invoiceRejected + paymentRejected + transactionRejected,
+  }
+}
+
+export function calculateRevenue({ invoices = [], payments = [], transactions = [] } = {}) {
+  return calculateRevenueBreakdown({ invoices, payments, transactions }).totalRevenue
+}
+
+export function calculateExpenseBreakdown({ expenses = [], transactions = [] } = {}) {
+  const expenseTransactions = approvedTransactionsByType(transactions, expenseTransactionTypes)
+  const expenseCoveredKeys = coveredKeys(expenseTransactions)
+  const transactionExpenses = expenseTransactions.reduce((sum, transaction) => sum + transactionAmount(transaction), 0)
+  const approvedExpenses = expenses
+    .filter(isApprovedExpense)
+    .filter((expense) => !isCovered(expense, expenseCoveredKeys))
+    .reduce((sum, expense) => sum + expenseValue(expense), 0)
+
+  return {
+    approvedExpenses,
+    transactionExpenses,
+    totalExpenses: approvedExpenses + transactionExpenses,
+  }
+}
+
+export function calculateApprovedExpenses(expenses = [], transactions = []) {
+  return calculateExpenseBreakdown({ expenses, transactions }).totalExpenses
 }
 
 export function calculateProfit({ revenue = 0, expenses = 0 } = {}) {
   return toNumber(revenue, 0) - toNumber(expenses, 0)
 }
 
-export function getDashboardStats({ invoices = [], payments = [], customers = [], leads = [], expenses = [] } = {}) {
-  const totalRevenue = calculateRevenue({ invoices, payments })
-  const totalExpenses = calculateApprovedExpenses(expenses)
+export function getDashboardStats({ invoices = [], payments = [], customers = [], leads = [], expenses = [], transactions = [] } = {}) {
+  const totalRevenue = calculateRevenue({ invoices, payments, transactions })
+  const totalExpenses = calculateApprovedExpenses(expenses, transactions)
   const now = new Date()
   const currentMonth = now.getMonth()
   const currentYear = now.getFullYear()

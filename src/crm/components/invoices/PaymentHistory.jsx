@@ -8,6 +8,7 @@ function statusVariant(status) {
   if (value === 'paid') return 'success'
   if (value === 'partial') return 'info'
   if (value === 'rejected') return 'danger'
+  if (value === 'pending_verification' || value === 'pending_approval') return 'info'
   return 'warning'
 }
 
@@ -16,6 +17,7 @@ function statusLabel(status) {
   if (value === 'paid') return 'Paid'
   if (value === 'partial' || value === 'partial_paid') return 'Partial Paid'
   if (value === 'rejected') return 'Rejected'
+  if (value === 'pending_verification' || value === 'pending_approval') return 'Pending Approval'
   return 'Pending'
 }
 
@@ -41,7 +43,7 @@ export default function PaymentHistory({ payments, currency }) {
       header: 'Status',
       cell: (r) => <Badge variant={statusVariant(r.paymentStatus)}>{statusLabel(r.paymentStatus)}</Badge>,
     },
-    { key: 'paidAt', header: 'Paid At', cell: (r) => dateLabel(r.paidAt) },
+    { key: 'paidAt', header: 'Paid At', cell: (r) => dateLabel(r.paidAt || r.paymentSubmittedAt || r.createdAt) },
     { key: 'reference', header: 'Reference' },
   ]
 

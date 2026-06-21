@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { HiOutlineFunnel, HiOutlinePlus } from 'react-icons/hi2'
+import { HiOutlineFunnel, HiOutlinePencilSquare, HiOutlinePlus, HiOutlineTrash } from 'react-icons/hi2'
 import Badge from '../components/ui/Badge.jsx'
 import Button from '../components/ui/Button.jsx'
 import Card from '../components/ui/Card.jsx'
@@ -11,6 +11,7 @@ import { useLeadScoring } from '../hooks/useLeadScoring.js'
 import LeadModal from '../components/leads/LeadModal.jsx'
 import { useMemo, useState } from 'react'
 import Toast from '../components/ui/Toast.jsx'
+import { confirmAction } from '../components/ui/dialogActions.js'
 import { db } from '../lib/firebase.js'
 import { createUserDoc } from '../lib/firestore.js'
 import { useUser } from '../hooks/useUser.js'
@@ -20,6 +21,8 @@ export default function LeadsPage() {
   const scoring = useLeadScoring({ paginated: true, limitCount: 50 })
   const { userId, workspaceId, businessType } = useUser()
   const [createOpen, setCreateOpen] = useState(false)
+  const [editingLead, setEditingLead] = useState(null)
+  const [deletingLeadId, setDeletingLeadId] = useState('')
   const [toast, setToast] = useState(null)
   const [search, setSearch] = useState('')
   const [stageFilter, setStageFilter] = useState('')
@@ -47,6 +50,23 @@ export default function LeadsPage() {
     })
   }, [scoring.leads, search, stageFilter])
 
+  async function handleDeleteLead(lead) {
+    if (!lead?.id || deletingLeadId) return
+    const label = lead.name || 'this lead'
+    if (!await confirmAction({ title: 'Delete lead?', message: `Delete ${label}? This will permanently remove the lead from this workspace.`, confirmLabel: 'Delete Lead' })) return
+
+    setDeletingLeadId(lead.id)
+    const res = await scoring.deleteLead(lead)
+    setDeletingLeadId('')
+    if (res?.ok) {
+      setToast({ tone: 'success', message: 'Lead deleted successfully' })
+      window.setTimeout(() => setToast(null), 1600)
+      return
+    }
+    setToast({ tone: 'error', message: res?.error || 'Failed to delete lead' })
+    window.setTimeout(() => setToast(null), 2400)
+  }
+
   const columns = [
     { key: 'id', header: 'Lead ID' },
     { key: 'name', header: 'Lead', cell: (r) => <span className="font-semibold">{r.name}</span> },
@@ -70,6 +90,31 @@ export default function LeadsPage() {
       key: 'prediction',
       header: 'Prediction',
       cell: (r) => <Badge variant={r.score >= 85 ? 'success' : 'info'}>{r.prediction}</Badge>,
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      cell: (r) => (
+        <div className="flex justify-end gap-2">
+          <Button
+            type="button"
+            variant="subtle"
+            className="h-8 rounded-xl px-3 text-xs"
+            onClick={() => setEditingLead(r)}
+          >
+            <HiOutlinePencilSquare className="h-4 w-4" /> Edit
+          </Button>
+          <Button
+            type="button"
+            variant="subtle"
+            className="h-8 rounded-xl px-3 text-xs text-rose-700 hover:border-rose-200 hover:bg-rose-50 dark:text-rose-300 dark:hover:border-rose-500/40 dark:hover:bg-rose-500/10"
+            disabled={deletingLeadId === r.id}
+            onClick={() => handleDeleteLead(r)}
+          >
+            <HiOutlineTrash className="h-4 w-4" /> {deletingLeadId === r.id ? 'Deleting...' : 'Delete'}
+          </Button>
+        </div>
+      ),
     },
   ]
 
@@ -204,6 +249,22 @@ export default function LeadsPage() {
             setCreateOpen(false)
           } catch (e) {
             setToast({ tone: 'error', message: clientSafeMessage(e, 'Unable to create lead.') })
+            window.setTimeout(() => setToast(null), 2400)
+          }
+        }}
+      />
+      <LeadModal
+        open={Boolean(editingLead)}
+        initialRecord={editingLead}
+        onClose={() => setEditingLead(null)}
+        onCreate={async (payload) => {
+          const res = await scoring.updateLead(editingLead?.id, payload)
+          if (res?.ok) {
+            setToast({ tone: 'success', message: 'Lead updated successfully' })
+            window.setTimeout(() => setToast(null), 1600)
+            setEditingLead(null)
+          } else {
+            setToast({ tone: 'error', message: res?.error || 'Failed to update lead' })
             window.setTimeout(() => setToast(null), 2400)
           }
         }}

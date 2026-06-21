@@ -78,6 +78,8 @@ export default function AttendancePage() {
   const [registeringDevice, setRegisteringDevice] = useState(false)
   const [devices, setDevices] = useState([])
   const [deviceLogs, setDeviceLogs] = useState([])
+  const [studentAttendanceRows, setStudentAttendanceRows] = useState([])
+  const [staffAttendanceRows, setStaffAttendanceRows] = useState([])
   const [deviceError, setDeviceError] = useState('')
   const [newDevice, setNewDevice] = useState({
     name: '',
@@ -94,11 +96,19 @@ export default function AttendancePage() {
   const selectedStudent = useMemo(() => students.find((student) => student.id === personId), [personId, students])
   const selectedStaff = useMemo(() => staff.find((member) => member.id === personId), [personId, staff])
   const activeList = mode === 'student' ? students : staff
+  const selectedPerson = mode === 'student' ? selectedStudent : selectedStaff
+  const activeAttendanceRows = mode === 'student' ? studentAttendanceRows : staffAttendanceRows
   const reportUrl = mode === 'student'
     ? '/app/school-reports?report=student_attendance'
     : '/app/school-reports?report=staff_attendance'
   const connectedDevices = devices.filter((device) => String(device.status || '').toLowerCase() !== 'disabled').length
   const recentAutoLogs = deviceLogs.slice(0, 8)
+
+  useEffect(() => {
+    if (!personId && activeList.length) {
+      setPersonId(activeList[0].id)
+    }
+  }, [activeList, personId])
 
   useEffect(() => {
     if (!workspaceId) {
@@ -132,6 +142,30 @@ export default function AttendancePage() {
           setDeviceError(error?.message || 'Unable to load device attendance logs.')
         },
       }),
+      listenToWorkspaceCollection({
+        ...common,
+        collectionName: 'studentAttendance',
+        onData: (rows) => {
+          setStudentAttendanceRows(sortNewest(rows))
+          setDeviceError('')
+        },
+        onError: (error) => {
+          setStudentAttendanceRows([])
+          setDeviceError(error?.message || 'Unable to load student attendance records.')
+        },
+      }),
+      listenToWorkspaceCollection({
+        ...common,
+        collectionName: 'staffAttendance',
+        onData: (rows) => {
+          setStaffAttendanceRows(sortNewest(rows))
+          setDeviceError('')
+        },
+        onError: (error) => {
+          setStaffAttendanceRows([])
+          setDeviceError(error?.message || 'Unable to load staff attendance records.')
+        },
+      }),
     ]
     return () => unsubs.forEach((unsub) => unsub?.())
   }, [businessType, workspaceId])
@@ -148,6 +182,10 @@ export default function AttendancePage() {
     }
     const isStudent = mode === 'student'
     const person = isStudent ? selectedStudent : selectedStaff
+    if (!person) {
+      setToast({ tone: 'warning', message: `Selected ${isStudent ? 'student' : 'staff member'} record could not be loaded. Please select again.` })
+      return
+    }
     const collectionName = isStudent ? 'studentAttendance' : 'staffAttendance'
     const payload = {
       date,
@@ -488,6 +526,11 @@ Header: x-nexora-device-secret: DEVICE_SECRET
                   </option>
                 ))}
               </Select>
+              {!activeList.length ? (
+                <p className="mt-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-800">
+                  No {mode === 'student' ? 'student' : 'staff'} records found. School Dashboard par Add Test Data click karein.
+                </p>
+              ) : null}
             </label>
 
             <label className="block">
@@ -531,14 +574,42 @@ Header: x-nexora-device-secret: DEVICE_SECRET
           <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
             <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">Selected</p>
             <p className="mt-2 text-sm font-semibold text-slate-700">
-              {personId
+              {selectedPerson
                 ? mode === 'student'
-                  ? `${studentLabel(selectedStudent)} - ${studentClass(selectedStudent)}`
-                  : `${staffLabel(selectedStaff)} - ${staffDepartment(selectedStaff)}`
+                  ? `${studentLabel(selectedPerson)} - ${studentClass(selectedPerson)}`
+                  : `${staffLabel(selectedPerson)} - ${staffDepartment(selectedPerson)}`
                 : 'No record selected yet.'}
             </p>
             <div className="mt-3 inline-flex">
               <Badge variant={statusTone(status)}>{status.toUpperCase()}</Badge>
+            </div>
+          </div>
+
+          <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-4">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">Saved Attendance</p>
+              <Badge variant={activeAttendanceRows.length ? 'success' : 'default'}>{activeAttendanceRows.length} records</Badge>
+            </div>
+            <div className="mt-3 space-y-2">
+              {activeAttendanceRows.slice(0, 8).length ? activeAttendanceRows.slice(0, 8).map((row) => (
+                <div key={row.id} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="min-w-0 truncate text-sm font-black text-slate-900">
+                      {mode === 'student' ? row.studentName || row.name || 'Student' : row.staffName || row.name || 'Staff member'}
+                    </p>
+                    <Badge variant={statusTone(String(row.attendance || row.status || 'present').toLowerCase())}>
+                      {String(row.attendance || row.status || 'present').toUpperCase()}
+                    </Badge>
+                  </div>
+                  <p className="mt-1 truncate text-xs font-semibold text-slate-500">
+                    {[row.className || row.class || row.department, row.date || 'No date', row.source || 'attendance'].filter(Boolean).join(' · ')}
+                  </p>
+                </div>
+              )) : (
+                <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-3 py-4 text-sm font-semibold text-slate-500">
+                  No saved {mode === 'student' ? 'student' : 'staff'} attendance yet. Save attendance ya Add Test Data click karein.
+                </div>
+              )}
             </div>
           </div>
         </Card>

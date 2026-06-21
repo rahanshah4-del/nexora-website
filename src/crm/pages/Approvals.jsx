@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { useMemo, useState } from 'react'
+import { HiOutlinePrinter } from 'react-icons/hi2'
 import Badge from '../components/ui/Badge.jsx'
 import Button from '../components/ui/Button.jsx'
 import Card from '../components/ui/Card.jsx'
@@ -8,6 +9,9 @@ import Table from '../components/ui/Table.jsx'
 import Toast from '../components/ui/Toast.jsx'
 import EmptyState from '../components/system/EmptyState.jsx'
 import { useApprovals } from '../hooks/useApprovals.js'
+import { useBusinessSettings } from '../hooks/useBusinessSettings.js'
+import { buildAccountTransactionHtml, transactionDateLabel } from '../lib/accountTransactionDocuments.js'
+import { printHtmlDocument } from '../lib/printerService.js'
 import { formatCurrency } from '../utils/format.js'
 
 function statusBadge(status) {
@@ -23,13 +27,56 @@ function isInvoiceRow(row) {
   return row?.sourceCollection === 'invoices'
 }
 
-function isPaidRow(row) {
-  return ['paid', 'rejected', 'cancelled', 'canceled'].includes(
-    String(row?.row?.paymentStatus || row?.row?.status || row?.status || '').toLowerCase(),
-  )
+function isFinanceApprovalRow(row) {
+  return ['invoices', 'payments', 'expenses', 'accountTransactions'].includes(row?.sourceCollection)
 }
 
-function DetailsModal({ approval, onClose }) {
+function approvalActionForRow(row) {
+  return isInvoiceRow(row) ? 'mark_paid' : 'approve'
+}
+
+function approvalButtonLabel(row) {
+  return isFinanceApprovalRow(row) ? 'Approve & Paid' : 'Approve'
+}
+
+function approvalDetailRows(approval = {}) {
+  const row = approval.row || {}
+  return [
+    ['Request ID', row.transactionId || approval.sourceId || row.id],
+    ['Source', approval.sourceCollection],
+    ['Type', approval.type],
+    ['Status', approval.status],
+    ['Title / Purpose', row.title || row.description || approval.customer],
+    ['Amount', formatCurrency(approval.amount || 0, approval.currency)],
+    ['Amount Paid', approval.amountPaid ? formatCurrency(approval.amountPaid, approval.currency) : ''],
+    ['Balance Due', approval.balanceDue ? formatCurrency(approval.balanceDue, approval.currency) : ''],
+    ['Payment Method', row.method || row.paymentMethod],
+    ['Bank Name', row.bankName],
+    ['Account Title', row.accountTitle],
+    ['Account Number', row.accountNumber],
+    ['Receiver Name', row.receiverName],
+    ['Paid To', row.paidTo],
+    ['Reason', row.reason],
+    ['Expense / Related ID', row.expenseId || row.relatedId],
+    ['Invoice Number', approval.invoiceNumber || row.invoiceNumber],
+    ['Invoice ID', approval.invoiceId || row.invoiceId],
+    ['Payment ID', row.paymentId],
+    ['Customer / Student / Client', row.customerName || row.studentName || row.tenantName || row.clientName || approval.customer],
+    ['Phone', row.customerPhone || row.studentPhone || row.phone],
+    ['Email', row.customerEmail || row.studentEmail || row.email],
+    ['Reference', row.reference || row.receiptReference || row.transactionId || row.paymentReference],
+    ['Submitted By', approval.submittedBy],
+    ['Created Date', transactionDateLabel(approval.date || row.createdAt)],
+    ['Approved By', row.approvedByName || row.approvedBy],
+    ['Approved Date', row.approvedAt ? transactionDateLabel(row.approvedAt) : ''],
+    ['Rejected By', row.rejectedByName || row.rejectedBy],
+    ['Rejected Date', row.rejectedAt ? transactionDateLabel(row.rejectedAt) : ''],
+    ['Description', row.description],
+    ['Notes', row.notes || row.note || row.remarks],
+  ].filter(([, value]) => value !== undefined && value !== null && String(value).trim() !== '')
+}
+
+function DetailsModal({ approval, onClose, onPrint }) {
   return (
     <AnimatePresence>
       {approval ? (
@@ -60,16 +107,7 @@ function DetailsModal({ approval, onClose }) {
               </div>
 
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                {[
-                  ['Status', approval.status],
-                  ['Submitted By', approval.submittedBy],
-                  ['Amount', formatCurrency(approval.amount, approval.currency)],
-                  ['Amount Paid', formatCurrency(approval.amountPaid || 0, approval.currency)],
-                  ['Balance Due', formatCurrency(approval.balanceDue || 0, approval.currency)],
-                  ['Date', approval.dateLabel],
-                  ['Invoice', approval.invoiceNumber || approval.invoiceId || '—'],
-                  ['Record Type', approval.type],
-                ].map(([label, value]) => (
+                {approvalDetailRows(approval).map(([label, value]) => (
                   <div key={label} className="glass-muted rounded-2xl p-4">
                     <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">{label}</p>
                     <p className="mt-1 break-words text-sm font-semibold text-slate-900 dark:text-white">{value || '—'}</p>
@@ -78,6 +116,11 @@ function DetailsModal({ approval, onClose }) {
               </div>
 
               <div className="mt-5 flex flex-wrap gap-2">
+                {approval.sourceCollection === 'accountTransactions' ? (
+                  <Button className="rounded-2xl" type="button" onClick={() => onPrint(approval.row)}>
+                    <HiOutlinePrinter className="h-4 w-4" /> Print Request
+                  </Button>
+                ) : null}
                 <Button variant="subtle" className="rounded-2xl" type="button" onClick={onClose}>
                   Close
                 </Button>
@@ -94,7 +137,7 @@ function ConfirmModal({ action, approval, busy, onClose, onConfirm }) {
   const open = Boolean(action && approval)
   const isReject = action === 'reject'
   const isMarkPaid = action === 'mark_paid'
-  const label = isReject ? 'Reject' : isMarkPaid ? 'Mark as Paid' : 'Approve'
+  const label = isReject ? 'Reject' : isMarkPaid || isFinanceApprovalRow(approval) ? 'Approve & Paid' : 'Approve'
 
   return (
     <AnimatePresence>
@@ -119,11 +162,11 @@ function ConfirmModal({ action, approval, busy, onClose, onConfirm }) {
             <Card className="rounded-3xl p-4 sm:p-5">
               <Badge variant={isReject ? 'danger' : 'success'}>{label}</Badge>
               <p className="mt-3 text-base font-semibold text-slate-950 dark:text-white">
-                {isReject ? 'Reject this approval request?' : isMarkPaid ? 'Mark this invoice as paid?' : 'Approve this request?'}
+                {isReject ? 'Reject this approval request?' : isMarkPaid || isFinanceApprovalRow(approval) ? 'Approve and mark paid?' : 'Approve this request?'}
               </p>
               <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
                 {approval.type} for {approval.customer} will be{' '}
-                {isReject ? 'marked rejected' : isMarkPaid ? 'marked paid and recorded in payments' : 'approved'}.
+                {isReject ? 'marked rejected' : isMarkPaid || isFinanceApprovalRow(approval) ? 'approved, marked paid, and recorded in finance' : 'approved'}.
               </p>
               <div className="mt-5 flex flex-wrap gap-2">
                 <Button
@@ -151,6 +194,7 @@ function ConfirmModal({ action, approval, busy, onClose, onConfirm }) {
 
 export default function ApprovalsPage() {
   const approvals = useApprovals()
+  const { settings: businessSettings } = useBusinessSettings()
   const [toast, setToast] = useState(null)
   const [details, setDetails] = useState(null)
   const [confirm, setConfirm] = useState({ action: null, approval: null })
@@ -217,24 +261,11 @@ export default function ApprovalsPage() {
                   type="button"
                   onClick={(event) => {
                     event.preventDefault()
-                    setConfirm({ action: 'approve', approval: row })
+                    setConfirm({ action: approvalActionForRow(row), approval: row })
                   }}
                 >
-                  Approve
+                  {approvalButtonLabel(row)}
                 </Button>
-                {isInvoiceRow(row) && !isPaidRow(row) ? (
-                  <Button
-                    variant="subtle"
-                    className="h-8 rounded-xl px-3 text-xs"
-                    type="button"
-                    onClick={(event) => {
-                      event.preventDefault()
-                      setConfirm({ action: 'mark_paid', approval: row })
-                    }}
-                  >
-                    Mark as Paid
-                  </Button>
-                ) : null}
                 <Button
                   variant="subtle"
                   className="h-8 rounded-xl border-rose-200 px-3 text-xs text-rose-700 hover:border-rose-300"
@@ -292,6 +323,18 @@ export default function ApprovalsPage() {
       window.setTimeout(() => setToast(null), 1800)
     } else {
       setToast({ tone: 'error', message: res?.error || 'Approval action failed' })
+      window.setTimeout(() => setToast(null), 2600)
+    }
+  }
+
+  async function printApprovalTransaction(transaction) {
+    const result = await printHtmlDocument({
+      html: buildAccountTransactionHtml(transaction, businessSettings, 'a4'),
+      settings: businessSettings,
+      paperSize: 'a4',
+    })
+    if (!result.ok) {
+      setToast({ tone: 'error', message: result.error || 'Unable to print transaction request' })
       window.setTimeout(() => setToast(null), 2600)
     }
   }
@@ -375,7 +418,7 @@ export default function ApprovalsPage() {
         </div>
       </Card>
 
-      <DetailsModal approval={details} onClose={() => setDetails(null)} />
+      <DetailsModal approval={details} onClose={() => setDetails(null)} onPrint={printApprovalTransaction} />
       <ConfirmModal
         action={confirm.action}
         approval={confirm.approval}

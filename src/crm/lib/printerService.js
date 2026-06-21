@@ -154,10 +154,10 @@ export function openBrowserPrintHtml(html, { width = 420, height = 720 } = {}) {
   return true
 }
 
-export async function printHtmlDocument({ html, settings, paperSize = 'a4', fallbackOptions } = {}) {
+export async function printHtmlDocument({ html, thermalText = '', settings, paperSize = 'a4', fallbackOptions } = {}) {
   const printer = normalizePrinterSettings(settings)
   if (paperSize === '58mm' && directPrinterAvailable(printer)) {
-    const direct = await printThermalText(htmlToPlainText(html), printer)
+    const direct = await printThermalText(thermalText || htmlToPlainText(html), printer)
     if (direct.ok) return direct
   }
   const opened = openBrowserPrintHtml(html, fallbackOptions || (paperSize === '58mm' ? { width: 280, height: 720 } : { width: 820, height: 900 }))

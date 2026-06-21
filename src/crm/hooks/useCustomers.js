@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { db } from '../lib/firebase.js'
-import { createUserDoc, fetchWorkspaceCollectionPage, listenToWorkspaceCollection } from '../lib/firestore.js'
+import { createUserDoc, fetchWorkspaceCollectionPage, listenToWorkspaceCollection, patchUserDoc, removeUserDoc } from '../lib/firestore.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 import { useUser } from './useUser.js'
 import { clientSafeMessage } from '../utils/messages.js'
@@ -281,6 +281,72 @@ export function useCustomers({ limitCount = DEFAULT_CUSTOMER_LIST_LIMIT, paginat
           return { ok: true }
         } catch (e) {
           return { ok: false, error: clientSafeMessage(e, 'Unable to create customer.') }
+        }
+      },
+      async updateCustomer(id, payload) {
+        if (!userId || !workspaceId) return { ok: false, error: 'Please login first' }
+        if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now' }
+        if (!id) return { ok: false, error: 'Customer not found' }
+        const name = String(payload.name || payload.studentName || '').trim()
+        const email = String(payload.email || payload.parentEmail || '').trim()
+        const phone = String(payload.phone || payload.parentPhone || '').trim()
+        const company = String(payload.company || [payload.className, payload.section].filter(Boolean).join(' - ')).trim()
+        const customerType = String(payload.customerType || 'General').trim()
+        const status = String(payload.status || 'Active').trim()
+        const notes = String(payload.notes || '').trim()
+        if (!name) return { ok: false, error: 'Name is required' }
+        if (!email) return { ok: false, error: 'Email is required' }
+        try {
+          const patch = {
+            ...payload,
+            name,
+            email,
+            phone,
+            company,
+            customerType: customerType || 'General',
+            status: status || 'Active',
+            notes,
+          }
+          await patchUserDoc(workspaceId, 'customers', id, patch, { businessType, diagnostics: { currentUserUid: userId, role } })
+          setRows((currentRows) => currentRows.map((customer) => (customer.id === id ? normalizeCustomer({ ...customer, ...patch }) : customer)))
+          await logActivity({
+            workspaceId,
+            userId,
+            businessType,
+            ...userActivityInfo(userDoc, firebaseUser),
+            action: 'Customer updated',
+            module: 'Customers',
+            description: `${name} was updated.`,
+            targetId: id,
+            targetName: name,
+            metadata: { email, company, customerType },
+          })
+          return { ok: true }
+        } catch (e) {
+          return { ok: false, error: clientSafeMessage(e, 'Unable to update customer.') }
+        }
+      },
+      async deleteCustomer(customer) {
+        if (!userId || !workspaceId) return { ok: false, error: 'Please login first' }
+        if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now' }
+        if (!customer?.id) return { ok: false, error: 'Customer not found' }
+        try {
+          await removeUserDoc(workspaceId, 'customers', customer.id, { diagnostics: { currentUserUid: userId, role } })
+          setRows((currentRows) => currentRows.filter((row) => row.id !== customer.id))
+          await logActivity({
+            workspaceId,
+            userId,
+            businessType,
+            ...userActivityInfo(userDoc, firebaseUser),
+            action: 'Customer deleted',
+            module: 'Customers',
+            description: `${customer.name || customer.studentName || 'Customer'} was removed.`,
+            targetId: customer.id,
+            targetName: customer.name || customer.studentName || customer.id,
+          })
+          return { ok: true }
+        } catch (e) {
+          return { ok: false, error: clientSafeMessage(e, 'Unable to delete customer.') }
         }
       },
     }),

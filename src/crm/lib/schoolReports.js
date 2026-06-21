@@ -14,6 +14,7 @@ import {
   invoiceValue,
   isApprovedExpense,
   isPaidRecord,
+  isRejectedRecord,
   paymentValue,
 } from './calculations.js'
 
@@ -77,6 +78,7 @@ function studentClass(record) {
 }
 
 function feeIsApproved(fee) {
+  if (isRejectedRecord(fee)) return false
   const approvalStatus = String(fee?.approvalStatus || '').toLowerCase()
   const status = String(fee?.status || getInvoiceStatus(fee) || '').toLowerCase()
   return APPROVED_INVOICE_STATES.has(approvalStatus) || APPROVED_INVOICE_STATES.has(status)
@@ -150,12 +152,18 @@ export function buildSchoolReport(reportKey, ctx) {
   const matchClass = (record) => classFilter === 'All' || studentClass(record) === classFilter
   const matchStudent = (record) =>
     studentFilter === 'All' || studentName(record) === studentFilter || record?.customerId === studentFilter || record?.studentId === studentFilter
-  const matchApprovedPayment = (payment) => (approvedOnly ? isPaidRecord(payment) || String(payment?.approvalStatus || '').toLowerCase() === 'approved' : true)
+  const matchApprovedPayment = (payment) => {
+    if (isRejectedRecord(payment)) return false
+    return approvedOnly ? isPaidRecord(payment) || String(payment?.approvalStatus || '').toLowerCase() === 'approved' : true
+  }
+  const activeFee = (fee) => !isRejectedRecord(fee)
+  const activeExpense = (expense) => !isRejectedRecord(expense)
 
   switch (reportKey) {
     case 'fee_collection': {
       const rows = fees
         .filter((fee) => inWindow(recordDate(fee, ['issueDate', 'invoiceDate', 'createdAt']), dateWindow))
+        .filter(activeFee)
         .filter((fee) => (approvedOnly ? feeIsApproved(fee) : true))
         .filter(matchClass)
         .filter(matchStudent)
@@ -184,6 +192,7 @@ export function buildSchoolReport(reportKey, ctx) {
     case 'pending_fee': {
       const rows = fees
         .filter((fee) => inWindow(recordDate(fee, ['issueDate', 'invoiceDate', 'createdAt']), dateWindow))
+        .filter(activeFee)
         .filter((fee) => (approvedOnly ? feeIsApproved(fee) : true))
         .filter(matchClass)
         .filter(matchStudent)
@@ -215,6 +224,7 @@ export function buildSchoolReport(reportKey, ctx) {
       const map = new Map()
       fees
         .filter((fee) => inWindow(recordDate(fee, ['issueDate', 'invoiceDate', 'createdAt']), dateWindow))
+        .filter(activeFee)
         .filter((fee) => (approvedOnly ? feeIsApproved(fee) : true))
         .filter(matchClass)
         .forEach((fee) => {
@@ -274,6 +284,7 @@ export function buildSchoolReport(reportKey, ctx) {
     case 'expense': {
       const rows = expenses
         .filter((e) => inWindow(recordDate(e, ['date', 'createdAt']), dateWindow))
+        .filter(activeExpense)
         .filter((e) => (approvedOnly ? isApprovedExpense(e) : true))
         .map((e) => ({
           date: dayKey(recordDate(e, ['date', 'createdAt'])),
@@ -322,6 +333,7 @@ export function buildSchoolReport(reportKey, ctx) {
         .reduce((s, p) => s + paymentValue(p), 0)
       const totalExpenses = expenses
         .filter((e) => inWindow(recordDate(e, ['date', 'createdAt']), dateWindow))
+        .filter(activeExpense)
         .filter((e) => (approvedOnly ? isApprovedExpense(e) : true))
         .reduce((s, e) => s + expenseValue(e), 0)
       const net = collected - totalExpenses

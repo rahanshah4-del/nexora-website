@@ -22,6 +22,7 @@ import EmptyState from '../components/system/EmptyState.jsx'
 import Input from '../components/ui/Input.jsx'
 import Select from '../components/ui/Select.jsx'
 import Toast from '../components/ui/Toast.jsx'
+import { confirmAction } from '../components/ui/dialogActions.js'
 import ProductModal from '../components/products/ProductModal.jsx'
 import { useInvoices } from '../hooks/useInvoices.js'
 import { useProducts } from '../hooks/useProducts.js'
@@ -223,7 +224,7 @@ export default function ProductsPage() {
   }
 
   async function handleDelete(product) {
-    const confirmed = window.confirm(`Delete ${product.name}?`)
+    const confirmed = await confirmAction({ title: 'Delete product?', message: `Delete ${product.name}? This cannot be undone.`, confirmLabel: 'Delete Product' })
     if (!confirmed) return
     const res = await productsApi.deleteProduct(product.id)
     showToast(res?.ok ? { tone: 'success', message: 'Product deleted' } : { tone: 'error', message: res?.error || 'Failed to delete product' })

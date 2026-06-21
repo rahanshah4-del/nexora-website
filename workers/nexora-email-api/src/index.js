@@ -1,4 +1,5 @@
 const RESEND_EMAIL_ENDPOINT = 'https://api.resend.com/emails'
+const RESEND_RECEIVING_ENDPOINT = `${RESEND_EMAIL_ENDPOINT}/receiving`
 const SENDER = 'Nexora Solutions <support@nexorasolution.online>'
 const SITE_URL = 'https://nexorasolution.online'
 const DEFAULT_LOGIN_URL = `${SITE_URL}/login`
@@ -662,6 +663,123 @@ function chunk(list, size) {
   return out
 }
 
+async function authorizeAdminRequest(request, env) {
+  if (!ALLOWED_ORIGINS.has(request.headers.get('Origin') || '')) {
+    return { error: jsonResponse(request, { success: false, error: 'Origin not allowed' }, 403) }
+  }
+
+  const projectId = getString(env.FIREBASE_PROJECT_ID) || DEFAULT_PROJECT_ID
+  const adminEmails = new Set(
+    (getString(env.ADMIN_EMAILS) ? env.ADMIN_EMAILS.split(',') : DEFAULT_ADMIN_EMAILS).map((value) =>
+      String(value).trim().toLowerCase(),
+    ),
+  )
+  const authHeader = request.headers.get('Authorization') || ''
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : ''
+
+  try {
+    const claims = await verifyFirebaseIdToken(token, projectId)
+    const email = String(claims.email || '').toLowerCase()
+    if (!claims.email_verified || !adminEmails.has(email)) {
+      return { error: jsonResponse(request, { success: false, error: 'Forbidden: admin access required' }, 403) }
+    }
+    return { claims }
+  } catch (error) {
+    return { error: jsonResponse(request, { success: false, error: `Unauthorized: ${error?.message || 'invalid token'}` }, 401) }
+  }
+}
+
+async function resendJson(url, env, options = {}) {
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      Authorization: `Bearer ${env.RESEND_API_KEY}`,
+      ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+      ...(options.headers || {}),
+    },
+  })
+  const data = await response.json().catch(() => null)
+  if (!response.ok) {
+    const error = new Error(getErrorMessage(data) || `Resend request failed (${response.status})`)
+    error.status = response.status
+    throw error
+  }
+  return data
+}
+
+function extractEmailAddress(value) {
+  const text = getString(value)
+  const bracketed = text.match(/<([^<>\s]+@[^<>\s]+)>/)
+  if (bracketed?.[1]) return bracketed[1].toLowerCase()
+  const plain = text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)
+  return plain?.[0]?.toLowerCase() || ''
+}
+
+async function handleInboxRequest(request, env, url) {
+  if (!env.RESEND_API_KEY) return jsonResponse(request, { success: false, error: 'RESEND_API_KEY missing' }, 500)
+  const authorization = await authorizeAdminRequest(request, env)
+  if (authorization.error) return authorization.error
+
+  const path = url.pathname.replace(/^\/inbox\/?/, '')
+  const parts = path.split('/').filter(Boolean)
+
+  try {
+    if (request.method === 'GET' && parts.length === 0) {
+      const data = await resendJson(RESEND_RECEIVING_ENDPOINT, env)
+      return jsonResponse(request, { success: true, emails: data?.data || [], hasMore: Boolean(data?.has_more) })
+    }
+
+    const emailId = getString(parts[0])
+    if (!emailId) return jsonResponse(request, { success: false, error: 'Email ID is required' }, 400)
+    const emailUrl = `${RESEND_RECEIVING_ENDPOINT}/${encodeURIComponent(emailId)}`
+
+    if (request.method === 'GET' && parts.length === 1) {
+      const [email, attachmentData] = await Promise.all([
+        resendJson(emailUrl, env),
+        resendJson(`${emailUrl}/attachments`, env).catch(() => ({ data: [] })),
+      ])
+      return jsonResponse(request, { success: true, email: { ...email, attachments: attachmentData?.data || email?.attachments || [] } })
+    }
+
+    if (request.method === 'POST' && parts[1] === 'reply') {
+      const body = await request.json().catch(() => null)
+      const replyText = getString(body?.text)
+      if (!replyText) return jsonResponse(request, { success: false, error: 'Reply message is required' }, 400)
+
+      const original = await resendJson(emailUrl, env)
+      const recipient = extractEmailAddress(original?.reply_to?.[0] || original?.from)
+      if (!recipient) return jsonResponse(request, { success: false, error: 'Could not determine the reply address' }, 400)
+
+      const originalSubject = getString(original?.subject) || 'Support request'
+      const subject = /^re:/i.test(originalSubject) ? originalSubject : `Re: ${originalSubject}`
+      const messageId = getString(original?.message_id)
+      const previousReferences = getString(original?.headers?.references)
+      const headers = messageId
+        ? {
+            'In-Reply-To': messageId,
+            References: [previousReferences, messageId].filter(Boolean).join(' '),
+          }
+        : undefined
+      const html = `<div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.65;color:#111827">${escapeHtml(replyText).replaceAll('\n', '<br>')}</div>`
+      const response = await fetchResendWithTimeout({
+        from: marketingFrom(env),
+        to: recipient,
+        subject,
+        html,
+        text: replyText,
+        headers,
+      }, env.RESEND_API_KEY)
+      const result = await response.json().catch(() => null)
+      if (!response.ok) return jsonResponse(request, { success: false, error: getErrorMessage(result) }, response.status)
+      return jsonResponse(request, { success: true, id: result?.id, recipient })
+    }
+
+    return jsonResponse(request, { success: false, error: 'Inbox endpoint not found' }, 404)
+  } catch (error) {
+    return jsonResponse(request, { success: false, error: error?.message || 'Inbox request failed' }, error?.status || 502)
+  }
+}
+
 // Send a marketing campaign in batches; returns per-recipient results.
 async function sendMarketingCampaign(request, env) {
   const projectId = getString(env.FIREBASE_PROJECT_ID) || DEFAULT_PROJECT_ID
@@ -751,7 +869,7 @@ export default {
     try {
       const url = new URL(request.url)
 
-      if (request.method === 'OPTIONS' && (url.pathname === '/send-email' || url.pathname === '/send-marketing')) {
+      if (request.method === 'OPTIONS' && (url.pathname === '/send-email' || url.pathname === '/send-marketing' || url.pathname.startsWith('/inbox'))) {
         return new Response(null, {
           status: 204,
           headers: corsHeaders(request),
@@ -760,6 +878,10 @@ export default {
 
       if (request.method === 'POST' && url.pathname === '/send-marketing') {
         return sendMarketingCampaign(request, env)
+      }
+
+      if (url.pathname === '/inbox' || url.pathname.startsWith('/inbox/')) {
+        return handleInboxRequest(request, env, url)
       }
 
       if (request.method === 'GET' && url.pathname === '/health') {

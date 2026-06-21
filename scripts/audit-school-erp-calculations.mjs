@@ -112,6 +112,7 @@ const dashboard = calculateSchoolDashboardStats({
 assert.equal(dashboard.activeStudents, 2, 'active students')
 assert.equal(dashboard.totalFeeBills, 3, 'total fee bills')
 assert.equal(dashboard.paidFeeBills, 1, 'paid fee bills')
+assert.equal(dashboard.collectedFeeRecords, 2, 'collected fee records')
 assert.equal(dashboard.pendingFeeBills, 2, 'dashboard pending fee bills include all outstanding records')
 closeTo(dashboard.collected, 15000, 'collected fees')
 closeTo(dashboard.pending, 10000, 'dashboard pending fees include all outstanding records')
@@ -124,6 +125,79 @@ assert.equal(dashboard.attendance.present, 2, 'present attendance')
 assert.equal(dashboard.attendance.absent, 1, 'absent attendance')
 assert.equal(dashboard.attendance.late, 1, 'late attendance')
 closeTo(dashboard.attendance.presentRate, 50, 'present rate')
+
+const rejectedDashboard = calculateSchoolDashboardStats({
+  invoices: [{
+    id: 'fee-rejected',
+    invoiceNumber: 'FEE-REJECTED',
+    total: 6000,
+    amountPaid: 6000,
+    status: 'paid',
+    paymentStatus: 'paid',
+    approvalStatus: 'rejected',
+  }],
+  payments: [{
+    id: 'payment-rejected',
+    invoiceId: 'fee-rejected',
+    amount: 6000,
+    status: 'paid',
+    paymentStatus: 'paid',
+    approvalStatus: 'rejected',
+  }, {
+    id: 'payment-approved-sibling',
+    invoiceId: 'fee-rejected',
+    amount: 6000,
+    status: 'paid',
+    paymentStatus: 'paid',
+    approvalStatus: 'approved',
+  }],
+  transactions: [{
+    id: 'income-stale',
+    invoiceId: 'fee-rejected',
+    relatedId: 'fee-rejected',
+    type: 'income',
+    amount: 6000,
+    status: 'approved',
+    approvalStatus: 'approved',
+  }],
+})
+closeTo(rejectedDashboard.collected, 0, 'rejected approval excluded from collected revenue')
+closeTo(rejectedDashboard.rejected, 6000, 'rejected approval amount')
+closeTo(rejectedDashboard.billed, 0, 'rejected approval excluded from active billed total')
+closeTo(rejectedDashboard.pending, 0, 'rejected approval excluded from pending fees')
+closeTo(rejectedDashboard.netIncome, 0, 'rejected approval excluded from net income')
+assert.equal(rejectedDashboard.rejectedFeeBills, 1, 'rejected fee bill count')
+assert.equal(rejectedDashboard.collectedFeeRecords, 0, 'rejected fee bill excluded from collected record count')
+
+const rejectedReportContext = {
+  ...ctx,
+  approvedOnly: false,
+  fees: [{
+    id: 'fee-rejected',
+    invoiceNumber: 'FEE-REJECTED',
+    customerName: 'Rejected Student',
+    total: 76200,
+    amountPaid: 76200,
+    status: 'paid',
+    paymentStatus: 'paid',
+    approvalStatus: 'rejected',
+    createdAt: '2026-06-08T10:00:00.000Z',
+  }],
+  payments: [{
+    id: 'payment-rejected',
+    invoiceId: 'fee-rejected',
+    amount: 76200,
+    status: 'paid',
+    paymentStatus: 'paid',
+    approvalStatus: 'rejected',
+    paidAt: '2026-06-08T12:00:00.000Z',
+  }],
+}
+const rejectedFeeCollection = buildSchoolReport('fee_collection', rejectedReportContext)
+assert.equal(rejectedFeeCollection.sourceCount, 0, 'rejected fee excluded from all-records fee collection')
+closeTo(rejectedFeeCollection.calculatedTotal, 0, 'rejected fee excluded from all-records fee total')
+const rejectedDailyCollection = buildSchoolReport('daily_collection', rejectedReportContext)
+assert.equal(rejectedDailyCollection.sourceCount, 0, 'rejected payment excluded from collection reports')
 
 const feeCollection = buildSchoolReport('fee_collection', ctx)
 assert.equal(feeCollection.sourceCount, 2, 'fee collection rows')

@@ -15,7 +15,6 @@ import { useUser } from './useUser.js'
 import { clientSafeMessage } from '../utils/messages.js'
 import { amountValue, calculateBalanceDue, invoiceValue, statusValue, toNumber } from '../lib/calculations.js'
 import { canApproveFinance } from '../lib/financeAccess.js'
-import { isPlatformAdminDoc } from '../../lib/roles.js'
 import { normalizeBusinessType } from '../data/moduleAccess.js'
 import { buildApprovedSubscriptionPayload } from '../../lib/subscriptionApproval.js'
 
@@ -46,10 +45,25 @@ function isClosedStatus(status) {
   return ['paid', 'rejected', 'cancelled', 'canceled'].includes(statusValue(status, ''))
 }
 
+function approvalStatusValues(approval = {}) {
+  const row = approval.row || approval || {}
+  return [
+    row.approvalStatus,
+    row.paymentStatus,
+    row.status,
+    approval.approvalStatus,
+    approval.paymentStatus,
+    approval.status,
+  ].map((value) => statusValue(value, '')).filter(Boolean)
+}
+
+function hasAnyStatus(approval, statuses = []) {
+  const statusSet = new Set(statuses)
+  return approvalStatusValues(approval).some((status) => statusSet.has(status))
+}
+
 function isReviewableApproval(approval = {}) {
-  const row = approval.row || {}
-  const status = statusValue(row.approvalStatus || row.paymentStatus || row.status || approval.status, 'pending')
-  return !['approved', 'paid', 'rejected', 'cancelled', 'canceled', 'active'].includes(status)
+  return !hasAnyStatus(approval, ['approved', 'paid', 'rejected', 'cancelled', 'canceled', 'active'])
 }
 
 function belongsToBusiness(row, businessType) {
@@ -440,16 +454,12 @@ export function useApprovals() {
   const pendingApprovals = useMemo(() => approvals.filter(isReviewableApproval), [approvals])
   const approvedApprovals = useMemo(
     () =>
-      approvals.filter((approval) =>
-        ['approved', 'paid', 'active'].includes(statusValue(approval.row?.approvalStatus || approval.row?.paymentStatus || approval.row?.status || approval.status, '')),
-      ),
+      approvals.filter((approval) => hasAnyStatus(approval, ['approved', 'paid', 'active'])),
     [approvals],
   )
   const rejectedApprovals = useMemo(
     () =>
-      approvals.filter((approval) =>
-        ['rejected', 'cancelled', 'canceled'].includes(statusValue(approval.row?.approvalStatus || approval.row?.paymentStatus || approval.row?.status || approval.status, '')),
-      ),
+      approvals.filter((approval) => hasAnyStatus(approval, ['rejected', 'cancelled', 'canceled'])),
     [approvals],
   )
 
@@ -513,10 +523,14 @@ export function useApprovals() {
           batch.update(paymentRef, {
             status: 'paid',
             paymentStatus: 'paid',
+            approvalStatus: 'approved',
             businessType,
             approvedBy: userId,
             approvedAt: now,
             paidAt: now,
+            amountPaid: walletAmount,
+            appliedAmount: walletAmount,
+            requiresApproval: false,
             updatedAt: now,
           })
 
@@ -526,21 +540,38 @@ export function useApprovals() {
             if (invoiceSnap.exists()) {
               const invoiceData = { id: approval.invoiceId, ...invoiceSnap.data() }
               const invoiceAmount = invoiceValue(invoiceData) || amountValue(row)
-              walletAmount = invoiceAmount
-              const stockAdjusted = await addInventoryAdjustments(batch, workspaceId, invoiceData, now, businessType)
+              const currentPaid = amountPaidValue(invoiceData)
+              const remainingDue = balanceDueValue(invoiceData, invoiceAmount)
+              walletAmount = Math.min(walletAmount, remainingDue > 0 ? remainingDue : invoiceAmount)
+              const nextPaid = Math.min(invoiceAmount, currentPaid + walletAmount)
+              const nextBalance = calculateBalanceDue(invoiceAmount, nextPaid)
+              const fullyPaid = nextBalance <= 0.005
+              const stockAdjusted = fullyPaid ? await addInventoryAdjustments(batch, workspaceId, invoiceData, now, businessType) : false
               batch.update(invoiceRef, {
-                status: 'paid',
-                paymentStatus: 'paid',
+                status: fullyPaid ? 'paid' : 'partial_paid',
+                paymentStatus: fullyPaid ? 'paid' : 'partial_paid',
                 approvalStatus: 'approved',
                 businessType,
-                requiresApproval: false,
+                requiresApproval: !fullyPaid,
                 approvedBy: userId,
                 approvedAt: now,
-                paidAt: now,
-                amountPaid: invoiceAmount,
-                balanceDue: 0,
+                paidAt: fullyPaid ? now : invoiceData.paidAt || null,
+                amountPaid: nextPaid,
+                partialPaidAmount: nextPaid,
+                balanceDue: nextBalance,
+                lastPaymentAt: now,
+                lastPaymentDate: now,
+                paymentHistory: arrayUnion({
+                  amount: walletAmount,
+                  appliedAmount: walletAmount,
+                  paymentMethod: row.paymentMethod || 'Approval Center',
+                  status: fullyPaid ? 'paid' : 'partial_paid',
+                  approvalPaymentId: approval.sourceId,
+                  approvedBy: userId,
+                  approvedAt: new Date().toISOString(),
+                }),
                 updatedAt: now,
-                ...(stockAdjusted ? { inventoryAdjustedAt: now } : {}),
+                ...(fullyPaid && stockAdjusted ? { inventoryAdjustedAt: now } : {}),
               })
             }
           }
@@ -549,7 +580,9 @@ export function useApprovals() {
           batch.set(transactionRef, {
             transactionId,
             type: 'income',
-            source: 'invoice',
+            source: row.source || 'invoice',
+            sourceModule: 'invoice',
+            seedBatchId: row.seedBatchId || '',
             amount: walletAmount,
             currency: row.currency || approval.currency || 'PKR',
             method: row.paymentMethod || 'Manual Approval',
@@ -642,10 +675,13 @@ export function useApprovals() {
         if (approval.sourceCollection === 'expenses') {
           batch.update(doc(db, workspaceCollectionPath(workspaceId, 'expenses'), approval.sourceId), {
             approvalStatus: 'approved',
-            status: 'approved',
+            status: 'paid',
+            paymentStatus: 'paid',
             businessType,
+            requiresApproval: false,
             approvedBy: userId,
             approvedAt: now,
+            paidAt: now,
             updatedAt: now,
           })
         }
@@ -654,7 +690,7 @@ export function useApprovals() {
           if (isClosedStatus(row.approvalStatus || row.status)) return { ok: false, error: 'This transaction has already been reviewed.' }
           batch.update(doc(db, workspaceCollectionPath(workspaceId, 'accountTransactions'), approval.sourceId), {
             approvalStatus: 'approved',
-            status: 'approved',
+            status: 'paid',
             businessType,
             requiresApproval: false,
             approvedBy: userId,
@@ -789,6 +825,9 @@ export function useApprovals() {
           customerName: row.customerName || approval.customer,
           customerEmail: row.customerEmail || '',
           clientId: row.clientId || '',
+          source: row.source || 'invoice',
+          sourceModule: 'invoice',
+          seedBatchId: row.seedBatchId || '',
           amount: invoiceTotal,
           amountPaid: invoiceTotal,
           amountUsd: invoiceTotal,
@@ -813,7 +852,9 @@ export function useApprovals() {
         batch.set(transactionRef, {
           transactionId,
           type: 'income',
-          source: 'invoice',
+          source: row.source || 'invoice',
+          sourceModule: 'invoice',
+          seedBatchId: row.seedBatchId || '',
           amount: invoiceTotal,
           currency: row.currency || 'PKR',
           method: 'Approval Center',
@@ -925,7 +966,9 @@ export function useApprovals() {
           batch.update(doc(db, workspaceCollectionPath(workspaceId, 'payments'), approval.sourceId), {
             status: 'rejected',
             paymentStatus: 'rejected',
+            approvalStatus: 'rejected',
             businessType,
+            requiresApproval: false,
             rejectedBy: userId,
             rejectedAt: now,
             updatedAt: now,

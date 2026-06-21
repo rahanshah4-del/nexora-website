@@ -347,6 +347,7 @@ function GenericReports() {
     const invoices = filtered(reports.data.invoices)
     const payments = filtered(reports.data.payments)
     const expenses = filtered(reports.data.expenses)
+    const transactions = filtered(reports.data.accountTransactions)
     const customers = filtered(reports.data.customers)
     const leads = filtered(reports.data.leads)
     const deals = filtered(reports.data.pipelines)
@@ -364,9 +365,9 @@ function GenericReports() {
     const hotLeads = leads.filter((lead) => safeNumber(lead.score) >= 80 || String(lead.scoreType || '').toLowerCase().includes('hot'))
     const openTickets = tickets.filter((ticket) => String(ticket.status || '').toLowerCase() === 'open')
     const completedTasks = tasks.filter((task) => String(task.status || '').toLowerCase() === 'completed')
-    const totalRevenueUsd = calculateRevenue({ invoices, payments })
+    const totalRevenueUsd = calculateRevenue({ invoices, payments, transactions })
     const paymentRevenueUsd = paidPayments.reduce((sum, payment) => sum + paymentValue(payment), 0)
-    const expensesUsd = calculateApprovedExpenses(expenses)
+    const expensesUsd = calculateApprovedExpenses(expenses, transactions)
     const profitUsd = calculateProfit({ revenue: totalRevenueUsd, expenses: expensesUsd })
     const pipelineUsd = deals.reduce((sum, deal) => sum + dealValue(deal), 0)
     const customerSpendUsd = customers.reduce((sum, customer) => sum + safeNumber(customer.spendUsd ?? customer.spend ?? customer.totalSpendUsd), 0)
@@ -375,6 +376,7 @@ function GenericReports() {
       invoices,
       payments,
       expenses,
+      transactions,
       customers,
       leads,
       deals,
@@ -546,7 +548,7 @@ function GenericReports() {
       transition={{ duration: 0.25 }}
     >
       {notice ? (
-        <div className="no-print fixed right-4 top-4 z-[70] max-w-[calc(100vw-2rem)] rounded-2xl border border-sky-200 bg-white px-4 py-3 text-sm font-semibold text-sky-800 shadow-sm">
+        <div className="no-print fixed left-1/2 top-1/2 z-[110] max-w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-sky-200 bg-white px-4 py-3 text-sm font-semibold text-sky-800 shadow-xl">
           {notice}
         </div>
       ) : null}
@@ -1490,7 +1492,7 @@ function TransportReports() {
   return (
     <motion.div className="min-w-0 space-y-5" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
       {notice ? (
-        <div className="no-print fixed right-4 top-4 z-[70] rounded-2xl border border-cyan-200 bg-white px-4 py-3 text-sm font-semibold text-cyan-800 shadow-sm">
+        <div className="no-print fixed left-1/2 top-1/2 z-[110] max-w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-cyan-200 bg-white px-4 py-3 text-sm font-semibold text-cyan-800 shadow-xl">
           {notice}
         </div>
       ) : null}
