@@ -28,6 +28,7 @@ export function loadRestaurantCustomers() {
 export function saveRestaurantCustomers(customers) {
   if (typeof window === 'undefined') return
   window.localStorage.setItem(restaurantCustomersStorageKey, JSON.stringify(customers))
+  notifyLocalDataChanged(restaurantCustomersStorageKey)
 }
 
 export function applyRestaurantCustomerPayment(customers, customerId, payment) {
@@ -56,3 +57,4 @@ export function applyRestaurantCustomerPayment(customers, customerId, payment) {
     }
   })
 }
+import { notifyLocalDataChanged } from '../lib/localDataEvents.js'

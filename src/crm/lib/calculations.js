@@ -227,6 +227,30 @@ function isCovered(record, keys) {
   return recordKeys(record).some((key) => keys.has(key))
 }
 
+function linkedRecordLookup(records = []) {
+  const lookup = new Map()
+  records.forEach((record) => recordKeys(record).forEach((key) => lookup.set(key, record)))
+  return lookup
+}
+
+function sumLinkedAmountsWithCap(rows = [], sourceRecords = [], rowAmount, sourceAmount) {
+  const lookup = linkedRecordLookup(sourceRecords)
+  const appliedBySource = new Map()
+  return rows.reduce((sum, row) => {
+    const sourceKey = recordKeys(row).find((key) => lookup.has(key))
+    const amount = Math.max(toNumber(rowAmount(row), 0), 0)
+    if (!sourceKey) return sum + amount
+    const source = lookup.get(sourceKey)
+    const canonicalKey = recordKeys(source)[0] || sourceKey
+    const limit = Math.max(toNumber(sourceAmount(source), 0), 0)
+    if (!limit) return sum + amount
+    const alreadyApplied = appliedBySource.get(canonicalKey) || 0
+    const applied = Math.min(amount, Math.max(0, limit - alreadyApplied))
+    appliedBySource.set(canonicalKey, alreadyApplied + applied)
+    return sum + applied
+  }, 0)
+}
+
 export function pipelineItemValue(item = {}) {
   return Math.max(
     toNumber(
@@ -273,14 +297,14 @@ export function calculateRevenueBreakdown({ invoices = [], payments = [], transa
   const incomeTransactions = approvedTransactionsByType(transactions, incomeTransactionTypes)
     .filter((transaction) => !isCovered(transaction, rejectedSourceKeys))
   const incomeCoveredKeys = coveredKeys(incomeTransactions)
-  const transactionRevenue = incomeTransactions.reduce((sum, transaction) => sum + transactionAmount(transaction), 0)
+  const transactionRevenue = sumLinkedAmountsWithCap(incomeTransactions, invoices, transactionAmount, invoiceValue)
 
   const paidPayments = payments
     .filter(isPaidRecord)
     .filter((payment) => !isCovered(payment, rejectedSourceKeys))
     .filter((payment) => !isCovered(payment, incomeCoveredKeys))
   const paymentInvoiceIds = new Set(paidPayments.flatMap(recordKeys))
-  const paymentRevenue = paidPayments.reduce((sum, payment) => sum + paymentValue(payment), 0)
+  const paymentRevenue = sumLinkedAmountsWithCap(paidPayments, invoices, paymentValue, invoiceValue)
   const invoiceRevenue = invoices
     .filter((invoice) => revenueInvoiceStatuses.has(getInvoiceStatus(invoice)))
     .filter((invoice) => !isCovered(invoice, incomeCoveredKeys))
@@ -328,7 +352,7 @@ export function calculateRevenue({ invoices = [], payments = [], transactions = 
 export function calculateExpenseBreakdown({ expenses = [], transactions = [] } = {}) {
   const expenseTransactions = approvedTransactionsByType(transactions, expenseTransactionTypes)
   const expenseCoveredKeys = coveredKeys(expenseTransactions)
-  const transactionExpenses = expenseTransactions.reduce((sum, transaction) => sum + transactionAmount(transaction), 0)
+  const transactionExpenses = sumLinkedAmountsWithCap(expenseTransactions, expenses, transactionAmount, expenseValue)
   const approvedExpenses = expenses
     .filter(isApprovedExpense)
     .filter((expense) => !isCovered(expense, expenseCoveredKeys))

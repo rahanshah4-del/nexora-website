@@ -7,6 +7,7 @@ import { useUser } from './useUser.js'
 import { clientSafeMessage } from '../utils/messages.js'
 import { useWorkspaceAccess } from './useWorkspaceAccess.js'
 import { isDraftInvoice, resolveInvoicePermissions } from '../lib/invoiceAccess.js'
+import { hasOpenInvoicePayment, pendingInvoicePaymentId } from '../lib/approvalQueue.js'
 import { normalizeBusinessType } from '../data/moduleAccess.js'
 import {
   calculateBalanceDue,
@@ -672,6 +673,9 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT } = {}) {
         const invoice = invoices.find((item) => item.id === id)
         if (!invoice) return { ok: false, error: 'Invoice not found' }
         if (getInvoiceStatus(invoice) === 'paid') return { ok: false, error: 'This invoice is already paid.' }
+        if (requiresSchoolFeeApproval(businessType) && hasOpenInvoicePayment(id, payments)) {
+          return { ok: false, error: 'A payment for this invoice is already waiting in Approval Center.' }
+        }
         const total = invoiceTotalAmount(invoice)
         const currentPaid = invoicePaidAmount(invoice)
         const remainingBalance = invoiceRemainingBalance(invoice)
@@ -703,7 +707,7 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT } = {}) {
           const invoiceRef = doc(db, workspaceCollectionPath(workspaceId, 'invoices'), id)
           if (requiresSchoolFeeApproval(businessType)) {
             const approvalMeta = approvalMetaForBusiness(businessType)
-            const paymentRef = doc(collection(db, workspaceCollectionPath(workspaceId, 'payments')))
+            const paymentRef = doc(db, workspaceCollectionPath(workspaceId, 'payments'), pendingInvoicePaymentId(id, currentPaid))
             const pendingPayment = {
               id: paymentRef.id,
               invoiceId: id,
@@ -1000,6 +1004,9 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT } = {}) {
         const invoice = invoices.find((item) => item.id === id)
         if (!invoice) return { ok: false, error: 'Invoice not found' }
         if (getInvoiceStatus(invoice) === 'paid') return { ok: false, error: 'This invoice is already paid.' }
+        if (requiresSchoolFeeApproval(businessType) && hasOpenInvoicePayment(id, payments)) {
+          return { ok: false, error: 'A payment for this invoice is already waiting in Approval Center.' }
+        }
         const amount = Number(options.amount || 0)
         if (!Number.isFinite(amount) || amount <= 0) return { ok: false, error: 'Enter a valid partial payment amount' }
         const currentPaid = invoicePaidAmount(invoice)
@@ -1030,7 +1037,7 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT } = {}) {
           const invoiceRef = doc(db, workspaceCollectionPath(workspaceId, 'invoices'), id)
           if (requiresSchoolFeeApproval(businessType)) {
             const approvalMeta = approvalMetaForBusiness(businessType)
-            const paymentRef = doc(collection(db, workspaceCollectionPath(workspaceId, 'payments')))
+            const paymentRef = doc(db, workspaceCollectionPath(workspaceId, 'payments'), pendingInvoicePaymentId(id, currentPaid))
             const pendingPayment = {
               id: paymentRef.id,
               invoiceId: id,

@@ -16,6 +16,7 @@ import {
 } from '../lib/platformPlans.js'
 import { trackAnalyticsEvent } from '../lib/analyticsTracking.js'
 import { sendWorkerEmail, upgradeRequestReceivedEmail } from '../lib/transactionalEmail.js'
+import { evaluatePromoCode, normalizePromoCode, PROMO_CODE_COLLECTION } from '../lib/promoCodes.js'
 import { labelForBusinessType } from '../crm/data/moduleAccess.js'
 
 const PAYMENTS_WORKER_URL = String(
@@ -197,6 +198,10 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
   const [cryptoCheckoutStarted, setCryptoCheckoutStarted] = useState(false)
   const [submitError, setSubmitError] = useState('')
   const [submitted, setSubmitted] = useState(false)
+  const [promoInput, setPromoInput] = useState('')
+  const [appliedPromo, setAppliedPromo] = useState(null)
+  const [promoResult, setPromoResult] = useState(null)
+  const [promoLoading, setPromoLoading] = useState(false)
 
   useEffect(() => {
     if (!auth) return undefined
@@ -278,6 +283,9 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
   const businessTypeLabel = businessType ? labelForBusinessType(businessType) : ''
   const currency = selectedPlan?.currency || platformSettings.defaultCurrency || DEFAULT_SAAS_CURRENCY
   const selectedAmount = billingCycle === 'yearly' ? selectedPlan?.yearlyPrice : selectedPlan?.monthlyPrice
+  const originalAmount = positiveAmount(selectedAmount)
+  const discountAmount = promoResult?.valid ? promoResult.discountAmount : 0
+  const finalAmount = promoResult?.valid ? promoResult.finalAmount : originalAmount
   const requestedPlan = selectedPlan?.name || ''
   const previewUrl = useMemo(() => (proofFile ? URL.createObjectURL(proofFile) : ''), [proofFile])
   const paidAmount = positiveAmount(form.amountPaid)
@@ -291,10 +299,61 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
   useEffect(() => {
     setForm((current) => ({
       ...current,
-      amountPaid: String(selectedAmount || '').toLowerCase() === 'custom' ? current.amountPaid : String(selectedAmount || ''),
+      amountPaid: String(selectedAmount || '').toLowerCase() === 'custom' ? current.amountPaid : String(finalAmount || ''),
       senderName: current.senderName || user?.displayName || userDoc?.ownerName || '',
     }))
-  }, [selectedAmount, user?.displayName, userDoc?.ownerName])
+  }, [finalAmount, selectedAmount, user?.displayName, userDoc?.ownerName])
+
+  function clearAppliedPromo() {
+    setAppliedPromo(null)
+    setPromoResult(null)
+  }
+
+  function selectPlan(planId) {
+    clearAppliedPromo()
+    setSelectedPlanId(planId)
+  }
+
+  function selectBillingCycle(cycle) {
+    clearAppliedPromo()
+    setBillingCycle(cycle)
+  }
+
+  async function applyPromoCode() {
+    const code = normalizePromoCode(promoInput)
+    setPromoInput(code)
+    setPromoResult(null)
+    if (!code) {
+      setPromoResult({ valid: false, error: 'Enter a promo code first.' })
+      return
+    }
+    if (!db || !user?.uid) {
+      setPromoResult({ valid: false, error: 'Sign in before applying a promo code.' })
+      return
+    }
+    setPromoLoading(true)
+    try {
+      const snap = await getDoc(doc(db, PROMO_CODE_COLLECTION, code))
+      if (!snap.exists()) throw new Error('Promo code was not found or is no longer available.')
+      const promo = { id: snap.id, ...snap.data() }
+      const result = evaluatePromoCode(promo, {
+        planId: selectedPlan?.id,
+        billingCycle,
+        amount: selectedAmount,
+      })
+      if (!result.valid) throw new Error(result.error)
+      setAppliedPromo(promo)
+      setPromoResult(result)
+    } catch (error) {
+      setAppliedPromo(null)
+      const message = error?.message?.startsWith('This promo') || error?.message?.startsWith('Minimum order')
+        ? error.message
+        : 'Promo code was not found or is no longer available.'
+      setPromoResult({ valid: false, error: message })
+    } finally {
+      setPromoLoading(false)
+    }
+  }
 
   function upgradeRequestContext() {
     return {
@@ -358,7 +417,7 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
           Authorization: `Bearer ${idToken}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ planId: selectedPlan.id, billingCycle }),
+        body: JSON.stringify({ planId: selectedPlan.id, billingCycle, promoCode: promoResult?.valid ? promoResult.promoCode : '' }),
       })
       const result = await response.json().catch(() => ({}))
       if (!response.ok || !result.ok) throw new Error(result.error || 'Unable to create crypto checkout.')
@@ -416,6 +475,13 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
         requestedPlan,
         selectedPlan: requestedPlan,
         billingCycle,
+        originalAmount,
+        discountAmount,
+        finalAmount: paidAmount,
+        promoCode: promoResult?.valid ? promoResult.promoCode : '',
+        promoCodeId: promoResult?.valid ? promoResult.promoCodeId : '',
+        promoDiscountType: promoResult?.valid ? promoResult.discountType : '',
+        promoDiscountValue: promoResult?.valid ? promoResult.discountValue : 0,
         amount: paidAmount,
         amountPaid: paidAmount,
         currency,
@@ -524,7 +590,7 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
                 </div>
                 <div className="inline-flex rounded-2xl bg-slate-100 p-1">
                   {['monthly', 'yearly'].map((cycle) => (
-                    <button key={cycle} type="button" onClick={() => setBillingCycle(cycle)} className={`rounded-xl px-4 py-2 text-xs font-black capitalize ${billingCycle === cycle ? 'bg-white text-violet-700 shadow-sm' : 'text-slate-500'}`}>
+                    <button key={cycle} type="button" onClick={() => selectBillingCycle(cycle)} className={`rounded-xl px-4 py-2 text-xs font-black capitalize ${billingCycle === cycle ? 'bg-white text-violet-700 shadow-sm' : 'text-slate-500'}`}>
                       {cycle}
                     </button>
                   ))}
@@ -532,7 +598,7 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
               </div>
               <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {platformPlans.map((plan) => (
-                  <PlanCard key={plan.id} plan={plan} selected={selectedPlan?.id === plan.id} active={String(currentPlan).toLowerCase() === String(plan.name).toLowerCase()} onSelect={setSelectedPlanId} />
+                  <PlanCard key={plan.id} plan={plan} selected={selectedPlan?.id === plan.id} active={String(currentPlan).toLowerCase() === String(plan.name).toLowerCase()} onSelect={selectPlan} />
                 ))}
               </div>
             </Panel>
@@ -615,7 +681,7 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
                 </label>
                 <label className="text-xs font-black text-slate-600">
                   Amount Paid <span className="font-semibold text-rose-500">(required)</span>
-                  <input className="mt-1 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold" value={form.amountPaid} onChange={(event) => setForm((current) => ({ ...current, amountPaid: event.target.value }))} inputMode="decimal" placeholder={money(selectedAmount, currency)} />
+                  <input className="mt-1 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold disabled:bg-slate-100 disabled:text-slate-500" value={form.amountPaid} onChange={(event) => setForm((current) => ({ ...current, amountPaid: event.target.value }))} inputMode="decimal" placeholder={money(selectedAmount, currency)} disabled={promoResult?.valid === true} />
                 </label>
                 <label className="text-xs font-black text-slate-600">
                   Payment Date <span className="font-semibold text-slate-400">(optional)</span>
@@ -651,10 +717,36 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
               <h2 className="mt-2 text-2xl font-black">{selectedPlan?.name}</h2>
               <div className="mt-4 space-y-3 text-sm font-bold text-slate-600">
                 <div className="flex justify-between gap-4"><span>Billing</span><span className="text-slate-950 capitalize">{billingCycle}</span></div>
-                <div className="flex justify-between gap-4"><span>Amount</span><span className="text-slate-950">{money(selectedAmount, currency)}</span></div>
+                <div className="flex justify-between gap-4"><span>Original amount</span><span className={discountAmount ? 'text-slate-400 line-through' : 'text-slate-950'}>{money(selectedAmount, currency)}</span></div>
+                {discountAmount ? <div className="flex justify-between gap-4 text-emerald-700"><span>Promo discount</span><span>-{money(discountAmount, currency)}</span></div> : null}
+                <div className="flex justify-between gap-4 border-t border-slate-100 pt-3"><span>Total</span><span className="text-base text-slate-950">{money(finalAmount || selectedAmount, currency)}</span></div>
                 <div className="flex justify-between gap-4"><span>Verification</span><span className="text-right text-slate-950">{isAutomaticCrypto ? 'Automatic' : hasPaymentEvidence ? 'Evidence added' : 'Evidence required'}</span></div>
                 <div className="flex justify-between gap-4"><span>Currency</span><span className="text-slate-950">{currency}</span></div>
                 <div className="flex justify-between gap-4"><span>Payment</span><span className="text-slate-950">{selectedMethod?.label}</span></div>
+              </div>
+              <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                <label className="text-xs font-black uppercase tracking-[0.12em] text-slate-500" htmlFor="billing-promo-code">Promo code</label>
+                <div className="mt-2 flex gap-2">
+                  <input
+                    id="billing-promo-code"
+                    value={promoInput}
+                    onChange={(event) => {
+                      setPromoInput(normalizePromoCode(event.target.value))
+                      setAppliedPromo(null)
+                      setPromoResult(null)
+                    }}
+                    onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); applyPromoCode() } }}
+                    className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-black uppercase outline-none focus:border-violet-400"
+                    placeholder="NEXORA20"
+                    maxLength={32}
+                  />
+                  <button type="button" onClick={applyPromoCode} disabled={promoLoading} className="rounded-xl bg-violet-600 px-4 py-2 text-xs font-black text-white disabled:opacity-50">
+                    {promoLoading ? 'Checking...' : 'Apply'}
+                  </button>
+                </div>
+                {promoResult?.valid ? <p className="mt-2 text-xs font-bold text-emerald-700">{promoResult.promoCode} applied. You saved {money(promoResult.discountAmount, currency)}.</p> : null}
+                {promoResult && !promoResult.valid ? <p className="mt-2 text-xs font-bold text-rose-700">{promoResult.error}</p> : null}
+                {appliedPromo?.description ? <p className="mt-1 text-xs font-semibold text-slate-500">{appliedPromo.description}</p> : null}
               </div>
               {submitError ? <p className="mt-4 rounded-2xl bg-rose-50 p-3 text-sm font-bold text-rose-700">{submitError}</p> : null}
               {cryptoReturnStatus === 'processing' ? <p className="mt-4 rounded-2xl bg-emerald-50 p-3 text-sm font-bold text-emerald-700">Payment received for verification. This page updates automatically when NOWPayments marks it finished.</p> : null}

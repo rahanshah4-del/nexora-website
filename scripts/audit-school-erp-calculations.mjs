@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict'
+import { hasOpenInvoicePayment, openPaymentInvoiceIds, pendingInvoicePaymentId } from '../src/crm/lib/approvalQueue.js'
+import { calculateApprovedExpenses } from '../src/crm/lib/calculations.js'
 import { calculateSchoolDashboardStats } from '../src/crm/lib/schoolDashboardCalculations.js'
 import { buildSchoolReport } from '../src/crm/lib/schoolReports.js'
 import { calculateInvoiceTotals } from '../src/crm/lib/calculations.js'
@@ -168,6 +170,19 @@ closeTo(rejectedDashboard.pending, 0, 'rejected approval excluded from pending f
 closeTo(rejectedDashboard.netIncome, 0, 'rejected approval excluded from net income')
 assert.equal(rejectedDashboard.rejectedFeeBills, 1, 'rejected fee bill count')
 assert.equal(rejectedDashboard.collectedFeeRecords, 0, 'rejected fee bill excluded from collected record count')
+
+const pendingPayment = { invoiceId: 'fee-invoice-1', status: 'pending_verification', approvalStatus: 'pending', requiresApproval: true }
+assert.equal(hasOpenInvoicePayment('fee-invoice-1', [pendingPayment]), true, 'pending payment should suppress duplicate invoice approval')
+assert.equal(openPaymentInvoiceIds([pendingPayment]).size, 1, 'one invoice should map to one canonical pending payment')
+assert.equal(pendingInvoicePaymentId('fee-invoice-1', 0), pendingInvoicePaymentId('fee-invoice-1', 0), 'pending payment id must be deterministic for double-click protection')
+assert.notEqual(pendingInvoicePaymentId('fee-invoice-1', 0), pendingInvoicePaymentId('fee-invoice-1', 5000), 'next partial-payment cycle must receive a new deterministic id')
+closeTo(calculateApprovedExpenses(
+  [{ id: 'expense-1', amount: 2500, status: 'approved' }],
+  [
+    { id: 'expense-pay-1', expenseId: 'expense-1', amount: 2500, type: 'expense', status: 'approved' },
+    { id: 'expense-pay-duplicate', relatedId: 'expense-1', amount: 2500, type: 'expense', status: 'approved' },
+  ],
+), 2500, 'duplicate linked expense transactions must be capped to expense total')
 
 const rejectedReportContext = {
   ...ctx,

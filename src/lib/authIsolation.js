@@ -12,6 +12,15 @@ const LOCAL_STORAGE_KEYS_TO_CLEAR = [
   'nexoraWorkspaceName',
   'nexora_workspace_view_mode',
   'nexora_preferences_v1',
+  'nexora.restaurant.orders.v2',
+  'nexora.restaurant.customers.v2',
+  'nexora.restaurant.menu.v2',
+  'nexora.restaurant.menu.categories.v1',
+  'nexora.restaurant.tables.v1',
+  'nexora.transport.vehicles.v1',
+  'nexora.transport.bookings.v1',
+  'nexora.transport.customers.v1',
+  'nexora.transport.payments.v1',
 ]
 
 // All sessionStorage keys that must be cleared on logout.

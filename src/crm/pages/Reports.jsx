@@ -11,7 +11,6 @@ import {
   HiOutlineChartBar,
   HiOutlineChartPie,
   HiOutlineCheckCircle,
-  HiOutlineClock,
   HiOutlineCurrencyDollar,
   HiOutlineDocumentText,
   HiOutlineFire,
@@ -51,18 +50,24 @@ import { cn } from '../utils/cn.js'
 import { buildReportId, exportReportCsv, exportReportExcel, exportReportPdf } from '../lib/reportGenerator.js'
 import WhatsappReports from '../components/reports/WhatsappReports.jsx'
 import { useSalesHubCollection } from '../hooks/useSalesHubCollection.js'
-import { calculateDealMetrics, calculatePipelineMetrics, calculateProductMetrics, calculateTaskMetrics } from '../lib/salesCalculations.js'
+import { buildSalesHubReport, calculateSalesHubReportMetrics, SALES_REPORT_TYPES } from '../lib/salesHubReports.js'
+import { generateSalesHubReportPdf, SALES_PDF_TEMPLATES } from '../lib/salesHubReportPdf.js'
 import { loadRestaurantCustomers } from '../data/restaurantCustomers.js'
-import { loadRestaurantOrders } from '../data/restaurantOrders.js'
+import { restaurantCustomersStorageKey } from '../data/restaurantCustomers.js'
+import { loadRestaurantOrders, restaurantOrdersStorageKey } from '../data/restaurantOrders.js'
 import { normalizeInvoiceOrders } from '../data/restaurantInvoiceOrders.js'
 import { useInvoices } from '../hooks/useInvoices.js'
 import { useExpenses } from '../hooks/useExpenses.js'
+import { useContracts } from '../hooks/useContracts.js'
+import { useMaintenance } from '../hooks/useMaintenance.js'
+import { contractDisplayStatus, contractOutstandingBalance, contractStats, maintenanceBalanceDue, maintenanceStats } from '../lib/propertyCalculations.js'
 import { formatRestaurantCurrency } from '../lib/restaurantPosCalculations.js'
 import { buildRestaurantReport } from '../lib/restaurantReports.js'
-import { loadTransportBookings } from '../data/transportBookings.js'
-import { loadTransportVehicles } from '../data/transportVehicles.js'
-import { loadTransportCustomers } from '../data/transportCustomers.js'
-import { loadTransportPayments } from '../data/transportPayments.js'
+import { loadTransportBookings, transportBookingsStorageKey } from '../data/transportBookings.js'
+import { loadTransportVehicles, transportVehiclesStorageKey } from '../data/transportVehicles.js'
+import { loadTransportCustomers, transportCustomersStorageKey } from '../data/transportCustomers.js'
+import { loadTransportPayments, transportPaymentsStorageKey } from '../data/transportPayments.js'
+import { useLocalData } from '../hooks/useLocalData.js'
 import {
   buildTransportReport,
   formatTransportCurrency,
@@ -915,69 +920,182 @@ function GenericReports() {
 }
 
 function SalesHubReports() {
+  const { currency: preferredCurrency } = usePreferences()
+  const { userDoc, workspaceId } = useUser()
+  const businessSettingsApi = useBusinessSettings()
   const dealsApi = useSalesHubCollection('salesDeals')
   const tasksApi = useSalesHubCollection('salesTasks')
   const quotesApi = useSalesHubCollection('salesQuotes')
   const productsApi = useSalesHubCollection('salesProducts')
-  const dealMetrics = calculateDealMetrics(dealsApi.rows)
-  const pipelineMetrics = calculatePipelineMetrics(dealsApi.rows)
-  const taskMetrics = calculateTaskMetrics(tasksApi.rows)
-  const productMetrics = calculateProductMetrics(productsApi.rows)
-  const reports = [
-    ['Sales Report', dealMetrics.wonValue],
-    ['Pipeline Report', pipelineMetrics.pipelineValue],
-    ['Deals Report', dealMetrics.totalDeals],
-    ['Lead Conversion Report', `${pipelineMetrics.conversionRate}%`],
-    ['Customer Report', 'Use Customers module'],
-    ['Quotation Report', quotesApi.rows.length],
-    ['Invoice Report', 'Use Invoices module'],
-    ['Expense Report', 'Use Expenses module'],
-    ['Team Performance Report', `${taskMetrics.completionRate}% completion`],
-    ['Forecast Report', dealMetrics.forecastRevenue],
-  ]
+  const invoicesApi = useInvoices({ limitCount: 250 })
+  const expensesApi = useExpenses({ limitCount: 250 })
+  const [filters, setFilters] = useState({ range: 'month', startDate: '', endDate: '' })
+  const [reportType, setReportType] = useState('executive')
+  const [paper, setPaper] = useState('a4')
+  const [template, setTemplate] = useState('modern')
+  const [exporting, setExporting] = useState(false)
+  const [notice, setNotice] = useState('')
+  const activeWindow = useMemo(() => dateWindow(filters), [filters])
+  const salesDataApi = useReports({ section: 'sales', limitCount: 250, dateWindow: activeWindow })
+  const currency = preferredCurrency || businessSettingsApi.settings?.currency || 'PKR'
+  const companyName = businessSettingsApi.settings?.businessName || userDoc?.workspaceName || userDoc?.company || 'Nexora Workspace'
 
-  function exportCsv() {
-    const csv = ['Report,Value', ...reports.map(([name, value]) => `${name},${value}`)].join('\n')
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = 'nexora-sales-hub-reports.csv'
-    link.click()
-    URL.revokeObjectURL(url)
+  const reportData = useMemo(() => {
+    const filtered = (rows) => (Array.isArray(rows) ? rows.filter((row) => withinDateWindow(row, activeWindow)) : [])
+    return {
+      deals: filtered(dealsApi.rows),
+      tasks: filtered(tasksApi.rows),
+      quotes: filtered(quotesApi.rows),
+      products: filtered(productsApi.rows),
+      invoices: filtered(invoicesApi.invoices),
+      payments: filtered(invoicesApi.payments),
+      expenses: filtered(expensesApi.expenses),
+      customers: filtered(salesDataApi.data.customers),
+      leads: filtered(salesDataApi.data.leads),
+    }
+  }, [activeWindow, dealsApi.rows, expensesApi.expenses, invoicesApi.invoices, invoicesApi.payments, productsApi.rows, quotesApi.rows, salesDataApi.data.customers, salesDataApi.data.leads, tasksApi.rows])
+
+  const metrics = useMemo(() => calculateSalesHubReportMetrics(reportData), [reportData])
+  const selectedReport = useMemo(() => buildSalesHubReport(reportType, reportData, { currency }), [currency, reportData, reportType])
+  const loading = dealsApi.loading || tasksApi.loading || quotesApi.loading || productsApi.loading || invoicesApi.loading || expensesApi.loading || salesDataApi.loading
+  const error = dealsApi.error || tasksApi.error || quotesApi.error || productsApi.error || invoicesApi.error || expensesApi.error || salesDataApi.error
+  const dateRangeLabel = filters.range === 'custom'
+    ? `${filters.startDate || 'Start'} to ${filters.endDate || 'Today'}`
+    : rangeOptions.find((option) => option.value === filters.range)?.label || 'This month'
+
+  function reportMeta() {
+    return {
+      workspaceName: companyName,
+      dateRange: dateRangeLabel,
+      reportId: buildReportId(businessSettingsApi.settings?.reportPrefix || 'SAL'),
+      generatedAt: new Date().toLocaleString(),
+      currency,
+      workspaceId,
+    }
   }
 
+  async function createPdf(mode) {
+    setExporting(true)
+    setNotice('')
+    const previewWindow = mode === 'print' ? window.open('', '_blank') : null
+    if (previewWindow) previewWindow.opener = null
+    try {
+      const pdfTemplate = paper === 'thermal' ? 'thermal' : template
+      const { doc, fileName } = await generateSalesHubReportPdf(selectedReport, reportMeta(), pdfTemplate)
+      if (mode === 'print') {
+        doc.autoPrint()
+        const url = doc.output('bloburl')
+        if (previewWindow) previewWindow.location.href = url
+        else window.open(url, '_blank', 'noopener,noreferrer')
+        setNotice(`${paper === 'thermal' ? '58mm' : 'A4'} print-ready PDF opened.`)
+      } else {
+        doc.save(fileName)
+        setNotice(`${paper === 'thermal' ? '58mm' : 'A4'} PDF downloaded.`)
+      }
+    } catch (pdfError) {
+      previewWindow?.close()
+      console.error('[Sales Hub Reports] PDF generation failed', pdfError)
+      setNotice('Unable to generate this report PDF. Please try again.')
+    } finally {
+      setExporting(false)
+    }
+  }
+
+  function exportCsv() {
+    const columns = selectedReport.columns
+    const rows = [
+      columns.map((column) => column.label),
+      ...selectedReport.rows.map((row) => columns.map((column) => {
+        const value = typeof column.value === 'function' ? column.value(row) : row[column.key]
+        return column.money ? `${currency} ${safeNumber(value).toLocaleString()}` : value
+      })),
+    ]
+    downloadCsv(rows, `${reportType}-${Date.now()}.csv`)
+  }
+
+  const previewColumns = selectedReport.columns.map((column) => ({
+    key: column.key,
+    label: column.label,
+    render: (row) => {
+      const value = typeof column.value === 'function' ? column.value(row) : row[column.key]
+      if (column.money) return formatMoney(value, currency)
+      if (column.numeric) return safeNumber(value).toLocaleString()
+      return safeText(value)
+    },
+  }))
+
   return (
-    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
+    <motion.div className="space-y-4" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
       <PageHeader
         title="Sales Hub Reports"
-        subtitle="Sales, pipeline, deals, lead conversion, customer, quotation, invoice, expense, team performance, and forecast reports."
+        subtitle="Live sales intelligence with accurate finance, pipeline, conversion, task, and forecast calculations."
         right={
           <>
-            <Button className="rounded-2xl" type="button" onClick={() => window.print()}><HiOutlinePrinter className="h-4 w-4" />Print / PDF</Button>
-            <Button variant="subtle" className="rounded-2xl" type="button" onClick={exportCsv}><HiOutlineArrowDownTray className="h-4 w-4" />Export Excel CSV</Button>
+            <Button type="button" disabled={exporting} onClick={() => createPdf('download')}><HiOutlineArrowDownTray className="h-4 w-4" />{exporting ? 'Preparing...' : 'Download PDF'}</Button>
+            <Button variant="subtle" type="button" disabled={exporting} onClick={() => createPdf('print')}><HiOutlinePrinter className="h-4 w-4" />Print Report</Button>
           </>
         }
       />
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-        {reports.map(([name, value]) => (
-          <Card key={name} className="p-4">
-            <p className="text-sm font-semibold text-slate-950 dark:text-white">{name}</p>
-            <p className="mt-3 truncate text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">
-              {typeof value === 'number' ? formatCurrency(value, 'PKR') : value}
-            </p>
-          </Card>
-        ))}
-      </div>
-      <Card className="mt-4 p-5">
-        <p className="text-sm font-semibold text-slate-950 dark:text-white">Calculation Summary</p>
-        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <DataPill label="Expected Revenue" value={formatCurrency(dealMetrics.expectedRevenue, 'PKR')} />
-          <DataPill label="Weighted Pipeline" value={formatCurrency(pipelineMetrics.weightedPipeline, 'PKR')} />
-          <DataPill label="Overdue Tasks" value={taskMetrics.overdueTasks} />
-          <DataPill label="Catalog Margin" value={`${productMetrics.marginPercent}%`} />
+
+      <Card className="p-4">
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[1.1fr_1fr_1fr_1fr_1fr_auto] xl:items-end">
+          <label className="text-xs font-semibold text-slate-600">Report template<Select className="mt-1.5" value={reportType} onChange={(event) => setReportType(event.target.value)}>{SALES_REPORT_TYPES.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</Select></label>
+          <label className="text-xs font-semibold text-slate-600">Date range<Select className="mt-1.5" value={filters.range} onChange={(event) => setFilters((current) => ({ ...current, range: event.target.value }))}>{rangeOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</Select></label>
+          {filters.range === 'custom' ? <label className="text-xs font-semibold text-slate-600">From<Input className="mt-1.5" type="date" value={filters.startDate} onChange={(event) => setFilters((current) => ({ ...current, startDate: event.target.value }))} /></label> : <div />}
+          {filters.range === 'custom' ? <label className="text-xs font-semibold text-slate-600">To<Input className="mt-1.5" type="date" value={filters.endDate} onChange={(event) => setFilters((current) => ({ ...current, endDate: event.target.value }))} /></label> : <div />}
+          <label className="text-xs font-semibold text-slate-600">A4 design<Select className="mt-1.5" value={template} disabled={paper === 'thermal'} onChange={(event) => setTemplate(event.target.value)}>{SALES_PDF_TEMPLATES.filter((option) => option.value !== 'thermal').map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</Select></label>
+          <div className="inline-flex h-10 rounded-xl bg-slate-100 p-1">
+            <button type="button" className={`rounded-lg px-3 text-xs font-bold ${paper === 'a4' ? 'bg-white text-sky-700 shadow-sm' : 'text-slate-500'}`} onClick={() => setPaper('a4')}>A4</button>
+            <button type="button" className={`rounded-lg px-3 text-xs font-bold ${paper === 'thermal' ? 'bg-white text-sky-700 shadow-sm' : 'text-slate-500'}`} onClick={() => setPaper('thermal')}>58mm</button>
+          </div>
         </div>
       </Card>
+
+      {error ? <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{error}</div> : null}
+      {notice ? <div className="rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm font-semibold text-sky-800">{notice}</div> : null}
+
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <MetricCard icon={HiOutlineBanknotes} label="Collected Revenue" value={formatMoney(metrics.revenue, currency)} helper="Approved paid invoices/payments without double counting" tone="emerald" />
+        <MetricCard icon={HiOutlineReceiptPercent} label="Approved Expenses" value={formatMoney(metrics.approvedExpenses, currency)} helper="Rejected and pending expenses excluded" tone="amber" />
+        <MetricCard icon={HiOutlineChartBar} label="Net Profit" value={formatMoney(metrics.profit, currency)} helper="Collected revenue minus approved expenses" tone="sky" />
+        <MetricCard icon={HiOutlineCurrencyDollar} label="Outstanding" value={formatMoney(metrics.outstanding, currency)} helper={`${metrics.paidInvoices} paid · ${metrics.overdueInvoices} overdue invoices`} tone="violet" />
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-[1.35fr_0.65fr]">
+        <Card className="p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4">
+            <div><p className="text-sm font-semibold text-slate-950">Sales performance</p><p className="mt-1 text-xs text-slate-500">Closed results, open pipeline, and weighted forecast</p></div>
+            <Badge variant="info">{loading ? 'Syncing' : 'Live data'}</Badge>
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <DataPill label="Won revenue" value={formatMoney(metrics.dealMetrics.wonValue, currency)} />
+            <DataPill label="Open pipeline" value={formatMoney(metrics.pipelineMetrics.pipelineValue, currency)} />
+            <DataPill label="Weighted forecast" value={formatMoney(metrics.pipelineMetrics.weightedPipeline, currency)} />
+            <DataPill label="Lead conversion" value={`${metrics.leadConversionRate}%`} />
+            <DataPill label="Accepted quotes" value={`${metrics.acceptedQuotes} · ${formatMoney(metrics.acceptedQuoteValue, currency)}`} />
+            <DataPill label="Task completion" value={`${metrics.taskMetrics.completionRate}%`} />
+          </div>
+        </Card>
+        <Card className="p-5">
+          <p className="text-sm font-semibold text-slate-950">Record coverage</p>
+          <div className="mt-4 space-y-2">
+            <SummaryRow label="Deals" value={metrics.dealMetrics.totalDeals} />
+            <SummaryRow label="Leads / converted" value={`${metrics.totalLeads} / ${metrics.convertedLeads}`} />
+            <SummaryRow label="Active customers" value={metrics.activeCustomers} />
+            <SummaryRow label="Quotations" value={metrics.totalQuotes} />
+            <SummaryRow label="Invoices" value={metrics.totalInvoices} />
+            <SummaryRow label="Tasks / overdue" value={`${metrics.taskMetrics.totalTasks} / ${metrics.taskMetrics.overdueTasks}`} />
+          </div>
+        </Card>
+      </div>
+
+      <ReportSection title={`${selectedReport.title} Preview`} badge={paper === 'thermal' ? '58mm' : template.toUpperCase()}>
+        <DataTable rows={selectedReport.rows.slice(0, 100)} columns={previewColumns} empty="Records for the selected date range will appear here." />
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-4">
+          <div><p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">{selectedReport.totalLabel}</p><p className="mt-1 text-xl font-semibold text-slate-950">{selectedReport.amountKey ? formatMoney(selectedReport.totalValue, currency) : safeNumber(selectedReport.totalValue).toLocaleString()}</p></div>
+          <div className="flex flex-wrap gap-2"><Button variant="subtle" type="button" onClick={exportCsv}><HiOutlineTableCells className="h-4 w-4" />CSV</Button><Button type="button" disabled={exporting} onClick={() => createPdf('download')}><HiOutlineArrowDownTray className="h-4 w-4" />{paper === 'thermal' ? '58mm PDF' : 'A4 PDF'}</Button></div>
+        </div>
+      </ReportSection>
     </motion.div>
   )
 }
@@ -988,6 +1106,68 @@ function DataPill({ label, value }) {
       <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">{label}</p>
       <p className="mt-2 text-sm font-semibold text-slate-950 dark:text-white">{value}</p>
     </div>
+  )
+}
+
+function PropertyReports() {
+  const { currency: preferredCurrency } = usePreferences()
+  const contractsApi = useContracts()
+  const maintenanceApi = useMaintenance()
+  const currency = preferredCurrency || 'PKR'
+  const contracts = useMemo(() => contractsApi.contracts || [], [contractsApi.contracts])
+  const requests = useMemo(() => maintenanceApi.requests || [], [maintenanceApi.requests])
+  const contractsSummary = useMemo(() => contractStats(contracts), [contracts])
+  const maintenanceSummary = useMemo(() => maintenanceStats(requests), [requests])
+  const loading = contractsApi.loading || maintenanceApi.loading
+  const error = contractsApi.error || maintenanceApi.error
+
+  function exportPropertyCsv() {
+    downloadCsv([
+      ['Type', 'Reference', 'Party / Property', 'Status', 'Amount', 'Balance'],
+      ...contracts.map((row) => ['Contract', row.reference || row.id, `${row.tenantName || '-'} / ${row.propertyName || '-'}`, contractDisplayStatus(row), row.monthlyRent, contractOutstandingBalance(row)]),
+      ...requests.map((row) => ['Maintenance', row.id, `${row.title || '-'} / ${row.propertyName || '-'}`, row.status, row.actualCost || row.estimatedCost, maintenanceBalanceDue(row)]),
+    ], `property-erp-report-${Date.now()}.csv`)
+  }
+
+  return (
+    <motion.div className="space-y-4" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
+      <PageHeader title="Property ERP Reports" subtitle="Live lease, rent expectation, deposits, outstanding balances, and maintenance performance." right={<Button variant="subtle" type="button" onClick={exportPropertyCsv}><HiOutlineArrowDownTray className="h-4 w-4" />Export CSV</Button>} />
+      {error ? <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{error}</div> : null}
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <MetricCard icon={HiOutlineBuildingOffice2} label="Active Contracts" value={contractsSummary.active} helper={`${contractsSummary.expiringSoon} expiring soon · ${contractsSummary.draft} draft`} tone="sky" />
+        <MetricCard icon={HiOutlineBanknotes} label="Monthly Rent Expected" value={formatMoney(contractsSummary.monthlyRentExpected, currency)} helper="Active and expiring-soon contracts only" tone="emerald" />
+        <MetricCard icon={HiOutlineCurrencyDollar} label="Contract Outstanding" value={formatMoney(contractsSummary.outstandingTotal, currency)} helper="Contract value minus advance and collected amount" tone="violet" />
+        <MetricCard icon={HiOutlineKey} label="Security Deposits Held" value={formatMoney(contractsSummary.depositHeld, currency)} helper="Active contracts only" tone="amber" />
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <DataPill label="Maintenance requests" value={maintenanceSummary.total} />
+        <DataPill label="Pending / overdue" value={`${maintenanceSummary.pending} / ${maintenanceSummary.overdue}`} />
+        <DataPill label="Actual maintenance cost" value={formatMoney(maintenanceSummary.actualTotal, currency)} />
+        <DataPill label="Pending maintenance cost" value={formatMoney(maintenanceSummary.pendingCost, currency)} />
+      </div>
+      <ReportSection title="Lease & Contract Report" badge={loading ? 'Syncing' : 'Live'}>
+        <DataTable rows={contracts} empty="Contracts will appear after they are created in Property ERP." columns={[
+          { key: 'reference', label: 'Reference', render: (row) => safeText(row.reference || row.id) },
+          { key: 'tenant', label: 'Tenant', render: (row) => safeText(row.tenantName) },
+          { key: 'property', label: 'Property / Unit', render: (row) => safeText([row.propertyName, row.unit].filter(Boolean).join(' / ')) },
+          { key: 'status', label: 'Status', render: (row) => contractDisplayStatus(row) },
+          { key: 'rent', label: 'Monthly Rent', render: (row) => formatMoney(row.monthlyRent, row.currency || currency) },
+          { key: 'outstanding', label: 'Outstanding', render: (row) => formatMoney(contractOutstandingBalance(row), row.currency || currency) },
+          { key: 'endDate', label: 'End Date', render: (row) => formatDate(row.endDate) },
+        ]} />
+      </ReportSection>
+      <ReportSection title="Maintenance Cost Report" badge="Operations">
+        <DataTable rows={requests} empty="Maintenance requests will appear after they are logged." columns={[
+          { key: 'title', label: 'Request', render: (row) => safeText(row.title) },
+          { key: 'property', label: 'Property', render: (row) => safeText(row.propertyName) },
+          { key: 'priority', label: 'Priority' },
+          { key: 'status', label: 'Status' },
+          { key: 'actual', label: 'Actual Cost', render: (row) => formatMoney(row.actualCost, row.currency || currency) },
+          { key: 'paid', label: 'Paid', render: (row) => formatMoney(row.paidAmount, row.currency || currency) },
+          { key: 'balance', label: 'Balance', render: (row) => formatMoney(maintenanceBalanceDue(row), row.currency || currency) },
+        ]} />
+      </ReportSection>
+    </motion.div>
   )
 }
 
@@ -1007,7 +1187,8 @@ function RestaurantReports() {
   const businessSettingsApi = useBusinessSettings()
   const settings = businessSettingsApi.settings || {}
   const expensesApi = useExpenses({ limitCount: 200 })
-  const customers = useMemo(() => loadRestaurantCustomers(), [])
+  const { data: customers } = useLocalData(loadRestaurantCustomers, [restaurantCustomersStorageKey])
+  const { data: savedRestaurantOrders } = useLocalData(loadRestaurantOrders, [restaurantOrdersStorageKey])
   const [filters, setFilters] = useState({
     range: 'today',
     startDate: '',
@@ -1016,7 +1197,7 @@ function RestaurantReports() {
     paymentMethod: 'All',
   })
 
-  const reportOrders = useMemo(() => [...loadRestaurantOrders(), ...normalizeInvoiceOrders(invoices)], [invoices])
+  const reportOrders = useMemo(() => [...savedRestaurantOrders, ...normalizeInvoiceOrders(invoices)], [invoices, savedRestaurantOrders])
   const windowRange = useMemo(() => restaurantDateWindow(filters, settings), [filters, settings])
   const orders = useMemo(
     () =>
@@ -1435,10 +1616,10 @@ function TransportReports() {
     endDate: '',
   })
   const [notice, setNotice] = useState('')
-  const vehicles = useMemo(() => loadTransportVehicles(), [])
-  const allBookings = useMemo(() => loadTransportBookings(), [])
-  const customers = useMemo(() => loadTransportCustomers(), [])
-  const allPayments = useMemo(() => loadTransportPayments(), [])
+  const { data: vehicles } = useLocalData(loadTransportVehicles, [transportVehiclesStorageKey])
+  const { data: allBookings } = useLocalData(loadTransportBookings, [transportBookingsStorageKey])
+  const { data: customers } = useLocalData(loadTransportCustomers, [transportCustomersStorageKey])
+  const { data: allPayments } = useLocalData(loadTransportPayments, [transportPaymentsStorageKey])
   const activeWindow = useMemo(() => dateWindow(filters), [filters])
   const dateRangeLabel = filters.range === 'custom'
     ? `${filters.startDate || 'Start'} to ${filters.endDate || 'End'}`
@@ -1984,6 +2165,9 @@ export default function ReportsPage() {
   }
   if (normalizeBusinessType(businessType) === 'Restaurant POS') {
     return <RestaurantReports />
+  }
+  if (normalizeBusinessType(businessType) === 'Property ERP') {
+    return <PropertyReports />
   }
   if (normalizeBusinessType(businessType) === 'School ERP') {
     return <Navigate to="/app/school-reports" replace />

@@ -32,7 +32,7 @@ function corsHeaders(request) {
 
   return {
     'Access-Control-Allow-Origin': allowedOrigin,
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Max-Age': '86400',
   }
@@ -715,6 +715,82 @@ function extractEmailAddress(value) {
   return plain?.[0]?.toLowerCase() || ''
 }
 
+function normalizeEmailList(value, max = 10) {
+  const items = Array.isArray(value) ? value : getString(value).split(',')
+  return [...new Set(items.map(extractEmailAddress).filter(Boolean))].slice(0, max)
+}
+
+function defaultEmailState(emailId) {
+  return { emailId, isRead: false, isStarred: false, folder: 'inbox', updatedAt: '' }
+}
+
+function normalizeEmailState(row, emailId = '') {
+  if (!row) return defaultEmailState(emailId)
+  return {
+    emailId: row.email_id || emailId,
+    isRead: row.is_read === 1,
+    isStarred: row.is_starred === 1,
+    folder: ['inbox', 'archive', 'trash'].includes(row.folder) ? row.folder : 'inbox',
+    updatedAt: row.updated_at || '',
+  }
+}
+
+async function getEmailState(env, emailId) {
+  const row = await env.EMAIL_DB.prepare(
+    'SELECT email_id, is_read, is_starred, folder, updated_at FROM email_state WHERE email_id = ?',
+  ).bind(emailId).first()
+  return normalizeEmailState(row, emailId)
+}
+
+async function saveEmailState(env, emailId, patch = {}) {
+  const current = await getEmailState(env, emailId)
+  const next = {
+    isRead: typeof patch.isRead === 'boolean' ? patch.isRead : current.isRead,
+    isStarred: typeof patch.isStarred === 'boolean' ? patch.isStarred : current.isStarred,
+    folder: ['inbox', 'archive', 'trash'].includes(patch.folder) ? patch.folder : current.folder,
+    updatedAt: new Date().toISOString(),
+  }
+  await env.EMAIL_DB.prepare(`
+    INSERT INTO email_state (email_id, is_read, is_starred, folder, updated_at)
+    VALUES (?, ?, ?, ?, ?)
+    ON CONFLICT(email_id) DO UPDATE SET
+      is_read = excluded.is_read,
+      is_starred = excluded.is_starred,
+      folder = excluded.folder,
+      updated_at = excluded.updated_at
+  `).bind(emailId, next.isRead ? 1 : 0, next.isStarred ? 1 : 0, next.folder, next.updatedAt).run()
+  return { emailId, ...next }
+}
+
+function summarizeSentEmails(emails = []) {
+  const summary = { total: emails.length, sent: 0, delivered: 0, opened: 0, clicked: 0, bounced: 0, complained: 0, failed: 0 }
+  emails.forEach((email) => {
+    const event = getString(email?.last_event).toLowerCase()
+    if (event in summary) summary[event] += 1
+    if (['opened', 'clicked'].includes(event)) summary.delivered += 1
+    if (event === 'clicked') summary.opened += 1
+  })
+  return summary
+}
+
+async function handleEmailActivityRequest(request, env) {
+  if (!env.RESEND_API_KEY) return jsonResponse(request, { success: false, error: 'RESEND_API_KEY missing' }, 500)
+  const authorization = await authorizeAdminRequest(request, env)
+  if (authorization.error) return authorization.error
+  try {
+    const data = await resendJson(RESEND_EMAIL_ENDPOINT, env)
+    const emails = Array.isArray(data?.data) ? data.data : []
+    return jsonResponse(request, {
+      success: true,
+      emails,
+      summary: summarizeSentEmails(emails),
+      hasMore: Boolean(data?.has_more),
+    })
+  } catch (error) {
+    return jsonResponse(request, { success: false, error: error?.message || 'Could not load email activity' }, error?.status || 502)
+  }
+}
+
 async function handleInboxRequest(request, env, url) {
   if (!env.RESEND_API_KEY) return jsonResponse(request, { success: false, error: 'RESEND_API_KEY missing' }, 500)
   const authorization = await authorizeAdminRequest(request, env)
@@ -725,8 +801,20 @@ async function handleInboxRequest(request, env, url) {
 
   try {
     if (request.method === 'GET' && parts.length === 0) {
-      const data = await resendJson(RESEND_RECEIVING_ENDPOINT, env)
-      return jsonResponse(request, { success: true, emails: data?.data || [], hasMore: Boolean(data?.has_more) })
+      const [data, stateResult] = await Promise.all([
+        resendJson(RESEND_RECEIVING_ENDPOINT, env),
+        env.EMAIL_DB.prepare('SELECT email_id, is_read, is_starred, folder, updated_at FROM email_state').all(),
+      ])
+      const stateMap = new Map((stateResult?.results || []).map((row) => [row.email_id, normalizeEmailState(row)]))
+      const emails = (data?.data || []).map((email) => ({ ...email, state: stateMap.get(email.id) || defaultEmailState(email.id) }))
+      const counts = emails.reduce((acc, email) => {
+        const state = email.state || defaultEmailState(email.id)
+        acc[state.folder] = (acc[state.folder] || 0) + 1
+        if (!state.isRead && state.folder === 'inbox') acc.unread += 1
+        if (state.isStarred && state.folder !== 'trash') acc.starred += 1
+        return acc
+      }, { inbox: 0, archive: 0, trash: 0, unread: 0, starred: 0 })
+      return jsonResponse(request, { success: true, emails, counts, hasMore: Boolean(data?.has_more) })
     }
 
     const emailId = getString(parts[0])
@@ -734,11 +822,35 @@ async function handleInboxRequest(request, env, url) {
     const emailUrl = `${RESEND_RECEIVING_ENDPOINT}/${encodeURIComponent(emailId)}`
 
     if (request.method === 'GET' && parts.length === 1) {
-      const [email, attachmentData] = await Promise.all([
+      const [email, attachmentData, state, repliesResult] = await Promise.all([
         resendJson(emailUrl, env),
         resendJson(`${emailUrl}/attachments`, env).catch(() => ({ data: [] })),
+        saveEmailState(env, emailId, { isRead: true }),
+        env.EMAIL_DB.prepare(`
+          SELECT id, sent_email_id, recipient, subject, body_text, status, sent_at
+          FROM email_replies WHERE inbound_email_id = ? ORDER BY sent_at ASC
+        `).bind(emailId).all(),
       ])
-      return jsonResponse(request, { success: true, email: { ...email, attachments: attachmentData?.data || email?.attachments || [] } })
+      return jsonResponse(request, {
+        success: true,
+        email: {
+          ...email,
+          attachments: attachmentData?.data || email?.attachments || [],
+          state,
+          replies: repliesResult?.results || [],
+        },
+      })
+    }
+
+    if (request.method === 'POST' && parts[1] === 'state') {
+      const body = await request.json().catch(() => null)
+      if (!body || typeof body !== 'object') return jsonResponse(request, { success: false, error: 'Invalid state payload' }, 400)
+      const state = await saveEmailState(env, emailId, {
+        isRead: body.isRead,
+        isStarred: body.isStarred,
+        folder: body.folder,
+      })
+      return jsonResponse(request, { success: true, state })
     }
 
     if (request.method === 'POST' && parts[1] === 'reply') {
@@ -761,9 +873,13 @@ async function handleInboxRequest(request, env, url) {
           }
         : undefined
       const html = `<div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.65;color:#111827">${escapeHtml(replyText).replaceAll('\n', '<br>')}</div>`
+      const cc = normalizeEmailList(body?.cc)
+      const bcc = normalizeEmailList(body?.bcc)
       const response = await fetchResendWithTimeout({
         from: marketingFrom(env),
         to: recipient,
+        cc: cc.length ? cc : undefined,
+        bcc: bcc.length ? bcc : undefined,
         subject,
         html,
         text: replyText,
@@ -771,7 +887,12 @@ async function handleInboxRequest(request, env, url) {
       }, env.RESEND_API_KEY)
       const result = await response.json().catch(() => null)
       if (!response.ok) return jsonResponse(request, { success: false, error: getErrorMessage(result) }, response.status)
-      return jsonResponse(request, { success: true, id: result?.id, recipient })
+      const sentAt = new Date().toISOString()
+      await env.EMAIL_DB.prepare(`
+        INSERT INTO email_replies (inbound_email_id, sent_email_id, recipient, subject, body_text, status, sent_at)
+        VALUES (?, ?, ?, ?, ?, 'sent', ?)
+      `).bind(emailId, result?.id || '', recipient, subject, replyText, sentAt).run()
+      return jsonResponse(request, { success: true, id: result?.id, recipient, sentAt })
     }
 
     return jsonResponse(request, { success: false, error: 'Inbox endpoint not found' }, 404)
@@ -869,7 +990,7 @@ export default {
     try {
       const url = new URL(request.url)
 
-      if (request.method === 'OPTIONS' && (url.pathname === '/send-email' || url.pathname === '/send-marketing' || url.pathname.startsWith('/inbox'))) {
+      if (request.method === 'OPTIONS' && (url.pathname === '/send-email' || url.pathname === '/send-marketing' || url.pathname.startsWith('/inbox') || url.pathname === '/email-activity')) {
         return new Response(null, {
           status: 204,
           headers: corsHeaders(request),
@@ -882,6 +1003,10 @@ export default {
 
       if (url.pathname === '/inbox' || url.pathname.startsWith('/inbox/')) {
         return handleInboxRequest(request, env, url)
+      }
+
+      if (request.method === 'GET' && url.pathname === '/email-activity') {
+        return handleEmailActivityRequest(request, env)
       }
 
       if (request.method === 'GET' && url.pathname === '/health') {

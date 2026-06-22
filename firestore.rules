@@ -2,6 +2,9 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Promo model: promoCodes/{UPPERCASE_CODE}. Backend admins own lifecycle
+    // management; signed-in clients may only get a currently usable exact code.
+    // Upgrade/payment records store the original, discount, and final amounts.
     function signedIn() {
       return request.auth != null;
     }
@@ -141,6 +144,10 @@ service cloud.firestore {
           'workspaceName',
           'plan',
           'amount',
+          'originalAmount',
+          'discountAmount',
+          'promoCode',
+          'promoCodeId',
           'currency',
           'cryptoAmountPaid',
           'cryptoCurrency',
@@ -168,6 +175,17 @@ service cloud.firestore {
         && request.resource.data.plan.size() <= 80
         && request.resource.data.amount is number
         && request.resource.data.amount >= 0
+        && request.resource.data.originalAmount is number
+        && request.resource.data.originalAmount >= request.resource.data.amount
+        && request.resource.data.discountAmount is number
+        && request.resource.data.discountAmount >= 0
+        && request.resource.data.promoCode is string
+        && request.resource.data.promoCode.size() <= 32
+        && request.resource.data.promoCodeId == request.resource.data.promoCode
+        && (
+          request.resource.data.promoCode == ''
+          || request.resource.data.promoCode.matches('^[A-Z0-9_-]{3,32}$')
+        )
         && request.resource.data.currency is string
         && request.resource.data.currency.size() > 0
         && request.resource.data.currency.size() <= 10
@@ -188,10 +206,70 @@ service cloud.firestore {
         && request.resource.data.source == 'nowpayments-ipn'
         && request.resource.data.updatedAt is timestamp
         && approval.get('automaticVerification', false) == true
+        && approval.get('originalAmount', approval.amount) == request.resource.data.originalAmount
+        && approval.get('discountAmount', 0) == request.resource.data.discountAmount
+        && approval.get('promoCode', '') == request.resource.data.promoCode
         && approval.get('paymentMethodId', '') == 'nowpayments'
         && approval.status == 'approved'
         && approval.approvalStatus == 'approved'
         && approval.paymentStatus == 'paid';
+    }
+
+    function validPromoCode(data, promoId) {
+      return data.keys().hasAll([
+          'code', 'description', 'discountType', 'discountValue', 'maxDiscount',
+          'minOrderAmount', 'applicablePlanIds', 'billingCycles', 'startsAt',
+          'expiresAt', 'usageLimit', 'usedCount', 'active',
+          'createdAt', 'createdBy', 'updatedAt', 'updatedBy'
+        ])
+        && data.keys().hasOnly([
+          'code', 'description', 'discountType', 'discountValue', 'maxDiscount',
+          'minOrderAmount', 'applicablePlanIds', 'billingCycles', 'startsAt',
+          'expiresAt', 'usageLimit', 'usedCount', 'active',
+          'createdAt', 'createdBy', 'updatedAt', 'updatedBy'
+        ])
+        && data.code == promoId
+        && data.code is string
+        && data.code.matches('^[A-Z0-9_-]{3,32}$')
+        && data.description is string
+        && data.description.size() <= 200
+        && data.discountType in ['percentage', 'fixed']
+        && data.discountValue is number
+        && data.discountValue > 0
+        && data.discountValue <= (data.discountType == 'percentage' ? 100 : 100000000)
+        && data.maxDiscount is number
+        && data.maxDiscount >= 0
+        && data.maxDiscount <= 100000000
+        && data.minOrderAmount is number
+        && data.minOrderAmount >= 0
+        && data.minOrderAmount <= 100000000
+        && data.applicablePlanIds is list
+        && data.applicablePlanIds.size() > 0
+        && data.applicablePlanIds.size() <= 10
+        && data.applicablePlanIds[0] is string
+        && data.billingCycles is list
+        && data.billingCycles.size() > 0
+        && data.billingCycles.size() <= 2
+        && data.billingCycles.hasOnly(['monthly', 'yearly'])
+        && data.startsAt is timestamp
+        && data.expiresAt is timestamp
+        && data.expiresAt > data.startsAt
+        && data.expiresAt <= data.startsAt + duration.value(3660, 'd')
+        && data.usageLimit is int
+        && data.usageLimit >= 0
+        && data.usageLimit <= 10000000
+        && data.usedCount is int
+        && data.usedCount >= 0
+        && (data.usageLimit == 0 || data.usedCount <= data.usageLimit)
+        && data.active is bool
+        && data.createdAt is timestamp
+        && data.createdBy is string
+        && data.createdBy.size() > 0
+        && data.createdBy.size() <= 128
+        && data.updatedAt is timestamp
+        && data.updatedBy is string
+        && data.updatedBy.size() > 0
+        && data.updatedBy.size() <= 128;
     }
 
     function marketingAdmin() {
@@ -665,6 +743,42 @@ service cloud.firestore {
     match /platformPlans/{docId} {
       allow read: if true;
       allow write: if backendAdmin();
+    }
+
+    match /promoCodes/{promoId} {
+      allow get: if paymentWorker() || (
+        activeSignedIn()
+          && resource.data.active == true
+          && resource.data.startsAt <= request.time
+          && resource.data.expiresAt > request.time
+          && (resource.data.usageLimit == 0 || resource.data.usedCount < resource.data.usageLimit)
+        );
+      allow list: if backendAdmin();
+      allow create: if backendAdmin()
+        && validPromoCode(request.resource.data, promoId)
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.updatedBy == request.auth.uid
+        && request.resource.data.usedCount == 0;
+      allow update: if (
+          backendAdmin()
+          && validPromoCode(request.resource.data, promoId)
+          && request.resource.data.code == resource.data.code
+          && request.resource.data.createdAt == resource.data.createdAt
+          && request.resource.data.createdBy == resource.data.createdBy
+          && request.resource.data.updatedAt >= request.time - duration.value(5, 'm')
+          && request.resource.data.updatedAt <= request.time + duration.value(5, 'm')
+          && request.resource.data.updatedBy == request.auth.uid
+        ) || (
+          paymentWorker()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['usedCount', 'updatedAt'])
+          && request.resource.data.usedCount == resource.data.usedCount + 1
+          && request.resource.data.updatedAt >= request.time - duration.value(5, 'm')
+          && request.resource.data.updatedAt <= request.time + duration.value(5, 'm')
+          && (resource.data.usageLimit == 0 || request.resource.data.usedCount <= resource.data.usageLimit)
+        );
+      allow delete: if backendAdmin();
     }
 
     match /whatsappPricing/{docId} {

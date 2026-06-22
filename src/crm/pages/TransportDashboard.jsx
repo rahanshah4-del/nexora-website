@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import {
@@ -22,10 +22,11 @@ import Button from '../components/ui/Button.jsx'
 import Badge from '../components/ui/Badge.jsx'
 import { cn } from '../utils/cn.js'
 import { buildTransportReport, formatTransportCurrency, getTransportPaymentSignedAmount } from '../lib/transportCalculations.js'
-import { loadTransportVehicles } from '../data/transportVehicles.js'
-import { loadTransportBookings, syncVehiclesWithBookings } from '../data/transportBookings.js'
-import { loadTransportCustomers } from '../data/transportCustomers.js'
-import { loadTransportPayments } from '../data/transportPayments.js'
+import { loadTransportVehicles, transportVehiclesStorageKey } from '../data/transportVehicles.js'
+import { loadTransportBookings, syncVehiclesWithBookings, transportBookingsStorageKey } from '../data/transportBookings.js'
+import { loadTransportCustomers, transportCustomersStorageKey } from '../data/transportCustomers.js'
+import { loadTransportPayments, transportPaymentsStorageKey } from '../data/transportPayments.js'
+import { useLocalData } from '../hooks/useLocalData.js'
 
 const bookingStatusMeta = {
   reserved: { label: 'Reserved', badge: 'info' },
@@ -43,24 +44,18 @@ const fleetStatusMeta = {
 
 export default function TransportDashboardPage() {
   const navigate = useNavigate()
-  const [vehicles, setVehicles] = useState([])
-  const [bookings, setBookings] = useState([])
-  const [customers, setCustomers] = useState([])
-  const [payments, setPayments] = useState([])
+  const { data: vehicles } = useLocalData(loadTransportVehicles, [transportVehiclesStorageKey])
+  const { data: bookings } = useLocalData(loadTransportBookings, [transportBookingsStorageKey])
+  const { data: customers } = useLocalData(loadTransportCustomers, [transportCustomersStorageKey])
+  const { data: payments } = useLocalData(loadTransportPayments, [transportPaymentsStorageKey])
 
   useEffect(() => {
     syncVehiclesWithBookings()
-    setVehicles(loadTransportVehicles())
-    setBookings(loadTransportBookings())
-    setCustomers(loadTransportCustomers())
-    setPayments(loadTransportPayments())
   }, [])
 
   const metrics = useMemo(() => {
     const today = new Date().toISOString().slice(0, 10)
     const report = buildTransportReport({ vehicles, bookings, customers, payments })
-    const activeBookings = bookings.filter((booking) => booking.status === 'active')
-    const reservedBookings = bookings.filter((booking) => booking.status === 'reserved')
     const todayRevenue = report.activePaymentRows
       .filter((payment) => payment.date === today)
       .reduce((sum, payment) => sum + getTransportPaymentSignedAmount(payment), 0)

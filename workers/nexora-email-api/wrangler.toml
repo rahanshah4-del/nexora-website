@@ -2,3 +2,7 @@ name = "nexora-email-api"
 main = "src/index.js"
 compatibility_date = "2026-06-02"
 
+[[d1_databases]]
+binding = "EMAIL_DB"
+database_name = "nexora-email-state"
+database_id = "f0eed903-4c7b-45b5-9f92-c79d57b40d7f"

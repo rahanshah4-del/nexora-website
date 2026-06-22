@@ -75,7 +75,9 @@ import { calculateRestaurantOrderSummary } from '../lib/restaurantReports.js'
 import { calculateSchoolDashboardStats } from '../lib/schoolDashboardCalculations.js'
 import { isWithinRestaurantBusinessDay, formatRestaurantBusinessWindow } from '../lib/restaurantBusinessDay.js'
 import { loadRestaurantOrders } from '../data/restaurantOrders.js'
+import { restaurantOrdersStorageKey } from '../data/restaurantOrders.js'
 import { normalizeInvoiceOrders } from '../data/restaurantInvoiceOrders.js'
+import { useLocalData } from '../hooks/useLocalData.js'
 
 // Dashboard hero title/subtitle per business type (module). Falls back to a
 // generic label for any unknown type. Only affects the hero header text.
@@ -336,7 +338,7 @@ const restaurantQuickActions = [
 function RestaurantDashboard({ workspaceName }) {
   const { invoices } = useInvoices({ limitCount: 50 })
   const { settings } = useBusinessSettings()
-  const savedOrders = useMemo(() => loadRestaurantOrders(), [])
+  const { data: savedOrders } = useLocalData(loadRestaurantOrders, [restaurantOrdersStorageKey])
   const invoiceOrders = useMemo(() => normalizeInvoiceOrders(invoices), [invoices])
   const todaySimpleOrders = savedOrders.filter((order) => isWithinRestaurantBusinessDay(order.createdAt || order.date, settings))
   const todayInvoiceOrders = invoiceOrders.filter((order) => isWithinRestaurantBusinessDay(order.createdAt || order.date, settings))

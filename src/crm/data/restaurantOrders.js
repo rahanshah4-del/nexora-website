@@ -1,4 +1,5 @@
 import { calculateRestaurantBill, safeMoney } from '../lib/restaurantPosCalculations.js'
+import { notifyLocalDataChanged } from '../lib/localDataEvents.js'
 
 export const restaurantOrdersStorageKey = 'nexora.restaurant.orders.v2'
 
@@ -20,11 +21,13 @@ export function loadRestaurantOrders() {
 export function saveRestaurantOrders(orders) {
   if (typeof window === 'undefined') return
   window.localStorage.setItem(restaurantOrdersStorageKey, JSON.stringify(Array.isArray(orders) ? orders : []))
+  notifyLocalDataChanged(restaurantOrdersStorageKey)
 }
 
 export function clearRestaurantOrders() {
   if (typeof window === 'undefined') return
   window.localStorage.removeItem(restaurantOrdersStorageKey)
+  notifyLocalDataChanged(restaurantOrdersStorageKey)
 }
 
 export function getNextRestaurantOrderNumber(seed = 45265) {

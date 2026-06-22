@@ -1,4 +1,5 @@
 import { safeMoney } from '../lib/transportCalculations.js'
+import { notifyLocalDataChanged } from '../lib/localDataEvents.js'
 
 export const transportVehiclesStorageKey = 'nexora.transport.vehicles.v1'
 
@@ -91,6 +92,7 @@ export function loadTransportVehicles() {
 export function saveTransportVehicles(vehicles) {
   if (typeof window === 'undefined') return
   window.localStorage.setItem(transportVehiclesStorageKey, JSON.stringify(Array.isArray(vehicles) ? vehicles : []))
+  notifyLocalDataChanged(transportVehiclesStorageKey)
 }
 
 export function getNextVehicleId(vehicles = loadTransportVehicles()) {

@@ -22,6 +22,7 @@ export function loadRestaurantMenuItems() {
 export function saveRestaurantMenuItems(items) {
   if (typeof window === 'undefined') return
   window.localStorage.setItem(restaurantMenuStorageKey, JSON.stringify(Array.isArray(items) ? items : []))
+  notifyLocalDataChanged(restaurantMenuStorageKey)
 }
 
 export function loadRestaurantMenuCategories() {
@@ -40,4 +41,6 @@ export function saveRestaurantMenuCategories(categories) {
   if (typeof window === 'undefined') return
   const cleaned = Array.from(new Set((Array.isArray(categories) ? categories : []).map((item) => String(item || '').trim()).filter(Boolean)))
   window.localStorage.setItem(restaurantMenuCategoriesStorageKey, JSON.stringify(cleaned))
+  notifyLocalDataChanged(restaurantMenuCategoriesStorageKey)
 }
+import { notifyLocalDataChanged } from '../lib/localDataEvents.js'

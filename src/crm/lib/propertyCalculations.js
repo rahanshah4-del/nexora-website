@@ -293,13 +293,13 @@ export function contractStats(contracts = [], now = new Date()) {
       active += 1
       monthlyRentExpected += contractMonthlyRent(contract)
       depositHeld += contractSecurityDeposit(contract)
+      outstandingTotal += contractOutstandingBalance(contract)
     }
     if (status === 'Expiring Soon') expiringSoon += 1
     if (status === 'Expired') expired += 1
     if (status === 'Terminated') terminated += 1
     if (status === 'Draft') draft += 1
     totalContractValue += contractTotalValue(contract)
-    outstandingTotal += contractOutstandingBalance(contract)
   }
 
   return {

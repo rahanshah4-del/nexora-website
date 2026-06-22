@@ -27,6 +27,40 @@ function normalizeBillingCycle(value) {
   return ['year', 'annual', 'annually', 'yearly'].includes(lower(value)) ? 'yearly' : 'monthly'
 }
 
+function normalizePromoCode(value) {
+  return clean(value).toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0, 32)
+}
+
+function evaluatePromo(promo, { code, planId, billingCycle, amount }) {
+  if (!promo || promo.active !== true || promo.code !== code) throw new Error('Promo code was not found or is inactive.')
+  const originalAmount = Number(amount)
+  const startsAt = new Date(promo.startsAt)
+  const expiresAt = new Date(promo.expiresAt)
+  const now = new Date()
+  if (!Number.isFinite(originalAmount) || originalAmount <= 0) throw new Error('Promo codes cannot be used with custom pricing.')
+  if (Number.isNaN(startsAt.getTime()) || Number.isNaN(expiresAt.getTime()) || now < startsAt || now >= expiresAt) throw new Error('This promo code is not currently valid.')
+  if (!Array.isArray(promo.applicablePlanIds) || (!promo.applicablePlanIds.includes('all') && !promo.applicablePlanIds.includes(planId))) throw new Error('This promo code is not valid for the selected plan.')
+  if (!Array.isArray(promo.billingCycles) || !promo.billingCycles.includes(billingCycle)) throw new Error('This promo code is not valid for the selected billing cycle.')
+  if (originalAmount < Number(promo.minOrderAmount || 0)) throw new Error('The selected plan does not meet this promo code minimum.')
+  if (Number(promo.usageLimit || 0) > 0 && Number(promo.usedCount || 0) >= Number(promo.usageLimit)) throw new Error('This promo code has reached its usage limit.')
+  const rawDiscount = promo.discountType === 'percentage'
+    ? originalAmount * (Number(promo.discountValue || 0) / 100)
+    : Number(promo.discountValue || 0)
+  const maxDiscount = Number(promo.maxDiscount || 0)
+  const discountAmount = Math.min(originalAmount, Math.max(0, maxDiscount > 0 ? Math.min(rawDiscount, maxDiscount) : rawDiscount))
+  const finalAmount = Number((originalAmount - discountAmount).toFixed(2))
+  if (discountAmount <= 0 || finalAmount <= 0) throw new Error('This promo code does not produce a valid checkout amount.')
+  return {
+    promoCode: code,
+    promoCodeId: code,
+    promoDiscountType: promo.discountType,
+    promoDiscountValue: Number(promo.discountValue || 0),
+    originalAmount,
+    discountAmount: Number(discountAmount.toFixed(2)),
+    finalAmount,
+  }
+}
+
 function firstString(...values) {
   return values.map(clean).find(Boolean) || ''
 }
@@ -305,7 +339,7 @@ async function validNowPaymentsSignature(body, signature, secret) {
   return timingSafeEqual(bytesToHex(mac), lower(signature))
 }
 
-function checkoutContext(claims, user, workspace, plan, billingCycle, configuredPkrPerUsd) {
+function checkoutContext(claims, user, workspace, plan, billingCycle, configuredPkrPerUsd, promo = null, promoCode = '') {
   const fallbackPlan = SERVER_PLANS[plan.id]
   const cycle = normalizeBillingCycle(billingCycle)
   const role = lower(user.role || claims.role)
@@ -325,13 +359,17 @@ function checkoutContext(claims, user, workspace, plan, billingCycle, configured
   if (billingCurrency === 'pkr' && !hasCryptoAmount && (!Number.isFinite(pkrPerUsd) || pkrPerUsd <= 0)) {
     throw new Error('PKR to USD checkout rate is not configured.')
   }
-  const priceAmount = billingCurrency === 'pkr' && !hasCryptoAmount
+  const basePriceAmount = billingCurrency === 'pkr' && !hasCryptoAmount
     ? Number((Number(planAmount) / pkrPerUsd).toFixed(2))
     : Number(hasCryptoAmount ? configuredAmount : planAmount)
   const priceCurrency = billingCurrency === 'pkr' && !hasCryptoAmount
     ? 'usd'
     : lower(hasCryptoAmount ? plan.nowPaymentsCurrency || 'USD' : billingCurrency)
-  if (!Number.isFinite(priceAmount) || priceAmount <= 0 || !priceCurrency) throw new Error('Invalid crypto plan price.')
+  const billingAmount = Number(planAmount)
+  if (!Number.isFinite(basePriceAmount) || basePriceAmount <= 0 || !priceCurrency || !Number.isFinite(billingAmount) || billingAmount <= 0) throw new Error('Invalid crypto plan price.')
+  const promoResult = promoCode ? evaluatePromo(promo, { code: promoCode, planId: plan.id, billingCycle: cycle, amount: billingAmount }) : null
+  const finalBillingAmount = promoResult?.finalAmount ?? billingAmount
+  const priceAmount = Number((basePriceAmount * (finalBillingAmount / billingAmount)).toFixed(2))
 
   return {
     uid: claims.sub,
@@ -346,7 +384,13 @@ function checkoutContext(claims, user, workspace, plan, billingCycle, configured
     billingCycle: cycle,
     priceAmount,
     priceCurrency,
-    billingAmount: Number.isFinite(Number(planAmount)) ? Number(planAmount) : priceAmount,
+    billingAmount: finalBillingAmount,
+    originalAmount: promoResult?.originalAmount ?? billingAmount,
+    discountAmount: promoResult?.discountAmount ?? 0,
+    promoCode: promoResult?.promoCode || '',
+    promoCodeId: promoResult?.promoCodeId || '',
+    promoDiscountType: promoResult?.promoDiscountType || '',
+    promoDiscountValue: promoResult?.promoDiscountValue || 0,
     billingCurrency: billingCurrency.toUpperCase(),
   }
 }
@@ -370,19 +414,21 @@ async function handleCreateInvoice(request, env) {
     return jsonResponse(request, env, { ok: false, error: 'Invalid checkout request.' }, 400)
   }
   const planId = normalizePlanId(input?.planId)
+  const promoCode = normalizePromoCode(input?.promoCode)
   const fallbackPlan = SERVER_PLANS[planId]
   if (!fallbackPlan) return jsonResponse(request, env, { ok: false, error: 'Select a valid subscription plan.' }, 400)
 
   try {
     const user = await firestoreGet(env, idToken, `users/${claims.sub}`) || {}
     const workspaceId = clean(user.workspaceId) || claims.sub
-    const [workspace, storedPlan] = await Promise.all([
+    const [workspace, storedPlan, promo] = await Promise.all([
       firestoreGet(env, idToken, `workspaces/${workspaceId}`),
       firestoreGet(env, idToken, `platformPlans/${planId}`),
+      promoCode ? firestoreGet(env, idToken, `promoCodes/${promoCode}`) : Promise.resolve(null),
     ])
     if (!workspace) throw new Error('Workspace record is missing.')
     const plan = { ...fallbackPlan, ...(storedPlan || {}), id: planId }
-    const context = checkoutContext(claims, user, workspace, plan, input?.billingCycle, env.PKR_PER_USD)
+    const context = checkoutContext(claims, user, workspace, plan, input?.billingCycle, env.PKR_PER_USD, promo, promoCode)
     const checkoutId = crypto.randomUUID().replaceAll('-', '')
     const orderId = `nx_${checkoutId}`
     const callbackUrl = `${new URL(request.url).origin}/webhooks/nowpayments`
@@ -419,6 +465,13 @@ async function handleCreateInvoice(request, env) {
       selectedPlan: context.requestedPlan,
       planId: context.planId,
       billingCycle: context.billingCycle,
+      originalAmount: context.originalAmount,
+      discountAmount: context.discountAmount,
+      finalAmount: context.billingAmount,
+      promoCode: context.promoCode,
+      promoCodeId: context.promoCodeId,
+      promoDiscountType: context.promoDiscountType,
+      promoDiscountValue: context.promoDiscountValue,
       amount: context.billingAmount,
       amountPaid: 0,
       currency: context.billingCurrency,
@@ -489,6 +542,9 @@ async function activateFinishedPayment(env, token, checkoutId, paymentId, verifi
       await rollbackFirestoreTransaction(env, token, transaction)
       return false
     }
+    const promo = payment.promoCodeId
+      ? await firestoreGet(env, token, `promoCodes/${payment.promoCodeId}`, transaction)
+      : null
     const subscription = approvedSubscriptionPayload(payment, paymentId, checkoutId)
     const paidAmount = Number(verified.actually_paid || verified.pay_amount || 0) || 0
     const paidCurrency = clean(verified.pay_currency).toUpperCase()
@@ -517,6 +573,10 @@ async function activateFinishedPayment(env, token, checkoutId, paymentId, verifi
         workspaceName: payment.workspaceName || '',
         plan: payment.requestedPlan,
         amount: Number(payment.amount || 0),
+        originalAmount: Number(payment.originalAmount || payment.amount || 0),
+        discountAmount: Number(payment.discountAmount || 0),
+        promoCode: payment.promoCode || '',
+        promoCodeId: payment.promoCodeId || '',
         currency: payment.currency,
         cryptoAmountPaid: paidAmount,
         cryptoCurrency: paidCurrency,
@@ -533,6 +593,12 @@ async function activateFinishedPayment(env, token, checkoutId, paymentId, verifi
         updatedAt: subscription.updatedAt,
       }),
     ]
+    if (promo && (Number(promo.usageLimit || 0) === 0 || Number(promo.usedCount || 0) < Number(promo.usageLimit))) {
+      writes.push(updateWrite(env, `promoCodes/${payment.promoCodeId}`, {
+        usedCount: Number(promo.usedCount || 0) + 1,
+        updatedAt: subscription.updatedAt,
+      }, true))
+    }
     await firestoreCommit(env, token, writes, transaction)
     return true
   } catch (error) {

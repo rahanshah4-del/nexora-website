@@ -17,6 +17,7 @@ import { amountValue, calculateBalanceDue, invoiceValue, statusValue, toNumber }
 import { canApproveFinance } from '../lib/financeAccess.js'
 import { normalizeBusinessType } from '../data/moduleAccess.js'
 import { buildApprovedSubscriptionPayload } from '../../lib/subscriptionApproval.js'
+import { openPaymentInvoiceIds } from '../lib/approvalQueue.js'
 
 const pendingPaymentStatuses = ['pending', 'pending_verification', 'pending_partial', 'partial_pending']
 const pendingRecordStatuses = ['pending', 'pending_approval', 'requested', 'invited']
@@ -439,9 +440,14 @@ export function useApprovals() {
   const approvals = useMemo(() => {
     const invoiceLabel = invoiceApprovalTypeForBusiness(businessType).label
     const approvalRecordSourceIds = new Set(approvalRecords.map((row) => row.sourceId || row.invoiceId).filter(Boolean))
+    const invoicesWithOpenPayments = openPaymentInvoiceIds(payments)
     const rows = [
-      ...approvalRecords.map((row) => createApproval(row.approvalLabel || invoiceLabel, 'approvals', row)),
-      ...invoices.filter((row) => !approvalRecordSourceIds.has(row.id)).map((row) => createApproval(row.approvalLabel || invoiceLabel, 'invoices', row)),
+      ...approvalRecords
+        .filter((row) => !(String(row.sourceCollection || 'invoices') === 'invoices' && invoicesWithOpenPayments.has(String(row.sourceId || row.invoiceId || ''))))
+        .map((row) => createApproval(row.approvalLabel || invoiceLabel, 'approvals', row)),
+      ...invoices
+        .filter((row) => !approvalRecordSourceIds.has(row.id) && !invoicesWithOpenPayments.has(String(row.id)))
+        .map((row) => createApproval(row.approvalLabel || invoiceLabel, 'invoices', row)),
       ...payments.map((row) => createApproval('Client payment reference', 'payments', row)),
       ...teamMembers.map((row) => createApproval('Staff access request', 'teamMembers', row)),
       ...clients.map((row) => createApproval('Client approval', 'clients', row)),
@@ -464,9 +470,11 @@ export function useApprovals() {
   )
 
   const summary = useMemo(
-    () => ({
+    () => {
+      const invoicesWithOpenPayments = openPaymentInvoiceIds(payments)
+      return ({
       pendingPayments: payments.filter((row) => isPendingPayment(row)).length,
-      pendingInvoices: approvalRecords.filter((row) => statusValue(row.status || row.approvalStatus, '') === 'pending').length || invoices.filter((row) => isPendingInvoice(row)).length,
+      pendingInvoices: approvalRecords.filter((row) => statusValue(row.status || row.approvalStatus, '') === 'pending' && !invoicesWithOpenPayments.has(String(row.sourceId || row.invoiceId || ''))).length || invoices.filter((row) => isPendingInvoice(row) && !invoicesWithOpenPayments.has(String(row.id))).length,
       upgradeRequests: 0,
       staffRequests: teamMembers.filter((row) => isPendingRecord(row)).length,
       expenseRequests: expenses.filter((row) => isPendingRecord(row)).length,
@@ -475,7 +483,8 @@ export function useApprovals() {
       approved: approvedApprovals.length,
       rejected: rejectedApprovals.length,
       total: pendingApprovals.length,
-    }),
+      })
+    },
     [accountTransactions, approvalRecords, approvedApprovals.length, expenses, invoices, payments, pendingApprovals.length, rejectedApprovals.length, teamMembers],
   )
 

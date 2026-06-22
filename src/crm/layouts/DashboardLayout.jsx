@@ -1,6 +1,15 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
+import {
+  HiOutlineArrowLeft,
+  HiOutlineArrowRight,
+  HiOutlineChartBar,
+  HiOutlineDocumentText,
+  HiOutlineShieldCheck,
+  HiOutlineSparkles,
+  HiOutlineUserGroup,
+} from 'react-icons/hi2'
 import Sidebar from '../components/sidebar/Sidebar.jsx'
 import TopNav from '../components/navbar/TopNav.jsx'
 import ProductSelectionModal from '../components/product/ProductSelectionModal.jsx'
@@ -31,6 +40,7 @@ import {
   workspaceRoute,
 } from '../lib/workspaceSession.js'
 import { goToWorkspace } from '../../lib/workspaceNavigation.js'
+import logoUrl from '../../assets/logo/nexora-logo.svg'
 
 function formatAccessDate(value) {
   const date = typeof value?.toDate === 'function' ? value.toDate() : value instanceof Date ? value : value ? new Date(value) : null
@@ -40,38 +50,79 @@ function formatAccessDate(value) {
 
 function TrialAccessBlock({ expired, subscriptionExpired, trialEndsAt, onBackToWorkspace, onUpgrade }) {
   const endLabel = formatAccessDate(trialEndsAt)
+  const eyebrow = expired ? (subscriptionExpired ? 'Subscription expired' : 'Trial expired') : 'Package inactive'
+  const title = expired
+    ? subscriptionExpired
+      ? 'Your workspace subscription has expired ⏳'
+      : 'Your 7-day trial has ended ⏳'
+    : 'Unlock your Nexora workspace ✨'
+  const description = expired && subscriptionExpired
+    ? 'Renew or upgrade your package to continue managing your complete business workspace.'
+    : expired
+      ? `Your Nexora CRM trial${endLabel ? ` ended on ${endLabel}` : ''}. Choose a package to keep your team moving without losing momentum.`
+      : 'Choose an active package to continue managing your business with Nexora CRM.'
+  const workspaceFeatures = [
+    { icon: HiOutlineUserGroup, label: 'Customers & leads', tone: 'bg-sky-50 text-sky-700' },
+    { icon: HiOutlineDocumentText, label: 'Invoices & billing', tone: 'bg-amber-50 text-amber-700' },
+    { icon: HiOutlineChartBar, label: 'Reports & insights', tone: 'bg-violet-50 text-violet-700' },
+    { icon: HiOutlineShieldCheck, label: 'Secure cloud data', tone: 'bg-emerald-50 text-emerald-700' },
+  ]
   return (
-    <div className="nexora-bg grid min-h-dvh place-items-center overflow-x-hidden px-4 py-10">
+    <div className="nexora-bg grid min-h-dvh place-items-center overflow-x-hidden px-4 py-8 sm:px-6">
       <motion.div
-        className="w-full max-w-xl rounded-[1.6rem] border border-white/85 bg-white/95 p-6 shadow-[0_24px_80px_-48px_rgba(15,23,42,0.55)]"
+        className="w-full max-w-3xl overflow-hidden rounded-[1.6rem] border border-white/90 bg-white/95 shadow-[0_28px_90px_-44px_rgba(15,23,42,0.5)]"
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.22, ease: 'easeOut' }}
       >
-        <Badge variant={expired ? 'danger' : 'warning'} className="font-semibold">
-          {expired ? (subscriptionExpired ? 'Subscription expired' : 'Trial expired') : 'Package inactive'}
-        </Badge>
-        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-slate-950">
-          {expired
-            ? subscriptionExpired
-              ? 'Your workspace subscription has expired'
-              : 'Your 7-day trial has expired'
-            : 'CRM access needs an active package'}
-        </h1>
-        <p className="mt-3 text-sm leading-7 text-slate-600">
-          {expired && subscriptionExpired
-            ? 'Renew or upgrade your package to continue using CRM data, customers, invoices, leads, and reports.'
-            : expired
-              ? `Your Nexora CRM trial${endLabel ? ` ended on ${endLabel}` : ''}. Upgrade to continue using CRM data, customers, invoices, leads, and reports.`
-              : 'Return to Workspace or choose an active package to continue using Nexora CRM.'}
-        </p>
-        <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-          <Button className="h-11 rounded-2xl" type="button" onClick={onUpgrade}>
-            Upgrade Package
-          </Button>
-          <Button className="h-11 rounded-2xl" variant="subtle" type="button" onClick={onBackToWorkspace}>
-            Back to Workspace
-          </Button>
+        <div className="h-1.5 bg-gradient-to-r from-sky-500 via-indigo-500 to-emerald-500" />
+        <div className="p-6 sm:p-8">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="flex min-w-0 items-center gap-3">
+              <img className="h-12 w-12 shrink-0 rounded-xl border border-slate-200 bg-slate-950 object-contain p-1.5 shadow-sm" src={logoUrl} alt="Nexora Solution" />
+              <div className="min-w-0">
+                <p className="truncate text-sm font-black uppercase text-slate-950">Nexora Solution</p>
+                <p className="text-xs font-semibold text-slate-500">Business Operating System</p>
+              </div>
+            </div>
+            <Badge variant={expired ? 'danger' : 'warning'} className="gap-1.5 px-3 py-1.5 font-bold">
+              <span aria-hidden="true">⏳</span> {eyebrow}
+            </Badge>
+          </div>
+
+          <div className="mt-8 max-w-2xl">
+            <div className="mb-3 inline-flex items-center gap-2 text-xs font-black uppercase text-sky-700">
+              <HiOutlineSparkles className="h-4 w-4" /> Your next chapter starts here
+            </div>
+            <h1 className="text-3xl font-black text-slate-950">{title}</h1>
+            <p className="mt-4 max-w-xl text-sm leading-7 text-slate-600 sm:text-base">{description}</p>
+          </div>
+
+          <div className="mt-7 border-y border-slate-200 py-5">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {workspaceFeatures.map(({ icon: Icon, label, tone }) => (
+                <div key={label} className="flex min-w-0 items-center gap-3">
+                  <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg ${tone}`}><Icon className="h-4 w-4" /></span>
+                  <span className="text-sm font-bold text-slate-700">{label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-5 flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-900">
+            <HiOutlineShieldCheck className="mt-0.5 h-5 w-5 shrink-0" />
+            <div><p className="text-sm font-black">Your workspace data is safe 🔒</p><p className="mt-0.5 text-xs leading-5 text-emerald-800">Customers, invoices, leads and reports remain securely stored while access is paused.</p></div>
+          </div>
+
+          <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <Button className="h-12 rounded-xl px-5" type="button" onClick={onUpgrade}>
+              Upgrade & Continue <span aria-hidden="true">🚀</span> <HiOutlineArrowRight className="h-4 w-4" />
+            </Button>
+            <Button className="h-12 rounded-xl px-5" variant="subtle" type="button" onClick={onBackToWorkspace}>
+              <HiOutlineArrowLeft className="h-4 w-4" /> Back to Workspace
+            </Button>
+            <p className="text-xs font-semibold text-slate-400 sm:ml-auto">Secure billing · Instant activation</p>
+          </div>
         </div>
       </motion.div>
     </div>

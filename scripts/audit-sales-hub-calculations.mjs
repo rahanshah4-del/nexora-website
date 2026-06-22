@@ -13,6 +13,7 @@ import {
   calculateRevenue,
   getDashboardStats,
 } from '../src/crm/lib/calculations.js'
+import { buildSalesHubReport, calculateSalesHubReportMetrics } from '../src/crm/lib/salesHubReports.js'
 
 function closeTo(actual, expected, label) {
   assert.equal(Math.round(Number(actual) * 100) / 100, expected, label)
@@ -107,12 +108,46 @@ assert.equal(taskMetrics.overdueTasks, 1, 'overdue task count')
 closeTo(taskMetrics.completionRate, 33.33, 'task completion rate')
 
 closeTo(calculateRevenue({ invoices, payments }), 12000, 'revenue should not double count paid invoices that have payment rows')
+closeTo(calculateRevenue({
+  invoices: [invoices[0]],
+  transactions: [
+    { id: 'income-invoice-inv-1', invoiceId: 'inv-1', amount: 10000, type: 'income', status: 'approved' },
+    { id: 'income-payment-duplicate', invoiceId: 'inv-1', paymentId: 'duplicate', amount: 10000, type: 'income', status: 'approved' },
+  ],
+}), 10000, 'duplicate linked income transactions must be capped to invoice total')
+closeTo(calculateRevenue({
+  invoices: [invoices[0]],
+  transactions: [
+    { id: 'income-part-1', invoiceId: 'inv-1', paymentId: 'part-1', amount: 4000, type: 'income', status: 'approved' },
+    { id: 'income-part-2', invoiceId: 'inv-1', paymentId: 'part-2', amount: 6000, type: 'income', status: 'approved' },
+  ],
+}), 10000, 'legitimate partial income transactions must sum to invoice total')
 const dashboardStats = getDashboardStats({ invoices, payments, customers, leads, expenses })
 assert.equal(dashboardStats.totalCustomers, 2, 'active customer count')
 assert.equal(dashboardStats.activeLeads, 1, 'active lead count')
 assert.equal(dashboardStats.pendingInvoices, 1, 'pending invoice count')
 closeTo(dashboardStats.expenses, 1500, 'approved expenses only')
 closeTo(dashboardStats.profit, 10500, 'profit should be revenue minus approved expenses')
+
+const reportMetrics = calculateSalesHubReportMetrics({
+  deals,
+  tasks,
+  quotes: [{ quoteNumber: 'QT-1', status: 'Accepted', items: quoteItems, discountPercent: 10, taxPercent: 5 }],
+  products,
+  invoices,
+  payments,
+  expenses,
+  customers,
+  leads,
+})
+closeTo(reportMetrics.revenue, 12000, 'report revenue should not double count invoice payments')
+closeTo(reportMetrics.approvedExpenses, 1500, 'report expenses should include approved only')
+closeTo(reportMetrics.profit, 10500, 'report profit should use collected revenue minus approved expenses')
+closeTo(reportMetrics.outstanding, 6000, 'report outstanding should exclude rejected invoices')
+closeTo(reportMetrics.leadConversionRate, 33.33, 'report lead conversion should use converted over all leads')
+closeTo(reportMetrics.acceptedQuoteValue, 23625, 'report accepted quote value should use quote totals')
+const invoiceReport = buildSalesHubReport('invoices', { invoices, payments, expenses, deals, tasks, leads, customers, products, quotes: [] }, { currency: 'PKR' })
+closeTo(invoiceReport.totalValue, 18000, 'invoice report total should exclude rejected invoices from financial total')
 
 console.log('Sales Hub calculation audit passed')
 console.table({

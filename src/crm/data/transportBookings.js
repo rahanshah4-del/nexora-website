@@ -1,5 +1,6 @@
 import { computeBookingTotals, normalizeRateType, rentalUnitsFor, safeMoney } from '../lib/transportCalculations.js'
 import { loadTransportVehicles, saveTransportVehicles } from './transportVehicles.js'
+import { notifyLocalDataChanged } from '../lib/localDataEvents.js'
 
 export const transportBookingsStorageKey = 'nexora.transport.bookings.v1'
 
@@ -23,6 +24,7 @@ export function loadTransportBookings() {
 export function saveTransportBookings(bookings) {
   if (typeof window === 'undefined') return
   window.localStorage.setItem(transportBookingsStorageKey, JSON.stringify(Array.isArray(bookings) ? bookings : []))
+  notifyLocalDataChanged(transportBookingsStorageKey)
 }
 
 export function getNextBookingNumber(bookings = loadTransportBookings()) {

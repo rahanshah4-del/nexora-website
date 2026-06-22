@@ -15,6 +15,7 @@ import {
   HiOutlineMegaphone,
   HiOutlineMoon,
   HiOutlineShieldCheck,
+  HiOutlineTag,
   HiOutlineUserGroup,
   HiOutlineUsers,
   HiOutlineWrenchScrewdriver,
@@ -22,12 +23,15 @@ import {
 import {
   collection,
   collectionGroup,
+  deleteDoc,
   doc,
+  increment,
   limit,
   onSnapshot,
   query,
   serverTimestamp,
   setDoc,
+  Timestamp,
   updateDoc,
   writeBatch,
 } from 'firebase/firestore'
@@ -152,6 +156,7 @@ const navGroups = [
       ['upgrades', 'Upgrade Requests', HiOutlineCheckBadge],
       ['transactions', 'Transactions', HiOutlineCurrencyDollar],
       ['plans', 'Plans', HiOutlineCreditCard],
+      ['promoCodes', 'Promo Codes', HiOutlineTag],
       ['whatsappPricing', 'WhatsApp Pricing', HiOutlineChatBubbleLeftRight],
       ['moduleAccess', 'Module Access', HiOutlineShieldCheck],
       ['visitorAnalytics', 'Visitor Analytics', HiOutlineChartBarSquare],
@@ -199,6 +204,18 @@ function money(value, currency = DEFAULT_SAAS_CURRENCY) {
 
 function amountValue(row = {}) {
   return Number(row.amount ?? row.amountPaid ?? row.price ?? row.total ?? 0) || 0
+}
+
+function generatePromoCode() {
+  const bytes = crypto.getRandomValues(new Uint8Array(8))
+  const suffix = Array.from(bytes, (byte) => (byte % 36).toString(36)).join('').toUpperCase()
+  return `NEXORA-${suffix}`
+}
+
+function promoDateInput(daysFromNow = 0) {
+  const date = new Date()
+  date.setDate(date.getDate() + daysFromNow)
+  return date.toISOString().slice(0, 10)
 }
 
 function rowCurrency(row = {}) {
@@ -348,6 +365,7 @@ function useControlCentreData() {
     announcements: [],
     supportTickets: [],
     plans: [],
+    promoCodes: [],
     backendStaff: [],
     clientSessions: [],
     userPresence: [],
@@ -376,6 +394,7 @@ function useControlCentreData() {
       announcements: [],
       supportTickets: [],
       plans: [],
+      promoCodes: [],
       backendStaff: [],
       clientSessions: [],
       userPresence: [],
@@ -455,6 +474,7 @@ function useControlCentreData() {
       listen('announcements', 'announcements', 200),
       listenGroup('supportTickets', 'supportTickets', 500),
       listen('plans', PLATFORM_PLAN_COLLECTION, 50),
+      listen('promoCodes', 'promoCodes', 300),
       listen('backendStaff', 'backendStaff', 100),
       listen('clientSessions', 'clientSessions', 300),
       listen('userPresence', 'userPresence', 300),
@@ -614,6 +634,22 @@ export default function ControlCentre() {
   const [workspacePlanFilter, setWorkspacePlanFilter] = useState('all')
   const [userFilter, setUserFilter] = useState('all')
   const [settingsDraft, setSettingsDraft] = useState(defaultPlatformSettings)
+  const [promoDraft, setPromoDraft] = useState({
+    code: generatePromoCode(),
+    description: '',
+    discountType: 'percentage',
+    discountValue: 10,
+    maxDiscount: 0,
+    minOrderAmount: 0,
+    applicablePlanId: 'all',
+    billingCycle: 'all',
+    startsAt: promoDateInput(0),
+    expiresAt: promoDateInput(30),
+    usageLimit: 100,
+    active: true,
+  })
+  const [promoDeleteTarget, setPromoDeleteTarget] = useState(null)
+  const [promoEditingId, setPromoEditingId] = useState('')
   const whatsappPricingApi = useWhatsappPricing({ enabled: true })
   const [whatsappPricingDraft, setWhatsappPricingDraft] = useState(defaultWhatsappPricing)
   const backendAdminAllowed = isBackendAdminEmail(user?.email)
@@ -672,8 +708,15 @@ export default function ControlCentre() {
   const stats = useMemo(() => {
     const now = new Date()
     const paidPayments = payments.filter(isPaid)
-    const approvedUpgrades = data.upgradeRequests.filter(isPaid)
-    const revenueRows = [...paidPayments, ...approvedUpgrades]
+    const materializedUpgradeIds = new Set(
+      paidPayments.flatMap((row) => [row.id, row.sourceId].filter(Boolean).map(String)),
+    )
+    const approvedUpgradeFallbacks = data.upgradeRequests.filter((row) =>
+      isPaid(row) && !materializedUpgradeIds.has(String(row.id)),
+    )
+    // Approved upgrade requests are copied into platformPayments. Count the
+    // request only as a fallback when that materialized payment is missing.
+    const revenueRows = [...paidPayments, ...approvedUpgradeFallbacks]
     const monthlyRevenue = revenueRows
       .filter((row) => {
         const date = toDate(row.paymentDate || row.paidAt || row.approvedAt || row.createdAt)
@@ -1181,6 +1224,7 @@ export default function ControlCentre() {
 
   async function approveUpgrade(row) {
     if (!backendAdminAllowed) throw new Error('Backend admin access required.')
+    if (isPaid(row)) throw new Error('This upgrade request is already approved.')
     const workspaceId = row.workspaceId || row.ownerId || row.userId
     const workspace = workspacesById.get(workspaceId) || {}
     const ownerId = row.ownerId || row.uid || row.userId || workspace.ownerId || workspace.userId
@@ -1220,6 +1264,10 @@ export default function ControlCentre() {
       workspaceName: row.workspaceName || row.companyName || '',
       plan,
       amount: amountValue(row),
+      originalAmount: Number(row.originalAmount || amountValue(row)),
+      discountAmount: Number(row.discountAmount || 0),
+      promoCode: row.promoCode || '',
+      promoCodeId: row.promoCodeId || '',
       currency,
       transactionId: row.transactionId || row.txnId || '',
       senderName: row.senderName || '',
@@ -1238,6 +1286,17 @@ export default function ControlCentre() {
       nextBillingDate: subscriptionPayload.nextBillingDate,
       updatedAt: subscriptionPayload.updatedAt,
     }, { merge: true })
+    if (row.promoCodeId) {
+      const promo = data.promoCodes.find((item) => item.id === row.promoCodeId)
+      const canIncrement = promo && (Number(promo.usageLimit || 0) === 0 || Number(promo.usedCount || 0) < Number(promo.usageLimit))
+      if (canIncrement) {
+        await updateDoc(promo.ref || doc(db, 'promoCodes', row.promoCodeId), {
+          usedCount: increment(1),
+          updatedAt: serverTimestamp(),
+          updatedBy: user?.uid || '',
+        }).catch((error) => console.error('[Promo] Manual redemption count update failed', error))
+      }
+    }
     await setDoc(doc(db, 'platformSubscriptions', workspaceId || row.id), {
       clientEmail: row.clientEmail || row.email || row.ownerEmail || '',
       workspaceId: workspaceId || '',
@@ -1482,7 +1541,8 @@ export default function ControlCentre() {
   const upgradeColumns = [
     { key: 'client', label: 'Client', render: (row) => <div><p className="font-black text-slate-900">{row.clientEmail || row.email || row.ownerEmail || '-'}</p><p className="text-xs text-slate-500">{row.workspaceName || row.companyName || row.workspaceId || '-'}</p></div> },
     { key: 'plan', label: 'Plan', render: (row) => row.requestedPlan || row.plan || '-' },
-    { key: 'amount', label: 'Amount', render: (row) => money(amountValue(row), rowCurrency(row)) },
+    { key: 'amount', label: 'Amount', render: (row) => <div><p className="font-black text-slate-900">{money(amountValue(row), rowCurrency(row))}</p>{Number(row.discountAmount || 0) > 0 ? <p className="text-xs text-emerald-700">{money(row.originalAmount, rowCurrency(row))} - {money(row.discountAmount, rowCurrency(row))}</p> : null}</div> },
+    { key: 'promoCode', label: 'Promo', render: (row) => row.promoCode ? <span className="font-mono text-xs font-black text-violet-700">{row.promoCode}</span> : '-' },
     { key: 'transactionId', label: 'Transaction ID', render: (row) => row.transactionId || row.txnId || '-' },
     { key: 'senderName', label: 'Sender Name', render: (row) => row.senderName || '-' },
     { key: 'senderNumber', label: 'Sender Number', render: (row) => row.senderNumber || row.userPhone || row.phone || '-' },
@@ -1507,7 +1567,7 @@ export default function ControlCentre() {
     { key: 'transactionId', label: 'Transaction ID', render: (row) => <span className="font-mono text-xs">{row.transactionId || row.id}</span> },
     { key: 'client', label: 'Client', render: (row) => <div><p className="font-black text-slate-900">{row.clientEmail || row.email || '-'}</p><p className="text-xs text-slate-500">{row.workspaceName || row.workspaceId || '-'}</p></div> },
     { key: 'plan', label: 'Plan', render: (row) => row.plan || row.selectedPlan || '-' },
-    { key: 'amount', label: 'Amount', render: (row) => money(amountValue(row), rowCurrency(row)) },
+    { key: 'amount', label: 'Amount', render: (row) => <div><p className="font-black text-slate-900">{money(amountValue(row), rowCurrency(row))}</p>{row.promoCode ? <p className="text-xs text-emerald-700">Promo: {row.promoCode}</p> : null}</div> },
     { key: 'currency', label: 'Currency', render: (row) => rowCurrency(row) },
     { key: 'method', label: 'Method', render: (row) => row.paymentMethod || row.method || '-' },
     { key: 'proof', label: 'Proof', render: (row) => proofUrl(row) ? <a className="font-bold text-violet-700" href={proofUrl(row)} target="_blank" rel="noreferrer">View Proof</a> : 'No Screenshot Uploaded' },
@@ -1797,6 +1857,111 @@ export default function ControlCentre() {
           ))}
         </div>
       </Panel>
+    )
+  }
+
+  function PromoCodes() {
+    const promoRows = useSearch(data.promoCodes, search, ['code', 'description', 'discountType'])
+    const inputClass = 'w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold outline-none focus:border-violet-400'
+    const editPromo = (row) => {
+      setPromoEditingId(row.id)
+      setPromoDraft({
+        code: row.code || row.id,
+        description: row.description || '',
+        discountType: row.discountType || 'percentage',
+        discountValue: Number(row.discountValue || 0),
+        maxDiscount: Number(row.maxDiscount || 0),
+        minOrderAmount: Number(row.minOrderAmount || 0),
+        applicablePlanId: row.applicablePlanIds?.includes('all') ? 'all' : row.applicablePlanIds?.[0] || 'all',
+        billingCycle: row.billingCycles?.length === 2 ? 'all' : row.billingCycles?.[0] || 'all',
+        startsAt: toDate(row.startsAt)?.toISOString().slice(0, 10) || promoDateInput(0),
+        expiresAt: toDate(row.expiresAt)?.toISOString().slice(0, 10) || promoDateInput(30),
+        usageLimit: Number(row.usageLimit || 0),
+        active: row.active === true,
+      })
+    }
+
+    const savePromo = async () => {
+      const code = String(promoDraft.code || '').trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0, 32)
+      if (!/^[A-Z0-9_-]{3,32}$/.test(code)) throw new Error('Promo code must be 3-32 letters, numbers, dashes, or underscores.')
+      const discountValue = Number(promoDraft.discountValue)
+      if (!Number.isFinite(discountValue) || discountValue <= 0) throw new Error('Enter a valid discount value.')
+      if (promoDraft.discountType === 'percentage' && discountValue > 100) throw new Error('Percentage discount cannot exceed 100%.')
+      const startsAt = new Date(`${promoDraft.startsAt}T00:00:00`)
+      const expiresAt = new Date(`${promoDraft.expiresAt}T23:59:59`)
+      if (Number.isNaN(startsAt.getTime()) || Number.isNaN(expiresAt.getTime()) || expiresAt <= startsAt) throw new Error('Expiry date must be after the start date.')
+      const existing = data.promoCodes.find((row) => row.id === code)
+      await setDoc(doc(db, 'promoCodes', code), {
+        code,
+        description: String(promoDraft.description || '').trim().slice(0, 200),
+        discountType: promoDraft.discountType,
+        discountValue,
+        maxDiscount: Math.max(0, Number(promoDraft.maxDiscount || 0)),
+        minOrderAmount: Math.max(0, Number(promoDraft.minOrderAmount || 0)),
+        applicablePlanIds: [promoDraft.applicablePlanId || 'all'],
+        billingCycles: promoDraft.billingCycle === 'all' ? ['monthly', 'yearly'] : [promoDraft.billingCycle],
+        startsAt: Timestamp.fromDate(startsAt),
+        expiresAt: Timestamp.fromDate(expiresAt),
+        usageLimit: Math.max(0, Math.floor(Number(promoDraft.usageLimit || 0))),
+        usedCount: Math.max(0, Math.floor(Number(existing?.usedCount || 0))),
+        active: promoDraft.active === true,
+        createdAt: existing?.createdAt || serverTimestamp(),
+        createdBy: existing?.createdBy || user?.uid || '',
+        updatedAt: serverTimestamp(),
+        updatedBy: user?.uid || '',
+      })
+      await logActivity(existing ? 'promo_code_updated' : 'promo_code_created', { code, discountType: promoDraft.discountType, discountValue })
+      setPromoDraft((current) => ({ ...current, code: generatePromoCode(), description: '' }))
+      setPromoEditingId('')
+    }
+
+    return (
+      <div className="space-y-4">
+        <Panel title="Promo Code Generator" action={<ShellButton onClick={() => { setPromoEditingId(''); setPromoDraft((current) => ({ ...current, code: generatePromoCode() })) }}>Generate Code</ShellButton>}>
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <label className="text-xs font-black text-slate-600">Promo code<input className={`${inputClass} mt-1 uppercase disabled:bg-slate-100 disabled:text-slate-500`} value={promoDraft.code} maxLength={32} disabled={Boolean(promoEditingId)} onChange={(event) => setPromoDraft((current) => ({ ...current, code: event.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, '') }))} /></label>
+            <label className="text-xs font-black text-slate-600 md:col-span-2">Description<input className={`${inputClass} mt-1`} value={promoDraft.description} placeholder="Summer upgrade offer" onChange={(event) => setPromoDraft((current) => ({ ...current, description: event.target.value }))} /></label>
+            <label className="text-xs font-black text-slate-600">Discount type<select className={`${inputClass} mt-1`} value={promoDraft.discountType} onChange={(event) => setPromoDraft((current) => ({ ...current, discountType: event.target.value }))}><option value="percentage">Percentage</option><option value="fixed">Fixed amount</option></select></label>
+            <label className="text-xs font-black text-slate-600">Discount value<input className={`${inputClass} mt-1`} type="number" min="0" value={promoDraft.discountValue} onChange={(event) => setPromoDraft((current) => ({ ...current, discountValue: event.target.value }))} /></label>
+            <label className="text-xs font-black text-slate-600">Max discount (0 = none)<input className={`${inputClass} mt-1`} type="number" min="0" value={promoDraft.maxDiscount} onChange={(event) => setPromoDraft((current) => ({ ...current, maxDiscount: event.target.value }))} /></label>
+            <label className="text-xs font-black text-slate-600">Minimum order<input className={`${inputClass} mt-1`} type="number" min="0" value={promoDraft.minOrderAmount} onChange={(event) => setPromoDraft((current) => ({ ...current, minOrderAmount: event.target.value }))} /></label>
+            <label className="text-xs font-black text-slate-600">Plan<select className={`${inputClass} mt-1`} value={promoDraft.applicablePlanId} onChange={(event) => setPromoDraft((current) => ({ ...current, applicablePlanId: event.target.value }))}><option value="all">All plans</option>{platformPlans.map((plan) => <option key={plan.id} value={plan.id}>{plan.name}</option>)}</select></label>
+            <label className="text-xs font-black text-slate-600">Billing cycle<select className={`${inputClass} mt-1`} value={promoDraft.billingCycle} onChange={(event) => setPromoDraft((current) => ({ ...current, billingCycle: event.target.value }))}><option value="all">Monthly + yearly</option><option value="monthly">Monthly only</option><option value="yearly">Yearly only</option></select></label>
+            <label className="text-xs font-black text-slate-600">Starts<input className={`${inputClass} mt-1`} type="date" value={promoDraft.startsAt} onChange={(event) => setPromoDraft((current) => ({ ...current, startsAt: event.target.value }))} /></label>
+            <label className="text-xs font-black text-slate-600">Expires<input className={`${inputClass} mt-1`} type="date" value={promoDraft.expiresAt} onChange={(event) => setPromoDraft((current) => ({ ...current, expiresAt: event.target.value }))} /></label>
+            <label className="text-xs font-black text-slate-600">Total usage limit (0 = unlimited)<input className={`${inputClass} mt-1`} type="number" min="0" value={promoDraft.usageLimit} onChange={(event) => setPromoDraft((current) => ({ ...current, usageLimit: event.target.value }))} /></label>
+          </div>
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">
+            <label className="flex items-center gap-2 text-sm font-black text-slate-700"><input type="checkbox" checked={promoDraft.active} onChange={(event) => setPromoDraft((current) => ({ ...current, active: event.target.checked }))} /> Active immediately</label>
+            <ShellButton className="bg-slate-950 px-5 text-white hover:bg-violet-700" disabled={busy === 'promo-save'} onClick={() => runAction('promo-save', savePromo, 'Promo code saved.')}>Save Promo Code</ShellButton>
+          </div>
+        </Panel>
+
+        <Panel title="Promo Codes" action={<ShellButton>Firestore: promoCodes</ShellButton>}>
+          <AdminTable rows={promoRows} emptyTitle="No promo codes created" columns={[
+            { key: 'code', label: 'Code', render: (row) => <div><p className="font-black text-slate-950">{row.code}</p><p className="text-xs text-slate-500">{row.description || 'No description'}</p></div> },
+            { key: 'discount', label: 'Discount', render: (row) => row.discountType === 'percentage' ? `${row.discountValue}%` : money(row.discountValue) },
+            { key: 'scope', label: 'Scope', render: (row) => `${row.applicablePlanIds?.join(', ') || 'all'} · ${row.billingCycles?.join(', ') || 'all'}` },
+            { key: 'usage', label: 'Usage', render: (row) => `${row.usedCount || 0} / ${row.usageLimit || '∞'}` },
+            { key: 'expiresAt', label: 'Expires', render: (row) => dateLabel(row.expiresAt) },
+            { key: 'active', label: 'Status', render: (row) => <Status value={row.active ? 'active' : 'disabled'} /> },
+            { key: 'actions', label: 'Actions', render: (row) => <div className="flex gap-2"><ShellButton onClick={() => editPromo(row)}>Edit</ShellButton><ShellButton onClick={() => runAction(`promo-toggle-${row.id}`, async () => { await updateDoc(row.ref || doc(db, 'promoCodes', row.id), { active: !row.active, updatedAt: serverTimestamp(), updatedBy: user?.uid || '' }); await logActivity('promo_code_status_changed', { code: row.code, active: !row.active }) }, row.active ? 'Promo code disabled.' : 'Promo code enabled.')}>{row.active ? 'Disable' : 'Enable'}</ShellButton><ShellButton className="text-rose-700" onClick={() => setPromoDeleteTarget(row)}>Delete</ShellButton></div> },
+          ]} />
+        </Panel>
+        {promoDeleteTarget ? (
+          <div className="fixed inset-0 z-[100] grid place-items-center bg-slate-950/55 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="delete-promo-title">
+            <Card className="w-full max-w-md p-6 shadow-2xl">
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-rose-600">Delete warning</p>
+              <h3 id="delete-promo-title" className="mt-2 text-xl font-black text-slate-950">Delete {promoDeleteTarget.code}?</h3>
+              <p className="mt-2 text-sm font-semibold leading-6 text-slate-600">This code will stop working immediately. Existing payment records will keep their promo details.</p>
+              <div className="mt-5 flex justify-end gap-2">
+                <ShellButton onClick={() => setPromoDeleteTarget(null)}>Cancel</ShellButton>
+                <ShellButton className="border-rose-600 bg-rose-600 text-white hover:bg-rose-700" onClick={() => runAction(`promo-delete-${promoDeleteTarget.id}`, async () => { await deleteDoc(promoDeleteTarget.ref || doc(db, 'promoCodes', promoDeleteTarget.id)); setPromoDeleteTarget(null) }, 'Promo code deleted.')}>Delete Promo</ShellButton>
+              </div>
+            </Card>
+          </div>
+        ) : null}
+      </div>
     )
   }
 
@@ -2576,6 +2741,7 @@ export default function ControlCentre() {
     upgrades: <Panel title="Upgrade Requests" action={<ShellButton>Firestore: upgradeRequests</ShellButton>}><AdminTable rows={upgradeRows} columns={upgradeColumns} emptyTitle="No upgrade requests found" /></Panel>,
     transactions: <Transactions />,
     plans: <Plans />,
+    promoCodes: <PromoCodes />,
     whatsappPricing: <WhatsappPricing />,
     moduleAccess: <ModuleAccess />,
     visitorAnalytics: <VisitorAnalytics />,
