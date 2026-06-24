@@ -1,0 +1,100 @@
+import { collection, doc, serverTimestamp, setDoc, writeBatch } from 'firebase/firestore'
+import { db } from './firebase.js'
+import { workspaceCollectionPath } from './firestore.js'
+import { normalizeBusinessType } from '../data/moduleAccess.js'
+
+function cleanDocId(value) {
+  const safe = String(value || '')
+    .trim()
+    .replace(/[^a-zA-Z0-9_-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+  return safe.slice(0, 140) || `notification-${Date.now()}`
+}
+
+function uniqueValues(values = []) {
+  return Array.from(new Set(values.map((value) => String(value || '').trim()).filter(Boolean)))
+}
+
+function cleanObject(value) {
+  if (Array.isArray(value)) return value.map(cleanObject).filter((item) => item !== undefined)
+  if (value && typeof value === 'object' && ('_methodName' in value || String(value.constructor?.name || '').includes('FieldValue'))) {
+    return value
+  }
+  if (value && typeof value === 'object' && typeof value.toDate !== 'function' && !(value instanceof Date)) {
+    return Object.fromEntries(
+      Object.entries(value)
+        .filter(([, entryValue]) => entryValue !== undefined)
+        .map(([key, entryValue]) => [key, cleanObject(entryValue)]),
+    )
+  }
+  return value === undefined ? null : value
+}
+
+export function workspaceNotificationTargets(...groups) {
+  return uniqueValues(groups.flat().filter(Boolean))
+}
+
+export async function createWorkspaceNotification({
+  workspaceId,
+  userId,
+  userIds,
+  businessType,
+  title,
+  message,
+  type = 'System',
+  priority = 'medium',
+  relatedId = '',
+  route = '',
+  metadata = {},
+  createdBy = '',
+  createdByEmail = '',
+  dedupeKey = '',
+} = {}) {
+  if (!db || !workspaceId || !title) return { ok: false, skipped: true }
+
+  const targetUserIds = workspaceNotificationTargets(userIds?.length ? userIds : userId)
+  if (!targetUserIds.length) return { ok: false, skipped: true }
+
+  try {
+    const batch = writeBatch(db)
+    const ref = collection(db, workspaceCollectionPath(workspaceId, 'notifications'))
+    const normalizedBusinessType = normalizeBusinessType(businessType)
+    targetUserIds.forEach((targetUserId) => {
+      const notificationRef = dedupeKey
+        ? doc(db, workspaceCollectionPath(workspaceId, 'notifications'), cleanDocId(`${dedupeKey}-${targetUserId}`))
+        : doc(ref)
+      batch.set(notificationRef, cleanObject({
+        workspaceId,
+        ownerId: workspaceId,
+        userId: targetUserId,
+        businessType: normalizedBusinessType,
+        type,
+        title,
+        message: message || title,
+        priority,
+        relatedId,
+        route,
+        metadata,
+        read: false,
+        createdBy,
+        createdByEmail,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      }), { merge: true })
+    })
+    await batch.commit()
+    return { ok: true, count: targetUserIds.length }
+  } catch (error) {
+    console.warn('[Notifications] create workspace notification failed', {
+      workspaceId,
+      title,
+      code: error?.code || '',
+      message: error?.message || '',
+    })
+    return { ok: false, error }
+  }
+}
+
+export async function upsertWorkspaceNotification(payload = {}) {
+  return createWorkspaceNotification(payload)
+}

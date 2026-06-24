@@ -28,6 +28,7 @@ import Card from '../components/ui/Card.jsx'
 import Input from '../components/ui/Input.jsx'
 import PageHeader from '../components/ui/PageHeader.jsx'
 import Select from '../components/ui/Select.jsx'
+import Table from '../components/ui/Table.jsx'
 import PrintableReport from '../components/print/PrintableReport.jsx'
 import { supportedCurrencies } from '../data/currency.js'
 import { labelForBusinessType, normalizeBusinessType } from '../data/moduleAccess.js'
@@ -75,8 +76,7 @@ import {
   isTransportRefundPayment,
 } from '../lib/transportCalculations.js'
 import {
-  restaurantBusinessDayWindow,
-  restaurantPreviousBusinessDayWindow,
+  restaurantBusinessDayBounds,
 } from '../lib/restaurantBusinessDay.js'
 import { directPrinterAvailable, printThermalText } from '../lib/printerService.js'
 
@@ -270,31 +270,18 @@ function DataTable({ columns, rows, empty }) {
     )
   }
 
+  const responsiveColumns = columns.map((column) => ({
+    key: column.key,
+    header: column.label,
+    cell: (row) => (column.render ? column.render(row) : safeText(row[column.key])),
+  }))
+
   return (
-    <div className="overflow-x-auto rounded-[1.1rem] border border-slate-200 bg-white">
-      <table className="min-w-full text-left text-sm">
-        <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-          <tr>
-            {columns.map((column) => (
-              <th key={column.key} className="whitespace-nowrap px-4 py-3">
-                {column.label}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-slate-100">
-          {rows.map((row, index) => (
-            <tr key={row.id || `${columns[0]?.key || 'row'}-${index}`}>
-              {columns.map((column) => (
-                <td key={column.key} className="whitespace-nowrap px-4 py-3 text-slate-700">
-                  {column.render ? column.render(row) : safeText(row[column.key])}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <Table
+      columns={responsiveColumns}
+      rows={rows}
+      className="rounded-[1.1rem] border-slate-200 bg-white"
+    />
   )
 }
 
@@ -1563,9 +1550,12 @@ function PrintTable({ title, rows, columns }) {
 
 function restaurantDateWindow(filters, settings = {}) {
   const now = new Date()
-  if (filters.range === 'today') return restaurantBusinessDayWindow(settings, now)
+  if (filters.range === 'today') return restaurantBusinessDayBounds(settings, now)
   if (filters.range === 'yesterday') {
-    return restaurantPreviousBusinessDayWindow(settings, now)
+    const todayBounds = restaurantBusinessDayBounds(settings, now)
+    const previousReference = new Date(todayBounds.start)
+    previousReference.setMinutes(previousReference.getMinutes() - 1)
+    return restaurantBusinessDayBounds(settings, previousReference)
   }
   if (filters.range === 'week') {
     const start = startOfDay(now)
@@ -2125,29 +2115,22 @@ function ReportMiniStat({ label, value }) {
 }
 
 function ReportTable({ title, rows = [], columns = [] }) {
+  const responsiveColumns = columns.map(([label, render], index) => ({
+    key: `${label}-${index}`,
+    header: label,
+    cell: (row) => render(row),
+  }))
+
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-200">
       <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
         <p className="text-sm font-black uppercase tracking-[0.14em] text-slate-600">{title}</p>
       </div>
-      <div className="overflow-x-auto">
-        <table className="min-w-full text-left text-xs">
-          <thead className="bg-white text-slate-500">
-            <tr>
-              {columns.map(([label]) => <th key={label} className="border-b border-slate-200 px-3 py-2 font-black uppercase tracking-[0.12em]">{label}</th>)}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.length ? rows.map((row, index) => (
-              <tr key={row.id || row.bookingNumber || row.name || index} className="border-b border-slate-100 last:border-0">
-                {columns.map(([label, render]) => <td key={label} className="px-3 py-2 font-semibold text-slate-700">{render(row)}</td>)}
-              </tr>
-            )) : (
-              <tr><td colSpan={columns.length} className="px-3 py-4 text-center font-semibold text-slate-400">No data yet</td></tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      {rows.length ? (
+        <Table columns={responsiveColumns} rows={rows} className="rounded-none border-0 bg-white text-xs" />
+      ) : (
+        <div className="px-3 py-4 text-center text-xs font-semibold text-slate-400">No data yet</div>
+      )}
     </div>
   )
 }

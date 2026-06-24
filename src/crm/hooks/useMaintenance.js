@@ -4,6 +4,7 @@ import { createUserDoc, patchUserDoc, removeUserDoc, subscribeUserCollection } f
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 import { useUser } from './useUser.js'
 import { clientSafeMessage } from '../utils/messages.js'
+import { createWorkspaceNotification } from '../lib/notifications.js'
 import {
   MAINTENANCE_PRIORITIES,
   MAINTENANCE_STATUSES,
@@ -171,6 +172,19 @@ export function useMaintenance({ enabled = true } = {}) {
             targetName: record.title,
             metadata: { priority: record.priority, status: record.status, estimatedCost: record.estimatedCost },
           })
+          await createWorkspaceNotification({
+            workspaceId,
+            userId,
+            businessType,
+            type: 'Maintenance',
+            priority: record.priority === 'High' || record.priority === 'Urgent' ? 'high' : 'medium',
+            title: 'Maintenance request created',
+            message: `${record.title} was logged for ${record.propertyName}.`,
+            relatedId: ref.id,
+            route: '/app/maintenance',
+            createdBy: userId,
+            createdByEmail: firebaseUser?.email || userDoc?.email || '',
+          })
           return { ok: true }
         } catch (e) {
           return { ok: false, error: clientSafeMessage(e, 'Unable to create maintenance request.') }
@@ -196,6 +210,19 @@ export function useMaintenance({ enabled = true } = {}) {
             targetId: id,
             targetName: record.title,
             metadata: { priority: record.priority, status: record.status, actualCost: record.actualCost },
+          })
+          await createWorkspaceNotification({
+            workspaceId,
+            userId,
+            businessType,
+            type: 'Maintenance',
+            priority: record.priority === 'High' || record.priority === 'Urgent' ? 'high' : 'low',
+            title: 'Maintenance request updated',
+            message: `${record.title} was updated.`,
+            relatedId: id,
+            route: '/app/maintenance',
+            createdBy: userId,
+            createdByEmail: firebaseUser?.email || userDoc?.email || '',
           })
           return { ok: true }
         } catch (e) {
@@ -225,6 +252,19 @@ export function useMaintenance({ enabled = true } = {}) {
             targetName: request.title || 'Request',
             metadata: { status: nextStatus },
           })
+          await createWorkspaceNotification({
+            workspaceId,
+            userId,
+            businessType,
+            type: 'Maintenance',
+            priority: nextStatus === 'Completed' ? 'medium' : 'low',
+            title: 'Maintenance status updated',
+            message: `${request.title || 'Request'} marked ${nextStatus}.`,
+            relatedId: request.id,
+            route: '/app/maintenance',
+            createdBy: userId,
+            createdByEmail: firebaseUser?.email || userDoc?.email || '',
+          })
           return { ok: true }
         } catch (e) {
           return { ok: false, error: clientSafeMessage(e, 'Unable to update maintenance request.') }
@@ -247,6 +287,19 @@ export function useMaintenance({ enabled = true } = {}) {
             targetId: request.id,
             targetName: request.title || 'Request',
             metadata: { status: request.status },
+          })
+          await createWorkspaceNotification({
+            workspaceId,
+            userId,
+            businessType,
+            type: 'Maintenance',
+            priority: 'low',
+            title: 'Maintenance request deleted',
+            message: `${request.title || 'Request'} was removed.`,
+            relatedId: request.id,
+            route: '/app/maintenance',
+            createdBy: userId,
+            createdByEmail: firebaseUser?.email || userDoc?.email || '',
           })
           return { ok: true }
         } catch (e) {

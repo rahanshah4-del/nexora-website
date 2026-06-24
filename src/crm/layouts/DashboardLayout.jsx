@@ -31,6 +31,7 @@ import {
 import { useAuth } from '../hooks/useAuth.js'
 import { useUser } from '../hooks/useUser.js'
 import { useWorkspaceAccess } from '../hooks/useWorkspaceAccess.js'
+import useScreenSize from '../hooks/useScreenSize.js'
 import {
   buildWorkspaceSession,
   isValidWorkspace,
@@ -262,7 +263,10 @@ function ComingSoonBlock({ onBackToWorkspace }) {
 
 export default function DashboardLayout() {
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [collapsed, setCollapsed] = useState(false)
+  const [collapsed, setCollapsed] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return window.localStorage.getItem('nexora-sidebar-collapsed') === 'true'
+  })
   const [productModalOpen, setProductModalOpen] = useState(false)
   const [selectedWorkspace, setSelectedWorkspace] = useState(null)
   const [sessionInfo, setSessionInfo] = useState(null)
@@ -292,6 +296,7 @@ export default function DashboardLayout() {
     role: userRole,
   } = useUser()
   const workspaceAccess = useWorkspaceAccess()
+  const screen = useScreenSize()
   const navigate = useNavigate()
   const location = useLocation()
   const persistedKeyRef = useRef('')
@@ -557,16 +562,15 @@ export default function DashboardLayout() {
   }, [accessPlan, businessType, developerOverride, location.pathname, lockedWorkspaceId, ready, userLoading])
 
   useEffect(() => {
-    const media = window.matchMedia?.('(max-width: 1279px)')
-    if (!media) return undefined
+    if (screen.isMobile || screen.isTablet) setMobileOpen(false)
+  }, [screen.isMobile, screen.isTablet])
 
-    const update = (event) => {
-      if (event.matches) setCollapsed(true)
-    }
-    if (media.matches) setCollapsed(true)
-    media.addEventListener?.('change', update)
-    return () => media.removeEventListener?.('change', update)
-  }, [])
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    window.localStorage.setItem('nexora-sidebar-collapsed', collapsed ? 'true' : 'false')
+  }, [collapsed])
+
+  const effectiveSidebarCollapsed = screen.isMobile || screen.isTablet ? true : collapsed
 
   useEffect(() => {
     if (!ready || !userId || userLoading) return
@@ -770,15 +774,18 @@ export default function DashboardLayout() {
 
   if (maintenance.active) {
     return (
-      <div className="nexora-bg crm-shell min-h-dvh overflow-x-clip">
-        <Sidebar collapsed={collapsed} onToggleCollapse={toggleCollapse} onSwitchProduct={openProductSwitcher} />
+      <div
+        className="nexora-bg crm-shell min-h-dvh overflow-x-clip"
+        data-screen-size={screen.breakpoint}
+        data-sidebar={effectiveSidebarCollapsed ? 'collapsed' : 'expanded'}
+        data-business-type={normalizedBusinessType}
+      >
+        <Sidebar collapsed={effectiveSidebarCollapsed} onToggleCollapse={toggleCollapse} onSwitchProduct={openProductSwitcher} />
         <div
-          className={`app-main relative z-10 flex min-h-dvh min-w-0 flex-col print:ml-0 ${
-            collapsed ? 'lg:ml-[72px]' : 'lg:ml-[236px]'
-          }`}
+          className="app-main relative z-10 flex min-h-dvh min-w-0 flex-col print:ml-0"
         >
           {isCompactPosRoute ? null : (
-            <TopNav collapsed={collapsed} onOpenSidebar={() => setMobileOpen(true)} onSwitchProduct={openProductSwitcher} />
+            <TopNav collapsed={effectiveSidebarCollapsed} onOpenSidebar={() => setMobileOpen(true)} onSwitchProduct={openProductSwitcher} />
           )}
           <main className="crm-main min-w-0 flex-1 overflow-x-clip px-3 pb-5 pt-4 sm:px-5 lg:px-6 lg:pb-6 lg:pt-5">
             <MaintenanceBlock state={maintenance} compact />
@@ -789,16 +796,20 @@ export default function DashboardLayout() {
   }
 
   return (
-    <div className="nexora-bg crm-shell min-h-dvh overflow-x-clip">
-      <Sidebar collapsed={collapsed} onToggleCollapse={toggleCollapse} onSwitchProduct={openProductSwitcher} />
+    <div
+      className="nexora-bg crm-shell min-h-dvh overflow-x-clip"
+      data-screen-size={screen.breakpoint}
+      data-sidebar={effectiveSidebarCollapsed ? 'collapsed' : 'expanded'}
+      data-business-type={normalizedBusinessType}
+      data-compact-pos={isCompactPosRoute ? 'true' : 'false'}
+    >
+      <Sidebar collapsed={effectiveSidebarCollapsed} onToggleCollapse={toggleCollapse} onSwitchProduct={openProductSwitcher} />
 
       <div
-        className={`app-main relative z-10 flex min-h-dvh min-w-0 flex-col print:ml-0 ${
-          collapsed ? 'lg:ml-[72px]' : 'lg:ml-[236px]'
-        }`}
+        className="app-main relative z-10 flex min-h-dvh min-w-0 flex-col print:ml-0"
       >
         {isCompactPosRoute ? null : (
-          <TopNav collapsed={collapsed} onOpenSidebar={() => setMobileOpen(true)} onSwitchProduct={openProductSwitcher} />
+          <TopNav collapsed={effectiveSidebarCollapsed} onOpenSidebar={() => setMobileOpen(true)} onSwitchProduct={openProductSwitcher} />
         )}
 
         <main className={`crm-main min-w-0 flex-1 overflow-x-clip print:p-0 ${
@@ -829,13 +840,13 @@ export default function DashboardLayout() {
       <AnimatePresence>
         {mobileOpen ? (
           <motion.div
-            className="fixed inset-0 z-50 bg-slate-950/35 lg:hidden"
+            className="fixed inset-0 z-50 bg-slate-950/35 backdrop-blur-[1px] lg:hidden"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setMobileOpen(false)}
           >
-            <div className="h-full p-4" onClick={(e) => e.stopPropagation()}>
+            <div className="flex h-full max-w-[19rem] p-3 sm:p-4" onClick={(e) => e.stopPropagation()}>
               <Sidebar mobile onNavigate={() => setMobileOpen(false)} onSwitchProduct={openProductSwitcher} />
             </div>
           </motion.div>

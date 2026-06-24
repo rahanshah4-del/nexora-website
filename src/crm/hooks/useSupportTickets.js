@@ -5,6 +5,7 @@ import { createUserDoc, fetchWorkspaceCollectionPage, listenToWorkspaceCollectio
 import { useUser } from './useUser.js'
 import { useWorkspaceAccess } from './useWorkspaceAccess.js'
 import { clientSafeMessage } from '../utils/messages.js'
+import { createWorkspaceNotification } from '../lib/notifications.js'
 
 function normalizeTicket(t) {
   const status = t.status || 'Open'
@@ -356,6 +357,20 @@ export function useSupportTickets({ limitCount = DEFAULT_SUPPORT_TICKET_LIST_LIM
               updatedAt: new Date().toISOString(),
             })
           }
+          await createWorkspaceNotification({
+            workspaceId,
+            userId,
+            businessType,
+            type: 'Support',
+            priority: String(ticket.priority || 'Medium').toLowerCase() === 'urgent' ? 'high' : 'medium',
+            title: 'Support ticket created',
+            message: `${subject} was submitted to support.`,
+            relatedId: docRef.id,
+            route: '/app/support',
+            createdBy: userId,
+            createdByEmail: creatorEmail,
+            metadata: { ticketNumber: tno, category: ticket.category || 'Technical Support' },
+          })
           return { ok: true }
         } catch (e) {
           return { ok: false, error: clientSafeMessage(e, 'Unable to create ticket.') }
@@ -366,6 +381,19 @@ export function useSupportTickets({ limitCount = DEFAULT_SUPPORT_TICKET_LIST_LIM
         setTickets((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch, updatedAt: new Date().toISOString().slice(0, 10) } : t)))
         if (!db || !workspaceId || source !== 'firestore') return
         await patchUserDoc(workspaceId, 'supportTickets', id, patch, { businessType })
+        await createWorkspaceNotification({
+          workspaceId,
+          userId,
+          businessType,
+          type: 'Support',
+          priority: 'low',
+          title: 'Support ticket updated',
+          message: `${patch.subject || patch.title || id} was updated.`,
+          relatedId: id,
+          route: '/app/support',
+          createdBy: userId,
+          createdByEmail: firebaseUser?.email || userDoc?.email || '',
+        })
       },
       async completeTicket(id) {
         if (!canEditSupportTickets) return { ok: false, error: 'Support ticket edit permission is not enabled for this account.' }
@@ -374,6 +402,19 @@ export function useSupportTickets({ limitCount = DEFAULT_SUPPORT_TICKET_LIST_LIM
         if (!db || !workspaceId || source !== 'firestore') return { ok: true }
         try {
           await patchUserDoc(workspaceId, 'supportTickets', id, patch, { businessType })
+          await createWorkspaceNotification({
+            workspaceId,
+            userId,
+            businessType,
+            type: 'Support',
+            priority: 'medium',
+            title: 'Support ticket completed',
+            message: `${id} was completed.`,
+            relatedId: id,
+            route: '/app/support',
+            createdBy: userId,
+            createdByEmail: firebaseUser?.email || userDoc?.email || '',
+          })
           return { ok: true }
         } catch (e) {
           return { ok: false, error: clientSafeMessage(e, 'Unable to complete ticket.') }
@@ -395,6 +436,19 @@ export function useSupportTickets({ limitCount = DEFAULT_SUPPORT_TICKET_LIST_LIM
         const next = [...(current?.comments || []), nextComment]
         try {
           await patchUserDoc(workspaceId, 'supportTickets', id, { comments: next, conversation: next }, { businessType })
+          await createWorkspaceNotification({
+            workspaceId,
+            userId,
+            businessType,
+            type: 'Support',
+            priority: 'medium',
+            title: 'New support reply',
+            message: `${comment.author || 'Support'} replied on ticket ${id}.`,
+            relatedId: id,
+            route: '/app/support',
+            createdBy: userId,
+            createdByEmail: firebaseUser?.email || userDoc?.email || '',
+          })
           return { ok: true }
         } catch (e) {
           return { ok: false, error: clientSafeMessage(e, 'Unable to add comment.') }

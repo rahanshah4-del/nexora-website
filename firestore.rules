@@ -272,6 +272,84 @@ service cloud.firestore {
         && data.updatedBy.size() <= 128;
     }
 
+    function validAnalyticsEvent() {
+      return request.resource.data.keys().hasOnly([
+          'eventType',
+          'page',
+          'buttonLabel',
+          'moduleName',
+          'userId',
+          'email',
+          'phone',
+          'workspaceId',
+          'businessType',
+          'status',
+          'sessionId',
+          'visitorId',
+          'referrer',
+          'deviceType',
+          'browser',
+          'os',
+          'country',
+          'userAgent',
+          'sessionDurationMs',
+          'timestamp',
+          'createdAt'
+        ])
+        && request.resource.data.keys().hasAll([
+          'eventType',
+          'page',
+          'sessionId',
+          'visitorId',
+          'timestamp',
+          'createdAt'
+        ])
+        && request.resource.data.eventType is string
+        && request.resource.data.eventType.size() > 0
+        && request.resource.data.eventType.size() <= 80
+        && request.resource.data.page is string
+        && request.resource.data.page.size() <= 200
+        && request.resource.data.buttonLabel is string
+        && request.resource.data.buttonLabel.size() <= 160
+        && request.resource.data.moduleName is string
+        && request.resource.data.moduleName.size() <= 120
+        && request.resource.data.userId is string
+        && request.resource.data.userId.size() <= 128
+        && request.resource.data.email is string
+        && request.resource.data.email.size() <= 254
+        && request.resource.data.phone is string
+        && request.resource.data.phone.size() <= 40
+        && request.resource.data.workspaceId is string
+        && request.resource.data.workspaceId.size() <= 128
+        && request.resource.data.businessType is string
+        && request.resource.data.businessType.size() <= 80
+        && request.resource.data.status is string
+        && request.resource.data.status.size() <= 120
+        && request.resource.data.sessionId is string
+        && request.resource.data.sessionId.size() > 0
+        && request.resource.data.sessionId.size() <= 160
+        && request.resource.data.visitorId is string
+        && request.resource.data.visitorId.size() > 0
+        && request.resource.data.visitorId.size() <= 160
+        && request.resource.data.referrer is string
+        && request.resource.data.referrer.size() <= 500
+        && request.resource.data.deviceType is string
+        && request.resource.data.deviceType.size() <= 40
+        && request.resource.data.browser is string
+        && request.resource.data.browser.size() <= 40
+        && request.resource.data.os is string
+        && request.resource.data.os.size() <= 40
+        && request.resource.data.country is string
+        && request.resource.data.country.size() <= 80
+        && request.resource.data.userAgent is string
+        && request.resource.data.userAgent.size() <= 500
+        && request.resource.data.sessionDurationMs is number
+        && request.resource.data.sessionDurationMs >= 0
+        && request.resource.data.sessionDurationMs <= 86400000
+        && request.resource.data.timestamp == request.time
+        && request.resource.data.createdAt == request.time;
+    }
+
     function marketingAdmin() {
       return backendAdmin()
         || (
@@ -827,7 +905,7 @@ service cloud.firestore {
     }
 
     match /analyticsEvents/{docId} {
-      allow create: if true;
+      allow create: if validAnalyticsEvent();
       allow read, update, delete: if backendAdmin();
     }
 

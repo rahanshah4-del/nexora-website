@@ -8,6 +8,7 @@ import { clientSafeMessage } from '../utils/messages.js'
 import { normalizeCurrency, statusValue, toNumber } from '../lib/calculations.js'
 import { isPendingTransaction, transactionAmount } from '../lib/financeCalculations.js'
 import { financePermissions, outflowTransaction } from '../lib/financeAccess.js'
+import { createWorkspaceNotification } from '../lib/notifications.js'
 
 function normalizeTransaction(transaction = {}) {
   return {
@@ -196,6 +197,20 @@ export function useAccountTransactions() {
             newValue: { type, amount, status: payload.status || 'pending' },
           },
         })
+        await createWorkspaceNotification({
+          workspaceId,
+          userId,
+          businessType,
+          type: 'Account',
+          priority: 'high',
+          title: 'Wallet transaction submitted',
+          message: `${title} for ${normalizeCurrency(payload.currency || 'PKR')} ${amount} was submitted.`,
+          relatedId: ref.id,
+          route: '/app/approvals',
+          createdBy: userId,
+          createdByEmail: firebaseUser?.email || userDoc?.email || '',
+          metadata: { type, amount, currency: normalizeCurrency(payload.currency || 'PKR') },
+        })
         return { ok: true }
       } catch (err) {
         return { ok: false, error: clientSafeMessage(err, 'Unable to save transaction.') }
@@ -234,6 +249,19 @@ export function useAccountTransactions() {
             oldValue: { status: transaction.status, approvalStatus: transaction.approvalStatus },
             newValue: { status: 'approved', approvalStatus: 'approved' },
           },
+        })
+        await createWorkspaceNotification({
+          workspaceId,
+          userId,
+          businessType,
+          type: 'Account',
+          priority: 'medium',
+          title: 'Wallet transaction approved',
+          message: `${transaction.title} was approved.`,
+          relatedId: transaction.id,
+          route: '/app/accounts',
+          createdBy: userId,
+          createdByEmail: firebaseUser?.email || userDoc?.email || '',
         })
         return { ok: true }
       } catch (err) {
@@ -274,6 +302,19 @@ export function useAccountTransactions() {
             newValue: { status: 'rejected', approvalStatus: 'rejected' },
           },
         })
+        await createWorkspaceNotification({
+          workspaceId,
+          userId,
+          businessType,
+          type: 'Account',
+          priority: 'high',
+          title: 'Wallet transaction rejected',
+          message: `${transaction.title} was rejected.`,
+          relatedId: transaction.id,
+          route: '/app/accounts',
+          createdBy: userId,
+          createdByEmail: firebaseUser?.email || userDoc?.email || '',
+        })
         return { ok: true }
       } catch (err) {
         return { ok: false, error: clientSafeMessage(err, 'Unable to reject transaction.') }
@@ -305,6 +346,19 @@ export function useAccountTransactions() {
             oldValue: { status: transaction.status, approvalStatus: transaction.approvalStatus },
             newValue: null,
           },
+        })
+        await createWorkspaceNotification({
+          workspaceId,
+          userId,
+          businessType,
+          type: 'Account',
+          priority: 'low',
+          title: 'Wallet transaction deleted',
+          message: `${transaction.title} was deleted.`,
+          relatedId: transaction.id,
+          route: '/app/accounts',
+          createdBy: userId,
+          createdByEmail: firebaseUser?.email || userDoc?.email || '',
         })
         return { ok: true }
       } catch (err) {

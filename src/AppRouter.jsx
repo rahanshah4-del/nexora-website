@@ -68,6 +68,7 @@ const WhatsappTemplatesPage = lazy(() => import('./crm/pages/WhatsappTemplates.j
 const WhatsappConnectPage = lazy(() => import('./crm/pages/WhatsappConnect.jsx'))
 const UpgradeRequests = lazy(() => import('./pages/admin/UpgradeRequests.jsx'))
 const ControlCentrePage = lazy(() => import('./pages/admin/ControlCentre.jsx'))
+const ClientCommandCenterPage = lazy(() => import('./pages/admin/ClientCommandCenter.jsx'))
 const AdminLogin = lazy(() => import('./pages/admin/AdminLogin.jsx'))
 
 class InvoiceRouteBoundary extends Component {
@@ -286,6 +287,7 @@ export default function AppRouter() {
       <Route path="/admin/login" element={<LazyPage><AdminLogin /></LazyPage>} />
       <Route path="/admin/control-centre" element={<AdminControlCentreRoute />} />
       <Route path="/admin" element={<AdminUpgradeRequestsRoute />}>
+          <Route path="client-command-center" element={<LazyPage><ClientCommandCenterPage /></LazyPage>} />
           <Route path="upgrade-requests" element={<LazyPage><UpgradeRequests /></LazyPage>} />
           <Route index element={<Navigate to="/admin/control-centre" replace />} />
       </Route>

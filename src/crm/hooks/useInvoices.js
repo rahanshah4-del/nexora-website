@@ -9,6 +9,7 @@ import { useWorkspaceAccess } from './useWorkspaceAccess.js'
 import { isDraftInvoice, resolveInvoicePermissions } from '../lib/invoiceAccess.js'
 import { hasOpenInvoicePayment, pendingInvoicePaymentId } from '../lib/approvalQueue.js'
 import { normalizeBusinessType } from '../data/moduleAccess.js'
+import { createWorkspaceNotification } from '../lib/notifications.js'
 import {
   calculateBalanceDue,
   calculateInvoiceTotals,
@@ -661,6 +662,22 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT } = {}) {
             targetName: invNo,
             metadata: { customerName: name, total: invoice.total, currency: invoice.currency },
           })
+          await createWorkspaceNotification({
+            workspaceId,
+            userId,
+            businessType,
+            type: 'Invoices',
+            priority: requiresApproval ? 'high' : 'medium',
+            title: requiresApproval ? 'Invoice approval needed' : 'Invoice created',
+            message: requiresApproval
+              ? `${invNo} for ${name} is waiting for approval.`
+              : `${invNo} was created for ${name}.`,
+            relatedId: ref.id,
+            route: requiresApproval ? '/app/approvals' : '/app/invoices',
+            createdBy: userId,
+            createdByEmail: firebaseUser?.email || userDoc?.email || '',
+            metadata: { invoiceNumber: invNo, total: invoice.total, currency: invoice.currency },
+          })
           return { ok: true }
         } catch (e) {
           return { ok: false, error: clientSafeMessage(e, 'Unable to create invoice.') }
@@ -805,7 +822,21 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT } = {}) {
                 paymentMethod,
                 oldValue: { status: invoice.status, paymentStatus: invoice.paymentStatus, amountPaid: currentPaid },
                 newValue: { status: 'pending_approval', paymentStatus: 'pending_verification', amountPaid: currentPaid },
-              },
+            },
+          })
+            await createWorkspaceNotification({
+              workspaceId,
+              userId,
+              businessType,
+              type: 'Approvals',
+              priority: 'high',
+              title: 'Payment sent for approval',
+              message: `${invoice.invoiceNumber || id} payment is waiting in Approval Center.`,
+              relatedId: paymentRef.id,
+              route: '/app/approvals',
+              createdBy: userId,
+              createdByEmail: firebaseUser?.email || userDoc?.email || '',
+              metadata: { invoiceId: id, amount: appliedAmount, currency: invoice.currency },
             })
             return { ok: true, pendingApproval: true }
           }
@@ -948,6 +979,20 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT } = {}) {
               newValue: { status: 'paid', paymentStatus: 'paid', amountPaid: total },
             },
           })
+          await createWorkspaceNotification({
+            workspaceId,
+            userId,
+            businessType,
+            type: 'Payments',
+            priority: 'medium',
+            title: 'Invoice paid',
+            message: `${invoice.invoiceNumber || id} was marked as paid.`,
+            relatedId: id,
+            route: '/app/invoices',
+            createdBy: userId,
+            createdByEmail: firebaseUser?.email || userDoc?.email || '',
+            metadata: { amount: appliedAmount, currency: invoice.currency, paymentMethod },
+          })
           return { ok: true }
         } catch (e) {
           return { ok: false, error: clientSafeMessage(e, 'Unable to mark invoice as paid.') }
@@ -991,6 +1036,19 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT } = {}) {
               oldValue: { status: invoice.status, paymentStatus: invoice.paymentStatus },
               newValue: { status: 'rejected', paymentStatus: 'rejected' },
             },
+          })
+          await createWorkspaceNotification({
+            workspaceId,
+            userId,
+            businessType,
+            type: 'Payments',
+            priority: 'high',
+            title: 'Payment rejected',
+            message: `${invoice.invoiceNumber || id} payment was rejected.`,
+            relatedId: id,
+            route: '/app/invoices',
+            createdBy: userId,
+            createdByEmail: firebaseUser?.email || userDoc?.email || '',
           })
           return { ok: true }
         } catch (e) {
@@ -1133,7 +1191,21 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT } = {}) {
                 paymentMethod,
                 oldValue: { status: invoice.status, paymentStatus: invoice.paymentStatus, amountPaid: currentPaid },
                 newValue: { status: 'pending_approval', paymentStatus: 'pending_verification', amountPaid: currentPaid },
-              },
+            },
+          })
+            await createWorkspaceNotification({
+              workspaceId,
+              userId,
+              businessType,
+              type: 'Approvals',
+              priority: 'high',
+              title: 'Partial payment approval needed',
+              message: `${appliedAmount} ${invoice.currency || 'PKR'} on ${invoice.invoiceNumber || id} is waiting for approval.`,
+              relatedId: paymentRef.id,
+              route: '/app/approvals',
+              createdBy: userId,
+              createdByEmail: firebaseUser?.email || userDoc?.email || '',
+              metadata: { invoiceId: id, amount: appliedAmount, currency: invoice.currency },
             })
             return { ok: true, pendingApproval: true }
           }
@@ -1278,6 +1350,20 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT } = {}) {
               },
             })
           }
+          await createWorkspaceNotification({
+            workspaceId,
+            userId,
+            businessType,
+            type: 'Payments',
+            priority: fullyPaid ? 'medium' : 'low',
+            title: fullyPaid ? 'Invoice fully paid' : 'Partial payment recorded',
+            message: `${appliedAmount} ${invoice.currency || 'PKR'} was recorded for ${invoice.invoiceNumber || id}.`,
+            relatedId: id,
+            route: '/app/invoices',
+            createdBy: userId,
+            createdByEmail: firebaseUser?.email || userDoc?.email || '',
+            metadata: { amount: appliedAmount, currency: invoice.currency, fullyPaid },
+          })
           return { ok: true }
         } catch (e) {
           return { ok: false, error: clientSafeMessage(e, 'Unable to record partial payment.') }
@@ -1316,6 +1402,19 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT } = {}) {
         }
         await patchUserDoc(workspaceId, 'invoices', id, safePatch, { businessType })
         patchLoadedInvoice(id, safePatch)
+        await createWorkspaceNotification({
+          workspaceId,
+          userId,
+          businessType,
+          type: 'Invoices',
+          priority: 'low',
+          title: 'Invoice updated',
+          message: `${invoice.invoiceNumber || id} was updated.`,
+          relatedId: id,
+          route: '/app/invoices',
+          createdBy: userId,
+          createdByEmail: firebaseUser?.email || userDoc?.email || '',
+        })
         return { ok: true }
       },
       async sendForApproval(id) {
@@ -1409,6 +1508,20 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT } = {}) {
             targetId: id,
             targetName: invoice.invoiceNumber || id,
           })
+          await createWorkspaceNotification({
+            workspaceId,
+            userId,
+            businessType,
+            type: 'Approvals',
+            priority: 'high',
+            title: 'Invoice sent for approval',
+            message: `${invoice.invoiceNumber || id} was sent to Approval Center.`,
+            relatedId: approvalRecordId,
+            route: '/app/approvals',
+            createdBy: userId,
+            createdByEmail: firebaseUser?.email || userDoc?.email || '',
+            metadata: { invoiceId: id, amount },
+          })
           return { ok: true }
         } catch (e) {
           return { ok: false, error: clientSafeMessage(e, 'Unable to send invoice for approval.') }
@@ -1432,6 +1545,19 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT } = {}) {
           approvedBy: userId,
           approvedAt: new Date().toISOString(),
         })
+        await createWorkspaceNotification({
+          workspaceId,
+          userId,
+          businessType,
+          type: 'Approvals',
+          priority: 'medium',
+          title: 'Invoice approved',
+          message: `${invoice.invoiceNumber || id} was approved.`,
+          relatedId: id,
+          route: '/app/invoices',
+          createdBy: userId,
+          createdByEmail: firebaseUser?.email || userDoc?.email || '',
+        })
         return { ok: true }
       },
       async markInvoiceSent(id) {
@@ -1446,6 +1572,20 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT } = {}) {
           status: 'sent',
           sentAt: new Date().toISOString(),
           sentBy: userId,
+        })
+        const invoice = invoices.find((item) => item.id === id)
+        await createWorkspaceNotification({
+          workspaceId,
+          userId,
+          businessType,
+          type: 'Invoices',
+          priority: 'low',
+          title: 'Invoice sent',
+          message: `${invoice?.invoiceNumber || id} was marked as sent.`,
+          relatedId: id,
+          route: '/app/invoices',
+          createdBy: userId,
+          createdByEmail: firebaseUser?.email || userDoc?.email || '',
         })
         return { ok: true }
       },
@@ -1516,6 +1656,19 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT } = {}) {
               newValue: { status: permissions.canEditAllInvoiceFields ? 'sent' : invoice.status, paymentStatus: 'pending', amountPaid: 0 },
             },
           })
+          await createWorkspaceNotification({
+            workspaceId,
+            userId,
+            businessType,
+            type: 'Payments',
+            priority: 'medium',
+            title: 'Invoice marked unpaid',
+            message: `${invoice.invoiceNumber || id} payment was reversed.`,
+            relatedId: id,
+            route: '/app/invoices',
+            createdBy: userId,
+            createdByEmail: firebaseUser?.email || userDoc?.email || '',
+          })
           return { ok: true }
         } catch (e) {
           return { ok: false, error: clientSafeMessage(e, 'Unable to mark invoice as unpaid.') }
@@ -1552,6 +1705,19 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT } = {}) {
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           })
+          await createWorkspaceNotification({
+            workspaceId,
+            userId,
+            businessType,
+            type: 'Invoices',
+            priority: 'low',
+            title: 'Invoice duplicated',
+            message: `${copyNumber} was created from ${invoice.invoiceNumber || id}.`,
+            relatedId: ref.id,
+            route: '/app/invoices',
+            createdBy: userId,
+            createdByEmail: firebaseUser?.email || userDoc?.email || '',
+          })
           return { ok: true }
         } catch (e) {
           return { ok: false, error: clientSafeMessage(e, 'Unable to duplicate invoice.') }
@@ -1560,8 +1726,22 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT } = {}) {
       async deleteInvoice(id) {
         if (!permissions.canDelete) return { ok: false, error: 'Only owner or admin can delete invoices.' }
         if (!workspaceId) return { ok: false, error: 'Please login first' }
+        const invoice = invoices.find((item) => item.id === id)
         await removeUserDoc(workspaceId, 'invoices', id)
         removeLoadedInvoice(id)
+        await createWorkspaceNotification({
+          workspaceId,
+          userId,
+          businessType,
+          type: 'Invoices',
+          priority: 'low',
+          title: 'Invoice deleted',
+          message: `${invoice?.invoiceNumber || id} was deleted.`,
+          relatedId: id,
+          route: '/app/invoices',
+          createdBy: userId,
+          createdByEmail: firebaseUser?.email || userDoc?.email || '',
+        })
         return { ok: true }
       },
     }),

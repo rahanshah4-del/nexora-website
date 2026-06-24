@@ -276,6 +276,11 @@ const SidebarNavItem = memo(function SidebarNavItem({ item, collapsed, onNavigat
       )}
       <HdSidebarIcon icon={Icon} tone={tone} disabled={disabled} />
       {!collapsed ? <span className="truncate pr-9">{label}</span> : null}
+      {collapsed ? (
+        <span className="sidebar-tooltip pointer-events-none absolute left-full top-1/2 z-50 ml-3 hidden -translate-y-1/2 whitespace-nowrap rounded-xl border border-slate-200 bg-slate-950 px-3 py-1.5 text-xs font-bold text-white shadow-lg group-hover:block">
+          {label}
+        </span>
+      ) : null}
     </>
   )
 
@@ -288,7 +293,7 @@ const SidebarNavItem = memo(function SidebarNavItem({ item, collapsed, onNavigat
           'focus-ring group relative flex w-full cursor-not-allowed items-center rounded-xl border border-transparent text-[13px] font-semibold text-slate-400 transition-colors duration-150 ease-out hover:border-slate-200/80 hover:bg-white hover:text-slate-600',
           collapsed ? 'justify-center px-0 py-2' : 'gap-2.5 px-2.5 py-1.5',
         )}
-        title="Coming Soon / Not included in your selected business type"
+        title={`${label} - Coming Soon / Not included in your selected business type`}
       >
         {content}
       </button>
@@ -305,6 +310,7 @@ const SidebarNavItem = memo(function SidebarNavItem({ item, collapsed, onNavigat
         }
         onNavigate?.()
       }}
+      title={label}
       className={({ isActive }) =>
         cn(
           'focus-ring group relative flex items-center rounded-xl text-[13px] font-semibold transition-colors duration-150 ease-out',
@@ -434,23 +440,25 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
     onSwitchProduct?.()
   }, [onNavigate, onSwitchProduct])
 
+  const shouldCollapse = !mobile && collapsed
+
   const content = useMemo(() => (
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
-      <Brand collapsed={collapsed} workspaceName={workspaceName} businessTitle={businessTitle} />
-      <div className={`mt-1 px-2 ${collapsed ? 'hidden' : ''}`}>
+      <Brand collapsed={shouldCollapse} workspaceName={workspaceName} businessTitle={businessTitle} />
+      <div className={`mt-1 px-2 ${shouldCollapse ? 'hidden' : ''}`}>
         <div className="rounded-[0.95rem] border border-slate-200/70 bg-slate-50/80 px-2.5 py-1.5">
           <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-slate-400">Workspace</p>
           <p className="mt-0.5 truncate text-[11px] font-semibold text-slate-700">{businessTitle}</p>
         </div>
       </div>
 
-      <nav className={`mt-2 min-h-0 flex-1 overflow-y-auto px-2 pb-2 pr-1.5 ${collapsed ? 'space-y-1.5' : 'space-y-0.5'}`}>
+      <nav className={`mt-2 min-h-0 flex-1 overflow-y-auto px-2 pb-2 pr-1.5 ${shouldCollapse ? 'space-y-1.5' : 'space-y-0.5'}`}>
         {sidebarItems.map((item) => (
-          <SidebarNavItem key={item.to} item={item} collapsed={collapsed} onNavigate={onNavigate} />
+          <SidebarNavItem key={item.to} item={item} collapsed={shouldCollapse} onNavigate={onNavigate} />
         ))}
       </nav>
 
-      {!collapsed && (
+      {!shouldCollapse && (
         <div className="shrink-0 space-y-2 pb-1">
           <div className="px-2">
             <button
@@ -464,13 +472,18 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
         </div>
       )}
     </div>
-  ), [businessTitle, collapsed, handleSwitchProduct, onNavigate, sidebarItems, workspaceName])
+  ), [businessTitle, handleSwitchProduct, onNavigate, shouldCollapse, sidebarItems, workspaceName])
 
   if (!mobile) {
     return (
       <>
-        <aside className={`hidden print:hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-20 lg:block lg:border-r lg:border-slate-200/80 lg:bg-white/[0.95] lg:shadow-[12px_0_44px_-38px_rgba(15,23,42,0.45)] lg:backdrop-blur-sm ${collapsed ? 'lg:w-[72px] lg:p-2' : 'lg:w-[236px] lg:p-2.5'}`}>
-          {content}
+        <aside
+          className="sidebar-aside hidden print:hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-20 lg:block lg:border-r lg:border-slate-200/80 lg:bg-white/[0.95] lg:shadow-[12px_0_44px_-38px_rgba(15,23,42,0.45)] lg:backdrop-blur-sm"
+          data-sidebar={shouldCollapse ? 'collapsed' : 'expanded'}
+        >
+          <div className={shouldCollapse ? 'sidebar-shell sidebar-shell-collapsed' : 'sidebar-shell sidebar-shell-expanded'}>
+            {content}
+          </div>
           {onToggleCollapse ? (
             <button
               type="button"
@@ -493,7 +506,7 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
         animate={{ x: 0, opacity: 1 }}
         exit={{ x: -40, opacity: 0 }}
         transition={{ duration: 0.18, ease: 'easeOut' }}
-        className="h-full w-[17rem] rounded-[1.5rem] border border-slate-200 bg-white/95 p-2 shadow-[0_18px_60px_-40px_rgba(15,23,42,0.45)] print:hidden"
+        className="sidebar-mobile h-full rounded-[1.5rem] border border-slate-200 bg-white/95 p-2 shadow-[0_18px_60px_-40px_rgba(15,23,42,0.45)] print:hidden"
       >
         {content}
       </motion.aside>

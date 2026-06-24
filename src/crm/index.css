@@ -28,6 +28,45 @@
 }
 
 @layer components {
+  :root {
+    --nexora-sidebar-width: 16.5rem;
+    --nexora-sidebar-collapsed-width: 4.75rem;
+    --nexora-content-gap: 1rem;
+  }
+
+  .crm-shell {
+    --nexora-sidebar-width-current: var(--nexora-sidebar-width);
+    --nexora-main-offset: 0px;
+    --nexora-shell-padding: 0.75rem;
+  }
+
+  .crm-shell[data-sidebar='expanded'] {
+    --nexora-main-offset: var(--nexora-sidebar-width);
+  }
+
+  .crm-shell[data-sidebar='collapsed'] {
+    --nexora-main-offset: var(--nexora-sidebar-collapsed-width);
+  }
+
+  .crm-shell[data-screen-size='mobile'],
+  .crm-shell[data-screen-size='tablet'] {
+    --nexora-shell-padding: 0.5rem;
+    --nexora-main-offset: 0px;
+  }
+
+  .crm-shell[data-screen-size='laptop'][data-sidebar='collapsed'] {
+    --nexora-main-offset: var(--nexora-sidebar-collapsed-width);
+  }
+
+  .crm-shell[data-screen-size='laptop'][data-sidebar='expanded'] {
+    --nexora-main-offset: var(--nexora-sidebar-width);
+  }
+
+  .crm-shell[data-screen-size='desktop'],
+  .crm-shell[data-screen-size='largeDesktop'] {
+    --nexora-shell-padding: 1rem;
+  }
+
   .nexora-bg {
     @apply relative isolate min-h-screen bg-slate-50;
     overflow-x: clip;
@@ -67,6 +106,7 @@
   .workspace-fluid-container {
     width: min(100%, 1920px);
     min-width: 0;
+    padding-inline: var(--nexora-shell-padding);
   }
 
   .crm-auto-grid {
@@ -95,8 +135,74 @@
 
   @media (min-width: 1280px) {
     .crm-two-pane {
-      grid-template-columns: minmax(0, 1fr) minmax(18rem, 23rem);
+      grid-template-columns: minmax(0, 1fr) minmax(0, 23rem);
     }
+  }
+
+  .crm-sidebar-shell,
+  .sidebar-shell {
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 0.5rem;
+    transition: width 220ms ease, padding 220ms ease;
+    will-change: width;
+  }
+
+  .sidebar-aside {
+    width: var(--nexora-sidebar-width);
+    transition: width 220ms ease, transform 220ms ease;
+    overflow: visible;
+    will-change: width;
+  }
+
+  .sidebar-aside[data-sidebar='collapsed'] {
+    width: var(--nexora-sidebar-collapsed-width);
+  }
+
+  .sidebar-aside[data-sidebar='expanded'] {
+    width: var(--nexora-sidebar-width);
+  }
+
+  .crm-shell .app-main {
+    margin-left: var(--nexora-main-offset);
+    width: calc(100% - var(--nexora-main-offset));
+    transition: margin-left 220ms ease, width 220ms ease;
+    will-change: margin-left, width;
+  }
+
+  .crm-shell[data-screen-size='mobile'] .app-main,
+  .crm-shell[data-screen-size='tablet'] .app-main {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .crm-shell .sidebar-shell,
+  .crm-shell .sidebar-mobile {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .crm-shell .sidebar-mobile {
+    max-width: min(18.5rem, calc(100vw - 1.5rem));
+  }
+
+  .crm-shell .sidebar-shell nav {
+    overflow-x: visible;
+  }
+
+  .crm-shell .sidebar-tooltip {
+    letter-spacing: 0;
+  }
+
+  .crm-shell .sidebar-shell-collapsed {
+    width: var(--nexora-sidebar-collapsed-width);
+  }
+
+  .crm-shell .sidebar-shell-expanded {
+    width: var(--nexora-sidebar-width);
+    padding: 0.625rem;
   }
 
   .crm-table-scroll {
@@ -104,6 +210,86 @@
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-inline: contain;
+  }
+
+  .crm-table-mobile {
+    display: none;
+  }
+
+  .crm-table-stack {
+    min-width: 0;
+  }
+
+  .restaurant-pos-page {
+    min-height: 0;
+    overflow-x: clip;
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  }
+
+  .restaurant-pos-grid {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .restaurant-pos-menu-panel,
+  .restaurant-pos-billing-panel {
+    min-width: 0;
+    align-self: start;
+  }
+
+  .restaurant-menu-scroll,
+  .restaurant-cart-panel {
+    min-height: 12rem;
+    max-height: none;
+  }
+
+  .crm-shell [class*='grid-cols-['] {
+    min-width: 0;
+  }
+
+  .crm-shell .grid > * {
+    min-width: 0;
+  }
+
+  .crm-shell .card-auto-fit,
+  .crm-shell .report-widget-grid {
+    display: grid;
+    min-width: 0;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  }
+
+  @media (min-width: 1024px) {
+    .restaurant-pos-grid {
+      grid-template-columns: minmax(0, 1fr) minmax(min(100%, 21rem), 0.42fr);
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .restaurant-pos-page {
+      min-height: calc(100dvh - 6.5rem);
+    }
+
+    .restaurant-pos-grid {
+      min-height: calc(100dvh - 6.5rem);
+      grid-template-columns: minmax(0, 1fr) minmax(min(100%, 22rem), 0.34fr);
+    }
+
+    .restaurant-pos-menu-panel,
+    .restaurant-pos-billing-panel {
+      max-height: calc(100dvh - 6.5rem);
+      overflow: hidden;
+    }
+
+    .restaurant-menu-scroll,
+    .restaurant-cart-panel {
+      min-height: 0;
+    }
+  }
+
+  @media (min-width: 1536px) {
+    .restaurant-pos-grid {
+      grid-template-columns: minmax(0, 1fr) minmax(min(100%, 24rem), 0.32fr);
+    }
   }
 
   .crm-shell .backdrop-blur-sm,
@@ -275,6 +461,74 @@
   }
 }
 
+@media (max-width: 1023px) {
+  .crm-main .overflow-x-auto {
+    overflow-x: visible;
+  }
+
+  .crm-main .overflow-x-auto > table:not(.print-document table) {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+
+  .crm-main .overflow-x-auto > table:not(.print-document table) thead {
+    display: none;
+  }
+
+  .crm-main .overflow-x-auto > table:not(.print-document table) tbody,
+  .crm-main .overflow-x-auto > table:not(.print-document table) tr,
+  .crm-main .overflow-x-auto > table:not(.print-document table) td {
+    display: block;
+    width: 100%;
+  }
+
+  .crm-main .overflow-x-auto > table:not(.print-document table) tr {
+    margin-bottom: 0.75rem;
+    overflow: hidden;
+    border: 1px solid rgb(226 232 240);
+    border-radius: 1rem;
+    background: rgb(255 255 255 / 0.92);
+  }
+
+  .crm-main .overflow-x-auto > table:not(.print-document table) td {
+    white-space: normal !important;
+    overflow-wrap: anywhere;
+    border-bottom: 1px solid rgb(241 245 249);
+  }
+
+  .crm-main .overflow-x-auto > table:not(.print-document table) td:last-child {
+    border-bottom: 0;
+  }
+
+  .crm-table-scroll {
+    display: none;
+  }
+
+  .crm-table-mobile {
+    display: grid;
+  }
+
+  .crm-shell .app-main {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+
+  .crm-shell .workspace-fluid-container {
+    padding-inline: 0.5rem;
+  }
+
+  .crm-shell .fixed.bottom-4[class~='left-1/2'],
+  .crm-shell .fixed.bottom-3[class~='left-1/2'],
+  .crm-shell .fixed.bottom-0.left-0.right-0 {
+    left: 0.5rem;
+    right: 0.5rem;
+    bottom: 0.5rem;
+    transform: none;
+    width: auto;
+    max-width: none;
+  }
+}
+
 @media (max-width: 767px) {
   .nexora-bg::before,
   .nexora-bg::after {
@@ -300,6 +554,10 @@
   .blur-2xl,
   .blur-3xl {
     filter: none !important;
+  }
+
+  .crm-table-mobile {
+    display: grid;
   }
 }
 

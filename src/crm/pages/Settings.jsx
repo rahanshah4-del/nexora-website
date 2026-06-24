@@ -737,8 +737,8 @@ function RestaurantPosSettingsCard({ draft, setDraft, canManageSettings, onSaveS
   ]
   const sampleTotals = calculateRestaurantBill(sampleRows, {
     discount: 100,
-    serviceCharges: restaurantSettings.serviceChargePercentage || 5,
-    tax: restaurantSettings.taxPercentage || 5,
+    serviceCharges: restaurantSettings.serviceChargePercentage ?? 0,
+    tax: restaurantSettings.taxPercentage ?? 0,
     serviceChargeEnabled: restaurantSettings.enableServiceCharge !== false,
     taxEnabled: restaurantSettings.enableTax !== false,
   })
@@ -889,10 +889,10 @@ function RestaurantPosSettingsCard({ draft, setDraft, canManageSettings, onSaveS
           <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Tax & Service Settings</p>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             <Field label="Tax percentage">
-              <Input type="number" min="0" value={restaurantSettings.taxPercentage || '5'} onChange={(event) => updateRestaurantSetting('taxPercentage', Math.max(0, Number(event.target.value) || 0))} readOnly={!canManageSettings} />
+              <Input type="number" min="0" value={restaurantSettings.taxPercentage ?? 0} onChange={(event) => updateRestaurantSetting('taxPercentage', Math.max(0, Number(event.target.value) || 0))} readOnly={!canManageSettings} />
             </Field>
             <Field label="Service charge percentage">
-              <Input type="number" min="0" value={restaurantSettings.serviceChargePercentage || '5'} onChange={(event) => updateRestaurantSetting('serviceChargePercentage', Math.max(0, Number(event.target.value) || 0))} readOnly={!canManageSettings} />
+              <Input type="number" min="0" value={restaurantSettings.serviceChargePercentage ?? 0} onChange={(event) => updateRestaurantSetting('serviceChargePercentage', Math.max(0, Number(event.target.value) || 0))} readOnly={!canManageSettings} />
             </Field>
             <ToggleSetting label="Enable tax" checked={restaurantSettings.enableTax !== false} onChange={(value) => updateRestaurantSetting('enableTax', value)} disabled={!canManageSettings} />
             <ToggleSetting label="Enable service charge" checked={restaurantSettings.enableServiceCharge !== false} onChange={(value) => updateRestaurantSetting('enableServiceCharge', value)} disabled={!canManageSettings} />

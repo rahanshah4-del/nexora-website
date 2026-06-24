@@ -28,7 +28,7 @@ import {
 import { FiLogOut } from 'react-icons/fi'
 import { useNavigate } from 'react-router-dom'
 import { signOut } from 'firebase/auth'
-import { doc, getDoc, getDocFromCache, getDocFromServer, serverTimestamp, setDoc } from 'firebase/firestore'
+import { collection, deleteDoc, doc, getDoc, getDocFromCache, getDocFromServer, limit, onSnapshot, query, serverTimestamp, setDoc, updateDoc, where, writeBatch } from 'firebase/firestore'
 import logoUrl from '../../assets/logo/nexora-logo.svg'
 import useAuth from '../../context/useAuth.js'
 import { auth, db } from '../../lib/firebase.js'
@@ -120,27 +120,6 @@ function onboardingErrorMessage(error) {
   }
   return clientSafeMessage(error, 'Could not create workspace right now.', { context: 'Workspace onboarding' })
 }
-
-const sampleNotifications = [
-  {
-    title: 'CRM workspace active',
-    text: 'Nexora CRM Workspace is ready to use.',
-    tone: 'text-emerald-600 bg-emerald-50',
-    icon: HiOutlineCheckCircle,
-  },
-  {
-    title: 'Trial expires in 7 days',
-    text: 'Your workspace trial period is 7 days from activation.',
-    tone: 'text-amber-600 bg-amber-50',
-    icon: HiOutlineBell,
-  },
-  {
-    title: 'Other modules coming soon',
-    text: 'School ERP, Property ERP, POS, and more will be available soon.',
-    tone: 'text-blue-600 bg-blue-50',
-    icon: HiOutlineInformationCircle,
-  },
-]
 
 function cleanString(value) {
   return typeof value === 'string' ? value.trim() : ''
@@ -301,6 +280,35 @@ function formatDate(value) {
   return new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', year: 'numeric' }).format(date)
 }
 
+function notificationTone(priority) {
+  const value = cleanString(priority).toLowerCase()
+  if (value === 'high') return 'text-red-600 bg-red-50'
+  if (value === 'medium') return 'text-amber-600 bg-amber-50'
+  return 'text-blue-600 bg-blue-50'
+}
+
+function notificationIcon(priority) {
+  const value = cleanString(priority).toLowerCase()
+  if (value === 'high') return HiOutlineInformationCircle
+  if (value === 'medium') return HiOutlineBell
+  return HiOutlineCheckCircle
+}
+
+function normalizeWorkspaceNotification(docId, row = {}) {
+  const createdAt = timestampToDate(row.createdAt)
+  return {
+    id: docId,
+    title: row.title || 'Notification',
+    text: row.message || row.detail || '',
+    type: row.type || 'Workspace',
+    read: row.read === true,
+    createdAt,
+    sortAt: createdAt?.getTime?.() || 0,
+    tone: notificationTone(row.priority),
+    icon: notificationIcon(row.priority),
+  }
+}
+
 function initialsFor(name, email) {
   const source = cleanString(name) || cleanString(email) || 'Nexora User'
   const initials = source
@@ -393,38 +401,80 @@ function SidebarItem({ icon: Icon, label, active = false, muted = false, onClick
   )
 }
 
-function NotificationDropdown({ notifications, onClose }) {
+function NotificationDropdown({ notifications, loading, onMarkRead, onClear, onClearAll, onClose }) {
   return (
     <div className="absolute right-0 top-full z-40 mt-2 w-[min(22rem,calc(100vw-2rem))] rounded-lg border border-slate-200 bg-white p-3 text-slate-900 shadow-xl shadow-slate-950/10">
       <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-2">
         <div>
           <p className="text-sm font-bold text-slate-950">Notifications</p>
-          <p className="mt-0.5 text-xs text-slate-500">{notifications.length} workspace updates</p>
+          <p className="mt-0.5 text-xs text-slate-500">{notifications.filter((item) => !item.read).length} unread workspace updates</p>
         </div>
-        <button
-          type="button"
-          onClick={onClose}
-          className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
-          aria-label="Close notifications"
-        >
-          <HiOutlineXMark className="h-5 w-5" />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            disabled={!notifications.length}
+            onClick={onClearAll}
+            className="rounded-md px-2 py-1 text-xs font-bold text-slate-500 transition hover:bg-slate-100 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Clear
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
+            aria-label="Close notifications"
+          >
+            <HiOutlineXMark className="h-5 w-5" />
+          </button>
+        </div>
       </div>
       <div className="mt-2 space-y-1">
-        {notifications.map((notification) => {
+        {loading ? (
+          <div className="rounded-lg px-3 py-8 text-center text-sm font-semibold text-slate-500">Loading notifications...</div>
+        ) : notifications.length ? notifications.map((notification) => {
           const Icon = notification.icon
           return (
-            <div key={notification.title} className="flex items-start gap-3 rounded-lg px-2 py-2 transition hover:bg-slate-50">
+            <button
+              key={notification.id}
+              type="button"
+              className={`flex w-full items-start gap-3 rounded-lg px-2 py-2 text-left transition hover:bg-slate-50 ${notification.read ? '' : 'bg-blue-50/70'}`}
+              onClick={() => onMarkRead?.(notification.id)}
+            >
               <span className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${notification.tone}`}>
                 <Icon className="h-5 w-5" />
               </span>
-              <span className="min-w-0">
-                <span className="block text-sm font-bold text-slate-900">{notification.title}</span>
+              <span className="min-w-0 flex-1">
+                <span className="flex items-start justify-between gap-2">
+                  <span className="block min-w-0 truncate text-sm font-bold text-slate-900">
+                    {notification.title}
+                    {!notification.read ? <span className="ml-2 inline-block h-2 w-2 rounded-full bg-red-500 align-middle" /> : null}
+                  </span>
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    className="shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wide text-slate-400 hover:bg-white hover:text-red-600"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      onClear?.(notification.id)
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key !== 'Enter' && event.key !== ' ') return
+                      event.preventDefault()
+                      event.stopPropagation()
+                      onClear?.(notification.id)
+                    }}
+                  >
+                    Clear
+                  </span>
+                </span>
                 <span className="mt-0.5 block text-xs leading-5 text-slate-500">{notification.text}</span>
+                <span className="mt-1 block text-[10px] font-bold uppercase tracking-wide text-blue-600">{notification.type}</span>
               </span>
-            </div>
+            </button>
           )
-        })}
+        }) : (
+          <div className="rounded-lg px-3 py-8 text-center text-sm font-semibold text-slate-500">No notifications yet.</div>
+        )}
       </div>
     </div>
   )
@@ -1283,6 +1333,8 @@ export default function WorkspaceSelection() {
   const [selectedRegion, setSelectedRegion] = useState('Pakistan')
   const [languageOpen, setLanguageOpen] = useState(false)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
+  const [workspaceNotifications, setWorkspaceNotifications] = useState([])
+  const [workspaceNotificationsLoading, setWorkspaceNotificationsLoading] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [supportCenterOpen, setSupportCenterOpen] = useState(false)
@@ -1633,6 +1685,70 @@ export default function WorkspaceSelection() {
     }
   }, [accountData, emailVerified, nowMs, onboardingCompleted, savedWorkspaceModule.businessType, user, workspaceData])
 
+  useEffect(() => {
+    if (!db || !user?.uid || !profile.workspaceId) {
+      setWorkspaceNotifications([])
+      setWorkspaceNotificationsLoading(false)
+      return undefined
+    }
+
+    setWorkspaceNotificationsLoading(true)
+    const collectionPath = `workspaces/${profile.workspaceId}/notifications`
+    const q = query(collection(db, collectionPath), where('userId', '==', user.uid), limit(30))
+    return onSnapshot(
+      q,
+      (snap) => {
+        const next = snap.docs
+          .map((item) => normalizeWorkspaceNotification(item.id, item.data()))
+          .sort((a, b) => b.sortAt - a.sortAt)
+        setWorkspaceNotifications(next)
+        setWorkspaceNotificationsLoading(false)
+      },
+      (error) => {
+        console.warn('[Workspace Notifications] listener failed', {
+          code: error?.code || '',
+          message: error?.message || '',
+          collectionPath,
+        })
+        setWorkspaceNotifications([])
+        setWorkspaceNotificationsLoading(false)
+      },
+    )
+  }, [profile.workspaceId, user?.uid])
+
+  const markWorkspaceNotificationRead = useCallback(
+    async (id) => {
+      if (!db || !profile.workspaceId || !id) return
+      setWorkspaceNotifications((current) => current.map((item) => (item.id === id ? { ...item, read: true } : item)))
+      await updateDoc(doc(db, 'workspaces', profile.workspaceId, 'notifications', id), {
+        read: true,
+        updatedAt: serverTimestamp(),
+      })
+    },
+    [profile.workspaceId],
+  )
+
+  const clearWorkspaceNotification = useCallback(
+    async (id) => {
+      if (!db || !profile.workspaceId || !id) return
+      setWorkspaceNotifications((current) => current.filter((item) => item.id !== id))
+      await deleteDoc(doc(db, 'workspaces', profile.workspaceId, 'notifications', id))
+    },
+    [profile.workspaceId],
+  )
+
+  const clearAllWorkspaceNotifications = useCallback(
+    async () => {
+      if (!db || !profile.workspaceId || !workspaceNotifications.length) return
+      const items = workspaceNotifications
+      setWorkspaceNotifications([])
+      const batch = writeBatch(db)
+      items.forEach((item) => batch.delete(doc(db, 'workspaces', profile.workspaceId, 'notifications', item.id)))
+      await batch.commit()
+    },
+    [profile.workspaceId, workspaceNotifications],
+  )
+
   const configuredBusinessType = savedWorkspaceModule.businessType
   const configuredSelectedWorkspace = savedWorkspaceModule.selectedWorkspace
   const recoveredWorkspaceModule = savedWorkspaceModule.complete && savedWorkspaceModule.source === 'recovered_business_fields'
@@ -1690,7 +1806,7 @@ export default function WorkspaceSelection() {
     },
     [allowedWorkspaceTypes, configuredSelectedWorkspace, lockedBusinessType, onboardingSelectionMode, profile.businessType, profile.planLabel, profile.trialExpired, profile.trialShortLabel, profile.workspaceId, shouldFilterModules],
   )
-  const notificationCount = sampleNotifications.length
+  const notificationCount = workspaceNotifications.filter((notification) => !notification.read).length
   const mustSelectModuleFirst = !developerOverride && !lockedBusinessType
   const createDisabled = creatingWorkspace || hasModuleLock || mustSelectModuleFirst
   const createWorkspaceMessage = hasModuleLock
@@ -3573,12 +3689,21 @@ export default function WorkspaceSelection() {
                   aria-expanded={notificationsOpen}
                 >
                   <HiOutlineBell className="h-5 w-5" />
-                  <span className="absolute right-1.5 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold leading-none text-white">
-                    {notificationCount}
-                  </span>
+                  {notificationCount ? (
+                    <span className="absolute right-1.5 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold leading-none text-white">
+                      {notificationCount}
+                    </span>
+                  ) : null}
                 </button>
                 {notificationsOpen ? (
-                  <NotificationDropdown notifications={sampleNotifications} onClose={() => setNotificationsOpen(false)} />
+                  <NotificationDropdown
+                    notifications={workspaceNotifications}
+                    loading={workspaceNotificationsLoading}
+                    onMarkRead={(id) => markWorkspaceNotificationRead(id).catch((error) => reportTechnicalError(error, 'Workspace notification read failed'))}
+                    onClear={(id) => clearWorkspaceNotification(id).catch((error) => reportTechnicalError(error, 'Workspace notification clear failed'))}
+                    onClearAll={() => clearAllWorkspaceNotifications().catch((error) => reportTechnicalError(error, 'Workspace notifications clear failed'))}
+                    onClose={() => setNotificationsOpen(false)}
+                  />
                 ) : null}
               </div>
               <span className="hidden h-8 w-px bg-slate-200 sm:block" />

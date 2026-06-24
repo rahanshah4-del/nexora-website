@@ -44,6 +44,8 @@ import {
   formatRestaurantCurrency,
 } from '../lib/restaurantPosCalculations.js'
 import { useBusinessSettings } from '../hooks/useBusinessSettings.js'
+import { useUser } from '../hooks/useUser.js'
+import { createWorkspaceNotification } from '../lib/notifications.js'
 import { directPrinterAvailable, printThermalText } from '../lib/printerService.js'
 
 const initialCart = []
@@ -59,8 +61,8 @@ const initialQuickBill = {
   paymentMethod: 'Cash',
   paidAmount: '',
   discount: '',
-  serviceCharges: '5',
-  tax: '5',
+  serviceCharges: '',
+  tax: '',
   notes: '',
   printBill: true,
   printKot: true,
@@ -286,6 +288,7 @@ function MenuImagePlaceholder({ item }) {
 export default function RestaurantOrdersPage() {
   const location = useLocation()
   const { settings } = useBusinessSettings()
+  const { userId, workspaceId, businessType, userDoc, firebaseUser } = useUser()
   const restaurantPrintSettings = {
     restaurantName: settings?.restaurantPos?.restaurantName || settings?.businessName || 'Nexora Restaurant',
     legalName: settings?.restaurantPos?.legalName || settings?.businessName || '',
@@ -323,6 +326,23 @@ export default function RestaurantOrdersPage() {
   const [menuItems] = useState(() => [...loadRestaurantMenuItems(), ...ordersPageExtraMenuItems])
   const [menuCategories] = useState(() => loadRestaurantMenuCategories())
   const [tableOptions] = useState(() => loadRestaurantTableOptions())
+
+  function notifyRestaurantOrder({ title, message, priority = 'medium', relatedId = orderNumber, dedupeKey = '' } = {}) {
+    createWorkspaceNotification({
+      workspaceId,
+      userId,
+      businessType,
+      type: 'Restaurant POS',
+      priority,
+      title,
+      message,
+      relatedId,
+      route: '/app/orders',
+      createdBy: userId,
+      createdByEmail: firebaseUser?.email || userDoc?.email || '',
+      dedupeKey,
+    }).catch(() => {})
+  }
 
   useEffect(() => {
     window.dispatchEvent(new CustomEvent('nexora:collapse-sidebar'))
@@ -508,6 +528,12 @@ export default function RestaurantOrdersPage() {
         updateRestaurantTableOrder(orderPayload.table, orderPayload)
       }
     }
+    notifyRestaurantOrder({
+      title: orderStatus === 'pending' ? 'Restaurant KOT saved' : 'Restaurant bill saved',
+      message: `${orderNumber} saved for ${orderPayload.customer}. Status: ${orderStatus}.`,
+      priority: orderStatus === 'pending' ? 'high' : 'medium',
+      dedupeKey: `restaurant-order-${orderNumber}-${orderStatus}`,
+    })
   }
 
   async function quickBillFlow() {
@@ -531,7 +557,12 @@ export default function RestaurantOrdersPage() {
   }
 
   function saveBillRecord() {
-    saveOrderRecord('served')
+    // A saved bill enters the kitchen workflow as "pending" instead of jumping straight
+    // to "served", so it shows in the kitchen display and isn't marked served prematurely.
+    // If the order has already been advanced in the kitchen, keep that progress.
+    const existingStatus = String(currentSavedOrder?.orderStatus || '').toLowerCase()
+    const nextStatus = ['preparing', 'ready', 'served'].includes(existingStatus) ? existingStatus : 'pending'
+    saveOrderRecord(nextStatus)
     setRestaurantCustomers((current) =>
       applyRestaurantCustomerPayment(current, selectedCustomerId, {
         orderNumber,
@@ -591,8 +622,6 @@ export default function RestaurantOrdersPage() {
       orderType: 'Quick Bill',
       printBill: current.printBill,
       printKot: current.printKot,
-      serviceCharges: current.serviceCharges,
-      tax: current.tax,
     }))
     setPaymentOpen(false)
     setPaymentDetails({ method: 'Cash', amount: '', note: '' })
@@ -608,8 +637,6 @@ export default function RestaurantOrdersPage() {
       orderType: 'Quick Bill',
       printBill: current.printBill,
       printKot: current.printKot,
-      serviceCharges: current.serviceCharges,
-      tax: current.tax,
     }))
     setPaymentOpen(false)
     setPaymentDetails({ method: 'Cash', amount: '', note: '' })
@@ -667,6 +694,12 @@ export default function RestaurantOrdersPage() {
       setFlowMessage('Payment saved. Ready for new order.')
       setBillingActionStatus({ type: 'payment', status: 'success', message: 'Paid. New order ready' })
     }
+    notifyRestaurantOrder({
+      title: nextPaymentStatus === 'paid' ? 'Restaurant payment received' : 'Restaurant partial payment saved',
+      message: `${orderNumber} payment saved. Status: ${nextPaymentStatus}.`,
+      priority: nextPaymentStatus === 'paid' ? 'medium' : 'high',
+      dedupeKey: `restaurant-payment-${orderNumber}-${nextPaymentStatus}`,
+    })
   }
 
   function quickPaidBill() {
@@ -701,12 +734,26 @@ export default function RestaurantOrdersPage() {
     prepareNextOrderAfterPaid()
     setFlowMessage('Bill paid and saved. Ready for next bill.')
     setBillingActionStatus({ type: 'payment', status: 'success', message: 'Paid. Next bill ready' })
+    notifyRestaurantOrder({
+      title: 'Restaurant bill paid',
+      message: `${orderNumber} was paid and saved.`,
+      priority: 'medium',
+      dedupeKey: `restaurant-paid-${orderNumber}`,
+    })
   }
 
   function saveBill() {
     if (!hasRequiredTable()) return
     saveBillRecord()
     setFlowMessage(dueAmount ? `Bill saved. Due amount ${formatRestaurantCurrency(dueAmount)} added to customer balance.` : 'Bill saved and payment recorded.')
+  }
+
+  function saveAdvancedBill() {
+    if (!hasRequiredTable()) return
+    saveBillRecord()
+    setQuickBillOpen(false)
+    setFlowMessage(dueAmount ? `Bill saved. Due amount ${formatRestaurantCurrency(dueAmount)} added to customer balance.` : 'Bill saved and payment recorded.')
+    setBillingActionStatus({ type: 'bill', status: 'success', message: 'Bill saved' })
   }
 
   function saveKot() {
@@ -717,10 +764,11 @@ export default function RestaurantOrdersPage() {
     setBillingActionStatus({ type: 'kot', status: 'success', message: 'KOT saved. New order ready' })
   }
 
-  function savePrintBill() {
+  async function savePrintBill() {
     if (!hasRequiredTable()) return
     setBillingActionStatus({ type: 'bill', status: 'loading', message: 'Generating bill...' })
-    window.setTimeout(async () => {
+    try {
+      await new Promise((resolve) => window.setTimeout(resolve, 80))
       saveBillRecord()
       if (quickBill.printBill) {
         const context = billContext()
@@ -741,13 +789,18 @@ export default function RestaurantOrdersPage() {
           message: quickBill.printBill ? 'Bill saved & printed. New order ready' : 'Bill saved. New order ready',
         })
       }
-    }, 80)
+    } catch (error) {
+      const message = error?.message || 'Unable to save bill. Please try again.'
+      setFlowMessage(message)
+      setBillingActionStatus({ type: 'bill', status: 'error', message })
+    }
   }
 
-  function savePrintKot() {
+  async function savePrintKot() {
     if (!hasRequiredTable()) return
     setBillingActionStatus({ type: 'kot', status: 'loading', message: 'Generating KOT...' })
-    window.setTimeout(async () => {
+    try {
+      await new Promise((resolve) => window.setTimeout(resolve, 80))
       if (quickBill.printKot) {
         const context = billContext()
         const printed = await sendRestaurantThermal(buildKotPrintTemplate(context))
@@ -761,7 +814,11 @@ export default function RestaurantOrdersPage() {
         status: 'success',
         message: quickBill.printKot ? 'KOT saved & printed. New order ready' : 'KOT saved. New order ready',
       })
-    }, 80)
+    } catch (error) {
+      const message = error?.message || 'Unable to save KOT. Please try again.'
+      setFlowMessage(message)
+      setBillingActionStatus({ type: 'kot', status: 'error', message })
+    }
   }
 
   function newOrder() {
@@ -775,8 +832,6 @@ export default function RestaurantOrdersPage() {
       tableNumber: '',
       printBill: current.printBill,
       printKot: current.printKot,
-      serviceCharges: current.serviceCharges,
-      tax: current.tax,
     }))
     setPrintPreview(null)
     setFlowMessage('')
@@ -814,6 +869,13 @@ export default function RestaurantOrdersPage() {
     prepareNextOrderAfterSave()
     setFlowMessage(`Order cancelled. Reason: ${cancelReason.trim()}`)
     setBillingActionStatus({ type: 'cancel', status: 'success', message: 'Order cancelled. New order ready' })
+    notifyRestaurantOrder({
+      title: 'Restaurant order cancelled',
+      message: `${currentSavedOrder.orderNumber || orderNumber} was cancelled. Reason: ${cancelReason.trim()}`,
+      priority: 'high',
+      relatedId: currentSavedOrder.orderNumber || orderNumber,
+      dedupeKey: `restaurant-cancelled-${currentSavedOrder.orderNumber || orderNumber}`,
+    })
   }
 
   function addItem(itemId) {
@@ -864,13 +926,13 @@ export default function RestaurantOrdersPage() {
   return (
     <>
       <motion.div
-        className="min-w-0 xl:min-h-[111dvh] xl:h-[111dvh] xl:overflow-hidden"
+        className="restaurant-pos-page min-w-0"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
       >
-        <div className="grid h-full min-w-0 gap-3 xl:grid-cols-[minmax(0,1fr)_430px] 2xl:grid-cols-[minmax(0,1fr)_460px]">
-        <Card className="flex min-h-0 flex-col rounded-[1.15rem] p-2.5 xl:h-full xl:overflow-hidden">
+        <div className="restaurant-pos-grid grid min-w-0 gap-3">
+        <Card className="restaurant-pos-menu-panel flex min-h-0 flex-col rounded-[1.15rem] p-2.5">
           <div className="flex min-w-0 shrink-0 flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
             <div className="min-w-0">
               <Badge variant="warning">Restaurant Billing</Badge>
@@ -992,7 +1054,7 @@ export default function RestaurantOrdersPage() {
             </div>
           </div>
 
-          <div className="mt-2 min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain pb-3 pr-1">
+          <div className="restaurant-menu-scroll mt-2 min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain pb-3 pr-1">
             <div className="grid min-w-0 grid-cols-[repeat(auto-fill,minmax(170px,1fr))] content-start gap-2 sm:grid-cols-[repeat(auto-fill,minmax(190px,1fr))]">
             {visibleItems.map((item) => {
               const inCart = cartRows.find((row) => row.itemId === item.id)
@@ -1037,7 +1099,7 @@ export default function RestaurantOrdersPage() {
           </div>
         </Card>
 
-          <Card className="flex h-full min-h-0 flex-col overflow-hidden rounded-[1.15rem] p-2.5">
+          <Card className="restaurant-pos-billing-panel flex min-h-0 flex-col rounded-[1.15rem] p-2.5">
             <div className="shrink-0 space-y-1">
             <div className="flex items-center justify-between gap-3">
               <div className="flex min-w-0 items-baseline gap-2">
@@ -1130,11 +1192,15 @@ export default function RestaurantOrdersPage() {
                   'flex items-center gap-2 rounded-lg px-2.5 py-1 text-[11px] font-bold transition',
                   billingActionStatus.status === 'success'
                     ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100'
-                    : 'bg-slate-950 text-white',
+                    : billingActionStatus.status === 'error'
+                      ? 'bg-rose-50 text-rose-700 ring-1 ring-rose-100'
+                      : 'bg-slate-950 text-white',
                 )}
               >
                 {billingActionStatus.status === 'loading' ? (
                   <HiArrowPath className="h-3.5 w-3.5 animate-spin" />
+                ) : billingActionStatus.status === 'error' ? (
+                  <HiOutlineXCircle className="h-3.5 w-3.5" />
                 ) : (
                   <HiCheckCircle className="h-3.5 w-3.5 animate-pulse" />
                 )}
@@ -1143,7 +1209,7 @@ export default function RestaurantOrdersPage() {
             ) : null}
           </div>
 
-          <div className="mt-1.5 flex min-h-[140px] flex-1 flex-col overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-1.5">
+          <div className="restaurant-cart-panel mt-1.5 flex flex-1 flex-col overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-1.5">
             <div className="flex shrink-0 items-center justify-between px-1 pb-1 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">
               <span>Cart items</span>
               <span>{cartRows.length}</span>
@@ -1317,7 +1383,7 @@ export default function RestaurantOrdersPage() {
                     value={quickBill.serviceCharges}
                     onChange={(event) => updateQuickBill('serviceCharges', event.target.value)}
                     className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-sky-300"
-                    placeholder="5"
+                    placeholder="0"
                   />
                 </Field>
                 <Field label="Tax">
@@ -1325,7 +1391,7 @@ export default function RestaurantOrdersPage() {
                     value={quickBill.tax}
                     onChange={(event) => updateQuickBill('tax', event.target.value)}
                     className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-sky-300"
-                    placeholder="5"
+                    placeholder="0"
                   />
                 </Field>
                 <Field label="Notes" className="md:col-span-2">
@@ -1346,7 +1412,7 @@ export default function RestaurantOrdersPage() {
                 <HiOutlinePrinter className="h-4 w-4" />
                 Print Bill
               </Button>
-              <Button type="button">Save Bill</Button>
+              <Button type="button" onClick={saveAdvancedBill}>Save Bill</Button>
             </div>
           </div>
         </div>

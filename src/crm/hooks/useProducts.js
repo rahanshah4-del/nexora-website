@@ -5,6 +5,7 @@ import { createUserDoc, patchUserDoc, removeUserDoc, subscribeUserCollection } f
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 import { useUser } from './useUser.js'
 import { clientSafeMessage } from '../utils/messages.js'
+import { createWorkspaceNotification } from '../lib/notifications.js'
 
 function normalizeProduct(product) {
   return {
@@ -159,6 +160,19 @@ export function useProducts(options = {}) {
             targetName: product.name,
             metadata: { sku: product.sku, category: product.category, price: product.price, productType: product.productType },
           })
+          await createWorkspaceNotification({
+            workspaceId,
+            userId,
+            businessType,
+            type: 'Inventory',
+            priority: product.stockQuantity <= product.minStockAlert ? 'high' : 'low',
+            title: 'Product created',
+            message: `${product.name} was added to products.`,
+            relatedId: ref.id,
+            route: '/app/products',
+            createdBy: userId,
+            createdByEmail: firebaseUser?.email || userDoc?.email || '',
+          })
           return { ok: true }
         } catch (e) {
           return { ok: false, error: clientSafeMessage(e, 'Unable to create product.') }
@@ -206,6 +220,19 @@ export function useProducts(options = {}) {
             targetName: product.name,
             metadata: { sku: product.sku, category: product.category, price: product.price, productType: product.productType },
           })
+          await createWorkspaceNotification({
+            workspaceId,
+            userId,
+            businessType,
+            type: 'Inventory',
+            priority: stockChanged && product.stockQuantity <= product.minStockAlert ? 'high' : 'low',
+            title: stockChanged ? 'Product stock updated' : 'Product updated',
+            message: `${product.name} was updated.`,
+            relatedId: id,
+            route: '/app/products',
+            createdBy: userId,
+            createdByEmail: firebaseUser?.email || userDoc?.email || '',
+          })
           return { ok: true }
         } catch (e) {
           return { ok: false, error: clientSafeMessage(e, 'Unable to update product.') }
@@ -229,6 +256,19 @@ export function useProducts(options = {}) {
             targetId: id,
             targetName: product?.name || id,
             metadata: { sku: product?.sku || '' },
+          })
+          await createWorkspaceNotification({
+            workspaceId,
+            userId,
+            businessType,
+            type: 'Inventory',
+            priority: 'low',
+            title: 'Product deleted',
+            message: `${product?.name || id} was deleted.`,
+            relatedId: id,
+            route: '/app/products',
+            createdBy: userId,
+            createdByEmail: firebaseUser?.email || userDoc?.email || '',
           })
           return { ok: true }
         } catch (e) {
@@ -273,6 +313,19 @@ export function useProducts(options = {}) {
             targetName: product.name,
             metadata: { sourceId: id, sku: product.sku },
           })
+          await createWorkspaceNotification({
+            workspaceId,
+            userId,
+            businessType,
+            type: 'Inventory',
+            priority: 'low',
+            title: 'Product duplicated',
+            message: `${original.name} was duplicated.`,
+            relatedId: ref.id,
+            route: '/app/products',
+            createdBy: userId,
+            createdByEmail: firebaseUser?.email || userDoc?.email || '',
+          })
           return { ok: true }
         } catch (e) {
           return { ok: false, error: clientSafeMessage(e, 'Unable to duplicate product.') }
@@ -299,6 +352,19 @@ export function useProducts(options = {}) {
             targetId: id,
             targetName: product?.name || id,
             metadata: { sku: product?.sku || '' },
+          })
+          await createWorkspaceNotification({
+            workspaceId,
+            userId,
+            businessType,
+            type: 'Inventory',
+            priority: 'low',
+            title: 'Product archived',
+            message: `${product?.name || id} was archived.`,
+            relatedId: id,
+            route: '/app/products',
+            createdBy: userId,
+            createdByEmail: firebaseUser?.email || userDoc?.email || '',
           })
           return { ok: true }
         } catch (e) {

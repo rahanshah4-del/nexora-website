@@ -6,12 +6,15 @@ import {
   HiOutlineChatBubbleLeftRight,
   HiOutlineChartBarSquare,
   HiOutlineCheckBadge,
+  HiOutlineChevronLeft,
+  HiOutlineChevronRight,
   HiOutlineCog6Tooth,
   HiOutlineCreditCard,
   HiOutlineCurrencyDollar,
   HiOutlineEnvelope,
   HiOutlineHome,
   HiOutlineLifebuoy,
+  HiOutlineBars3,
   HiOutlineMegaphone,
   HiOutlineMoon,
   HiOutlineShieldCheck,
@@ -25,6 +28,7 @@ import {
   collectionGroup,
   deleteDoc,
   doc,
+  getDoc,
   increment,
   limit,
   onSnapshot,
@@ -37,6 +41,7 @@ import {
 } from 'firebase/firestore'
 import { signOut } from 'firebase/auth'
 import { labelForBusinessType } from '../../crm/data/moduleAccess.js'
+import ClientCommandCenter from './ClientCommandCenter.jsx'
 import {
   Area,
   AreaChart,
@@ -48,7 +53,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { auth, firestoreDb as db } from '../../lib/firebase.js'
+import { auth, firebaseAuthEnabled, firestoreDb as db, getFirebaseAuthConfigMessage, missingFirebaseAuthEnvVars } from '../../lib/firebase.js'
 import useAuth from '../../context/useAuth.js'
 import { clientSafeMessage } from '../../lib/errorHandler.js'
 import { isBackendAdminEmail } from '../../lib/roles.js'
@@ -67,6 +72,7 @@ import {
   planPriceLabel,
 } from '../../lib/platformPlans.js'
 import {
+  EMAIL_WORKER_URL,
   createPasswordResetLink,
   passwordResetEmail,
   sendWorkerEmail,
@@ -87,6 +93,7 @@ import {
   formatPricingAmount,
 } from '../../crm/lib/whatsappPricing.js'
 import { buildApprovedSubscriptionPayload } from '../../lib/subscriptionApproval.js'
+import { createWorkspaceNotification, workspaceNotificationTargets } from '../../crm/lib/notifications.js'
 import EmailMarketing from './EmailMarketing.jsx'
 
 export class ControlCentreErrorBoundary extends Component {
@@ -167,12 +174,14 @@ const navGroups = [
     items: [
       ['emailMarketing', 'Email Marketing', HiOutlineEnvelope],
       ['announcements', 'Announcements', HiOutlineMegaphone],
+      ['commandCenter', 'Command Center', HiOutlineChatBubbleLeftRight],
       ['support', 'Support Tickets', HiOutlineLifebuoy],
     ],
   },
   {
     label: 'System',
     items: [
+      ['systemHealth', 'System Health', HiOutlineShieldCheck],
       ['maintenance', 'Maintenance Mode', HiOutlineWrenchScrewdriver],
       ['settings', 'Settings', HiOutlineCog6Tooth],
       ['logs', 'System Logs', HiOutlineCog6Tooth],
@@ -321,6 +330,36 @@ function isExpired(row = {}) {
   const trialEndsAt = toDate(row.trialEndsAt)
   const expiresAt = toDate(row.subscriptionExpiresAt || row.expiresAt)
   return ['expired', 'cancelled', 'canceled', 'inactive'].includes(status) || (trialEndsAt && trialEndsAt < new Date()) || (expiresAt && expiresAt < new Date())
+}
+
+function ageMinutes(value) {
+  const date = toDate(value)
+  if (!date) return null
+  return Math.max(0, (Date.now() - date.getTime()) / 60000)
+}
+
+function ageLabel(value) {
+  const minutes = ageMinutes(value)
+  if (minutes == null) return '-'
+  if (minutes < 60) return `${Math.max(1, Math.round(minutes))}m ago`
+  if (minutes < 1440) return `${Math.max(1, Math.round(minutes / 60))}h ago`
+  return `${Math.max(1, Math.round(minutes / 1440))}d ago`
+}
+
+function listSummary(values = [], limit = 3) {
+  const items = values.filter(Boolean)
+  if (!items.length) return '-'
+  const visible = items.slice(0, limit)
+  const extra = items.length - visible.length
+  return `${visible.join(', ')}${extra > 0 ? ` +${extra} more` : ''}`
+}
+
+function healthCardClass(status) {
+  const value = statusValue(status)
+  if (['critical', 'error', 'failed', 'blocked', 'offline'].includes(value)) return 'border-rose-200 bg-rose-50/70'
+  if (['warning', 'degraded', 'stale', 'pending'].includes(value)) return 'border-amber-200 bg-amber-50/70'
+  if (['healthy', 'online', 'verified', 'ready', 'synced', 'connected', 'enabled', 'active'].includes(value)) return 'border-emerald-200 bg-emerald-50/70'
+  return 'border-slate-200 bg-slate-50/70'
 }
 
 function daysLeft(value) {
@@ -510,11 +549,11 @@ function Status({ value }) {
   const status = statusValue(value)
   const tone = status.startsWith('invalid_subscription')
     ? 'bg-rose-50 text-rose-700 ring-rose-100'
-    : ['active', 'paid', 'approved', 'healthy', 'online', 'verified'].includes(status)
+    : ['active', 'paid', 'approved', 'healthy', 'online', 'verified', 'connected', 'ready', 'synced', 'enabled'].includes(status)
     ? 'bg-emerald-50 text-emerald-700 ring-emerald-100'
-    : ['trial', 'pending', 'pending_approval'].includes(status)
+    : ['trial', 'pending', 'pending_approval', 'warning', 'degraded', 'stale'].includes(status)
       ? 'bg-amber-50 text-amber-700 ring-amber-100'
-      : ['blocked', 'disabled', 'expired', 'rejected', 'offline'].includes(status)
+      : ['blocked', 'disabled', 'expired', 'rejected', 'offline', 'critical', 'error', 'failed'].includes(status)
         ? 'bg-rose-50 text-rose-700 ring-rose-100'
         : 'bg-slate-100 text-slate-600 ring-slate-200'
   return <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold capitalize ring-1 ${tone}`}>{String(value || 'Unknown').replace(/_/g, ' ')}</span>
@@ -587,12 +626,17 @@ function AdminTable({ columns, rows, emptyTitle, maxHeight = 'max-h-[30rem]' }) 
   )
 }
 
-function useSearch(rows, queryText, fields) {
-  return useMemo(() => {
-    const q = queryText.trim().toLowerCase()
-    if (!q) return rows
-    return rows.filter((row) => fields.some((field) => String(row[field] || '').toLowerCase().includes(q)))
-  }, [fields, queryText, rows])
+function searchRows(rows, queryText, fields) {
+  const q = queryText.trim().toLowerCase()
+  if (!q) return rows
+  return rows.filter((row) => fields.some((field) => String(row[field] || '').toLowerCase().includes(q)))
+}
+
+function backendNotificationDocId(notificationId = '') {
+  return String(notificationId || 'notification')
+    .replace(/[^a-zA-Z0-9_-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 180) || `notification-${Date.now()}`
 }
 
 function mergePresence(users, clientSessions, userPresence) {
@@ -609,7 +653,13 @@ export default function ControlCentre() {
   const [busy, setBusy] = useState('')
   const [toast, setToast] = useState('')
   const [notificationsOpen, setNotificationsOpen] = useState(false)
-  const [readNotifications, setReadNotifications] = useState(() => new Set())
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return window.localStorage.getItem('nexora-backend-sidebar-collapsed') === 'true'
+  })
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
+  const [backendNotificationStates, setBackendNotificationStates] = useState({})
+  const [backendNotificationStateError, setBackendNotificationStateError] = useState('')
   const [staffDraft, setStaffDraft] = useState({ name: '', email: '', role: 'Support' })
   const [announcementDraft, setAnnouncementDraft] = useState({
     title: '',
@@ -654,6 +704,41 @@ export default function ControlCentre() {
   const [whatsappPricingDraft, setWhatsappPricingDraft] = useState(defaultWhatsappPricing)
   const backendAdminAllowed = isBackendAdminEmail(user?.email)
   console.log('[Admin Auth] ControlCentre admin check:', user?.email, backendAdminAllowed ? 'allowed' : 'blocked')
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    window.localStorage.setItem('nexora-backend-sidebar-collapsed', sidebarCollapsed ? 'true' : 'false')
+  }, [sidebarCollapsed])
+
+  useEffect(() => {
+    setMobileSidebarOpen(false)
+  }, [activeTab])
+
+  useEffect(() => {
+    if (!db || !backendAdminAllowed) {
+      Promise.resolve().then(() => setBackendNotificationStates({}))
+      return undefined
+    }
+    return onSnapshot(
+      query(collection(db, 'backendNotificationStates'), limit(500)),
+      (snap) => {
+        const states = {}
+        snap.docs.forEach((item) => {
+          states[item.id] = item.data() || {}
+        })
+        setBackendNotificationStateError('')
+        setBackendNotificationStates(states)
+      },
+      (error) => {
+        setBackendNotificationStateError(firestoreErrorMessage('backendNotificationStates', error))
+        console.warn('[Backend Notifications] state listener failed', {
+          code: error?.code || '',
+          message: error?.message || '',
+        })
+        setBackendNotificationStates({})
+      },
+    )
+  }, [backendAdminAllowed])
 
   const liveUsers = useMemo(() => mergePresence(data.users, data.clientSessions, data.userPresence), [data.users, data.clientSessions, data.userPresence])
   const onlineUsers = useMemo(() => liveUsers.filter(isOnline), [liveUsers])
@@ -741,7 +826,248 @@ export default function ControlCentre() {
     }
   }, [data.upgradeRequests, data.users, data.workspaces, onlineUsers.length, payments])
 
-  const allNotifications = useMemo(() => {
+  const systemHealth = useMemo(() => {
+    const now = Date.now()
+    const sourceErrors = data.sourceErrors || {}
+    const sourceErrorEntries = Object.entries(sourceErrors)
+    const pendingPayments = payments.filter((row) => ['pending', 'pending_approval', 'waiting', 'confirming'].includes(statusValue(row.paymentStatus || row.status)))
+    const stalePendingPayments = pendingPayments.filter((row) => (ageMinutes(row.createdAt || row.paymentDate) || 0) > 1440)
+    const pendingUpgrades = data.upgradeRequests.filter((row) => statusValue(row.approvalStatus || row.status) === 'pending')
+    const stalePendingUpgrades = pendingUpgrades.filter((row) => (ageMinutes(row.createdAt || row.requestedAt) || 0) > 1440)
+    const openTickets = data.supportTickets.filter((row) => ['open', 'pending', 'in_progress', 'new'].includes(statusValue(row.status || 'open')))
+    const urgentTickets = openTickets.filter((row) => ['urgent', 'critical', 'high'].includes(statusValue(row.priority)))
+    const staleTickets = openTickets.filter((row) => (ageMinutes(row.updatedAt || row.createdAt) || 0) > 1440)
+    const invalidSubscriptions = data.workspaces.filter(hasMissingPaidSubscriptionExpiry)
+    const expiredWorkspaces = data.workspaces.filter(isExpired)
+    const blockedWorkspaces = data.workspaces.filter((row) => statusValue(row.status || row.accountStatus) === 'blocked')
+    const workspaceIds = data.workspaces.map((row) => row.workspaceId || row.id).filter(Boolean)
+    const duplicateWorkspaceIds = [...new Set(workspaceIds.filter((id, index) => workspaceIds.indexOf(id) !== index))]
+    const workspaceIdSet = new Set(workspaceIds)
+    const orphanUsers = data.users.filter((row) => {
+      const workspaceId = row.workspaceId || row.currentWorkspaceId
+      return workspaceId && !workspaceIdSet.has(workspaceId)
+    })
+    const workspacesMissingOwner = data.workspaces.filter((row) => !(row.ownerId || row.userId || row.uid))
+    const workspacesMissingModule = data.workspaces.filter((row) => !(row.primaryBusinessType || row.selectedBusinessType || row.currentBusinessType || row.businessType || row.module))
+    const enabledPlans = platformPlans.filter((plan) => plan.enabled !== false && plan.active !== false)
+    const usingDefaultPlansOnly = data.plans.length === 0
+    const paymentAccounts = platformSettings.paymentAccounts || {}
+    const paymentPlaceholders = Object.values(paymentAccounts).filter((account = {}) => {
+      const value = `${account.accountNumber || ''} ${account.paymentUrl || ''}`.toLowerCase()
+      return value.includes('0300-1234567') || value.includes('xxxxxxxx') || value.includes('contact support')
+    })
+    const exposedSensitiveEnvKeys = Object.keys(import.meta.env || {}).filter((key) => {
+      const upper = key.toUpperCase()
+      if (!upper.startsWith('VITE_')) return false
+      if (upper.startsWith('VITE_FIREBASE_')) return false
+      if (upper.startsWith('VITE_META_APP_ID') || upper.startsWith('VITE_META_CONFIG_ID')) return false
+      if (upper.endsWith('_WORKER_URL')) return false
+      return /(SECRET|PRIVATE|TOKEN|PASSWORD|RESEND|SENDGRID|OPENAI|API_KEY)/.test(upper)
+    })
+    const latestAnalyticsAt = data.analyticsEvents.reduce((latest, row) => {
+      const date = toDate(row.timestamp || row.createdAt)
+      return date && date.getTime() > latest ? date.getTime() : latest
+    }, 0)
+    const analyticsStale = latestAnalyticsAt ? now - latestAnalyticsAt > 24 * 60 * 60 * 1000 : data.analyticsEvents.length === 0
+    const latestPresenceAt = [...data.clientSessions, ...data.userPresence, ...data.userSessions].reduce((latest, row) => {
+      const date = toDate(row.lastActiveAt || row.updatedAt || row.createdAt)
+      return date && date.getTime() > latest ? date.getTime() : latest
+    }, 0)
+    const presenceStale = latestPresenceAt ? now - latestPresenceAt > 60 * 60 * 1000 : data.workspaces.length > 0
+    const whatsappConfigured = Boolean(import.meta.env.VITE_WHATSAPP_WORKER_URL)
+    const whatsappIssues = [...whatsappByWorkspace.values()].filter((config) => {
+      if (config.whatsappApiMode === 'manual') return false
+      const connectionStatus = statusValue(config.connectionStatus || config.status || 'not_connected')
+      const verificationStatus = statusValue(config.verificationStatus || '')
+      return !config.webhookVerified || ['failed', 'disconnected', 'not_connected'].includes(connectionStatus) || verificationStatus === 'failed'
+    })
+    const maintenanceDraft = normalizeMaintenanceConfig(platformSettings.maintenanceConfig)
+    const localAuditFindings = []
+    if (exposedSensitiveEnvKeys.length) {
+      localAuditFindings.push(`Frontend-exposed secret-style env keys: ${listSummary(exposedSensitiveEnvKeys)}`)
+    }
+    localAuditFindings.push('firestore.rules has intentional public reads for platformSettings, platformPlans, whatsappPricing, announcements, and phoneRegistry exact get.')
+
+    const checks = [
+      {
+        id: 'firestore-listeners',
+        title: 'Firestore live listeners',
+        status: sourceErrorEntries.length ? 'critical' : 'healthy',
+        detail: sourceErrorEntries.length ? listSummary(sourceErrorEntries.map(([key]) => key), 6) : `${Object.keys(data).filter((key) => Array.isArray(data[key])).length} live collections connected.`,
+        actionTab: 'logs',
+        metric: sourceErrorEntries.length,
+      },
+      {
+        id: 'backend-auth',
+        title: 'Backend admin auth',
+        status: !firebaseAuthEnabled || !backendAdminAllowed ? 'critical' : 'healthy',
+        detail: getFirebaseAuthConfigMessage() || (backendAdminAllowed ? `${user?.email || 'Admin'} is allowed.` : 'Current account is not in backend admin allowlist.'),
+        actionTab: 'roles',
+        metric: backendAdminAllowed ? 1 : 0,
+      },
+      {
+        id: 'firebase-config',
+        title: 'Firebase production config',
+        status: missingFirebaseAuthEnvVars.length ? 'warning' : 'healthy',
+        detail: missingFirebaseAuthEnvVars.length ? `Using fallback for ${listSummary(missingFirebaseAuthEnvVars)}` : 'Required Firebase web env keys are present.',
+        actionTab: 'settings',
+        metric: missingFirebaseAuthEnvVars.length,
+      },
+      {
+        id: 'env-security',
+        title: 'Frontend secret exposure',
+        status: exposedSensitiveEnvKeys.length ? 'critical' : 'healthy',
+        detail: exposedSensitiveEnvKeys.length ? listSummary(exposedSensitiveEnvKeys) : 'No secret-style VITE_* runtime keys detected.',
+        actionTab: 'systemHealth',
+        metric: exposedSensitiveEnvKeys.length,
+      },
+      {
+        id: 'rules-audit',
+        title: 'Firestore rules audit',
+        status: 'healthy',
+        detail: 'Public platform reads are intentional. Analytics public create is schema-guarded in local rules.',
+        actionTab: 'systemHealth',
+        metric: localAuditFindings.length,
+      },
+      {
+        id: 'notifications',
+        title: 'Backend notifications',
+        status: backendNotificationStateError ? 'warning' : 'healthy',
+        detail: backendNotificationStateError || `${Object.keys(backendNotificationStates).length} read/clear states synced.`,
+        actionTab: 'dashboard',
+        metric: Object.keys(backendNotificationStates).length,
+      },
+      {
+        id: 'payment-queue',
+        title: 'Payment approval queue',
+        status: stalePendingPayments.length ? 'critical' : pendingPayments.length ? 'warning' : 'healthy',
+        detail: stalePendingPayments.length ? `${stalePendingPayments.length} pending more than 24h.` : `${pendingPayments.length} pending payment records.`,
+        actionTab: 'transactions',
+        metric: pendingPayments.length,
+      },
+      {
+        id: 'upgrade-queue',
+        title: 'Upgrade queue',
+        status: stalePendingUpgrades.length ? 'critical' : pendingUpgrades.length ? 'warning' : 'healthy',
+        detail: stalePendingUpgrades.length ? `${stalePendingUpgrades.length} pending more than 24h.` : `${pendingUpgrades.length} pending upgrade requests.`,
+        actionTab: 'upgrades',
+        metric: pendingUpgrades.length,
+      },
+      {
+        id: 'support-tickets',
+        title: 'Support tickets SLA',
+        status: urgentTickets.length || staleTickets.length ? 'critical' : openTickets.length ? 'warning' : 'healthy',
+        detail: urgentTickets.length ? `${urgentTickets.length} urgent/high open tickets.` : staleTickets.length ? `${staleTickets.length} open tickets stale more than 24h.` : `${openTickets.length} open tickets.`,
+        actionTab: 'support',
+        metric: openTickets.length,
+      },
+      {
+        id: 'subscriptions',
+        title: 'Subscriptions and trials',
+        status: invalidSubscriptions.length ? 'critical' : expiredWorkspaces.length || blockedWorkspaces.length ? 'warning' : 'healthy',
+        detail: invalidSubscriptions.length ? `${invalidSubscriptions.length} paid subscriptions missing expiry/billing date.` : `${expiredWorkspaces.length} expired, ${blockedWorkspaces.length} blocked.`,
+        actionTab: 'clients',
+        metric: invalidSubscriptions.length + expiredWorkspaces.length + blockedWorkspaces.length,
+      },
+      {
+        id: 'workspace-isolation',
+        title: 'Workspace isolation',
+        status: duplicateWorkspaceIds.length || orphanUsers.length || workspacesMissingOwner.length ? 'critical' : 'healthy',
+        detail: duplicateWorkspaceIds.length ? `Duplicate workspace ids: ${listSummary(duplicateWorkspaceIds)}` : orphanUsers.length ? `${orphanUsers.length} users point to missing workspace ids.` : workspacesMissingOwner.length ? `${workspacesMissingOwner.length} workspaces missing owner id.` : 'Workspace ids, owners, and user links look isolated.',
+        actionTab: 'clients',
+        metric: duplicateWorkspaceIds.length + orphanUsers.length + workspacesMissingOwner.length,
+      },
+      {
+        id: 'module-access',
+        title: 'Module assignment',
+        status: workspacesMissingModule.length ? 'warning' : 'healthy',
+        detail: workspacesMissingModule.length ? `${workspacesMissingModule.length} workspaces missing selected business module.` : 'Business modules are assigned for listed workspaces.',
+        actionTab: 'moduleAccess',
+        metric: workspacesMissingModule.length,
+      },
+      {
+        id: 'plans-pricing',
+        title: 'Plans and payment accounts',
+        status: !enabledPlans.length || paymentPlaceholders.length ? 'critical' : usingDefaultPlansOnly ? 'warning' : 'healthy',
+        detail: !enabledPlans.length ? 'No enabled plans found.' : paymentPlaceholders.length ? `${paymentPlaceholders.length} payment accounts still use placeholder values.` : usingDefaultPlansOnly ? 'Using built-in plan defaults; no platformPlans docs saved yet.' : `${enabledPlans.length} enabled plans and payment accounts configured.`,
+        actionTab: !enabledPlans.length ? 'plans' : 'settings',
+        metric: enabledPlans.length,
+      },
+      {
+        id: 'email-worker',
+        title: 'Email delivery worker',
+        status: EMAIL_WORKER_URL ? 'healthy' : 'critical',
+        detail: EMAIL_WORKER_URL ? 'Transactional email endpoint is configured.' : 'Email worker URL is missing.',
+        actionTab: 'settings',
+        metric: EMAIL_WORKER_URL ? 1 : 0,
+      },
+      {
+        id: 'whatsapp-api',
+        title: 'WhatsApp API readiness',
+        status: !whatsappConfigured && data.whatsappSettings.length ? 'critical' : whatsappIssues.length ? 'warning' : 'healthy',
+        detail: !whatsappConfigured && data.whatsappSettings.length ? 'VITE_WHATSAPP_WORKER_URL is missing.' : whatsappIssues.length ? `${whatsappIssues.length} WhatsApp API configs need webhook/connection review.` : `${data.whatsappSettings.length} workspace configs monitored.`,
+        actionTab: 'whatsappPricing',
+        metric: whatsappIssues.length,
+      },
+      {
+        id: 'analytics',
+        title: 'Visitor analytics',
+        status: analyticsStale ? 'warning' : 'healthy',
+        detail: latestAnalyticsAt ? `Last event ${ageLabel(new Date(latestAnalyticsAt))}.` : 'No analytics events received yet.',
+        actionTab: 'visitorAnalytics',
+        metric: data.analyticsEvents.length,
+      },
+      {
+        id: 'presence',
+        title: 'Presence tracking',
+        status: presenceStale ? 'warning' : 'healthy',
+        detail: latestPresenceAt ? `Last activity ${ageLabel(new Date(latestPresenceAt))}. ${onlineUsers.length} online now.` : 'No presence records yet.',
+        actionTab: 'activity',
+        metric: onlineUsers.length,
+      },
+      {
+        id: 'maintenance-mode',
+        title: 'Maintenance mode',
+        status: maintenanceDraft.enabled ? 'warning' : 'healthy',
+        detail: maintenanceDraft.enabled ? `Enabled for ${maintenanceDraft.target || 'workspace'}${maintenanceDraft.module ? ` / ${maintenanceDraft.module}` : ''}.` : 'Maintenance controls are off.',
+        actionTab: 'maintenance',
+        metric: maintenanceDraft.enabled ? 1 : 0,
+      },
+    ]
+
+    const counts = checks.reduce((acc, check) => {
+      const status = statusValue(check.status)
+      acc[status] = (acc[status] || 0) + 1
+      return acc
+    }, { healthy: 0, warning: 0, critical: 0 })
+    const issues = checks.filter((check) => ['critical', 'warning', 'degraded', 'stale', 'error'].includes(statusValue(check.status)))
+    const overall = checks.some((check) => statusValue(check.status) === 'critical')
+      ? 'critical'
+      : checks.some((check) => ['warning', 'degraded', 'stale'].includes(statusValue(check.status)))
+        ? 'warning'
+        : 'healthy'
+    return {
+      checks,
+      counts,
+      issues,
+      overall,
+      localAuditFindings,
+      lastCheckedAt: new Date(),
+    }
+  }, [
+    backendAdminAllowed,
+    backendNotificationStates,
+    backendNotificationStateError,
+    data,
+    onlineUsers.length,
+    payments,
+    platformPlans,
+    platformSettings,
+    user?.email,
+    whatsappByWorkspace,
+  ])
+
+  const derivedNotifications = useMemo(() => {
     const signupItems = [...data.workspaces]
       .sort((a, b) => (toDate(b.createdAt)?.getTime() || 0) - (toDate(a.createdAt)?.getTime() || 0))
       .slice(0, 5)
@@ -751,6 +1077,7 @@ export default function ControlCentre() {
         title: 'New client signup',
         detail: `${workspaceName(row)} · ${userEmail(row) || row.id}`,
         createdAt: row.createdAt,
+        route: 'clients',
       }))
     const upgradeItems = data.upgradeRequests
       .filter((row) => statusValue(row.approvalStatus || row.status) === 'pending')
@@ -761,6 +1088,7 @@ export default function ControlCentre() {
         title: 'Upgrade request pending',
         detail: `${row.clientEmail || row.email || row.workspaceId || 'Client'} · ${row.requestedPlan || row.plan || 'Plan'}`,
         createdAt: row.createdAt,
+        route: 'upgrades',
       }))
     const paymentItems = payments
       .filter((row) => ['pending', 'pending_approval'].includes(statusValue(row.paymentStatus || row.status)))
@@ -771,6 +1099,7 @@ export default function ControlCentre() {
         title: 'Payment pending',
         detail: `${row.clientEmail || row.email || row.workspaceId || 'Client'} · ${money(amountValue(row), rowCurrency(row))}`,
         createdAt: row.createdAt || row.paymentDate,
+        route: 'transactions',
       }))
     const ticketItems = data.supportTickets
       .filter((row) => ['open', 'pending'].includes(statusValue(row.status)))
@@ -781,6 +1110,7 @@ export default function ControlCentre() {
         title: row.title || row.subject || 'Support ticket',
         detail: `${row.clientEmail || row.email || row.workspaceId || 'Client'} · ${row.priority || 'medium'}`,
         createdAt: row.createdAt,
+        route: 'support',
       }))
     const expiredItems = data.workspaces
       .filter(isExpired)
@@ -791,13 +1121,32 @@ export default function ControlCentre() {
         title: 'Trial expired',
         detail: `${workspaceName(row)} · ${dateLabel(row.trialEndsAt || row.subscriptionExpiresAt)}`,
         createdAt: row.trialEndsAt || row.subscriptionExpiresAt,
+        route: 'clients',
       }))
-    return [...signupItems, ...upgradeItems, ...paymentItems, ...ticketItems, ...expiredItems]
+    const healthItems = systemHealth.issues
+      .filter((item) => statusValue(item.status) === 'critical')
+      .slice(0, 8)
+      .map((item) => ({
+        id: `health-${item.id}`,
+        type: 'system health',
+        title: item.title,
+        detail: item.detail,
+        createdAt: systemHealth.lastCheckedAt,
+        route: item.actionTab,
+      }))
+    return [...healthItems, ...signupItems, ...upgradeItems, ...paymentItems, ...ticketItems, ...expiredItems]
       .sort((a, b) => (toDate(b.createdAt)?.getTime() || 0) - (toDate(a.createdAt)?.getTime() || 0))
       .slice(0, 20)
-  }, [data.supportTickets, data.upgradeRequests, data.workspaces, payments])
+  }, [data.supportTickets, data.upgradeRequests, data.workspaces, payments, systemHealth])
 
-  const unreadNotifications = allNotifications.filter((item) => !readNotifications.has(item.id))
+  const allNotifications = useMemo(
+    () => derivedNotifications.filter((item) => !backendNotificationStates[backendNotificationDocId(item.id)]?.cleared),
+    [backendNotificationStates, derivedNotifications],
+  )
+  const unreadNotifications = useMemo(
+    () => allNotifications.filter((item) => !backendNotificationStates[backendNotificationDocId(item.id)]?.read),
+    [allNotifications, backendNotificationStates],
+  )
   const analyticsStats = useMemo(() => {
     const today = new Date().toDateString()
     const events = data.analyticsEvents
@@ -875,14 +1224,14 @@ export default function ControlCentre() {
     return days
   }, [payments])
 
-  const workspaceRows = useSearch(
+  const workspaceRows = searchRows(
     data.workspaces
       .filter((row) => workspaceStatusFilter === 'all' || statusValue(row.status || row.subscriptionStatus || row.planStatus) === workspaceStatusFilter || (workspaceStatusFilter === 'expired' && isExpired(row)) || (workspaceStatusFilter === 'trial' && isTrial(row)))
       .filter((row) => workspacePlanFilter === 'all' || statusValue(row.plan || row.selectedPlan) === statusValue(workspacePlanFilter)),
     search,
     ['id', 'uid', 'email', 'ownerEmail', 'companyName', 'workspaceName', 'businessName', 'selectedBusinessType', 'businessType'],
   )
-  const userRows = useSearch(
+  const userRows = searchRows(
     liveUsers.filter((row) => {
       if (userFilter === 'verified') return row.emailVerified === true
       if (userFilter === 'unverified') return row.emailVerified !== true
@@ -893,8 +1242,8 @@ export default function ControlCentre() {
     search,
     ['id', 'uid', 'email', 'name', 'fullName', 'displayName', 'role'],
   )
-  const upgradeRows = useSearch(data.upgradeRequests, search, ['id', 'email', 'clientEmail', 'workspaceName', 'requestedPlan', 'transactionId', 'paymentMethod', 'status'])
-  const paymentRows = useSearch(
+  const upgradeRows = searchRows(data.upgradeRequests, search, ['id', 'email', 'clientEmail', 'workspaceName', 'requestedPlan', 'transactionId', 'paymentMethod', 'status'])
+  const paymentRows = searchRows(
     payments
       .filter((row) => transactionStatusFilter === 'all' || statusValue(row.paymentStatus || row.status) === transactionStatusFilter)
       .filter((row) => transactionPlanFilter === 'all' || statusValue(row.plan || row.selectedPlan) === statusValue(transactionPlanFilter)),
@@ -938,6 +1287,118 @@ export default function ControlCentre() {
     return ''
   }
 
+  async function notifyWorkspaceOwner({
+    workspaceId,
+    row = {},
+    userIds = [],
+    title,
+    message,
+    type = 'Backend',
+    priority = 'medium',
+    route = '/app/dashboard',
+    relatedId = '',
+    metadata = {},
+  } = {}) {
+    if (!workspaceId || !title) return
+    let workspace = workspacesById.get(workspaceId) || {}
+    if (!Object.keys(workspace).length && db) {
+      try {
+        const snap = await getDoc(doc(db, 'workspaces', workspaceId))
+        workspace = snap.exists() ? { id: snap.id, ...snap.data() } : {}
+      } catch {
+        workspace = {}
+      }
+    }
+    const ownerId = ownerIdForWorkspaceRow({ ...workspace, ...row }, workspaceId)
+    const targetUserIds = workspaceNotificationTargets(
+      userIds,
+      ownerId,
+      row.ownerId,
+      row.uid,
+      row.userId && row.userId !== workspaceId ? row.userId : '',
+      workspace.ownerId,
+      workspace.userId && workspace.userId !== workspaceId ? workspace.userId : '',
+      workspaceId,
+    )
+    await createWorkspaceNotification({
+      workspaceId,
+      userIds: targetUserIds,
+      businessType: workspaceBusinessType({ ...workspace, ...row }),
+      title,
+      message,
+      type,
+      priority,
+      relatedId,
+      route,
+      metadata,
+      createdBy: user?.uid || '',
+      createdByEmail: user?.email || '',
+    })
+  }
+
+  function workspaceIdForBackendRow(row = {}) {
+    return row.workspaceId || String(row.path || '').split('/')[1] || row.ownerId || row.userId || row.uid || ''
+  }
+
+  function announcementAudienceWorkspaces(announcement = {}) {
+    const audience = statusValue(announcement.audience || 'all')
+    const workspaceId = announcement.workspaceId || ''
+    const businessType = normalizeAdminBusinessType(announcement.businessType || '')
+    return data.workspaces.filter((workspace) => {
+      const id = workspace.workspaceId || workspace.id || workspace.ownerId
+      if (!id) return false
+      if (audience === 'workspace') return id === workspaceId
+      if (audience === 'businesstype') return normalizeAdminBusinessType(workspaceBusinessType(workspace)) === businessType
+      if (audience === 'trial') return isTrial(workspace)
+      if (audience === 'paid') return isPaidSubscriptionStatus(workspace) || isPaid(workspace)
+      if (audience === 'expired') return isExpired(workspace)
+      return true
+    })
+  }
+
+  async function notifyAnnouncementAudience(announcement = {}, announcementId = '') {
+    const title = announcement.title || 'Announcement'
+    const message = announcement.message || title
+    const targets = announcementAudienceWorkspaces(announcement)
+    await Promise.allSettled(
+      targets.map((workspace) =>
+        notifyWorkspaceOwner({
+          workspaceId: workspace.workspaceId || workspace.id || workspace.ownerId,
+          row: workspace,
+          type: 'Announcement',
+          priority: announcement.priority || 'medium',
+          title,
+          message,
+          relatedId: announcementId,
+          route: '/app/notifications',
+          metadata: {
+            announcementId,
+            audience: announcement.audience || 'all',
+            announcementType: announcement.type || 'info',
+          },
+        }),
+      ),
+    )
+  }
+
+  async function updateSupportTicket(row, patch, notification = {}) {
+    await updateDoc(row.ref || doc(db, 'supportTickets', row.id), patch)
+    const workspaceId = workspaceIdForBackendRow(row)
+    if (workspaceId && notification.title) {
+      await notifyWorkspaceOwner({
+        workspaceId,
+        row,
+        type: 'Support',
+        priority: notification.priority || 'medium',
+        title: notification.title,
+        message: notification.message || notification.title,
+        relatedId: row.id,
+        route: '/app/support',
+        metadata: { status: patch.status || row.status || '', ticketId: row.id },
+      })
+    }
+  }
+
   async function syncWorkspaceAndUserSubscription({ workspaceId, ownerId, payload }) {
     if (!workspaceId) throw new Error('Workspace ID is required to sync subscription state.')
     if (!ownerId) throw new Error('Owner user ID is required to sync subscription state.')
@@ -972,6 +1433,57 @@ export default function ControlCentre() {
     } finally {
       setBusy('')
     }
+  }
+
+  async function saveBackendNotificationState(notificationIds = [], patch = {}) {
+    const ids = Array.from(new Set((Array.isArray(notificationIds) ? notificationIds : [notificationIds]).filter(Boolean)))
+    if (!ids.length) return
+    const optimisticPatch = {
+      ...patch,
+      updatedBy: user?.uid || '',
+      updatedByEmail: user?.email || '',
+    }
+    setBackendNotificationStates((current) => {
+      const next = { ...current }
+      ids.forEach((id) => {
+        const stateId = backendNotificationDocId(id)
+        next[stateId] = {
+          ...(next[stateId] || {}),
+          notificationId: id,
+          ...optimisticPatch,
+          updatedAt: new Date().toISOString(),
+        }
+      })
+      return next
+    })
+    if (!db) return
+    const batch = writeBatch(db)
+    ids.forEach((id) => {
+      batch.set(doc(db, 'backendNotificationStates', backendNotificationDocId(id)), {
+        notificationId: id,
+        ...patch,
+        updatedBy: user?.uid || '',
+        updatedByEmail: user?.email || '',
+        updatedAt: serverTimestamp(),
+      }, { merge: true })
+    })
+    await batch.commit()
+  }
+
+  function markBackendNotificationRead(id) {
+    return saveBackendNotificationState(id, { read: true, cleared: false, readAt: serverTimestamp() })
+  }
+
+  function markAllBackendNotificationsRead() {
+    return saveBackendNotificationState(allNotifications.map((item) => item.id), { read: true, cleared: false, readAt: serverTimestamp() })
+  }
+
+  function clearBackendNotification(id) {
+    return saveBackendNotificationState(id, { read: true, cleared: true, clearedAt: serverTimestamp() })
+  }
+
+  function clearAllBackendNotifications() {
+    return saveBackendNotificationState(allNotifications.map((item) => item.id), { read: true, cleared: true, clearedAt: serverTimestamp() })
   }
 
   async function handleLogout() {
@@ -1068,6 +1580,37 @@ export default function ControlCentre() {
       await updateDoc(doc(db, 'workspaces', workspaceId), payload)
     }
     await logActivity(action, { workspaceId, email: userEmail(row), update })
+    if (action === 'client_blocked' || action === 'client_unblocked' || action === 'trial_extended' || action === 'client_marked_paid' || action === 'plan_changed') {
+      await notifyWorkspaceOwner({
+        workspaceId,
+        row,
+        type: 'Workspace',
+        priority: action === 'client_blocked' ? 'high' : 'medium',
+        title:
+          action === 'client_blocked'
+            ? 'Workspace access blocked'
+            : action === 'client_unblocked'
+              ? 'Workspace access restored'
+              : action === 'trial_extended'
+                ? 'Trial extended'
+                : action === 'client_marked_paid'
+                  ? 'Payment marked paid'
+                  : 'Plan updated',
+        message:
+          action === 'client_blocked'
+            ? 'Your workspace access was blocked by backend admin.'
+            : action === 'client_unblocked'
+              ? 'Your workspace access was restored by backend admin.'
+              : action === 'trial_extended'
+                ? 'Your workspace trial was extended.'
+                : action === 'client_marked_paid'
+                  ? 'Your workspace payment was marked as paid.'
+                  : `Your workspace plan was updated to ${update.plan || update.selectedPlan || row.plan || 'selected plan'}.`,
+        relatedId: workspaceId,
+        route: '/app/dashboard',
+        metadata: { action, update },
+      })
+    }
   }
 
   async function markWorkspacePaid(row) {
@@ -1105,12 +1648,38 @@ export default function ControlCentre() {
       await setDoc(doc(db, 'users', ownerId), payload, { merge: true })
     }
     await logActivity(action, { workspaceId, ownerId, email: userEmail(row), patch })
+    await notifyWorkspaceOwner({
+      workspaceId,
+      row,
+      type: 'Workspace',
+      priority: 'medium',
+      title: 'Module access updated',
+      message: 'Your workspace module access was updated by backend admin.',
+      relatedId: workspaceId,
+      route: '/app/dashboard',
+      metadata: { action, patch },
+    })
   }
 
   async function updateUser(row, update, action) {
     const uid = row.uid || row.userId || row.id
     await updateDoc(doc(db, 'users', uid), { ...update, updatedAt: serverTimestamp(), updatedBy: user?.uid || '' })
     await logActivity(action, { uid, email: userEmail(row), update })
+    const workspaceId = row.workspaceId || row.currentWorkspaceId || uid
+    if (workspaceId && (action === 'user_blocked' || action === 'user_activated')) {
+      await notifyWorkspaceOwner({
+        workspaceId,
+        row,
+        userIds: [uid],
+        type: 'Account',
+        priority: action === 'user_blocked' ? 'high' : 'medium',
+        title: action === 'user_blocked' ? 'Account blocked' : 'Account restored',
+        message: action === 'user_blocked' ? 'Your account was blocked by backend admin.' : 'Your account was restored by backend admin.',
+        relatedId: uid,
+        route: '/workspace',
+        metadata: { action, update },
+      })
+    }
   }
 
   // WhatsApp API trial controls — writes the workspace-isolated config doc at
@@ -1323,6 +1892,18 @@ export default function ControlCentre() {
       if (!sent.ok) throw new Error(sent.error)
     }
     await logActivity('upgrade_approved', { workspaceId, upgradeRequestId: row.id, plan })
+    await notifyWorkspaceOwner({
+      workspaceId,
+      row,
+      userIds: [ownerId],
+      type: 'Subscription',
+      priority: 'high',
+      title: 'Upgrade approved',
+      message: `Your ${plan} upgrade was approved.`,
+      relatedId: row.id,
+      route: '/app/dashboard',
+      metadata: { plan, amount: amountValue(row), currency },
+    })
   }
 
   async function rejectUpgrade(row) {
@@ -1350,6 +1931,20 @@ export default function ControlCentre() {
       if (!sent.ok) throw new Error(sent.error)
     }
     await logActivity('upgrade_rejected', { upgradeRequestId: row.id, workspaceId: row.workspaceId || '' })
+    const workspaceId = row.workspaceId || row.ownerId || row.userId || ''
+    if (workspaceId) {
+      await notifyWorkspaceOwner({
+        workspaceId,
+        row,
+        type: 'Subscription',
+        priority: 'high',
+        title: 'Upgrade rejected',
+        message: `Your ${row.requestedPlan || row.selectedPlan || row.plan || 'plan'} upgrade was rejected.`,
+        relatedId: row.id,
+        route: '/workspace',
+        metadata: { reason: row.rejectionReason || row.reason || '' },
+      })
+    }
   }
 
   async function updateTransaction(row, update, action) {
@@ -1415,6 +2010,24 @@ export default function ControlCentre() {
       await syncWorkspaceAndUserSubscription({ workspaceId, ownerId, payload: subscriptionPayload })
     }
     await logActivity(action, { transactionId: row.transactionId || row.id, workspaceId: row.workspaceId || '', update })
+    if (workspaceId) {
+      await notifyWorkspaceOwner({
+        workspaceId,
+        row,
+        userIds: ownerId ? [ownerId] : [],
+        type: 'Billing',
+        priority: paymentApproved ? 'high' : statusValue(update.status || update.paymentStatus) === 'rejected' ? 'high' : 'medium',
+        title: paymentApproved ? 'Payment approved' : statusValue(update.status || update.paymentStatus) === 'rejected' ? 'Payment rejected' : 'Payment updated',
+        message: paymentApproved
+          ? `Your ${row.plan || row.selectedPlan || row.requestedPlan || 'subscription'} payment was approved.`
+          : statusValue(update.status || update.paymentStatus) === 'rejected'
+            ? `Your ${row.plan || row.selectedPlan || row.requestedPlan || 'subscription'} payment was rejected.`
+            : 'Your platform payment was updated.',
+        relatedId: row.id,
+        route: '/workspace',
+        metadata: { action, update, amount: amountValue(row), currency: rowCurrency(row) },
+      })
+    }
   }
 
   const workspaceColumns = [
@@ -1673,13 +2286,94 @@ export default function ControlCentre() {
           <Panel title="Pending Upgrade Requests" action={<ShellButton onClick={() => setActiveTab('upgrades')}>Review</ShellButton>}>
             <AdminTable rows={data.upgradeRequests.filter((row) => statusValue(row.approvalStatus || row.status) === 'pending').slice(0, 6)} columns={upgradeColumns.slice(0, 7)} emptyTitle="No pending upgrade requests" maxHeight="max-h-[18rem]" />
           </Panel>
-          <Panel title="System Health">
-            {['Firestore SaaS Collections', 'Firebase Auth', 'Password Reset Email', 'Presence Tracking'].map((item) => (
-              <div key={item} className="flex items-center justify-between border-b border-slate-100 py-3 last:border-0">
-                <span className="text-sm font-semibold text-slate-700">{item}</span>
-                <Status value={data.error ? 'Warning' : 'Healthy'} />
+          <Panel title="System Health" action={<ShellButton onClick={() => setActiveTab('systemHealth')}>Open</ShellButton>}>
+            <div className="grid grid-cols-3 gap-2">
+              <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-3">
+                <p className="text-[10px] font-black uppercase tracking-wide text-emerald-700">Healthy</p>
+                <p className="mt-1 text-xl font-black text-emerald-900">{systemHealth.counts.healthy || 0}</p>
+              </div>
+              <div className="rounded-xl border border-amber-100 bg-amber-50 p-3">
+                <p className="text-[10px] font-black uppercase tracking-wide text-amber-700">Warning</p>
+                <p className="mt-1 text-xl font-black text-amber-900">{systemHealth.counts.warning || 0}</p>
+              </div>
+              <div className="rounded-xl border border-rose-100 bg-rose-50 p-3">
+                <p className="text-[10px] font-black uppercase tracking-wide text-rose-700">Critical</p>
+                <p className="mt-1 text-xl font-black text-rose-900">{systemHealth.counts.critical || 0}</p>
+              </div>
+            </div>
+            <div className="mt-3 space-y-2">
+              {systemHealth.issues.slice(0, 5).map((item) => (
+                <button key={item.id} type="button" className="flex w-full items-start justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50 p-3 text-left hover:bg-white" onClick={() => setActiveTab(item.actionTab || 'systemHealth')}>
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-black text-slate-900">{item.title}</span>
+                    <span className="mt-1 block line-clamp-2 text-xs font-semibold text-slate-500">{item.detail}</span>
+                  </span>
+                  <Status value={item.status} />
+                </button>
+              ))}
+              {!systemHealth.issues.length ? <EmptyState title="All launch checks healthy" detail="Live Firestore listeners, queues, isolation, and configuration checks are currently healthy." /> : null}
+            </div>
+            <p className="mt-3 text-[11px] font-semibold text-slate-500">Live check: {dateTimeLabel(systemHealth.lastCheckedAt)}</p>
+          </Panel>
+        </div>
+      </div>
+    )
+  }
+
+  function SystemHealth() {
+    const sourceErrorEntries = Object.entries(data.sourceErrors || {})
+    return (
+      <div className="space-y-4">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <KpiCard label="Overall Health" value={String(systemHealth.overall).replace(/_/g, ' ')} helper={`Last checked ${dateTimeLabel(systemHealth.lastCheckedAt)}`} icon={HiOutlineShieldCheck} tone={systemHealth.overall === 'critical' ? 'rose' : systemHealth.overall === 'warning' ? 'amber' : 'emerald'} />
+          <KpiCard label="Critical Issues" value={systemHealth.counts.critical || 0} helper="Backend notifications created" icon={HiOutlineBell} tone="rose" />
+          <KpiCard label="Warnings" value={systemHealth.counts.warning || 0} helper="Needs review before launch" icon={HiOutlineWrenchScrewdriver} tone="amber" />
+          <KpiCard label="Healthy Checks" value={systemHealth.counts.healthy || 0} helper="Live checks passing" icon={HiOutlineCheckBadge} tone="emerald" />
+        </div>
+
+        <Panel title="Launch Health Checks" action={<ShellButton onClick={() => setActiveTab('logs')}>Open Logs</ShellButton>}>
+          <div className="grid gap-3 xl:grid-cols-2">
+            {systemHealth.checks.map((item) => (
+              <div key={item.id} className={`rounded-2xl border p-4 ${healthCardClass(item.status)}`}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-black text-slate-950">{item.title}</p>
+                    <p className="mt-1 text-xs font-semibold leading-5 text-slate-600">{item.detail}</p>
+                  </div>
+                  <Status value={item.status} />
+                </div>
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-[11px] font-bold uppercase tracking-wide text-slate-500">Metric: {item.metric ?? 0}</span>
+                  {item.actionTab ? <ShellButton onClick={() => setActiveTab(item.actionTab)}>Review</ShellButton> : null}
+                </div>
               </div>
             ))}
+          </div>
+        </Panel>
+
+        <div className="grid gap-4 xl:grid-cols-2">
+          <Panel title="Live Firestore Errors">
+            {sourceErrorEntries.length ? (
+              <div className="space-y-2">
+                {sourceErrorEntries.map(([key, message]) => (
+                  <div key={key} className="rounded-xl border border-rose-100 bg-rose-50 p-3">
+                    <p className="text-xs font-black uppercase tracking-wide text-rose-700">{key}</p>
+                    <p className="mt-1 break-words text-xs font-semibold leading-5 text-rose-900">{message}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <EmptyState title="No listener errors" detail="All Control Centre Firestore listeners are currently connected or empty without permission/index errors." />
+            )}
+          </Panel>
+          <Panel title="Security / Isolation Audit">
+            <div className="space-y-2">
+              {systemHealth.localAuditFindings.map((item) => (
+                <div key={item} className="rounded-xl border border-slate-100 bg-slate-50 p-3 text-xs font-semibold leading-5 text-slate-700">
+                  {item}
+                </div>
+              ))}
+            </div>
           </Panel>
         </div>
       </div>
@@ -1861,7 +2555,7 @@ export default function ControlCentre() {
   }
 
   function PromoCodes() {
-    const promoRows = useSearch(data.promoCodes, search, ['code', 'description', 'discountType'])
+    const promoRows = searchRows(data.promoCodes, search, ['code', 'description', 'discountType'])
     const inputClass = 'w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold outline-none focus:border-violet-400'
     const editPromo = (row) => {
       setPromoEditingId(row.id)
@@ -1966,7 +2660,7 @@ export default function ControlCentre() {
   }
 
   function ModuleAccess() {
-    const rows = useSearch(data.workspaces, search, ['id', 'workspaceId', 'ownerEmail', 'email', 'workspaceName', 'companyName', 'businessType', 'selectedBusinessType', 'primaryBusinessType'])
+    const rows = searchRows(data.workspaces, search, ['id', 'workspaceId', 'ownerEmail', 'email', 'workspaceName', 'companyName', 'businessType', 'selectedBusinessType', 'primaryBusinessType'])
     const columns = [
       { key: 'client', label: 'Client', render: (row) => <div><p className="font-black text-slate-900">{userEmail(row) || '-'}</p><p className="text-xs text-slate-500">{row.ownerId || row.userId || row.uid || '-'}</p></div> },
       { key: 'workspace', label: 'Workspace', render: (row) => <div><p className="font-black text-slate-900">{workspaceName(row)}</p><p className="text-xs text-slate-500">{row.workspaceId || row.id}</p></div> },
@@ -2152,6 +2846,9 @@ export default function ControlCentre() {
                 createdByEmail: user?.email || '',
               })
               await logActivity('announcement_sent', announcementDraft)
+              if (announcementDraft.status === 'published') {
+                await notifyAnnouncementAudience(announcementDraft, id)
+              }
               setAnnouncementDraft({ title: '', message: '', type: 'info', audience: 'all', workspaceId: '', businessType: '', priority: 'medium', scheduledAt: '', expiresAt: '', pinned: false, status: 'draft' })
             }, 'Announcement saved.')
           }}>Save</ShellButton>
@@ -2181,7 +2878,10 @@ export default function ControlCentre() {
             label: 'Actions',
             render: (row) => (
               <div className="flex flex-wrap gap-2">
-                <ShellButton onClick={() => runAction(`announcement-publish-${row.id}`, () => updateDoc(row.ref || doc(db, 'announcements', row.id), { status: 'published', publishedAt: serverTimestamp(), updatedAt: serverTimestamp() }), 'Announcement published.')}>Publish</ShellButton>
+                <ShellButton onClick={() => runAction(`announcement-publish-${row.id}`, async () => {
+                  await updateDoc(row.ref || doc(db, 'announcements', row.id), { status: 'published', publishedAt: serverTimestamp(), updatedAt: serverTimestamp() })
+                  await notifyAnnouncementAudience(row, row.id)
+                }, 'Announcement published.')}>Publish</ShellButton>
                 <ShellButton onClick={() => runAction(`announcement-draft-${row.id}`, () => updateDoc(row.ref || doc(db, 'announcements', row.id), { status: 'draft', updatedAt: serverTimestamp() }), 'Announcement moved to draft.')}>Draft</ShellButton>
                 <ShellButton onClick={() => runAction(`announcement-expire-${row.id}`, () => updateDoc(row.ref || doc(db, 'announcements', row.id), { status: 'expired', expiredAt: serverTimestamp(), updatedAt: serverTimestamp() }), 'Announcement expired.')}>Expire</ShellButton>
               </div>
@@ -2193,7 +2893,7 @@ export default function ControlCentre() {
   }
 
   function SupportTickets() {
-    const ticketRows = useSearch(data.supportTickets, search, ['title', 'subject', 'clientEmail', 'email', 'workspaceName', 'category', 'status', 'priority'])
+    const ticketRows = searchRows(data.supportTickets, search, ['title', 'subject', 'clientEmail', 'email', 'workspaceName', 'category', 'status', 'priority'])
     const workspaceOptions = data.workspaces.map((workspace) => ({
       id: workspace.id || workspace.workspaceId || workspace.ownerId,
       name: workspaceName(workspace),
@@ -2239,6 +2939,17 @@ export default function ControlCentre() {
               }
               await setDoc(doc(db, 'workspaces', ticketDraft.workspaceId, 'supportTickets', id), payload)
               await logActivity('support_ticket_created', ticketDraft)
+              await notifyWorkspaceOwner({
+                workspaceId: ticketDraft.workspaceId,
+                row: selectedWorkspace,
+                type: 'Support',
+                priority: ticketDraft.priority || 'medium',
+                title: 'Support ticket created',
+                message: `${ticketDraft.title} was created by backend support.`,
+                relatedId: id,
+                route: '/app/support',
+                metadata: { ticketNumber: payload.ticketNumber, category: ticketDraft.category },
+              })
               setTicketDraft({ title: '', clientEmail: '', category: 'Technical Support', priority: 'medium', workspaceId: '' })
             }, 'Support ticket created.')
           }}>Create</ShellButton>
@@ -2271,7 +2982,11 @@ export default function ControlCentre() {
                     const message = input?.value?.trim()
                     if (!message) return
                     const conversation = [...(row.comments || row.conversation || []), { id: `admin_${Date.now()}`, author: user?.email || 'Admin', message, createdAt: new Date().toISOString() }]
-                    runAction(`ticket-reply-${row.id}`, () => updateDoc(row.ref || doc(db, 'supportTickets', row.id), { comments: conversation, conversation, lastReplyAt: serverTimestamp(), updatedAt: serverTimestamp() }), 'Reply saved.')
+                    runAction(`ticket-reply-${row.id}`, () => updateSupportTicket(
+                      row,
+                      { comments: conversation, conversation, lastReplyAt: serverTimestamp(), updatedAt: serverTimestamp() },
+                      { title: 'New support reply', message: `Support replied on ${row.title || row.subject || row.id}.` },
+                    ), 'Reply saved.')
                     input.value = ''
                   }}>Reply</ShellButton>
                 </div>
@@ -2283,10 +2998,10 @@ export default function ControlCentre() {
             label: 'Actions',
             render: (row) => (
               <div className="flex flex-wrap gap-2">
-                <ShellButton onClick={() => runAction(`ticket-complete-${row.id}`, () => updateDoc(row.ref || doc(db, 'supportTickets', row.id), { status: 'Completed', completedAt: serverTimestamp(), resolvedAt: serverTimestamp(), updatedAt: serverTimestamp() }), 'Ticket completed.')}>Complete</ShellButton>
-                <ShellButton onClick={() => runAction(`ticket-resolve-${row.id}`, () => updateDoc(row.ref || doc(db, 'supportTickets', row.id), { status: 'Resolved', resolvedAt: serverTimestamp(), updatedAt: serverTimestamp() }), 'Ticket resolved.')}>Resolve</ShellButton>
-                <ShellButton onClick={() => runAction(`ticket-reopen-${row.id}`, () => updateDoc(row.ref || doc(db, 'supportTickets', row.id), { status: 'Open', reopenedAt: serverTimestamp(), updatedAt: serverTimestamp() }), 'Ticket reopened.')}>Reopen</ShellButton>
-                <ShellButton onClick={() => runAction(`ticket-close-${row.id}`, () => updateDoc(row.ref || doc(db, 'supportTickets', row.id), { status: 'Closed', closedAt: serverTimestamp(), updatedAt: serverTimestamp() }), 'Ticket closed.')}>Close</ShellButton>
+                <ShellButton onClick={() => runAction(`ticket-complete-${row.id}`, () => updateSupportTicket(row, { status: 'Completed', completedAt: serverTimestamp(), resolvedAt: serverTimestamp(), updatedAt: serverTimestamp() }, { title: 'Support ticket completed', message: `${row.title || row.subject || row.id} was completed.` }), 'Ticket completed.')}>Complete</ShellButton>
+                <ShellButton onClick={() => runAction(`ticket-resolve-${row.id}`, () => updateSupportTicket(row, { status: 'Resolved', resolvedAt: serverTimestamp(), updatedAt: serverTimestamp() }, { title: 'Support ticket resolved', message: `${row.title || row.subject || row.id} was resolved.` }), 'Ticket resolved.')}>Resolve</ShellButton>
+                <ShellButton onClick={() => runAction(`ticket-reopen-${row.id}`, () => updateSupportTicket(row, { status: 'Open', reopenedAt: serverTimestamp(), updatedAt: serverTimestamp() }, { title: 'Support ticket reopened', message: `${row.title || row.subject || row.id} was reopened.` }), 'Ticket reopened.')}>Reopen</ShellButton>
+                <ShellButton onClick={() => runAction(`ticket-close-${row.id}`, () => updateSupportTicket(row, { status: 'Closed', closedAt: serverTimestamp(), updatedAt: serverTimestamp() }, { title: 'Support ticket closed', message: `${row.title || row.subject || row.id} was closed.` }), 'Ticket closed.')}>Close</ShellButton>
               </div>
             ),
           },
@@ -2733,73 +3448,160 @@ export default function ControlCentre() {
     )
   }
 
-  const content = {
-    dashboard: <Dashboard />,
-    activity: <Panel title="Live Client Activity" action={<ShellButton>Online = last 5 minutes</ShellButton>}><AdminTable rows={useSearch(liveUsers, search, ['email', 'uid', 'workspaceName', 'currentBusinessType'])} columns={liveColumns} emptyTitle="No client activity found" /></Panel>,
-    clients: <Workspaces />,
-    users: <Users />,
-    upgrades: <Panel title="Upgrade Requests" action={<ShellButton>Firestore: upgradeRequests</ShellButton>}><AdminTable rows={upgradeRows} columns={upgradeColumns} emptyTitle="No upgrade requests found" /></Panel>,
-    transactions: <Transactions />,
-    plans: <Plans />,
-    promoCodes: <PromoCodes />,
-    whatsappPricing: <WhatsappPricing />,
-    moduleAccess: <ModuleAccess />,
-    visitorAnalytics: <VisitorAnalytics />,
-    emailMarketing: <EmailMarketing embedded />,
-    announcements: <Announcements />,
-    support: <SupportTickets />,
-    maintenance: <MaintenanceManagement />,
-    settings: <Settings />,
-    logs: <Panel title="System Logs" action={<ShellButton>Firestore: backendActivityLogs</ShellButton>}><AdminTable rows={data.backendActivityLogs} emptyTitle="No backend activity logs found" columns={[{ key: 'admin', label: 'Admin', render: (row) => row.adminEmail || row.adminUid || '-' }, { key: 'action', label: 'Action' }, { key: 'details', label: 'Details', render: (row) => JSON.stringify(row.details || {}).slice(0, 120) }, { key: 'date', label: 'Date', render: (row) => dateTimeLabel(row.createdAt) }]} /></Panel>,
-    roles: <Roles />,
-    staff: <StaffManagement />,
+  function renderContent() {
+    switch (activeTab) {
+      case 'activity':
+        return <Panel title="Live Client Activity" action={<ShellButton>Online = last 5 minutes</ShellButton>}><AdminTable rows={searchRows(liveUsers, search, ['email', 'uid', 'workspaceName', 'currentBusinessType'])} columns={liveColumns} emptyTitle="No client activity found" /></Panel>
+      case 'clients':
+        return Workspaces()
+      case 'users':
+        return Users()
+      case 'upgrades':
+        return <Panel title="Upgrade Requests" action={<ShellButton>Firestore: upgradeRequests</ShellButton>}><AdminTable rows={upgradeRows} columns={upgradeColumns} emptyTitle="No upgrade requests found" /></Panel>
+      case 'transactions':
+        return Transactions()
+      case 'plans':
+        return Plans()
+      case 'promoCodes':
+        return PromoCodes()
+      case 'whatsappPricing':
+        return WhatsappPricing()
+      case 'moduleAccess':
+        return ModuleAccess()
+      case 'visitorAnalytics':
+        return VisitorAnalytics()
+      case 'emailMarketing':
+        return <EmailMarketing embedded />
+      case 'announcements':
+        return Announcements()
+      case 'commandCenter':
+        return <ClientCommandCenter embedded />
+      case 'support':
+        return SupportTickets()
+      case 'systemHealth':
+        return SystemHealth()
+      case 'maintenance':
+        return MaintenanceManagement()
+      case 'settings':
+        return Settings()
+      case 'logs':
+        return <Panel title="System Logs" action={<ShellButton>Firestore: backendActivityLogs</ShellButton>}><AdminTable rows={data.backendActivityLogs} emptyTitle="No backend activity logs found" columns={[{ key: 'admin', label: 'Admin', render: (row) => row.adminEmail || row.adminUid || '-' }, { key: 'action', label: 'Action' }, { key: 'details', label: 'Details', render: (row) => JSON.stringify(row.details || {}).slice(0, 120) }, { key: 'date', label: 'Date', render: (row) => dateTimeLabel(row.createdAt) }]} /></Panel>
+      case 'roles':
+        return Roles()
+      case 'staff':
+        return StaffManagement()
+      case 'dashboard':
+      default:
+        return Dashboard()
+    }
   }
 
-  return (
-    <div className="min-h-screen bg-slate-50 text-slate-950">
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[260px] overflow-y-auto bg-[#08172b] px-4 py-5 text-white shadow-2xl lg:block">
-        <div className="flex items-center gap-3 px-1">
-          <img src={logoUrl} alt="Nexora" className="h-11 w-11 rounded-xl bg-white object-contain p-1.5" />
-          <div>
-            <p className="text-2xl font-black tracking-wide">NEXORA SOLUTION</p>
-            <p className="text-xs text-slate-300">SaaS Owner Admin Panel</p>
+  const commandCenterActive = activeTab === 'commandCenter'
+  const activeTitle = navGroups.flatMap((g) => g.items).find(([key]) => key === activeTab)?.[1] || 'Dashboard'
+  const desktopSidebarWidth = sidebarCollapsed ? 'lg:pl-[86px]' : 'lg:pl-[260px]'
+  const renderSidebar = (mobile = false) => (
+    <div className={`flex h-full min-h-0 flex-col ${sidebarCollapsed && !mobile ? 'px-3 py-5' : 'px-4 py-5'}`}>
+      <div className={`flex items-center ${sidebarCollapsed && !mobile ? 'justify-center' : 'gap-3'} px-1`}>
+        <img src={logoUrl} alt="Nexora" className="h-11 w-11 shrink-0 rounded-xl bg-white object-contain p-1.5" />
+        {sidebarCollapsed && !mobile ? null : (
+          <div className="min-w-0">
+            <p className="truncate text-2xl font-black tracking-wide">NEXORA</p>
+            <p className="truncate text-xs text-slate-300">SaaS Owner Admin Panel</p>
           </div>
-        </div>
-        <nav className="mt-7 space-y-6">
-          {navGroups.map((group) => (
-            <div key={group.label}>
+        )}
+      </div>
+      <nav className="mt-7 min-h-0 flex-1 space-y-6 overflow-y-auto pr-1">
+        {navGroups.map((group) => (
+          <div key={group.label}>
+            {sidebarCollapsed && !mobile ? null : (
               <p className="px-2 text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">{group.label}</p>
-              <div className="mt-2 space-y-1">
-                {group.items.map(([key, label, Icon]) => {
-                  const active = activeTab === key
-                  return (
-                    <button key={key} type="button" onClick={() => setActiveTab(key)} className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold transition ${active ? 'bg-gradient-to-r from-blue-600 to-violet-600 text-white shadow-lg shadow-violet-950/30' : 'text-slate-200 hover:bg-white/10'}`}>
-                      <Icon className="h-5 w-5" />
+            )}
+            <div className="mt-2 space-y-1">
+              {group.items.map(([key, label, Icon]) => {
+                const active = activeTab === key
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => {
+                      setActiveTab(key)
+                      setMobileSidebarOpen(false)
+                    }}
+                    title={sidebarCollapsed && !mobile ? label : undefined}
+                    className={`group relative flex w-full items-center rounded-xl text-sm font-bold transition ${sidebarCollapsed && !mobile ? 'justify-center px-0 py-2.5' : 'gap-3 px-3 py-2.5'} ${active ? 'bg-gradient-to-r from-blue-600 to-violet-600 text-white shadow-lg shadow-violet-950/30' : 'text-slate-200 hover:bg-white/10'}`}
+                  >
+                    <Icon className="h-5 w-5 shrink-0" />
+                    {sidebarCollapsed && !mobile ? (
+                      <span className="pointer-events-none absolute left-full top-1/2 z-50 ml-3 hidden -translate-y-1/2 whitespace-nowrap rounded-lg border border-white/10 bg-slate-950 px-3 py-1.5 text-xs font-bold text-white shadow-xl group-hover:block">
+                        {label}
+                      </span>
+                    ) : (
                       <span className="truncate">{label}</span>
-                    </button>
-                  )
-                })}
-              </div>
+                    )}
+                  </button>
+                )
+              })}
             </div>
-          ))}
-        </nav>
-        <a href="/" className="mt-7 flex items-center justify-between rounded-xl border border-white/15 px-4 py-3 text-sm font-bold text-white hover:bg-white/10">
+          </div>
+        ))}
+      </nav>
+      {sidebarCollapsed && !mobile ? null : (
+        <a href="/" className="mt-5 flex items-center justify-between rounded-xl border border-white/15 px-4 py-3 text-sm font-bold text-white hover:bg-white/10">
           View Nexora Site
           <span>↗</span>
         </a>
+      )}
+    </div>
+  )
+
+  return (
+    <div className={commandCenterActive ? 'min-h-screen bg-[#080d19] text-slate-100' : 'min-h-screen bg-slate-50 text-slate-950'}>
+      <aside className={`fixed inset-y-0 left-0 z-30 hidden bg-[#08172b] text-white shadow-2xl transition-[width] duration-300 ease-out lg:block ${sidebarCollapsed ? 'w-[86px]' : 'w-[260px]'}`}>
+        {renderSidebar(false)}
+        <button
+          type="button"
+          onClick={() => setSidebarCollapsed((collapsed) => !collapsed)}
+          className="absolute -right-3 top-6 grid h-7 w-7 place-items-center rounded-full border border-white/10 bg-[#111827] text-white shadow-lg transition hover:bg-violet-600"
+          aria-label={sidebarCollapsed ? 'Expand backend sidebar' : 'Collapse backend sidebar'}
+        >
+          {sidebarCollapsed ? <HiOutlineChevronRight className="h-4 w-4" /> : <HiOutlineChevronLeft className="h-4 w-4" />}
+        </button>
       </aside>
 
-      <main className="min-w-0 lg:pl-[260px]">
-        <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/90 backdrop-blur">
+      <div className={`fixed inset-0 z-50 lg:hidden ${mobileSidebarOpen ? 'pointer-events-auto' : 'pointer-events-none'}`} aria-hidden={!mobileSidebarOpen}>
+        <div
+          className={`absolute inset-0 bg-slate-950/55 backdrop-blur-[2px] transition-opacity duration-300 ease-out ${mobileSidebarOpen ? 'opacity-100' : 'opacity-0'}`}
+          onClick={() => setMobileSidebarOpen(false)}
+        />
+        <aside
+          className={`relative h-full w-[min(18.5rem,calc(100vw-1rem))] bg-[#08172b] text-white shadow-2xl transition-transform duration-300 ease-out ${mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+          onClick={(event) => event.stopPropagation()}
+        >
+          {renderSidebar(true)}
+        </aside>
+      </div>
+
+      <main className={`min-w-0 transition-[padding-left] duration-300 ease-out ${desktopSidebarWidth}`}>
+        <header className={commandCenterActive ? 'sticky top-0 z-20 border-b border-white/10 bg-[#080d19]/95 backdrop-blur' : 'sticky top-0 z-20 border-b border-slate-200 bg-white/90 backdrop-blur'}>
           <div className="flex flex-col gap-4 px-4 py-4 sm:px-6 xl:flex-row xl:items-center xl:justify-between">
             <div className="min-w-0">
-              <p className="text-2xl font-black tracking-tight">{navGroups.flatMap((g) => g.items).find(([key]) => key === activeTab)?.[1] || 'Dashboard'}</p>
-              <p className="text-sm text-slate-500">Nexora SaaS business management. Client internal CRM records are not shown here.</p>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  className={commandCenterActive ? 'grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-white/10 bg-[#111827] text-slate-200 lg:hidden' : 'grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm lg:hidden'}
+                  onClick={() => setMobileSidebarOpen(true)}
+                  aria-label="Open backend sidebar"
+                >
+                  <HiOutlineBars3 className="h-5 w-5" />
+                </button>
+                <p className={commandCenterActive ? 'text-2xl font-black tracking-tight text-white' : 'text-2xl font-black tracking-tight'}>{activeTitle}</p>
+              </div>
+              <p className={commandCenterActive ? 'text-sm text-slate-400' : 'text-sm text-slate-500'}>Nexora SaaS business management. Client internal CRM records are not shown here.</p>
             </div>
             <div className="flex min-w-0 flex-col gap-3 md:flex-row md:items-center md:justify-end">
               <div className="relative min-w-0 md:w-[320px]">
-                <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search clients, users, payments..." className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 pr-20 text-sm outline-none focus:border-violet-300" />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md bg-slate-100 px-2 py-1 text-[10px] font-black text-slate-500">Ctrl + K</span>
+                <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search clients, users, payments..." className={commandCenterActive ? 'h-11 w-full rounded-xl border border-white/10 bg-[#111827] px-4 pr-20 text-sm text-slate-100 outline-none placeholder:text-slate-500 focus:border-violet-400' : 'h-11 w-full rounded-xl border border-slate-200 bg-white px-4 pr-20 text-sm outline-none focus:border-violet-300'} />
+                <span className={commandCenterActive ? 'absolute right-3 top-1/2 -translate-y-1/2 rounded-md bg-white/10 px-2 py-1 text-[10px] font-black text-slate-400' : 'absolute right-3 top-1/2 -translate-y-1/2 rounded-md bg-slate-100 px-2 py-1 text-[10px] font-black text-slate-500'}>Ctrl + K</span>
               </div>
               <div className="flex shrink-0 flex-wrap items-center gap-2">
               <div className="relative">
@@ -2812,19 +3614,25 @@ export default function ControlCentre() {
                     <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-2">
                       <p className="text-sm font-black text-slate-950">Backend Notifications</p>
                       <div className="flex gap-2">
-                        <button type="button" className="text-xs font-bold text-violet-700" onClick={() => setReadNotifications(new Set(allNotifications.map((item) => item.id)))}>Mark all read</button>
-                        <button type="button" className="text-xs font-bold text-slate-500" onClick={() => setReadNotifications(new Set(allNotifications.map((item) => item.id)))}>Clear all</button>
+                        <button type="button" className="text-xs font-bold text-violet-700 disabled:opacity-50" disabled={!allNotifications.length} onClick={() => markAllBackendNotificationsRead().catch((error) => setToast(clientSafeMessage(error, 'Unable to mark notifications read.')))}>Mark all read</button>
+                        <button type="button" className="text-xs font-bold text-slate-500 disabled:opacity-50" disabled={!allNotifications.length} onClick={() => clearAllBackendNotifications().catch((error) => setToast(clientSafeMessage(error, 'Unable to clear notifications.')))}>Clear all</button>
                       </div>
                     </div>
                     <div className="mt-2 max-h-96 overflow-auto">
                       {allNotifications.map((item) => {
-                        const unread = !readNotifications.has(item.id)
+                        const unread = !backendNotificationStates[backendNotificationDocId(item.id)]?.read
                         return (
                           <button
                             key={item.id}
                             type="button"
                             className={`mb-2 w-full rounded-xl border p-3 text-left ${unread ? 'border-violet-100 bg-violet-50' : 'border-slate-100 bg-slate-50'}`}
-                            onClick={() => setReadNotifications((current) => new Set([...current, item.id]))}
+                            onClick={() => {
+                              markBackendNotificationRead(item.id).catch((error) => setToast(clientSafeMessage(error, 'Unable to update notification.')))
+                              if (item.route) {
+                                setActiveTab(item.route)
+                                setNotificationsOpen(false)
+                              }
+                            }}
                           >
                             <div className="flex items-start justify-between gap-3">
                               <div className="min-w-0">
@@ -2832,7 +3640,26 @@ export default function ControlCentre() {
                                 <p className="mt-1 truncate text-xs text-slate-500">{item.detail}</p>
                                 <p className="mt-1 text-[11px] font-bold uppercase tracking-wide text-violet-600">{item.type}</p>
                               </div>
-                              {unread ? <span className="mt-1 h-2 w-2 rounded-full bg-rose-500" /> : null}
+                              <span className="flex shrink-0 flex-col items-end gap-2">
+                                {unread ? <span className="mt-1 h-2 w-2 rounded-full bg-rose-500" /> : null}
+                                <span
+                                  role="button"
+                                  tabIndex={0}
+                                  className="rounded-lg px-2 py-1 text-[10px] font-black uppercase tracking-wide text-slate-500 hover:bg-white hover:text-rose-600"
+                                  onClick={(event) => {
+                                    event.stopPropagation()
+                                    clearBackendNotification(item.id).catch((error) => setToast(clientSafeMessage(error, 'Unable to clear notification.')))
+                                  }}
+                                  onKeyDown={(event) => {
+                                    if (event.key !== 'Enter' && event.key !== ' ') return
+                                    event.preventDefault()
+                                    event.stopPropagation()
+                                    clearBackendNotification(item.id).catch((error) => setToast(clientSafeMessage(error, 'Unable to clear notification.')))
+                                  }}
+                                >
+                                  Clear
+                                </span>
+                              </span>
                             </div>
                           </button>
                         )
@@ -2842,13 +3669,13 @@ export default function ControlCentre() {
                   </div>
                 ) : null}
               </div>
-              <button className="grid h-10 w-10 place-items-center rounded-full text-slate-700 hover:bg-slate-100" type="button"><HiOutlineMoon className="h-5 w-5" /></button>
+              <button className={commandCenterActive ? 'grid h-10 w-10 place-items-center rounded-full text-slate-300 hover:bg-white/10' : 'grid h-10 w-10 place-items-center rounded-full text-slate-700 hover:bg-slate-100'} type="button"><HiOutlineMoon className="h-5 w-5" /></button>
               <ShellButton onClick={() => runAction('admin-logout', handleLogout, 'Signed out.')}>Logout</ShellButton>
-              <div className="flex items-center gap-3 border-l border-slate-200 pl-3">
-                <div className="grid h-10 w-10 place-items-center rounded-full bg-slate-200 text-sm font-black">{String(user?.email || 'A').slice(0, 1).toUpperCase()}</div>
+              <div className={commandCenterActive ? 'flex items-center gap-3 border-l border-white/10 pl-3' : 'flex items-center gap-3 border-l border-slate-200 pl-3'}>
+                <div className={commandCenterActive ? 'grid h-10 w-10 place-items-center rounded-full bg-violet-600 text-sm font-black text-white' : 'grid h-10 w-10 place-items-center rounded-full bg-slate-200 text-sm font-black'}>{String(user?.email || 'A').slice(0, 1).toUpperCase()}</div>
                 <div className="hidden sm:block">
-                  <p className="text-sm font-black">System Admin</p>
-                  <p className="text-xs text-slate-500">{user?.email || 'Super Admin'}</p>
+                  <p className={commandCenterActive ? 'text-sm font-black text-white' : 'text-sm font-black'}>System Admin</p>
+                  <p className={commandCenterActive ? 'text-xs text-slate-400' : 'text-xs text-slate-500'}>{user?.email || 'Super Admin'}</p>
                 </div>
               </div>
               </div>
@@ -2856,7 +3683,7 @@ export default function ControlCentre() {
           </div>
         </header>
 
-        <div className="px-4 py-4 sm:px-6">
+        <div className={commandCenterActive ? 'px-3 py-3 sm:px-5' : 'px-4 py-4 sm:px-6'}>
           {toast ? <div className="mb-4 rounded-2xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm font-semibold text-violet-800">{toast}</div> : null}
           {data.error ? <div className="mb-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{data.error}</div> : null}
           {Object.keys(data.sourceErrors || {}).length ? (
@@ -2865,7 +3692,7 @@ export default function ControlCentre() {
             </div>
           ) : null}
           {data.loading ? <div className="mb-4 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600">Loading SaaS admin data…</div> : null}
-          {content[activeTab] || <Dashboard />}
+          {renderContent()}
         </div>
       </main>
     </div>

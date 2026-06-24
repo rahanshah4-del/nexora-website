@@ -5,6 +5,7 @@ import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 import { useUser } from './useUser.js'
 import { clientSafeMessage } from '../utils/messages.js'
 import { expenseValue, normalizeCurrency, statusValue } from '../lib/calculations.js'
+import { createWorkspaceNotification } from '../lib/notifications.js'
 
 function normalizeExpense(expense) {
   return {
@@ -133,6 +134,20 @@ export function useExpenses({ limitCount = null } = {}) {
             targetName: title,
             metadata: { amount, currency: normalizeCurrency(payload.currency), category: payload.category },
           })
+          await createWorkspaceNotification({
+            workspaceId,
+            userId,
+            businessType,
+            type: 'Expenses',
+            priority: 'high',
+            title: 'Expense approval needed',
+            message: `${title} was submitted for approval.`,
+            relatedId: ref.id,
+            route: '/app/approvals',
+            createdBy: userId,
+            createdByEmail: firebaseUser?.email || userDoc?.email || '',
+            metadata: { amount, currency: normalizeCurrency(payload.currency), category: payload.category },
+          })
           return { ok: true }
         } catch (e) {
           return { ok: false, error: clientSafeMessage(e, 'Unable to create expense.') }
@@ -169,6 +184,19 @@ export function useExpenses({ limitCount = null } = {}) {
             targetName: title,
             metadata: { amount, currency: normalizeCurrency(payload.currency), category: payload.category },
           })
+          await createWorkspaceNotification({
+            workspaceId,
+            userId,
+            businessType,
+            type: 'Expenses',
+            priority: 'low',
+            title: 'Expense updated',
+            message: `${title} was updated.`,
+            relatedId: id,
+            route: '/app/expenses',
+            createdBy: userId,
+            createdByEmail: firebaseUser?.email || userDoc?.email || '',
+          })
           return { ok: true }
         } catch (e) {
           return { ok: false, error: clientSafeMessage(e, 'Unable to update expense.') }
@@ -191,6 +219,19 @@ export function useExpenses({ limitCount = null } = {}) {
             targetId: expense.id,
             targetName: expense.title || 'Expense',
             metadata: { amount: expense.amount, currency: expense.currency },
+          })
+          await createWorkspaceNotification({
+            workspaceId,
+            userId,
+            businessType,
+            type: 'Expenses',
+            priority: 'low',
+            title: 'Expense deleted',
+            message: `${expense.title || 'Expense'} was removed.`,
+            relatedId: expense.id,
+            route: '/app/expenses',
+            createdBy: userId,
+            createdByEmail: firebaseUser?.email || userDoc?.email || '',
           })
           return { ok: true }
         } catch (e) {

@@ -14,7 +14,7 @@ function badgeFor(priority) {
   return 'default'
 }
 
-export default function NotificationItem({ item, onMarkRead, onDelete, disabled, selected = false, onToggleSelect }) {
+export default function NotificationItem({ item, onClick, onMarkRead, onDelete, disabled, selected = false, onToggleSelect }) {
   return (
     <div
       className={cn(
@@ -35,8 +35,8 @@ export default function NotificationItem({ item, onMarkRead, onDelete, disabled,
 
       <button
         type="button"
-        disabled={disabled || item.read}
-        onClick={() => onMarkRead?.(item.id)}
+        disabled={disabled || (!onClick && item.read)}
+        onClick={() => (onClick ? onClick(item) : onMarkRead?.(item.id))}
         className="focus-ring min-w-0 flex-1 rounded-xl px-1 py-1 text-left disabled:cursor-default"
         title={item.read ? 'Already read' : 'Mark as read'}
       >

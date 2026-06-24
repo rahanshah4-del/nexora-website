@@ -17,6 +17,11 @@ const menu = {
 assert.equal(itemDiscountAmount(menu.burger), 100, 'percentage item discount')
 assert.equal(finalItemPrice(menu.fries), 350, 'fixed item discount final price')
 
+const defaultBill = calculateRestaurantBill([{ item: menu.pizza, qty: 1 }])
+closeTo(defaultBill.serviceCharges, 0, 'restaurant default service charge is zero')
+closeTo(defaultBill.tax, 0, 'restaurant default tax is zero')
+closeTo(defaultBill.total, 2000, 'restaurant default bill has no automatic additions')
+
 const bill = calculateRestaurantBill(
   [
     { item: menu.burger, qty: 2 },

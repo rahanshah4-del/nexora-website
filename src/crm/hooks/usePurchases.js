@@ -10,6 +10,7 @@ import {
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 import { useUser } from './useUser.js'
 import { clientSafeMessage } from '../utils/messages.js'
+import { createWorkspaceNotification } from '../lib/notifications.js'
 
 function toNumber(value, fallback = 0) {
   const numeric = Number(value)
@@ -142,6 +143,20 @@ export function usePurchases() {
             targetName: purchase.reference || ref.id,
             metadata: { total: purchase.total, items: purchase.items.length },
           })
+          await createWorkspaceNotification({
+            workspaceId,
+            userId,
+            businessType,
+            type: 'Inventory',
+            priority: 'medium',
+            title: 'Purchase order created',
+            message: `Purchase order for ${purchase.supplierName || 'supplier'} was created.`,
+            relatedId: ref.id,
+            route: '/app/inventory',
+            createdBy: userId,
+            createdByEmail: firebaseUser?.email || userDoc?.email || '',
+            metadata: { total: purchase.total, items: purchase.items.length },
+          })
           return { ok: true, id: ref.id }
         } catch (e) {
           return { ok: false, error: clientSafeMessage(e, 'Unable to create purchase order.') }
@@ -155,6 +170,19 @@ export function usePurchases() {
         if (!purchase.items.length) return { ok: false, error: 'Add at least one product line' }
         try {
           await patchUserDoc(workspaceId, 'purchases', id, purchase, { businessType })
+          await createWorkspaceNotification({
+            workspaceId,
+            userId,
+            businessType,
+            type: 'Inventory',
+            priority: 'low',
+            title: 'Purchase order updated',
+            message: `${purchase.reference || id} was updated.`,
+            relatedId: id,
+            route: '/app/inventory',
+            createdBy: userId,
+            createdByEmail: firebaseUser?.email || userDoc?.email || '',
+          })
           return { ok: true }
         } catch (e) {
           return { ok: false, error: clientSafeMessage(e, 'Unable to update purchase order.') }
@@ -166,6 +194,19 @@ export function usePurchases() {
         if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now' }
         try {
           await removeUserDoc(workspaceId, 'purchases', id)
+          await createWorkspaceNotification({
+            workspaceId,
+            userId,
+            businessType,
+            type: 'Inventory',
+            priority: 'low',
+            title: 'Purchase order deleted',
+            message: `${id} was deleted.`,
+            relatedId: id,
+            route: '/app/inventory',
+            createdBy: userId,
+            createdByEmail: firebaseUser?.email || userDoc?.email || '',
+          })
           return { ok: true }
         } catch (e) {
           return { ok: false, error: clientSafeMessage(e, 'Unable to delete purchase order.') }
@@ -218,6 +259,20 @@ export function usePurchases() {
             description: `Stock received for purchase order ${purchase.reference || id}.`,
             targetId: id,
             targetName: purchase.reference || id,
+            metadata: { items: purchase.items.length, total: purchase.total },
+          })
+          await createWorkspaceNotification({
+            workspaceId,
+            userId,
+            businessType,
+            type: 'Inventory',
+            priority: 'medium',
+            title: 'Purchase stock received',
+            message: `Stock received for purchase order ${purchase.reference || id}.`,
+            relatedId: id,
+            route: '/app/inventory',
+            createdBy: userId,
+            createdByEmail: firebaseUser?.email || userDoc?.email || '',
             metadata: { items: purchase.items.length, total: purchase.total },
           })
           return { ok: true }

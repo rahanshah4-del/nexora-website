@@ -18,6 +18,7 @@ import { canApproveFinance } from '../lib/financeAccess.js'
 import { normalizeBusinessType } from '../data/moduleAccess.js'
 import { buildApprovedSubscriptionPayload } from '../../lib/subscriptionApproval.js'
 import { openPaymentInvoiceIds } from '../lib/approvalQueue.js'
+import { createWorkspaceNotification } from '../lib/notifications.js'
 
 const pendingPaymentStatuses = ['pending', 'pending_verification', 'pending_partial', 'partial_pending']
 const pendingRecordStatuses = ['pending', 'pending_approval', 'requested', 'invited']
@@ -775,6 +776,25 @@ export function useApprovals() {
             },
           })
         }
+        await createWorkspaceNotification({
+          workspaceId,
+          userId,
+          businessType,
+          type: 'Approvals',
+          priority: 'medium',
+          title:
+            approval.sourceCollection === 'payments'
+              ? 'Payment approved'
+              : approval.sourceCollection === 'expenses'
+                ? 'Expense approved'
+                : 'Request approved',
+          message: `${approval.type} for ${approval.customer} was approved.`,
+          relatedId: approval.sourceId,
+          route: approval.sourceCollection === 'payments' || approval.sourceCollection === 'invoices' ? '/app/invoices' : '/app/approvals',
+          createdBy: userId,
+          createdByEmail: firebaseUser?.email || userDoc?.email || '',
+          metadata: { sourceCollection: approval.sourceCollection, amount: approval.amount, currency: approval.currency },
+        })
         return { ok: true }
       } catch (err) {
         return { ok: false, error: clientSafeMessage(err, 'Unable to approve request.') }
@@ -926,6 +946,20 @@ export function useApprovals() {
             oldValue: { status: row.status || '', paymentStatus: row.paymentStatus || '', amountPaid: row.amountPaid || 0 },
             newValue: { status: 'paid', paymentStatus: 'paid', amountPaid: invoiceTotal },
           },
+        })
+        await createWorkspaceNotification({
+          workspaceId,
+          userId,
+          businessType,
+          type: 'Approvals',
+          priority: 'medium',
+          title: 'Invoice marked paid',
+          message: `${row.invoiceNumber || approval.sourceId} was marked as paid.`,
+          relatedId: approval.sourceId,
+          route: '/app/invoices',
+          createdBy: userId,
+          createdByEmail: firebaseUser?.email || userDoc?.email || '',
+          metadata: { amount: invoiceTotal, currency: row.currency || 'PKR' },
         })
         return { ok: true }
       } catch (err) {
@@ -1083,6 +1117,20 @@ export function useApprovals() {
             },
             newValue: { status: 'rejected', approvalStatus: 'rejected' },
           },
+        })
+        await createWorkspaceNotification({
+          workspaceId,
+          userId,
+          businessType,
+          type: 'Approvals',
+          priority: 'high',
+          title: 'Request rejected',
+          message: `${approval.type} for ${approval.customer} was rejected.`,
+          relatedId: approval.sourceId,
+          route: '/app/approvals',
+          createdBy: userId,
+          createdByEmail: firebaseUser?.email || userDoc?.email || '',
+          metadata: { sourceCollection: approval.sourceCollection, amount: approval.amount, currency: approval.currency },
         })
         return { ok: true }
       } catch (err) {

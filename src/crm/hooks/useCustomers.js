@@ -4,6 +4,7 @@ import { createUserDoc, fetchWorkspaceCollectionPage, listenToWorkspaceCollectio
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 import { useUser } from './useUser.js'
 import { clientSafeMessage } from '../utils/messages.js'
+import { createWorkspaceNotification } from '../lib/notifications.js'
 
 function normalizeCustomer(c) {
   return {
@@ -278,6 +279,20 @@ export function useCustomers({ limitCount = DEFAULT_CUSTOMER_LIST_LIMIT, paginat
             targetName: name,
             metadata: { email, company, customerType },
           })
+          await createWorkspaceNotification({
+            workspaceId,
+            userId,
+            businessType,
+            type: 'Customers',
+            priority: 'low',
+            title: 'Customer created',
+            message: `${name} was added as a customer.`,
+            relatedId: ref.id,
+            route: '/app/customers',
+            createdBy: userId,
+            createdByEmail: firebaseUser?.email || userDoc?.email || '',
+            metadata: { email, company, customerType },
+          })
           return { ok: true }
         } catch (e) {
           return { ok: false, error: clientSafeMessage(e, 'Unable to create customer.') }
@@ -321,6 +336,19 @@ export function useCustomers({ limitCount = DEFAULT_CUSTOMER_LIST_LIMIT, paginat
             targetName: name,
             metadata: { email, company, customerType },
           })
+          await createWorkspaceNotification({
+            workspaceId,
+            userId,
+            businessType,
+            type: 'Customers',
+            priority: 'low',
+            title: 'Customer updated',
+            message: `${name} was updated.`,
+            relatedId: id,
+            route: '/app/customers',
+            createdBy: userId,
+            createdByEmail: firebaseUser?.email || userDoc?.email || '',
+          })
           return { ok: true }
         } catch (e) {
           return { ok: false, error: clientSafeMessage(e, 'Unable to update customer.') }
@@ -343,6 +371,19 @@ export function useCustomers({ limitCount = DEFAULT_CUSTOMER_LIST_LIMIT, paginat
             description: `${customer.name || customer.studentName || 'Customer'} was removed.`,
             targetId: customer.id,
             targetName: customer.name || customer.studentName || customer.id,
+          })
+          await createWorkspaceNotification({
+            workspaceId,
+            userId,
+            businessType,
+            type: 'Customers',
+            priority: 'low',
+            title: 'Customer deleted',
+            message: `${customer.name || customer.studentName || 'Customer'} was removed.`,
+            relatedId: customer.id,
+            route: '/app/customers',
+            createdBy: userId,
+            createdByEmail: firebaseUser?.email || userDoc?.email || '',
           })
           return { ok: true }
         } catch (e) {

@@ -58,6 +58,7 @@ export default function NotificationDropdown({ notificationsEnabled, api, onClos
                     await api.markAsRead(n.id)
                     api.markDropdownSeen()
                     onClose?.()
+                    if (n.route) navigate(n.route)
                   } catch (e) {
                     setToast({ tone: 'error', message: clientSafeMessage(e, 'Unable to update notification.') })
                     window.setTimeout(() => setToast(null), 2200)

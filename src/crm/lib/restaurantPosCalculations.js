@@ -25,8 +25,8 @@ export function finalItemPrice(item = {}) {
 
 export function calculateRestaurantBill(cartRows = [], options = {}) {
   const discountInput = safeMoney(options.discount)
-  const serviceRate = options.serviceChargeEnabled === false ? 0 : safeMoney(options.serviceRate ?? options.serviceCharges ?? 5)
-  const taxRate = options.taxEnabled === false ? 0 : safeMoney(options.taxRate ?? options.tax ?? 5)
+  const serviceRate = options.serviceChargeEnabled === false ? 0 : safeMoney(options.serviceRate ?? options.serviceCharges ?? 0)
+  const taxRate = options.taxEnabled === false ? 0 : safeMoney(options.taxRate ?? options.tax ?? 0)
 
   const rows = cartRows.map((row) => {
     const item = row.item || row

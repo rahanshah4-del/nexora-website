@@ -42,6 +42,7 @@ function normalizeNotification(n) {
     createdAt,
     timeLabel: formatTimeAgo(createdAt),
     relatedId: n.relatedId ?? null,
+    route: n.route ?? '',
     businessType: normalizeBusinessType(n.businessType),
   }
 }

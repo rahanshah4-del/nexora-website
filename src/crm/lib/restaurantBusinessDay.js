@@ -69,8 +69,10 @@ export function restaurantPreviousBusinessDayWindow(settings = {}, referenceDate
 export function isWithinRestaurantBusinessDay(value, settings = {}, referenceDate = new Date()) {
   const date = value instanceof Date ? value : new Date(value)
   if (Number.isNaN(date.getTime())) return false
-  const window = restaurantBusinessDayWindow(settings, referenceDate)
-  return date >= window.start && date <= window.end
+  // Use the business-day bucket (not strict open/close window membership) so that
+  // orders placed during the daytime gap between closing and opening still count
+  // toward the same business day instead of vanishing from the "Today" list.
+  return restaurantBusinessDateKey(date, settings) === restaurantBusinessDateKey(referenceDate, settings)
 }
 
 export function restaurantBusinessDateKey(value, settings = {}) {
@@ -85,6 +87,25 @@ export function restaurantBusinessDateKey(value, settings = {}) {
     keyDate.setDate(keyDate.getDate() - 1)
   }
   return localDateKey(keyDate)
+}
+
+// Full business-day bucket [start, end] for the day a reference timestamp belongs to.
+// Unlike restaurantBusinessDayWindow (which only spans open->close hours and leaves a
+// gap during daytime), this covers the entire 24h bucket aligned to the rollover time,
+// so orders/expenses placed at ANY hour fall inside exactly one business day.
+export function restaurantBusinessDayBounds(settings = {}, referenceDate = new Date()) {
+  const reference = referenceDate instanceof Date ? referenceDate : new Date(referenceDate)
+  const safeReference = Number.isNaN(reference.getTime()) ? new Date() : reference
+  const { openingTime, closingTime } = restaurantTimingSettings(settings)
+  const openingMinutes = parseTimeMinutes(openingTime, defaultOpeningTime)
+  const closingMinutes = parseTimeMinutes(closingTime, defaultClosingTime)
+  // Overnight schedules roll over at closing time; same-day schedules roll over at midnight.
+  const rolloverMinutes = closingMinutes <= openingMinutes ? closingMinutes : 0
+  const [year, month, day] = restaurantBusinessDateKey(safeReference, settings).split('-').map(Number)
+  const start = addMinutes(new Date(year, month - 1, day), rolloverMinutes)
+  const end = addMinutes(start, 24 * 60)
+  end.setMilliseconds(end.getMilliseconds() - 1)
+  return { start, end }
 }
 
 export function formatRestaurantBusinessWindow(settings = {}, referenceDate = new Date()) {
