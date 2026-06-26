@@ -5,6 +5,7 @@ import Card from '../components/ui/Card.jsx'
 import Badge from '../components/ui/Badge.jsx'
 import NotificationHistory from '../components/notifications/NotificationHistory.jsx'
 import ActivityTimeline from '../components/notifications/ActivityTimeline.jsx'
+import QueueStatusMonitor from '../components/notifications/QueueStatusMonitor.jsx'
 import { useNotifications } from '../hooks/useNotifications.js'
 import { usePreferences } from '../hooks/usePreferences.js'
 
@@ -44,6 +45,10 @@ export default function NotificationsPage() {
         </div>
       ) : null}
 
+      <div className="mb-4">
+        <QueueStatusMonitor />
+      </div>
+
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <NotificationHistory enabled={notifications.enabled} api={api} />
@@ -70,4 +75,3 @@ export default function NotificationsPage() {
     </motion.div>
   )
 }
-

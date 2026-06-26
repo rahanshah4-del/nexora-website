@@ -1,7 +1,8 @@
-import { collection, doc, serverTimestamp, setDoc, writeBatch } from 'firebase/firestore'
+import { collection, doc, serverTimestamp, writeBatch } from 'firebase/firestore'
 import { db } from './firebase.js'
 import { workspaceCollectionPath } from './firestore.js'
 import { normalizeBusinessType } from '../data/moduleAccess.js'
+import { enqueueBackgroundJob } from './backgroundJobs.js'
 
 function cleanDocId(value) {
   const safe = String(value || '')
@@ -49,6 +50,7 @@ export async function createWorkspaceNotification({
   createdBy = '',
   createdByEmail = '',
   dedupeKey = '',
+  queue = true,
 } = {}) {
   if (!db || !workspaceId || !title) return { ok: false, skipped: true }
 
@@ -56,6 +58,36 @@ export async function createWorkspaceNotification({
   if (!targetUserIds.length) return { ok: false, skipped: true }
 
   try {
+    if (queue && createdBy) {
+      const queued = await enqueueBackgroundJob({
+        workspaceId,
+        userId: createdBy,
+        businessType,
+        createdByEmail,
+        type: 'notification.generate',
+        label: title,
+        route,
+        priority,
+        payload: {
+          userId,
+          userIds: targetUserIds,
+          businessType,
+          title,
+          message,
+          type,
+          priority,
+          relatedId,
+          route,
+          metadata,
+          createdBy,
+          createdByEmail,
+          dedupeKey,
+        },
+        metadata: { total: targetUserIds.length },
+      })
+      if (queued.ok) return { ok: true, queued: true, jobId: queued.jobId, count: targetUserIds.length }
+    }
+
     const batch = writeBatch(db)
     const ref = collection(db, workspaceCollectionPath(workspaceId, 'notifications'))
     const normalizedBusinessType = normalizeBusinessType(businessType)

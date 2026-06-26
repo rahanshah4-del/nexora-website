@@ -678,7 +678,7 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT } = {}) {
             createdByEmail: firebaseUser?.email || userDoc?.email || '',
             metadata: { invoiceNumber: invNo, total: invoice.total, currency: invoice.currency },
           })
-          return { ok: true }
+          return { ok: true, id: ref.id, invoice: { id: ref.id, ...docPayload, invoiceNumber: invNo } }
         } catch (e) {
           return { ok: false, error: clientSafeMessage(e, 'Unable to create invoice.') }
         }

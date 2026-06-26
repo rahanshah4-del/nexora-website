@@ -6,3 +6,15 @@ compatibility_date = "2026-06-02"
 binding = "EMAIL_DB"
 database_name = "nexora-email-state"
 database_id = "f0eed903-4c7b-45b5-9f92-c79d57b40d7f"
+
+[[queues.producers]]
+queue = "nexora-email-jobs"
+binding = "EMAIL_QUEUE"
+
+[[queues.consumers]]
+queue = "nexora-email-jobs"
+max_batch_size = 10
+max_batch_timeout = 5
+max_retries = 5
+retry_delay = 60
+dead_letter_queue = "nexora-email-jobs-dlq"

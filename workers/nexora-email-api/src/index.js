@@ -959,6 +959,28 @@ async function sendMarketingCampaign(request, env) {
 
   const from = marketingFrom(env)
   const batchSize = Math.min(Math.max(Number(body?.batchSize) || 20, 1), 50)
+
+  if (!testEmail && env.EMAIL_QUEUE) {
+    await env.EMAIL_QUEUE.send({
+      type: 'email.campaign',
+      from,
+      subject,
+      html,
+      text,
+      recipients,
+      batchSize,
+      queuedAt: new Date().toISOString(),
+    }, { delaySeconds: 0 })
+    return jsonResponse(request, {
+      success: true,
+      queued: true,
+      status: 'pending',
+      sentCount: 0,
+      failedCount: 0,
+      totalRecipients: recipients.length,
+    })
+  }
+
   const results = []
   for (const group of chunk(recipients, batchSize)) {
     // eslint-disable-next-line no-await-in-loop
@@ -983,6 +1005,40 @@ async function sendMarketingCampaign(request, env) {
   const sentCount = results.filter((r) => r.status === 'sent').length
   const failedCount = results.length - sentCount
   return jsonResponse(request, { success: true, test: Boolean(testEmail), sentCount, failedCount, results })
+}
+
+async function processQueuedMarketingEmail(env, job = {}) {
+  if (!env.RESEND_API_KEY) throw new Error('RESEND_API_KEY missing')
+  const recipients = Array.isArray(job.recipients) ? job.recipients : []
+  if (!recipients.length) return { sentCount: 0, failedCount: 0 }
+  const batchSize = Math.min(Math.max(Number(job.batchSize) || 20, 1), 50)
+  let sentCount = 0
+  let failedCount = 0
+
+  for (const group of chunk(recipients, batchSize)) {
+    // eslint-disable-next-line no-await-in-loop
+    const settled = await Promise.all(
+      group.map(async (recipient) => {
+        const to = getString(recipient.email)
+        try {
+          const response = await fetchResendWithTimeout({
+            from: job.from || marketingFrom(env),
+            to,
+            subject: job.subject,
+            html: job.html,
+            text: job.text || undefined,
+          }, env.RESEND_API_KEY)
+          return response.ok
+        } catch {
+          return false
+        }
+      }),
+    )
+    sentCount += settled.filter(Boolean).length
+    failedCount += settled.filter((ok) => !ok).length
+  }
+
+  return { sentCount, failedCount }
 }
 
 export default {
@@ -1094,6 +1150,22 @@ export default {
       }
     } catch (error) {
       return jsonResponse(request, { success: false, error: error?.message || 'Worker error: email request failed.' }, 500)
+    }
+  },
+
+  async queue(batch, env) {
+    for (const message of batch.messages) {
+      try {
+        if (message.body?.type === 'email.campaign') await processQueuedMarketingEmail(env, message.body)
+        message.ack()
+      } catch (error) {
+        if (Number(message.attempts || 1) >= 5) {
+          console.error('[Email Queue] job failed permanently', error?.message || error)
+          message.ack()
+        } else {
+          message.retry({ delaySeconds: Math.min(900, 30 * Number(message.attempts || 1)) })
+        }
+      }
     }
   },
 }

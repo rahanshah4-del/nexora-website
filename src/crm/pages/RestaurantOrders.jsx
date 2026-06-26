@@ -45,6 +45,7 @@ import {
 } from '../lib/restaurantPosCalculations.js'
 import { useBusinessSettings } from '../hooks/useBusinessSettings.js'
 import { useUser } from '../hooks/useUser.js'
+import { enqueueBackgroundJob } from '../lib/backgroundJobs.js'
 import { createWorkspaceNotification } from '../lib/notifications.js'
 import { directPrinterAvailable, printThermalText } from '../lib/printerService.js'
 
@@ -344,6 +345,27 @@ export default function RestaurantOrdersPage() {
     }).catch(() => {})
   }
 
+  function queueRestaurantJob(type, label, payload = {}, metadata = {}) {
+    if (!workspaceId || !userId) return
+    enqueueBackgroundJob({
+      workspaceId,
+      userId,
+      businessType,
+      createdByEmail: firebaseUser?.email || userDoc?.email || '',
+      type,
+      label,
+      route: '/app/orders',
+      priority: metadata.priority || 'normal',
+      payload: {
+        orderNumber,
+        billNumber: payload.billNumber || `BILL-${orderNumber.replace(/^#/, '')}`,
+        kotNumber: payload.kotNumber || `KOT-${orderNumber.replace(/^#/, '')}`,
+        ...payload,
+      },
+      metadata,
+    }).catch(() => {})
+  }
+
   useEffect(() => {
     window.dispatchEvent(new CustomEvent('nexora:collapse-sidebar'))
   }, [])
@@ -563,6 +585,7 @@ export default function RestaurantOrdersPage() {
     const existingStatus = String(currentSavedOrder?.orderStatus || '').toLowerCase()
     const nextStatus = ['preparing', 'ready', 'served'].includes(existingStatus) ? existingStatus : 'pending'
     saveOrderRecord(nextStatus)
+    queueRestaurantJob('restaurant.bill.save', 'Restaurant bill save processing', billContext(), { total: 1 })
     setRestaurantCustomers((current) =>
       applyRestaurantCustomerPayment(current, selectedCustomerId, {
         orderNumber,
@@ -687,6 +710,7 @@ export default function RestaurantOrdersPage() {
     setFlowMessage(nextPaymentStatus === 'paid' ? 'Payment saved. Order marked paid.' : `Payment saved. Remaining due ${formatRestaurantCurrency(nextDueAmount)}.`)
     setBillingActionStatus({ type: 'payment', status: 'success', message: nextPaymentStatus === 'paid' ? 'Paid' : 'Partial payment saved' })
     if (printBill) {
+      queueRestaurantJob('restaurant.print', 'Restaurant payment bill print', { ...context, printType: 'bill' }, { total: 1 })
       setPrintPreview({ title: '58mm Bill Preview', type: 'bill', data: buildBillPrintData(context) })
     }
     if (nextPaymentStatus === 'paid') {
@@ -731,6 +755,7 @@ export default function RestaurantOrdersPage() {
       }),
     )
     setPrintPreview(null)
+    queueRestaurantJob('restaurant.bill.save', 'Restaurant paid bill processing', context, { total: 1 })
     prepareNextOrderAfterPaid()
     setFlowMessage('Bill paid and saved. Ready for next bill.')
     setBillingActionStatus({ type: 'payment', status: 'success', message: 'Paid. Next bill ready' })
@@ -766,14 +791,15 @@ export default function RestaurantOrdersPage() {
 
   async function savePrintBill() {
     if (!hasRequiredTable()) return
-    setBillingActionStatus({ type: 'bill', status: 'loading', message: 'Generating bill...' })
+    setBillingActionStatus({ type: 'bill', status: 'loading', message: 'Queueing bill...' })
     try {
-      await new Promise((resolve) => window.setTimeout(resolve, 80))
       saveBillRecord()
+      const context = billContext()
+      queueRestaurantJob('restaurant.print', 'Restaurant bill print job', { ...context, printType: 'bill' }, { total: 1 })
       if (quickBill.printBill) {
-        const context = billContext()
-        const printed = await sendRestaurantThermal(buildBillPrintTemplate(context))
-        if (!printed) setPrintPreview({ title: '58mm Bill Preview', type: 'bill', data: buildBillPrintData(context) })
+        sendRestaurantThermal(buildBillPrintTemplate(context)).then((printed) => {
+          if (!printed) setPrintPreview({ title: '58mm Bill Preview', type: 'bill', data: buildBillPrintData(context) })
+        })
       }
       setFlowMessage('')
       setBillingActionStatus({
@@ -798,15 +824,17 @@ export default function RestaurantOrdersPage() {
 
   async function savePrintKot() {
     if (!hasRequiredTable()) return
-    setBillingActionStatus({ type: 'kot', status: 'loading', message: 'Generating KOT...' })
+    setBillingActionStatus({ type: 'kot', status: 'loading', message: 'Queueing KOT...' })
     try {
-      await new Promise((resolve) => window.setTimeout(resolve, 80))
+      const context = billContext()
+      queueRestaurantJob('restaurant.print', 'Restaurant KOT print job', { ...context, printType: 'kot' }, { total: 1, priority: 'high' })
       if (quickBill.printKot) {
-        const context = billContext()
-        const printed = await sendRestaurantThermal(buildKotPrintTemplate(context))
-        if (!printed) setPrintPreview({ title: '58mm KOT Preview', type: 'kot', data: buildKotPrintData(context) })
+        sendRestaurantThermal(buildKotPrintTemplate(context)).then((printed) => {
+          if (!printed) setPrintPreview({ title: '58mm KOT Preview', type: 'kot', data: buildKotPrintData(context) })
+        })
       }
       saveOrderRecord('pending')
+      queueRestaurantJob('restaurant.bill.save', 'Restaurant KOT save processing', context, { total: 1, priority: 'high' })
       prepareNextOrderAfterSave()
       setFlowMessage('KOT saved for kitchen. Ready for next order.')
       setBillingActionStatus({

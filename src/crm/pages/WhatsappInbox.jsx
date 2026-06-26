@@ -25,7 +25,9 @@ import { useWhatsappContacts } from '../hooks/useWhatsappContacts.js'
 import { useWhatsappTemplates } from '../hooks/useWhatsappTemplates.js'
 import { useWhatsappNotes } from '../hooks/useWhatsappNotes.js'
 import { useTeamMembers } from '../hooks/useTeamMembers.js'
+import { useUser } from '../hooks/useUser.js'
 import { formatCompact } from '../utils/format.js'
+import { enqueueBackgroundJob } from '../lib/backgroundJobs.js'
 import { CONTACT_STATUSES, contactStats, renderTemplate, waLink } from '../lib/whatsappManual.js'
 
 const blankContact = {
@@ -71,6 +73,7 @@ export default function WhatsappInboxPage() {
   const templatesApi = useWhatsappTemplates()
   const notesApi = useWhatsappNotes()
   const teamApi = useTeamMembers()
+  const { workspaceId, userId, businessType, firebaseUser, userDoc } = useUser()
 
   const [selectedId, setSelectedId] = useState(null)
   const [search, setSearch] = useState('')
@@ -153,6 +156,45 @@ export default function WhatsappInboxPage() {
     api.markContacted(selected)
     const template = templatesApi.templates.find((t) => t.id === templateId)
     if (template) templatesApi.recordUsage(template)
+  }
+
+  async function queueBulkMessage() {
+    if (!message.trim()) {
+      showToast('error', 'Message is required before queueing bulk send.', 2600)
+      return
+    }
+    const recipients = filtered
+      .filter((contact) => contact.phone)
+      .map((contact) => ({
+        id: contact.id,
+        name: contact.name || '',
+        phone: contact.phone || '',
+        company: contact.company || '',
+        message: renderTemplate(message, contactVars(contact)),
+      }))
+    if (!recipients.length) {
+      showToast('error', 'No filtered contacts have WhatsApp numbers.', 2600)
+      return
+    }
+    setBusy(true)
+    const res = await enqueueBackgroundJob({
+      workspaceId,
+      userId,
+      businessType,
+      createdByEmail: firebaseUser?.email || userDoc?.email || '',
+      type: 'whatsapp.bulk',
+      label: `WhatsApp bulk message (${recipients.length})`,
+      route: '/app/whatsapp-inbox',
+      payload: {
+        message,
+        templateId,
+        recipients,
+      },
+      metadata: { total: recipients.length },
+    })
+    setBusy(false)
+    if (res.ok) showToast('success', `Bulk WhatsApp job queued for ${recipients.length} contact(s).`, 3000)
+    else showToast('error', res.error || 'Unable to queue WhatsApp bulk send.', 3000)
   }
 
   async function copyMessage() {
@@ -379,6 +421,9 @@ export default function WhatsappInboxPage() {
                     </Button>
                     <Button variant="subtle" className="rounded-2xl" type="button" onClick={copyMessage} disabled={!message.trim()}>
                       <HiOutlineDocumentDuplicate className="h-4 w-4" /> Copy
+                    </Button>
+                    <Button variant="subtle" className="rounded-2xl" type="button" onClick={queueBulkMessage} disabled={busy || !message.trim()}>
+                      <HiOutlineUserGroup className="h-4 w-4" /> Queue bulk
                     </Button>
                   </div>
                 </div>

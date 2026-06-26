@@ -412,6 +412,15 @@ export async function sendCampaign(payload) {
     return { ok: false, error: `Firebase Function failed: ${functionResult.error}. Worker fallback failed: ${workerResult.error}` }
   }
 
+  if (workerResult.queued) {
+    await updateCampaign(created.id, {
+      status: 'queued',
+      totalRecipients: workerResult.totalRecipients || recipients.length,
+      queuedAt: serverTimestamp(),
+    })
+    return { ok: true, ...workerResult, campaignId: created.id, provider: 'worker-queue' }
+  }
+
   await writeEmailLogs(created.id, workerResult.results || [])
   await updateCampaign(created.id, {
     status: 'completed',

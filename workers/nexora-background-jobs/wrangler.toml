@@ -1,0 +1,29 @@
+name = "nexora-background-jobs"
+main = "src/index.js"
+compatibility_date = "2026-06-02"
+
+[vars]
+FIREBASE_PROJECT_ID = "nexora-business-suite"
+ALLOWED_ORIGINS = "https://nexorasolution.online,https://www.nexorasolution.online,https://nexora-business-suite.web.app,https://nexora-business-suite.firebaseapp.com,http://localhost:5173,http://localhost:5174"
+FROM_EMAIL = "support@nexorasolution.online"
+FROM_NAME = "Nexora Solution"
+
+[[queues.producers]]
+queue = "nexora-background-jobs"
+binding = "BACKGROUND_QUEUE"
+
+[[queues.consumers]]
+queue = "nexora-background-jobs"
+max_batch_size = 10
+max_batch_timeout = 5
+max_retries = 5
+retry_delay = 60
+dead_letter_queue = "nexora-background-jobs-dlq"
+
+# Required secrets:
+#   FIREBASE_CLIENT_EMAIL
+#   FIREBASE_PRIVATE_KEY
+# Optional provider secrets:
+#   RESEND_API_KEY
+#   WHATSAPP_BULK_ENDPOINT
+#   WHATSAPP_BULK_TOKEN

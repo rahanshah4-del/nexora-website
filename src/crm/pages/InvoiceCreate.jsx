@@ -29,6 +29,7 @@ import { formatCurrency } from '../utils/format.js'
 import { cn } from '../utils/cn.js'
 import { resolveWorkspaceName } from '../../lib/workspaceName.js'
 import { normalizeBusinessType } from '../data/moduleAccess.js'
+import { enqueueBackgroundJob } from '../lib/backgroundJobs.js'
 import {
   INVOICE_STATUS_OPTIONS,
   INVOICE_TEMPLATES,
@@ -111,7 +112,7 @@ export default function InvoiceCreatePage() {
   const { settings: businessSettings } = useBusinessSettings()
   const { products } = useProducts()
   const { customers } = useCustomers()
-  const { userDoc, userId, businessType } = useUser()
+  const { userDoc, userId, workspaceId, businessType, firebaseUser } = useUser()
   const [invoice, setInvoice] = useState(() => createBlankInvoice())
   const [toast, setToast] = useState(null)
   const [submitting, setSubmitting] = useState(false)
@@ -428,6 +429,23 @@ export default function InvoiceCreatePage() {
     setSubmitting(false)
 
     if (res?.ok) {
+      enqueueBackgroundJob({
+        workspaceId,
+        userId,
+        businessType,
+        createdByEmail: firebaseUser?.email || userDoc?.email || '',
+        type: 'restaurant.invoice.generate',
+        label: isSchool ? 'Fee bill generation' : 'Invoice generation',
+        route: '/app/invoices',
+        payload: {
+          invoiceId: res.id || '',
+          invoice: res.invoice || { ...invoice, items: cleanItems, total: totals.grandTotal },
+          company,
+          businessType,
+          status: requestedStatus,
+        },
+        metadata: { total: 1 },
+      }).catch(() => {})
       showToast({ tone: 'success', message: requestedStatus === 'draft' ? (isSchool ? 'Draft fee bill saved' : 'Draft invoice saved') : (isSchool ? 'Fee bill created successfully' : 'Invoice created successfully') })
       window.setTimeout(() => navigate('/app/invoices'), 650)
     } else {
