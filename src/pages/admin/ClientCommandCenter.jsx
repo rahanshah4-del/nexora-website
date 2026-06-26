@@ -21,6 +21,7 @@ import {
   HiOutlinePencilSquare,
   HiOutlinePlus,
   HiOutlinePlusCircle,
+  HiOutlinePower,
   HiOutlineRectangleStack,
   HiOutlineShieldCheck,
   HiOutlineSquares2X2,
@@ -33,6 +34,7 @@ import { clientSafeMessage } from '../../lib/errorHandler.js'
 import { isBackendAdminEmail } from '../../lib/roles.js'
 import { sendWorkerEmail } from '../../lib/transactionalEmail.js'
 import { labelForBusinessType } from '../../crm/data/moduleAccess.js'
+import { resolveClientShortId } from '../../lib/clientIds.js'
 
 const modules = ['General CRM', 'School ERP', 'Retail / POS', 'Property ERP', 'Restaurant POS', 'WhatsApp CRM', 'Transport / Rental']
 const moduleVisuals = {
@@ -139,6 +141,11 @@ function moduleAccessDetails(row = {}) {
   }
 }
 
+function clientBlocked(row = {}) {
+  return ['blocked', 'disabled', 'inactive'].includes(statusValue(row.status || row.accountStatus, 'active'))
+    || row.workspaceAccessDenied === true
+}
+
 function moduleSlug(moduleName) {
   return lower(moduleName).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'module'
 }
@@ -154,6 +161,7 @@ function searchTextForClient(client = {}) {
     client.contactPerson,
     client.email,
     client.phone,
+    client.shortClientId,
     client.workspaceId,
     client.ownerId,
     client.userId,
@@ -356,8 +364,8 @@ function DarkActionButton({ icon: Icon, children, active = false, className = ''
       className={[
         'inline-flex h-9 items-center justify-center gap-2 rounded-lg px-3 text-xs font-black transition disabled:cursor-not-allowed disabled:opacity-50',
         active
-          ? 'border border-violet-400/40 bg-violet-600 text-white shadow-[0_12px_28px_-18px_rgba(124,58,237,0.9)]'
-          : 'border border-white/10 bg-slate-950/30 text-slate-200 hover:border-violet-400/40 hover:bg-violet-500/10 hover:text-white',
+          ? 'border border-cyan-300/40 bg-gradient-to-r from-cyan-500 via-blue-600 to-fuchsia-600 text-white shadow-[0_14px_34px_-18px_rgba(34,211,238,0.85)]'
+          : 'border border-cyan-300/15 bg-slate-950/35 text-slate-100 hover:border-cyan-300/40 hover:bg-cyan-400/10 hover:text-white',
         className,
       ].join(' ')}
       {...props}
@@ -386,7 +394,7 @@ function StatCard({ label, value, icon: Icon, tone }) {
 
 function DarkStatCard({ label, value, helper, icon: Icon, tone }) {
   return (
-    <section className="min-w-0 rounded-lg border border-white/10 bg-[#111a2c] p-4 shadow-[0_18px_55px_-42px_rgba(0,0,0,0.85)]">
+    <section className="min-w-0 rounded-lg border border-cyan-300/15 bg-[linear-gradient(135deg,#111a2c_0%,#18245a_55%,#0f3146_100%)] p-4 shadow-[0_18px_55px_-42px_rgba(34,211,238,0.55)]">
       <div className="flex items-center gap-4">
         <span className={`grid h-12 w-12 shrink-0 place-items-center rounded-full ${tone}`}>
           <Icon className="h-5 w-5" />
@@ -588,6 +596,7 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
   const [search, setSearch] = useState('')
   const [selectedClientId, setSelectedClientId] = useState('')
   const [selectedIssueId, setSelectedIssueId] = useState('')
+  const [showLongClientId, setShowLongClientId] = useState(false)
   const [activeTab, setActiveTab] = useState('services')
   const [activeAction, setActiveAction] = useState('')
   const [toast, setToast] = useState('')
@@ -616,6 +625,7 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
         ...workspace,
         id,
         workspaceId: id,
+        shortClientId: resolveClientShortId({ ...owner, ...workspace, workspaceId: id }),
         ownerUserId: firstValue(owner.uid, owner.userId, workspace.ownerId, workspace.userId, workspace.uid),
         clientName: firstValue(workspace.clientName, workspace.ownerName, owner.fullName, owner.displayName, owner.name, workspaceName(workspace)),
         companyName: workspaceName(workspace),
@@ -691,6 +701,7 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
   )
   const accessDetails = selectedClient ? moduleAccessDetails(selectedClient) : { primary: '', allowed: [], special: false, all: false }
   const activeModules = accessDetails.allowed
+  const selectedClientBlocked = selectedClient ? clientBlocked(selectedClient) : false
   const totalSpent = clientPayments
     .filter((row) => ['paid', 'approved', 'completed'].includes(statusValue(row.paymentStatus || row.status || row.approvalStatus)))
     .reduce((sum, row) => sum + paymentAmount(row), 0)
@@ -817,6 +828,49 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
     await saveModuleAccess([accessDetails.primary || workspaceBusinessType(selectedClient)], 'module_access_reset_primary')
   }
 
+  async function saveClientAccessStatus(active) {
+    if (!selectedClient?.workspaceId) throw new Error('Select a client workspace first.')
+    const ownerId = ownerIdForClient(selectedClient)
+    const payload = {
+      status: active ? 'active' : 'blocked',
+      accountStatus: active ? 'active' : 'blocked',
+      workspaceAccessDenied: !active,
+      updatedAt: serverTimestamp(),
+      updatedBy: user?.uid || '',
+      updatedByEmail: user?.email || '',
+      ...(active ? { activatedAt: serverTimestamp(), activatedByEmail: user?.email || '' } : { deactivatedAt: serverTimestamp(), deactivatedByEmail: user?.email || '' }),
+    }
+    await setDoc(doc(db, 'workspaces', selectedClient.workspaceId), payload, { merge: true })
+    if (ownerId) {
+      await setDoc(doc(db, 'users', ownerId), payload, { merge: true })
+    }
+
+    const notificationTargets = Array.from(new Set([ownerId, selectedClient.uid, selectedClient.userId, selectedClient.ownerId].filter(Boolean).map(String)))
+    if (notificationTargets.length) {
+      const notificationsRef = collection(db, 'workspaces', selectedClient.workspaceId, 'notifications')
+      await Promise.all(notificationTargets.map((targetUserId) => setDoc(doc(notificationsRef), {
+        workspaceId: selectedClient.workspaceId,
+        ownerId: selectedClient.workspaceId,
+        userId: targetUserId,
+        businessType: workspaceBusinessType(selectedClient),
+        type: 'Workspace',
+        priority: active ? 'medium' : 'high',
+        title: active ? 'Workspace activated' : 'Workspace deactivated',
+        message: active
+          ? 'Your Nexora workspace access has been activated by the backend team.'
+          : 'Your Nexora workspace access has been paused by the backend team. Contact Nexora support for help.',
+        route: '/app/dashboard',
+        relatedId: selectedClient.workspaceId,
+        metadata: { action: active ? 'client_activated' : 'client_deactivated' },
+        read: false,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        createdBy: user?.uid || '',
+        createdByEmail: user?.email || '',
+      }, { merge: true })))
+    }
+  }
+
   async function addNote(message = noteDraft) {
     const note = clean(message)
     if (!selectedIssue || !note) return
@@ -938,12 +992,13 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
 
   const profile = selectedClient ? {
     'Client name': selectedClient.clientName,
+    'Short Client ID': selectedClient.shortClientId,
     'Company name': selectedClient.companyName,
     'Contact person': selectedClient.contactPerson,
     Email: selectedClient.email,
     Phone: selectedClient.phone,
     Location: firstValue(selectedClient.location, selectedClient.city, selectedClient.country, selectedClient.address),
-    'Client ID': selectedClient.workspaceId,
+    ...(showLongClientId ? { 'Full Client ID': selectedClient.workspaceId } : {}),
     'Account status': selectedClient.status || selectedClient.accountStatus || selectedClient.subscriptionStatus || 'active',
     'Total spent': money(totalSpent, currency),
     'Outstanding amount': money(outstandingAmount, currency),
@@ -980,25 +1035,26 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
 
   if (embedded) {
     return (
-      <section className="min-h-[calc(100vh-8rem)] rounded-[1.1rem] border border-white/10 bg-[#080d19] p-3 text-slate-100 shadow-[0_24px_80px_-50px_rgba(0,0,0,0.95)] sm:p-4">
+      <section className="min-h-[calc(100vh-8rem)] rounded-[1.1rem] border border-cyan-300/20 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.18),transparent_34%),radial-gradient(circle_at_top_right,rgba(217,70,239,0.20),transparent_32%),linear-gradient(135deg,#050816_0%,#101235_48%,#061d2f_100%)] p-3 text-slate-100 shadow-[0_24px_80px_-50px_rgba(34,211,238,0.55)] sm:p-4">
         {toast ? <div className="fixed left-1/2 top-5 z-[100] max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-bold text-white shadow-xl">{toast}</div> : null}
         <div className="space-y-3">
           <header className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <h1 className="text-xl font-black tracking-tight text-white">Client Command Center</h1>
-              <p className="mt-1 text-sm font-medium text-slate-400">Search, manage client services, issues and tickets</p>
+              <span className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-cyan-200">Command Center</span>
+              <h1 className="mt-2 text-xl font-black tracking-tight text-white">Client Command Center</h1>
+              <p className="mt-1 text-sm font-medium text-cyan-100/75">Vivid client operations view for services, issues, tickets, notes, and follow-up.</p>
             </div>
             <div className="flex items-center gap-3">
-              <span className="hidden rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-bold text-slate-300 md:inline-flex">
+              <span className="hidden rounded-full border border-cyan-300/30 bg-cyan-400/10 px-3 py-1 text-xs font-bold text-cyan-100 md:inline-flex">
                 Backend live data
               </span>
-              <span className="grid h-9 w-9 place-items-center rounded-full bg-violet-600 text-sm font-black text-white">
+              <span className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-cyan-400 via-blue-600 to-fuchsia-600 text-sm font-black text-white shadow-lg shadow-cyan-950/40">
                 {String(user?.email || 'N').slice(0, 1).toUpperCase()}
               </span>
             </div>
           </header>
 
-          <section className="rounded-lg border border-white/10 bg-[#111827] p-3">
+          <section className="rounded-lg border border-cyan-300/15 bg-[linear-gradient(135deg,#111827_0%,#172554_52%,#083344_100%)] p-3 shadow-[0_18px_60px_-48px_rgba(34,211,238,0.7)]">
             <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center">
               <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
                 <label className="relative block min-w-0">
@@ -1008,7 +1064,7 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
                     placeholder="Search client by name, email, phone, company, ID, or plan..."
-                    className="h-11 w-full rounded-lg border border-white/10 bg-[#0f172a] pl-10 pr-24 text-sm font-semibold text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-violet-400"
+                    className="h-11 w-full rounded-lg border border-cyan-300/15 bg-[#081225] pl-10 pr-24 text-sm font-semibold text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-400/10"
                   />
                   <span className="pointer-events-none absolute right-11 top-1/2 -translate-y-1/2 text-[11px] font-black text-slate-500">
                     {searchMatches}/{clients.length}
@@ -1036,6 +1092,8 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
                 <DarkActionButton icon={HiOutlinePlusCircle} active={activeAction === 'createTicket'} onClick={() => setActiveAction(activeAction === 'createTicket' ? '' : 'createTicket')}>Create Ticket</DarkActionButton>
                 <DarkActionButton icon={HiOutlineEnvelope} active={activeAction === 'sendEmail'} onClick={() => setActiveAction(activeAction === 'sendEmail' ? '' : 'sendEmail')}>Send Email</DarkActionButton>
                 <DarkActionButton icon={HiOutlinePencilSquare} active={activeAction === 'addNote'} onClick={() => setActiveAction(activeAction === 'addNote' ? '' : 'addNote')}>Add Note</DarkActionButton>
+                <DarkActionButton icon={HiOutlinePower} active={!selectedClientBlocked} disabled={!selectedClient || busy === 'client-activate'} onClick={() => runAction('client-activate', () => saveClientAccessStatus(true), 'Client activated.')}>Activate</DarkActionButton>
+                <DarkActionButton icon={HiOutlineLockClosed} className="border-rose-400/30 text-rose-100 hover:border-rose-300/50 hover:bg-rose-500/10" disabled={!selectedClient || selectedClientBlocked || busy === 'client-deactivate'} onClick={() => runAction('client-deactivate', () => saveClientAccessStatus(false), 'Client deactivated.')}>Deactivate</DarkActionButton>
               </div>
             </div>
           </section>
@@ -1049,10 +1107,10 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
 
           {selectedClient ? (
             <>
-              <section className="rounded-lg border border-white/10 bg-[#111827] p-4">
+              <section className="rounded-lg border border-cyan-300/15 bg-[linear-gradient(135deg,#111827_0%,#18245a_56%,#0f3146_100%)] p-4 shadow-[0_18px_60px_-48px_rgba(34,211,238,0.65)]">
                 <div className="grid gap-4 xl:grid-cols-[minmax(0,1.3fr)_minmax(22rem,0.95fr)_12rem]">
                   <div className="flex min-w-0 gap-4">
-                    <div className="grid h-16 w-16 shrink-0 place-items-center rounded-full bg-gradient-to-br from-violet-600 to-blue-700 text-lg font-black text-white">
+                    <div className="grid h-16 w-16 shrink-0 place-items-center rounded-full bg-gradient-to-br from-cyan-400 via-blue-600 to-fuchsia-600 text-lg font-black text-white shadow-lg shadow-cyan-950/40">
                       {(selectedClient.companyName || selectedClient.clientName || 'NC').split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase()}
                     </div>
                     <div className="min-w-0">
@@ -1069,7 +1127,17 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
                     </div>
                   </div>
                   <div className="grid gap-x-5 gap-y-3 border-white/10 xl:grid-cols-2 xl:border-l xl:pl-5">
-                    <DarkField label="Client ID" value={selectedClient.workspaceId} />
+                    <DarkField label="Short Client ID" value={selectedClient.shortClientId} />
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-slate-400">Full Client ID</p>
+                      <button
+                        type="button"
+                        className="mt-1 rounded-lg border border-white/10 px-2 py-1 text-xs font-black text-cyan-200 hover:bg-white/10"
+                        onClick={() => setShowLongClientId((show) => !show)}
+                      >
+                        {showLongClientId ? selectedClient.workspaceId : 'Show full ID'}
+                      </button>
+                    </div>
                     <DarkField label="Company" value={selectedClient.companyName} />
                     <DarkField label="Contact Person" value={selectedClient.contactPerson} />
                     <DarkField label="Email" value={selectedClient.email} />
@@ -1077,6 +1145,10 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
                     <DarkField label="Preferred Contact" value={profile['Preferred contact method']} />
                   </div>
                   <div className="grid gap-2 border-white/10 xl:border-l xl:pl-5">
+                    <DarkActionButton icon={HiOutlinePower} active={!selectedClientBlocked} disabled={busy === 'client-activate'} onClick={() => runAction('client-activate', () => saveClientAccessStatus(true), 'Client activated.')}>Activate Client</DarkActionButton>
+                    <DarkActionButton icon={HiOutlineLockClosed} className="border-rose-400/30 text-rose-100 hover:border-rose-300/50 hover:bg-rose-500/10" disabled={selectedClientBlocked || busy === 'client-deactivate'} onClick={() => runAction('client-deactivate', () => saveClientAccessStatus(false), 'Client deactivated.')}>Deactivate Client</DarkActionButton>
+                    <DarkActionButton icon={HiOutlineSquares2X2} active={accessDetails.all} disabled={busy === 'module-access-all'} onClick={() => runAction('module-access-all', grantAllModules, 'All modules enabled for this client.')}>Enable All Modules</DarkActionButton>
+                    <DarkActionButton icon={HiOutlineShieldCheck} disabled={busy === 'module-access-reset'} onClick={() => runAction('module-access-reset', resetPrimaryModule, 'Client reset to primary module only.')}>Primary Only</DarkActionButton>
                     <DarkActionButton icon={HiOutlinePencilSquare} onClick={() => setActiveAction('addNote')}>Edit Client</DarkActionButton>
                     <DarkActionButton icon={HiOutlineChatBubbleLeftRight} onClick={() => setActiveTab('tickets')}>Open Tickets</DarkActionButton>
                     <DarkActionButton icon={HiOutlineEnvelope} onClick={() => setActiveAction('sendEmail')} disabled={!selectedClient.email}>Email Client</DarkActionButton>
@@ -1093,7 +1165,7 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
               </section>
 
               {activeAction ? (
-                <section className="rounded-lg border border-violet-400/20 bg-[#111827] p-4">
+                <section className="rounded-lg border border-cyan-300/20 bg-[linear-gradient(135deg,#111827_0%,#172554_55%,#083344_100%)] p-4 shadow-[0_18px_60px_-48px_rgba(34,211,238,0.65)]">
                   {activeAction === 'createTicket' ? (
                     <div className="grid gap-3 lg:grid-cols-[1fr_11rem_13rem_auto]">
                       <input className="h-10 rounded-lg border border-white/10 bg-[#0f172a] px-3 text-sm font-semibold text-slate-100 outline-none placeholder:text-slate-500 focus:border-violet-400" placeholder="Ticket title" value={ticketDraft.title} onChange={(event) => setTicketDraft((current) => ({ ...current, title: event.target.value }))} />
@@ -1281,15 +1353,15 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 px-3 py-5 text-slate-950 sm:px-5 lg:px-6">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(14,165,233,0.16),transparent_32%),radial-gradient(circle_at_top_right,rgba(168,85,247,0.18),transparent_30%),linear-gradient(135deg,#f8fbff_0%,#eef7ff_48%,#f5f3ff_100%)] px-3 py-5 text-slate-950 sm:px-5 lg:px-6">
       {toast ? <div className="fixed left-1/2 top-5 z-[100] max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-bold text-white shadow-xl">{toast}</div> : null}
       <div className="mx-auto max-w-[1500px] space-y-5">
-        <header className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+        <header className="rounded-2xl border border-blue-200 bg-[linear-gradient(135deg,#ffffff_0%,#eff6ff_48%,#f5f3ff_100%)] p-4 shadow-[0_24px_70px_-52px_rgba(37,99,235,0.45)] sm:p-5">
           <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
             <div className="min-w-0">
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-blue-600">Backend Admin</p>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-blue-600">Backend Admin Command Center</p>
               <h1 className="mt-1 text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">Client Command Center</h1>
-              <p className="mt-1 text-sm text-slate-500">Search a client and manage support, notes, issue resolution, billing context, and email follow-up.</p>
+              <p className="mt-1 text-sm font-semibold text-slate-600">Search a client and manage support, notes, issue resolution, billing context, and email follow-up.</p>
             </div>
             <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] xl:w-[44rem]">
               <label className="relative block min-w-0">
@@ -1325,7 +1397,7 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
                 className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700 outline-none focus:border-blue-300"
               >
                 {!searchedClients.length ? <option value="">No matching clients</option> : null}
-                {searchedClients.map((client) => <option key={client.id} value={client.id}>{client.companyName} - {client.email || client.id}</option>)}
+                {searchedClients.map((client) => <option key={client.id} value={client.id}>{client.companyName} - {client.email || client.shortClientId}</option>)}
               </select>
             </div>
           </div>
@@ -1335,6 +1407,8 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
             <ActionButton icon={HiOutlinePlusCircle} active={activeAction === 'createTicket'} onClick={() => setActiveAction(activeAction === 'createTicket' ? '' : 'createTicket')}>Create Ticket</ActionButton>
             <ActionButton icon={HiOutlineEnvelope} active={activeAction === 'sendEmail'} onClick={() => setActiveAction(activeAction === 'sendEmail' ? '' : 'sendEmail')}>Send Email</ActionButton>
             <ActionButton icon={HiOutlinePencilSquare} active={activeAction === 'addNote'} onClick={() => setActiveAction(activeAction === 'addNote' ? '' : 'addNote')}>Add Note</ActionButton>
+            <ActionButton icon={HiOutlinePower} active={!selectedClientBlocked} disabled={!selectedClient || busy === 'client-activate'} onClick={() => runAction('client-activate', () => saveClientAccessStatus(true), 'Client activated.')}>Activate Client</ActionButton>
+            <ActionButton icon={HiOutlineLockClosed} className="border-rose-200 bg-rose-50 text-rose-700 hover:border-rose-300 hover:text-rose-800" disabled={!selectedClient || selectedClientBlocked || busy === 'client-deactivate'} onClick={() => runAction('client-deactivate', () => saveClientAccessStatus(false), 'Client deactivated.')}>Deactivate Client</ActionButton>
           </div>
         </header>
 
@@ -1391,7 +1465,23 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
                   </div>
                   <StatusPill value={profile['Account status']} />
                 </div>
+                <div className="mt-4 grid gap-2 rounded-2xl border border-blue-100 bg-blue-50/60 p-3 sm:grid-cols-2 xl:grid-cols-4">
+                  <ActionButton icon={HiOutlinePower} active={!selectedClientBlocked} disabled={busy === 'client-activate'} onClick={() => runAction('client-activate', () => saveClientAccessStatus(true), 'Client activated.')}>Activate</ActionButton>
+                  <ActionButton icon={HiOutlineLockClosed} className="border-rose-200 bg-rose-50 text-rose-700 hover:border-rose-300 hover:text-rose-800" disabled={selectedClientBlocked || busy === 'client-deactivate'} onClick={() => runAction('client-deactivate', () => saveClientAccessStatus(false), 'Client deactivated.')}>Deactivate</ActionButton>
+                  <ActionButton icon={HiOutlineSquares2X2} active={accessDetails.all} disabled={busy === 'module-access-all'} onClick={() => runAction('module-access-all', grantAllModules, 'All modules enabled for this client.')}>Enable All Modules</ActionButton>
+                  <ActionButton icon={HiOutlineShieldCheck} disabled={busy === 'module-access-reset'} onClick={() => runAction('module-access-reset', resetPrimaryModule, 'Client reset to primary module only.')}>Primary Only</ActionButton>
+                </div>
                 <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                  <div className="min-w-0 rounded-xl border border-blue-100 bg-blue-50 px-3 py-2">
+                    <p className="text-[11px] font-black uppercase tracking-[0.1em] text-blue-500">Full Client ID</p>
+                    <button
+                      type="button"
+                      className="mt-1 rounded-lg bg-white px-2 py-1 text-xs font-black text-blue-700"
+                      onClick={() => setShowLongClientId((show) => !show)}
+                    >
+                      {showLongClientId ? selectedClient.workspaceId : 'Show full ID'}
+                    </button>
+                  </div>
                   {Object.entries(profile).map(([label, value]) => <Field key={label} label={label} value={value} />)}
                 </div>
               </div>

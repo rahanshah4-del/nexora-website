@@ -11,7 +11,7 @@
 
 html {
   min-height: 100%;
-  scroll-behavior: smooth;
+  scroll-behavior: auto;
   overflow-x: hidden;
   overflow-y: auto;
 }
@@ -72,10 +72,10 @@ body.public-website {
 
 @layer components {
   .glass-card {
-    @apply rounded-[2rem] border border-slate-200/70 bg-white/90 shadow-soft backdrop-blur-xl transition duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_30px_80px_-42px_rgba(15,23,42,0.32)];
+    @apply rounded-[2rem] border border-slate-200/70 bg-white/90 shadow-soft backdrop-blur-xl;
   }
   .glass-panel {
-    @apply rounded-[1.75rem] border border-slate-200/80 bg-white/80 p-6 shadow-[0_28px_60px_-28px_rgba(15,23,42,0.2)] transition duration-300 ease-out hover:-translate-y-1 hover:bg-white hover:shadow-[0_32px_72px_-38px_rgba(15,23,42,0.28)];
+    @apply rounded-[1.75rem] border border-slate-200/80 bg-white/80 p-6 shadow-[0_28px_60px_-28px_rgba(15,23,42,0.2)] hover:bg-white;
   }
   .section-heading {
     @apply font-display text-slate-950 text-2xl font-semibold tracking-tight sm:text-4xl;
@@ -87,13 +87,13 @@ body.public-website {
 	    @apply inline-flex items-center rounded-full border border-sky-200/80 bg-sky-50 px-3 py-1.5 text-xs font-semibold text-sky-700 sm:px-4 sm:py-2 sm:text-sm;
 	  }
 	  .premium-card {
-	    @apply rounded-[1.65rem] border border-slate-200/80 bg-white/90 shadow-[0_28px_80px_-48px_rgba(15,23,42,0.38)] backdrop-blur transition duration-300 ease-out hover:-translate-y-1 hover:border-blue-200 hover:shadow-[0_34px_90px_-50px_rgba(37,99,235,0.36)];
+	    @apply rounded-[1.65rem] border border-slate-200/80 bg-white/90 shadow-[0_28px_80px_-48px_rgba(15,23,42,0.38)] backdrop-blur hover:border-blue-200;
 	  }
 	  .premium-button-primary {
-	    @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-slate-950 px-7 text-sm font-extrabold text-white shadow-[0_20px_46px_-28px_rgba(15,23,42,0.95)] transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-blue-700;
+	    @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-slate-950 px-7 text-sm font-extrabold text-white shadow-[0_20px_46px_-28px_rgba(15,23,42,0.95)] hover:bg-blue-700;
 	  }
 	  .premium-button-secondary {
-	    @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-slate-200 bg-white/90 px-7 text-sm font-extrabold text-slate-950 shadow-[0_18px_42px_-34px_rgba(15,23,42,0.55)] transition duration-200 ease-out hover:-translate-y-0.5 hover:border-blue-300 hover:text-blue-700;
+	    @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-slate-200 bg-white/90 px-7 text-sm font-extrabold text-slate-950 shadow-[0_18px_42px_-34px_rgba(15,23,42,0.55)] hover:border-blue-300 hover:text-blue-700;
 	  }
 	}
 
@@ -103,20 +103,55 @@ body.public-website {
   }
 
   .page-enter {
-    animation: pageEnter 240ms ease-out both;
+    animation: public-fade-up 420ms ease-out both;
   }
 
   .hero-enter {
-    animation: heroEnter 280ms ease-out both;
+    animation: public-fade-up 480ms ease-out both;
+  }
+
+  .marketing-page {
+    animation: public-page-in 360ms ease-out both;
+  }
+
+  .marketing-page .site-header {
+    animation: public-header-in 420ms ease-out both;
+  }
+
+  .marketing-page main > section {
+    animation: public-fade-up 520ms ease-out both;
+  }
+
+  .marketing-page main > section:nth-child(1) {
+    animation-delay: 40ms;
+  }
+
+  .marketing-page main > section:nth-child(2) {
+    animation-delay: 90ms;
+  }
+
+  .marketing-page main > section:nth-child(3) {
+    animation-delay: 130ms;
+  }
+
+  .marketing-page .premium-card,
+  .marketing-page .glass-card,
+  .marketing-page .premium-button-primary,
+  .marketing-page .premium-button-secondary {
+    transition: border-color 180ms ease, color 180ms ease, background-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+  }
+
+  .marketing-page .premium-card:hover,
+  .marketing-page .premium-button-primary:hover,
+  .marketing-page .premium-button-secondary:hover {
+    transform: translateY(-2px);
   }
 
   .marketing-page [data-reveal] {
-    opacity: 0;
-    transform: translate3d(0, 14px, 0);
-    transition:
-      opacity 240ms ease-out,
-      transform 240ms ease-out;
-    will-change: opacity, transform;
+    opacity: 1;
+    transform: none;
+    animation: public-fade-up 420ms ease-out both;
+    will-change: auto;
   }
 
   .marketing-page [data-reveal].is-revealed {
@@ -187,10 +222,8 @@ body.public-website {
     background: currentColor;
     content: '';
     opacity: 0;
-    transform: scaleX(0.35);
-    transition:
-      opacity 200ms ease-out,
-      transform 200ms ease-out;
+    transform: none;
+    transition: opacity 160ms ease;
     transform-origin: center;
   }
 
@@ -198,11 +231,11 @@ body.public-website {
   .marketing-page .site-header .nav-link:focus-visible::after,
   .marketing-page .site-header .nav-link.active::after {
     opacity: 1;
-    transform: scaleX(1);
+    transform: none;
   }
 
   .glow-blob {
-    animation: none;
+    animation: public-soft-pulse 7s ease-in-out infinite;
   }
 
   .logo-shell {
@@ -212,7 +245,7 @@ body.public-website {
   }
 
   .hero-float {
-    animation: none;
+    animation: public-float 6s ease-in-out infinite;
   }
 
 	  .pos-preview-shell {
@@ -227,94 +260,73 @@ body.public-website {
     background: linear-gradient(115deg, transparent 0%, transparent 38%, rgba(255, 255, 255, 0.52) 48%, transparent 58%, transparent 100%);
     content: '';
     opacity: 0.45;
-    transform: translateX(-58%);
-    animation: posScreenSheen 4.8s ease-in-out infinite;
+    transform: none;
+    animation: public-shine 7s ease-in-out infinite;
   }
 
   .pos-float-card {
-    animation: posFloat 5.6s ease-in-out infinite;
-  }
-
-  .pos-float-card:nth-child(2) {
-    animation-delay: 900ms;
+    animation: public-fade-up 520ms ease-out both;
   }
 
   .pos-reveal-card {
-    animation: posCardRise 420ms ease-out both;
+    animation: public-fade-up 520ms ease-out both;
   }
 
-  @keyframes pageEnter {
+  @keyframes public-page-in {
     from {
-      opacity: 0;
-      transform: translate3d(0, 12px, 0);
-    }
-    to {
-      opacity: 1;
-      transform: translate3d(0, 0, 0);
-    }
-  }
-
-  @keyframes heroEnter {
-    from {
-      opacity: 0;
-      transform: translate3d(0, 22px, 0);
-    }
-    to {
-      opacity: 1;
-      transform: translate3d(0, 0, 0);
-    }
-  }
-
-  @keyframes heroFloat {
-    0%,
-    100% {
-      transform: translate3d(0, 0, 0);
-    }
-    50% {
-      transform: translate3d(0, -8px, 0);
-    }
-  }
-
-  @keyframes glowDrift {
-    0%,
-    100% {
-      opacity: 0.75;
-      transform: translate3d(0, 0, 0) scale(1);
-    }
-    50% {
       opacity: 0.92;
-      transform: translate3d(0, -10px, 0) scale(1.04);
-    }
-  }
-
-  @keyframes posFloat {
-    0%,
-    100% {
-      transform: translate3d(0, 0, 0);
-    }
-    50% {
-      transform: translate3d(0, -7px, 0);
-    }
-  }
-
-  @keyframes posScreenSheen {
-    0%,
-    45% {
-      transform: translateX(-58%);
-    }
-    100% {
-      transform: translateX(58%);
-    }
-  }
-
-  @keyframes posCardRise {
-    from {
-      opacity: 0;
-      transform: translate3d(0, 10px, 0);
     }
     to {
       opacity: 1;
-      transform: translate3d(0, 0, 0);
+    }
+  }
+
+  @keyframes public-header-in {
+    from {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes public-fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes public-float {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-6px);
+    }
+  }
+
+  @keyframes public-soft-pulse {
+    0%, 100% {
+      opacity: 0.72;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+
+  @keyframes public-shine {
+    0%, 70%, 100% {
+      transform: translateX(-55%);
+    }
+    85% {
+      transform: translateX(55%);
     }
   }
 
@@ -327,16 +339,6 @@ body.public-website {
   @media (prefers-reduced-motion: reduce) {
     html {
       scroll-behavior: auto;
-    }
-
-    .marketing-page,
-    .marketing-page *,
-    .marketing-page *::before,
-    .marketing-page *::after {
-      animation-duration: 1ms !important;
-      animation-iteration-count: 1 !important;
-      scroll-behavior: auto !important;
-      transition-duration: 1ms !important;
     }
 
     .page-enter,

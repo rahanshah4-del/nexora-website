@@ -243,6 +243,7 @@ const salesHubSidebarCoreModules = new Set([
   'quotations',
   'invoices',
   'salesProducts',
+  'businessServices',
   'expenses',
   'accounts',
   'accountStatements',
@@ -274,6 +275,7 @@ export const businessWorkspaceCatalog = [
       'activities',
       'quotations',
       'salesProducts',
+      'businessServices',
       'followUps',
       'invoices',
       'payments',
@@ -590,6 +592,7 @@ export const legacyPermissionAliases = {
   reports: ['reports', 'viewReports'],
   schoolReports: ['reports', 'viewReports'],
   settings: ['settingsAccess'],
+  businessServices: ['support', 'settingsAccess'],
 }
 
 export function modulePermissionKey(moduleKey, action = 'view') {

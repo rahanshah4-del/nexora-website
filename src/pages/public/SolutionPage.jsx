@@ -373,7 +373,7 @@ export default function SolutionPage() {
 
   return (
     <PublicPageShell>
-      <section className="hero-enter relative overflow-hidden bg-[linear-gradient(180deg,#ffffff_0%,#f7fbff_72%,#ffffff_100%)] pb-16 pt-12 sm:pb-20 sm:pt-14 lg:pb-24 lg:pt-16">
+      <section className="relative overflow-hidden bg-[linear-gradient(180deg,#ffffff_0%,#f7fbff_72%,#ffffff_100%)] pb-16 pt-12 sm:pb-20 sm:pt-14 lg:pb-24 lg:pt-16">
         <div className="soft-arc-bg pointer-events-none" />
         <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-200 to-transparent" />
         <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-5 sm:px-6 lg:grid-cols-[0.92fr_1.08fr] lg:px-8">
@@ -422,7 +422,7 @@ export default function SolutionPage() {
           <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {page.features.map(([title, text, FeatureIcon]) => (
               <article key={title} className="premium-card group flex min-h-48 gap-4 p-6">
-                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-blue-50 text-blue-700 transition duration-200 group-hover:bg-slate-950 group-hover:text-white">
+                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-blue-50 text-blue-700 group-hover:bg-slate-950 group-hover:text-white">
                   <FeatureIcon className="text-2xl" />
                 </span>
                 <div>

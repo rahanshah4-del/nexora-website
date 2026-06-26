@@ -50,7 +50,7 @@ export default function PublicFooter() {
             <h3 className="text-sm font-extrabold">Quick Links</h3>
             <div className="mt-5 grid gap-3 text-sm text-blue-100">
               {quickLinks.map(([label, href]) => (
-                <a key={label} href={href} className="transition hover:text-white">
+                <a key={label} href={href} className="hover:text-white">
                   {label}
                 </a>
               ))}
@@ -61,7 +61,7 @@ export default function PublicFooter() {
             <h3 className="text-sm font-extrabold">Solutions</h3>
             <div className="mt-5 grid gap-3 text-sm text-blue-100">
               {solutionLinks.map(([label, to]) => (
-                <Link key={label} to={to} className="transition hover:text-white">
+                <Link key={label} to={to} className="hover:text-white">
                   {label}
                 </Link>
               ))}
@@ -71,11 +71,11 @@ export default function PublicFooter() {
           <div>
             <h3 className="text-sm font-extrabold">Contact Us</h3>
             <div className="mt-5 grid gap-4 text-sm text-blue-100">
-              <a href={whatsappLink} target="_blank" rel="noreferrer" className="flex gap-3 transition hover:text-white">
+              <a href={whatsappLink} target="_blank" rel="noreferrer" className="flex gap-3 hover:text-white">
                 <HiOutlineChatBubbleLeftRight className="mt-0.5 shrink-0 text-lg" />
                 <span>{whatsappNumberDisplay}</span>
               </a>
-              <a href={`mailto:${contactEmail}`} className="flex gap-3 transition hover:text-white">
+              <a href={`mailto:${contactEmail}`} className="flex gap-3 hover:text-white">
                 <HiOutlineDocumentChartBar className="mt-0.5 shrink-0 text-lg" />
                 <span>{contactEmail}</span>
               </a>

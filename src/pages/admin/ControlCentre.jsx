@@ -2,6 +2,7 @@ import { Component, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   HiOutlineBell,
+  HiOutlineBriefcase,
   HiOutlineBuildingOffice2,
   HiOutlineChatBubbleLeftRight,
   HiOutlineChartBarSquare,
@@ -95,6 +96,7 @@ import {
 import { buildApprovedSubscriptionPayload } from '../../lib/subscriptionApproval.js'
 import { createWorkspaceNotification, workspaceNotificationTargets } from '../../crm/lib/notifications.js'
 import EmailMarketing from './EmailMarketing.jsx'
+import AdminBusinessServices from './BusinessServices.jsx'
 
 export class ControlCentreErrorBoundary extends Component {
   state = { error: null }
@@ -164,6 +166,7 @@ const navGroups = [
       ['transactions', 'Transactions', HiOutlineCurrencyDollar],
       ['plans', 'Plans', HiOutlineCreditCard],
       ['promoCodes', 'Promo Codes', HiOutlineTag],
+      ['businessServices', 'Business Services', HiOutlineBriefcase],
       ['whatsappPricing', 'WhatsApp Pricing', HiOutlineChatBubbleLeftRight],
       ['moduleAccess', 'Module Access', HiOutlineShieldCheck],
       ['visitorAnalytics', 'Visitor Analytics', HiOutlineChartBarSquare],
@@ -412,6 +415,7 @@ function useControlCentreData() {
     analyticsEvents: [],
     userSessions: [],
     whatsappSettings: [],
+    businessServiceRequests: [],
     loading: Boolean(db),
     error: '',
     sourceErrors: {},
@@ -441,6 +445,7 @@ function useControlCentreData() {
       analyticsEvents: [],
       userSessions: [],
       whatsappSettings: [],
+      businessServiceRequests: [],
     }
     const expected = Object.keys(cache).length
     const loaded = new Set()
@@ -521,6 +526,7 @@ function useControlCentreData() {
       listen('analyticsEvents', 'analyticsEvents', 1000),
       listen('userSessions', 'userSessions', 500),
       listenGroup('whatsappSettings', 'whatsappSettings', 500),
+      listen('businessServiceRequests', 'businessServiceRequests', 300),
     ]
 
     return () => unsubscribers.forEach((unsubscribe) => unsubscribe?.())
@@ -1112,6 +1118,17 @@ export default function ControlCentre() {
         createdAt: row.createdAt,
         route: 'support',
       }))
+    const businessServiceItems = (data.businessServiceRequests || [])
+      .filter((row) => ['new', 'under_review'].includes(statusValue(row.status || 'New')))
+      .slice(0, 5)
+      .map((row) => ({
+        id: `business-service-${row.id}`,
+        type: 'business service',
+        title: 'Business service request',
+        detail: `${row.companyName || row.email || 'Client'} · ${row.serviceTitle || 'Service'}`,
+        createdAt: row.createdAt || row.updatedAt,
+        route: 'businessServices',
+      }))
     const expiredItems = data.workspaces
       .filter(isExpired)
       .slice(0, 5)
@@ -1134,10 +1151,10 @@ export default function ControlCentre() {
         createdAt: systemHealth.lastCheckedAt,
         route: item.actionTab,
       }))
-    return [...healthItems, ...signupItems, ...upgradeItems, ...paymentItems, ...ticketItems, ...expiredItems]
+    return [...healthItems, ...businessServiceItems, ...signupItems, ...upgradeItems, ...paymentItems, ...ticketItems, ...expiredItems]
       .sort((a, b) => (toDate(b.createdAt)?.getTime() || 0) - (toDate(a.createdAt)?.getTime() || 0))
       .slice(0, 20)
-  }, [data.supportTickets, data.upgradeRequests, data.workspaces, payments, systemHealth])
+  }, [data.businessServiceRequests, data.supportTickets, data.upgradeRequests, data.workspaces, payments, systemHealth])
 
   const allNotifications = useMemo(
     () => derivedNotifications.filter((item) => !backendNotificationStates[backendNotificationDocId(item.id)]?.cleared),
@@ -3464,6 +3481,8 @@ export default function ControlCentre() {
         return Plans()
       case 'promoCodes':
         return PromoCodes()
+      case 'businessServices':
+        return <AdminBusinessServices />
       case 'whatsappPricing':
         return WhatsappPricing()
       case 'moduleAccess':
@@ -3506,7 +3525,7 @@ export default function ControlCentre() {
         {sidebarCollapsed && !mobile ? null : (
           <div className="min-w-0">
             <p className="truncate text-2xl font-black tracking-wide">NEXORA</p>
-            <p className="truncate text-xs text-slate-300">SaaS Owner Admin Panel</p>
+            <p className="truncate text-xs font-semibold text-cyan-100">Backend Control Center</p>
           </div>
         )}
       </div>
@@ -3528,7 +3547,7 @@ export default function ControlCentre() {
                       setMobileSidebarOpen(false)
                     }}
                     title={sidebarCollapsed && !mobile ? label : undefined}
-                    className={`group relative flex w-full items-center rounded-xl text-sm font-bold transition ${sidebarCollapsed && !mobile ? 'justify-center px-0 py-2.5' : 'gap-3 px-3 py-2.5'} ${active ? 'bg-gradient-to-r from-blue-600 to-violet-600 text-white shadow-lg shadow-violet-950/30' : 'text-slate-200 hover:bg-white/10'}`}
+                    className={`group relative flex w-full items-center rounded-xl text-sm font-bold transition ${sidebarCollapsed && !mobile ? 'justify-center px-0 py-2.5' : 'gap-3 px-3 py-2.5'} ${active ? 'bg-gradient-to-r from-cyan-400 via-blue-600 to-fuchsia-600 text-white shadow-lg shadow-cyan-950/30' : 'text-slate-100 hover:bg-cyan-400/10 hover:text-white'}`}
                   >
                     <Icon className="h-5 w-5 shrink-0" />
                     {sidebarCollapsed && !mobile ? (
@@ -3555,13 +3574,13 @@ export default function ControlCentre() {
   )
 
   return (
-    <div className={commandCenterActive ? 'min-h-screen bg-[#080d19] text-slate-100' : 'min-h-screen bg-slate-50 text-slate-950'}>
-      <aside className={`fixed inset-y-0 left-0 z-30 hidden bg-[#08172b] text-white shadow-2xl transition-[width] duration-300 ease-out lg:block ${sidebarCollapsed ? 'w-[86px]' : 'w-[260px]'}`}>
+    <div className={commandCenterActive ? 'min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.18),transparent_34%),radial-gradient(circle_at_top_right,rgba(217,70,239,0.20),transparent_32%),linear-gradient(135deg,#050816_0%,#101235_48%,#061d2f_100%)] text-slate-100' : 'min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(14,165,233,0.16),transparent_32%),radial-gradient(circle_at_top_right,rgba(168,85,247,0.18),transparent_30%),linear-gradient(135deg,#f8fbff_0%,#eef7ff_48%,#f5f3ff_100%)] text-slate-950'}>
+      <aside className={`fixed inset-y-0 left-0 z-30 hidden bg-[linear-gradient(180deg,#051937_0%,#15205f_48%,#0f766e_100%)] text-white shadow-2xl shadow-cyan-950/40 transition-[width] duration-300 ease-out lg:block ${sidebarCollapsed ? 'w-[86px]' : 'w-[260px]'}`}>
         {renderSidebar(false)}
         <button
           type="button"
           onClick={() => setSidebarCollapsed((collapsed) => !collapsed)}
-          className="absolute -right-3 top-6 grid h-7 w-7 place-items-center rounded-full border border-white/10 bg-[#111827] text-white shadow-lg transition hover:bg-violet-600"
+          className="absolute -right-3 top-6 grid h-7 w-7 place-items-center rounded-full border border-cyan-200/30 bg-cyan-500 text-white shadow-lg transition hover:bg-fuchsia-600"
           aria-label={sidebarCollapsed ? 'Expand backend sidebar' : 'Collapse backend sidebar'}
         >
           {sidebarCollapsed ? <HiOutlineChevronRight className="h-4 w-4" /> : <HiOutlineChevronLeft className="h-4 w-4" />}
@@ -3574,7 +3593,7 @@ export default function ControlCentre() {
           onClick={() => setMobileSidebarOpen(false)}
         />
         <aside
-          className={`relative h-full w-[min(18.5rem,calc(100vw-1rem))] bg-[#08172b] text-white shadow-2xl transition-transform duration-300 ease-out ${mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+          className={`relative h-full w-[min(18.5rem,calc(100vw-1rem))] bg-[linear-gradient(180deg,#051937_0%,#15205f_48%,#0f766e_100%)] text-white shadow-2xl transition-transform duration-300 ease-out ${mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
           onClick={(event) => event.stopPropagation()}
         >
           {renderSidebar(true)}
@@ -3582,7 +3601,7 @@ export default function ControlCentre() {
       </div>
 
       <main className={`min-w-0 transition-[padding-left] duration-300 ease-out ${desktopSidebarWidth}`}>
-        <header className={commandCenterActive ? 'sticky top-0 z-20 border-b border-white/10 bg-[#080d19]/95 backdrop-blur' : 'sticky top-0 z-20 border-b border-slate-200 bg-white/90 backdrop-blur'}>
+        <header className={commandCenterActive ? 'sticky top-0 z-20 border-b border-cyan-300/20 bg-[linear-gradient(135deg,rgba(8,13,25,0.96),rgba(30,27,75,0.94),rgba(8,47,73,0.92))] backdrop-blur' : 'sticky top-0 z-20 border-b border-blue-200/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(239,246,255,0.96),rgba(245,243,255,0.94))] shadow-sm shadow-blue-100/60 backdrop-blur'}>
           <div className="flex flex-col gap-4 px-4 py-4 sm:px-6 xl:flex-row xl:items-center xl:justify-between">
             <div className="min-w-0">
               <div className="flex items-center gap-3">
@@ -3594,14 +3613,19 @@ export default function ControlCentre() {
                 >
                   <HiOutlineBars3 className="h-5 w-5" />
                 </button>
-                <p className={commandCenterActive ? 'text-2xl font-black tracking-tight text-white' : 'text-2xl font-black tracking-tight'}>{activeTitle}</p>
+                <div className="min-w-0">
+                  <p className={commandCenterActive ? 'text-2xl font-black tracking-tight text-white' : 'text-2xl font-black tracking-tight text-slate-950'}>{activeTitle}</p>
+                  <span className={commandCenterActive ? 'mt-1 inline-flex rounded-full border border-cyan-300/30 bg-cyan-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-cyan-200' : 'mt-1 inline-flex rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-blue-700'}>
+                    Backend Control Center
+                  </span>
+                </div>
               </div>
-              <p className={commandCenterActive ? 'text-sm text-slate-400' : 'text-sm text-slate-500'}>Nexora SaaS business management. Client internal CRM records are not shown here.</p>
+              <p className={commandCenterActive ? 'mt-2 text-sm text-cyan-100/75' : 'mt-2 text-sm font-semibold text-slate-600'}>This is the Nexora backend Control Center for SaaS operations, clients, payments, support, communication, and system settings.</p>
             </div>
             <div className="flex min-w-0 flex-col gap-3 md:flex-row md:items-center md:justify-end">
               <div className="relative min-w-0 md:w-[320px]">
-                <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search clients, users, payments..." className={commandCenterActive ? 'h-11 w-full rounded-xl border border-white/10 bg-[#111827] px-4 pr-20 text-sm text-slate-100 outline-none placeholder:text-slate-500 focus:border-violet-400' : 'h-11 w-full rounded-xl border border-slate-200 bg-white px-4 pr-20 text-sm outline-none focus:border-violet-300'} />
-                <span className={commandCenterActive ? 'absolute right-3 top-1/2 -translate-y-1/2 rounded-md bg-white/10 px-2 py-1 text-[10px] font-black text-slate-400' : 'absolute right-3 top-1/2 -translate-y-1/2 rounded-md bg-slate-100 px-2 py-1 text-[10px] font-black text-slate-500'}>Ctrl + K</span>
+                <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search clients, users, payments..." className={commandCenterActive ? 'h-11 w-full rounded-xl border border-cyan-300/20 bg-[#10172a] px-4 pr-20 text-sm text-slate-100 outline-none placeholder:text-slate-500 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-400/10' : 'h-11 w-full rounded-xl border border-blue-200 bg-white px-4 pr-20 text-sm font-semibold outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-100'} />
+                <span className={commandCenterActive ? 'absolute right-3 top-1/2 -translate-y-1/2 rounded-md bg-cyan-400/10 px-2 py-1 text-[10px] font-black text-cyan-200' : 'absolute right-3 top-1/2 -translate-y-1/2 rounded-md bg-blue-50 px-2 py-1 text-[10px] font-black text-blue-600'}>Ctrl + K</span>
               </div>
               <div className="flex shrink-0 flex-wrap items-center gap-2">
               <div className="relative">

@@ -350,6 +350,186 @@ service cloud.firestore {
         && request.resource.data.createdAt == request.time;
     }
 
+    function validBusinessService(data) {
+      return data.keys().hasAll([
+          'title',
+          'description',
+          'startingPrice',
+          'priceType',
+          'enabled',
+          'featured',
+          'sortOrder',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'title',
+          'description',
+          'startingPrice',
+          'priceType',
+          'enabled',
+          'featured',
+          'sortOrder',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.title is string
+        && data.title.size() > 0
+        && data.title.size() <= 100
+        && data.description is string
+        && data.description.size() > 0
+        && data.description.size() <= 500
+        && data.startingPrice is number
+        && data.startingPrice >= 0
+        && data.startingPrice <= 100000000
+        && data.priceType in ['monthly', 'one-time', 'custom']
+        && data.enabled is bool
+        && data.featured is bool
+        && data.sortOrder is number
+        && data.sortOrder >= 0
+        && data.sortOrder <= 100000
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function validBusinessServiceRequest(data) {
+      return data.keys().hasAll([
+          'serviceId',
+          'serviceTitle',
+          'companyName',
+          'contactNumber',
+          'email',
+          'supportDetails',
+          'engagementType',
+          'preferredWorkingHours',
+          'notes',
+          'status',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'serviceId',
+          'serviceTitle',
+          'companyName',
+          'contactNumber',
+          'email',
+          'supportDetails',
+          'engagementType',
+          'preferredWorkingHours',
+          'notes',
+          'status',
+          'workspaceId',
+          'ownerId',
+          'userId',
+          'latestAdminRemark',
+          'latestClientComment',
+          'lastActivityAt',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.serviceId is string
+        && data.serviceId.size() > 0
+        && data.serviceId.size() <= 120
+        && data.serviceTitle is string
+        && data.serviceTitle.size() > 0
+        && data.serviceTitle.size() <= 100
+        && data.companyName is string
+        && data.companyName.size() > 0
+        && data.companyName.size() <= 160
+        && data.contactNumber is string
+        && data.contactNumber.size() > 0
+        && data.contactNumber.size() <= 40
+        && data.email is string
+        && data.email.size() > 0
+        && data.email.size() <= 254
+        && data.email.matches('^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$')
+        && data.supportDetails is string
+        && data.supportDetails.size() > 0
+        && data.supportDetails.size() <= 1500
+        && data.engagementType in ['Full Time', 'Part Time']
+        && data.preferredWorkingHours is string
+        && data.preferredWorkingHours.size() <= 120
+        && data.notes is string
+        && data.notes.size() <= 1000
+        && data.status == 'New'
+        && (!('userId' in data) || (data.userId is string && data.userId.size() <= 128 && (!signedIn() || data.userId == request.auth.uid)))
+        && (!('workspaceId' in data) || (data.workspaceId is string && data.workspaceId.size() <= 128))
+        && (!('ownerId' in data) || (data.ownerId is string && data.ownerId.size() <= 128))
+        && (!('latestAdminRemark' in data) || (data.latestAdminRemark is string && data.latestAdminRemark.size() <= 1000))
+        && (!('latestClientComment' in data) || (data.latestClientComment is string && data.latestClientComment.size() <= 1000))
+        && (!('lastActivityAt' in data) || data.lastActivityAt == request.time)
+        && data.createdAt == request.time
+        && data.updatedAt == request.time;
+    }
+
+    function validBusinessServiceRequestStatusUpdate(data) {
+      return data.diff(resource.data).affectedKeys().hasOnly(['status', 'latestAdminRemark', 'lastActivityAt', 'updatedAt'])
+        && data.status in ['New', 'Under Review', 'Proposal Sent', 'Approved', 'Active', 'Rejected', 'Closed']
+        && data.latestAdminRemark is string
+        && data.latestAdminRemark.size() <= 1000
+        && data.lastActivityAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function validBusinessServiceRequestClientCommentUpdate(data) {
+      return signedIn()
+        && resource.data.userId == request.auth.uid
+        && data.diff(resource.data).affectedKeys().hasOnly(['latestClientComment', 'lastActivityAt', 'updatedAt'])
+        && data.latestClientComment is string
+        && data.latestClientComment.size() > 0
+        && data.latestClientComment.size() <= 1000
+        && data.lastActivityAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function businessServiceRequestMember() {
+      return signedIn()
+        && (
+          resource.data.userId == request.auth.uid
+          || (resource.data.workspaceId is string && resource.data.workspaceId.size() > 0 && workspaceMember(resource.data.workspaceId))
+        );
+    }
+
+    function businessServiceRequestParentMember(requestId) {
+      let parent = get(/databases/$(database)/documents/businessServiceRequests/$(requestId)).data;
+      return signedIn()
+        && (
+          parent.userId == request.auth.uid
+          || (parent.workspaceId is string && parent.workspaceId.size() > 0 && workspaceMember(parent.workspaceId))
+        );
+    }
+
+    function validBusinessServiceRequestTimeline(data) {
+      return data.keys().hasOnly(['type', 'title', 'message', 'status', 'actor', 'actorId', 'actorEmail', 'createdAt'])
+        && data.type is string
+        && data.type.size() > 0
+        && data.type.size() <= 40
+        && data.title is string
+        && data.title.size() > 0
+        && data.title.size() <= 160
+        && data.message is string
+        && data.message.size() <= 1200
+        && (!('status' in data) || (data.status is string && data.status.size() <= 40))
+        && data.actor in ['client', 'admin', 'system']
+        && data.actorId is string
+        && data.actorId.size() <= 128
+        && data.actorEmail is string
+        && data.actorEmail.size() <= 254
+        && data.createdAt == request.time;
+    }
+
+    function validBusinessServiceRequestComment(data) {
+      return data.keys().hasOnly(['message', 'actor', 'actorId', 'actorEmail', 'createdAt'])
+        && data.message is string
+        && data.message.size() > 0
+        && data.message.size() <= 1000
+        && data.actor == 'client'
+        && data.actorId == request.auth.uid
+        && data.actorEmail is string
+        && data.actorEmail.size() <= 254
+        && data.createdAt == request.time;
+    }
+
     function marketingAdmin() {
       return backendAdmin()
         || (
@@ -889,6 +1069,34 @@ service cloud.firestore {
     match /announcements/{docId} {
       allow read: if true;
       allow write: if backendAdmin();
+    }
+
+    match /businessServices/{docId} {
+      allow read: if true;
+      allow create, update: if backendAdmin() && validBusinessService(request.resource.data);
+      allow delete: if backendAdmin();
+    }
+
+    match /businessServiceRequests/{docId} {
+      allow create: if validBusinessServiceRequest(request.resource.data);
+      allow read: if backendAdmin() || businessServiceRequestMember();
+      allow delete: if backendAdmin();
+      allow update: if (backendAdmin() && validBusinessServiceRequestStatusUpdate(request.resource.data))
+        || validBusinessServiceRequestClientCommentUpdate(request.resource.data);
+
+      match /timeline/{timelineId} {
+        allow read: if backendAdmin() || businessServiceRequestParentMember(docId);
+        allow create: if (backendAdmin() || businessServiceRequestParentMember(docId))
+          && validBusinessServiceRequestTimeline(request.resource.data);
+        allow update, delete: if false;
+      }
+
+      match /comments/{commentId} {
+        allow read: if backendAdmin() || businessServiceRequestParentMember(docId);
+        allow create: if businessServiceRequestParentMember(docId)
+          && validBusinessServiceRequestComment(request.resource.data);
+        allow update, delete: if false;
+      }
     }
 
     match /supportTickets/{docId} {

@@ -18,6 +18,7 @@ import {
 } from 'react-icons/hi2'
 import Header from './components/Header'
 import NexoraLogo from './components/brand/NexoraLogo'
+import BusinessServicesSection from './components/BusinessServicesSection.jsx'
 import TawkChat from './pages/public/TawkChat.jsx'
 
 const whatsappNumberDisplay = '+92 319 432 9754'
@@ -206,7 +207,6 @@ function DashboardPreview() {
               <div
                 key={style}
                 className={`flex h-16 w-16 items-center justify-center rounded-2xl border border-white bg-white/95 shadow-[0_24px_60px_-34px_rgba(15,23,42,0.42)] backdrop-blur ${style}`}
-                style={{ animationDelay: `${index * 0.6}s` }}
           >
             <Icon className="text-3xl" />
           </div>
@@ -222,7 +222,6 @@ function DashboardPreview() {
               <div
                 key={style}
                 className={`flex h-16 w-16 items-center justify-center rounded-2xl border border-white bg-white/95 shadow-[0_24px_60px_-34px_rgba(15,23,42,0.42)] backdrop-blur ${style}`}
-                style={{ animationDelay: `${index * 0.7}s` }}
           >
             <Icon className="text-3xl" />
           </div>
@@ -392,7 +391,7 @@ function PosShowcasePreview() {
 
             <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {products.map(([name, price, tone]) => (
-                <div key={name} className="rounded-[1.2rem] border border-slate-100 bg-white p-3 shadow-[0_20px_48px_-36px_rgba(15,23,42,0.38)] transition duration-200 ease-out hover:-translate-y-0.5">
+                <div key={name} className="rounded-[1.2rem] border border-slate-100 bg-white p-3 shadow-[0_20px_48px_-36px_rgba(15,23,42,0.38)]">
                   <div className={`grid h-16 place-items-center rounded-xl ${tone}`}>
                     <HiOutlineShoppingCart className="text-2xl" />
                   </div>
@@ -461,42 +460,17 @@ function App({ initialSectionId = '' }) {
   useEffect(() => {
     if (!initialSectionId) return undefined
     const handle = window.requestAnimationFrame(() => {
-      document.getElementById(initialSectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      document.getElementById(initialSectionId)?.scrollIntoView({ behavior: 'auto', block: 'start' })
     })
     return () => window.cancelAnimationFrame(handle)
   }, [initialSectionId])
 
-  useEffect(() => {
-    const revealTargets = Array.from(document.querySelectorAll('.marketing-page [data-reveal]'))
-    if (!revealTargets.length) return undefined
-
-    if (!('IntersectionObserver' in window)) {
-      revealTargets.forEach((target) => target.classList.add('is-revealed'))
-      return undefined
-    }
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (!entry.isIntersecting) return
-          entry.target.classList.add('is-revealed')
-          observer.unobserve(entry.target)
-        })
-      },
-      { rootMargin: '0px 0px -8% 0px', threshold: 0.08 },
-    )
-
-    revealTargets.forEach((target) => observer.observe(target))
-
-    return () => observer.disconnect()
-  }, [])
-
   return (
-    <div className="marketing-page page-enter min-h-screen overflow-x-hidden bg-white text-slate-950">
+    <div className="marketing-page min-h-screen overflow-x-hidden bg-white text-slate-950">
       <Header />
 
       <main>
-        <section id="hero" className="hero-enter relative overflow-hidden bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_72%,#ffffff_100%)] pb-14 pt-12 sm:pb-16 sm:pt-14 lg:pb-20 lg:pt-16">
+        <section id="hero" className="relative overflow-hidden bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_72%,#ffffff_100%)] pb-14 pt-12 sm:pb-16 sm:pt-14 lg:pb-20 lg:pt-16">
           <div className="soft-arc-bg pointer-events-none" />
           <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-200 to-transparent" />
           <div className="pointer-events-none absolute left-[12%] top-9 hidden h-52 w-52 rotate-3 bg-[radial-gradient(circle,#cbd5e1_1px,transparent_1px)] [background-size:18px_18px] opacity-50 lg:block" />
@@ -568,13 +542,15 @@ function App({ initialSectionId = '' }) {
                   <h3 className="mt-4 text-lg font-extrabold text-slate-950">{card.title}</h3>
                   <p className="mt-3 flex-1 text-sm leading-6 text-slate-600">{card.text}</p>
                   <Link to={card.route} className="mt-4 inline-flex items-center gap-1 text-sm font-extrabold text-blue-600">
-                    Learn More <HiOutlineArrowRight className="transition group-hover:translate-x-0.5" />
+                    Learn More <HiOutlineArrowRight />
                   </Link>
                 </article>
               ))}
             </div>
           </div>
         </section>
+
+        <BusinessServicesSection />
 
         <section id="about" data-reveal className="bg-white px-5 pb-16 pt-2 sm:px-6 sm:pb-20 lg:px-8 lg:pb-24">
           <div className="mx-auto flex max-w-7xl flex-col gap-6 rounded-[2rem] border border-blue-100 bg-[linear-gradient(135deg,#eff6ff_0%,#ffffff_64%,#f8fafc_100%)] p-4 shadow-[0_30px_90px_-62px_rgba(37,99,235,0.42)] lg:p-5">
@@ -746,7 +722,7 @@ function App({ initialSectionId = '' }) {
               <h3 className="text-sm font-extrabold">Quick Links</h3>
               <div className="mt-5 grid gap-3 text-sm text-blue-100">
                 {footerGroups.quickLinks.map(([label, href]) => (
-                  <a key={label} href={href} className="transition hover:text-white">{label}</a>
+                  <a key={label} href={href} className="hover:text-white">{label}</a>
                 ))}
               </div>
             </div>
@@ -755,7 +731,7 @@ function App({ initialSectionId = '' }) {
               <h3 className="text-sm font-extrabold">Modules</h3>
               <div className="mt-5 grid gap-3 text-sm text-blue-100">
                 {footerGroups.modules.map(([module, to]) => (
-                  <Link key={module} to={to} className="transition hover:text-white">
+                  <Link key={module} to={to} className="hover:text-white">
                     {module}
                   </Link>
                 ))}
@@ -774,11 +750,11 @@ function App({ initialSectionId = '' }) {
             <div>
               <h3 className="text-sm font-extrabold">Contact Us</h3>
               <div className="mt-5 grid gap-4 text-sm text-blue-100">
-                <a href={whatsappLink} target="_blank" rel="noreferrer" className="flex gap-3 transition hover:text-white">
+                <a href={whatsappLink} target="_blank" rel="noreferrer" className="flex gap-3 hover:text-white">
                   <HiOutlineChatBubbleLeftRight className="mt-0.5 shrink-0 text-lg" />
                   <span>{whatsappNumberDisplay}</span>
                 </a>
-                <a href={`mailto:${contactEmail}`} className="flex gap-3 transition hover:text-white">
+                <a href={`mailto:${contactEmail}`} className="flex gap-3 hover:text-white">
                   <HiOutlineDocumentChartBar className="mt-0.5 shrink-0 text-lg" />
                   <span>{contactEmail}</span>
                 </a>
@@ -801,7 +777,7 @@ function App({ initialSectionId = '' }) {
         target="_blank"
         rel="noreferrer"
         aria-label="Chat with Nexora on WhatsApp"
-        className="fixed bottom-5 right-5 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#25d366] text-white shadow-[0_18px_38px_-22px_rgba(37,211,102,0.9)] transition hover:-translate-y-0.5 hover:bg-[#20bd5a]"
+        className="fixed bottom-5 right-5 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#25d366] text-white shadow-[0_18px_38px_-22px_rgba(37,211,102,0.9)] hover:bg-[#20bd5a]"
       >
         <HiOutlineChatBubbleLeftRight className="text-3xl" />
       </a>

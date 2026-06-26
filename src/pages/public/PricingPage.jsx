@@ -10,6 +10,7 @@ import {
   HiOutlineShieldCheck,
   HiOutlineUserGroup,
 } from 'react-icons/hi2'
+import BusinessServicesSection from '../../components/BusinessServicesSection.jsx'
 import PublicPageShell from './PublicPageShell.jsx'
 
 const yearlyDiscount = 0.8
@@ -99,7 +100,7 @@ export default function PricingPage() {
 
   return (
     <PublicPageShell>
-      <section className="hero-enter relative overflow-hidden bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_72%,#ffffff_100%)] pb-16 pt-12 sm:pb-20 sm:pt-14 lg:pb-24 lg:pt-16">
+      <section className="relative overflow-hidden bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_72%,#ffffff_100%)] pb-16 pt-12 sm:pb-20 sm:pt-14 lg:pb-24 lg:pt-16">
         <div className="soft-arc-bg pointer-events-none" />
         <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-200 to-transparent" />
         <div className="relative mx-auto max-w-7xl px-5 text-center sm:px-6 lg:px-8">
@@ -131,7 +132,7 @@ export default function PricingPage() {
                 key={cycle}
                 type="button"
                 onClick={() => setBillingCycle(cycle)}
-                className={`min-h-10 rounded-full px-5 text-sm font-bold transition duration-200 ease-out ${
+                className={`min-h-10 rounded-full px-5 text-sm font-bold ${
                   billingCycle === cycle ? 'bg-slate-950 text-white shadow-sm' : 'text-slate-600 hover:text-blue-600'
                 }`}
               >
@@ -148,7 +149,7 @@ export default function PricingPage() {
             {pricingPlans.map((plan) => (
               <article
                 key={plan.name}
-                className={`relative flex h-full min-h-[32rem] flex-col rounded-[1.65rem] border bg-white p-6 shadow-[0_28px_80px_-50px_rgba(15,23,42,0.34)] transition duration-200 ease-out hover:-translate-y-1 hover:shadow-[0_34px_90px_-52px_rgba(37,99,235,0.32)] ${
+                className={`relative flex h-full min-h-[32rem] flex-col rounded-[1.65rem] border bg-white p-6 shadow-[0_28px_80px_-50px_rgba(15,23,42,0.34)] ${
                   plan.featured ? 'border-blue-300 bg-blue-50/50 ring-2 ring-blue-100' : 'border-slate-200'
                 }`}
               >
@@ -177,7 +178,7 @@ export default function PricingPage() {
 
                 <Link
                   to={plan.ctaTo}
-                  className={`mt-8 inline-flex min-h-12 items-center justify-center rounded-full border px-5 text-sm font-extrabold transition duration-200 ease-out hover:-translate-y-0.5 ${
+                  className={`mt-8 inline-flex min-h-12 items-center justify-center rounded-full border px-5 text-sm font-extrabold ${
                     plan.featured
                       ? 'border-slate-950 bg-slate-950 text-white hover:bg-blue-700'
                       : 'border-slate-200 bg-white text-slate-950 hover:border-blue-300 hover:text-blue-600'
@@ -255,6 +256,8 @@ export default function PricingPage() {
           </div>
         </div>
       </section>
+
+      <BusinessServicesSection />
 
       <section data-reveal className="bg-white px-5 pb-16 sm:px-6 sm:pb-20 lg:px-8">
         <div className="mx-auto grid max-w-7xl items-center gap-6 rounded-[2rem] border border-blue-100 bg-[linear-gradient(135deg,#eff6ff_0%,#ffffff_58%,#e0f2fe_100%)] p-6 shadow-[0_30px_90px_-60px_rgba(37,99,235,0.44)] sm:p-8 lg:grid-cols-[1fr_auto]">

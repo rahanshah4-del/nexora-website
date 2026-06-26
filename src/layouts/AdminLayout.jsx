@@ -3,13 +3,14 @@ import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 const adminNav = [
   { to: '/admin/control-centre', label: 'Control Centre' },
   { to: '/admin/client-command-center', label: 'Command Center' },
+  { to: '/admin/business-services', label: 'Business Services' },
   { to: '/admin/upgrade-requests', label: 'Upgrade Requests' },
 ]
 
 export default function AdminLayout() {
   const location = useLocation()
   if (location.pathname === '/admin/control-centre') return <Outlet />
-  const lightMode = location.pathname === '/admin/client-command-center'
+  const lightMode = location.pathname === '/admin/client-command-center' || location.pathname === '/admin/business-services'
   const shellClass = lightMode ? 'min-h-screen bg-slate-50 text-slate-950' : 'min-h-screen bg-slate-950 text-white'
   const headerClass = lightMode ? 'border-b border-slate-200 bg-white/90 backdrop-blur' : 'border-b border-white/10 bg-slate-950/60 backdrop-blur'
   const brandClass = lightMode ? 'text-sm font-semibold tracking-wide text-slate-950' : 'text-sm font-semibold tracking-wide text-white'

@@ -63,6 +63,7 @@ const SALES_HUB_SIDEBAR_ORDER = [
   'quotations',
   'invoices',
   'salesProducts',
+  'businessServices',
   'expenses',
   'accounts',
   'accountStatements',

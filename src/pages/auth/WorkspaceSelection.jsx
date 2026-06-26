@@ -56,9 +56,11 @@ import { trackAnalyticsEvent } from '../../lib/analyticsTracking.js'
 import { LANGUAGE_OPTIONS, languageMeta, useLanguage } from '../../lib/i18n.jsx'
 import { VERIFY_EMAIL_ROUTE, getAuthRouteState, isUserCustomVerified, shouldShowWorkspaceSelection } from '../../lib/authRouteState.js'
 import { resolveProfileDisplay } from '../../lib/profileDisplay.js'
+import { clientShortId, resolveClientShortId } from '../../lib/clientIds.js'
 import TicketModal from '../../crm/components/support/TicketModal.jsx'
 import TicketDrawer from '../../crm/components/support/TicketDrawer.jsx'
 import { useSupportTickets } from '../../crm/hooks/useSupportTickets.js'
+import BusinessServicesSection from '../../components/BusinessServicesSection.jsx'
 
 import { clearAllUserCache } from '../../lib/authIsolation.js'
 
@@ -1341,6 +1343,7 @@ export default function WorkspaceSelection() {
   const [supportTicketCreateOpen, setSupportTicketCreateOpen] = useState(false)
   const [activeSupportTicket, setActiveSupportTicket] = useState(null)
   const [supportToast, setSupportToast] = useState('')
+  const [businessServicesOpen, setBusinessServicesOpen] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [viewMode, setViewMode] = useState(() => {
@@ -1681,6 +1684,7 @@ export default function WorkspaceSelection() {
       trialExpired,
       isTrial,
       workspaceId: cleanString(workspaceData?.workspaceId) || cleanString(accountData?.workspaceId) || user?.uid || '',
+      shortClientId: resolveClientShortId({ ...accountData, ...workspaceData, workspaceId: cleanString(workspaceData?.workspaceId) || cleanString(accountData?.workspaceId) || user?.uid || '' }),
       businessType: profileBusinessTypeSource ? normalizeBusinessType(profileBusinessTypeSource) : '',
     }
   }, [accountData, emailVerified, nowMs, onboardingCompleted, savedWorkspaceModule.businessType, user, workspaceData])
@@ -2419,6 +2423,7 @@ export default function WorkspaceSelection() {
       return
     }
     const now = serverTimestamp()
+    const shortClientId = clientShortId(workspaceId)
 
     setBusinessTypeSaving(workspace.type)
     setCreateMessage('')
@@ -2428,6 +2433,7 @@ export default function WorkspaceSelection() {
       selectedBusinessType: businessTypeId,
       currentBusinessType: businessTypeId,
       primaryBusinessType: businessTypeId,
+      shortClientId,
       allowedBusinessTypes: [businessTypeId],
       specialModuleAccess: false,
       allModulesAccess: false,
@@ -2443,6 +2449,7 @@ export default function WorkspaceSelection() {
       selectedBusinessType: businessTypeId,
       currentBusinessType: businessTypeId,
       primaryBusinessType: businessTypeId,
+      shortClientId,
       allowedBusinessTypes: [businessTypeId],
       specialModuleAccess: false,
       allModulesAccess: false,
@@ -2466,6 +2473,7 @@ export default function WorkspaceSelection() {
       console.log('[WorkspaceSelection] workspace exists', { workspaceId, workspaceExists })
 
       const workspaceUpdatePayload = {
+        shortClientId,
         businessType: businessTypeId,
         currentBusinessType: businessTypeId,
         selectedBusinessType: businessTypeId,
@@ -2538,6 +2546,7 @@ export default function WorkspaceSelection() {
           ownerId: uid,
           enabledModules,
           selectedFeatures,
+          shortClientId,
           onboardingCompleted: true,
           updatedAt: now,
         },
@@ -2744,6 +2753,7 @@ export default function WorkspaceSelection() {
 
       const workspaceName = normalizeWorkspaceName(companyName, companyName)
       saveStoredWorkspaceName(uid, workspaceName)
+      const shortClientId = clientShortId(uid)
       const {
         businessTypeLabel,
         businessTypeId,
@@ -2876,6 +2886,7 @@ export default function WorkspaceSelection() {
       const allowedBusinessTypes = [selectedModuleBusinessType]
       const baseUserPayload = {
         uid,
+        shortClientId,
         ownerId: uid,
         userId: uid,
         workspaceId,
@@ -2926,6 +2937,7 @@ export default function WorkspaceSelection() {
         trialDays: CRM_TRIAL_DAYS,
       }
       const userOnboardingUpdatePayload = {
+        shortClientId,
         businessType: selectedModuleBusinessType,
         selectedBusinessType: selectedModuleBusinessType,
         currentBusinessType: selectedModuleBusinessType,
@@ -2967,6 +2979,7 @@ export default function WorkspaceSelection() {
       // Protected fields (ownerId, userId, createdBy, createdAt, plan, planStatus,
       // subscriptionStatus, billingCycle, trial*, isTrialActive) are NOT sent.
       const workspaceOnboardingUpdatePayload = {
+        shortClientId,
         primaryBusinessType: selectedModuleBusinessType,
         businessType: selectedModuleBusinessType,
         selectedBusinessType: selectedModuleBusinessType,
@@ -2981,6 +2994,7 @@ export default function WorkspaceSelection() {
       // New workspace: safe create payload only (spec step 3). workspaceId === uid.
       const workspaceCreatePayload = {
         workspaceId,
+        shortClientId,
         ownerId: uid,
         userId: uid,
         createdBy: uid,
@@ -3788,6 +3802,7 @@ export default function WorkspaceSelection() {
                 </p>
                 <div className="mt-4 flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-500">
                   <span className="rounded-full bg-white/70 px-2.5 py-1 text-slate-700 shadow-sm">{profile.workspaceName}</span>
+                  <span className="rounded-full bg-blue-600 px-2.5 py-1 text-white shadow-sm">Client ID: {profile.shortClientId}</span>
                   <span className="rounded-full bg-white/70 px-2.5 py-1 text-slate-700 shadow-sm">{profile.planLabel}</span>
                   {profile.trialShortLabel ? (
                     <span className={`rounded-full px-2.5 py-1 shadow-sm ${profile.trialExpired ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'}`}>
@@ -3895,6 +3910,32 @@ export default function WorkspaceSelection() {
                 <SupportTicketsListRow disabled={!hasCrmWorkspace} onOpen={handleOpenSupportTickets} />
               </div>
             )}
+
+            <section className="mt-6 overflow-hidden rounded-2xl border border-blue-100 bg-[linear-gradient(135deg,#eff6ff_0%,#ffffff_56%,#f5f3ff_100%)] shadow-sm">
+              <button
+                type="button"
+                className="flex w-full flex-col gap-4 px-4 py-4 text-left sm:flex-row sm:items-center sm:justify-between sm:px-5"
+                onClick={() => setBusinessServicesOpen((open) => !open)}
+                aria-expanded={businessServicesOpen}
+              >
+                <span className="flex min-w-0 items-center gap-3">
+                  <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-slate-950 text-xl text-white shadow-sm" aria-hidden="true">💼</span>
+                  <span className="min-w-0">
+                    <span className="block text-sm font-black text-slate-950">Business Services</span>
+                    <span className="mt-1 block text-xs font-semibold leading-5 text-slate-500">Need back office support, staffing, bookkeeping, VA, or website management?</span>
+                  </span>
+                </span>
+                <span className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-full bg-blue-600 px-4 text-xs font-black text-white shadow-sm">
+                  {businessServicesOpen ? 'Hide Services' : 'Show Services'}
+                  <HiOutlineChevronDown className={`h-4 w-4 ${businessServicesOpen ? 'rotate-180' : ''}`} />
+                </span>
+              </button>
+              {businessServicesOpen ? (
+                <div className="border-t border-blue-100 bg-white/70 p-4 sm:p-5">
+                  <BusinessServicesSection compact variant="workspace" />
+                </div>
+              ) : null}
+            </section>
 
             <footer className="py-4 text-center text-xs font-medium text-slate-500">
               NEXORA SOLUTION — All rights reserved 2019-2026.

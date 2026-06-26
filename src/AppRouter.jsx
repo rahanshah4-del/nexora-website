@@ -41,6 +41,7 @@ const SalesTasksPage = lazy(() => import('./crm/pages/SalesTasks.jsx'))
 const SalesActivitiesPage = lazy(() => import('./crm/pages/SalesActivities.jsx'))
 const QuotationsPage = lazy(() => import('./crm/pages/Quotations.jsx'))
 const ProductsServicesPage = lazy(() => import('./crm/pages/ProductsServices.jsx'))
+const BusinessServicesPage = lazy(() => import('./crm/pages/BusinessServices.jsx'))
 const FollowUpsPage = lazy(() => import('./crm/pages/FollowUps.jsx'))
 const TeamPage = lazy(() => import('./crm/pages/Team.jsx'))
 const HRDashboardPage = lazy(() => import('./crm/pages/HRDashboard.jsx'))
@@ -69,6 +70,7 @@ const WhatsappConnectPage = lazy(() => import('./crm/pages/WhatsappConnect.jsx')
 const UpgradeRequests = lazy(() => import('./pages/admin/UpgradeRequests.jsx'))
 const ControlCentrePage = lazy(() => import('./pages/admin/ControlCentre.jsx'))
 const ClientCommandCenterPage = lazy(() => import('./pages/admin/ClientCommandCenter.jsx'))
+const AdminBusinessServicesPage = lazy(() => import('./pages/admin/BusinessServices.jsx'))
 const AdminLogin = lazy(() => import('./pages/admin/AdminLogin.jsx'))
 
 class InvoiceRouteBoundary extends Component {
@@ -256,6 +258,7 @@ export default function AppRouter() {
         <Route path="activities" element={<LazyPage><SalesActivitiesPage /></LazyPage>} />
         <Route path="quotations" element={<LazyPage><QuotationsPage /></LazyPage>} />
         <Route path="products-services" element={<LazyPage><ProductsServicesPage /></LazyPage>} />
+        <Route path="business-services" element={<LazyPage><BusinessServicesPage /></LazyPage>} />
         <Route path="follow-ups" element={<LazyPage><FollowUpsPage /></LazyPage>} />
         <Route path="team" element={<LazyPage><TeamPage /></LazyPage>} />
         <Route path="hr" element={<LazyPage><HRDashboardPage /></LazyPage>} />
@@ -288,6 +291,7 @@ export default function AppRouter() {
       <Route path="/admin/control-centre" element={<AdminControlCentreRoute />} />
       <Route path="/admin" element={<AdminUpgradeRequestsRoute />}>
           <Route path="client-command-center" element={<LazyPage><ClientCommandCenterPage /></LazyPage>} />
+          <Route path="business-services" element={<LazyPage><AdminBusinessServicesPage /></LazyPage>} />
           <Route path="upgrade-requests" element={<LazyPage><UpgradeRequests /></LazyPage>} />
           <Route index element={<Navigate to="/admin/control-centre" replace />} />
       </Route>

@@ -146,3 +146,12 @@ export function businessServicePriceTypeLabel(priceType = 'custom') {
   if (priceType === 'one-time') return 'One-time'
   return 'Custom'
 }
+
+export function businessServiceDocId(title = '') {
+  return String(title || 'business-service')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '')
+    .slice(0, 80) || 'business-service'
+}
