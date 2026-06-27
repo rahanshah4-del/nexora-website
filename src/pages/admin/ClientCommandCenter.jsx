@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
+  arrayUnion,
   collection,
   collectionGroup,
   doc,
@@ -764,6 +765,19 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
     }
   }
 
+  function clientTimelinePayload(message, extra = {}) {
+    return {
+      id: `admin_${Date.now()}`,
+      author: 'Nexora Support',
+      authorUid: user?.uid || '',
+      message,
+      createdAt: new Date().toISOString(),
+      source: 'command_center',
+      visibility: 'client',
+      ...extra,
+    }
+  }
+
   async function saveModuleAccess(nextModules, action = 'module_access_updated') {
     if (!selectedClient?.workspaceId) throw new Error('Select a client workspace first.')
     const primary = accessDetails.primary || workspaceBusinessType(selectedClient)
@@ -874,19 +888,43 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
   async function addNote(message = noteDraft) {
     const note = clean(message)
     if (!selectedIssue || !note) return
-    const existingNotes = Array.isArray(selectedIssue.supportNotes)
-      ? selectedIssue.supportNotes
-      : Array.isArray(selectedIssue.notes)
-        ? selectedIssue.notes
-        : []
+    const ref = ticketRef(selectedIssue)
+    if (!ref) throw new Error('Ticket reference is missing.')
     const existingText = clean(selectedIssue.internalNotes)
-    await updateDoc(ticketRef(selectedIssue), {
-      supportNotes: [...existingNotes, notePayload(note)],
+    const supportNote = notePayload(note, { visibility: 'client', source: 'command_center' })
+    const clientTimelineNote = clientTimelinePayload(note, { kind: 'admin_note' })
+    await updateDoc(ref, {
+      supportNotes: arrayUnion(supportNote),
+      comments: arrayUnion(clientTimelineNote),
+      conversation: arrayUnion(clientTimelineNote),
       internalNotes: [existingText, `${new Date().toLocaleString()} - ${user?.email || 'Admin'}: ${note}`].filter(Boolean).join('\n'),
       updatedAt: serverTimestamp(),
       updatedBy: user?.uid || '',
       updatedByEmail: user?.email || '',
     })
+    if (selectedClient?.workspaceId) {
+      const ownerId = ownerIdForClient(selectedClient)
+      const notificationTargets = Array.from(new Set([ownerId, selectedClient.uid, selectedClient.userId, selectedClient.ownerId].filter(Boolean).map(String)))
+      const notificationsRef = collection(db, 'workspaces', selectedClient.workspaceId, 'notifications')
+      await Promise.all(notificationTargets.map((targetUserId) => setDoc(doc(notificationsRef), {
+        workspaceId: selectedClient.workspaceId,
+        ownerId: selectedClient.workspaceId,
+        userId: targetUserId,
+        businessType: workspaceBusinessType(selectedClient),
+        type: 'Support',
+        priority: 'medium',
+        title: 'New ticket note',
+        message: note,
+        route: '/app/support',
+        relatedId: selectedIssue.id || selectedIssue.ticketNumber || '',
+        metadata: { ticketNumber: ticketNumber(selectedIssue), action: 'command_center_note' },
+        read: false,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        createdBy: user?.uid || '',
+        createdByEmail: user?.email || '',
+      }, { merge: true })))
+    }
     setNoteDraft('')
   }
 
@@ -1181,8 +1219,8 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
                   ) : null}
                   {activeAction === 'addNote' ? (
                     <div className="grid gap-3 lg:grid-cols-[1fr_auto]">
-                      <textarea className="min-h-20 rounded-lg border border-white/10 bg-[#0f172a] px-3 py-2 text-sm text-slate-100 outline-none placeholder:text-slate-500 focus:border-violet-400" placeholder="Internal note for selected issue" value={noteDraft} onChange={(event) => setNoteDraft(event.target.value)} />
-                      <DarkActionButton icon={HiOutlinePencilSquare} active disabled={!selectedIssue || busy === 'add-note'} onClick={() => runAction('add-note', () => addNote(), 'Internal note saved.')}>Add Note</DarkActionButton>
+                      <textarea className="min-h-20 rounded-lg border border-white/10 bg-[#0f172a] px-3 py-2 text-sm text-slate-100 outline-none placeholder:text-slate-500 focus:border-violet-400" placeholder="Ticket note for selected issue" value={noteDraft} onChange={(event) => setNoteDraft(event.target.value)} />
+                      <DarkActionButton icon={HiOutlinePencilSquare} active disabled={!selectedIssue || busy === 'add-note'} onClick={() => runAction('add-note', () => addNote(), 'Ticket note saved.')}>Add Note</DarkActionButton>
                     </div>
                   ) : null}
                   {activeAction === 'sendEmail' ? (
@@ -1436,8 +1474,8 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
             ) : null}
             {activeAction === 'addNote' ? (
               <div className="grid gap-3 lg:grid-cols-[1fr_auto]">
-                <textarea className="min-h-20 rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-300" placeholder="Internal note for selected issue" value={noteDraft} onChange={(event) => setNoteDraft(event.target.value)} />
-                <ActionButton icon={HiOutlinePencilSquare} disabled={!selectedIssue || busy === 'add-note'} onClick={() => runAction('add-note', () => addNote(), 'Internal note saved.')}>Add Note</ActionButton>
+                <textarea className="min-h-20 rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-300" placeholder="Ticket note for selected issue" value={noteDraft} onChange={(event) => setNoteDraft(event.target.value)} />
+                <ActionButton icon={HiOutlinePencilSquare} disabled={!selectedIssue || busy === 'add-note'} onClick={() => runAction('add-note', () => addNote(), 'Ticket note saved.')}>Add Note</ActionButton>
               </div>
             ) : null}
             {activeAction === 'sendEmail' ? (

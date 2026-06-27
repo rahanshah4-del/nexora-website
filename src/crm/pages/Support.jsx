@@ -8,7 +8,7 @@ import TicketTable from '../components/support/TicketTable.jsx'
 import TicketModal from '../components/support/TicketModal.jsx'
 import TicketDrawer from '../components/support/TicketDrawer.jsx'
 import SupportStats from '../components/support/SupportStats.jsx'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useSupportTickets } from '../hooks/useSupportTickets.js'
 import { usePreferences } from '../hooks/usePreferences.js'
 import Toast from '../components/ui/Toast.jsx'
@@ -45,6 +45,12 @@ export default function SupportPage() {
       return matches && statusOk
     })
   }, [support.tickets, query, statusFilter])
+
+  useEffect(() => {
+    if (!active?.id) return
+    const fresh = support.tickets.find((ticket) => ticket.id === active.id)
+    if (fresh) setActive(fresh)
+  }, [active?.id, support.tickets])
 
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
@@ -180,6 +186,10 @@ export default function SupportPage() {
             window.setTimeout(() => setToast(null), 2400)
             return
           }
+          setActive((current) => current?.id === t.id ? {
+            ...current,
+            comments: [...(current.comments || []), { id: `local_${Date.now()}`, ...c, createdAt: new Date().toISOString() }],
+          } : current)
           const sent = await sendSupportReplyEmail({ ticket: t, message: c.message })
           setToast(sent.ok
             ? { tone: 'success', message: 'Reply saved and emailed to customer' }

@@ -13,7 +13,7 @@ import NexoraLogo from './brand/NexoraLogo'
 const mainLinks = [
   { label: 'Home', to: '/' },
   { label: 'Pricing', to: '/pricing' },
-  { label: 'Business Services', href: '/#business-services' },
+  { label: 'Business Services', to: '/business-services' },
   { label: 'Industries', to: '/industries' },
 ]
 
@@ -174,7 +174,7 @@ function Header() {
       <div className={`fixed inset-0 z-[60] lg:hidden ${mobileMenuOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}>
         <button
           type="button"
-          className={`absolute inset-0 bg-slate-950/35 ${
+          className={`absolute inset-0 bg-slate-950/35 transition-opacity duration-300 ease-out ${
             mobileMenuOpen ? 'opacity-100' : 'opacity-0'
           }`}
           onClick={closeAll}
@@ -183,7 +183,7 @@ function Header() {
         />
 
         <aside
-          className={`absolute right-3 top-3 flex h-[calc(100dvh-1.5rem)] w-[min(23rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_28px_80px_-36px_rgba(15,23,42,0.55)] ${
+          className={`absolute right-3 top-3 flex h-[calc(100dvh-1.5rem)] w-[min(23rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_28px_80px_-36px_rgba(15,23,42,0.55)] transition-transform duration-300 ease-out will-change-transform ${
             mobileMenuOpen ? 'translate-x-0' : 'translate-x-[calc(100%+1rem)]'
           }`}
         >

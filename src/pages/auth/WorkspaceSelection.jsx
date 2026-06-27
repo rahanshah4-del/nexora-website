@@ -1346,6 +1346,9 @@ export default function WorkspaceSelection() {
   const [businessServicesOpen, setBusinessServicesOpen] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [canUseWorkspaceOnDevice, setCanUseWorkspaceOnDevice] = useState(() => (
+    typeof window === 'undefined' ? true : window.matchMedia('(min-width: 1024px)').matches
+  ))
   const [viewMode, setViewMode] = useState(() => {
     try {
       return window.localStorage.getItem('nexora_workspace_view_mode') === 'list' ? 'list' : 'grid'
@@ -2031,6 +2034,15 @@ export default function WorkspaceSelection() {
     () => typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches,
     [],
   )
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined
+    const media = window.matchMedia('(min-width: 1024px)')
+    const syncDeviceAccess = () => setCanUseWorkspaceOnDevice(media.matches)
+    syncDeviceAccess()
+    media.addEventListener?.('change', syncDeviceAccess)
+    return () => media.removeEventListener?.('change', syncDeviceAccess)
+  }, [])
 
   const handleToggleSidebar = useCallback(() => {
     if (isDesktopViewport()) {
@@ -3388,6 +3400,42 @@ export default function WorkspaceSelection() {
 
   if (authLoading) return <PageLoader stage="auth" />
   if (accountLoading) return <PageLoader stage="workspace" businessType={profile.businessType || onboardingForm.businessType} />
+
+  if (!canUseWorkspaceOnDevice) {
+    return (
+      <main className="grid min-h-dvh place-items-center bg-[linear-gradient(180deg,#f8fbff_0%,#ffffff_54%,#eef7ff_100%)] px-5 py-8 text-slate-950">
+        <section className="w-full max-w-md rounded-[1.6rem] border border-blue-100 bg-white p-5 text-center shadow-[0_28px_90px_-58px_rgba(37,99,235,0.5)]">
+          <img src={logoUrl} alt="Nexora" className="mx-auto h-14 w-14 rounded-2xl shadow-sm" />
+          <p className="mt-5 inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1.5 text-xs font-black uppercase tracking-[0.16em] text-blue-700">
+            <span aria-hidden="true">🖥️</span>
+            Workspace
+          </p>
+          <h1 className="mt-4 text-2xl font-black tracking-tight text-slate-950">Please use desktop or a large tablet.</h1>
+          <p className="mt-3 text-sm leading-6 text-slate-600">
+            Nexora workspace modules need a wider screen for full controls, tables, reports, and setup tools.
+          </p>
+          <div className="mt-5 grid gap-3">
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-slate-950 px-5 text-sm font-black text-white shadow-sm"
+            >
+              <span aria-hidden="true">⬅️</span>
+              Back
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/', { replace: true })}
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-5 text-sm font-black text-blue-700"
+            >
+              <span aria-hidden="true">🏠</span>
+              Website Home
+            </button>
+          </div>
+        </section>
+      </main>
+    )
+  }
 
   return (
     <main className="relative min-h-dvh overflow-x-clip overscroll-none bg-white text-slate-950">

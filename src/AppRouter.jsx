@@ -14,6 +14,7 @@ import AnalyticsTracker from './components/AnalyticsTracker.jsx'
 const MarketingRoute = lazy(() => import('./pages/public/MarketingRoute.jsx'))
 const PricingPage = lazy(() => import('./pages/public/PricingPage.jsx'))
 const SolutionPage = lazy(() => import('./pages/public/SolutionPage.jsx'))
+const PublicBusinessServicesPage = lazy(() => import('./pages/public/BusinessServicesPage.jsx'))
 const DashboardLayout = lazy(() => import('./crm/layouts/DashboardLayout.jsx'))
 const AdminLayout = lazy(() => import('./layouts/AdminLayout.jsx'))
 const DashboardHomePage = lazy(() => import('./crm/pages/DashboardHome.jsx'))
@@ -209,6 +210,7 @@ export default function AppRouter() {
         <Route path="/" element={<LazyPage><MarketingRoute /></LazyPage>} />
         <Route path="/features" element={<LazyPage><MarketingRoute sectionId="services" /></LazyPage>} />
         <Route path="/pricing" element={<LazyPage><PricingPage /></LazyPage>} />
+        <Route path="/business-services" element={<LazyPage><PublicBusinessServicesPage /></LazyPage>} />
         <Route path="/contact" element={<LazyPage><MarketingRoute sectionId="contact" /></LazyPage>} />
         <Route path="/industries" element={<LazyPage><MarketingRoute sectionId="products" /></LazyPage>} />
         <Route path="/solutions/:solutionSlug" element={<LazyPage><SolutionPage /></LazyPage>} />

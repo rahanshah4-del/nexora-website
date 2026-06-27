@@ -56,6 +56,12 @@ body.public-website {
   overscroll-behavior-y: auto;
 }
 
+html.business-service-modal-open,
+body.business-service-modal-open {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
 ::selection {
   background: #38bdf8;
   color: #0f172a;

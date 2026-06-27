@@ -10,6 +10,7 @@ import { createWorkspaceNotification } from '../lib/notifications.js'
 function normalizeTicket(t) {
   const status = t.status || 'Open'
   const comments = Array.isArray(t.comments) ? t.comments : Array.isArray(t.conversation) ? t.conversation : []
+  const supportNotes = Array.isArray(t.supportNotes) ? t.supportNotes : Array.isArray(t.notes) ? t.notes : []
   const attachments = Array.isArray(t.attachments) ? t.attachments : []
   const screenshotUrl = t.screenshotUrl || t.attachmentUrl || attachments[0]?.url || ''
   return {
@@ -26,6 +27,7 @@ function normalizeTicket(t) {
     category: t.category || 'Technical Support',
     comments,
     conversation: comments,
+    supportNotes,
     screenshotUrl,
     screenshotName: t.screenshotName || t.attachmentName || attachments[0]?.name || '',
     attachments,
@@ -422,7 +424,7 @@ export function useSupportTickets({ limitCount = DEFAULT_SUPPORT_TICKET_LIST_LIM
       },
       async addComment(id, comment) {
         if (!canEditSupportTickets) return { ok: false, error: 'Support ticket comment permission is not enabled for this account.' }
-        const createdAt = new Date().toISOString().slice(0, 10)
+        const createdAt = new Date().toISOString()
         const nextComment = { id: `c_${Date.now()}`, ...comment, createdAt }
         setTickets((prev) =>
           prev.map((t) =>

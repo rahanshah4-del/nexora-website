@@ -18,7 +18,6 @@ import {
 } from 'react-icons/hi2'
 import Header from './components/Header'
 import NexoraLogo from './components/brand/NexoraLogo'
-import BusinessServicesSection from './components/BusinessServicesSection.jsx'
 import TawkChat from './pages/public/TawkChat.jsx'
 
 const whatsappNumberDisplay = '+92 319 432 9754'
@@ -550,8 +549,6 @@ function App({ initialSectionId = '' }) {
           </div>
         </section>
 
-        <BusinessServicesSection />
-
         <section id="about" data-reveal className="bg-white px-5 pb-16 pt-2 sm:px-6 sm:pb-20 lg:px-8 lg:pb-24">
           <div className="mx-auto flex max-w-7xl flex-col gap-6 rounded-[2rem] border border-blue-100 bg-[linear-gradient(135deg,#eff6ff_0%,#ffffff_64%,#f8fafc_100%)] p-4 shadow-[0_30px_90px_-62px_rgba(37,99,235,0.42)] lg:p-5">
             <div className="rounded-[1.5rem] border border-blue-100 bg-white p-6 shadow-sm">
@@ -772,15 +769,6 @@ function App({ initialSectionId = '' }) {
         </div>
       </footer>
 
-      <a
-        href={whatsappLeadLink}
-        target="_blank"
-        rel="noreferrer"
-        aria-label="Chat with Nexora on WhatsApp"
-        className="fixed bottom-5 right-5 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#25d366] text-white shadow-[0_18px_38px_-22px_rgba(37,211,102,0.9)] hover:bg-[#20bd5a]"
-      >
-        <HiOutlineChatBubbleLeftRight className="text-3xl" />
-      </a>
       <TawkChat />
     </div>
   )

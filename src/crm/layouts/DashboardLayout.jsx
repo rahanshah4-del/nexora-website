@@ -132,25 +132,72 @@ function TrialAccessBlock({ expired, subscriptionExpired, trialEndsAt, onBackToW
 
 function AccountBlockedBlock({ onBackToWorkspace }) {
   return (
-    <div className="nexora-bg grid min-h-dvh place-items-center overflow-x-hidden px-4 py-10">
+    <div className="nexora-bg grid min-h-dvh place-items-center overflow-x-hidden px-4 py-8 sm:px-6">
       <motion.div
-        className="w-full max-w-xl rounded-[1.6rem] border border-rose-100 bg-white/95 p-6 shadow-[0_24px_80px_-48px_rgba(15,23,42,0.55)]"
+        className="w-full max-w-3xl overflow-hidden rounded-[1.6rem] border border-rose-100 bg-white/95 shadow-[0_28px_90px_-44px_rgba(190,18,60,0.28)]"
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.22, ease: 'easeOut' }}
       >
-        <Badge variant="danger" className="font-semibold">
-          Access blocked
-        </Badge>
-        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-slate-950">
-          Your account is blocked. Contact administrator.
-        </h1>
-        <p className="mt-3 text-sm leading-7 text-slate-600">
-          CRM access has been disabled for this account. Ask your workspace owner or administrator to restore access.
-        </p>
-        <Button className="mt-6 h-11 rounded-2xl" variant="subtle" type="button" onClick={onBackToWorkspace}>
-          Back to Workspace
-        </Button>
+        <div className="h-1.5 bg-gradient-to-r from-rose-500 via-orange-400 to-amber-400" />
+        <div className="p-6 sm:p-8">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="flex min-w-0 items-center gap-3">
+              <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-rose-50 text-3xl shadow-sm ring-1 ring-rose-100" aria-hidden="true">
+                🔒
+              </span>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-black uppercase text-slate-950">Nexora workspace access</p>
+                <p className="text-xs font-semibold text-slate-500">Security status check</p>
+              </div>
+            </div>
+            <Badge variant="danger" className="gap-1.5 px-3 py-1.5 font-bold">
+              <span aria-hidden="true">🚫</span> Access blocked
+            </Badge>
+          </div>
+
+          <div className="mt-8 max-w-2xl">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-rose-50 px-3 py-1.5 text-xs font-black uppercase text-rose-700 ring-1 ring-rose-100">
+              <span aria-hidden="true">⚠️</span>
+              Account paused by admin
+            </div>
+            <h1 className="text-3xl font-black text-slate-950">
+              Your account is blocked. Contact administrator.
+            </h1>
+            <p className="mt-4 max-w-xl text-sm leading-7 text-slate-600 sm:text-base">
+              CRM access has been disabled for this account. Ask your workspace owner or Nexora administrator to restore access.
+            </p>
+          </div>
+
+          <div className="mt-7 grid gap-3 sm:grid-cols-3">
+            {[
+              ['🛡️', 'Data stays safe', 'Your workspace records remain secured.'],
+              ['👤', 'Admin review', 'Owner/admin can reactivate access.'],
+              ['🔔', 'Status update', 'You can return once access is restored.'],
+            ].map(([emoji, title, text]) => (
+              <div key={title} className="rounded-2xl border border-rose-100 bg-rose-50/55 p-4">
+                <p className="text-2xl" aria-hidden="true">{emoji}</p>
+                <p className="mt-3 text-sm font-black text-slate-950">{title}</p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">{text}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-6 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-950">
+            <HiOutlineShieldCheck className="mt-0.5 h-5 w-5 shrink-0" />
+            <div>
+              <p className="text-sm font-black">Need access restored?</p>
+              <p className="mt-0.5 text-xs leading-5 text-amber-900">Contact the workspace owner or backend administrator and ask them to activate your account from Command Center.</p>
+            </div>
+          </div>
+
+          <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <Button className="h-12 rounded-xl px-5" variant="subtle" type="button" onClick={onBackToWorkspace}>
+              <span aria-hidden="true">⬅️</span> Back to Workspace
+            </Button>
+            <p className="text-xs font-semibold text-slate-400 sm:ml-auto">Protected mode · Access paused</p>
+          </div>
+        </div>
       </motion.div>
     </div>
   )

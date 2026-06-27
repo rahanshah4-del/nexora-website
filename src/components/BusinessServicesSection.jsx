@@ -82,6 +82,17 @@ export default function BusinessServicesSection({ compact = false, variant = com
     }
   }, [selectedRequest?.id])
 
+  useEffect(() => {
+    const modalOpen = Boolean(selectedService || selectedRequest)
+    if (!modalOpen) return undefined
+    document.documentElement.classList.add('business-service-modal-open')
+    document.body.classList.add('business-service-modal-open')
+    return () => {
+      document.documentElement.classList.remove('business-service-modal-open')
+      document.body.classList.remove('business-service-modal-open')
+    }
+  }, [selectedRequest, selectedService])
+
   const visibleServices = useMemo(() => enabledBusinessServices(services), [services])
 
   const updateForm = (key, value) => setForm((current) => ({ ...current, [key]: value }))
@@ -286,27 +297,28 @@ export default function BusinessServicesSection({ compact = false, variant = com
       </div>
 
       {selectedService ? (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/60 px-4 py-6 backdrop-blur-sm">
-          <div className="max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-[1.35rem] bg-white p-5 shadow-2xl">
-            <div className="flex items-start justify-between gap-4 border-b border-slate-100 pb-4">
+        <div className="fixed inset-0 z-50 overflow-y-auto overscroll-contain bg-slate-950/60 px-3 py-3 backdrop-blur-sm sm:grid sm:place-items-center sm:px-4 sm:py-6">
+          <div className="mx-auto flex min-h-[calc(100dvh-1.5rem)] w-full max-w-3xl flex-col overflow-hidden rounded-[1.1rem] bg-white shadow-2xl sm:min-h-0 sm:max-h-[92dvh] sm:rounded-[1.35rem]">
+            <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-slate-100 bg-white px-4 pb-4 pt-4 sm:px-5">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.14em] text-blue-700">Request Service</p>
-                <h3 className="mt-1 text-2xl font-black text-slate-950">{selectedService.title}</h3>
+                <h3 className="mt-1 text-xl font-black text-slate-950 sm:text-2xl">{selectedService.title}</h3>
               </div>
               <button type="button" className="grid h-9 w-9 place-items-center rounded-full bg-slate-100 text-slate-600" onClick={() => setSelectedService(null)} aria-label="Close">
                 <HiOutlineXMark className="h-5 w-5" />
               </button>
             </div>
 
-            {message ? (
-              <div className="mt-4 flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">
-                <HiOutlineCheckCircle className="mt-0.5 h-5 w-5 shrink-0" />
-                {message}
-              </div>
-            ) : null}
-            {error ? <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-rose-700">{error}</div> : null}
+            <div className="flex-1 overflow-y-auto overscroll-contain px-4 pb-4 sm:px-5 sm:pb-5">
+              {message ? (
+                <div className="mt-4 flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">
+                  <HiOutlineCheckCircle className="mt-0.5 h-5 w-5 shrink-0" />
+                  {message}
+                </div>
+              ) : null}
+              {error ? <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-rose-700">{error}</div> : null}
 
-            <form className="mt-5 grid gap-4 sm:grid-cols-2" onSubmit={submit}>
+              <form className="mt-5 grid gap-4 sm:grid-cols-2" onSubmit={submit}>
               <Field label="Service Type">
                 <input className="h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-700" value={selectedService.title} readOnly />
               </Field>
@@ -344,17 +356,18 @@ export default function BusinessServicesSection({ compact = false, variant = com
                   {submitting ? 'Submitting...' : 'Submit Request'}
                 </button>
               </div>
-            </form>
+              </form>
+            </div>
           </div>
         </div>
       ) : null}
       {selectedRequest ? (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/60 px-4 py-6 backdrop-blur-sm">
-          <div className="max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-[1.35rem] bg-white p-5 shadow-2xl">
-            <div className="flex items-start justify-between gap-4 border-b border-slate-100 pb-4">
+        <div className="fixed inset-0 z-50 overflow-y-auto overscroll-contain bg-slate-950/60 px-3 py-3 backdrop-blur-sm sm:grid sm:place-items-center sm:px-4 sm:py-6">
+          <div className="mx-auto flex min-h-[calc(100dvh-1.5rem)] w-full max-w-3xl flex-col overflow-hidden rounded-[1.1rem] bg-white shadow-2xl sm:min-h-0 sm:max-h-[92dvh] sm:rounded-[1.35rem]">
+            <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-slate-100 bg-white px-4 pb-4 pt-4 sm:px-5">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.14em] text-blue-700">Request Timeline</p>
-                <h3 className="mt-1 text-2xl font-black text-slate-950">{selectedRequest.serviceTitle}</h3>
+                <h3 className="mt-1 text-xl font-black text-slate-950 sm:text-2xl">{selectedRequest.serviceTitle}</h3>
                 <p className="mt-1 text-sm font-semibold text-slate-500">Current status: {selectedRequest.status || 'New'}</p>
               </div>
               <button type="button" className="grid h-9 w-9 place-items-center rounded-full bg-slate-100 text-slate-600" onClick={() => setSelectedRequest(null)} aria-label="Close">
@@ -362,9 +375,10 @@ export default function BusinessServicesSection({ compact = false, variant = com
               </button>
             </div>
 
-            {error ? <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-rose-700">{error}</div> : null}
+            <div className="flex-1 overflow-y-auto overscroll-contain px-4 pb-4 sm:px-5 sm:pb-5">
+              {error ? <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-rose-700">{error}</div> : null}
 
-            <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_0.9fr]">
+              <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_0.9fr]">
               <div>
                 <p className="text-sm font-black text-slate-950">Progress</p>
                 <div className="mt-3 space-y-3">
@@ -404,6 +418,7 @@ export default function BusinessServicesSection({ compact = false, variant = com
                   </button>
                 </form>
               </div>
+            </div>
             </div>
           </div>
         </div>
