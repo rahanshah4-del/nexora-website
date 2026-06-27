@@ -36,6 +36,7 @@ import { isBackendAdminEmail } from '../../lib/roles.js'
 import { sendWorkerEmail } from '../../lib/transactionalEmail.js'
 import { labelForBusinessType } from '../../crm/data/moduleAccess.js'
 import { resolveClientShortId } from '../../lib/clientIds.js'
+import { listWorkerUpgradeRequests } from '../../lib/upgradeWorker.js'
 
 const modules = ['General CRM', 'School ERP', 'Retail / POS', 'Property ERP', 'Restaurant POS', 'WhatsApp CRM', 'Transport / Rental']
 const moduleVisuals = {
@@ -72,6 +73,21 @@ function dateLabel(value) {
 function dateTimeLabel(value) {
   const date = toDate(value)
   return date ? date.toLocaleString() : '-'
+}
+
+function relativeTimeLabel(value, now = Date.now()) {
+  const date = toDate(value)
+  if (!date) return '-'
+  const diffMs = Math.max(0, Number(now) - date.getTime())
+  const seconds = Math.floor(diffMs / 1000)
+  if (seconds < 20) return 'just now'
+  if (seconds < 60) return `${seconds}s ago`
+  const minutes = Math.floor(seconds / 60)
+  if (minutes < 60) return `${minutes}m ago`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours}h ago`
+  const days = Math.floor(hours / 24)
+  return `${days}d ago`
 }
 
 function clean(value) {
@@ -125,6 +141,10 @@ function ipFor(row = {}) {
     source.requestIp,
     source.remoteAddress,
     source.lastSeenIp,
+    source.visitorIp,
+    source.networkIp,
+    source.publicIp,
+    source.lastKnownIp,
   )
 }
 
@@ -252,6 +272,7 @@ function useCommandCenterData() {
     upgradeRequests: [],
     platformPayments: [],
     supportTickets: [],
+    userSessions: [],
     loading: Boolean(db),
     sourceErrors: {},
   })
@@ -270,6 +291,7 @@ function useCommandCenterData() {
       upgradeRequests: [],
       platformPayments: [],
       supportTickets: [],
+      userSessions: [],
     }
     const loaded = new Set()
     const expected = Object.keys(cache).length
@@ -322,6 +344,7 @@ function useCommandCenterData() {
       listen('workspaces', 'workspaces', 500),
       listen('upgradeRequests', 'upgradeRequests', 300),
       listen('platformPayments', 'platformPayments', 500),
+      listen('userSessions', 'userSessions', 500),
       listenGroup('supportTickets', 'supportTickets', 500),
     ]
 
@@ -689,6 +712,47 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
   const [resolutionNote, setResolutionNote] = useState('')
   const [ticketDraft, setTicketDraft] = useState({ title: '', description: '', priority: 'medium', module: 'General CRM' })
   const [emailDraft, setEmailDraft] = useState({ subject: 'Your Nexora support issue has been resolved', message: '' })
+  const [workerUpgradeRequests, setWorkerUpgradeRequests] = useState([])
+  const [workerUpgradeError, setWorkerUpgradeError] = useState('')
+  const [liveNow, setLiveNow] = useState(() => Date.now())
+
+  useEffect(() => {
+    const tick = () => setLiveNow(Date.now())
+    tick()
+    const timer = window.setInterval(tick, 10000)
+    window.addEventListener('focus', tick)
+    document.addEventListener('visibilitychange', tick)
+    return () => {
+      window.clearInterval(timer)
+      window.removeEventListener('focus', tick)
+      document.removeEventListener('visibilitychange', tick)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!backendAdminAllowed || !user?.getIdToken) return undefined
+    let cancelled = false
+    async function loadWorkerRequests() {
+      try {
+        const token = await user.getIdToken()
+        const rows = await listWorkerUpgradeRequests(token, 200)
+        if (!cancelled) {
+          setWorkerUpgradeRequests(rows)
+          setWorkerUpgradeError('')
+        }
+      } catch (error) {
+        if (!cancelled) setWorkerUpgradeError(clientSafeMessage(error, 'Cloudflare upgrade requests are not available.'))
+      }
+    }
+    loadWorkerRequests()
+    window.addEventListener('focus', loadWorkerRequests)
+    const timer = window.setInterval(loadWorkerRequests, 10000)
+    return () => {
+      cancelled = true
+      window.clearInterval(timer)
+      window.removeEventListener('focus', loadWorkerRequests)
+    }
+  }, [backendAdminAllowed, user])
 
   const usersById = useMemo(() => {
     const map = new Map()
@@ -737,6 +801,19 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
     () => searchedClients.find((client) => client.id === selectedClientId) || searchedClients[0] || null,
     [searchedClients, selectedClientId],
   )
+  const clientSessions = useMemo(
+    () => data.userSessions
+      .filter((session) => sameClient(session, selectedClient))
+      .sort((a, b) => (toDate(b.lastActiveAt)?.getTime() || 0) - (toDate(a.lastActiveAt)?.getTime() || 0)),
+    [data.userSessions, selectedClient],
+  )
+  const latestClientSession = clientSessions[0] || null
+  const latestClientActiveAt = latestClientSession?.lastActiveAt || selectedClient?.lastActiveAt || selectedClient?.lastAccessedAt || selectedClient?.lastLoginAt
+  const clientOnline = Boolean(toDate(latestClientActiveAt) && liveNow - toDate(latestClientActiveAt).getTime() <= 5 * 60 * 1000)
+  const clientPresenceLabel = clientOnline ? 'Online now' : latestClientActiveAt ? `Offline · last seen ${relativeTimeLabel(latestClientActiveAt, liveNow)}` : 'No live session yet'
+  const clientUsageLabel = latestClientSession
+    ? `${latestClientSession.lastEventType || 'active'} · ${latestClientSession.page || latestClientSession.businessType || latestClientSession.browser || 'workspace'}`
+    : 'Waiting for client activity'
   const searchIsActive = Boolean(lower(search))
   const searchMatches = searchedClients.length
 
@@ -778,8 +855,8 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
     [data.platformPayments, selectedClient],
   )
   const clientRequests = useMemo(
-    () => data.upgradeRequests.filter((row) => sameClient(row, selectedClient)),
-    [data.upgradeRequests, selectedClient],
+    () => [...workerUpgradeRequests, ...data.upgradeRequests].filter((row) => sameClient(row, selectedClient)),
+    [data.upgradeRequests, selectedClient, workerUpgradeRequests],
   )
   const accessDetails = selectedClient ? moduleAccessDetails(selectedClient) : { primary: '', allowed: [], special: false, all: false }
   const activeModules = accessDetails.allowed
@@ -1131,9 +1208,12 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
     Location: firstValue(selectedClient.location, selectedClient.city, selectedClient.country, selectedClient.address),
     ...(showLongClientId ? { 'Full Client ID': selectedClient.workspaceId } : {}),
     'Account status': selectedClient.status || selectedClient.accountStatus || selectedClient.subscriptionStatus || 'active',
+    'Live status': clientPresenceLabel,
+    'Current usage': clientUsageLabel,
     'Total spent': money(totalSpent, currency),
     'Outstanding amount': money(outstandingAmount, currency),
     'Last login': dateTimeLabel(selectedClient.lastLoginAt || selectedClient.lastActiveAt || selectedClient.lastAccessedAt),
+    'Last active': dateTimeLabel(latestClientActiveAt),
     'Joined date': dateLabel(selectedClient.createdAt || selectedClient.signupAt || selectedClient.joinedAt),
     'Preferred contact method': selectedClient.preferredContactMethod || (selectedClient.phone ? 'Phone' : 'Email'),
   } : {}
@@ -1178,9 +1258,11 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
     ['Primary module', labelForBusinessType(accessDetails.primary || workspaceBusinessType(selectedClient || {}))],
     ['Module access', accessDetails.all ? 'All modules enabled' : `${activeModules.length} active module${activeModules.length === 1 ? '' : 's'}`],
     ['Ticket health', `${openIssues.length} open / ${resolvedIssues.length} resolved`],
+    ['Live status', clientPresenceLabel],
+    ['Using now', clientUsageLabel],
     ['Money status', `${money(outstandingAmount, currency)} outstanding`],
     ['IP address', ipFor(selectedClient) || 'IP not captured'],
-    ['Last login', profile['Last login'] || '-'],
+    ['Last active', profile['Last active'] || '-'],
     ['Renewal / trial', dateLabel(selectedClient?.nextBillingDate || selectedClient?.subscriptionExpiresAt || selectedClient?.trialEndsAt) || '-'],
   ]
 
@@ -1197,7 +1279,7 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
             </div>
             <div className="flex items-center gap-3">
               <span className="hidden rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 md:inline-flex">
-                Backend live data
+                Live sync · {new Date(liveNow).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
               </span>
               <span className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-cyan-400 via-blue-600 to-fuchsia-600 text-sm font-black text-white shadow-lg shadow-cyan-950/40">
                 {String(user?.email || 'N').slice(0, 1).toUpperCase()}
@@ -1239,6 +1321,9 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
                 </DarkActionButton>
               </div>
               <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-black text-emerald-700">
+                  Live sync · {new Date(liveNow).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                </span>
                 <span className="mr-1 text-xs font-black text-slate-500">Quick Actions:</span>
                 <DarkActionButton icon={HiOutlinePlusCircle} active={activeAction === 'createTicket'} onClick={() => setActiveAction(activeAction === 'createTicket' ? '' : 'createTicket')}>Create Ticket</DarkActionButton>
                 <DarkActionButton icon={HiOutlineEnvelope} active={activeAction === 'sendEmail'} onClick={() => setActiveAction(activeAction === 'sendEmail' ? '' : 'sendEmail')}>Send Email</DarkActionButton>
@@ -1252,6 +1337,11 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
           {Object.values(data.sourceErrors || {}).length ? (
             <section className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs font-semibold text-amber-800">
               {Object.values(data.sourceErrors).join(' ')}
+            </section>
+          ) : null}
+          {workerUpgradeError ? (
+            <section className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs font-semibold text-amber-800">
+              {workerUpgradeError}
             </section>
           ) : null}
           {error ? <section className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm font-semibold text-rose-700">{error}</section> : null}
@@ -1268,6 +1358,10 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
                       <div className="flex flex-wrap items-center gap-3">
                         <h2 className="truncate text-xl font-black text-slate-950">{selectedClient.companyName || selectedClient.clientName}</h2>
                         <DarkStatusPill value={profile['Account status'] === 'active' ? 'Active Client' : profile['Account status']} />
+                        <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-black shadow-sm ${clientOnline ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-white text-slate-600'}`}>
+                          <span className={`h-2 w-2 rounded-full ${clientOnline ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.8)]' : 'bg-slate-400'}`} />
+                          {clientPresenceLabel}
+                        </span>
                       </div>
                       <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs font-semibold text-slate-600">
                         <span>{selectedClient.email || '-'}</span>
@@ -1606,6 +1700,11 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
             {Object.values(data.sourceErrors).join(' ')}
           </section>
         ) : null}
+        {workerUpgradeError ? (
+          <section className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-800">
+            {workerUpgradeError}
+          </section>
+        ) : null}
         {error ? <section className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-rose-700">{error}</section> : null}
 
         {activeAction ? (
@@ -1654,6 +1753,10 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
                     <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700 shadow-sm">
                       <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.75)]" />
                       IP: {profile['IP address']}
+                    </div>
+                    <div className={`mt-2 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-black shadow-sm ${clientOnline ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-slate-50 text-slate-600'}`}>
+                      <span className={`h-2 w-2 rounded-full ${clientOnline ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.75)]' : 'bg-slate-400'}`} />
+                      {clientPresenceLabel}
                     </div>
                   </div>
                   <StatusPill value={profile['Account status']} />

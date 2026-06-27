@@ -137,6 +137,38 @@ export async function trackAnalyticsEvent(eventType, data = {}) {
   }
 }
 
+export async function updateUserSessionActivity(eventType = 'session_active', data = {}) {
+  if (!db) return
+  const userId = clean(data.userId || data.uid)
+  if (!userId) return
+  const visitorId = getVisitorId()
+  const sessionId = getSessionId()
+  try {
+    await setDoc(
+      doc(db, 'userSessions', sessionId),
+      {
+        sessionId,
+        visitorId,
+        userId,
+        email: clean(data.email),
+        phone: clean(data.phone),
+        workspaceId: clean(data.workspaceId),
+        businessType: clean(data.businessType),
+        deviceType: deviceType(),
+        browser: browserName(),
+        os: osName(),
+        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent || '' : '',
+        lastActiveAt: serverTimestamp(),
+        lastEventType: eventType,
+        sessionDurationMs: getSessionDurationMs(),
+      },
+      { merge: true },
+    )
+  } catch (error) {
+    if (import.meta.env.DEV) console.warn('[Nexora Analytics] activity heartbeat not saved', error)
+  }
+}
+
 export async function getUserAnalyticsContext(user) {
   if (!db || !user?.uid) return { userId: user?.uid || '', email: user?.email || '' }
   try {

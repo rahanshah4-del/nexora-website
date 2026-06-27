@@ -337,14 +337,14 @@ function isExpired(row = {}) {
   return ['expired', 'cancelled', 'canceled', 'inactive'].includes(status) || (trialEndsAt && trialEndsAt < new Date()) || (expiresAt && expiresAt < new Date())
 }
 
-function ageMinutes(value) {
+function ageMinutes(value, now = Date.now()) {
   const date = toDate(value)
   if (!date) return null
-  return Math.max(0, (Date.now() - date.getTime()) / 60000)
+  return Math.max(0, (now - date.getTime()) / 60000)
 }
 
-function ageLabel(value) {
-  const minutes = ageMinutes(value)
+function ageLabel(value, now = Date.now()) {
+  const minutes = ageMinutes(value, now)
   if (minutes == null) return '-'
   if (minutes < 60) return `${Math.max(1, Math.round(minutes))}m ago`
   if (minutes < 1440) return `${Math.max(1, Math.round(minutes / 60))}h ago`
@@ -367,15 +367,15 @@ function healthCardClass(status) {
   return 'border-slate-200 bg-slate-50/70'
 }
 
-function daysLeft(value) {
+function daysLeft(value, now = Date.now()) {
   const date = toDate(value)
   if (!date) return '-'
-  return Math.max(0, Math.ceil((date.getTime() - Date.now()) / 86400000))
+  return Math.max(0, Math.ceil((date.getTime() - now) / 86400000))
 }
 
-function isOnline(row = {}) {
+function isOnline(row = {}, now = Date.now()) {
   const lastActive = toDate(row.lastActiveAt)
-  return Boolean(lastActive && Date.now() - lastActive.getTime() <= 5 * 60 * 1000)
+  return Boolean(lastActive && now - lastActive.getTime() <= 5 * 60 * 1000)
 }
 
 function normalizeSnapDoc(docSnap) {
@@ -713,10 +713,24 @@ export default function ControlCentre() {
   const [promoEditingId, setPromoEditingId] = useState('')
   const [workerUpgradeRequests, setWorkerUpgradeRequests] = useState([])
   const [workerUpgradeError, setWorkerUpgradeError] = useState('')
+  const [liveNow, setLiveNow] = useState(() => Date.now())
   const whatsappPricingApi = useWhatsappPricing({ enabled: true })
   const [whatsappPricingDraft, setWhatsappPricingDraft] = useState(defaultWhatsappPricing)
   const backendAdminAllowed = isBackendAdminEmail(user?.email)
   console.log('[Admin Auth] ControlCentre admin check:', user?.email, backendAdminAllowed ? 'allowed' : 'blocked')
+
+  useEffect(() => {
+    const tick = () => setLiveNow(Date.now())
+    tick()
+    const timer = window.setInterval(tick, 10000)
+    window.addEventListener('focus', tick)
+    document.addEventListener('visibilitychange', tick)
+    return () => {
+      window.clearInterval(timer)
+      window.removeEventListener('focus', tick)
+      document.removeEventListener('visibilitychange', tick)
+    }
+  }, [])
 
   useEffect(() => {
     if (!backendAdminAllowed || !user?.getIdToken) return undefined
@@ -734,10 +748,12 @@ export default function ControlCentre() {
       }
     }
     loadWorkerUpgradeRequests()
-    const timer = window.setInterval(loadWorkerUpgradeRequests, 30000)
+    window.addEventListener('focus', loadWorkerUpgradeRequests)
+    const timer = window.setInterval(loadWorkerUpgradeRequests, 10000)
     return () => {
       cancelled = true
       window.clearInterval(timer)
+      window.removeEventListener('focus', loadWorkerUpgradeRequests)
     }
   }, [backendAdminAllowed, user])
 
@@ -777,7 +793,7 @@ export default function ControlCentre() {
   }, [backendAdminAllowed])
 
   const liveUsers = useMemo(() => mergePresence(data.users, data.clientSessions, data.userPresence), [data.users, data.clientSessions, data.userPresence])
-  const onlineUsers = useMemo(() => liveUsers.filter(isOnline), [liveUsers])
+  const onlineUsers = useMemo(() => liveUsers.filter((row) => isOnline(row, liveNow)), [liveNow, liveUsers])
   const platformPlans = useMemo(() => mergePlatformPlans(data.plans), [data.plans])
   const platformSettings = useMemo(() => {
     const liveSettings = data.platformSettings[0] || {}
@@ -868,16 +884,16 @@ export default function ControlCentre() {
   }, [data.users, data.workspaces, onlineUsers.length, payments, upgradeRequests])
 
   const systemHealth = useMemo(() => {
-    const now = Date.now()
+    const now = liveNow
     const sourceErrors = data.sourceErrors || {}
     const sourceErrorEntries = Object.entries(sourceErrors)
     const pendingPayments = payments.filter((row) => ['pending', 'pending_approval', 'waiting', 'confirming'].includes(statusValue(row.paymentStatus || row.status)))
-    const stalePendingPayments = pendingPayments.filter((row) => (ageMinutes(row.createdAt || row.paymentDate) || 0) > 1440)
+    const stalePendingPayments = pendingPayments.filter((row) => (ageMinutes(row.createdAt || row.paymentDate, now) || 0) > 1440)
     const pendingUpgrades = upgradeRequests.filter((row) => statusValue(row.approvalStatus || row.status) === 'pending')
-    const stalePendingUpgrades = pendingUpgrades.filter((row) => (ageMinutes(row.createdAt || row.requestedAt) || 0) > 1440)
+    const stalePendingUpgrades = pendingUpgrades.filter((row) => (ageMinutes(row.createdAt || row.requestedAt, now) || 0) > 1440)
     const openTickets = data.supportTickets.filter((row) => ['open', 'pending', 'in_progress', 'new'].includes(statusValue(row.status || 'open')))
     const urgentTickets = openTickets.filter((row) => ['urgent', 'critical', 'high'].includes(statusValue(row.priority)))
-    const staleTickets = openTickets.filter((row) => (ageMinutes(row.updatedAt || row.createdAt) || 0) > 1440)
+    const staleTickets = openTickets.filter((row) => (ageMinutes(row.updatedAt || row.createdAt, now) || 0) > 1440)
     const invalidSubscriptions = data.workspaces.filter(hasMissingPaidSubscriptionExpiry)
     const expiredWorkspaces = data.workspaces.filter(isExpired)
     const blockedWorkspaces = data.workspaces.filter((row) => statusValue(row.status || row.accountStatus) === 'blocked')
@@ -1062,7 +1078,7 @@ export default function ControlCentre() {
         id: 'analytics',
         title: 'Visitor analytics',
         status: analyticsStale ? 'warning' : 'healthy',
-        detail: latestAnalyticsAt ? `Last event ${ageLabel(new Date(latestAnalyticsAt))}.` : 'No analytics events received yet.',
+        detail: latestAnalyticsAt ? `Last event ${ageLabel(new Date(latestAnalyticsAt), now)}.` : 'No analytics events received yet.',
         actionTab: 'visitorAnalytics',
         metric: data.analyticsEvents.length,
       },
@@ -1082,7 +1098,7 @@ export default function ControlCentre() {
         id: 'presence',
         title: 'Presence tracking',
         status: presenceStale ? 'warning' : 'healthy',
-        detail: latestPresenceAt ? `Last activity ${ageLabel(new Date(latestPresenceAt))}. ${onlineUsers.length} online now.` : 'No presence records yet.',
+        detail: latestPresenceAt ? `Last activity ${ageLabel(new Date(latestPresenceAt), now)}. ${onlineUsers.length} online now.` : 'No presence records yet.',
         actionTab: 'activity',
         metric: onlineUsers.length,
       },
@@ -1120,6 +1136,7 @@ export default function ControlCentre() {
     backendNotificationStates,
     backendNotificationStateError,
     data,
+    liveNow,
     onlineUsers.length,
     payments,
     platformPlans,
@@ -1226,11 +1243,11 @@ export default function ControlCentre() {
     const visitors = new Set(events.map((row) => row.visitorId).filter(Boolean))
     const activeSessions = data.userSessions.filter((row) => {
       const lastActive = toDate(row.lastActiveAt)
-      return lastActive && Date.now() - lastActive.getTime() <= 5 * 60 * 1000
+      return lastActive && liveNow - lastActive.getTime() <= 5 * 60 * 1000
     })
     const recentEventSessions = new Set(events.filter((row) => {
       const eventTime = toDate(row.timestamp || row.createdAt)
-      return eventTime && Date.now() - eventTime.getTime() <= 5 * 60 * 1000
+      return eventTime && liveNow - eventTime.getTime() <= 5 * 60 * 1000
     }).map((row) => row.sessionId || row.visitorId).filter(Boolean))
     const moduleClicks = new Map()
     events.filter((row) => row.eventType === 'module_click').forEach((row) => {
@@ -1251,7 +1268,7 @@ export default function ControlCentre() {
       activeSessions: Math.max(activeSessions.length, recentEventSessions.size),
       mostClickedModule,
     }
-  }, [data.analyticsEvents, data.userSessions])
+  }, [data.analyticsEvents, data.userSessions, liveNow])
 
   const funnelRows = useMemo(() => {
     const events = data.analyticsEvents

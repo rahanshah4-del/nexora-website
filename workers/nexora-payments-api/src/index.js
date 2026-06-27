@@ -37,7 +37,7 @@ function requireUpgradeStorage(env) {
 }
 
 function adminEmails(env) {
-  return String(env.BACKEND_ADMIN_EMAILS || 'rahanshah4@gmail.com')
+  return String(env.BACKEND_ADMIN_EMAILS || 'admin@nexora.com,rahanshah2@gmail.com,rahanshah4@gmail.com')
     .split(',')
     .map((email) => lower(email))
     .filter(Boolean)
@@ -148,7 +148,7 @@ function corsHeaders(request, env) {
   const origins = allowedOrigins(env)
   return {
     'Access-Control-Allow-Origin': origins.includes(origin) ? origin : origins[0] || 'https://nexorasolution.online',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS',
     'Access-Control-Allow-Headers': 'Authorization, Content-Type',
     'Access-Control-Max-Age': '86400',
     Vary: 'Origin',
@@ -160,6 +160,23 @@ function jsonResponse(request, env, body, status = 200) {
     status,
     headers: { ...corsHeaders(request, env), 'Content-Type': 'application/json' },
   })
+}
+
+function clientIpPayload(request) {
+  const forwarded = request.headers.get('x-forwarded-for') || ''
+  const ip = clean(request.headers.get('cf-connecting-ip') || forwarded.split(',')[0] || request.headers.get('x-real-ip'))
+  const cf = request.cf || {}
+  return {
+    ok: true,
+    ip,
+    country: clean(cf.country),
+    city: clean(cf.city),
+    region: clean(cf.region),
+    timezone: clean(cf.timezone),
+    colo: clean(cf.colo),
+    asn: cf.asn ? String(cf.asn) : '',
+    organization: clean(cf.asOrganization),
+  }
 }
 
 function base64UrlToBytes(input) {
@@ -954,6 +971,9 @@ export default {
         firebaseServiceConfigured: Boolean(env.FIREBASE_PAYMENT_SERVICE_EMAIL && env.FIREBASE_PAYMENT_SERVICE_PASSWORD),
         upgradeStorageConfigured: Boolean(env.UPGRADE_DB && env.UPGRADE_SCREENSHOTS),
       })
+    }
+    if (request.method === 'GET' && url.pathname === '/api/client-ip') {
+      return jsonResponse(request, env, clientIpPayload(request))
     }
     if (request.method === 'POST' && url.pathname === '/api/payments/invoice') {
       return handleCreateInvoice(request, env)

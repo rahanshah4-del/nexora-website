@@ -1,7 +1,8 @@
 import { useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 import useAuth from '../context/useAuth.js'
-import { getUserAnalyticsContext, trackAnalyticsEvent } from '../lib/analyticsTracking.js'
+import { getUserAnalyticsContext, trackAnalyticsEvent, updateUserSessionActivity } from '../lib/analyticsTracking.js'
+import { syncClientIpToProfile } from '../lib/clientIp.js'
 
 function clickLabel(element) {
   return (
@@ -35,10 +36,28 @@ export default function AnalyticsTracker() {
   useEffect(() => {
     let cancelled = false
     getUserAnalyticsContext(user).then((context) => {
-      if (!cancelled) contextRef.current = context
+      if (!cancelled) {
+        contextRef.current = context
+        updateUserSessionActivity('session_seen', context)
+      }
     })
+    syncClientIpToProfile({ user })
     return () => {
       cancelled = true
+    }
+  }, [user])
+
+  useEffect(() => {
+    if (!user?.uid) return undefined
+    const touch = () => updateUserSessionActivity('session_heartbeat', { userId: user.uid, email: user.email || '', ...contextRef.current })
+    touch()
+    const timer = window.setInterval(touch, 60000)
+    window.addEventListener('focus', touch)
+    document.addEventListener('visibilitychange', touch)
+    return () => {
+      window.clearInterval(timer)
+      window.removeEventListener('focus', touch)
+      document.removeEventListener('visibilitychange', touch)
     }
   }, [user])
 
