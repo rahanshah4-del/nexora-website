@@ -1282,7 +1282,7 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
                 Live sync · {new Date(liveNow).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
               </span>
               <span className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-cyan-400 via-blue-600 to-fuchsia-600 text-sm font-black text-white shadow-lg shadow-cyan-950/40">
-                {String(user?.email || 'N').slice(0, 1).toUpperCase()}
+                🧭
               </span>
             </div>
           </header>

@@ -3791,7 +3791,7 @@ export default function ControlCentre() {
               <button className={commandCenterActive ? 'grid h-10 w-10 place-items-center rounded-full text-slate-300 hover:bg-white/10' : 'grid h-10 w-10 place-items-center rounded-full text-slate-700 hover:bg-slate-100'} type="button"><HiOutlineMoon className="h-5 w-5" /></button>
               <ShellButton onClick={() => runAction('admin-logout', handleLogout, 'Signed out.')}>Logout</ShellButton>
               <div className={commandCenterActive ? 'flex items-center gap-3 border-l border-white/10 pl-3' : 'flex items-center gap-3 border-l border-slate-200 pl-3'}>
-                <div className={commandCenterActive ? 'grid h-10 w-10 place-items-center rounded-full bg-violet-600 text-sm font-black text-white' : 'grid h-10 w-10 place-items-center rounded-full bg-slate-200 text-sm font-black'}>{String(user?.email || 'A').slice(0, 1).toUpperCase()}</div>
+                <div className={commandCenterActive ? 'grid h-10 w-10 place-items-center rounded-full bg-violet-600 text-lg font-black text-white' : 'grid h-10 w-10 place-items-center rounded-full bg-slate-200 text-lg font-black'}>⚙️</div>
                 <div className="hidden sm:block">
                   <p className={commandCenterActive ? 'text-sm font-black text-white' : 'text-sm font-black'}>System Admin</p>
                   <p className={commandCenterActive ? 'text-xs text-slate-400' : 'text-xs text-slate-500'}>{user?.email || 'Super Admin'}</p>

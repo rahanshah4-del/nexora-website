@@ -242,13 +242,13 @@ function BusinessModuleBlock({ onBackToWorkspace }) {
         transition={{ duration: 0.22, ease: 'easeOut' }}
       >
         <Badge variant="warning" className="font-semibold">
-          Not included
+          Coming soon
         </Badge>
         <h1 className="mt-4 text-2xl font-semibold tracking-tight text-slate-950">
-          This module is not enabled for your account.
+          We are preparing this feature for your account.
         </h1>
         <p className="mt-3 text-sm leading-7 text-slate-600">
-          This module is not enabled for your account. Contact Nexora support.
+          Nexora is building and activating more workspace tools for this module. It will be available soon with a smoother, more useful experience.
         </p>
         <Button className="mt-6 h-11 rounded-2xl" variant="subtle" type="button" onClick={onBackToWorkspace}>
           Back to Workspace

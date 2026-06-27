@@ -100,6 +100,16 @@ const regionOptions = ['Pakistan', 'India', 'Bangladesh', 'Middle East', 'Europe
 const currencyOptions = ['PKR', 'INR', 'BDT', 'AED', 'SAR', 'USD', 'EUR']
 const CRM_TRIAL_DAYS = 7
 const CRM_DASHBOARD_ROUTE = '/app/dashboard'
+const WELCOME_PROMO_CODE = 'welcome-nexora'
+const workspaceEmojiMap = {
+  'General CRM': '📈',
+  'Retail / POS': '🛒',
+  'School ERP': '🎓',
+  'Property ERP': '🏫',
+  'Restaurant POS': '🍽️',
+  'Transport / Rental': '🚚',
+  'WhatsApp CRM': '💬',
+}
 
 function logAutoLogoutTrace(functionName, reason) {
   console.warn('[AUTO LOGOUT TRACE]', {
@@ -320,6 +330,11 @@ function initialsFor(name, email) {
     .map((part) => part[0]?.toUpperCase())
     .join('')
   return initials || 'NU'
+}
+
+function avatarEmojiFor(businessType) {
+  const type = normalizeBusinessType(cleanString(businessType) || 'General CRM')
+  return workspaceEmojiMap[type] || '👤'
 }
 
 function trialSourceDate(workspaceData, accountData, user) {
@@ -1244,8 +1259,8 @@ function SettingsModal({
     <ModalShell title={t('settings')} onClose={onClose}>
       <div className="px-5 py-4">
         <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-extrabold text-white">
-            {profile.initials}
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-sky-500 via-blue-600 to-violet-600 text-xl shadow-sm shadow-blue-200">
+            {profile.avatarEmoji}
           </span>
           <div className="min-w-0">
             <p className="truncate text-sm font-bold text-slate-950">{profile.name}</p>
@@ -1388,6 +1403,7 @@ export default function WorkspaceSelection() {
   const [verificationMessage, setVerificationMessage] = useState('')
   const [businessTypeSaving, setBusinessTypeSaving] = useState('')
   const [selectedBusinessType, setSelectedBusinessType] = useState('')
+  const [welcomePromoCopied, setWelcomePromoCopied] = useState(false)
   const supportTicketsApi = useSupportTickets({ limitCount: 80 })
 
   const emailVerifiedCustom = accountData?.emailVerifiedCustom === true
@@ -1689,8 +1705,24 @@ export default function WorkspaceSelection() {
       workspaceId: cleanString(workspaceData?.workspaceId) || cleanString(accountData?.workspaceId) || user?.uid || '',
       shortClientId: resolveClientShortId({ ...accountData, ...workspaceData, workspaceId: cleanString(workspaceData?.workspaceId) || cleanString(accountData?.workspaceId) || user?.uid || '' }),
       businessType: profileBusinessTypeSource ? normalizeBusinessType(profileBusinessTypeSource) : '',
+      avatarEmoji: avatarEmojiFor(profileBusinessTypeSource),
     }
   }, [accountData, emailVerified, nowMs, onboardingCompleted, savedWorkspaceModule.businessType, user, workspaceData])
+
+  const welcomeModuleType = normalizeBusinessType(
+    selectedBusinessType || onboardingForm.businessType || profile.businessType || savedWorkspaceModule.businessType || 'General CRM',
+  )
+  const welcomeModuleEmoji = workspaceEmojiMap[welcomeModuleType] || '🚀'
+
+  async function copyWelcomePromoCode() {
+    try {
+      await navigator.clipboard?.writeText(WELCOME_PROMO_CODE)
+      setWelcomePromoCopied(true)
+      window.setTimeout(() => setWelcomePromoCopied(false), 1800)
+    } catch {
+      setWelcomePromoCopied(false)
+    }
+  }
 
   useEffect(() => {
     if (!db || !user?.uid || !profile.workspaceId) {
@@ -1776,7 +1808,7 @@ export default function WorkspaceSelection() {
   const hasModuleLock = !developerOverride && hasCrmWorkspace && Boolean(lockedBusinessType)
   const shouldFilterModules = !developerOverride && workspaceFullyConfigured && allowedWorkspaceTypes.length > 0
   const onboardingSelectionMode = !developerOverride && (!workspaceFullyConfigured || savedWorkspaceModule.stale)
-  const moduleLockMessage = 'This module is not enabled for your account. Contact Nexora support.'
+  const moduleLockMessage = 'We are preparing this feature for your account. It will be available soon as Nexora expands your workspace tools.'
   const needsWorkspaceOnboarding = !authLoading && !accountLoading && Boolean(user?.uid) && !hasCrmWorkspace
   const visibleModuleAccess = useMemo(
     () =>
@@ -3487,8 +3519,8 @@ export default function WorkspaceSelection() {
                 title={sidebarCollapsed ? `${profile.name}\n${profile.roleLabel}\n${profile.email}` : undefined}
               >
                 <span className="flex items-center gap-3">
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-sky-600 to-indigo-600 text-sm font-extrabold text-white">
-                    {profile.initials}
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-sky-500 via-blue-600 to-violet-600 text-xl shadow-sm shadow-blue-200">
+                    {profile.avatarEmoji}
                   </span>
                   {!sidebarCollapsed && (
                     <span className="min-w-0 flex-1">
@@ -3858,6 +3890,31 @@ export default function WorkspaceSelection() {
                     </span>
                   ) : null}
                 </div>
+                {needsWorkspaceOnboarding ? (
+                <div className="mt-4 max-w-xl rounded-2xl border border-violet-100 bg-white/85 p-3 shadow-sm backdrop-blur">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-sky-500 via-violet-600 to-fuchsia-600 text-xl shadow-sm shadow-violet-200">
+                        {welcomeModuleEmoji}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-sm font-black text-slate-950">Welcome offer: 50% off first workspace module</p>
+                        <p className="mt-0.5 text-xs font-semibold leading-5 text-slate-600">
+                          Use this code to start with setup, reports, invoices, and daily work tools at a lower first-module cost.
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={copyWelcomePromoCode}
+                      className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-violet-200 bg-violet-600 px-3 text-xs font-black uppercase tracking-[0.08em] text-white shadow-sm transition hover:bg-violet-700"
+                    >
+                      <HiOutlineClipboardDocumentList className="h-4 w-4" />
+                      {welcomePromoCopied ? 'Copied' : WELCOME_PROMO_CODE}
+                    </button>
+                  </div>
+                </div>
+                ) : null}
               </div>
             </motion.section>
 
