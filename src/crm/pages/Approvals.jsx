@@ -28,7 +28,7 @@ function isInvoiceRow(row) {
 }
 
 function isFinanceApprovalRow(row) {
-  return ['invoices', 'payments', 'expenses', 'accountTransactions'].includes(row?.sourceCollection)
+  return ['invoices', 'payments', 'expenses', 'accountTransactions', 'staffSalaryPayments'].includes(row?.sourceCollection)
 }
 
 function approvalActionForRow(row) {
@@ -56,6 +56,11 @@ function approvalDetailRows(approval = {}) {
     ['Account Number', row.accountNumber],
     ['Receiver Name', row.receiverName],
     ['Paid To', row.paidTo],
+    ['Staff Name', row.staffName],
+    ['Salary Month', row.salaryMonth],
+    ['Gross Pay', row.grossPay ? formatCurrency(row.grossPay, approval.currency) : ''],
+    ['Deduction', row.deduction ? formatCurrency(row.deduction, approval.currency) : ''],
+    ['Net Pay', row.netPay ? formatCurrency(row.netPay, approval.currency) : ''],
     ['Reason', row.reason],
     ['Expense / Related ID', row.expenseId || row.relatedId],
     ['Invoice Number', approval.invoiceNumber || row.invoiceNumber],
@@ -213,6 +218,7 @@ export default function ApprovalsPage() {
       ['Pending Invoices', approvals.summary.pendingInvoices],
       ['Upgrade Requests', approvals.summary.upgradeRequests],
       ['Staff Requests', approvals.summary.staffRequests],
+      ['Salary Requests', approvals.summary.salaryRequests],
       ['Expense Requests', approvals.summary.expenseRequests],
       ['Account Requests', approvals.summary.accountRequests],
     ],

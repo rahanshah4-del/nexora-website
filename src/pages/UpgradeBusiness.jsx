@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
-import { addDoc, collection, doc, getDoc, onSnapshot, query, serverTimestamp } from 'firebase/firestore'
-import { getDownloadURL, ref, uploadBytes } from 'firebase/storage'
+import { collection, doc, getDoc, onSnapshot, query } from 'firebase/firestore'
 import { onAuthStateChanged } from 'firebase/auth'
 import useNoIndex from '../hooks/useNoIndex.js'
-import { assertFirebaseReady, auth, db, storage } from '../lib/firebase.js'
+import { assertFirebaseReady, auth, db } from '../lib/firebase.js'
 import { clientSafeMessage } from '../lib/errorHandler.js'
 import {
   DEFAULT_SAAS_CURRENCY,
@@ -16,6 +15,7 @@ import {
 } from '../lib/platformPlans.js'
 import { trackAnalyticsEvent } from '../lib/analyticsTracking.js'
 import { sendWorkerEmail, upgradeRequestReceivedEmail } from '../lib/transactionalEmail.js'
+import { submitManualUpgradeRequest } from '../lib/upgradeWorker.js'
 import { evaluatePromoCode, normalizePromoCode, PROMO_CODE_COLLECTION } from '../lib/promoCodes.js'
 import { labelForBusinessType } from '../crm/data/moduleAccess.js'
 
@@ -160,7 +160,7 @@ function UploadBox({ file, previewUrl, onFile }) {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm font-black text-slate-950">Upload Payment Proof Screenshot</p>
-            <p className="mt-1 text-xs font-semibold text-slate-500">Required if no transaction ID is provided. PNG/JPG receipt screenshots are supported.</p>
+            <p className="mt-1 text-xs font-semibold text-slate-500">Required for manual upgrade review. PNG/JPG receipt screenshots are supported.</p>
           </div>
           <span className="rounded-full bg-violet-600 px-4 py-2 text-xs font-black text-white">{file ? 'Replace proof' : 'Choose proof file'}</span>
         </div>
@@ -359,7 +359,7 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
     return {
       collectionPath: 'upgradeRequests',
       hasDb: Boolean(db),
-      hasStorage: Boolean(storage),
+      storageTarget: 'cloudflare-r2',
       hasUserUid: Boolean(user?.uid),
       userUid: user?.uid || '',
       hasWorkspaceId: Boolean(workspaceId),
@@ -394,7 +394,9 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
     if (!selectedMethod?.id) return 'Payment method is required.'
     if (isAutomaticCrypto) return ''
     if (paidAmount <= 0) return 'Enter the paid amount before submitting your upgrade request.'
-    if (!hasPaymentEvidence) return 'Add a transaction ID or upload payment proof before submitting.'
+    if (!proofFile) return 'Upload payment proof screenshot before submitting.'
+    if (!String(proofFile.type || '').startsWith('image/')) return 'Only image screenshots are supported.'
+    if (proofFile.size > 6 * 1024 * 1024) return 'Screenshot must be 6MB or smaller.'
     return ''
   }
 
@@ -448,21 +450,8 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
     setSubmitting(true)
     try {
       assertFirebaseReady()
-      let paymentProof = ''
-      let objectPath = ''
-      if (proofFile) {
-        if (!storage) throw new Error('Payment proof upload is not configured.')
-        const safeName = proofFile.name?.replaceAll(/[^\w.-]+/g, '_') || 'payment-proof.png'
-        objectPath = `upgradeRequests/${user.uid}/${Date.now()}_${safeName}`
-        console.info('Upgrade request screenshot upload starting:', { objectPath, size: proofFile.size, type: proofFile.type })
-        const storageRef = ref(storage, objectPath)
-        await uploadBytes(storageRef, proofFile, { contentType: proofFile.type || 'image/png' })
-        paymentProof = await getDownloadURL(storageRef)
-        console.info('Upgrade request screenshot upload completed:', { objectPath, hasPaymentProofUrl: Boolean(paymentProof) })
-      } else {
-        console.info('Upgrade request screenshot upload skipped: no screenshot uploaded.')
-      }
-      const payload = {
+      const idToken = await user.getIdToken()
+      const workerFields = {
         email: user.email || userDoc?.email || '',
         uid: user.uid,
         userId: user.uid,
@@ -473,6 +462,7 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
         businessType,
         currentPlan,
         requestedPlan,
+        planId: selectedPlan?.id || selectedPlanId,
         selectedPlan: requestedPlan,
         billingCycle,
         originalAmount,
@@ -491,45 +481,42 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
         paymentMethod: selectedMethod.label || selectedMethod.id,
         paymentMethodId: selectedMethod.id,
         paymentDate: form.paymentDate || '',
-        paymentProof,
-        paymentProofPath: objectPath,
-        screenshotUrl: paymentProof,
+        module: businessTypeLabel || businessType,
         notes: form.notes.trim(),
         paymentNotes: form.notes.trim(),
         status: 'pending',
         approvalStatus: 'pending',
         paymentStatus: 'pending',
-        createdAt: serverTimestamp(),
       }
-      console.info('Upgrade request Firestore write starting:', {
-        collectionPath: 'upgradeRequests',
-        userId: payload.userId,
-        createdBy: payload.createdBy,
-        workspaceId: payload.workspaceId,
-        businessType: payload.businessType,
-        requestedPlan: payload.requestedPlan,
-        paymentMethod: payload.paymentMethod,
-        amount: payload.amount,
-        hasTransactionId: Boolean(payload.transactionId),
-        hasScreenshot: Boolean(payload.screenshotUrl),
+      console.info('Upgrade request Worker submit starting:', {
+        endpoint: 'Cloudflare Worker /api/upgrades/manual',
+        userId: workerFields.userId,
+        workspaceId: workerFields.workspaceId,
+        businessType: workerFields.businessType,
+        requestedPlan: workerFields.requestedPlan,
+        paymentMethod: workerFields.paymentMethod,
+        amount: workerFields.amount,
+        hasTransactionId: Boolean(workerFields.transactionId),
+        hasScreenshot: Boolean(proofFile),
       })
-      const requestRef = await addDoc(collection(db, 'upgradeRequests'), payload)
-      console.info('Upgrade request Firestore write completed:', { id: requestRef.id, collectionPath: 'upgradeRequests' })
+      const workerResult = await submitManualUpgradeRequest({ idToken, fields: workerFields, screenshotFile: proofFile })
+      const payload = workerResult.request || workerFields
+      console.info('Upgrade request Worker submit completed:', { id: payload.id, source: payload.source || 'cloudflare-d1' })
       const emailTemplate = upgradeRequestReceivedEmail({
-        name: payload.senderName || user.displayName || 'there',
+        name: workerFields.senderName || user.displayName || 'there',
         plan: requestedPlan,
         amount: paidAmount,
         currency,
-        billingCycle: payload.billingCycle || '',
-        paymentMethod: payload.paymentMethod || '',
-        transactionId: payload.transactionId || '',
-        paymentDate: payload.paymentDate || '',
-        workspaceName: payload.workspaceName || '',
+        billingCycle: workerFields.billingCycle || '',
+        paymentMethod: workerFields.paymentMethod || '',
+        transactionId: workerFields.transactionId || '',
+        paymentDate: workerFields.paymentDate || '',
+        workspaceName: workerFields.workspaceName || '',
       })
-      const emailResult = await sendWorkerEmail({ to: payload.email, ...emailTemplate })
+      const emailResult = await sendWorkerEmail({ to: workerFields.email, ...emailTemplate })
       await trackAnalyticsEvent('upgrade_request_submitted', {
         userId: user.uid,
-        email: payload.email,
+        email: workerFields.email,
         workspaceId,
         businessType,
         page: '/upgrade-business',
@@ -720,7 +707,7 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
                 <div className="flex justify-between gap-4"><span>Original amount</span><span className={discountAmount ? 'text-slate-400 line-through' : 'text-slate-950'}>{money(selectedAmount, currency)}</span></div>
                 {discountAmount ? <div className="flex justify-between gap-4 text-emerald-700"><span>Promo discount</span><span>-{money(discountAmount, currency)}</span></div> : null}
                 <div className="flex justify-between gap-4 border-t border-slate-100 pt-3"><span>Total</span><span className="text-base text-slate-950">{money(finalAmount || selectedAmount, currency)}</span></div>
-                <div className="flex justify-between gap-4"><span>Verification</span><span className="text-right text-slate-950">{isAutomaticCrypto ? 'Automatic' : hasPaymentEvidence ? 'Evidence added' : 'Evidence required'}</span></div>
+                <div className="flex justify-between gap-4"><span>Verification</span><span className="text-right text-slate-950">{isAutomaticCrypto ? 'Automatic' : proofFile ? 'Screenshot ready' : 'Screenshot required'}</span></div>
                 <div className="flex justify-between gap-4"><span>Currency</span><span className="text-slate-950">{currency}</span></div>
                 <div className="flex justify-between gap-4"><span>Payment</span><span className="text-slate-950">{selectedMethod?.label}</span></div>
               </div>

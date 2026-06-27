@@ -142,6 +142,7 @@ export function buildSchoolReport(reportKey, ctx) {
     staff = [],
     studentAttendance = [],
     staffAttendance = [],
+    salaryPayments = [],
     dateWindow = null,
     classFilter = 'All',
     studentFilter = 'All',
@@ -158,6 +159,7 @@ export function buildSchoolReport(reportKey, ctx) {
   }
   const activeFee = (fee) => !isRejectedRecord(fee)
   const activeExpense = (expense) => !isRejectedRecord(expense)
+  const approvedSalaryPayment = (payment) => ['approved', 'paid'].includes(String(payment?.approvalStatus || payment?.status || payment?.paymentStatus || '').toLowerCase())
 
   switch (reportKey) {
     case 'fee_collection': {
@@ -306,20 +308,63 @@ export function buildSchoolReport(reportKey, ctx) {
     }
 
     case 'salary': {
+      const paidRows = (salaryPayments || [])
+        .filter((payment) => inWindow(recordDate(payment, ['paymentDate', 'paidAt', 'createdAt']), dateWindow))
+        .filter((payment) => (approvedOnly ? approvedSalaryPayment(payment) : !isRejectedRecord(payment)))
+        .map((payment) => ({
+          date: dayKey(recordDate(payment, ['paymentDate', 'paidAt', 'createdAt'])),
+          month: firstString(payment.salaryMonth, payment.month, '—'),
+          name: firstString(payment.staffName, payment.name, 'Staff'),
+          role: firstString(payment.role, payment.designation, 'Staff'),
+          gross: num(payment.grossPay ?? payment.baseSalary ?? payment.salary),
+          deduction: num(payment.deduction),
+          paid: num(payment.netPay ?? payment.amount ?? payment.paidAmount),
+          method: firstString(payment.paymentMethod, 'Cash'),
+          status: firstString(payment.status, 'Paid'),
+        }))
+      if (paidRows.length) {
+        return makeReport({
+          key: reportKey, title: 'Salary Payment Report', currency,
+          columns: [
+            { key: 'date', label: 'Date' },
+            { key: 'month', label: 'Month' },
+            { key: 'name', label: 'Staff Name' },
+            { key: 'role', label: 'Role' },
+            { key: 'gross', label: `Gross (${currency})`, numeric: true },
+            { key: 'deduction', label: `Deduction (${currency})`, numeric: true },
+            { key: 'paid', label: `Net Paid (${currency})`, numeric: true },
+            { key: 'method', label: 'Method' },
+            { key: 'status', label: 'Status' },
+          ],
+          rows: paidRows,
+          amountKey: 'paid',
+          totalLabel: 'Total Salary Paid',
+          calculatedTotal: paidRows.reduce((s, r) => s + num(r.paid), 0),
+          extraSummary: [
+            { label: 'Gross', value: `${currency} ${paidRows.reduce((s, r) => s + num(r.gross), 0).toLocaleString()}` },
+            { label: 'Deductions', value: `${currency} ${paidRows.reduce((s, r) => s + num(r.deduction), 0).toLocaleString()}` },
+          ],
+        })
+      }
+
       const rows = staff
         .filter(matchStudent)
         .map((member) => ({
           name: firstString(member.name, member.fullName, member.displayName, member.email, 'Staff'),
           role: firstString(member.role, member.designation, 'Staff'),
           salary: num(member.salary ?? member.monthlySalary ?? member.baseSalary ?? member.pay),
+          salaryType: firstString(member.salaryType, 'monthly'),
+          status: firstString(member.salaryStatus, member.status, 'active'),
         }))
         .filter((row) => row.salary > 0 || true)
       return makeReport({
-        key: reportKey, title: 'Salary Report', currency,
+        key: reportKey, title: 'Salary Profile Report', currency,
         columns: [
           { key: 'name', label: 'Staff Name' },
           { key: 'role', label: 'Role' },
           { key: 'salary', label: `Salary (${currency})`, numeric: true },
+          { key: 'salaryType', label: 'Type' },
+          { key: 'status', label: 'Status' },
         ],
         rows, amountKey: 'salary', totalLabel: 'Total Salary',
         calculatedTotal: rows.reduce((s, r) => s + num(r.salary), 0),
@@ -334,12 +379,19 @@ export function buildSchoolReport(reportKey, ctx) {
       const totalExpenses = expenses
         .filter((e) => inWindow(recordDate(e, ['date', 'createdAt']), dateWindow))
         .filter(activeExpense)
+        .filter((e) => String(e.source || e.sourceModule || '').toLowerCase() !== 'school_payroll' && String(e.sourceModule || '').toLowerCase() !== 'payroll')
         .filter((e) => (approvedOnly ? isApprovedExpense(e) : true))
         .reduce((s, e) => s + expenseValue(e), 0)
-      const net = collected - totalExpenses
+      const salaryPaid = (salaryPayments || [])
+        .filter((p) => inWindow(recordDate(p, ['paymentDate', 'paidAt', 'createdAt']), dateWindow))
+        .filter(approvedSalaryPayment)
+        .reduce((s, p) => s + num(p.netPay ?? p.amount ?? p.paidAmount), 0)
+      const totalOutflow = totalExpenses + salaryPaid
+      const net = collected - totalOutflow
       const rows = [
         { line: 'Total Fee Collection', type: 'Income', amount: collected },
         { line: 'Total Expenses', type: 'Expense', amount: -totalExpenses },
+        { line: 'Salary Payments', type: 'Payroll', amount: -salaryPaid },
         { line: 'Net Profit / Loss', type: net >= 0 ? 'Profit' : 'Loss', amount: net },
       ]
       return makeReport({
@@ -355,6 +407,7 @@ export function buildSchoolReport(reportKey, ctx) {
         extraSummary: [
           { label: 'Income', value: `${currency} ${collected.toLocaleString()}` },
           { label: 'Expense', value: `${currency} ${totalExpenses.toLocaleString()}` },
+          { label: 'Salary Paid', value: `${currency} ${salaryPaid.toLocaleString()}` },
         ],
       })
     }

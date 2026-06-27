@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
-import { collection, doc, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc, writeBatch } from 'firebase/firestore'
+import { collection, doc, onSnapshot, orderBy, query, serverTimestamp, updateDoc, writeBatch } from 'firebase/firestore'
 import { db } from '../../lib/firebase.js'
 import useAuth from '../../context/useAuth.js'
 import { clientSafeMessage } from '../../lib/errorHandler.js'
 import { isBackendAdminEmail } from '../../lib/roles.js'
 import { buildApprovedSubscriptionPayload } from '../../lib/subscriptionApproval.js'
+import { listWorkerUpgradeRequests, updateWorkerUpgradeRequestStatus } from '../../lib/upgradeWorker.js'
 
 function StatusPill({ value }) {
   const style =
@@ -32,8 +33,11 @@ export default function UpgradeRequests() {
   console.log('[Admin Auth] UpgradeRequests admin check:', user?.email, backendAdminAllowed ? 'allowed' : 'blocked')
   const firebaseEnabled = Boolean(db)
   const [items, setItems] = useState([])
+  const [workerItems, setWorkerItems] = useState([])
   const [loading, setLoading] = useState(() => firebaseEnabled)
+  const [workerLoading, setWorkerLoading] = useState(false)
   const [error, setError] = useState('')
+  const [workerError, setWorkerError] = useState('')
   const [updatingId, setUpdatingId] = useState('')
 
   useEffect(() => {
@@ -55,12 +59,42 @@ export default function UpgradeRequests() {
     return () => unsubscribe()
   }, [firebaseEnabled])
 
+  useEffect(() => {
+    if (!backendAdminAllowed || !user?.getIdToken) return undefined
+    let cancelled = false
+    async function loadWorkerRequests() {
+      setWorkerLoading(true)
+      setWorkerError('')
+      try {
+        const idToken = await user.getIdToken()
+        const rows = await listWorkerUpgradeRequests(idToken, 200)
+        if (!cancelled) setWorkerItems(rows)
+      } catch (e) {
+        if (!cancelled) setWorkerError(clientSafeMessage(e, 'Failed to load Worker upgrade requests.', { context: 'Worker upgrade requests load' }))
+      } finally {
+        if (!cancelled) setWorkerLoading(false)
+      }
+    }
+    loadWorkerRequests()
+    const timer = window.setInterval(loadWorkerRequests, 30000)
+    return () => {
+      cancelled = true
+      window.clearInterval(timer)
+    }
+  }, [backendAdminAllowed, user])
+
+  const allItems = useMemo(
+    () => [...workerItems, ...items]
+      .sort((a, b) => new Date(b.createdAt || b.updatedAt || 0).getTime() - new Date(a.createdAt || a.updatedAt || 0).getTime()),
+    [items, workerItems],
+  )
+
   const stats = useMemo(() => {
-    const total = items.length
-    const pending = items.filter((x) => x.approvalStatus === 'pending').length
-    const approved = items.filter((x) => x.approvalStatus === 'approved').length
+    const total = allItems.length
+    const pending = allItems.filter((x) => x.approvalStatus === 'pending').length
+    const approved = allItems.filter((x) => x.approvalStatus === 'approved').length
     return { total, pending, approved }
-  }, [items])
+  }, [allItems])
 
   const updateApproval = async (item, approvalStatus) => {
     if (!db) return
@@ -72,7 +106,14 @@ export default function UpgradeRequests() {
     if (!id) return
     setUpdatingId(id)
     try {
+      const isWorkerRequest = item.source === 'cloudflare-d1'
+      const idToken = isWorkerRequest ? await user.getIdToken() : ''
       if (approvalStatus !== 'approved') {
+        if (isWorkerRequest) {
+          const result = await updateWorkerUpgradeRequestStatus(idToken, id, approvalStatus)
+          setWorkerItems((current) => current.map((row) => (row.id === id ? result.request || { ...row, approvalStatus, status: approvalStatus } : row)))
+          return
+        }
         await updateDoc(doc(db, 'upgradeRequests', id), {
           status: approvalStatus,
           approvalStatus,
@@ -108,8 +149,10 @@ export default function UpgradeRequests() {
         updatedAt: subscriptionPayload.updatedAt,
       }
       console.log('[Subscription Approval] payload', { requestId: id, workspaceId, ownerId, subscriptionPayload })
-      console.log('[Subscription Approval] request update', { path: `upgradeRequests/${id}`, requestUpdate })
-      batch.update(doc(db, 'upgradeRequests', id), requestUpdate)
+      if (!isWorkerRequest) {
+        console.log('[Subscription Approval] request update', { path: `upgradeRequests/${id}`, requestUpdate })
+        batch.update(doc(db, 'upgradeRequests', id), requestUpdate)
+      }
       console.log('[Subscription Approval] user update', { path: `users/${ownerId}`, subscriptionPayload })
       batch.set(doc(db, 'users', ownerId), subscriptionPayload, { merge: true })
       console.log('[Subscription Approval] workspace update', { path: `workspaces/${workspaceId}`, subscriptionPayload })
@@ -123,7 +166,7 @@ export default function UpgradeRequests() {
         },
         { merge: true },
       )
-      batch.set(doc(db, 'platformPayments', id), {
+      batch.set(doc(db, 'platformPayments', isWorkerRequest ? `d1-${id}` : id), {
         clientEmail: item.clientEmail || item.email || '',
         workspaceId,
         workspaceName: item.workspaceName || '',
@@ -142,12 +185,17 @@ export default function UpgradeRequests() {
         approvedAt: subscriptionPayload.approvedAt,
         subscriptionExpiresAt: subscriptionPayload.subscriptionExpiresAt,
         nextBillingDate: subscriptionPayload.nextBillingDate,
-        source: 'upgradeRequests',
+        source: isWorkerRequest ? 'cloudflare-d1-upgradeRequests' : 'upgradeRequests',
         sourceId: id,
         updatedAt: subscriptionPayload.updatedAt,
       }, { merge: true })
       await batch.commit()
+      if (isWorkerRequest) {
+        const result = await updateWorkerUpgradeRequestStatus(idToken, id, 'approved')
+        setWorkerItems((current) => current.map((row) => (row.id === id ? result.request || { ...row, ...requestUpdate } : row)))
+      }
       setError('')
+      setWorkerError('')
     } catch (error) {
       const raw = String(error?.message || error || '')
       setError(/missing or insufficient permissions|permission-denied|permission denied/i.test(raw)
@@ -184,8 +232,14 @@ export default function UpgradeRequests() {
         <div className="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-rose-100">
           Firebase is not configured.
         </div>
-      ) : error ? (
-        <div className="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-rose-100">{error}</div>
+      ) : error || workerError ? (
+        <div className="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-rose-100">{error || workerError}</div>
+      ) : null}
+
+      {workerLoading ? (
+        <div className="rounded-2xl border border-sky-400/20 bg-sky-500/10 p-4 text-sm text-sky-100">
+          Syncing Cloudflare D1 upgrade requests…
+        </div>
       ) : null}
 
       <div className="overflow-x-auto rounded-2xl border border-white/10 bg-white/5">
@@ -202,17 +256,18 @@ export default function UpgradeRequests() {
           <div>Status</div>
           <div className="text-right">Actions</div>
         </div>
-        {loading ? (
+        {loading && !allItems.length ? (
           <div className="px-4 py-6 text-sm text-slate-200/80">Loading…</div>
-        ) : items.length === 0 ? (
+        ) : allItems.length === 0 ? (
           <div className="px-4 py-6 text-sm text-slate-200/80">No requests yet.</div>
         ) : (
           <div className="divide-y divide-white/10">
-            {items.map((item) => (
-              <div key={item.id} className="grid grid-cols-[1.15fr_0.75fr_0.7fr_1fr_0.9fr_0.9fr_0.9fr_1.05fr_0.75fr_1fr] gap-0 px-4 py-4 text-sm">
+            {allItems.map((item) => (
+              <div key={`${item.source || 'firestore'}-${item.id}`} className="grid grid-cols-[1.15fr_0.75fr_0.7fr_1fr_0.9fr_0.9fr_0.9fr_1.05fr_0.75fr_1fr] gap-0 px-4 py-4 text-sm">
                 <div className="min-w-0">
                   <p className="truncate font-semibold text-white">{item.email || item.userName || item.userId || 'Unknown'}</p>
                   <div className="mt-1 flex flex-wrap gap-2 text-xs text-slate-300">
+                    {item.source === 'cloudflare-d1' ? <span className="rounded-full border border-cyan-400/20 bg-cyan-400/10 px-2 py-0.5 font-semibold text-cyan-100">D1 + R2</span> : null}
                     {item.userId ? <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5">{item.userId}</span> : null}
                     {proofUrl(item) ? (
                       <a

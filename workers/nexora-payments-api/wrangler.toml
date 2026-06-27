@@ -9,8 +9,19 @@ APP_BASE_URL = "https://nexorasolution.online"
 ALLOWED_ORIGINS = "https://nexorasolution.online,https://www.nexorasolution.online,http://localhost:5173,http://127.0.0.1:5173"
 PKR_PER_USD = "278.2732"
 
+[[d1_databases]]
+binding = "UPGRADE_DB"
+database_name = "nexora-upgrade-requests"
+database_id = "58ca4308-9eb6-44cb-bd76-be062d94b4b8"
+
+[[r2_buckets]]
+binding = "UPGRADE_SCREENSHOTS"
+bucket_name = "nexora-upgrade-screenshots"
+
 # Set with `wrangler secret put`; never commit values:
 # NOWPAYMENTS_API_KEY
 # NOWPAYMENTS_IPN_SECRET
 # FIREBASE_PAYMENT_SERVICE_EMAIL
 # FIREBASE_PAYMENT_SERVICE_PASSWORD
+# BACKEND_ADMIN_EMAILS (optional comma-separated list for D1 upgrade request review)
+# R2_PUBLIC_BASE_URL (optional, otherwise Worker screenshot route is used)

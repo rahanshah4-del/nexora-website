@@ -33,6 +33,7 @@ import {
   increment,
   limit,
   onSnapshot,
+  orderBy,
   query,
   serverTimestamp,
   setDoc,
@@ -94,6 +95,7 @@ import {
   formatPricingAmount,
 } from '../../crm/lib/whatsappPricing.js'
 import { buildApprovedSubscriptionPayload } from '../../lib/subscriptionApproval.js'
+import { listWorkerUpgradeRequests, updateWorkerUpgradeRequestStatus } from '../../lib/upgradeWorker.js'
 import { createWorkspaceNotification, workspaceNotificationTargets } from '../../crm/lib/notifications.js'
 import EmailMarketing from './EmailMarketing.jsx'
 import AdminBusinessServices from './BusinessServices.jsx'
@@ -473,10 +475,13 @@ function useControlCentreData() {
         sourceErrors: { ...(current.sourceErrors || {}), [key]: message },
       }))
     }
-    const listen = (key, collectionName, rowLimit = 300) => {
+    const listen = (key, collectionName, rowLimit = 300, sortField = '') => {
       try {
+        const collectionQuery = sortField
+          ? query(collection(db, collectionName), orderBy(sortField, 'desc'), limit(rowLimit))
+          : query(collection(db, collectionName), limit(rowLimit))
         return onSnapshot(
-          query(collection(db, collectionName), limit(rowLimit)),
+          collectionQuery,
           (snap) => setRows(key, snap.docs.map(normalizeSnapDoc)),
           (error) => {
             setRows(key, [])
@@ -523,8 +528,8 @@ function useControlCentreData() {
       listen('clientSessions', 'clientSessions', 300),
       listen('userPresence', 'userPresence', 300),
       listen('platformSettings', 'platformSettings', 20),
-      listen('analyticsEvents', 'analyticsEvents', 1000),
-      listen('userSessions', 'userSessions', 500),
+      listen('analyticsEvents', 'analyticsEvents', 1000, 'createdAt'),
+      listen('userSessions', 'userSessions', 500, 'lastActiveAt'),
       listenGroup('whatsappSettings', 'whatsappSettings', 500),
       listen('businessServiceRequests', 'businessServiceRequests', 300),
     ]
@@ -706,10 +711,35 @@ export default function ControlCentre() {
   })
   const [promoDeleteTarget, setPromoDeleteTarget] = useState(null)
   const [promoEditingId, setPromoEditingId] = useState('')
+  const [workerUpgradeRequests, setWorkerUpgradeRequests] = useState([])
+  const [workerUpgradeError, setWorkerUpgradeError] = useState('')
   const whatsappPricingApi = useWhatsappPricing({ enabled: true })
   const [whatsappPricingDraft, setWhatsappPricingDraft] = useState(defaultWhatsappPricing)
   const backendAdminAllowed = isBackendAdminEmail(user?.email)
   console.log('[Admin Auth] ControlCentre admin check:', user?.email, backendAdminAllowed ? 'allowed' : 'blocked')
+
+  useEffect(() => {
+    if (!backendAdminAllowed || !user?.getIdToken) return undefined
+    let cancelled = false
+    async function loadWorkerUpgradeRequests() {
+      try {
+        const token = await user.getIdToken()
+        const rows = await listWorkerUpgradeRequests(token, 200)
+        if (!cancelled) {
+          setWorkerUpgradeRequests(rows)
+          setWorkerUpgradeError('')
+        }
+      } catch (error) {
+        if (!cancelled) setWorkerUpgradeError(clientSafeMessage(error, 'Cloudflare upgrade requests are not available.'))
+      }
+    }
+    loadWorkerUpgradeRequests()
+    const timer = window.setInterval(loadWorkerUpgradeRequests, 30000)
+    return () => {
+      cancelled = true
+      window.clearInterval(timer)
+    }
+  }, [backendAdminAllowed, user])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -796,13 +826,18 @@ export default function ControlCentre() {
   }, [whatsappPricingApi.pricing])
 
   const payments = data.platformPayments
+  const upgradeRequests = useMemo(
+    () => [...workerUpgradeRequests, ...data.upgradeRequests]
+      .sort((a, b) => (toDate(b.createdAt || b.updatedAt)?.getTime() || 0) - (toDate(a.createdAt || a.updatedAt)?.getTime() || 0)),
+    [data.upgradeRequests, workerUpgradeRequests],
+  )
   const stats = useMemo(() => {
     const now = new Date()
     const paidPayments = payments.filter(isPaid)
     const materializedUpgradeIds = new Set(
       paidPayments.flatMap((row) => [row.id, row.sourceId].filter(Boolean).map(String)),
     )
-    const approvedUpgradeFallbacks = data.upgradeRequests.filter((row) =>
+    const approvedUpgradeFallbacks = upgradeRequests.filter((row) =>
       isPaid(row) && !materializedUpgradeIds.has(String(row.id)),
     )
     // Approved upgrade requests are copied into platformPayments. Count the
@@ -826,11 +861,11 @@ export default function ControlCentre() {
       blockedClients: data.workspaces.filter((row) => statusValue(row.status || row.accountStatus) === 'blocked').length,
       onlineNow: onlineUsers.length,
       todayLogins,
-      pendingUpgrades: data.upgradeRequests.filter((row) => statusValue(row.approvalStatus || row.status) === 'pending').length,
+      pendingUpgrades: upgradeRequests.filter((row) => statusValue(row.approvalStatus || row.status) === 'pending').length,
       monthlyRevenue,
       totalRevenue: revenueRows.reduce((sum, row) => sum + amountValue(row), 0),
     }
-  }, [data.upgradeRequests, data.users, data.workspaces, onlineUsers.length, payments])
+  }, [data.users, data.workspaces, onlineUsers.length, payments, upgradeRequests])
 
   const systemHealth = useMemo(() => {
     const now = Date.now()
@@ -838,7 +873,7 @@ export default function ControlCentre() {
     const sourceErrorEntries = Object.entries(sourceErrors)
     const pendingPayments = payments.filter((row) => ['pending', 'pending_approval', 'waiting', 'confirming'].includes(statusValue(row.paymentStatus || row.status)))
     const stalePendingPayments = pendingPayments.filter((row) => (ageMinutes(row.createdAt || row.paymentDate) || 0) > 1440)
-    const pendingUpgrades = data.upgradeRequests.filter((row) => statusValue(row.approvalStatus || row.status) === 'pending')
+    const pendingUpgrades = upgradeRequests.filter((row) => statusValue(row.approvalStatus || row.status) === 'pending')
     const stalePendingUpgrades = pendingUpgrades.filter((row) => (ageMinutes(row.createdAt || row.requestedAt) || 0) > 1440)
     const openTickets = data.supportTickets.filter((row) => ['open', 'pending', 'in_progress', 'new'].includes(statusValue(row.status || 'open')))
     const urgentTickets = openTickets.filter((row) => ['urgent', 'critical', 'high'].includes(statusValue(row.priority)))
@@ -875,6 +910,14 @@ export default function ControlCentre() {
       return date && date.getTime() > latest ? date.getTime() : latest
     }, 0)
     const analyticsStale = latestAnalyticsAt ? now - latestAnalyticsAt > 24 * 60 * 60 * 1000 : data.analyticsEvents.length === 0
+    const recentFrontendEvents = data.analyticsEvents.filter((row) => {
+      const date = toDate(row.timestamp || row.createdAt)
+      return date && now - date.getTime() <= 24 * 60 * 60 * 1000 && String(row.eventType || '').startsWith('frontend_')
+    })
+    const frontendRuntimeIssues = recentFrontendEvents.filter((row) => ['frontend_runtime_error', 'frontend_unhandled_rejection', 'frontend_error_boundary'].includes(row.eventType))
+    const frontendOfflineIssues = recentFrontendEvents.filter((row) => row.eventType === 'frontend_offline')
+    const latestFrontendIssue = [...frontendRuntimeIssues, ...frontendOfflineIssues]
+      .sort((a, b) => (toDate(b.timestamp || b.createdAt)?.getTime() || 0) - (toDate(a.timestamp || a.createdAt)?.getTime() || 0))[0]
     const latestPresenceAt = [...data.clientSessions, ...data.userPresence, ...data.userSessions].reduce((latest, row) => {
       const date = toDate(row.lastActiveAt || row.updatedAt || row.createdAt)
       return date && date.getTime() > latest ? date.getTime() : latest
@@ -962,7 +1005,7 @@ export default function ControlCentre() {
       {
         id: 'support-tickets',
         title: 'Support tickets SLA',
-        status: urgentTickets.length || staleTickets.length ? 'critical' : openTickets.length ? 'warning' : 'healthy',
+        status: urgentTickets.length ? 'critical' : staleTickets.length || openTickets.length ? 'warning' : 'healthy',
         detail: urgentTickets.length ? `${urgentTickets.length} urgent/high open tickets.` : staleTickets.length ? `${staleTickets.length} open tickets stale more than 24h.` : `${openTickets.length} open tickets.`,
         actionTab: 'support',
         metric: openTickets.length,
@@ -978,8 +1021,8 @@ export default function ControlCentre() {
       {
         id: 'workspace-isolation',
         title: 'Workspace isolation',
-        status: duplicateWorkspaceIds.length || orphanUsers.length || workspacesMissingOwner.length ? 'critical' : 'healthy',
-        detail: duplicateWorkspaceIds.length ? `Duplicate workspace ids: ${listSummary(duplicateWorkspaceIds)}` : orphanUsers.length ? `${orphanUsers.length} users point to missing workspace ids.` : workspacesMissingOwner.length ? `${workspacesMissingOwner.length} workspaces missing owner id.` : 'Workspace ids, owners, and user links look isolated.',
+        status: duplicateWorkspaceIds.length ? 'critical' : orphanUsers.length || workspacesMissingOwner.length ? 'warning' : 'healthy',
+        detail: duplicateWorkspaceIds.length ? `Duplicate workspace ids: ${listSummary(duplicateWorkspaceIds)}` : orphanUsers.length ? `${orphanUsers.length} user links are isolated from active workspaces and need mapping review.` : workspacesMissingOwner.length ? `${workspacesMissingOwner.length} workspaces missing owner id; access remains isolated until fixed.` : 'Workspace ids, owners, and user links look isolated.',
         actionTab: 'clients',
         metric: duplicateWorkspaceIds.length + orphanUsers.length + workspacesMissingOwner.length,
       },
@@ -994,7 +1037,7 @@ export default function ControlCentre() {
       {
         id: 'plans-pricing',
         title: 'Plans and payment accounts',
-        status: !enabledPlans.length || paymentPlaceholders.length ? 'critical' : usingDefaultPlansOnly ? 'warning' : 'healthy',
+        status: !enabledPlans.length ? 'critical' : paymentPlaceholders.length || usingDefaultPlansOnly ? 'warning' : 'healthy',
         detail: !enabledPlans.length ? 'No enabled plans found.' : paymentPlaceholders.length ? `${paymentPlaceholders.length} payment accounts still use placeholder values.` : usingDefaultPlansOnly ? 'Using built-in plan defaults; no platformPlans docs saved yet.' : `${enabledPlans.length} enabled plans and payment accounts configured.`,
         actionTab: !enabledPlans.length ? 'plans' : 'settings',
         metric: enabledPlans.length,
@@ -1022,6 +1065,18 @@ export default function ControlCentre() {
         detail: latestAnalyticsAt ? `Last event ${ageLabel(new Date(latestAnalyticsAt))}.` : 'No analytics events received yet.',
         actionTab: 'visitorAnalytics',
         metric: data.analyticsEvents.length,
+      },
+      {
+        id: 'frontend-health',
+        title: 'Frontend runtime health',
+        status: frontendRuntimeIssues.length ? 'critical' : frontendOfflineIssues.length ? 'warning' : 'healthy',
+        detail: frontendRuntimeIssues.length
+          ? `${frontendRuntimeIssues.length} frontend errors in the last 24h. Latest: ${latestFrontendIssue?.buttonLabel || 'runtime error'}`
+          : frontendOfflineIssues.length
+            ? `${frontendOfflineIssues.length} offline/sync interruptions in the last 24h.`
+            : 'No frontend runtime or offline issues reported in the last 24h.',
+        actionTab: 'visitorAnalytics',
+        metric: frontendRuntimeIssues.length + frontendOfflineIssues.length,
       },
       {
         id: 'presence',
@@ -1069,6 +1124,7 @@ export default function ControlCentre() {
     payments,
     platformPlans,
     platformSettings,
+    upgradeRequests,
     user?.email,
     whatsappByWorkspace,
   ])
@@ -1085,7 +1141,7 @@ export default function ControlCentre() {
         createdAt: row.createdAt,
         route: 'clients',
       }))
-    const upgradeItems = data.upgradeRequests
+    const upgradeItems = upgradeRequests
       .filter((row) => statusValue(row.approvalStatus || row.status) === 'pending')
       .slice(0, 5)
       .map((row) => ({
@@ -1141,7 +1197,7 @@ export default function ControlCentre() {
         route: 'clients',
       }))
     const healthItems = systemHealth.issues
-      .filter((item) => statusValue(item.status) === 'critical')
+      .filter((item) => statusValue(item.status) === 'critical' || item.id === 'frontend-health')
       .slice(0, 8)
       .map((item) => ({
         id: `health-${item.id}`,
@@ -1154,7 +1210,7 @@ export default function ControlCentre() {
     return [...healthItems, ...businessServiceItems, ...signupItems, ...upgradeItems, ...paymentItems, ...ticketItems, ...expiredItems]
       .sort((a, b) => (toDate(b.createdAt)?.getTime() || 0) - (toDate(a.createdAt)?.getTime() || 0))
       .slice(0, 20)
-  }, [data.businessServiceRequests, data.supportTickets, data.upgradeRequests, data.workspaces, payments, systemHealth])
+  }, [data.businessServiceRequests, data.supportTickets, data.workspaces, payments, systemHealth, upgradeRequests])
 
   const allNotifications = useMemo(
     () => derivedNotifications.filter((item) => !backendNotificationStates[backendNotificationDocId(item.id)]?.cleared),
@@ -1172,6 +1228,10 @@ export default function ControlCentre() {
       const lastActive = toDate(row.lastActiveAt)
       return lastActive && Date.now() - lastActive.getTime() <= 5 * 60 * 1000
     })
+    const recentEventSessions = new Set(events.filter((row) => {
+      const eventTime = toDate(row.timestamp || row.createdAt)
+      return eventTime && Date.now() - eventTime.getTime() <= 5 * 60 * 1000
+    }).map((row) => row.sessionId || row.visitorId).filter(Boolean))
     const moduleClicks = new Map()
     events.filter((row) => row.eventType === 'module_click').forEach((row) => {
       const key = row.moduleName || row.buttonLabel || 'Unknown'
@@ -1188,7 +1248,7 @@ export default function ControlCentre() {
       signupCompleted,
       loginCompleted: events.filter((row) => row.eventType === 'login_completed').length,
       dropOffs: Math.max(0, signupStarted - signupCompleted),
-      activeSessions: activeSessions.length,
+      activeSessions: Math.max(activeSessions.length, recentEventSessions.size),
       mostClickedModule,
     }
   }, [data.analyticsEvents, data.userSessions])
@@ -1259,7 +1319,7 @@ export default function ControlCentre() {
     search,
     ['id', 'uid', 'email', 'name', 'fullName', 'displayName', 'role'],
   )
-  const upgradeRows = searchRows(data.upgradeRequests, search, ['id', 'email', 'clientEmail', 'workspaceName', 'requestedPlan', 'transactionId', 'paymentMethod', 'status'])
+  const upgradeRows = searchRows(upgradeRequests, search, ['id', 'email', 'clientEmail', 'workspaceName', 'requestedPlan', 'transactionId', 'paymentMethod', 'status', 'source'])
   const paymentRows = searchRows(
     payments
       .filter((row) => transactionStatusFilter === 'all' || statusValue(row.paymentStatus || row.status) === transactionStatusFilter)
@@ -1811,6 +1871,7 @@ export default function ControlCentre() {
   async function approveUpgrade(row) {
     if (!backendAdminAllowed) throw new Error('Backend admin access required.')
     if (isPaid(row)) throw new Error('This upgrade request is already approved.')
+    const isWorkerRequest = row.source === 'cloudflare-d1'
     const workspaceId = row.workspaceId || row.ownerId || row.userId
     const workspace = workspacesById.get(workspaceId) || {}
     const ownerId = row.ownerId || row.uid || row.userId || workspace.ownerId || workspace.userId
@@ -1841,10 +1902,16 @@ export default function ControlCentre() {
       updatedAt: subscriptionPayload.updatedAt,
     }
     console.log('[Subscription Approval] payload', { requestId: row.id, workspaceId, ownerId, subscriptionPayload })
-    console.log('[Subscription Approval] request update', { path: `upgradeRequests/${row.id}`, requestUpdate })
-    await updateDoc(row.ref || doc(db, 'upgradeRequests', row.id), requestUpdate)
+    if (isWorkerRequest) {
+      const token = await user.getIdToken()
+      const result = await updateWorkerUpgradeRequestStatus(token, row.id, 'approved')
+      setWorkerUpgradeRequests((current) => current.map((item) => (item.id === row.id ? result.request || { ...item, ...requestUpdate } : item)))
+    } else {
+      console.log('[Subscription Approval] request update', { path: `upgradeRequests/${row.id}`, requestUpdate })
+      await updateDoc(row.ref || doc(db, 'upgradeRequests', row.id), requestUpdate)
+    }
     await syncWorkspaceAndUserSubscription({ workspaceId, ownerId, payload: subscriptionPayload })
-    await setDoc(doc(db, 'platformPayments', row.id), {
+    await setDoc(doc(db, 'platformPayments', isWorkerRequest ? `d1-${row.id}` : row.id), {
       clientEmail: row.clientEmail || row.email || row.ownerEmail || '',
       workspaceId: workspaceId || '',
       workspaceName: row.workspaceName || row.companyName || '',
@@ -1866,7 +1933,7 @@ export default function ControlCentre() {
       approvedByEmail: subscriptionPayload.approvedByEmail,
       approvedAt: subscriptionPayload.approvedAt,
       paymentDate: row.paymentDate || subscriptionPayload.approvedAt,
-      source: 'upgradeRequests',
+      source: isWorkerRequest ? 'cloudflare-d1-upgradeRequests' : 'upgradeRequests',
       sourceId: row.id,
       subscriptionExpiresAt: subscriptionPayload.subscriptionExpiresAt,
       nextBillingDate: subscriptionPayload.nextBillingDate,
@@ -1892,7 +1959,7 @@ export default function ControlCentre() {
       status: 'active',
       subscriptionStatus: 'active',
       paymentStatus: 'paid',
-      source: 'upgradeRequests',
+      source: isWorkerRequest ? 'cloudflare-d1-upgradeRequests' : 'upgradeRequests',
       sourceId: row.id,
     }, { merge: true })
     const email = userEmail(row)
@@ -1927,6 +1994,11 @@ export default function ControlCentre() {
     if (!backendAdminAllowed) throw new Error('Backend admin access required.')
     const adminEmail = user?.email || ''
     const now = serverTimestamp()
+    if (row.source === 'cloudflare-d1') {
+      const token = await user.getIdToken()
+      const result = await updateWorkerUpgradeRequestStatus(token, row.id, 'rejected')
+      setWorkerUpgradeRequests((current) => current.map((item) => (item.id === row.id ? result.request || { ...item, status: 'rejected', approvalStatus: 'rejected', paymentStatus: 'rejected' } : item)))
+    } else {
     await updateDoc(row.ref || doc(db, 'upgradeRequests', row.id), {
       status: 'rejected',
       approvalStatus: 'rejected',
@@ -1937,6 +2009,7 @@ export default function ControlCentre() {
       rejectedAt: now,
       updatedAt: now,
     })
+    }
     const email = userEmail(row)
     if (email) {
       const template = upgradeRejectedEmail({
@@ -2169,7 +2242,7 @@ export default function ControlCentre() {
   ]
 
   const upgradeColumns = [
-    { key: 'client', label: 'Client', render: (row) => <div><p className="font-black text-slate-900">{row.clientEmail || row.email || row.ownerEmail || '-'}</p><p className="text-xs text-slate-500">{row.workspaceName || row.companyName || row.workspaceId || '-'}</p></div> },
+    { key: 'client', label: 'Client', render: (row) => <div><p className="font-black text-slate-900">{row.clientEmail || row.email || row.ownerEmail || '-'}</p><p className="text-xs text-slate-500">{row.workspaceName || row.companyName || row.workspaceId || '-'}</p>{row.source === 'cloudflare-d1' ? <span className="mt-1 inline-flex rounded-full bg-cyan-50 px-2 py-0.5 text-[10px] font-black text-cyan-700 ring-1 ring-cyan-100">D1 + R2</span> : null}</div> },
     { key: 'plan', label: 'Plan', render: (row) => row.requestedPlan || row.plan || '-' },
     { key: 'amount', label: 'Amount', render: (row) => <div><p className="font-black text-slate-900">{money(amountValue(row), rowCurrency(row))}</p>{Number(row.discountAmount || 0) > 0 ? <p className="text-xs text-emerald-700">{money(row.originalAmount, rowCurrency(row))} - {money(row.discountAmount, rowCurrency(row))}</p> : null}</div> },
     { key: 'promoCode', label: 'Promo', render: (row) => row.promoCode ? <span className="font-mono text-xs font-black text-violet-700">{row.promoCode}</span> : '-' },
@@ -2301,7 +2374,7 @@ export default function ControlCentre() {
 
         <div className="grid gap-4 xl:grid-cols-[1.4fr_0.7fr]">
           <Panel title="Pending Upgrade Requests" action={<ShellButton onClick={() => setActiveTab('upgrades')}>Review</ShellButton>}>
-            <AdminTable rows={data.upgradeRequests.filter((row) => statusValue(row.approvalStatus || row.status) === 'pending').slice(0, 6)} columns={upgradeColumns.slice(0, 7)} emptyTitle="No pending upgrade requests" maxHeight="max-h-[18rem]" />
+            <AdminTable rows={upgradeRequests.filter((row) => statusValue(row.approvalStatus || row.status) === 'pending').slice(0, 6)} columns={upgradeColumns.slice(0, 7)} emptyTitle="No pending upgrade requests" maxHeight="max-h-[18rem]" />
           </Panel>
           <Panel title="System Health" action={<ShellButton onClick={() => setActiveTab('systemHealth')}>Open</ShellButton>}>
             <div className="grid grid-cols-3 gap-2">
@@ -3474,7 +3547,12 @@ export default function ControlCentre() {
       case 'users':
         return Users()
       case 'upgrades':
-        return <Panel title="Upgrade Requests" action={<ShellButton>Firestore: upgradeRequests</ShellButton>}><AdminTable rows={upgradeRows} columns={upgradeColumns} emptyTitle="No upgrade requests found" /></Panel>
+        return (
+          <Panel title="Upgrade Requests" action={<ShellButton>{workerUpgradeError ? 'D1 sync warning' : 'Firestore + D1/R2'}</ShellButton>}>
+            {workerUpgradeError ? <p className="mb-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800">{workerUpgradeError}</p> : null}
+            <AdminTable rows={upgradeRows} columns={upgradeColumns} emptyTitle="No upgrade requests found" />
+          </Panel>
+        )
       case 'transactions':
         return Transactions()
       case 'plans':

@@ -69,13 +69,18 @@ function clean(value) {
   return typeof value === 'string' ? value.trim() : value || ''
 }
 
+function currentPagePath() {
+  if (typeof window === 'undefined') return ''
+  return `${window.location.pathname || ''}${window.location.search || ''}${window.location.hash || ''}`
+}
+
 export async function trackAnalyticsEvent(eventType, data = {}) {
   if (!db || !eventType) return
   const visitorId = getVisitorId()
   const sessionId = getSessionId()
   const payload = {
     eventType,
-    page: data.page || (typeof window !== 'undefined' ? window.location.pathname : ''),
+    page: data.page || currentPagePath(),
     buttonLabel: clean(data.buttonLabel),
     moduleName: clean(data.moduleName),
     userId: clean(data.userId || data.uid),
@@ -97,8 +102,15 @@ export async function trackAnalyticsEvent(eventType, data = {}) {
     createdAt: serverTimestamp(),
   }
 
+  let eventSaved = false
   try {
     await addDoc(collection(db, 'analyticsEvents'), payload)
+    eventSaved = true
+  } catch (error) {
+    if (import.meta.env.DEV) console.warn('[Nexora Analytics] event not saved', error)
+  }
+
+  try {
     await setDoc(
       doc(db, 'userSessions', sessionId),
       {
@@ -121,7 +133,7 @@ export async function trackAnalyticsEvent(eventType, data = {}) {
       { merge: true },
     )
   } catch (error) {
-    if (import.meta.env.DEV) console.warn('[Nexora Analytics] event not saved', error)
+    if (import.meta.env.DEV && eventSaved) console.warn('[Nexora Analytics] session not saved', error)
   }
 }
 

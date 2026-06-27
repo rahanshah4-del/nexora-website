@@ -8,7 +8,7 @@ import { useWorkspaceAccess } from '../../hooks/useWorkspaceAccess.js'
 import logoUrl from '../../../assets/logo/nexora-logo.svg'
 import { isDeveloperOwnerAccount, labelForBusinessType, normalizeBusinessType, selectedModulesForSidebar } from '../../data/moduleAccess.js'
 import { resolveWorkspaceName } from '../../../lib/workspaceName.js'
-import { HiOutlineSquares2X2 } from 'react-icons/hi2'
+import { HiOutlineBanknotes, HiOutlineSquares2X2 } from 'react-icons/hi2'
 
 const priorityRoutes = [
   '/app/dashboard',
@@ -159,6 +159,7 @@ const SCHOOL_ERP_SIDEBAR_ORDER = [
   'accountStatements',
   'approvals',
   'team',
+  'schoolPayroll',
   'notifications',
   'reports',
   'settings',
@@ -417,6 +418,16 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
       }
       return allowedRoutes.has(item.to) || item.comingSoon
     })
+    if (normalizedType === 'School ERP' && items.some((item) => item.key === 'team') && !items.some((item) => item.key === 'schoolPayroll')) {
+      const teamIndex = items.findIndex((item) => item.key === 'team')
+      items.splice(teamIndex + 1, 0, {
+        key: 'schoolPayroll',
+        to: '/app/payroll',
+        label: 'Salary / Payroll',
+        icon: HiOutlineBanknotes,
+        comingSoon: false,
+      })
+    }
     if (!items.some((item) => item.key === 'reports')) {
       const navItem = orderedSidebarItems.find((item) => item.to === '/app/reports')
       items.push({

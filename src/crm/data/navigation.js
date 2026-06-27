@@ -58,6 +58,7 @@ export const navItems = [
   { label: 'Sales Pipeline', to: '/app/pipeline', icon: HiOutlineRectangleStack },
   { label: 'Follow-Up Automation', to: '/app/follow-ups', icon: HiOutlineInboxStack },
   { label: 'Team Management', to: '/app/team', icon: HiOutlineShieldCheck },
+  { label: 'Salary / Payroll', to: '/app/payroll', icon: HiOutlineBanknotes },
   { label: 'HR Dashboard', to: '/app/hr', icon: HiOutlineBriefcase },
   { label: 'Invoices', to: '/app/invoices', icon: HiOutlineReceiptPercent },
   { label: 'Expenses', to: '/app/expenses', icon: HiOutlineDocumentText },

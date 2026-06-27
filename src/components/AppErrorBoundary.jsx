@@ -1,4 +1,5 @@
 import { Component } from 'react'
+import { trackAnalyticsEvent } from '../lib/analyticsTracking.js'
 
 export default class AppErrorBoundary extends Component {
   state = { error: null }
@@ -9,6 +10,12 @@ export default class AppErrorBoundary extends Component {
 
   componentDidCatch(error, info) {
     console.error('[Nexora App] Runtime error', error, info)
+    trackAnalyticsEvent('frontend_error_boundary', {
+      page: typeof window !== 'undefined' ? `${window.location.pathname || ''}${window.location.search || ''}${window.location.hash || ''}` : '',
+      buttonLabel: String(error?.message || error || 'React render error').slice(0, 160),
+      moduleName: 'Frontend health',
+      status: 'critical',
+    })
   }
 
   render() {
@@ -16,7 +23,7 @@ export default class AppErrorBoundary extends Component {
       return (
         <main className="grid min-h-screen place-items-center bg-slate-50 px-4 text-slate-950">
           <section className="w-full max-w-xl rounded-3xl border border-rose-200 bg-white p-6 shadow-sm">
-            <p className="text-sm font-black uppercase tracking-[0.2em] text-rose-600">Nexora</p>
+            <p className="text-sm font-black uppercase tracking-[0.2em] text-rose-600">⚠️ Nexora</p>
             <h1 className="mt-3 text-2xl font-black tracking-tight">Application could not render</h1>
             <p className="mt-2 text-sm leading-6 text-slate-600">
               A runtime error was caught before the page could finish loading. Please reload or sign in again.

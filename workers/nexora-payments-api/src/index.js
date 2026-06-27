@@ -31,6 +31,77 @@ function normalizePromoCode(value) {
   return clean(value).toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0, 32)
 }
 
+function requireUpgradeStorage(env) {
+  if (!env.UPGRADE_DB) throw new Error('Upgrade D1 database binding is not configured.')
+  if (!env.UPGRADE_SCREENSHOTS) throw new Error('Upgrade R2 bucket binding is not configured.')
+}
+
+function adminEmails(env) {
+  return String(env.BACKEND_ADMIN_EMAILS || 'rahanshah4@gmail.com')
+    .split(',')
+    .map((email) => lower(email))
+    .filter(Boolean)
+}
+
+function isBackendAdmin(claims, env) {
+  return adminEmails(env).includes(lower(claims?.email))
+}
+
+function safeFileName(value) {
+  return clean(value).replace(/[^a-zA-Z0-9._-]+/g, '_').slice(0, 120) || 'payment-proof.png'
+}
+
+function publicScreenshotUrl(request, env, requestId) {
+  const base = clean(env.R2_PUBLIC_BASE_URL).replace(/\/$/, '')
+  if (base) return `${base}/${encodeURIComponent(requestId)}`
+  return `${new URL(request.url).origin}/api/upgrades/${encodeURIComponent(requestId)}/screenshot`
+}
+
+function normalizeUpgradeStatus(value) {
+  const status = lower(value || 'pending')
+  return ['pending', 'approved', 'rejected', 'waiting', 'paid', 'active', 'closed'].includes(status) ? status : 'pending'
+}
+
+function mapUpgradeRow(row = {}) {
+  return {
+    id: row.id,
+    source: 'cloudflare-d1',
+    sourceCollection: 'cloudflareD1UpgradeRequests',
+    clientId: row.client_id || '',
+    uid: row.uid || '',
+    userId: row.uid || '',
+    createdBy: row.uid || '',
+    ownerId: row.uid || '',
+    email: row.email || '',
+    workspaceId: row.workspace_id || '',
+    workspaceName: row.workspace_name || '',
+    businessType: row.business_type || row.module || '',
+    requestedPlan: row.plan || '',
+    selectedPlan: row.plan || '',
+    planId: row.plan_id || '',
+    billingCycle: row.billing_cycle || 'monthly',
+    amount: Number(row.amount || 0),
+    amountPaid: Number(row.amount || 0),
+    currency: row.currency || 'PKR',
+    paymentMethod: row.payment_method || '',
+    paymentMethodId: row.payment_method || '',
+    transactionId: row.transaction_id || '',
+    senderName: row.sender_name || '',
+    senderNumber: row.sender_number || '',
+    paymentDate: row.payment_date || '',
+    notes: row.notes || '',
+    paymentProof: row.screenshot_url || '',
+    screenshotUrl: row.screenshot_url || '',
+    screenshotKey: row.screenshot_key || '',
+    screenshotName: row.screenshot_name || '',
+    status: row.status || 'pending',
+    approvalStatus: row.status === 'approved' ? 'approved' : row.status === 'rejected' ? 'rejected' : 'pending',
+    paymentStatus: row.status === 'approved' || row.status === 'paid' || row.status === 'active' ? 'paid' : row.status || 'pending',
+    createdAt: row.created_at || '',
+    updatedAt: row.updated_at || '',
+  }
+}
+
 function evaluatePromo(promo, { code, planId, billingCycle, amount }) {
   if (!promo || promo.active !== true || promo.code !== code) throw new Error('Promo code was not found or is inactive.')
   const originalAmount = Number(amount)
@@ -665,6 +736,212 @@ async function handleNowPaymentsIpn(request, env) {
   }
 }
 
+async function handleManualUpgradeRequest(request, env) {
+  const origin = request.headers.get('Origin') || ''
+  if (!allowedOrigins(env).includes(origin)) return jsonResponse(request, env, { ok: false, error: 'Origin not allowed.' }, 403)
+  try {
+    requireUpgradeStorage(env)
+  } catch (error) {
+    return jsonResponse(request, env, { ok: false, error: error.message }, 503)
+  }
+
+  const authHeader = request.headers.get('Authorization') || ''
+  const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : ''
+  let claims
+  try {
+    claims = await verifyFirebaseToken(idToken, env)
+  } catch {
+    return jsonResponse(request, env, { ok: false, error: 'Sign in again before submitting the upgrade request.' }, 401)
+  }
+
+  let input
+  try {
+    input = await request.formData()
+  } catch {
+    return jsonResponse(request, env, { ok: false, error: 'Invalid upgrade request form.' }, 400)
+  }
+
+  try {
+    const file = input.get('screenshot')
+    if (!file || typeof file.arrayBuffer !== 'function') throw new Error('Payment screenshot is required.')
+    const contentType = clean(file.type || 'image/png').toLowerCase()
+    if (!contentType.startsWith('image/')) throw new Error('Only image screenshots are supported.')
+    if (Number(file.size || 0) > 6 * 1024 * 1024) throw new Error('Screenshot must be 6MB or smaller.')
+
+    const user = await firestoreGet(env, idToken, `users/${claims.sub}`) || {}
+    const workspaceId = clean(user.workspaceId) || clean(input.get('workspaceId')) || claims.sub
+    const workspace = await firestoreGet(env, idToken, `workspaces/${workspaceId}`)
+    if (!workspace) throw new Error('Workspace record is missing.')
+    const role = lower(user.role || claims.role)
+    const canUpgrade = claims.sub === workspaceId
+      || workspace.ownerId === claims.sub
+      || workspace.createdBy === claims.sub
+      || (user.workspaceId === workspaceId && ['owner', 'admin'].includes(role))
+    if (!canUpgrade) throw new Error('Only the workspace owner/admin can submit an upgrade request.')
+
+    const amount = Number(input.get('amount') || input.get('amountPaid') || 0)
+    if (!Number.isFinite(amount) || amount <= 0) throw new Error('Enter the paid amount before submitting your upgrade request.')
+    const plan = firstString(input.get('plan'), input.get('requestedPlan'), 'Standard')
+    const requestId = crypto.randomUUID().replaceAll('-', '')
+    const now = new Date().toISOString()
+    const fileName = safeFileName(file.name)
+    const screenshotKey = `upgrade-requests/${workspaceId}/${requestId}/${fileName}`
+    await env.UPGRADE_SCREENSHOTS.put(screenshotKey, await file.arrayBuffer(), {
+      httpMetadata: { contentType },
+      customMetadata: {
+        requestId,
+        workspaceId,
+        uid: claims.sub,
+        email: lower(claims.email || user.email),
+      },
+    })
+    const screenshotUrl = publicScreenshotUrl(request, env, requestId)
+    const row = {
+      id: requestId,
+      client_id: firstString(workspace.clientId, workspace.shortId, workspace.shortCode, workspaceId),
+      uid: claims.sub,
+      email: lower(claims.email || user.email),
+      workspace_id: workspaceId,
+      workspace_name: firstString(workspace.workspaceName, workspace.companyName, workspace.businessName, 'Nexora Workspace'),
+      module: firstString(input.get('module'), workspace.selectedBusinessType, workspace.businessType, user.selectedBusinessType, user.businessType),
+      business_type: firstString(input.get('businessType'), workspace.selectedBusinessType, workspace.businessType, user.selectedBusinessType, user.businessType),
+      plan_id: normalizePlanId(input.get('planId') || plan),
+      plan,
+      billing_cycle: normalizeBillingCycle(input.get('billingCycle')),
+      amount,
+      currency: firstString(input.get('currency'), 'PKR').toUpperCase(),
+      payment_method: firstString(input.get('paymentMethod'), 'Manual'),
+      transaction_id: clean(input.get('transactionId')).slice(0, 160),
+      sender_name: clean(input.get('senderName')).slice(0, 160),
+      sender_number: clean(input.get('senderNumber')).slice(0, 80),
+      payment_date: clean(input.get('paymentDate')).slice(0, 40),
+      notes: clean(input.get('notes')).slice(0, 1000),
+      screenshot_key: screenshotKey,
+      screenshot_url: screenshotUrl,
+      screenshot_name: fileName,
+      screenshot_type: contentType,
+      status: 'pending',
+      created_at: now,
+      updated_at: now,
+    }
+    row.raw_json = JSON.stringify({
+      originalAmount: Number(input.get('originalAmount') || amount) || amount,
+      discountAmount: Number(input.get('discountAmount') || 0) || 0,
+      promoCode: clean(input.get('promoCode')),
+      paymentMethodId: clean(input.get('paymentMethodId')),
+      currentPlan: clean(input.get('currentPlan')),
+    })
+    await env.UPGRADE_DB.prepare(
+      `INSERT INTO upgrade_requests (
+        id, client_id, uid, email, workspace_id, workspace_name, module, business_type, plan_id, plan,
+        billing_cycle, amount, currency, payment_method, transaction_id, sender_name, sender_number,
+        payment_date, notes, screenshot_key, screenshot_url, screenshot_name, screenshot_type,
+        status, created_at, updated_at, raw_json
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    )
+      .bind(
+        row.id,
+        row.client_id,
+        row.uid,
+        row.email,
+        row.workspace_id,
+        row.workspace_name,
+        row.module,
+        row.business_type,
+        row.plan_id,
+        row.plan,
+        row.billing_cycle,
+        row.amount,
+        row.currency,
+        row.payment_method,
+        row.transaction_id,
+        row.sender_name,
+        row.sender_number,
+        row.payment_date,
+        row.notes,
+        row.screenshot_key,
+        row.screenshot_url,
+        row.screenshot_name,
+        row.screenshot_type,
+        row.status,
+        row.created_at,
+        row.updated_at,
+        row.raw_json,
+      )
+      .run()
+    return jsonResponse(request, env, { ok: true, request: mapUpgradeRow(row) })
+  } catch (error) {
+    console.error('[Payments Worker] manual upgrade failed', error?.message || String(error))
+    return jsonResponse(request, env, { ok: false, error: error?.message || 'Unable to submit upgrade request.' }, 400)
+  }
+}
+
+async function handleListUpgradeRequests(request, env) {
+  const authHeader = request.headers.get('Authorization') || ''
+  const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : ''
+  let claims
+  try {
+    claims = await verifyFirebaseToken(idToken, env)
+  } catch {
+    return jsonResponse(request, env, { ok: false, error: 'Backend admin sign-in required.' }, 401)
+  }
+  if (!isBackendAdmin(claims, env)) return jsonResponse(request, env, { ok: false, error: 'Backend admin access required.' }, 403)
+  try {
+    if (!env.UPGRADE_DB) throw new Error('Upgrade D1 database binding is not configured.')
+    const limitValue = Math.min(300, Math.max(1, Number(new URL(request.url).searchParams.get('limit') || 150)))
+    const result = await env.UPGRADE_DB.prepare('SELECT * FROM upgrade_requests ORDER BY created_at DESC LIMIT ?').bind(limitValue).all()
+    return jsonResponse(request, env, { ok: true, requests: (result.results || []).map(mapUpgradeRow) })
+  } catch (error) {
+    return jsonResponse(request, env, { ok: false, error: error?.message || 'Unable to load upgrade requests.' }, 500)
+  }
+}
+
+async function handleUpdateUpgradeRequestStatus(request, env, requestId) {
+  const authHeader = request.headers.get('Authorization') || ''
+  const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : ''
+  let claims
+  try {
+    claims = await verifyFirebaseToken(idToken, env)
+  } catch {
+    return jsonResponse(request, env, { ok: false, error: 'Backend admin sign-in required.' }, 401)
+  }
+  if (!isBackendAdmin(claims, env)) return jsonResponse(request, env, { ok: false, error: 'Backend admin access required.' }, 403)
+  try {
+    if (!env.UPGRADE_DB) throw new Error('Upgrade D1 database binding is not configured.')
+    const body = await request.json().catch(() => ({}))
+    const status = normalizeUpgradeStatus(body.status || body.approvalStatus)
+    const now = new Date().toISOString()
+    await env.UPGRADE_DB.prepare('UPDATE upgrade_requests SET status = ?, updated_at = ? WHERE id = ?')
+      .bind(status, now, requestId)
+      .run()
+    const row = await env.UPGRADE_DB.prepare('SELECT * FROM upgrade_requests WHERE id = ?').bind(requestId).first()
+    if (!row) return jsonResponse(request, env, { ok: false, error: 'Upgrade request not found.' }, 404)
+    return jsonResponse(request, env, { ok: true, request: mapUpgradeRow(row) })
+  } catch (error) {
+    return jsonResponse(request, env, { ok: false, error: error?.message || 'Unable to update upgrade request.' }, 500)
+  }
+}
+
+async function handleUpgradeScreenshot(request, env, requestId) {
+  try {
+    requireUpgradeStorage(env)
+    const row = await env.UPGRADE_DB.prepare('SELECT screenshot_key, screenshot_type, screenshot_name FROM upgrade_requests WHERE id = ?').bind(requestId).first()
+    if (!row?.screenshot_key) return new Response('Screenshot not found', { status: 404, headers: corsHeaders(request, env) })
+    const object = await env.UPGRADE_SCREENSHOTS.get(row.screenshot_key)
+    if (!object) return new Response('Screenshot not found', { status: 404, headers: corsHeaders(request, env) })
+    return new Response(object.body, {
+      headers: {
+        ...corsHeaders(request, env),
+        'Content-Type': row.screenshot_type || object.httpMetadata?.contentType || 'application/octet-stream',
+        'Content-Disposition': `inline; filename="${safeFileName(row.screenshot_name)}"`,
+        'Cache-Control': 'private, max-age=300',
+      },
+    })
+  } catch (error) {
+    return new Response(error?.message || 'Unable to load screenshot', { status: 500, headers: corsHeaders(request, env) })
+  }
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url)
@@ -675,10 +952,25 @@ export default {
         service: 'nexora-payments-api',
         nowPaymentsConfigured: Boolean(env.NOWPAYMENTS_API_KEY && env.NOWPAYMENTS_IPN_SECRET),
         firebaseServiceConfigured: Boolean(env.FIREBASE_PAYMENT_SERVICE_EMAIL && env.FIREBASE_PAYMENT_SERVICE_PASSWORD),
+        upgradeStorageConfigured: Boolean(env.UPGRADE_DB && env.UPGRADE_SCREENSHOTS),
       })
     }
     if (request.method === 'POST' && url.pathname === '/api/payments/invoice') {
       return handleCreateInvoice(request, env)
+    }
+    if (request.method === 'POST' && url.pathname === '/api/upgrades/manual') {
+      return handleManualUpgradeRequest(request, env)
+    }
+    if (request.method === 'GET' && url.pathname === '/api/upgrades/requests') {
+      return handleListUpgradeRequests(request, env)
+    }
+    const statusMatch = url.pathname.match(/^\/api\/upgrades\/requests\/([^/]+)\/status$/)
+    if (request.method === 'PATCH' && statusMatch) {
+      return handleUpdateUpgradeRequestStatus(request, env, statusMatch[1])
+    }
+    const screenshotMatch = url.pathname.match(/^\/api\/upgrades\/([^/]+)\/screenshot$/)
+    if (request.method === 'GET' && screenshotMatch) {
+      return handleUpgradeScreenshot(request, env, screenshotMatch[1])
     }
     if (request.method === 'POST' && url.pathname === '/webhooks/nowpayments') {
       return handleNowPaymentsIpn(request, env)

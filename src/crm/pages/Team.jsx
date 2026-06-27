@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import Card from '../components/ui/Card.jsx'
 import PageHeader from '../components/ui/PageHeader.jsx'
 import Badge from '../components/ui/Badge.jsx'
@@ -460,6 +461,7 @@ export default function TeamPage() {
   const { userId, businessType, accessPlan, workspaceId, workspaceDoc, firebaseUser, userDoc } = useUser()
   const { members, loading, source, error, permissionKeys, addMember, updateMember, deleteMember } = useTeamMembers()
   const [toast, setToast] = useState(null)
+  const [searchParams, setSearchParams] = useSearchParams()
   const [tab, setTab] = useState('members')
   const [memberSearch, setMemberSearch] = useState('')
   const filteredMembers = useMemo(() => {
@@ -486,6 +488,8 @@ export default function TeamPage() {
   const perms = useTeamPermissions({ permissionKeys: matrixPermissionKeys })
   const staffApi = useStaffPermissions()
   const activity = useActivityLogs()
+  const currency = userDoc?.currency || workspaceDoc?.currency || 'PKR'
+  const workspaceName = workspaceDoc?.companyName || workspaceDoc?.schoolName || userDoc?.companyName || 'Nexora School'
 
   const showToast = (tone, message, timeout = 2200) => {
     setToast({ tone, message })
@@ -508,7 +512,22 @@ export default function TeamPage() {
     { key: 'permissions', label: 'Permissions' },
     { key: 'access', label: 'Access Control' },
     { key: 'activity', label: 'Activity Logs' },
-  ]
+  ].filter(Boolean)
+
+  useEffect(() => {
+    const requestedTab = searchParams.get('tab')
+    if (requestedTab && tabs.some((item) => item.key === requestedTab)) {
+      setTab(requestedTab)
+    }
+  }, [searchParams, tabs])
+
+  const selectTab = (nextTab) => {
+    setTab(nextTab)
+    const params = new URLSearchParams(searchParams)
+    if (nextTab === 'members') params.delete('tab')
+    else params.set('tab', nextTab)
+    setSearchParams(params, { replace: true })
+  }
 
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
@@ -536,7 +555,7 @@ export default function TeamPage() {
             type="button"
             variant={tab === t.key ? 'subtle' : 'ghost'}
             className="rounded-2xl px-3 py-2 text-xs"
-            onClick={() => setTab(t.key)}
+            onClick={() => selectTab(t.key)}
           >
             {t.label}
           </Button>

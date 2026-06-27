@@ -30,6 +30,7 @@ export default function AnalyticsTracker() {
   const { user } = useAuth()
   const contextRef = useRef({})
   const lastClickAt = useRef(0)
+  const lastIssueRef = useRef({})
 
   useEffect(() => {
     let cancelled = false
@@ -74,6 +75,48 @@ export default function AnalyticsTracker() {
       window.removeEventListener('beforeunload', onUnload)
     }
   }, [location.pathname])
+
+  useEffect(() => {
+    const recordFrontendIssue = (eventType, message, status = 'critical') => {
+      const cleanMessage = String(message || 'Frontend issue detected').replace(/\s+/g, ' ').trim().slice(0, 160)
+      const key = `${eventType}:${location.pathname}:${cleanMessage}`
+      const now = Date.now()
+      if (now - (lastIssueRef.current[key] || 0) < 60000) return
+      lastIssueRef.current[key] = now
+      trackAnalyticsEvent(eventType, {
+        ...contextRef.current,
+        page: `${location.pathname}${location.search || ''}${location.hash || ''}`,
+        buttonLabel: cleanMessage,
+        moduleName: 'Frontend health',
+        status,
+      })
+    }
+
+    const onError = (event) => {
+      recordFrontendIssue('frontend_runtime_error', event?.message || event?.error?.message || 'Runtime error', 'critical')
+    }
+    const onUnhandledRejection = (event) => {
+      const reason = event?.reason
+      recordFrontendIssue('frontend_unhandled_rejection', reason?.message || reason || 'Unhandled promise rejection', 'critical')
+    }
+    const onOffline = () => {
+      recordFrontendIssue('frontend_offline', 'Internet disconnected. Live sync is paused.', 'warning')
+    }
+    const onOnline = () => {
+      recordFrontendIssue('frontend_online', 'Internet restored. Live sync is active.', 'healthy')
+    }
+
+    window.addEventListener('error', onError)
+    window.addEventListener('unhandledrejection', onUnhandledRejection)
+    window.addEventListener('offline', onOffline)
+    window.addEventListener('online', onOnline)
+    return () => {
+      window.removeEventListener('error', onError)
+      window.removeEventListener('unhandledrejection', onUnhandledRejection)
+      window.removeEventListener('offline', onOffline)
+      window.removeEventListener('online', onOnline)
+    }
+  }, [location.hash, location.pathname, location.search])
 
   return null
 }

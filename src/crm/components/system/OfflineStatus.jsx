@@ -19,5 +19,5 @@ export default function OfflineStatus() {
     }
   }, [])
 
-  return <Badge variant={online ? 'success' : 'warning'}>{online ? 'Live Sync' : 'Sync paused'}</Badge>
+  return <Badge variant={online ? 'success' : 'warning'}>{online ? '✅ Live Sync' : '📡 Sync paused'}</Badge>
 }

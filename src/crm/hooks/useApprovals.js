@@ -169,6 +169,7 @@ function createApproval(type, sourceCollection, row) {
     row.studentName ||
     row.tenantName ||
     row.clientName ||
+    row.staffName ||
     row.title ||
     row.name ||
     row.userName ||
@@ -299,6 +300,7 @@ export function useApprovals() {
   const [teamMembers, setTeamMembers] = useState([])
   const [clients, setClients] = useState([])
   const [expenses, setExpenses] = useState([])
+  const [salaryPayments, setSalaryPayments] = useState([])
   const [accountTransactions, setAccountTransactions] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -312,6 +314,7 @@ export function useApprovals() {
         setTeamMembers([])
         setClients([])
         setExpenses([])
+        setSalaryPayments([])
         setAccountTransactions([])
         setLoading(false)
         setError(db ? '' : 'Secure Cloud Sync is not available right now.')
@@ -324,7 +327,7 @@ export function useApprovals() {
       setError('')
     })
 
-    const expectedLoads = 7
+    const expectedLoads = 8
     let loaded = 0
     function markLoaded() {
       loaded += 1
@@ -416,6 +419,17 @@ export function useApprovals() {
       onCollectionError('expenses'),
     )
 
+    const unsubSalaryPayments = subscribeWorkspaceCollection(
+      workspaceId,
+      'staffSalaryPayments',
+      businessType,
+      (rows) => {
+        setSalaryPayments(rows.filter(isApprovalRecord))
+        markLoaded()
+      },
+      onCollectionError('staffSalaryPayments'),
+    )
+
     const unsubAccountTransactions = subscribeWorkspaceCollection(
       workspaceId,
       'accountTransactions',
@@ -434,6 +448,7 @@ export function useApprovals() {
       unsubTeam?.()
       unsubClients?.()
       unsubExpenses?.()
+      unsubSalaryPayments?.()
       unsubAccountTransactions?.()
     }
   }, [businessType, canApprove, userId, workspaceId])
@@ -453,10 +468,11 @@ export function useApprovals() {
       ...teamMembers.map((row) => createApproval('Staff access request', 'teamMembers', row)),
       ...clients.map((row) => createApproval('Client approval', 'clients', row)),
       ...expenses.map((row) => createApproval('Expense approval', 'expenses', row)),
+      ...salaryPayments.map((row) => createApproval('Salary payment approval', 'staffSalaryPayments', row)),
       ...accountTransactions.map((row) => createApproval(transactionApprovalType(row), 'accountTransactions', row)),
     ]
     return rows.sort((a, b) => b.sortAt - a.sortAt)
-  }, [accountTransactions, approvalRecords, businessType, clients, expenses, invoices, payments, teamMembers])
+  }, [accountTransactions, approvalRecords, businessType, clients, expenses, invoices, payments, salaryPayments, teamMembers])
 
   const pendingApprovals = useMemo(() => approvals.filter(isReviewableApproval), [approvals])
   const approvedApprovals = useMemo(
@@ -479,6 +495,7 @@ export function useApprovals() {
       upgradeRequests: 0,
       staffRequests: teamMembers.filter((row) => isPendingRecord(row)).length,
       expenseRequests: expenses.filter((row) => isPendingRecord(row)).length,
+      salaryRequests: salaryPayments.filter((row) => isPendingRecord(row)).length,
       accountRequests: accountTransactions.filter((row) => isPendingRecord(row)).length,
       pending: pendingApprovals.length,
       approved: approvedApprovals.length,
@@ -486,7 +503,7 @@ export function useApprovals() {
       total: pendingApprovals.length,
       })
     },
-    [accountTransactions, approvalRecords, approvedApprovals.length, expenses, invoices, payments, pendingApprovals.length, rejectedApprovals.length, teamMembers],
+    [accountTransactions, approvalRecords, approvedApprovals.length, expenses, invoices, payments, pendingApprovals.length, rejectedApprovals.length, salaryPayments, teamMembers],
   )
 
   const approve = useCallback(
@@ -696,6 +713,51 @@ export function useApprovals() {
           })
         }
 
+        if (approval.sourceCollection === 'staffSalaryPayments') {
+          const salaryAmount = amountValue(row)
+          batch.update(doc(db, workspaceCollectionPath(workspaceId, 'staffSalaryPayments'), approval.sourceId), {
+            approvalStatus: 'approved',
+            status: 'paid',
+            paymentStatus: 'paid',
+            businessType,
+            requiresApproval: false,
+            approvedBy: userId,
+            approvedAt: now,
+            paidAt: now,
+            updatedAt: now,
+          })
+          batch.set(doc(db, workspaceCollectionPath(workspaceId, 'expenses'), `salary-${approval.sourceId}`), {
+            title: `Salary - ${row.staffName || approval.customer}`,
+            category: 'Salary',
+            amount: salaryAmount,
+            currency: row.currency || approval.currency || 'PKR',
+            paymentMethod: row.paymentMethod || 'Payroll',
+            paidBy: row.staffName || approval.customer,
+            status: 'paid',
+            approvalStatus: 'approved',
+            paymentStatus: 'paid',
+            requiresApproval: false,
+            notes: row.remarks || `Payroll salary for ${row.salaryMonth || ''}`.trim(),
+            receiptReference: row.transactionRef || approval.sourceId,
+            source: 'school_payroll',
+            sourceModule: 'payroll',
+            payrollPaymentId: approval.sourceId,
+            staffId: row.staffId || '',
+            staffName: row.staffName || approval.customer,
+            salaryMonth: row.salaryMonth || '',
+            approvedBy: userId,
+            approvedAt: now,
+            paidAt: now,
+            ownerId: workspaceId,
+            userId: workspaceId,
+            workspaceId,
+            businessType,
+            createdBy: row.createdBy || userId,
+            createdAt: row.createdAt || now,
+            updatedAt: now,
+          }, { merge: true })
+        }
+
         if (approval.sourceCollection === 'accountTransactions') {
           if (isClosedStatus(row.approvalStatus || row.status)) return { ok: false, error: 'This transaction has already been reviewed.' }
           batch.update(doc(db, workspaceCollectionPath(workspaceId, 'accountTransactions'), approval.sourceId), {
@@ -737,6 +799,8 @@ export function useApprovals() {
                 ? 'Subscription upgraded'
                 : approval.sourceCollection === 'payments'
                   ? 'Payment approved'
+                  : approval.sourceCollection === 'staffSalaryPayments'
+                    ? 'Salary payment approved'
                   : approval.sourceCollection === 'expenses'
                     ? 'Expense approved'
                     : approval.sourceCollection === 'accountTransactions'
@@ -785,12 +849,14 @@ export function useApprovals() {
           title:
             approval.sourceCollection === 'payments'
               ? 'Payment approved'
+              : approval.sourceCollection === 'staffSalaryPayments'
+                ? 'Salary payment approved'
               : approval.sourceCollection === 'expenses'
                 ? 'Expense approved'
                 : 'Request approved',
           message: `${approval.type} for ${approval.customer} was approved.`,
           relatedId: approval.sourceId,
-          route: approval.sourceCollection === 'payments' || approval.sourceCollection === 'invoices' ? '/app/invoices' : '/app/approvals',
+          route: approval.sourceCollection === 'payments' || approval.sourceCollection === 'invoices' ? '/app/invoices' : approval.sourceCollection === 'staffSalaryPayments' ? '/app/payroll' : '/app/approvals',
           createdBy: userId,
           createdByEmail: firebaseUser?.email || userDoc?.email || '',
           metadata: { sourceCollection: approval.sourceCollection, amount: approval.amount, currency: approval.currency },
@@ -1077,6 +1143,19 @@ export function useApprovals() {
           })
         }
 
+        if (approval.sourceCollection === 'staffSalaryPayments') {
+          batch.update(doc(db, workspaceCollectionPath(workspaceId, 'staffSalaryPayments'), approval.sourceId), {
+            approvalStatus: 'rejected',
+            status: 'rejected',
+            paymentStatus: 'rejected',
+            businessType,
+            requiresApproval: false,
+            rejectedBy: userId,
+            rejectedAt: now,
+            updatedAt: now,
+          })
+        }
+
         if (approval.sourceCollection === 'accountTransactions') {
           batch.update(doc(db, workspaceCollectionPath(workspaceId, 'accountTransactions'), approval.sourceId), {
             approvalStatus: 'rejected',
@@ -1098,6 +1177,8 @@ export function useApprovals() {
           action:
             approval.sourceCollection === 'invoices'
               ? 'Invoice rejected'
+              : approval.sourceCollection === 'staffSalaryPayments'
+                ? 'Salary payment rejected'
               : approval.sourceCollection === 'accountTransactions'
                 ? accountActionLabel(approval.row, false)
                 : 'Approval rejected',
@@ -1127,7 +1208,7 @@ export function useApprovals() {
           title: 'Request rejected',
           message: `${approval.type} for ${approval.customer} was rejected.`,
           relatedId: approval.sourceId,
-          route: '/app/approvals',
+          route: approval.sourceCollection === 'staffSalaryPayments' ? '/app/payroll' : '/app/approvals',
           createdBy: userId,
           createdByEmail: firebaseUser?.email || userDoc?.email || '',
           metadata: { sourceCollection: approval.sourceCollection, amount: approval.amount, currency: approval.currency },

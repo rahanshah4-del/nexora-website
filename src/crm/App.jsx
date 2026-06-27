@@ -25,6 +25,7 @@ const AttendancePage = lazy(() => import('./pages/Attendance.jsx'))
 const SettingsPage = lazy(() => import('./pages/Settings.jsx'))
 const UpgradeBusinessPage = lazy(() => import('./pages/UpgradeBusiness.jsx'))
 const TeamPage = lazy(() => import('./pages/Team.jsx'))
+const SchoolPayrollPage = lazy(() => import('./pages/SchoolPayroll.jsx'))
 const InvoicesPage = lazy(() => import('./pages/Invoices.jsx'))
 const InvoiceCreatePage = lazy(() => import('./pages/InvoiceCreate.jsx'))
 const ExpensesPage = lazy(() => import('./pages/Expenses.jsx'))
@@ -87,6 +88,7 @@ export default function App() {
             <Route path="/app/follow-ups" element={gated(<FollowUpsPage />)} />
             <Route path="/app/hr" element={gated(<HRDashboardPage />)} />
             <Route path="/app/team" element={gated(<TeamPage />)} />
+            <Route path="/app/payroll" element={gated(<SchoolPayrollPage />)} />
             <Route path="/app/invoices" element={gated(<InvoicesPage />)} />
             <Route path="/app/invoices/create" element={gated(<InvoiceCreatePage />)} />
             <Route path="/app/expenses" element={gated(<ExpensesPage />)} />

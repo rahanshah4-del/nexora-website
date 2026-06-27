@@ -1,7 +1,6 @@
 import {
   HiOutlineArrowRightOnRectangle,
   HiOutlineCog6Tooth,
-  HiOutlineEllipsisHorizontal,
   HiOutlineSquares2X2,
 } from 'react-icons/hi2'
 import Avatar from '../ui/Avatar.jsx'
@@ -166,59 +165,6 @@ function TopNav({ onOpenSidebar, onSwitchProduct }) {
               <OfflineStatus />
               <BranchSwitcher />
             </div>
-            <Dropdown
-              className="shrink-0 2xl:hidden"
-              panelClassName="w-80 p-2"
-              trigger={() => (
-                <button
-                  type="button"
-                  className="focus-ring inline-grid h-10 w-10 place-items-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-sky-200 hover:text-sky-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-                  aria-label="Open workspace actions"
-                >
-                  <HiOutlineEllipsisHorizontal className="h-5 w-5" />
-                </button>
-              )}
-            >
-              {({ close }) => (
-                <div className="space-y-2">
-                  <div className="rounded-[1rem] border border-slate-200/80 bg-white/80 p-3 text-xs shadow-sm">
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="text-slate-500">Business</span>
-                      <span className="min-w-0 truncate font-semibold text-slate-900">{businessTypeLabel}</span>
-                    </div>
-                    <div className="mt-2 flex items-center justify-between gap-3">
-                      <span className="text-slate-500">Access</span>
-                      <span className="min-w-0 truncate font-semibold text-slate-900">{profileSummary.accessLabel}</span>
-                    </div>
-                  </div>
-                  <div className="grid gap-2 rounded-[1rem] border border-slate-200/80 bg-slate-50/80 p-2">
-                    <OfflineStatus />
-                    <BranchSwitcher />
-                  </div>
-                  <button
-                    type="button"
-                    className="focus-ring flex w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm hover:border-sky-200 hover:text-sky-700"
-                    onClick={() => {
-                      close()
-                      goToWorkspace(navigate, location)
-                    }}
-                  >
-                    Back to Workspace
-                  </button>
-                  <button
-                    type="button"
-                    className="focus-ring flex w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-3 py-2 text-xs font-bold text-white shadow-sm hover:bg-sky-700"
-                    onClick={() => {
-                      close()
-                      onSwitchProduct?.()
-                    }}
-                  >
-                    <HiOutlineSquares2X2 className="h-4 w-4" />
-                    Switch Product
-                  </button>
-                </div>
-              )}
-            </Dropdown>
             <Badge
               variant="info"
               className="hidden h-9 max-w-[18rem] shrink-0 items-center truncate px-3 font-semibold lg:inline-flex"

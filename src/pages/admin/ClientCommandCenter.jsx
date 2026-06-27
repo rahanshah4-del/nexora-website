@@ -112,6 +112,22 @@ function phoneFor(row = {}) {
   return firstValue(row.phone, row.phoneNumber, row.mobile, row.whatsapp, row.senderNumber, row.userPhone)
 }
 
+function ipFor(row = {}) {
+  const source = row || {}
+  return firstValue(
+    source.ipAddress,
+    source.lastIpAddress,
+    source.lastLoginIp,
+    source.loginIp,
+    source.clientIp,
+    source.clientIPAddress,
+    source.ip,
+    source.requestIp,
+    source.remoteAddress,
+    source.lastSeenIp,
+  )
+}
+
 function workspaceName(row = {}) {
   return firstValue(row.companyName, row.workspaceName, row.businessName, row.name, row.ownerName, row.email, row.id) || 'Client workspace'
 }
@@ -330,12 +346,12 @@ function StatusPill({ value }) {
 function DarkStatusPill({ value }) {
   const status = statusValue(value)
   const tone = resolvedStatuses.has(status) || ['active', 'paid', 'approved'].includes(status)
-    ? 'border-emerald-500/20 bg-emerald-500/15 text-emerald-300'
+    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
     : ['pending', 'trial', 'in_progress', 'open', 'new'].includes(status)
-      ? 'border-amber-500/20 bg-amber-500/15 text-amber-300'
+      ? 'border-amber-200 bg-amber-50 text-amber-700'
       : ['blocked', 'rejected', 'failed', 'expired', 'urgent', 'high'].includes(status)
-        ? 'border-rose-500/20 bg-rose-500/15 text-rose-300'
-        : 'border-slate-500/20 bg-slate-500/15 text-slate-300'
+        ? 'border-rose-200 bg-rose-50 text-rose-700'
+        : 'border-slate-200 bg-slate-100 text-slate-600'
   return <span className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-black capitalize ${tone}`}>{String(value || 'Unknown').replace(/_/g, ' ')}</span>
 }
 
@@ -365,8 +381,31 @@ function DarkActionButton({ icon: Icon, children, active = false, className = ''
       className={[
         'inline-flex h-9 items-center justify-center gap-2 rounded-lg px-3 text-xs font-black transition disabled:cursor-not-allowed disabled:opacity-50',
         active
-          ? 'border border-cyan-300/40 bg-gradient-to-r from-cyan-500 via-blue-600 to-fuchsia-600 text-white shadow-[0_14px_34px_-18px_rgba(34,211,238,0.85)]'
-          : 'border border-cyan-300/15 bg-slate-950/35 text-slate-100 hover:border-cyan-300/40 hover:bg-cyan-400/10 hover:text-white',
+          ? 'border border-blue-500/20 bg-gradient-to-r from-blue-600 via-cyan-500 to-violet-600 text-white shadow-[0_14px_34px_-18px_rgba(37,99,235,0.65)]'
+          : 'border border-slate-200 bg-white text-slate-700 shadow-sm hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700',
+        className,
+      ].join(' ')}
+      {...props}
+    >
+      <Icon className="h-4 w-4" />
+      {children}
+    </button>
+  )
+}
+
+function VividActionButton({ icon: Icon, children, tone = 'blue', className = '', ...props }) {
+  const tones = {
+    blue: 'border-blue-500 bg-blue-600 text-white shadow-[0_12px_28px_-18px_rgba(37,99,235,0.85)] hover:bg-blue-700',
+    emerald: 'border-emerald-500 bg-emerald-600 text-white shadow-[0_12px_28px_-18px_rgba(5,150,105,0.85)] hover:bg-emerald-700',
+    violet: 'border-violet-500 bg-violet-600 text-white shadow-[0_12px_28px_-18px_rgba(124,58,237,0.85)] hover:bg-violet-700',
+    amber: 'border-amber-400 bg-amber-400 text-slate-950 shadow-[0_12px_28px_-18px_rgba(245,158,11,0.85)] hover:bg-amber-500',
+  }
+  return (
+    <button
+      type="button"
+      className={[
+        'inline-flex h-9 items-center justify-center gap-2 rounded-lg border px-3 text-xs font-black transition disabled:cursor-not-allowed disabled:opacity-50',
+        tones[tone] || tones.blue,
         className,
       ].join(' ')}
       {...props}
@@ -395,35 +434,51 @@ function StatCard({ label, value, icon: Icon, tone }) {
 
 function DarkStatCard({ label, value, helper, icon: Icon, tone }) {
   return (
-    <section className="min-w-0 rounded-lg border border-cyan-300/15 bg-[linear-gradient(135deg,#111a2c_0%,#18245a_55%,#0f3146_100%)] p-4 shadow-[0_18px_55px_-42px_rgba(34,211,238,0.55)]">
+    <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
       <div className="flex items-center gap-4">
         <span className={`grid h-12 w-12 shrink-0 place-items-center rounded-full ${tone}`}>
           <Icon className="h-5 w-5" />
         </span>
         <div className="min-w-0">
-          <p className="truncate text-xs font-semibold text-slate-300">{label}</p>
-          <p className="mt-0.5 text-2xl font-black text-white">{value}</p>
-          <p className="mt-1 truncate text-xs font-semibold text-slate-400">{helper}</p>
+          <p className="truncate text-xs font-semibold text-slate-500">{label}</p>
+          <p className="mt-0.5 text-2xl font-black text-slate-950">{value}</p>
+          <p className="mt-1 truncate text-xs font-semibold text-slate-500">{helper}</p>
         </div>
       </div>
     </section>
   )
 }
 
-function Field({ label, value }) {
+function Field({ label, value, copyValue, onCopy }) {
+  const canCopy = Boolean(copyValue)
   return (
     <div className="min-w-0 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
-      <p className="text-[11px] font-black uppercase tracking-[0.1em] text-slate-400">{label}</p>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-[11px] font-black uppercase tracking-[0.1em] text-slate-400">{label}</p>
+        {canCopy ? (
+          <button type="button" className="rounded-md bg-white px-2 py-0.5 text-[10px] font-black text-blue-700 shadow-sm hover:bg-blue-50" onClick={() => onCopy?.(copyValue, label)}>
+            Copy
+          </button>
+        ) : null}
+      </div>
       <p className="mt-1 truncate text-sm font-bold text-slate-800">{value || '-'}</p>
     </div>
   )
 }
 
-function DarkField({ label, value }) {
+function DarkField({ label, value, copyValue, onCopy }) {
+  const canCopy = Boolean(copyValue)
   return (
-    <div className="min-w-0">
-      <p className="text-xs font-semibold text-slate-400">{label}</p>
-      <p className="mt-1 truncate text-sm font-bold text-slate-100">{value || '-'}</p>
+    <div className="min-w-0 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs font-semibold text-slate-500">{label}</p>
+        {canCopy ? (
+          <button type="button" className="rounded-md border border-blue-100 bg-white px-2 py-0.5 text-[10px] font-black text-blue-700 shadow-sm hover:bg-blue-50" onClick={() => onCopy?.(copyValue, label)}>
+            Copy
+          </button>
+        ) : null}
+      </div>
+      <p className="mt-1 truncate text-sm font-bold text-slate-900">{value || '-'}</p>
     </div>
   )
 }
@@ -462,73 +517,99 @@ function SimpleTable({ columns, rows, empty }) {
 function ModuleAccessBoard({ rows, access, onToggle, onGrantAll, onReset, busy, dark = false }) {
   const Button = dark ? DarkActionButton : ActionButton
   const StatusChip = dark ? DarkStatusPill : StatusPill
-  const shellClass = dark ? 'rounded-lg border border-white/10 bg-[#111827]' : 'rounded-2xl border border-slate-200 bg-white'
+  const shellClass = dark
+    ? 'overflow-hidden rounded-lg border border-cyan-300/15 bg-[linear-gradient(135deg,#0b1120_0%,#111827_58%,#0f172a_100%)] shadow-[0_18px_60px_-46px_rgba(34,211,238,0.5)]'
+    : 'overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm'
   const headerClass = dark ? 'border-white/10' : 'border-slate-100'
   const titleClass = dark ? 'text-white' : 'text-slate-950'
   const mutedClass = dark ? 'text-slate-400' : 'text-slate-500'
+  const panelClass = dark ? 'border-white/10 bg-white/[0.035]' : 'border-slate-200 bg-slate-50'
+  const rowClass = dark ? 'border-white/10 bg-slate-950/30 hover:border-cyan-300/30 hover:bg-cyan-400/5' : 'border-slate-200 bg-white hover:border-blue-200 hover:bg-blue-50/40'
   const grantedCount = rows.filter((row) => row.granted).length
   const lockedCount = rows.length - grantedCount
   const extraCount = Math.max(grantedCount - 1, 0)
+  const progress = rows.length ? Math.round((grantedCount / rows.length) * 100) : 0
 
   return (
     <section className={shellClass}>
-      <div className={`flex flex-col gap-3 border-b px-4 py-4 sm:flex-row sm:items-center sm:justify-between ${headerClass}`}>
-        <div className="min-w-0">
-          <p className={`text-sm font-black ${titleClass}`}>Client Services</p>
-          <p className={`mt-1 text-xs font-semibold ${mutedClass}`}>
-            {access.primary ? `Primary: ${labelForBusinessType(access.primary)}` : 'Primary module not set'}
-            {' '}
-            · {grantedCount} assigned
-            {' '}
-            · {extraCount} extra
-            {' '}
-            · {lockedCount} locked
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Button icon={HiOutlineSquares2X2} active={access.all} disabled={!rows.length || busy === 'module-access-all'} onClick={onGrantAll}>
-            Enable all modules
-          </Button>
-          <Button icon={HiOutlineShieldCheck} active={!access.special || access.allowed.length <= 1} disabled={!rows.length || busy === 'module-access-reset'} onClick={onReset}>
-            Reset primary only
-          </Button>
+      <div className={`border-b px-4 py-4 ${headerClass}`}>
+        <div className="flex flex-col gap-4">
+          <div className="flex min-w-0 items-start gap-3">
+            <span className={`relative grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-2xl text-2xl shadow-lg ${dark ? 'border border-cyan-300/25 bg-slate-950 shadow-cyan-950/40' : 'border border-blue-100 bg-white shadow-blue-100/80'}`}>
+              <span className="absolute inset-0 bg-[conic-gradient(from_130deg,#22d3ee,#2563eb,#a855f7,#fb7185,#22d3ee)] opacity-80" />
+              <span className={`absolute inset-[3px] rounded-[0.85rem] ${dark ? 'bg-slate-950/75' : 'bg-white/80'}`} />
+              <span className="relative">🧩</span>
+            </span>
+            <div className="min-w-0">
+              <p className={`text-lg font-black ${titleClass}`}>Client Services</p>
+              <p className={`mt-1 max-w-3xl text-sm font-semibold leading-6 ${mutedClass}`}>
+                Control which Nexora modules this client can use. Primary workspace stays locked, extras can be granted or removed anytime.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+            <div className={`min-w-0 rounded-2xl border p-3 ${panelClass}`}>
+              <div className="flex items-center justify-between gap-3">
+                <span className={`inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.14em] ${mutedClass}`}>
+                  <span aria-hidden="true">📊</span>
+                  Access coverage
+                </span>
+                <span className={`text-sm font-black ${titleClass}`}>{grantedCount}/{rows.length}</span>
+              </div>
+              <div className={`mt-2 h-2 overflow-hidden rounded-full ${dark ? 'bg-white/10' : 'bg-slate-200'}`}>
+                <div className="h-full rounded-full bg-gradient-to-r from-cyan-400 via-blue-500 to-violet-500" style={{ width: `${progress}%` }} />
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-black ${dark ? 'bg-sky-400/10 text-sky-100 ring-1 ring-sky-300/20' : 'bg-sky-50 text-sky-800 ring-1 ring-sky-100'}`}>
+                  <span className="text-sm">🏠</span>
+                  Primary: {access.primary ? labelForBusinessType(access.primary) : 'Not set'}
+                </span>
+                <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-black ${dark ? 'bg-emerald-400/10 text-emerald-100 ring-1 ring-emerald-300/20' : 'bg-emerald-50 text-emerald-800 ring-1 ring-emerald-100'}`}>
+                  <span className="text-sm">✅</span>
+                  {extraCount} extra
+                </span>
+                <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-black ${dark ? 'bg-rose-400/10 text-rose-100 ring-1 ring-rose-300/20' : 'bg-rose-50 text-rose-800 ring-1 ring-rose-100'}`}>
+                  <span className="text-sm">🔒</span>
+                  {lockedCount} locked
+                </span>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+              <Button icon={HiOutlineSquares2X2} active={access.all} disabled={!rows.length || busy === 'module-access-all'} onClick={onGrantAll}>
+                Enable all
+              </Button>
+              <Button icon={HiOutlineShieldCheck} active={!access.special || access.allowed.length <= 1} disabled={!rows.length || busy === 'module-access-reset'} onClick={onReset}>
+                Primary only
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
-      <div className={`p-3 ${dark ? 'divide-y divide-white/10' : 'divide-y divide-slate-100'}`}>
+      <div className="grid gap-2 p-3">
         {rows.map((row) => {
-          const cardClass = row.granted
-            ? dark
-              ? 'border-violet-400/30 bg-violet-500/10'
-              : 'border-violet-200 bg-violet-50'
-            : dark
-              ? 'border-white/10 bg-[#0f172a]'
-              : 'border-slate-200 bg-slate-50'
-          const iconClass = row.granted
-            ? row.visual.accent
-            : dark
-              ? 'border border-white/10 bg-white/5 text-slate-400'
-              : 'border border-slate-200 bg-white text-slate-500'
-          const descriptionClass = row.granted
-            ? dark ? 'text-slate-200' : 'text-slate-700'
-            : dark ? 'text-slate-400' : 'text-slate-500'
-          return (
-            <article key={row.id} className={`min-w-0 border px-3 py-3 first:rounded-t-2xl last:rounded-b-2xl sm:px-4 ${cardClass}`}>
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                <div className="flex min-w-0 items-start gap-3">
-                  <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl text-lg ${iconClass}`}>
-                    {row.visual.emoji}
+              const descriptionClass = row.granted
+                ? dark ? 'text-slate-200' : 'text-slate-700'
+                : dark ? 'text-slate-400' : 'text-slate-500'
+              return (
+            <article key={row.id} className={`min-w-0 rounded-2xl border px-3 py-3 transition sm:px-4 ${rowClass}`}>
+              <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_8rem_13rem] xl:items-center">
+                <div className="flex min-w-0 items-center gap-3">
+                  <span className={`relative grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-2xl text-xl shadow-sm ring-1 transition ${dark ? row.visual.accent : row.visual.light} ${row.granted ? 'scale-100 shadow-lg ring-white/20' : 'opacity-80 grayscale-[0.25]'}`}>
+                    <span className={`absolute inset-0 ${row.granted ? 'bg-[radial-gradient(circle_at_25%_20%,rgba(255,255,255,0.78),transparent_28%),linear-gradient(135deg,rgba(255,255,255,0.18),transparent_48%,rgba(0,0,0,0.08))' : 'bg-white/5'}`} />
+                    <span className="relative drop-shadow-sm">{row.visual.emoji}</span>
                   </span>
                   <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className={`truncate text-sm font-black ${titleClass}`}>{row.label}</p>
-                      <StatusChip value={row.primary ? 'Primary' : row.granted ? 'Granted' : 'Locked'} />
-                    </div>
+                    <p className={`truncate text-sm font-black ${titleClass}`}>{row.label}</p>
                     <p className={`mt-1 text-xs leading-5 ${descriptionClass}`}>{row.visual.description}</p>
                   </div>
                 </div>
+                <div className="flex xl:justify-center">
+                  <StatusChip value={row.primary ? 'Primary' : row.granted ? 'Enabled' : 'Locked'} />
+                </div>
                 <div className="flex shrink-0 flex-wrap items-center gap-2 lg:justify-end">
                   {row.primary ? (
-                    <span className={`inline-flex h-9 items-center gap-2 rounded-lg border px-3 text-xs font-black ${dark ? 'border-white/10 bg-white/5 text-slate-300' : 'border-slate-200 bg-white text-slate-600'}`}>
+                    <span className={`inline-flex h-9 items-center gap-2 rounded-lg border px-3 text-xs font-black ${dark ? 'border-white/10 bg-white/5 text-slate-300' : 'border-slate-200 bg-slate-50 text-slate-600'}`}>
                       <HiOutlineLockClosed className="h-4 w-4" />
                       Primary module
                     </span>
@@ -543,7 +624,7 @@ function ModuleAccessBoard({ rows, access, onToggle, onGrantAll, onReset, busy, 
                     </Button>
                   )}
                   {row.granted && !row.primary ? (
-                    <span className={`text-xs font-semibold ${dark ? 'text-slate-400' : 'text-slate-500'}`}>Extra access enabled</span>
+                    <span className={`hidden text-xs font-semibold xl:inline ${dark ? 'text-slate-400' : 'text-slate-500'}`}>Extra access</span>
                   ) : null}
                 </div>
               </div>
@@ -724,6 +805,17 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
   function notify(message) {
     setToast(message)
     window.setTimeout(() => setToast(''), 3000)
+  }
+
+  async function copyClientValue(value, label = 'Value') {
+    const text = String(value || '').trim()
+    if (!text) return
+    try {
+      await navigator.clipboard?.writeText(text)
+      notify(`${label} copied.`)
+    } catch {
+      setError(`Could not copy ${label}.`)
+    }
   }
 
   function ticketRef(row) {
@@ -1035,6 +1127,7 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
     'Contact person': selectedClient.contactPerson,
     Email: selectedClient.email,
     Phone: selectedClient.phone,
+    'IP address': ipFor(selectedClient) || 'IP not captured',
     Location: firstValue(selectedClient.location, selectedClient.city, selectedClient.country, selectedClient.address),
     ...(showLongClientId ? { 'Full Client ID': selectedClient.workspaceId } : {}),
     'Account status': selectedClient.status || selectedClient.accountStatus || selectedClient.subscriptionStatus || 'active',
@@ -1070,20 +1163,40 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
       actions: moduleName,
     }
   })
+  const copyFields = selectedClient ? [
+    ['Short Client ID', selectedClient.shortClientId],
+    ['Full Client ID', selectedClient.workspaceId],
+    ['Owner/User ID', ownerIdForClient(selectedClient)],
+    ['Email', selectedClient.email],
+    ['Phone', selectedClient.phone],
+    ['IP Address', ipFor(selectedClient)],
+    ['Company', selectedClient.companyName],
+    ['Contact Person', selectedClient.contactPerson],
+    ['Location', profile.Location],
+  ].filter(([, value]) => Boolean(value)) : []
+  const operationsSnapshot = [
+    ['Primary module', labelForBusinessType(accessDetails.primary || workspaceBusinessType(selectedClient || {}))],
+    ['Module access', accessDetails.all ? 'All modules enabled' : `${activeModules.length} active module${activeModules.length === 1 ? '' : 's'}`],
+    ['Ticket health', `${openIssues.length} open / ${resolvedIssues.length} resolved`],
+    ['Money status', `${money(outstandingAmount, currency)} outstanding`],
+    ['IP address', ipFor(selectedClient) || 'IP not captured'],
+    ['Last login', profile['Last login'] || '-'],
+    ['Renewal / trial', dateLabel(selectedClient?.nextBillingDate || selectedClient?.subscriptionExpiresAt || selectedClient?.trialEndsAt) || '-'],
+  ]
 
   if (embedded) {
     return (
-      <section className="min-h-[calc(100vh-8rem)] rounded-[1.1rem] border border-cyan-300/20 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.18),transparent_34%),radial-gradient(circle_at_top_right,rgba(217,70,239,0.20),transparent_32%),linear-gradient(135deg,#050816_0%,#101235_48%,#061d2f_100%)] p-3 text-slate-100 shadow-[0_24px_80px_-50px_rgba(34,211,238,0.55)] sm:p-4">
+      <section className="min-h-[calc(100vh-8rem)] rounded-[1.1rem] border border-blue-100 bg-[radial-gradient(circle_at_top_left,rgba(14,165,233,0.16),transparent_34%),radial-gradient(circle_at_top_right,rgba(168,85,247,0.16),transparent_32%),linear-gradient(135deg,#f8fbff_0%,#eef7ff_48%,#f7f4ff_100%)] p-3 text-slate-950 shadow-[0_24px_80px_-58px_rgba(37,99,235,0.45)] sm:p-4">
         {toast ? <div className="fixed left-1/2 top-5 z-[100] max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-bold text-white shadow-xl">{toast}</div> : null}
         <div className="space-y-3">
           <header className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <span className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-cyan-200">Command Center</span>
-              <h1 className="mt-2 text-xl font-black tracking-tight text-white">Client Command Center</h1>
-              <p className="mt-1 text-sm font-medium text-cyan-100/75">Vivid client operations view for services, issues, tickets, notes, and follow-up.</p>
+              <span className="inline-flex rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-blue-700">Command Center</span>
+              <h1 className="mt-2 text-xl font-black tracking-tight text-slate-950">Client Command Center</h1>
+              <p className="mt-1 text-sm font-semibold text-slate-600">Light client operations view for services, issues, tickets, notes, and follow-up.</p>
             </div>
             <div className="flex items-center gap-3">
-              <span className="hidden rounded-full border border-cyan-300/30 bg-cyan-400/10 px-3 py-1 text-xs font-bold text-cyan-100 md:inline-flex">
+              <span className="hidden rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 md:inline-flex">
                 Backend live data
               </span>
               <span className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-cyan-400 via-blue-600 to-fuchsia-600 text-sm font-black text-white shadow-lg shadow-cyan-950/40">
@@ -1092,25 +1205,25 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
             </div>
           </header>
 
-          <section className="rounded-lg border border-cyan-300/15 bg-[linear-gradient(135deg,#111827_0%,#172554_52%,#083344_100%)] p-3 shadow-[0_18px_60px_-48px_rgba(34,211,238,0.7)]">
+          <section className="rounded-2xl border border-blue-100 bg-white/90 p-3 shadow-sm backdrop-blur">
             <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center">
               <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
                 <label className="relative block min-w-0">
-                  <HiOutlineMagnifyingGlass className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                  <HiOutlineMagnifyingGlass className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                   <input
                     ref={searchRef}
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
                     placeholder="Search client by name, email, phone, company, ID, or plan..."
-                    className="h-11 w-full rounded-lg border border-cyan-300/15 bg-[#081225] pl-10 pr-24 text-sm font-semibold text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-400/10"
+                    className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-24 text-sm font-semibold text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
                   />
-                  <span className="pointer-events-none absolute right-11 top-1/2 -translate-y-1/2 text-[11px] font-black text-slate-500">
+                  <span className="pointer-events-none absolute right-11 top-1/2 -translate-y-1/2 text-[11px] font-black text-slate-400">
                     {searchMatches}/{clients.length}
                   </span>
                   {searchIsActive ? (
                     <button
                       type="button"
-                      className="absolute right-3 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-full border border-white/10 bg-white/5 text-slate-400 hover:text-white"
+                      className="absolute right-3 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-full border border-slate-200 bg-slate-50 text-slate-500 hover:bg-blue-50 hover:text-blue-700"
                       onClick={() => {
                         setSearch('')
                         searchRef.current?.focus()
@@ -1126,26 +1239,26 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
                 </DarkActionButton>
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                <span className="mr-1 text-xs font-black text-slate-300">Quick Actions:</span>
+                <span className="mr-1 text-xs font-black text-slate-500">Quick Actions:</span>
                 <DarkActionButton icon={HiOutlinePlusCircle} active={activeAction === 'createTicket'} onClick={() => setActiveAction(activeAction === 'createTicket' ? '' : 'createTicket')}>Create Ticket</DarkActionButton>
                 <DarkActionButton icon={HiOutlineEnvelope} active={activeAction === 'sendEmail'} onClick={() => setActiveAction(activeAction === 'sendEmail' ? '' : 'sendEmail')}>Send Email</DarkActionButton>
                 <DarkActionButton icon={HiOutlinePencilSquare} active={activeAction === 'addNote'} onClick={() => setActiveAction(activeAction === 'addNote' ? '' : 'addNote')}>Add Note</DarkActionButton>
                 <DarkActionButton icon={HiOutlinePower} active={!selectedClientBlocked} disabled={!selectedClient || busy === 'client-activate'} onClick={() => runAction('client-activate', () => saveClientAccessStatus(true), 'Client activated.')}>Activate</DarkActionButton>
-                <DarkActionButton icon={HiOutlineLockClosed} className="border-rose-400/30 text-rose-100 hover:border-rose-300/50 hover:bg-rose-500/10" disabled={!selectedClient || selectedClientBlocked || busy === 'client-deactivate'} onClick={() => runAction('client-deactivate', () => saveClientAccessStatus(false), 'Client deactivated.')}>Deactivate</DarkActionButton>
+                <DarkActionButton icon={HiOutlineLockClosed} className="border-rose-200 bg-rose-50 text-rose-700 hover:border-rose-300 hover:bg-rose-100 hover:text-rose-800" disabled={!selectedClient || selectedClientBlocked || busy === 'client-deactivate'} onClick={() => runAction('client-deactivate', () => saveClientAccessStatus(false), 'Client deactivated.')}>Deactivate</DarkActionButton>
               </div>
             </div>
           </section>
 
           {Object.values(data.sourceErrors || {}).length ? (
-            <section className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-3 text-xs font-semibold text-amber-200">
+            <section className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs font-semibold text-amber-800">
               {Object.values(data.sourceErrors).join(' ')}
             </section>
           ) : null}
-          {error ? <section className="rounded-lg border border-rose-500/20 bg-rose-500/10 p-3 text-sm font-semibold text-rose-200">{error}</section> : null}
+          {error ? <section className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm font-semibold text-rose-700">{error}</section> : null}
 
           {selectedClient ? (
             <>
-              <section className="rounded-lg border border-cyan-300/15 bg-[linear-gradient(135deg,#111827_0%,#18245a_56%,#0f3146_100%)] p-4 shadow-[0_18px_60px_-48px_rgba(34,211,238,0.65)]">
+              <section className="rounded-2xl border border-blue-100 bg-[linear-gradient(135deg,#ffffff_0%,#eff6ff_52%,#f5f3ff_100%)] p-4 shadow-[0_18px_60px_-50px_rgba(37,99,235,0.38)]">
                 <div className="grid gap-4 xl:grid-cols-[minmax(0,1.3fr)_minmax(22rem,0.95fr)_12rem]">
                   <div className="flex min-w-0 gap-4">
                     <div className="grid h-16 w-16 shrink-0 place-items-center rounded-full bg-gradient-to-br from-cyan-400 via-blue-600 to-fuchsia-600 text-lg font-black text-white shadow-lg shadow-cyan-950/40">
@@ -1153,38 +1266,56 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
                     </div>
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-3">
-                        <h2 className="truncate text-xl font-black text-white">{selectedClient.companyName || selectedClient.clientName}</h2>
+                        <h2 className="truncate text-xl font-black text-slate-950">{selectedClient.companyName || selectedClient.clientName}</h2>
                         <DarkStatusPill value={profile['Account status'] === 'active' ? 'Active Client' : profile['Account status']} />
                       </div>
-                      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs font-semibold text-slate-400">
+                      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs font-semibold text-slate-600">
                         <span>{selectedClient.email || '-'}</span>
                         <span>{selectedClient.phone || '-'}</span>
                         <span>{profile.Location || '-'}</span>
                         <span>Client Since: {profile['Joined date']}</span>
+                        <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 font-black text-emerald-700 shadow-sm">
+                          <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.75)]" />
+                          IP: {profile['IP address']}
+                        </span>
                       </div>
                     </div>
                   </div>
-                  <div className="grid gap-x-5 gap-y-3 border-white/10 xl:grid-cols-2 xl:border-l xl:pl-5">
-                    <DarkField label="Short Client ID" value={selectedClient.shortClientId} />
+                  <div className="grid gap-x-5 gap-y-3 border-blue-100 xl:grid-cols-2 xl:border-l xl:pl-5">
+                    <DarkField label="Short Client ID" value={selectedClient.shortClientId} copyValue={selectedClient.shortClientId} onCopy={copyClientValue} />
                     <div className="min-w-0">
-                      <p className="text-xs font-semibold text-slate-400">Full Client ID</p>
-                      <button
-                        type="button"
-                        className="mt-1 rounded-lg border border-white/10 px-2 py-1 text-xs font-black text-cyan-200 hover:bg-white/10"
-                        onClick={() => setShowLongClientId((show) => !show)}
-                      >
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-xs font-semibold text-slate-500">Full Client ID</p>
+                        {showLongClientId ? (
+                          <button type="button" className="rounded-md border border-blue-100 bg-white px-2 py-0.5 text-[10px] font-black text-blue-700 shadow-sm hover:bg-blue-50" onClick={() => copyClientValue(selectedClient.workspaceId, 'Full Client ID')}>
+                            Copy
+                          </button>
+                        ) : null}
+                      </div>
+                      <button type="button" className="mt-1 rounded-lg border border-blue-100 bg-white px-2 py-1 text-xs font-black text-blue-700 shadow-sm hover:bg-blue-50" onClick={() => setShowLongClientId((show) => !show)}>
                         {showLongClientId ? selectedClient.workspaceId : 'Show full ID'}
                       </button>
                     </div>
-                    <DarkField label="Company" value={selectedClient.companyName} />
-                    <DarkField label="Contact Person" value={selectedClient.contactPerson} />
-                    <DarkField label="Email" value={selectedClient.email} />
-                    <DarkField label="Phone" value={selectedClient.phone} />
+                    <DarkField label="Company" value={selectedClient.companyName} copyValue={selectedClient.companyName} onCopy={copyClientValue} />
+                    <DarkField label="Contact Person" value={selectedClient.contactPerson} copyValue={selectedClient.contactPerson} onCopy={copyClientValue} />
+                    <DarkField label="Email" value={selectedClient.email} copyValue={selectedClient.email} onCopy={copyClientValue} />
+                    <DarkField label="Phone" value={selectedClient.phone} copyValue={selectedClient.phone} onCopy={copyClientValue} />
+                    <div className="min-w-0 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 shadow-sm">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-xs font-semibold text-emerald-700">IP Address</p>
+                        {ipFor(selectedClient) ? (
+                          <button type="button" className="rounded-md bg-white px-2 py-0.5 text-[10px] font-black text-emerald-700 shadow-sm hover:bg-emerald-100" onClick={() => copyClientValue(ipFor(selectedClient), 'IP Address')}>
+                            Copy
+                          </button>
+                        ) : null}
+                      </div>
+                      <p className="mt-1 truncate text-sm font-black text-emerald-900">{profile['IP address']}</p>
+                    </div>
                     <DarkField label="Preferred Contact" value={profile['Preferred contact method']} />
                   </div>
-                  <div className="grid gap-2 border-white/10 xl:border-l xl:pl-5">
+                  <div className="grid gap-2 border-blue-100 xl:border-l xl:pl-5">
                     <DarkActionButton icon={HiOutlinePower} active={!selectedClientBlocked} disabled={busy === 'client-activate'} onClick={() => runAction('client-activate', () => saveClientAccessStatus(true), 'Client activated.')}>Activate Client</DarkActionButton>
-                    <DarkActionButton icon={HiOutlineLockClosed} className="border-rose-400/30 text-rose-100 hover:border-rose-300/50 hover:bg-rose-500/10" disabled={selectedClientBlocked || busy === 'client-deactivate'} onClick={() => runAction('client-deactivate', () => saveClientAccessStatus(false), 'Client deactivated.')}>Deactivate Client</DarkActionButton>
+                    <DarkActionButton icon={HiOutlineLockClosed} className="border-rose-200 bg-rose-50 text-rose-700 hover:border-rose-300 hover:bg-rose-100 hover:text-rose-800" disabled={selectedClientBlocked || busy === 'client-deactivate'} onClick={() => runAction('client-deactivate', () => saveClientAccessStatus(false), 'Client deactivated.')}>Deactivate Client</DarkActionButton>
                     <DarkActionButton icon={HiOutlineSquares2X2} active={accessDetails.all} disabled={busy === 'module-access-all'} onClick={() => runAction('module-access-all', grantAllModules, 'All modules enabled for this client.')}>Enable All Modules</DarkActionButton>
                     <DarkActionButton icon={HiOutlineShieldCheck} disabled={busy === 'module-access-reset'} onClick={() => runAction('module-access-reset', resetPrimaryModule, 'Client reset to primary module only.')}>Primary Only</DarkActionButton>
                     <DarkActionButton icon={HiOutlinePencilSquare} onClick={() => setActiveAction('addNote')}>Edit Client</DarkActionButton>
@@ -1195,40 +1326,40 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
               </section>
 
               <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-                <DarkStatCard label="Total Services" value={activeModules.length} helper={`Active: ${activeModules.length}`} icon={HiOutlineRectangleStack} tone="bg-blue-500/15 text-blue-300" />
-                <DarkStatCard label="Total Tickets" value={clientTickets.length} helper={`Open: ${openIssues.length} | Resolved: ${resolvedIssues.length}`} icon={HiOutlineTicket} tone="bg-emerald-500/15 text-emerald-300" />
-                <DarkStatCard label="Open Issues" value={openIssues.length} helper="Needs attention" icon={HiOutlineClock} tone="bg-amber-500/15 text-amber-300" />
-                <DarkStatCard label="Resolved Issues" value={resolvedIssues.length} helper="All time" icon={HiOutlineCheckCircle} tone="bg-green-500/15 text-green-300" />
-                <DarkStatCard label="Total Notes" value={notes.length} helper="Internal notes" icon={HiOutlinePencilSquare} tone="bg-violet-500/15 text-violet-300" />
+                <DarkStatCard label="Total Services" value={activeModules.length} helper={`Active: ${activeModules.length}`} icon={HiOutlineRectangleStack} tone="bg-blue-50 text-blue-700 ring-1 ring-blue-100" />
+                <DarkStatCard label="Total Tickets" value={clientTickets.length} helper={`Open: ${openIssues.length} | Resolved: ${resolvedIssues.length}`} icon={HiOutlineTicket} tone="bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100" />
+                <DarkStatCard label="Open Issues" value={openIssues.length} helper="Needs attention" icon={HiOutlineClock} tone="bg-amber-50 text-amber-700 ring-1 ring-amber-100" />
+                <DarkStatCard label="Resolved Issues" value={resolvedIssues.length} helper="All time" icon={HiOutlineCheckCircle} tone="bg-green-50 text-green-700 ring-1 ring-green-100" />
+                <DarkStatCard label="Total Notes" value={notes.length} helper="Internal notes" icon={HiOutlinePencilSquare} tone="bg-violet-50 text-violet-700 ring-1 ring-violet-100" />
               </section>
 
               {activeAction ? (
-                <section className="rounded-lg border border-cyan-300/20 bg-[linear-gradient(135deg,#111827_0%,#172554_55%,#083344_100%)] p-4 shadow-[0_18px_60px_-48px_rgba(34,211,238,0.65)]">
+                <section className="rounded-2xl border border-blue-100 bg-white p-4 shadow-sm">
                   {activeAction === 'createTicket' ? (
                     <div className="grid gap-3 lg:grid-cols-[1fr_11rem_13rem_auto]">
-                      <input className="h-10 rounded-lg border border-white/10 bg-[#0f172a] px-3 text-sm font-semibold text-slate-100 outline-none placeholder:text-slate-500 focus:border-violet-400" placeholder="Ticket title" value={ticketDraft.title} onChange={(event) => setTicketDraft((current) => ({ ...current, title: event.target.value }))} />
-                      <select className="h-10 rounded-lg border border-white/10 bg-[#0f172a] px-3 text-sm font-bold text-slate-100" value={ticketDraft.priority} onChange={(event) => setTicketDraft((current) => ({ ...current, priority: event.target.value }))}>
+                      <input className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 outline-none placeholder:text-slate-400 focus:border-blue-300 focus:ring-4 focus:ring-blue-100" placeholder="Ticket title" value={ticketDraft.title} onChange={(event) => setTicketDraft((current) => ({ ...current, title: event.target.value }))} />
+                      <select className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-800" value={ticketDraft.priority} onChange={(event) => setTicketDraft((current) => ({ ...current, priority: event.target.value }))}>
                         {['low', 'medium', 'high', 'urgent'].map((priority) => <option key={priority}>{priority}</option>)}
                       </select>
-                      <select className="h-10 rounded-lg border border-white/10 bg-[#0f172a] px-3 text-sm font-bold text-slate-100" value={ticketDraft.module} onChange={(event) => setTicketDraft((current) => ({ ...current, module: event.target.value }))}>
+                      <select className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-800" value={ticketDraft.module} onChange={(event) => setTicketDraft((current) => ({ ...current, module: event.target.value }))}>
                         {activeModules.map((moduleName) => <option key={moduleName}>{labelForBusinessType(moduleName)}</option>)}
                       </select>
                       <DarkActionButton icon={HiOutlinePlusCircle} active disabled={busy === 'create-ticket'} onClick={() => runAction('create-ticket', createTicket, 'Support ticket created.')}>Create Ticket</DarkActionButton>
-                      <textarea className="min-h-20 rounded-lg border border-white/10 bg-[#0f172a] px-3 py-2 text-sm text-slate-100 outline-none placeholder:text-slate-500 focus:border-violet-400 lg:col-span-4" placeholder="Description" value={ticketDraft.description} onChange={(event) => setTicketDraft((current) => ({ ...current, description: event.target.value }))} />
+                      <textarea className="min-h-20 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none placeholder:text-slate-400 focus:border-blue-300 focus:ring-4 focus:ring-blue-100 lg:col-span-4" placeholder="Description" value={ticketDraft.description} onChange={(event) => setTicketDraft((current) => ({ ...current, description: event.target.value }))} />
                     </div>
                   ) : null}
                   {activeAction === 'addNote' ? (
                     <div className="grid gap-3 lg:grid-cols-[1fr_auto]">
-                      <textarea className="min-h-20 rounded-lg border border-white/10 bg-[#0f172a] px-3 py-2 text-sm text-slate-100 outline-none placeholder:text-slate-500 focus:border-violet-400" placeholder="Ticket note for selected issue" value={noteDraft} onChange={(event) => setNoteDraft(event.target.value)} />
+                      <textarea className="min-h-20 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none placeholder:text-slate-400 focus:border-blue-300 focus:ring-4 focus:ring-blue-100" placeholder="Ticket note for selected issue" value={noteDraft} onChange={(event) => setNoteDraft(event.target.value)} />
                       <DarkActionButton icon={HiOutlinePencilSquare} active disabled={!selectedIssue || busy === 'add-note'} onClick={() => runAction('add-note', () => addNote(), 'Ticket note saved.')}>Add Note</DarkActionButton>
                     </div>
                   ) : null}
                   {activeAction === 'sendEmail' ? (
                     <div className="grid gap-3 lg:grid-cols-[1fr_auto]">
                       <div className="space-y-3">
-                        <input className="h-10 w-full rounded-lg border border-white/10 bg-[#0f172a] px-3 text-sm font-semibold text-slate-100 outline-none focus:border-violet-400" value={emailDraft.subject} onChange={(event) => setEmailDraft((current) => ({ ...current, subject: event.target.value }))} />
-                        <textarea className="min-h-24 w-full rounded-lg border border-white/10 bg-[#0f172a] px-3 py-2 text-sm text-slate-100 outline-none focus:border-violet-400" value={emailDraft.message} onChange={(event) => setEmailDraft((current) => ({ ...current, message: event.target.value }))} />
-                        <p className="text-xs font-semibold text-slate-400">Recipient: {selectedClient.email || 'No client email found'}</p>
+                        <input className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-100" value={emailDraft.subject} onChange={(event) => setEmailDraft((current) => ({ ...current, subject: event.target.value }))} />
+                        <textarea className="min-h-24 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-100" value={emailDraft.message} onChange={(event) => setEmailDraft((current) => ({ ...current, message: event.target.value }))} />
+                        <p className="text-xs font-semibold text-slate-500">Recipient: {selectedClient.email || 'No client email found'}</p>
                       </div>
                       <DarkActionButton icon={HiOutlineEnvelope} active disabled={!selectedClient.email || !selectedIssue || busy === 'send-resolution-email'} onClick={() => runAction('send-resolution-email', sendResolutionEmail, 'Resolution email sent.')}>Send Email</DarkActionButton>
                     </div>
@@ -1237,14 +1368,14 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
               ) : null}
 
               <section className="grid gap-3 xl:grid-cols-[minmax(0,0.92fr)_minmax(0,1.05fr)]">
-                <div className="rounded-lg border border-white/10 bg-[#111827]">
-                  <div className="flex gap-2 overflow-x-auto border-b border-white/10 px-4 pt-3">
+                <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+                  <div className="flex gap-2 overflow-x-auto border-b border-slate-100 px-4 pt-3">
                     {tabs.slice(0, 6).map(([key, label]) => (
                       <button
                         key={key}
                         type="button"
                         onClick={() => setActiveTab(key)}
-                        className={`whitespace-nowrap border-b-2 px-3 pb-3 text-xs font-black transition ${activeTab === key ? 'border-violet-500 text-violet-300' : 'border-transparent text-slate-400 hover:text-white'}`}
+                        className={`whitespace-nowrap border-b-2 px-3 pb-3 text-xs font-black transition ${activeTab === key ? 'border-blue-600 text-blue-700' : 'border-transparent text-slate-500 hover:text-slate-900'}`}
                       >
                         {label}
                       </button>
@@ -1256,7 +1387,6 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
                         rows={serviceRows}
                         access={accessDetails}
                         busy={busy}
-                        dark
                         onToggle={(moduleName) => runAction(`module-${moduleSlug(moduleName)}`, () => toggleModuleAccess(moduleName), 'Module access updated.')}
                         onGrantAll={() => runAction('module-access-all', grantAllModules, 'All modules enabled for this client.')}
                         onReset={() => runAction('module-access-reset', resetPrimaryModule, 'Client reset to primary module only.')}
@@ -1267,10 +1397,10 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
                         {(activeTab === 'tickets' || activeTab === 'issues' ? clientTickets : activeTab === 'notes' ? notes : activeTab === 'invoices' ? clientRequests : clientPayments).slice(0, 8).map((row, index) => {
                           const ticket = row.ticket || row
                           return (
-                            <button key={row.path || row.id || index} type="button" onClick={() => ticket?.id ? setSelectedIssueId(ticket.path || ticket.id) : undefined} className="block w-full rounded-lg border border-white/10 bg-[#0f172a] p-3 text-left hover:border-violet-400/30">
+                            <button key={row.path || row.id || index} type="button" onClick={() => ticket?.id ? setSelectedIssueId(ticket.path || ticket.id) : undefined} className="block w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-left hover:border-blue-200 hover:bg-blue-50">
                               <div className="flex items-start justify-between gap-3">
                                 <div className="min-w-0">
-                                  <p className="truncate text-sm font-black text-slate-100">{activeTab === 'notes' ? row.message || 'Internal note' : activeTab === 'payments' ? row.transactionId || row.id : issueTitle(ticket)}</p>
+                                  <p className="truncate text-sm font-black text-slate-950">{activeTab === 'notes' ? row.message || 'Internal note' : activeTab === 'payments' ? row.transactionId || row.id : issueTitle(ticket)}</p>
                                   <p className="mt-1 text-xs text-slate-500">{activeTab === 'payments' ? money(paymentAmount(row), rowCurrency(row)) : `Ticket ID: ${ticketNumber(ticket) || '-'}`}</p>
                                 </div>
                                 <DarkStatusPill value={row.status || row.paymentStatus || ticket.status || 'open'} />
@@ -1283,8 +1413,8 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
                   </div>
                 </div>
 
-                <div className="rounded-lg border border-white/10 bg-[#111827]">
-                  <div className="flex gap-2 overflow-x-auto border-b border-white/10 px-4 pt-3">
+                <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+                  <div className="flex gap-2 overflow-x-auto border-b border-slate-100 px-4 pt-3">
                     {[
                       ['tickets', 'Ticket Timeline'],
                       ['issues', 'Issue Timeline'],
@@ -1295,7 +1425,7 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
                         key={key}
                         type="button"
                         onClick={() => setActiveTab(key)}
-                        className={`whitespace-nowrap border-b-2 px-3 pb-3 text-xs font-black transition ${activeTab === key ? 'border-violet-500 text-violet-300' : 'border-transparent text-slate-400 hover:text-white'}`}
+                        className={`whitespace-nowrap border-b-2 px-3 pb-3 text-xs font-black transition ${activeTab === key ? 'border-blue-600 text-blue-700' : 'border-transparent text-slate-500 hover:text-slate-900'}`}
                       >
                         {label}
                       </button>
@@ -1309,13 +1439,13 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
                           key={item.id || item.path}
                           type="button"
                           onClick={() => ticket?.id ? setSelectedIssueId(ticket.path || ticket.id) : undefined}
-                          className="relative block w-full rounded-lg border border-white/10 bg-[#0f172a] p-4 text-left hover:border-violet-400/30"
+                          className="relative block w-full rounded-xl border border-slate-200 bg-slate-50 p-4 text-left hover:border-blue-200 hover:bg-blue-50"
                         >
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
                               <DarkStatusPill value={activeTab === 'emailHistory' ? item.status || 'sent' : issueStatus(ticket)} />
-                              <p className="mt-2 truncate text-sm font-black text-slate-100">{activeTab === 'emailHistory' ? item.subject || 'Email sent' : `Issue: ${issueTitle(ticket)}`}</p>
-                              <p className="mt-1 text-xs leading-5 text-slate-400">{activeTab === 'emailHistory' ? item.message || '-' : ticket.description || ticket.message || 'No description provided.'}</p>
+                              <p className="mt-2 truncate text-sm font-black text-slate-950">{activeTab === 'emailHistory' ? item.subject || 'Email sent' : `Issue: ${issueTitle(ticket)}`}</p>
+                              <p className="mt-1 text-xs leading-5 text-slate-600">{activeTab === 'emailHistory' ? item.message || '-' : ticket.description || ticket.message || 'No description provided.'}</p>
                               <p className="mt-1 text-xs text-slate-500">Ticket ID: {ticketNumber(ticket) || '-'} · Priority: {ticket.priority || 'normal'}</p>
                             </div>
                             <p className="shrink-0 text-right text-xs font-semibold text-slate-500">{dateTimeLabel(item.sentAt || ticket.updatedAt || ticket.createdAt)}</p>
@@ -1323,64 +1453,85 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
                         </button>
                       )
                     })}
-                    {!clientTickets.length && activeTab !== 'emailHistory' ? <div className="rounded-lg border border-dashed border-white/10 p-8 text-center text-sm font-bold text-slate-500">No tickets found.</div> : null}
-                    {activeTab === 'emailHistory' && !emailHistory.length ? <div className="rounded-lg border border-dashed border-white/10 p-8 text-center text-sm font-bold text-slate-500">No email history found.</div> : null}
+                    {!clientTickets.length && activeTab !== 'emailHistory' ? <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center text-sm font-bold text-slate-500">No tickets found.</div> : null}
+                    {activeTab === 'emailHistory' && !emailHistory.length ? <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center text-sm font-bold text-slate-500">No email history found.</div> : null}
                   </div>
                 </div>
               </section>
 
               <section className="grid gap-3 xl:grid-cols-[minmax(0,0.92fr)_minmax(0,1.05fr)]">
-                <div className="rounded-lg border border-white/10 bg-[#111827] p-4">
-                  <p className="text-sm font-black text-white">Client Information</p>
-                  <div className="mt-4 grid gap-x-8 gap-y-4 md:grid-cols-2">
-                    {Object.entries(profile).map(([label, value]) => <DarkField key={label} label={label} value={value} />)}
+                <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-black text-slate-950">Client Operations</p>
+                      <p className="mt-1 text-xs font-semibold text-slate-500">Useful status, billing, access and copy shortcuts.</p>
+                    </div>
+                    <DarkStatusPill value={selectedClientBlocked ? 'Blocked' : 'Active'} />
+                  </div>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    {operationsSnapshot.map(([label, value]) => (
+                      <div key={label} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                        <p className="text-[11px] font-black uppercase tracking-[0.12em] text-slate-500">{label}</p>
+                        <p className="mt-1 truncate text-sm font-bold text-slate-900">{value || '-'}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-4 rounded-xl border border-blue-100 bg-blue-50 p-3">
+                    <p className="text-xs font-black uppercase tracking-[0.12em] text-blue-700">Copy shortcuts</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {copyFields.map(([label, value]) => (
+                        <button key={label} type="button" className="rounded-lg border border-blue-100 bg-white px-3 py-1.5 text-xs font-black text-blue-700 shadow-sm hover:border-blue-200 hover:bg-blue-50" onClick={() => copyClientValue(value, label)}>
+                          Copy {label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
-                <div className="rounded-lg border border-white/10 bg-[#111827] p-4">
+                <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                   <div className="flex items-start justify-between gap-3">
-                    <p className="text-sm font-black text-white">Issue Details</p>
+                    <p className="text-sm font-black text-slate-950">Issue Details</p>
                     {selectedIssue ? <DarkStatusPill value={issueStatus(selectedIssue)} /> : null}
                   </div>
                   {selectedIssue ? (
                     <>
                       <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_18rem]">
                         <div>
-                          <p className="text-xs font-semibold text-slate-400">Issue Title</p>
-                          <p className="mt-1 text-sm font-black text-white">{issueTitle(selectedIssue)}</p>
-                          <p className="mt-4 text-xs font-semibold text-slate-400">Description</p>
-                          <p className="mt-1 text-sm leading-6 text-slate-300">{selectedIssue.description || selectedIssue.message || 'No description provided.'}</p>
+                          <p className="text-xs font-semibold text-slate-500">Issue Title</p>
+                          <p className="mt-1 text-sm font-black text-slate-950">{issueTitle(selectedIssue)}</p>
+                          <p className="mt-4 text-xs font-semibold text-slate-500">Description</p>
+                          <p className="mt-1 text-sm leading-6 text-slate-600">{selectedIssue.description || selectedIssue.message || 'No description provided.'}</p>
                           <div className="mt-4 grid grid-cols-2 gap-4">
                             <DarkField label="Priority" value={selectedIssue.priority || '-'} />
                             <DarkField label="Module" value={selectedIssue.module || selectedIssue.category || workspaceBusinessType(selectedClient)} />
                           </div>
                         </div>
-                        <div className="grid gap-3 border-white/10 lg:border-l lg:pl-4">
+                        <div className="grid gap-3 border-slate-100 lg:border-l lg:pl-4">
                           <DarkField label="Ticket ID" value={ticketNumber(selectedIssue)} />
                           <DarkField label="Created" value={dateTimeLabel(selectedIssue.createdAt)} />
                           <DarkField label="Last Updated" value={dateTimeLabel(selectedIssue.updatedAt)} />
                           <DarkField label="Requested By" value={selectedIssue.customerName || selectedIssue.clientEmail || selectedClient.email} />
                         </div>
                       </div>
-                      <textarea className="mt-4 min-h-20 w-full rounded-lg border border-white/10 bg-[#0f172a] px-3 py-2 text-sm text-slate-100 outline-none placeholder:text-slate-500 focus:border-violet-400" placeholder="Short resolution note" value={resolutionNote} onChange={(event) => setResolutionNote(event.target.value)} />
+                      <textarea className="mt-4 min-h-20 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none placeholder:text-slate-400 focus:border-blue-300 focus:ring-4 focus:ring-blue-100" placeholder="Short resolution note" value={resolutionNote} onChange={(event) => setResolutionNote(event.target.value)} />
                       <div className="mt-4 flex flex-wrap gap-2">
-                        <DarkActionButton icon={HiOutlinePencilSquare} active onClick={() => setActiveAction('addNote')}>Add Note</DarkActionButton>
-                        <DarkActionButton icon={HiOutlineClock} className="bg-blue-600/80 text-white hover:bg-blue-600" disabled={busy === 'update-status'} onClick={() => runAction('update-status', updateIssueStatus, 'Issue status updated.')}>Update Status</DarkActionButton>
-                        <DarkActionButton icon={HiOutlineCheckCircle} className="bg-emerald-700 text-white hover:bg-emerald-600" disabled={busy === 'resolve-issue'} onClick={() => runAction('resolve-issue', resolveIssue, 'Issue resolved. You can send a resolution email now.')}>Resolve Issue</DarkActionButton>
-                        <DarkActionButton icon={HiOutlineEnvelope} disabled={!selectedClient.email} onClick={() => setActiveAction('sendEmail')}>Send Email to Client</DarkActionButton>
+                        <VividActionButton icon={HiOutlinePencilSquare} tone="violet" onClick={() => setActiveAction('addNote')}>Add Note</VividActionButton>
+                        <VividActionButton icon={HiOutlineClock} tone="blue" disabled={busy === 'update-status'} onClick={() => runAction('update-status', updateIssueStatus, 'Issue status updated.')}>Update Status</VividActionButton>
+                        <VividActionButton icon={HiOutlineCheckCircle} tone="emerald" disabled={busy === 'resolve-issue'} onClick={() => runAction('resolve-issue', resolveIssue, 'Issue resolved. You can send a resolution email now.')}>Resolve Issue</VividActionButton>
+                        <VividActionButton icon={HiOutlineEnvelope} tone="amber" disabled={!selectedClient.email} onClick={() => setActiveAction('sendEmail')}>Send Email to Client</VividActionButton>
                       </div>
                     </>
                   ) : (
-                    <div className="mt-4 rounded-lg border border-dashed border-white/10 p-10 text-center text-sm font-bold text-slate-500">No issue selected.</div>
+                    <div className="mt-4 rounded-xl border border-dashed border-slate-200 bg-slate-50 p-10 text-center text-sm font-bold text-slate-500">No issue selected.</div>
                   )}
                 </div>
               </section>
             </>
           ) : (
-            <section className="grid min-h-[26rem] place-items-center rounded-lg border border-dashed border-white/10 bg-[#111827] p-8 text-center">
+            <section className="grid min-h-[26rem] place-items-center rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center shadow-sm">
               <div>
                 <HiOutlineChatBubbleLeftRight className="mx-auto h-10 w-10 text-violet-400" />
-                <p className="mt-3 text-lg font-black text-white">{data.loading ? 'Loading clients...' : 'No clients found'}</p>
+                <p className="mt-3 text-lg font-black text-slate-950">{data.loading ? 'Loading clients...' : 'No clients found'}</p>
                 <p className="mt-1 text-sm text-slate-400">Client workspaces will appear here when backend admin data is available.</p>
               </div>
             </section>
@@ -1500,6 +1651,10 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
                     <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-600">Client profile</p>
                     <h2 className="mt-1 text-xl font-black text-slate-950">{selectedClient.clientName}</h2>
                     <p className="text-sm font-semibold text-slate-500">{selectedClient.companyName} - {labelForBusinessType(workspaceBusinessType(selectedClient))}</p>
+                    <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700 shadow-sm">
+                      <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.75)]" />
+                      IP: {profile['IP address']}
+                    </div>
                   </div>
                   <StatusPill value={profile['Account status']} />
                 </div>
@@ -1511,16 +1666,38 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
                 </div>
                 <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                   <div className="min-w-0 rounded-xl border border-blue-100 bg-blue-50 px-3 py-2">
-                    <p className="text-[11px] font-black uppercase tracking-[0.1em] text-blue-500">Full Client ID</p>
-                    <button
-                      type="button"
-                      className="mt-1 rounded-lg bg-white px-2 py-1 text-xs font-black text-blue-700"
-                      onClick={() => setShowLongClientId((show) => !show)}
-                    >
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-[11px] font-black uppercase tracking-[0.1em] text-blue-500">Full Client ID</p>
+                      {showLongClientId ? (
+                        <button type="button" className="rounded-md bg-white px-2 py-0.5 text-[10px] font-black text-blue-700 shadow-sm hover:bg-blue-50" onClick={() => copyClientValue(selectedClient.workspaceId, 'Full Client ID')}>
+                          Copy
+                        </button>
+                      ) : null}
+                    </div>
+                    <button type="button" className="mt-1 rounded-lg bg-white px-2 py-1 text-xs font-black text-blue-700" onClick={() => setShowLongClientId((show) => !show)}>
                       {showLongClientId ? selectedClient.workspaceId : 'Show full ID'}
                     </button>
                   </div>
-                  {Object.entries(profile).map(([label, value]) => <Field key={label} label={label} value={value} />)}
+                  <Field label="Short Client ID" value={selectedClient.shortClientId} copyValue={selectedClient.shortClientId} onCopy={copyClientValue} />
+                  <Field label="Owner/User ID" value={ownerIdForClient(selectedClient)} copyValue={ownerIdForClient(selectedClient)} onCopy={copyClientValue} />
+                  <Field label="Company name" value={selectedClient.companyName} copyValue={selectedClient.companyName} onCopy={copyClientValue} />
+                  <Field label="Contact person" value={selectedClient.contactPerson} copyValue={selectedClient.contactPerson} onCopy={copyClientValue} />
+                  <Field label="Email" value={selectedClient.email} copyValue={selectedClient.email} onCopy={copyClientValue} />
+                  <Field label="Phone" value={selectedClient.phone} copyValue={selectedClient.phone} onCopy={copyClientValue} />
+                  <div className="min-w-0 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 shadow-sm">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-xs font-semibold text-emerald-700">IP Address</p>
+                      {ipFor(selectedClient) ? (
+                        <button type="button" className="rounded-md bg-white px-2 py-0.5 text-[10px] font-black text-emerald-700 shadow-sm hover:bg-emerald-100" onClick={() => copyClientValue(ipFor(selectedClient), 'IP Address')}>
+                          Copy
+                        </button>
+                      ) : null}
+                    </div>
+                    <p className="mt-1 truncate text-sm font-black text-emerald-900">{profile['IP address']}</p>
+                  </div>
+                  <Field label="Location" value={profile.Location} copyValue={profile.Location} onCopy={copyClientValue} />
+                  <Field label="Last login" value={profile['Last login']} />
+                  <Field label="Joined date" value={profile['Joined date']} />
                 </div>
               </div>
 

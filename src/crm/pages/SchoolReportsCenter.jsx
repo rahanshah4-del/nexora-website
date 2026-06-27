@@ -162,6 +162,7 @@ export default function SchoolReportsCenter() {
   const [toast, setToast] = useState('')
   const [studentAttendance, setStudentAttendance] = useState([])
   const [staffAttendance, setStaffAttendance] = useState([])
+  const [salaryPayments, setSalaryPayments] = useState([])
   const [attendanceError, setAttendanceError] = useState('')
   const reportIdRef = useRef(genId())
 
@@ -185,6 +186,7 @@ export default function SchoolReportsCenter() {
     if (!workspaceId) {
       setStudentAttendance([])
       setStaffAttendance([])
+      setSalaryPayments([])
       setAttendanceError('')
       return undefined
     }
@@ -216,6 +218,17 @@ export default function SchoolReportsCenter() {
           setAttendanceError('Attendance records could not be loaded.')
         },
       }),
+      listenToWorkspaceCollection({
+        ...common,
+        collectionName: 'staffSalaryPayments',
+        onData: (rows) => {
+          setSalaryPayments(sortNewestAttendance(rows))
+        },
+        onError: (error) => {
+          console.warn('[School Reports] salary payments load failed', error)
+          setSalaryPayments([])
+        },
+      }),
     ]
     return () => unsubs.forEach((unsub) => unsub?.())
   }, [businessType, workspaceId])
@@ -230,13 +243,14 @@ export default function SchoolReportsCenter() {
         staff,
         studentAttendance,
         staffAttendance,
+        salaryPayments,
         dateWindow,
         classFilter,
         studentFilter,
         approvedOnly,
         currency,
       }),
-    [reportKey, fees, payments, expenses, students, staff, studentAttendance, staffAttendance, dateWindow, classFilter, studentFilter, approvedOnly, currency],
+    [reportKey, fees, payments, expenses, students, staff, studentAttendance, staffAttendance, salaryPayments, dateWindow, classFilter, studentFilter, approvedOnly, currency],
   )
 
   const reportValidations = useMemo(
@@ -250,6 +264,7 @@ export default function SchoolReportsCenter() {
           staff,
           studentAttendance,
           staffAttendance,
+          salaryPayments,
           dateWindow,
           classFilter,
           studentFilter,
@@ -264,7 +279,7 @@ export default function SchoolReportsCenter() {
           pass: validationPassFor(item, total),
         }
       }),
-    [approvedOnly, classFilter, currency, dateWindow, expenses, fees, payments, staff, staffAttendance, studentAttendance, studentFilter, students],
+    [approvedOnly, classFilter, currency, dateWindow, expenses, fees, payments, salaryPayments, staff, staffAttendance, studentAttendance, studentFilter, students],
   )
 
   const meta = useMemo(
@@ -413,6 +428,7 @@ export default function SchoolReportsCenter() {
   const pendingFeeTotal = reportByKey.get('pending_fee')?.calculatedTotal || 0
   const monthlyRows = reportByKey.get('monthly_collection')?.rows || []
   const expenseRows = reportByKey.get('expense')?.rows || []
+  const salaryPaidTotal = reportByKey.get('salary')?.calculatedTotal || 0
   const attendanceRows = reportByKey.get('student_attendance')?.rows || []
   const maxMonthlyAmount = Math.max(1, ...monthlyRows.map((row) => Number(row.amount || 0)))
   const presentCount = attendanceRows.filter((row) => String(row.status || '').toLowerCase().includes('present')).length
@@ -425,13 +441,13 @@ export default function SchoolReportsCenter() {
     { label: 'Total Students', value: students.length.toLocaleString(), meta: 'Active student records', icon: HiOutlineUserGroup, tone: 'from-violet-50 to-white border-violet-100 text-violet-700' },
     { label: 'Total Teachers', value: staff.length.toLocaleString(), meta: 'Staff & teacher records', icon: HiOutlineAcademicCap, tone: 'from-emerald-50 to-white border-emerald-100 text-emerald-700' },
     { label: 'Fee Collection', value: formatCurrency(feeCollectionTotal, currency), meta: `${reportByKey.get('fee_collection')?.sourceCount || 0} source records`, icon: HiOutlineBanknotes, tone: 'from-sky-50 to-white border-sky-100 text-sky-700' },
-    { label: 'Pending Fees', value: formatCurrency(pendingFeeTotal, currency), meta: `${reportByKey.get('pending_fee')?.sourceCount || 0} pending records`, icon: HiOutlineDocumentText, tone: 'from-rose-50 to-white border-rose-100 text-rose-700' },
+    { label: 'Salary Paid', value: formatCurrency(salaryPaidTotal, currency), meta: `${reportByKey.get('salary')?.sourceCount || 0} payroll records`, icon: HiOutlineCurrencyDollar, tone: 'from-amber-50 to-white border-amber-100 text-amber-700' },
   ]
 
   return (
     <div className="space-y-5 pb-24">
       {toast ? (
-        <div className="fixed left-1/2 top-1/2 z-[110] max-w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-1/2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-xl">{toast}</div>
+        <div className="fixed right-3 top-3 z-[110] max-w-[calc(100vw-1.5rem)] rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-900 shadow-xl sm:right-5 sm:top-5">✅ {toast}</div>
       ) : null}
 
       <header className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
