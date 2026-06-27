@@ -7,9 +7,11 @@ import {
   HiOutlineCheckBadge,
   HiOutlineDocumentChartBar,
   HiOutlinePencilSquare,
+  HiOutlinePlusCircle,
   HiOutlinePrinter,
   HiOutlineTrash,
   HiOutlineUserGroup,
+  HiOutlineXMark,
 } from 'react-icons/hi2'
 import { FaWhatsapp } from 'react-icons/fa'
 import Badge from '../components/ui/Badge.jsx'
@@ -23,7 +25,6 @@ import Select from '../components/ui/Select.jsx'
 import Toast from '../components/ui/Toast.jsx'
 import { useBusinessSettings } from '../hooks/useBusinessSettings.js'
 import { useSchoolPayroll, calculateSalaryPayment } from '../hooks/useSchoolPayroll.js'
-import { useTeamMembers } from '../hooks/useTeamMembers.js'
 import { useUser } from '../hooks/useUser.js'
 import { formatCurrency } from '../utils/format.js'
 
@@ -125,10 +126,9 @@ function StatCard({ icon: Icon, label, value, helper, tone }) {
 
 export default function SchoolPayrollPage() {
   const { userDoc, workspaceDoc } = useUser()
-  const teamApi = useTeamMembers()
   const settingsApi = useBusinessSettings()
-  const members = teamApi.members || []
-  const payroll = useSchoolPayroll({ members })
+  const payroll = useSchoolPayroll()
+  const members = payroll.members || []
   const settings = settingsApi.settings || {}
   const currency = settings.currency || userDoc?.currency || workspaceDoc?.currency || 'PKR'
   const workspaceName = settings.schoolName || settings.companyName || workspaceDoc?.schoolName || userDoc?.companyName || 'Nexora School'
@@ -137,6 +137,18 @@ export default function SchoolPayrollPage() {
   const [selectedId, setSelectedId] = useState('')
   const [editing, setEditing] = useState(null)
   const [busy, setBusy] = useState(false)
+  const [memberOpen, setMemberOpen] = useState(false)
+  const [memberDraft, setMemberDraft] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    role: 'Teacher',
+    department: '',
+    designation: '',
+    salary: '',
+    salaryType: 'monthly',
+    salaryNotes: '',
+  })
   const [profile, setProfile] = useState({ salary: '', salaryType: 'monthly', salaryStatus: 'active', department: '', designation: '', salaryNotes: '' })
   const [payment, setPayment] = useState({
     salaryMonth: currentMonthInput(),
@@ -216,6 +228,30 @@ export default function SchoolPayrollPage() {
     })
   }
 
+  async function addPayrollMember() {
+    setBusy(true)
+    const res = await payroll.addPayrollMember(memberDraft)
+    setBusy(false)
+    if (res.ok) {
+      showToast('success', 'Payroll member added')
+      setMemberOpen(false)
+      setMemberDraft({
+        name: '',
+        email: '',
+        phone: '',
+        role: 'Teacher',
+        department: '',
+        designation: '',
+        salary: '',
+        salaryType: 'monthly',
+        salaryNotes: '',
+      })
+      if (res.id) setSelectedId(res.id)
+    } else {
+      showToast('error', res.error || 'Unable to add payroll member')
+    }
+  }
+
   async function saveProfile() {
     setBusy(true)
     const res = await payroll.saveSalaryProfile(selectedMember.id, profile)
@@ -256,6 +292,9 @@ export default function SchoolPayrollPage() {
         subtitle="Teacher and staff salary profiles, approval-based payroll transactions, reports, print, and WhatsApp sharing."
         right={
           <div className="flex flex-wrap gap-2">
+            <Button type="button" className="rounded-2xl bg-blue-600 hover:bg-blue-700" onClick={() => setMemberOpen((open) => !open)}>
+              <HiOutlinePlusCircle className="h-4 w-4" /> Add Member
+            </Button>
             <Link to="/app/approvals" className="focus-ring inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:border-slate-300">
               Approval Center
             </Link>
@@ -266,6 +305,68 @@ export default function SchoolPayrollPage() {
         }
       />
 
+      {memberOpen ? (
+        <Card className="border-blue-100 bg-gradient-to-br from-blue-50 via-white to-violet-50 p-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="text-sm font-black text-slate-950 dark:text-white">Add payroll member</p>
+              <p className="mt-1 text-xs font-semibold text-slate-500">Create teachers or staff only for Salary / Payroll. This does not create a Team Management login.</p>
+            </div>
+            <Button type="button" variant="subtle" className="h-9 rounded-xl px-3 text-xs" onClick={() => setMemberOpen(false)}>
+              <HiOutlineXMark className="h-4 w-4" /> Close
+            </Button>
+          </div>
+          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <Field label="Name">
+              <Input value={memberDraft.name} onChange={(event) => setMemberDraft((current) => ({ ...current, name: event.target.value }))} placeholder="Teacher / staff name" />
+            </Field>
+            <Field label="Role">
+              <Select value={memberDraft.role} onChange={(event) => setMemberDraft((current) => ({ ...current, role: event.target.value, designation: current.designation || event.target.value }))}>
+                <option value="Teacher">Teacher</option>
+                <option value="Admin Staff">Admin Staff</option>
+                <option value="Accountant">Accountant</option>
+                <option value="Support Staff">Support Staff</option>
+                <option value="Driver">Driver</option>
+                <option value="Other">Other</option>
+              </Select>
+            </Field>
+            <Field label="Department">
+              <Input value={memberDraft.department} onChange={(event) => setMemberDraft((current) => ({ ...current, department: event.target.value }))} placeholder="Primary, Accounts..." />
+            </Field>
+            <Field label="Designation">
+              <Input value={memberDraft.designation} onChange={(event) => setMemberDraft((current) => ({ ...current, designation: event.target.value }))} placeholder="Math Teacher..." />
+            </Field>
+            <Field label="Monthly salary">
+              <Input type="number" min="0" value={memberDraft.salary} onChange={(event) => setMemberDraft((current) => ({ ...current, salary: event.target.value }))} />
+            </Field>
+            <Field label="Salary type">
+              <Select value={memberDraft.salaryType} onChange={(event) => setMemberDraft((current) => ({ ...current, salaryType: event.target.value }))}>
+                <option value="monthly">Monthly</option>
+                <option value="daily">Daily</option>
+                <option value="hourly">Hourly</option>
+                <option value="custom">Custom</option>
+              </Select>
+            </Field>
+            <Field label="Phone">
+              <Input value={memberDraft.phone} onChange={(event) => setMemberDraft((current) => ({ ...current, phone: event.target.value }))} />
+            </Field>
+            <Field label="Email">
+              <Input value={memberDraft.email} onChange={(event) => setMemberDraft((current) => ({ ...current, email: event.target.value }))} />
+            </Field>
+            <div className="md:col-span-2 xl:col-span-3">
+              <Field label="Notes">
+                <Input value={memberDraft.salaryNotes} onChange={(event) => setMemberDraft((current) => ({ ...current, salaryNotes: event.target.value }))} placeholder="Optional payroll note" />
+              </Field>
+            </div>
+            <div className="flex items-end">
+              <Button type="button" className="w-full rounded-2xl bg-emerald-600 hover:bg-emerald-700" disabled={busy} onClick={addPayrollMember}>
+                {busy ? 'Saving...' : 'Save Member'}
+              </Button>
+            </div>
+          </div>
+        </Card>
+      ) : null}
+
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         <StatCard icon={HiOutlineUserGroup} label="Staff with salary" value={payroll.staffWithSalary.length} helper={`${members.length} total staff`} tone="from-sky-50 to-white border-sky-100 text-sky-700" />
         <StatCard icon={HiOutlineBanknotes} label="Monthly payroll" value={formatCurrency(payroll.monthlyPayroll, currency)} helper="salary profile total" tone="from-emerald-50 to-white border-emerald-100 text-emerald-700" />
@@ -274,7 +375,7 @@ export default function SchoolPayrollPage() {
       </div>
 
       {!activeMembers.length ? (
-        <EmptyState title="No teacher or staff records yet" description="Add teachers and staff in Team Management, then payroll will become active here." />
+        <EmptyState title="No payroll members yet" description="Add teachers or staff directly in Salary / Payroll to start salary profiles and approval-based payments." />
       ) : (
         <div className="grid gap-4 xl:grid-cols-[390px_minmax(0,1fr)]">
           <div className="space-y-4">

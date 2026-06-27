@@ -22,7 +22,6 @@ import { useUser } from '../hooks/useUser.js'
 import { useInvoices } from '../hooks/useInvoices.js'
 import { useExpenses } from '../hooks/useExpenses.js'
 import { useCustomers } from '../hooks/useCustomers.js'
-import { useTeamMembers } from '../hooks/useTeamMembers.js'
 import { useBusinessSettings } from '../hooks/useBusinessSettings.js'
 import { formatCurrency } from '../utils/format.js'
 import { listenToWorkspaceCollection } from '../lib/firestore.js'
@@ -139,7 +138,6 @@ export default function SchoolReportsCenter() {
   const invoicesApi = useInvoices({ limitCount: 500 })
   const expensesApi = useExpenses({ limitCount: 500 })
   const customersApi = useCustomers({ limitCount: 500 })
-  const teamApi = useTeamMembers()
 
   const currency = settings.currency || userDoc?.currency || 'PKR'
   const workspaceName =
@@ -163,6 +161,7 @@ export default function SchoolReportsCenter() {
   const [studentAttendance, setStudentAttendance] = useState([])
   const [staffAttendance, setStaffAttendance] = useState([])
   const [salaryPayments, setSalaryPayments] = useState([])
+  const [payrollMembers, setPayrollMembers] = useState([])
   const [attendanceError, setAttendanceError] = useState('')
   const reportIdRef = useRef(genId())
 
@@ -170,7 +169,7 @@ export default function SchoolReportsCenter() {
   const payments = invoicesApi.payments || []
   const expenses = expensesApi.expenses || []
   const students = customersApi.customers || []
-  const staff = teamApi.members || []
+  const staff = payrollMembers
 
   const dateWindow = useMemo(() => resolveWindow(rangeKey, customStart, customEnd), [rangeKey, customStart, customEnd])
   const classOptions = useMemo(() => deriveClassOptions({ students, fees }), [students, fees])
@@ -187,6 +186,7 @@ export default function SchoolReportsCenter() {
       setStudentAttendance([])
       setStaffAttendance([])
       setSalaryPayments([])
+      setPayrollMembers([])
       setAttendanceError('')
       return undefined
     }
@@ -216,6 +216,17 @@ export default function SchoolReportsCenter() {
           console.warn('[School Reports] staff attendance load failed', error)
           setStaffAttendance([])
           setAttendanceError('Attendance records could not be loaded.')
+        },
+      }),
+      listenToWorkspaceCollection({
+        ...common,
+        collectionName: 'payrollMembers',
+        onData: (rows) => {
+          setPayrollMembers(rows)
+        },
+        onError: (error) => {
+          console.warn('[School Reports] payroll members load failed', error)
+          setPayrollMembers([])
         },
       }),
       listenToWorkspaceCollection({

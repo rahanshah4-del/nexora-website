@@ -40,23 +40,55 @@ export function calculateSalaryPayment({ baseSalary = 0, allowance = 0, bonus = 
   }
 }
 
-export function useSchoolPayroll({ members = [] } = {}) {
+export function useSchoolPayroll() {
   const { userId, workspaceId, businessType, userDoc, firebaseUser } = useUser()
+  const [members, setMembers] = useState([])
   const [payments, setPayments] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [membersLoading, setMembersLoading] = useState(true)
+  const [paymentsLoading, setPaymentsLoading] = useState(true)
   const [error, setError] = useState('')
 
   useEffect(() => {
     if (!db || !workspaceId) {
       Promise.resolve().then(() => {
-        setPayments([])
-        setLoading(false)
+        setMembers([])
+        setMembersLoading(false)
         setError('')
       })
       return undefined
     }
 
-    setLoading(true)
+    setMembersLoading(true)
+    return listenToWorkspaceCollection({
+      workspaceId,
+      businessType,
+      collectionName: 'payrollMembers',
+      orderByField: null,
+      limitCount: 600,
+      onData: (rows) => {
+        setMembers(rows.sort((a, b) => String(a.name || a.fullName || '').localeCompare(String(b.name || b.fullName || ''))))
+        setMembersLoading(false)
+        setError('')
+      },
+      onError: (err) => {
+        setMembers([])
+        setMembersLoading(false)
+        setError(clientSafeMessage(err, 'Unable to load payroll members.'))
+      },
+    })
+  }, [businessType, workspaceId])
+
+  useEffect(() => {
+    if (!db || !workspaceId) {
+      Promise.resolve().then(() => {
+        setPayments([])
+        setPaymentsLoading(false)
+        setError('')
+      })
+      return undefined
+    }
+
+    setPaymentsLoading(true)
     return listenToWorkspaceCollection({
       workspaceId,
       businessType,
@@ -65,18 +97,19 @@ export function useSchoolPayroll({ members = [] } = {}) {
       limitCount: 600,
       onData: (rows) => {
         setPayments([...rows].sort((a, b) => paymentDateValue(b) - paymentDateValue(a)))
-        setLoading(false)
+        setPaymentsLoading(false)
         setError('')
       },
       onError: (err) => {
         setPayments([])
-        setLoading(false)
+        setPaymentsLoading(false)
         setError(clientSafeMessage(err, 'Unable to load salary payments.'))
       },
     })
   }, [businessType, workspaceId])
 
   return useMemo(() => {
+    const loading = membersLoading || paymentsLoading
     const currentMonth = monthKey()
     const staffWithSalary = members.filter((member) => salaryOf(member) > 0)
     const monthlyPayroll = staffWithSalary.reduce((sum, member) => sum + salaryOf(member), 0)
@@ -86,6 +119,7 @@ export function useSchoolPayroll({ members = [] } = {}) {
       .reduce((sum, payment) => sum + money(payment.netPay ?? payment.amount ?? payment.paidAmount), 0)
 
     return {
+      members,
       payments,
       loading,
       error,
@@ -95,6 +129,50 @@ export function useSchoolPayroll({ members = [] } = {}) {
       paidThisMonth,
       pendingThisMonth: Math.max(0, monthlyPayroll - paidThisMonth),
       salaryOf,
+      async addPayrollMember(payload = {}) {
+        if (!workspaceId || !userId) return { ok: false, error: 'Please login first' }
+        const name = String(payload.name || payload.fullName || '').trim()
+        if (!name) return { ok: false, error: 'Enter teacher or staff name.' }
+        const salary = money(payload.salary || payload.monthlySalary)
+        try {
+          const ref = await createUserDoc(
+            workspaceId,
+            'payrollMembers',
+            {
+              name,
+              fullName: name,
+              email: String(payload.email || '').trim(),
+              phone: String(payload.phone || '').trim(),
+              role: payload.role || payload.designation || 'Staff',
+              department: payload.department || '',
+              designation: payload.designation || payload.role || 'Staff',
+              salary,
+              monthlySalary: salary,
+              salaryType: payload.salaryType || 'monthly',
+              salaryStatus: payload.salaryStatus || 'active',
+              status: payload.status || 'active',
+              salaryNotes: payload.salaryNotes || '',
+              createdBy: userId,
+            },
+            { businessType },
+          )
+          await logActivity({
+            workspaceId,
+            userId,
+            businessType,
+            ...userActivityInfo(userDoc, firebaseUser),
+            action: 'Payroll member added',
+            module: 'School Payroll',
+            description: `${name} was added directly in Salary / Payroll.`,
+            targetId: ref.id,
+            targetName: name,
+            metadata: { salary, role: payload.role || payload.designation || 'Staff' },
+          })
+          return { ok: true, id: ref.id }
+        } catch (err) {
+          return { ok: false, error: clientSafeMessage(err, 'Unable to add payroll member.') }
+        }
+      },
       async saveSalaryProfile(memberId, patch = {}) {
         if (!workspaceId || !userId || !memberId) return { ok: false, error: 'Please login first' }
         const member = members.find((item) => item.id === memberId) || {}
@@ -109,7 +187,7 @@ export function useSchoolPayroll({ members = [] } = {}) {
           userId: member.userId || member.uid || member.staffId || member.email || memberId,
         }
         try {
-          await patchUserDoc(workspaceId, 'teamMembers', memberId, salaryPatch, { businessType })
+          await patchUserDoc(workspaceId, 'payrollMembers', memberId, salaryPatch, { businessType })
           await logActivity({
             workspaceId,
             userId,
@@ -259,5 +337,5 @@ export function useSchoolPayroll({ members = [] } = {}) {
         }
       },
     }
-  }, [businessType, firebaseUser, loading, members, payments, userDoc, userId, workspaceId])
+  }, [businessType, firebaseUser, members, membersLoading, payments, paymentsLoading, userDoc, userId, workspaceId])
 }
