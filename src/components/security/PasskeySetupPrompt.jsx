@@ -37,10 +37,10 @@ export default function PasskeySetupPrompt({ enabled = true }) {
     setMessage('')
     try {
       await registerPasskey()
-      setMessage('Passkey enabled. Next login can use fingerprint, Face ID, Windows Hello, or device PIN.')
+      setMessage('✅ Passkey enabled. Next time you can sign in with fingerprint, Face ID, Windows Hello, or device PIN.')
       window.setTimeout(() => setOpen(false), 1200)
     } catch (error) {
-      setMessage(error?.message || 'Passkey setup failed. You can try again from Settings > Security.')
+      setMessage(error?.message || '⚠️ Passkey setup failed. You can try again from Settings > Security.')
     } finally {
       setBusy(false)
     }
@@ -58,17 +58,17 @@ export default function PasskeySetupPrompt({ enabled = true }) {
           <div>
             <p className="inline-flex items-center gap-2 rounded-full bg-indigo-100 px-3 py-1 text-xs font-black text-indigo-700">
               <HiOutlineShieldCheck className="h-4 w-4" />
-              Secure sign-in
+              Secure sign-in 🔐
             </p>
-            <h2 className="mt-3 text-2xl font-black text-slate-950">Enable Passkey?</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-600">Sign in faster and more securely using your device.</p>
+            <h2 className="mt-3 text-2xl font-black text-slate-950">Enable Passkey? ✨</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-600">Sign in faster and more securely using your device. This is optional, and password login will still work.</p>
           </div>
           <button type="button" onClick={skip} className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white text-slate-500 shadow-sm">
             <HiOutlineXMark className="h-5 w-5" />
           </button>
         </div>
         <div className="space-y-3 p-5">
-          {['Fingerprint', 'Face ID', 'Windows Hello', 'Device PIN'].map((item) => (
+          {['👆 Fingerprint', '😊 Face ID', '🪟 Windows Hello', '🔢 Device PIN'].map((item) => (
             <div key={item} className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2 text-sm font-bold text-slate-700">
               <span className="grid h-8 w-8 place-items-center rounded-xl bg-white text-indigo-600">
                 <HiOutlineKey className="h-4 w-4" />

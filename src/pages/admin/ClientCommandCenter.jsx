@@ -16,6 +16,7 @@ import {
   HiOutlineCheckCircle,
   HiOutlineClock,
   HiOutlineEnvelope,
+  HiOutlineKey,
   HiOutlineLockClosed,
   HiOutlineMagnifyingGlass,
   HiOutlineMinus,
@@ -37,6 +38,7 @@ import { sendWorkerEmail } from '../../lib/transactionalEmail.js'
 import { labelForBusinessType } from '../../crm/data/moduleAccess.js'
 import { resolveClientShortId } from '../../lib/clientIds.js'
 import { listWorkerUpgradeRequests } from '../../lib/upgradeWorker.js'
+import { adminForceLogoutUser, adminListPasskeySecurity, adminUpdatePasskey } from '../../lib/passkeys.js'
 
 const modules = ['General CRM', 'School ERP', 'Retail / POS', 'Property ERP', 'Restaurant POS', 'WhatsApp CRM', 'Transport / Rental']
 const moduleVisuals = {
@@ -211,7 +213,69 @@ function searchTextForClient(client = {}) {
     client.selectedPlan,
     client.subscriptionStatus,
     client.planStatus,
+    client.behaviorScore,
+    client.behaviorLevel,
+    client.behaviorPriority,
+    client.behaviorTopModule,
   ].map(lower).join(' ')
+}
+
+function behaviorScoreForClient(client = {}, events = [], sessions = []) {
+  if (!client?.id) return { score: 0, level: 'not_interested', priority: 'Watch', topModule: '-', events: 0, clicks: 0, lastEventAt: null }
+  const ids = new Set([client.id, client.workspaceId, client.ownerId, client.userId, client.uid, client.ownerUserId].filter(Boolean).map(String))
+  const emails = [client.email, client.ownerEmail, client.userEmail, client.clientEmail].map(lower).filter(Boolean)
+  const phones = [client.phone, client.phoneNumber, client.mobile].map((value) => clean(value).replace(/\D+/g, '')).filter(Boolean)
+  const weights = {
+    signup_completed: 42,
+    workspace_selected: 36,
+    upgrade_request_submitted: 40,
+    start_free_trial_click: 26,
+    signup_started: 24,
+    pricing_click: 20,
+    business_service_request_submitted: 22,
+    module_click: 14,
+    login_completed: 10,
+    button_click: 5,
+    page_view: 1,
+  }
+  const matches = (row = {}) => {
+    const rowIds = [row.workspaceId, row.ownerId, row.userId, row.uid, row.visitorId, row.sessionId].filter(Boolean).map(String)
+    if (rowIds.some((id) => ids.has(id))) return true
+    const rowEmails = [row.email, row.ownerEmail, row.userEmail, row.clientEmail, row.customerEmail].map(lower).filter(Boolean)
+    if (rowEmails.some((email) => emails.includes(email))) return true
+    const rowPhones = [row.phone, row.phoneNumber, row.mobile].map((value) => clean(value).replace(/\D+/g, '')).filter(Boolean)
+    return rowPhones.some((phone) => phones.includes(phone))
+  }
+  const modulesMap = new Map()
+  let score = 0
+  let clicks = 0
+  let matchedEvents = 0
+  let durationMs = 0
+  let lastEventAt = null
+  events.filter(matches).forEach((row) => {
+    const eventType = row.eventType || 'event'
+    const date = toDate(row.timestamp || row.createdAt)
+    matchedEvents += 1
+    score += weights[eventType] || 2
+    durationMs += Number(row.sessionDurationMs || 0) || 0
+    if (date && (!lastEventAt || date.getTime() > lastEventAt.getTime())) lastEventAt = date
+    if (['button_click', 'module_click', 'pricing_click', 'start_free_trial_click'].includes(eventType)) clicks += 1
+    const moduleName = row.moduleName || row.buttonLabel || row.businessType || row.module || ''
+    if (moduleName) modulesMap.set(moduleName, (modulesMap.get(moduleName) || 0) + (eventType === 'module_click' ? 3 : 1))
+  })
+  sessions.filter(matches).forEach((row) => {
+    const date = toDate(row.lastActiveAt || row.updatedAt || row.createdAt)
+    score += 4
+    durationMs += Number(row.sessionDurationMs || 0) || 0
+    if (date && (!lastEventAt || date.getTime() > lastEventAt.getTime())) lastEventAt = date
+    const moduleName = row.businessType || row.currentBusinessType || row.module || ''
+    if (moduleName) modulesMap.set(moduleName, (modulesMap.get(moduleName) || 0) + 1)
+  })
+  score = Math.min(100, score + Math.min(20, Math.floor(durationMs / 60000) * 3))
+  const level = score >= 55 ? 'interested' : score >= 28 ? 'warm' : score >= 10 ? 'cold' : 'not_interested'
+  const priority = level === 'interested' ? 'High' : level === 'warm' ? 'Medium' : level === 'cold' ? 'Low' : 'Watch'
+  const topModule = [...modulesMap.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] || '-'
+  return { score, level, priority, topModule, events: matchedEvents, clicks, lastEventAt }
 }
 
 function paymentAmount(row = {}) {
@@ -273,6 +337,7 @@ function useCommandCenterData() {
     platformPayments: [],
     supportTickets: [],
     userSessions: [],
+    analyticsEvents: [],
     loading: Boolean(db),
     sourceErrors: {},
   })
@@ -292,6 +357,7 @@ function useCommandCenterData() {
       platformPayments: [],
       supportTickets: [],
       userSessions: [],
+      analyticsEvents: [],
     }
     const loaded = new Set()
     const expected = Object.keys(cache).length
@@ -345,6 +411,7 @@ function useCommandCenterData() {
       listen('upgradeRequests', 'upgradeRequests', 300),
       listen('platformPayments', 'platformPayments', 500),
       listen('userSessions', 'userSessions', 500),
+      listen('analyticsEvents', 'analyticsEvents', 1000),
       listenGroup('supportTickets', 'supportTickets', 500),
     ]
 
@@ -714,6 +781,10 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
   const [emailDraft, setEmailDraft] = useState({ subject: 'Your Nexora support issue has been resolved', message: '' })
   const [workerUpgradeRequests, setWorkerUpgradeRequests] = useState([])
   const [workerUpgradeError, setWorkerUpgradeError] = useState('')
+  const [passkeySecurity, setPasskeySecurity] = useState({ passkeys: [], loginHistory: [], activeSessions: [] })
+  const [passkeySecurityError, setPasskeySecurityError] = useState('')
+  const [securityExpanded, setSecurityExpanded] = useState(false)
+  const [upgradeExpanded, setUpgradeExpanded] = useState(false)
   const [liveNow, setLiveNow] = useState(() => Date.now())
 
   useEffect(() => {
@@ -754,6 +825,30 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
     }
   }, [backendAdminAllowed, user])
 
+  useEffect(() => {
+    if (!backendAdminAllowed || !user?.getIdToken) return undefined
+    let cancelled = false
+    async function loadPasskeySecurity() {
+      try {
+        const result = await adminListPasskeySecurity('')
+        if (!cancelled) {
+          setPasskeySecurity(result || { passkeys: [], loginHistory: [], activeSessions: [] })
+          setPasskeySecurityError('')
+        }
+      } catch (error) {
+        if (!cancelled) setPasskeySecurityError(clientSafeMessage(error, 'Passkey security data is not available.'))
+      }
+    }
+    loadPasskeySecurity()
+    window.addEventListener('focus', loadPasskeySecurity)
+    const timer = window.setInterval(loadPasskeySecurity, 15000)
+    return () => {
+      cancelled = true
+      window.clearInterval(timer)
+      window.removeEventListener('focus', loadPasskeySecurity)
+    }
+  }, [backendAdminAllowed, user])
+
   const usersById = useMemo(() => {
     const map = new Map()
     data.users.forEach((row) => {
@@ -766,7 +861,7 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
     return data.workspaces.map((workspace) => {
       const id = workspaceIdFor(workspace)
       const owner = usersById.get(String(workspace.ownerId || workspace.userId || workspace.uid || id)) || {}
-      return {
+      const baseClient = {
         ...owner,
         ...workspace,
         id,
@@ -779,8 +874,24 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
         email: emailFor({ ...owner, ...workspace }),
         phone: phoneFor({ ...owner, ...workspace }),
       }
+      const behavior = behaviorScoreForClient(baseClient, data.analyticsEvents, data.userSessions)
+      return {
+        ...baseClient,
+        behaviorScore: behavior.score,
+        behaviorLevel: behavior.level,
+        behaviorPriority: behavior.priority,
+        behaviorTopModule: behavior.topModule,
+        behaviorEvents: behavior.events,
+        behaviorClicks: behavior.clicks,
+        behaviorLastEventAt: behavior.lastEventAt,
+      }
     }).filter((client) => client.id)
-  }, [data.workspaces, usersById])
+      .sort((a, b) => {
+        const aTime = toDate(a.createdAt || a.signupAt || a.joinedAt || a.updatedAt || a.lastActiveAt)?.getTime() || 0
+        const bTime = toDate(b.createdAt || b.signupAt || b.joinedAt || b.updatedAt || b.lastActiveAt)?.getTime() || 0
+        return bTime - aTime
+      })
+  }, [data.analyticsEvents, data.userSessions, data.workspaces, usersById])
 
   const searchedClients = useMemo(() => {
     const q = lower(search)
@@ -807,7 +918,27 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
       .sort((a, b) => (toDate(b.lastActiveAt)?.getTime() || 0) - (toDate(a.lastActiveAt)?.getTime() || 0)),
     [data.userSessions, selectedClient],
   )
+  const clientPasskeys = useMemo(
+    () => (passkeySecurity.passkeys || [])
+      .filter((passkey) => sameClient(passkey, selectedClient))
+      .sort((a, b) => (toDate(b.lastUsed || b.updatedAt || b.createdAt)?.getTime() || 0) - (toDate(a.lastUsed || a.updatedAt || a.createdAt)?.getTime() || 0)),
+    [passkeySecurity.passkeys, selectedClient],
+  )
+  const clientLoginHistory = useMemo(
+    () => (passkeySecurity.loginHistory || [])
+      .filter((entry) => sameClient(entry, selectedClient))
+      .sort((a, b) => (toDate(b.createdAt || b.date || b.time)?.getTime() || 0) - (toDate(a.createdAt || a.date || a.time)?.getTime() || 0)),
+    [passkeySecurity.loginHistory, selectedClient],
+  )
   const latestClientSession = clientSessions[0] || null
+  const latestClientPasskey = clientPasskeys[0] || null
+  const activeClientPasskeys = clientPasskeys.filter((row) => statusValue(row.status, 'active') === 'active')
+  const blockedClientPasskeys = clientPasskeys.filter((row) => ['disabled', 'deleted', 'removed'].includes(statusValue(row.status)))
+  const failedClientPasskeyAttempts = clientLoginHistory.filter((row) => statusValue(row.authenticationMethod || row.method) === 'passkey' && statusValue(row.status) === 'failed').length
+  const successfulClientPasskeyLogins = clientLoginHistory.filter((row) => statusValue(row.authenticationMethod || row.method) === 'passkey' && statusValue(row.status) === 'success').length
+  const passwordClientLogins = clientLoginHistory.filter((row) => statusValue(row.authenticationMethod || row.method) === 'password' && statusValue(row.status) === 'success').length
+  const googleClientLogins = clientLoginHistory.filter((row) => statusValue(row.authenticationMethod || row.method) === 'google' && statusValue(row.status) === 'success').length
+  const latestClientLogin = clientLoginHistory[0] || null
   const latestClientActiveAt = latestClientSession?.lastActiveAt || selectedClient?.lastActiveAt || selectedClient?.lastAccessedAt || selectedClient?.lastLoginAt
   const clientOnline = Boolean(toDate(latestClientActiveAt) && liveNow - toDate(latestClientActiveAt).getTime() <= 5 * 60 * 1000)
   const clientPresenceLabel = clientOnline ? 'Online now' : latestClientActiveAt ? `Offline · last seen ${relativeTimeLabel(latestClientActiveAt, liveNow)}` : 'No live session yet'
@@ -858,6 +989,14 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
     () => [...workerUpgradeRequests, ...data.upgradeRequests].filter((row) => sameClient(row, selectedClient)),
     [data.upgradeRequests, selectedClient, workerUpgradeRequests],
   )
+  const sortedClientRequests = useMemo(
+    () => [...clientRequests].sort((a, b) => (toDate(b.createdAt || b.requestedAt || b.updatedAt)?.getTime() || 0) - (toDate(a.createdAt || a.requestedAt || a.updatedAt)?.getTime() || 0)),
+    [clientRequests],
+  )
+  const pendingClientRequests = sortedClientRequests.filter((row) => ['pending', 'pending_approval', 'waiting', 'new', 'under_review'].includes(statusValue(row.approvalStatus || row.status || row.paymentStatus)))
+  const approvedClientRequests = sortedClientRequests.filter((row) => ['approved', 'paid', 'active', 'completed'].includes(statusValue(row.approvalStatus || row.status || row.paymentStatus)))
+  const rejectedClientRequests = sortedClientRequests.filter((row) => ['rejected', 'declined', 'failed'].includes(statusValue(row.approvalStatus || row.status || row.paymentStatus)))
+  const latestClientRequest = sortedClientRequests[0] || null
   const accessDetails = selectedClient ? moduleAccessDetails(selectedClient) : { primary: '', allowed: [], special: false, all: false }
   const activeModules = accessDetails.allowed
   const selectedClientBlocked = selectedClient ? clientBlocked(selectedClient) : false
@@ -1265,6 +1404,185 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
     ['Last active', profile['Last active'] || '-'],
     ['Renewal / trial', dateLabel(selectedClient?.nextBillingDate || selectedClient?.subscriptionExpiresAt || selectedClient?.trialEndsAt) || '-'],
   ]
+  const securitySnapshot = [
+    ['Active passkeys', activeClientPasskeys.length],
+    ['Registered devices', clientPasskeys.length],
+    ['Blocked devices', blockedClientPasskeys.length],
+    ['Failed passkey attempts', failedClientPasskeyAttempts],
+    ['Successful passkey logins', successfulClientPasskeyLogins],
+    ['Password logins', passwordClientLogins],
+    ['Google logins', googleClientLogins],
+    ['Last passkey used', dateTimeLabel(latestClientPasskey?.lastUsed)],
+    ['Last login', latestClientLogin ? `${latestClientLogin.authenticationMethod || latestClientLogin.method || 'login'} · ${dateTimeLabel(latestClientLogin.createdAt || latestClientLogin.date || latestClientLogin.time)}` : '-'],
+  ]
+  const clientOwnerId = selectedClient ? firstValue(ownerIdForClient(selectedClient), latestClientPasskey?.userId) : ''
+  const securityPanel = selectedClient ? (
+    <section className="rounded-2xl border border-cyan-200 bg-[linear-gradient(135deg,#ecfeff_0%,#eff6ff_50%,#f5f3ff_100%)] p-4 shadow-[0_18px_55px_-45px_rgba(14,165,233,0.5)]">
+      <button
+        type="button"
+        className="flex w-full flex-wrap items-center justify-between gap-3 text-left"
+        onClick={() => setSecurityExpanded((expanded) => !expanded)}
+        aria-expanded={securityExpanded}
+      >
+        <div className="min-w-0">
+          <div className="flex items-center gap-3">
+            <span className="grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-cyan-400 via-blue-600 to-violet-600 text-lg text-white shadow-lg shadow-blue-900/20">
+              🔐
+            </span>
+            <div>
+              <p className="text-sm font-black text-slate-950">Client Security Snapshot</p>
+              <p className="mt-0.5 text-xs font-semibold text-slate-600">
+                {activeClientPasskeys.length} active passkey · {failedClientPasskeyAttempts} failed attempts · {latestClientLogin ? `last login ${relativeTimeLabel(latestClientLogin.createdAt || latestClientLogin.date || latestClientLogin.time, liveNow)}` : 'no login history'}
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <DarkStatusPill value={activeClientPasskeys.length ? 'Passkey enabled' : 'No passkey'} />
+          <span className="rounded-full border border-cyan-200 bg-white px-3 py-1 text-xs font-black text-cyan-700 shadow-sm">
+            {securityExpanded ? 'Minimize' : 'Expand'}
+          </span>
+        </div>
+      </button>
+
+      {securityExpanded ? (
+        <>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {securitySnapshot.map(([label, value]) => (
+              <div key={label} className="min-w-0 rounded-xl border border-white/80 bg-white/85 px-3 py-2 shadow-sm">
+                <p className="text-[11px] font-black uppercase tracking-[0.12em] text-slate-500">{label}</p>
+                <p className="mt-1 truncate text-sm font-black text-slate-950">{value || '-'}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+            <div className="rounded-xl border border-blue-100 bg-white/85 p-3 shadow-sm">
+              <p className="text-[11px] font-black uppercase tracking-[0.12em] text-blue-700">Latest device</p>
+              <div className="mt-2 grid gap-2 sm:grid-cols-4">
+                <p className="truncate text-sm font-black text-slate-950">{latestClientPasskey?.deviceName || 'No registered passkey'}</p>
+                <p className="truncate text-xs font-semibold text-slate-600">{latestClientPasskey?.platform || '-'}</p>
+                <p className="truncate text-xs font-semibold text-slate-600">{latestClientPasskey?.browser || '-'}</p>
+                <p className="truncate text-xs font-semibold text-slate-600">{latestClientPasskey ? dateTimeLabel(latestClientPasskey.lastUsed || latestClientPasskey.createdAt) : '-'}</p>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2 lg:justify-end">
+              <ActionButton
+                icon={HiOutlineKey}
+                disabled={!latestClientPasskey || statusValue(latestClientPasskey.status) !== 'active' || busy === 'passkey-disable-latest'}
+                onClick={() => runAction('passkey-disable-latest', () => adminUpdatePasskey(latestClientPasskey.id, 'disable'), 'Latest passkey disabled.')}
+              >
+                Disable Latest Passkey
+              </ActionButton>
+              <ActionButton
+                icon={HiOutlinePower}
+                disabled={!clientOwnerId || busy === 'passkey-force-logout'}
+                onClick={() => runAction('passkey-force-logout', () => adminForceLogoutUser(clientOwnerId), 'Client forced logout.')}
+              >
+                Force Logout
+              </ActionButton>
+            </div>
+          </div>
+        </>
+      ) : null}
+    </section>
+  ) : null
+  const upgradeSummary = latestClientRequest ? [
+    ['Latest status', latestClientRequest.approvalStatus || latestClientRequest.status || latestClientRequest.paymentStatus || 'Pending'],
+    ['Requested plan', latestClientRequest.requestedPlan || latestClientRequest.selectedPlan || latestClientRequest.plan || '-'],
+    ['Module', latestClientRequest.businessType || latestClientRequest.module || workspaceBusinessType(selectedClient)],
+    ['Amount', money(paymentAmount(latestClientRequest), rowCurrency(latestClientRequest))],
+    ['Payment method', latestClientRequest.paymentMethod || latestClientRequest.paymentMethodId || '-'],
+    ['Transaction ID', latestClientRequest.transactionId || latestClientRequest.referenceNumber || '-'],
+    ['Proof', latestClientRequest.screenshotUrl || latestClientRequest.paymentProof || latestClientRequest.screenshotKey ? 'Uploaded' : 'Missing'],
+    ['Requested at', dateTimeLabel(latestClientRequest.createdAt || latestClientRequest.requestedAt)],
+    ['Updated at', dateTimeLabel(latestClientRequest.updatedAt || latestClientRequest.approvedAt || latestClientRequest.rejectedAt)],
+  ] : []
+  const upgradePanel = selectedClient ? (
+    <section className="rounded-2xl border border-amber-200 bg-[linear-gradient(135deg,#fffbeb_0%,#fff7ed_46%,#eff6ff_100%)] p-4 shadow-[0_18px_55px_-45px_rgba(245,158,11,0.45)]">
+      <button
+        type="button"
+        className="flex w-full flex-wrap items-center justify-between gap-3 text-left"
+        onClick={() => setUpgradeExpanded((expanded) => !expanded)}
+        aria-expanded={upgradeExpanded}
+      >
+        <div className="min-w-0">
+          <div className="flex items-center gap-3">
+            <span className="grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-amber-300 via-orange-500 to-blue-600 text-lg text-white shadow-lg shadow-amber-900/20">
+              ⬆️
+            </span>
+            <div>
+              <p className="text-sm font-black text-slate-950">Upgrade Requests Snapshot</p>
+              <p className="mt-0.5 text-xs font-semibold text-slate-600">
+                {pendingClientRequests.length} pending · {approvedClientRequests.length} approved · latest {latestClientRequest ? statusValue(latestClientRequest.approvalStatus || latestClientRequest.status || latestClientRequest.paymentStatus, 'pending').replace(/_/g, ' ') : 'none'}
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <DarkStatusPill value={pendingClientRequests.length ? 'Pending review' : latestClientRequest ? latestClientRequest.status || latestClientRequest.approvalStatus || 'Reviewed' : 'No requests'} />
+          <span className="rounded-full border border-amber-200 bg-white px-3 py-1 text-xs font-black text-amber-700 shadow-sm">
+            {upgradeExpanded ? 'Minimize' : 'Expand'}
+          </span>
+        </div>
+      </button>
+
+      {upgradeExpanded ? (
+        <>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {[
+              ['Total requests', sortedClientRequests.length],
+              ['Pending review', pendingClientRequests.length],
+              ['Approved / active', approvedClientRequests.length],
+              ['Rejected / failed', rejectedClientRequests.length],
+            ].map(([label, value]) => (
+              <div key={label} className="min-w-0 rounded-xl border border-white/80 bg-white/85 px-3 py-2 shadow-sm">
+                <p className="text-[11px] font-black uppercase tracking-[0.12em] text-slate-500">{label}</p>
+                <p className="mt-1 truncate text-sm font-black text-slate-950">{value}</p>
+              </div>
+            ))}
+          </div>
+
+          {latestClientRequest ? (
+            <div className="mt-4 rounded-xl border border-amber-100 bg-white/85 p-3 shadow-sm">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="text-[11px] font-black uppercase tracking-[0.12em] text-amber-700">Latest upgrade request</p>
+                  <p className="mt-1 text-sm font-black text-slate-950">{latestClientRequest.requestedPlan || latestClientRequest.selectedPlan || latestClientRequest.plan || 'Plan request'}</p>
+                </div>
+                <DarkStatusPill value={latestClientRequest.approvalStatus || latestClientRequest.status || latestClientRequest.paymentStatus || 'pending'} />
+              </div>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {upgradeSummary.map(([label, value]) => (
+                  <div key={label} className="min-w-0 rounded-lg border border-slate-100 bg-slate-50 px-3 py-2">
+                    <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">{label}</p>
+                    <p className="mt-1 truncate text-xs font-black text-slate-900">{value || '-'}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {latestClientRequest.screenshotUrl || latestClientRequest.paymentProof ? (
+                  <a
+                    href={latestClientRequest.screenshotUrl || latestClientRequest.paymentProof}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex h-9 items-center rounded-lg border border-amber-200 bg-white px-3 text-xs font-black text-amber-700 shadow-sm hover:bg-amber-50"
+                  >
+                    Open Proof
+                  </a>
+                ) : null}
+                <ActionButton icon={HiOutlineRectangleStack} onClick={() => setActiveTab('invoices')}>View Requests</ActionButton>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-4 rounded-xl border border-dashed border-amber-200 bg-white/70 p-6 text-center text-sm font-bold text-slate-500">
+              No upgrade requests found for this client.
+            </div>
+          )}
+        </>
+      ) : null}
+    </section>
+  ) : null
 
   if (embedded) {
     return (
@@ -1344,6 +1662,11 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
               {workerUpgradeError}
             </section>
           ) : null}
+          {passkeySecurityError ? (
+            <section className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs font-semibold text-amber-800">
+              {passkeySecurityError}
+            </section>
+          ) : null}
           {error ? <section className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm font-semibold text-rose-700">{error}</section> : null}
 
           {selectedClient ? (
@@ -1358,6 +1681,15 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
                       <div className="flex flex-wrap items-center gap-3">
                         <h2 className="truncate text-xl font-black text-slate-950">{selectedClient.companyName || selectedClient.clientName}</h2>
                         <DarkStatusPill value={profile['Account status'] === 'active' ? 'Active Client' : profile['Account status']} />
+                        <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-black shadow-sm ${
+                          selectedClient.behaviorScore >= 55
+                            ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                            : selectedClient.behaviorScore >= 28
+                              ? 'border-amber-200 bg-amber-50 text-amber-700'
+                              : 'border-slate-200 bg-white text-slate-600'
+                        }`}>
+                          Interest {selectedClient.behaviorScore || 0}/100 - {selectedClient.behaviorPriority || 'Watch'}
+                        </span>
                         <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-black shadow-sm ${clientOnline ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-white text-slate-600'}`}>
                           <span className={`h-2 w-2 rounded-full ${clientOnline ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.8)]' : 'bg-slate-400'}`} />
                           {clientPresenceLabel}
@@ -1426,6 +1758,9 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
                 <DarkStatCard label="Resolved Issues" value={resolvedIssues.length} helper="All time" icon={HiOutlineCheckCircle} tone="bg-green-50 text-green-700 ring-1 ring-green-100" />
                 <DarkStatCard label="Total Notes" value={notes.length} helper="Internal notes" icon={HiOutlinePencilSquare} tone="bg-violet-50 text-violet-700 ring-1 ring-violet-100" />
               </section>
+
+              {securityPanel}
+              {upgradePanel}
 
               {activeAction ? (
                 <section className="rounded-2xl border border-blue-100 bg-white p-4 shadow-sm">
@@ -1680,7 +2015,11 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
                 className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700 outline-none focus:border-blue-300"
               >
                 {!searchedClients.length ? <option value="">No matching clients</option> : null}
-                {searchedClients.map((client) => <option key={client.id} value={client.id}>{client.companyName} - {client.email || client.shortClientId}</option>)}
+                {searchedClients.map((client) => (
+                  <option key={client.id} value={client.id}>
+                    {client.companyName} - Score {client.behaviorScore || 0}/100 - {client.behaviorPriority || 'Watch'} - {client.email || client.shortClientId}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
@@ -1703,6 +2042,11 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
         {workerUpgradeError ? (
           <section className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-800">
             {workerUpgradeError}
+          </section>
+        ) : null}
+        {passkeySecurityError ? (
+          <section className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-800">
+            {passkeySecurityError}
           </section>
         ) : null}
         {error ? <section className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-rose-700">{error}</section> : null}
@@ -1753,6 +2097,15 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
                     <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700 shadow-sm">
                       <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.75)]" />
                       IP: {profile['IP address']}
+                    </div>
+                    <div className={`mt-2 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-black shadow-sm ${
+                      selectedClient.behaviorScore >= 55
+                        ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                        : selectedClient.behaviorScore >= 28
+                          ? 'border-amber-200 bg-amber-50 text-amber-700'
+                          : 'border-slate-200 bg-slate-50 text-slate-600'
+                    }`}>
+                      Interest score: {selectedClient.behaviorScore || 0}/100 - Priority {selectedClient.behaviorPriority || 'Watch'}
                     </div>
                     <div className={`mt-2 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-black shadow-sm ${clientOnline ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-slate-50 text-slate-600'}`}>
                       <span className={`h-2 w-2 rounded-full ${clientOnline ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.75)]' : 'bg-slate-400'}`} />
@@ -1854,6 +2207,9 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
               <StatCard label="Resolved Issues" value={resolvedIssues.length} icon={HiOutlineCheckCircle} tone="bg-emerald-50 text-emerald-700" />
               <StatCard label="Total Notes" value={notes.length} icon={HiOutlinePencilSquare} tone="bg-slate-100 text-slate-700" />
             </section>
+
+            {securityPanel}
+            {upgradePanel}
 
             <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
               <div className="overflow-x-auto">

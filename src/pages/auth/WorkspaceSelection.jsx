@@ -61,7 +61,6 @@ import TicketModal from '../../crm/components/support/TicketModal.jsx'
 import TicketDrawer from '../../crm/components/support/TicketDrawer.jsx'
 import { useSupportTickets } from '../../crm/hooks/useSupportTickets.js'
 import BusinessServicesSection from '../../components/BusinessServicesSection.jsx'
-import PasskeySetupPrompt from '../../components/security/PasskeySetupPrompt.jsx'
 
 import { clearAllUserCache } from '../../lib/authIsolation.js'
 
@@ -4139,7 +4138,6 @@ export default function WorkspaceSelection() {
           </section>
         </div>
       ) : null}
-      <PasskeySetupPrompt enabled={profile.emailVerified} />
     </main>
   )
 }

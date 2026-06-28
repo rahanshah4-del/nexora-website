@@ -18,6 +18,7 @@ import Badge from '../components/ui/Badge.jsx'
 import Button from '../components/ui/Button.jsx'
 import PageLoader from '../components/ui/PageLoader.jsx'
 import { MaintenanceBlock } from '../../components/MaintenanceMode.jsx'
+import PasskeySetupPrompt from '../../components/security/PasskeySetupPrompt.jsx'
 import usePlatformMaintenance from '../../hooks/usePlatformMaintenance.js'
 import {
   businessWorkspaceForSelection,
@@ -883,6 +884,20 @@ export default function DashboardLayout() {
       />
 
       <OnboardingWizard open={onboardingOpen} onComplete={() => setProductModalOpen(true)} />
+
+      <PasskeySetupPrompt
+        enabled={Boolean(
+          ready &&
+            isAuthenticated &&
+            firebaseUser?.emailVerified &&
+            workspaceOnboardingCompleted &&
+            hasActiveAccess &&
+            !isBlocked &&
+            !onboardingOpen &&
+            !productModalOpen &&
+            !isCompactPosRoute,
+        )}
+      />
 
       <AnimatePresence>
         {mobileOpen ? (

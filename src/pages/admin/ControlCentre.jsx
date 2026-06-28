@@ -174,6 +174,7 @@ const navGroups = [
       ['whatsappPricing', 'WhatsApp Pricing', HiOutlineChatBubbleLeftRight],
       ['moduleAccess', 'Module Access', HiOutlineShieldCheck],
       ['visitorAnalytics', 'Visitor Analytics', HiOutlineChartBarSquare],
+      ['behaviorInterest', 'Behavior Interest', HiOutlineChartBarSquare],
       ['security', 'Security / Passkeys', HiOutlineKey],
     ],
   },
@@ -1298,6 +1299,114 @@ export default function ControlCentre() {
       mostClickedModule,
     }
   }, [data.analyticsEvents, data.userSessions, liveNow])
+
+  const behaviorInterest = useMemo(() => {
+    const groups = new Map()
+    const interestWeights = {
+      signup_completed: 42,
+      workspace_selected: 36,
+      upgrade_request_submitted: 40,
+      start_free_trial_click: 26,
+      signup_started: 24,
+      pricing_click: 20,
+      business_service_request_submitted: 22,
+      module_click: 14,
+      login_completed: 10,
+      button_click: 5,
+      page_view: 1,
+    }
+    const getKey = (row) => row.userId || row.email || row.phone || row.visitorId || row.sessionId || row.id
+    const ensure = (row) => {
+      const key = getKey(row)
+      if (!key) return null
+      if (!groups.has(key)) {
+        groups.set(key, {
+          id: key,
+          userId: row.userId || '',
+          visitorId: row.visitorId || '',
+          email: row.email || '',
+          phone: row.phone || '',
+          score: 0,
+          events: 0,
+          clicks: 0,
+          signupStarted: 0,
+          signupCompleted: 0,
+          upgradeIntent: 0,
+          durationMs: 0,
+          modules: new Map(),
+          lastEventAt: null,
+          lastEventType: '',
+          lastPage: '',
+        })
+      }
+      return groups.get(key)
+    }
+    data.analyticsEvents.forEach((row) => {
+      const item = ensure(row)
+      if (!item) return
+      const eventType = row.eventType || 'event'
+      const date = toDate(row.timestamp || row.createdAt)
+      item.events += 1
+      item.score += interestWeights[eventType] || 2
+      item.durationMs += Number(row.sessionDurationMs || 0) || 0
+      item.lastEventAt = !item.lastEventAt || (date && date.getTime() > item.lastEventAt.getTime()) ? date || item.lastEventAt : item.lastEventAt
+      item.lastEventType = date && item.lastEventAt?.getTime?.() === date.getTime() ? eventType : item.lastEventType || eventType
+      item.lastPage = row.page || item.lastPage
+      if (['button_click', 'module_click', 'pricing_click', 'start_free_trial_click'].includes(eventType)) item.clicks += 1
+      if (eventType === 'signup_started') item.signupStarted += 1
+      if (eventType === 'signup_completed') item.signupCompleted += 1
+      if (eventType === 'upgrade_request_submitted' || eventType === 'pricing_click') item.upgradeIntent += 1
+      const moduleName = row.moduleName || row.buttonLabel || row.businessType || row.module || ''
+      if (moduleName) item.modules.set(moduleName, (item.modules.get(moduleName) || 0) + (eventType === 'module_click' ? 3 : 1))
+    })
+    data.userSessions.forEach((row) => {
+      const item = ensure(row)
+      if (!item) return
+      const date = toDate(row.lastActiveAt || row.updatedAt || row.createdAt)
+      item.score += 4
+      item.durationMs += Number(row.sessionDurationMs || 0) || 0
+      item.lastEventAt = !item.lastEventAt || (date && date.getTime() > item.lastEventAt.getTime()) ? date || item.lastEventAt : item.lastEventAt
+      item.lastEventType = item.lastEventType || row.lastEventType || 'session'
+      item.lastPage = row.page || item.lastPage
+      const moduleName = row.businessType || row.currentBusinessType || row.module || ''
+      if (moduleName) item.modules.set(moduleName, (item.modules.get(moduleName) || 0) + 1)
+    })
+    const rows = [...groups.values()].map((item) => {
+      const durationBonus = Math.min(20, Math.floor(item.durationMs / 60000) * 3)
+      const score = Math.min(100, item.score + durationBonus)
+      const topModule = [...item.modules.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] || '-'
+      const level = score >= 55 || item.signupCompleted || item.upgradeIntent >= 2
+        ? 'interested'
+        : score >= 28 || item.signupStarted
+          ? 'warm'
+          : score >= 10
+            ? 'cold'
+            : 'not_interested'
+      const priority = level === 'interested' ? 'High' : level === 'warm' ? 'Medium' : level === 'cold' ? 'Low' : 'Watch'
+      return { ...item, score, topModule, level, priority, lastEventAt: item.lastEventAt }
+    }).sort((a, b) => b.score - a.score)
+    const interested = rows.filter((row) => row.level === 'interested')
+    const warm = rows.filter((row) => row.level === 'warm')
+    const cold = rows.filter((row) => row.level === 'cold')
+    const notInterested = rows.filter((row) => row.level === 'not_interested')
+    const expectedConversions = Math.round((interested.length * 0.65) + (warm.length * 0.25) + (cold.length * 0.05))
+    const moduleInterest = [...rows.reduce((map, row) => {
+      if (row.topModule && row.topModule !== '-') map.set(row.topModule, (map.get(row.topModule) || 0) + row.score)
+      return map
+    }, new Map()).entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 8)
+      .map(([moduleName, score]) => ({ moduleName, score }))
+    return {
+      rows,
+      interested,
+      warm,
+      cold,
+      notInterested,
+      expectedConversions,
+      moduleInterest,
+    }
+  }, [data.analyticsEvents, data.userSessions])
 
   const funnelRows = useMemo(() => {
     const events = data.analyticsEvents
@@ -2452,6 +2561,40 @@ export default function ControlCentre() {
             <p className="mt-3 text-[11px] font-semibold text-slate-500">Live check: {dateTimeLabel(systemHealth.lastCheckedAt)}</p>
           </Panel>
         </div>
+
+        <Panel title="Behavior Interest" action={<ShellButton onClick={() => setActiveTab('behaviorInterest')}>Open</ShellButton>}>
+          <div className="grid gap-3 md:grid-cols-5">
+            <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-3">
+              <p className="text-[10px] font-black uppercase tracking-wide text-emerald-700">Interested</p>
+              <p className="mt-1 text-xl font-black text-emerald-900">{behaviorInterest.interested.length}</p>
+            </div>
+            <div className="rounded-xl border border-blue-100 bg-blue-50 p-3">
+              <p className="text-[10px] font-black uppercase tracking-wide text-blue-700">Warm</p>
+              <p className="mt-1 text-xl font-black text-blue-900">{behaviorInterest.warm.length}</p>
+            </div>
+            <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
+              <p className="text-[10px] font-black uppercase tracking-wide text-slate-600">Cold</p>
+              <p className="mt-1 text-xl font-black text-slate-900">{behaviorInterest.cold.length}</p>
+            </div>
+            <div className="rounded-xl border border-rose-100 bg-rose-50 p-3">
+              <p className="text-[10px] font-black uppercase tracking-wide text-rose-700">Not interested</p>
+              <p className="mt-1 text-xl font-black text-rose-900">{behaviorInterest.notInterested.length}</p>
+            </div>
+            <div className="rounded-xl border border-violet-100 bg-violet-50 p-3">
+              <p className="text-[10px] font-black uppercase tracking-wide text-violet-700">Expected</p>
+              <p className="mt-1 text-xl font-black text-violet-900">{behaviorInterest.expectedConversions}</p>
+            </div>
+          </div>
+          <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+            {behaviorInterest.rows.slice(0, 4).map((row) => (
+              <div key={row.id} className="rounded-xl border border-slate-100 bg-white p-3">
+                <p className="truncate text-sm font-black text-slate-900">{row.email || row.phone || row.visitorId || row.id}</p>
+                <p className="mt-1 text-xs font-semibold text-slate-500">{row.topModule} · score {row.score}</p>
+                <Status value={row.level} />
+              </div>
+            ))}
+          </div>
+        </Panel>
       </div>
     )
   }
@@ -3534,6 +3677,57 @@ export default function ControlCentre() {
     )
   }
 
+  function BehaviorInterest() {
+    return (
+      <div className="space-y-4">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+          <KpiCard label="Interested" value={behaviorInterest.interested.length} helper="High-priority leads" icon={HiOutlineCheckBadge} tone="emerald" />
+          <KpiCard label="Warm" value={behaviorInterest.warm.length} helper="Follow-up recommended" icon={HiOutlineChartBarSquare} tone="sky" />
+          <KpiCard label="Cold" value={behaviorInterest.cold.length} helper="Low intent" icon={HiOutlineUsers} tone="amber" />
+          <KpiCard label="Not Interested" value={behaviorInterest.notInterested.length} helper="Watch only" icon={HiOutlineBell} tone="rose" />
+          <KpiCard label="Expected Conversions" value={behaviorInterest.expectedConversions} helper="Behavior-based estimate" icon={HiOutlineCreditCard} tone="violet" />
+        </div>
+
+        <div className="grid gap-4 xl:grid-cols-[1.25fr_0.75fr]">
+          <Panel title="Interested Priority Queue" action={<ShellButton>Behavior score</ShellButton>}>
+            <AdminTable
+              rows={behaviorInterest.rows}
+              emptyTitle="No behavior data found"
+              columns={[
+                { key: 'priority', label: 'Priority', render: (row) => <Status value={row.priority} /> },
+                { key: 'score', label: 'Score', render: (row) => row.score },
+                { key: 'identity', label: 'Visitor / Client', render: (row) => <div><p className="font-black text-slate-900">{row.email || row.phone || row.userId || row.visitorId || row.id}</p><p className="text-xs text-slate-500">{row.userId || row.visitorId || '-'}</p></div> },
+                { key: 'level', label: 'Interest', render: (row) => <Status value={row.level} /> },
+                { key: 'module', label: 'Interested In', render: (row) => row.topModule || '-' },
+                { key: 'events', label: 'Events', render: (row) => `${row.events} events · ${row.clicks} clicks` },
+                { key: 'signup', label: 'Signup', render: (row) => `${row.signupStarted} started / ${row.signupCompleted} done` },
+                { key: 'last', label: 'Last Behavior', render: (row) => <div><p className="font-semibold">{row.lastEventType || '-'}</p><p className="text-xs text-slate-500">{dateTimeLabel(row.lastEventAt)}</p></div> },
+              ]}
+            />
+          </Panel>
+
+          <Panel title="Module Demand">
+            <div className="space-y-3">
+              {behaviorInterest.moduleInterest.map((row, index) => (
+                <div key={row.moduleName} className="rounded-xl border border-slate-100 bg-slate-50 p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="truncate text-sm font-black text-slate-900">{row.moduleName}</p>
+                    <span className="rounded-full bg-white px-2 py-1 text-xs font-black text-slate-700">#{index + 1}</span>
+                  </div>
+                  <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-200">
+                    <div className="h-full rounded-full bg-gradient-to-r from-emerald-400 via-blue-500 to-violet-500" style={{ width: `${Math.min(100, row.score)}%` }} />
+                  </div>
+                  <p className="mt-1 text-xs font-semibold text-slate-500">Interest score {row.score}</p>
+                </div>
+              ))}
+              {!behaviorInterest.moduleInterest.length ? <EmptyState title="No module interest yet" detail="Module clicks and signup behavior will appear here." /> : null}
+            </div>
+          </Panel>
+        </div>
+      </div>
+    )
+  }
+
   function StaffManagement() {
     return (
       <Panel title="Staff Management" action={<ShellButton>Firestore: backendStaff</ShellButton>}>
@@ -3684,6 +3878,8 @@ export default function ControlCentre() {
         return ModuleAccess()
       case 'visitorAnalytics':
         return VisitorAnalytics()
+      case 'behaviorInterest':
+        return BehaviorInterest()
       case 'security':
         return SecurityPasskeys()
       case 'emailMarketing':
