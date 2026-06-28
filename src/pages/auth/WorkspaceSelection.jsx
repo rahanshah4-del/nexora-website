@@ -3730,21 +3730,21 @@ export default function WorkspaceSelection() {
             sidebarCollapsed ? 'lg:ml-[68px]' : 'lg:ml-[260px]'
           }`}
         >
-          <header className="sticky top-0 z-20 flex h-[76px] items-center justify-between border-b border-white/60 bg-white/80 px-5 backdrop-blur-xl lg:px-6">
-            <div className="flex min-w-0 items-center gap-5">
+          <header className="sticky top-0 z-20 flex min-h-14 items-center justify-between border-b border-white/60 bg-white/90 px-3 py-2 backdrop-blur-xl sm:h-[76px] sm:px-5 sm:py-0 lg:px-6">
+            <div className="flex min-w-0 items-center gap-3 sm:gap-5">
               <button
                 type="button"
-                className="flex h-10 w-10 items-center justify-center rounded-lg text-slate-700 transition hover:bg-slate-100"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-700 transition hover:bg-slate-100 sm:h-10 sm:w-10"
                 onClick={handleToggleSidebar}
                 aria-label={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
               >
-                <HiOutlineBars3 className="h-6 w-6" />
+                <HiOutlineBars3 className="h-5 w-5 sm:h-6 sm:w-6" />
               </button>
               <div className="min-w-0">
-                <h1 className="truncate text-lg font-bold leading-6 text-slate-950">
+                <h1 className="truncate text-base font-bold leading-5 text-slate-950 sm:text-lg sm:leading-6">
                   {workspaceView === 'all' ? 'All Workspaces' : 'Enter Workspace'}
                 </h1>
-                <p className="mt-0.5 truncate text-sm text-slate-500">
+                <p className="mt-0.5 truncate text-xs text-slate-500 sm:text-sm">
                   {workspaceView === 'all' ? 'All Nexora modules on one page' : 'Select a workspace to continue'}
                 </p>
               </div>
@@ -3840,24 +3840,24 @@ export default function WorkspaceSelection() {
             </div>
           </header>
 
-          <div className="px-5 py-5 lg:px-6">
+          <div className="px-3 py-3 sm:px-5 sm:py-5 lg:px-6">
             <motion.section
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.28, ease: 'easeOut' }}
-              className="relative overflow-hidden rounded-2xl border border-white/60 bg-gradient-to-r from-sky-50 via-white to-indigo-50 px-7 py-6 shadow-sm"
+              className="relative overflow-hidden rounded-2xl border border-white/60 bg-gradient-to-r from-sky-50 via-white to-indigo-50 px-4 py-4 shadow-sm sm:px-7 sm:py-6"
             >
               <div className="max-w-[560px]">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="text-2xl font-extrabold tracking-tight text-slate-950">Welcome back, {profile.name.split(' ')[0]}.</h2>
+                  <h2 className="text-xl font-extrabold tracking-tight text-slate-950 sm:text-2xl">Welcome back, {profile.name.split(' ')[0]}.</h2>
                   <VerificationBadge verified={profile.emailVerified} />
                 </div>
-                <p className="mt-3 max-w-md text-sm leading-6 text-slate-600">
+                <p className="mt-2 max-w-md text-sm leading-6 text-slate-600 sm:mt-3">
                   {needsWorkspaceOnboarding
                     ? 'Choose a business module below to set up your workspace and start your 7-day trial.'
                     : 'Select a workspace to access your business data and modules.'}
                 </p>
-                <div className="mt-4 flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-500">
+                <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-500 sm:mt-4">
                   <span className="rounded-full bg-white/70 px-2.5 py-1 text-slate-700 shadow-sm">{profile.workspaceName}</span>
                   <span className="rounded-full bg-blue-600 px-2.5 py-1 text-white shadow-sm">Client ID: {profile.shortClientId}</span>
                   <span className="rounded-full bg-white/70 px-2.5 py-1 text-slate-700 shadow-sm">{profile.planLabel}</span>

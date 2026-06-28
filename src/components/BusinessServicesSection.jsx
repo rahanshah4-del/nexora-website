@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useSearchParams } from 'react-router-dom'
 import { HiOutlineArrowRight, HiOutlineCheckCircle, HiOutlineXMark } from 'react-icons/hi2'
 import {
@@ -41,6 +42,11 @@ function Field({ label, children }) {
       <div className="mt-1.5">{children}</div>
     </label>
   )
+}
+
+function ModalPortal({ children }) {
+  if (typeof document === 'undefined') return null
+  return createPortal(children, document.body)
 }
 
 export default function BusinessServicesSection({ compact = false, variant = compact ? 'compact' : 'public' }) {
@@ -297,8 +303,9 @@ export default function BusinessServicesSection({ compact = false, variant = com
       </div>
 
       {selectedService ? (
-        <div className="fixed inset-0 z-50 bg-white sm:grid sm:place-items-center sm:overflow-y-auto sm:overscroll-contain sm:bg-slate-950/60 sm:px-4 sm:py-6 sm:backdrop-blur-sm">
-          <div className="mx-auto flex h-dvh w-full max-w-3xl flex-col overflow-hidden bg-white shadow-2xl sm:h-auto sm:min-h-0 sm:max-h-[92dvh] sm:rounded-[1.35rem]">
+        <ModalPortal>
+        <div className="fixed inset-0 z-[100] grid place-items-center overflow-y-auto overscroll-contain bg-slate-950/60 px-3 py-4 backdrop-blur-sm sm:px-4 sm:py-6">
+          <div className="mx-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-3xl flex-col overflow-hidden rounded-[1.25rem] bg-white shadow-2xl sm:max-h-[92dvh] sm:rounded-[1.35rem]">
             <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-slate-100 bg-white px-4 pb-4 pt-4 sm:px-5">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.14em] text-blue-700">Request Service</p>
@@ -362,10 +369,12 @@ export default function BusinessServicesSection({ compact = false, variant = com
             </div>
           </div>
         </div>
+        </ModalPortal>
       ) : null}
       {selectedRequest ? (
-        <div className="fixed inset-0 z-50 bg-white sm:grid sm:place-items-center sm:overflow-y-auto sm:overscroll-contain sm:bg-slate-950/60 sm:px-4 sm:py-6 sm:backdrop-blur-sm">
-          <div className="mx-auto flex h-dvh w-full max-w-3xl flex-col overflow-hidden bg-white shadow-2xl sm:h-auto sm:min-h-0 sm:max-h-[92dvh] sm:rounded-[1.35rem]">
+        <ModalPortal>
+        <div className="fixed inset-0 z-[100] grid place-items-center overflow-y-auto overscroll-contain bg-slate-950/60 px-3 py-4 backdrop-blur-sm sm:px-4 sm:py-6">
+          <div className="mx-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-3xl flex-col overflow-hidden rounded-[1.25rem] bg-white shadow-2xl sm:max-h-[92dvh] sm:rounded-[1.35rem]">
             <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-slate-100 bg-white px-4 pb-4 pt-4 sm:px-5">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.14em] text-blue-700">Request Timeline</p>
@@ -426,6 +435,7 @@ export default function BusinessServicesSection({ compact = false, variant = com
             </div>
           </div>
         </div>
+        </ModalPortal>
       ) : null}
     </section>
   )
