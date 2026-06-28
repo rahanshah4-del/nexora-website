@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nexora-pwa-v7'
+const CACHE_NAME = 'nexora-pwa-v8-install-icon'
 const CACHE_URLS = [
   '/',
   '/index.html',
@@ -8,9 +8,13 @@ const CACHE_URLS = [
   '/favicon-32x32.png',
   '/favicon-48x48.png',
   '/favicon-64x64.png',
+  '/manifest.json',
   '/apple-touch-icon.png',
   '/android-chrome-192x192.png',
   '/android-chrome-512x512.png',
+  '/nexora-pwa-install-180.png',
+  '/nexora-pwa-install-192.png',
+  '/nexora-pwa-install-512.png',
   '/nexora-brand-logo.png',
 ]
 const OFFLINE_HTML = '<!doctype html><html><body><h1>Nexora is offline</h1><p>Please reconnect and try again.</p></body></html>'
