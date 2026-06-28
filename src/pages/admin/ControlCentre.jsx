@@ -3779,9 +3779,9 @@ export default function ControlCentre() {
   }
 
   function SecurityPasskeys() {
-    const passkeys = passkeySecurity.passkeys || []
-    const loginHistory = passkeySecurity.loginHistory || []
-    const sessions = passkeySecurity.activeSessions || []
+    const passkeys = [...(passkeySecurity.passkeys || [])].sort((a, b) => String(b.updatedAt || b.lastUsed || b.createdAt || '').localeCompare(String(a.updatedAt || a.lastUsed || a.createdAt || '')))
+    const loginHistory = [...(passkeySecurity.loginHistory || [])].sort((a, b) => String(b.createdAt || b.date || b.time || '').localeCompare(String(a.createdAt || a.date || a.time || '')))
+    const sessions = [...(passkeySecurity.activeSessions || [])].sort((a, b) => String(b.lastActiveAt || b.startedAt || b.loginTime || '').localeCompare(String(a.lastActiveAt || a.startedAt || a.loginTime || '')))
     const activePasskeys = passkeys.filter((row) => row.status === 'active')
     const failedPasskeyAttempts = loginHistory.filter((row) => row.authenticationMethod === 'passkey' && row.status === 'failed').length
     const successfulPasskeyLogins = loginHistory.filter((row) => row.authenticationMethod === 'passkey' && row.status === 'success').length

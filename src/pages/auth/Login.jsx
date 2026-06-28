@@ -52,16 +52,19 @@ export default function Login() {
   const [passkeyLoading, setPasskeyLoading] = useState(false)
   const [error, setError] = useState('')
   const [info, setInfo] = useState('')
+  const [sessionExpiredNotice, setSessionExpiredNotice] = useState(false)
 
   useEffect(() => {
     const storedNotice = window.sessionStorage.getItem('nexora:loginNotice')
     if (storedNotice) {
       setInfo(storedNotice)
+      setSessionExpiredNotice(true)
       window.sessionStorage.removeItem('nexora:loginNotice')
       return
     }
     if (location.state?.reason === 'workspace_inactivity') {
       setInfo('Your workspace session expired after 15 minutes of inactivity. Please sign in again. If you enabled passkey, use “Sign in with Passkey”.')
+      setSessionExpiredNotice(true)
     }
   }, [location.state])
 
@@ -277,11 +280,31 @@ export default function Login() {
             ) : null}
             {info ? (
               <motion.div
-                initial={{ opacity: 0, y: -4 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mt-4 rounded-xl border border-sky-200 bg-sky-50 px-3.5 py-2 text-[13px] font-medium text-sky-700"
+                initial={{ opacity: 0, y: -8, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                className={`mt-4 text-center ${
+                  sessionExpiredNotice
+                    ? 'rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 via-white to-sky-50 px-4 py-4 shadow-[0_18px_55px_-36px_rgba(245,158,11,0.75)]'
+                    : 'rounded-xl border border-sky-200 bg-sky-50 px-3.5 py-2 text-[13px] font-medium text-sky-700'
+                }`}
               >
-                {info}
+                {sessionExpiredNotice ? (
+                  <>
+                    <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-amber-100 text-2xl shadow-sm">
+                      ⏳
+                    </div>
+                    <p className="mt-3 text-sm font-black text-slate-950">Session expired</p>
+                    <p className="mt-1 text-xs font-semibold leading-5 text-slate-600">{info}</p>
+                    <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                      <button type="button" onClick={() => setSessionExpiredNotice(false)} className="min-h-10 rounded-xl bg-slate-950 px-3 text-xs font-black text-white">
+                        Re-login
+                      </button>
+                      <button type="button" onClick={() => window.location.reload()} className="min-h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-black text-slate-700">
+                        Reload
+                      </button>
+                    </div>
+                  </>
+                ) : info}
               </motion.div>
             ) : null}
 

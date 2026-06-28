@@ -533,6 +533,8 @@ async function finishRegistration(request, env) {
     userId: uid,
     email: claims.email || user.email || '',
     workspaceId,
+    company: firstString(user.companyName, user.workspaceName, user.businessName, user.company),
+    workspaceName: firstString(user.workspaceName, user.companyName, user.businessName, user.company),
     credentialId,
     publicKey: bytesToBase64Url(credential.publicKey),
     counter: credential.counter || 0,
@@ -667,27 +669,25 @@ async function adminList(request, env) {
   const { claims } = await requireAuth(request, env)
   if (!isAdmin(claims, env)) throw new Error('Admin access required.')
   const token = await getServiceAccessToken(env)
-  const [keys, users, sessions, logins] = await Promise.all([
-    firestoreListSafe(env, token, 'userPasskeys', 1000),
-    firestoreListSafe(env, token, 'users', 1000),
-    firestoreListSafe(env, token, 'userSessions', 1000),
-    firestoreListSafe(env, token, 'loginHistory', 500),
+  const [keys, sessions, logins] = await Promise.all([
+    firestoreList(env, token, 'userPasskeys', 200),
+    firestoreListSafe(env, token, 'userSessions', 200),
+    firestoreList(env, token, 'loginHistory', 200),
   ])
-  const userMap = new Map(users.map((user) => [user.id, user]))
   const search = lower(body.search)
   let passkeys = keys.map((row) => {
-    const user = userMap.get(row.userId) || {}
     return {
       id: row.id,
       userId: row.userId || '',
-      user: firstString(user.fullName, user.name, user.displayName, row.email, user.email),
-      email: firstString(row.email, user.email),
-      company: firstString(user.companyName, user.workspaceName, user.businessName),
-      workspaceId: row.workspaceId || user.workspaceId || '',
+      user: firstString(row.user, row.fullName, row.name, row.displayName, row.email),
+      email: firstString(row.email),
+      company: firstString(row.company, row.companyName, row.workspaceName, row.businessName),
+      workspaceId: row.workspaceId || '',
       deviceName: row.deviceName || '',
       browser: row.browser || '',
       platform: row.platform || '',
       createdAt: row.createdAt || '',
+      updatedAt: row.updatedAt || '',
       lastUsed: row.lastUsed || '',
       status: row.status || 'active',
       forcedReRegister: row.forcedReRegister === true,
@@ -696,10 +696,14 @@ async function adminList(request, env) {
   if (search) {
     passkeys = passkeys.filter((row) => [row.user, row.email, row.company, row.workspaceId, row.deviceName].some((value) => lower(value).includes(search)))
   }
+  passkeys = passkeys.sort((a, b) => String(b.updatedAt || b.lastUsed || b.createdAt || '').localeCompare(String(a.updatedAt || a.lastUsed || a.createdAt || '')))
   const loginHistory = logins
     .sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')))
     .slice(0, 500)
-  return jsonResponse(request, env, { passkeys, loginHistory, activeSessions: sessions })
+  const activeSessions = sessions
+    .sort((a, b) => String(b.lastActiveAt || b.startedAt || b.loginTime || '').localeCompare(String(a.lastActiveAt || a.startedAt || a.loginTime || '')))
+    .slice(0, 500)
+  return jsonResponse(request, env, { passkeys, loginHistory, activeSessions })
 }
 
 async function adminUpdate(request, env) {
