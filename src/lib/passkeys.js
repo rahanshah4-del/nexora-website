@@ -33,7 +33,7 @@ async function workerRequest(path, { method = 'POST', body, authRequired = true 
   const response = await fetch(`${PASSKEY_WORKER_URL}${path}`, {
     method,
     headers,
-    body: body === undefined ? undefined : JSON.stringify(body),
+    body: ['GET', 'HEAD'].includes(method) || body === undefined ? undefined : JSON.stringify(body),
   })
   const data = await response.json().catch(() => ({}))
   if (!response.ok) throw new Error(data?.error || 'Passkey request failed.')
