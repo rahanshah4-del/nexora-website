@@ -24,7 +24,7 @@ import { cn } from '../../utils/cn.js'
 import { belongsToBusiness, collectionRef, workspaceCollectionPath } from '../../lib/firestore.js'
 
 const RECENTS_KEY = 'nexora_global_search_recent_v1'
-const SEARCH_COLLECTION_LIMIT = 50
+const SEARCH_COLLECTION_LIMIT = 25
 const emptySearchRows = { customers: [], leads: [], invoices: [] }
 const searchCollections = [
   { key: 'customers', moduleKey: 'customers', path: 'customers' },

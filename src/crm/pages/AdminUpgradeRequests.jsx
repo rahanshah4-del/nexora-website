@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import {
   collection,
   doc,
+  limit,
   onSnapshot,
   orderBy,
   query,
@@ -116,7 +117,7 @@ export default function AdminUpgradeRequestsPage() {
       })
       return
     }
-    const q = query(collection(db, 'upgradeRequests'), orderBy('createdAt', 'desc'))
+    const q = query(collection(db, 'upgradeRequests'), orderBy('createdAt', 'desc'), limit(100))
     const unsub = onSnapshot(
       q,
       (snap) => {

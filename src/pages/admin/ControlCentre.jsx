@@ -518,24 +518,24 @@ function useControlCentreData() {
     }
 
     const unsubscribers = [
-      listen('users', 'users', 500),
-      listen('workspaces', 'workspaces', 500),
-      listen('upgradeRequests', 'upgradeRequests', 300),
-      listen('subscriptions', 'subscriptions', 300),
-      listen('platformPayments', 'platformPayments', 500),
-      listen('backendActivityLogs', 'backendActivityLogs', 500),
+      listen('users', 'users', 250),
+      listen('workspaces', 'workspaces', 250),
+      listen('upgradeRequests', 'upgradeRequests', 120),
+      listen('subscriptions', 'subscriptions', 150),
+      listen('platformPayments', 'platformPayments', 150),
+      listen('backendActivityLogs', 'backendActivityLogs', 120),
       listen('announcements', 'announcements', 200),
-      listenGroup('supportTickets', 'supportTickets', 500),
+      listenGroup('supportTickets', 'supportTickets', 150),
       listen('plans', PLATFORM_PLAN_COLLECTION, 50),
-      listen('promoCodes', 'promoCodes', 300),
+      listen('promoCodes', 'promoCodes', 100),
       listen('backendStaff', 'backendStaff', 100),
-      listen('clientSessions', 'clientSessions', 300),
-      listen('userPresence', 'userPresence', 300),
+      listen('clientSessions', 'clientSessions', 120),
+      listen('userPresence', 'userPresence', 120),
       listen('platformSettings', 'platformSettings', 20),
-      listen('analyticsEvents', 'analyticsEvents', 1000, 'createdAt'),
-      listen('userSessions', 'userSessions', 500, 'lastActiveAt'),
-      listenGroup('whatsappSettings', 'whatsappSettings', 500),
-      listen('businessServiceRequests', 'businessServiceRequests', 300),
+      listen('analyticsEvents', 'analyticsEvents', 200, 'createdAt'),
+      listen('userSessions', 'userSessions', 120, 'lastActiveAt'),
+      listenGroup('whatsappSettings', 'whatsappSettings', 120),
+      listen('businessServiceRequests', 'businessServiceRequests', 120),
     ]
 
     return () => unsubscribers.forEach((unsubscribe) => unsubscribe?.())
@@ -728,7 +728,9 @@ export default function ControlCentre() {
   useEffect(() => {
     const tick = () => setLiveNow(Date.now())
     tick()
-    const timer = window.setInterval(tick, 10000)
+    const timer = window.setInterval(() => {
+      if (!document.hidden) tick()
+    }, 30000)
     window.addEventListener('focus', tick)
     document.addEventListener('visibilitychange', tick)
     return () => {
@@ -742,9 +744,10 @@ export default function ControlCentre() {
     if (!backendAdminAllowed || !user?.getIdToken) return undefined
     let cancelled = false
     async function loadWorkerUpgradeRequests() {
+      if (document.hidden) return
       try {
         const token = await user.getIdToken()
-        const rows = await listWorkerUpgradeRequests(token, 200)
+        const rows = await listWorkerUpgradeRequests(token, 100)
         if (!cancelled) {
           setWorkerUpgradeRequests(rows)
           setWorkerUpgradeError('')
@@ -755,7 +758,7 @@ export default function ControlCentre() {
     }
     loadWorkerUpgradeRequests()
     window.addEventListener('focus', loadWorkerUpgradeRequests)
-    const timer = window.setInterval(loadWorkerUpgradeRequests, 10000)
+    const timer = window.setInterval(loadWorkerUpgradeRequests, 120000)
     return () => {
       cancelled = true
       window.clearInterval(timer)
@@ -767,6 +770,7 @@ export default function ControlCentre() {
     if (!backendAdminAllowed) return undefined
     let cancelled = false
     async function loadPasskeySecurity() {
+      if (document.hidden) return
       try {
         const result = await adminListPasskeySecurity(search)
         if (!cancelled) {
@@ -778,7 +782,7 @@ export default function ControlCentre() {
       }
     }
     loadPasskeySecurity()
-    const timer = window.setInterval(loadPasskeySecurity, 15000)
+    const timer = window.setInterval(loadPasskeySecurity, 120000)
     window.addEventListener('focus', loadPasskeySecurity)
     return () => {
       cancelled = true
@@ -802,7 +806,7 @@ export default function ControlCentre() {
       return undefined
     }
     return onSnapshot(
-      query(collection(db, 'backendNotificationStates'), limit(500)),
+      query(collection(db, 'backendNotificationStates'), limit(150)),
       (snap) => {
         const states = {}
         snap.docs.forEach((item) => {

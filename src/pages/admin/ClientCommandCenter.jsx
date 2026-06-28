@@ -406,13 +406,13 @@ function useCommandCenterData() {
     }
 
     const unsubscribers = [
-      listen('users', 'users', 500),
-      listen('workspaces', 'workspaces', 500),
-      listen('upgradeRequests', 'upgradeRequests', 300),
-      listen('platformPayments', 'platformPayments', 500),
-      listen('userSessions', 'userSessions', 500),
-      listen('analyticsEvents', 'analyticsEvents', 1000),
-      listenGroup('supportTickets', 'supportTickets', 500),
+      listen('users', 'users', 250),
+      listen('workspaces', 'workspaces', 250),
+      listen('upgradeRequests', 'upgradeRequests', 120),
+      listen('platformPayments', 'platformPayments', 150),
+      listen('userSessions', 'userSessions', 120),
+      listen('analyticsEvents', 'analyticsEvents', 200),
+      listenGroup('supportTickets', 'supportTickets', 150),
     ]
 
     return () => unsubscribers.forEach((unsubscribe) => unsubscribe?.())
@@ -790,7 +790,9 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
   useEffect(() => {
     const tick = () => setLiveNow(Date.now())
     tick()
-    const timer = window.setInterval(tick, 10000)
+    const timer = window.setInterval(() => {
+      if (!document.hidden) tick()
+    }, 30000)
     window.addEventListener('focus', tick)
     document.addEventListener('visibilitychange', tick)
     return () => {
@@ -804,9 +806,10 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
     if (!backendAdminAllowed || !user?.getIdToken) return undefined
     let cancelled = false
     async function loadWorkerRequests() {
+      if (document.hidden) return
       try {
         const token = await user.getIdToken()
-        const rows = await listWorkerUpgradeRequests(token, 200)
+        const rows = await listWorkerUpgradeRequests(token, 100)
         if (!cancelled) {
           setWorkerUpgradeRequests(rows)
           setWorkerUpgradeError('')
@@ -817,7 +820,7 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
     }
     loadWorkerRequests()
     window.addEventListener('focus', loadWorkerRequests)
-    const timer = window.setInterval(loadWorkerRequests, 10000)
+    const timer = window.setInterval(loadWorkerRequests, 120000)
     return () => {
       cancelled = true
       window.clearInterval(timer)
@@ -829,6 +832,7 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
     if (!backendAdminAllowed || !user?.getIdToken) return undefined
     let cancelled = false
     async function loadPasskeySecurity() {
+      if (document.hidden) return
       try {
         const result = await adminListPasskeySecurity('')
         if (!cancelled) {
@@ -841,7 +845,7 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
     }
     loadPasskeySecurity()
     window.addEventListener('focus', loadPasskeySecurity)
-    const timer = window.setInterval(loadPasskeySecurity, 15000)
+    const timer = window.setInterval(loadPasskeySecurity, 120000)
     return () => {
       cancelled = true
       window.clearInterval(timer)

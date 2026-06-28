@@ -3,6 +3,7 @@ import {
   collection,
   doc,
   getDoc,
+  limit,
   onSnapshot,
   orderBy,
   query,
@@ -50,7 +51,7 @@ export function listenBusinessServices({ includeDisabled = false } = {}, onNext,
     return () => {}
   }
 
-  const q = query(collection(db, BUSINESS_SERVICES_COLLECTION), orderBy('sortOrder', 'asc'))
+  const q = query(collection(db, BUSINESS_SERVICES_COLLECTION), orderBy('sortOrder', 'asc'), limit(50))
   return onSnapshot(
     q,
     (snap) => {
@@ -70,7 +71,7 @@ export function listenBusinessServiceRequests(onNext, onError) {
     onNext([])
     return () => {}
   }
-  const q = query(collection(db, BUSINESS_SERVICE_REQUESTS_COLLECTION), orderBy('createdAt', 'desc'))
+  const q = query(collection(db, BUSINESS_SERVICE_REQUESTS_COLLECTION), orderBy('createdAt', 'desc'), limit(100))
   return onSnapshot(
     q,
     (snap) => onNext(snap.docs.map((item) => ({ id: item.id, ...item.data() }))),
@@ -84,7 +85,7 @@ export function listenMyBusinessServiceRequests(onNext, onError) {
     onNext([])
     return () => {}
   }
-  const q = query(collection(db, BUSINESS_SERVICE_REQUESTS_COLLECTION), where('userId', '==', uid))
+  const q = query(collection(db, BUSINESS_SERVICE_REQUESTS_COLLECTION), where('userId', '==', uid), limit(50))
   return onSnapshot(
     q,
     (snap) => onNext(snap.docs.map((item) => ({ id: item.id, ...item.data() })).sort((a, b) => {
@@ -101,7 +102,7 @@ export function listenBusinessServiceRequestTimeline(requestId, onNext, onError)
     onNext([])
     return () => {}
   }
-  const q = query(collection(db, BUSINESS_SERVICE_REQUESTS_COLLECTION, requestId, 'timeline'), orderBy('createdAt', 'asc'))
+  const q = query(collection(db, BUSINESS_SERVICE_REQUESTS_COLLECTION, requestId, 'timeline'), orderBy('createdAt', 'asc'), limit(80))
   return onSnapshot(q, (snap) => onNext(snap.docs.map((item) => ({ id: item.id, ...item.data() }))), onError)
 }
 
@@ -110,7 +111,7 @@ export function listenBusinessServiceRequestComments(requestId, onNext, onError)
     onNext([])
     return () => {}
   }
-  const q = query(collection(db, BUSINESS_SERVICE_REQUESTS_COLLECTION, requestId, 'comments'), orderBy('createdAt', 'asc'))
+  const q = query(collection(db, BUSINESS_SERVICE_REQUESTS_COLLECTION, requestId, 'comments'), orderBy('createdAt', 'asc'), limit(80))
   return onSnapshot(q, (snap) => onNext(snap.docs.map((item) => ({ id: item.id, ...item.data() }))), onError)
 }
 

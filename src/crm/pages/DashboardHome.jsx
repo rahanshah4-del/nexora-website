@@ -325,7 +325,7 @@ const DataRow = memo(function DataRow({ label, value, badge }) {
   )
 })
 
-const DASHBOARD_RECENT_LIMIT = 50
+const DASHBOARD_RECENT_LIMIT = 25
 
 const restaurantQuickActions = [
   { title: 'New Order', detail: 'Start dine-in or takeaway', to: '/app/orders', icon: HiOutlineShoppingBag },
@@ -336,7 +336,7 @@ const restaurantQuickActions = [
 ]
 
 function RestaurantDashboard({ workspaceName }) {
-  const { invoices } = useInvoices({ limitCount: 50 })
+  const { invoices } = useInvoices({ limitCount: DASHBOARD_RECENT_LIMIT })
   const { settings } = useBusinessSettings()
   const { data: savedOrders } = useLocalData(loadRestaurantOrders, [restaurantOrdersStorageKey])
   const invoiceOrders = useMemo(() => normalizeInvoiceOrders(invoices), [invoices])

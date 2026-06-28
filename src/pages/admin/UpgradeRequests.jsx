@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { collection, doc, onSnapshot, orderBy, query, serverTimestamp, updateDoc, writeBatch } from 'firebase/firestore'
+import { collection, doc, limit, onSnapshot, orderBy, query, serverTimestamp, updateDoc, writeBatch } from 'firebase/firestore'
 import { db } from '../../lib/firebase.js'
 import useAuth from '../../context/useAuth.js'
 import { clientSafeMessage } from '../../lib/errorHandler.js'
@@ -43,7 +43,7 @@ export default function UpgradeRequests() {
   useEffect(() => {
     if (!firebaseEnabled) return undefined
 
-    const q = query(collection(db, 'upgradeRequests'), orderBy('createdAt', 'desc'))
+    const q = query(collection(db, 'upgradeRequests'), orderBy('createdAt', 'desc'), limit(100))
     const unsubscribe = onSnapshot(
       q,
       (snap) => {
@@ -63,11 +63,12 @@ export default function UpgradeRequests() {
     if (!backendAdminAllowed || !user?.getIdToken) return undefined
     let cancelled = false
     async function loadWorkerRequests() {
+      if (document.hidden) return
       setWorkerLoading(true)
       setWorkerError('')
       try {
         const idToken = await user.getIdToken()
-        const rows = await listWorkerUpgradeRequests(idToken, 200)
+        const rows = await listWorkerUpgradeRequests(idToken, 100)
         if (!cancelled) setWorkerItems(rows)
       } catch (e) {
         if (!cancelled) setWorkerError(clientSafeMessage(e, 'Failed to load Worker upgrade requests.', { context: 'Worker upgrade requests load' }))
@@ -76,10 +77,12 @@ export default function UpgradeRequests() {
       }
     }
     loadWorkerRequests()
-    const timer = window.setInterval(loadWorkerRequests, 30000)
+    window.addEventListener('focus', loadWorkerRequests)
+    const timer = window.setInterval(loadWorkerRequests, 120000)
     return () => {
       cancelled = true
       window.clearInterval(timer)
+      window.removeEventListener('focus', loadWorkerRequests)
     }
   }, [backendAdminAllowed, user])
 
