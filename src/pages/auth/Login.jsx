@@ -7,6 +7,7 @@ import {
   HiOutlineChatBubbleLeftRight,
   HiOutlineEye,
   HiOutlineEyeSlash,
+  HiOutlineFingerPrint,
   HiOutlineKey,
   HiOutlineHomeModern,
   HiOutlineLockClosed,
@@ -403,10 +404,13 @@ export default function Login() {
               type="button"
               onClick={handlePasskeySignIn}
               disabled={passkeyLoading}
-              className="mt-2.5 flex h-10 w-full items-center justify-center gap-2.5 rounded-xl border border-indigo-200 bg-indigo-50 text-[13px] font-black text-indigo-700 transition hover:bg-indigo-100 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+              className="group mt-2.5 flex h-10 w-full items-center justify-center gap-2.5 rounded-xl border border-slate-900 bg-slate-950 text-[13px] font-black text-white shadow-lg shadow-slate-950/20 transition hover:-translate-y-0.5 hover:bg-slate-900 active:translate-y-0 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              <HiOutlineKey className="h-[18px] w-[18px]" />
-              {passkeyLoading ? 'Opening passkey…' : '🔐 Sign in with Passkey'}
+              <span className="relative grid h-6 w-6 place-items-center rounded-full bg-gradient-to-br from-white to-slate-200 text-slate-950 shadow-sm ring-1 ring-white/40 transition group-hover:scale-105">
+                <HiOutlineFingerPrint className="h-[17px] w-[17px] stroke-[2.4]" />
+                <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full border border-slate-950 bg-cyan-300" />
+              </span>
+              {passkeyLoading ? 'Opening passkey…' : 'Sign in with Passkey'}
             </button>
 
             <p className="mt-4 text-center text-xs text-slate-500">
