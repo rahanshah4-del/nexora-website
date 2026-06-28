@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import { HiOutlineKey, HiOutlineShieldCheck, HiOutlineXMark } from 'react-icons/hi2'
 import { auth } from '../../lib/firebase.js'
-import { listMyPasskeys, passkeysSupported, platformPasskeyAvailable, registerPasskey } from '../../lib/passkeys.js'
+import { listMyPasskeys, passkeysSupported, registerPasskey } from '../../lib/passkeys.js'
 
-export default function PasskeySetupPrompt({ enabled = true }) {
+const PASSKEY_REMINDER_DELAY_MS = 3 * 24 * 60 * 60 * 1000
+
+export default function PasskeySetupPrompt({ enabled = true, emailVerified = false }) {
   const user = auth?.currentUser
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -13,10 +15,11 @@ export default function PasskeySetupPrompt({ enabled = true }) {
   useEffect(() => {
     let cancelled = false
     async function check() {
-      if (!enabled || !user?.uid || !user.emailVerified) return
+      if (!enabled || !user?.uid || !emailVerified) return
       const skipKey = `nexoraPasskeySkipped:${user.uid}`
-      if (localStorage.getItem(skipKey) === 'yes') return
-      const isSupported = passkeysSupported() && await platformPasskeyAvailable()
+      const skippedAt = Number(localStorage.getItem(skipKey) || 0)
+      if (skippedAt && Date.now() - skippedAt < PASSKEY_REMINDER_DELAY_MS) return
+      const isSupported = passkeysSupported()
       if (!isSupported) return
       const passkeys = await listMyPasskeys().catch(() => [])
       if (!cancelled) {
@@ -28,7 +31,7 @@ export default function PasskeySetupPrompt({ enabled = true }) {
     return () => {
       cancelled = true
     }
-  }, [enabled, user?.uid, user?.emailVerified])
+  }, [enabled, emailVerified, user?.uid])
 
   if (!open || !supported) return null
 
@@ -37,6 +40,7 @@ export default function PasskeySetupPrompt({ enabled = true }) {
     setMessage('')
     try {
       await registerPasskey()
+      if (user?.uid) localStorage.removeItem(`nexoraPasskeySkipped:${user.uid}`)
       setMessage('✅ Passkey enabled. Next time you can sign in with fingerprint, Face ID, Windows Hello, or device PIN.')
       window.setTimeout(() => setOpen(false), 1200)
     } catch (error) {
@@ -47,7 +51,7 @@ export default function PasskeySetupPrompt({ enabled = true }) {
   }
 
   function skip() {
-    if (user?.uid) localStorage.setItem(`nexoraPasskeySkipped:${user.uid}`, 'yes')
+    if (user?.uid) localStorage.setItem(`nexoraPasskeySkipped:${user.uid}`, String(Date.now()))
     setOpen(false)
   }
 

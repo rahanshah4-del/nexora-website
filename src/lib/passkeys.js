@@ -88,17 +88,40 @@ export function deviceMeta() {
   }
 }
 
+function passkeySetupErrorMessage(error) {
+  const name = String(error?.name || '')
+  const message = String(error?.message || error || '')
+  const combined = `${name} ${message}`.toLowerCase()
+  if (combined.includes('quota')) {
+    return 'Your device passkey storage is full. Remove an old saved passkey for Nexora from your browser/device password settings, then try again. Password login will still work.'
+  }
+  if (combined.includes('invalidstate') || combined.includes('previously registered') || combined.includes('already registered')) {
+    return 'A passkey for this account already exists on this device. Use “Sign in with Passkey” next time, or remove the old passkey from Settings > Security before registering again.'
+  }
+  if (combined.includes('notallowed') || combined.includes('cancel') || combined.includes('abort')) {
+    return 'Passkey setup was cancelled or timed out. You can try again from Settings > Security.'
+  }
+  if (combined.includes('not supported') || combined.includes('unsupported')) {
+    return 'Passkeys are not supported on this browser or device. Please use password login or try Chrome, Edge, Safari, Android, iPhone, or Windows Hello.'
+  }
+  return message || 'Passkey setup failed. You can try again from Settings > Security.'
+}
+
 export async function listMyPasskeys() {
   const data = await callBackend('listMyPasskeys')
   return data?.passkeys || []
 }
 
 export async function registerPasskey() {
-  if (!passkeysSupported()) throw new Error('Passkeys are not supported on this browser.')
-  const meta = deviceMeta()
-  const begin = await callBackend('passkeyBeginRegistration', { origin: meta.origin })
-  const response = await startRegistration({ optionsJSON: begin.options })
-  return callBackend('passkeyFinishRegistration', { response, ...meta })
+  try {
+    if (!passkeysSupported()) throw new Error('Passkeys are not supported on this browser.')
+    const meta = deviceMeta()
+    const begin = await callBackend('passkeyBeginRegistration', { origin: meta.origin })
+    const response = await startRegistration({ optionsJSON: begin.options })
+    return callBackend('passkeyFinishRegistration', { response, ...meta })
+  } catch (error) {
+    throw new Error(passkeySetupErrorMessage(error))
+  }
 }
 
 export async function signInWithPasskey() {

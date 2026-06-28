@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { AiOutlineGoogle } from 'react-icons/ai'
 import {
   HiOutlineAcademicCap,
@@ -16,7 +16,7 @@ import {
   HiOutlineUser,
   HiOutlineUserGroup,
 } from 'react-icons/hi2'
-import { Link, Navigate, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
 import { motion } from 'framer-motion'
 import { auth, authPersistenceReady } from '../../lib/firebase.js'
@@ -43,6 +43,7 @@ const LOGIN_MODULES = [
 export default function Login() {
   const { user, loading } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -51,6 +52,18 @@ export default function Login() {
   const [passkeyLoading, setPasskeyLoading] = useState(false)
   const [error, setError] = useState('')
   const [info, setInfo] = useState('')
+
+  useEffect(() => {
+    const storedNotice = window.sessionStorage.getItem('nexora:loginNotice')
+    if (storedNotice) {
+      setInfo(storedNotice)
+      window.sessionStorage.removeItem('nexora:loginNotice')
+      return
+    }
+    if (location.state?.reason === 'workspace_inactivity') {
+      setInfo('Your workspace session expired after 15 minutes of inactivity. Please sign in again. If you enabled passkey, use “Sign in with Passkey”.')
+    }
+  }, [location.state])
 
   // Already authenticated? Redirect optimistically to the workspace. The
   // /workspace route + RequireAuth own the not-verified bounce, so we never
@@ -86,6 +99,7 @@ export default function Login() {
       }
       recordLoginHistory({ method: 'password', status: 'success', userId: credentials.user.uid, email: credentials.user.email || loginEmail }).catch(() => {})
       trackAnalyticsEvent('login_completed', { userId: credentials.user.uid, email: credentials.user.email || loginEmail, page: '/login', status: 'success' }).catch(() => {})
+      window.sessionStorage.removeItem('nexora:loginNotice')
       console.log('[LOGIN STEP 7] Route decision', { route: WORKSPACE_ROUTE, reason: 'verified' })
       navigate(WORKSPACE_ROUTE, { replace: true })
       console.log('[LOGIN STEP 8] Navigation success', { route: WORKSPACE_ROUTE })
@@ -116,6 +130,7 @@ export default function Login() {
       const result = await signInWithPopup(auth, provider)
       recordLoginHistory({ method: 'google', status: 'success', userId: result.user.uid, email: result.user.email || '' }).catch(() => {})
       trackAnalyticsEvent('login_completed', { userId: result.user.uid, email: result.user.email || '', page: '/login', status: 'google' }).catch(() => {})
+      window.sessionStorage.removeItem('nexora:loginNotice')
       navigate(WORKSPACE_ROUTE, { replace: true })
     } catch (err) {
       trackAnalyticsEvent('login_failed', { page: '/login', status: err?.code || 'google_failed' }).catch(() => {})
@@ -138,6 +153,7 @@ export default function Login() {
       trackAnalyticsEvent('login_started', { page: '/login', buttonLabel: 'Passkey sign in' }).catch(() => {})
       const { credentials } = await signInWithPasskey()
       trackAnalyticsEvent('login_completed', { userId: credentials.user.uid, email: credentials.user.email || '', page: '/login', status: 'passkey' }).catch(() => {})
+      window.sessionStorage.removeItem('nexora:loginNotice')
       navigate(WORKSPACE_ROUTE, { replace: true })
     } catch (err) {
       trackAnalyticsEvent('login_failed', { page: '/login', status: err?.code || 'passkey_failed' }).catch(() => {})

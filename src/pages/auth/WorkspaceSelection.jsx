@@ -1811,6 +1811,19 @@ export default function WorkspaceSelection() {
   const onboardingSelectionMode = !developerOverride && (!workspaceFullyConfigured || savedWorkspaceModule.stale)
   const moduleLockMessage = 'We are preparing this feature for your account. It will be available soon as Nexora expands your workspace tools.'
   const needsWorkspaceOnboarding = !authLoading && !accountLoading && Boolean(user?.uid) && !hasCrmWorkspace
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined
+    if (authLoading || accountLoading || !user?.uid || !emailVerified || workspaceFullyConfigured || businessTypeSaving) return undefined
+    const refreshKey = `nexora:workspace:auto-refresh-before-module:${user.uid}`
+    if (window.sessionStorage.getItem(refreshKey) === 'done') return undefined
+    window.sessionStorage.setItem(refreshKey, 'done')
+    const timer = window.setTimeout(() => {
+      window.location.reload()
+    }, 250)
+    return () => window.clearTimeout(timer)
+  }, [accountLoading, authLoading, businessTypeSaving, emailVerified, user?.uid, workspaceFullyConfigured])
+
   const visibleModuleAccess = useMemo(
     () =>
       shouldFilterModules

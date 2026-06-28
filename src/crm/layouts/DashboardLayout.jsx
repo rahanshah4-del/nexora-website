@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { signOut } from 'firebase/auth'
 import {
   HiOutlineArrowLeft,
   HiOutlineArrowRight,
@@ -43,7 +44,10 @@ import {
   workspaceRoute,
 } from '../lib/workspaceSession.js'
 import { goToWorkspace } from '../../lib/workspaceNavigation.js'
+import { auth } from '../../lib/firebase.js'
 import logoUrl from '../../assets/logo/nexora-logo.svg'
+
+const WORKSPACE_INACTIVITY_LIMIT_MS = 15 * 60 * 1000
 
 function formatAccessDate(value) {
   const date = typeof value?.toDate === 'function' ? value.toDate() : value instanceof Date ? value : value ? new Date(value) : null
@@ -360,6 +364,40 @@ export default function DashboardLayout() {
 
   const userId = user?.uid ?? null
   const isAuthenticated = Boolean(userId)
+
+  useEffect(() => {
+    if (!ready || !isAuthenticated || userLoading || !location.pathname.startsWith('/app')) return undefined
+    let timer = null
+    let expired = false
+    const expireSession = async () => {
+      if (expired) return
+      expired = true
+      try {
+        window.sessionStorage.setItem('nexora:loginNotice', 'Your workspace session expired after 15 minutes of inactivity. Please sign in again. If you enabled passkey, use "Sign in with Passkey".')
+      } catch {
+        // Non-fatal in private browsing.
+      }
+      try {
+        if (auth) await signOut(auth)
+      } catch {
+        // Navigation below still returns the user to login.
+      }
+      navigate('/login', { replace: true, state: { reason: 'workspace_inactivity' } })
+    }
+    const resetTimer = () => {
+      if (expired) return
+      if (timer) window.clearTimeout(timer)
+      timer = window.setTimeout(expireSession, WORKSPACE_INACTIVITY_LIMIT_MS)
+    }
+    const events = ['click', 'keydown', 'mousemove', 'mousedown', 'touchstart', 'scroll', 'wheel']
+    events.forEach((eventName) => window.addEventListener(eventName, resetTimer, { passive: true }))
+    resetTimer()
+    return () => {
+      if (timer) window.clearTimeout(timer)
+      events.forEach((eventName) => window.removeEventListener(eventName, resetTimer))
+    }
+  }, [isAuthenticated, location.pathname, navigate, ready, userLoading])
+
   const hasActiveAccess = Boolean(hasActiveWorkspaceSubscription || isTrialActive)
   const billingRenewalRoute = location.pathname === '/app/subscriptions' || location.pathname.startsWith('/app/subscriptions/')
   const developerOverride = isDeveloperOwnerAccount(userDoc, firebaseUser)
@@ -901,6 +939,7 @@ export default function DashboardLayout() {
       <OnboardingWizard open={onboardingOpen} onComplete={() => setProductModalOpen(true)} />
 
       <PasskeySetupPrompt
+        emailVerified={passkeyEmailVerified}
         enabled={Boolean(
           ready &&
             isAuthenticated &&

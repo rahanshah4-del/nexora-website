@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { AiOutlineGoogle } from 'react-icons/ai'
 import { HiOutlineCheckCircle, HiOutlineExclamationCircle } from 'react-icons/hi2'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
@@ -14,16 +14,15 @@ import { sendCustomVerificationEmail } from '../../lib/emailVerificationService.
 import { trackAnalyticsEvent } from '../../lib/analyticsTracking.js'
 
 function normalizePhone(raw) {
-  if (!raw) return ''
-  let cleaned = raw.replace(/[\s\-().]/g, '')
-  if (cleaned.startsWith('00')) cleaned = '+' + cleaned.slice(2)
-  if (!cleaned.startsWith('+') && !cleaned.startsWith('0')) cleaned = '+' + cleaned
-  return cleaned
+  return String(raw || '').replace(/\D/g, '')
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const PAKISTAN_MOBILE_RE = /^03\d{9}$/
+const SIGNUP_SESSION_MS = 5 * 60 * 1000
 
 function validateField(name, value, all) {
+  const phoneDigits = normalizePhone(value)
   switch (name) {
     case 'fullName':
       return value.trim() ? '' : 'Enter your full name.'
@@ -33,9 +32,13 @@ function validateField(name, value, all) {
       if (!value.trim()) return 'Enter your email address.'
       return EMAIL_RE.test(value.trim()) ? '' : 'Enter a valid email address.'
     case 'phone':
-      return value.trim() ? '' : 'Enter your phone number.'
+      if (!value.trim()) return 'Enter your phone number.'
+      if (!/^\d+$/.test(value.trim())) return 'Use digits only, for example 03194329754.'
+      if (phoneDigits.length !== 11) return 'Phone number must be exactly 11 digits, for example 03194329754.'
+      return PAKISTAN_MOBILE_RE.test(phoneDigits) ? '' : 'Phone number must start with 03, for example 03194329754.'
     case 'password':
-      return value.length >= 6 ? '' : 'Password must be at least 6 characters.'
+      if (value.length < 8) return 'Password must be at least 8 characters.'
+      return /[A-Za-z]/.test(value) && /\d/.test(value) ? '' : 'Password must include at least one letter and one number.'
     case 'confirmPassword':
       if (!value) return 'Re-enter your password.'
       return value === all.password ? '' : 'Passwords do not match.'
@@ -84,6 +87,15 @@ export default function Signup() {
   const [googleLoading, setGoogleLoading] = useState(false)
   const [error, setError] = useState('')
   const [verificationSent, setVerificationSent] = useState(false)
+  const [sessionExpired, setSessionExpired] = useState(false)
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setSessionExpired(true)
+      setError('Your signup session expired. Please refresh the page and start again.')
+    }, SIGNUP_SESSION_MS)
+    return () => window.clearTimeout(timer)
+  }, [])
 
   const errors = useMemo(() => {
     const next = {}
@@ -102,7 +114,7 @@ export default function Signup() {
 
   const handleChange = (name, value) => {
     setForm((current) => ({ ...current, [name]: value }))
-    if (error) setError('')
+    if (error && !sessionExpired) setError('')
   }
 
   const handleBlur = (name) => setTouched((current) => ({ ...current, [name]: true }))
@@ -135,6 +147,10 @@ export default function Signup() {
     event.preventDefault()
     setError('')
     markAllTouched()
+    if (sessionExpired) {
+      setError('Your signup session expired. Please refresh the page and start again.')
+      return
+    }
     if (!formValid) return
 
     if (!auth) {
@@ -199,6 +215,10 @@ export default function Signup() {
       return
     }
     setTouched((current) => ({ ...current, fullName: true, phone: true }))
+    if (sessionExpired) {
+      setError('Your signup session expired. Please refresh the page and start again.')
+      return
+    }
     const trimmedFullName = form.fullName.trim()
     const trimmedPhone = form.phone.trim()
     if (!trimmedFullName) {
@@ -277,14 +297,21 @@ export default function Signup() {
               animate={{ opacity: 1, y: 0 }}
               className="mt-5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-medium text-rose-700"
             >
-              {error}
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <span>{error}</span>
+                {sessionExpired ? (
+                  <button type="button" onClick={() => window.location.reload()} className="rounded-lg bg-rose-600 px-3 py-1.5 text-xs font-black text-white">
+                    Refresh
+                  </button>
+                ) : null}
+              </div>
             </motion.div>
           ) : null}
 
           <button
             type="button"
             onClick={handleGoogleSignUp}
-            disabled={googleLoading || submitting}
+            disabled={googleLoading || submitting || sessionExpired}
             className="mt-5 flex w-full items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <AiOutlineGoogle className="h-5 w-5 text-slate-700" />
@@ -304,16 +331,16 @@ export default function Signup() {
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Email address" name="email" type="email" value={form.email} error={errors.email} touched={touched.email} onChange={handleChange} onBlur={handleBlur} placeholder="you@example.com" autoComplete="email" />
-              <Field label="Phone number" name="phone" type="tel" value={form.phone} error={errors.phone} touched={touched.phone} onChange={handleChange} onBlur={handleBlur} placeholder="0312 3456789" autoComplete="tel" />
+              <Field label="Phone number" name="phone" type="tel" value={form.phone} error={errors.phone} touched={touched.phone} onChange={handleChange} onBlur={handleBlur} placeholder="03194329754" autoComplete="tel" />
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Password" name="password" type="password" value={form.password} error={errors.password} touched={touched.password} onChange={handleChange} onBlur={handleBlur} placeholder="Create a password" autoComplete="new-password" />
+              <Field label="Password" name="password" type="password" value={form.password} error={errors.password} touched={touched.password} onChange={handleChange} onBlur={handleBlur} placeholder="At least 8 characters" autoComplete="new-password" />
               <Field label="Confirm password" name="confirmPassword" type="password" value={form.confirmPassword} error={errors.confirmPassword} touched={touched.confirmPassword} onChange={handleChange} onBlur={handleBlur} placeholder="Re-enter password" autoComplete="new-password" />
             </div>
 
             <button
               type="submit"
-              disabled={submitting || googleLoading}
+              disabled={submitting || googleLoading || sessionExpired}
               className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-600 to-indigo-600 text-sm font-bold text-white shadow-lg shadow-sky-600/20 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {submitting ? (
