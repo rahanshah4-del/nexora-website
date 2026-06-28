@@ -508,14 +508,14 @@ function WorkspaceCard({ workspace, index, emailVerified, selected, saving, onSe
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.22, delay: index * 0.03, ease: 'easeOut' }}
-      className={`rounded-lg border bg-white p-4 shadow-[0_12px_32px_-26px_rgba(15,23,42,0.42)] ${
+      className={`rounded-lg border bg-white p-3 shadow-[0_12px_32px_-26px_rgba(15,23,42,0.42)] sm:p-4 ${
         selected ? 'border-blue-500 ring-1 ring-blue-100' : 'border-slate-200'
       }`}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-3">
-          <span className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl ${workspace.iconTone}`}>
-            <Icon className="h-7 w-7" />
+          <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl sm:h-14 sm:w-14 ${workspace.iconTone}`}>
+            <Icon className="h-6 w-6 sm:h-7 sm:w-7" />
           </span>
           <div className="min-w-0 pt-0.5">
             <div className="flex min-w-0 flex-wrap items-center gap-2">
@@ -545,7 +545,7 @@ function WorkspaceCard({ workspace, index, emailVerified, selected, saving, onSe
         ) : null}
       </div>
 
-      <div className="mt-5 grid grid-cols-2 gap-3 text-xs font-medium text-slate-500">
+      <div className="mt-3 grid grid-cols-2 gap-3 text-xs font-medium text-slate-500 sm:mt-5">
         <span className="flex items-center gap-1.5">
           <HiOutlineChartBarSquare className="h-4 w-4" />
           Status
@@ -561,7 +561,7 @@ function WorkspaceCard({ workspace, index, emailVerified, selected, saving, onSe
         type="button"
         disabled={disabled || saving}
         onClick={() => onSelect?.(workspace)}
-        className={`mt-4 flex h-10 w-full items-center justify-center gap-3 rounded-lg border text-[13px] font-bold transition ${
+        className={`mt-3 flex h-10 w-full items-center justify-center gap-3 rounded-lg border text-[13px] font-bold transition sm:mt-4 ${
           workspace.active
             ? 'border-blue-600 bg-blue-600 text-white hover:bg-blue-700'
             : 'cursor-not-allowed border-slate-200 bg-white text-slate-700 opacity-70'
@@ -679,17 +679,17 @@ function CreateWorkspaceListRow({ disabled, message, onOpen }) {
 function CreateWorkspaceCard({ disabled, message, onOpen }) {
   return (
     <article
-      className={`rounded-lg border p-4 shadow-[0_12px_32px_-26px_rgba(15,23,42,0.42)] ${
+      className={`rounded-lg border p-3 shadow-[0_12px_32px_-26px_rgba(15,23,42,0.42)] sm:p-4 ${
         disabled ? 'border-slate-200 bg-white' : 'border-blue-100 bg-blue-50/35'
       }`}
     >
-      <div className="flex min-h-[110px] items-center gap-4">
-        <span className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full ${disabled ? 'bg-slate-100 text-slate-400' : 'bg-blue-100 text-blue-600'}`}>
-          <HiOutlinePlus className="h-7 w-7" />
+      <div className="flex min-h-0 items-center gap-3 sm:min-h-[110px] sm:gap-4">
+        <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full sm:h-14 sm:w-14 ${disabled ? 'bg-slate-100 text-slate-400' : 'bg-blue-100 text-blue-600'}`}>
+          <HiOutlinePlus className="h-6 w-6 sm:h-7 sm:w-7" />
         </span>
         <div>
           <h2 className="text-[15px] font-bold text-slate-950">Create New Workspace</h2>
-          <p className="mt-1.5 text-sm leading-5 text-slate-600">
+          <p className="mt-1 text-sm leading-5 text-slate-600 sm:mt-1.5">
             {message || (disabled ? 'Workspace creation is already in progress.' : 'Start a separate 7-day Nexora CRM trial workspace.')}
           </p>
           {message ? <p className="mt-2 text-xs font-bold text-amber-700">{message}</p> : null}
@@ -700,7 +700,7 @@ function CreateWorkspaceCard({ disabled, message, onOpen }) {
         type="button"
         disabled={disabled}
         onClick={onOpen}
-        className={`mt-4 flex h-10 w-full items-center justify-center gap-3 rounded-lg border text-[13px] font-bold transition ${
+        className={`mt-3 flex h-10 w-full items-center justify-center gap-3 rounded-lg border text-[13px] font-bold transition sm:mt-4 ${
           disabled
             ? 'cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400'
             : 'border-blue-600 bg-white text-blue-600 hover:bg-blue-600 hover:text-white'
@@ -715,10 +715,10 @@ function CreateWorkspaceCard({ disabled, message, onOpen }) {
 
 function SupportTicketsWorkspaceCard({ disabled, onOpen }) {
   return (
-    <article className="rounded-lg border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-cyan-50 p-4 shadow-[0_12px_32px_-26px_rgba(15,23,42,0.42)]">
-      <div className="flex min-h-[110px] items-center gap-4">
-        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-cyan-600 text-white shadow-sm shadow-emerald-500/20">
-          <HiOutlineLifebuoy className="h-7 w-7" />
+    <article className="rounded-lg border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-cyan-50 p-3 shadow-[0_12px_32px_-26px_rgba(15,23,42,0.42)] sm:p-4">
+      <div className="flex min-h-0 items-center gap-3 sm:min-h-[110px] sm:gap-4">
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-cyan-600 text-white shadow-sm shadow-emerald-500/20 sm:h-14 sm:w-14">
+          <HiOutlineLifebuoy className="h-6 w-6 sm:h-7 sm:w-7" />
         </span>
         <div className="min-w-0">
           <h2 className="text-[15px] font-bold text-slate-950">Support Tickets</h2>
@@ -3840,12 +3840,29 @@ export default function WorkspaceSelection() {
             </div>
           </header>
 
-          <div className="px-3 py-3 sm:px-5 sm:py-5 lg:px-6">
+          <div className="px-3 py-2 sm:px-5 sm:py-5 lg:px-6">
+            <section className="rounded-xl border border-white/70 bg-white/90 px-3 py-2.5 shadow-sm sm:hidden">
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <h2 className="truncate text-base font-black text-slate-950">Welcome, {profile.name.split(' ')[0]}</h2>
+                  <p className="mt-0.5 truncate text-xs font-semibold text-slate-500">{workspaceView === 'all' ? 'All modules' : 'Select workspace'}</p>
+                </div>
+                <span className="shrink-0 rounded-full bg-blue-600 px-2.5 py-1 text-[11px] font-black text-white">ID: {profile.shortClientId}</span>
+              </div>
+              <div className="mt-2 flex flex-wrap gap-1.5 text-[11px] font-bold">
+                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-700">{profile.planLabel}</span>
+                {profile.trialShortLabel ? (
+                  <span className={`rounded-full px-2 py-0.5 ${profile.trialExpired ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'}`}>
+                    {profile.trialShortLabel}
+                  </span>
+                ) : null}
+              </div>
+            </section>
             <motion.section
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.28, ease: 'easeOut' }}
-              className="relative overflow-hidden rounded-2xl border border-white/60 bg-gradient-to-r from-sky-50 via-white to-indigo-50 px-4 py-4 shadow-sm sm:px-7 sm:py-6"
+              className="relative hidden overflow-hidden rounded-2xl border border-white/60 bg-gradient-to-r from-sky-50 via-white to-indigo-50 px-4 py-4 shadow-sm sm:block sm:px-7 sm:py-6"
             >
               <div className="max-w-[560px]">
                 <div className="flex flex-wrap items-center gap-2">
@@ -3897,7 +3914,7 @@ export default function WorkspaceSelection() {
 
             {profile.trialShortLabel ? (
               <div
-                className={`mt-4 flex flex-col gap-3 rounded-xl border px-4 py-3 sm:flex-row sm:items-center sm:justify-between ${
+                className={`mt-4 hidden flex-col gap-3 rounded-xl border px-4 py-3 sm:flex sm:flex-row sm:items-center sm:justify-between ${
                   profile.trialExpired ? 'border-red-200 bg-red-50 text-red-800' : 'border-blue-100 bg-blue-50 text-blue-800'
                 }`}
               >
@@ -3919,7 +3936,7 @@ export default function WorkspaceSelection() {
               </div>
             ) : null}
 
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="mt-3 flex flex-col gap-2 sm:mt-6 sm:flex-row sm:items-center sm:justify-between">
               <h2 className="text-lg font-bold text-slate-950">
                 {needsWorkspaceOnboarding ? 'Choose Your Workspace' : workspaceView === 'all' ? 'All Workspaces' : 'Your Workspaces'}
               </h2>
@@ -3960,7 +3977,7 @@ export default function WorkspaceSelection() {
             </div>
 
             {viewMode === 'grid' ? (
-              <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              <div className="mt-3 grid gap-3 sm:mt-4 sm:gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {visibleWorkspaces.map((workspace, index) => (
                   <WorkspaceCard
                     key={workspace.id}
@@ -3976,7 +3993,7 @@ export default function WorkspaceSelection() {
                 <SupportTicketsWorkspaceCard disabled={!hasCrmWorkspace} onOpen={handleOpenSupportTickets} />
               </div>
             ) : (
-              <div className="mt-4 space-y-3">
+              <div className="mt-3 space-y-3 sm:mt-4">
                 {visibleWorkspaces.map((workspace, index) => (
                   <WorkspaceListRow
                     key={workspace.id}

@@ -22,6 +22,7 @@ const solutionLinks = [
   { label: 'School ERP', to: '/solutions/school-erp' },
   { label: 'Property ERP', to: '/solutions/property-erp' },
   { label: 'POS', to: '/solutions/pos' },
+  { label: 'Medical Store POS', to: '/solutions/medical-store-pos' },
   { label: 'Transport / Rental', to: '/solutions/transport-rental' },
   { label: 'WhatsApp CRM', to: '/solutions/whatsapp-crm' },
   { label: 'Reports', to: '/solutions/reports' },
