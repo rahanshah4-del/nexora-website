@@ -274,6 +274,14 @@ async function firestoreList(env, token, collection, pageSize = 500) {
   return (payload.documents || []).map(decodeFirestoreDocument).filter(Boolean)
 }
 
+async function firestoreListSafe(env, token, collection, pageSize = 500) {
+  try {
+    return await firestoreList(env, token, collection, pageSize)
+  } catch {
+    return []
+  }
+}
+
 async function firestoreRunQuery(env, token, collection, field, op, value, limit = 100) {
   const response = await fetch(`${FIRESTORE_BASE}/projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents:runQuery`, {
     method: 'POST',
@@ -660,10 +668,10 @@ async function adminList(request, env) {
   if (!isAdmin(claims, env)) throw new Error('Admin access required.')
   const token = await getServiceAccessToken(env)
   const [keys, users, sessions, logins] = await Promise.all([
-    firestoreList(env, token, 'userPasskeys', 1000),
-    firestoreList(env, token, 'users', 1000),
-    firestoreList(env, token, 'userSessions', 1000),
-    firestoreList(env, token, 'loginHistory', 500),
+    firestoreListSafe(env, token, 'userPasskeys', 1000),
+    firestoreListSafe(env, token, 'users', 1000),
+    firestoreListSafe(env, token, 'userSessions', 1000),
+    firestoreListSafe(env, token, 'loginHistory', 500),
   ])
   const userMap = new Map(users.map((user) => [user.id, user]))
   const search = lower(body.search)
