@@ -248,26 +248,26 @@ export default function Login() {
         </aside>
 
         {/* Sign-in form */}
-        <section className="relative flex min-h-screen flex-col items-center overflow-y-auto px-4 py-6 sm:px-5 sm:py-10">
+        <section className="relative flex min-h-screen flex-col items-center overflow-y-auto px-4 py-5 sm:px-5 sm:py-8">
           <motion.div
             initial={{ opacity: 0, y: 18, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.45, ease: 'easeOut' }}
-            className="my-auto w-full max-w-sm rounded-3xl border border-white/15 bg-white/95 p-5 shadow-[0_40px_120px_-40px_rgba(2,6,23,0.9)] backdrop-blur-2xl sm:p-6"
+            className="my-auto w-full max-w-[21rem] rounded-3xl border border-white/15 bg-white/95 p-4 shadow-[0_32px_90px_-42px_rgba(2,6,23,0.9)] backdrop-blur-2xl sm:p-5"
           >
             {/* Logo on mobile (left panel hidden) — compact so it never overlaps */}
-            <div className="mb-4 flex items-center justify-between gap-2 lg:hidden">
+            <div className="mb-3 flex items-center justify-between gap-2 lg:hidden">
               <NexoraLogo compact className="min-w-0" />
               <span className="shrink-0 rounded-full bg-slate-100 px-2 py-1 text-[9px] font-bold uppercase tracking-[0.18em] text-slate-500">
                 Sign in
               </span>
             </div>
 
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 via-indigo-600 to-fuchsia-600 text-white shadow-lg shadow-indigo-600/40">
-              <HiOutlineLockClosed className="h-5 w-5" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 via-indigo-600 to-fuchsia-600 text-white shadow-lg shadow-indigo-600/40">
+              <HiOutlineLockClosed className="h-[18px] w-[18px]" />
             </div>
-            <h1 className="mt-3.5 text-xl font-black tracking-tight text-slate-950 sm:text-[22px]">Welcome back</h1>
-            <p className="mt-1 text-[13px] text-slate-500">Sign in to your Nexora Solution account.</p>
+            <h1 className="mt-3 text-lg font-black tracking-tight text-slate-950 sm:text-xl">Welcome back</h1>
+            <p className="mt-1 text-xs text-slate-500">Sign in to your Nexora Solution account.</p>
 
             {error ? (
               <motion.div
@@ -308,8 +308,8 @@ export default function Login() {
               </motion.div>
             ) : null}
 
-            <form className="mt-5 space-y-3.5" onSubmit={onSubmit}>
-              <label className="block space-y-1 text-[13px] text-slate-700">
+            <form className="mt-4 space-y-3" onSubmit={onSubmit}>
+              <label className="block space-y-1 text-xs text-slate-700">
                 <span className="font-semibold">Email address</span>
                 <div className="relative">
                   <HiOutlineUser className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-slate-400" />
@@ -318,14 +318,14 @@ export default function Login() {
                     required
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
-                    className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50/80 pl-10 pr-3.5 text-[13px] text-slate-900 outline-none transition focus:border-sky-400 focus:bg-white focus:ring-4 focus:ring-sky-100"
+                    className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50/80 pl-10 pr-3.5 text-[13px] text-slate-900 outline-none transition focus:border-sky-400 focus:bg-white focus:ring-4 focus:ring-sky-100"
                     placeholder="you@example.com"
                     autoComplete="email"
                   />
                 </div>
               </label>
 
-              <label className="block space-y-1 text-[13px] text-slate-700">
+              <label className="block space-y-1 text-xs text-slate-700">
                 <span className="font-semibold">Password</span>
                 <div className="relative">
                   <HiOutlineLockClosed className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-slate-400" />
@@ -334,7 +334,7 @@ export default function Login() {
                     required
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
-                    className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50/80 pl-10 pr-10 text-[13px] text-slate-900 outline-none transition focus:border-sky-400 focus:bg-white focus:ring-4 focus:ring-sky-100"
+                    className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50/80 pl-10 pr-10 text-[13px] text-slate-900 outline-none transition focus:border-sky-400 focus:bg-white focus:ring-4 focus:ring-sky-100"
                     placeholder="Enter your password"
                     autoComplete="current-password"
                   />
@@ -350,7 +350,7 @@ export default function Login() {
               </label>
 
               <div className="flex justify-end">
-                <button type="button" onClick={handlePasswordReset} className="text-[13px] font-semibold text-sky-700 transition hover:text-sky-900">
+                <button type="button" onClick={handlePasswordReset} className="text-xs font-semibold text-sky-700 transition hover:text-sky-900">
                   Forgot password?
                 </button>
               </div>
@@ -358,7 +358,7 @@ export default function Login() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="group flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 via-indigo-600 to-fuchsia-600 bg-[length:200%_auto] text-[13px] font-bold text-white shadow-lg shadow-indigo-600/35 transition hover:bg-right hover:brightness-110 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+                className="group flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 via-indigo-600 to-fuchsia-600 bg-[length:200%_auto] text-[13px] font-bold text-white shadow-lg shadow-indigo-600/35 transition hover:bg-right hover:brightness-110 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {submitting ? (
                   <>
@@ -374,7 +374,7 @@ export default function Login() {
               </button>
             </form>
 
-            <div className="my-4 flex items-center gap-3 text-[11px] text-slate-400">
+            <div className="my-3 flex items-center gap-3 text-[10px] text-slate-400">
               <span className="h-px flex-1 bg-slate-200" />
               <span className="uppercase tracking-wide">or</span>
               <span className="h-px flex-1 bg-slate-200" />
@@ -384,7 +384,7 @@ export default function Login() {
               type="button"
               onClick={handleGoogleSignIn}
               disabled={googleLoading}
-              className="flex h-11 w-full items-center justify-center gap-2.5 rounded-xl border border-slate-200 bg-white text-[13px] font-semibold text-slate-900 transition hover:bg-slate-50 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex h-10 w-full items-center justify-center gap-2.5 rounded-xl border border-slate-200 bg-white text-[13px] font-semibold text-slate-900 transition hover:bg-slate-50 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
             >
               <AiOutlineGoogle className="h-[18px] w-[18px] text-slate-700" />
               {googleLoading ? 'Connecting…' : 'Continue with Google'}
@@ -393,7 +393,7 @@ export default function Login() {
             <button
               type="button"
               disabled
-              className="mt-3 flex h-11 w-full cursor-not-allowed items-center justify-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 text-[13px] font-semibold text-slate-400"
+              className="mt-2.5 flex h-10 w-full cursor-not-allowed items-center justify-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 text-[13px] font-semibold text-slate-400"
               title="Microsoft sign-in is future ready"
             >
               Continue with Microsoft
@@ -403,20 +403,20 @@ export default function Login() {
               type="button"
               onClick={handlePasskeySignIn}
               disabled={passkeyLoading}
-              className="mt-3 flex h-11 w-full items-center justify-center gap-2.5 rounded-xl border border-indigo-200 bg-indigo-50 text-[13px] font-black text-indigo-700 transition hover:bg-indigo-100 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+              className="mt-2.5 flex h-10 w-full items-center justify-center gap-2.5 rounded-xl border border-indigo-200 bg-indigo-50 text-[13px] font-black text-indigo-700 transition hover:bg-indigo-100 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
             >
               <HiOutlineKey className="h-[18px] w-[18px]" />
               {passkeyLoading ? 'Opening passkey…' : '🔐 Sign in with Passkey'}
             </button>
 
-            <p className="mt-5 text-center text-[13px] text-slate-500">
+            <p className="mt-4 text-center text-xs text-slate-500">
               Don&apos;t have an account?{' '}
               <Link to="/signup" className="font-bold text-slate-900 hover:text-slate-700">
                 Create account
               </Link>
             </p>
 
-            <div className="mt-4 flex items-center justify-center gap-1.5 text-[11px] text-slate-400">
+            <div className="mt-3 flex items-center justify-center gap-1.5 text-[10px] text-slate-400">
               <HiOutlineShieldCheck className="h-4 w-4 text-emerald-500" />
               Enterprise-grade security · Your data is safe
             </div>
