@@ -107,6 +107,25 @@ function passkeySetupErrorMessage(error) {
   return message || 'Passkey setup failed. You can try again from Settings > Security.'
 }
 
+function passkeySignInErrorMessage(error) {
+  const name = String(error?.name || '')
+  const message = String(error?.message || error || '')
+  const combined = `${name} ${message}`.toLowerCase()
+  if (combined.includes('notallowed') || combined.includes('timed out') || combined.includes('timeout') || combined.includes('privacy-considerations')) {
+    return 'Passkey sign-in was cancelled or timed out. Please approve the fingerprint, Face ID, Windows Hello, or device PIN prompt. You can also sign in with password or Google.'
+  }
+  if (combined.includes('abort') || combined.includes('cancel')) {
+    return 'Passkey sign-in was cancelled. Please try again, or use password/Google login as a fallback.'
+  }
+  if (combined.includes('not supported') || combined.includes('unsupported')) {
+    return 'Passkeys are not supported on this browser or device. Please use password login, Google, or try Chrome, Edge, Safari, Android, iPhone, or Windows Hello.'
+  }
+  if (combined.includes('not registered') || combined.includes('disabled')) {
+    return 'No active passkey was found for this device/account. Please use password or Google login, then register a new passkey from Settings > Security.'
+  }
+  return message || 'Passkey sign-in failed. Please use password or Google login, then try passkey again from Security settings.'
+}
+
 export async function listMyPasskeys() {
   const data = await callBackend('listMyPasskeys')
   return data?.passkeys || []
@@ -125,19 +144,23 @@ export async function registerPasskey() {
 }
 
 export async function signInWithPasskey() {
-  if (!auth) throw new Error('Authentication is not configured.')
-  if (!passkeysSupported()) throw new Error('Passkeys are not supported on this browser.')
-  const meta = deviceMeta()
-  const begin = await callBackend('passkeyBeginAuthentication', { origin: meta.origin }, { authRequired: false })
-  const response = await startAuthentication({ optionsJSON: begin.options })
-  const finish = await callBackend('passkeyFinishAuthentication', {
-    challengeId: begin.challengeId,
-    response,
-    ...meta,
-  }, { authRequired: false })
-  if (!finish?.token) throw new Error('Passkey login token was not returned.')
-  const credentials = await signInWithCustomToken(auth, finish.token)
-  return { credentials, result: finish }
+  try {
+    if (!auth) throw new Error('Authentication is not configured.')
+    if (!passkeysSupported()) throw new Error('Passkeys are not supported on this browser.')
+    const meta = deviceMeta()
+    const begin = await callBackend('passkeyBeginAuthentication', { origin: meta.origin }, { authRequired: false })
+    const response = await startAuthentication({ optionsJSON: begin.options })
+    const finish = await callBackend('passkeyFinishAuthentication', {
+      challengeId: begin.challengeId,
+      response,
+      ...meta,
+    }, { authRequired: false })
+    if (!finish?.token) throw new Error('Passkey login token was not returned.')
+    const credentials = await signInWithCustomToken(auth, finish.token)
+    return { credentials, result: finish }
+  } catch (error) {
+    throw new Error(passkeySignInErrorMessage(error))
+  }
 }
 
 export async function renamePasskey(id, deviceName) {
