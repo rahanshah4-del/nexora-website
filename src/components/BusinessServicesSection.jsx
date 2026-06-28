@@ -297,15 +297,17 @@ export default function BusinessServicesSection({ compact = false, variant = com
       </div>
 
       {selectedService ? (
-        <div className="fixed inset-0 z-50 overflow-y-auto overscroll-contain bg-slate-950/60 px-3 py-3 backdrop-blur-sm sm:grid sm:place-items-center sm:px-4 sm:py-6">
-          <div className="mx-auto flex min-h-[calc(100dvh-1.5rem)] w-full max-w-3xl flex-col overflow-hidden rounded-[1.1rem] bg-white shadow-2xl sm:min-h-0 sm:max-h-[92dvh] sm:rounded-[1.35rem]">
+        <div className="fixed inset-0 z-50 bg-white sm:grid sm:place-items-center sm:overflow-y-auto sm:overscroll-contain sm:bg-slate-950/60 sm:px-4 sm:py-6 sm:backdrop-blur-sm">
+          <div className="mx-auto flex h-dvh w-full max-w-3xl flex-col overflow-hidden bg-white shadow-2xl sm:h-auto sm:min-h-0 sm:max-h-[92dvh] sm:rounded-[1.35rem]">
             <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-slate-100 bg-white px-4 pb-4 pt-4 sm:px-5">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.14em] text-blue-700">Request Service</p>
                 <h3 className="mt-1 text-xl font-black text-slate-950 sm:text-2xl">{selectedService.title}</h3>
               </div>
-              <button type="button" className="grid h-9 w-9 place-items-center rounded-full bg-slate-100 text-slate-600" onClick={() => setSelectedService(null)} aria-label="Close">
-                <HiOutlineXMark className="h-5 w-5" />
+              <button type="button" className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-full bg-slate-100 px-3 text-xs font-black text-slate-700 sm:w-9 sm:px-0" onClick={() => setSelectedService(null)} aria-label="Close">
+                <span className="sm:hidden" aria-hidden="true">⬅️</span>
+                <span className="sm:hidden">Back</span>
+                <HiOutlineXMark className="hidden h-5 w-5 sm:block" />
               </button>
             </div>
 
@@ -362,16 +364,18 @@ export default function BusinessServicesSection({ compact = false, variant = com
         </div>
       ) : null}
       {selectedRequest ? (
-        <div className="fixed inset-0 z-50 overflow-y-auto overscroll-contain bg-slate-950/60 px-3 py-3 backdrop-blur-sm sm:grid sm:place-items-center sm:px-4 sm:py-6">
-          <div className="mx-auto flex min-h-[calc(100dvh-1.5rem)] w-full max-w-3xl flex-col overflow-hidden rounded-[1.1rem] bg-white shadow-2xl sm:min-h-0 sm:max-h-[92dvh] sm:rounded-[1.35rem]">
+        <div className="fixed inset-0 z-50 bg-white sm:grid sm:place-items-center sm:overflow-y-auto sm:overscroll-contain sm:bg-slate-950/60 sm:px-4 sm:py-6 sm:backdrop-blur-sm">
+          <div className="mx-auto flex h-dvh w-full max-w-3xl flex-col overflow-hidden bg-white shadow-2xl sm:h-auto sm:min-h-0 sm:max-h-[92dvh] sm:rounded-[1.35rem]">
             <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-slate-100 bg-white px-4 pb-4 pt-4 sm:px-5">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.14em] text-blue-700">Request Timeline</p>
                 <h3 className="mt-1 text-xl font-black text-slate-950 sm:text-2xl">{selectedRequest.serviceTitle}</h3>
                 <p className="mt-1 text-sm font-semibold text-slate-500">Current status: {selectedRequest.status || 'New'}</p>
               </div>
-              <button type="button" className="grid h-9 w-9 place-items-center rounded-full bg-slate-100 text-slate-600" onClick={() => setSelectedRequest(null)} aria-label="Close">
-                <HiOutlineXMark className="h-5 w-5" />
+              <button type="button" className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-full bg-slate-100 px-3 text-xs font-black text-slate-700 sm:w-9 sm:px-0" onClick={() => setSelectedRequest(null)} aria-label="Close">
+                <span className="sm:hidden" aria-hidden="true">⬅️</span>
+                <span className="sm:hidden">Back</span>
+                <HiOutlineXMark className="hidden h-5 w-5 sm:block" />
               </button>
             </div>
 

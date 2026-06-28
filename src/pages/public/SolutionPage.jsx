@@ -13,6 +13,7 @@ import {
   HiOutlinePlayCircle,
   HiOutlineShieldCheck,
   HiOutlineShoppingCart,
+  HiOutlineTruck,
   HiOutlineUserGroup,
 } from 'react-icons/hi2'
 import PublicPageShell from './PublicPageShell.jsx'
@@ -184,6 +185,37 @@ const solutionPages = {
     faqs: [
       ['Can broadcasts be tracked?', 'Yes. Campaign activity can be connected with customer follow-up and reporting.'],
       ['Can teams assign follow-ups?', 'Yes. WhatsApp CRM workflows support team follow-ups and customer tracking.'],
+    ],
+  },
+  'transport-rental': {
+    eyebrow: 'Transport / Rental Solution',
+    productName: 'Nexora Transport / Rental',
+    headlineBefore: 'Manage fleet, rentals, bookings and payments from ',
+    headlineHighlight: 'one transport desk.',
+    description: 'A transport and rental workspace for vehicles, customers, bookings, dues, refunds, rental ledgers and payment tracking.',
+    icon: HiOutlineTruck,
+    previewTitle: 'Fleet Rental Control',
+    previewLabel: 'Transport workspace',
+    sidebar: ['Dashboard', 'Vehicles', 'Bookings', 'Customers', 'Payments', 'Reports'],
+    stats: [
+      ['Fleet Units', '42', 'Available'],
+      ['Active Rentals', '18', 'Live'],
+      ['Dues', 'PKR 312K', 'Follow-up'],
+    ],
+    rows: ['Vehicle booked', 'Payment collected', 'Rental returned', 'Fleet report ready'],
+    features: [
+      ['Fleet Management', 'Track vehicles, status, availability and rental performance.', HiOutlineTruck],
+      ['Rental Bookings', 'Create booking records with customer, duration, rate and due tracking.', HiOutlineCheckCircle],
+      ['Customer Ledger', 'Keep customer rental history, balances and contact details organized.', HiOutlineUserGroup],
+      ['Payments & Dues', 'Record collections, refunds, pending dues and payment methods.', HiOutlineDocumentChartBar],
+      ['Rental Reports', 'View bookings, revenue, dues, utilization and customer summaries.', HiOutlineChartBarSquare],
+      ['Cloud Sync', 'Keep counter, office and mobile access aligned for daily operations.', HiOutlineCloud],
+    ],
+    benefits: ['Control fleet availability', 'Reduce missed rental dues', 'Keep customer ledgers clean', 'Review revenue and active rentals faster'],
+    useCases: ['Car rental companies', 'Bike rentals', 'Fleet operators', 'Transport counters'],
+    faqs: [
+      ['Can I track active rentals and dues?', 'Yes. Transport / Rental workflows include active bookings, dues, payments and return status.'],
+      ['Can I manage vehicles and customers together?', 'Yes. Vehicle records, customer ledgers and rental payments stay connected in one workspace.'],
     ],
   },
   'reports': {

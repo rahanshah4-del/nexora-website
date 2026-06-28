@@ -1361,6 +1361,7 @@ export default function WorkspaceSelection() {
   const [businessServicesOpen, setBusinessServicesOpen] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [deviceBlockerOpen, setDeviceBlockerOpen] = useState(false)
   const [canUseWorkspaceOnDevice, setCanUseWorkspaceOnDevice] = useState(() => (
     typeof window === 'undefined' ? true : window.matchMedia('(min-width: 1024px)').matches
   ))
@@ -2186,6 +2187,12 @@ export default function WorkspaceSelection() {
   }, [accountData?.workspaceId, profile.workspaceName, user?.uid, workspaceData, workspaceNameDraft])
 
   const handleSelectBusinessWorkspace = useCallback(async (workspace) => {
+    if (!canUseWorkspaceOnDevice) {
+      setSelectedBusinessType(workspace?.type ? normalizeBusinessType(workspace.type) : '')
+      setDeviceBlockerOpen(true)
+      setSidebarOpen(false)
+      return
+    }
     console.log('[Module Click]', {
       source: 'WorkspaceSelection',
       workspaceId: workspace?.id || '',
@@ -2701,6 +2708,7 @@ export default function WorkspaceSelection() {
     accountLoading,
     authLoading,
     businessTypeSaving,
+    canUseWorkspaceOnDevice,
     configuredBusinessType,
     configuredSelectedWorkspace,
     emailVerified,
@@ -2724,6 +2732,11 @@ export default function WorkspaceSelection() {
   ])
 
   const handleOpenCreate = useCallback(() => {
+    if (!canUseWorkspaceOnDevice) {
+      setDeviceBlockerOpen(true)
+      setSidebarOpen(false)
+      return
+    }
     if (!emailVerified) {
       setCreateMessage('Please verify your email before creating a workspace.')
       navigate(getAuthRouteState({ ...user, emailVerifiedCustom: accountData?.emailVerifiedCustom }).route)
@@ -2739,7 +2752,7 @@ export default function WorkspaceSelection() {
     }
     setCreateMessage('')
     setCreateOpen(true)
-  }, [accountData?.emailVerifiedCustom, emailVerified, hasModuleLock, moduleLockMessage, mustSelectModuleFirst, navigate, user])
+  }, [accountData?.emailVerifiedCustom, canUseWorkspaceOnDevice, emailVerified, hasModuleLock, moduleLockMessage, mustSelectModuleFirst, navigate, user])
 
   const handleCreateWorkspace = useCallback(async () => {
     console.log('HANDLE_CREATE_WORKSPACE_ENTERED')
@@ -3433,42 +3446,6 @@ export default function WorkspaceSelection() {
   if (authLoading) return <PageLoader stage="auth" />
   if (accountLoading) return <PageLoader stage="workspace" businessType={profile.businessType || onboardingForm.businessType} />
 
-  if (!canUseWorkspaceOnDevice) {
-    return (
-      <main className="grid min-h-dvh place-items-center bg-[linear-gradient(180deg,#f8fbff_0%,#ffffff_54%,#eef7ff_100%)] px-5 py-8 text-slate-950">
-        <section className="w-full max-w-md rounded-[1.6rem] border border-blue-100 bg-white p-5 text-center shadow-[0_28px_90px_-58px_rgba(37,99,235,0.5)]">
-          <img src={logoUrl} alt="Nexora" className="mx-auto h-14 w-14 rounded-2xl shadow-sm" />
-          <p className="mt-5 inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1.5 text-xs font-black uppercase tracking-[0.16em] text-blue-700">
-            <span aria-hidden="true">🖥️</span>
-            Workspace
-          </p>
-          <h1 className="mt-4 text-2xl font-black tracking-tight text-slate-950">Please use desktop or a large tablet.</h1>
-          <p className="mt-3 text-sm leading-6 text-slate-600">
-            Nexora workspace modules need a wider screen for full controls, tables, reports, and setup tools.
-          </p>
-          <div className="mt-5 grid gap-3">
-            <button
-              type="button"
-              onClick={() => navigate(-1)}
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-slate-950 px-5 text-sm font-black text-white shadow-sm"
-            >
-              <span aria-hidden="true">⬅️</span>
-              Back
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate('/', { replace: true })}
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-5 text-sm font-black text-blue-700"
-            >
-              <span aria-hidden="true">🏠</span>
-              Website Home
-            </button>
-          </div>
-        </section>
-      </main>
-    )
-  }
-
   return (
     <main className="relative min-h-dvh overflow-x-clip overscroll-none bg-white text-slate-950">
       {/* Ambient light/glass background */}
@@ -4112,6 +4089,39 @@ export default function WorkspaceSelection() {
           loggingOut={loggingOut}
           onClose={() => setSettingsOpen(false)}
         />
+      ) : null}
+      {deviceBlockerOpen ? (
+        <div className="fixed inset-0 z-[90] grid place-items-center bg-slate-950/55 px-4 py-6 backdrop-blur-sm">
+          <section className="w-full max-w-md rounded-[1.6rem] border border-blue-100 bg-white p-5 text-center shadow-[0_28px_90px_-58px_rgba(37,99,235,0.5)]">
+            <img src={logoUrl} alt="Nexora" className="mx-auto h-14 w-14 rounded-2xl shadow-sm" />
+            <p className="mt-5 inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1.5 text-xs font-black uppercase tracking-[0.16em] text-blue-700">
+              <span aria-hidden="true">🖥️</span>
+              Workspace Module
+            </p>
+            <h1 className="mt-4 text-2xl font-black tracking-tight text-slate-950">Use desktop or a large tablet for this module.</h1>
+            <p className="mt-3 text-sm leading-6 text-slate-600">
+              You can review modules here, but full Nexora workspace tools need a wider screen for tables, reports, setup, and daily controls.
+            </p>
+            <div className="mt-5 grid gap-3">
+              <button
+                type="button"
+                onClick={() => setDeviceBlockerOpen(false)}
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-slate-950 px-5 text-sm font-black text-white shadow-sm"
+              >
+                <span aria-hidden="true">⬅️</span>
+                Back to Module Selection
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate('/', { replace: true })}
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-5 text-sm font-black text-blue-700"
+              >
+                <span aria-hidden="true">🏠</span>
+                Website Home
+              </button>
+            </div>
+          </section>
+        </div>
       ) : null}
     </main>
   )

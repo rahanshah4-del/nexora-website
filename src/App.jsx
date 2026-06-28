@@ -14,6 +14,7 @@ import {
   HiOutlinePlayCircle,
   HiOutlineShieldCheck,
   HiOutlineShoppingCart,
+  HiOutlineTruck,
   HiOutlineUserGroup,
 } from 'react-icons/hi2'
 import Header from './components/Header'
@@ -62,6 +63,13 @@ const moduleCards = [
     icon: HiOutlineShoppingCart,
     tone: 'orange',
     route: '/solutions/pos',
+  },
+  {
+    title: 'Transport / Rental',
+    text: 'Fleet, rental bookings, customer ledgers, dues and transport reports.',
+    icon: HiOutlineTruck,
+    tone: 'cyan',
+    route: '/solutions/transport-rental',
   },
   {
     title: 'WhatsApp CRM',
@@ -163,6 +171,7 @@ const footerGroups = {
     ['School ERP', '/solutions/school-erp'],
     ['Property ERP', '/solutions/property-erp'],
     ['POS', '/solutions/pos'],
+    ['Transport / Rental', '/solutions/transport-rental'],
     ['WhatsApp CRM', '/solutions/whatsapp-crm'],
     ['Reports', '/solutions/reports'],
   ],
@@ -175,6 +184,7 @@ function ModuleIcon({ icon: Icon, tone }) {
     green: 'bg-emerald-50 text-emerald-600',
     purple: 'bg-violet-50 text-violet-600',
     orange: 'bg-orange-50 text-orange-500',
+    cyan: 'bg-cyan-50 text-cyan-600',
     emerald: 'bg-green-50 text-green-600',
     sky: 'bg-sky-50 text-sky-600',
   }
@@ -531,7 +541,7 @@ function App({ initialSectionId = '' }) {
               </p>
             </div>
 
-            <div className="mt-12 grid items-stretch gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+            <div className="mt-12 grid items-stretch gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {moduleCards.map((card) => (
 	                <article
 	                  key={card.title}

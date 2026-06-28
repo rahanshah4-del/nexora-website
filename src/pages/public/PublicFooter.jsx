@@ -15,6 +15,7 @@ const solutionLinks = [
   ['School ERP', '/solutions/school-erp'],
   ['Property ERP', '/solutions/property-erp'],
   ['POS', '/solutions/pos'],
+  ['Transport / Rental', '/solutions/transport-rental'],
   ['WhatsApp CRM', '/solutions/whatsapp-crm'],
   ['Reports', '/solutions/reports'],
 ]

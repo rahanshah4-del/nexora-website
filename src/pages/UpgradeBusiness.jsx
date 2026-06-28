@@ -289,7 +289,6 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
   const requestedPlan = selectedPlan?.name || ''
   const previewUrl = useMemo(() => (proofFile ? URL.createObjectURL(proofFile) : ''), [proofFile])
   const paidAmount = positiveAmount(form.amountPaid)
-  const hasPaymentEvidence = Boolean(form.transactionId.trim() || proofFile)
 
   useEffect(() => {
     if (!previewUrl) return undefined
@@ -378,9 +377,10 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
       hasPositiveAmount: paidAmount > 0,
       hasScreenshot: Boolean(proofFile),
       hasTransactionId: Boolean(form.transactionId.trim()),
-      hasPaymentEvidence,
       hasSenderName: Boolean(form.senderName.trim()),
       hasSenderNumber: Boolean(form.senderNumber.trim()),
+      hasPaymentDate: Boolean(form.paymentDate),
+      hasNotes: Boolean(form.notes.trim()),
     }
   }
 
@@ -393,7 +393,12 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
     if (!requestedPlan) return 'Plan is required.'
     if (!selectedMethod?.id) return 'Payment method is required.'
     if (isAutomaticCrypto) return ''
+    if (!form.transactionId.trim()) return 'Enter the transaction ID before submitting your upgrade request.'
     if (paidAmount <= 0) return 'Enter the paid amount before submitting your upgrade request.'
+    if (!form.paymentDate) return 'Select the payment date before submitting your upgrade request.'
+    if (!form.senderName.trim()) return 'Enter the sender/account name before submitting your upgrade request.'
+    if (!form.senderNumber.trim()) return 'Enter the sender/account number before submitting your upgrade request.'
+    if (!form.notes.trim()) return 'Add transaction notes before submitting your upgrade request.'
     if (!proofFile) return 'Upload payment proof screenshot before submitting.'
     if (!String(proofFile.type || '').startsWith('image/')) return 'Only image screenshots are supported.'
     if (proofFile.size > 6 * 1024 * 1024) return 'Screenshot must be 6MB or smaller.'
@@ -661,34 +666,35 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
 
             {!isAutomaticCrypto ? <Panel>
               <h2 className="text-xl font-black">Transaction information</h2>
+              <p className="mt-1 text-sm font-semibold text-slate-500">All transaction fields and payment proof screenshot are required for manual review.</p>
               <div className="mt-5 grid gap-4 md:grid-cols-2">
                 <label className="text-xs font-black text-slate-600">
-                  Transaction ID <span className="font-semibold text-slate-400">(required if no proof)</span>
-                  <input className="mt-1 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold" value={form.transactionId} onChange={(event) => setForm((current) => ({ ...current, transactionId: event.target.value }))} placeholder="e.g. TXN-123456" />
+                  Transaction ID <span className="font-semibold text-rose-500">(required)</span>
+                  <input required className="mt-1 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold" value={form.transactionId} onChange={(event) => setForm((current) => ({ ...current, transactionId: event.target.value }))} placeholder="e.g. TXN-123456" />
                 </label>
                 <label className="text-xs font-black text-slate-600">
                   Amount Paid <span className="font-semibold text-rose-500">(required)</span>
-                  <input className="mt-1 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold disabled:bg-slate-100 disabled:text-slate-500" value={form.amountPaid} onChange={(event) => setForm((current) => ({ ...current, amountPaid: event.target.value }))} inputMode="decimal" placeholder={money(selectedAmount, currency)} disabled={promoResult?.valid === true} />
+                  <input required className="mt-1 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold disabled:bg-slate-100 disabled:text-slate-500" value={form.amountPaid} onChange={(event) => setForm((current) => ({ ...current, amountPaid: event.target.value }))} inputMode="decimal" placeholder={money(selectedAmount, currency)} disabled={promoResult?.valid === true} />
                 </label>
                 <label className="text-xs font-black text-slate-600">
-                  Payment Date <span className="font-semibold text-slate-400">(optional)</span>
-                  <input type="date" className="mt-1 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold" value={form.paymentDate} onChange={(event) => setForm((current) => ({ ...current, paymentDate: event.target.value }))} />
+                  Payment Date <span className="font-semibold text-rose-500">(required)</span>
+                  <input required type="date" className="mt-1 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold" value={form.paymentDate} onChange={(event) => setForm((current) => ({ ...current, paymentDate: event.target.value }))} />
                 </label>
                 <label className="text-xs font-black text-slate-600">
-                  Sender Name <span className="font-semibold text-slate-400">(optional)</span>
-                  <input className="mt-1 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold" value={form.senderName} onChange={(event) => setForm((current) => ({ ...current, senderName: event.target.value }))} placeholder="Name on payment account" />
+                  Sender Name <span className="font-semibold text-rose-500">(required)</span>
+                  <input required className="mt-1 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold" value={form.senderName} onChange={(event) => setForm((current) => ({ ...current, senderName: event.target.value }))} placeholder="Name on payment account" />
                 </label>
                 <label className="text-xs font-black text-slate-600">
-                  Sender Number <span className="font-semibold text-slate-400">(optional)</span>
-                  <input className="mt-1 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold" value={form.senderNumber} onChange={(event) => setForm((current) => ({ ...current, senderNumber: event.target.value }))} placeholder="e.g. 03xx-xxxxxxx" />
+                  Sender Number <span className="font-semibold text-rose-500">(required)</span>
+                  <input required className="mt-1 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold" value={form.senderNumber} onChange={(event) => setForm((current) => ({ ...current, senderNumber: event.target.value }))} placeholder="e.g. 03xx-xxxxxxx" />
                 </label>
                 <label className="text-xs font-black text-slate-600">
                   Payment Method <span className="font-semibold text-rose-500">(required)</span>
                   <input className="mt-1 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold" value={selectedMethod?.label || ''} readOnly />
                 </label>
                 <label className="md:col-span-2 text-xs font-black text-slate-600">
-                  Notes
-                  <textarea className="mt-1 h-28 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold" value={form.notes} onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))} placeholder="Optional note for Nexora billing team" />
+                  Notes <span className="font-semibold text-rose-500">(required)</span>
+                  <textarea required className="mt-1 h-28 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold" value={form.notes} onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))} placeholder="Add account name, transfer app, or any details Nexora billing team needs" />
                 </label>
               </div>
             </Panel> : null}
