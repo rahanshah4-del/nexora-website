@@ -3456,13 +3456,11 @@ export default function WorkspaceSelection() {
 
       <div className="relative flex min-h-dvh flex-col bg-slate-50 lg:flex-row">
         <aside
-          className={`border-r border-white/60 bg-white/80 text-slate-900 backdrop-blur-xl transition-all duration-300 ease-in-out ${
+          className={`fixed inset-y-0 left-0 z-30 w-[260px] border-r border-white/60 bg-white/80 text-slate-900 backdrop-blur-xl transition-all duration-300 ease-in-out ${
             sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-          } lg:fixed lg:inset-y-0 lg:left-0 lg:translate-x-0 ${
+          } lg:translate-x-0 ${
             sidebarCollapsed ? 'lg:w-[68px]' : 'lg:w-[260px]'
-          } lg:overflow-y-auto ${
-            sidebarOpen ? 'fixed inset-y-0 left-0 z-30 w-[260px]' : 'lg:z-20'
-          }`}
+          } lg:z-20 lg:overflow-y-auto`}
           aria-label="Workspace sidebar"
         >
           <div className="flex min-h-full flex-col px-4 py-5">
