@@ -20,6 +20,7 @@ import PageLoader from '../components/ui/PageLoader.jsx'
 import { MaintenanceBlock } from '../../components/MaintenanceMode.jsx'
 import PasskeySetupPrompt from '../../components/security/PasskeySetupPrompt.jsx'
 import usePlatformMaintenance from '../../hooks/usePlatformMaintenance.js'
+import { isUserCustomVerified } from '../../lib/authRouteState.js'
 import {
   businessWorkspaceForSelection,
   businessWorkspaceForType,
@@ -364,6 +365,20 @@ export default function DashboardLayout() {
   const developerOverride = isDeveloperOwnerAccount(userDoc, firebaseUser)
   const workspaceOnboardingCompleted = userDoc?.onboardingCompleted === true || workspaceDoc?.onboardingCompleted === true
   const workspaceOnboardingResolved = Boolean(userDoc || workspaceDoc)
+  const passkeyEmailVerified = isUserCustomVerified({
+    ...firebaseUser,
+    emailVerifiedCustom: userDoc?.emailVerifiedCustom === true || workspaceDoc?.emailVerifiedCustom === true,
+  })
+  const moduleEnteredForPasskey = Boolean(
+    workspaceOnboardingCompleted ||
+      userDoc?.currentBusinessType ||
+      userDoc?.selectedBusinessType ||
+      userDoc?.businessType ||
+      workspaceDoc?.currentBusinessType ||
+      workspaceDoc?.selectedBusinessType ||
+      workspaceDoc?.businessType ||
+      businessType,
+  )
   const lockedWorkspaceId = businessWorkspaceId || businessWorkspaceForType(
     userDoc?.selectedWorkspace ||
       workspaceDoc?.selectedWorkspace ||
@@ -889,8 +904,8 @@ export default function DashboardLayout() {
         enabled={Boolean(
           ready &&
             isAuthenticated &&
-            firebaseUser?.emailVerified &&
-            workspaceOnboardingCompleted &&
+            passkeyEmailVerified &&
+            moduleEnteredForPasskey &&
             hasActiveAccess &&
             !isBlocked &&
             !onboardingOpen &&

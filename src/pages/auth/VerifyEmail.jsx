@@ -77,6 +77,7 @@ export default function VerifyEmail() {
   const [leaving, setLeaving] = useState(false)
   const [cooldown, setCooldown] = useState(0)
   const inputsRef = useRef([])
+  const autoSubmittedOtpRef = useRef('')
 
   const otp = digits.join('')
 
@@ -253,6 +254,19 @@ export default function VerifyEmail() {
       setVerifying(false)
     }
   }
+
+  useEffect(() => {
+    if (otp.length < OTP_LENGTH) {
+      autoSubmittedOtpRef.current = ''
+      return undefined
+    }
+    if (!/^\d{6}$/.test(otp) || verifying || success || autoSubmittedOtpRef.current === otp) return undefined
+    autoSubmittedOtpRef.current = otp
+    const timer = window.setTimeout(() => {
+      handleVerify()
+    }, 180)
+    return () => window.clearTimeout(timer)
+  }, [otp, verifying, success])
 
   const handleResend = async () => {
     const currentUser = auth?.currentUser || user

@@ -673,18 +673,18 @@ export default function TransportBookingsPage() {
 
       {modalOpen ? (
         <div className="fixed inset-0 z-[80] grid place-items-center overflow-y-auto bg-slate-950/45 p-4 backdrop-blur-sm">
-          <div className="flex max-h-[calc(100dvh-2rem)] w-full max-w-5xl flex-col overflow-hidden rounded-[1.25rem] border border-slate-200 bg-white shadow-2xl">
+          <div className="flex max-h-[calc(100dvh-2rem)] w-full max-w-6xl flex-col overflow-hidden rounded-[1.25rem] border border-slate-200 bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-100 px-5 py-3">
-              <div>
+              <div className="min-w-0">
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-sky-600">Transport / Rental</p>
-                <h2 className="text-lg font-black tracking-tight text-slate-950">{editingBooking ? `Edit Booking ${editingBooking.bookingNumber}` : 'New Booking'}</h2>
+                <h2 className="truncate text-lg font-black tracking-tight text-slate-950">{editingBooking ? `Edit Booking ${editingBooking.bookingNumber || ''}`.trim() : 'New Booking'}</h2>
               </div>
               <button type="button" onClick={closeModal} className="rounded-lg px-2 py-1 text-sm font-semibold text-slate-400 hover:bg-slate-100 hover:text-slate-700">✕</button>
             </div>
-            <div className="grid min-h-0 flex-1 gap-4 overflow-y-auto p-5 lg:grid-cols-[minmax(0,1fr)_320px]">
-              <div className="grid content-start gap-3 sm:grid-cols-2">
+            <div className="grid min-h-0 flex-1 gap-4 overflow-y-auto p-4 sm:p-5 lg:grid-cols-5">
+              <div className="grid min-w-0 content-start gap-3 md:grid-cols-2 lg:col-span-3">
                 <Field label="Vehicle">
-                  <Select value={form.vehicleId} onChange={(event) => updateForm('vehicleId', event.target.value)}>
+                  <Select className="h-12 min-w-0 truncate pr-10" value={form.vehicleId} onChange={(event) => updateForm('vehicleId', event.target.value)}>
                     <option value="">Select a vehicle</option>
                     {availableVehicles.map((vehicle) => (
                       <option key={vehicle.id} value={vehicle.id}>{vehicle.name} • {vehicle.registration}</option>
@@ -692,19 +692,19 @@ export default function TransportBookingsPage() {
                   </Select>
                 </Field>
                 <Field label="Customer">
-                  <Select value={form.customerId} onChange={(event) => updateForm('customerId', event.target.value)}>
+                  <Select className="h-12 min-w-0 truncate pr-10" value={form.customerId} onChange={(event) => updateForm('customerId', event.target.value)}>
                     {customers.map((customer) => <option key={customer.id} value={customer.id}>{customer.name}</option>)}
                   </Select>
                 </Field>
                 <Field label="Rate Type">
-                  <Select value={form.rateType} onChange={(event) => updateForm('rateType', event.target.value)}>
+                  <Select className="h-12 min-w-0 truncate pr-10" value={form.rateType} onChange={(event) => updateForm('rateType', event.target.value)}>
                     <option value="daily">Daily</option>
                     <option value="hourly">Hourly</option>
                     <option value="weekly">Weekly</option>
                   </Select>
                 </Field>
                 <Field label="Payment Method">
-                  <Select value={form.paymentMethod} onChange={(event) => updateForm('paymentMethod', event.target.value)}>
+                  <Select className="h-12 min-w-0 truncate pr-10" value={form.paymentMethod} onChange={(event) => updateForm('paymentMethod', event.target.value)}>
                     <option>Cash</option>
                     <option>Card</option>
                     <option>Bank Transfer</option>
@@ -712,7 +712,7 @@ export default function TransportBookingsPage() {
                     <option>Easypaisa</option>
                   </Select>
                 </Field>
-                <div className="rounded-2xl border border-sky-100 bg-sky-50 p-3 sm:col-span-2">
+                <div className="min-w-0 rounded-2xl border border-sky-100 bg-sky-50 p-3 md:col-span-2">
                   <label className="flex items-center justify-between gap-3 text-sm font-semibold text-slate-800">
                     <span>
                       Include Driver
@@ -727,39 +727,39 @@ export default function TransportBookingsPage() {
                   </label>
                   {form.withDriver || selectedVehicle?.driverIncluded ? (
                     <div className="mt-2 grid gap-2 text-xs font-semibold text-sky-800 sm:grid-cols-2">
-                      <span>Driver: {selectedVehicle?.driverName || 'Assigned driver'}</span>
-                      <span>Rate: {formatTransportCurrency(selectedVehicle?.driverRate || 0)}/unit</span>
+                      <span className="min-w-0 break-words">Driver: {selectedVehicle?.driverName || 'Assigned driver'}</span>
+                      <span className="min-w-0 break-words">Rate: {formatTransportCurrency(selectedVehicle?.driverRate || 0)}/unit</span>
                       {selectedVehicle?.driverPhone ? <span>Phone: {selectedVehicle.driverPhone}</span> : null}
                       {selectedVehicle?.driverLicense ? <span>License: {selectedVehicle.driverLicense}</span> : null}
                     </div>
                   ) : null}
                 </div>
                 <Field label="Pickup Date">
-                  <Input type="date" value={form.pickupDate} onChange={(event) => updateForm('pickupDate', event.target.value)} />
+                  <Input className="h-12 min-w-0" type="date" value={form.pickupDate} onChange={(event) => updateForm('pickupDate', event.target.value)} />
                 </Field>
                 <Field label="Return Date">
-                  <Input type="date" value={form.returnDate} onChange={(event) => updateForm('returnDate', event.target.value)} />
+                  <Input className="h-12 min-w-0" type="date" value={form.returnDate} onChange={(event) => updateForm('returnDate', event.target.value)} />
                 </Field>
                 <Field label="Extra Charges (PKR)">
-                  <Input type="number" min="0" value={form.extraCharges} onChange={(event) => updateForm('extraCharges', event.target.value)} />
+                  <Input className="h-12 min-w-0" type="number" min="0" value={form.extraCharges} onChange={(event) => updateForm('extraCharges', event.target.value)} />
                 </Field>
                 <Field label="Discount (PKR)">
-                  <Input type="number" min="0" value={form.discount} onChange={(event) => updateForm('discount', event.target.value)} />
+                  <Input className="h-12 min-w-0" type="number" min="0" value={form.discount} onChange={(event) => updateForm('discount', event.target.value)} />
                 </Field>
                 <Field label="Tax (%)">
-                  <Input type="number" min="0" value={form.taxRate} onChange={(event) => updateForm('taxRate', event.target.value)} />
+                  <Input className="h-12 min-w-0" type="number" min="0" value={form.taxRate} onChange={(event) => updateForm('taxRate', event.target.value)} />
                 </Field>
                 <Field label="Advance Paid (PKR)">
-                  <Input type="number" min="0" value={form.advancePaid} onChange={(event) => updateForm('advancePaid', event.target.value)} />
+                  <Input className="h-12 min-w-0" type="number" min="0" value={form.advancePaid} onChange={(event) => updateForm('advancePaid', event.target.value)} />
                 </Field>
-                <div className="sm:col-span-2">
+                <div className="md:col-span-2">
                   <Field label="Notes">
-                    <Input value={form.notes} onChange={(event) => updateForm('notes', event.target.value)} placeholder="Optional notes" />
+                    <Input className="h-12 min-w-0" value={form.notes} onChange={(event) => updateForm('notes', event.target.value)} placeholder="Optional notes" />
                   </Field>
                 </div>
               </div>
 
-              <div className="sticky top-0 self-start rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <div className="min-w-0 self-start rounded-2xl border border-slate-200 bg-slate-50 p-4 lg:sticky lg:top-0 lg:col-span-2">
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Summary</p>
                 {selectedVehicle && previewTotals ? (
                   <div className="mt-3 space-y-1.5 text-sm">
@@ -888,7 +888,7 @@ function StatCard({ label, value, tone }) {
 
 function Field({ label, children }) {
   return (
-    <label className="block">
+    <label className="block min-w-0">
       <span className="mb-1.5 block text-xs font-semibold text-slate-600">{label}</span>
       {children}
     </label>
@@ -897,9 +897,9 @@ function Field({ label, children }) {
 
 function SummaryRow({ label, value, strong, tone }) {
   return (
-    <div className="flex items-center justify-between">
-      <span className={`${strong ? 'font-bold text-slate-950' : 'text-slate-500'}`}>{label}</span>
-      <span className={`${strong ? 'text-base font-black text-slate-950' : `font-semibold ${tone || 'text-slate-700'}`}`}>{value}</span>
+    <div className="flex min-w-0 items-center justify-between gap-3">
+      <span className={`min-w-0 truncate ${strong ? 'font-bold text-slate-950' : 'text-slate-500'}`}>{label}</span>
+      <span className={`shrink-0 text-right ${strong ? 'text-base font-black text-slate-950' : `font-semibold ${tone || 'text-slate-700'}`}`}>{value}</span>
     </div>
   )
 }
