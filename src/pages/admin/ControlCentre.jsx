@@ -14,6 +14,7 @@ import {
   HiOutlineCurrencyDollar,
   HiOutlineEnvelope,
   HiOutlineHome,
+  HiOutlineKey,
   HiOutlineLifebuoy,
   HiOutlineBars3,
   HiOutlineMegaphone,
@@ -99,6 +100,7 @@ import { listWorkerUpgradeRequests, updateWorkerUpgradeRequestStatus } from '../
 import { createWorkspaceNotification, workspaceNotificationTargets } from '../../crm/lib/notifications.js'
 import EmailMarketing from './EmailMarketing.jsx'
 import AdminBusinessServices from './BusinessServices.jsx'
+import { adminForceLogoutUser, adminListPasskeySecurity, adminUpdatePasskey } from '../../lib/passkeys.js'
 
 export class ControlCentreErrorBoundary extends Component {
   state = { error: null }
@@ -172,6 +174,7 @@ const navGroups = [
       ['whatsappPricing', 'WhatsApp Pricing', HiOutlineChatBubbleLeftRight],
       ['moduleAccess', 'Module Access', HiOutlineShieldCheck],
       ['visitorAnalytics', 'Visitor Analytics', HiOutlineChartBarSquare],
+      ['security', 'Security / Passkeys', HiOutlineKey],
     ],
   },
   {
@@ -713,6 +716,8 @@ export default function ControlCentre() {
   const [promoEditingId, setPromoEditingId] = useState('')
   const [workerUpgradeRequests, setWorkerUpgradeRequests] = useState([])
   const [workerUpgradeError, setWorkerUpgradeError] = useState('')
+  const [passkeySecurity, setPasskeySecurity] = useState({ passkeys: [], loginHistory: [], activeSessions: [] })
+  const [passkeySecurityError, setPasskeySecurityError] = useState('')
   const [liveNow, setLiveNow] = useState(() => Date.now())
   const whatsappPricingApi = useWhatsappPricing({ enabled: true })
   const [whatsappPricingDraft, setWhatsappPricingDraft] = useState(defaultWhatsappPricing)
@@ -756,6 +761,30 @@ export default function ControlCentre() {
       window.removeEventListener('focus', loadWorkerUpgradeRequests)
     }
   }, [backendAdminAllowed, user])
+
+  useEffect(() => {
+    if (!backendAdminAllowed) return undefined
+    let cancelled = false
+    async function loadPasskeySecurity() {
+      try {
+        const result = await adminListPasskeySecurity(search)
+        if (!cancelled) {
+          setPasskeySecurity(result)
+          setPasskeySecurityError('')
+        }
+      } catch (error) {
+        if (!cancelled) setPasskeySecurityError(clientSafeMessage(error, 'Passkey security data is not available.'))
+      }
+    }
+    loadPasskeySecurity()
+    const timer = window.setInterval(loadPasskeySecurity, 15000)
+    window.addEventListener('focus', loadPasskeySecurity)
+    return () => {
+      cancelled = true
+      window.clearInterval(timer)
+      window.removeEventListener('focus', loadPasskeySecurity)
+    }
+  }, [backendAdminAllowed, search])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -3555,6 +3584,77 @@ export default function ControlCentre() {
     )
   }
 
+  function SecurityPasskeys() {
+    const passkeys = passkeySecurity.passkeys || []
+    const loginHistory = passkeySecurity.loginHistory || []
+    const sessions = passkeySecurity.activeSessions || []
+    const activePasskeys = passkeys.filter((row) => row.status === 'active')
+    const failedPasskeyAttempts = loginHistory.filter((row) => row.authenticationMethod === 'passkey' && row.status === 'failed').length
+    const successfulPasskeyLogins = loginHistory.filter((row) => row.authenticationMethod === 'passkey' && row.status === 'success').length
+    const passwordLogins = loginHistory.filter((row) => row.authenticationMethod === 'password').length
+    const googleLogins = loginHistory.filter((row) => row.authenticationMethod === 'google').length
+    const blockedDevices = passkeys.filter((row) => ['disabled', 'deleted', 'removed'].includes(row.status)).length
+    const usersWithPasskeys = new Set(activePasskeys.map((row) => row.userId).filter(Boolean))
+    const usersWithoutPasskey = Math.max(0, data.users.length - usersWithPasskeys.size)
+
+    const passkeyColumns = [
+      { key: 'user', label: 'User', render: (row) => <div><p className="font-black text-slate-950">{row.user || row.email || row.userId}</p><p className="text-xs font-semibold text-slate-500">{row.email || '-'}</p></div> },
+      { key: 'company', label: 'Company', render: (row) => row.company || '-' },
+      { key: 'workspace', label: 'Workspace', render: (row) => row.workspaceId || '-' },
+      { key: 'device', label: 'Registered Devices', render: (row) => <div><p className="font-bold">{row.deviceName || 'Passkey device'}</p><p className="text-xs text-slate-500">{row.platform || '-'} · {row.browser || '-'}</p></div> },
+      { key: 'created', label: 'Created Date', render: (row) => dateTimeLabel(row.createdAt) },
+      { key: 'lastUsed', label: 'Last Used', render: (row) => dateTimeLabel(row.lastUsed) },
+      { key: 'status', label: 'Status', render: (row) => <Status value={row.forcedReRegister ? 'force re-register' : row.status || 'active'} /> },
+      { key: 'actions', label: 'Actions', render: (row) => (
+        <div className="flex flex-wrap gap-2">
+          <ShellButton onClick={() => runAction(`passkey-disable-${row.id}`, () => adminUpdatePasskey(row.id, 'disable'), 'Passkey disabled.')}>Disable Passkey</ShellButton>
+          <ShellButton onClick={() => runAction(`passkey-delete-${row.id}`, () => adminUpdatePasskey(row.id, 'delete'), 'Passkey deleted.')}>Delete Passkey</ShellButton>
+          <ShellButton onClick={() => runAction(`passkey-reregister-${row.id}`, () => adminUpdatePasskey(row.id, 'force-re-register'), 'Re-register required.')}>Force Re-register</ShellButton>
+          <ShellButton onClick={() => runAction(`passkey-logout-${row.userId}`, () => adminForceLogoutUser(row.userId), 'User forced logout.')}>Force Logout</ShellButton>
+        </div>
+      ) },
+    ]
+
+    return (
+      <div className="space-y-4">
+        {passkeySecurityError ? <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800">{passkeySecurityError}</p> : null}
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <KpiCard label="Passkey Adoption" value={`${usersWithPasskeys.size}/${data.users.length || 0}`} helper="Users with active passkey" icon={HiOutlineKey} tone="emerald" />
+          <KpiCard label="Registered Devices" value={activePasskeys.length} helper="Active passkeys" icon={HiOutlineShieldCheck} tone="sky" />
+          <KpiCard label="Users Without Passkey" value={usersWithoutPasskey} helper="Password/Google fallback users" icon={HiOutlineUsers} tone="amber" />
+          <KpiCard label="Failed Passkey Attempts" value={failedPasskeyAttempts} helper="Security monitoring" icon={HiOutlineBell} tone="rose" />
+          <KpiCard label="Successful Passkey Logins" value={successfulPasskeyLogins} helper="Verified WebAuthn logins" icon={HiOutlineCheckBadge} tone="emerald" />
+          <KpiCard label="Password Logins" value={passwordLogins} helper="Fallback usage" icon={HiOutlineShieldCheck} />
+          <KpiCard label="Google Logins" value={googleLogins} helper="OAuth usage" icon={HiOutlineUsers} tone="sky" />
+          <KpiCard label="Blocked Devices" value={blockedDevices} helper="Disabled/removed passkeys" icon={HiOutlineWrenchScrewdriver} tone="rose" />
+        </div>
+        <Panel title="Security / Passkeys" action={<ShellButton>Firestore: userPasskeys</ShellButton>}>
+          <AdminTable rows={passkeys} columns={passkeyColumns} emptyTitle="No passkeys registered" />
+        </Panel>
+        <Panel title="Login History">
+          <AdminTable rows={loginHistory} emptyTitle="No login history found" columns={[
+            { key: 'time', label: 'Date / Time', render: (row) => dateTimeLabel(row.createdAt || row.date) },
+            { key: 'user', label: 'User', render: (row) => row.email || row.userId || '-' },
+            { key: 'device', label: 'Browser / OS / Device', render: (row) => `${row.browser || '-'} · ${row.os || row.platform || '-'} · ${row.device || '-'}` },
+            { key: 'country', label: 'Country / IP', render: (row) => `${row.country || '-'} · ${row.ip || '-'}` },
+            { key: 'method', label: 'Authentication Method', render: (row) => <Status value={row.authenticationMethod || row.method || 'unknown'} /> },
+            { key: 'status', label: 'Result', render: (row) => <Status value={row.status || '-'} /> },
+          ]} />
+        </Panel>
+        <Panel title="Active Sessions">
+          <AdminTable rows={sessions} emptyTitle="No active sessions found" columns={[
+            { key: 'device', label: 'Desktop / Mobile', render: (row) => row.deviceType || row.device || '-' },
+            { key: 'browser', label: 'Browser', render: (row) => `${row.browser || '-'} · ${row.os || '-'}` },
+            { key: 'location', label: 'Location', render: (row) => row.country || row.ip || '-' },
+            { key: 'started', label: 'Started', render: (row) => dateTimeLabel(row.startedAt || row.loginTime) },
+            { key: 'active', label: 'Last Active', render: (row) => dateTimeLabel(row.lastActiveAt) },
+            { key: 'actions', label: 'Actions', render: (row) => <ShellButton onClick={() => row.userId && runAction(`session-logout-${row.userId}`, () => adminForceLogoutUser(row.userId), 'Session terminated.')}>Terminate Session</ShellButton> },
+          ]} />
+        </Panel>
+      </div>
+    )
+  }
+
   function renderContent() {
     switch (activeTab) {
       case 'activity':
@@ -3584,6 +3684,8 @@ export default function ControlCentre() {
         return ModuleAccess()
       case 'visitorAnalytics':
         return VisitorAnalytics()
+      case 'security':
+        return SecurityPasskeys()
       case 'emailMarketing':
         return <EmailMarketing embedded />
       case 'announcements':

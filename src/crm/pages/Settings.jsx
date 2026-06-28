@@ -28,6 +28,7 @@ import { labelForBusinessType, normalizeBusinessType } from '../data/moduleAcces
 import { whatsappCapabilities, whatsappTrialStatus } from '../lib/whatsappApiTrial.js'
 import ConnectWhatsappModal from '../components/whatsapp/ConnectWhatsappModal.jsx'
 import ConfirmDialog from '../components/whatsapp/ConfirmDialog.jsx'
+import PasskeySettingsCard from '../../components/security/PasskeySettingsCard.jsx'
 import { RestaurantBillPreview, RestaurantKotPreview } from '../components/restaurant/RestaurantPrintPreview.jsx'
 import { buildBillPrintData, buildKotPrintData, calculateRestaurantBill } from '../lib/restaurantPosCalculations.js'
 import {
@@ -1412,6 +1413,8 @@ export default function SettingsPage() {
           {viewOnlyMessage}
         </Card>
       ) : null}
+
+      <PasskeySettingsCard />
 
       <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(340px,0.85fr)]">
         <div className="min-w-0 space-y-5">

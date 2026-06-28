@@ -7,6 +7,7 @@ import {
   HiOutlineChatBubbleLeftRight,
   HiOutlineEye,
   HiOutlineEyeSlash,
+  HiOutlineKey,
   HiOutlineHomeModern,
   HiOutlineLockClosed,
   HiOutlineShieldCheck,
@@ -26,6 +27,7 @@ import { trackAnalyticsEvent } from '../../lib/analyticsTracking.js'
 import { getCustomEmailVerificationStatus } from '../../lib/emailVerificationService.js'
 import { createPasswordResetLink, passwordResetEmail, sendWorkerEmail } from '../../lib/transactionalEmail.js'
 import { VERIFY_EMAIL_ROUTE, WORKSPACE_ROUTE } from '../../lib/authRouteState.js'
+import { passkeysSupported, recordLoginHistory, signInWithPasskey } from '../../lib/passkeys.js'
 
 // Modules showcased on the sign-in panel — mirrors the workspace catalog.
 const LOGIN_MODULES = [
@@ -46,6 +48,7 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
+  const [passkeyLoading, setPasskeyLoading] = useState(false)
   const [error, setError] = useState('')
   const [info, setInfo] = useState('')
 
@@ -81,6 +84,7 @@ export default function Login() {
         console.log('[LOGIN STEP 8] Navigation success', { route: VERIFY_EMAIL_ROUTE })
         return
       }
+      recordLoginHistory({ method: 'password', status: 'success', userId: credentials.user.uid, email: credentials.user.email || loginEmail }).catch(() => {})
       trackAnalyticsEvent('login_completed', { userId: credentials.user.uid, email: credentials.user.email || loginEmail, page: '/login', status: 'success' }).catch(() => {})
       console.log('[LOGIN STEP 7] Route decision', { route: WORKSPACE_ROUTE, reason: 'verified' })
       navigate(WORKSPACE_ROUTE, { replace: true })
@@ -88,6 +92,7 @@ export default function Login() {
     } catch (err) {
       console.error('[LOGIN ERROR]', { code: err?.code || '', message: err?.message || String(err || '') })
       trackAnalyticsEvent('login_failed', { email: email.trim().toLowerCase(), page: '/login', status: err?.code || 'failed' }).catch(() => {})
+      recordLoginHistory({ method: 'password', status: 'failed', email: email.trim().toLowerCase(), error: err?.code || err?.message || 'failed' }).catch(() => {})
       setError(clientSafeMessage(err, 'Unable to sign in. Please verify your credentials.', { context: 'Login with email' }))
     } finally {
       // Guarantee the spinner always clears — success, error, or unexpected
@@ -109,13 +114,36 @@ export default function Login() {
       trackAnalyticsEvent('login_started', { page: '/login', buttonLabel: 'Google sign in' }).catch(() => {})
       await authPersistenceReady
       const result = await signInWithPopup(auth, provider)
+      recordLoginHistory({ method: 'google', status: 'success', userId: result.user.uid, email: result.user.email || '' }).catch(() => {})
       trackAnalyticsEvent('login_completed', { userId: result.user.uid, email: result.user.email || '', page: '/login', status: 'google' }).catch(() => {})
       navigate(WORKSPACE_ROUTE, { replace: true })
     } catch (err) {
       trackAnalyticsEvent('login_failed', { page: '/login', status: err?.code || 'google_failed' }).catch(() => {})
+      recordLoginHistory({ method: 'google', status: 'failed', error: err?.code || err?.message || 'google_failed' }).catch(() => {})
       setError(clientSafeMessage(err, 'Google sign-in failed. Please try again.', { context: 'Login with Google' }))
     } finally {
       setGoogleLoading(false)
+    }
+  }
+
+  const handlePasskeySignIn = async () => {
+    setError('')
+    setInfo('')
+    if (!passkeysSupported()) {
+      setError('Passkey is not supported on this browser or device.')
+      return
+    }
+    setPasskeyLoading(true)
+    try {
+      trackAnalyticsEvent('login_started', { page: '/login', buttonLabel: 'Passkey sign in' }).catch(() => {})
+      const { credentials } = await signInWithPasskey()
+      trackAnalyticsEvent('login_completed', { userId: credentials.user.uid, email: credentials.user.email || '', page: '/login', status: 'passkey' }).catch(() => {})
+      navigate(WORKSPACE_ROUTE, { replace: true })
+    } catch (err) {
+      trackAnalyticsEvent('login_failed', { page: '/login', status: err?.code || 'passkey_failed' }).catch(() => {})
+      setError(clientSafeMessage(err, 'Passkey sign-in failed. Use password or Google, then register a new passkey from Security settings.', { context: 'Login with passkey' }))
+    } finally {
+      setPasskeyLoading(false)
     }
   }
 
@@ -321,6 +349,25 @@ export default function Login() {
             >
               <AiOutlineGoogle className="h-[18px] w-[18px] text-slate-700" />
               {googleLoading ? 'Connecting…' : 'Continue with Google'}
+            </button>
+
+            <button
+              type="button"
+              disabled
+              className="mt-3 flex h-11 w-full cursor-not-allowed items-center justify-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 text-[13px] font-semibold text-slate-400"
+              title="Microsoft sign-in is future ready"
+            >
+              Continue with Microsoft
+            </button>
+
+            <button
+              type="button"
+              onClick={handlePasskeySignIn}
+              disabled={passkeyLoading}
+              className="mt-3 flex h-11 w-full items-center justify-center gap-2.5 rounded-xl border border-indigo-200 bg-indigo-50 text-[13px] font-black text-indigo-700 transition hover:bg-indigo-100 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <HiOutlineKey className="h-[18px] w-[18px]" />
+              {passkeyLoading ? 'Opening passkey…' : '🔐 Sign in with Passkey'}
             </button>
 
             <p className="mt-5 text-center text-[13px] text-slate-500">

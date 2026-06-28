@@ -3,6 +3,12 @@ import crypto from 'node:crypto'
 import { onCall, onRequest, HttpsError } from 'firebase-functions/v2/https'
 import { onDocumentWritten } from 'firebase-functions/v2/firestore'
 import { logger } from 'firebase-functions'
+import {
+  generateAuthenticationOptions,
+  generateRegistrationOptions,
+  verifyAuthenticationResponse,
+  verifyRegistrationResponse,
+} from '@simplewebauthn/server'
 
 admin.initializeApp()
 
@@ -23,6 +29,12 @@ const MODULES = new Set(['all', 'restaurant', 'crm', 'transport', 'school', 'pro
 const BATCH_SIZE = 25
 const BATCH_DELAY_MS = 350
 const FUNCTION_REGION = 'us-central1'
+const PASSKEY_RP_NAME = process.env.PASSKEY_RP_NAME || 'Nexora Business Suite'
+const PASSKEY_RP_ID = process.env.PASSKEY_RP_ID || 'nexorasolution.online'
+const PASSKEY_ORIGINS = (process.env.PASSKEY_ORIGINS || 'https://nexorasolution.online,https://www.nexorasolution.online,http://localhost:5173,http://localhost:5174,http://localhost:4173')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean)
 
 function clean(value) {
   return typeof value === 'string' ? value.trim() : ''
@@ -125,6 +137,111 @@ function safeDocId(value) {
   const raw = clean(value)
   if (!raw) return crypto.randomBytes(8).toString('hex')
   return raw.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 120)
+}
+
+function safeOrigin(value) {
+  const origin = clean(value)
+  if (!origin) return ''
+  try {
+    const parsed = new URL(origin)
+    if (['localhost', '127.0.0.1'].includes(parsed.hostname)) return parsed.origin
+    return PASSKEY_ORIGINS.includes(parsed.origin) ? parsed.origin : ''
+  } catch {
+    return ''
+  }
+}
+
+function rpIdForOrigin(origin) {
+  try {
+    const parsed = new URL(origin)
+    if (['localhost', '127.0.0.1'].includes(parsed.hostname)) return parsed.hostname
+  } catch {
+    // ignore
+  }
+  return PASSKEY_RP_ID
+}
+
+function expectedOrigins(origin) {
+  const extra = safeOrigin(origin)
+  return extra && !PASSKEY_ORIGINS.includes(extra) ? [...PASSKEY_ORIGINS, extra] : PASSKEY_ORIGINS
+}
+
+function bufferToBase64Url(value) {
+  return Buffer.from(value || []).toString('base64url')
+}
+
+function base64UrlToBuffer(value) {
+  return new Uint8Array(Buffer.from(String(value || ''), 'base64url'))
+}
+
+function browserFromUa(ua = '') {
+  const text = String(ua)
+  if (/edg/i.test(text)) return 'Edge'
+  if (/chrome|crios/i.test(text)) return 'Chrome'
+  if (/safari/i.test(text)) return 'Safari'
+  if (/firefox/i.test(text)) return 'Firefox'
+  return 'Unknown'
+}
+
+function platformFromUa(ua = '') {
+  const text = String(ua)
+  if (/windows/i.test(text)) return 'Windows'
+  if (/android/i.test(text)) return 'Android'
+  if (/iphone|ipad|ios/i.test(text)) return 'iOS'
+  if (/mac os|macintosh/i.test(text)) return 'macOS'
+  if (/linux/i.test(text)) return 'Linux'
+  return 'Unknown'
+}
+
+async function validatePasskeyUser(userId) {
+  if (!userId) throw new HttpsError('unauthenticated', 'User is required.')
+  const [authUser, userSnap] = await Promise.all([
+    admin.auth().getUser(userId),
+    db.collection('users').doc(userId).get(),
+  ])
+  const user = userSnap.data() || {}
+  const workspaceId = firstString(user.workspaceId, user.ownerId, user.companyId, userId)
+  const workspaceSnap = workspaceId ? await db.collection('workspaces').doc(workspaceId).get() : null
+  const workspace = workspaceSnap?.data?.() || {}
+  const role = lower(user.role || user.userRole || user.accountRole || 'owner')
+  const subscriptionStatus = lower(workspace.subscriptionStatus || workspace.planStatus || user.subscriptionStatus || user.planStatus || 'trial')
+  const trialEndsAt = workspace.trialEndsAt?.toDate?.() || user.trialEndsAt?.toDate?.() || (workspace.trialEndsAt || user.trialEndsAt ? new Date(workspace.trialEndsAt || user.trialEndsAt) : null)
+  const trialExpired = trialEndsAt && !Number.isNaN(trialEndsAt.getTime()) && trialEndsAt.getTime() < Date.now()
+  const blocked = user.blocked === true || user.isBlocked === true || workspace.blocked === true || workspace.isBlocked === true || lower(user.status) === 'blocked' || lower(workspace.status) === 'blocked'
+  const deleted = user.deleted === true || user.isDeleted === true || workspace.deleted === true || workspace.isDeleted === true || lower(user.status) === 'deleted' || lower(workspace.status) === 'deleted'
+  const inactiveWorkspace = lower(workspace.status) === 'inactive' || workspace.active === false || workspace.enabled === false
+
+  if (authUser.emailVerified !== true && user.emailVerifiedCustom !== true) throw new HttpsError('permission-denied', 'Email verification is required before using passkey.')
+  if (blocked) throw new HttpsError('permission-denied', 'Account is blocked.')
+  if (deleted) throw new HttpsError('permission-denied', 'Account or workspace is deleted.')
+  if (inactiveWorkspace) throw new HttpsError('permission-denied', 'Workspace is not active.')
+  if (!role || ['deleted', 'blocked', 'disabled'].includes(role)) throw new HttpsError('permission-denied', 'User role is not valid.')
+  if (['expired', 'cancelled', 'canceled'].includes(subscriptionStatus) && trialExpired) throw new HttpsError('permission-denied', 'Subscription is not valid.')
+
+  return { authUser, user, workspace, workspaceId, role }
+}
+
+async function writeLoginHistory({ userId = '', email = '', workspaceId = '', method = '', status = '', userAgent = '', ip = '', country = '', deviceName = '', credentialId = '', error = '' }) {
+  const payload = {
+    userId,
+    email,
+    workspaceId,
+    authenticationMethod: method,
+    status,
+    browser: browserFromUa(userAgent),
+    os: platformFromUa(userAgent),
+    platform: platformFromUa(userAgent),
+    device: deviceName || platformFromUa(userAgent),
+    userAgent,
+    country,
+    ip,
+    credentialId,
+    error,
+    createdAt: FieldValue.serverTimestamp(),
+    date: FieldValue.serverTimestamp(),
+    time: FieldValue.serverTimestamp(),
+  }
+  await db.collection('loginHistory').add(payload)
 }
 
 function dateKey(value) {
@@ -540,6 +657,339 @@ export const sendMarketingCampaign = onCall(
       })
       throw new HttpsError('internal', error?.message || 'Marketing email function failed.')
     }
+  },
+)
+
+export const passkeyBeginRegistration = onCall(
+  { region: FUNCTION_REGION, timeoutSeconds: 60, memory: '256MiB' },
+  async (request) => {
+    if (!request.auth?.uid) throw new HttpsError('unauthenticated', 'Sign in before enabling passkey.')
+    const { authUser, user, workspaceId } = await validatePasskeyUser(request.auth.uid)
+    const origin = safeOrigin(request.data?.origin) || PASSKEY_ORIGINS[0]
+    const rpID = rpIdForOrigin(origin)
+    const existingSnap = await db.collection('userPasskeys').where('userId', '==', request.auth.uid).where('status', '==', 'active').limit(50).get()
+    const options = await generateRegistrationOptions({
+      rpName: PASSKEY_RP_NAME,
+      rpID,
+      userID: Buffer.from(request.auth.uid),
+      userName: authUser.email || user.email || request.auth.token.email || request.auth.uid,
+      userDisplayName: firstString(user.fullName, user.name, user.displayName, authUser.displayName, authUser.email),
+      attestationType: 'none',
+      authenticatorSelection: {
+        residentKey: 'preferred',
+        userVerification: 'required',
+      },
+      excludeCredentials: existingSnap.docs.map((docSnap) => ({ id: docSnap.data().credentialId })),
+    })
+    await db.collection('passkeyChallenges').doc(`${request.auth.uid}_registration`).set({
+      userId: request.auth.uid,
+      workspaceId,
+      challenge: options.challenge,
+      type: 'registration',
+      rpID,
+      origin,
+      createdAt: FieldValue.serverTimestamp(),
+      expiresAt: Date.now() + 5 * 60 * 1000,
+    }, { merge: true })
+    return { options }
+  },
+)
+
+export const passkeyFinishRegistration = onCall(
+  { region: FUNCTION_REGION, timeoutSeconds: 60, memory: '256MiB' },
+  async (request) => {
+    if (!request.auth?.uid) throw new HttpsError('unauthenticated', 'Sign in before enabling passkey.')
+    const { authUser, user, workspaceId } = await validatePasskeyUser(request.auth.uid)
+    const challengeRef = db.collection('passkeyChallenges').doc(`${request.auth.uid}_registration`)
+    const challengeSnap = await challengeRef.get()
+    const challenge = challengeSnap.data() || {}
+    if (!challengeSnap.exists || challenge.type !== 'registration' || Number(challenge.expiresAt || 0) < Date.now()) {
+      throw new HttpsError('failed-precondition', 'Passkey setup expired. Try again.')
+    }
+    const verification = await verifyRegistrationResponse({
+      response: request.data?.response,
+      expectedChallenge: challenge.challenge,
+      expectedOrigin: expectedOrigins(challenge.origin),
+      expectedRPID: challenge.rpID || PASSKEY_RP_ID,
+      requireUserVerification: true,
+    })
+    if (!verification.verified || !verification.registrationInfo?.credential) {
+      throw new HttpsError('permission-denied', 'Passkey registration could not be verified.')
+    }
+    const credential = verification.registrationInfo.credential
+    const userAgent = clean(request.data?.userAgent)
+    const deviceName = clean(request.data?.deviceName) || `${platformFromUa(userAgent)} ${browserFromUa(userAgent)}`
+    const credentialId = credential.id
+    const ref = db.collection('userPasskeys').doc(safeDocId(credentialId))
+    await ref.set({
+      id: ref.id,
+      userId: request.auth.uid,
+      email: authUser.email || user.email || '',
+      workspaceId,
+      credentialId,
+      publicKey: bufferToBase64Url(credential.publicKey),
+      counter: credential.counter || 0,
+      transports: request.data?.response?.response?.transports || [],
+      deviceName,
+      browser: browserFromUa(userAgent),
+      platform: platformFromUa(userAgent),
+      userAgent,
+      status: 'active',
+      credentialDeviceType: verification.registrationInfo.credentialDeviceType || '',
+      credentialBackedUp: verification.registrationInfo.credentialBackedUp === true,
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+      lastUsed: null,
+      forcedReRegister: false,
+    }, { merge: true })
+    await challengeRef.delete().catch(() => {})
+    return { success: true, passkey: { id: ref.id, credentialId, deviceName, status: 'active' } }
+  },
+)
+
+export const passkeyBeginAuthentication = onCall(
+  { region: FUNCTION_REGION, timeoutSeconds: 60, memory: '256MiB' },
+  async (request) => {
+    const origin = safeOrigin(request.data?.origin) || PASSKEY_ORIGINS[0]
+    const rpID = rpIdForOrigin(origin)
+    const options = await generateAuthenticationOptions({
+      rpID,
+      userVerification: 'required',
+      allowCredentials: [],
+    })
+    const challengeId = crypto.randomBytes(16).toString('hex')
+    await db.collection('passkeyChallenges').doc(challengeId).set({
+      challengeId,
+      challenge: options.challenge,
+      type: 'authentication',
+      rpID,
+      origin,
+      createdAt: FieldValue.serverTimestamp(),
+      expiresAt: Date.now() + 5 * 60 * 1000,
+    })
+    return { challengeId, options }
+  },
+)
+
+export const passkeyFinishAuthentication = onCall(
+  { region: FUNCTION_REGION, timeoutSeconds: 60, memory: '256MiB' },
+  async (request) => {
+    const response = request.data?.response
+    const credentialId = clean(response?.id)
+    const challengeId = clean(request.data?.challengeId)
+    const userAgent = clean(request.data?.userAgent)
+    const ip = clean(request.rawRequest?.ip || request.rawRequest?.headers?.['fastly-client-ip'] || request.rawRequest?.headers?.['x-forwarded-for'])
+    const challengeRef = db.collection('passkeyChallenges').doc(challengeId)
+    const challengeSnap = await challengeRef.get()
+    const challenge = challengeSnap.data() || {}
+    if (!challengeSnap.exists || challenge.type !== 'authentication' || Number(challenge.expiresAt || 0) < Date.now()) {
+      throw new HttpsError('failed-precondition', 'Passkey login expired. Try again.')
+    }
+    const keySnap = await db.collection('userPasskeys').where('credentialId', '==', credentialId).limit(1).get()
+    const keyDoc = keySnap.docs[0]
+    const passkey = keyDoc?.data?.() || {}
+    if (!keyDoc || passkey.status !== 'active') {
+      await writeLoginHistory({ method: 'passkey', status: 'failed', userAgent, ip, credentialId, error: 'Passkey not registered or disabled.' }).catch(() => {})
+      throw new HttpsError('not-found', 'Passkey is not registered or has been disabled.')
+    }
+    const userContext = await validatePasskeyUser(passkey.userId)
+    const verification = await verifyAuthenticationResponse({
+      response,
+      expectedChallenge: challenge.challenge,
+      expectedOrigin: expectedOrigins(challenge.origin),
+      expectedRPID: challenge.rpID || PASSKEY_RP_ID,
+      credential: {
+        id: passkey.credentialId,
+        publicKey: base64UrlToBuffer(passkey.publicKey),
+        counter: Number(passkey.counter || 0),
+        transports: passkey.transports || [],
+      },
+      requireUserVerification: true,
+    })
+    if (!verification.verified) {
+      await writeLoginHistory({ userId: passkey.userId, email: passkey.email || '', workspaceId: passkey.workspaceId || '', method: 'passkey', status: 'failed', userAgent, ip, credentialId, error: 'Signature verification failed.' }).catch(() => {})
+      throw new HttpsError('permission-denied', 'Passkey verification failed.')
+    }
+    await keyDoc.ref.set({
+      counter: verification.authenticationInfo.newCounter,
+      lastUsed: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+      browser: browserFromUa(userAgent) || passkey.browser || '',
+      platform: platformFromUa(userAgent) || passkey.platform || '',
+    }, { merge: true })
+    await challengeRef.delete().catch(() => {})
+    await writeLoginHistory({
+      userId: passkey.userId,
+      email: passkey.email || userContext.authUser.email || '',
+      workspaceId: userContext.workspaceId,
+      method: 'passkey',
+      status: 'success',
+      userAgent,
+      ip,
+      credentialId,
+      deviceName: passkey.deviceName || '',
+    }).catch(() => {})
+    const token = await admin.auth().createCustomToken(passkey.userId, {
+      authMethod: 'passkey',
+      workspaceId: userContext.workspaceId,
+    })
+    return {
+      success: true,
+      token,
+      userId: passkey.userId,
+      workspaceId: userContext.workspaceId,
+    }
+  },
+)
+
+export const listMyPasskeys = onCall(
+  { region: FUNCTION_REGION, timeoutSeconds: 60, memory: '256MiB' },
+  async (request) => {
+    if (!request.auth?.uid) throw new HttpsError('unauthenticated', 'Sign in to view passkeys.')
+    const snap = await db.collection('userPasskeys').where('userId', '==', request.auth.uid).limit(100).get()
+    return {
+      passkeys: snap.docs.map((docSnap) => {
+        const row = docSnap.data()
+        return {
+          id: docSnap.id,
+          credentialId: row.credentialId || '',
+          deviceName: row.deviceName || '',
+          browser: row.browser || '',
+          platform: row.platform || '',
+          createdAt: row.createdAt?.toDate?.()?.toISOString?.() || '',
+          lastUsed: row.lastUsed?.toDate?.()?.toISOString?.() || '',
+          status: row.status || 'active',
+          forcedReRegister: row.forcedReRegister === true,
+        }
+      }),
+    }
+  },
+)
+
+export const renameMyPasskey = onCall(
+  { region: FUNCTION_REGION, timeoutSeconds: 60, memory: '256MiB' },
+  async (request) => {
+    if (!request.auth?.uid) throw new HttpsError('unauthenticated', 'Sign in to rename passkey.')
+    const id = safeDocId(request.data?.id)
+    const deviceName = clean(request.data?.deviceName).slice(0, 80)
+    if (!id || !deviceName) throw new HttpsError('invalid-argument', 'Device name is required.')
+    const ref = db.collection('userPasskeys').doc(id)
+    const snap = await ref.get()
+    if (!snap.exists || snap.data()?.userId !== request.auth.uid) throw new HttpsError('permission-denied', 'Passkey not found.')
+    await ref.set({ deviceName, updatedAt: FieldValue.serverTimestamp() }, { merge: true })
+    return { success: true }
+  },
+)
+
+export const removeMyPasskey = onCall(
+  { region: FUNCTION_REGION, timeoutSeconds: 60, memory: '256MiB' },
+  async (request) => {
+    if (!request.auth?.uid) throw new HttpsError('unauthenticated', 'Sign in to remove passkey.')
+    const id = safeDocId(request.data?.id)
+    const ref = db.collection('userPasskeys').doc(id)
+    const snap = await ref.get()
+    if (!snap.exists || snap.data()?.userId !== request.auth.uid) throw new HttpsError('permission-denied', 'Passkey not found.')
+    await ref.set({ status: 'removed', removedAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() }, { merge: true })
+    return { success: true }
+  },
+)
+
+export const adminListPasskeySecurity = onCall(
+  { region: FUNCTION_REGION, timeoutSeconds: 60, memory: '512MiB' },
+  async (request) => {
+    if (!isAdminOrOwner(request.auth)) throw new HttpsError('permission-denied', 'Admin access required.')
+    const search = lower(request.data?.search)
+    const [keysSnap, usersSnap, sessionsSnap, loginsSnap] = await Promise.all([
+      db.collection('userPasskeys').limit(1000).get(),
+      db.collection('users').limit(1000).get(),
+      db.collection('userSessions').limit(1000).get(),
+      db.collection('loginHistory').orderBy('createdAt', 'desc').limit(500).get().catch(async () => db.collection('loginHistory').limit(500).get()),
+    ])
+    const users = new Map(usersSnap.docs.map((docSnap) => [docSnap.id, { id: docSnap.id, ...docSnap.data() }]))
+    let passkeys = keysSnap.docs.map((docSnap) => {
+      const row = docSnap.data()
+      const user = users.get(row.userId) || {}
+      return {
+        id: docSnap.id,
+        userId: row.userId || '',
+        user: firstString(user.fullName, user.name, user.displayName, row.email, user.email),
+        email: firstString(row.email, user.email),
+        company: firstString(user.companyName, user.workspaceName, user.businessName),
+        workspaceId: row.workspaceId || user.workspaceId || '',
+        deviceName: row.deviceName || '',
+        browser: row.browser || '',
+        platform: row.platform || '',
+        createdAt: row.createdAt?.toDate?.()?.toISOString?.() || '',
+        lastUsed: row.lastUsed?.toDate?.()?.toISOString?.() || '',
+        status: row.status || 'active',
+        forcedReRegister: row.forcedReRegister === true,
+      }
+    })
+    if (search) {
+      passkeys = passkeys.filter((row) => [row.user, row.email, row.company, row.workspaceId, row.deviceName].some((value) => lower(value).includes(search)))
+    }
+    const loginHistory = loginsSnap.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data(), createdAt: docSnap.data().createdAt?.toDate?.()?.toISOString?.() || '' }))
+    const activeSessions = sessionsSnap.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data(), lastActiveAt: docSnap.data().lastActiveAt?.toDate?.()?.toISOString?.() || '' }))
+    return { passkeys, loginHistory, activeSessions }
+  },
+)
+
+export const adminUpdatePasskey = onCall(
+  { region: FUNCTION_REGION, timeoutSeconds: 60, memory: '256MiB' },
+  async (request) => {
+    if (!isAdminOrOwner(request.auth)) throw new HttpsError('permission-denied', 'Admin access required.')
+    const id = safeDocId(request.data?.id)
+    const action = lower(request.data?.action)
+    const ref = db.collection('userPasskeys').doc(id)
+    const snap = await ref.get()
+    if (!snap.exists) throw new HttpsError('not-found', 'Passkey not found.')
+    if (action === 'disable') await ref.set({ status: 'disabled', updatedAt: FieldValue.serverTimestamp() }, { merge: true })
+    else if (action === 'delete') await ref.set({ status: 'deleted', deletedAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() }, { merge: true })
+    else if (action === 'force-re-register') await ref.set({ forcedReRegister: true, status: 'disabled', updatedAt: FieldValue.serverTimestamp() }, { merge: true })
+    else throw new HttpsError('invalid-argument', 'Unsupported passkey action.')
+    return { success: true }
+  },
+)
+
+export const adminForceLogoutUser = onCall(
+  { region: FUNCTION_REGION, timeoutSeconds: 60, memory: '256MiB' },
+  async (request) => {
+    if (!isAdminOrOwner(request.auth)) throw new HttpsError('permission-denied', 'Admin access required.')
+    const userId = clean(request.data?.userId)
+    if (!userId) throw new HttpsError('invalid-argument', 'User ID is required.')
+    await admin.auth().revokeRefreshTokens(userId)
+    await db.collection('users').doc(userId).set({
+      forceLogoutAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    }, { merge: true })
+    return { success: true }
+  },
+)
+
+export const recordLoginHistory = onCall(
+  { region: FUNCTION_REGION, timeoutSeconds: 30, memory: '256MiB' },
+  async (request) => {
+    const method = lower(request.data?.method || 'password')
+    const status = lower(request.data?.status || 'success')
+    if (!['password', 'google', 'passkey', 'failed'].includes(method)) {
+      throw new HttpsError('invalid-argument', 'Unsupported login method.')
+    }
+    const userId = clean(request.data?.userId || request.auth?.uid)
+    const email = lower(request.data?.email || request.auth?.token?.email)
+    const workspaceId = clean(request.data?.workspaceId)
+    const userAgent = clean(request.data?.userAgent)
+    const ip = clean(request.rawRequest?.ip || request.rawRequest?.headers?.['fastly-client-ip'] || request.rawRequest?.headers?.['x-forwarded-for'])
+    await writeLoginHistory({
+      userId,
+      email,
+      workspaceId,
+      method,
+      status,
+      userAgent,
+      ip,
+      error: clean(request.data?.error),
+    })
+    return { success: true }
   },
 )
 
