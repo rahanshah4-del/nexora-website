@@ -59,7 +59,7 @@ function mergeTicketPages(currentRows, nextRows) {
   ]
 }
 
-export function useSupportTickets({ limitCount = DEFAULT_SUPPORT_TICKET_LIST_LIMIT, paginated = false } = {}) {
+export function useSupportTickets({ limitCount = DEFAULT_SUPPORT_TICKET_LIST_LIMIT, paginated = false, enabled = true } = {}) {
   const { userId, workspaceId, businessType, userDoc, workspaceDoc, firebaseUser } = useUser()
   const ticketListLimit = safeSupportTicketListLimit(limitCount)
   const ticketPageLimit = safeSupportTicketPageLimit(limitCount)
@@ -78,6 +78,17 @@ export function useSupportTickets({ limitCount = DEFAULT_SUPPORT_TICKET_LIST_LIM
   const ticketRequestRef = useRef(0)
 
   const loadTicketPage = useCallback(async ({ reset = false } = {}) => {
+    if (!enabled) {
+      setTickets([])
+      ticketCursorRef.current = null
+      setHasMoreTickets(false)
+      setTicketPage(0)
+      setSource(db ? 'firestore' : 'none')
+      setError('')
+      setLoading(false)
+      setPaginationLoading(false)
+      return { ok: true }
+    }
     if (!db) {
       setTickets([])
       setSource('none')
@@ -150,7 +161,7 @@ export function useSupportTickets({ limitCount = DEFAULT_SUPPORT_TICKET_LIST_LIM
         else setPaginationLoading(false)
       }
     }
-  }, [businessType, ticketPageLimit, workspaceId])
+  }, [businessType, enabled, ticketPageLimit, workspaceId])
 
   const loadMoreTickets = useCallback(async () => {
     if (loading || paginationLoading || !hasMoreTickets) return { ok: true }
@@ -162,6 +173,19 @@ export function useSupportTickets({ limitCount = DEFAULT_SUPPORT_TICKET_LIST_LIM
   }, [])
 
   useEffect(() => {
+    if (!enabled) {
+      Promise.resolve().then(() => {
+        setTickets([])
+        ticketCursorRef.current = null
+        setHasMoreTickets(false)
+        setTicketPage(0)
+        setSource(db ? 'firestore' : 'none')
+        setError('')
+        setLoading(false)
+        setPaginationLoading(false)
+      })
+      return
+    }
     if (!db) {
       Promise.resolve().then(() => {
         setTickets([])
@@ -245,7 +269,7 @@ export function useSupportTickets({ limitCount = DEFAULT_SUPPORT_TICKET_LIST_LIM
     })
 
     return () => unsub?.()
-  }, [access.loading, businessType, canReadSupportTickets, loadTicketPage, paginated, ticketListLimit, workspaceId])
+  }, [access.loading, businessType, canReadSupportTickets, enabled, loadTicketPage, paginated, ticketListLimit, workspaceId])
 
   const stats = useMemo(() => {
     const byStatus = tickets.reduce((acc, t) => {

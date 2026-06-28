@@ -45,7 +45,7 @@ function mergeCustomerPages(currentRows, nextRows) {
   ]
 }
 
-export function useCustomers({ limitCount = DEFAULT_CUSTOMER_LIST_LIMIT, paginated = false } = {}) {
+export function useCustomers({ limitCount = DEFAULT_CUSTOMER_LIST_LIMIT, paginated = false, enabled = true } = {}) {
   const { userId, workspaceId, businessType, userDoc, firebaseUser, role } = useUser()
   const customerListLimit = safeCustomerListLimit(limitCount)
   const customerPageLimit = safeCustomerPageLimit(limitCount)
@@ -60,6 +60,17 @@ export function useCustomers({ limitCount = DEFAULT_CUSTOMER_LIST_LIMIT, paginat
   const customerRequestRef = useRef(0)
 
   const loadCustomerPage = useCallback(async ({ reset = false } = {}) => {
+    if (!enabled) {
+      setRows([])
+      customerCursorRef.current = null
+      setHasMoreCustomers(false)
+      setCustomerPage(0)
+      setSource(db ? 'firestore' : 'none')
+      setError('')
+      setLoading(false)
+      setPaginationLoading(false)
+      return { ok: true }
+    }
     if (!db) {
       setRows([])
       setSource('none')
@@ -141,7 +152,7 @@ export function useCustomers({ limitCount = DEFAULT_CUSTOMER_LIST_LIMIT, paginat
         else setPaginationLoading(false)
       }
     }
-  }, [businessType, customerPageLimit, role, userId, workspaceId])
+  }, [businessType, customerPageLimit, enabled, role, userId, workspaceId])
 
   const loadMoreCustomers = useCallback(async () => {
     if (loading || paginationLoading || !hasMoreCustomers) return { ok: true }
@@ -153,6 +164,19 @@ export function useCustomers({ limitCount = DEFAULT_CUSTOMER_LIST_LIMIT, paginat
   }, [])
 
   useEffect(() => {
+    if (!enabled) {
+      Promise.resolve().then(() => {
+        setRows([])
+        customerCursorRef.current = null
+        setHasMoreCustomers(false)
+        setCustomerPage(0)
+        setSource(db ? 'firestore' : 'none')
+        setError('')
+        setLoading(false)
+        setPaginationLoading(false)
+      })
+      return
+    }
     if (!db) {
       Promise.resolve().then(() => {
         setRows([])
@@ -215,7 +239,7 @@ export function useCustomers({ limitCount = DEFAULT_CUSTOMER_LIST_LIMIT, paginat
       },
     })
     return () => unsub?.()
-  }, [businessType, customerListLimit, loadCustomerPage, paginated, role, userId, workspaceId])
+  }, [businessType, customerListLimit, enabled, loadCustomerPage, paginated, role, userId, workspaceId])
 
   const api = useMemo(
     () => ({

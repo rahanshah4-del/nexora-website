@@ -32,6 +32,7 @@ export default function AnalyticsTracker() {
   const contextRef = useRef({})
   const lastClickAt = useRef(0)
   const lastIssueRef = useRef({})
+  const lastPageViewRef = useRef({ path: '', at: 0 })
 
   useEffect(() => {
     let cancelled = false
@@ -49,9 +50,12 @@ export default function AnalyticsTracker() {
 
   useEffect(() => {
     if (!user?.uid) return undefined
-    const touch = () => updateUserSessionActivity('session_heartbeat', { userId: user.uid, email: user.email || '', ...contextRef.current })
+    const touch = () => {
+      if (document.hidden) return
+      updateUserSessionActivity('session_heartbeat', { userId: user.uid, email: user.email || '', ...contextRef.current })
+    }
     touch()
-    const timer = window.setInterval(touch, 60000)
+    const timer = window.setInterval(touch, 120000)
     window.addEventListener('focus', touch)
     document.addEventListener('visibilitychange', touch)
     return () => {
@@ -62,6 +66,9 @@ export default function AnalyticsTracker() {
   }, [user])
 
   useEffect(() => {
+    const now = Date.now()
+    if (lastPageViewRef.current.path === location.pathname && now - lastPageViewRef.current.at < 30000) return
+    lastPageViewRef.current = { path: location.pathname, at: now }
     trackAnalyticsEvent('page_view', { ...contextRef.current, page: location.pathname })
     if (location.pathname === '/app/dashboard') {
       trackAnalyticsEvent('login_completed', { ...contextRef.current, page: location.pathname, status: 'crm_opened' })

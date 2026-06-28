@@ -82,8 +82,15 @@ export function subscribeUserCollection(userId, path, onData, onError, options =
     onData([])
     return () => {}
   }
+  const constraints = []
+  if (options?.orderByField) constraints.push(orderBy(options.orderByField, options.orderDirection || 'desc'))
+  if (Number.isFinite(Number(options?.limitCount)) && Number(options.limitCount) > 0) {
+    constraints.push(queryLimit(Math.floor(Number(options.limitCount))))
+  }
+  const source = constraints.length ? query(ref, ...constraints) : ref
+
   return onSnapshot(
-    ref,
+    source,
     (snap) =>
       onData(
         snap.docs

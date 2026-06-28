@@ -690,16 +690,23 @@ function SchoolDashboard({
 
 export default function DashboardHomePage() {
   const currency = 'PKR'
-  const invoicesApi = useInvoices({ limitCount: DASHBOARD_RECENT_LIMIT })
-  const customersApi = useCustomers({ limitCount: DASHBOARD_RECENT_LIMIT })
-  const leadsApi = useLeadScoring({ limitCount: DASHBOARD_RECENT_LIMIT })
-  const activityApi = useActivityLogs({ limitCount: DASHBOARD_RECENT_LIMIT })
-  const ticketsApi = useSupportTickets({ limitCount: DASHBOARD_RECENT_LIMIT })
-  const expensesApi = useExpenses({ limitCount: DASHBOARD_RECENT_LIMIT })
-  const accountsApi = useAccountTransactions()
   const { businessType, workspaceDoc, userDoc } = useUser()
-  const isSchool = normalizeBusinessType(businessType) === 'School ERP'
-  const isProperty = normalizeBusinessType(businessType) === 'Property ERP'
+  const normalizedBusinessType = normalizeBusinessType(businessType)
+  const isSchool = normalizedBusinessType === 'School ERP'
+  const isProperty = normalizedBusinessType === 'Property ERP'
+  const isWhatsapp = normalizedBusinessType === 'WhatsApp CRM'
+  const isRestaurant = normalizedBusinessType === 'Restaurant POS'
+  const isRetail = normalizedBusinessType === 'Retail / POS'
+  const isSalesHub = normalizedBusinessType === 'General CRM'
+  const isTransport = normalizedBusinessType === 'Transport / Rental'
+  const useCommonDashboardData = !isWhatsapp && !isRestaurant && !isTransport
+  const invoicesApi = useInvoices({ limitCount: DASHBOARD_RECENT_LIMIT, enabled: useCommonDashboardData })
+  const customersApi = useCustomers({ limitCount: DASHBOARD_RECENT_LIMIT, enabled: useCommonDashboardData })
+  const leadsApi = useLeadScoring({ limitCount: DASHBOARD_RECENT_LIMIT, enabled: isSalesHub })
+  const activityApi = useActivityLogs({ limitCount: DASHBOARD_RECENT_LIMIT, enabled: useCommonDashboardData })
+  const ticketsApi = useSupportTickets({ limitCount: DASHBOARD_RECENT_LIMIT, enabled: isSalesHub })
+  const expensesApi = useExpenses({ limitCount: DASHBOARD_RECENT_LIMIT, enabled: useCommonDashboardData })
+  const accountsApi = useAccountTransactions({ limitCount: DASHBOARD_RECENT_LIMIT, enabled: useCommonDashboardData })
   const schoolAttendanceApi = useSchoolAttendanceSummary({ enabled: isSchool })
   const maintenanceApi = useMaintenance({ enabled: isProperty })
   const contractsApi = useContracts({ enabled: isProperty })
@@ -711,10 +718,6 @@ export default function DashboardHomePage() {
     [maintenanceApi.requests, contractsApi.contracts],
   )
   const propertyLoading = isProperty && (maintenanceApi.loading || contractsApi.loading)
-  const isWhatsapp = normalizeBusinessType(businessType) === 'WhatsApp CRM'
-  const isRestaurant = normalizeBusinessType(businessType) === 'Restaurant POS'
-  const isRetail = normalizeBusinessType(businessType) === 'Retail / POS'
-  const isSalesHub = normalizeBusinessType(businessType) === 'General CRM'
   const showSalesPipeline = isSalesHub
   const showSupportMetrics = isSalesHub
   const retailProductsApi = useProducts({ enabled: isRetail })
@@ -1037,6 +1040,7 @@ export default function DashboardHomePage() {
   )
 
   useEffect(() => {
+    if (!import.meta.env.DEV) return
     console.log('[Dashboard] loading', {
       loading,
       limitCount: DASHBOARD_RECENT_LIMIT,
@@ -1045,6 +1049,7 @@ export default function DashboardHomePage() {
   }, [loading])
 
   useEffect(() => {
+    if (!import.meta.env.DEV) return
     if (loading) return
     console.log('[Dashboard] recent data loaded', {
       invoices: invoicesApi.invoices.length,
@@ -1067,6 +1072,7 @@ export default function DashboardHomePage() {
   ])
 
   useEffect(() => {
+    if (!import.meta.env.DEV) return
     if (loading) return
     console.log('[Dashboard] summary ready', {
       source: 'recent-limited-data',
@@ -1079,17 +1085,18 @@ export default function DashboardHomePage() {
   }, [dashboardStats.activeLeads, dashboardStats.totalCustomers, loading, openTickets.length, totalRevenueUsd])
 
   useEffect(() => {
+    if (!import.meta.env.DEV) return
     if (loading) return
-    if (normalizeBusinessType(businessType) !== 'Retail / POS') return
+    if (normalizedBusinessType !== 'Retail / POS') return
     console.log('[Retail POS Dashboard Loaded]', {
       source: 'DashboardHome',
-      businessType: normalizeBusinessType(businessType),
+      businessType: normalizedBusinessType,
       invoices: invoicesApi.invoices.length,
       customers: customersApi.customers.length,
       expenses: expensesApi.expenses.length,
       totalRevenueUsd,
     })
-  }, [businessType, customersApi.customers.length, expensesApi.expenses.length, invoicesApi.invoices.length, loading, totalRevenueUsd])
+  }, [customersApi.customers.length, expensesApi.expenses.length, invoicesApi.invoices.length, loading, normalizedBusinessType, totalRevenueUsd])
 
   // WhatsApp CRM gets a dedicated, green-themed dashboard instead of the shared
   // CRM layout. All hooks above still run; only the rendered output differs.

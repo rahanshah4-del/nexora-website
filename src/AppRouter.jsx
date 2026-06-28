@@ -1,17 +1,17 @@
 import { Component, Suspense, lazy } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
-import UpgradeBusiness from './pages/UpgradeBusiness.jsx'
-import Login from './pages/auth/Login.jsx'
-import Signup from './pages/auth/Signup.jsx'
-import VerifyEmail from './pages/auth/VerifyEmail.jsx'
-import WorkspaceSelection from './pages/auth/WorkspaceSelection.jsx'
-import CrmRequireAuth from './crm/components/auth/RequireAuth.jsx'
 import PageLoader from './crm/components/ui/PageLoader.jsx'
-import RootRequireAuth from './layouts/RequireAuth.jsx'
-import RequireAdmin from './layouts/RequireAdmin.jsx'
-import AnalyticsTracker from './components/AnalyticsTracker.jsx'
 
 const MarketingRoute = lazy(() => import('./pages/public/MarketingRoute.jsx'))
+const UpgradeBusiness = lazy(() => import('./pages/UpgradeBusiness.jsx'))
+const Login = lazy(() => import('./pages/auth/Login.jsx'))
+const Signup = lazy(() => import('./pages/auth/Signup.jsx'))
+const VerifyEmail = lazy(() => import('./pages/auth/VerifyEmail.jsx'))
+const WorkspaceSelection = lazy(() => import('./pages/auth/WorkspaceSelection.jsx'))
+const CrmRequireAuth = lazy(() => import('./crm/components/auth/RequireAuth.jsx'))
+const RootRequireAuth = lazy(() => import('./layouts/RequireAuth.jsx'))
+const RequireAdmin = lazy(() => import('./layouts/RequireAdmin.jsx'))
+const AnalyticsTracker = lazy(() => import('./components/AnalyticsTracker.jsx'))
 const PricingPage = lazy(() => import('./pages/public/PricingPage.jsx'))
 const SolutionPage = lazy(() => import('./pages/public/SolutionPage.jsx'))
 const PublicBusinessServicesPage = lazy(() => import('./pages/public/BusinessServicesPage.jsx'))
@@ -154,8 +154,10 @@ class InventoryRouteBoundary extends Component {
 }
 
 function InventoryRoute() {
-  console.log('[Inventory Route] module access', { path: '/app/inventory' })
-  console.log('[Inventory Route] gated result', 'allowed (DashboardLayout guards passed)')
+  if (import.meta.env.DEV) {
+    console.log('[Inventory Route] module access', { path: '/app/inventory' })
+    console.log('[Inventory Route] gated result', 'allowed (DashboardLayout guards passed)')
+  }
   return (
     <InventoryRouteBoundary>
       <LazyPage>
@@ -166,8 +168,10 @@ function InventoryRoute() {
 }
 
 function RetailPosRoute() {
-  console.log('[Retail POS Route] module access', { path: '/app/pos', module: 'pos' })
-  console.log('[Retail POS Route] gated result', 'allowed (DashboardLayout guards passed)')
+  if (import.meta.env.DEV) {
+    console.log('[Retail POS Route] module access', { path: '/app/pos', module: 'pos' })
+    console.log('[Retail POS Route] gated result', 'allowed (DashboardLayout guards passed)')
+  }
   return (
     <InvoiceRouteBoundary>
       <LazyPage>
@@ -180,33 +184,35 @@ function RetailPosRoute() {
 function UpgradeRouteGuard() {
   const location = useLocation()
   const cameFromUpgrade = Boolean(location.state?.fromUpgradeBusiness)
-  return <UpgradeBusiness cameFromUpgrade={cameFromUpgrade} />
+  return <LazyPage><UpgradeBusiness cameFromUpgrade={cameFromUpgrade} /></LazyPage>
 }
 
 function AdminControlCentreRoute() {
   return (
-    <RequireAdmin>
-      <LazyPage>
+    <LazyPage>
+      <RequireAdmin>
         <ControlCentrePage />
-      </LazyPage>
-    </RequireAdmin>
+      </RequireAdmin>
+    </LazyPage>
   )
 }
 
 function AdminUpgradeRequestsRoute() {
   return (
-    <RequireAdmin>
-      <LazyPage>
+    <LazyPage>
+      <RequireAdmin>
         <AdminLayout />
-      </LazyPage>
-    </RequireAdmin>
+      </RequireAdmin>
+    </LazyPage>
   )
 }
 
 export default function AppRouter() {
   return (
     <>
-      <AnalyticsTracker />
+      <Suspense fallback={null}>
+        <AnalyticsTracker />
+      </Suspense>
       <Routes>
         <Route path="/" element={<LazyPage><MarketingRoute /></LazyPage>} />
         <Route path="/features" element={<LazyPage><MarketingRoute sectionId="services" /></LazyPage>} />
@@ -216,11 +222,11 @@ export default function AppRouter() {
         <Route path="/industries" element={<LazyPage><MarketingRoute sectionId="products" /></LazyPage>} />
         <Route path="/solutions/:solutionSlug" element={<LazyPage><SolutionPage /></LazyPage>} />
 
-      <Route path="/login" element={<Login />} />
-      <Route path="/signup" element={<Signup />} />
-      <Route element={<RootRequireAuth />}>
-        <Route path="/verify-email" element={<VerifyEmail />} />
-        <Route path="/workspace" element={<WorkspaceSelection />} />
+      <Route path="/login" element={<LazyPage><Login /></LazyPage>} />
+      <Route path="/signup" element={<LazyPage><Signup /></LazyPage>} />
+      <Route element={<LazyPage><RootRequireAuth /></LazyPage>}>
+        <Route path="/verify-email" element={<LazyPage><VerifyEmail /></LazyPage>} />
+        <Route path="/workspace" element={<LazyPage><WorkspaceSelection /></LazyPage>} />
       </Route>
       <Route path="/upgrade-business" element={<UpgradeRouteGuard />} />
 

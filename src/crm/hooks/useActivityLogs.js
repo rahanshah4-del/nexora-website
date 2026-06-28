@@ -63,7 +63,7 @@ function mergeLogPages(currentRows, nextRows) {
   ]
 }
 
-export function useActivityLogs({ limitCount = DEFAULT_ACTIVITY_LOG_LIST_LIMIT, paginated = false } = {}) {
+export function useActivityLogs({ limitCount = DEFAULT_ACTIVITY_LOG_LIST_LIMIT, paginated = false, enabled = true } = {}) {
   const { workspaceId, businessType } = useUser()
   const logListLimit = safeActivityLogListLimit(limitCount)
   const logPageLimit = safeActivityLogPageLimit(limitCount)
@@ -78,6 +78,17 @@ export function useActivityLogs({ limitCount = DEFAULT_ACTIVITY_LOG_LIST_LIMIT, 
   const logRequestRef = useRef(0)
 
   const loadLogPage = useCallback(async ({ reset = false } = {}) => {
+    if (!enabled) {
+      setLogs([])
+      logCursorRef.current = null
+      setHasMoreLogs(false)
+      setLogPage(0)
+      setSource(db ? 'firestore' : 'none')
+      setError('')
+      setLoading(false)
+      setPaginationLoading(false)
+      return { ok: true }
+    }
     if (!db) {
       setLogs([])
       setSource('none')
@@ -150,7 +161,7 @@ export function useActivityLogs({ limitCount = DEFAULT_ACTIVITY_LOG_LIST_LIMIT, 
         else setPaginationLoading(false)
       }
     }
-  }, [businessType, logPageLimit, workspaceId])
+  }, [businessType, enabled, logPageLimit, workspaceId])
 
   const loadMoreLogs = useCallback(async () => {
     if (loading || paginationLoading || !hasMoreLogs) return { ok: true }
@@ -158,6 +169,19 @@ export function useActivityLogs({ limitCount = DEFAULT_ACTIVITY_LOG_LIST_LIMIT, 
   }, [hasMoreLogs, loadLogPage, loading, paginationLoading])
 
   useEffect(() => {
+    if (!enabled) {
+      Promise.resolve().then(() => {
+        setLogs([])
+        logCursorRef.current = null
+        setHasMoreLogs(false)
+        setLogPage(0)
+        setSource(db ? 'firestore' : 'none')
+        setError('')
+        setLoading(false)
+        setPaginationLoading(false)
+      })
+      return
+    }
     if (!db) {
       Promise.resolve().then(() => {
         setLogs([])
@@ -216,7 +240,7 @@ export function useActivityLogs({ limitCount = DEFAULT_ACTIVITY_LOG_LIST_LIMIT, 
     })
 
     return () => unsub?.()
-  }, [businessType, loadLogPage, logListLimit, paginated, workspaceId])
+  }, [businessType, enabled, loadLogPage, logListLimit, paginated, workspaceId])
 
   const api = useMemo(
     () => ({

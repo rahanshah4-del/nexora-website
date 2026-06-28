@@ -135,10 +135,10 @@ export class ControlCentreErrorBoundary extends Component {
   }
 }
 
-const modules = ['General CRM', 'School ERP', 'Retail / POS', 'Property ERP', 'Restaurant POS', 'WhatsApp CRM']
+const modules = ['General CRM', 'School ERP', 'Retail / POS', 'Property ERP', 'Restaurant POS', 'WhatsApp CRM', 'Transport / Rental']
 const planNames = ['Basic', 'Standard', 'Enterprise']
 const adminRoles = ['Super Admin', 'Admin', 'Support', 'Billing Manager', 'Read Only']
-const moduleColors = ['#7c3aed', '#3b82f6', '#f59e0b', '#ef4444', '#14b8a6', '#0ea5e9']
+const moduleColors = ['#7c3aed', '#3b82f6', '#f59e0b', '#ef4444', '#14b8a6', '#0ea5e9', '#f97316']
 const paidSubscriptionStatuses = ['active', 'paid', 'approved', 'current']
 const defaultPlatformSettings = {
   ...defaultSaasPlatformSettings,
@@ -172,7 +172,6 @@ const navGroups = [
       ['promoCodes', 'Promo Codes', HiOutlineTag],
       ['businessServices', 'Business Services', HiOutlineBriefcase],
       ['whatsappPricing', 'WhatsApp Pricing', HiOutlineChatBubbleLeftRight],
-      ['moduleAccess', 'Module Access', HiOutlineShieldCheck],
       ['visitorAnalytics', 'Visitor Analytics', HiOutlineChartBarSquare],
       ['behaviorInterest', 'Behavior Interest', HiOutlineChartBarSquare],
       ['security', 'Security / Passkeys', HiOutlineKey],
@@ -254,6 +253,9 @@ function workspaceBusinessType(row = {}) {
 
 function normalizeAdminBusinessType(type) {
   const value = String(type || '').trim().toLowerCase()
+  if (['transport', 'rental', 'transport rental', 'transport/rental', 'transport-rental', 'transport / rental', 'transport / logistics', 'transport logistics', 'fleet', 'fleet rental'].includes(value)) {
+    return 'Transport / Rental'
+  }
   return modules.find((module) => module.toLowerCase() === value) || modules.find((module) => value && module.toLowerCase().includes(value)) || 'General CRM'
 }
 
@@ -402,7 +404,23 @@ function firestoreErrorMessage(key, error) {
   return `${code}: ${rawMessage}`
 }
 
-function useControlCentreData() {
+function useDocumentVisible() {
+  const [visible, setVisible] = useState(() => (typeof document === 'undefined' ? true : !document.hidden))
+  useEffect(() => {
+    const update = () => setVisible(!document.hidden)
+    document.addEventListener('visibilitychange', update)
+    window.addEventListener('focus', update)
+    window.addEventListener('blur', update)
+    return () => {
+      document.removeEventListener('visibilitychange', update)
+      window.removeEventListener('focus', update)
+      window.removeEventListener('blur', update)
+    }
+  }, [])
+  return visible
+}
+
+function useControlCentreData({ enabled = true } = {}) {
   const [state, setState] = useState({
     users: [],
     workspaces: [],
@@ -428,6 +446,10 @@ function useControlCentreData() {
   })
 
   useEffect(() => {
+    if (!enabled) {
+      setState((current) => ({ ...current, loading: false }))
+      return undefined
+    }
     if (!db) {
       setState((current) => ({ ...current, loading: false, error: 'Firebase is not configured.' }))
       return undefined
@@ -518,28 +540,28 @@ function useControlCentreData() {
     }
 
     const unsubscribers = [
-      listen('users', 'users', 250),
-      listen('workspaces', 'workspaces', 250),
-      listen('upgradeRequests', 'upgradeRequests', 120),
-      listen('subscriptions', 'subscriptions', 150),
-      listen('platformPayments', 'platformPayments', 150),
-      listen('backendActivityLogs', 'backendActivityLogs', 120),
-      listen('announcements', 'announcements', 200),
-      listenGroup('supportTickets', 'supportTickets', 150),
+      listen('users', 'users', 180),
+      listen('workspaces', 'workspaces', 180),
+      listen('upgradeRequests', 'upgradeRequests', 80),
+      listen('subscriptions', 'subscriptions', 100),
+      listen('platformPayments', 'platformPayments', 100),
+      listen('backendActivityLogs', 'backendActivityLogs', 80),
+      listen('announcements', 'announcements', 80),
+      listenGroup('supportTickets', 'supportTickets', 100),
       listen('plans', PLATFORM_PLAN_COLLECTION, 50),
       listen('promoCodes', 'promoCodes', 100),
       listen('backendStaff', 'backendStaff', 100),
-      listen('clientSessions', 'clientSessions', 120),
-      listen('userPresence', 'userPresence', 120),
+      listen('clientSessions', 'clientSessions', 80),
+      listen('userPresence', 'userPresence', 80),
       listen('platformSettings', 'platformSettings', 20),
-      listen('analyticsEvents', 'analyticsEvents', 200, 'createdAt'),
-      listen('userSessions', 'userSessions', 120, 'lastActiveAt'),
-      listenGroup('whatsappSettings', 'whatsappSettings', 120),
-      listen('businessServiceRequests', 'businessServiceRequests', 120),
+      listen('analyticsEvents', 'analyticsEvents', 100, 'createdAt'),
+      listen('userSessions', 'userSessions', 80, 'lastActiveAt'),
+      listenGroup('whatsappSettings', 'whatsappSettings', 80),
+      listen('businessServiceRequests', 'businessServiceRequests', 80),
     ]
 
     return () => unsubscribers.forEach((unsubscribe) => unsubscribe?.())
-  }, [])
+  }, [enabled])
 
   return state
 }
@@ -662,7 +684,9 @@ function mergePresence(users, clientSessions, userPresence) {
 export default function ControlCentre() {
   const { user } = useAuth()
   const navigate = useNavigate()
-  const data = useControlCentreData()
+  const pageVisible = useDocumentVisible()
+  const backendAdminAllowed = isBackendAdminEmail(user?.email)
+  const data = useControlCentreData({ enabled: backendAdminAllowed && pageVisible })
   const [activeTab, setActiveTab] = useState('dashboard')
   const [search, setSearch] = useState('')
   const [busy, setBusy] = useState('')
@@ -722,8 +746,7 @@ export default function ControlCentre() {
   const [liveNow, setLiveNow] = useState(() => Date.now())
   const whatsappPricingApi = useWhatsappPricing({ enabled: true })
   const [whatsappPricingDraft, setWhatsappPricingDraft] = useState(defaultWhatsappPricing)
-  const backendAdminAllowed = isBackendAdminEmail(user?.email)
-  console.log('[Admin Auth] ControlCentre admin check:', user?.email, backendAdminAllowed ? 'allowed' : 'blocked')
+  if (import.meta.env.DEV) console.log('[Admin Auth] ControlCentre admin check:', user?.email, backendAdminAllowed ? 'allowed' : 'blocked')
 
   useEffect(() => {
     const tick = () => setLiveNow(Date.now())
@@ -1081,7 +1104,7 @@ export default function ControlCentre() {
         title: 'Module assignment',
         status: workspacesMissingModule.length ? 'warning' : 'healthy',
         detail: workspacesMissingModule.length ? `${workspacesMissingModule.length} workspaces missing selected business module.` : 'Business modules are assigned for listed workspaces.',
-        actionTab: 'moduleAccess',
+        actionTab: 'clients',
         metric: workspacesMissingModule.length,
       },
       {
@@ -1868,33 +1891,6 @@ export default function ControlCentre() {
       },
       'client_marked_paid',
     )
-  }
-
-  async function updateWorkspaceModuleAccess(row, patch, action = 'module_access_updated') {
-    const workspaceId = row.workspaceId || row.id
-    const ownerId = row.ownerId || row.userId || row.uid
-    const payload = {
-      ...patch,
-      updatedAt: serverTimestamp(),
-      updatedBy: user?.uid || '',
-      updatedByEmail: user?.email || '',
-    }
-    await setDoc(doc(db, 'workspaces', workspaceId), payload, { merge: true })
-    if (ownerId) {
-      await setDoc(doc(db, 'users', ownerId), payload, { merge: true })
-    }
-    await logActivity(action, { workspaceId, ownerId, email: userEmail(row), patch })
-    await notifyWorkspaceOwner({
-      workspaceId,
-      row,
-      type: 'Workspace',
-      priority: 'medium',
-      title: 'Module access updated',
-      message: 'Your workspace module access was updated by backend admin.',
-      relatedId: workspaceId,
-      route: '/app/dashboard',
-      metadata: { action, patch },
-    })
   }
 
   async function updateUser(row, update, action) {
@@ -2942,86 +2938,6 @@ export default function ControlCentre() {
     )
   }
 
-  function ModuleAccess() {
-    const rows = searchRows(data.workspaces, search, ['id', 'workspaceId', 'ownerEmail', 'email', 'workspaceName', 'companyName', 'businessType', 'selectedBusinessType', 'primaryBusinessType'])
-    const columns = [
-      { key: 'client', label: 'Client', render: (row) => <div><p className="font-black text-slate-900">{userEmail(row) || '-'}</p><p className="text-xs text-slate-500">{row.ownerId || row.userId || row.uid || '-'}</p></div> },
-      { key: 'workspace', label: 'Workspace', render: (row) => <div><p className="font-black text-slate-900">{workspaceName(row)}</p><p className="text-xs text-slate-500">{row.workspaceId || row.id}</p></div> },
-      { key: 'primary', label: 'Primary Module', render: (row) => displayAdminBusinessType(moduleAccessForWorkspace(row).primary) },
-      { key: 'plan', label: 'Plan', render: (row) => row.plan || row.selectedPlan || 'Basic' },
-      { key: 'status', label: 'Status', render: (row) => <Status value={row.status || row.subscriptionStatus || row.planStatus || 'active'} /> },
-      {
-        key: 'allowed',
-        label: 'Allowed Modules',
-        render: (row) => {
-          const access = moduleAccessForWorkspace(row)
-          return (
-            <div className="min-w-[28rem]">
-              <div className="grid gap-2 md:grid-cols-2">
-                {modules.map((module) => {
-                  const id = `module-access-${row.id}-${module.replace(/[^a-z0-9]+/gi, '-')}`
-                  const isPrimary = module === access.primary
-                  return (
-                    <label key={module} className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold ${isPrimary ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-slate-200 bg-slate-50 text-slate-700'}`}>
-                      <input id={id} type="checkbox" defaultChecked={access.allowed.includes(module)} disabled={isPrimary} />
-                      <span>{displayAdminBusinessType(module)}{isPrimary ? ' · primary' : ''}</span>
-                    </label>
-                  )
-                })}
-              </div>
-            </div>
-          )
-        },
-      },
-      { key: 'special', label: 'Special Access', render: (row) => <Status value={moduleAccessForWorkspace(row).all ? 'all modules' : moduleAccessForWorkspace(row).special ? 'enabled' : 'primary only'} /> },
-      {
-        key: 'actions',
-        label: 'Actions',
-        render: (row) => {
-          const access = moduleAccessForWorkspace(row)
-          const readSelected = () => modules.filter((module) => {
-            if (module === access.primary) return true
-            const id = `module-access-${row.id}-${module.replace(/[^a-z0-9]+/gi, '-')}`
-            return document.getElementById(id)?.checked === true
-          })
-          return (
-            <div className="flex min-w-[18rem] flex-wrap gap-2">
-              <ShellButton onClick={() => {
-                const allowedBusinessTypes = readSelected()
-                runAction(`module-save-${row.id}`, () => updateWorkspaceModuleAccess(row, {
-                  primaryBusinessType: access.primary,
-                  allowedBusinessTypes,
-                  specialModuleAccess: allowedBusinessTypes.length > 1,
-                  allModulesAccess: allowedBusinessTypes.length === modules.length,
-                }), 'Module access saved.')
-              }}>Save</ShellButton>
-              <ShellButton onClick={() => runAction(`module-all-${row.id}`, () => updateWorkspaceModuleAccess(row, {
-                primaryBusinessType: access.primary,
-                allowedBusinessTypes: modules,
-                specialModuleAccess: true,
-                allModulesAccess: true,
-              }, 'module_access_all_enabled'), 'All modules enabled.')}>Enable All</ShellButton>
-              <ShellButton onClick={() => runAction(`module-reset-${row.id}`, () => updateWorkspaceModuleAccess(row, {
-                primaryBusinessType: access.primary,
-                allowedBusinessTypes: [access.primary],
-                specialModuleAccess: false,
-                allModulesAccess: false,
-              }, 'module_access_reset_primary'), 'Reset to primary module only.')}>Reset</ShellButton>
-            </div>
-          )
-        },
-      },
-    ]
-    return (
-      <Panel title="Module Access / Special Access" action={<ShellButton>Workspaces: special module grants</ShellButton>}>
-        <p className="mb-4 text-sm font-semibold leading-6 text-slate-600">
-          Normal clients keep one primary module. Use this panel to grant extra modules without changing workspace isolation or deleting existing data.
-        </p>
-        <AdminTable rows={rows} columns={columns} emptyTitle="No workspaces found" />
-      </Panel>
-    )
-  }
-
   function Transactions() {
     const statuses = ['all', 'pending', 'approved', 'paid', 'rejected', 'failed']
     const planFilters = ['all', ...platformPlans.map((plan) => plan.name)]
@@ -3878,8 +3794,6 @@ export default function ControlCentre() {
         return <AdminBusinessServices />
       case 'whatsappPricing':
         return WhatsappPricing()
-      case 'moduleAccess':
-        return ModuleAccess()
       case 'visitorAnalytics':
         return VisitorAnalytics()
       case 'behaviorInterest':

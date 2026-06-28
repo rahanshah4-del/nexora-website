@@ -97,7 +97,7 @@ function mergeLeadPages(currentRows, nextRows) {
   ]
 }
 
-export function useLeadScoring({ limitCount = DEFAULT_LEAD_LIST_LIMIT, paginated = false } = {}) {
+export function useLeadScoring({ limitCount = DEFAULT_LEAD_LIST_LIMIT, paginated = false, enabled = true } = {}) {
   const { userId, workspaceId, businessType, role } = useUser()
   const leadListLimit = safeLeadListLimit(limitCount)
   const leadPageLimit = safeLeadPageLimit(limitCount)
@@ -112,6 +112,17 @@ export function useLeadScoring({ limitCount = DEFAULT_LEAD_LIST_LIMIT, paginated
   const leadRequestRef = useRef(0)
 
   const loadLeadPage = useCallback(async ({ reset = false } = {}) => {
+    if (!enabled) {
+      setRows([])
+      leadCursorRef.current = null
+      setHasMoreLeads(false)
+      setLeadPage(0)
+      setSource(db ? 'firestore' : 'none')
+      setError('')
+      setLoading(false)
+      setPaginationLoading(false)
+      return { ok: true }
+    }
     if (!db) {
       setRows([])
       setSource('none')
@@ -193,7 +204,7 @@ export function useLeadScoring({ limitCount = DEFAULT_LEAD_LIST_LIMIT, paginated
         else setPaginationLoading(false)
       }
     }
-  }, [businessType, leadPageLimit, role, userId, workspaceId])
+  }, [businessType, enabled, leadPageLimit, role, userId, workspaceId])
 
   const loadMoreLeads = useCallback(async () => {
     if (loading || paginationLoading || !hasMoreLeads) return { ok: true }
@@ -253,6 +264,19 @@ export function useLeadScoring({ limitCount = DEFAULT_LEAD_LIST_LIMIT, paginated
   }, [role, userId, workspaceId])
 
   useEffect(() => {
+    if (!enabled) {
+      Promise.resolve().then(() => {
+        setRows([])
+        leadCursorRef.current = null
+        setHasMoreLeads(false)
+        setLeadPage(0)
+        setSource(db ? 'firestore' : 'none')
+        setError('')
+        setLoading(false)
+        setPaginationLoading(false)
+      })
+      return
+    }
     if (!db) {
       Promise.resolve().then(() => {
         setRows([])
@@ -313,7 +337,7 @@ export function useLeadScoring({ limitCount = DEFAULT_LEAD_LIST_LIMIT, paginated
       },
     })
     return () => unsub()
-  }, [businessType, leadListLimit, loadLeadPage, paginated, role, userId, workspaceId])
+  }, [businessType, enabled, leadListLimit, loadLeadPage, paginated, role, userId, workspaceId])
 
   const scored = useMemo(
     () =>

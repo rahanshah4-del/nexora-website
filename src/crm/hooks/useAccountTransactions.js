@@ -59,7 +59,7 @@ function actionLabel(type, approved = false) {
   return approved ? 'Wallet transaction approved' : 'Wallet transaction requested'
 }
 
-export function useAccountTransactions() {
+export function useAccountTransactions({ enabled = true, limitCount = null } = {}) {
   const { userId, workspaceId, businessType, role, userDoc, firebaseUser } = useUser()
   const permissions = useMemo(() => financePermissions(userDoc?.role || role), [role, userDoc?.role])
   const canApprove = permissions.canApproveStandard
@@ -69,6 +69,15 @@ export function useAccountTransactions() {
   const [error, setError] = useState('')
 
   useEffect(() => {
+    if (!enabled) {
+      Promise.resolve().then(() => {
+        setTransactions([])
+        setSource(db ? 'firestore' : 'none')
+        setError('')
+        setLoading(false)
+      })
+      return
+    }
     if (!db) {
       Promise.resolve().then(() => {
         setTransactions([])
@@ -111,11 +120,11 @@ export function useAccountTransactions() {
         setTransactions([])
         setLoading(false)
       },
-      { businessType },
+      { businessType, orderByField: limitCount ? 'createdAt' : '', orderDirection: 'desc', limitCount },
     )
 
     return () => unsub?.()
-  }, [businessType, workspaceId])
+  }, [businessType, enabled, limitCount, workspaceId])
 
   const createTransaction = useCallback(
     async (payload = {}) => {

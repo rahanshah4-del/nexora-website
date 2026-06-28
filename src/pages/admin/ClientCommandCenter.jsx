@@ -329,7 +329,23 @@ function sourceErrorMessage(key, error) {
   return `${key}: ${raw}`
 }
 
-function useCommandCenterData() {
+function useDocumentVisible() {
+  const [visible, setVisible] = useState(() => (typeof document === 'undefined' ? true : !document.hidden))
+  useEffect(() => {
+    const update = () => setVisible(!document.hidden)
+    document.addEventListener('visibilitychange', update)
+    window.addEventListener('focus', update)
+    window.addEventListener('blur', update)
+    return () => {
+      document.removeEventListener('visibilitychange', update)
+      window.removeEventListener('focus', update)
+      window.removeEventListener('blur', update)
+    }
+  }, [])
+  return visible
+}
+
+function useCommandCenterData({ enabled = true } = {}) {
   const [state, setState] = useState({
     users: [],
     workspaces: [],
@@ -343,6 +359,10 @@ function useCommandCenterData() {
   })
 
   useEffect(() => {
+    if (!enabled) {
+      setState((current) => ({ ...current, loading: false }))
+      return undefined
+    }
     if (!db) {
       Promise.resolve().then(() => {
         setState((current) => ({ ...current, loading: false, sourceErrors: { firebase: 'Firebase is not configured.' } }))
@@ -406,17 +426,17 @@ function useCommandCenterData() {
     }
 
     const unsubscribers = [
-      listen('users', 'users', 250),
-      listen('workspaces', 'workspaces', 250),
-      listen('upgradeRequests', 'upgradeRequests', 120),
-      listen('platformPayments', 'platformPayments', 150),
-      listen('userSessions', 'userSessions', 120),
-      listen('analyticsEvents', 'analyticsEvents', 200),
-      listenGroup('supportTickets', 'supportTickets', 150),
+      listen('users', 'users', 180),
+      listen('workspaces', 'workspaces', 180),
+      listen('upgradeRequests', 'upgradeRequests', 80),
+      listen('platformPayments', 'platformPayments', 100),
+      listen('userSessions', 'userSessions', 80),
+      listen('analyticsEvents', 'analyticsEvents', 100),
+      listenGroup('supportTickets', 'supportTickets', 100),
     ]
 
     return () => unsubscribers.forEach((unsubscribe) => unsubscribe?.())
-  }, [])
+  }, [enabled])
 
   return state
 }
@@ -762,9 +782,10 @@ function buildResolutionEmail({ clientName, ticketId, title, resolutionNote }) {
 
 export default function ClientCommandCenter({ embedded = false } = {}) {
   const { user } = useAuth()
-  const data = useCommandCenterData()
+  const pageVisible = useDocumentVisible()
   const searchRef = useRef(null)
   const backendAdminAllowed = isBackendAdminEmail(user?.email)
+  const data = useCommandCenterData({ enabled: backendAdminAllowed && pageVisible })
   const [search, setSearch] = useState('')
   const [selectedClientId, setSelectedClientId] = useState('')
   const [selectedIssueId, setSelectedIssueId] = useState('')

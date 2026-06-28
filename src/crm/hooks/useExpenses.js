@@ -35,7 +35,7 @@ function safeRecentLimit(limitCount) {
   return Math.floor(next)
 }
 
-export function useExpenses({ limitCount = null } = {}) {
+export function useExpenses({ limitCount = null, enabled = true } = {}) {
   const { userId, workspaceId, businessType, userDoc, firebaseUser } = useUser()
   const recentLimit = safeRecentLimit(limitCount)
   const [expenses, setExpenses] = useState([])
@@ -44,6 +44,15 @@ export function useExpenses({ limitCount = null } = {}) {
   const [error, setError] = useState('')
 
   useEffect(() => {
+    if (!enabled) {
+      Promise.resolve().then(() => {
+        setExpenses([])
+        setSource(db ? 'firestore' : 'none')
+        setError('')
+        setLoading(false)
+      })
+      return
+    }
     if (!db) {
       Promise.resolve().then(() => {
         setExpenses([])
@@ -91,7 +100,7 @@ export function useExpenses({ limitCount = null } = {}) {
       : subscribeUserCollection(workspaceId, 'expenses', handleRows, handleError, { businessType })
 
     return () => unsub?.()
-  }, [businessType, recentLimit, workspaceId])
+  }, [businessType, enabled, recentLimit, workspaceId])
 
   return useMemo(
     () => ({

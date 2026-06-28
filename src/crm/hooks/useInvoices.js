@@ -358,7 +358,7 @@ async function cancelInvoiceFinanceDocs({ batch, workspaceId, invoice, now, user
   }
 }
 
-export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT } = {}) {
+export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled = true } = {}) {
   const { userId, workspaceId, businessType, role, userDoc, firebaseUser } = useUser()
   const workspaceAccess = useWorkspaceAccess()
   const invoiceListLimit = safeInvoiceListLimit(limitCount)
@@ -374,6 +374,17 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT } = {}) {
   const invoiceRequestRef = useRef(0)
 
   const loadInvoicePage = useCallback(async ({ reset = false } = {}) => {
+    if (!enabled) {
+      setInvoices([])
+      setPayments([])
+      setSource(db ? 'firestore' : 'none')
+      setError('')
+      setLoading(false)
+      setPaginationLoading(false)
+      setHasMoreInvoices(false)
+      setInvoicePage(0)
+      return { ok: true }
+    }
     if (!db) {
       setInvoices([])
       setSource('none')
@@ -446,7 +457,7 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT } = {}) {
         else setPaginationLoading(false)
       }
     }
-  }, [businessType, invoiceListLimit, workspaceId])
+  }, [businessType, enabled, invoiceListLimit, workspaceId])
 
   const loadMoreInvoices = useCallback(async () => {
     if (loading || paginationLoading || !hasMoreInvoices) return { ok: true }
@@ -468,6 +479,19 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT } = {}) {
   }, [])
 
   useEffect(() => {
+    if (!enabled) {
+      Promise.resolve().then(() => {
+        setInvoices([])
+        setPayments([])
+        setSource(db ? 'firestore' : 'none')
+        setError('')
+        setLoading(false)
+        setPaginationLoading(false)
+        setHasMoreInvoices(false)
+        setInvoicePage(0)
+      })
+      return
+    }
     if (!db) {
       Promise.resolve().then(() => {
         setInvoices([])
@@ -513,7 +537,7 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT } = {}) {
       invoiceRequestRef.current += 1
       unsubPay?.()
     }
-  }, [businessType, invoiceListLimit, loadInvoicePage, workspaceId])
+  }, [businessType, enabled, invoiceListLimit, loadInvoicePage, workspaceId])
 
   const stats = useMemo(() => {
     const byStatus = (status) => invoices.filter((i) => getInvoiceStatus(i) === status).length
