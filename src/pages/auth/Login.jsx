@@ -273,7 +273,7 @@ export default function Login() {
               <motion.div
                 initial={{ opacity: 0, y: -4 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2 text-[13px] font-medium text-rose-700"
+                className="mt-3 max-h-16 overflow-y-auto rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-[11px] font-semibold leading-5 text-rose-700"
               >
                 {error}
               </motion.div>
