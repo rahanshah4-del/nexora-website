@@ -21,7 +21,23 @@ function timelineFor(ticket) {
   const supportNotes = Array.isArray(ticket?.supportNotes) ? ticket.supportNotes : []
   const clientMessages = new Set([...comments, ...conversation].map((item) => String(item?.message || item || '').trim()).filter(Boolean))
   const visibleSupportNotes = supportNotes.filter((item) => !clientMessages.has(String(item?.message || item || '').trim()))
-  const merged = [...comments, ...conversation, ...visibleSupportNotes]
+  const statusEntries = [
+    ticket?.createdAt && {
+      id: `${ticket.id || ticket.ticketNumber || 'ticket'}-created`,
+      author: 'Nexora Support',
+      message: `Ticket created${ticket.ticketNumber ? ` (${ticket.ticketNumber})` : ''}.`,
+      createdAt: ticket.createdAt,
+      kind: 'status',
+    },
+    ticket?.status && {
+      id: `${ticket.id || ticket.ticketNumber || 'ticket'}-status-${ticket.status}`,
+      author: 'Nexora Support',
+      message: `Current status: ${ticket.status}.`,
+      createdAt: ticket.updatedAt || ticket.completedAt || ticket.resolvedAt || ticket.createdAt,
+      kind: 'status',
+    },
+  ].filter(Boolean)
+  const merged = [...statusEntries, ...comments, ...conversation, ...visibleSupportNotes]
   const seen = new Set()
   return merged
     .filter((item) => item && (item.message || typeof item === 'string'))

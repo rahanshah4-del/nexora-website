@@ -66,13 +66,14 @@ export function calculateNetProfit({ revenue = 0, expenses = 0 } = {}) {
 
 export function calculatePendingApprovals({ invoices = [], payments = [], expenses = [], transactions = [], upgradeRequests = [] } = {}) {
   const pendingInvoices = invoices.filter((invoice) => {
-    const status = statusValue(invoice.approvalStatus || invoice.paymentStatus || invoice.status, 'pending')
-    return invoice.requiresApproval === true || pendingStatuses.has(status)
+    const safe = invoice || {}
+    const status = statusValue(safe.approvalStatus || safe.paymentStatus || safe.status, 'pending')
+    return safe.requiresApproval === true || pendingStatuses.has(status)
   }).length
-  const pendingPayments = payments.filter((payment) => pendingStatuses.has(statusValue(payment.paymentStatus || payment.status, 'pending'))).length
-  const pendingExpenses = expenses.filter((expense) => pendingStatuses.has(statusValue(expense.approvalStatus || expense.status, 'pending'))).length
+  const pendingPayments = payments.filter((payment) => pendingStatuses.has(statusValue(payment?.paymentStatus || payment?.status, 'pending'))).length
+  const pendingExpenses = expenses.filter((expense) => pendingStatuses.has(statusValue(expense?.approvalStatus || expense?.status, 'pending'))).length
   const pendingTransactions = transactions.filter(isPendingTransaction).length
-  const pendingUpgrades = upgradeRequests.filter((request) => pendingStatuses.has(statusValue(request.approvalStatus || request.paymentStatus, 'pending'))).length
+  const pendingUpgrades = upgradeRequests.filter((request) => pendingStatuses.has(statusValue(request?.approvalStatus || request?.paymentStatus || request?.status, 'pending'))).length
 
   return pendingInvoices + pendingPayments + pendingExpenses + pendingTransactions + pendingUpgrades
 }

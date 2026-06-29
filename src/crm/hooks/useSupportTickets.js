@@ -31,6 +31,8 @@ function normalizeTicket(t) {
     screenshotUrl,
     screenshotName: t.screenshotName || t.attachmentName || attachments[0]?.name || '',
     attachments,
+    source: t.source || '',
+    upgradeRequestId: t.upgradeRequestId || '',
     createdAt: t.createdAt || '—',
     updatedAt: t.updatedAt || t.createdAt || '—',
   }
@@ -59,7 +61,25 @@ function mergeTicketPages(currentRows, nextRows) {
   ]
 }
 
-export function useSupportTickets({ limitCount = DEFAULT_SUPPORT_TICKET_LIST_LIMIT, paginated = false, enabled = true } = {}) {
+function ticketTime(value) {
+  const date = value?.toDate?.() || (value ? new Date(value) : null)
+  return date && !Number.isNaN(date.getTime()) ? date.getTime() : 0
+}
+
+function mergeAndSortTickets(rows = []) {
+  const map = new Map()
+  rows.forEach((ticket) => {
+    const key = String(ticket.id || ticket.ticketNumber || '')
+    if (!key) return
+    const current = map.get(key)
+    if (!current || ticketTime(ticket.updatedAt || ticket.createdAt) >= ticketTime(current.updatedAt || current.createdAt)) {
+      map.set(key, ticket)
+    }
+  })
+  return Array.from(map.values()).sort((a, b) => ticketTime(b.updatedAt || b.createdAt) - ticketTime(a.updatedAt || a.createdAt))
+}
+
+export function useSupportTickets({ limitCount = DEFAULT_SUPPORT_TICKET_LIST_LIMIT, paginated = false, enabled = true, includeAllBusinessTypes = false } = {}) {
   const { userId, workspaceId, businessType, userDoc, workspaceDoc, firebaseUser } = useUser()
   const ticketListLimit = safeSupportTicketListLimit(limitCount)
   const ticketPageLimit = safeSupportTicketPageLimit(limitCount)
@@ -75,12 +95,14 @@ export function useSupportTickets({ limitCount = DEFAULT_SUPPORT_TICKET_LIST_LIM
   const [source, setSource] = useState(db ? 'firestore' : 'none')
   const [error, setError] = useState('')
   const ticketCursorRef = useRef(null)
+  const ownerTicketCursorRef = useRef(null)
   const ticketRequestRef = useRef(0)
 
   const loadTicketPage = useCallback(async ({ reset = false } = {}) => {
     if (!enabled) {
       setTickets([])
       ticketCursorRef.current = null
+      ownerTicketCursorRef.current = null
       setHasMoreTickets(false)
       setTicketPage(0)
       setSource(db ? 'firestore' : 'none')
@@ -100,6 +122,7 @@ export function useSupportTickets({ limitCount = DEFAULT_SUPPORT_TICKET_LIST_LIM
     if (!workspaceId) {
       setTickets([])
       ticketCursorRef.current = null
+      ownerTicketCursorRef.current = null
       setHasMoreTickets(false)
       setTicketPage(0)
       setSource('firestore')
@@ -112,6 +135,7 @@ export function useSupportTickets({ limitCount = DEFAULT_SUPPORT_TICKET_LIST_LIM
     const requestId = ++ticketRequestRef.current
     if (reset) {
       ticketCursorRef.current = null
+      ownerTicketCursorRef.current = null
       setTickets([])
       setHasMoreTickets(false)
       setTicketPage(0)
@@ -124,25 +148,42 @@ export function useSupportTickets({ limitCount = DEFAULT_SUPPORT_TICKET_LIST_LIM
       const page = await fetchWorkspaceCollectionPage({
         workspaceId,
         collectionName: 'supportTickets',
-        businessType,
+        businessType: includeAllBusinessTypes ? '' : businessType,
         orderByField: 'createdAt',
         orderDirection: 'desc',
         limitCount: ticketPageLimit,
         startAfterDoc: reset ? null : ticketCursorRef.current,
       })
+      let ownerPage = { rows: [], lastDoc: null, hasMore: false, size: 0 }
+      if (includeAllBusinessTypes && userId && userId !== workspaceId) {
+        ownerPage = await fetchWorkspaceCollectionPage({
+          workspaceId: userId,
+          collectionName: 'supportTickets',
+          businessType: '',
+          orderByField: 'createdAt',
+          orderDirection: 'desc',
+          limitCount: ticketPageLimit,
+          startAfterDoc: reset ? null : ownerTicketCursorRef.current,
+        })
+      }
       if (requestId !== ticketRequestRef.current) return { ok: false }
 
-      const nextRows = (Array.isArray(page.rows) ? page.rows : []).map(normalizeTicket)
-      setTickets((currentRows) => (reset ? nextRows : mergeTicketPages(currentRows, nextRows)))
+      const nextRows = [
+        ...(Array.isArray(page.rows) ? page.rows : []),
+        ...(Array.isArray(ownerPage.rows) ? ownerPage.rows : []),
+      ].map(normalizeTicket)
+      setTickets((currentRows) => mergeAndSortTickets(reset ? nextRows : mergeTicketPages(currentRows, nextRows)))
       ticketCursorRef.current = page.lastDoc
-      setHasMoreTickets(page.hasMore)
+      ownerTicketCursorRef.current = ownerPage.lastDoc
+      setHasMoreTickets(page.hasMore || ownerPage.hasMore)
       setTicketPage((currentPage) => (reset ? 1 : currentPage + 1))
       setSource('firestore')
       setError('')
       console.log(reset ? '[Support] first page loaded' : '[Support] next page loaded', {
         count: page.size,
+        ownerPathCount: ownerPage.size,
         pageSize: ticketPageLimit,
-        hasMore: page.hasMore,
+        hasMore: page.hasMore || ownerPage.hasMore,
       })
       console.log('[Support] pagination cursor', {
         cursorId: page.lastDoc?.id || null,
@@ -161,7 +202,7 @@ export function useSupportTickets({ limitCount = DEFAULT_SUPPORT_TICKET_LIST_LIM
         else setPaginationLoading(false)
       }
     }
-  }, [businessType, enabled, ticketPageLimit, workspaceId])
+  }, [businessType, enabled, includeAllBusinessTypes, ticketPageLimit, userId, workspaceId])
 
   const loadMoreTickets = useCallback(async () => {
     if (loading || paginationLoading || !hasMoreTickets) return { ok: true }
@@ -177,6 +218,7 @@ export function useSupportTickets({ limitCount = DEFAULT_SUPPORT_TICKET_LIST_LIM
       Promise.resolve().then(() => {
         setTickets([])
         ticketCursorRef.current = null
+        ownerTicketCursorRef.current = null
         setHasMoreTickets(false)
         setTicketPage(0)
         setSource(db ? 'firestore' : 'none')
@@ -202,6 +244,7 @@ export function useSupportTickets({ limitCount = DEFAULT_SUPPORT_TICKET_LIST_LIM
       Promise.resolve().then(() => {
         setTickets([])
         ticketCursorRef.current = null
+        ownerTicketCursorRef.current = null
         setHasMoreTickets(false)
         setTicketPage(0)
         setSource('firestore')
@@ -216,6 +259,7 @@ export function useSupportTickets({ limitCount = DEFAULT_SUPPORT_TICKET_LIST_LIM
       Promise.resolve().then(() => {
         setTickets([])
         ticketCursorRef.current = null
+        ownerTicketCursorRef.current = null
         setHasMoreTickets(false)
         setTicketPage(0)
         setSource('firestore')
@@ -230,6 +274,7 @@ export function useSupportTickets({ limitCount = DEFAULT_SUPPORT_TICKET_LIST_LIM
       Promise.resolve().then(() => {
         setTickets([])
         ticketCursorRef.current = null
+        ownerTicketCursorRef.current = null
         setHasMoreTickets(false)
         setTicketPage(0)
         setSource('firestore')
@@ -253,7 +298,7 @@ export function useSupportTickets({ limitCount = DEFAULT_SUPPORT_TICKET_LIST_LIM
     const unsub = listenToWorkspaceCollection({
       workspaceId,
       collectionName: 'supportTickets',
-      businessType,
+      businessType: includeAllBusinessTypes ? '' : businessType,
       limitCount: ticketListLimit,
       onData(rows) {
         setTickets((Array.isArray(rows) ? rows : []).map(normalizeTicket))
@@ -269,7 +314,7 @@ export function useSupportTickets({ limitCount = DEFAULT_SUPPORT_TICKET_LIST_LIM
     })
 
     return () => unsub?.()
-  }, [access.loading, businessType, canReadSupportTickets, enabled, loadTicketPage, paginated, ticketListLimit, workspaceId])
+  }, [access.loading, businessType, canReadSupportTickets, enabled, includeAllBusinessTypes, loadTicketPage, paginated, ticketListLimit, workspaceId])
 
   const stats = useMemo(() => {
     const byStatus = tickets.reduce((acc, t) => {
@@ -299,7 +344,8 @@ export function useSupportTickets({ limitCount = DEFAULT_SUPPORT_TICKET_LIST_LIM
       stats,
       async createTicket(payload) {
         const ticket = normalizeTicket(payload)
-        if (!canCreateSupportTickets) return { ok: false, error: 'Support ticket create permission is not enabled for this account.' }
+        const isRejectedUpgradeTicket = ticket.source === 'upgrade_rejection' && Boolean(ticket.upgradeRequestId)
+        if (!canCreateSupportTickets && !isRejectedUpgradeTicket) return { ok: false, error: 'Support ticket create permission is not enabled for this account.' }
         if (!userId || !workspaceId) return { ok: false, error: 'Please login first' }
         const tno = String(ticket.ticketNumber || '').trim()
         const name = String(ticket.customerName || '').trim()
@@ -356,6 +402,8 @@ export function useSupportTickets({ limitCount = DEFAULT_SUPPORT_TICKET_LIST_LIM
             screenshotUrl,
             screenshotName,
             attachments,
+            source: ticket.source || '',
+            upgradeRequestId: ticket.upgradeRequestId || '',
             workspaceName,
             createdByEmail: creatorEmail,
             createdBy: userId,
@@ -376,6 +424,8 @@ export function useSupportTickets({ limitCount = DEFAULT_SUPPORT_TICKET_LIST_LIM
               screenshotUrl,
               screenshotName,
               attachments,
+              source: ticket.source || '',
+              upgradeRequestId: ticket.upgradeRequestId || '',
               workspaceName,
               createdByEmail: creatorEmail,
               createdBy: userId,
@@ -397,7 +447,7 @@ export function useSupportTickets({ limitCount = DEFAULT_SUPPORT_TICKET_LIST_LIM
             createdByEmail: creatorEmail,
             metadata: { ticketNumber: tno, category: ticket.category || 'Technical Support' },
           })
-          return { ok: true }
+          return { ok: true, ticketId: docRef.id, ticketNumber: tno }
         } catch (e) {
           return { ok: false, error: clientSafeMessage(e, 'Unable to create ticket.') }
         }

@@ -26,9 +26,9 @@ import {
   HiOutlineXMark,
 } from 'react-icons/hi2'
 import { FiLogOut } from 'react-icons/fi'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { signOut } from 'firebase/auth'
-import { collection, deleteDoc, doc, getDoc, getDocFromCache, getDocFromServer, limit, onSnapshot, query, serverTimestamp, setDoc, updateDoc, where, writeBatch } from 'firebase/firestore'
+import { addDoc, collection, deleteDoc, doc, getDoc, getDocFromCache, getDocFromServer, limit, onSnapshot, query, serverTimestamp, setDoc, updateDoc, where, writeBatch } from 'firebase/firestore'
 import logoUrl from '../../assets/logo/nexora-logo.svg'
 import useAuth from '../../context/useAuth.js'
 import { auth, db } from '../../lib/firebase.js'
@@ -61,6 +61,8 @@ import TicketModal from '../../crm/components/support/TicketModal.jsx'
 import TicketDrawer from '../../crm/components/support/TicketDrawer.jsx'
 import { useSupportTickets } from '../../crm/hooks/useSupportTickets.js'
 import BusinessServicesSection from '../../components/BusinessServicesSection.jsx'
+import UpgradeRequestTimelineCard from '../../components/upgrade/UpgradeRequestTimelineCard.jsx'
+import useLatestUpgradeRequest from '../../hooks/useLatestUpgradeRequest.js'
 
 import { clearAllUserCache } from '../../lib/authIsolation.js'
 
@@ -790,7 +792,7 @@ function WorkspaceHelpCenter({
 }) {
   if (!open) return null
 
-  const visibleTickets = support.tickets.slice(0, 8)
+  const visibleTickets = support.tickets
   const openCount = support.stats.open + support.stats.inProgress
 
   return (
@@ -894,28 +896,45 @@ function WorkspaceHelpCenter({
               ) : support.error ? (
                 <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-bold text-rose-700">{support.error}</div>
               ) : visibleTickets.length ? (
-                <div className="grid gap-3">
-                  {visibleTickets.map((ticket) => (
-                    <button
-                      type="button"
-                      key={ticket.id}
-                      onClick={() => onOpenTicket(ticket)}
-                      className="group rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:border-emerald-200 hover:shadow-md"
-                    >
-                      <div className="flex flex-wrap items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="rounded-lg bg-slate-100 px-2 py-1 text-[11px] font-black text-slate-600">{ticket.ticketNumber}</span>
-                            <span className={`rounded-lg px-2 py-1 text-[11px] font-black ring-1 ${ticketStatusTone(ticket.status)}`}>{ticket.status}</span>
-                            <span className="rounded-lg bg-cyan-50 px-2 py-1 text-[11px] font-black text-cyan-700">{ticket.priority}</span>
+                <div className="space-y-4">
+                  <div className="grid gap-3">
+                    {visibleTickets.map((ticket) => (
+                      <button
+                        type="button"
+                        key={ticket.id}
+                        onClick={() => onOpenTicket(ticket)}
+                        className="group rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:border-emerald-200 hover:shadow-md"
+                      >
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="rounded-lg bg-slate-100 px-2 py-1 text-[11px] font-black text-slate-600">{ticket.ticketNumber}</span>
+                              <span className={`rounded-lg px-2 py-1 text-[11px] font-black ring-1 ${ticketStatusTone(ticket.status)}`}>{ticket.status}</span>
+                              <span className="rounded-lg bg-cyan-50 px-2 py-1 text-[11px] font-black text-cyan-700">{ticket.priority}</span>
+                            </div>
+                            <p className="mt-2 truncate text-sm font-black text-slate-950">{ticket.subject}</p>
+                            <p className="mt-1 line-clamp-2 text-xs font-semibold leading-5 text-slate-500">{ticket.message}</p>
                           </div>
-                          <p className="mt-2 truncate text-sm font-black text-slate-950">{ticket.subject}</p>
-                          <p className="mt-1 line-clamp-2 text-xs font-semibold leading-5 text-slate-500">{ticket.message}</p>
+                          <HiOutlineArrowRight className="mt-1 h-5 w-5 text-slate-300 transition group-hover:translate-x-1 group-hover:text-emerald-600" />
                         </div>
-                        <HiOutlineArrowRight className="mt-1 h-5 w-5 text-slate-300 transition group-hover:translate-x-1 group-hover:text-emerald-600" />
-                      </div>
-                    </button>
-                  ))}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-600 sm:flex-row sm:items-center sm:justify-between">
+                    <span>{support.tickets.length} ticket history records loaded</span>
+                    {support.hasMoreTickets ? (
+                      <button
+                        type="button"
+                        disabled={support.paginationLoading}
+                        onClick={() => support.loadMoreTickets?.()}
+                        className="inline-flex h-10 items-center justify-center rounded-xl bg-slate-950 px-4 text-xs font-black text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {support.paginationLoading ? 'Loading...' : 'Load older tickets'}
+                      </button>
+                    ) : (
+                      <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-black text-emerald-700">All history loaded</span>
+                    )}
+                  </div>
                 </div>
               ) : (
                 <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-10 text-center">
@@ -1344,6 +1363,7 @@ function SettingsModal({
 
 export default function WorkspaceSelection() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { user, loading: authLoading } = useAuth()
   const { language, meta: activeLanguageMeta, setLanguage } = useLanguage()
   const selectedLanguage = language
@@ -1356,6 +1376,7 @@ export default function WorkspaceSelection() {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [supportCenterOpen, setSupportCenterOpen] = useState(false)
   const [supportTicketCreateOpen, setSupportTicketCreateOpen] = useState(false)
+  const [supportTicketInitial, setSupportTicketInitial] = useState(null)
   const [activeSupportTicket, setActiveSupportTicket] = useState(null)
   const [supportToast, setSupportToast] = useState('')
   const [businessServicesOpen, setBusinessServicesOpen] = useState(false)
@@ -1405,7 +1426,8 @@ export default function WorkspaceSelection() {
   const [businessTypeSaving, setBusinessTypeSaving] = useState('')
   const [selectedBusinessType, setSelectedBusinessType] = useState('')
   const [welcomePromoCopied, setWelcomePromoCopied] = useState(false)
-  const supportTicketsApi = useSupportTickets({ limitCount: 80 })
+  const supportTicketsApi = useSupportTickets({ limitCount: 50, paginated: true, includeAllBusinessTypes: true })
+  const latestUpgradeRequest = useLatestUpgradeRequest(user?.uid, Boolean(user?.uid))
 
   const emailVerifiedCustom = accountData?.emailVerifiedCustom === true
   const emailVerifiedRaw = isUserCustomVerified({ ...user, emailVerifiedCustom })
@@ -1446,6 +1468,14 @@ export default function WorkspaceSelection() {
       // Ignore storage failures (private mode, quota, etc.)
     }
   }, [viewMode])
+
+  useEffect(() => {
+    if (!location.state?.openSupportTicket) return
+    setSupportCenterOpen(true)
+    setSupportTicketInitial(location.state.supportTicketDraft || null)
+    setSupportTicketCreateOpen(true)
+    navigate(location.pathname, { replace: true, state: null })
+  }, [location.pathname, location.state, navigate])
 
   useEffect(() => {
     let cancelled = false
@@ -3947,6 +3977,14 @@ export default function WorkspaceSelection() {
               </div>
             ) : null}
 
+            <UpgradeRequestTimelineCard
+              request={latestUpgradeRequest}
+              moduleLabel={profile.workspaceName}
+              onOpen={handleUpgradePlan}
+              className="mt-4"
+              hideWhenResolved
+            />
+
             <div className="mt-3 flex flex-col gap-2 sm:mt-6 sm:flex-row sm:items-center sm:justify-between">
               <h2 className="text-lg font-bold text-slate-950">
                 {needsWorkspaceOnboarding ? 'Choose Your Workspace' : workspaceView === 'all' ? 'All Workspaces' : 'Your Workspaces'}
@@ -4082,11 +4120,35 @@ export default function WorkspaceSelection() {
       />
       <TicketModal
         open={supportTicketCreateOpen}
-        onClose={() => setSupportTicketCreateOpen(false)}
-        initialCustomer={{ name: profile.name, email: profile.email }}
+        onClose={() => {
+          setSupportTicketCreateOpen(false)
+          setSupportTicketInitial(null)
+        }}
+        initialCustomer={{ name: profile.name, email: profile.email, ...(supportTicketInitial || {}) }}
         onCreate={async (payload) => {
           const result = await supportTicketsApi.createTicket(payload)
           setSupportToast(result?.ok ? 'Ticket created successfully.' : result?.error || 'Could not create ticket.')
+          if (result?.ok) {
+            const upgradeRequestId = payload.upgradeRequestId || supportTicketInitial?.upgradeRequestId || ''
+            if (db && upgradeRequestId) {
+              try {
+                await addDoc(collection(db, 'upgradeRequests', upgradeRequestId, 'timeline'), {
+                  type: 'support_ticket',
+                  status: 'ticket_created',
+                  title: 'Support ticket created',
+                  message: `Support ticket ${result.ticketNumber || result.ticketId || ''} was created for this rejected upgrade request.`,
+                  ticketId: result.ticketId || '',
+                  ticketNumber: result.ticketNumber || '',
+                  actor: 'client',
+                  actorName: profile.name || profile.email || 'Client',
+                  createdAt: serverTimestamp(),
+                })
+              } catch (error) {
+                reportTechnicalError(error, 'Upgrade request support ticket timeline failed')
+              }
+            }
+            setSupportTicketInitial(null)
+          }
         }}
       />
       <TicketDrawer

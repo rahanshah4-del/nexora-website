@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
+  addDoc,
   arrayUnion,
   collection,
   collectionGroup,
@@ -10,11 +11,13 @@ import {
   serverTimestamp,
   setDoc,
   updateDoc,
+  writeBatch,
 } from 'firebase/firestore'
 import {
   HiOutlineChatBubbleLeftRight,
   HiOutlineCheckCircle,
   HiOutlineClock,
+  HiOutlineCreditCard,
   HiOutlineEnvelope,
   HiOutlineKey,
   HiOutlineLockClosed,
@@ -37,8 +40,23 @@ import { isBackendAdminEmail } from '../../lib/roles.js'
 import { sendWorkerEmail } from '../../lib/transactionalEmail.js'
 import { labelForBusinessType } from '../../crm/data/moduleAccess.js'
 import { resolveClientShortId } from '../../lib/clientIds.js'
-import { listWorkerUpgradeRequests } from '../../lib/upgradeWorker.js'
+import { listWorkerUpgradeRequests, updateWorkerUpgradeRequestStatus } from '../../lib/upgradeWorker.js'
 import { adminForceLogoutUser, adminListPasskeySecurity, adminUpdatePasskey } from '../../lib/passkeys.js'
+import { buildApprovedSubscriptionPayload } from '../../lib/subscriptionApproval.js'
+
+function needsBackendWarning(actionId = '') {
+  return /approve|reject|delete|remove|block|deactivate|disable|resolve|close|complete|paid|reset|logout|toggle/i.test(String(actionId))
+}
+
+function backendWarningMessage(actionId = '') {
+  const id = String(actionId)
+  if (/delete|remove/i.test(id)) return 'Warning: this will remove backend data. Continue?'
+  if (/approve|paid/i.test(id)) return 'Warning: this will approve or mark a payment as paid. Continue?'
+  if (/reject/i.test(id)) return 'Warning: this will reject the request and notify/update the client record. Continue?'
+  if (/block|deactivate|disable/i.test(id)) return 'Warning: this may disable client access. Continue?'
+  if (/resolve|close|complete/i.test(id)) return 'Warning: this will change the request/ticket status. Continue?'
+  return 'Warning: this backend action will update live data. Continue?'
+}
 
 const modules = ['General CRM', 'School ERP', 'Retail / POS', 'Property ERP', 'Restaurant POS', 'WhatsApp CRM', 'Transport / Rental']
 const moduleVisuals = {
@@ -286,8 +304,32 @@ function rowCurrency(row = {}) {
   return row.currency || row.billingCurrency || 'PKR'
 }
 
+function isFinalUpgradeRequest(row = {}) {
+  const status = statusValue(row?.approvalStatus || row?.status || row?.paymentStatus)
+  return ['approved', 'paid', 'active', 'completed', 'rejected', 'declined', 'failed', 'closed'].includes(status)
+}
+
+function upgradeRequestIdentity(row = {}) {
+  const screenshotKey = clean(row.screenshotKey || row.paymentProofKey || row.screenshot_key)
+  if (screenshotKey) return `proof:${screenshotKey}`
+  const transactionId = clean(row.transactionId || row.txnId || row.referenceNumber)
+  if (transactionId) return `txn:${transactionId.toLowerCase()}`
+  const directId = clean(row.id || row.requestId || row.request_id)
+  if (directId) return `id:${directId}`
+  return [
+    clean(row.userId || row.uid || row.email).toLowerCase(),
+    clean(row.requestedPlan || row.selectedPlan || row.plan).toLowerCase(),
+    clean(row.amount || row.amountPaid || row.planPrice),
+    clean(row.createdAt || row.requestedAt || row.created_at),
+  ].filter(Boolean).join('|') || 'row:unknown'
+}
+
+function upgradeRequestDisplayId(row = {}) {
+  return clean(row.id || row.requestId || row.request_id || row.transactionId || row.txnId || row.referenceNumber) || '-'
+}
+
 function sameClient(row = {}, client = {}) {
-  if (!client?.id) return false
+  if (!row || !client?.id) return false
   const ids = new Set([client.id, client.workspaceId, client.ownerId, client.userId, client.uid].filter(Boolean).map(String))
   const rowIds = [
     row.workspaceId,
@@ -806,6 +848,8 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
   const [passkeySecurityError, setPasskeySecurityError] = useState('')
   const [securityExpanded, setSecurityExpanded] = useState(false)
   const [upgradeExpanded, setUpgradeExpanded] = useState(false)
+  const [upgradeRejectingId, setUpgradeRejectingId] = useState('')
+  const [upgradeRejectReason, setUpgradeRejectReason] = useState('')
   const [liveNow, setLiveNow] = useState(() => Date.now())
 
   useEffect(() => {
@@ -1010,23 +1054,31 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
     () => data.platformPayments.filter((row) => sameClient(row, selectedClient)),
     [data.platformPayments, selectedClient],
   )
-  const clientRequests = useMemo(
-    () => [...workerUpgradeRequests, ...data.upgradeRequests].filter((row) => sameClient(row, selectedClient)),
-    [data.upgradeRequests, selectedClient, workerUpgradeRequests],
-  )
+  const clientRequests = useMemo(() => {
+    const byKey = new Map()
+    ;[...workerUpgradeRequests, ...data.upgradeRequests]
+      .filter(Boolean)
+      .filter((row) => sameClient(row, selectedClient))
+      .forEach((row) => {
+        const key = upgradeRequestIdentity(row)
+        const existing = byKey.get(key)
+        byKey.set(key, existing ? { ...row, ...existing } : row)
+      })
+    return [...byKey.values()]
+  }, [data.upgradeRequests, selectedClient, workerUpgradeRequests])
   const sortedClientRequests = useMemo(
-    () => [...clientRequests].sort((a, b) => (toDate(b.createdAt || b.requestedAt || b.updatedAt)?.getTime() || 0) - (toDate(a.createdAt || a.requestedAt || a.updatedAt)?.getTime() || 0)),
+    () => clientRequests.filter(Boolean).sort((a, b) => (toDate(b?.createdAt || b?.requestedAt || b?.updatedAt)?.getTime() || 0) - (toDate(a?.createdAt || a?.requestedAt || a?.updatedAt)?.getTime() || 0)),
     [clientRequests],
   )
-  const pendingClientRequests = sortedClientRequests.filter((row) => ['pending', 'pending_approval', 'waiting', 'new', 'under_review'].includes(statusValue(row.approvalStatus || row.status || row.paymentStatus)))
-  const approvedClientRequests = sortedClientRequests.filter((row) => ['approved', 'paid', 'active', 'completed'].includes(statusValue(row.approvalStatus || row.status || row.paymentStatus)))
-  const rejectedClientRequests = sortedClientRequests.filter((row) => ['rejected', 'declined', 'failed'].includes(statusValue(row.approvalStatus || row.status || row.paymentStatus)))
+  const pendingClientRequests = sortedClientRequests.filter((row) => ['pending', 'pending_approval', 'waiting', 'new', 'under_review'].includes(statusValue(row?.approvalStatus || row?.status || row?.paymentStatus)))
+  const approvedClientRequests = sortedClientRequests.filter((row) => ['approved', 'paid', 'active', 'completed'].includes(statusValue(row?.approvalStatus || row?.status || row?.paymentStatus)))
+  const rejectedClientRequests = sortedClientRequests.filter((row) => ['rejected', 'declined', 'failed'].includes(statusValue(row?.approvalStatus || row?.status || row?.paymentStatus)))
   const latestClientRequest = sortedClientRequests[0] || null
   const accessDetails = selectedClient ? moduleAccessDetails(selectedClient) : { primary: '', allowed: [], special: false, all: false }
   const activeModules = accessDetails.allowed
   const selectedClientBlocked = selectedClient ? clientBlocked(selectedClient) : false
   const totalSpent = clientPayments
-    .filter((row) => ['paid', 'approved', 'completed'].includes(statusValue(row.paymentStatus || row.status || row.approvalStatus)))
+    .filter((row) => ['paid', 'approved', 'completed'].includes(statusValue(row?.paymentStatus || row?.status || row?.approvalStatus)))
     .reduce((sum, row) => sum + paymentAmount(row), 0)
   const currency = rowCurrency(clientPayments[0] || selectedClient || {})
   const outstandingAmount = Number(selectedClient?.outstandingAmount ?? selectedClient?.balanceDue ?? selectedClient?.dueAmount ?? 0) || 0
@@ -1066,6 +1118,7 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
   }
 
   async function runAction(id, action, success) {
+    if (needsBackendWarning(id) && !window.confirm(backendWarningMessage(id))) return
     if (!backendAdminAllowed) {
       setError('Backend admin access required.')
       return
@@ -1084,6 +1137,122 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
     } finally {
       setBusy('')
     }
+  }
+
+  async function addUpgradeTimeline(row, entry) {
+    if (!row?.id) return
+    await addDoc(collection(db, 'upgradeRequests', row.id, 'timeline'), {
+      ...entry,
+      actor: 'admin',
+      actorName: user?.email || 'Nexora Team',
+      createdAt: serverTimestamp(),
+    })
+  }
+
+  async function approveClientUpgrade(row, markPaidOnly = false) {
+    if (!row?.id) throw new Error('Upgrade request is missing.')
+    if (isFinalUpgradeRequest(row)) throw new Error('This upgrade request is already completed.')
+    const ownerId = row.ownerId || row.uid || row.userId || ownerIdForClient(selectedClient)
+    const workspaceId = row.workspaceId || selectedClient?.workspaceId || selectedClient?.id || ownerId
+    if (!ownerId) throw new Error('Owner user ID is required to approve subscription upgrades.')
+    if (!workspaceId) throw new Error('Workspace ID is required to approve subscription upgrades.')
+    const plan = row.requestedPlan || row.selectedPlan || row.plan || selectedClient?.plan || 'Standard'
+    const subscriptionPayload = buildApprovedSubscriptionPayload({
+      plan,
+      billingCycle: row.billingCycle || 'monthly',
+      amount: paymentAmount(row),
+      currency: rowCurrency(row),
+      approvedBy: user?.uid || user?.email || '',
+      approvedByEmail: user?.email || '',
+    })
+    const requestUpdate = {
+      status: 'approved',
+      approvalStatus: 'approved',
+      paymentStatus: 'paid',
+      approvedBy: subscriptionPayload.approvedBy,
+      approvedByEmail: subscriptionPayload.approvedByEmail,
+      approvedAt: subscriptionPayload.approvedAt,
+      subscriptionExpiresAt: subscriptionPayload.subscriptionExpiresAt,
+      nextBillingDate: subscriptionPayload.nextBillingDate,
+      updatedAt: subscriptionPayload.updatedAt,
+    }
+    const batch = writeBatch(db)
+    if (row.source !== 'cloudflare-d1') batch.update(row.ref || doc(db, 'upgradeRequests', row.id), requestUpdate)
+    batch.set(doc(db, 'users', ownerId), subscriptionPayload, { merge: true })
+    batch.set(doc(db, 'workspaces', workspaceId), { ...subscriptionPayload, ownerId, userId: workspaceId, workspaceId }, { merge: true })
+    batch.set(doc(db, 'platformPayments', row.source === 'cloudflare-d1' ? `d1-${row.id}` : row.id), {
+      clientEmail: row.clientEmail || row.email || selectedClient?.email || '',
+      workspaceId,
+      workspaceName: row.workspaceName || selectedClient?.companyName || '',
+      plan,
+      amount: paymentAmount(row),
+      currency: rowCurrency(row),
+      transactionId: row.transactionId || '',
+      senderName: row.senderName || '',
+      senderNumber: row.senderNumber || row.userPhone || selectedClient?.phone || '',
+      paymentMethod: row.paymentMethod || 'Manual',
+      paymentProof: row.paymentProof || row.screenshotUrl || '',
+      status: 'paid',
+      paymentStatus: 'paid',
+      approvedBy: subscriptionPayload.approvedBy,
+      approvedByEmail: subscriptionPayload.approvedByEmail,
+      approvedAt: subscriptionPayload.approvedAt,
+      subscriptionExpiresAt: subscriptionPayload.subscriptionExpiresAt,
+      nextBillingDate: subscriptionPayload.nextBillingDate,
+      source: row.source === 'cloudflare-d1' ? 'cloudflare-d1-upgradeRequests' : 'upgradeRequests',
+      sourceId: row.id,
+      updatedAt: subscriptionPayload.updatedAt,
+    }, { merge: true })
+    await batch.commit()
+    if (row.source === 'cloudflare-d1') {
+      const token = await user.getIdToken()
+      const result = await updateWorkerUpgradeRequestStatus(token, row.id, 'approved')
+      setWorkerUpgradeRequests((current) => current.map((item) => (item.id === row.id ? result.request || { ...item, ...requestUpdate } : item)))
+      const { ref, ...mirrorBase } = row
+      await setDoc(doc(db, 'upgradeRequests', row.id), { ...mirrorBase, ...requestUpdate, id: row.id, source: row.source || 'cloudflare-d1' }, { merge: true })
+    }
+    await addUpgradeTimeline(row, {
+      type: 'approved',
+      status: 'approved',
+      title: markPaidOnly ? 'Payment marked paid' : 'Request approved',
+      message: markPaidOnly ? 'Your upgrade payment has been marked as paid.' : 'Your upgrade request has been approved. Your workspace plan has been updated.',
+    })
+  }
+
+  async function rejectClientUpgrade(row) {
+    if (!row?.id) throw new Error('Upgrade request is missing.')
+    if (isFinalUpgradeRequest(row)) throw new Error('This upgrade request is already completed.')
+    const reason = upgradeRejectReason.trim()
+    if (!reason) throw new Error('Reject reason is required.')
+    const requestUpdate = {
+      status: 'rejected',
+      approvalStatus: 'rejected',
+      paymentStatus: 'rejected',
+      rejectionReason: reason,
+      adminRemark: reason,
+      latestAdminRemark: reason,
+      rejectedBy: user?.uid || user?.email || '',
+      rejectedByEmail: user?.email || '',
+      rejectedAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    }
+    if (row.source === 'cloudflare-d1') {
+      const token = await user.getIdToken()
+      const result = await updateWorkerUpgradeRequestStatus(token, row.id, 'rejected')
+      setWorkerUpgradeRequests((current) => current.map((item) => (item.id === row.id ? result.request || { ...item, ...requestUpdate } : item)))
+      const { ref, ...mirrorBase } = row
+      await setDoc(doc(db, 'upgradeRequests', row.id), { ...mirrorBase, ...requestUpdate, id: row.id, source: row.source || 'cloudflare-d1' }, { merge: true })
+    } else {
+      await updateDoc(row.ref || doc(db, 'upgradeRequests', row.id), requestUpdate)
+    }
+    await addUpgradeTimeline(row, {
+      type: 'rejected',
+      status: 'rejected',
+      title: 'Request rejected',
+      message: reason,
+    })
+    setUpgradeRejectingId('')
+    setUpgradeRejectReason('')
   }
 
   function notePayload(message, extra = {}) {
@@ -1513,7 +1682,8 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
     </section>
   ) : null
   const upgradeSummary = latestClientRequest ? [
-    ['Latest status', latestClientRequest.approvalStatus || latestClientRequest.status || latestClientRequest.paymentStatus || 'Pending'],
+    ['Request ID', upgradeRequestDisplayId(latestClientRequest)],
+    ['Latest status', latestClientRequest?.approvalStatus || latestClientRequest?.status || latestClientRequest?.paymentStatus || 'Pending'],
     ['Requested plan', latestClientRequest.requestedPlan || latestClientRequest.selectedPlan || latestClientRequest.plan || '-'],
     ['Module', latestClientRequest.businessType || latestClientRequest.module || workspaceBusinessType(selectedClient)],
     ['Amount', money(paymentAmount(latestClientRequest), rowCurrency(latestClientRequest))],
@@ -1539,13 +1709,13 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
             <div>
               <p className="text-sm font-black text-slate-950">Upgrade Requests Snapshot</p>
               <p className="mt-0.5 text-xs font-semibold text-slate-600">
-                {pendingClientRequests.length} pending · {approvedClientRequests.length} approved · latest {latestClientRequest ? statusValue(latestClientRequest.approvalStatus || latestClientRequest.status || latestClientRequest.paymentStatus, 'pending').replace(/_/g, ' ') : 'none'}
+                {pendingClientRequests.length} pending · {approvedClientRequests.length} approved · latest {latestClientRequest ? statusValue(latestClientRequest?.approvalStatus || latestClientRequest?.status || latestClientRequest?.paymentStatus, 'pending').replace(/_/g, ' ') : 'none'}
               </p>
             </div>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <DarkStatusPill value={pendingClientRequests.length ? 'Pending review' : latestClientRequest ? latestClientRequest.status || latestClientRequest.approvalStatus || 'Reviewed' : 'No requests'} />
+          <DarkStatusPill value={pendingClientRequests.length ? 'Pending review' : latestClientRequest ? latestClientRequest?.status || latestClientRequest?.approvalStatus || 'Reviewed' : 'No requests'} />
           <span className="rounded-full border border-amber-200 bg-white px-3 py-1 text-xs font-black text-amber-700 shadow-sm">
             {upgradeExpanded ? 'Minimize' : 'Expand'}
           </span>
@@ -1575,7 +1745,7 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
                   <p className="text-[11px] font-black uppercase tracking-[0.12em] text-amber-700">Latest upgrade request</p>
                   <p className="mt-1 text-sm font-black text-slate-950">{latestClientRequest.requestedPlan || latestClientRequest.selectedPlan || latestClientRequest.plan || 'Plan request'}</p>
                 </div>
-                <DarkStatusPill value={latestClientRequest.approvalStatus || latestClientRequest.status || latestClientRequest.paymentStatus || 'pending'} />
+                <DarkStatusPill value={latestClientRequest?.approvalStatus || latestClientRequest?.status || latestClientRequest?.paymentStatus || 'pending'} />
               </div>
               <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 {upgradeSummary.map(([label, value]) => (
@@ -1596,8 +1766,65 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
                     Open Proof
                   </a>
                 ) : null}
+                {!isFinalUpgradeRequest(latestClientRequest) ? (
+                  <>
+                    <ActionButton
+                      icon={HiOutlineCheckCircle}
+                      disabled={busy === `client-upgrade-approve-${latestClientRequest.id}`}
+                      onClick={() => runAction(`client-upgrade-approve-${latestClientRequest.id}`, () => approveClientUpgrade(latestClientRequest), 'Upgrade approved.')}
+                    >
+                      Approve
+                    </ActionButton>
+                    <ActionButton
+                      icon={HiOutlineCreditCard}
+                      disabled={busy === `client-upgrade-paid-${latestClientRequest.id}`}
+                      onClick={() => runAction(`client-upgrade-paid-${latestClientRequest.id}`, () => approveClientUpgrade(latestClientRequest, true), 'Payment marked paid.')}
+                    >
+                      Mark Paid
+                    </ActionButton>
+                    <ActionButton
+                      icon={HiOutlineXMark}
+                      className="border-rose-200 bg-rose-50 text-rose-700 hover:border-rose-300 hover:text-rose-800"
+                      disabled={busy === `client-upgrade-reject-${latestClientRequest.id}`}
+                      onClick={() => {
+                        setUpgradeRejectingId(latestClientRequest.id)
+                        setUpgradeRejectReason('')
+                      }}
+                    >
+                      Reject
+                    </ActionButton>
+                  </>
+                ) : (
+                  <span className="inline-flex h-9 items-center rounded-lg border border-slate-200 bg-slate-50 px-3 text-xs font-black text-slate-500">
+                    Request completed · actions locked
+                  </span>
+                )}
                 <ActionButton icon={HiOutlineRectangleStack} onClick={() => setActiveTab('invoices')}>View Requests</ActionButton>
               </div>
+              {upgradeRejectingId === latestClientRequest.id ? (
+                <div className="mt-3 rounded-xl border border-rose-200 bg-rose-50 p-3">
+                  <label className="text-[11px] font-black uppercase tracking-[0.12em] text-rose-700">Reject reason</label>
+                  <textarea
+                    value={upgradeRejectReason}
+                    onChange={(event) => setUpgradeRejectReason(event.target.value)}
+                    rows={3}
+                    maxLength={1200}
+                    placeholder="Write why this upgrade request is being rejected..."
+                    className="mt-2 w-full resize-none rounded-xl border border-rose-200 bg-white px-3 py-2 text-xs font-semibold text-slate-900 outline-none focus:border-rose-400"
+                  />
+                  <div className="mt-2 flex justify-end gap-2">
+                    <ActionButton icon={HiOutlineXMark} onClick={() => { setUpgradeRejectingId(''); setUpgradeRejectReason('') }}>Cancel</ActionButton>
+                    <ActionButton
+                      icon={HiOutlineXMark}
+                      className="border-rose-600 bg-rose-600 text-white hover:bg-rose-700"
+                      disabled={!upgradeRejectReason.trim() || busy === `client-upgrade-reject-${latestClientRequest.id}`}
+                      onClick={() => runAction(`client-upgrade-reject-${latestClientRequest.id}`, () => rejectClientUpgrade(latestClientRequest), 'Upgrade rejected.')}
+                    >
+                      Confirm Reject
+                    </ActionButton>
+                  </div>
+                </div>
+              ) : null}
             </div>
           ) : (
             <div className="mt-4 rounded-xl border border-dashed border-amber-200 bg-white/70 p-6 text-center text-sm font-bold text-slate-500">
@@ -2327,7 +2554,7 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
                       { key: 'id', label: 'Invoice / Request ID' },
                       { key: 'plan', label: 'Plan', render: (row) => row.requestedPlan || row.selectedPlan || row.plan || '-' },
                       { key: 'amount', label: 'Amount', render: (row) => money(paymentAmount(row), rowCurrency(row)) },
-                      { key: 'status', label: 'Status', render: (row) => <StatusPill value={row.approvalStatus || row.paymentStatus || row.status || 'pending'} /> },
+                      { key: 'status', label: 'Status', render: (row) => <StatusPill value={row?.approvalStatus || row?.paymentStatus || row?.status || 'pending'} /> },
                       { key: 'createdAt', label: 'Created', render: (row) => dateTimeLabel(row.createdAt) },
                     ]}
                   />

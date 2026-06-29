@@ -147,6 +147,47 @@ function detailsCard(heading, rows) {
                     </table>`
 }
 
+function paymentSummaryHero({
+  status = 'Paid',
+  title = 'Nexora payment',
+  amount = 0,
+  currency = 'PKR',
+  orderId = '',
+  buttonLabel = 'View receipt',
+  buttonUrl = NEXORA_WORKSPACE_URL,
+  note = '',
+} = {}) {
+  return `
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;border-radius:22px;background:#ffffff;border:1px solid #dbe4ff;overflow:hidden;margin:0 0 20px;box-shadow:0 16px 34px rgba(15,23,42,0.08);">
+                      <tr>
+                        <td style="background:#dfe4ff;padding:14px 22px;font-size:15px;line-height:21px;font-weight:900;color:#0f172a;">
+                          ${escapeHtml(status)}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding:24px 22px 26px;">
+                          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                            <tr>
+                              <td style="vertical-align:top;">
+                                <div style="font-size:24px;line-height:30px;font-weight:900;color:#111827;margin-bottom:28px;">${escapeHtml(title)}</div>
+                                <div style="font-size:13px;line-height:18px;font-weight:900;color:#64748b;text-transform:uppercase;letter-spacing:.9px;">Amount paid</div>
+                                <div style="font-size:44px;line-height:52px;font-weight:900;color:#111827;letter-spacing:-1px;margin-top:5px;">${escapeHtml(money(amount, currency))}</div>
+                                ${orderId ? `<div style="margin-top:10px;font-size:13px;line-height:20px;color:#64748b;font-weight:700;">Order / Payment ID: <span style="color:#0f172a;">${escapeHtml(orderId)}</span></div>` : ''}
+                                ${note ? `<div style="margin-top:8px;font-size:13px;line-height:20px;color:#64748b;font-weight:700;">${escapeHtml(note)}</div>` : ''}
+                                <div style="margin-top:26px;">
+                                  <a href="${escapeHtml(buttonUrl)}" style="display:inline-block;border-radius:999px;background:#5f6680;color:#ffffff;text-decoration:none;font-size:15px;line-height:19px;font-weight:900;padding:15px 25px;">${escapeHtml(buttonLabel)}</a>
+                                </div>
+                              </td>
+                              <td align="right" style="vertical-align:top;width:120px;">
+                                <img src="${NEXORA_LOGO_URL}" width="88" height="88" alt="Nexora" style="display:block;width:88px;height:88px;border-radius:22px;object-fit:contain;" />
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    </table>`
+}
+
 function calloutBox(label, text, bg = '#fef2f2', border = '#fecaca', labelColor = '#b91c1c') {
   return `
                     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;border-radius:14px;background:${bg};border:1px solid ${border};margin:2px 0 18px;">
@@ -543,6 +584,16 @@ export function upgradeRequestReceivedEmail({
   workspaceName = '',
 } = {}) {
   const body = [
+    paymentSummaryHero({
+      status: 'Payment received',
+      title: 'Nexora payment',
+      amount,
+      currency,
+      orderId: transactionId,
+      buttonLabel: 'View payment',
+      buttonUrl: NEXORA_UPGRADE_URL,
+      note: 'Under Nexora review',
+    }),
     greetingLine(name),
     leadParagraph(
       `Thank you! We&rsquo;ve received your payment for the <strong style="color:#0f172a;">${escapeHtml(plan)}</strong> plan. Our team is reviewing your details and your workspace will be upgraded shortly &mdash; usually within a few hours.`,
@@ -578,8 +629,19 @@ export function upgradeApprovedEmail({
   currency = 'PKR',
   billingCycle = '',
   workspaceName = '',
+  transactionId = '',
 } = {}) {
   const body = [
+    Number(amount) > 0 ? paymentSummaryHero({
+      status: 'Paid',
+      title: 'Nexora bill',
+      amount,
+      currency,
+      orderId: transactionId,
+      buttonLabel: 'View workspace',
+      buttonUrl: NEXORA_WORKSPACE_URL,
+      note: 'Plan activated',
+    }) : '',
     greetingLine(name),
     leadParagraph(
       `Great news &mdash; your upgrade to <strong style="color:#0f172a;">${escapeHtml(plan)}</strong> has been approved and your workspace is now active. All premium features for your plan are unlocked.`,

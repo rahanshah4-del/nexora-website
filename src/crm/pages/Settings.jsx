@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   HiOutlineBuildingOffice2,
   HiOutlineCheckCircle,
@@ -29,6 +29,8 @@ import { whatsappCapabilities, whatsappTrialStatus } from '../lib/whatsappApiTri
 import ConnectWhatsappModal from '../components/whatsapp/ConnectWhatsappModal.jsx'
 import ConfirmDialog from '../components/whatsapp/ConfirmDialog.jsx'
 import PasskeySettingsCard from '../../components/security/PasskeySettingsCard.jsx'
+import UpgradeRequestTimelineCard from '../../components/upgrade/UpgradeRequestTimelineCard.jsx'
+import useLatestUpgradeRequest from '../../hooks/useLatestUpgradeRequest.js'
 import { RestaurantBillPreview, RestaurantKotPreview } from '../components/restaurant/RestaurantPrintPreview.jsx'
 import { buildBillPrintData, buildKotPrintData, calculateRestaurantBill } from '../lib/restaurantPosCalculations.js'
 import {
@@ -1293,6 +1295,7 @@ function TransportReportSettingsCard({ draft, setDraft, canManageSettings }) {
 
 export default function SettingsPage() {
   const { userId, workspaceId, userDoc, firebaseUser } = useUser()
+  const navigate = useNavigate()
   const { currency, setCurrency, profile, setProfile } = usePreferences()
   const { settings, businessType, saveSettings } = useBusinessSettings()
   const access = useWorkspaceAccess()
@@ -1303,6 +1306,7 @@ export default function SettingsPage() {
   const businessTypeLabel = labelForBusinessType(businessType)
   const canManageSettings = access.canManageSettings
   const viewOnlyMessage = 'You have view access only. Contact your workspace administrator to modify settings.'
+  const latestUpgradeRequest = useLatestUpgradeRequest(userId, Boolean(userId))
 
   useEffect(() => {
     setDraft((current) => ({ ...current, ...profile, ...settings }))
@@ -1519,6 +1523,14 @@ export default function SettingsPage() {
           ) : null}
         </div>
       </div>
+
+      <UpgradeRequestTimelineCard
+        request={latestUpgradeRequest}
+        moduleLabel={businessTypeLabel}
+        onOpen={() => navigate('/upgrade-business', { state: { fromUpgradeBusiness: true } })}
+        className="mt-5"
+        hideWhenResolved
+      />
 
     </motion.div>
   )

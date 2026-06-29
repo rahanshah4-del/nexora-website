@@ -26,6 +26,7 @@ import {
   HiOutlineWrenchScrewdriver,
 } from 'react-icons/hi2'
 import {
+  addDoc,
   collection,
   collectionGroup,
   deleteDoc,
@@ -101,6 +102,20 @@ import { createWorkspaceNotification, workspaceNotificationTargets } from '../..
 import EmailMarketing from './EmailMarketing.jsx'
 import AdminBusinessServices from './BusinessServices.jsx'
 import { adminForceLogoutUser, adminListPasskeySecurity, adminUpdatePasskey } from '../../lib/passkeys.js'
+
+function needsBackendWarning(actionId = '') {
+  return /approve|reject|delete|remove|block|deactivate|disable|resolve|close|complete|paid|reset|logout|toggle/i.test(String(actionId))
+}
+
+function backendWarningMessage(actionId = '') {
+  const id = String(actionId)
+  if (/delete|remove/i.test(id)) return 'Warning: this will remove backend data. Continue?'
+  if (/approve|paid/i.test(id)) return 'Warning: this will approve or mark a payment as paid. Continue?'
+  if (/reject/i.test(id)) return 'Warning: this will reject the request and notify/update the client record. Continue?'
+  if (/block|deactivate|disable/i.test(id)) return 'Warning: this may disable client access. Continue?'
+  if (/resolve|close|complete/i.test(id)) return 'Warning: this will change the request/ticket status. Continue?'
+  return 'Warning: this backend action will update live data. Continue?'
+}
 
 export class ControlCentreErrorBoundary extends Component {
   state = { error: null }
@@ -247,6 +262,62 @@ function statusValue(value, fallback = 'unknown') {
   return String(value || fallback).trim().toLowerCase().replace(/\s+/g, '_')
 }
 
+function supportTicketTone(row = {}) {
+  const priority = statusValue(row.priority, 'medium')
+  const status = statusValue(row.status, 'open')
+  const categoryText = `${row.category || ''} ${row.module || ''} ${row.title || ''} ${row.subject || ''} ${row.description || ''}`.toLowerCase()
+  const isPayment = /payment|billing|invoice|upgrade|plan|paid|transaction|receipt|proof/.test(categoryText)
+  const isResolved = ['resolved', 'completed', 'closed'].includes(status)
+  if (isResolved) {
+    return {
+      row: 'bg-emerald-50/45 hover:bg-emerald-50',
+      card: 'border-emerald-200 bg-emerald-50/80',
+      stripe: 'from-emerald-400 to-teal-500',
+      label: 'Resolved',
+      pill: 'bg-emerald-100 text-emerald-700 ring-emerald-200',
+      rank: 5,
+    }
+  }
+  if (priority === 'urgent' || priority === 'critical') {
+    return {
+      row: 'bg-rose-50/70 hover:bg-rose-50',
+      card: 'border-rose-200 bg-rose-50',
+      stripe: 'from-rose-500 to-red-600',
+      label: 'Urgent',
+      pill: 'bg-rose-100 text-rose-700 ring-rose-200',
+      rank: 0,
+    }
+  }
+  if (priority === 'high') {
+    return {
+      row: 'bg-orange-50/70 hover:bg-orange-50',
+      card: 'border-orange-200 bg-orange-50',
+      stripe: 'from-orange-500 to-amber-500',
+      label: 'High',
+      pill: 'bg-orange-100 text-orange-700 ring-orange-200',
+      rank: 1,
+    }
+  }
+  if (isPayment) {
+    return {
+      row: 'bg-sky-50/70 hover:bg-sky-50',
+      card: 'border-sky-200 bg-sky-50',
+      stripe: 'from-sky-500 to-blue-600',
+      label: 'Payment',
+      pill: 'bg-sky-100 text-sky-700 ring-sky-200',
+      rank: 2,
+    }
+  }
+  return {
+    row: 'hover:bg-slate-50/80',
+    card: 'border-slate-200 bg-white',
+    stripe: 'from-slate-300 to-slate-400',
+    label: priority === 'low' ? 'Low' : 'Normal',
+    pill: priority === 'low' ? 'bg-slate-100 text-slate-600 ring-slate-200' : 'bg-violet-50 text-violet-700 ring-violet-100',
+    rank: 3,
+  }
+}
+
 function workspaceBusinessType(row = {}) {
   return row.primaryBusinessType || row.selectedBusinessType || row.currentBusinessType || row.businessType || row.module || 'General CRM'
 }
@@ -288,7 +359,7 @@ function phoneNumber(row = {}) {
 }
 
 function isPaid(row = {}) {
-  return ['paid', 'approved', 'active', 'completed'].includes(statusValue(row.paymentStatus || row.approvalStatus || row.status || row.planStatus))
+  return ['paid', 'approved', 'active', 'completed'].includes(statusValue(row?.paymentStatus || row?.approvalStatus || row?.status || row?.planStatus))
 }
 
 function isPaidSubscriptionStatus(row = {}) {
@@ -586,13 +657,15 @@ function Status({ value }) {
   const status = statusValue(value)
   const tone = status.startsWith('invalid_subscription')
     ? 'bg-rose-50 text-rose-700 ring-rose-100'
-    : ['active', 'paid', 'approved', 'healthy', 'online', 'verified', 'connected', 'ready', 'synced', 'enabled'].includes(status)
+    : ['active', 'paid', 'approved', 'healthy', 'online', 'verified', 'connected', 'ready', 'synced', 'enabled', 'resolved', 'completed', 'closed'].includes(status)
     ? 'bg-emerald-50 text-emerald-700 ring-emerald-100'
-    : ['trial', 'pending', 'pending_approval', 'warning', 'degraded', 'stale'].includes(status)
+    : ['trial', 'pending', 'pending_approval', 'warning', 'degraded', 'stale', 'medium'].includes(status)
       ? 'bg-amber-50 text-amber-700 ring-amber-100'
-      : ['blocked', 'disabled', 'expired', 'rejected', 'offline', 'critical', 'error', 'failed'].includes(status)
+      : ['blocked', 'disabled', 'expired', 'rejected', 'offline', 'critical', 'error', 'failed', 'urgent', 'high'].includes(status)
         ? 'bg-rose-50 text-rose-700 ring-rose-100'
-        : 'bg-slate-100 text-slate-600 ring-slate-200'
+        : ['low'].includes(status)
+          ? 'bg-sky-50 text-sky-700 ring-sky-100'
+          : 'bg-slate-100 text-slate-600 ring-slate-200'
   return <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold capitalize ring-1 ${tone}`}>{String(value || 'Unknown').replace(/_/g, ' ')}</span>
 }
 
@@ -643,7 +716,7 @@ function Panel({ title, action, children }) {
   )
 }
 
-function AdminTable({ columns, rows, emptyTitle, maxHeight = 'max-h-[30rem]' }) {
+function AdminTable({ columns, rows, emptyTitle, maxHeight = 'max-h-[30rem]', rowClassName }) {
   if (!rows.length) return <EmptyState title={emptyTitle} />
   return (
     <div className={`overflow-auto ${maxHeight}`}>
@@ -653,7 +726,7 @@ function AdminTable({ columns, rows, emptyTitle, maxHeight = 'max-h-[30rem]' }) 
         </thead>
         <tbody className="divide-y divide-slate-100">
           {rows.map((row) => (
-            <tr key={row.path || row.id} className="align-top hover:bg-slate-50/80">
+            <tr key={row.path || row.id} className={`align-top ${rowClassName ? rowClassName(row) : 'hover:bg-slate-50/80'}`}>
               {columns.map((column) => <td key={column.key} className="px-4 py-3 text-slate-700">{column.render ? column.render(row) : row[column.key] || '-'}</td>)}
             </tr>
           ))}
@@ -934,7 +1007,7 @@ export default function ControlCentre() {
       blockedClients: data.workspaces.filter((row) => statusValue(row.status || row.accountStatus) === 'blocked').length,
       onlineNow: onlineUsers.length,
       todayLogins,
-      pendingUpgrades: upgradeRequests.filter((row) => statusValue(row.approvalStatus || row.status) === 'pending').length,
+      pendingUpgrades: upgradeRequests.filter((row) => statusValue(row?.approvalStatus || row?.status) === 'pending').length,
       monthlyRevenue,
       totalRevenue: revenueRows.reduce((sum, row) => sum + amountValue(row), 0),
     }
@@ -946,7 +1019,7 @@ export default function ControlCentre() {
     const sourceErrorEntries = Object.entries(sourceErrors)
     const pendingPayments = payments.filter((row) => ['pending', 'pending_approval', 'waiting', 'confirming'].includes(statusValue(row.paymentStatus || row.status)))
     const stalePendingPayments = pendingPayments.filter((row) => (ageMinutes(row.createdAt || row.paymentDate, now) || 0) > 1440)
-    const pendingUpgrades = upgradeRequests.filter((row) => statusValue(row.approvalStatus || row.status) === 'pending')
+    const pendingUpgrades = upgradeRequests.filter((row) => statusValue(row?.approvalStatus || row?.status) === 'pending')
     const stalePendingUpgrades = pendingUpgrades.filter((row) => (ageMinutes(row.createdAt || row.requestedAt, now) || 0) > 1440)
     const openTickets = data.supportTickets.filter((row) => ['open', 'pending', 'in_progress', 'new'].includes(statusValue(row.status || 'open')))
     const urgentTickets = openTickets.filter((row) => ['urgent', 'critical', 'high'].includes(statusValue(row.priority)))
@@ -1216,7 +1289,7 @@ export default function ControlCentre() {
         route: 'clients',
       }))
     const upgradeItems = upgradeRequests
-      .filter((row) => statusValue(row.approvalStatus || row.status) === 'pending')
+      .filter((row) => statusValue(row?.approvalStatus || row?.status) === 'pending')
       .slice(0, 5)
       .map((row) => ({
         id: `upgrade-${row.id}`,
@@ -1674,7 +1747,27 @@ export default function ControlCentre() {
     console.log('[Subscription Sync] complete', { workspaceId, ownerId })
   }
 
+  async function mirrorUpgradeRequest(row, update, timeline = null) {
+    if (!row?.id) return
+    const { ref, ...base } = row
+    await setDoc(doc(db, 'upgradeRequests', row.id), {
+      ...base,
+      ...update,
+      id: row.id,
+      source: row.source || 'cloudflare-d1',
+    }, { merge: true })
+    if (timeline) {
+      await addDoc(collection(db, 'upgradeRequests', row.id, 'timeline'), {
+        ...timeline,
+        actor: 'admin',
+        actorName: user?.email || 'Nexora Team',
+        createdAt: serverTimestamp(),
+      })
+    }
+  }
+
   async function runAction(id, action, success = 'Action completed.') {
+    if (needsBackendWarning(id) && !window.confirm(backendWarningMessage(id))) return
     setBusy(id)
     setToast('')
     try {
@@ -2061,9 +2154,21 @@ export default function ControlCentre() {
       const token = await user.getIdToken()
       const result = await updateWorkerUpgradeRequestStatus(token, row.id, 'approved')
       setWorkerUpgradeRequests((current) => current.map((item) => (item.id === row.id ? result.request || { ...item, ...requestUpdate } : item)))
+      await mirrorUpgradeRequest(row, requestUpdate, {
+        type: 'approved',
+        status: 'approved',
+        title: 'Request approved',
+        message: 'Your upgrade request has been approved. Your workspace plan has been updated.',
+      })
     } else {
       console.log('[Subscription Approval] request update', { path: `upgradeRequests/${row.id}`, requestUpdate })
       await updateDoc(row.ref || doc(db, 'upgradeRequests', row.id), requestUpdate)
+      await mirrorUpgradeRequest(row, requestUpdate, {
+        type: 'approved',
+        status: 'approved',
+        title: 'Request approved',
+        message: 'Your upgrade request has been approved. Your workspace plan has been updated.',
+      })
     }
     await syncWorkspaceAndUserSubscription({ workspaceId, ownerId, payload: subscriptionPayload })
     await setDoc(doc(db, 'platformPayments', isWorkerRequest ? `d1-${row.id}` : row.id), {
@@ -2126,6 +2231,7 @@ export default function ControlCentre() {
         currency,
         billingCycle: row.billingCycle || '',
         workspaceName: row.workspaceName || row.companyName || '',
+        transactionId: row.transactionId || row.paymentId || row.nowPaymentsPaymentId || row.id || '',
       })
       const sent = await sendWorkerEmail({ to: email, ...template })
       if (!sent.ok) throw new Error(sent.error)
@@ -2149,12 +2255,7 @@ export default function ControlCentre() {
     if (!backendAdminAllowed) throw new Error('Backend admin access required.')
     const adminEmail = user?.email || ''
     const now = serverTimestamp()
-    if (row.source === 'cloudflare-d1') {
-      const token = await user.getIdToken()
-      const result = await updateWorkerUpgradeRequestStatus(token, row.id, 'rejected')
-      setWorkerUpgradeRequests((current) => current.map((item) => (item.id === row.id ? result.request || { ...item, status: 'rejected', approvalStatus: 'rejected', paymentStatus: 'rejected' } : item)))
-    } else {
-    await updateDoc(row.ref || doc(db, 'upgradeRequests', row.id), {
+    const rejectionUpdate = {
       status: 'rejected',
       approvalStatus: 'rejected',
       paymentStatus: 'rejected',
@@ -2163,6 +2264,24 @@ export default function ControlCentre() {
       rejectionReason: row.rejectionReason || row.reason || '',
       rejectedAt: now,
       updatedAt: now,
+    }
+    if (row.source === 'cloudflare-d1') {
+      const token = await user.getIdToken()
+      const result = await updateWorkerUpgradeRequestStatus(token, row.id, 'rejected')
+      setWorkerUpgradeRequests((current) => current.map((item) => (item.id === row.id ? result.request || { ...item, status: 'rejected', approvalStatus: 'rejected', paymentStatus: 'rejected' } : item)))
+      await mirrorUpgradeRequest(row, rejectionUpdate, {
+        type: 'rejected',
+        status: 'rejected',
+        title: 'Request rejected',
+        message: row.rejectionReason || row.reason || 'Nexora reviewed your payment proof and rejected this upgrade request.',
+      })
+    } else {
+    await updateDoc(row.ref || doc(db, 'upgradeRequests', row.id), rejectionUpdate)
+    await mirrorUpgradeRequest(row, rejectionUpdate, {
+      type: 'rejected',
+      status: 'rejected',
+      title: 'Request rejected',
+      message: row.rejectionReason || row.reason || 'Nexora reviewed your payment proof and rejected this upgrade request.',
     })
     }
     const email = userEmail(row)
@@ -2235,7 +2354,7 @@ export default function ControlCentre() {
       const requestUpdate = {
         status: update.status || update.paymentStatus || row.status || 'pending',
         paymentStatus: update.paymentStatus || update.status || row.paymentStatus || 'pending',
-        approvalStatus: update.approvalStatus || row.approvalStatus || update.status || 'pending',
+        approvalStatus: update.approvalStatus || row?.approvalStatus || update.status || 'pending',
         ...(subscriptionPayload ? {
           status: 'approved',
           approvalStatus: 'approved',
@@ -2407,7 +2526,7 @@ export default function ControlCentre() {
     { key: 'method', label: 'Payment Method', render: (row) => row.paymentMethod || row.method || '-' },
     { key: 'proof', label: 'Screenshot', render: (row) => proofUrl(row) ? <a className="font-bold text-violet-700" href={proofUrl(row)} target="_blank" rel="noreferrer">View Screenshot</a> : 'No Screenshot Uploaded' },
     { key: 'date', label: 'Date', render: (row) => dateTimeLabel(row.paymentDate || row.createdAt) },
-    { key: 'status', label: 'Status', render: (row) => <Status value={row.approvalStatus || row.status || 'pending'} /> },
+    { key: 'status', label: 'Status', render: (row) => <Status value={row?.approvalStatus || row?.status || 'pending'} /> },
     {
       key: 'actions',
       label: 'Actions',
@@ -2529,7 +2648,7 @@ export default function ControlCentre() {
 
         <div className="grid gap-4 xl:grid-cols-[1.4fr_0.7fr]">
           <Panel title="Pending Upgrade Requests" action={<ShellButton onClick={() => setActiveTab('upgrades')}>Review</ShellButton>}>
-            <AdminTable rows={upgradeRequests.filter((row) => statusValue(row.approvalStatus || row.status) === 'pending').slice(0, 6)} columns={upgradeColumns.slice(0, 7)} emptyTitle="No pending upgrade requests" maxHeight="max-h-[18rem]" />
+            <AdminTable rows={upgradeRequests.filter((row) => statusValue(row?.approvalStatus || row?.status) === 'pending').slice(0, 6)} columns={upgradeColumns.slice(0, 7)} emptyTitle="No pending upgrade requests" maxHeight="max-h-[18rem]" />
           </Panel>
           <Panel title="System Health" action={<ShellButton onClick={() => setActiveTab('systemHealth')}>Open</ShellButton>}>
             <div className="grid grid-cols-3 gap-2">
@@ -3093,6 +3212,8 @@ export default function ControlCentre() {
 
   function SupportTickets() {
     const ticketRows = searchRows(data.supportTickets, search, ['title', 'subject', 'clientEmail', 'email', 'workspaceName', 'category', 'status', 'priority'])
+      .slice()
+      .sort((a, b) => supportTicketTone(a).rank - supportTicketTone(b).rank || (toDate(b.updatedAt || b.createdAt)?.getTime() || 0) - (toDate(a.updatedAt || a.createdAt)?.getTime() || 0))
     const workspaceOptions = data.workspaces.map((workspace) => ({
       id: workspace.id || workspace.workspaceId || workspace.ownerId,
       name: workspaceName(workspace),
@@ -3153,8 +3274,26 @@ export default function ControlCentre() {
             }, 'Support ticket created.')
           }}>Create</ShellButton>
         </div>
-        <AdminTable rows={ticketRows} emptyTitle="No support tickets found" columns={[
-          { key: 'ticket', label: 'Ticket', render: (row) => <div><p className="font-black text-slate-900">{row.title || row.subject || row.id}</p><p className="text-xs text-slate-500">{row.category || 'Technical Support'} · SLA {statusValue(row.priority) === 'urgent' ? '2h' : statusValue(row.priority) === 'high' ? '8h' : '24h'}</p></div> },
+        <AdminTable rows={ticketRows} emptyTitle="No support tickets found" rowClassName={(row) => supportTicketTone(row).row} columns={[
+          { key: 'ticket', label: 'Ticket', render: (row) => {
+            const tone = supportTicketTone(row)
+            return (
+              <div className={`relative min-w-[15rem] overflow-hidden rounded-2xl border p-3 shadow-sm ${tone.card}`}>
+                <span className={`absolute inset-y-0 left-0 w-1.5 bg-gradient-to-b ${tone.stripe}`} />
+                <div className="flex items-start justify-between gap-3 pl-2">
+                  <div className="min-w-0">
+                    <p className="truncate font-black text-slate-950">{row.title || row.subject || row.id}</p>
+                    <p className="mt-1 text-xs font-semibold text-slate-600">
+                      {row.category || 'Technical Support'} · SLA {statusValue(row.priority) === 'urgent' ? '2h' : statusValue(row.priority) === 'high' ? '8h' : '24h'}
+                    </p>
+                  </div>
+                  <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.08em] ring-1 ${tone.pill}`}>
+                    {tone.label}
+                  </span>
+                </div>
+              </div>
+            )
+          } },
           { key: 'client', label: 'Client', render: (row) => <div><p>{row.clientEmail || row.email || '-'}</p><p className="text-xs text-slate-500">{row.workspaceName || row.workspaceId || '-'}</p></div> },
           { key: 'priority', label: 'Priority', render: (row) => <Status value={row.priority || 'medium'} /> },
           { key: 'status', label: 'Status', render: (row) => <Status value={row.status || 'open'} /> },

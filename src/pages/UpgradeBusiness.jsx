@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Navigate, useLocation } from 'react-router-dom'
+import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { addDoc, collection, doc, getDoc, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc, where } from 'firebase/firestore'
 import { onAuthStateChanged } from 'firebase/auth'
 import useNoIndex from '../hooks/useNoIndex.js'
@@ -65,7 +65,8 @@ function formatTimelineDate(value) {
 }
 
 function normalizeRequestStatus(row = {}) {
-  return String(row.approvalStatus || row.status || row.paymentStatus || 'pending').toLowerCase()
+  const safe = row || {}
+  return String(safe.approvalStatus || safe.status || safe.paymentStatus || 'pending').toLowerCase()
 }
 
 function isClosedUpgradeRequest(row = {}) {
@@ -209,6 +210,7 @@ function UploadBox({ file, previewUrl, onFile }) {
 
 export default function UpgradeBusiness({ cameFromUpgrade = false }) {
   const location = useLocation()
+  const navigate = useNavigate()
   useNoIndex(true)
 
   const [user, setUser] = useState(null)
@@ -240,8 +242,6 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
   const [promoLoading, setPromoLoading] = useState(false)
   const [activeRequest, setActiveRequest] = useState(null)
   const [requestTimeline, setRequestTimeline] = useState([])
-  const [requestComment, setRequestComment] = useState('')
-  const [commentSaving, setCommentSaving] = useState(false)
 
   useEffect(() => {
     if (!auth) return undefined
@@ -593,6 +593,11 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
         ...workerFields,
         ...payload,
         id: requestId,
+        uid: user.uid,
+        userId: user.uid,
+        createdBy: user.uid,
+        ownerId: workspaceDoc.ownerId || user.uid,
+        workspaceId,
         source: payload.source || 'cloudflare-d1',
         screenshotUrl: payload.screenshotUrl || payload.paymentProof || '',
         screenshotKey: payload.screenshotKey || payload.paymentProofKey || '',
@@ -615,6 +620,9 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
         createdAt: serverTimestamp(),
       })
       setActiveRequest({ ...firestoreRequest, id: requestId })
+      window.setTimeout(() => {
+        navigate('/app/dashboard', { replace: true, state: { upgradeRequestSubmitted: true, upgradeRequestId: requestId } })
+      }, 250)
       const emailTemplate = upgradeRequestReceivedEmail({
         name: workerFields.senderName || user.displayName || 'there',
         plan: requestedPlan,
@@ -649,39 +657,37 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
     }
   }
 
-  async function submitTimelineComment(event) {
-    event.preventDefault()
-    const message = requestComment.trim()
-    if (!db || !activeRequest?.id || !message) return
-    setCommentSaving(true)
-    setSubmitError('')
-    try {
-      await addDoc(collection(db, 'upgradeRequests', activeRequest.id, 'timeline'), {
-        type: 'client_comment',
-        status: normalizeRequestStatus(activeRequest),
-        title: 'Client comment',
-        message,
-        actor: 'client',
-        actorName: user?.displayName || user?.email || 'Client',
-        createdAt: serverTimestamp(),
-      })
-      setRequestComment('')
-    } catch (error) {
-      setSubmitError(clientSafeMessage(error, 'Unable to add your comment. Please try again.', { context: 'Upgrade request client comment' }))
-    } finally {
-      setCommentSaving(false)
-    }
-  }
-
   if (authReady && !user && !cameFromUpgrade) {
     return <Navigate to="/" replace state={{ from: location.pathname }} />
   }
 
   const timelineSteps = requestTimelineSteps(activeRequest || {}, isAutomaticCrypto)
+  const requestRejected = normalizeRequestStatus(activeRequest) === 'rejected'
   const latestAdminNote = [...requestTimeline]
     .reverse()
     .find((item) => item.actor === 'admin' && item.message)
   const adminRemark = activeRequest?.latestAdminRemark || activeRequest?.adminRemark || activeRequest?.rejectionReason || latestAdminNote?.message || ''
+  const openRejectedTicket = () => {
+    if (!activeRequest?.id) return
+    navigate('/workspace', {
+      state: {
+        openSupportTicket: true,
+        supportTicketDraft: {
+          source: 'upgrade_rejection',
+          upgradeRequestId: activeRequest.id,
+          category: 'Upgrade Request',
+          subject: `Upgrade request rejected - ${activeRequest.id}`,
+          priority: 'High',
+          message: [
+            `My upgrade request was rejected. Request ID: ${activeRequest.id}.`,
+            requestedPlan ? `Requested plan: ${requestedPlan}.` : '',
+            adminRemark ? `Nexora remark: ${adminRemark}` : '',
+            'Please review this request and guide me on the next step.',
+          ].filter(Boolean).join('\n'),
+        },
+      },
+    })
+  }
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
@@ -923,6 +929,21 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
                   <p className="mt-2 text-sm font-bold leading-6 text-slate-700">{adminRemark}</p>
                 </div>
               ) : null}
+              {requestRejected ? (
+                <div className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 p-4">
+                  <p className="text-sm font-black text-rose-900">Need help with this rejected request?</p>
+                  <p className="mt-1 text-sm font-semibold leading-6 text-rose-700">
+                    Create a support ticket so Nexora team can review the rejection and guide you.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={openRejectedTicket}
+                    className="mt-3 rounded-2xl bg-rose-600 px-4 py-2 text-xs font-black text-white shadow-sm transition hover:bg-rose-700"
+                  >
+                    Create Support Ticket
+                  </button>
+                </div>
+              ) : null}
               {requestTimeline.length ? (
                 <div className="mt-5 space-y-3">
                   {requestTimeline.map((item) => (
@@ -936,23 +957,6 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
                     </div>
                   ))}
                 </div>
-              ) : null}
-              {activeRequest ? (
-                <form onSubmit={submitTimelineComment} className="mt-5 rounded-2xl border border-slate-200 bg-white p-3">
-                  <label className="text-xs font-black uppercase tracking-[0.14em] text-slate-500" htmlFor="upgrade-request-comment">Add comment</label>
-                  <textarea
-                    id="upgrade-request-comment"
-                    value={requestComment}
-                    onChange={(event) => setRequestComment(event.target.value)}
-                    rows={3}
-                    maxLength={1200}
-                    className="mt-2 w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold outline-none focus:border-violet-400 focus:bg-white"
-                    placeholder="Write any extra detail for Nexora review..."
-                  />
-                  <button type="submit" disabled={commentSaving || !requestComment.trim()} className="mt-3 rounded-2xl bg-violet-600 px-4 py-2 text-xs font-black text-white disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500">
-                    {commentSaving ? 'Adding...' : 'Add Comment'}
-                  </button>
-                </form>
               ) : null}
             </Panel>
 

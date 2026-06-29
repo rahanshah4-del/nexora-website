@@ -42,17 +42,17 @@ export default function TicketDrawer({ open, ticket, onClose, onSave, onAddComme
           aria-modal="true"
         >
           <motion.div
-            initial={{ x: 30, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: 30, opacity: 0 }}
+            initial={{ y: 16, opacity: 0, scale: 0.98 }}
+            animate={{ y: 0, opacity: 1, scale: 1 }}
+            exit={{ y: 16, opacity: 0, scale: 0.98 }}
             transition={{ duration: 0.2 }}
             onClick={(e) => e.stopPropagation()}
-            className="absolute right-0 top-0 h-full w-full max-w-xl p-4"
+            className="grid min-h-full place-items-center p-3 sm:p-4"
           >
-            <Card className="h-full overflow-hidden p-0">
-              <div className="flex items-start justify-between border-b border-white/15 p-5 dark:border-white/10">
+            <Card className="relative flex max-h-[88dvh] w-full max-w-2xl flex-col overflow-hidden p-0">
+              <div className="flex items-start justify-between border-b border-white/15 p-4 dark:border-white/10">
                 <div className="min-w-0">
-                  <p className="truncate text-base font-semibold text-slate-900 dark:text-white">{draft.subject}</p>
+                  <p className="truncate text-sm font-black text-slate-900 dark:text-white sm:text-base">{draft.subject}</p>
                   <div className="mt-2 flex flex-wrap items-center gap-2">
                     <Badge variant="purple">{draft.ticketNumber}</Badge>
                     <Badge variant={statusVariant(draft.status)}>{draft.status}</Badge>
@@ -69,13 +69,13 @@ export default function TicketDrawer({ open, ticket, onClose, onSave, onAddComme
                 </button>
               </div>
 
-              <div className="h-full overflow-auto p-5 pb-28">
+              <div className="min-h-0 flex-1 overflow-auto p-4 pb-24">
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="sm:col-span-2">
+                  <div>
                     <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Customer</label>
                     <Input className="mt-1" value={draft.customerName} disabled={!canEdit} onChange={(e) => setDraft((d) => ({ ...d, customerName: e.target.value }))} />
                   </div>
-                  <div className="sm:col-span-2">
+                  <div>
                     <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Email</label>
                     <Input className="mt-1" type="email" value={draft.customerEmail} disabled={!canEdit} onChange={(e) => setDraft((d) => ({ ...d, customerEmail: e.target.value }))} />
                   </div>
@@ -113,7 +113,7 @@ export default function TicketDrawer({ open, ticket, onClose, onSave, onAddComme
                   <div className="sm:col-span-2">
                     <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Message</label>
                     <textarea
-                      className="focus-ring mt-1 h-28 w-full rounded-xl border border-white/30 bg-white/40 p-3 text-sm text-slate-900 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/40 dark:text-slate-100"
+                      className="focus-ring mt-1 h-24 w-full resize-none rounded-xl border border-white/30 bg-white/40 p-3 text-sm text-slate-900 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/40 dark:text-slate-100"
                       value={draft.message}
                       disabled={!canEdit}
                       onChange={(e) => setDraft((d) => ({ ...d, message: e.target.value }))}
@@ -143,7 +143,7 @@ export default function TicketDrawer({ open, ticket, onClose, onSave, onAddComme
                 </div>
               </div>
 
-              <div className="absolute bottom-0 left-0 right-0 border-t border-white/15 bg-white/40 p-4 backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/40">
+              <div className="absolute bottom-0 left-0 right-0 border-t border-white/15 bg-white/80 p-3 backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/80">
                 <div className="flex flex-wrap items-center gap-2">
                   {canEdit ? (
                     <Button className="rounded-2xl" type="button" onClick={() => onSave?.(draft)}>

@@ -139,6 +139,7 @@ export default function AdminBusinessServices() {
   }
 
   const updateStatus = async (request, status) => {
+    if (!window.confirm(`Warning: this will change the service request status to ${status}. Continue?`)) return
     setError('')
     try {
       const remark = remarkDrafts[request.id] || ''

@@ -111,13 +111,14 @@ export function calculateInvoiceTotals(input = {}) {
 }
 
 export function getInvoiceStatus(invoice = {}) {
-  const status = statusValue(invoice.status, '')
-  const paymentStatus = statusValue(invoice.paymentStatus, '')
-  const total = toNumber(invoice.total ?? invoice.totalUsd, 0)
-  const amountPaid = toNumber(invoice.amountPaid ?? invoice.partialPaidAmount, 0)
+  const safe = invoice || {}
+  const status = statusValue(safe.status, '')
+  const paymentStatus = statusValue(safe.paymentStatus, '')
+  const total = toNumber(safe.total ?? safe.totalUsd, 0)
+  const amountPaid = toNumber(safe.amountPaid ?? safe.partialPaidAmount, 0)
   const balanceDue = calculateBalanceDue(total, amountPaid)
-  const dueDate = invoice.dueDate ? new Date(invoice.dueDate) : null
-  const approvalStatus = statusValue(invoice.approvalStatus, '')
+  const dueDate = safe.dueDate ? new Date(safe.dueDate) : null
+  const approvalStatus = statusValue(safe.approvalStatus, '')
 
   if (rejectedStatuses.has(status) || rejectedStatuses.has(paymentStatus) || rejectedStatuses.has(approvalStatus)) return 'rejected'
   if (paidStatuses.has(status) || paidStatuses.has(paymentStatus) || (total > 0 && balanceDue <= 0)) return 'paid'
@@ -131,24 +132,27 @@ export function getInvoiceStatus(invoice = {}) {
 }
 
 export function isPaidRecord(record = {}) {
-  const status = statusValue(record.paymentStatus || record.status, '')
-  const approvalStatus = statusValue(record.approvalStatus, '')
-  if (isRejectedRecord(record)) return false
+  const safe = record || {}
+  const status = statusValue(safe.paymentStatus || safe.status, '')
+  const approvalStatus = statusValue(safe.approvalStatus, '')
+  if (isRejectedRecord(safe)) return false
   return paidStatuses.has(status) || approvedStatuses.has(status) || approvedStatuses.has(approvalStatus)
 }
 
 export function isRejectedRecord(record = {}) {
-  return [record.status, record.paymentStatus, record.approvalStatus]
+  const safe = record || {}
+  return [safe.status, safe.paymentStatus, safe.approvalStatus]
     .map((value) => statusValue(value, ''))
     .some((status) => rejectedStatuses.has(status))
 }
 
 export function transactionStatusValue(transaction = {}) {
-  return statusValue(transaction.approvalStatus || transaction.status, 'pending')
+  const safe = transaction || {}
+  return statusValue(safe.approvalStatus || safe.status, 'pending')
 }
 
 export function transactionTypeValue(transaction = {}) {
-  return statusValue(transaction.type, 'adjustment')
+  return statusValue(transaction?.type, 'adjustment')
 }
 
 export function isApprovedTransaction(transaction = {}) {
@@ -156,18 +160,21 @@ export function isApprovedTransaction(transaction = {}) {
 }
 
 export function transactionAmount(transaction = {}) {
-  return Math.max(toNumber(transaction.amount ?? transaction.amountPaid ?? transaction.total, 0), 0)
+  const safe = transaction || {}
+  return Math.max(toNumber(safe.amount ?? safe.amountPaid ?? safe.total, 0), 0)
 }
 
 export function isApprovedExpense(expense = {}) {
-  const approvalStatus = statusValue(expense.approvalStatus, '')
-  const status = statusValue(expense.status, '')
-  return !isRejectedRecord(expense) && (approvedStatuses.has(approvalStatus) || approvedStatuses.has(status))
+  const safe = expense || {}
+  const approvalStatus = statusValue(safe.approvalStatus, '')
+  const status = statusValue(safe.status, '')
+  return !isRejectedRecord(safe) && (approvedStatuses.has(approvalStatus) || approvedStatuses.has(status))
 }
 
 export function amountValue(record = {}) {
-  const value = record.amount ?? record.amountPaid ?? record.total ?? record.totalUsd ?? record.planPrice ?? record.value
-  if (value === undefined || value === null || value === '') warnInvalidData('Record amount is missing.', record)
+  const safe = record || {}
+  const value = safe.amount ?? safe.amountPaid ?? safe.total ?? safe.totalUsd ?? safe.planPrice ?? safe.value
+  if (value === undefined || value === null || value === '') warnInvalidData('Record amount is missing.', safe)
   return Math.max(toNumber(value, 0), 0)
 }
 

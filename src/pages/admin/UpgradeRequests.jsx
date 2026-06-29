@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { addDoc, collection, doc, limit, onSnapshot, orderBy, query, serverTimestamp, updateDoc, writeBatch } from 'firebase/firestore'
+import { addDoc, collection, doc, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc, writeBatch } from 'firebase/firestore'
 import { db } from '../../lib/firebase.js'
 import useAuth from '../../context/useAuth.js'
 import { clientSafeMessage } from '../../lib/errorHandler.js'
@@ -8,13 +8,14 @@ import { buildApprovedSubscriptionPayload } from '../../lib/subscriptionApproval
 import { listWorkerUpgradeRequests, updateWorkerUpgradeRequestStatus } from '../../lib/upgradeWorker.js'
 
 function StatusPill({ value }) {
+  const normalized = String(value || 'pending').toLowerCase()
   const style =
-    value === 'approved'
+    normalized === 'approved'
       ? 'border-emerald-400/30 bg-emerald-500/10 text-emerald-200'
-      : value === 'rejected'
+      : normalized === 'rejected'
         ? 'border-rose-400/30 bg-rose-500/10 text-rose-200'
         : 'border-white/10 bg-white/5 text-slate-200/80'
-  return <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${style}`}>{value}</span>
+  return <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${style}`}>{normalized}</span>
 }
 
 function proofUrl(item = {}) {
@@ -34,6 +35,52 @@ function dateMs(value) {
   return Number.isFinite(parsed) ? parsed : 0
 }
 
+function cleanId(value) {
+  return String(value || '').trim()
+}
+
+function requestIdentity(item = {}) {
+  const screenshotKey = cleanId(item.screenshotKey || item.paymentProofKey || item.screenshot_key)
+  if (screenshotKey) return `proof:${screenshotKey}`
+  const transactionId = cleanId(item.transactionId || item.txnId || item.referenceNumber)
+  if (transactionId) return `txn:${transactionId.toLowerCase()}`
+  const directId = cleanId(item.id || item.requestId || item.request_id)
+  if (directId) return `id:${directId}`
+  return [
+    cleanId(item.userId || item.uid || item.email).toLowerCase(),
+    cleanId(item.requestedPlan || item.selectedPlan || item.plan).toLowerCase(),
+    cleanId(item.amount || item.amountPaid || item.planPrice),
+    cleanId(item.createdAt || item.requestedAt || item.created_at),
+  ].filter(Boolean).join('|') || 'row:unknown'
+}
+
+function requestDisplayId(item = {}) {
+  return cleanId(item.id || item.requestId || item.request_id || item.transactionId || item.txnId || item.referenceNumber) || '-'
+}
+
+function confirmUpgradeAction(status) {
+  const normalized = String(status || '').replace(/_/g, ' ')
+  if (status === 'approved') return window.confirm('Warning: this will approve the upgrade and update the client subscription. Continue?')
+  if (status === 'rejected') return window.confirm('Warning: this will reject the upgrade request. Continue?')
+  if (status === 'under_review') return window.confirm('Warning: this will mark the request as under Nexora review. Continue?')
+  return window.confirm(`Warning: this will change the request status to ${normalized}. Continue?`)
+}
+
+function isFinalUpgradeStatus(item = {}) {
+  const status = String(item?.approvalStatus || item?.status || item?.paymentStatus || '').toLowerCase()
+  return ['approved', 'paid', 'active', 'completed', 'rejected', 'declined', 'failed', 'closed'].includes(status)
+}
+
+function mirrorableUpgradeRequest(item = {}, update = {}) {
+  const { ref, _store, ...base } = item
+  return {
+    ...base,
+    ...update,
+    id: item.id,
+    source: item.source || 'cloudflare-d1',
+  }
+}
+
 export default function UpgradeRequests() {
   const { user } = useAuth()
   const backendAdminAllowed = isBackendAdminEmail(user?.email)
@@ -47,6 +94,7 @@ export default function UpgradeRequests() {
   const [workerError, setWorkerError] = useState('')
   const [updatingId, setUpdatingId] = useState('')
   const [remarkDrafts, setRemarkDrafts] = useState({})
+  const [rejectingId, setRejectingId] = useState('')
 
   useEffect(() => {
     if (!firebaseEnabled) return undefined
@@ -97,13 +145,14 @@ export default function UpgradeRequests() {
   const allItems = useMemo(() => {
     const byId = new Map()
     ;[...workerItems, ...items].forEach((row) => {
-      if (!row?.id) return
-      const existing = byId.get(row.id)
+      if (!row) return
+      const key = requestIdentity(row)
+      const existing = byId.get(key)
       if (!existing) {
-        byId.set(row.id, row)
+        byId.set(key, row)
         return
       }
-      byId.set(row.id, row._store === 'firestore' ? { ...existing, ...row } : { ...row, ...existing })
+      byId.set(key, row._store === 'firestore' ? { ...existing, ...row } : { ...row, ...existing })
     })
     return [...byId.values()]
       .sort((a, b) => dateMs(b.createdAt || b.updatedAt) - dateMs(a.createdAt || a.updatedAt))
@@ -111,8 +160,8 @@ export default function UpgradeRequests() {
 
   const stats = useMemo(() => {
     const total = allItems.length
-    const pending = allItems.filter((x) => x.approvalStatus === 'pending').length
-    const approved = allItems.filter((x) => x.approvalStatus === 'approved').length
+    const pending = allItems.filter((x) => x?.approvalStatus === 'pending' || x?.status === 'pending').length
+    const approved = allItems.filter((x) => x?.approvalStatus === 'approved' || x?.status === 'approved').length
     return { total, pending, approved }
   }, [allItems])
 
@@ -127,6 +176,7 @@ export default function UpgradeRequests() {
 
   const updateApproval = async (item, approvalStatus) => {
     if (!db) return
+    if (!confirmUpgradeAction(approvalStatus)) return
     if (!backendAdminAllowed) {
       setError('Backend admin access required.')
       return
@@ -142,6 +192,27 @@ export default function UpgradeRequests() {
         if (isWorkerRequest) {
           const result = await updateWorkerUpgradeRequestStatus(idToken, id, approvalStatus)
           setWorkerItems((current) => current.map((row) => (row.id === id ? result.request || { ...row, approvalStatus, status: approvalStatus } : row)))
+          const workerUpdate = {
+            status: approvalStatus,
+            approvalStatus,
+            paymentStatus: approvalStatus === 'rejected' ? 'rejected' : item.paymentStatus || 'pending',
+            ...(remark ? { adminRemark: remark, latestAdminRemark: remark } : {}),
+            ...(approvalStatus === 'under_review' ? { reviewOpenedBy: user?.email || '', reviewOpenedAt: serverTimestamp() } : {}),
+            ...(approvalStatus === 'rejected' ? { rejectedBy: user?.email || '', rejectedAt: serverTimestamp() } : {}),
+            updatedAt: serverTimestamp(),
+          }
+          await setDoc(doc(db, 'upgradeRequests', id), mirrorableUpgradeRequest(item, workerUpdate), { merge: true })
+          await addTimelineEntry(id, {
+            type: approvalStatus === 'rejected' ? 'rejected' : approvalStatus === 'under_review' ? 'review' : 'status',
+            status: approvalStatus,
+            title: approvalStatus === 'rejected' ? 'Request rejected' : approvalStatus === 'under_review' ? 'Nexora review started' : 'Status updated',
+            message: remark || (approvalStatus === 'rejected'
+              ? 'Nexora reviewed your payment proof and rejected this upgrade request.'
+              : approvalStatus === 'under_review'
+                ? 'Nexora team has opened your request for review.'
+                : `Request status changed to ${approvalStatus}.`),
+          })
+          setRejectingId('')
           return
         }
         await updateDoc(doc(db, 'upgradeRequests', id), {
@@ -164,6 +235,7 @@ export default function UpgradeRequests() {
               : `Request status changed to ${approvalStatus}.`),
         })
         setRemarkDrafts((current) => ({ ...current, [id]: '' }))
+        setRejectingId('')
         return
       }
 
@@ -238,15 +310,16 @@ export default function UpgradeRequests() {
       if (isWorkerRequest) {
         const result = await updateWorkerUpgradeRequestStatus(idToken, id, 'approved')
         setWorkerItems((current) => current.map((row) => (row.id === id ? result.request || { ...row, ...requestUpdate } : row)))
-      } else {
-        await addTimelineEntry(id, {
-          type: 'approved',
-          status: 'approved',
-          title: 'Request approved',
-          message: remark || 'Your upgrade request has been approved. Your workspace plan has been updated.',
-        })
+        await setDoc(doc(db, 'upgradeRequests', id), mirrorableUpgradeRequest(item, requestUpdate), { merge: true })
       }
+      await addTimelineEntry(id, {
+        type: 'approved',
+        status: 'approved',
+        title: 'Request approved',
+        message: remark || 'Your upgrade request has been approved. Your workspace plan has been updated.',
+      })
       setRemarkDrafts((current) => ({ ...current, [id]: '' }))
+      setRejectingId('')
       setError('')
       setWorkerError('')
     } catch (error) {
@@ -296,9 +369,10 @@ export default function UpgradeRequests() {
       ) : null}
 
       <div className="overflow-x-auto rounded-2xl border border-white/10 bg-white/5">
-        <div className="min-w-[1500px]">
-        <div className="grid grid-cols-[1.15fr_0.75fr_0.7fr_1fr_0.9fr_0.9fr_0.9fr_1.05fr_0.75fr_1.55fr] gap-0 border-b border-white/10 bg-slate-950/40 px-4 py-3 text-xs font-semibold text-slate-200/90">
+        <div className="min-w-[1620px]">
+        <div className="grid grid-cols-[1.15fr_0.85fr_0.75fr_0.7fr_1fr_0.9fr_0.9fr_0.9fr_1.05fr_0.75fr_1.55fr] gap-0 border-b border-white/10 bg-slate-950/40 px-4 py-3 text-xs font-semibold text-slate-200/90">
           <div>User</div>
+          <div>Request ID</div>
           <div>Plan</div>
           <div>Amount</div>
           <div>Transaction ID</div>
@@ -316,7 +390,7 @@ export default function UpgradeRequests() {
         ) : (
           <div className="divide-y divide-white/10">
             {allItems.map((item) => (
-              <div key={`${item._store || item.source || 'firestore'}-${item.id}`} className="grid grid-cols-[1.15fr_0.75fr_0.7fr_1fr_0.9fr_0.9fr_0.9fr_1.05fr_0.75fr_1.55fr] gap-0 px-4 py-4 text-sm">
+              <div key={requestIdentity(item)} className="grid grid-cols-[1.15fr_0.85fr_0.75fr_0.7fr_1fr_0.9fr_0.9fr_0.9fr_1.05fr_0.75fr_1.55fr] gap-0 px-4 py-4 text-sm">
                 <div className="min-w-0">
                   <p className="truncate font-semibold text-white">{item.email || item.userName || item.userId || 'Unknown'}</p>
                   <div className="mt-1 flex flex-wrap gap-2 text-xs text-slate-300">
@@ -335,6 +409,7 @@ export default function UpgradeRequests() {
                     ) : null}
                   </div>
                 </div>
+                <div className="font-mono text-xs text-cyan-100">{requestDisplayId(item)}</div>
                 <div className="text-slate-200/90">{item.requestedPlan || item.selectedPlan || item.plan || '-'}</div>
                 <div className="text-slate-200/90">{amountLabel(item)}</div>
                 <div className="font-mono text-xs text-slate-200/90">{item.transactionId || item.txnId || '-'}</div>
@@ -345,51 +420,67 @@ export default function UpgradeRequests() {
                   {proofUrl(item) ? <a className="font-semibold text-slate-100 hover:underline" href={proofUrl(item)} target="_blank" rel="noreferrer">View Screenshot</a> : 'No Screenshot Uploaded'}
                 </div>
                 <div>
-                  <StatusPill value={item.approvalStatus || 'pending'} />
+                  <StatusPill value={item?.approvalStatus || item?.status || 'pending'} />
                 </div>
                 <div className="flex flex-col items-stretch gap-2">
-                  <textarea
-                    value={remarkDrafts[item.id] || ''}
-                    onChange={(event) => setRemarkDrafts((current) => ({ ...current, [item.id]: event.target.value }))}
-                    rows={2}
-                    maxLength={1200}
-                    placeholder="Comment / remark for client timeline"
-                    className="w-full resize-none rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-xs font-semibold text-white outline-none placeholder:text-slate-400 focus:border-violet-300"
-                  />
-                  <div className="flex flex-wrap items-center justify-end gap-2">
-                    <button
-                      type="button"
-                      disabled={updatingId === item.id}
-                      onClick={() => updateApproval(item, 'under_review')}
-                      className="rounded-full bg-sky-600/20 px-3 py-1.5 text-xs font-semibold text-sky-100 hover:bg-sky-600/30 disabled:opacity-50"
-                    >
-                      Open Review
-                    </button>
-                    <button
-                      type="button"
-                      disabled={updatingId === item.id}
-                      onClick={() => updateApproval(item, 'approved')}
-                      className="rounded-full bg-emerald-600/20 px-3 py-1.5 text-xs font-semibold text-emerald-100 hover:bg-emerald-600/30 disabled:opacity-50"
-                    >
-                      Approve
-                    </button>
-                    <button
-                      type="button"
-                      disabled={updatingId === item.id}
-                      onClick={() => updateApproval(item, 'rejected')}
-                      className="rounded-full bg-rose-600/20 px-3 py-1.5 text-xs font-semibold text-rose-100 hover:bg-rose-600/30 disabled:opacity-50"
-                    >
-                      Reject
-                    </button>
-                    <button
-                      type="button"
-                      disabled={updatingId === item.id}
-                      onClick={() => updateApproval(item, 'pending')}
-                      className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/15 disabled:opacity-50"
-                    >
-                      Pending
-                    </button>
-                  </div>
+                  {isFinalUpgradeStatus(item) ? (
+                    <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-right text-xs font-semibold text-slate-300">
+                      Request already {String(item?.approvalStatus || item?.status || 'completed').replace(/_/g, ' ')}. Actions locked.
+                    </div>
+                  ) : (
+                    <>
+                      {rejectingId === item.id ? (
+                        <div className="rounded-xl border border-rose-400/20 bg-rose-500/10 p-2">
+                          <label className="text-[11px] font-black uppercase tracking-[0.12em] text-rose-100">Reject reason</label>
+                          <textarea
+                            value={remarkDrafts[item.id] || ''}
+                            onChange={(event) => setRemarkDrafts((current) => ({ ...current, [item.id]: event.target.value }))}
+                            rows={3}
+                            maxLength={1200}
+                            placeholder="Write why this upgrade request is being rejected..."
+                            className="mt-2 w-full resize-none rounded-xl border border-rose-300/20 bg-slate-950/40 px-3 py-2 text-xs font-semibold text-white outline-none placeholder:text-slate-400 focus:border-rose-200"
+                          />
+                          <div className="mt-2 flex justify-end gap-2">
+                            <button type="button" onClick={() => setRejectingId('')} className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/15">Cancel</button>
+                            <button
+                              type="button"
+                              disabled={updatingId === item.id || !String(remarkDrafts[item.id] || '').trim()}
+                              onClick={() => updateApproval(item, 'rejected')}
+                              className="rounded-full bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-500 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              Confirm Reject
+                            </button>
+                          </div>
+                        </div>
+                      ) : null}
+                      <div className="flex flex-wrap items-center justify-end gap-2">
+                        <button
+                          type="button"
+                          disabled={updatingId === item.id}
+                          onClick={() => updateApproval(item, 'under_review')}
+                          className="rounded-full bg-sky-600/20 px-3 py-1.5 text-xs font-semibold text-sky-100 hover:bg-sky-600/30 disabled:opacity-50"
+                        >
+                          Open Review
+                        </button>
+                        <button
+                          type="button"
+                          disabled={updatingId === item.id}
+                          onClick={() => updateApproval(item, 'approved')}
+                          className="rounded-full bg-emerald-600/20 px-3 py-1.5 text-xs font-semibold text-emerald-100 hover:bg-emerald-600/30 disabled:opacity-50"
+                        >
+                          Approve
+                        </button>
+                        <button
+                          type="button"
+                          disabled={updatingId === item.id}
+                          onClick={() => setRejectingId(item.id)}
+                          className="rounded-full bg-rose-600/20 px-3 py-1.5 text-xs font-semibold text-rose-100 hover:bg-rose-600/30 disabled:opacity-50"
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             ))}

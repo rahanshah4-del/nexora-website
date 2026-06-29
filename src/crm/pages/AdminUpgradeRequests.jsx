@@ -122,7 +122,7 @@ export default function AdminUpgradeRequestsPage() {
     const unsub = onSnapshot(
       q,
       (snap) => {
-        setRows(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
+        setRows(snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter(Boolean))
         setLoading(false)
       },
       () => setRows([]),
@@ -167,16 +167,18 @@ export default function AdminUpgradeRequestsPage() {
         key: 'approvalStatus',
         header: 'Approval',
         cell: (r) => {
-          const v = r.approvalStatus === 'approved' ? 'success' : r.approvalStatus === 'rejected' ? 'danger' : 'warning'
-          return <Badge variant={v}>{r.approvalStatus}</Badge>
+          const approvalStatus = r?.approvalStatus || r?.status || 'pending'
+          const v = approvalStatus === 'approved' ? 'success' : approvalStatus === 'rejected' ? 'danger' : 'warning'
+          return <Badge variant={v}>{approvalStatus}</Badge>
         },
       },
       {
         key: 'paymentStatus',
         header: 'Payment',
         cell: (r) => {
-          const v = r.paymentStatus === 'paid' ? 'success' : r.paymentStatus === 'rejected' ? 'danger' : 'warning'
-          return <Badge variant={v}>{r.paymentStatus}</Badge>
+          const paymentStatus = r?.paymentStatus || r?.status || 'pending'
+          const v = paymentStatus === 'paid' ? 'success' : paymentStatus === 'rejected' ? 'danger' : 'warning'
+          return <Badge variant={v}>{paymentStatus}</Badge>
         },
       },
       { key: 'createdAt', header: 'Created Date', cell: (r) => <span className="text-xs">{formatCreatedDate(r.createdAt)}</span> },
@@ -188,7 +190,7 @@ export default function AdminUpgradeRequestsPage() {
             <Button
               className="rounded-xl px-3 py-2 text-xs"
               onClick={() => setConfirm({ open: true, action: 'approve', row: r })}
-              disabled={busyId === r.id || r.approvalStatus !== 'pending'}
+              disabled={busyId === r?.id || (r?.approvalStatus || r?.status || 'pending') !== 'pending'}
               type="button"
             >
               Approve
@@ -197,7 +199,7 @@ export default function AdminUpgradeRequestsPage() {
               variant="subtle"
               className="rounded-xl px-3 py-2 text-xs"
               onClick={() => setConfirm({ open: true, action: 'reject', row: r })}
-              disabled={busyId === r.id || r.approvalStatus !== 'pending'}
+              disabled={busyId === r?.id || (r?.approvalStatus || r?.status || 'pending') !== 'pending'}
               type="button"
             >
               Reject
@@ -283,6 +285,7 @@ export default function AdminUpgradeRequestsPage() {
           currency: r.currency || 'PKR',
           billingCycle: r.billingCycle || '',
           workspaceName: r.workspaceName || '',
+          transactionId: r.transactionId || r.paymentId || r.nowPaymentsPaymentId || r.id || '',
         })
         const sent = await sendWorkerEmail({ to, ...template })
         setToast(sent.ok
