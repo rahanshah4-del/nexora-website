@@ -9,9 +9,9 @@ import {
 } from '../lib/businessServices.js'
 import {
   addBusinessServiceRequestComment,
+  getBusinessServicesOnce,
   listenBusinessServiceRequestComments,
   listenBusinessServiceRequestTimeline,
-  listenBusinessServices,
   listenMyBusinessServiceRequests,
   submitBusinessServiceRequest,
 } from '../lib/businessServicesApi.js'
@@ -34,6 +34,29 @@ const publicHighlights = [
 ]
 
 const publicProcess = ['Request', 'Nexora Review', 'Proposal', 'Activation']
+const SERVICES_CACHE_KEY = 'nexora-business-services-cache-v1'
+const SERVICES_CACHE_TTL_MS = 10 * 60 * 1000
+
+function readServicesCache() {
+  if (typeof window === 'undefined') return null
+  try {
+    const cached = JSON.parse(window.sessionStorage.getItem(SERVICES_CACHE_KEY) || 'null')
+    if (!cached?.at || !Array.isArray(cached?.rows)) return null
+    if (Date.now() - cached.at > SERVICES_CACHE_TTL_MS) return null
+    return cached.rows
+  } catch {
+    return null
+  }
+}
+
+function writeServicesCache(rows) {
+  if (typeof window === 'undefined') return
+  try {
+    window.sessionStorage.setItem(SERVICES_CACHE_KEY, JSON.stringify({ at: Date.now(), rows }))
+  } catch {
+    // Ignore storage pressure; default services still render.
+  }
+}
 
 function Field({ label, children }) {
   return (
@@ -64,7 +87,21 @@ export default function BusinessServicesSection({ compact = false, variant = com
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
 
-  useEffect(() => listenBusinessServices({}, setServices, () => {}), [])
+  useEffect(() => {
+    let cancelled = false
+    const cached = readServicesCache()
+    if (cached) setServices(cached)
+    getBusinessServicesOnce({})
+      .then((rows) => {
+        if (cancelled) return
+        setServices(rows)
+        writeServicesCache(rows)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   useEffect(() => {
     if (!auth?.currentUser) return undefined

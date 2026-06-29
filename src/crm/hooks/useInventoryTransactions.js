@@ -66,6 +66,7 @@ function normalizeTransaction(txn) {
 export function useInventoryTransactions(options = {}) {
   const { userId, workspaceId, businessType, userDoc, firebaseUser } = useUser()
   const enabled = options.enabled !== false
+  const limitCount = Number.isFinite(Number(options.limitCount)) && Number(options.limitCount) > 0 ? Math.floor(Number(options.limitCount)) : null
   const [transactions, setTransactions] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -105,11 +106,11 @@ export function useInventoryTransactions(options = {}) {
         setTransactions([])
         setLoading(false)
       },
-      { businessType },
+      { businessType, orderByField: limitCount ? 'createdAt' : '', orderDirection: 'desc', limitCount },
     )
 
     return () => unsub?.()
-  }, [businessType, enabled, workspaceId])
+  }, [businessType, enabled, limitCount, workspaceId])
 
   return useMemo(
     () => ({

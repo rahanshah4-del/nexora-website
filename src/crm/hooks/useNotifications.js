@@ -73,7 +73,7 @@ export function useNotifications() {
     const ref = collectionRef(workspaceCollectionPath(workspaceId, 'notifications'))
     // Avoid composite index requirement: do not combine `where + orderBy`.
     // Sort client-side by `createdAt` desc.
-    const q = query(ref, where('userId', '==', userId), limit(50))
+    const q = query(ref, where('userId', '==', userId), limit(20))
 
     const unsub = onSnapshot(
       q,

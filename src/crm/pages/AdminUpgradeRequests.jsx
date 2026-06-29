@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import {
+  addDoc,
   collection,
   doc,
   limit,
@@ -264,6 +265,15 @@ export default function AdminUpgradeRequestsPage() {
       )
 
       await batch.commit()
+      await addDoc(collection(db, 'upgradeRequests', r.id, 'timeline'), {
+        type: 'approved',
+        status: 'approved',
+        title: 'Request approved',
+        message: 'Your upgrade request has been approved. Your workspace plan has been updated.',
+        actor: 'admin',
+        actorName: firebaseUser?.email || 'Nexora Team',
+        createdAt: serverTimestamp(),
+      })
       const to = r.clientEmail || r.email || r.ownerEmail || r.userEmail || ''
       if (to) {
         const template = upgradeApprovedEmail({
@@ -298,6 +308,15 @@ export default function AdminUpgradeRequestsPage() {
         rejectedAt: serverTimestamp(),
       })
       await batch.commit()
+      await addDoc(collection(db, 'upgradeRequests', r.id, 'timeline'), {
+        type: 'rejected',
+        status: 'rejected',
+        title: 'Request rejected',
+        message: r.rejectionReason || r.reason || 'Nexora reviewed your payment proof and rejected this upgrade request.',
+        actor: 'admin',
+        actorName: firebaseUser?.email || 'Nexora Team',
+        createdAt: serverTimestamp(),
+      })
       const to = r.clientEmail || r.email || r.ownerEmail || r.userEmail || ''
       if (to) {
         const template = upgradeRejectedEmail({

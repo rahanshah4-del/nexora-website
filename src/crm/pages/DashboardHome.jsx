@@ -720,8 +720,8 @@ export default function DashboardHomePage() {
   const propertyLoading = isProperty && (maintenanceApi.loading || contractsApi.loading)
   const showSalesPipeline = isSalesHub
   const showSupportMetrics = isSalesHub
-  const retailProductsApi = useProducts({ enabled: isRetail })
-  const retailTransactionsApi = useInventoryTransactions({ enabled: isRetail })
+  const retailProductsApi = useProducts({ enabled: isRetail, limitCount: DASHBOARD_RECENT_LIMIT })
+  const retailTransactionsApi = useInventoryTransactions({ enabled: isRetail, limitCount: DASHBOARD_RECENT_LIMIT })
   const retailInventoryStats = useInventoryStats(retailProductsApi.products, retailTransactionsApi.transactions)
   const retailLoading = isRetail && (retailProductsApi.loading || retailTransactionsApi.loading)
   const salesDealsApi = useSalesHubCollection('salesDeals', { enabled: isSalesHub })

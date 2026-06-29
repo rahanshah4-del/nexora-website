@@ -824,7 +824,7 @@ export default function ControlCentre() {
   }, [activeTab])
 
   useEffect(() => {
-    if (!db || !backendAdminAllowed) {
+    if (!db || !backendAdminAllowed || !notificationsOpen) {
       Promise.resolve().then(() => setBackendNotificationStates({}))
       return undefined
     }
@@ -847,7 +847,7 @@ export default function ControlCentre() {
         setBackendNotificationStates({})
       },
     )
-  }, [backendAdminAllowed])
+  }, [backendAdminAllowed, notificationsOpen])
 
   const liveUsers = useMemo(() => mergePresence(data.users, data.clientSessions, data.userPresence), [data.users, data.clientSessions, data.userPresence])
   const onlineUsers = useMemo(() => liveUsers.filter((row) => isOnline(row, liveNow)), [liveNow, liveUsers])

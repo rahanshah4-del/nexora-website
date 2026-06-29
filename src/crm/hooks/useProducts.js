@@ -63,6 +63,7 @@ function sanitizeProduct(payload) {
 export function useProducts(options = {}) {
   const { userId, workspaceId, businessType, userDoc, firebaseUser } = useUser()
   const enabled = options.enabled !== false
+  const limitCount = Number.isFinite(Number(options.limitCount)) && Number(options.limitCount) > 0 ? Math.floor(Number(options.limitCount)) : null
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
   const [source, setSource] = useState(db ? 'firestore' : 'none')
@@ -116,11 +117,11 @@ export function useProducts(options = {}) {
         setProducts([])
         setLoading(false)
       },
-      { businessType },
+      { businessType, orderByField: limitCount ? 'createdAt' : '', orderDirection: 'desc', limitCount },
     )
 
     return () => unsub?.()
-  }, [businessType, enabled, workspaceId])
+  }, [businessType, enabled, limitCount, workspaceId])
 
   return useMemo(
     () => ({

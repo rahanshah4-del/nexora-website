@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { collection, doc, limit, onSnapshot, orderBy, query, serverTimestamp, updateDoc, writeBatch } from 'firebase/firestore'
+import { addDoc, collection, doc, limit, onSnapshot, orderBy, query, serverTimestamp, updateDoc, writeBatch } from 'firebase/firestore'
 import { db } from '../../lib/firebase.js'
 import useAuth from '../../context/useAuth.js'
 import { clientSafeMessage } from '../../lib/errorHandler.js'
@@ -27,6 +27,13 @@ function amountLabel(item = {}) {
   return amount > 0 ? `${currency} ${amount.toLocaleString('en-US')}` : '-'
 }
 
+function dateMs(value) {
+  if (!value) return 0
+  if (typeof value?.toDate === 'function') return value.toDate().getTime()
+  const parsed = new Date(value).getTime()
+  return Number.isFinite(parsed) ? parsed : 0
+}
+
 export default function UpgradeRequests() {
   const { user } = useAuth()
   const backendAdminAllowed = isBackendAdminEmail(user?.email)
@@ -39,6 +46,7 @@ export default function UpgradeRequests() {
   const [error, setError] = useState('')
   const [workerError, setWorkerError] = useState('')
   const [updatingId, setUpdatingId] = useState('')
+  const [remarkDrafts, setRemarkDrafts] = useState({})
 
   useEffect(() => {
     if (!firebaseEnabled) return undefined
@@ -47,7 +55,7 @@ export default function UpgradeRequests() {
     const unsubscribe = onSnapshot(
       q,
       (snap) => {
-        setItems(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
+        setItems(snap.docs.map((d) => ({ id: d.id, ...d.data(), _store: 'firestore' })))
         setLoading(false)
       },
       (e) => {
@@ -69,7 +77,7 @@ export default function UpgradeRequests() {
       try {
         const idToken = await user.getIdToken()
         const rows = await listWorkerUpgradeRequests(idToken, 100)
-        if (!cancelled) setWorkerItems(rows)
+        if (!cancelled) setWorkerItems(rows.map((row) => ({ ...row, _store: 'worker' })))
       } catch (e) {
         if (!cancelled) setWorkerError(clientSafeMessage(e, 'Failed to load Worker upgrade requests.', { context: 'Worker upgrade requests load' }))
       } finally {
@@ -86,11 +94,20 @@ export default function UpgradeRequests() {
     }
   }, [backendAdminAllowed, user])
 
-  const allItems = useMemo(
-    () => [...workerItems, ...items]
-      .sort((a, b) => new Date(b.createdAt || b.updatedAt || 0).getTime() - new Date(a.createdAt || a.updatedAt || 0).getTime()),
-    [items, workerItems],
-  )
+  const allItems = useMemo(() => {
+    const byId = new Map()
+    ;[...workerItems, ...items].forEach((row) => {
+      if (!row?.id) return
+      const existing = byId.get(row.id)
+      if (!existing) {
+        byId.set(row.id, row)
+        return
+      }
+      byId.set(row.id, row._store === 'firestore' ? { ...existing, ...row } : { ...row, ...existing })
+    })
+    return [...byId.values()]
+      .sort((a, b) => dateMs(b.createdAt || b.updatedAt) - dateMs(a.createdAt || a.updatedAt))
+  }, [items, workerItems])
 
   const stats = useMemo(() => {
     const total = allItems.length
@@ -98,6 +115,15 @@ export default function UpgradeRequests() {
     const approved = allItems.filter((x) => x.approvalStatus === 'approved').length
     return { total, pending, approved }
   }, [allItems])
+
+  async function addTimelineEntry(requestId, entry) {
+    await addDoc(collection(db, 'upgradeRequests', requestId, 'timeline'), {
+      ...entry,
+      actor: 'admin',
+      actorName: user?.email || 'Nexora Team',
+      createdAt: serverTimestamp(),
+    })
+  }
 
   const updateApproval = async (item, approvalStatus) => {
     if (!db) return
@@ -107,9 +133,10 @@ export default function UpgradeRequests() {
     }
     const id = item?.id
     if (!id) return
+    const remark = String(remarkDrafts[id] || '').trim()
     setUpdatingId(id)
     try {
-      const isWorkerRequest = item.source === 'cloudflare-d1'
+      const isWorkerRequest = item._store === 'worker'
       const idToken = isWorkerRequest ? await user.getIdToken() : ''
       if (approvalStatus !== 'approved') {
         if (isWorkerRequest) {
@@ -121,8 +148,22 @@ export default function UpgradeRequests() {
           status: approvalStatus,
           approvalStatus,
           paymentStatus: approvalStatus === 'rejected' ? 'rejected' : item.paymentStatus || 'pending',
+          ...(remark ? { adminRemark: remark, latestAdminRemark: remark } : {}),
+          ...(approvalStatus === 'under_review' ? { reviewOpenedBy: user?.email || '', reviewOpenedAt: serverTimestamp() } : {}),
           ...(approvalStatus === 'rejected' ? { rejectedBy: user?.email || '', rejectedAt: serverTimestamp() } : {}),
+          updatedAt: serverTimestamp(),
         })
+        await addTimelineEntry(id, {
+          type: approvalStatus === 'rejected' ? 'rejected' : approvalStatus === 'under_review' ? 'review' : 'status',
+          status: approvalStatus,
+          title: approvalStatus === 'rejected' ? 'Request rejected' : approvalStatus === 'under_review' ? 'Nexora review started' : 'Status updated',
+          message: remark || (approvalStatus === 'rejected'
+            ? 'Nexora reviewed your payment proof and rejected this upgrade request.'
+            : approvalStatus === 'under_review'
+              ? 'Nexora team has opened your request for review.'
+              : `Request status changed to ${approvalStatus}.`),
+        })
+        setRemarkDrafts((current) => ({ ...current, [id]: '' }))
         return
       }
 
@@ -144,6 +185,7 @@ export default function UpgradeRequests() {
         status: 'approved',
         approvalStatus: 'approved',
         paymentStatus: 'paid',
+        ...(remark ? { adminRemark: remark, latestAdminRemark: remark } : {}),
         approvedBy: subscriptionPayload.approvedBy,
         approvedByEmail: subscriptionPayload.approvedByEmail,
         approvedAt: subscriptionPayload.approvedAt,
@@ -196,7 +238,15 @@ export default function UpgradeRequests() {
       if (isWorkerRequest) {
         const result = await updateWorkerUpgradeRequestStatus(idToken, id, 'approved')
         setWorkerItems((current) => current.map((row) => (row.id === id ? result.request || { ...row, ...requestUpdate } : row)))
+      } else {
+        await addTimelineEntry(id, {
+          type: 'approved',
+          status: 'approved',
+          title: 'Request approved',
+          message: remark || 'Your upgrade request has been approved. Your workspace plan has been updated.',
+        })
       }
+      setRemarkDrafts((current) => ({ ...current, [id]: '' }))
       setError('')
       setWorkerError('')
     } catch (error) {
@@ -246,8 +296,8 @@ export default function UpgradeRequests() {
       ) : null}
 
       <div className="overflow-x-auto rounded-2xl border border-white/10 bg-white/5">
-        <div className="min-w-[1260px]">
-        <div className="grid grid-cols-[1.15fr_0.75fr_0.7fr_1fr_0.9fr_0.9fr_0.9fr_1.05fr_0.75fr_1fr] gap-0 border-b border-white/10 bg-slate-950/40 px-4 py-3 text-xs font-semibold text-slate-200/90">
+        <div className="min-w-[1500px]">
+        <div className="grid grid-cols-[1.15fr_0.75fr_0.7fr_1fr_0.9fr_0.9fr_0.9fr_1.05fr_0.75fr_1.55fr] gap-0 border-b border-white/10 bg-slate-950/40 px-4 py-3 text-xs font-semibold text-slate-200/90">
           <div>User</div>
           <div>Plan</div>
           <div>Amount</div>
@@ -266,11 +316,12 @@ export default function UpgradeRequests() {
         ) : (
           <div className="divide-y divide-white/10">
             {allItems.map((item) => (
-              <div key={`${item.source || 'firestore'}-${item.id}`} className="grid grid-cols-[1.15fr_0.75fr_0.7fr_1fr_0.9fr_0.9fr_0.9fr_1.05fr_0.75fr_1fr] gap-0 px-4 py-4 text-sm">
+              <div key={`${item._store || item.source || 'firestore'}-${item.id}`} className="grid grid-cols-[1.15fr_0.75fr_0.7fr_1fr_0.9fr_0.9fr_0.9fr_1.05fr_0.75fr_1.55fr] gap-0 px-4 py-4 text-sm">
                 <div className="min-w-0">
                   <p className="truncate font-semibold text-white">{item.email || item.userName || item.userId || 'Unknown'}</p>
                   <div className="mt-1 flex flex-wrap gap-2 text-xs text-slate-300">
                     {item.source === 'cloudflare-d1' ? <span className="rounded-full border border-cyan-400/20 bg-cyan-400/10 px-2 py-0.5 font-semibold text-cyan-100">D1 + R2</span> : null}
+                    {item._store === 'firestore' ? <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2 py-0.5 font-semibold text-emerald-100">Live timeline</span> : null}
                     {item.userId ? <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5">{item.userId}</span> : null}
                     {proofUrl(item) ? (
                       <a
@@ -296,31 +347,49 @@ export default function UpgradeRequests() {
                 <div>
                   <StatusPill value={item.approvalStatus || 'pending'} />
                 </div>
-                <div className="flex items-center justify-end gap-2">
-                  <button
-                    type="button"
-                    disabled={updatingId === item.id}
-                    onClick={() => updateApproval(item, 'approved')}
-                    className="rounded-full bg-emerald-600/20 px-3 py-1.5 text-xs font-semibold text-emerald-100 hover:bg-emerald-600/30 disabled:opacity-50"
-                  >
-                    Approve
-                  </button>
-                  <button
-                    type="button"
-                    disabled={updatingId === item.id}
-                    onClick={() => updateApproval(item, 'rejected')}
-                    className="rounded-full bg-rose-600/20 px-3 py-1.5 text-xs font-semibold text-rose-100 hover:bg-rose-600/30 disabled:opacity-50"
-                  >
-                    Reject
-                  </button>
-                  <button
-                    type="button"
-                    disabled={updatingId === item.id}
-                    onClick={() => updateApproval(item, 'pending')}
-                    className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/15 disabled:opacity-50"
-                  >
-                    Pending
-                  </button>
+                <div className="flex flex-col items-stretch gap-2">
+                  <textarea
+                    value={remarkDrafts[item.id] || ''}
+                    onChange={(event) => setRemarkDrafts((current) => ({ ...current, [item.id]: event.target.value }))}
+                    rows={2}
+                    maxLength={1200}
+                    placeholder="Comment / remark for client timeline"
+                    className="w-full resize-none rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-xs font-semibold text-white outline-none placeholder:text-slate-400 focus:border-violet-300"
+                  />
+                  <div className="flex flex-wrap items-center justify-end gap-2">
+                    <button
+                      type="button"
+                      disabled={updatingId === item.id}
+                      onClick={() => updateApproval(item, 'under_review')}
+                      className="rounded-full bg-sky-600/20 px-3 py-1.5 text-xs font-semibold text-sky-100 hover:bg-sky-600/30 disabled:opacity-50"
+                    >
+                      Open Review
+                    </button>
+                    <button
+                      type="button"
+                      disabled={updatingId === item.id}
+                      onClick={() => updateApproval(item, 'approved')}
+                      className="rounded-full bg-emerald-600/20 px-3 py-1.5 text-xs font-semibold text-emerald-100 hover:bg-emerald-600/30 disabled:opacity-50"
+                    >
+                      Approve
+                    </button>
+                    <button
+                      type="button"
+                      disabled={updatingId === item.id}
+                      onClick={() => updateApproval(item, 'rejected')}
+                      className="rounded-full bg-rose-600/20 px-3 py-1.5 text-xs font-semibold text-rose-100 hover:bg-rose-600/30 disabled:opacity-50"
+                    >
+                      Reject
+                    </button>
+                    <button
+                      type="button"
+                      disabled={updatingId === item.id}
+                      onClick={() => updateApproval(item, 'pending')}
+                      className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/15 disabled:opacity-50"
+                    >
+                      Pending
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}

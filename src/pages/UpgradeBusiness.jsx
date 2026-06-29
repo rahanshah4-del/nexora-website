@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
-import { collection, doc, getDoc, onSnapshot, query } from 'firebase/firestore'
+import { addDoc, collection, doc, getDoc, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc, where } from 'firebase/firestore'
 import { onAuthStateChanged } from 'firebase/auth'
 import useNoIndex from '../hooks/useNoIndex.js'
 import { assertFirebaseReady, auth, db } from '../lib/firebase.js'
@@ -49,6 +49,42 @@ function money(value, currency = DEFAULT_SAAS_CURRENCY) {
 function positiveAmount(value) {
   const amount = Number(value)
   return Number.isFinite(amount) && amount > 0 ? amount : 0
+}
+
+function timestampMs(value) {
+  if (!value) return 0
+  if (typeof value?.toDate === 'function') return value.toDate().getTime()
+  const parsed = new Date(value).getTime()
+  return Number.isFinite(parsed) ? parsed : 0
+}
+
+function formatTimelineDate(value) {
+  const ms = timestampMs(value)
+  if (!ms) return 'Just now'
+  return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(ms))
+}
+
+function normalizeRequestStatus(row = {}) {
+  return String(row.approvalStatus || row.status || row.paymentStatus || 'pending').toLowerCase()
+}
+
+function isClosedUpgradeRequest(row = {}) {
+  return ['approved', 'rejected', 'active', 'closed', 'cancelled', 'canceled'].includes(normalizeRequestStatus(row))
+}
+
+function requestTimelineSteps(request = {}, isAutomaticCrypto = false) {
+  const status = normalizeRequestStatus(request)
+  const rejected = status === 'rejected'
+  const approved = status === 'approved' || request.paymentStatus === 'paid'
+  const reviewing = ['under_review', 'reviewing', 'in_review'].includes(status) || request.reviewOpenedAt
+  const labels = isAutomaticCrypto
+    ? ['Secure checkout', 'Blockchain payment', 'Automatic verification', 'Workspace plan activated']
+    : ['Payment submitted', 'Nexora review', rejected ? 'Rejected' : 'Approved or rejected', 'Workspace plan updated']
+  return labels.map((label, index) => {
+    const done = index === 0 || (index === 1 && (reviewing || approved || rejected)) || (index === 2 && (approved || rejected)) || (index === 3 && approved)
+    const active = (!approved && !rejected && ((index === 1 && reviewing) || (index === 0 && !reviewing))) || (index === 2 && rejected)
+    return { label, done, active, rejected: rejected && index === 2 }
+  })
 }
 
 function planSavings(plan) {
@@ -202,6 +238,10 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
   const [appliedPromo, setAppliedPromo] = useState(null)
   const [promoResult, setPromoResult] = useState(null)
   const [promoLoading, setPromoLoading] = useState(false)
+  const [activeRequest, setActiveRequest] = useState(null)
+  const [requestTimeline, setRequestTimeline] = useState([])
+  const [requestComment, setRequestComment] = useState('')
+  const [commentSaving, setCommentSaving] = useState(false)
 
   useEffect(() => {
     if (!auth) return undefined
@@ -268,6 +308,45 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
     })
   }, [user?.uid, userDoc?.workspaceId])
 
+  useEffect(() => {
+    if (!db || !user?.uid) {
+      setActiveRequest(null)
+      setRequestTimeline([])
+      return undefined
+    }
+    const q = query(collection(db, 'upgradeRequests'), where('userId', '==', user.uid))
+    return onSnapshot(
+      q,
+      (snap) => {
+        const rows = snap.docs
+          .map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }))
+          .sort((a, b) => timestampMs(b.createdAt || b.updatedAt) - timestampMs(a.createdAt || a.updatedAt))
+        const latestOpen = rows.find((row) => !isClosedUpgradeRequest(row))
+        const latest = latestOpen || rows[0] || null
+        setActiveRequest(latest)
+        if (latestOpen) setSubmitted(true)
+        if (!latestOpen) setSubmitted(false)
+      },
+      () => {
+        setActiveRequest(null)
+        setRequestTimeline([])
+      },
+    )
+  }, [user?.uid])
+
+  useEffect(() => {
+    if (!db || !activeRequest?.id) {
+      setRequestTimeline([])
+      return undefined
+    }
+    const q = query(collection(db, 'upgradeRequests', activeRequest.id, 'timeline'), orderBy('createdAt', 'asc'), limit(80))
+    return onSnapshot(
+      q,
+      (snap) => setRequestTimeline(snap.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }))),
+      () => setRequestTimeline([]),
+    )
+  }, [activeRequest?.id])
+
   const platformPlans = useMemo(() => mergePlatformPlans(planDocs), [planDocs])
   const activePlans = useMemo(() => platformPlans.filter((plan) => plan.active !== false), [platformPlans])
   const platformSettings = useMemo(() => mergePlatformSettings(settingsDocs), [settingsDocs])
@@ -289,6 +368,7 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
   const requestedPlan = selectedPlan?.name || ''
   const previewUrl = useMemo(() => (proofFile ? URL.createObjectURL(proofFile) : ''), [proofFile])
   const paidAmount = positiveAmount(form.amountPaid)
+  const hasOpenUpgradeRequest = Boolean(activeRequest && !isClosedUpgradeRequest(activeRequest))
 
   useEffect(() => {
     if (!previewUrl) return undefined
@@ -392,6 +472,7 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
     if (!businessType) return 'Business type is missing for this workspace.'
     if (!requestedPlan) return 'Plan is required.'
     if (!selectedMethod?.id) return 'Payment method is required.'
+    if (hasOpenUpgradeRequest) return 'You already have an upgrade request under review. Track the live timeline below.'
     if (isAutomaticCrypto) return ''
     if (!form.transactionId.trim()) return 'Enter the transaction ID before submitting your upgrade request.'
     if (paidAmount <= 0) return 'Enter the paid amount before submitting your upgrade request.'
@@ -406,7 +487,7 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
   }
 
   const validationError = validateUpgradeRequest()
-  const canSubmit = !submitting && !submitted && !validationError
+  const canSubmit = !submitting && !submitted && !validationError && !hasOpenUpgradeRequest
 
   async function handleCryptoCheckout() {
     setSubmitError('')
@@ -507,6 +588,33 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
       const workerResult = await submitManualUpgradeRequest({ idToken, fields: workerFields, screenshotFile: proofFile })
       const payload = workerResult.request || workerFields
       console.info('Upgrade request Worker submit completed:', { id: payload.id, source: payload.source || 'cloudflare-d1' })
+      const requestId = String(payload.id || `manual-${user.uid}-${Date.now()}`)
+      const firestoreRequest = {
+        ...workerFields,
+        ...payload,
+        id: requestId,
+        source: payload.source || 'cloudflare-d1',
+        screenshotUrl: payload.screenshotUrl || payload.paymentProof || '',
+        screenshotKey: payload.screenshotKey || payload.paymentProofKey || '',
+        paymentProof: payload.screenshotUrl || payload.paymentProof || '',
+        status: 'pending',
+        approvalStatus: 'pending',
+        paymentStatus: 'pending',
+        timelineStage: 'payment_submitted',
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      }
+      await setDoc(doc(db, 'upgradeRequests', requestId), firestoreRequest, { merge: false })
+      await addDoc(collection(db, 'upgradeRequests', requestId, 'timeline'), {
+        type: 'status',
+        status: 'pending',
+        title: 'Payment submitted',
+        message: 'Your upgrade request has been submitted. Nexora team will review the payment proof soon.',
+        actor: 'client',
+        actorName: workerFields.senderName || user.displayName || user.email || 'Client',
+        createdAt: serverTimestamp(),
+      })
+      setActiveRequest({ ...firestoreRequest, id: requestId })
       const emailTemplate = upgradeRequestReceivedEmail({
         name: workerFields.senderName || user.displayName || 'there',
         plan: requestedPlan,
@@ -541,9 +649,39 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
     }
   }
 
+  async function submitTimelineComment(event) {
+    event.preventDefault()
+    const message = requestComment.trim()
+    if (!db || !activeRequest?.id || !message) return
+    setCommentSaving(true)
+    setSubmitError('')
+    try {
+      await addDoc(collection(db, 'upgradeRequests', activeRequest.id, 'timeline'), {
+        type: 'client_comment',
+        status: normalizeRequestStatus(activeRequest),
+        title: 'Client comment',
+        message,
+        actor: 'client',
+        actorName: user?.displayName || user?.email || 'Client',
+        createdAt: serverTimestamp(),
+      })
+      setRequestComment('')
+    } catch (error) {
+      setSubmitError(clientSafeMessage(error, 'Unable to add your comment. Please try again.', { context: 'Upgrade request client comment' }))
+    } finally {
+      setCommentSaving(false)
+    }
+  }
+
   if (authReady && !user && !cameFromUpgrade) {
     return <Navigate to="/" replace state={{ from: location.pathname }} />
   }
+
+  const timelineSteps = requestTimelineSteps(activeRequest || {}, isAutomaticCrypto)
+  const latestAdminNote = [...requestTimeline]
+    .reverse()
+    .find((item) => item.actor === 'admin' && item.message)
+  const adminRemark = activeRequest?.latestAdminRemark || activeRequest?.adminRemark || activeRequest?.rejectionReason || latestAdminNote?.message || ''
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
@@ -745,7 +883,8 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
               {cryptoReturnStatus === 'processing' ? <p className="mt-4 rounded-2xl bg-emerald-50 p-3 text-sm font-bold text-emerald-700">Payment received for verification. This page updates automatically when NOWPayments marks it finished.</p> : null}
               {cryptoReturnStatus === 'cancelled' ? <p className="mt-4 rounded-2xl bg-amber-50 p-3 text-sm font-bold text-amber-700">Crypto checkout was cancelled. No plan change was made.</p> : null}
               {!submitError && validationError && !submitted ? <p className="mt-4 rounded-2xl bg-amber-50 p-3 text-sm font-bold text-amber-700">{validationError}</p> : null}
-              {submitted ? <p className="mt-4 rounded-2xl bg-emerald-50 p-3 text-sm font-bold text-emerald-700">Upgrade request submitted. Status is pending until Nexora approves payment.</p> : null}
+              {hasOpenUpgradeRequest ? <p className="mt-4 rounded-2xl bg-sky-50 p-3 text-sm font-bold text-sky-800">You already have an active upgrade request. Live status and Nexora comments are shown below.</p> : null}
+              {submitted && !hasOpenUpgradeRequest ? <p className="mt-4 rounded-2xl bg-emerald-50 p-3 text-sm font-bold text-emerald-700">Upgrade request submitted. Status is pending until Nexora approves payment.</p> : null}
               {cryptoCheckoutStarted ? <p className="mt-4 rounded-2xl bg-emerald-50 p-3 text-sm font-bold text-emerald-700">Checkout created. Your plan will activate automatically after the payment reaches finished status.</p> : null}
               {isAutomaticCrypto ? (
                 <button type="button" disabled={cryptoCheckoutLoading || Boolean(validationError)} onClick={handleCryptoCheckout} className={`mt-5 w-full rounded-2xl px-5 py-4 text-sm font-black transition ${!cryptoCheckoutLoading && !validationError ? 'bg-emerald-500 text-slate-950 hover:bg-emerald-400' : 'cursor-not-allowed bg-slate-200 text-slate-500'}`}>
@@ -753,23 +892,68 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
                 </button>
               ) : (
                 <button type="button" disabled={!canSubmit} onClick={handleSubmit} className={`mt-5 w-full rounded-2xl px-5 py-4 text-sm font-black transition ${canSubmit ? 'bg-slate-950 text-white hover:bg-violet-700' : 'cursor-not-allowed bg-slate-200 text-slate-500'}`}>
-                  {submitting ? 'Submitting...' : submitted ? 'Submitted' : validationError ? 'Complete Payment Details' : 'Submit Upgrade Request'}
+                  {submitting ? 'Submitting...' : hasOpenUpgradeRequest ? 'Request Under Review' : submitted ? 'Submitted' : validationError ? 'Complete Payment Details' : 'Submit Upgrade Request'}
                 </button>
               )}
             </Panel>
 
             <Panel>
-              <h3 className="text-lg font-black">Request status timeline</h3>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-lg font-black">Request status timeline</h3>
+                  <p className="mt-1 text-xs font-bold text-slate-500">
+                    {activeRequest ? `Request ID: ${activeRequest.id}` : 'Submit a request to start live tracking.'}
+                  </p>
+                </div>
+                {activeRequest ? <Badge tone={normalizeRequestStatus(activeRequest) === 'rejected' ? 'amber' : normalizeRequestStatus(activeRequest) === 'approved' ? 'green' : 'violet'}>{normalizeRequestStatus(activeRequest).replace(/_/g, ' ')}</Badge> : null}
+              </div>
               <div className="mt-4 space-y-4">
-                {(isAutomaticCrypto
-                  ? ['Secure checkout', 'Blockchain payment', 'Automatic verification', 'Workspace plan activated']
-                  : ['Payment submitted', 'Nexora review', 'Approved or rejected', 'Workspace plan updated']).map((item, index) => (
-                  <div key={item} className="flex gap-3">
-                    <span className={`mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-black ${index === 0 && submitted ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-600'}`}>{index + 1}</span>
-                    <p className="text-sm font-bold text-slate-600">{item}</p>
+                {timelineSteps.map((item, index) => (
+                  <div key={item.label} className="flex gap-3">
+                    <span className={`mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-black ${
+                      item.rejected ? 'bg-rose-500 text-white' : item.done ? 'bg-emerald-500 text-white' : item.active ? 'bg-violet-600 text-white' : 'bg-slate-100 text-slate-600'
+                    }`}>{item.done ? '✓' : index + 1}</span>
+                    <p className={`text-sm font-bold ${item.done || item.active ? 'text-slate-900' : 'text-slate-600'}`}>{item.label}</p>
                   </div>
                 ))}
               </div>
+              {adminRemark ? (
+                <div className="mt-5 rounded-2xl border border-violet-100 bg-violet-50 p-4">
+                  <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-700">Nexora remark</p>
+                  <p className="mt-2 text-sm font-bold leading-6 text-slate-700">{adminRemark}</p>
+                </div>
+              ) : null}
+              {requestTimeline.length ? (
+                <div className="mt-5 space-y-3">
+                  {requestTimeline.map((item) => (
+                    <div key={item.id} className="rounded-2xl border border-slate-100 bg-slate-50 p-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-500">{item.title || item.type || 'Update'}</p>
+                        <p className="text-[11px] font-bold text-slate-400">{formatTimelineDate(item.createdAt)}</p>
+                      </div>
+                      {item.message ? <p className="mt-2 text-sm font-semibold leading-6 text-slate-700">{item.message}</p> : null}
+                      {item.actorName ? <p className="mt-2 text-[11px] font-bold text-slate-400">By {item.actorName}</p> : null}
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+              {activeRequest ? (
+                <form onSubmit={submitTimelineComment} className="mt-5 rounded-2xl border border-slate-200 bg-white p-3">
+                  <label className="text-xs font-black uppercase tracking-[0.14em] text-slate-500" htmlFor="upgrade-request-comment">Add comment</label>
+                  <textarea
+                    id="upgrade-request-comment"
+                    value={requestComment}
+                    onChange={(event) => setRequestComment(event.target.value)}
+                    rows={3}
+                    maxLength={1200}
+                    className="mt-2 w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold outline-none focus:border-violet-400 focus:bg-white"
+                    placeholder="Write any extra detail for Nexora review..."
+                  />
+                  <button type="submit" disabled={commentSaving || !requestComment.trim()} className="mt-3 rounded-2xl bg-violet-600 px-4 py-2 text-xs font-black text-white disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500">
+                    {commentSaving ? 'Adding...' : 'Add Comment'}
+                  </button>
+                </form>
+              ) : null}
             </Panel>
 
             <Panel>
@@ -786,7 +970,7 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
 
       <div className="sticky bottom-0 z-30 border-t border-slate-200 bg-white/95 p-3 backdrop-blur xl:hidden">
         <button type="button" disabled={isAutomaticCrypto ? cryptoCheckoutLoading || Boolean(validationError) : !canSubmit} onClick={isAutomaticCrypto ? handleCryptoCheckout : handleSubmit} className={`w-full rounded-2xl px-5 py-4 text-sm font-black ${isAutomaticCrypto ? !cryptoCheckoutLoading && !validationError ? 'bg-emerald-500 text-slate-950' : 'bg-slate-200 text-slate-500' : canSubmit ? 'bg-slate-950 text-white' : 'bg-slate-200 text-slate-500'}`}>
-          {isAutomaticCrypto ? cryptoCheckoutLoading ? 'Opening secure checkout...' : 'Pay with Crypto' : submitting ? 'Submitting...' : submitted ? 'Submitted' : validationError ? 'Complete Payment Details' : 'Submit Upgrade Request'}
+          {isAutomaticCrypto ? cryptoCheckoutLoading ? 'Opening secure checkout...' : 'Pay with Crypto' : submitting ? 'Submitting...' : hasOpenUpgradeRequest ? 'Request Under Review' : submitted ? 'Submitted' : validationError ? 'Complete Payment Details' : 'Submit Upgrade Request'}
         </button>
       </div>
     </main>

@@ -3,6 +3,7 @@ import {
   collection,
   doc,
   getDoc,
+  getDocs,
   limit,
   onSnapshot,
   orderBy,
@@ -64,6 +65,19 @@ export function listenBusinessServices({ includeDisabled = false } = {}, onNext,
       onNext(includeDisabled ? defaultBusinessServices : defaultBusinessServices.filter((service) => service.enabled))
     },
   )
+}
+
+export async function getBusinessServicesOnce({ includeDisabled = false } = {}) {
+  if (!db) return includeDisabled ? defaultBusinessServices : defaultBusinessServices.filter((service) => service.enabled)
+  try {
+    const q = query(collection(db, BUSINESS_SERVICES_COLLECTION), orderBy('sortOrder', 'asc'), limit(50))
+    const snap = await getDocs(q)
+    const rows = snap.docs.map((item) => normalizeBusinessService({ id: item.id, ...item.data() }, item.id))
+    const next = rows.length ? sortBusinessServices(rows) : defaultBusinessServices
+    return includeDisabled ? next : next.filter((service) => service.enabled)
+  } catch {
+    return includeDisabled ? defaultBusinessServices : defaultBusinessServices.filter((service) => service.enabled)
+  }
 }
 
 export function listenBusinessServiceRequests(onNext, onError) {

@@ -991,6 +991,26 @@ service cloud.firestore {
       allow read: if backendAdmin() || paymentWorker() || (activeSignedIn() && resource.data.userId == request.auth.uid);
       allow update: if backendAdmin() || validPaymentRequestUpdate();
       allow delete: if backendAdmin();
+
+      match /timeline/{timelineId} {
+        allow read: if backendAdmin()
+          || paymentWorker()
+          || (
+            activeSignedIn()
+            && get(/databases/$(database)/documents/upgradeRequests/$(requestId)).data.userId == request.auth.uid
+          );
+        allow create: if backendAdmin()
+          || (
+            activeSignedIn()
+            && get(/databases/$(database)/documents/upgradeRequests/$(requestId)).data.userId == request.auth.uid
+            && request.resource.data.actor == 'client'
+            && request.resource.data.message is string
+            && request.resource.data.message.size() > 0
+            && request.resource.data.message.size() <= 2000
+            && request.resource.data.createdAt is timestamp
+          );
+        allow update, delete: if false;
+      }
     }
 
     match /platformSettings/{docId} {
