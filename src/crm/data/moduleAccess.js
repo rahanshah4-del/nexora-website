@@ -505,6 +505,7 @@ export function normalizeBusinessType(type) {
   if (value.includes('property') || value.includes('tenant') || value.includes('rent')) return 'Property ERP'
   if (value.includes('whatsapp')) return 'WhatsApp CRM'
   if (value.includes('restaurant') || value.includes('canteen') || value.includes('kot') || value.includes('kitchen')) return 'Restaurant POS'
+  if (value.includes('transport') || value.includes('rental') || value.includes('fleet')) return 'Transport / Rental'
   if (value.includes('retail') || value.includes('inventory') || value.includes('pharma') || value === 'pos' || value.includes('pos')) return 'Retail / POS'
   return 'General CRM'
 }

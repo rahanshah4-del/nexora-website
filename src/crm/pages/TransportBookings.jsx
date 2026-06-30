@@ -260,6 +260,10 @@ const blankForm = {
   notes: '',
 }
 
+function transportWarningMessage(action = 'continue') {
+  return `This will ${action}. Please review before continuing.`
+}
+
 export default function TransportBookingsPage() {
   const { settings: businessSettings } = useBusinessSettings()
   const [bookings, setBookings] = useState(() => loadTransportBookings())
@@ -275,6 +279,7 @@ export default function TransportBookingsPage() {
   const [cancelReason, setCancelReason] = useState('')
   const [refundForm, setRefundForm] = useState({ amount: '', method: 'Cash', printReceipt: true })
   const [returnTarget, setReturnTarget] = useState(null)
+  const [confirmPrompt, setConfirmPrompt] = useState(null)
 
   useEffect(() => {
     syncVehiclesWithBookings()
@@ -322,6 +327,27 @@ export default function TransportBookingsPage() {
     () => vehicles.filter((vehicle) => vehicle.status === 'available' || vehicle.id === form.vehicleId),
     [vehicles, form.vehicleId],
   )
+
+  function requestTransportConfirm(action, onConfirm, options = {}) {
+    setConfirmPrompt({
+      emoji: options.emoji || '⚠️',
+      title: options.title || 'Confirm transport action',
+      message: transportWarningMessage(action),
+      confirmLabel: options.confirmLabel || 'Yes, continue',
+      tone: options.tone || 'amber',
+      onConfirm,
+    })
+  }
+
+  function closeTransportConfirm() {
+    setConfirmPrompt(null)
+  }
+
+  function runTransportConfirm() {
+    const action = confirmPrompt?.onConfirm
+    setConfirmPrompt(null)
+    action?.()
+  }
 
   function openModal(booking = null) {
     setWarning('')
@@ -567,7 +593,13 @@ export default function TransportBookingsPage() {
         title="Bookings & Rentals"
         subtitle="Create rental bookings, check vehicles out and in, and track payments and dues."
         right={(
-          <Button onClick={openModal}>
+          <Button
+            onClick={() => requestTransportConfirm('open a new booking form', () => openModal(null), {
+              emoji: '🚌',
+              title: 'Start new booking?',
+              confirmLabel: 'Open booking form',
+            })}
+          >
             <HiOutlinePlus className="h-4 w-4" />
             New Booking
           </Button>
@@ -621,36 +653,93 @@ export default function TransportBookingsPage() {
                   </div>
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <Button variant="subtle" className="h-8 px-3 text-xs" onClick={() => openModal(booking)}>
+                  <Button
+                    variant="subtle"
+                    className="h-8 px-3 text-xs"
+                    onClick={() => requestTransportConfirm(`open booking ${booking.bookingNumber} for editing`, () => openModal(booking), {
+                      emoji: '✏️',
+                      title: 'Edit booking?',
+                      confirmLabel: 'Edit booking',
+                    })}
+                  >
                     <HiOutlinePencilSquare className="h-4 w-4" />
                     Edit
                   </Button>
-                  <Button variant="subtle" className="h-8 px-3 text-xs" onClick={() => printBooking(booking)}>
+                  <Button
+                    variant="subtle"
+                    className="h-8 px-3 text-xs"
+                    onClick={() => requestTransportConfirm(`print A4 booking receipt for ${booking.bookingNumber}`, () => printBooking(booking), {
+                      emoji: '🖨️',
+                      title: 'Print booking?',
+                      confirmLabel: 'Print A4',
+                    })}
+                  >
                     <HiOutlinePrinter className="h-4 w-4" />
                     Print
                   </Button>
-                  <Button variant="subtle" className="h-8 px-3 text-xs" onClick={() => printBooking58mm(booking)}>
+                  <Button
+                    variant="subtle"
+                    className="h-8 px-3 text-xs"
+                    onClick={() => requestTransportConfirm(`print 58mm booking receipt for ${booking.bookingNumber}`, () => printBooking58mm(booking), {
+                      emoji: '🧾',
+                      title: 'Print 58mm receipt?',
+                      confirmLabel: 'Print 58mm',
+                    })}
+                  >
                     <HiOutlinePrinter className="h-4 w-4" />
                     58mm
                   </Button>
-                  <Button variant="subtle" className="h-8 px-3 text-xs text-emerald-700" onClick={() => whatsappBooking(booking)}>
+                  <Button
+                    variant="subtle"
+                    className="h-8 px-3 text-xs text-emerald-700"
+                    onClick={() => requestTransportConfirm(`send booking ${booking.bookingNumber} details on WhatsApp`, () => whatsappBooking(booking), {
+                      emoji: '💬',
+                      title: 'Send WhatsApp message?',
+                      confirmLabel: 'Send message',
+                    })}
+                  >
                     <HiOutlineChatBubbleLeftRight className="h-4 w-4" />
                     WhatsApp
                   </Button>
                   {booking.status === 'reserved' ? (
-                    <Button variant="subtle" className="h-8 px-3 text-xs" onClick={() => activate(booking)}>
+                    <Button
+                      variant="subtle"
+                      className="h-8 px-3 text-xs"
+                      onClick={() => requestTransportConfirm(`check out booking ${booking.bookingNumber} and mark the vehicle active`, () => activate(booking), {
+                        emoji: '🚗',
+                        title: 'Check out vehicle?',
+                        confirmLabel: 'Check out',
+                      })}
+                    >
                       <HiOutlineArrowRightCircle className="h-4 w-4" />
                       Check Out
                     </Button>
                   ) : null}
                   {booking.status === 'reserved' || booking.status === 'active' ? (
-                    <Button variant="subtle" className="h-8 px-3 text-xs" onClick={() => setReturnTarget(booking)}>
+                    <Button
+                      variant="subtle"
+                      className="h-8 px-3 text-xs"
+                      onClick={() => requestTransportConfirm(`open return controls for booking ${booking.bookingNumber}`, () => setReturnTarget(booking), {
+                        emoji: '↩️',
+                        title: 'Open return controls?',
+                        confirmLabel: 'Open return',
+                      })}
+                    >
                       <HiOutlineArrowLeftCircle className="h-4 w-4" />
                       Return
                     </Button>
                   ) : null}
                   {booking.status !== 'cancelled' ? (
-                    <Button variant="subtle" className="h-8 border-rose-200 bg-rose-50 px-3 text-xs text-rose-700 hover:bg-rose-100" onClick={() => openCancel(booking)}>
+                    <Button
+                      variant="subtle"
+                      className="h-8 border-rose-200 bg-rose-50 px-3 text-xs text-rose-700 hover:bg-rose-100"
+                      onClick={() => requestTransportConfirm(`open cancellation/refund controls for booking ${booking.bookingNumber}`, () => openCancel(booking), {
+                        emoji: '🚫',
+                        title: 'Cancel booking?',
+                        confirmLabel: 'Open cancel controls',
+                        tone: 'rose',
+                      })}
+                    >
                       <HiOutlineXCircle className="h-4 w-4" />
                       Cancel
                     </Button>
@@ -679,7 +768,15 @@ export default function TransportBookingsPage() {
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-sky-600">Transport / Rental</p>
                 <h2 className="truncate text-lg font-black tracking-tight text-slate-950">{editingBooking ? `Edit Booking ${editingBooking.bookingNumber || ''}`.trim() : 'New Booking'}</h2>
               </div>
-              <button type="button" onClick={closeModal} className="rounded-lg px-2 py-1 text-sm font-semibold text-slate-400 hover:bg-slate-100 hover:text-slate-700">✕</button>
+              <button
+                type="button"
+                onClick={() => requestTransportConfirm('close this booking window. Unsaved changes will be lost', closeModal, {
+                  emoji: '⚠️',
+                  title: 'Close booking window?',
+                  confirmLabel: 'Close window',
+                })}
+                className="rounded-lg px-2 py-1 text-sm font-semibold text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+              >✕</button>
             </div>
             <div className="grid min-h-0 flex-1 gap-4 overflow-y-auto p-4 sm:p-5 lg:grid-cols-5">
               <div className="grid min-w-0 content-start gap-3 md:grid-cols-2 lg:col-span-3">
@@ -783,13 +880,39 @@ export default function TransportBookingsPage() {
             </div>
             {warning ? <p className="px-5 pb-1 text-sm font-medium text-rose-600">{warning}</p> : null}
             <div className="flex flex-wrap justify-end gap-2 border-t border-slate-100 bg-slate-50 px-5 py-3">
-              <Button variant="subtle" onClick={closeModal}>Cancel</Button>
+              <Button
+                variant="subtle"
+                onClick={() => requestTransportConfirm('close this booking window. Unsaved changes will be lost', closeModal, {
+                  emoji: '⚠️',
+                  title: 'Close booking window?',
+                  confirmLabel: 'Close window',
+                })}
+              >Cancel</Button>
               {editingBooking ? (
-                <Button onClick={() => saveBooking(editingBooking.status)}>Update Booking</Button>
+                <Button
+                  onClick={() => requestTransportConfirm(`update booking ${editingBooking.bookingNumber || ''}`.trim(), () => saveBooking(editingBooking.status), {
+                    emoji: '✅',
+                    title: 'Update booking?',
+                    confirmLabel: 'Update booking',
+                  })}
+                >Update Booking</Button>
               ) : (
                 <>
-                  <Button variant="subtle" onClick={() => saveBooking('reserved')}>Save as Reserved</Button>
-                  <Button onClick={() => saveBooking('active')}>Check Out Now</Button>
+                  <Button
+                    variant="subtle"
+                    onClick={() => requestTransportConfirm('create this booking as reserved', () => saveBooking('reserved'), {
+                      emoji: '📌',
+                      title: 'Save reserved booking?',
+                      confirmLabel: 'Save as reserved',
+                    })}
+                  >Save as Reserved</Button>
+                  <Button
+                    onClick={() => requestTransportConfirm('create this booking and check out the vehicle now', () => saveBooking('active'), {
+                      emoji: '🚗',
+                      title: 'Check out now?',
+                      confirmLabel: 'Check out now',
+                    })}
+                  >Check Out Now</Button>
                 </>
               )}
             </div>
@@ -844,8 +967,28 @@ export default function TransportBookingsPage() {
             </label>
             {warning ? <p className="mt-2 text-sm font-semibold text-rose-600">{warning}</p> : null}
             <div className="mt-4 flex justify-end gap-2">
-              <Button variant="subtle" onClick={() => { setCancelTarget(null); setCancelReason(''); setRefundForm({ amount: '', method: 'Cash', printReceipt: true }); setWarning('') }}>Close</Button>
-              <Button className="bg-rose-600 hover:bg-rose-700" onClick={confirmCancel}>Cancel & Refund</Button>
+              <Button
+                variant="subtle"
+                onClick={() => requestTransportConfirm('close cancellation/refund window. Unsaved details will be lost', () => {
+                  setCancelTarget(null)
+                  setCancelReason('')
+                  setRefundForm({ amount: '', method: 'Cash', printReceipt: true })
+                  setWarning('')
+                }, {
+                  emoji: '⚠️',
+                  title: 'Close refund window?',
+                  confirmLabel: 'Close window',
+                })}
+              >Close</Button>
+              <Button
+                className="bg-rose-600 hover:bg-rose-700"
+                onClick={() => requestTransportConfirm(`cancel booking ${cancelTarget.bookingNumber} and process the refund details`, confirmCancel, {
+                  emoji: '🚫',
+                  title: 'Cancel and refund?',
+                  confirmLabel: 'Cancel booking',
+                  tone: 'rose',
+                })}
+              >Cancel & Refund</Button>
             </div>
           </div>
         </div>
@@ -867,8 +1010,54 @@ export default function TransportBookingsPage() {
               <SummaryRow label="Due to settle" value={formatTransportCurrency(returnTarget.dueAmount)} tone="text-rose-600" />
             </div>
             <div className="mt-4 flex justify-end gap-2">
-              <Button variant="subtle" onClick={() => setReturnTarget(null)}>No, keep open</Button>
-              <Button onClick={confirmReturnBooking}>Yes, vehicle returned</Button>
+              <Button
+                variant="subtle"
+                onClick={() => requestTransportConfirm('close return confirmation and keep booking open', () => setReturnTarget(null), {
+                  emoji: '⚠️',
+                  title: 'Close return window?',
+                  confirmLabel: 'Keep booking open',
+                })}
+              >No, keep open</Button>
+              <Button
+                onClick={() => requestTransportConfirm('mark this vehicle as returned, settle dues, and free the vehicle', confirmReturnBooking, {
+                  emoji: '✅',
+                  title: 'Confirm vehicle return?',
+                  confirmLabel: 'Mark returned',
+                })}
+              >Yes, vehicle returned</Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {confirmPrompt ? (
+        <div
+          className="fixed inset-0 z-[140] grid place-items-center bg-slate-950/55 p-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          onClick={closeTransportConfirm}
+        >
+          <div
+            className="w-full max-w-md rounded-[1.5rem] border border-amber-200 bg-white p-5 shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-start gap-3">
+              <div className={`grid h-12 w-12 shrink-0 place-items-center rounded-2xl text-2xl shadow-sm ${confirmPrompt.tone === 'rose' ? 'bg-rose-100' : 'bg-amber-100'}`}>
+                {confirmPrompt.emoji}
+              </div>
+              <div className="min-w-0">
+                <p className="text-lg font-black tracking-tight text-slate-950">{confirmPrompt.title}</p>
+                <p className="mt-1 text-sm font-semibold leading-6 text-slate-600">{confirmPrompt.message}</p>
+              </div>
+            </div>
+            <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <Button variant="subtle" onClick={closeTransportConfirm}>No, go back</Button>
+              <Button
+                className={confirmPrompt.tone === 'rose' ? 'bg-rose-600 hover:bg-rose-700' : 'bg-amber-600 hover:bg-amber-700'}
+                onClick={runTransportConfirm}
+              >
+                {confirmPrompt.confirmLabel}
+              </Button>
             </div>
           </div>
         </div>

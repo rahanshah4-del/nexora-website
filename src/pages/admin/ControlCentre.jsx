@@ -335,6 +335,74 @@ function displayAdminBusinessType(type) {
   return value ? labelForBusinessType(normalizeAdminBusinessType(value)) : '-'
 }
 
+function businessTypeForSelectedWorkspace(value) {
+  const selected = String(value || '').trim().toLowerCase()
+  if (!selected) return ''
+  const map = {
+    crm: 'General CRM',
+    'general-crm': 'General CRM',
+    'sales-hub': 'General CRM',
+    'nexora-sales-hub': 'General CRM',
+    'school-erp': 'School ERP',
+    school: 'School ERP',
+    'retail-pos': 'Retail / POS',
+    retail: 'Retail / POS',
+    pos: 'Retail / POS',
+    'property-erp': 'Property ERP',
+    property: 'Property ERP',
+    'restaurant-pos': 'Restaurant POS',
+    restaurant: 'Restaurant POS',
+    'whatsapp-crm': 'WhatsApp CRM',
+    whatsapp: 'WhatsApp CRM',
+    'transport-rental': 'Transport / Rental',
+    transport: 'Transport / Rental',
+    rental: 'Transport / Rental',
+    fleet: 'Transport / Rental',
+  }
+  if (map[selected]) return map[selected]
+  return normalizeAdminBusinessType(selected)
+}
+
+function moduleConsistencyIssue(row = {}, source = 'workspace') {
+  const selectedWorkspace = row.selectedWorkspace || row.selectedProduct || row.workspaceModule || ''
+  const expected = businessTypeForSelectedWorkspace(selectedWorkspace)
+  const runtimeFields = [
+    ['selectedBusinessType', row.selectedBusinessType],
+    ['currentBusinessType', row.currentBusinessType],
+    ['businessType', row.businessType],
+    ['module', row.module],
+  ].filter(([, value]) => String(value || '').trim())
+  const normalizedRuntimeFields = runtimeFields.map(([field, value]) => ({ field, value: normalizeAdminBusinessType(value), raw: value }))
+  const runtimeValues = Array.from(new Set(normalizedRuntimeFields.map((item) => item.value).filter(Boolean)))
+  const mismatched = []
+  const specialAccess = row.allModulesAccess === true || row.specialModuleAccess === true || (Array.isArray(row.allowedBusinessTypes) && row.allowedBusinessTypes.length > 1)
+
+  if (runtimeValues.length > 1) {
+    const expectedRuntime = normalizeAdminBusinessType(row.currentBusinessType || row.selectedBusinessType || row.businessType || row.module)
+    normalizedRuntimeFields
+      .filter((item) => item.value !== expectedRuntime)
+      .forEach((item) => mismatched.push(item))
+  }
+
+  const primary = String(row.primaryBusinessType || '').trim() ? normalizeAdminBusinessType(row.primaryBusinessType) : ''
+  const activeRuntime = normalizeAdminBusinessType(row.currentBusinessType || row.selectedBusinessType || row.businessType || row.module)
+  if (!specialAccess && primary && activeRuntime && primary !== activeRuntime) {
+    mismatched.push({ field: 'primaryBusinessType', value: primary, raw: row.primaryBusinessType })
+  }
+
+  if (!mismatched.length) return null
+  return {
+    id: `${source}-${row.id || row.uid || row.userId || row.workspaceId || row.email || selectedWorkspace}`,
+    source,
+    row,
+    selectedWorkspace,
+    expected: activeRuntime || primary || expected || 'Unknown',
+    mismatched,
+    label: workspaceName(row),
+    email: userEmail(row),
+  }
+}
+
 function moduleAccessForWorkspace(row = {}) {
   const primary = normalizeAdminBusinessType(row.primaryBusinessType || row.selectedBusinessType || row.businessType)
   if (row.allModulesAccess === true) return { primary, allowed: modules, special: true, all: true }
@@ -897,8 +965,8 @@ export default function ControlCentre() {
   }, [activeTab])
 
   useEffect(() => {
-    if (!db || !backendAdminAllowed || !notificationsOpen) {
-      Promise.resolve().then(() => setBackendNotificationStates({}))
+    if (!db || !backendAdminAllowed) {
+      setBackendNotificationStates({})
       return undefined
     }
     return onSnapshot(
@@ -920,7 +988,7 @@ export default function ControlCentre() {
         setBackendNotificationStates({})
       },
     )
-  }, [backendAdminAllowed, notificationsOpen])
+  }, [backendAdminAllowed])
 
   const liveUsers = useMemo(() => mergePresence(data.users, data.clientSessions, data.userPresence), [data.users, data.clientSessions, data.userPresence])
   const onlineUsers = useMemo(() => liveUsers.filter((row) => isOnline(row, liveNow)), [liveNow, liveUsers])
@@ -1036,6 +1104,22 @@ export default function ControlCentre() {
     })
     const workspacesMissingOwner = data.workspaces.filter((row) => !(row.ownerId || row.userId || row.uid))
     const workspacesMissingModule = data.workspaces.filter((row) => !(row.primaryBusinessType || row.selectedBusinessType || row.currentBusinessType || row.businessType || row.module))
+    const rawModuleMismatches = [
+      ...data.workspaces.map((row) => moduleConsistencyIssue(row, 'workspace')),
+      ...data.users.map((row) => moduleConsistencyIssue(row, 'user')),
+    ].filter(Boolean)
+    const seenModuleMismatchKeys = new Set()
+    const moduleMismatches = rawModuleMismatches.filter((item) => {
+      const row = item.row || {}
+      const key = row.workspaceId || row.uid || row.userId || row.id || item.email || item.label || item.id
+      if (seenModuleMismatchKeys.has(key)) return false
+      seenModuleMismatchKeys.add(key)
+      return true
+    })
+    const moduleMismatchLabels = moduleMismatches.map((item) => {
+      const mismatch = item.mismatched[0]
+      return `${item.email || item.label || item.id}: should run ${item.expected}, ${mismatch?.field || 'module'} is ${mismatch?.value || 'wrong'}`
+    })
     const enabledPlans = platformPlans.filter((plan) => plan.enabled !== false && plan.active !== false)
     const usingDefaultPlansOnly = data.plans.length === 0
     const paymentAccounts = platformSettings.paymentAccounts || {}
@@ -1175,10 +1259,14 @@ export default function ControlCentre() {
       {
         id: 'module-access',
         title: 'Module assignment',
-        status: workspacesMissingModule.length ? 'warning' : 'healthy',
-        detail: workspacesMissingModule.length ? `${workspacesMissingModule.length} workspaces missing selected business module.` : 'Business modules are assigned for listed workspaces.',
+        status: moduleMismatches.length ? 'critical' : workspacesMissingModule.length ? 'warning' : 'healthy',
+        detail: moduleMismatches.length
+          ? `${moduleMismatches.length} selected module mismatch found: ${listSummary(moduleMismatchLabels, 3)}`
+          : workspacesMissingModule.length
+            ? `${workspacesMissingModule.length} workspaces missing selected business module.`
+            : 'Selected workspace and business module fields are consistent.',
         actionTab: 'clients',
-        metric: workspacesMissingModule.length,
+        metric: moduleMismatches.length + workspacesMissingModule.length,
       },
       {
         id: 'plans-pricing',
@@ -1214,14 +1302,14 @@ export default function ControlCentre() {
       },
       {
         id: 'frontend-health',
-        title: 'Frontend runtime health',
+        title: 'Bug / error reports live',
         status: frontendRuntimeIssues.length ? 'critical' : frontendOfflineIssues.length ? 'warning' : 'healthy',
         detail: frontendRuntimeIssues.length
-          ? `${frontendRuntimeIssues.length} frontend errors in the last 24h. Latest: ${latestFrontendIssue?.buttonLabel || 'runtime error'}`
+          ? `${frontendRuntimeIssues.length} frontend bug/error reports in the last 24h. Latest: ${latestFrontendIssue?.buttonLabel || 'runtime error'}`
           : frontendOfflineIssues.length
             ? `${frontendOfflineIssues.length} offline/sync interruptions in the last 24h.`
             : 'No frontend runtime or offline issues reported in the last 24h.',
-        actionTab: 'visitorAnalytics',
+        actionTab: 'systemHealth',
         metric: frontendRuntimeIssues.length + frontendOfflineIssues.length,
       },
       {
@@ -1259,6 +1347,7 @@ export default function ControlCentre() {
       issues,
       overall,
       localAuditFindings,
+      moduleMismatches,
       lastCheckedAt: new Date(),
     }
   }, [
@@ -2720,14 +2809,94 @@ export default function ControlCentre() {
 
   function SystemHealth() {
     const sourceErrorEntries = Object.entries(data.sourceErrors || {})
+    const bugReportRows = [...data.analyticsEvents]
+      .filter((row) => String(row.eventType || '').startsWith('frontend_'))
+      .sort((a, b) => (toDate(b.timestamp || b.createdAt)?.getTime() || 0) - (toDate(a.timestamp || a.createdAt)?.getTime() || 0))
+      .slice(0, 12)
+    const criticalBugReports = bugReportRows.filter((row) => ['frontend_runtime_error', 'frontend_unhandled_rejection', 'frontend_error_boundary'].includes(row.eventType))
+    const syncBugReports = bugReportRows.filter((row) => ['frontend_offline', 'frontend_online'].includes(row.eventType))
+    const bugTone = (row) => {
+      const eventType = String(row.eventType || '')
+      if (['frontend_runtime_error', 'frontend_unhandled_rejection', 'frontend_error_boundary'].includes(eventType)) return 'border-rose-200 bg-rose-50 text-rose-900'
+      if (eventType === 'frontend_offline') return 'border-amber-200 bg-amber-50 text-amber-900'
+      return 'border-emerald-200 bg-emerald-50 text-emerald-900'
+    }
+    const bugLabel = (row) => String(row.eventType || 'frontend_report').replace(/^frontend_/, '').replace(/_/g, ' ')
     return (
       <div className="space-y-4">
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <KpiCard label="Overall Health" value={String(systemHealth.overall).replace(/_/g, ' ')} helper={`Last checked ${dateTimeLabel(systemHealth.lastCheckedAt)}`} icon={HiOutlineShieldCheck} tone={systemHealth.overall === 'critical' ? 'rose' : systemHealth.overall === 'warning' ? 'amber' : 'emerald'} />
           <KpiCard label="Critical Issues" value={systemHealth.counts.critical || 0} helper="Backend notifications created" icon={HiOutlineBell} tone="rose" />
-          <KpiCard label="Warnings" value={systemHealth.counts.warning || 0} helper="Needs review before launch" icon={HiOutlineWrenchScrewdriver} tone="amber" />
+          <KpiCard label="Live Bug Reports" value={criticalBugReports.length} helper={`${syncBugReports.length} sync/offline reports loaded`} icon={HiOutlineWrenchScrewdriver} tone={criticalBugReports.length ? 'rose' : syncBugReports.length ? 'amber' : 'emerald'} />
           <KpiCard label="Healthy Checks" value={systemHealth.counts.healthy || 0} helper="Live checks passing" icon={HiOutlineCheckBadge} tone="emerald" />
         </div>
+
+        <Panel title="Bug / Error Reports Live" action={<ShellButton onClick={() => setActiveTab('visitorAnalytics')}>Open Analytics</ShellButton>}>
+          {bugReportRows.length ? (
+            <div className="grid gap-3 xl:grid-cols-2">
+              {bugReportRows.map((row) => (
+                <div key={row.id} className={`rounded-2xl border p-4 ${bugTone(row)}`}>
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-xs font-black uppercase tracking-[0.14em] opacity-75">{bugLabel(row)}</p>
+                      <p className="mt-1 break-words text-sm font-black">{row.buttonLabel || row.status || 'Frontend report captured'}</p>
+                    </div>
+                    <Status value={row.status || (criticalBugReports.includes(row) ? 'critical' : 'warning')} />
+                  </div>
+                  <div className="mt-3 grid gap-2 text-xs font-bold sm:grid-cols-2">
+                    <div className="min-w-0 rounded-xl bg-white/70 p-2">
+                      <p className="text-[10px] uppercase tracking-wide opacity-60">Page</p>
+                      <p className="truncate">{row.page || '-'}</p>
+                    </div>
+                    <div className="min-w-0 rounded-xl bg-white/70 p-2">
+                      <p className="text-[10px] uppercase tracking-wide opacity-60">Client</p>
+                      <p className="truncate">{row.email || row.userId || row.visitorId || '-'}</p>
+                    </div>
+                    <div className="min-w-0 rounded-xl bg-white/70 p-2">
+                      <p className="text-[10px] uppercase tracking-wide opacity-60">Device</p>
+                      <p className="truncate">{[row.deviceType, row.browser, row.os].filter(Boolean).join(' / ') || '-'}</p>
+                    </div>
+                    <div className="min-w-0 rounded-xl bg-white/70 p-2">
+                      <p className="text-[10px] uppercase tracking-wide opacity-60">Time</p>
+                      <p className="truncate">{dateTimeLabel(row.createdAt || row.timestamp)}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <EmptyState title="No live bug reports" detail="Runtime errors, render crashes, unhandled promises, and internet disconnect reports will appear here automatically." />
+          )}
+        </Panel>
+
+        <Panel title="Module Isolation Mismatches" action={<ShellButton onClick={() => setActiveTab('clients')}>Open Clients</ShellButton>}>
+          {systemHealth.moduleMismatches?.length ? (
+            <div className="grid gap-3 xl:grid-cols-2">
+              {systemHealth.moduleMismatches.slice(0, 12).map((item) => (
+                <div key={item.id} className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-rose-950">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-xs font-black uppercase tracking-[0.14em] text-rose-700">{item.source} isolation issue</p>
+                      <p className="mt-1 truncate text-sm font-black">{item.email || item.label || item.id}</p>
+                      <p className="mt-1 text-xs font-bold text-rose-700">Runtime module should be consistent with {item.expected}.</p>
+                    </div>
+                    <Status value="critical" />
+                  </div>
+                  <div className="mt-3 grid gap-2">
+                    {item.mismatched.slice(0, 4).map((mismatch) => (
+                      <div key={`${item.id}-${mismatch.field}`} className="rounded-xl bg-white/75 px-3 py-2 text-xs font-bold">
+                        <span className="uppercase tracking-wide text-rose-500">{mismatch.field}</span>
+                        <span className="ml-2 text-rose-950">{mismatch.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <EmptyState title="All module isolation checks clear" detail="Selected workspace, current business module, and saved business type are aligned for monitored clients." />
+          )}
+        </Panel>
 
         <Panel title="Launch Health Checks" action={<ShellButton onClick={() => setActiveTab('logs')}>Open Logs</ShellButton>}>
           <div className="grid gap-3 xl:grid-cols-2">

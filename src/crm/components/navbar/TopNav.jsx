@@ -146,7 +146,7 @@ function TopNav({ onOpenSidebar, onSwitchProduct }) {
     <>
       {toast ? <Toast message={toast} onClose={() => setToast(null)} /> : null}
       <header className="sticky top-0 z-40 w-full px-3 pt-3 print:hidden sm:px-5 lg:px-6">
-        <div className="workspace-fluid-container mx-auto flex min-h-[64px] min-w-0 flex-wrap items-center gap-2 rounded-[1.35rem] border border-white/70 bg-white/[0.94] px-3 py-2.5 shadow-[0_16px_48px_-40px_rgba(15,23,42,0.45)] backdrop-blur-sm transition-colors duration-200 dark:border-slate-800 dark:bg-slate-950/90 sm:gap-3 sm:px-4 xl:flex-nowrap">
+        <div className="workspace-fluid-container mx-auto flex min-h-[64px] min-w-0 items-center gap-2 rounded-[1.35rem] border border-white/70 bg-white/[0.94] px-3 py-2.5 shadow-[0_16px_48px_-40px_rgba(15,23,42,0.45)] backdrop-blur-sm transition-colors duration-200 dark:border-slate-800 dark:bg-slate-950/90 sm:gap-3 sm:px-4">
           <button
             type="button"
             className="focus-ring inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-white/10 lg:hidden"
@@ -160,28 +160,31 @@ function TopNav({ onOpenSidebar, onSwitchProduct }) {
             </span>
           </button>
 
-          <div className="ml-auto flex min-w-0 flex-1 items-center justify-end gap-1.5 sm:gap-2 xl:flex-none">
+          <div className="hidden min-w-0 flex-1 items-center gap-2 lg:flex">
             <div className="hidden shrink-0 items-center gap-2 2xl:flex">
               <OfflineStatus />
               <BranchSwitcher />
             </div>
             <Badge
               variant="info"
-              className="hidden h-9 max-w-[18rem] shrink-0 items-center truncate px-3 font-semibold lg:inline-flex"
+              className="h-10 max-w-[min(24rem,34vw)] shrink items-center truncate px-4 text-sm font-extrabold"
               title={`Current Business: ${businessTypeLabel}`}
             >
               <span className="truncate">Current Business: {businessTypeLabel}</span>
             </Badge>
             <Badge
               variant={isTrialExpired ? 'danger' : isTrialActive ? 'warning' : 'success'}
-              className="hidden h-9 max-w-[16rem] shrink-0 items-center truncate px-3 font-semibold lg:inline-flex"
+              className="h-10 max-w-[min(19rem,26vw)] shrink-0 items-center truncate px-4 text-sm font-extrabold"
               title={profileSummary.accessLabel}
             >
               <span className="truncate">{profileSummary.accessLabel}</span>
             </Badge>
+          </div>
+
+          <div className="ml-auto flex min-w-0 shrink-0 items-center justify-end gap-1.5 sm:gap-2">
             <Button
               variant="subtle"
-              className="hidden h-10 shrink-0 rounded-2xl px-3 text-xs lg:inline-flex"
+              className="hidden h-11 shrink-0 rounded-2xl px-4 text-sm font-extrabold lg:inline-flex"
               onClick={() => goToWorkspace(navigate, location)}
               type="button"
             >
@@ -189,11 +192,11 @@ function TopNav({ onOpenSidebar, onSwitchProduct }) {
             </Button>
             <Button
               variant="subtle"
-              className="hidden h-10 shrink-0 rounded-2xl px-3 text-xs xl:inline-flex"
+              className="hidden h-11 shrink-0 rounded-2xl px-4 text-sm font-extrabold xl:inline-flex"
               onClick={onSwitchProduct}
               type="button"
             >
-              <span className="nexora-hd-icon h-7 w-7 rounded-xl border-cyan-200 bg-gradient-to-br from-cyan-400 via-sky-500 to-blue-600 shadow-cyan-500/25">
+              <span className="nexora-hd-icon h-8 w-8 rounded-xl border-cyan-200 bg-gradient-to-br from-cyan-400 via-sky-500 to-blue-600 shadow-cyan-500/25">
                 <HiOutlineSquares2X2 className="h-4 w-4" />
               </span>
               Switch Product
@@ -213,7 +216,7 @@ function TopNav({ onOpenSidebar, onSwitchProduct }) {
                   ) : (
                     <Avatar name={profileSummary.displayName} className="h-9 w-9 shrink-0 rounded-2xl" />
                   )}
-                  <div className="hidden max-w-[10rem] min-w-0 text-left xl:block">
+                  <div className="hidden max-w-[14rem] min-w-0 text-left xl:block 2xl:max-w-[16rem]">
                     <p className="truncate text-sm font-semibold text-slate-950 dark:text-white">
                       {profileSummary.displayName}
                     </p>

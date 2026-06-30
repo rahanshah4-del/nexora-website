@@ -55,6 +55,8 @@ function modernEmailShell({
   title,
   subtitle = '',
   body,
+  topContent = '',
+  schema = '',
 }) {
   const supportEmail = 'support@nexorasolution.online'
   const whatsapp = '03194329754'
@@ -65,14 +67,35 @@ function modernEmailShell({
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>${escapeHtml(title)}</title>
+        <style>
+          @media only screen and (max-width: 620px) {
+            .nexora-email-pad { padding: 12px 6px !important; }
+            .nexora-email-shell,
+            .nexora-top-card { width: 100% !important; max-width: 100% !important; }
+            .nexora-shell-head { padding: 24px 18px 22px !important; }
+            .nexora-shell-body { padding: 22px 16px 4px !important; }
+            .nexora-shell-help { padding: 4px 16px 22px !important; }
+            .nexora-payment-card { border-radius: 22px !important; margin-bottom: 16px !important; }
+            .nexora-payment-card-head { padding: 13px 16px !important; }
+            .nexora-payment-card-body { padding: 24px 18px 26px !important; }
+            .nexora-payment-title { font-size: 22px !important; line-height: 28px !important; margin-bottom: 24px !important; }
+            .nexora-payment-amount { font-size: 50px !important; line-height: 56px !important; letter-spacing: -1px !important; }
+            .nexora-payment-logo-col { width: 76px !important; }
+            .nexora-payment-logo-box { width: 64px !important; height: 64px !important; border-radius: 18px !important; padding: 6px !important; }
+            .nexora-payment-logo-img { width: 52px !important; height: 52px !important; border-radius: 14px !important; }
+            .nexora-payment-button { display: block !important; width: 100% !important; box-sizing: border-box !important; text-align: center !important; padding-left: 0 !important; padding-right: 0 !important; }
+          }
+        </style>
+        ${schema}
       </head>
       <body style="margin:0;padding:0;background:#f4f7fb;font-family:Arial,Helvetica,sans-serif;color:#111827;">
         <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;background:#f4f7fb;margin:0;padding:0;">
           <tr>
-            <td align="center" style="padding:28px 12px;">
-              <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:600px;background:#ffffff;border-radius:24px;overflow:hidden;border:1px solid #dbeafe;box-shadow:0 18px 45px rgba(15,23,42,0.10);">
+            <td class="nexora-email-pad" align="center" style="padding:28px 8px;">
+              ${topContent ? `<table class="nexora-top-card" role="presentation" width="860" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:860px;margin:0 0 16px;">${topContent}</table>` : ''}
+              <table class="nexora-email-shell" role="presentation" width="860" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:860px;background:#ffffff;border-radius:24px;overflow:hidden;border:1px solid #dbeafe;box-shadow:0 18px 45px rgba(15,23,42,0.10);">
                 <tr>
-                  <td style="background:${accent};background-image:${accentGradient};padding:30px 30px 28px;color:#ffffff;">
+                  <td class="nexora-shell-head" style="background:${accent};background-image:${accentGradient};padding:30px 30px 28px;color:#ffffff;">
                     <table role="presentation" cellspacing="0" cellpadding="0" border="0">
                       <tr>
                         <td width="46" height="46" align="center" style="width:46px;height:46px;border-radius:14px;background:#ffffff;padding:4px;"><img src="${NEXORA_LOGO_URL}" width="38" height="38" alt="Nexora" style="display:block;width:38px;height:38px;border-radius:11px;object-fit:contain;" /></td>
@@ -88,10 +111,10 @@ function modernEmailShell({
                   </td>
                 </tr>
                 <tr>
-                  <td style="padding:28px 30px 6px;background:#ffffff;">${body}</td>
+                  <td class="nexora-shell-body" style="padding:28px 34px 6px;background:#ffffff;">${body}</td>
                 </tr>
                 <tr>
-                  <td style="padding:4px 30px 26px;background:#ffffff;">
+                  <td class="nexora-shell-help" style="padding:4px 34px 26px;background:#ffffff;">
                     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;border-radius:16px;background:#f8fafc;border:1px solid #e2e8f0;">
                       <tr>
                         <td style="padding:18px 20px;">
@@ -158,34 +181,67 @@ function paymentSummaryHero({
   note = '',
 } = {}) {
   return `
-                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;border-radius:22px;background:#ffffff;border:1px solid #dbe4ff;overflow:hidden;margin:0 0 20px;box-shadow:0 16px 34px rgba(15,23,42,0.08);">
+                  <tr>
+                    <td>
+                    <table class="nexora-payment-card" role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;border-radius:24px;background:#ffffff;border:1px solid #dbe4ff;overflow:hidden;margin:0 0 22px;box-shadow:0 18px 42px rgba(15,23,42,0.10);">
                       <tr>
-                        <td style="background:#dfe4ff;padding:14px 22px;font-size:15px;line-height:21px;font-weight:900;color:#0f172a;">
-                          ${escapeHtml(status)}
-                        </td>
-                      </tr>
-                      <tr>
-                        <td style="padding:24px 22px 26px;">
+                        <td class="nexora-payment-card-head" style="background:#e3e8ff;padding:13px 22px;">
                           <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
                             <tr>
-                              <td style="vertical-align:top;">
-                                <div style="font-size:24px;line-height:30px;font-weight:900;color:#111827;margin-bottom:28px;">${escapeHtml(title)}</div>
-                                <div style="font-size:13px;line-height:18px;font-weight:900;color:#64748b;text-transform:uppercase;letter-spacing:.9px;">Amount paid</div>
-                                <div style="font-size:44px;line-height:52px;font-weight:900;color:#111827;letter-spacing:-1px;margin-top:5px;">${escapeHtml(money(amount, currency))}</div>
-                                ${orderId ? `<div style="margin-top:10px;font-size:13px;line-height:20px;color:#64748b;font-weight:700;">Order / Payment ID: <span style="color:#0f172a;">${escapeHtml(orderId)}</span></div>` : ''}
-                                ${note ? `<div style="margin-top:8px;font-size:13px;line-height:20px;color:#64748b;font-weight:700;">${escapeHtml(note)}</div>` : ''}
-                                <div style="margin-top:26px;">
-                                  <a href="${escapeHtml(buttonUrl)}" style="display:inline-block;border-radius:999px;background:#5f6680;color:#ffffff;text-decoration:none;font-size:15px;line-height:19px;font-weight:900;padding:15px 25px;">${escapeHtml(buttonLabel)}</a>
-                                </div>
-                              </td>
-                              <td align="right" style="vertical-align:top;width:120px;">
-                                <img src="${NEXORA_LOGO_URL}" width="88" height="88" alt="Nexora" style="display:block;width:88px;height:88px;border-radius:22px;object-fit:contain;" />
-                              </td>
+                              <td style="font-size:14px;line-height:20px;font-weight:900;color:#172554;">${escapeHtml(status)}</td>
+                              <td align="right" style="font-size:12px;line-height:18px;font-weight:800;color:#475569;">Nexora Receipt</td>
                             </tr>
                           </table>
                         </td>
                       </tr>
-                    </table>`
+                      <tr>
+                        <td class="nexora-payment-card-body" style="padding:28px 30px 30px;">
+                          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                            <tr>
+                              <td style="vertical-align:top;">
+                                <div class="nexora-payment-title" style="font-size:25px;line-height:31px;font-weight:900;color:#111827;margin-bottom:30px;">${escapeHtml(title)}</div>
+                                <div style="font-size:13px;line-height:18px;font-weight:900;color:#64748b;text-transform:uppercase;letter-spacing:.9px;">Amount paid</div>
+                                <div class="nexora-payment-amount" style="font-size:58px;line-height:64px;font-weight:900;color:#111827;letter-spacing:-1.4px;margin-top:5px;">${escapeHtml(money(amount, currency))}</div>
+                                <div style="margin-top:26px;">
+                                  <a class="nexora-payment-button" href="${escapeHtml(buttonUrl)}" style="display:inline-block;border-radius:999px;background:#0f172a;color:#ffffff;text-decoration:none;font-size:15px;line-height:19px;font-weight:900;padding:15px 30px;">${escapeHtml(buttonLabel)}</a>
+                                </div>
+                              </td>
+                              <td class="nexora-payment-logo-col" align="right" style="vertical-align:top;width:150px;">
+                                <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin-left:auto;">
+                                  <tr>
+                                    <td class="nexora-payment-logo-box" align="center" style="width:92px;height:92px;border-radius:26px;background:#050816;padding:8px;box-shadow:0 12px 25px rgba(15,23,42,0.18);">
+                                      <img class="nexora-payment-logo-img" src="${NEXORA_LOGO_URL}" width="76" height="76" alt="Nexora" style="display:block;width:76px;height:76px;border-radius:20px;object-fit:contain;" />
+                                    </td>
+                                  </tr>
+                                </table>
+                              </td>
+                            </tr>
+                          </table>
+                          ${(orderId || note) ? `
+                          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;margin-top:24px;border-top:1px solid #e2e8f0;">
+                            ${orderId ? `<tr><td style="padding:14px 0 0;font-size:12px;line-height:18px;font-weight:900;color:#64748b;text-transform:uppercase;letter-spacing:.8px;">Order / Payment ID</td><td align="right" style="padding:14px 0 0;font-size:13px;line-height:18px;font-weight:900;color:#0f172a;">${escapeHtml(orderId)}</td></tr>` : ''}
+                            ${note ? `<tr><td style="padding:10px 0 0;font-size:12px;line-height:18px;font-weight:900;color:#64748b;text-transform:uppercase;letter-spacing:.8px;">Status Note</td><td align="right" style="padding:10px 0 0;font-size:13px;line-height:18px;font-weight:900;color:#0f172a;">${escapeHtml(note)}</td></tr>` : ''}
+                          </table>` : ''}
+                        </td>
+                      </tr>
+                    </table>
+                    </td>
+                  </tr>`
+}
+
+function emailViewActionSchema({ label = 'View payment', url = NEXORA_WORKSPACE_URL, description = '' } = {}) {
+  const payload = {
+    '@context': 'https://schema.org',
+    '@type': 'EmailMessage',
+    potentialAction: {
+      '@type': 'ViewAction',
+      target: clean(url),
+      url: clean(url),
+      name: clean(label),
+    },
+    description: clean(description || label),
+  }
+  return `<script type="application/ld+json">${JSON.stringify(payload).replaceAll('<', '\\u003c')}</script>`
 }
 
 function calloutBox(label, text, bg = '#fef2f2', border = '#fecaca', labelColor = '#b91c1c') {
@@ -583,17 +639,17 @@ export function upgradeRequestReceivedEmail({
   paymentDate = '',
   workspaceName = '',
 } = {}) {
+  const paymentCard = paymentSummaryHero({
+    status: 'Payment received',
+    title: 'Nexora payment',
+    amount,
+    currency,
+    orderId: transactionId,
+    buttonLabel: 'View payment',
+    buttonUrl: NEXORA_UPGRADE_URL,
+    note: 'Under Nexora review',
+  })
   const body = [
-    paymentSummaryHero({
-      status: 'Payment received',
-      title: 'Nexora payment',
-      amount,
-      currency,
-      orderId: transactionId,
-      buttonLabel: 'View payment',
-      buttonUrl: NEXORA_UPGRADE_URL,
-      note: 'Under Nexora review',
-    }),
     greetingLine(name),
     leadParagraph(
       `Thank you! We&rsquo;ve received your payment for the <strong style="color:#0f172a;">${escapeHtml(plan)}</strong> plan. Our team is reviewing your details and your workspace will be upgraded shortly &mdash; usually within a few hours.`,
@@ -617,6 +673,12 @@ export function upgradeRequestReceivedEmail({
       badge: statusPill('Payment Received'),
       title: 'We received your payment',
       subtitle: 'Your upgrade request is under review.',
+      topContent: paymentCard,
+      schema: emailViewActionSchema({
+        label: 'View payment',
+        url: NEXORA_UPGRADE_URL,
+        description: `View Nexora payment ${transactionId || ''}`.trim(),
+      }),
       body,
     }),
   }
@@ -631,17 +693,17 @@ export function upgradeApprovedEmail({
   workspaceName = '',
   transactionId = '',
 } = {}) {
+  const paymentCard = Number(amount) > 0 ? paymentSummaryHero({
+    status: 'Paid',
+    title: 'Nexora bill',
+    amount,
+    currency,
+    orderId: transactionId,
+    buttonLabel: 'View bill',
+    buttonUrl: NEXORA_WORKSPACE_URL,
+    note: 'Plan activated',
+  }) : ''
   const body = [
-    Number(amount) > 0 ? paymentSummaryHero({
-      status: 'Paid',
-      title: 'Nexora bill',
-      amount,
-      currency,
-      orderId: transactionId,
-      buttonLabel: 'View workspace',
-      buttonUrl: NEXORA_WORKSPACE_URL,
-      note: 'Plan activated',
-    }) : '',
     greetingLine(name),
     leadParagraph(
       `Great news &mdash; your upgrade to <strong style="color:#0f172a;">${escapeHtml(plan)}</strong> has been approved and your workspace is now active. All premium features for your plan are unlocked.`,
@@ -664,6 +726,12 @@ export function upgradeApprovedEmail({
       badge: statusPill('Approved'),
       title: 'Upgrade approved',
       subtitle: 'Your workspace plan is now active.',
+      topContent: paymentCard,
+      schema: emailViewActionSchema({
+        label: 'View bill',
+        url: NEXORA_WORKSPACE_URL,
+        description: `View Nexora bill ${transactionId || ''}`.trim(),
+      }),
       body,
     }),
   }

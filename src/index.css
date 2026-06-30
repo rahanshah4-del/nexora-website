@@ -363,6 +363,12 @@ body.business-service-modal-open {
     }
   }
 
+  .fixed.inset-0[class*='backdrop-blur'],
+  .fixed[class*='inset-0'][class*='backdrop-blur'] {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     html {
       scroll-behavior: auto;

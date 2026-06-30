@@ -350,7 +350,10 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
   const platformPlans = useMemo(() => mergePlatformPlans(planDocs), [planDocs])
   const activePlans = useMemo(() => platformPlans.filter((plan) => plan.active !== false), [platformPlans])
   const platformSettings = useMemo(() => mergePlatformSettings(settingsDocs), [settingsDocs])
-  const paymentMethods = useMemo(() => paymentMethodsFromSettings(platformSettings), [platformSettings])
+  const paymentMethods = useMemo(
+    () => paymentMethodsFromSettings(platformSettings).filter((method) => method.id !== 'manual_payment'),
+    [platformSettings],
+  )
   const selectedPlan = platformPlans.find((plan) => plan.id === selectedPlanId) || platformPlans[1] || platformPlans[0]
   const selectedMethod = paymentMethods.find((method) => method.id === paymentMethod) || paymentMethods[0]
   const isAutomaticCrypto = selectedMethod?.id === 'nowpayments'
@@ -363,6 +366,13 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
   const currency = selectedPlan?.currency || platformSettings.defaultCurrency || DEFAULT_SAAS_CURRENCY
   const selectedAmount = billingCycle === 'yearly' ? selectedPlan?.yearlyPrice : selectedPlan?.monthlyPrice
   const originalAmount = positiveAmount(selectedAmount)
+
+  useEffect(() => {
+    if (!paymentMethods.length) return
+    if (!paymentMethods.some((method) => method.id === paymentMethod)) {
+      setPaymentMethod(paymentMethods[0].id)
+    }
+  }, [paymentMethod, paymentMethods])
   const discountAmount = promoResult?.valid ? promoResult.discountAmount : 0
   const finalAmount = promoResult?.valid ? promoResult.finalAmount : originalAmount
   const requestedPlan = selectedPlan?.name || ''

@@ -302,6 +302,14 @@
     -webkit-backdrop-filter: blur(4px);
   }
 
+  .fixed.inset-0[class*='backdrop-blur'],
+  .fixed[class*='inset-0'][class*='backdrop-blur'],
+  .crm-shell .fixed.inset-0[class*='backdrop-blur'],
+  .crm-shell .fixed[class*='inset-0'][class*='backdrop-blur'] {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
   .glass {
     @apply rounded-[1.35rem] border border-white/70 bg-white/[0.92] shadow-[0_16px_42px_-34px_rgba(15,23,42,0.3)] backdrop-blur-sm transition-colors duration-200 ease-out dark:border-slate-800 dark:bg-slate-950/90 dark:text-white;
   }

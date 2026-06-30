@@ -22,6 +22,10 @@ function isResolvedStatus(value = '') {
   return ['resolved', 'completed', 'closed'].includes(String(value || '').toLowerCase())
 }
 
+function isApprovedStatus(value = '') {
+  return ['approved', 'paid', 'active', 'completed'].includes(String(value || '').toLowerCase())
+}
+
 export default function UpgradeRequestTimelineCard({ request, moduleLabel = 'Workspace', onOpen, className = '', hideWhenResolved = false }) {
   if (!request) return null
   const status = upgradeStatusValue(request)
@@ -34,7 +38,7 @@ export default function UpgradeRequestTimelineCard({ request, moduleLabel = 'Wor
     : null
   const ticketStatus = linkedTicket?.status || ticketTimelineEntry?.status || ''
   const showTicketHistoryOnly = isResolvedStatus(status) || isResolvedStatus(ticketStatus)
-  if (hideWhenResolved && showTicketHistoryOnly) return null
+  if (hideWhenResolved && (isApprovedStatus(status) || showTicketHistoryOnly)) return null
   if (showTicketHistoryOnly && !linkedTicket && !ticketTimelineEntry) return null
   const tone = rejected
     ? {
