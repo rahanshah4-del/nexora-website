@@ -31,7 +31,7 @@ import {
   syncVehiclesWithBookings,
 } from '../data/transportBookings.js'
 import { loadTransportVehicles } from '../data/transportVehicles.js'
-import { loadTransportCustomers, applyTransportCustomerLedger, saveTransportCustomers } from '../data/transportCustomers.js'
+import { loadTransportCustomers, applyTransportCustomerLedger, saveTransportCustomers, upsertTransportCustomer } from '../data/transportCustomers.js'
 import { recordTransportPayment } from '../data/transportPayments.js'
 import { useBusinessSettings } from '../hooks/useBusinessSettings.js'
 import { printHtmlDocument } from '../lib/printerService.js'
@@ -57,7 +57,19 @@ function escapeHtml(value) {
   })[char])
 }
 
+function displayBookingNotes(booking = {}) {
+  const notes = String(booking.notes || '').trim()
+  if (!notes) return ''
+  if (booking.status !== 'cancelled') return notes
+  return notes
+    .split(/\n+/)
+    .filter((line) => !/returned with pending due/i.test(line))
+    .join('\n')
+    .trim()
+}
+
 function buildBookingPrintHtml(booking) {
+  const notes = displayBookingNotes(booking)
   return `<!doctype html>
   <html>
     <head>
@@ -125,7 +137,16 @@ function buildBookingPrintHtml(booking) {
               ${booking.refundedAt ? `<div class="refund-line"><span>Refund Date</span><strong>${escapeHtml(new Date(booking.refundedAt).toLocaleString())}</strong></div>` : ''}
             </div>
           ` : ''}
-          ${booking.notes ? `<p style="margin-top:16px;font-size:13px;color:#475569"><strong>Notes:</strong> ${escapeHtml(booking.notes)}</p>` : ''}
+          ${booking.status === 'cancelled' && booking.cancellationFine > 0 ? `
+            <div class="refund-box" style="border-color:#d97706;background:#fffbeb;color:#92400e">
+              <div class="refund-head">
+                <span>Cancellation Fine</span>
+                <span class="refund-badge" style="background:#d97706">Retained</span>
+              </div>
+              <div class="refund-line"><span>Fine Amount</span><strong>${escapeHtml(formatTransportCurrency(booking.cancellationFine))}</strong></div>
+            </div>
+          ` : ''}
+          ${notes ? `<p style="margin-top:16px;font-size:13px;color:#475569"><strong>Notes:</strong> ${escapeHtml(notes)}</p>` : ''}
           ${booking.cancelReason ? `<p style="margin-top:16px;font-size:13px;color:#be123c"><strong>Cancel reason:</strong> ${escapeHtml(booking.cancelReason)}</p>` : ''}
         </div>
         <div class="footer"><span>NEXORA SOLUTION</span><span>ALL RIGHTS RESERVED 2019-2026</span></div>
@@ -135,6 +156,7 @@ function buildBookingPrintHtml(booking) {
 }
 
 function buildBooking58mmPrintHtml(booking) {
+  const notes = displayBookingNotes(booking)
   return `<!doctype html>
   <html>
     <head>
@@ -179,7 +201,7 @@ function buildBooking58mmPrintHtml(booking) {
         <div class="line"></div>
         <div class="row"><span>Total</span><strong>${escapeHtml(formatTransportCurrency(booking.total))}</strong></div>
         <div class="row"><span>Paid</span><strong>${escapeHtml(formatTransportCurrency(booking.advancePaid))}</strong></div>
-        <div class="row"><span>Due</span><strong>${escapeHtml(formatTransportCurrency(booking.dueAmount))}</strong></div>
+        <div class="row"><span>${booking.status === 'cancelled' ? 'Fine' : 'Due'}</span><strong>${escapeHtml(formatTransportCurrency(booking.status === 'cancelled' ? booking.cancellationFine : booking.dueAmount))}</strong></div>
         <div class="row"><span>Deposit</span><strong>${escapeHtml(formatTransportCurrency(booking.securityDeposit))}</strong></div>
         <div class="row big"><span>Payment</span><strong>${escapeHtml(booking.paymentMethod)}</strong></div>
         ${booking.refundAmount > 0 ? `
@@ -189,8 +211,9 @@ function buildBooking58mmPrintHtml(booking) {
             <div class="row"><span>Method</span><strong>${escapeHtml(booking.refundMethod || booking.paymentMethod || 'Cash')}</strong></div>
           </div>
         ` : ''}
+        ${booking.status === 'cancelled' && booking.cancellationFine > 0 ? `<div class="refund"><div class="row"><span>Fine</span><strong>${escapeHtml(formatTransportCurrency(booking.cancellationFine))}</strong></div></div>` : ''}
         ${booking.cancelReason ? `<div class="line"></div><div><strong>Cancel reason:</strong> ${escapeHtml(booking.cancelReason)}</div>` : ''}
-        ${booking.notes ? `<div class="line"></div><div><strong>Notes:</strong> ${escapeHtml(booking.notes)}</div>` : ''}
+        ${notes ? `<div class="line"></div><div><strong>Notes:</strong> ${escapeHtml(notes)}</div>` : ''}
         <div class="line"></div>
         <div class="footer">Powered by Nexora<br/>ALL RIGHTS RESERVED 2019-2026</div>
       </section>
@@ -260,6 +283,8 @@ const blankForm = {
   notes: '',
 }
 
+const transportPaymentMethods = ['Cash', 'Card', 'JazzCash', 'Easypaisa']
+
 function transportWarningMessage(action = 'continue') {
   return `This will ${action}. Please review before continuing.`
 }
@@ -279,6 +304,9 @@ export default function TransportBookingsPage() {
   const [cancelReason, setCancelReason] = useState('')
   const [refundForm, setRefundForm] = useState({ amount: '', method: 'Cash', printReceipt: true })
   const [returnTarget, setReturnTarget] = useState(null)
+  const [returnSettlement, setReturnSettlement] = useState({ amount: '', method: 'Cash' })
+  const [returnCustomerForm, setReturnCustomerForm] = useState({ name: '', phone: '' })
+  const [returnWarning, setReturnWarning] = useState('')
   const [confirmPrompt, setConfirmPrompt] = useState(null)
 
   useEffect(() => {
@@ -460,42 +488,104 @@ export default function TransportBookingsPage() {
     closeModal()
   }
 
+  function openReturnControls(booking) {
+    setReturnTarget(booking)
+    setReturnSettlement({
+      amount: booking?.dueAmount > 0 ? String(Math.round(booking.dueAmount)) : '0',
+      method: booking?.paymentMethod || 'Cash',
+    })
+    setReturnCustomerForm({ name: '', phone: booking?.phone || '' })
+    setReturnWarning('')
+  }
+
+  function closeReturnControls() {
+    setReturnTarget(null)
+    setReturnSettlement({ amount: '', method: 'Cash' })
+    setReturnCustomerForm({ name: '', phone: '' })
+    setReturnWarning('')
+  }
+
   function confirmReturnBooking() {
     const booking = returnTarget
     if (!booking) return
-    // Returning the vehicle: settle any remaining due as collected on return.
-    const due = booking.dueAmount
+    const due = Number(booking.dueAmount) || 0
+    const amountReceived = Math.max(0, Number(returnSettlement.amount) || 0)
+    if (amountReceived > due) {
+      setReturnWarning(`Received amount cannot exceed due amount ${formatTransportCurrency(due)}.`)
+      return
+    }
+    const remainingDue = Math.max(0, due - amountReceived)
+    const needsCustomerForDue = remainingDue > 0 && booking.customerId === 'tcust-walkin'
+    let settlementCustomer = {
+      id: booking.customerId,
+      name: booking.customer,
+      phone: booking.phone,
+    }
+    let customerRows = loadTransportCustomers()
+
+    if (needsCustomerForDue) {
+      const customerName = returnCustomerForm.name.trim()
+      const customerPhone = returnCustomerForm.phone.trim()
+      if (!customerName) {
+        setReturnWarning('Please add customer name before keeping due amount.')
+        return
+      }
+      customerRows = upsertTransportCustomer({
+        name: customerName,
+        phone: customerPhone,
+        notes: `Created from return due for booking ${booking.bookingNumber}.`,
+      })
+      settlementCustomer = customerRows.find((customer) => customer.name === customerName && customer.phone === customerPhone) || customerRows[0]
+      customerRows = customerRows.map((customer) => {
+        if (customer.id !== 'tcust-walkin') return customer
+        return {
+          ...customer,
+          creditBalance: Math.max(0, (Number(customer.creditBalance) || 0) - due),
+        }
+      })
+    }
+    const nextPaid = Math.min(booking.total, (Number(booking.advancePaid) || 0) + amountReceived)
     const nextBookings = upsertTransportBooking({
       ...booking,
-      advancePaid: booking.total,
+      customerId: settlementCustomer.id,
+      customer: settlementCustomer.name,
+      phone: settlementCustomer.phone,
+      advancePaid: nextPaid,
       status: 'returned',
-      paymentStatus: 'paid',
+      paymentStatus: remainingDue > 0 ? 'partial' : 'paid',
+      paymentMethod: returnSettlement.method || booking.paymentMethod || 'Cash',
+      notes: [
+        booking.notes,
+        remainingDue > 0 ? `Returned with pending due ${formatTransportCurrency(remainingDue)}.` : '',
+      ].filter(Boolean).join('\n'),
     })
-    if (due > 0) {
-      const updatedCustomers = applyTransportCustomerLedger(loadTransportCustomers(), booking.customerId, {
+    if (amountReceived > 0 || needsCustomerForDue) {
+      const updatedCustomers = applyTransportCustomerLedger(customerRows, settlementCustomer.id, {
         bookingNumber: booking.bookingNumber,
         total: booking.total,
-        paid: due,
-        due: 0,
-        method: booking.paymentMethod,
-        note: 'Balance collected on return',
+        paid: amountReceived,
+        due: needsCustomerForDue ? remainingDue : 0,
+        method: returnSettlement.method || booking.paymentMethod || 'Cash',
+        note: remainingDue > 0 ? 'Returned with pending customer due' : 'Balance collected on return',
       })
       saveTransportCustomers(updatedCustomers)
       setCustomers(updatedCustomers)
+    }
+    if (amountReceived > 0) {
       recordTransportPayment({
         bookingNumber: booking.bookingNumber,
-        customerId: booking.customerId,
-        customer: booking.customer,
-        amount: due,
-        method: booking.paymentMethod,
+        customerId: settlementCustomer.id,
+        customer: settlementCustomer.name,
+        amount: amountReceived,
+        method: returnSettlement.method || booking.paymentMethod || 'Cash',
         type: 'rental',
-        note: 'Balance on return',
+        note: remainingDue > 0 ? `Partial return payment. Remaining due ${formatTransportCurrency(remainingDue)}` : 'Balance on return',
       })
     }
     setBookings(nextBookings)
     syncVehiclesWithBookings()
     setVehicles(loadTransportVehicles())
-    setReturnTarget(null)
+    closeReturnControls()
   }
 
   function activate(booking) {
@@ -524,6 +614,31 @@ export default function TransportBookingsPage() {
       setWarning(`Refund cannot exceed paid amount ${formatTransportCurrency(cancelTarget.advancePaid)}.`)
       return
     }
+    const cancellationFine = Math.max(0, (Number(cancelTarget.advancePaid) || 0) - refundAmount)
+    const updatedCustomers = loadTransportCustomers().map((customer) => {
+      if (customer.id !== cancelTarget.customerId) return customer
+      return {
+        ...customer,
+        creditBalance: Math.max(0, (Number(customer.creditBalance) || 0) - (Number(cancelTarget.dueAmount) || 0)),
+        paidAmount: Math.max(0, (Number(customer.paidAmount) || 0) - refundAmount),
+        bookingHistory: [
+          {
+            bookingNumber: cancelTarget.bookingNumber,
+            total: cancellationFine,
+            paid: cancellationFine,
+            due: 0,
+            method: refundForm.method,
+            date: new Date().toISOString().slice(0, 10),
+            note: cancellationFine > 0
+              ? `Booking cancelled. Cancellation fine ${formatTransportCurrency(cancellationFine)} retained.`
+              : 'Booking cancelled. No due retained.',
+          },
+          ...(customer.bookingHistory || []),
+        ].slice(0, 50),
+      }
+    })
+    saveTransportCustomers(updatedCustomers)
+    setCustomers(updatedCustomers)
     if (refundAmount > 0) {
       recordTransportPayment({
         bookingNumber: cancelTarget.bookingNumber,
@@ -537,11 +652,13 @@ export default function TransportBookingsPage() {
     }
     const nextBookings = upsertTransportBooking({
       ...cancelTarget,
-      advancePaid: Math.max(0, cancelTarget.advancePaid - refundAmount),
+      advancePaid: cancellationFine,
       status: 'cancelled',
       paymentStatus: refundAmount > 0 ? 'refunded' : 'cancelled',
       cancelReason: cancelReason.trim(),
+      notes: displayBookingNotes({ ...cancelTarget, status: 'cancelled' }),
       refundAmount,
+      cancellationFine,
       refundMethod: refundForm.method,
       refundedAt: refundAmount > 0 ? new Date().toISOString() : '',
       cancelledAt: new Date().toISOString(),
@@ -586,6 +703,11 @@ export default function TransportBookingsPage() {
     ].join('\n')
     window.open(`https://wa.me/${phone || ''}?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer')
   }
+
+  const returnDueAmount = returnTarget ? Number(returnTarget.dueAmount) || 0 : 0
+  const returnReceivedAmount = Math.max(0, Number(returnSettlement.amount) || 0)
+  const returnRemainingDue = Math.max(0, returnDueAmount - Math.min(returnReceivedAmount, returnDueAmount))
+  const returnNeedsCustomer = Boolean(returnTarget && returnTarget.customerId === 'tcust-walkin' && returnRemainingDue > 0)
 
   return (
     <motion.div className="min-w-0 space-y-5" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.28 }}>
@@ -640,9 +762,23 @@ export default function TransportBookingsPage() {
                   </div>
                   <div className="text-right">
                     <p className="text-base font-black tracking-tight text-slate-950 dark:text-white">{formatTransportCurrency(booking.total)}</p>
-                    {booking.refundAmount > 0 ? (
-                      <div className="mt-1 inline-flex items-center rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-black text-rose-700">
-                        Refunded {formatTransportCurrency(booking.refundAmount)}
+                    {booking.status === 'cancelled' ? (
+                      <div className="mt-1 flex flex-wrap justify-end gap-1.5">
+                        {booking.cancellationFine > 0 ? (
+                          <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-black text-amber-700">
+                            Fine {formatTransportCurrency(booking.cancellationFine)}
+                          </span>
+                        ) : null}
+                        {booking.refundAmount > 0 ? (
+                          <span className="inline-flex items-center rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-black text-rose-700">
+                            Refunded {formatTransportCurrency(booking.refundAmount)}
+                          </span>
+                        ) : null}
+                        {!booking.cancellationFine && !booking.refundAmount ? (
+                          <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-black text-slate-500">
+                            Cancelled clear
+                          </span>
+                        ) : null}
                       </div>
                     ) : (
                       <p className="mt-0.5 text-xs font-semibold text-slate-500">
@@ -719,7 +855,7 @@ export default function TransportBookingsPage() {
                     <Button
                       variant="subtle"
                       className="h-8 px-3 text-xs"
-                      onClick={() => requestTransportConfirm(`open return controls for booking ${booking.bookingNumber}`, () => setReturnTarget(booking), {
+                      onClick={() => requestTransportConfirm(`open return controls for booking ${booking.bookingNumber}`, () => openReturnControls(booking), {
                         emoji: '↩️',
                         title: 'Open return controls?',
                         confirmLabel: 'Open return',
@@ -802,11 +938,8 @@ export default function TransportBookingsPage() {
                 </Field>
                 <Field label="Payment Method">
                   <Select className="h-12 min-w-0 truncate pr-10" value={form.paymentMethod} onChange={(event) => updateForm('paymentMethod', event.target.value)}>
-                    <option>Cash</option>
-                    <option>Card</option>
+                    {transportPaymentMethods.map((method) => <option key={method}>{method}</option>)}
                     <option>Bank Transfer</option>
-                    <option>JazzCash</option>
-                    <option>Easypaisa</option>
                   </Select>
                 </Field>
                 <div className="min-w-0 rounded-2xl border border-sky-100 bg-sky-50 p-3 md:col-span-2">
@@ -921,18 +1054,19 @@ export default function TransportBookingsPage() {
       ) : null}
 
       {cancelTarget ? (
-        <div className="fixed inset-0 z-[90] grid place-items-center bg-slate-950/45 p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[90] grid place-items-center overflow-y-auto bg-slate-950/45 p-4 backdrop-blur-sm">
           <div className="w-full max-w-lg rounded-[1.25rem] border border-slate-200 bg-white p-5 shadow-2xl">
             <div className="flex items-center gap-2 text-rose-600">
               <HiOutlineXCircle className="h-5 w-5" />
               <p className="text-base font-black tracking-tight">Cancel booking & process refund</p>
             </div>
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              Booking {cancelTarget.bookingNumber} will be cancelled. Enter refund details and print refund receipt if needed.
+              Booking {cancelTarget.bookingNumber} will be cancelled. Any paid amount not refunded will be saved as cancellation fine/profit.
             </p>
             <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-3 text-sm">
               <SummaryRow label="Paid amount" value={formatTransportCurrency(cancelTarget.advancePaid)} />
               <SummaryRow label="Current due" value={formatTransportCurrency(cancelTarget.dueAmount)} tone="text-rose-600" />
+              <SummaryRow label="Fine if not refunded" value={formatTransportCurrency(Math.max(0, (Number(cancelTarget.advancePaid) || 0) - (Number(refundForm.amount) || 0)))} tone="text-amber-600" />
             </div>
             <Field label="Cancel Reason">
               <Input value={cancelReason} onChange={(event) => setCancelReason(event.target.value)} placeholder="Customer cancelled, vehicle unavailable, duplicate booking..." />
@@ -996,35 +1130,99 @@ export default function TransportBookingsPage() {
 
       {returnTarget ? (
         <div className="fixed inset-0 z-[90] grid place-items-center bg-slate-950/45 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-[1.25rem] border border-slate-200 bg-white p-5 shadow-2xl">
+          <div className="w-full max-w-lg rounded-[1.25rem] border border-slate-200 bg-white p-5 shadow-2xl">
             <div className="flex items-center gap-2 text-amber-600">
               <HiOutlineExclamationTriangle className="h-5 w-5" />
               <p className="text-base font-black tracking-tight">Confirm vehicle return</p>
             </div>
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              Waqai gaari wapas aa gayi hai? This will mark {returnTarget.vehicleName} as returned, settle remaining due, and free the vehicle.
+              Waqai gaari wapas aa gayi hai? Amount received record karein. Agar client kam paisa de raha hai to remaining due customer ke naam par pending rahega aur vehicle free ho jayegi.
             </p>
             <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-3 text-sm">
               <SummaryRow label="Booking" value={returnTarget.bookingNumber} />
               <SummaryRow label="Vehicle" value={returnTarget.vehicleRegistration} />
               <SummaryRow label="Due to settle" value={formatTransportCurrency(returnTarget.dueAmount)} tone="text-rose-600" />
             </div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <Field label="Amount received now">
+                <Input
+                  className="h-12"
+                  type="number"
+                  min="0"
+                  max={returnDueAmount}
+                  value={returnSettlement.amount}
+                  onChange={(event) => {
+                    setReturnSettlement((current) => ({ ...current, amount: event.target.value }))
+                    setReturnWarning('')
+                  }}
+                />
+              </Field>
+              <Field label="Payment method">
+                <Select
+                  className="h-12 pr-10"
+                  value={returnSettlement.method}
+                  onChange={(event) => setReturnSettlement((current) => ({ ...current, method: event.target.value }))}
+                >
+                  {transportPaymentMethods.map((method) => <option key={method}>{method}</option>)}
+                </Select>
+              </Field>
+            </div>
+            <div className={`mt-3 rounded-2xl border px-3 py-2 text-sm font-semibold ${returnRemainingDue > 0 ? 'border-amber-200 bg-amber-50 text-amber-700' : 'border-emerald-200 bg-emerald-50 text-emerald-700'}`}>
+              {returnRemainingDue > 0
+                ? `Remaining due after return: ${formatTransportCurrency(returnRemainingDue)}`
+                : 'Full due will be settled on return.'}
+            </div>
+            {returnNeedsCustomer ? (
+              <div className="mt-3 rounded-2xl border border-rose-200 bg-rose-50 p-3">
+                <div className="flex items-start gap-2">
+                  <HiOutlineExclamationTriangle className="mt-0.5 h-5 w-5 shrink-0 text-rose-500" />
+                  <div>
+                    <p className="text-sm font-black text-rose-700">Add customer before keeping due</p>
+                    <p className="mt-0.5 text-xs font-semibold text-rose-600">
+                      Walk-in Customer par due save nahi ho sakta. Please customer details add karein, phir return process complete hoga.
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  <Field label="Customer name">
+                    <Input
+                      className="h-12 bg-white"
+                      value={returnCustomerForm.name}
+                      onChange={(event) => {
+                        setReturnCustomerForm((current) => ({ ...current, name: event.target.value }))
+                        setReturnWarning('')
+                      }}
+                      placeholder="Customer full name"
+                    />
+                  </Field>
+                  <Field label="Contact number">
+                    <Input
+                      className="h-12 bg-white"
+                      value={returnCustomerForm.phone}
+                      onChange={(event) => setReturnCustomerForm((current) => ({ ...current, phone: event.target.value }))}
+                      placeholder="03XXXXXXXXX"
+                    />
+                  </Field>
+                </div>
+              </div>
+            ) : null}
+            {returnWarning ? <p className="mt-2 text-sm font-semibold text-rose-600">{returnWarning}</p> : null}
             <div className="mt-4 flex justify-end gap-2">
               <Button
                 variant="subtle"
-                onClick={() => requestTransportConfirm('close return confirmation and keep booking open', () => setReturnTarget(null), {
+                onClick={() => requestTransportConfirm('close return confirmation and keep booking open', closeReturnControls, {
                   emoji: '⚠️',
                   title: 'Close return window?',
                   confirmLabel: 'Keep booking open',
                 })}
               >No, keep open</Button>
               <Button
-                onClick={() => requestTransportConfirm('mark this vehicle as returned, settle dues, and free the vehicle', confirmReturnBooking, {
+                onClick={() => requestTransportConfirm('mark this vehicle as returned, record payment, and keep any short amount as customer due', confirmReturnBooking, {
                   emoji: '✅',
                   title: 'Confirm vehicle return?',
-                  confirmLabel: 'Mark returned',
+                  confirmLabel: 'Return & record',
                 })}
-              >Yes, vehicle returned</Button>
+              >Return & record payment</Button>
             </div>
           </div>
         </div>

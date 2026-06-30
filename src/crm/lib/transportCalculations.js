@@ -26,6 +26,13 @@ export function getTransportPaymentSignedAmount(payment = {}) {
   return isTransportRefundPayment(payment) ? -amount : amount
 }
 
+function cancellationFineAmount(booking = {}) {
+  return safeMoney(Math.max(
+    safeMoney(booking.cancellationFine),
+    safeMoney(booking.advancePaid),
+  ))
+}
+
 export function formatTransportSignedCurrency(value) {
   const amount = safeSignedMoney(value)
   const prefix = amount < 0 ? '-PKR ' : 'PKR '
@@ -43,6 +50,7 @@ export function buildTransportFinanceSummary({ bookings = [], payments = [] } = 
   const cancelledPayments = payments.filter((payment) => cancelledBookingNumbers.has(payment.bookingNumber))
   const activeBookings = bookings.filter((booking) => String(booking.status || '').toLowerCase() !== 'cancelled')
   const cancelledBookings = bookings.filter((booking) => String(booking.status || '').toLowerCase() === 'cancelled')
+  const cancellationFines = cancelledBookings.reduce((sum, booking) => sum + cancellationFineAmount(booking), 0)
   const grossCollected = activePayments
     .filter((payment) => !isTransportRefundPayment(payment))
     .reduce((sum, payment) => sum + safeMoney(payment.amount), 0)
@@ -62,12 +70,13 @@ export function buildTransportFinanceSummary({ bookings = [], payments = [] } = 
     activeRefunds,
     cancelledRefunds,
     totalRefunds,
-    netCollected: Math.max(0, grossCollected - activeRefunds),
+    netCollected: Math.max(0, grossCollected - activeRefunds + cancellationFines),
     activeBookingValue: activeBookings.reduce((sum, booking) => sum + safeMoney(booking.total), 0),
     cancelledBookingValue: cancelledBookings.reduce((sum, booking) => sum + safeMoney(booking.total), 0),
     paidAmount: activeBookings.reduce((sum, booking) => sum + safeMoney(booking.advancePaid), 0),
     outstandingDues: activeBookings.reduce((sum, booking) => sum + safeMoney(booking.dueAmount), 0),
     cancelledPaidAmount: cancelledBookings.reduce((sum, booking) => sum + safeMoney(booking.advancePaid), 0),
+    cancellationFines,
   }
 }
 
@@ -95,6 +104,7 @@ export function buildTransportReport({ vehicles = [], bookings = [], customers =
   const cancelledRows = cancelledBookings.map((booking) => ({
     ...booking,
     refundAmount: safeMoney(booking.refundAmount),
+    cancellationFine: cancellationFineAmount(booking),
     refundMethod: booking.refundMethod || refundRows.find((payment) => payment.bookingNumber === booking.bookingNumber)?.method || '',
   }))
   const vehicleRows = vehicleSource.map((vehicle) => {
@@ -137,6 +147,7 @@ export function buildTransportReport({ vehicles = [], bookings = [], customers =
     cancelledRefunds: finance.cancelledRefunds,
     cancelledBookingValue: finance.cancelledBookingValue,
     cancelledPaidAmount: finance.cancelledPaidAmount,
+    cancellationFines: finance.cancellationFines,
     securityDeposits,
     driverCharges,
     utilization: vehicleSource.length ? Math.round(((activeBookings.length + reservedBookings.length) / vehicleSource.length) * 100) : 0,

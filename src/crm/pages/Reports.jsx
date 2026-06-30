@@ -1840,6 +1840,7 @@ function buildTransportPdfReport({ template, report, settings = {}, dateRangeLab
             { label: 'Customer', value: (row) => row.customer },
             { label: 'Vehicle', value: (row) => row.vehicleName },
             { label: 'Paid', value: (row) => formatTransportCurrency(row.advancePaid) },
+            { label: 'Fine', value: (row) => row.cancellationFine > 0 ? formatTransportCurrency(row.cancellationFine) : '-' },
             { label: 'Refunded', value: (row) => row.refundAmount > 0 ? formatTransportCurrency(row.refundAmount) : '-' },
             { label: 'Reason', value: (row) => row.cancelReason || '-' },
           ],
@@ -1867,6 +1868,7 @@ function buildTransportPdfReport({ template, report, settings = {}, dateRangeLab
         { label: 'Net collected', value: formatTransportCurrency(report.totalRevenue) },
         { label: 'Gross active collected', value: formatTransportCurrency(report.grossCollected) },
         { label: 'Refunded amount', value: formatTransportCurrency(report.totalRefunds) },
+        { label: 'Cancellation fines', value: formatTransportCurrency(report.cancellationFines) },
         { label: 'Active booking value', value: formatTransportCurrency(report.bookingRevenue) },
         { label: 'Cancelled booking value', value: formatTransportCurrency(report.cancelledBookingValue) },
         { label: 'Paid amount', value: formatTransportCurrency(report.paidAmount) },
@@ -2040,6 +2042,7 @@ function TransportLedgerTemplate({ report }) {
           ['Booking', (row) => row.bookingNumber],
           ['Customer', (row) => row.customer],
           ['Paid', (row) => formatTransportCurrency(row.advancePaid)],
+          ['Fine', (row) => row.cancellationFine > 0 ? formatTransportCurrency(row.cancellationFine) : '-'],
           ['Refunded', (row) => row.refundAmount > 0 ? formatTransportCurrency(row.refundAmount) : '-'],
           ['Reason', (row) => row.cancelReason || '-'],
         ]}
@@ -2094,6 +2097,7 @@ function TransportFinancialTemplate({ report }) {
           <div className="mt-4 space-y-2 text-sm">
             <SummaryRow label="Gross active collected" value={formatTransportCurrency(report.grossCollected)} />
             <SummaryRow label="Refunded amount" value={formatTransportCurrency(report.totalRefunds)} />
+            <SummaryRow label="Cancellation fines" value={formatTransportCurrency(report.cancellationFines)} />
             <SummaryRow label="Paid amount" value={formatTransportCurrency(report.paidAmount)} />
             <SummaryRow label="Due amount" value={formatTransportCurrency(report.outstandingDues)} />
             <SummaryRow label="Driver charges" value={formatTransportCurrency(report.driverCharges)} />

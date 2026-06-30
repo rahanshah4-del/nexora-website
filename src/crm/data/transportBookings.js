@@ -96,6 +96,9 @@ export function normalizeTransportBooking(booking = {}) {
     cancelReason: booking.cancelReason || '',
     cancelledAt: booking.cancelledAt || '',
     refundAmount,
+    cancellationFine: status === 'cancelled'
+      ? Math.max(safeMoney(booking.cancellationFine), totals.advancePaid)
+      : safeMoney(booking.cancellationFine),
     refundMethod: booking.refundMethod || '',
     refundedAt: booking.refundedAt || '',
     totals,

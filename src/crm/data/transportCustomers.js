@@ -2,6 +2,7 @@ import { safeMoney } from '../lib/transportCalculations.js'
 import { notifyLocalDataChanged } from '../lib/localDataEvents.js'
 
 export const transportCustomersStorageKey = 'nexora.transport.customers.v1'
+const transportBookingsStorageKey = 'nexora.transport.bookings.v1'
 
 const seedCustomers = [
   {
@@ -31,8 +32,39 @@ function readStoredCustomers() {
   }
 }
 
+function cancelledBookingNumbers() {
+  if (typeof window === 'undefined') return new Set()
+  try {
+    const stored = window.localStorage.getItem(transportBookingsStorageKey)
+    const parsed = stored ? JSON.parse(stored) : []
+    if (!Array.isArray(parsed)) return new Set()
+    return new Set(
+      parsed
+        .filter((booking) => String(booking?.status || '').toLowerCase() === 'cancelled')
+        .map((booking) => booking?.bookingNumber)
+        .filter(Boolean),
+    )
+  } catch {
+    return new Set()
+  }
+}
+
 export function loadTransportCustomers() {
-  return readStoredCustomers().map((customer) => normalizeTransportCustomer(customer)).filter((customer) => customer.id)
+  const cancelledNumbers = cancelledBookingNumbers()
+  return readStoredCustomers()
+    .map((customer) => normalizeTransportCustomer(customer))
+    .map((customer) => {
+      if (!cancelledNumbers.size || !customer.bookingHistory?.length) return customer
+      const cancelledDue = customer.bookingHistory
+        .filter((entry) => cancelledNumbers.has(entry.bookingNumber))
+        .reduce((sum, entry) => sum + safeMoney(entry.due), 0)
+      if (cancelledDue <= 0) return customer
+      return {
+        ...customer,
+        creditBalance: Math.max(0, customer.creditBalance - cancelledDue),
+      }
+    })
+    .filter((customer) => customer.id)
 }
 
 export function saveTransportCustomers(customers) {
