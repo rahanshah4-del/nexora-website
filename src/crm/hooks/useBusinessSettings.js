@@ -34,6 +34,19 @@ export const defaultBusinessSettings = {
     webUsbInterface: 0,
     webUsbEndpoint: 1,
   },
+  barcodeScannerSettings: {
+    enabled: true,
+    mode: 'keyboard',
+    autoAddToCart: true,
+    submitKey: 'Enter',
+    minLength: 4,
+    scanTimeoutMs: 700,
+    deviceName: '',
+    lastTestCode: '',
+  },
+  retailPosPromos: null,
+  defaultPosTaxRate: 0,
+  defaultInvoiceTaxRate: 0,
 }
 
 export function businessSettingsId(businessType) {

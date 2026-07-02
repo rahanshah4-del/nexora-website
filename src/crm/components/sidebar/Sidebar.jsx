@@ -6,7 +6,7 @@ import { memo, useCallback, useMemo } from 'react'
 import { useUser } from '../../hooks/useUser.js'
 import { useWorkspaceAccess } from '../../hooks/useWorkspaceAccess.js'
 import logoUrl from '../../../assets/logo/nexora-logo.svg'
-import { isDeveloperOwnerAccount, labelForBusinessType, normalizeBusinessType, selectedModulesForSidebar } from '../../data/moduleAccess.js'
+import { isDeveloperOwnerAccount, labelForBusinessModule, labelForBusinessType, moduleCatalog, normalizeBusinessType, selectedModulesForSidebar } from '../../data/moduleAccess.js'
 import { resolveWorkspaceName } from '../../../lib/workspaceName.js'
 import { HiOutlineBanknotes, HiOutlineSquares2X2 } from 'react-icons/hi2'
 
@@ -87,6 +87,8 @@ function orderSalesHubSidebar(items) {
 const RETAIL_POS_SIDEBAR_ORDER = [
   'dashboard',
   'pos',
+  'posOrders',
+  'posDiscounts',
   'customers',
   'inventory',
   'invoices',
@@ -305,6 +307,8 @@ const SidebarNavItem = memo(function SidebarNavItem({ item, collapsed, onNavigat
   return (
     <NavLink
       to={item.to}
+      target={item.openInNewWindow ? '_blank' : undefined}
+      rel={item.openInNewWindow ? 'noopener noreferrer' : undefined}
       onClick={() => {
         if (item.to === '/app/inventory') {
           console.log('[Inventory Route] clicked')
@@ -357,7 +361,8 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
   const access = useWorkspaceAccess()
   const businessTitle = labelForBusinessType(businessType)
   const developerOverride = isDeveloperOwnerAccount(userDoc, firebaseUser)
-  const ownerAdminBypass = Boolean(developerOverride || userIsOwner || userIsAdmin || access.isAdmin)
+  const staffAccount = Boolean(userDoc?.isStaff === true || (access.isStaff && !userIsOwner && !userIsAdmin))
+  const ownerAdminBypass = !staffAccount && Boolean(developerOverride || userIsOwner || userIsAdmin || access.isAdmin)
   const workspaceName = useMemo(
     () =>
       resolveWorkspaceName({
@@ -368,7 +373,26 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
     [userDoc, userId],
   )
   const sidebarItems = useMemo(() => {
-    const modules = selectedModulesForSidebar({
+    const staffPermissionModules = staffAccount
+      ? Array.from(new Set([
+          'dashboard',
+          ...access.permissionKeys
+            .filter((permission) => permission.action === 'view' && access.hasModulePermission(permission.moduleKey, 'view'))
+            .map((permission) => permission.moduleKey),
+        ]))
+          .map((moduleKey) => {
+            const module = moduleCatalog.find((item) => item.key === moduleKey)
+            return module
+              ? {
+                  ...module,
+                  label: labelForBusinessModule(module.key, businessType),
+                  comingSoon: false,
+                }
+              : null
+          })
+          .filter(Boolean)
+      : null
+    const modules = staffPermissionModules || selectedModulesForSidebar({
       enabledModules: userDoc?.enabledModules,
       onboardingCompleted: userDoc?.onboardingCompleted,
       plan: accessPlan,
@@ -394,7 +418,7 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
         item.key === 'reports' &&
         item.to === '/app/reports'
       if (forceSchoolReports) return true
-      if (!ownerAdminBypass && access.isStaff && !access.hasModulePermission(item.key, 'view')) {
+      if (staffAccount && !item.alwaysEnabled && !access.hasModulePermission(item.key, 'view')) {
         console.warn('[Sales Hub Access Denied]', {
           source: 'Sidebar',
           role: role || access.role || '',
@@ -405,7 +429,7 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
         })
         return false
       }
-      if (item.to === '/app/team' && !ownerAdminBypass && !access.hasModulePermission('team', 'view')) {
+      if (item.to === '/app/team' && staffAccount && !access.hasModulePermission('team', 'view')) {
         console.warn('[Sales Hub Access Denied]', {
           source: 'Sidebar',
           role: role || access.role || '',
@@ -428,7 +452,8 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
         comingSoon: false,
       })
     }
-    if (!items.some((item) => item.key === 'reports')) {
+    const canShowReports = ownerAdminBypass || (!staffAccount && access.hasModulePermission('reports', 'view')) || (staffAccount && access.hasModulePermission('reports', 'view'))
+    if (canShowReports && !items.some((item) => item.key === 'reports')) {
       const navItem = orderedSidebarItems.find((item) => item.to === '/app/reports')
       items.push({
         ...(navItem || {}),
@@ -445,7 +470,7 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
     if (normalizedType === 'Transport / Rental') return orderTransportRentalSidebar(items)
     if (normalizedType === 'WhatsApp CRM') return orderWhatsappCrmSidebar(items)
     return items
-  }, [access, accessPlan, businessType, developerOverride, ownerAdminBypass, role, userDoc?.enabledModules, userDoc?.onboardingCompleted, workspaceId])
+  }, [access, accessPlan, businessType, developerOverride, ownerAdminBypass, role, staffAccount, userDoc?.enabledModules, userDoc?.isStaff, userDoc?.onboardingCompleted, workspaceId])
 
   const handleSwitchProduct = useCallback(() => {
     onNavigate?.()

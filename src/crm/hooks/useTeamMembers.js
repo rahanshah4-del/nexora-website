@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { collection, deleteDoc, doc, getDocs, query, setDoc, where } from 'firebase/firestore'
 import { db } from '../lib/firebase.js'
 import { createUserDoc, patchUserDoc, removeUserDoc, subscribeUserCollection } from '../lib/firestore.js'
 import { useUser } from './useUser.js'
@@ -14,6 +15,85 @@ function normalizeMember(m) {
 }
 
 const OWNER_PROTECTION_MESSAGE = 'Workspace owner cannot be disabled or downgraded.'
+
+function staffInviteEmailKey(email) {
+  return String(email || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'staff-email'
+}
+
+async function removeStaffAccessRecords(workspaceId, member) {
+  if (!db || !workspaceId || !member) return
+  const ids = new Set([member.id, member.uid, member.userId, member.staffId].filter(Boolean).map(String))
+  const email = String(member.email || '').trim().toLowerCase()
+  const disabledProfileBase = {
+    name: member.name || member.fullName || 'Staff User',
+    fullName: member.fullName || member.name || 'Staff User',
+    displayName: member.displayName || member.name || member.fullName || 'Staff User',
+    email,
+    username: member.username || '',
+    usernameLower: String(member.username || '').trim().toLowerCase(),
+    role: String(member.role || 'staff').trim().toLowerCase() === 'owner' ? 'staff' : String(member.role || 'staff').trim().toLowerCase(),
+    status: 'disabled',
+    createdBy: member.createdBy || '',
+    inviteStatus: 'revoked',
+    permissions: member.permissions && typeof member.permissions === 'object' && !Array.isArray(member.permissions) ? member.permissions : {},
+    businessPermissions: member.businessPermissions && typeof member.businessPermissions === 'object' ? member.businessPermissions : {},
+    businessType: member.businessType || '',
+    selectedBusinessType: member.selectedBusinessType || member.businessType || '',
+    currentBusinessType: member.currentBusinessType || member.businessType || '',
+    primaryBusinessType: member.primaryBusinessType || member.businessType || '',
+    allowedBusinessTypes: Array.isArray(member.allowedBusinessTypes) ? member.allowedBusinessTypes : [],
+    selectedWorkspace: member.selectedWorkspace || '',
+    enabledModules: Array.isArray(member.enabledModules) ? member.enabledModules : [],
+    plan: member.plan || 'Free',
+    planStatus: member.planStatus || 'active',
+    billingCycle: member.billingCycle || 'monthly',
+    provider: member.provider || 'password',
+    emailVerifiedCustom: true,
+    onboardingCompleted: true,
+    workspaceId,
+    ownerId: workspaceId,
+    companyId: workspaceId,
+  }
+  const deletes = []
+
+  for (const id of ids) {
+    deletes.push(deleteDoc(doc(db, 'workspaces', workspaceId, 'staff', id)).catch(() => {}))
+    deletes.push(deleteDoc(doc(db, 'workspaces', workspaceId, 'permissions', id)).catch(() => {}))
+    deletes.push(deleteDoc(doc(db, 'staffInviteClaims', id)).catch(() => {}))
+    deletes.push(setDoc(doc(db, 'users', id), {
+      ...disabledProfileBase,
+      uid: id,
+      userId: id,
+      staffId: id,
+      email,
+    }))
+  }
+
+  if (email) {
+    deletes.push(deleteDoc(doc(db, 'staffInviteEmails', staffInviteEmailKey(email))).catch(() => {}))
+    for (const collectionName of ['staff', 'permissions']) {
+      const snap = await getDocs(query(collection(db, 'workspaces', workspaceId, collectionName), where('email', '==', email))).catch(() => null)
+      snap?.docs?.forEach((item) => {
+        deletes.push(deleteDoc(item.ref).catch(() => {}))
+        const data = item.data() || {}
+        ;[item.id, data.uid, data.userId, data.staffId].filter(Boolean).forEach((id) => ids.add(String(id)))
+      })
+    }
+  }
+
+  for (const id of ids) {
+    deletes.push(deleteDoc(doc(db, 'staffInviteClaims', id)).catch(() => {}))
+    deletes.push(setDoc(doc(db, 'users', id), {
+      ...disabledProfileBase,
+      uid: id,
+      userId: id,
+      staffId: id,
+      email,
+    }))
+  }
+
+  await Promise.all(deletes)
+}
 
 function logTeamPermissionIssue(error, details = {}) {
   console.warn('[Team Management Permission Debug]', {
@@ -100,8 +180,12 @@ export function useTeamMembers() {
         }
         const name = String(docPayload.name || '').trim()
         const email = String(docPayload.email || '').trim()
+        const emailLower = email.toLowerCase()
+        const currentEmail = String(firebaseUser?.email || userDoc?.email || '').trim().toLowerCase()
         if (!name) return { ok: false, error: 'Name is required' }
         if (!email) return { ok: false, error: 'Email is required' }
+        if (currentEmail && emailLower === currentEmail) return { ok: false, error: 'Owner/admin email ko staff member ke tor par add nahi kar sakte. Separate staff email use karein.' }
+        if (rows.some((item) => String(item.email || '').trim().toLowerCase() === emailLower)) return { ok: false, error: 'This email is already added as a team member.' }
         if (!db) {
           setRows((prev) => [{ id: `TM-${String(prev.length + 1).padStart(3, '0')}`, ...docPayload }, ...prev])
           return { ok: false, error: 'Secure Cloud Sync is not available right now' }
@@ -195,6 +279,7 @@ export function useTeamMembers() {
         setRows((prev) => prev.filter((m) => m.id !== id))
         if (!db || !workspaceId || !userId || source !== 'firestore') return { ok: true }
         try {
+          await removeStaffAccessRecords(workspaceId, member)
           await removeUserDoc(workspaceId, 'teamMembers', id)
           await logActivity({
             workspaceId,
@@ -203,7 +288,7 @@ export function useTeamMembers() {
             ...userActivityInfo(userDoc, firebaseUser),
             action: 'Staff deleted',
             module: 'Team',
-            description: `${member?.name || 'Team member'} was removed from the team.`,
+            description: `${member?.name || 'Team member'} was removed from the team and staff access board.`,
             targetId: id,
             targetName: member?.name || id,
             metadata: { email: member?.email || '' },

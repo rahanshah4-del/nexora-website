@@ -19,6 +19,7 @@ import { normalizeBusinessType } from '../data/moduleAccess.js'
 import { buildApprovedSubscriptionPayload } from '../../lib/subscriptionApproval.js'
 import { openPaymentInvoiceIds } from '../lib/approvalQueue.js'
 import { createWorkspaceNotification } from '../lib/notifications.js'
+import { useWorkspaceAccess } from './useWorkspaceAccess.js'
 
 const pendingPaymentStatuses = ['pending', 'pending_verification', 'pending_partial', 'partial_pending']
 const pendingRecordStatuses = ['pending', 'pending_approval', 'requested', 'invited']
@@ -292,7 +293,17 @@ async function addInventoryAdjustments(batch, workspaceId, invoice, now, busines
 
 export function useApprovals() {
   const { userId, workspaceId, businessType, role, userDoc, firebaseUser, isAdmin, isOwner } = useUser()
-  const canApprove = Boolean(isOwner || isAdmin || canApproveFinance(userDoc?.role || role))
+  const workspaceAccess = useWorkspaceAccess()
+  const canApprove = Boolean(
+    isOwner ||
+    isAdmin ||
+    workspaceAccess.hasModulePermission('approvals', 'approve') ||
+    workspaceAccess.hasModulePermission('invoices', 'approve') ||
+    workspaceAccess.hasModulePermission('payments', 'approve') ||
+    workspaceAccess.hasModulePermission('expenses', 'approve') ||
+    workspaceAccess.hasModulePermission('accounts', 'approve') ||
+    (canApproveFinance(userDoc?.role || role) && workspaceAccess.hasModulePermission('approvals', 'view'))
+  )
   const canApproveSubscription = false
   const [invoices, setInvoices] = useState([])
   const [approvalRecords, setApprovalRecords] = useState([])

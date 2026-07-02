@@ -670,6 +670,24 @@ service cloud.firestore {
         );
     }
 
+    function hasModulePermission(workspaceId, moduleKey, action) {
+      return hasPermission(workspaceId, 'module.' + moduleKey + '.' + action);
+    }
+
+    function canCreatePosSale(workspaceId) {
+      return workspaceAdmin(workspaceId)
+        || hasModulePermission(workspaceId, 'pos', 'create')
+        || hasModulePermission(workspaceId, 'posOrders', 'create');
+    }
+
+    function canDeleteModule(workspaceId, moduleKey) {
+      return workspaceAdmin(workspaceId) || hasModulePermission(workspaceId, moduleKey, 'delete');
+    }
+
+    function canApproveModule(workspaceId, moduleKey) {
+      return workspaceAdmin(workspaceId) || hasModulePermission(workspaceId, moduleKey, 'approve');
+    }
+
     function canManageWorkspace(workspaceId) {
       return workspaceAdmin(workspaceId)
         || (workspaceMember(workspaceId) && isManagerRole(memberRole()));
@@ -744,19 +762,180 @@ service cloud.firestore {
         && (!ownerMemberResource(workspaceId, memberId) || isOwnerRole(request.resource.data.role));
     }
 
+    function validStaffUserProfile(data, uid) {
+      return data.keys().hasOnly([
+          'uid',
+          'name',
+          'fullName',
+          'displayName',
+          'email',
+          'username',
+          'usernameLower',
+          'role',
+          'status',
+          'createdBy',
+          'ownerId',
+          'companyId',
+          'workspaceId',
+          'userId',
+          'staffId',
+          'permissions',
+          'businessPermissions',
+          'businessType',
+          'selectedBusinessType',
+          'currentBusinessType',
+          'primaryBusinessType',
+          'allowedBusinessTypes',
+          'selectedWorkspace',
+          'enabledModules',
+          'plan',
+          'planStatus',
+          'billingCycle',
+          'provider',
+          'inviteStatus',
+          'emailVerifiedCustom',
+          'emailVerifiedCustomAt',
+          'onboardingCompleted',
+          'invitedAt',
+          'invitedBy',
+          'acceptedAt',
+          'lastLoginAt',
+          'inviteEmailStatus',
+          'inviteEmailError',
+          'inviteEmailSentAt',
+          'passwordSetPending',
+          'createdAt',
+          'updatedAt',
+          'updatedBy',
+          'authCreated'
+        ])
+        && data.uid == uid
+        && data.userId == uid
+        && data.staffId == uid
+        && data.workspaceId is string
+        && data.workspaceId.size() > 0
+        && data.workspaceId.size() <= 128
+        && data.workspaceId != uid
+        && data.ownerId == data.workspaceId
+        && data.email is string
+        && data.email.size() > 3
+        && data.email.size() <= 254
+        && data.role is string
+        && !isOwnerRole(data.role)
+        && !(data.role in ['superadmin', 'Superadmin', 'SUPERADMIN'])
+        && data.status in ['active', 'blocked', 'disabled', 'inactive', 'Active', 'Blocked', 'Disabled', 'Inactive']
+        && data.emailVerifiedCustom == true
+        && data.onboardingCompleted == true
+        && (!data.keys().hasAny(['authCreated']) || data.authCreated is bool)
+        && (!data.keys().hasAny(['isAdmin']) || data.isAdmin == false);
+    }
+
+    function adminCanWriteStaffUser(uid) {
+      return signedIn()
+        && request.resource.data.workspaceId is string
+        && workspaceAdmin(request.resource.data.workspaceId)
+        && validStaffUserProfile(request.resource.data, uid);
+    }
+
+    function adminCanReadStaffUser() {
+      return signedIn()
+        && resource.data.workspaceId is string
+        && workspaceAdmin(resource.data.workspaceId)
+        && !isOwnerRole(resource.data.get('role', ''));
+    }
+
+    function selfUserUpdateSafe(uid) {
+      return signedIn()
+        && request.auth.uid == uid
+        && (
+          (
+            isOwnerRole(resource.data.get('role', 'owner'))
+            && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+              'uid',
+              'userId',
+              'ownerId',
+              'workspaceId',
+              'role',
+              'isAdmin',
+              'plan',
+              'planStatus',
+              'subscriptionStatus',
+              'billingCycle',
+              'trialStartAt',
+              'trialStartedAt',
+              'trialEndsAt',
+              'isTrialActive',
+              'expiresAt'
+            ])
+          )
+          ||
+          (
+            !isOwnerRole(resource.data.get('role', 'owner'))
+            && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+              'uid',
+              'userId',
+              'staffId',
+              'ownerId',
+              'companyId',
+              'workspaceId',
+              'role',
+              'isAdmin',
+              'permissions',
+              'businessPermissions',
+              'businessType',
+              'selectedBusinessType',
+              'currentBusinessType',
+              'primaryBusinessType',
+              'allowedBusinessTypes',
+              'selectedWorkspace',
+              'enabledModules',
+              'plan',
+              'planStatus',
+              'subscriptionStatus',
+              'billingCycle',
+              'trialStartAt',
+              'trialStartedAt',
+              'trialEndsAt',
+              'isTrialActive',
+              'expiresAt'
+            ])
+          )
+        );
+    }
+
     match /users/{uid} {
-      allow create: if signedIn() && request.auth.uid == uid;
-      allow read: if backendAdmin() || (signedIn() && request.auth.uid == uid);
+      allow create: if (signedIn() && request.auth.uid == uid)
+        || adminCanWriteStaffUser(uid);
+      allow read: if backendAdmin() || (signedIn() && request.auth.uid == uid) || adminCanReadStaffUser();
       allow update: if backendAdmin()
         || (paymentWorker() && validPaymentUserUpdate(uid))
-        || (signedIn()
-          && request.auth.uid == uid
-          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['isAdmin', 'plan', 'planStatus', 'subscriptionStatus']));
+        || adminCanWriteStaffUser(uid)
+        || selfUserUpdateSafe(uid);
       allow delete: if backendAdmin();
 
       match /{subPath=**} {
         allow read, write: if backendAdmin() || (signedIn() && request.auth.uid == uid);
       }
+    }
+
+    match /staffInviteClaims/{uid} {
+      allow read: if backendAdmin()
+        || (signedIn() && request.auth.uid == uid)
+        || (signedIn() && resource.data.workspaceId is string && workspaceAdmin(resource.data.workspaceId));
+      allow create, update: if adminCanWriteStaffUser(uid);
+      allow delete: if backendAdmin()
+        || (signedIn() && resource.data.workspaceId is string && workspaceAdmin(resource.data.workspaceId));
+    }
+
+    match /staffInviteEmails/{emailKey} {
+      allow read: if backendAdmin()
+        || (signedIn() && resource.data.email is string && request.auth.token.email == resource.data.email)
+        || (signedIn() && resource.data.workspaceId is string && workspaceAdmin(resource.data.workspaceId));
+      allow create, update: if signedIn()
+        && request.resource.data.uid is string
+        && adminCanWriteStaffUser(request.resource.data.uid);
+      allow delete: if backendAdmin()
+        || (signedIn() && resource.data.workspaceId is string && workspaceAdmin(resource.data.workspaceId));
     }
 
     match /phoneRegistry/{phoneId} {
@@ -824,99 +1003,134 @@ service cloud.firestore {
       match /customers/{docId} {
         allow read: if workspaceMember(workspaceId);
         allow create: if canWriteSales(workspaceId) && safeCreate(workspaceId);
-        allow update: if canWriteSales(workspaceId) && safeUpdate(workspaceId);
-        allow delete: if canManageWorkspace(workspaceId);
+        allow update: if (canWriteSales(workspaceId) || canCreatePosSale(workspaceId)) && safeUpdate(workspaceId);
+        allow delete: if canDeleteModule(workspaceId, 'customers');
       }
 
       match /leads/{docId} {
         allow read: if workspaceMember(workspaceId);
         allow create: if canWriteSales(workspaceId) && safeCreate(workspaceId);
         allow update: if canWriteSales(workspaceId) && safeUpdate(workspaceId);
-        allow delete: if canManageWorkspace(workspaceId);
+        allow delete: if canDeleteModule(workspaceId, 'leads');
       }
 
       match /salesDeals/{docId} {
         allow read: if workspaceMember(workspaceId);
         allow create: if canWriteSales(workspaceId) && safeCreate(workspaceId);
         allow update: if canWriteSales(workspaceId) && safeUpdate(workspaceId);
-        allow delete: if canManageWorkspace(workspaceId);
+        allow delete: if canDeleteModule(workspaceId, 'deals') || canDeleteModule(workspaceId, 'salesPipeline');
       }
 
       match /salesTasks/{docId} {
         allow read: if workspaceMember(workspaceId);
         allow create: if canWriteSales(workspaceId) && safeCreate(workspaceId);
         allow update: if canWriteSales(workspaceId) && safeUpdate(workspaceId);
-        allow delete: if canManageWorkspace(workspaceId);
+        allow delete: if canDeleteModule(workspaceId, 'tasks') || canDeleteModule(workspaceId, 'followUps');
       }
 
       match /salesActivities/{docId} {
         allow read: if workspaceMember(workspaceId);
         allow create: if canWriteSales(workspaceId) && safeCreate(workspaceId);
         allow update: if canWriteSales(workspaceId) && safeUpdate(workspaceId);
-        allow delete: if canManageWorkspace(workspaceId);
+        allow delete: if canDeleteModule(workspaceId, 'activities');
       }
 
       match /salesQuotes/{docId} {
         allow read: if workspaceMember(workspaceId);
         allow create: if canWriteSales(workspaceId) && safeCreate(workspaceId);
         allow update: if canWriteSales(workspaceId) && safeUpdate(workspaceId);
-        allow delete: if canManageWorkspace(workspaceId);
+        allow delete: if canDeleteModule(workspaceId, 'quotations');
       }
 
       match /salesProducts/{docId} {
         allow read: if workspaceMember(workspaceId);
         allow create: if canWriteSales(workspaceId) && safeCreate(workspaceId);
         allow update: if canWriteSales(workspaceId) && safeUpdate(workspaceId);
-        allow delete: if canManageWorkspace(workspaceId);
+        allow delete: if canDeleteModule(workspaceId, 'salesProducts') || canDeleteModule(workspaceId, 'products');
+      }
+
+      match /products/{docId} {
+        allow read: if workspaceMember(workspaceId);
+        allow create: if (canWriteSales(workspaceId) || hasModulePermission(workspaceId, 'inventory', 'create')) && safeCreate(workspaceId);
+        allow update: if (canWriteSales(workspaceId) || hasModulePermission(workspaceId, 'inventory', 'edit') || canCreatePosSale(workspaceId)) && safeUpdate(workspaceId);
+        allow delete: if canDeleteModule(workspaceId, 'products') || canDeleteModule(workspaceId, 'inventory');
       }
 
       match /salesInvoices/{docId} {
         allow read: if workspaceMember(workspaceId);
         allow create: if canWriteAccounting(workspaceId) && safeCreate(workspaceId);
         allow update: if canWriteAccounting(workspaceId) && safeUpdate(workspaceId);
-        allow delete: if canManageWorkspace(workspaceId);
+        allow delete: if canDeleteModule(workspaceId, 'invoices');
       }
 
       match /salesExpenses/{docId} {
         allow read: if workspaceMember(workspaceId);
         allow create: if canWriteAccounting(workspaceId) && safeCreate(workspaceId);
         allow update: if canWriteAccounting(workspaceId) && safeUpdate(workspaceId);
-        allow delete: if canManageWorkspace(workspaceId);
+        allow delete: if canDeleteModule(workspaceId, 'expenses');
+      }
+
+      match /posOrders/{docId} {
+        allow read: if workspaceMember(workspaceId);
+        allow create: if canCreatePosSale(workspaceId) && safeCreate(workspaceId);
+        allow update: if (workspaceAdmin(workspaceId) || hasModulePermission(workspaceId, 'posOrders', 'edit')) && safeUpdate(workspaceId);
+        allow delete: if canDeleteModule(workspaceId, 'posOrders') || canDeleteModule(workspaceId, 'pos');
+      }
+
+      match /inventoryTransactions/{docId} {
+        allow read: if workspaceMember(workspaceId);
+        allow create: if (canCreatePosSale(workspaceId) || hasModulePermission(workspaceId, 'inventory', 'create') || hasModulePermission(workspaceId, 'inventory', 'edit')) && safeCreate(workspaceId);
+        allow update: if false;
+        allow delete: if canDeleteModule(workspaceId, 'inventory');
+      }
+
+      match /posQueueJobs/{docId} {
+        allow read: if workspaceMember(workspaceId);
+        allow create: if canCreatePosSale(workspaceId) && safeCreate(workspaceId);
+        allow update: if workspaceAdmin(workspaceId) || hasModulePermission(workspaceId, 'pos', 'edit');
+        allow delete: if workspaceAdmin(workspaceId) || canDeleteModule(workspaceId, 'pos');
+      }
+
+      match /posWalletPayments/{docId} {
+        allow read: if workspaceMember(workspaceId);
+        allow create: if (workspaceAdmin(workspaceId) || hasModulePermission(workspaceId, 'payments', 'create') || hasModulePermission(workspaceId, 'pos', 'create')) && safeCreate(workspaceId);
+        allow update: if (workspaceAdmin(workspaceId) || hasModulePermission(workspaceId, 'payments', 'edit')) && safeUpdate(workspaceId);
+        allow delete: if canDeleteModule(workspaceId, 'payments') || canDeleteModule(workspaceId, 'pos');
       }
 
       match /orders/{docId} {
         allow read: if workspaceMember(workspaceId);
         allow create: if workspaceMember(workspaceId) && safeCreate(workspaceId);
         allow update: if workspaceMember(workspaceId) && safeUpdate(workspaceId);
-        allow delete: if canManageWorkspace(workspaceId);
+        allow delete: if canDeleteModule(workspaceId, 'orders');
       }
 
       match /menuItems/{docId} {
         allow read: if workspaceMember(workspaceId);
         allow create: if canManageWorkspace(workspaceId) && safeCreate(workspaceId);
         allow update: if canManageWorkspace(workspaceId) && safeUpdate(workspaceId);
-        allow delete: if canManageWorkspace(workspaceId);
+        allow delete: if canDeleteModule(workspaceId, 'menuManagement');
       }
 
       match /tables/{docId} {
         allow read: if workspaceMember(workspaceId);
         allow create: if canManageWorkspace(workspaceId) && safeCreate(workspaceId);
         allow update: if workspaceMember(workspaceId) && safeUpdate(workspaceId);
-        allow delete: if canManageWorkspace(workspaceId);
+        allow delete: if canDeleteModule(workspaceId, 'tables');
       }
 
       match /kot/{docId} {
         allow read: if workspaceMember(workspaceId);
         allow create: if workspaceMember(workspaceId) && safeCreate(workspaceId);
         allow update: if workspaceMember(workspaceId) && safeUpdate(workspaceId);
-        allow delete: if canManageWorkspace(workspaceId);
+        allow delete: if canDeleteModule(workspaceId, 'ordersKot');
       }
 
       match /bills/{docId} {
         allow read: if workspaceMember(workspaceId);
         allow create: if workspaceMember(workspaceId) && safeCreate(workspaceId);
         allow update: if canWriteAccounting(workspaceId) && safeUpdate(workspaceId);
-        allow delete: if canManageWorkspace(workspaceId);
+        allow delete: if canDeleteModule(workspaceId, 'invoices') || canDeleteModule(workspaceId, 'orders');
       }
 
       match /restaurantSettings/{docId} {
@@ -930,32 +1144,39 @@ service cloud.firestore {
         allow update, delete: if canManageWorkspace(workspaceId);
       }
 
+      match /approvals/{docId} {
+        allow read: if workspaceMember(workspaceId);
+        allow create: if workspaceMember(workspaceId) && safeCreate(workspaceId);
+        allow update: if (canApproveModule(workspaceId, 'approvals') || canApproveModule(workspaceId, 'invoices') || canApproveModule(workspaceId, 'payments') || canApproveModule(workspaceId, 'expenses') || canApproveModule(workspaceId, 'accounts')) && safeUpdate(workspaceId);
+        allow delete: if canDeleteModule(workspaceId, 'approvals');
+      }
+
       match /invoices/{docId} {
         allow read: if workspaceMember(workspaceId);
         allow create: if canWriteAccounting(workspaceId) && safeCreate(workspaceId);
         allow update: if canWriteAccounting(workspaceId) && safeUpdate(workspaceId);
-        allow delete: if canManageWorkspace(workspaceId);
+        allow delete: if canDeleteModule(workspaceId, 'invoices');
       }
 
       match /payments/{docId} {
         allow read: if workspaceMember(workspaceId);
         allow create: if canWriteAccounting(workspaceId) && safeCreate(workspaceId);
         allow update: if canWriteAccounting(workspaceId) && safeUpdate(workspaceId);
-        allow delete: if canManageWorkspace(workspaceId);
+        allow delete: if canDeleteModule(workspaceId, 'payments') || canDeleteModule(workspaceId, 'invoices');
       }
 
       match /expenses/{docId} {
         allow read: if workspaceMember(workspaceId);
         allow create: if canWriteAccounting(workspaceId) && safeCreate(workspaceId);
         allow update: if canWriteAccounting(workspaceId) && safeUpdate(workspaceId);
-        allow delete: if canManageWorkspace(workspaceId);
+        allow delete: if canDeleteModule(workspaceId, 'expenses');
       }
 
       match /accountTransactions/{docId} {
         allow read: if workspaceMember(workspaceId);
         allow create: if canWriteAccounting(workspaceId) && safeCreate(workspaceId);
         allow update: if canWriteAccounting(workspaceId) && safeUpdate(workspaceId);
-        allow delete: if canManageWorkspace(workspaceId);
+        allow delete: if canDeleteModule(workspaceId, 'accounts') || canDeleteModule(workspaceId, 'accountStatements');
       }
 
       match /activityLogs/{docId} {
@@ -975,7 +1196,7 @@ service cloud.firestore {
         allow read: if backendAdmin() || workspaceMember(workspaceId);
         allow create: if workspaceMember(workspaceId) && safeCreate(workspaceId);
         allow update: if backendAdmin() || (workspaceMember(workspaceId) && safeUpdate(workspaceId));
-        allow delete: if backendAdmin() || canManageWorkspace(workspaceId);
+        allow delete: if backendAdmin() || canDeleteModule(workspaceId, 'support');
       }
 
       match /{collectionName}/{docId} {

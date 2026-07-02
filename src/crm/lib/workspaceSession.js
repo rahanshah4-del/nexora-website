@@ -22,6 +22,14 @@ export function workspaceRoute(workspace) {
   return businessWorkspaceForSelection(workspace)?.route || '/app/dashboard'
 }
 
+function configuredWorkspaceForUser(userDoc = {}) {
+  if (isValidWorkspace(userDoc?.selectedWorkspace)) return userDoc.selectedWorkspace
+  if (userDoc?.onboardingCompleted === true && userDoc?.businessType) {
+    return businessWorkspaceForType(userDoc.businessType).id
+  }
+  return ''
+}
+
 export function scopedWorkspaceKey(userId) {
   return `selectedWorkspace:${userId}`
 }
@@ -107,8 +115,8 @@ export function buildWorkspaceSession({ user, userDoc, selectedWorkspace, worksp
     clientName: userDoc?.fullName || userDoc?.name || user?.displayName || email?.split('@')?.[0] || 'Nexora Client',
     loginTime: sessionStartTime,
     lastLogin: userDoc?.lastLogin || userDoc?.lastLoginAt || sessionStartTime,
-    selectedWorkspace: isValidWorkspace(selectedWorkspace) ? selectedWorkspace : businessWorkspaceForType(userDoc?.businessType).id,
-    selectedWorkspaceLabel: workspaceLabel(isValidWorkspace(selectedWorkspace) ? selectedWorkspace : businessWorkspaceForType(userDoc?.businessType).id),
+    selectedWorkspace: isValidWorkspace(selectedWorkspace) ? selectedWorkspace : configuredWorkspaceForUser(userDoc),
+    selectedWorkspaceLabel: workspaceLabel(isValidWorkspace(selectedWorkspace) ? selectedWorkspace : configuredWorkspaceForUser(userDoc)),
     sessionId: getSessionId(userId),
     sessionStartTime,
     planType,
@@ -125,6 +133,7 @@ export async function persistWorkspaceSession(session) {
   const businessType = businessWorkspaceForSelection(selectedWorkspace)?.type || businessWorkspaceCatalog[0].type
   const workspaceId = session.workspaceId || uid
   const ownerId = session.ownerId || workspaceId
+  const isStaffSession = Boolean(workspaceId && workspaceId !== uid)
   const payload = {
     userId: uid,
     ownerId,
@@ -141,7 +150,7 @@ export async function persistWorkspaceSession(session) {
     updatedAt: serverTimestamp(),
   }
 
-  await Promise.all([
+  const writes = [
     setDoc(
       doc(db, 'users', uid, 'sessions', sessionId),
       {
@@ -151,7 +160,10 @@ export async function persistWorkspaceSession(session) {
       },
       { merge: true },
     ),
-    setDoc(
+  ]
+
+  if (!isStaffSession) {
+    writes.push(setDoc(
       doc(db, 'workspaces', workspaceId),
       {
         ownerId,
@@ -168,8 +180,8 @@ export async function persistWorkspaceSession(session) {
         updatedAt: serverTimestamp(),
       },
       { merge: true },
-    ),
-    setDoc(
+    ))
+    writes.push(setDoc(
       doc(db, 'users', uid),
       {
         selectedWorkspace,
@@ -180,6 +192,17 @@ export async function persistWorkspaceSession(session) {
         updatedAt: serverTimestamp(),
       },
       { merge: true },
-    ),
-  ])
+    ))
+  } else {
+    writes.push(setDoc(
+      doc(db, 'users', uid),
+      {
+        lastLogin: payload.lastLogin,
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true },
+    ))
+  }
+
+  await Promise.all(writes)
 }

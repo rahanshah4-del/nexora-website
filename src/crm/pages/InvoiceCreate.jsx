@@ -118,6 +118,21 @@ export default function InvoiceCreatePage() {
   const [submitting, setSubmitting] = useState(false)
   const [previewSeen, setPreviewSeen] = useState(false)
   const [previewOpen, setPreviewOpen] = useState(false)
+
+  useEffect(() => {
+    const defaultTax = money(businessSettings?.defaultInvoiceTaxRate)
+    if (!defaultTax || normalizeBusinessType(businessType) === 'School ERP') return
+    setInvoice((current) => {
+      const shouldApply = (current.items || []).some((item) => money(item.taxRate) === 0 && !item.productId)
+      if (!shouldApply) return current
+      return {
+        ...current,
+        items: current.items.map((item) => (
+          money(item.taxRate) === 0 && !item.productId ? { ...item, taxRate: defaultTax } : item
+        )),
+      }
+    })
+  }, [businessSettings?.defaultInvoiceTaxRate, businessType])
   const [printInvoice, setPrintInvoice] = useState(null)
   const isSchool = normalizeBusinessType(businessType) === 'School ERP'
   const canCreateInvoices = Boolean(permissions.canCreateInvoice ?? permissions.canCreate)

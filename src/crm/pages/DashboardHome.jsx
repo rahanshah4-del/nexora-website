@@ -49,6 +49,8 @@ import { useBusinessSettings } from '../hooks/useBusinessSettings.js'
 import { useProducts } from '../hooks/useProducts.js'
 import { useInventoryTransactions } from '../hooks/useInventoryTransactions.js'
 import { useInventoryStats } from '../hooks/useInventory.js'
+import { usePosOrders } from '../hooks/usePosOrders.js'
+import { usePosWalletPayments } from '../hooks/usePosWalletPayments.js'
 import { useSchoolAttendanceSummary } from '../hooks/useSchoolAttendanceSummary.js'
 import WhatsappDashboard from '../components/dashboard/WhatsappDashboard.jsx'
 import { useUser } from '../hooks/useUser.js'
@@ -722,8 +724,16 @@ export default function DashboardHomePage() {
   const showSupportMetrics = isSalesHub
   const retailProductsApi = useProducts({ enabled: isRetail, limitCount: DASHBOARD_RECENT_LIMIT })
   const retailTransactionsApi = useInventoryTransactions({ enabled: isRetail, limitCount: DASHBOARD_RECENT_LIMIT })
+  const retailPosOrdersApi = usePosOrders({ enabled: isRetail, limitCount: DASHBOARD_RECENT_LIMIT })
+  const retailWalletPaymentsApi = usePosWalletPayments({ enabled: isRetail, limitCount: DASHBOARD_RECENT_LIMIT })
   const retailInventoryStats = useInventoryStats(retailProductsApi.products, retailTransactionsApi.transactions)
-  const retailLoading = isRetail && (retailProductsApi.loading || retailTransactionsApi.loading)
+  const retailPosSales = useMemo(
+    () =>
+      retailPosOrdersApi.orders.reduce((sum, order) => sum + toFiniteNumber(order.paidAmount), 0) +
+      retailWalletPaymentsApi.payments.reduce((sum, payment) => sum + toFiniteNumber(payment.amount), 0),
+    [retailPosOrdersApi.orders, retailWalletPaymentsApi.payments],
+  )
+  const retailLoading = isRetail && (retailProductsApi.loading || retailTransactionsApi.loading || retailPosOrdersApi.loading || retailWalletPaymentsApi.loading)
   const salesDealsApi = useSalesHubCollection('salesDeals', { enabled: isSalesHub })
   const salesTasksApi = useSalesHubCollection('salesTasks', { enabled: isSalesHub })
   const salesQuotesApi = useSalesHubCollection('salesQuotes', { enabled: isSalesHub })
@@ -800,7 +810,11 @@ export default function DashboardHomePage() {
       }),
     [accountsApi.transactions, customersApi.customers, expensesApi.expenses, invoicesApi.invoices, invoicesApi.payments, leadsApi.leads],
   )
-  const totalRevenueUsd = dashboardStats.totalRevenue
+  const retailTotalRevenue = useMemo(
+    () => dashboardStats.totalRevenue + retailPosSales,
+    [dashboardStats.totalRevenue, retailPosSales],
+  )
+  const totalRevenueUsd = isRetail ? retailTotalRevenue : dashboardStats.totalRevenue
   const pendingRevenueUsd = useMemo(
     () => pendingInvoices.reduce((sum, invoice) => sum + invoiceBalanceDue(invoice), 0),
     [pendingInvoices],
@@ -1506,6 +1520,8 @@ export default function DashboardHomePage() {
                 <LoadingBlock lines={4} />
               ) : isRetail ? (
                 <>
+                  <DataRow label="POS collected" value={formatCurrency(retailPosSales, currency)} badge={`${formatCompact(retailPosOrdersApi.orders.length)} orders + wallet settlements`} />
+                  <DataRow label="Invoice sales" value={formatCurrency(dashboardStats.totalRevenue, currency)} badge="Invoice module separate" />
                   <DataRow label="Cost value" value={formatCurrency(retailInventoryStats.inventoryValue, currency)} badge={`${formatCompact(retailInventoryStats.totalStock)} units`} />
                   <DataRow label="Retail value" value={formatCurrency(retailInventoryStats.retailValue, currency)} badge="Selling price basis" />
                   <DataRow label="Potential margin" value={formatCurrency(retailInventoryStats.potentialMargin, currency)} badge={`${formatCompact(retailInventoryStats.lowStockCount + retailInventoryStats.outOfStockCount)} stock alerts`} />

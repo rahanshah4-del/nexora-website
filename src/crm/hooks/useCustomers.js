@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { collection, doc, serverTimestamp, writeBatch } from 'firebase/firestore'
 import { db } from '../lib/firebase.js'
-import { createUserDoc, fetchWorkspaceCollectionPage, listenToWorkspaceCollection, patchUserDoc, removeUserDoc } from '../lib/firestore.js'
+import { createUserDoc, fetchWorkspaceCollectionPage, listenToWorkspaceCollection, patchUserDoc, removeUserDoc, workspaceCollectionPath } from '../lib/firestore.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 import { useUser } from './useUser.js'
 import { clientSafeMessage } from '../utils/messages.js'
@@ -16,6 +17,11 @@ function normalizeCustomer(c) {
     company: c.company || c.className || '',
     customerType: c.customerType || 'General',
     status: c.status || 'Active',
+    walletDue: Number(c.walletDue ?? c.dueAmount ?? c.balanceDue ?? 0) || 0,
+    walletCredit: Number(c.walletCredit ?? c.creditBalance ?? 0) || 0,
+    lifetimeSpend: Number(c.lifetimeSpend ?? c.totalSpend ?? 0) || 0,
+    posOrdersCount: Number(c.posOrdersCount ?? 0) || 0,
+    lastPosOrderAt: c.lastPosOrderAt || null,
     notes: c.notes || '',
     createdBy: c.createdBy || c.userId || '',
     createdAt: c.createdAt || null,
@@ -317,7 +323,23 @@ export function useCustomers({ limitCount = DEFAULT_CUSTOMER_LIST_LIMIT, paginat
             createdByEmail: firebaseUser?.email || userDoc?.email || '',
             metadata: { email, company, customerType },
           })
-          return { ok: true }
+          return {
+            ok: true,
+            id: ref.id,
+            customer: normalizeCustomer({
+              id: ref.id,
+              ...payload,
+              name,
+              email,
+              phone,
+              company,
+              customerType: customerType || 'General',
+              status: status || 'Active',
+              notes,
+              createdBy: userId,
+              createdAt: new Date().toISOString(),
+            }),
+          }
         } catch (e) {
           return { ok: false, error: clientSafeMessage(e, 'Unable to create customer.') }
         }
@@ -376,6 +398,64 @@ export function useCustomers({ limitCount = DEFAULT_CUSTOMER_LIST_LIMIT, paginat
           return { ok: true }
         } catch (e) {
           return { ok: false, error: clientSafeMessage(e, 'Unable to update customer.') }
+        }
+      },
+      async settleCustomerDue(customer, payload = {}) {
+        if (!userId || !workspaceId) return { ok: false, error: 'Please login first' }
+        if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now' }
+        if (!customer?.id) return { ok: false, error: 'Customer not found' }
+        const currentDue = Math.max(0, Number(customer.walletDue || 0))
+        const amount = Number(payload.amount || 0)
+        const paymentMethod = String(payload.paymentMethod || 'Cash').trim() || 'Cash'
+        const note = String(payload.note || '').trim()
+        if (!Number.isFinite(amount) || amount <= 0) return { ok: false, error: 'Enter a valid payment amount.' }
+        if (amount > currentDue) return { ok: false, error: 'Payment amount cannot be more than customer due.' }
+        try {
+          const nextDue = Math.max(0, currentDue - amount)
+          const batch = writeBatch(db)
+          const customerRef = doc(db, workspaceCollectionPath(workspaceId, 'customers'), customer.id)
+          const paymentRef = doc(collection(db, workspaceCollectionPath(workspaceId, 'posWalletPayments')))
+          batch.update(customerRef, {
+            walletDue: nextDue,
+            lastWalletPaymentAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            updatedBy: userId,
+          })
+          batch.set(paymentRef, {
+            customerId: customer.id,
+            customerName: customer.name || customer.studentName || 'Customer',
+            customerEmail: customer.email || '',
+            customerPhone: customer.phone || '',
+            amount,
+            paymentMethod,
+            note,
+            type: 'wallet_settlement',
+            source: 'customer_wallet',
+            status: 'paid',
+            workspaceId,
+            ownerId: workspaceId,
+            businessType,
+            createdBy: userId,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          })
+          await batch.commit()
+          setRows((currentRows) => currentRows.map((row) => (row.id === customer.id ? normalizeCustomer({ ...row, walletDue: nextDue, lastWalletPaymentAt: new Date().toISOString() }) : row)))
+          await logActivity({
+            workspaceId,
+            userId,
+            businessType,
+            ...userActivityInfo(userDoc, firebaseUser),
+            action: 'Customer due settled',
+            module: 'Customers',
+            description: `${customer.name || 'Customer'} paid ${amount.toLocaleString()} via ${paymentMethod}.`,
+            targetId: customer.id,
+            targetName: customer.name || customer.id,
+            metadata: { amount, paymentMethod, previousDue: currentDue, remainingDue: nextDue },
+          })
+          return { ok: true, id: paymentRef.id, remainingDue: nextDue }
+        } catch (e) {
+          return { ok: false, error: clientSafeMessage(e, 'Unable to settle customer due.') }
         }
       },
       async deleteCustomer(customer) {

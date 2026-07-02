@@ -57,6 +57,7 @@ import { LANGUAGE_OPTIONS, languageMeta, useLanguage } from '../../lib/i18n.jsx'
 import { VERIFY_EMAIL_ROUTE, getAuthRouteState, isUserCustomVerified, shouldShowWorkspaceSelection } from '../../lib/authRouteState.js'
 import { resolveProfileDisplay } from '../../lib/profileDisplay.js'
 import { clientShortId, resolveClientShortId } from '../../lib/clientIds.js'
+import { isStaffWorkspaceProfile } from '../../lib/accountProvisioning.js'
 import TicketModal from '../../crm/components/support/TicketModal.jsx'
 import TicketDrawer from '../../crm/components/support/TicketDrawer.jsx'
 import { useSupportTickets } from '../../crm/hooks/useSupportTickets.js'
@@ -216,25 +217,25 @@ function resolveSavedWorkspaceModule({ accountData, workspaceData, onboardingCom
   const workspaceFromId = workspaceIdSource ? businessWorkspaceForId(workspaceIdSource) : null
   const allowedBusinessTypeSource = firstCleanString(workspaceData?.allowedBusinessTypes, accountData?.allowedBusinessTypes)
   const businessTypeSource = firstCleanString(
-    workspaceFromId?.type,
     workspaceData?.primaryBusinessType,
     accountData?.primaryBusinessType,
-    workspaceData?.selectedBusinessType,
     workspaceData?.currentBusinessType,
-    workspaceData?.businessType,
-    accountData?.selectedBusinessType,
     accountData?.currentBusinessType,
+    workspaceData?.selectedBusinessType,
+    accountData?.selectedBusinessType,
+    workspaceData?.businessType,
     accountData?.businessType,
+    workspaceFromId?.type,
     allowedBusinessTypeSource,
   )
-  const businessType = businessTypeSource ? normalizeBusinessType(businessTypeSource) : ''
-  const catalogWorkspace = workspaceFromId || (businessType ? businessWorkspaceForType(businessType) : null)
-  const selectedWorkspace = workspaceIdSource || cleanString(catalogWorkspace?.id)
+  const businessType = normalizeOptionalBusinessType(businessTypeSource)
+  const catalogWorkspace = businessType ? businessWorkspaceForType(businessType) : workspaceFromId
+  const selectedWorkspace = cleanString(catalogWorkspace?.id) || workspaceIdSource
   const allowedBusinessTypes = Array.from(new Set([
     businessType,
     ...(Array.isArray(workspaceData?.allowedBusinessTypes) ? workspaceData.allowedBusinessTypes : []),
     ...(Array.isArray(accountData?.allowedBusinessTypes) ? accountData.allowedBusinessTypes : []),
-  ].filter(Boolean).map(normalizeBusinessType)))
+  ].filter(Boolean).map(normalizeOptionalBusinessType).filter(Boolean)))
   const complete = Boolean(businessType && selectedWorkspace)
   const recoveredFromModuleFields = complete && !onboardingCompleted
 
@@ -274,6 +275,11 @@ function onboardingModuleSelection(workspaceOrType) {
     selectedFeatures: enabledModules.map((key) => labelForBusinessModule(key, businessTypeLabel)),
     redirectTarget: catalogWorkspace.route || CRM_DASHBOARD_ROUTE,
   }
+}
+
+function normalizeOptionalBusinessType(value) {
+  const cleaned = cleanString(value)
+  return cleaned ? normalizeBusinessType(cleaned) : ''
 }
 
 function timestampToDate(value) {
@@ -335,7 +341,7 @@ function initialsFor(name, email) {
 }
 
 function avatarEmojiFor(businessType) {
-  const type = normalizeBusinessType(cleanString(businessType) || 'General CRM')
+  const type = normalizeOptionalBusinessType(businessType) || 'General CRM'
   return workspaceEmojiMap[type] || '👤'
 }
 
@@ -1735,15 +1741,32 @@ export default function WorkspaceSelection() {
       isTrial,
       workspaceId: cleanString(workspaceData?.workspaceId) || cleanString(accountData?.workspaceId) || user?.uid || '',
       shortClientId: resolveClientShortId({ ...accountData, ...workspaceData, workspaceId: cleanString(workspaceData?.workspaceId) || cleanString(accountData?.workspaceId) || user?.uid || '' }),
-      businessType: profileBusinessTypeSource ? normalizeBusinessType(profileBusinessTypeSource) : '',
+      businessType: normalizeOptionalBusinessType(profileBusinessTypeSource),
       avatarEmoji: avatarEmojiFor(profileBusinessTypeSource),
     }
   }, [accountData, emailVerified, nowMs, onboardingCompleted, savedWorkspaceModule.businessType, user, workspaceData])
 
-  const welcomeModuleType = normalizeBusinessType(
-    selectedBusinessType || onboardingForm.businessType || profile.businessType || savedWorkspaceModule.businessType || 'General CRM',
-  )
+  const welcomeModuleType = normalizeOptionalBusinessType(
+    selectedBusinessType || onboardingForm.businessType || profile.businessType || savedWorkspaceModule.businessType,
+  ) || 'General CRM'
   const welcomeModuleEmoji = workspaceEmojiMap[welcomeModuleType] || '🚀'
+  const staffWorkspaceProfile = isStaffWorkspaceProfile(accountData, user?.uid)
+
+  useEffect(() => {
+    if (authLoading || accountLoading || !user?.uid || !staffWorkspaceProfile) return
+    const staffBusinessType = normalizeOptionalBusinessType(
+      accountData?.currentBusinessType ||
+        accountData?.selectedBusinessType ||
+        accountData?.businessType ||
+        workspaceData?.currentBusinessType ||
+        workspaceData?.selectedBusinessType ||
+        workspaceData?.businessType,
+    )
+    if (!staffBusinessType) return
+    const staffWorkspace = businessWorkspaceForType(staffBusinessType)
+    saveSelectedWorkspace(user.uid, accountData?.selectedWorkspace || staffWorkspace.id)
+    navigate(staffWorkspace.route || CRM_DASHBOARD_ROUTE, { replace: true })
+  }, [accountData, accountLoading, authLoading, navigate, staffWorkspaceProfile, user?.uid, workspaceData])
 
   async function copyWelcomePromoCode() {
     try {
@@ -1844,7 +1867,7 @@ export default function WorkspaceSelection() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined
-    if (authLoading || accountLoading || !user?.uid || !emailVerified || workspaceFullyConfigured || businessTypeSaving) return undefined
+    if (authLoading || accountLoading || !user?.uid || !emailVerified || workspaceFullyConfigured || businessTypeSaving || needsWorkspaceOnboarding) return undefined
     const refreshKey = `nexora:workspace:auto-refresh-before-module:${user.uid}`
     if (window.sessionStorage.getItem(refreshKey) === 'done') return undefined
     window.sessionStorage.setItem(refreshKey, 'done')
@@ -1852,7 +1875,7 @@ export default function WorkspaceSelection() {
       window.location.reload()
     }, 250)
     return () => window.clearTimeout(timer)
-  }, [accountLoading, authLoading, businessTypeSaving, emailVerified, user?.uid, workspaceFullyConfigured])
+  }, [accountLoading, authLoading, businessTypeSaving, emailVerified, needsWorkspaceOnboarding, user?.uid, workspaceFullyConfigured])
 
   const visibleModuleAccess = useMemo(
     () =>

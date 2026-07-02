@@ -221,9 +221,9 @@
   }
 
   .restaurant-pos-page {
-    min-height: 0;
+    min-height: 100dvh;
     overflow-x: clip;
-    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+    padding-bottom: max(0.625rem, env(safe-area-inset-bottom));
   }
 
   .restaurant-pos-grid {
@@ -239,7 +239,7 @@
 
   .restaurant-menu-scroll,
   .restaurant-cart-panel {
-    min-height: 12rem;
+    min-height: 14rem;
     max-height: none;
   }
 
@@ -259,24 +259,22 @@
   }
 
   @media (min-width: 1024px) {
-    .restaurant-pos-grid {
-      grid-template-columns: minmax(0, 1fr) minmax(min(100%, 21rem), 0.42fr);
-    }
-  }
-
-  @media (min-width: 1280px) {
     .restaurant-pos-page {
-      min-height: calc(100dvh - 6.5rem);
+      height: 100dvh;
+      min-height: 100dvh;
+      overflow: hidden;
     }
 
     .restaurant-pos-grid {
-      min-height: calc(100dvh - 6.5rem);
-      grid-template-columns: minmax(0, 1fr) minmax(min(100%, 22rem), 0.34fr);
+      height: 100%;
+      min-height: 0;
+      grid-template-columns: minmax(0, 1fr) minmax(390px, 420px);
     }
 
     .restaurant-pos-menu-panel,
     .restaurant-pos-billing-panel {
-      max-height: calc(100dvh - 6.5rem);
+      height: 100%;
+      max-height: 100%;
       overflow: hidden;
     }
 
@@ -288,7 +286,7 @@
 
   @media (min-width: 1536px) {
     .restaurant-pos-grid {
-      grid-template-columns: minmax(0, 1fr) minmax(min(100%, 24rem), 0.32fr);
+      grid-template-columns: minmax(0, 1fr) minmax(420px, 450px);
     }
   }
 

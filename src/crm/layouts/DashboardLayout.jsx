@@ -371,6 +371,10 @@ export default function DashboardLayout() {
     let expired = false
     const expireSession = async () => {
       if (expired) return
+      if (document.hidden) {
+        resetTimer()
+        return
+      }
       expired = true
       try {
         window.sessionStorage.setItem('nexora:loginNotice', 'Your workspace session expired after 15 minutes of inactivity. Please sign in again. If you enabled passkey, use "Sign in with Passkey".')
@@ -390,11 +394,16 @@ export default function DashboardLayout() {
       timer = window.setTimeout(expireSession, WORKSPACE_INACTIVITY_LIMIT_MS)
     }
     const events = ['click', 'keydown', 'mousemove', 'mousedown', 'touchstart', 'scroll', 'wheel']
+    const handleVisibilityChange = () => {
+      if (!document.hidden) resetTimer()
+    }
     events.forEach((eventName) => window.addEventListener(eventName, resetTimer, { passive: true }))
+    document.addEventListener('visibilitychange', handleVisibilityChange)
     resetTimer()
     return () => {
       if (timer) window.clearTimeout(timer)
       events.forEach((eventName) => window.removeEventListener(eventName, resetTimer))
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
   }, [isAuthenticated, location.pathname, navigate, ready, userLoading])
 
@@ -417,15 +426,18 @@ export default function DashboardLayout() {
       workspaceDoc?.businessType ||
       businessType,
   )
-  const lockedWorkspaceId = businessWorkspaceId || businessWorkspaceForType(
+  const lockedWorkspaceSource =
+    userDoc?.primaryBusinessType ||
+    workspaceDoc?.primaryBusinessType ||
+    userDoc?.currentBusinessType ||
+    workspaceDoc?.currentBusinessType ||
+    userDoc?.selectedBusinessType ||
+    workspaceDoc?.selectedBusinessType ||
+    userDoc?.businessType ||
+    workspaceDoc?.businessType ||
     userDoc?.selectedWorkspace ||
-      workspaceDoc?.selectedWorkspace ||
-      userDoc?.selectedBusinessType ||
-      userDoc?.businessType ||
-      workspaceDoc?.selectedBusinessType ||
-      workspaceDoc?.businessType ||
-      businessType,
-  ).id
+    workspaceDoc?.selectedWorkspace
+  const lockedWorkspaceId = businessWorkspaceId || (workspaceOnboardingCompleted && lockedWorkspaceSource ? businessWorkspaceForType(lockedWorkspaceSource).id : '')
   const teamOverride = workspaceAccess.isAdmin || workspaceAccess.hasPermission('settingsAccess')
   const crmAccessBlocked =
     ready &&
@@ -445,11 +457,27 @@ export default function DashboardLayout() {
   )
   const maintenance = usePlatformMaintenance(maintenanceContext)
   const isCompactPosRoute = location.pathname === '/app/orders'
+  const isStandalonePosBillingRoute = location.pathname === '/app/pos'
+  const staffAccount = Boolean(userDoc?.isStaff === true || workspaceAccess.isStaff)
+  const staffEnabledModules = new Set(Array.isArray(userDoc?.enabledModules) ? userDoc.enabledModules : [])
+  const staffModuleGranted = Boolean(
+    !isOwnerAdmin &&
+    staffAccount &&
+    currentModule &&
+    (
+      currentModule.alwaysEnabled ||
+      staffEnabledModules.has(currentModule.key) ||
+      (!workspaceAccess.loading && workspaceAccess.hasModulePermission(currentModule.key, 'view'))
+    ),
+  )
   const allowedModules = useMemo(
     () =>
-      workspaceAccess.permissionKeys
+      Array.from(new Set([
+        'dashboard',
+        ...workspaceAccess.permissionKeys
         .filter((item) => item.action === 'view' && workspaceAccess.hasModulePermission(item.moduleKey, 'view'))
         .map((item) => item.moduleKey),
+      ])),
     [workspaceAccess],
   )
   const routePlanBlocked =
@@ -459,6 +487,7 @@ export default function DashboardLayout() {
     Boolean(userDoc) &&
     Boolean(currentModule) &&
     !isOwnerAdmin &&
+    !staffModuleGranted &&
     !routeAllowedByPlan(location.pathname, accessPlan, { developerOverride, teamOverride, businessType })
   const routeBusinessBlocked =
     ready &&
@@ -467,6 +496,7 @@ export default function DashboardLayout() {
     Boolean(userDoc) &&
     Boolean(currentModule) &&
     !isOwnerAdmin &&
+    !staffModuleGranted &&
     !routeAllowedByBusinessType(location.pathname, businessType, {
       developerOverride,
       allowedBusinessTypes,
@@ -486,8 +516,9 @@ export default function DashboardLayout() {
     Boolean(currentModule) &&
     !workspaceAccess.loading &&
     !developerOverride &&
-    currentModule.key !== 'settings' &&
     !isOwnerAdmin &&
+    !currentModule.alwaysEnabled &&
+    !staffModuleGranted &&
     !workspaceAccess.hasModulePermission(currentModule.key, 'view')
   const onboardingOpen = Boolean(ready && userId && !userLoading && !isStaff && workspaceOnboardingResolved && !workspaceOnboardingCompleted)
 
@@ -663,7 +694,9 @@ export default function DashboardLayout() {
   }, [accessPlan, businessType, developerOverride, location.pathname, lockedWorkspaceId, ready, userLoading])
 
   useEffect(() => {
-    if (screen.isMobile || screen.isTablet) setMobileOpen(false)
+    if (screen.isMobile || screen.isTablet) {
+      Promise.resolve().then(() => setMobileOpen(false))
+    }
   }, [screen.isMobile, screen.isTablet])
 
   useEffect(() => {
@@ -675,6 +708,14 @@ export default function DashboardLayout() {
 
   useEffect(() => {
     if (!ready || !userId || userLoading) return
+    if (!developerOverride && !lockedWorkspaceId) {
+      Promise.resolve().then(() => {
+        setSelectedWorkspace(null)
+        setSessionInfo(null)
+        setProductModalOpen(false)
+      })
+      return
+    }
 
     const selected = developerOverride ? readSelectedWorkspace(userId) : lockedWorkspaceId
     if (!developerOverride && selected && readSelectedWorkspace(userId) !== selected) {
@@ -816,12 +857,32 @@ export default function DashboardLayout() {
 
   const continueLastWorkspace = useCallback(() => {
     const workspace = developerOverride ? selectedWorkspace || readSelectedWorkspace(userId) || 'general-crm' : lockedWorkspaceId
+    if (!workspace) {
+      navigate('/workspace', { replace: true })
+      return
+    }
     selectWorkspace(workspace)
-  }, [developerOverride, lockedWorkspaceId, selectWorkspace, selectedWorkspace, userId])
+  }, [developerOverride, lockedWorkspaceId, navigate, selectWorkspace, selectedWorkspace, userId])
+
+  const firstAllowedRoute = useMemo(() => {
+    const allowedSet = new Set(allowedModules)
+    const module = workspaceAccess.permissionKeys.find((item) => item.action === 'view' && allowedSet.has(item.moduleKey) && item.route && !item.comingSoon)
+    return module?.route || '/app/dashboard'
+  }, [allowedModules, workspaceAccess.permissionKeys])
 
   const backToWorkspace = useCallback(() => {
+    if (!isOwnerAdmin && workspaceAccess.isStaff) {
+      navigate(firstAllowedRoute, { replace: true })
+      return
+    }
     goToWorkspace(navigate, location)
-  }, [location, navigate])
+  }, [firstAllowedRoute, isOwnerAdmin, location, navigate, workspaceAccess.isStaff])
+
+  useEffect(() => {
+    if (!routePermissionBlocked || !staffAccount) return
+    if (location.pathname === firstAllowedRoute) return
+    navigate(firstAllowedRoute, { replace: true })
+  }, [firstAllowedRoute, location.pathname, navigate, routePermissionBlocked, staffAccount])
 
   const openProductSwitcher = useCallback(() => {
     setProductModalOpen(true)
@@ -874,6 +935,14 @@ export default function DashboardLayout() {
   }
 
   if (maintenance.active) {
+    if (isStandalonePosBillingRoute) {
+      return (
+        <div className="min-h-dvh bg-slate-50 text-slate-950">
+          <MaintenanceBlock state={maintenance} compact />
+        </div>
+      )
+    }
+
     return (
       <div
         className="nexora-bg crm-shell min-h-dvh overflow-x-clip"
@@ -892,6 +961,14 @@ export default function DashboardLayout() {
             <MaintenanceBlock state={maintenance} compact />
           </main>
         </div>
+      </div>
+    )
+  }
+
+  if (isStandalonePosBillingRoute) {
+    return (
+      <div className="min-h-dvh bg-slate-50 text-slate-950">
+        <Outlet />
       </div>
     )
   }

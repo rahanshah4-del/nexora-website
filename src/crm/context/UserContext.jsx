@@ -1,9 +1,9 @@
 import { createContext, useEffect, useMemo, useRef, useState } from 'react'
-import { doc, serverTimestamp, setDoc, onSnapshot } from 'firebase/firestore'
+import { doc, getDoc, serverTimestamp, setDoc, onSnapshot } from 'firebase/firestore'
 import { db } from '../lib/firebase.js'
 import { useAuth } from '../hooks/useAuth.js'
 import { usePreferences } from '../hooks/usePreferences.js'
-import { ensureUserWorkspace } from '../../lib/accountProvisioning.js'
+import { ensureUserWorkspace, isStaffWorkspaceProfile } from '../../lib/accountProvisioning.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 import { normalizeFinanceRole } from '../lib/financeAccess.js'
 import { isPlatformAdminDoc } from '../../lib/roles.js'
@@ -23,18 +23,11 @@ import { readSelectedWorkspace } from '../lib/workspaceSession.js'
 
 const UserContext = createContext(null)
 
-const defaultUserDoc = {
-  name: 'Nexora User',
-  fullName: 'Nexora User',
-  displayName: 'Nexora User',
-  email: 'user@nexora.solutions',
-  plan: 'Free',
-  role: 'owner', // owner | admin | staff
-  planStatus: 'trial',
-  upgradedAt: null,
-}
-
 const blockedStatuses = ['blocked', 'disabled', 'inactive']
+
+function staffInviteEmailKey(email) {
+  return String(email || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'staff-email'
+}
 
 function normalizeRole(role) {
   const value = normalizeFinanceRole(role)
@@ -42,7 +35,7 @@ function normalizeRole(role) {
 }
 
 export function UserProvider({ children }) {
-  const { user, ready } = useAuth()
+  const { user, ready, logout } = useAuth()
   const { profile, plan: localPlan } = usePreferences()
   const [userDoc, setUserDoc] = useState(null)
   const [staffAccessStatus, setStaffAccessStatus] = useState('')
@@ -81,53 +74,92 @@ export function UserProvider({ children }) {
     }
 
     const ref = doc(db, 'users', user.uid)
-    if (provisionedUserRef.current !== user.uid) {
-      provisionedUserRef.current = user.uid
-      const currentProfile = profileRef.current
-      console.log('[Auth Isolation] profile source', {
-        uid: user.uid,
-        email: user.email || '',
-        fullName: currentProfile.ownerName || user.displayName || '',
-      })
-      ensureUserWorkspace(user, {
-        fullName: currentProfile.ownerName,
-        email: currentProfile.email || user.email || '',
-        provider: user.providerData?.[0]?.providerId || 'password',
-      }).catch(() => {})
-    }
-
     const unsub = onSnapshot(
       ref,
       (snap) => {
         if (!snap.exists()) {
-          const currentProfile = profileRef.current
-          const authEmail = user.email || currentProfile.email || defaultUserDoc.email
-          const authDisplayName = user.displayName || authEmail?.split('@')?.[0] || defaultUserDoc.name
-          console.log('[User Profile] fullName', authDisplayName)
-          console.log('[User Profile] displayName', authDisplayName)
-          console.log('[User Profile] profile source', user.displayName ? 'firebase.displayName' : 'email_prefix')
-          setDoc(
-            ref,
-            {
-              ...defaultUserDoc,
-              uid: user.uid,
-              ownerId: user.uid,
-              userId: user.uid,
-              workspaceId: user.uid,
-              name: authDisplayName,
-              fullName: authDisplayName,
-              displayName: authDisplayName,
-              email: authEmail,
-              provider: user.providerData?.[0]?.providerId || 'password',
-              role: 'owner',
-              createdAt: serverTimestamp(),
-              updatedAt: serverTimestamp(),
-            },
-            { merge: true },
-          ).catch(() => {})
+          console.warn('[User Profile] missing profile; waiting for signup or staff invite provisioning', {
+            uid: user.uid,
+            email: user.email || '',
+          })
+          Promise.all([
+            getDoc(doc(db, 'staffInviteClaims', user.uid)).catch(() => null),
+            getDoc(doc(db, 'staffInviteEmails', staffInviteEmailKey(user.email))).catch(() => null),
+          ])
+            .then(async (claimSnap) => {
+              const claim = claimSnap
+                .map((snap) => (snap?.exists?.() ? snap.data() : null))
+                .find((item) => isStaffWorkspaceProfile(item, user.uid) || String(item?.email || '').trim().toLowerCase() === String(user.email || '').trim().toLowerCase())
+              if (!isStaffWorkspaceProfile(claim, user.uid)) return
+              const repairPayload = {
+                ...claim,
+                uid: user.uid,
+                userId: user.uid,
+                staffId: String(claim.staffId || claim.uid || claim.userId || user.uid),
+                email: user.email || claim.email || '',
+                emailVerifiedCustom: true,
+                onboardingCompleted: true,
+                updatedAt: serverTimestamp(),
+                lastLoginAt: serverTimestamp(),
+              }
+              await setDoc(ref, repairPayload, { merge: true })
+              setUserDoc(repairPayload)
+            })
+            .catch(() => {})
           setUserDoc(null)
         } else {
-          setUserDoc(snap.data())
+          const nextUserDoc = snap.data()
+          setUserDoc(nextUserDoc)
+          const roleValue = normalizeRole(nextUserDoc?.role)
+          const selfWorkspaceProfile =
+            roleValue !== 'owner' &&
+            user.uid &&
+            String(nextUserDoc?.workspaceId || '').trim() === user.uid &&
+            nextUserDoc?.isStaff !== true
+          if (selfWorkspaceProfile) {
+            Promise.all([
+              getDoc(doc(db, 'staffInviteClaims', user.uid)).catch(() => null),
+              getDoc(doc(db, 'staffInviteEmails', staffInviteEmailKey(user.email))).catch(() => null),
+            ])
+              .then(async (claimSnap) => {
+                const claim = claimSnap
+                  .map((claimDoc) => (claimDoc?.exists?.() ? claimDoc.data() : null))
+                  .find((item) => item?.isStaff === true || (String(item?.workspaceId || '').trim() && String(item?.workspaceId || '').trim() !== user.uid))
+                if (!claim) return
+                const repairPayload = {
+                  ...claim,
+                  uid: user.uid,
+                  userId: user.uid,
+                  staffId: String(claim.staffId || claim.uid || claim.userId || user.uid),
+                  email: user.email || claim.email || '',
+                  isStaff: true,
+                  isOwner: false,
+                  isAdmin: false,
+                  emailVerifiedCustom: true,
+                  onboardingCompleted: true,
+                  updatedAt: serverTimestamp(),
+                  lastLoginAt: serverTimestamp(),
+                }
+                await setDoc(ref, repairPayload, { merge: true })
+                setUserDoc(repairPayload)
+              })
+              .catch(() => {})
+          }
+          if (provisionedUserRef.current !== user.uid) {
+            provisionedUserRef.current = user.uid
+            const currentProfile = profileRef.current
+            console.log('[Auth Isolation] profile source', {
+              uid: user.uid,
+              email: user.email || '',
+              fullName: currentProfile.ownerName || user.displayName || '',
+              staffProfile: isStaffWorkspaceProfile(nextUserDoc, user.uid),
+            })
+            ensureUserWorkspace(user, {
+              fullName: currentProfile.ownerName,
+              email: currentProfile.email || user.email || '',
+              provider: user.providerData?.[0]?.providerId || 'password',
+            }).catch(() => {})
+          }
         }
         setLoading(false)
       },
@@ -157,7 +189,26 @@ export function UserProvider({ children }) {
     const ref = doc(db, 'workspaces', nextWorkspaceId, 'staff', nextStaffId)
     const unsub = onSnapshot(
       ref,
-      (snap) => setStaffAccessStatus(snap.exists() ? String(snap.data()?.status || '') : ''),
+      (snap) => {
+        if (snap.exists()) {
+          setStaffAccessStatus(String(snap.data()?.status || ''))
+          return
+        }
+        setStaffAccessStatus('')
+        if (String(userDoc.status || '').trim().toLowerCase() === 'active') {
+          setDoc(ref, {
+            ...userDoc,
+            uid: nextStaffId,
+            staffId: nextStaffId,
+            userId: nextStaffId,
+            workspaceId: nextWorkspaceId,
+            ownerId: nextWorkspaceId,
+            companyId: nextWorkspaceId,
+            status: 'active',
+            updatedAt: serverTimestamp(),
+          }, { merge: true }).catch(() => {})
+        }
+      },
       () => setStaffAccessStatus(''),
     )
 
@@ -165,7 +216,14 @@ export function UserProvider({ children }) {
   }, [loading, ready, user, userDoc])
 
   const role = normalizeRole(userDoc?.role)
-  const workspaceId = userDoc?.workspaceId || user?.uid || null
+  const staffProfile = isStaffWorkspaceProfile(userDoc, user?.uid)
+  const userDocWorkspaceId = userDoc?.workspaceId || ''
+  const repairedStaffWorkspaceId = staffProfile && user?.uid && userDocWorkspaceId === user.uid
+    ? [userDoc?.ownerId, userDoc?.companyId, userDoc?.createdBy]
+        .map((value) => String(value || '').trim())
+        .find((value) => value && value !== user.uid) || userDocWorkspaceId
+    : userDocWorkspaceId
+  const workspaceId = repairedStaffWorkspaceId || user?.uid || null
   const developerOverride = isDeveloperOwnerAccount(userDoc, user)
   const allowedBusinessTypes = Array.from(new Set([
     ...(Array.isArray(workspaceDoc?.allowedBusinessTypes) ? workspaceDoc.allowedBusinessTypes : []),
@@ -205,7 +263,7 @@ export function UserProvider({ children }) {
         ? selectedBusinessWorkspace
       : specialModuleAccess && requestedBusinessAllowed
         ? requestedBusinessType
-        : workspaceDoc?.selectedWorkspace || lockedBusinessType || userDoc?.selectedWorkspace,
+        : lockedBusinessType || workspaceDoc?.selectedWorkspace || userDoc?.selectedWorkspace,
   )
   const businessType = normalizeBusinessType(
     selectedBusiness?.type ||
@@ -225,7 +283,7 @@ export function UserProvider({ children }) {
   const workspaceBlocked = workspaceAccessDenied || workspaceStatus === 'blocked' || workspaceStatus === 'inactive' || workspaceAccountStatus === 'blocked'
   const accountStatus = workspaceBlocked ? 'blocked' : staffStatus || userStatus || 'active'
   const isBlocked = workspaceBlocked || blockedStatuses.includes(userStatus) || blockedStatuses.includes(staffStatus)
-  const ownsWorkspace = Boolean(
+  const ownsWorkspace = !staffProfile && Boolean(
     user?.uid && (
       user.uid === workspaceId ||
       user.uid === userDoc?.ownerId ||
@@ -234,9 +292,19 @@ export function UserProvider({ children }) {
       user.uid === workspaceDoc?.createdBy
     ),
   )
-  const isOwner = role === 'owner' || ownsWorkspace
+  const isOwner = !staffProfile && (role === 'owner' || ownsWorkspace)
   const isAdmin = isOwner || role === 'admin'
-  const isStaff = !isAdmin
+  const isStaff = staffProfile || !isAdmin
+
+  useEffect(() => {
+    if (!ready || loading || !user?.uid || !isBlocked || !isStaff) return
+    try {
+      window.sessionStorage.setItem('nexora:loginNotice', 'Your staff access was disabled by the workspace owner. Please contact your administrator.')
+    } catch {
+      // Non-fatal in private browsing.
+    }
+    logout?.()
+  }, [isBlocked, isStaff, loading, logout, ready, user?.uid])
 
   useEffect(() => {
     console.log('[Role Access] role', role)
@@ -408,6 +476,7 @@ export function UserProvider({ children }) {
     if (!user?.uid || !workspaceId || loading || loggedLoginRef.current === user.uid) return
     loggedLoginRef.current = user.uid
     const { userName, userEmail } = userActivityInfo(userDoc, user)
+    const now = serverTimestamp()
     logActivity({
       workspaceId,
       userId: user.uid,
@@ -420,7 +489,14 @@ export function UserProvider({ children }) {
       targetName: userName,
       metadata: { role },
     }).catch(() => {})
-  }, [loading, role, user, userDoc, workspaceId])
+    if (db && role !== 'owner' && staffId) {
+      Promise.all([
+        setDoc(doc(db, 'workspaces', workspaceId, 'staff', staffId), { inviteStatus: 'accepted', acceptedAt: now, lastLoginAt: now, updatedAt: now }, { merge: true }),
+        setDoc(doc(db, 'workspaces', workspaceId, 'teamMembers', staffId), { inviteStatus: 'accepted', acceptedAt: now, lastLoginAt: now, updatedAt: now }, { merge: true }),
+        setDoc(doc(db, 'users', user.uid), { inviteStatus: 'accepted', acceptedAt: now, lastLoginAt: now, updatedAt: now }, { merge: true }),
+      ]).catch(() => {})
+    }
+  }, [loading, role, staffId, user, userDoc, workspaceId])
 
   const value = useMemo(
     () => ({

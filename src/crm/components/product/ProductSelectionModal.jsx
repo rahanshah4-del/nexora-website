@@ -3,8 +3,10 @@ import { memo } from 'react'
 import {
   HiOutlineArrowPath,
   HiOutlineArrowRight,
+  HiOutlineBuildingStorefront,
   HiOutlineClock,
   HiOutlineEnvelope,
+  HiOutlineQueueList,
   HiOutlineSparkles,
   HiOutlineSquares2X2,
   HiOutlineUserCircle,
@@ -27,11 +29,16 @@ const accentMap = {
 
 const iconMap = {
   'general-crm': HiOutlineUserGroup,
-  'retail-pos': HiOutlineSquares2X2,
+  'retail-pos': HiOutlineBuildingStorefront,
   'school-erp': HiOutlineUserCircle,
   'property-erp': HiOutlineSquares2X2,
-  'restaurant-pos': HiOutlineSquares2X2,
+  'restaurant-pos': HiOutlineQueueList,
   'whatsapp-crm': HiOutlineEnvelope,
+}
+
+const iconShellMap = {
+  'retail-pos': 'border-orange-200 bg-orange-50 text-orange-700 shadow-orange-100 dark:border-orange-400/25 dark:bg-orange-400/10 dark:text-orange-200',
+  'restaurant-pos': 'border-rose-200 bg-rose-50 text-rose-700 shadow-rose-100 dark:border-rose-400/25 dark:bg-rose-400/10 dark:text-rose-200',
 }
 
 const products = businessWorkspaceCatalog.map((workspace) => ({
@@ -92,8 +99,11 @@ function ProductCard({ product, onSelect }) {
     >
       <div className={cn('absolute inset-x-0 top-0 h-1 bg-gradient-to-r', product.accent)} />
       <div className="flex min-w-0 items-start gap-3">
-        <span className={cn('grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-br text-white shadow-lg', product.accent)}>
-          <Icon className="h-6 w-6" />
+        <span className={cn(
+          'grid h-12 w-12 shrink-0 place-items-center rounded-2xl border shadow-sm transition-colors duration-200',
+          iconShellMap[product.id] || `bg-gradient-to-br ${product.accent} text-white`,
+        )}>
+          <Icon className="h-6 w-6 stroke-[2.15]" />
         </span>
         <span className="min-w-0 flex-1">
           <span className="block truncate text-base font-semibold tracking-tight text-slate-950 dark:text-white">

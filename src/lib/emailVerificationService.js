@@ -1,6 +1,7 @@
 import { deleteDoc, doc, getDoc, getDocFromServer, serverTimestamp, setDoc, Timestamp } from 'firebase/firestore'
 import { db } from './firebase.js'
 import { EMAIL_WORKER_URL, sendWorkerEmail } from './transactionalEmail.js'
+import { isStaffWorkspaceProfile } from './accountProvisioning.js'
 
 const OTP_TTL_MINUTES = 10
 const technicalLogPrefix = '[Nexora email verification]'
@@ -61,6 +62,36 @@ function isPermissionDenied(error) {
 
 function clean(value) {
   return typeof value === 'string' ? value.trim() : ''
+}
+
+function staffInviteEmailKey(email) {
+  return clean(email).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'staff-email'
+}
+
+async function readStaffInviteProfile(user, { server = true } = {}) {
+  if (!db || !user?.uid) return null
+  const refs = [
+    doc(db, 'staffInviteClaims', user.uid),
+  ]
+  const emailKey = staffInviteEmailKey(user.email)
+  if (emailKey) refs.push(doc(db, 'staffInviteEmails', emailKey))
+
+  for (const ref of refs) {
+    try {
+      const snap = await withTimeout(server ? getDocFromServer(ref) : getDoc(ref), server ? 4000 : 2500, ref.path)
+      const data = snap.exists() ? snap.data() : null
+      if (isStaffWorkspaceProfile(data, user.uid) || (data?.email && clean(data.email).toLowerCase() === clean(user.email).toLowerCase() && data?.workspaceId)) {
+        return data
+      }
+    } catch (error) {
+      console.warn('[VerifyEmail] staff invite lookup unavailable', {
+        path: ref.path,
+        code: error?.code || '',
+        message: error?.message || String(error || ''),
+      })
+    }
+  }
+  return null
 }
 
 function randomOtp() {
@@ -129,6 +160,31 @@ export async function sendCustomVerificationEmail(user, options = {}) {
     try {
       console.log('[OTP email] OTP save start', { path: otpDocPath })
       const existingSnap = await getDoc(userRef)
+      if (existingSnap.exists() && isStaffWorkspaceProfile(existingSnap.data(), uid)) {
+        markVerifiedFlag(uid)
+        await setDoc(userRef, { emailVerifiedCustom: true, onboardingCompleted: true, updatedAt: serverTimestamp() }, { merge: true }).catch(() => {})
+        return { ok: true, provider: 'staff_invite', otp: false, message: 'Staff invite email is already verified by the owner.' }
+      }
+      const inviteProfile = await readStaffInviteProfile(user, { server: false })
+      if (inviteProfile) {
+        markVerifiedFlag(uid)
+        await setDoc(
+          userRef,
+          {
+            ...inviteProfile,
+            uid,
+            userId: uid,
+            staffId: clean(inviteProfile.staffId || inviteProfile.uid || inviteProfile.userId) || uid,
+            email: to.toLowerCase(),
+            emailVerifiedCustom: true,
+            onboardingCompleted: true,
+            updatedAt: serverTimestamp(),
+            lastLoginAt: serverTimestamp(),
+          },
+          { merge: true },
+        ).catch(() => {})
+        return { ok: true, provider: 'staff_invite', otp: false, message: 'Staff invite email is already verified by the owner.' }
+      }
       if (existingSnap.exists() && existingSnap.data()?.emailVerifiedCustom === true) {
         return { ok: true, provider: 'already_verified', otp: false, message: 'Email is already verified.' }
       }
@@ -277,7 +333,31 @@ export async function getCustomEmailVerificationStatus(user) {
   const ref = doc(db, 'users', user.uid)
   try {
     const snap = await withTimeout(getDocFromServer(ref), 6000, `users/${user.uid}`)
-    const verified = snap.exists() && snap.data()?.emailVerifiedCustom === true
+    const data = snap.exists() ? snap.data() : null
+    const staffProfile = isStaffWorkspaceProfile(data, user.uid)
+    if (!staffProfile) {
+      const inviteProfile = await readStaffInviteProfile(user, { server: true })
+      if (inviteProfile) {
+        markVerifiedFlag(user.uid)
+        await setDoc(
+          ref,
+          {
+            ...inviteProfile,
+            uid: user.uid,
+            userId: user.uid,
+            staffId: clean(inviteProfile.staffId || inviteProfile.uid || inviteProfile.userId) || user.uid,
+            email: clean(user.email || inviteProfile.email).toLowerCase(),
+            emailVerifiedCustom: true,
+            onboardingCompleted: true,
+            updatedAt: serverTimestamp(),
+            lastLoginAt: serverTimestamp(),
+          },
+          { merge: true },
+        ).catch(() => {})
+        return true
+      }
+    }
+    const verified = snap.exists() && (data?.emailVerifiedCustom === true || staffProfile)
     console.log('[VerifyEmail] server verification status', {
       uid: user.uid,
       exists: snap.exists(),
@@ -297,7 +377,9 @@ export async function getCustomEmailVerificationStatus(user) {
     // default to "not verified" — RequireAuth owns the not-verified bounce.
     try {
       const snap = await withTimeout(getDoc(ref), 4000, `users/${user.uid} cache`)
-      return snap.exists() && snap.data()?.emailVerifiedCustom === true
+      const data = snap.exists() ? snap.data() : null
+      if (snap.exists() && (data?.emailVerifiedCustom === true || isStaffWorkspaceProfile(data, user.uid))) return true
+      return Boolean(await readStaffInviteProfile(user, { server: false }))
     } catch (fallbackError) {
       console.warn('[VerifyEmail] verification status unavailable', {
         uid: user.uid,

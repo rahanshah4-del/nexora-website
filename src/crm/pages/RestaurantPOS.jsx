@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion'
 import {
+  HiOutlineCalculator,
   HiOutlineChartBarSquare,
-  HiOutlineClipboardDocumentList,
   HiOutlineCube,
   HiOutlineQueueList,
   HiOutlineSparkles,
@@ -10,7 +10,7 @@ import Card from '../components/ui/Card.jsx'
 import Badge from '../components/ui/Badge.jsx'
 
 const modules = [
-  { label: 'Billing', detail: 'Fast restaurant checkout', icon: HiOutlineClipboardDocumentList },
+  { label: 'Billing', detail: 'Fast restaurant checkout', icon: HiOutlineCalculator },
   { label: 'Orders', detail: 'Dine-in, takeaway, delivery', icon: HiOutlineQueueList },
   { label: 'Inventory', detail: 'Recipe and stock control', icon: HiOutlineCube },
   { label: 'Reports', detail: 'Sales and shift summaries', icon: HiOutlineChartBarSquare },

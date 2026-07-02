@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import { serverTimestamp } from 'firebase/firestore'
+import { collection, doc, serverTimestamp, writeBatch } from 'firebase/firestore'
 import { db } from '../lib/firebase.js'
-import { createUserDoc, patchUserDoc, removeUserDoc, subscribeUserCollection } from '../lib/firestore.js'
+import { createUserDoc, patchUserDoc, removeUserDoc, subscribeUserCollection, workspaceCollectionPath } from '../lib/firestore.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 import { useUser } from './useUser.js'
 import { clientSafeMessage } from '../utils/messages.js'
@@ -30,6 +30,8 @@ function normalizeProduct(product) {
     supplier: product.supplier || '',
     stockHistory: Array.isArray(product.stockHistory) ? product.stockHistory : [],
     status: product.status || 'active',
+    seedSource: product.seedSource || '',
+    seedKey: product.seedKey || '',
     createdBy: product.createdBy || product.userId || '',
     createdAt: product.createdAt || null,
     updatedAt: product.updatedAt || null,
@@ -57,6 +59,8 @@ function sanitizeProduct(payload) {
     branch: String(payload.branch || '').trim(),
     supplier: String(payload.supplier || '').trim(),
     status: String(payload.status || 'active').trim() || 'active',
+    seedSource: String(payload.seedSource || '').trim(),
+    seedKey: String(payload.seedKey || '').trim(),
   }
 }
 
@@ -177,6 +181,115 @@ export function useProducts(options = {}) {
           return { ok: true }
         } catch (e) {
           return { ok: false, error: clientSafeMessage(e, 'Unable to create product.') }
+        }
+      },
+      async loadSeedProducts(seedProducts = [], seedSource = '') {
+        if (!userId || !workspaceId) return { ok: false, error: 'Please login first' }
+        if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now' }
+        const source = String(seedSource || '').trim()
+        const incoming = Array.isArray(seedProducts) ? seedProducts : []
+        if (!source || !incoming.length) return { ok: false, error: 'Product seed list is empty' }
+        const existingKeys = new Set(
+          products
+            .filter((item) => item.seedSource === source)
+            .map((item) => item.seedKey || item.sku || item.name),
+        )
+        const rows = incoming
+          .map((item) => sanitizeProduct({ ...item, seedSource: source }))
+          .filter((item) => item.name && item.sku)
+          .filter((item) => !existingKeys.has(item.seedKey || item.sku || item.name))
+        if (!rows.length) return { ok: true, added: 0, skipped: incoming.length }
+        try {
+          const batch = writeBatch(db)
+          const productCollection = collection(db, workspaceCollectionPath(workspaceId, 'products'))
+          rows.forEach((product) => {
+            const ref = doc(productCollection)
+            batch.set(ref, {
+              ...product,
+              ownerId: workspaceId,
+              userId: workspaceId,
+              workspaceId,
+              businessType,
+              createdBy: userId,
+              stockHistory: [
+                {
+                  type: 'seeded',
+                  quantity: product.stockQuantity,
+                  note: 'Loaded from Pakistan shop starter catalog',
+                  createdAt: new Date().toISOString(),
+                  createdBy: userId,
+                },
+              ],
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp(),
+            })
+          })
+          await batch.commit()
+          await logActivity({
+            workspaceId,
+            userId,
+            businessType,
+            ...userActivityInfo(userDoc, firebaseUser),
+            action: 'Starter products loaded',
+            module: 'Inventory',
+            description: `${rows.length} Pakistan shop starter products were loaded.`,
+            metadata: { seedSource: source, count: rows.length },
+          })
+          await createWorkspaceNotification({
+            workspaceId,
+            userId,
+            businessType,
+            type: 'Inventory',
+            priority: 'low',
+            title: 'Starter inventory loaded',
+            message: `${rows.length} Pakistan shop products were added.`,
+            route: '/app/inventory',
+            createdBy: userId,
+            createdByEmail: firebaseUser?.email || userDoc?.email || '',
+          })
+          return { ok: true, added: rows.length, skipped: incoming.length - rows.length }
+        } catch (e) {
+          return { ok: false, error: clientSafeMessage(e, 'Unable to load starter products.') }
+        }
+      },
+      async unloadSeedProducts(seedSource = '') {
+        if (!userId || !workspaceId) return { ok: false, error: 'Please login first' }
+        if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now' }
+        const source = String(seedSource || '').trim()
+        if (!source) return { ok: false, error: 'Seed source is required' }
+        const seededProducts = products.filter((item) => item.seedSource === source)
+        if (!seededProducts.length) return { ok: true, removed: 0 }
+        try {
+          const batch = writeBatch(db)
+          seededProducts.forEach((product) => {
+            batch.delete(doc(db, workspaceCollectionPath(workspaceId, 'products'), product.id))
+          })
+          await batch.commit()
+          await logActivity({
+            workspaceId,
+            userId,
+            businessType,
+            ...userActivityInfo(userDoc, firebaseUser),
+            action: 'Starter products unloaded',
+            module: 'Inventory',
+            description: `${seededProducts.length} Pakistan shop starter products were removed.`,
+            metadata: { seedSource: source, count: seededProducts.length },
+          })
+          await createWorkspaceNotification({
+            workspaceId,
+            userId,
+            businessType,
+            type: 'Inventory',
+            priority: 'low',
+            title: 'Starter inventory unloaded',
+            message: `${seededProducts.length} starter products were removed.`,
+            route: '/app/inventory',
+            createdBy: userId,
+            createdByEmail: firebaseUser?.email || userDoc?.email || '',
+          })
+          return { ok: true, removed: seededProducts.length }
+        } catch (e) {
+          return { ok: false, error: clientSafeMessage(e, 'Unable to unload starter products.') }
         }
       },
       async updateProduct(id, payload) {

@@ -762,6 +762,70 @@ export function upgradeRejectedEmail({ name = 'there', reason = '', plan = '' } 
   }
 }
 
+export function staffInvitationEmail({
+  staffName = 'there',
+  staffEmail = '',
+  temporaryPassword = '',
+  role = 'Staff',
+  workspaceName = 'Nexora workspace',
+  businessType = '',
+  invitedBy = '',
+  modules = [],
+  loginUrl = NEXORA_WORKSPACE_URL,
+} = {}) {
+  const moduleList = Array.isArray(modules) ? modules.filter(Boolean).slice(0, 8) : []
+  const moduleRows = moduleList.length
+    ? moduleList.map((item) => `<span style="display:inline-block;margin:0 6px 8px 0;border-radius:999px;background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;font-size:12px;line-height:18px;font-weight:900;padding:7px 11px;">${escapeHtml(item)}</span>`).join('')
+    : '<span style="display:inline-block;border-radius:999px;background:#f8fafc;border:1px solid #e2e8f0;color:#64748b;font-size:12px;line-height:18px;font-weight:900;padding:7px 11px;">Modules will appear after login</span>'
+  const body = [
+    greetingLine(staffName),
+    leadParagraph(
+      `You have been invited to join <strong style="color:#0f172a;">${escapeHtml(workspaceName)}</strong> on Nexora Business Suite. Use the login details below to access only the modules assigned to your role.`,
+    ),
+    detailsCard('Login Details', [
+      ['Workspace', workspaceName],
+      ['Role', role],
+      ['Email', staffEmail],
+      temporaryPassword ? ['Temporary Password', temporaryPassword] : null,
+      ['Business Type', businessType],
+      ['Invited By', invitedBy],
+    ]),
+    `
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;border-radius:16px;background:#f8fafc;border:1px solid #e2e8f0;margin:2px 0 18px;">
+                      <tr>
+                        <td style="padding:18px 20px;">
+                          <div style="font-size:12px;line-height:18px;font-weight:900;color:#1e3a8a;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;">Allowed Modules</div>
+                          <div>${moduleRows}</div>
+                        </td>
+                      </tr>
+                    </table>`,
+    ctaButton('Open Nexora Workspace', loginUrl),
+    calloutBox(
+      'Security Note',
+      'Your owner/admin can update permissions or disable access at any time. Do not share your login details with anyone.',
+      '#eff6ff',
+      '#bfdbfe',
+      '#1d4ed8',
+    ),
+  ].join('')
+  return {
+    subject: `${workspaceName} invited you to Nexora`,
+    html: modernEmailShell({
+      accent: '#0f172a',
+      accentGradient: 'linear-gradient(135deg,#0f172a 0%,#1d4ed8 52%,#0f766e 100%)',
+      badge: statusPill('Staff Invitation'),
+      title: 'You are invited to Nexora',
+      subtitle: `${workspaceName} has added you as ${role}.`,
+      schema: emailViewActionSchema({
+        label: 'Open Nexora Workspace',
+        url: loginUrl,
+        description: `Join ${workspaceName} on Nexora Business Suite`,
+      }),
+      body,
+    }),
+  }
+}
+
 export function supportTicketReplyEmail({ ticketNumber = '', subject = 'Support ticket', message = '' } = {}) {
   return {
     subject: `Support reply: ${subject || ticketNumber || 'Nexora ticket'}`,

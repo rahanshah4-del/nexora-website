@@ -954,18 +954,18 @@ export default function RestaurantOrdersPage() {
   return (
     <>
       <motion.div
-        className="restaurant-pos-page min-w-0"
+        className="restaurant-pos-page min-h-screen min-w-0 bg-slate-50 p-2.5 sm:p-3"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
       >
         <div className="restaurant-pos-grid grid min-w-0 gap-3">
-        <Card className="restaurant-pos-menu-panel flex min-h-0 flex-col rounded-[1.15rem] p-2.5">
+        <Card className="restaurant-pos-menu-panel flex min-h-0 flex-col rounded-[1.15rem] p-2.5 sm:p-3">
           <div className="flex min-w-0 shrink-0 flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
             <div className="min-w-0">
               <Badge variant="warning">Restaurant Billing</Badge>
-              <h1 className="mt-1.5 text-xl font-semibold tracking-tight text-slate-950 dark:text-white">Orders</h1>
-              <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-300">Build orders from the menu, send KOT, and complete billing.</p>
+              <h1 className="mt-1.5 text-xl font-semibold tracking-tight text-slate-950 dark:text-white">POS Till</h1>
+              <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-300">Full-screen restaurant billing for menu orders, KOT, and payment.</p>
             </div>
             <Button type="button" className="h-9 w-full px-3 text-xs lg:w-auto" onClick={newOrder}>
               <HiOutlinePlus className="h-4 w-4" />
@@ -1083,7 +1083,20 @@ export default function RestaurantOrdersPage() {
           </div>
 
           <div className="restaurant-menu-scroll mt-2 min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain pb-3 pr-1">
-            <div className="grid min-w-0 grid-cols-[repeat(auto-fill,minmax(170px,1fr))] content-start gap-2 sm:grid-cols-[repeat(auto-fill,minmax(190px,1fr))]">
+            {visibleItems.length === 0 ? (
+              <div className="grid min-h-[18rem] place-items-center rounded-[1rem] border border-dashed border-slate-200 bg-white/80 px-4 py-8 text-center">
+                <div className="max-w-sm">
+                  <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-orange-50 text-orange-600 ring-1 ring-orange-100">
+                    <GiKnifeFork className="h-7 w-7" />
+                  </div>
+                  <h2 className="mt-4 text-base font-black text-slate-950">No menu items found</h2>
+                  <p className="mt-1 text-sm font-semibold text-slate-500">
+                    Search ya category change karein. Menu empty ho to Settings/Menu se items add karein.
+                  </p>
+                </div>
+              </div>
+            ) : null}
+            <div className="grid min-w-0 grid-cols-[repeat(auto-fill,minmax(150px,1fr))] content-start gap-2 sm:grid-cols-[repeat(auto-fill,minmax(180px,1fr))] 2xl:grid-cols-[repeat(auto-fill,minmax(190px,1fr))]">
             {visibleItems.map((item) => {
               const inCart = cartRows.find((row) => row.itemId === item.id)
               return (

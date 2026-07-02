@@ -31,6 +31,7 @@ import CategoryModal from '../components/inventory/CategoryModal.jsx'
 import SupplierModal from '../components/inventory/SupplierModal.jsx'
 import PurchaseModal from '../components/inventory/PurchaseModal.jsx'
 import { useProducts } from '../hooks/useProducts.js'
+import { PAKISTAN_SHOP_SEED_SOURCE, pakistanShopProducts } from '../data/pakistanShopProducts.js'
 import { useCategories } from '../hooks/useCategories.js'
 import { useSuppliers } from '../hooks/useSuppliers.js'
 import { usePurchases } from '../hooks/usePurchases.js'
@@ -184,6 +185,10 @@ export default function Inventory() {
 
   const { products } = productsApi
   const stats = useInventoryStats(products, transactionsApi.transactions)
+  const starterProductsLoaded = useMemo(
+    () => products.filter((product) => product.seedSource === PAKISTAN_SHOP_SEED_SOURCE).length,
+    [products],
+  )
 
   // Modal state
   const [productModal, setProductModal] = useState({ open: false, product: null })
@@ -237,6 +242,35 @@ export default function Inventory() {
     }
   }
 
+  async function loadPakistanStarterProducts() {
+    const result = await productsApi.loadSeedProducts(pakistanShopProducts, PAKISTAN_SHOP_SEED_SOURCE)
+    if (result?.ok) {
+      if (result.added > 0) notify(`${result.added} Pakistan shop products loaded`)
+      else notify('Starter products already loaded')
+      setTab('products')
+    } else {
+      notify(result?.error || 'Unable to load starter products')
+    }
+  }
+
+  async function unloadPakistanStarterProducts() {
+    if (!starterProductsLoaded) {
+      notify('No starter products to unload')
+      return
+    }
+    if (await confirmAction({
+      tone: 'warning',
+      badge: 'Starter Inventory',
+      title: 'Unload sample products?',
+      message: `This will remove only ${starterProductsLoaded} Nexora starter products. Your manually added products will stay safe.`,
+      confirmLabel: 'Unload Sample Products',
+    })) {
+      const result = await productsApi.unloadSeedProducts(PAKISTAN_SHOP_SEED_SOURCE)
+      if (result?.ok) notify(`${result.removed || 0} starter products removed`)
+      else notify(result?.error || 'Unable to unload starter products')
+    }
+  }
+
   return (
     <div className="min-w-0">
       {toast ? <Toast message={toast} onClose={() => setToast('')} /> : null}
@@ -246,6 +280,12 @@ export default function Inventory() {
         subtitle="Manage products, stock movements, suppliers, purchases, and live stock value for your Retail / POS workspace."
         right={
           <>
+            <Button variant="subtle" className="rounded-2xl" type="button" onClick={loadPakistanStarterProducts}>
+              <HiOutlineArrowDownTray className="h-4 w-4" /> Load products
+            </Button>
+            <Button variant="subtle" className="rounded-2xl" type="button" onClick={unloadPakistanStarterProducts}>
+              <HiOutlineTrash className="h-4 w-4" /> Unload products
+            </Button>
             <Button variant="subtle" className="rounded-2xl" type="button" onClick={() => setStockModal({ open: true, presetProductId: '', presetType: 'stock_in' })}>
               <HiOutlineCircleStack className="h-4 w-4" /> Stock movement
             </Button>
@@ -291,6 +331,9 @@ export default function Inventory() {
           onSearch={setProductSearch}
           currency={currency}
           onAdd={() => setProductModal({ open: true, product: null })}
+          onLoadStarter={loadPakistanStarterProducts}
+          onUnloadStarter={unloadPakistanStarterProducts}
+          starterProductsLoaded={starterProductsLoaded}
           onEdit={(product) => setProductModal({ open: true, product })}
           onStock={(product) => setStockModal({ open: true, presetProductId: product.id, presetType: 'stock_in' })}
           onDelete={async (product) => {
@@ -515,7 +558,7 @@ function DashboardTab({ stats, currency, onView }) {
   )
 }
 
-function ProductsTab({ products, search, onSearch, currency, onAdd, onEdit, onStock, onDelete }) {
+function ProductsTab({ products, search, onSearch, currency, onAdd, onLoadStarter, onUnloadStarter, starterProductsLoaded, onEdit, onStock, onDelete }) {
   return (
     <Card className="p-4 sm:p-5">
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -528,9 +571,17 @@ function ProductsTab({ products, search, onSearch, currency, onAdd, onEdit, onSt
             onChange={(e) => onSearch(e.target.value)}
           />
         </div>
-        <Button className="rounded-2xl" type="button" onClick={onAdd}>
-          <HiOutlinePlus className="h-4 w-4" /> Add product
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="subtle" className="rounded-2xl" type="button" onClick={onLoadStarter}>
+            <HiOutlineArrowDownTray className="h-4 w-4" /> Load products
+          </Button>
+          <Button variant="subtle" className="rounded-2xl" type="button" onClick={onUnloadStarter}>
+            <HiOutlineTrash className="h-4 w-4" /> Unload products{starterProductsLoaded ? ` (${starterProductsLoaded})` : ''}
+          </Button>
+          <Button className="rounded-2xl" type="button" onClick={onAdd}>
+            <HiOutlinePlus className="h-4 w-4" /> Add product
+          </Button>
+        </div>
       </div>
 
       {products.length ? (

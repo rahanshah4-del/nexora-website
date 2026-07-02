@@ -3,11 +3,16 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   HiOutlineBuildingOffice2,
+  HiOutlineBanknotes,
   HiOutlineCheckCircle,
   HiOutlineChatBubbleLeftRight,
   HiOutlineDocumentText,
   HiOutlinePaintBrush,
   HiOutlinePrinter,
+  HiOutlineQrCode,
+  HiOutlineReceiptPercent,
+  HiOutlineShoppingCart,
+  HiOutlineTag,
   HiOutlineTruck,
 } from 'react-icons/hi2'
 import Button from '../components/ui/Button.jsx'
@@ -41,6 +46,17 @@ import {
   requestThermalPrinter,
   webUsbSupported,
 } from '../lib/printerService.js'
+
+const defaultBarcodeScannerSettings = {
+  enabled: true,
+  mode: 'keyboard',
+  autoAddToCart: true,
+  submitKey: 'Enter',
+  minLength: 4,
+  scanTimeoutMs: 700,
+  deviceName: '',
+  lastTestCode: '',
+}
 
 function Field({ label, children, className = '' }) {
   return (
@@ -183,22 +199,22 @@ function WorkspaceSetupCard({ businessType, draft, setDraft, currency, setCurren
   }
 
   return (
-    <Card id="business-profile" className="scroll-mt-28 overflow-hidden p-0">
-      <div className="border-b border-slate-200 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 p-5 text-white sm:p-6">
+    <Card id="business-profile" className="scroll-mt-28 h-full overflow-hidden rounded-[1.5rem] border-slate-200/80 bg-white p-0 shadow-sm">
+      <div className="border-b border-slate-200 bg-gradient-to-br from-slate-50 via-white to-blue-50 p-5 sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
             <Badge variant="info">{copy.badge}</Badge>
-            <h2 className="mt-3 text-xl font-black tracking-tight">{copy.title}</h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">{copy.subtitle}</p>
+            <h2 className="mt-3 text-xl font-black tracking-tight text-slate-950">{copy.title}</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">{copy.subtitle}</p>
           </div>
-          <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-white/10 text-white">
+          <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-100">
             <HiOutlineBuildingOffice2 className="h-7 w-7" />
           </div>
         </div>
         <div className="mt-5 grid gap-2 sm:grid-cols-4">
           {documentTargets.map((target) => (
-            <div key={target} className="rounded-2xl border border-white/10 bg-white/10 px-3 py-2">
-              <p className="text-xs font-bold text-slate-200">{target}</p>
+            <div key={target} className="rounded-2xl border border-blue-100 bg-white px-3 py-2 shadow-sm">
+              <p className="text-xs font-bold text-slate-600">{target}</p>
             </div>
           ))}
         </div>
@@ -501,6 +517,303 @@ function PrinterConnectionSettingsCard({ businessType, draft, setDraft, canManag
         </div>
       </div>
     </Card>
+  )
+}
+
+function BarcodeScannerSettingsCard({ draft, setDraft, canManageSettings, onSaveSettings }) {
+  const scanner = { ...defaultBarcodeScannerSettings, ...(draft.barcodeScannerSettings || {}) }
+  const [testCode, setTestCode] = useState('')
+  const [note, setNote] = useState('')
+
+  function patchScanner(patch) {
+    setDraft((current) => ({
+      ...current,
+      barcodeScannerSettings: {
+        ...defaultBarcodeScannerSettings,
+        ...(current.barcodeScannerSettings || {}),
+        ...patch,
+      },
+    }))
+  }
+
+  async function saveScannerSettings() {
+    if (!canManageSettings) return
+    setNote('Saving barcode scanner settings...')
+    await onSaveSettings?.()
+    setNote('Barcode scanner settings saved.')
+  }
+
+  function handleTestKeyDown(event) {
+    if (event.key !== scanner.submitKey) return
+    const code = testCode.trim()
+    if (!code) return
+    event.preventDefault()
+    patchScanner({ lastTestCode: code })
+    setNote(`Scanner test received: ${code}`)
+    setTestCode('')
+  }
+
+  return (
+    <Card id="barcode-scanner-settings" className="scroll-mt-28 overflow-hidden p-0">
+      <div className="border-b border-slate-200 bg-gradient-to-br from-blue-950 via-slate-950 to-cyan-950 p-5 text-white">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-cyan-200">Barcode Scanner</p>
+            <h2 className="mt-2 text-xl font-black tracking-tight">POS scanner connection</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-300">
+              Connect USB/Bluetooth scanners that type barcode numbers and press Enter automatically.
+            </p>
+          </div>
+          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white/10 text-cyan-200 ring-1 ring-white/15">
+            <HiOutlineQrCode className="h-6 w-6" />
+          </span>
+        </div>
+      </div>
+
+      <div className="space-y-4 p-5">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field label="Scanner status">
+            <Select value={scanner.enabled ? 'enabled' : 'disabled'} onChange={(event) => patchScanner({ enabled: event.target.value === 'enabled' })} disabled={!canManageSettings}>
+              <option value="enabled">Enabled</option>
+              <option value="disabled">Disabled</option>
+            </Select>
+          </Field>
+          <Field label="Connection mode">
+            <Select value={scanner.mode} onChange={(event) => patchScanner({ mode: event.target.value })} disabled={!canManageSettings}>
+              <option value="keyboard">USB/Bluetooth keyboard scanner</option>
+              <option value="camera">Camera scanner placeholder</option>
+            </Select>
+          </Field>
+          <Field label="Scanner/device name">
+            <Input value={scanner.deviceName || ''} onChange={(event) => patchScanner({ deviceName: event.target.value })} placeholder="Counter scanner / Zebra / Honeywell" readOnly={!canManageSettings} />
+          </Field>
+          <Field label="Submit key">
+            <Select value={scanner.submitKey} onChange={(event) => patchScanner({ submitKey: event.target.value })} disabled={!canManageSettings}>
+              <option value="Enter">Enter</option>
+              <option value="Tab">Tab</option>
+            </Select>
+          </Field>
+          <Field label="Minimum barcode length">
+            <Input type="number" min="1" value={scanner.minLength} onChange={(event) => patchScanner({ minLength: Math.max(1, Number(event.target.value) || 4) })} readOnly={!canManageSettings} />
+          </Field>
+          <Field label="Scan timeout ms">
+            <Input type="number" min="200" value={scanner.scanTimeoutMs} onChange={(event) => patchScanner({ scanTimeoutMs: Math.max(200, Number(event.target.value) || 700) })} readOnly={!canManageSettings} />
+          </Field>
+        </div>
+
+        <label className="flex items-center gap-2 text-xs font-semibold text-slate-600">
+          <input type="checkbox" checked={Boolean(scanner.autoAddToCart)} onChange={(event) => patchScanner({ autoAddToCart: event.target.checked })} disabled={!canManageSettings} />
+          Auto add scanned product to POS cart
+        </label>
+
+        <div className="rounded-2xl border border-cyan-100 bg-cyan-50 p-3">
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-cyan-800">Test scanner</p>
+          <Input
+            className="mt-2"
+            value={testCode}
+            onChange={(event) => setTestCode(event.target.value)}
+            onKeyDown={handleTestKeyDown}
+            placeholder="Click here and scan barcode..."
+            readOnly={!canManageSettings}
+          />
+          <p className="mt-2 text-xs font-semibold text-cyan-900">
+            Last test: {scanner.lastTestCode || 'No scan yet'}
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 text-xs leading-5 text-slate-700">
+          Most retail barcode scanners work in keyboard mode. In POS Billing, scan a product barcode and it will auto-add to cart if barcode/SKU matches inventory.
+        </div>
+
+        {note ? <p className="rounded-xl bg-slate-900 px-3 py-2 text-xs font-semibold text-white">{note}</p> : null}
+
+        <Button type="button" className="rounded-2xl" onClick={saveScannerSettings} disabled={!canManageSettings}>
+          Save Scanner
+        </Button>
+      </div>
+    </Card>
+  )
+}
+
+function RetailPosSettingsCard({ draft, setDraft, canManageSettings, onSaveSettings }) {
+  const printer = normalizePrinterSettings(draft.printerSettings)
+  const scanner = { ...defaultBarcodeScannerSettings, ...(draft.barcodeScannerSettings || {}) }
+  const retailPos = draft.retailPos || {}
+  const [note, setNote] = useState('')
+
+  function patch(values) {
+    setDraft((current) => ({ ...current, ...values }))
+  }
+
+  function patchRetail(values) {
+    setDraft((current) => ({
+      ...current,
+      retailPos: {
+        ...(current.retailPos || {}),
+        ...values,
+      },
+    }))
+  }
+
+  async function saveRetailSettings() {
+    if (!canManageSettings) return
+    setNote('Saving Retail / POS settings...')
+    await onSaveSettings?.()
+    setNote('Retail / POS settings saved.')
+    window.setTimeout(() => setNote(''), 2200)
+  }
+
+  const scannerState = scanner.enabled ? 'Enabled' : 'Disabled'
+  const printerState = printer.mode === 'direct' ? 'Direct first' : 'Chrome print'
+
+  return (
+    <Card id="retail-pos-settings" className="scroll-mt-28 overflow-hidden p-0">
+      <div className="border-b border-slate-200 bg-gradient-to-br from-sky-950 via-blue-950 to-violet-950 p-5 text-white">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-cyan-200">Retail / POS</p>
+            <h2 className="mt-2 text-2xl font-black tracking-tight">Counter settings</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-200">
+              Set till cash behavior, POS tax, receipt defaults, printer size, and scanner readiness from one clean control panel.
+            </p>
+          </div>
+          <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-white/10 text-cyan-200 ring-1 ring-white/15">
+            <HiOutlineShoppingCart className="h-7 w-7" />
+          </div>
+        </div>
+        <div className="mt-5 grid gap-2 sm:grid-cols-4">
+          <MiniStatus icon={HiOutlineBanknotes} label="Patti cash" value="Daily separate" />
+          <MiniStatus icon={HiOutlineTag} label="Promo" value="Code based" />
+          <MiniStatus icon={HiOutlinePrinter} label="Printer" value={printerState} />
+          <MiniStatus icon={HiOutlineQrCode} label="Scanner" value={scannerState} />
+        </div>
+      </div>
+
+      <div className="grid gap-4 p-5 lg:grid-cols-[1.05fr_0.95fr]">
+        <div className="rounded-[1.25rem] border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="grid h-11 w-11 place-items-center rounded-2xl bg-emerald-50 text-emerald-700">
+              <HiOutlineBanknotes className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="font-black text-slate-950">Till & cash control</p>
+              <p className="text-xs font-semibold text-slate-500">Opening cash stays separate from sales revenue.</p>
+            </div>
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <Field label="Default opening cash hint">
+              <Input
+                type="number"
+                min="0"
+                value={retailPos.defaultOpeningCash ?? ''}
+                onChange={(event) => patchRetail({ defaultOpeningCash: event.target.value })}
+                placeholder="Example: 5000"
+                readOnly={!canManageSettings}
+              />
+            </Field>
+            <Field label="Cash drawer / counter name">
+              <Input
+                value={retailPos.cashDrawerName || ''}
+                onChange={(event) => patchRetail({ cashDrawerName: event.target.value })}
+                placeholder="Main Counter"
+                readOnly={!canManageSettings}
+              />
+            </Field>
+            <Field label="Default payment method">
+              <Select value={retailPos.defaultPaymentMethod || 'Cash'} onChange={(event) => patchRetail({ defaultPaymentMethod: event.target.value })} disabled={!canManageSettings}>
+                <option>Cash</option>
+                <option>Card</option>
+                <option>JazzCash</option>
+                <option>Easypaisa</option>
+                <option>Bank Transfer</option>
+              </Select>
+            </Field>
+            <Field label="Low stock alert qty">
+              <Input
+                type="number"
+                min="0"
+                value={retailPos.lowStockAlertQty ?? ''}
+                onChange={(event) => patchRetail({ lowStockAlertQty: event.target.value })}
+                placeholder="Example: 10"
+                readOnly={!canManageSettings}
+              />
+            </Field>
+          </div>
+          <div className="mt-4 rounded-2xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs font-semibold leading-5 text-emerald-800">
+            First order par cashier se opening/patti cash poocha jayega. Yeh amount sale/revenue mein add nahi hota, sirf closing cash reference ke liye hota hai.
+          </div>
+        </div>
+
+        <div className="rounded-[1.25rem] border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="grid h-11 w-11 place-items-center rounded-2xl bg-blue-50 text-blue-700">
+              <HiOutlineReceiptPercent className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="font-black text-slate-950">Tax, receipt & billing</p>
+              <p className="text-xs font-semibold text-slate-500">Defaults used by POS billing and reports.</p>
+            </div>
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <Field label="POS tax %">
+              <Input type="number" min="0" value={draft.defaultPosTaxRate ?? 0} onChange={(event) => patch({ defaultPosTaxRate: event.target.value })} readOnly={!canManageSettings} />
+            </Field>
+            <Field label="Invoice tax %">
+              <Input type="number" min="0" value={draft.defaultInvoiceTaxRate ?? 0} onChange={(event) => patch({ defaultInvoiceTaxRate: event.target.value })} readOnly={!canManageSettings} />
+            </Field>
+            <Field label="POS order prefix">
+              <Input value={retailPos.orderPrefix || 'POS'} onChange={(event) => patchRetail({ orderPrefix: event.target.value })} placeholder="POS" readOnly={!canManageSettings} />
+            </Field>
+            <Field label="Receipt paper">
+              <Input value={printer.receiptPaperSize || '58mm'} readOnly />
+            </Field>
+            <Field label="Receipt footer" className="sm:col-span-2">
+              <Input value={draft.receiptFooter || ''} onChange={(event) => patch({ receiptFooter: event.target.value })} placeholder="Thank you for shopping with us" readOnly={!canManageSettings} />
+            </Field>
+          </div>
+        </div>
+
+        <div className="rounded-[1.25rem] border border-slate-200 bg-slate-50 p-4 lg:col-span-2">
+          <div className="grid gap-3 md:grid-cols-[1fr_auto] md:items-center">
+            <div>
+              <p className="font-black text-slate-950">Retail shortcuts</p>
+              <p className="mt-1 text-sm font-semibold text-slate-500">Fast access for cashier setup, promos, orders, and till screen.</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Link to="/app/pos-discounts" className="inline-flex h-10 items-center gap-2 rounded-2xl border border-blue-100 bg-white px-3 text-sm font-black text-blue-700 shadow-sm hover:bg-blue-50">
+                <HiOutlineTag className="h-4 w-4" /> Tax & Promo
+              </Link>
+              <Link to="/app/pos-orders" className="inline-flex h-10 items-center gap-2 rounded-2xl border border-violet-100 bg-white px-3 text-sm font-black text-violet-700 shadow-sm hover:bg-violet-50">
+                <HiOutlineReceiptPercent className="h-4 w-4" /> POS Orders
+              </Link>
+              <button type="button" onClick={() => window.open('/app/pos', '_blank', 'noopener,noreferrer')} className="inline-flex h-10 items-center gap-2 rounded-2xl bg-slate-950 px-3 text-sm font-black text-white shadow-sm hover:bg-slate-800">
+                <HiOutlineShoppingCart className="h-4 w-4" /> Open POS
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {note ? <p className="rounded-xl bg-slate-900 px-3 py-2 text-xs font-semibold text-white lg:col-span-2">{note}</p> : null}
+
+        <div className="flex justify-end lg:col-span-2">
+          <Button type="button" className="rounded-2xl" onClick={saveRetailSettings} disabled={!canManageSettings}>
+            Save Retail POS Settings
+          </Button>
+        </div>
+      </div>
+    </Card>
+  )
+}
+
+function MiniStatus({ icon: Icon, label, value }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/10 px-3 py-2">
+      <div className="flex items-center gap-2">
+        <Icon className="h-4 w-4 text-cyan-200" />
+        <span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-300">{label}</span>
+      </div>
+      <p className="mt-1 text-sm font-black text-white">{value}</p>
+    </div>
   )
 }
 
@@ -1332,9 +1645,16 @@ export default function SettingsPage() {
       receiptFooter: draft.receiptFooter || '',
       signatureUrl: draft.signatureUrl || '',
       themeColor: draft.themeColor || '#2563eb',
+      defaultPosTaxRate: Math.max(0, Number(draft.defaultPosTaxRate || 0)),
+      defaultInvoiceTaxRate: Math.max(0, Number(draft.defaultInvoiceTaxRate || 0)),
+      retailPosPromos: draft.retailPosPromos || settings.retailPosPromos || null,
       printerSettings: {
         ...defaultPrinterSettings,
         ...(draft.printerSettings || {}),
+      },
+      barcodeScannerSettings: {
+        ...defaultBarcodeScannerSettings,
+        ...(draft.barcodeScannerSettings || {}),
       },
       restaurantPos: {
         ...(draft.restaurantPos || {}),
@@ -1355,6 +1675,15 @@ export default function SettingsPage() {
           ? {
               companyName: draft.transportRental?.companyName || draft.businessName || draft.companyName || '',
               reportFooter: draft.transportRental?.reportFooter || draft.receiptFooter || '',
+            }
+          : {}),
+      },
+      retailPos: {
+        ...(draft.retailPos || {}),
+        ...(normalizeBusinessType(businessType) === 'Retail / POS'
+          ? {
+              outletName: draft.retailPos?.outletName || draft.businessName || draft.companyName || '',
+              receiptFooter: draft.receiptFooter || '',
             }
           : {}),
       },
@@ -1420,51 +1749,52 @@ export default function SettingsPage() {
 
       <PasskeySettingsCard />
 
-      <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(340px,0.85fr)]">
-        <div className="min-w-0 space-y-5">
-          <Card id="profile-settings" className="scroll-mt-28 p-5 sm:p-6">
-            <div className="flex flex-col gap-4 border-b border-slate-200/80 pb-5 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex min-w-0 items-center gap-3">
-                {draft.avatarDataUrl ? (
-                  <img src={draft.avatarDataUrl} alt="Profile" className="h-16 w-16 rounded-3xl object-cover shadow-sm" />
-                ) : (
-                  <Avatar name={draft.ownerName || 'Owner'} className="h-16 w-16 rounded-3xl text-base" />
-                )}
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="text-sm font-semibold text-slate-950 dark:text-white">Profile</p>
-                    {saved ? <HiOutlineCheckCircle className="text-lg text-emerald-500" /> : null}
+      <div className="grid min-w-0 gap-5">
+        <div className="grid min-w-0 gap-5 xl:grid-cols-2 xl:items-start">
+          <Card id="profile-settings" className="scroll-mt-28 h-full overflow-hidden rounded-[1.5rem] border-slate-200/80 bg-white p-0 shadow-sm">
+            <div className="border-b border-slate-200 bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-950 p-5 text-white sm:p-6">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div className="flex min-w-0 items-center gap-4">
+                  {draft.avatarDataUrl ? (
+                    <img src={draft.avatarDataUrl} alt="Profile" className="h-16 w-16 rounded-3xl border border-white/20 bg-white object-cover shadow-sm" />
+                  ) : (
+                    <Avatar name={draft.ownerName || 'Owner'} className="h-16 w-16 rounded-3xl border border-white/20 text-base shadow-sm" />
+                  )}
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge variant="info">Owner Profile</Badge>
+                      {saved ? <HiOutlineCheckCircle className="text-lg text-emerald-300" /> : null}
+                    </div>
+                    <h2 className="mt-3 truncate text-xl font-black tracking-tight">{draft.ownerName || 'Workspace Owner'}</h2>
+                    <p className="mt-1 text-sm font-semibold text-slate-300">{businessTypeLabel} contact identity</p>
                   </div>
-                  <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-300">
-                    Owner and contact details for the current {businessTypeLabel} module.
-                  </p>
                 </div>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <Button variant="subtle" className="rounded-2xl" onClick={() => fileRef.current?.click()} type="button" disabled={!canManageSettings}>
-                  Upload image
-                </Button>
-                <Button
-                  variant="ghost"
-                  className="rounded-2xl"
-                  onClick={() => setDraft((current) => ({ ...current, avatarDataUrl: '', logoUrl: '' }))}
-                  type="button"
-                  disabled={!canManageSettings}
-                >
-                  Remove
-                </Button>
-                <input
-                  ref={fileRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(event) => onAvatarChange(event.target.files?.[0])}
-                  disabled={!canManageSettings}
-                />
+                <div className="flex shrink-0 flex-wrap gap-2">
+                  <Button variant="subtle" className="rounded-2xl border-white/20 bg-white/10 text-white hover:bg-white/20" onClick={() => fileRef.current?.click()} type="button" disabled={!canManageSettings}>
+                    Upload image
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    className="rounded-2xl text-white hover:bg-white/10"
+                    onClick={() => setDraft((current) => ({ ...current, avatarDataUrl: '', logoUrl: '' }))}
+                    type="button"
+                    disabled={!canManageSettings}
+                  >
+                    Remove
+                  </Button>
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(event) => onAvatarChange(event.target.files?.[0])}
+                    disabled={!canManageSettings}
+                  />
+                </div>
               </div>
             </div>
 
-            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 p-5 sm:grid-cols-2 sm:p-6">
               <Field label="Owner Name">
                 <Input
 	                  value={draft.ownerName}
@@ -1489,6 +1819,9 @@ export default function SettingsPage() {
 	                  readOnly={!canManageSettings}
 	                />
               </Field>
+              <div className="rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-xs font-semibold leading-5 text-blue-800 sm:col-span-2">
+                Ye profile contact details workspace header, printable documents aur client communication mein use hoti hain.
+              </div>
             </div>
           </Card>
 
@@ -1506,7 +1839,15 @@ export default function SettingsPage() {
           )}
         </div>
 
-        <div className="min-w-0 space-y-5">
+        <div className="grid min-w-0 gap-5">
+          {normalizeBusinessType(businessType) === 'Retail / POS' ? (
+            <RetailPosSettingsCard
+              draft={draft}
+              setDraft={setDraft}
+              canManageSettings={canManageSettings}
+              onSaveSettings={onSaveProfile}
+            />
+          ) : null}
           <PrinterConnectionSettingsCard
             businessType={businessType}
             draft={draft}
@@ -1514,6 +1855,14 @@ export default function SettingsPage() {
             canManageSettings={canManageSettings}
             onSaveSettings={onSaveProfile}
           />
+          {normalizeBusinessType(businessType) === 'Retail / POS' ? (
+            <BarcodeScannerSettingsCard
+              draft={draft}
+              setDraft={setDraft}
+              canManageSettings={canManageSettings}
+              onSaveSettings={onSaveProfile}
+            />
+          ) : null}
           {normalizeBusinessType(businessType) === 'WhatsApp CRM' ? <WhatsappApiCard /> : null}
           {normalizeBusinessType(businessType) === 'Restaurant POS' ? (
             <RestaurantPosSettingsCard draft={draft} setDraft={setDraft} canManageSettings={canManageSettings} onSaveSettings={onSaveProfile} />

@@ -22,7 +22,7 @@ function removeUndefinedFields(payload) {
 
 function normalizePhone(raw) {
   if (!raw) return ''
-  let cleaned = raw.replace(/[\s\-\(\)\.]/g, '')
+  let cleaned = raw.replace(/[\s().-]/g, '')
   if (cleaned.startsWith('00')) {
     cleaned = '+' + cleaned.slice(2)
   }
@@ -43,6 +43,18 @@ function explicitProfileName(user, overrides = {}) {
 function isPasswordOnlyUser(user, provider) {
   const providers = Array.isArray(user?.providerData) ? user.providerData.map((item) => item?.providerId).filter(Boolean) : []
   return provider === 'password' || providers.includes('password')
+}
+
+export function isStaffWorkspaceProfile(profile, uid = '') {
+  if (!profile || typeof profile !== 'object') return false
+  const role = cleanString(profile.role).toLowerCase()
+  const workspaceId = cleanString(profile.workspaceId)
+  const ownerId = cleanString(profile.ownerId || profile.companyId || profile.createdBy)
+  const staffId = cleanString(profile.staffId || profile.uid || profile.userId)
+  const currentUid = cleanString(uid)
+  if (!workspaceId || role === 'owner') return false
+  if (profile.isStaff === true) return workspaceId !== currentUid || (Boolean(ownerId) && ownerId !== currentUid)
+  return ['admin', 'accountant', 'manager', 'sales', 'support', 'staff'].includes(role) && workspaceId !== currentUid && Boolean(staffId)
 }
 
 export async function createSignupUserProfile(user, overrides = {}) {
@@ -209,6 +221,27 @@ async function ensureUserWorkspaceInternal(user, overrides = {}) {
   const effectiveOwnerId = cleanString(existingUser?.ownerId) || effectiveWorkspaceId
   const existingWorkspace = workspaceSnap.exists() ? workspaceSnap.data() : null
   const onboardingCompleted = existingUser?.onboardingCompleted === true || existingWorkspace?.onboardingCompleted === true
+
+  if (isStaffWorkspaceProfile(existingUser, uid)) {
+    await setDoc(
+      userRef,
+      {
+        uid,
+        userId: uid,
+        staffId: cleanString(existingUser.staffId) || uid,
+        workspaceId: existingWorkspaceId,
+        ownerId: effectiveOwnerId || existingWorkspaceId,
+        email,
+        emailVerifiedCustom: true,
+        onboardingCompleted: true,
+        provider,
+        updatedAt: now,
+        lastLoginAt: now,
+      },
+      { merge: true },
+    )
+    return { uid, workspaceId: existingWorkspaceId, onboardingCompleted: true, staff: true }
+  }
 
   console.log('[Onboarding] default module source', {
     source: 'ensureUserWorkspace',

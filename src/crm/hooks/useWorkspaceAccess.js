@@ -78,6 +78,20 @@ function mergePermissionGrants(defaults = {}, overrides = {}) {
   )
 }
 
+function hasModuleViewGrant(permissions = {}, keys = []) {
+  return keys.some((item) => item.action === 'view' && Boolean(permissions[item.key]))
+}
+
+function enabledModuleViewPermissions(userDoc = {}, keys = []) {
+  const enabled = new Set(Array.isArray(userDoc?.enabledModules) ? userDoc.enabledModules : [])
+  if (!enabled.size) return {}
+  return Object.fromEntries(
+    keys
+      .filter((item) => item.action === 'view' && enabled.has(item.moduleKey))
+      .map((item) => [item.key, true]),
+  )
+}
+
 export function useWorkspaceAccess() {
   const { userId, workspaceId, businessType, staffId, role, userDoc, isAdmin, isOwner, isStaff, isAccountant, isManager, accessPlan } = useUser()
   const currentPermissionKeys = useMemo(() => workspacePermissionKeysForBusiness(businessType, accessPlan), [accessPlan, businessType])
@@ -115,13 +129,17 @@ export function useWorkspaceAccess() {
       ref,
       (snap) => {
         const defaults = roleDefaultPermissions(userDoc?.role || role, businessType, accessPlan)
-        const overrides = snap.exists() ? permissionsForBusiness(snap.data(), businessType, accessPlan) : {}
+        const rawOverrides = snap.exists() ? permissionsForBusiness(snap.data(), businessType, accessPlan) : {}
+        const profileModuleFallback = enabledModuleViewPermissions(userDoc, currentPermissionKeys)
+        const overrides = snap.exists() && !hasModuleViewGrant(rawOverrides, currentPermissionKeys)
+          ? { ...rawOverrides, ...profileModuleFallback }
+          : rawOverrides
         setExplicitPermissions(snap.exists() ? overrides : emptyPermissions(currentPermissionKeys))
-        setPermissions(mergePermissionGrants(defaults, overrides))
+        setPermissions(snap.exists() ? overrides : mergePermissionGrants(defaults, overrides))
         setLoading(false)
       },
       () => {
-        setPermissions(emptyPermissions(currentPermissionKeys))
+        setPermissions({ ...emptyPermissions(currentPermissionKeys), ...enabledModuleViewPermissions(userDoc, currentPermissionKeys) })
         setExplicitPermissions(emptyPermissions(currentPermissionKeys))
         setLoading(false)
       },

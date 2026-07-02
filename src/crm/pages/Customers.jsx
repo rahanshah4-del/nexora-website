@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { HiOutlineArrowDownTray, HiOutlineBars3, HiOutlinePencilSquare, HiOutlinePlus, HiOutlineSquares2X2, HiOutlineTrash } from 'react-icons/hi2'
+import { HiOutlineArrowDownTray, HiOutlineBanknotes, HiOutlineBars3, HiOutlinePencilSquare, HiOutlinePlus, HiOutlineSquares2X2, HiOutlineTrash } from 'react-icons/hi2'
 import Button from '../components/ui/Button.jsx'
 import Card from '../components/ui/Card.jsx'
 import Input from '../components/ui/Input.jsx'
@@ -15,6 +15,7 @@ import CustomerModal from '../components/customers/CustomerModal.jsx'
 import { useUser } from '../hooks/useUser.js'
 import { normalizeBusinessType } from '../data/moduleAccess.js'
 import { loadRestaurantCustomers, saveRestaurantCustomers } from '../data/restaurantCustomers.js'
+import { formatCurrency } from '../utils/format.js'
 
 function formatDate(value) {
   if (!value) return '—'
@@ -27,6 +28,9 @@ export default function CustomersPage() {
   const { businessType } = useUser()
   const [createOpen, setCreateOpen] = useState(false)
   const [editingCustomer, setEditingCustomer] = useState(null)
+  const [settleCustomer, setSettleCustomer] = useState(null)
+  const [settleDraft, setSettleDraft] = useState({ amount: '', paymentMethod: 'Cash', note: '' })
+  const [settlingDue, setSettlingDue] = useState(false)
   const [deletingCustomerId, setDeletingCustomerId] = useState('')
   const [toast, setToast] = useState(null)
   const [search, setSearch] = useState('')
@@ -63,7 +67,9 @@ export default function CustomersPage() {
     const business = isSchool
       ? customersApi.customers.filter((customer) => customer.parentName || customer.parentEmail || customer.parentPhone).length
       : customersApi.customers.filter((customer) => customer.customerType === 'Business' || customer.customerType === 'Enterprise').length
-    return { total: customersApi.customers.length, active, business }
+    const walletDue = customersApi.customers.reduce((sum, customer) => sum + Number(customer.walletDue || 0), 0)
+    const walletCredit = customersApi.customers.reduce((sum, customer) => sum + Number(customer.walletCredit || 0), 0)
+    return { total: customersApi.customers.length, active, business, walletDue, walletCredit }
   }, [customersApi.customers, isSchool])
 
   async function handleDeleteCustomer(customer) {
@@ -81,6 +87,27 @@ export default function CustomersPage() {
       return
     }
     setToast({ tone: 'error', message: res?.error || (isSchool ? 'Failed to delete student' : 'Failed to delete customer') })
+    window.setTimeout(() => setToast(null), 2400)
+  }
+
+  function openSettleDue(customer) {
+    setSettleCustomer(customer)
+    setSettleDraft({ amount: String(Math.max(0, Number(customer.walletDue || 0))), paymentMethod: 'Cash', note: '' })
+  }
+
+  async function handleSettleDue(event) {
+    event.preventDefault()
+    if (!settleCustomer || settlingDue) return
+    setSettlingDue(true)
+    const res = await customersApi.settleCustomerDue(settleCustomer, settleDraft)
+    setSettlingDue(false)
+    if (res?.ok) {
+      setToast({ tone: 'success', message: `Due settled. Remaining due ${formatCurrency(res.remainingDue || 0)}.` })
+      window.setTimeout(() => setToast(null), 1800)
+      setSettleCustomer(null)
+      return
+    }
+    setToast({ tone: 'error', message: res?.error || 'Unable to settle due.' })
     window.setTimeout(() => setToast(null), 2400)
   }
 
@@ -133,6 +160,18 @@ export default function CustomersPage() {
         { key: 'company', header: 'Company', cell: (r) => r.company || '—' },
         { key: 'customerType', header: 'Type', cell: (r) => <Badge variant="info">{r.customerType}</Badge> },
         {
+          key: 'wallet',
+          header: 'Wallet',
+          cell: (r) => (
+            <div className="min-w-28">
+              <p className={`text-sm font-black ${Number(r.walletDue || 0) > 0 ? 'text-rose-700' : 'text-emerald-700'}`}>
+                Due {formatCurrency(r.walletDue || 0)}
+              </p>
+              <p className="text-xs font-semibold text-slate-500">Credit {formatCurrency(r.walletCredit || 0)}</p>
+            </div>
+          ),
+        },
+        {
           key: 'status',
           header: 'Status',
           cell: (r) => {
@@ -154,6 +193,16 @@ export default function CustomersPage() {
               >
                 <HiOutlinePencilSquare className="h-4 w-4" /> Edit
               </Button>
+              {Number(r.walletDue || 0) > 0 ? (
+                <Button
+                  type="button"
+                  variant="subtle"
+                  className="h-8 rounded-xl border-emerald-200 bg-emerald-50 px-3 text-xs text-emerald-800 hover:bg-emerald-100"
+                  onClick={() => openSettleDue(r)}
+                >
+                  <HiOutlineBanknotes className="h-4 w-4" /> Settle Due
+                </Button>
+              ) : null}
               <Button
                 type="button"
                 variant="subtle"
@@ -188,11 +237,12 @@ export default function CustomersPage() {
         }
       />
 
-      <div className="mb-4 grid gap-3 md:grid-cols-3">
+      <div className="mb-4 grid gap-3 md:grid-cols-4">
         {[
           [isSchool ? 'Total Students' : 'Total customers', stats.total],
           [isSchool ? 'Active Students' : 'Active records', stats.active],
           [isSchool ? 'Parent Accounts' : 'Business accounts', stats.business],
+          [isSchool ? 'Wallet due' : 'Customer wallet due', formatCurrency(stats.walletDue)],
         ].map(([label, value]) => (
           <Card key={label} className="p-4">
             <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">{label}</p>
@@ -303,6 +353,60 @@ export default function CustomersPage() {
           }
         }}
       />
+      {settleCustomer ? (
+        <div className="fixed inset-0 z-[70] grid place-items-center bg-slate-950/35 px-4 py-6">
+          <form onSubmit={handleSettleDue} className="w-full max-w-lg rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-2xl">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-600">Customer Wallet</p>
+                <h2 className="mt-1 text-2xl font-black text-slate-950">Settle Due Payment</h2>
+                <p className="mt-1 text-sm font-semibold text-slate-500">{settleCustomer.name} · Current due {formatCurrency(settleCustomer.walletDue || 0)}</p>
+              </div>
+              <button type="button" onClick={() => setSettleCustomer(null)} className="grid h-10 w-10 place-items-center rounded-2xl border border-slate-200 text-xl font-black text-slate-500 hover:bg-slate-50">
+                ×
+              </button>
+            </div>
+            <div className="mt-5 grid gap-4">
+              <label className="block">
+                <span className="text-xs font-black uppercase tracking-[0.12em] text-slate-500">Amount received</span>
+                <Input
+                  type="number"
+                  min="1"
+                  max={Number(settleCustomer.walletDue || 0)}
+                  value={settleDraft.amount}
+                  onChange={(event) => setSettleDraft((draft) => ({ ...draft, amount: event.target.value }))}
+                  required
+                />
+              </label>
+              <label className="block">
+                <span className="text-xs font-black uppercase tracking-[0.12em] text-slate-500">Payment method</span>
+                <select
+                  value={settleDraft.paymentMethod}
+                  onChange={(event) => setSettleDraft((draft) => ({ ...draft, paymentMethod: event.target.value }))}
+                  className="mt-1 h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-800 shadow-sm outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                >
+                  {['Cash', 'Card', 'JazzCash', 'Easypaisa', 'Bank Transfer'].map((method) => <option key={method} value={method}>{method}</option>)}
+                </select>
+              </label>
+              <label className="block">
+                <span className="text-xs font-black uppercase tracking-[0.12em] text-slate-500">Note</span>
+                <textarea
+                  value={settleDraft.note}
+                  onChange={(event) => setSettleDraft((draft) => ({ ...draft, note: event.target.value }))}
+                  placeholder="Optional settlement note"
+                  className="mt-1 min-h-24 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 shadow-sm outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                />
+              </label>
+            </div>
+            <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <Button type="button" variant="subtle" className="rounded-2xl" onClick={() => setSettleCustomer(null)}>Cancel</Button>
+              <Button type="submit" className="rounded-2xl" disabled={settlingDue}>
+                <HiOutlineBanknotes className="h-4 w-4" /> {settlingDue ? 'Settling...' : 'Settle Payment'}
+              </Button>
+            </div>
+          </form>
+        </div>
+      ) : null}
     </motion.div>
   )
 }

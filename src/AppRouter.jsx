@@ -1,6 +1,9 @@
 import { Component, Suspense, lazy, useEffect } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import PageLoader from './crm/components/ui/PageLoader.jsx'
+import { useUser } from './crm/hooks/useUser.js'
+import { useWorkspaceAccess } from './crm/hooks/useWorkspaceAccess.js'
+import { isDeveloperOwnerAccount, moduleByRoute } from './crm/data/moduleAccess.js'
 
 const MarketingRoute = lazy(() => import('./pages/public/MarketingRoute.jsx'))
 const UpgradeBusiness = lazy(() => import('./pages/UpgradeBusiness.jsx'))
@@ -33,6 +36,9 @@ const ClientPortalPage = lazy(() => import('./crm/pages/ClientPortal.jsx'))
 const CustomersPage = lazy(() => import('./crm/pages/Customers.jsx'))
 const ProductsPage = lazy(() => import('./crm/pages/Products.jsx'))
 const InventoryPage = lazy(() => import('./crm/pages/Inventory.jsx'))
+const RetailPOSPage = lazy(() => import('./crm/pages/RetailPOS.jsx'))
+const RetailPOSOrdersPage = lazy(() => import('./crm/pages/RetailPOSOrders.jsx'))
+const RetailPOSDiscountsPage = lazy(() => import('./crm/pages/RetailPOSDiscounts.jsx'))
 const LeadsPage = lazy(() => import('./crm/pages/Leads.jsx'))
 const LeadScoringPage = lazy(() => import('./crm/pages/LeadScoring.jsx'))
 const AIAssistantPage = lazy(() => import('./crm/pages/AIAssistant.jsx'))
@@ -175,7 +181,30 @@ function RetailPosRoute() {
   return (
     <InvoiceRouteBoundary>
       <LazyPage>
-        <InvoiceCreatePage />
+        <RetailPOSPage />
+      </LazyPage>
+    </InvoiceRouteBoundary>
+  )
+}
+
+function RestaurantTillRoute() {
+  const access = useWorkspaceAccess()
+  const { firebaseUser, userDoc, isAdmin, isOwner } = useUser()
+  const module = moduleByRoute('/app/orders')
+  const developerOverride = isDeveloperOwnerAccount(userDoc, firebaseUser)
+  const ownerAdminBypass = developerOverride || isAdmin || isOwner || access.isAdmin
+  if (access.loading) return <PageLoader stage="permissions" />
+  if (!ownerAdminBypass && module && !access.hasModulePermission(module.key, 'view')) {
+    return <Navigate to="/app/dashboard" replace state={{ deniedModule: module.key }} />
+  }
+  if (import.meta.env.DEV) {
+    console.log('[Restaurant POS Till Route] module access', { path: '/app/orders', module: 'orders' })
+    console.log('[Restaurant POS Till Route] gated result', 'standalone authenticated till permission checked')
+  }
+  return (
+    <InvoiceRouteBoundary>
+      <LazyPage>
+        <RestaurantOrdersPage />
       </LazyPage>
     </InvoiceRouteBoundary>
   )
@@ -299,6 +328,17 @@ export default function AppRouter() {
       <Route path="/upgrade-business" element={<UpgradeRouteGuard />} />
 
       <Route
+        path="/app/orders"
+        element={
+          <LazyPage>
+            <CrmRequireAuth>
+              <RestaurantTillRoute />
+            </CrmRequireAuth>
+          </LazyPage>
+        }
+      />
+
+      <Route
         path="/app"
         element={
           <LazyPage>
@@ -311,7 +351,6 @@ export default function AppRouter() {
         <Route index element={<Navigate to="/app/dashboard" replace />} />
         <Route path="dashboard" element={<LazyPage><DashboardHomePage /></LazyPage>} />
         <Route path="restaurant-pos" element={<LazyPage><RestaurantPOSPage /></LazyPage>} />
-        <Route path="orders" element={<LazyPage><RestaurantOrdersPage /></LazyPage>} />
         <Route path="menu-management" element={<LazyPage><RestaurantMenuManagementPage /></LazyPage>} />
         <Route path="tables" element={<LazyPage><RestaurantTablesPage /></LazyPage>} />
         <Route path="orders-kot" element={<LazyPage><RestaurantOrdersKotPage /></LazyPage>} />
@@ -326,6 +365,8 @@ export default function AppRouter() {
         <Route path="products" element={<LazyPage><ProductsPage /></LazyPage>} />
         <Route path="inventory" element={<InventoryRoute />} />
         <Route path="pos" element={<RetailPosRoute />} />
+        <Route path="pos-orders" element={<LazyPage><RetailPOSOrdersPage /></LazyPage>} />
+        <Route path="pos-discounts" element={<LazyPage><RetailPOSDiscountsPage /></LazyPage>} />
         <Route path="leads" element={<LazyPage><LeadsPage /></LazyPage>} />
         <Route path="leads/scoring" element={<LazyPage><LeadScoringPage /></LazyPage>} />
         <Route path="ai-assistant" element={<LazyPage><AIAssistantPage /></LazyPage>} />

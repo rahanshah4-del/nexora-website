@@ -36,6 +36,8 @@ import { useBusinessSettings } from '../hooks/useBusinessSettings.js'
 import { usePreferences } from '../hooks/usePreferences.js'
 import { REPORT_SECTION_OPTIONS, useReports } from '../hooks/useReports.js'
 import { useUser } from '../hooks/useUser.js'
+import { usePosOrders } from '../hooks/usePosOrders.js'
+import { usePosWalletPayments } from '../hooks/usePosWalletPayments.js'
 import {
   calculateApprovedExpenses,
   calculateProfit,
@@ -78,7 +80,7 @@ import {
 import {
   restaurantBusinessDayBounds,
 } from '../lib/restaurantBusinessDay.js'
-import { directPrinterAvailable, printThermalText } from '../lib/printerService.js'
+import { directPrinterAvailable, printHtmlDocument, printThermalText } from '../lib/printerService.js'
 
 const NEXORA_LOGO = '/nexora-brand-logo.png'
 
@@ -315,10 +317,396 @@ function ReportQrCode({ payload }) {
   return <img src={src} alt="Report QR code" className="h-24 w-24 rounded-2xl border border-slate-200 bg-white p-1" />
 }
 
+function htmlEscape(value = '') {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+}
+
+function receiptLine(label, value) {
+  const left = String(label || '').slice(0, 14)
+  const right = String(value ?? '').slice(0, 17)
+  return `${left.padEnd(14, ' ')}${right.padStart(18, ' ')}`
+}
+
+function buildRetailClosingThermalText({ report, branding, dateRangeLabel, generatedAt, currency }) {
+  const rows = [
+    branding.companyName || 'NEXORA SOLUTION',
+    branding.phone || '',
+    branding.address || '',
+    '-'.repeat(32),
+    'RETAIL POS CLOSING',
+    receiptLine('Range', dateRangeLabel),
+    receiptLine('Generated', generatedAt),
+    '-'.repeat(32),
+    receiptLine('Orders', report.orderCount),
+    receiptLine('Items sold', report.itemCount),
+    receiptLine('Gross', formatMoney(report.grossSales, currency)),
+    receiptLine('Discount', `-${formatMoney(report.discount, currency)}`),
+    receiptLine('Tax', formatMoney(report.tax, currency)),
+    receiptLine('Net sales', formatMoney(report.netSales, currency)),
+    receiptLine('Collected', formatMoney(report.collected, currency)),
+    receiptLine('Due', formatMoney(report.dueAmount, currency)),
+    receiptLine('Settled due', formatMoney(report.walletSettled, currency)),
+    receiptLine('Profit', formatMoney(report.profit, currency)),
+    '-'.repeat(32),
+    'PAYMENT METHODS',
+    ...report.methodRows.slice(0, 8).map((row) => receiptLine(row.method, `${row.count} / ${formatMoney(row.amount, currency)}`)),
+    '-'.repeat(32),
+    'TOP ITEMS',
+    ...report.itemRows.slice(0, 8).map((row) => receiptLine(`${row.name} x${row.qty}`, formatMoney(row.amount, currency))),
+    '-'.repeat(32),
+    branding.receiptFooter || 'NEXORA SOLUTION',
+  ]
+  return rows.filter(Boolean).join('\n')
+}
+
+function buildRetailClosing58mmHtml({ report, branding, dateRangeLabel, generatedAt, currency }) {
+  const money = (value) => htmlEscape(formatMoney(value, currency))
+  const row = (label, value) => `<div class="row"><span>${htmlEscape(label)}</span><strong>${htmlEscape(value)}</strong></div>`
+  return `<!doctype html>
+<html>
+  <head>
+    <title>Retail POS Closing</title>
+    <style>
+      @page { size: 58mm auto; margin: 0; }
+      * { box-sizing: border-box; }
+      body { margin: 0; width: 58mm; background: #fff; color: #111827; font-family: Arial, sans-serif; font-size: 10px; }
+      .receipt { width: 58mm; padding: 8px 7px; }
+      .center { text-align: center; }
+      h1 { margin: 0; font-size: 13px; line-height: 1.25; text-transform: uppercase; }
+      .muted { color: #4b5563; font-size: 9px; line-height: 1.35; }
+      .rule { border-top: 1px dashed #111827; margin: 7px 0; }
+      .row { display: flex; justify-content: space-between; gap: 6px; padding: 2px 0; }
+      .row span { min-width: 0; overflow-wrap: anywhere; }
+      .row strong { text-align: right; white-space: nowrap; }
+      .section { margin: 6px 0 3px; font-weight: 800; text-transform: uppercase; font-size: 9px; letter-spacing: .04em; }
+      @media print { body { width: 58mm; } }
+    </style>
+  </head>
+  <body>
+    <main class="receipt">
+      <div class="center">
+        <h1>${htmlEscape(branding.companyName || 'NEXORA SOLUTION')}</h1>
+        <div class="muted">${htmlEscape(branding.phone)}</div>
+        <div class="muted">${htmlEscape(branding.address)}</div>
+      </div>
+      <div class="rule"></div>
+      <div class="center"><strong>RETAIL POS CLOSING</strong></div>
+      ${row('Range', dateRangeLabel)}
+      ${row('Generated', generatedAt)}
+      <div class="rule"></div>
+      ${row('Orders', report.orderCount)}
+      ${row('Items sold', report.itemCount)}
+      ${row('Gross', money(report.grossSales))}
+      ${row('Discount', `-${formatMoney(report.discount, currency)}`)}
+      ${row('Tax', money(report.tax))}
+      ${row('Net sales', money(report.netSales))}
+      ${row('Collected', money(report.collected))}
+      ${row('Due', money(report.dueAmount))}
+      ${row('Settled due', money(report.walletSettled))}
+      ${row('Profit', money(report.profit))}
+      <div class="rule"></div>
+      <div class="section">Payment Methods</div>
+      ${report.methodRows.slice(0, 8).map((item) => row(`${item.method} (${item.count})`, formatMoney(item.amount, currency))).join('')}
+      <div class="section">Top Items</div>
+      ${report.itemRows.slice(0, 8).map((item) => row(`${item.name} x${item.qty}`, formatMoney(item.amount, currency))).join('')}
+      <div class="rule"></div>
+      <div class="center muted">${htmlEscape(branding.receiptFooter || 'NEXORA SOLUTION')}</div>
+    </main>
+  </body>
+</html>`
+}
+
+function RetailPOSReports() {
+  const { profile, currency: preferredCurrency } = usePreferences()
+  const { userDoc, firebaseUser, plan } = useUser()
+  const businessSettingsApi = useBusinessSettings()
+  const [filters, setFilters] = useState({ range: 'today', startDate: '', endDate: '', currency: preferredCurrency || 'PKR' })
+  const [detailLoaded, setDetailLoaded] = useState(false)
+  const [notice, setNotice] = useState('')
+  const activeWindow = useMemo(() => dateWindow(filters), [filters])
+  const limitCount = detailLoaded ? 500 : 150
+  const posOrdersApi = usePosOrders({ enabled: true, limitCount })
+  const walletApi = usePosWalletPayments({ enabled: true, limitCount })
+  const reports = useReports({ section: 'finance', limitCount, dateWindow: activeWindow })
+
+  const branding = useMemo(() => ({
+    companyName: safeText(businessSettingsApi.settings.businessName || profile.companyName || userDoc?.company || userDoc?.workspaceName, 'Nexora Retail POS'),
+    ownerName: safeText(profile.ownerName || userDoc?.fullName || userDoc?.name || firebaseUser?.displayName, 'Workspace Owner'),
+    email: safeText(businessSettingsApi.settings.email || profile.email || userDoc?.email || firebaseUser?.email, 'No email yet'),
+    phone: safeText(businessSettingsApi.settings.phone || profile.phone, ''),
+    address: safeText(businessSettingsApi.settings.address || profile.address || [profile.city, profile.country].filter(Boolean).join(', '), ''),
+    receiptFooter: businessSettingsApi.settings.receiptFooter || 'Thank you',
+    logo: businessSettingsApi.settings.logoUrl || profile.avatarDataUrl || NEXORA_LOGO,
+  }), [businessSettingsApi.settings, firebaseUser?.displayName, firebaseUser?.email, profile, userDoc])
+
+  const retailReport = useMemo(() => {
+    const inRange = (rows) => (Array.isArray(rows) ? rows.filter((row) => withinDateWindow(row, activeWindow)) : [])
+    const orders = inRange(posOrdersApi.orders)
+    const walletPayments = inRange(walletApi.payments)
+    const expenses = inRange(reports.data.expenses)
+    const customers = inRange(reports.data.customers)
+    const methodMap = new Map()
+    const itemMap = new Map()
+    let itemCount = 0
+
+    orders.forEach((order) => {
+      const method = safeText(order.paymentMethod, 'Cash')
+      const methodRow = methodMap.get(method) || { method, count: 0, amount: 0 }
+      methodRow.count += 1
+      methodRow.amount += safeNumber(order.paidAmount)
+      methodMap.set(method, methodRow)
+
+      ;(order.items || []).forEach((item) => {
+        const name = safeText(item.name || item.productName || item.sku, 'Item')
+        const qty = safeNumber(item.quantity ?? item.qty, 1)
+        const price = safeNumber(item.lineTotal ?? item.total ?? qty * safeNumber(item.price ?? item.rate))
+        const itemRow = itemMap.get(name) || { name, qty: 0, amount: 0 }
+        itemRow.qty += qty
+        itemRow.amount += price
+        itemCount += qty
+        itemMap.set(name, itemRow)
+      })
+    })
+
+    walletPayments.forEach((payment) => {
+      const method = `${safeText(payment.paymentMethod, 'Cash')} due`
+      const methodRow = methodMap.get(method) || { method, count: 0, amount: 0 }
+      methodRow.count += 1
+      methodRow.amount += safeNumber(payment.amount)
+      methodMap.set(method, methodRow)
+    })
+
+    const grossSales = orders.reduce((sum, order) => sum + safeNumber(order.subtotal || order.total), 0)
+    const discount = orders.reduce((sum, order) => sum + safeNumber(order.discount), 0)
+    const tax = orders.reduce((sum, order) => sum + safeNumber(order.tax), 0)
+    const netSales = orders.reduce((sum, order) => sum + safeNumber(order.total), 0)
+    const collected = orders.reduce((sum, order) => sum + safeNumber(order.paidAmount), 0)
+    const dueAmount = orders.reduce((sum, order) => sum + safeNumber(order.dueAmount), 0)
+    const walletSettled = walletPayments.reduce((sum, payment) => sum + safeNumber(payment.amount), 0)
+    const cost = orders.reduce((sum, order) => sum + safeNumber(order.cost), 0)
+    const profit = orders.reduce((sum, order) => sum + safeNumber(order.profit), 0)
+    const expensesAmount = calculateApprovedExpenses(expenses)
+
+    return {
+      orders,
+      walletPayments,
+      customers,
+      expenses,
+      orderCount: orders.length,
+      settlementCount: walletPayments.length,
+      itemCount,
+      grossSales,
+      discount,
+      tax,
+      netSales,
+      collected,
+      dueAmount,
+      walletSettled,
+      cost,
+      profit,
+      expensesAmount,
+      netAfterExpense: profit - expensesAmount,
+      averageOrder: orders.length ? netSales / orders.length : 0,
+      methodRows: Array.from(methodMap.values()).sort((a, b) => b.amount - a.amount),
+      itemRows: Array.from(itemMap.values()).sort((a, b) => b.amount - a.amount),
+      recentRows: orders.slice(0, 12),
+      hasData: orders.length || walletPayments.length,
+    }
+  }, [activeWindow, posOrdersApi.orders, reports.data.customers, reports.data.expenses, walletApi.payments])
+
+  const dateRangeLabel = filters.range === 'custom'
+    ? `${filters.startDate || 'Start'} to ${filters.endDate || 'End'}`
+    : rangeOptions.find((option) => option.value === filters.range)?.label || 'Today'
+  const generatedAt = new Date().toLocaleString()
+  const loading = posOrdersApi.loading || walletApi.loading || reports.loading
+  const error = posOrdersApi.error || walletApi.error || reports.error
+
+  function showNotice(message) {
+    setNotice(message)
+    window.setTimeout(() => setNotice(''), 2400)
+  }
+
+  async function print58mmClosing() {
+    const thermalText = buildRetailClosingThermalText({ report: retailReport, branding, dateRangeLabel, generatedAt, currency: filters.currency })
+    const html = buildRetailClosing58mmHtml({ report: retailReport, branding, dateRangeLabel, generatedAt, currency: filters.currency })
+    const result = await printHtmlDocument({
+      html,
+      thermalText,
+      settings: businessSettingsApi.settings,
+      paperSize: '58mm',
+      fallbackOptions: { width: 300, height: 820 },
+    })
+    showNotice(result.ok ? (result.fallback ? '58mm browser print opened.' : 'Sent to 58mm printer.') : result.error || 'Unable to print 58mm report.')
+  }
+
+  function exportRetailCsv() {
+    downloadCsv([
+      ['Retail POS Closing', branding.companyName, dateRangeLabel, generatedAt],
+      ['Metric', 'Value'],
+      ['Orders', retailReport.orderCount],
+      ['Items sold', retailReport.itemCount],
+      ['Gross sales', retailReport.grossSales],
+      ['Discount', retailReport.discount],
+      ['Tax', retailReport.tax],
+      ['Net sales', retailReport.netSales],
+      ['Collected', retailReport.collected],
+      ['Due amount', retailReport.dueAmount],
+      ['Due settled', retailReport.walletSettled],
+      ['Profit', retailReport.profit],
+      [],
+      ['Order', 'Customer', 'Payment', 'Items', 'Total', 'Paid', 'Due', 'Profit', 'Date'],
+      ...retailReport.orders.map((row) => [
+        row.orderNumber || row.id,
+        row.customerName,
+        row.paymentMethod,
+        row.itemCount,
+        row.total,
+        row.paidAmount,
+        row.dueAmount,
+        row.profit,
+        formatDate(row.createdAt),
+      ]),
+    ], `retail-pos-report-${Date.now()}.csv`)
+  }
+
+  return (
+    <motion.div className="min-w-0 space-y-5" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
+      {notice ? (
+        <div className="fixed left-1/2 top-1/2 z-[110] max-w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-emerald-200 bg-white px-4 py-3 text-sm font-semibold text-emerald-800 shadow-xl">
+          {notice}
+        </div>
+      ) : null}
+
+      <PageHeader
+        title="Retail POS Reports"
+        subtitle="Daily closing, sales, payments, products, profit, due settlements, and 58mm thermal reports generated from POS orders."
+        right={
+          <>
+            <Button type="button" className="rounded-2xl" onClick={print58mmClosing}>
+              <HiOutlinePrinter className="h-4 w-4" />
+              58mm Daily Closing
+            </Button>
+            <Button type="button" variant="subtle" className="rounded-2xl" onClick={exportRetailCsv}>
+              <HiOutlineArrowDownTray className="h-4 w-4" />
+              Export CSV
+            </Button>
+          </>
+        }
+      />
+
+      <Card className="p-4">
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[1fr_1fr_1fr_1fr_auto] xl:items-end">
+          <label className="text-xs font-semibold text-slate-600">Date range<Select className="mt-1.5" value={filters.range} onChange={(event) => setFilters((current) => ({ ...current, range: event.target.value }))}>{rangeOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</Select></label>
+          <label className="text-xs font-semibold text-slate-600">Start<Input className="mt-1.5" type="date" disabled={filters.range !== 'custom'} value={filters.startDate} onChange={(event) => setFilters((current) => ({ ...current, startDate: event.target.value }))} /></label>
+          <label className="text-xs font-semibold text-slate-600">End<Input className="mt-1.5" type="date" disabled={filters.range !== 'custom'} value={filters.endDate} onChange={(event) => setFilters((current) => ({ ...current, endDate: event.target.value }))} /></label>
+          <label className="text-xs font-semibold text-slate-600">Currency<Select className="mt-1.5" value={filters.currency} onChange={(event) => setFilters((current) => ({ ...current, currency: event.target.value }))}>{supportedCurrencies.map((item) => <option key={item.code} value={item.code}>{item.code}</option>)}</Select></label>
+          <Button type="button" variant={detailLoaded ? 'subtle' : 'primary'} className="h-10 rounded-2xl" disabled={detailLoaded} onClick={() => setDetailLoaded(true)}>
+            <HiOutlineChartBar className="h-4 w-4" />
+            {detailLoaded ? 'Detailed loaded' : 'Load more'}
+          </Button>
+        </div>
+      </Card>
+
+      {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-rose-700">{error}</div> : null}
+
+      <Card className="overflow-hidden border-slate-200 bg-white">
+        <div className="grid gap-0 lg:grid-cols-[1.1fr_0.9fr]">
+          <div className="border-b border-slate-200 p-5 lg:border-b-0 lg:border-r">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="min-w-0">
+                <Badge variant={loading ? 'warning' : 'success'}>{loading ? 'Syncing' : 'Live POS data'}</Badge>
+                <h2 className="mt-3 text-2xl font-black tracking-tight text-slate-950">{branding.companyName}</h2>
+                <p className="mt-1 text-sm font-semibold text-slate-500">{dateRangeLabel} · Plan {plan || 'Free'}</p>
+              </div>
+              <img src={branding.logo} alt="Business logo" className="h-14 w-14 rounded-2xl border border-slate-200 object-cover" onError={(event) => { event.currentTarget.src = NEXORA_LOGO }} />
+            </div>
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              <ReportMiniStat label="Net sales" value={formatMoney(retailReport.netSales, filters.currency)} />
+              <ReportMiniStat label="Collected" value={formatMoney(retailReport.collected + retailReport.walletSettled, filters.currency)} />
+              <ReportMiniStat label="Profit" value={formatMoney(retailReport.profit, filters.currency)} />
+              <ReportMiniStat label="Due amount" value={formatMoney(retailReport.dueAmount, filters.currency)} />
+            </div>
+          </div>
+          <div className="p-5">
+            <p className="text-sm font-black uppercase tracking-[0.16em] text-slate-500">Closing Summary</p>
+            <div className="mt-4 space-y-2">
+              <SummaryRow label="Orders" value={`${retailReport.orderCount} bills`} />
+              <SummaryRow label="Items sold" value={retailReport.itemCount} />
+              <SummaryRow label="Gross sales" value={formatMoney(retailReport.grossSales, filters.currency)} />
+              <SummaryRow label="Discounts" value={`-${formatMoney(retailReport.discount, filters.currency)}`} />
+              <SummaryRow label="Tax collected" value={formatMoney(retailReport.tax, filters.currency)} />
+              <SummaryRow label="Average order" value={formatMoney(retailReport.averageOrder, filters.currency)} />
+              <SummaryRow label="Approved expenses" value={formatMoney(retailReport.expensesAmount, filters.currency)} />
+              <SummaryRow label="Net after expense" value={formatMoney(retailReport.netAfterExpense, filters.currency)} />
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {!loading && !retailReport.hasData ? (
+        <Card className="p-8 text-center">
+          <HiOutlineBuildingStorefront className="mx-auto h-10 w-10 text-slate-400" />
+          <p className="mt-3 text-lg font-semibold text-slate-950">No POS report data yet</p>
+          <p className="mt-2 text-sm text-slate-500">Create bills in POS Billing and this report will fill automatically.</p>
+        </Card>
+      ) : null}
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <MetricCard icon={HiOutlineReceiptPercent} label="Orders" value={retailReport.orderCount} helper={`${retailReport.itemCount} items sold`} tone="sky" />
+        <MetricCard icon={HiOutlineBanknotes} label="Cashflow" value={formatMoney(retailReport.collected + retailReport.walletSettled, filters.currency)} helper={`${retailReport.settlementCount} due settlements included`} tone="emerald" />
+        <MetricCard icon={HiOutlineCalculator} label="Tax & Discount" value={formatMoney(retailReport.tax - retailReport.discount, filters.currency)} helper={`${formatMoney(retailReport.tax, filters.currency)} tax minus ${formatMoney(retailReport.discount, filters.currency)} discount`} tone="amber" />
+        <MetricCard icon={HiOutlineChartPie} label="Cost / Profit" value={formatMoney(retailReport.profit, filters.currency)} helper={`${formatMoney(retailReport.cost, filters.currency)} product cost`} tone="violet" />
+      </div>
+
+      <div className="grid gap-5 xl:grid-cols-2">
+        <ReportTable title="Payment Method Report" rows={retailReport.methodRows} columns={[
+          ['Method', (row) => row.method],
+          ['Bills', (row) => row.count],
+          ['Amount', (row) => formatMoney(row.amount, filters.currency)],
+        ]} />
+        <ReportTable title="Top Selling Items" rows={retailReport.itemRows.slice(0, 20)} columns={[
+          ['Item', (row) => row.name],
+          ['Qty', (row) => row.qty],
+          ['Sales', (row) => formatMoney(row.amount, filters.currency)],
+        ]} />
+      </div>
+
+      <ReportTable title="Recent POS Bills" rows={retailReport.recentRows} columns={[
+        ['Bill', (row) => row.orderNumber || row.id],
+        ['Customer', (row) => row.customerName],
+        ['Method', (row) => row.paymentMethod],
+        ['Total', (row) => formatMoney(row.total, filters.currency)],
+        ['Paid', (row) => formatMoney(row.paidAmount, filters.currency)],
+        ['Due', (row) => formatMoney(row.dueAmount, filters.currency)],
+        ['Profit', (row) => formatMoney(row.profit, filters.currency)],
+      ]} />
+
+      <Card className="p-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-black text-slate-950">58mm print is receipt-text based</p>
+            <p className="mt-1 text-sm text-slate-500">Daily closing uses direct thermal text when WebUSB printer is connected, otherwise a 58mm browser print document opens. No screenshot printing is used.</p>
+          </div>
+          <Button type="button" className="rounded-2xl" onClick={print58mmClosing}>
+            <HiOutlinePrinter className="h-4 w-4" />
+            Print 58mm
+          </Button>
+        </div>
+      </Card>
+    </motion.div>
+  )
+}
+
 function GenericReports() {
   const { profile, currency: preferredCurrency } = usePreferences()
   const businessSettingsApi = useBusinessSettings()
   const { userDoc, firebaseUser, workspaceId, businessType, plan } = useUser()
+  const isRetailReport = normalizeBusinessType(businessType) === 'Retail / POS'
   const [filters, setFilters] = useState({
     range: 'month',
     startDate: '',
@@ -332,6 +720,8 @@ function GenericReports() {
   const activeWindow = useMemo(() => dateWindow(filters), [filters])
   const detailLimit = detailedReportLoaded ? 250 : 100
   const reports = useReports({ section: reportSection, limitCount: detailLimit, dateWindow: activeWindow })
+  const posOrdersApi = usePosOrders({ enabled: isRetailReport, limitCount: detailLimit })
+  const posWalletPaymentsApi = usePosWalletPayments({ enabled: isRetailReport, limitCount: detailLimit })
   const selectedReportSectionLabel = REPORT_SECTION_OPTIONS.find((item) => item.value === reportSection)?.label || 'Overview'
 
   const reportData = useMemo(() => {
@@ -347,6 +737,8 @@ function GenericReports() {
     const tickets = filtered(reports.data.supportTickets)
     const activityLogs = filtered(reports.data.activityLogs)
     const staff = filtered([...(reports.data.teamMembers || []), ...(reports.data.staff || [])])
+    const posOrders = filtered(posOrdersApi.orders)
+    const posWalletPayments = filtered(posWalletPaymentsApi.payments)
 
     const paidInvoices = invoices.filter((invoice) => getInvoiceStatus(invoice) === 'paid')
     const paidPayments = payments.filter(isPaidRecord)
@@ -363,6 +755,8 @@ function GenericReports() {
     const profitUsd = calculateProfit({ revenue: totalRevenueUsd, expenses: expensesUsd })
     const pipelineUsd = deals.reduce((sum, deal) => sum + dealValue(deal), 0)
     const customerSpendUsd = customers.reduce((sum, customer) => sum + safeNumber(customer.spendUsd ?? customer.spend ?? customer.totalSpendUsd), 0)
+    const posSalesUsd = posOrders.reduce((sum, order) => sum + safeNumber(order.paidAmount), 0) + posWalletPayments.reduce((sum, payment) => sum + safeNumber(payment.amount), 0)
+    const posProfitUsd = posOrders.reduce((sum, order) => sum + safeNumber(order.profit), 0)
 
     return {
       invoices,
@@ -376,6 +770,8 @@ function GenericReports() {
       tickets,
       activityLogs,
       staff,
+      posOrders,
+      posWalletPayments,
       paidInvoices,
       paidPayments,
       approvedExpenses,
@@ -391,6 +787,8 @@ function GenericReports() {
       profitUsd,
       pipelineUsd,
       customerSpendUsd,
+      posSalesUsd,
+      posProfitUsd,
       hasData:
         invoices.length ||
         payments.length ||
@@ -401,9 +799,11 @@ function GenericReports() {
         tasks.length ||
         tickets.length ||
         activityLogs.length ||
-        staff.length,
+        staff.length ||
+        posOrders.length ||
+        posWalletPayments.length,
     }
-  }, [reports.data, activeWindow])
+  }, [reports.data, activeWindow, posOrdersApi.orders, posWalletPaymentsApi.payments])
 
   const branding = useMemo(
     () => ({
@@ -726,9 +1126,9 @@ function GenericReports() {
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <MetricCard
             icon={HiOutlineCurrencyDollar}
-            label="Revenue report"
-            value={formatMoney(reportData.totalRevenueUsd || reportData.paymentRevenueUsd, filters.currency)}
-            helper={`${reportData.paidInvoices.length} paid invoices - ${reportData.pendingInvoices.length} pending`}
+            label={isRetailReport ? 'POS collection report' : 'Revenue report'}
+            value={formatMoney(isRetailReport ? reportData.posSalesUsd : (reportData.totalRevenueUsd || reportData.paymentRevenueUsd), filters.currency)}
+            helper={isRetailReport ? `${reportData.posOrders.length} POS orders - ${reportData.posWalletPayments.length} due settlements` : `${reportData.paidInvoices.length} paid invoices - ${reportData.pendingInvoices.length} pending`}
             tone="sky"
           />
           <MetricCard
@@ -758,6 +1158,10 @@ function GenericReports() {
           <ReportSection title="Executive summary" badge="Summary">
             <div className="grid gap-3 sm:grid-cols-2">
               <SummaryRow label="Lead pipeline" value={`${reportData.leads.length} leads / ${reportData.hotLeads.length} hot`} />
+              {isRetailReport ? <SummaryRow label="POS collected" value={`${formatMoney(reportData.posSalesUsd, filters.currency)} / ${reportData.posOrders.length} orders`} /> : null}
+              {isRetailReport ? <SummaryRow label="Wallet due settled" value={`${formatMoney(reportData.posWalletPayments.reduce((sum, payment) => sum + safeNumber(payment.amount), 0), filters.currency)} / ${reportData.posWalletPayments.length} payments`} /> : null}
+              {isRetailReport ? <SummaryRow label="Invoice sale" value={formatMoney(reportData.totalRevenueUsd, filters.currency)} /> : null}
+              {isRetailReport ? <SummaryRow label="POS profit" value={formatMoney(reportData.posProfitUsd, filters.currency)} /> : null}
               <SummaryRow label="Revenue" value={formatMoney(reportData.totalRevenueUsd, filters.currency)} />
               <SummaryRow label="Approved expenses" value={formatMoney(reportData.expensesUsd, filters.currency)} />
               <SummaryRow label="Profit" value={formatMoney(reportData.profitUsd, filters.currency)} />
@@ -2149,6 +2553,9 @@ export default function ReportsPage() {
   }
   if (normalizeBusinessType(businessType) === 'General CRM') {
     return <SalesHubReports />
+  }
+  if (normalizeBusinessType(businessType) === 'Retail / POS') {
+    return <RetailPOSReports />
   }
   if (normalizeBusinessType(businessType) === 'Restaurant POS') {
     return <RestaurantReports />
