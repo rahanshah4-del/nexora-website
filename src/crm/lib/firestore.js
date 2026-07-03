@@ -77,7 +77,11 @@ export function subscribeCollection(path, onData, onError) {
 export function subscribeUserCollection(userId, path, onData, onError, options = {}) {
   const collectionPath = workspaceCollectionPath(userId, path)
   const ref = userId ? collectionRef(collectionPath) : null
-  const businessType = normalizeBusinessType(options?.businessType)
+  const hasBusinessFilter = typeof options?.businessType !== 'undefined' && String(options.businessType || '').trim() !== ''
+  const businessType = hasBusinessFilter ? normalizeBusinessType(options.businessType) : ''
+  const fallbackBusinessTypes = Array.isArray(options?.businessTypeFallbacks)
+    ? options.businessTypeFallbacks.map((item) => normalizeBusinessType(item))
+    : []
   if (!ref) {
     onData([])
     return () => {}
@@ -96,7 +100,15 @@ export function subscribeUserCollection(userId, path, onData, onError, options =
         snap.docs
           .map((d) => ({ id: d.id, ...d.data() }))
           .filter((row) => belongsToWorkspace(row, userId))
-          .filter((row) => belongsToBusiness(row, businessType))
+          .filter((row) => {
+            if (!hasBusinessFilter) return true
+            if (belongsToBusiness(row, businessType)) return true
+            if (options?.includeMissingBusinessType && !row?.businessType && !row?.selectedBusinessType) return true
+            if (fallbackBusinessTypes.length && (row?.businessType || row?.selectedBusinessType)) {
+              return fallbackBusinessTypes.includes(normalizeBusinessType(row.businessType || row.selectedBusinessType))
+            }
+            return false
+          })
           .map((row) => withWorkspaceFallback(row.id, row, userId)),
       ),
     (err) => {

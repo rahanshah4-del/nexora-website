@@ -50,7 +50,6 @@ const QuotationsPage = lazy(() => import('./crm/pages/Quotations.jsx'))
 const ProductsServicesPage = lazy(() => import('./crm/pages/ProductsServices.jsx'))
 const BusinessServicesPage = lazy(() => import('./crm/pages/BusinessServices.jsx'))
 const FollowUpsPage = lazy(() => import('./crm/pages/FollowUps.jsx'))
-const TeamPage = lazy(() => import('./crm/pages/Team.jsx'))
 const SchoolPayrollPage = lazy(() => import('./crm/pages/SchoolPayroll.jsx'))
 const HRDashboardPage = lazy(() => import('./crm/pages/HRDashboard.jsx'))
 const InvoicesPage = lazy(() => import('./crm/pages/Invoices.jsx'))
@@ -378,7 +377,7 @@ export default function AppRouter() {
         <Route path="products-services" element={<LazyPage><ProductsServicesPage /></LazyPage>} />
         <Route path="business-services" element={<LazyPage><BusinessServicesPage /></LazyPage>} />
         <Route path="follow-ups" element={<LazyPage><FollowUpsPage /></LazyPage>} />
-        <Route path="team" element={<LazyPage><TeamPage /></LazyPage>} />
+        <Route path="team" element={<Navigate to="/app/dashboard" replace />} />
         <Route path="payroll" element={<LazyPage><SchoolPayrollPage /></LazyPage>} />
         <Route path="hr" element={<LazyPage><HRDashboardPage /></LazyPage>} />
         <Route path="invoices" element={<InvoiceRouteBoundary><LazyPage><InvoicesPage /></LazyPage></InvoiceRouteBoundary>} />

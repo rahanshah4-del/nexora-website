@@ -41,7 +41,7 @@ function escapeHtml(value) {
 }
 
 export default function RetailPOSOrdersPage() {
-  const { orders, loading, error, deleteOrder } = usePosOrders({ limitCount: 100 })
+  const { orders, loading, error, deleteOrder } = usePosOrders({ limitCount: 100, readBusinessType: false })
   const walletPaymentsApi = usePosWalletPayments({ limitCount: 100 })
   const [actionMessage, setActionMessage] = useState('')
   const todayOrders = useMemo(() => orders.filter((order) => isToday(order.createdAt)), [orders])
@@ -181,6 +181,15 @@ export default function RetailPOSOrdersPage() {
     },
     { key: 'items', header: 'Items', cell: (row) => row.itemCount },
     { key: 'paymentMethod', header: 'Payment', cell: (row) => <Badge variant="info">{row.paymentMethod}</Badge> },
+    {
+      key: 'syncStatus',
+      header: 'Sync',
+      cell: (row) => {
+        if (row.syncStatus === 'failed') return <Badge variant="danger">Sync failed</Badge>
+        if (row.localOnly || row.syncStatus === 'pending') return <Badge variant="warning">Sync pending</Badge>
+        return <Badge variant="success">Synced</Badge>
+      },
+    },
     { key: 'total', header: 'Total', cell: (row) => <span className="font-black text-blue-700">{formatCurrency(row.total)}</span> },
     { key: 'dueAmount', header: 'Due', cell: (row) => <span className={Number(row.dueAmount || 0) > 0 ? 'font-black text-rose-700' : 'font-bold text-emerald-700'}>{formatCurrency(row.dueAmount || 0)}</span> },
     { key: 'discount', header: 'Promo', cell: (row) => formatCurrency(row.discount || 0) },

@@ -162,7 +162,7 @@ function buildRetailPosThermalText(order = {}) {
 }
 
 export default function RetailPOSPage() {
-  const { workspaceId, businessType, userDoc, firebaseUser, userId } = useUser()
+  const { workspaceId, businessType, userDoc, firebaseUser, userId, isOwner, isAdmin, isStaff } = useUser()
   const { settings: businessSettings } = useBusinessSettings()
   const productsApi = useProducts({ limitCount: 200 })
   const ordersApi = usePosOrders({ limitCount: 8 })
@@ -193,6 +193,7 @@ export default function RetailPOSPage() {
   const [shiftDraft, setShiftDraft] = useState({ openingCash: '', note: '' })
   const [pendingPrint, setPendingPrint] = useState(false)
   const scannerBufferRef = useRef({ value: '', startedAt: 0, lastAt: 0 })
+  const savingRef = useRef(false)
   const activePromoCodes = businessSettings?.retailPosPromos || retailPosPromoCodes
   const retailPosSettings = businessSettings?.retailPos || {}
 
@@ -442,7 +443,7 @@ export default function RetailPOSPage() {
   }
 
   async function submitOrder(shouldPrint = false, shiftOverride = null) {
-    if (saving) return
+    if (savingRef.current) return
     if (!cart.length) {
       setMessage('Cart empty hai. Pehle product add karein.')
       return
@@ -466,7 +467,16 @@ export default function RetailPOSPage() {
       setMessage('Due sale ke liye saved customer select ya add karein. Walk-in customer par due save nahi hota.')
       return
     }
+    savingRef.current = true
     setSaving(true)
+    let unlockTimer = null
+    if (typeof window !== 'undefined') {
+      unlockTimer = window.setTimeout(() => {
+        savingRef.current = false
+        setSaving(false)
+        setMessage('Order save zyada time le raha hai. Button unlock kar diya hai; order list check karein.')
+      }, 8000)
+    }
     const orderNumber = nextOrderNumber()
     const cartSnapshot = [...cart]
     const totalsSnapshot = { ...totals }
@@ -503,7 +513,8 @@ export default function RetailPOSPage() {
     try {
       const cashierName = userDoc?.displayName || userDoc?.fullName || userDoc?.name || firebaseUser?.displayName || firebaseUser?.email || 'Cashier'
       const cashierEmail = firebaseUser?.email || userDoc?.email || ''
-      const isStaffSale = userDoc?.isStaff === true || !['owner', 'admin'].includes(String(userDoc?.role || '').toLowerCase())
+      const ownerSale = Boolean(isOwner || isAdmin || userId === workspaceId || firebaseUser?.uid === workspaceId)
+      const isStaffSale = Boolean(isStaff && !ownerSale)
       const result = await ordersApi.createOrder({
         orderNumber,
         createdBy: userId || firebaseUser?.uid || workspaceId,
@@ -514,7 +525,7 @@ export default function RetailPOSPage() {
         cashier: cashierName,
         createdByName: cashierName,
         createdByEmail: cashierEmail,
-        createdByRole: userDoc?.role || '',
+        createdByRole: ownerSale ? 'owner' : userDoc?.role || '',
         createdByStaff: isStaffSale,
         staffTag: isStaffSale ? 'Sales Staff' : '',
         paymentMethod,
@@ -541,6 +552,9 @@ export default function RetailPOSPage() {
       if (!result?.ok) {
         throw new Error(result?.error || 'POS order save nahi ho saka.')
       }
+      if (unlockTimer) window.clearTimeout(unlockTimer)
+      savingRef.current = false
+      setSaving(false)
 
       const batch = writeBatch(db)
       const transactionCollection = collection(db, workspaceCollectionPath(workspaceId, 'inventoryTransactions'))
@@ -619,41 +633,43 @@ export default function RetailPOSPage() {
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       })
-      let stockSyncOk = true
-      let stockSyncError = ''
-      try {
-        await batch.commit()
-      } catch (syncError) {
-        stockSyncOk = false
-        stockSyncError = syncError?.message || 'Stock sync permission pending.'
-        console.warn('[Retail POS] order saved but stock sync failed', {
-          orderNumber,
-          code: syncError?.code || '',
-          message: syncError?.message || String(syncError || ''),
-          workspaceId,
-          userId: userId || firebaseUser?.uid || '',
-        })
-      }
-      if (shouldPrint) {
-        const printed = await printReceipt({
-          orderNumber,
-          items: orderItems,
-          totals: totalsSnapshot,
-          paid: paidSnapshot,
-          changeAmount: changeSnapshot,
-          customer: customerSnapshot,
-          cashier: userDoc?.displayName || firebaseUser?.displayName || firebaseUser?.email || 'Cashier',
-          paymentMethod,
-          promo: promoSnapshot,
-          dueAmount: dueSnapshot,
-        })
-        if (!printed?.ok) setMessage(printed?.error || 'Allow pop-ups to print 58mm receipt.')
-      }
       setSuccessNotice({
         orderNumber,
-        text: stockSyncOk ? 'Order saved. Stock sync queued.' : 'Order saved. Stock sync pending.',
+        text: 'Order saved. Till ready for next bill.',
       })
-      if (!stockSyncOk) setMessage(`Order saved, lekin stock sync pending hai: ${stockSyncError}`)
+      Promise.resolve().then(async () => {
+        let stockSyncOk = true
+        let stockSyncError = ''
+        try {
+          await batch.commit()
+        } catch (syncError) {
+          stockSyncOk = false
+          stockSyncError = syncError?.message || 'Stock sync permission pending.'
+          console.warn('[Retail POS] order saved but stock sync failed', {
+            orderNumber,
+            code: syncError?.code || '',
+            message: syncError?.message || String(syncError || ''),
+            workspaceId,
+            userId: userId || firebaseUser?.uid || '',
+          })
+        }
+        if (shouldPrint) {
+          const printed = await printReceipt({
+            orderNumber,
+            items: orderItems,
+            totals: totalsSnapshot,
+            paid: paidSnapshot,
+            changeAmount: changeSnapshot,
+            customer: customerSnapshot,
+            cashier: cashierName,
+            paymentMethod,
+            promo: promoSnapshot,
+            dueAmount: dueSnapshot,
+          })
+          if (!printed?.ok) setMessage(printed?.error || 'Allow pop-ups to print 58mm receipt.')
+        }
+        if (!stockSyncOk) setMessage(`Order saved, lekin stock sync pending hai: ${stockSyncError}`)
+      })
     } catch (error) {
       setCart(cartSnapshot)
       setCustomerName(customerSnapshot.name)
@@ -665,6 +681,8 @@ export default function RetailPOSPage() {
       setSuccessNotice(null)
       setMessage(error?.message || 'POS order save nahi ho saka.')
     } finally {
+      if (unlockTimer) window.clearTimeout(unlockTimer)
+      savingRef.current = false
       setSaving(false)
     }
   }

@@ -807,7 +807,9 @@ service cloud.firestore {
           'createdAt',
           'updatedAt',
           'updatedBy',
-          'authCreated'
+          'authCreated',
+          'isStaff',
+          'isOwner'
         ])
         && data.uid == uid
         && data.userId == uid
@@ -827,6 +829,8 @@ service cloud.firestore {
         && data.emailVerifiedCustom == true
         && data.onboardingCompleted == true
         && (!data.keys().hasAny(['authCreated']) || data.authCreated is bool)
+        && (!data.keys().hasAny(['isStaff']) || data.isStaff == true)
+        && (!data.keys().hasAny(['isOwner']) || data.isOwner == false)
         && (!data.keys().hasAny(['isAdmin']) || data.isAdmin == false);
     }
 
@@ -975,13 +979,15 @@ service cloud.firestore {
 
       match /staff/{staffId} {
         allow read: if workspaceAdmin(workspaceId) || (workspaceMember(workspaceId) && staffId == permissionDocId());
-        allow create, update: if canManageWorkspace(workspaceId) && safeUpdate(workspaceId) && ownerMemberWriteSafe(workspaceId, staffId);
+        allow create: if canManageWorkspace(workspaceId) && safeCreate(workspaceId) && ownerMemberWriteSafe(workspaceId, staffId);
+        allow update: if canManageWorkspace(workspaceId) && safeUpdate(workspaceId) && ownerMemberWriteSafe(workspaceId, staffId);
         allow delete: if canManageWorkspace(workspaceId) && !ownerMemberResource(workspaceId, staffId);
       }
 
       match /teamMembers/{memberId} {
         allow read: if workspaceMember(workspaceId);
-        allow create, update: if canManageWorkspace(workspaceId) && safeUpdate(workspaceId) && ownerMemberWriteSafe(workspaceId, memberId);
+        allow create: if canManageWorkspace(workspaceId) && safeCreate(workspaceId) && ownerMemberWriteSafe(workspaceId, memberId);
+        allow update: if canManageWorkspace(workspaceId) && safeUpdate(workspaceId) && ownerMemberWriteSafe(workspaceId, memberId);
         allow delete: if canManageWorkspace(workspaceId) && !ownerMemberResource(workspaceId, memberId);
       }
 
