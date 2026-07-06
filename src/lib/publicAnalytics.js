@@ -57,6 +57,21 @@ function loadGtm() {
   initializedAnalytics.gtm = true
 }
 
+function renderGtmNoscript() {
+  if (!canUseDom() || !import.meta.env.PROD || !GTM_ID || document.getElementById('nexora-gtm-noscript')) return
+  const iframe = document.createElement('iframe')
+  iframe.id = 'nexora-gtm-noscript'
+  iframe.src = `https://www.googletagmanager.com/ns.html?id=${encodeURIComponent(GTM_ID)}`
+  iframe.height = '0'
+  iframe.width = '0'
+  iframe.style.display = 'none'
+  iframe.style.visibility = 'hidden'
+  const body = document.body
+  if (body) {
+    body.insertBefore(iframe, body.firstChild)
+  }
+}
+
 function loadClarity() {
   if (initializedAnalytics.clarity || !CLARITY_ID || !canUseDom() || !import.meta.env.PROD) return
   window.clarity = window.clarity || function clarity() {
@@ -79,6 +94,7 @@ export function initPublicAnalytics() {
   if (!hasPublicAnalyticsConfig()) return
   loadGtag()
   loadGtm()
+  renderGtmNoscript()
   loadClarity()
 }
 
