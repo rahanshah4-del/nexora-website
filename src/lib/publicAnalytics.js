@@ -1,6 +1,6 @@
 const GA_MEASUREMENT_ID = 'G-Y89E5YBWYE'
 const GTM_ID = ''
-const CLARITY_ID = import.meta.env.VITE_CLARITY_ID || ''
+const CLARITY_ID = 'xieqswieej'
 const GOOGLE_ADS_ID = import.meta.env.VITE_GOOGLE_ADS_ID || ''
 
 const loadedScripts = new Set()
