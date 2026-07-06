@@ -1,5 +1,5 @@
-const GA_MEASUREMENT_ID = import.meta.env.VITE_GA_MEASUREMENT_ID || ''
-const GTM_ID = import.meta.env.VITE_GTM_ID || ''
+const GA_MEASUREMENT_ID = 'G-Y89E5YBWYE'
+const GTM_ID = 'GTM-PZJV65RW'
 const CLARITY_ID = import.meta.env.VITE_CLARITY_ID || ''
 const GOOGLE_ADS_ID = import.meta.env.VITE_GOOGLE_ADS_ID || ''
 
