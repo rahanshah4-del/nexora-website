@@ -1,10 +1,10 @@
 const GA_MEASUREMENT_ID = 'G-Y89E5YBWYE'
-const GTM_ID = 'GTM-PZJV65RW'
+const GTM_ID = ''
 const CLARITY_ID = import.meta.env.VITE_CLARITY_ID || ''
 const GOOGLE_ADS_ID = import.meta.env.VITE_GOOGLE_ADS_ID || ''
 
 const loadedScripts = new Set()
-const initializedAnalytics = { gtag: false, gtm: false, clarity: false }
+const initializedAnalytics = { gtag: false, clarity: false }
 
 function canUseDom() {
   return typeof window !== 'undefined' && typeof document !== 'undefined'
@@ -49,29 +49,6 @@ function loadGtag() {
   initializedAnalytics.gtag = true
 }
 
-function loadGtm() {
-  if (initializedAnalytics.gtm || !GTM_ID || !canUseDom() || !import.meta.env.PROD) return
-  window.dataLayer = window.dataLayer || []
-  window.dataLayer.push({ 'gtm.start': Date.now(), event: 'gtm.js' })
-  loadScript('nexora-gtm', `https://www.googletagmanager.com/gtm.js?id=${encodeURIComponent(GTM_ID)}`)
-  initializedAnalytics.gtm = true
-}
-
-function renderGtmNoscript() {
-  if (!canUseDom() || !import.meta.env.PROD || !GTM_ID || document.getElementById('nexora-gtm-noscript')) return
-  const iframe = document.createElement('iframe')
-  iframe.id = 'nexora-gtm-noscript'
-  iframe.src = `https://www.googletagmanager.com/ns.html?id=${encodeURIComponent(GTM_ID)}`
-  iframe.height = '0'
-  iframe.width = '0'
-  iframe.style.display = 'none'
-  iframe.style.visibility = 'hidden'
-  const body = document.body
-  if (body) {
-    body.insertBefore(iframe, body.firstChild)
-  }
-}
-
 function loadClarity() {
   if (initializedAnalytics.clarity || !CLARITY_ID || !canUseDom() || !import.meta.env.PROD) return
   window.clarity = window.clarity || function clarity() {
@@ -87,14 +64,12 @@ function loadClarity() {
 }
 
 export function hasPublicAnalyticsConfig() {
-  return Boolean(GA_MEASUREMENT_ID || GTM_ID || CLARITY_ID || GOOGLE_ADS_ID)
+  return Boolean(GA_MEASUREMENT_ID || CLARITY_ID || GOOGLE_ADS_ID)
 }
 
 export function initPublicAnalytics() {
   if (!hasPublicAnalyticsConfig()) return
   loadGtag()
-  loadGtm()
-  renderGtmNoscript()
   loadClarity()
 }
 
