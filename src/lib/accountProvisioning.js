@@ -54,7 +54,19 @@ export function isStaffWorkspaceProfile(profile, uid = '') {
   const currentUid = cleanString(uid)
   if (!workspaceId || role === 'owner') return false
   if (profile.isStaff === true) return workspaceId !== currentUid || (Boolean(ownerId) && ownerId !== currentUid)
-  return ['admin', 'accountant', 'manager', 'sales', 'support', 'staff'].includes(role) && workspaceId !== currentUid && Boolean(staffId)
+  return [
+    'admin',
+    'accountant',
+    'manager',
+    'cashier',
+    'sales',
+    'sales_staff',
+    'support',
+    'support_staff',
+    'data_entry',
+    'viewer',
+    'staff',
+  ].includes(role) && workspaceId !== currentUid && Boolean(staffId)
 }
 
 export async function createSignupUserProfile(user, overrides = {}) {

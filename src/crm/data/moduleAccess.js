@@ -170,6 +170,7 @@ export const moduleCatalog = [
   { key: 'activities', label: 'Activities', route: '/app/activities', minPlan: 'Basic' },
   { key: 'quotations', label: 'Quotations', route: '/app/quotations', minPlan: 'Basic' },
   { key: 'salesProducts', label: 'Products & Services', route: '/app/products-services', minPlan: 'Basic' },
+  { key: 'business_services', label: 'Business Services', route: '/app/business-services', minPlan: 'Business' },
   { key: 'aiLeadScoring', label: 'AI Lead Scoring', route: '/app/leads/scoring', minPlan: 'Business' },
   { key: 'aiAssistant', label: 'AI Assistant', route: '/app/ai-assistant', minPlan: 'Business' },
   { key: 'salesPipeline', label: 'Sales Pipeline', route: '/app/pipeline', minPlan: 'Basic' },
@@ -246,7 +247,7 @@ const salesHubSidebarCoreModules = new Set([
   'quotations',
   'invoices',
   'salesProducts',
-  'businessServices',
+  'business_services',
   'expenses',
   'accounts',
   'accountStatements',
@@ -278,7 +279,7 @@ export const businessWorkspaceCatalog = [
       'activities',
       'quotations',
       'salesProducts',
-      'businessServices',
+      'business_services',
       'followUps',
       'invoices',
       'payments',
@@ -600,7 +601,8 @@ export const legacyPermissionAliases = {
   reports: ['reports', 'viewReports'],
   schoolReports: ['reports', 'viewReports'],
   settings: ['settingsAccess'],
-  businessServices: ['support', 'settingsAccess'],
+  business_services: ['businessServices', 'business_services', 'support', 'settingsAccess'],
+  businessServices: ['business_services', 'support', 'settingsAccess'],
 }
 
 export function modulePermissionKey(moduleKey, action = 'view') {

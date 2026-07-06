@@ -6,6 +6,7 @@ import { workspacePermissionDefaults } from '../../lib/roles.js'
 import {
   businessPermissionKey,
   mapLegacyPermissionToModule,
+  moduleCatalog,
   modulePermissionKey,
   moduleViewPermissionKey,
   permissionKeysForBusiness,
@@ -23,7 +24,53 @@ export const legacyWorkspacePermissionKeys = [
   { key: 'settingsAccess', label: 'Settings Access' },
 ]
 
+function traceAccess(event, payload = {}) {
+  if (import.meta.env.DEV) {
+    console.log(`[StaffAccessTrace] ${event}`, payload)
+  }
+}
+
 export const workspacePermissionKeys = permissionKeysForBusiness({ businessType: 'General CRM', plan: 'Enterprise' })
+
+const permissionKeyCatalog = moduleCatalog.flatMap((module) =>
+  ['view', 'create', 'edit', 'delete', 'export', 'approve'].map((action) => ({
+    key: modulePermissionKey(module.key, action),
+    moduleKey: module.key,
+    moduleLabel: module.label,
+    action,
+    actionLabel: action,
+    label: `${module.label} - ${action}`,
+    route: module.route,
+    comingSoon: module.comingSoon,
+  })),
+)
+
+const permissionModuleAliases = {
+  pos: ['pos', 'retail_pos', 'retail', 'retail-pos'],
+  posOrders: ['posOrders', 'pos_orders', 'pos-orders', 'retail_pos_orders', 'retail-pos-orders'],
+  retail_pos: ['retail_pos', 'retail-pos', 'retail', 'pos'],
+  dashboard: ['dashboard'],
+}
+
+function mergePermissionKeys(...groups) {
+  const byKey = new Map()
+  groups.flat().filter(Boolean).forEach((item) => {
+    if (!byKey.has(item.key)) byKey.set(item.key, item)
+  })
+  return Array.from(byKey.values())
+}
+
+function aliasKeysFor(moduleKey) {
+  return permissionModuleAliases[moduleKey] || [moduleKey]
+}
+
+function permissionValue(row = {}, moduleKey, action = 'view') {
+  return aliasKeysFor(moduleKey).some((key) => row?.[modulePermissionKey(key, action)] === true)
+}
+
+function enabledModuleHas(enabled = new Set(), moduleKey) {
+  return aliasKeysFor(moduleKey).some((key) => enabled.has(key))
+}
 
 export function workspacePermissionKeysForBusiness(businessType, plan = 'Business') {
   return permissionKeysForBusiness({ businessType, plan, teamOverride: true })
@@ -54,14 +101,24 @@ function applyLegacyCompatibility(next, raw = {}, keys = []) {
   return next
 }
 
+function hasPermissionGrant(row = {}, keys = []) {
+  return keys.some((item) => row?.[item.key] === true || permissionValue(row, item.moduleKey, item.action))
+}
+
 function permissionsForBusiness(data = {}, businessType, plan) {
   const keys = workspacePermissionKeysForBusiness(businessType, plan)
   const key = businessPermissionKey(businessType)
   const next = emptyPermissions(keys)
+  const flatPermissions = applyLegacyCompatibility({ ...next, ...data }, data, keys)
   if (data.businessPermissions && typeof data.businessPermissions === 'object') {
-    return applyLegacyCompatibility({ ...next, ...(data.businessPermissions[key] || {}) }, data.businessPermissions[key] || {}, keys)
+    const scopedPermissions =
+      data.businessPermissions[key] ||
+      (key === 'retail-pos' ? data.businessPermissions.retail_pos || data.businessPermissions.retail || data.businessPermissions.pos : null) ||
+      {}
+    const nestedPermissions = applyLegacyCompatibility({ ...next, ...scopedPermissions }, scopedPermissions, keys)
+    return hasPermissionGrant(nestedPermissions, keys) ? nestedPermissions : flatPermissions
   }
-  return key === 'general-crm' ? applyLegacyCompatibility({ ...next, ...data }, data, keys) : next
+  return key === 'general-crm' || hasPermissionGrant(flatPermissions, keys) ? flatPermissions : next
 }
 
 function roleDefaultPermissions(role, businessType, plan) {
@@ -78,26 +135,40 @@ function mergePermissionGrants(defaults = {}, overrides = {}) {
   )
 }
 
-function hasModuleViewGrant(permissions = {}, keys = []) {
-  return keys.some((item) => item.action === 'view' && Boolean(permissions[item.key]))
-}
-
 function enabledModuleViewPermissions(userDoc = {}, keys = []) {
   const enabled = new Set(Array.isArray(userDoc?.enabledModules) ? userDoc.enabledModules : [])
   if (!enabled.size) return {}
-  return Object.fromEntries(
-    keys
-      .filter((item) => item.action === 'view' && enabled.has(item.moduleKey))
+  const grants = Object.fromEntries(
+    mergePermissionKeys(keys, permissionKeyCatalog)
+      .filter((item) => item.action === 'view' && enabledModuleHas(enabled, item.moduleKey))
       .map((item) => [item.key, true]),
   )
+  if (enabledModuleHas(enabled, 'pos')) grants[moduleViewPermissionKey('pos')] = true
+  if (enabledModuleHas(enabled, 'posOrders')) grants[moduleViewPermissionKey('posOrders')] = true
+  if (enabledModuleHas(enabled, 'retail_pos')) grants[moduleViewPermissionKey('retail_pos')] = true
+  return grants
+}
+
+function applyAccessFallbacks(permissions = {}, userDoc = {}, keys = []) {
+  if (hasPermissionGrant(permissions, keys)) return permissions
+  return { ...permissions, ...enabledModuleViewPermissions(userDoc, keys) }
 }
 
 export function useWorkspaceAccess() {
   const { userId, workspaceId, businessType, staffId, role, userDoc, isAdmin, isOwner, isStaff, isAccountant, isManager, accessPlan } = useUser()
-  const currentPermissionKeys = useMemo(() => workspacePermissionKeysForBusiness(businessType, accessPlan), [accessPlan, businessType])
+  const currentPermissionKeys = useMemo(
+    () => mergePermissionKeys(workspacePermissionKeysForBusiness(businessType, accessPlan), permissionKeyCatalog),
+    [accessPlan, businessType],
+  )
   const [permissions, setPermissions] = useState(() => emptyPermissions(currentPermissionKeys))
   const [explicitPermissions, setExplicitPermissions] = useState(() => emptyPermissions(currentPermissionKeys))
   const [loading, setLoading] = useState(true)
+  const staffAccount = Boolean(isStaff && !isOwner && !isAdmin)
+  const enabledModulesKey = Array.isArray(userDoc?.enabledModules) ? userDoc.enabledModules.filter(Boolean).join('|') : ''
+  const fallbackUserDoc = useMemo(
+    () => ({ enabledModules: enabledModulesKey ? enabledModulesKey.split('|').filter(Boolean) : [] }),
+    [enabledModulesKey],
+  )
 
   useEffect(() => {
     if (!db || !workspaceId || !userId) {
@@ -109,7 +180,7 @@ export function useWorkspaceAccess() {
       return
     }
 
-    if (isAdmin) {
+    if (isAdmin && !staffAccount) {
       Promise.resolve().then(() => {
         const defaults = { ...emptyPermissions(currentPermissionKeys), ...workspacePermissionDefaults(isOwner ? 'owner' : role) }
         currentPermissionKeys.forEach((item) => {
@@ -125,27 +196,51 @@ export function useWorkspaceAccess() {
     Promise.resolve().then(() => setLoading(true))
     const permissionDocId = staffId || userId
     const ref = doc(db, 'workspaces', workspaceId, 'permissions', permissionDocId)
+    traceAccess('permission-listener-subscribe', {
+      permissionDocId,
+      role,
+      staffId,
+      workspaceId,
+      businessType,
+      enabledModules: fallbackUserDoc.enabledModules,
+    })
     const unsub = onSnapshot(
       ref,
       (snap) => {
-        const defaults = roleDefaultPermissions(userDoc?.role || role, businessType, accessPlan)
+        const defaults = roleDefaultPermissions(role, businessType, accessPlan)
         const rawOverrides = snap.exists() ? permissionsForBusiness(snap.data(), businessType, accessPlan) : {}
-        const profileModuleFallback = enabledModuleViewPermissions(userDoc, currentPermissionKeys)
-        const overrides = snap.exists() && !hasModuleViewGrant(rawOverrides, currentPermissionKeys)
-          ? { ...rawOverrides, ...profileModuleFallback }
-          : rawOverrides
+        const profileModuleFallback = enabledModuleViewPermissions(fallbackUserDoc, currentPermissionKeys)
+        const overrides = applyAccessFallbacks(rawOverrides, fallbackUserDoc, currentPermissionKeys)
+        const resolvedModules = currentPermissionKeys
+          .filter((item) => item.action === 'view' && overrides[item.key])
+          .map((item) => item.moduleKey)
+        traceAccess('permission-listener-update', {
+          exists: snap.exists(),
+          role,
+          staffId,
+          workspaceId,
+          businessType,
+          enabledModules: fallbackUserDoc.enabledModules,
+          resolvedModules,
+          permissionKeys: Object.keys(overrides).filter((key) => overrides[key] === true),
+        })
         setExplicitPermissions(snap.exists() ? overrides : emptyPermissions(currentPermissionKeys))
-        setPermissions(snap.exists() ? overrides : mergePermissionGrants(defaults, overrides))
+        setPermissions(staffAccount
+          ? (snap.exists() ? overrides : { ...emptyPermissions(currentPermissionKeys), ...profileModuleFallback })
+          : (snap.exists() ? overrides : mergePermissionGrants(defaults, overrides)))
         setLoading(false)
       },
       () => {
-        setPermissions({ ...emptyPermissions(currentPermissionKeys), ...enabledModuleViewPermissions(userDoc, currentPermissionKeys) })
+        setPermissions({ ...emptyPermissions(currentPermissionKeys), ...enabledModuleViewPermissions(fallbackUserDoc, currentPermissionKeys) })
         setExplicitPermissions(emptyPermissions(currentPermissionKeys))
         setLoading(false)
       },
     )
-    return () => unsub()
-  }, [accessPlan, businessType, currentPermissionKeys, isAdmin, isOwner, role, staffId, userDoc?.role, userId, workspaceId])
+    return () => {
+      traceAccess('permission-listener-unsubscribe', { permissionDocId, staffId, workspaceId, businessType })
+      unsub()
+    }
+  }, [accessPlan, businessType, currentPermissionKeys, fallbackUserDoc, isAdmin, isOwner, role, staffAccount, staffId, userId, workspaceId])
 
   return useMemo(
     () => ({
@@ -160,6 +255,7 @@ export function useWorkspaceAccess() {
       isAccountant,
       isManager,
       loading,
+      accessReady: !loading,
       permissions,
       explicitPermissions,
       canManageSettings: isAdmin || Boolean(permissions.settingsAccess),
@@ -170,6 +266,7 @@ export function useWorkspaceAccess() {
       hasModulePermission(moduleKey, action = 'view') {
         const permissionKey = modulePermissionKey(moduleKey, action)
         if (isOwner || isAdmin) return true
+        if (permissionValue(permissions, moduleKey, action)) return true
         if (moduleKey === 'support') {
           const allowed = Boolean(permissions.support || permissions[permissionKey])
           if (!allowed) {

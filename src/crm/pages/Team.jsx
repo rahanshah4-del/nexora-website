@@ -8,30 +8,16 @@ import Button from '../components/ui/Button.jsx'
 import Input from '../components/ui/Input.jsx'
 import PageSearch from '../components/ui/PageSearch.jsx'
 import TeamMembersTable from '../components/team/TeamMembersTable.jsx'
+import EmptyState from '../components/system/EmptyState.jsx'
 import { useTeamMembers } from '../hooks/useTeamMembers.js'
 import Toast from '../components/ui/Toast.jsx'
-import EmptyState from '../components/system/EmptyState.jsx'
-import { useTeamPermissions } from '../hooks/useTeamPermissions.js'
 import { useStaffPermissions } from '../hooks/useStaffPermissions.js'
 import { useActivityLogs } from '../hooks/useActivityLogs.js'
 import { usePreferences } from '../hooks/usePreferences.js'
 import { useUser } from '../hooks/useUser.js'
 import ActivityTimeline from '../components/activity/ActivityTimeline.jsx'
 import { clientSafeMessage } from '../utils/messages.js'
-import { modulePermissionActionLabels, modulePermissionActions, permissionModuleDefinitions } from '../data/moduleAccess.js'
 import { showGlobalToast } from '../lib/globalToast.js'
-
-const roleCards = [
-  { name: 'Owner', summary: 'Full workspace access. Owner permissions are always enabled.' },
-  { name: 'Admin', summary: 'Manage team, settings, approvals, and operational modules.' },
-  { name: 'Manager', summary: 'Lead daily operations, team tasks, and module visibility.' },
-  { name: 'Sales Staff', summary: 'Work with leads, deals, customers, and follow-ups.' },
-  { name: 'Support Agent', summary: 'Handle customer support and service activity.' },
-  { name: 'Accountant', summary: 'Manage finance workflows, invoices, payments, and reports.' },
-  { name: 'Custom Role', summary: 'Use the permission matrix to shape a custom access profile.' },
-]
-
-const actionPermissions = modulePermissionActions.map((action) => modulePermissionActionLabels[action])
 
 function Field({ label, children }) {
   return (
@@ -78,163 +64,6 @@ function groupPermissionKeys(permissionKeys = []) {
   return groups
 }
 
-function RolePermissionTable({ title, description, rows, roles, matrix, onToggle }) {
-  return (
-    <Card className="p-5">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-sm font-semibold text-slate-900 dark:text-white">{title}</p>
-          <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">{description}</p>
-        </div>
-        <Badge variant="purple">RBAC</Badge>
-      </div>
-
-      <div className="mt-4 overflow-x-auto">
-        <table className="min-w-[58rem] w-full text-left text-sm">
-          <thead className="bg-white/50 text-slate-700 dark:bg-slate-900/50 dark:text-slate-200">
-            <tr>
-              <th className="px-4 py-3 font-semibold">Permission</th>
-              {roles.map((role) => (
-                <th key={role} className="px-4 py-3 font-semibold">
-                  {role}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-white/15 bg-white/30 dark:divide-white/10 dark:bg-slate-900/25">
-            {rows.map((permission) => (
-              <tr key={permission} className="hover:bg-white/40 dark:hover:bg-white/5">
-                <td className="px-4 py-3 font-semibold text-slate-900 dark:text-white">{permission}</td>
-                {roles.map((role) => {
-                  const owner = role === 'Owner'
-                  return (
-                    <td key={role} className="px-4 py-3">
-                      <input
-                        type="checkbox"
-                        checked={owner || Boolean(matrix?.[role]?.[permission])}
-                        disabled={owner}
-                        onChange={() => onToggle?.(role, permission)}
-                        className="h-4 w-4 rounded border-white/30 bg-white/40 text-indigo-600 disabled:opacity-60 dark:border-white/10 dark:bg-slate-900/40"
-                      />
-                    </td>
-                  )
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </Card>
-  )
-}
-
-function RolesTab() {
-  return (
-    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-      {roleCards.map((role) => (
-        <Card key={role.name} className="p-5">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-base font-semibold text-slate-950 dark:text-white">{role.name}</p>
-              <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">{role.summary}</p>
-            </div>
-            <Badge variant={role.name === 'Owner' ? 'success' : role.name === 'Custom Role' ? 'info' : 'purple'}>
-              {role.name === 'Owner' ? 'Full' : 'Role'}
-            </Badge>
-          </div>
-        </Card>
-      ))}
-    </div>
-  )
-}
-
-function PermissionsTab({ perms, modulePermissions, onToast }) {
-  return (
-    <div className="space-y-4">
-      {perms.error ? (
-        <Card className="p-5">
-          <p className="text-sm text-rose-700 dark:text-rose-200">{perms.error}</p>
-        </Card>
-      ) : null}
-
-      {perms.loading ? (
-        <Card className="p-5">
-          <div className="grid min-h-[16rem] place-items-center text-sm text-slate-600 dark:text-slate-300">
-            Loading permissions…
-          </div>
-        </Card>
-      ) : !perms.exists ? (
-        <EmptyState
-          title="Permissions not set up yet"
-          description="Initialize the permission matrix to manage role access across the team."
-          actionLabel="Initialize Permissions"
-          onAction={async () => {
-            const res = await perms.initializeTemplate()
-            if (res?.ok) onToast('success', 'Permissions initialized')
-            else if (res?.error) onToast('error', res.error)
-          }}
-        />
-      ) : (
-        <>
-          <RolePermissionTable
-            title="Module permissions"
-            description="Frontend module visibility for staff where the CRM already supports it. Backend security rules are unchanged."
-            rows={modulePermissions}
-            roles={perms.roles}
-            matrix={perms.matrix}
-            onToggle={perms.toggle}
-          />
-          <RolePermissionTable
-            title="Action permissions"
-            description="Action-level controls for team workflows. Owner remains fully enabled."
-            rows={actionPermissions}
-            roles={perms.roles}
-            matrix={perms.matrix}
-            onToggle={perms.toggle}
-          />
-          <Card className="p-5">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm font-semibold text-slate-900 dark:text-white">Save permission matrix</p>
-                <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
-                  Stored under the existing workspace teamPermissions document.
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  type="button"
-                  className="rounded-2xl"
-                  disabled={perms.loading}
-                  onClick={async () => {
-                    const res = await perms.save()
-                    if (res?.ok) onToast('success', 'Permissions saved successfully')
-                    else if (res?.error) onToast('error', res.error)
-                  }}
-                >
-                  Save Permissions
-                </Button>
-                <Button
-                  type="button"
-                  className="rounded-2xl"
-                  variant="subtle"
-                  disabled={perms.loading}
-                  onClick={async () => {
-                    const res = await perms.initializeTemplate()
-                    if (res?.ok) onToast('success', 'Permissions template applied')
-                    else if (res?.error) onToast('error', res.error)
-                  }}
-                >
-                  Reset Template
-                </Button>
-              </div>
-            </div>
-          </Card>
-        </>
-      )}
-    </div>
-  )
-}
-
 const rolePresets = {
   admin: {
     label: 'Admin',
@@ -245,6 +74,12 @@ const rolePresets = {
     label: 'Manager',
     description: 'Daily operations, reports, exports, and approvals.',
     allowActions: ['view', 'create', 'edit', 'export', 'approve'],
+  },
+  cashier: {
+    label: 'Cashier',
+    description: 'POS sales, orders, KOT, billing, and receipt printing only.',
+    cashierOnly: true,
+    allowActions: ['view', 'create', 'edit'],
   },
   accountant: {
     label: 'Accountant',
@@ -272,7 +107,8 @@ const rolePresets = {
 }
 
 const financeModules = new Set(['dashboard', 'invoices', 'payments', 'expenses', 'accounts', 'accountStatements', 'reports', 'approvals'])
-const salesModules = new Set(['dashboard', 'customers', 'leads', 'salesPipeline', 'deals', 'followUps', 'products', 'inventory', 'pos', 'posOrders', 'orders', 'invoices', 'reports'])
+const salesModules = new Set(['dashboard', 'pos', 'posOrders', 'orders'])
+const cashierModules = new Set(['dashboard', 'pos', 'posOrders', 'orders', 'ordersKot', 'tables'])
 const supportModules = new Set(['dashboard', 'customers', 'support', 'whatsappInbox', 'whatsappLeads', 'whatsappFollowUps', 'notifications', 'reports'])
 const extraPermissionActions = ['create', 'edit', 'delete', 'export', 'approve']
 
@@ -286,6 +122,7 @@ function roleLabel(role) {
 
 function moduleAllowedForPreset(moduleKey, preset) {
   if (preset.financeOnly) return financeModules.has(moduleKey)
+  if (preset.cashierOnly) return cashierModules.has(moduleKey)
   if (preset.salesOnly) return salesModules.has(moduleKey)
   if (preset.supportOnly) return supportModules.has(moduleKey)
   return true
@@ -331,12 +168,11 @@ function displayPermissionsForStaff(staff = {}, rowPermissions = {}, permissionK
 
 function inviteStageState(draft, selectedModules, selfEmailBlocked) {
   const hasMember = Boolean(String(draft.name || '').trim() && String(draft.email || '').trim())
-  const hasPassword = Boolean(draft.password && draft.confirmPassword && draft.password === draft.confirmPassword && draft.password.length >= 6)
   return [
     { key: 'member', label: 'Member', helper: hasMember ? 'Ready' : 'Name + email', done: hasMember && !selfEmailBlocked, active: !hasMember || selfEmailBlocked },
     { key: 'role', label: 'Role', helper: roleLabel(draft.role), done: Boolean(draft.role), active: hasMember && !draft.role },
     { key: 'modules', label: 'Modules', helper: `${selectedModules.length} selected`, done: selectedModules.length > 0, active: hasMember && selectedModules.length === 0 },
-    { key: 'invite', label: 'Send Invite', helper: hasPassword ? 'Ready' : 'Password needed', done: hasMember && selectedModules.length > 0 && hasPassword && !selfEmailBlocked, active: hasMember && selectedModules.length > 0 && !hasPassword },
+    { key: 'invite', label: 'Credentials', helper: 'Auto generated', done: hasMember && selectedModules.length > 0 && !selfEmailBlocked, active: hasMember && selectedModules.length > 0 },
   ]
 }
 
@@ -395,12 +231,19 @@ function InviteSuccessPanel({ invite }) {
     >
       <p className="font-black">Invite sent</p>
       <p className="mt-1 text-xs font-semibold">{invite.email} is ready to log in as {roleLabel(invite.role)}. Timeline will switch to accepted after first login.</p>
+      {invite.workspaceCode || invite.staffLoginId ? (
+        <div className="mt-3 grid gap-2 text-xs sm:grid-cols-2">
+          {invite.workspaceCode ? <div className="rounded-xl bg-white/75 px-3 py-2 font-black">Workspace: {invite.workspaceCode}</div> : null}
+          {invite.staffLoginId ? <div className="rounded-xl bg-white/75 px-3 py-2 font-black">Staff ID: {invite.staffLoginId}</div> : null}
+        </div>
+      ) : null}
     </motion.div>
   )
 }
 
-function StaffAccessCard({ staff, rowPermissions, permissionKeys, canManage, onStatus, onPermission, onResendEmail, onToast }) {
+function StaffAccessCard({ staff, rowPermissions, permissionKeys, canManage, onStatus, onPermission, onSendAccess, onResendEmail, onToast }) {
   const [resendBusy, setResendBusy] = useState(false)
+  const [sendAccessBusy, setSendAccessBusy] = useState(false)
   const blocked = ['blocked', 'disabled', 'inactive'].includes(String(staff.status || '').toLowerCase())
   const accepted = String(staff.inviteStatus || '').toLowerCase() === 'accepted' || Boolean(staff.acceptedAt || staff.lastLoginAt)
   const emailFailed = String(staff.inviteEmailStatus || '').toLowerCase() === 'failed'
@@ -425,6 +268,27 @@ function StaffAccessCard({ staff, rowPermissions, permissionKeys, canManage, onS
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button
+            variant="subtle"
+            className={`rounded-xl px-3 py-2 text-xs ${sendAccessBusy ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100' : ''}`}
+            type="button"
+            disabled={!canManage || sendAccessBusy}
+            onClick={async () => {
+              setSendAccessBusy(true)
+              onToast('info', `Sending access to ${staff.name || staff.email || staff.id}...`)
+              try {
+                const res = await onSendAccess(staff.id)
+                if (res?.ok) onToast('success', res.message || 'Staff access sent')
+                else onToast('error', res?.error || 'Failed to send access')
+              } catch (error) {
+                onToast('error', clientSafeMessage(error, 'Failed to send access.'))
+              } finally {
+                setSendAccessBusy(false)
+              }
+            }}
+          >
+            {sendAccessBusy ? 'Sending...' : 'Send access'}
+          </Button>
           <Button
             variant="subtle"
             className={`rounded-xl px-3 py-2 text-xs ${resendBusy ? 'bg-sky-50 text-sky-700 ring-1 ring-sky-100' : ''}`}
@@ -474,32 +338,37 @@ function StaffAccessCard({ staff, rowPermissions, permissionKeys, canManage, onS
         ))}
       </div>
 
-      <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-        {groups.map((group) => {
-          const viewPermission = group.permissions.find((permission) => permission.action === 'view')
-          const checked = Boolean(viewPermission && rowPermissions?.[viewPermission.key])
-          return (
-            <PermissionSwitch
-              key={group.key}
-              label={group.label}
-              checked={checked}
-              disabled={!canManage}
-              onChange={async (value) => {
-                for (const permission of group.permissions) {
-                  if (permission.action === 'view' || !value) {
-                    const res = await onPermission(staff.id, permission.key, permission.action === 'view' ? value : false)
-                    if (!res?.ok) {
-                      onToast('error', res?.error || 'Failed to update permission')
-                      return
+      <details className="mt-4 rounded-[1.1rem] border border-slate-200 bg-slate-50/80 p-3">
+        <summary className="cursor-pointer text-xs font-black uppercase tracking-[0.12em] text-slate-600">
+          Manage access
+        </summary>
+        <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+          {groups.map((group) => {
+            const viewPermission = group.permissions.find((permission) => permission.action === 'view')
+            const checked = Boolean(viewPermission && rowPermissions?.[viewPermission.key])
+            return (
+              <PermissionSwitch
+                key={group.key}
+                label={group.label}
+                checked={checked}
+                disabled={!canManage}
+                onChange={async (value) => {
+                  for (const permission of group.permissions) {
+                    if (permission.action === 'view' || !value) {
+                      const res = await onPermission(staff.id, permission.key, permission.action === 'view' ? value : false)
+                      if (!res?.ok) {
+                        onToast('error', res?.error || 'Failed to update permission')
+                        return
+                      }
                     }
                   }
-                }
-                onToast('success', `${group.label} access ${value ? 'enabled' : 'disabled'}`)
-              }}
-            />
-          )
-        })}
-      </div>
+                  onToast('success', `${group.label} access ${value ? 'enabled' : 'disabled'}`)
+                }}
+              />
+            )
+          })}
+        </div>
+      </details>
     </div>
   )
 }
@@ -512,8 +381,6 @@ function AccessControlTab({ staffApi, members, onToast, currentUserEmail, curren
     name: '',
     email: '',
     username: '',
-    password: '',
-    confirmPassword: '',
     role: 'sales',
     status: 'active',
     permissions: buildRolePermissions('sales', staffApi.permissionKeys),
@@ -529,18 +396,14 @@ function AccessControlTab({ staffApi, members, onToast, currentUserEmail, curren
   const draftEmail = String(draft.email || '').trim().toLowerCase()
   const ownerEmail = String(currentUserEmail || '').trim().toLowerCase()
   const selfEmailBlocked = Boolean(draftEmail && ownerEmail && draftEmail === ownerEmail)
-  const passwordReady = Boolean(draft.password && draft.confirmPassword && draft.password === draft.confirmPassword && draft.password.length >= 6)
-  const canSendInvite = Boolean(draft.name.trim() && draftEmail && passwordReady && selectedModules.length > 0 && !selfEmailBlocked && !staffApi.loading && !inviteBusy)
+  const canSendInvite = Boolean(draft.name.trim() && draftEmail && selectedModules.length > 0 && !selfEmailBlocked && !staffApi.loading && !inviteBusy)
   const inviteBlockReason =
     !draft.name.trim() ? 'Staff name add karein.'
       : !draftEmail ? 'Staff email add karein.'
         : selfEmailBlocked ? 'Owner/admin wali email staff invite me use nahi ho sakti.'
-          : !draft.password ? 'Password add karein.'
-            : draft.password.length < 6 ? 'Password kam az kam 6 characters ka hona chahiye.'
-              : draft.password !== draft.confirmPassword ? 'Password aur confirm password match nahi kar rahe.'
-                : selectedModules.length === 0 ? 'Kam az kam ek module select karein.'
-                  : staffApi.loading ? 'Staff permissions load ho rahi hain, ek second wait karein.'
-                    : ''
+          : selectedModules.length === 0 ? 'Kam az kam ek module select karein.'
+            : staffApi.loading ? 'Staff permissions load ho rahi hain, ek second wait karein.'
+              : ''
   const stages = inviteStageState(draft, selectedModules, selfEmailBlocked)
   const visibleStaff = useMemo(
     () => {
@@ -554,11 +417,11 @@ function AccessControlTab({ staffApi, members, onToast, currentUserEmail, curren
         if (ownerId && id === String(ownerId)) return false
         if (currentUserId && id === String(currentUserId)) return false
         if (ownerEmail && email === ownerEmail) return false
-        if (!memberIds.has(id) && !memberEmails.has(email)) return false
+        if (String(staff.isStaff || '').toLowerCase() === 'false') return false
         return true
       })
     },
-    [currentUserId, members, ownerEmail, ownerId, staffApi.staff],
+    [currentUserId, ownerEmail, ownerId, staffApi.staff],
   )
   const staffUsed = visibleStaff.length || members.filter((member) => {
     const role = String(member.role || '').trim().toLowerCase()
@@ -593,8 +456,6 @@ function AccessControlTab({ staffApi, members, onToast, currentUserEmail, curren
       name: '',
       email: '',
       username: '',
-      password: '',
-      confirmPassword: '',
       role: 'sales',
       status: 'active',
       permissions: buildRolePermissions('sales', staffApi.permissionKeys),
@@ -612,7 +473,7 @@ function AccessControlTab({ staffApi, members, onToast, currentUserEmail, curren
         </Card>
       ) : (
         <>
-        <Card className="overflow-hidden">
+        <Card id="staff-access-onboarding" className="scroll-mt-24 overflow-hidden">
           <div className="border-b border-slate-200/80 bg-slate-950 px-5 py-4 text-white">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
@@ -647,13 +508,8 @@ function AccessControlTab({ staffApi, members, onToast, currentUserEmail, curren
                 <Field label="Username optional">
                   <Input value={draft.username} onChange={(event) => setDraft((current) => ({ ...current, username: event.target.value }))} />
                 </Field>
-                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-                  <Field label="Password">
-                    <Input type="password" value={draft.password} onChange={(event) => setDraft((current) => ({ ...current, password: event.target.value }))} />
-                  </Field>
-                  <Field label="Confirm Password">
-                    <Input type="password" value={draft.confirmPassword} onChange={(event) => setDraft((current) => ({ ...current, confirmPassword: event.target.value }))} />
-                  </Field>
+                <div className="rounded-2xl border border-sky-100 bg-sky-50 px-3 py-3 text-xs font-semibold leading-5 text-sky-800">
+                  Workspace code, unique Staff ID, and PIN will be generated automatically and sent to this email.
                 </div>
                 <Field label="Start access">
                   <SegmentedToggle
@@ -774,7 +630,7 @@ function AccessControlTab({ staffApi, members, onToast, currentUserEmail, curren
                     </div>
                   </div>
                   <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-3 text-xs leading-5 text-emerald-900">
-                    Audit log, staff record, permissions record, and Firebase login are created together.
+                    Audit log, staff record, permissions record, workspace code, staff ID, and PIN invite are created together.
                   </div>
                   <Button
                     type="button"
@@ -790,12 +646,12 @@ function AccessControlTab({ staffApi, members, onToast, currentUserEmail, curren
                         showGlobalToast('error', message, 3200)
                         return
                       }
-                      const invite = { email: draft.email, role: draft.role }
                       setInviteBusy(true)
                       showGlobalToast('info', `Sending invite to ${draft.email}...`, 3000)
                       try {
                         const res = await staffApi.createStaff(draft)
                         if (res.ok) {
+                          const invite = { email: draft.email, role: draft.role, workspaceCode: res.workspaceCode, staffLoginId: res.staffLoginId }
                           setInvitePulse(invite)
                           window.setTimeout(() => setInvitePulse(null), 5000)
                           resetDraft()
@@ -818,7 +674,7 @@ function AccessControlTab({ staffApi, members, onToast, currentUserEmail, curren
                     {inviteBusy ? 'Sending Invite...' : canSendInvite ? 'Send Invite' : 'Check & Send Invite'}
                   </Button>
                   {!canSendInvite ? (
-                    <p className="text-center text-[11px] font-semibold text-slate-500">{inviteBlockReason || 'Complete member, password, modules, and email checks to send.'}</p>
+                    <p className="text-center text-[11px] font-semibold text-slate-500">{inviteBlockReason || 'Complete member, modules, and email checks to send.'}</p>
                   ) : null}
                 </div>
               </div>
@@ -851,6 +707,7 @@ function AccessControlTab({ staffApi, members, onToast, currentUserEmail, curren
                     canManage={staffApi.canManage}
                     onStatus={staffApi.setStaffStatus}
                     onPermission={staffApi.setStaffPermission}
+                    onSendAccess={staffApi.syncStaffAccess}
                     onResendEmail={staffApi.resendStaffInvite}
                     onToast={onToast}
                   />
@@ -873,11 +730,11 @@ function AccessControlTab({ staffApi, members, onToast, currentUserEmail, curren
 }
 
 export default function TeamPage() {
-  const { userId, businessType, accessPlan, workspaceId, workspaceDoc, firebaseUser, userDoc } = useUser()
-  const { members, loading, source, error, permissionKeys, addMember, updateMember, deleteMember } = useTeamMembers()
+  const { userId, workspaceId, workspaceDoc, firebaseUser, userDoc } = useUser()
+  const { members, loading, source, error, addMember, updateMember, deleteMember } = useTeamMembers()
   const [toast, setToast] = useState(null)
   const [searchParams, setSearchParams] = useSearchParams()
-  const [tab, setTab] = useState('members')
+  const [tab, setTab] = useState('access')
   const [memberSearch, setMemberSearch] = useState('')
   const filteredMembers = useMemo(() => {
     const q = memberSearch.trim().toLowerCase()
@@ -888,19 +745,6 @@ export default function TeamPage() {
       ),
     )
   }, [members, memberSearch])
-  const modulePermissions = useMemo(
-    () =>
-      permissionModuleDefinitions({
-        businessType,
-        plan: accessPlan,
-        developerOverride: false,
-        teamOverride: true,
-        onboardingCompleted: true,
-      }).map((module) => module.label),
-    [accessPlan, businessType],
-  )
-  const matrixPermissionKeys = useMemo(() => [...modulePermissions, ...actionPermissions], [modulePermissions])
-  const perms = useTeamPermissions({ permissionKeys: matrixPermissionKeys })
   const staffApi = useStaffPermissions()
   const activity = useActivityLogs()
 
@@ -920,10 +764,8 @@ export default function TeamPage() {
   })
 
   const tabs = [
+    { key: 'access', label: 'Staff Access' },
     { key: 'members', label: 'Team Members' },
-    { key: 'roles', label: 'Roles' },
-    { key: 'permissions', label: 'Permissions' },
-    { key: 'access', label: 'Access Control' },
     { key: 'activity', label: 'Activity Logs' },
   ].filter(Boolean)
 
@@ -937,9 +779,16 @@ export default function TeamPage() {
   const selectTab = (nextTab) => {
     setTab(nextTab)
     const params = new URLSearchParams(searchParams)
-    if (nextTab === 'members') params.delete('tab')
+    if (nextTab === 'access') params.delete('tab')
     else params.set('tab', nextTab)
     setSearchParams(params, { replace: true })
+  }
+
+  const openStaffAccessCreator = () => {
+    selectTab('access')
+    window.setTimeout(() => {
+      document.getElementById('staff-access-onboarding')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 80)
   }
 
   return (
@@ -987,10 +836,10 @@ export default function TeamPage() {
             <Card className="p-5">
               <TeamMembersTable
                 members={members}
-                permissionKeys={permissionKeys}
                 ownerId={workspaceDoc?.ownerId || workspaceId || userId}
                 currentUserId={userId}
                 currentUserEmail={firebaseUser?.email || userDoc?.email || ''}
+                onAddClick={openStaffAccessCreator}
                 onAdd={async (m) => {
                   const res = await addMember(m)
                   if (res?.ok) showToast('success', 'Team member added successfully')
@@ -1007,7 +856,7 @@ export default function TeamPage() {
                 }}
                 onDelete={async (id) => {
                   const res = await deleteMember(id)
-                  if (res?.ok) showToast('success', 'Team member deleted')
+                  if (res?.ok) showToast('success', res.message || 'Team member deleted')
                   else if (res?.error) showToast('error', res.error)
                 }}
               />
@@ -1026,10 +875,10 @@ export default function TeamPage() {
               </div>
               <TeamMembersTable
                 members={filteredMembers}
-                permissionKeys={permissionKeys}
                 ownerId={workspaceDoc?.ownerId || workspaceId || userId}
                 currentUserId={userId}
                 currentUserEmail={firebaseUser?.email || userDoc?.email || ''}
+                onAddClick={openStaffAccessCreator}
                 onAdd={async (m) => {
                   const res = await addMember(m)
                   if (res?.ok) showToast('success', 'Team member added successfully')
@@ -1046,17 +895,13 @@ export default function TeamPage() {
                 }}
                 onDelete={async (id) => {
                   const res = await deleteMember(id)
-                  if (res?.ok) showToast('success', 'Team member deleted')
+                  if (res?.ok) showToast('success', res.message || 'Team member deleted')
                   else if (res?.error) showToast('error', res.error)
                 }}
               />
             </Card>
           )
         ) : null}
-
-        {tab === 'roles' ? <RolesTab /> : null}
-
-        {tab === 'permissions' ? <PermissionsTab perms={perms} modulePermissions={modulePermissions} onToast={showToast} /> : null}
 
         {tab === 'access' ? (
           <AccessControlTab

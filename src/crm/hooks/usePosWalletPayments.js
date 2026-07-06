@@ -66,7 +66,14 @@ export function usePosWalletPayments(options = {}) {
         setPayments([])
         setLoading(false)
       },
-      { businessType, orderByField: 'createdAt', orderDirection: 'desc', limitCount },
+      {
+        businessType,
+        businessTypeFallbacks: ['Retail / POS', 'General CRM'],
+        includeMissingBusinessType: true,
+        orderByField: 'createdAt',
+        orderDirection: 'desc',
+        limitCount,
+      },
     )
     return () => unsub?.()
   }, [businessType, enabled, limitCount, workspaceId])

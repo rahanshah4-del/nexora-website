@@ -25,6 +25,12 @@ const UserContext = createContext(null)
 
 const blockedStatuses = ['blocked', 'disabled', 'inactive']
 
+function traceUserContext(event, payload = {}) {
+  if (import.meta.env.DEV) {
+    console.log(`[UserContextTrace] ${event}`, payload)
+  }
+}
+
 function staffInviteEmailKey(email) {
   return String(email || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'staff-email'
 }
@@ -32,6 +38,51 @@ function staffInviteEmailKey(email) {
 function normalizeRole(role) {
   const value = normalizeFinanceRole(role)
   return value === 'staff' && !role ? 'owner' : value
+}
+
+function permissionModuleKey(permissionKey) {
+  const match = String(permissionKey || '').match(/^module\.([^.]+)\./)
+  return match?.[1] || ''
+}
+
+function normalizeStaffModuleKey(moduleKey) {
+  const value = String(moduleKey || '').trim()
+  const lower = value.toLowerCase().replace(/[-\s]+/g, '_')
+  if (lower === 'retail_pos' || lower === 'retail' || lower === 'pos') return 'pos'
+  if (lower === 'pos_orders' || lower === 'retail_pos_orders') return 'posOrders'
+  return value
+}
+
+function inferBusinessTypeFromStaffAccess(row = {}) {
+  const modules = new Set((Array.isArray(row?.enabledModules) ? row.enabledModules : []).map(normalizeStaffModuleKey).filter(Boolean))
+  Object.entries(row?.permissions && typeof row.permissions === 'object' ? row.permissions : {}).forEach(([key, value]) => {
+    if (value === true && String(key).endsWith('.view')) {
+      const moduleKey = normalizeStaffModuleKey(permissionModuleKey(key))
+      if (moduleKey) modules.add(moduleKey)
+    }
+  })
+  Object.entries(row && typeof row === 'object' ? row : {}).forEach(([key, value]) => {
+    if (value === true && String(key).startsWith('module.') && String(key).endsWith('.view')) {
+      const moduleKey = normalizeStaffModuleKey(permissionModuleKey(key))
+      if (moduleKey) modules.add(moduleKey)
+    }
+  })
+  Object.entries(row?.businessPermissions && typeof row.businessPermissions === 'object' ? row.businessPermissions : {}).forEach(([key, scoped]) => {
+    const hasGrant = scoped && typeof scoped === 'object' && Object.values(scoped).some((value) => value === true)
+    if (hasGrant && key === 'restaurant-pos') modules.add('orders')
+    if (hasGrant && ['retail-pos', 'retail_pos', 'retail', 'pos'].includes(String(key))) modules.add('pos')
+    if (scoped && typeof scoped === 'object') {
+      Object.entries(scoped).forEach(([permissionKey, value]) => {
+        if (value === true && String(permissionKey).startsWith('module.') && String(permissionKey).endsWith('.view')) {
+          const moduleKey = normalizeStaffModuleKey(permissionModuleKey(permissionKey))
+          if (moduleKey) modules.add(moduleKey)
+        }
+      })
+    }
+  })
+  if (modules.has('orders') || modules.has('ordersKot') || modules.has('tables') || modules.has('kitchenDisplay') || modules.has('menuManagement')) return 'Restaurant POS'
+  if (modules.has('pos') || modules.has('posOrders') || modules.has('posDiscounts') || modules.has('inventory')) return 'Retail / POS'
+  return ''
 }
 
 export function UserProvider({ children }) {
@@ -42,6 +93,9 @@ export function UserProvider({ children }) {
   const [workspaceOwnerId, setWorkspaceOwnerId] = useState('')
   const [workspaceDoc, setWorkspaceDoc] = useState(null)
   const [workspaceAccessDenied, setWorkspaceAccessDenied] = useState(false)
+  const [profileStatusReady, setProfileStatusReady] = useState(false)
+  const [staffAccessStatusReady, setStaffAccessStatusReady] = useState(true)
+  const [workspaceStatusReady, setWorkspaceStatusReady] = useState(false)
   const [selectedBusinessWorkspace, setSelectedBusinessWorkspace] = useState(null)
   const [loading, setLoading] = useState(true)
   const provisionedUserRef = useRef('')
@@ -57,6 +111,9 @@ export function UserProvider({ children }) {
     if (!db) {
       Promise.resolve().then(() => {
         setUserDoc(null)
+        setProfileStatusReady(true)
+        setStaffAccessStatusReady(true)
+        setWorkspaceStatusReady(true)
         setLoading(false)
       })
       return
@@ -68,6 +125,9 @@ export function UserProvider({ children }) {
         setStaffAccessStatus('')
         setWorkspaceOwnerId('')
         setWorkspaceAccessDenied(false)
+        setProfileStatusReady(false)
+        setStaffAccessStatusReady(true)
+        setWorkspaceStatusReady(false)
         setLoading(false)
       })
       return
@@ -77,6 +137,7 @@ export function UserProvider({ children }) {
     const unsub = onSnapshot(
       ref,
       (snap) => {
+        setProfileStatusReady(true)
         if (!snap.exists()) {
           console.warn('[User Profile] missing profile; waiting for signup or staff invite provisioning', {
             uid: user.uid,
@@ -109,6 +170,15 @@ export function UserProvider({ children }) {
           setUserDoc(null)
         } else {
           const nextUserDoc = snap.data()
+          traceUserContext('userDoc-update', {
+            uid: user.uid,
+            role: nextUserDoc?.role || '',
+            staffId: nextUserDoc?.staffId || '',
+            workspaceId: nextUserDoc?.workspaceId || '',
+            ownerId: nextUserDoc?.ownerId || '',
+            businessType: nextUserDoc?.businessType || nextUserDoc?.selectedBusinessType || '',
+            enabledModules: Array.isArray(nextUserDoc?.enabledModules) ? nextUserDoc.enabledModules : [],
+          })
           setUserDoc(nextUserDoc)
           const roleValue = normalizeRole(nextUserDoc?.role)
           const selfWorkspaceProfile =
@@ -165,6 +235,7 @@ export function UserProvider({ children }) {
       },
       () => {
         setUserDoc(null)
+        setProfileStatusReady(true)
         setLoading(false)
       },
     )
@@ -174,23 +245,42 @@ export function UserProvider({ children }) {
 
   useEffect(() => {
     if (!ready || !db || !user || loading || !userDoc) {
-      Promise.resolve().then(() => setStaffAccessStatus(''))
+      Promise.resolve().then(() => {
+        setStaffAccessStatus('')
+        setStaffAccessStatusReady(true)
+      })
       return undefined
     }
 
-    const nextWorkspaceId = userDoc.workspaceId || user.uid
+    const staffWorkspaceProfile = isStaffWorkspaceProfile(userDoc, user.uid)
+    const rawWorkspaceId = String(userDoc.workspaceId || '').trim()
+    const nextWorkspaceId = staffWorkspaceProfile
+      ? [userDoc?.ownerId, userDoc?.companyId, userDoc?.createdBy, rawWorkspaceId]
+          .map((value) => String(value || '').trim())
+          .find((value) => value && value !== user.uid) || rawWorkspaceId || user.uid
+      : rawWorkspaceId || user.uid
     const nextStaffId = userDoc.staffId || user.uid
     const nextRole = normalizeRole(userDoc.role)
     if (!nextWorkspaceId || !nextStaffId || nextRole === 'owner') {
-      Promise.resolve().then(() => setStaffAccessStatus(''))
+      Promise.resolve().then(() => {
+        setStaffAccessStatus('')
+        setStaffAccessStatusReady(true)
+      })
       return undefined
     }
 
+    setStaffAccessStatusReady(false)
     const ref = doc(db, 'workspaces', nextWorkspaceId, 'staff', nextStaffId)
     const unsub = onSnapshot(
       ref,
       (snap) => {
+        setStaffAccessStatusReady(true)
         if (snap.exists()) {
+          traceUserContext('staff-status-update', {
+            staffId: nextStaffId,
+            workspaceId: nextWorkspaceId,
+            status: snap.data()?.status || '',
+          })
           setStaffAccessStatus(String(snap.data()?.status || ''))
           return
         }
@@ -209,7 +299,10 @@ export function UserProvider({ children }) {
           }, { merge: true }).catch(() => {})
         }
       },
-      () => setStaffAccessStatus(''),
+      () => {
+        setStaffAccessStatus('')
+        setStaffAccessStatusReady(true)
+      },
     )
 
     return () => unsub()
@@ -218,28 +311,45 @@ export function UserProvider({ children }) {
   const role = normalizeRole(userDoc?.role)
   const staffProfile = isStaffWorkspaceProfile(userDoc, user?.uid)
   const userDocWorkspaceId = userDoc?.workspaceId || ''
-  const repairedStaffWorkspaceId = staffProfile && user?.uid && userDocWorkspaceId === user.uid
+  const staffOwnerWorkspaceId = staffProfile && user?.uid
     ? [userDoc?.ownerId, userDoc?.companyId, userDoc?.createdBy]
         .map((value) => String(value || '').trim())
-        .find((value) => value && value !== user.uid) || userDocWorkspaceId
+        .find((value) => value && value !== user.uid) || ''
+    : ''
+  const repairedStaffWorkspaceId = staffProfile
+    ? staffOwnerWorkspaceId || userDocWorkspaceId
     : userDocWorkspaceId
   const workspaceId = repairedStaffWorkspaceId || user?.uid || null
   const developerOverride = isDeveloperOwnerAccount(userDoc, user)
-  const allowedBusinessTypes = Array.from(new Set([
-    ...(Array.isArray(workspaceDoc?.allowedBusinessTypes) ? workspaceDoc.allowedBusinessTypes : []),
-    ...(Array.isArray(userDoc?.allowedBusinessTypes) ? userDoc.allowedBusinessTypes : []),
-  ].filter(Boolean).map(normalizeBusinessType)))
-  const allModulesAccess = workspaceDoc?.allModulesAccess === true || userDoc?.allModulesAccess === true
-  const specialModuleAccess = allModulesAccess || workspaceDoc?.specialModuleAccess === true || userDoc?.specialModuleAccess === true
-  const lockedBusinessType =
-    workspaceDoc?.primaryBusinessType ||
-    workspaceDoc?.selectedBusinessType ||
-    workspaceDoc?.currentBusinessType ||
-    workspaceDoc?.businessType ||
-    userDoc?.primaryBusinessType ||
-    userDoc?.selectedBusinessType ||
-    userDoc?.currentBusinessType ||
-    userDoc?.businessType
+  const allowedBusinessTypes = Array.from(new Set((
+    staffProfile
+      ? (Array.isArray(userDoc?.allowedBusinessTypes) ? userDoc.allowedBusinessTypes : [])
+      : [
+          ...(Array.isArray(workspaceDoc?.allowedBusinessTypes) ? workspaceDoc.allowedBusinessTypes : []),
+          ...(Array.isArray(userDoc?.allowedBusinessTypes) ? userDoc.allowedBusinessTypes : []),
+        ]
+  ).filter(Boolean).map(normalizeBusinessType)))
+  const allModulesAccess = staffProfile ? false : workspaceDoc?.allModulesAccess === true || userDoc?.allModulesAccess === true
+  const specialModuleAccess = staffProfile ? false : allModulesAccess || workspaceDoc?.specialModuleAccess === true || userDoc?.specialModuleAccess === true
+  const staffAccessBusinessType = staffProfile ? inferBusinessTypeFromStaffAccess(userDoc) : ''
+  const lockedBusinessType = staffProfile
+    ? staffAccessBusinessType ||
+      userDoc?.primaryBusinessType ||
+      userDoc?.selectedBusinessType ||
+      userDoc?.currentBusinessType ||
+      userDoc?.businessType ||
+      workspaceDoc?.primaryBusinessType ||
+      workspaceDoc?.selectedBusinessType ||
+      workspaceDoc?.currentBusinessType ||
+      workspaceDoc?.businessType
+    : workspaceDoc?.primaryBusinessType ||
+      workspaceDoc?.selectedBusinessType ||
+      workspaceDoc?.currentBusinessType ||
+      workspaceDoc?.businessType ||
+      userDoc?.primaryBusinessType ||
+      userDoc?.selectedBusinessType ||
+      userDoc?.currentBusinessType ||
+      userDoc?.businessType
   const requestedBusinessType = normalizeBusinessType(
     workspaceDoc?.selectedBusinessType ||
       workspaceDoc?.currentBusinessType ||
@@ -257,7 +367,9 @@ export function UserProvider({ children }) {
     storedBusinessType === normalizeBusinessType(lockedBusinessType)
   )
   const selectedBusiness = businessWorkspaceForSelection(
-    developerOverride
+    staffProfile
+      ? lockedBusinessType || userDoc?.selectedWorkspace
+      : developerOverride
       ? selectedBusinessWorkspace || userDoc?.selectedWorkspace || userDoc?.selectedBusinessType || userDoc?.businessType
       : storedBusinessAllowed
         ? selectedBusinessWorkspace
@@ -266,12 +378,19 @@ export function UserProvider({ children }) {
         : lockedBusinessType || workspaceDoc?.selectedWorkspace || userDoc?.selectedWorkspace,
   )
   const businessType = normalizeBusinessType(
-    selectedBusiness?.type ||
-      lockedBusinessType ||
-      workspaceDoc?.selectedBusinessType ||
-      workspaceDoc?.businessType ||
-      userDoc?.selectedBusinessType ||
-      userDoc?.businessType,
+    staffProfile
+      ? selectedBusiness?.type ||
+        lockedBusinessType ||
+        userDoc?.selectedBusinessType ||
+        userDoc?.businessType ||
+        workspaceDoc?.selectedBusinessType ||
+        workspaceDoc?.businessType
+      : selectedBusiness?.type ||
+        lockedBusinessType ||
+        workspaceDoc?.selectedBusinessType ||
+        workspaceDoc?.businessType ||
+        userDoc?.selectedBusinessType ||
+        userDoc?.businessType,
   )
   const businessWorkspaceId = selectedBusiness?.id || businessWorkspaceForType(businessType).id
   const staffId = userDoc?.staffId || user?.uid || null
@@ -410,17 +529,30 @@ export function UserProvider({ children }) {
   useEffect(() => {
     if (!ready || !db || !user?.uid || loading || !workspaceId) {
       Promise.resolve().then(() => {
+        setWorkspaceDoc(null)
         setWorkspaceOwnerId('')
         setWorkspaceAccessDenied(false)
+        setWorkspaceStatusReady(false)
       })
       return undefined
     }
 
+    setWorkspaceDoc(null)
+    setWorkspaceOwnerId('')
+    setWorkspaceAccessDenied(false)
+    setWorkspaceStatusReady(false)
     const ref = doc(db, 'workspaces', workspaceId)
     const unsub = onSnapshot(
       ref,
       (snap) => {
+        setWorkspaceStatusReady(true)
         const data = snap.exists() ? snap.data() : null
+        traceUserContext('workspaceDoc-update', {
+          workspaceId,
+          ownerId: data?.ownerId || '',
+          businessType: data?.businessType || data?.selectedBusinessType || '',
+          status: data?.status || '',
+        })
         setWorkspaceDoc(data)
         setWorkspaceOwnerId(data ? String(data?.ownerId || '') : '')
         setWorkspaceAccessDenied(false)
@@ -436,6 +568,7 @@ export function UserProvider({ children }) {
         setWorkspaceDoc(null)
         setWorkspaceOwnerId('')
         setWorkspaceAccessDenied(error?.code === 'permission-denied')
+        setWorkspaceStatusReady(true)
       },
     )
 
@@ -471,6 +604,11 @@ export function UserProvider({ children }) {
   const isSubscriptionExpired = accessState.isSubscriptionExpired
   const isWorkspaceExpired = !workspaceBlocked && accessState.isWorkspaceExpired
   const hasActiveWorkspaceSubscription = !workspaceBlocked && accessState.hasActiveWorkspaceSubscription
+  const accessStatusReady = !user?.uid || Boolean(
+    profileStatusReady &&
+      (!workspaceId || workspaceStatusReady) &&
+      (!staffProfile || staffAccessStatusReady)
+  )
 
   useEffect(() => {
     if (!user?.uid || !workspaceId || loading || loggedLoginRef.current === user.uid) return
@@ -489,13 +627,8 @@ export function UserProvider({ children }) {
       targetName: userName,
       metadata: { role },
     }).catch(() => {})
-    if (db && role !== 'owner' && staffId) {
-      Promise.all([
-        setDoc(doc(db, 'workspaces', workspaceId, 'staff', staffId), { inviteStatus: 'accepted', acceptedAt: now, lastLoginAt: now, updatedAt: now }, { merge: true }),
-        setDoc(doc(db, 'workspaces', workspaceId, 'teamMembers', staffId), { inviteStatus: 'accepted', acceptedAt: now, lastLoginAt: now, updatedAt: now }, { merge: true }),
-        setDoc(doc(db, 'users', user.uid), { inviteStatus: 'accepted', acceptedAt: now, lastLoginAt: now, updatedAt: now }, { merge: true }),
-      ]).catch(() => {})
-    }
+    // Team/staff PIN login is backend-owned. Avoid duplicate client writes here;
+    // Firestore rules intentionally deny normal clients from changing staff access state.
   }, [loading, role, staffId, user, userDoc, workspaceId])
 
   const value = useMemo(
@@ -513,6 +646,7 @@ export function UserProvider({ children }) {
       userDoc,
       workspaceDoc,
       workspaceAccessDenied,
+      accessStatusReady,
       loading,
       plan: effectivePlan,
       accessPlan,

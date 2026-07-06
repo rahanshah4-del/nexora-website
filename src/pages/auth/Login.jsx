@@ -18,9 +18,10 @@ import {
   HiOutlineUserGroup,
 } from 'react-icons/hi2'
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
-import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
+import { signInWithCustomToken, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
+import { httpsCallable } from 'firebase/functions'
 import { motion } from 'framer-motion'
-import { auth, authPersistenceReady } from '../../lib/firebase.js'
+import { auth, authPersistenceReady, functions } from '../../lib/firebase.js'
 import useAuth from '../../context/useAuth.js'
 import NexoraLogo from '../../components/brand/NexoraLogo.jsx'
 import { clientSafeMessage } from '../../lib/errorHandler.js'
@@ -51,6 +52,11 @@ export default function Login() {
   const [submitting, setSubmitting] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const [passkeyLoading, setPasskeyLoading] = useState(false)
+  const [staffLoginOpen, setStaffLoginOpen] = useState(false)
+  const [staffWorkspaceCode, setStaffWorkspaceCode] = useState('')
+  const [staffLoginId, setStaffLoginId] = useState('')
+  const [staffPin, setStaffPin] = useState('')
+  const [staffSubmitting, setStaffSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [info, setInfo] = useState('')
   const [sessionExpiredNotice, setSessionExpiredNotice] = useState(false)
@@ -164,6 +170,55 @@ export default function Login() {
       setError(clientSafeMessage(err, 'Passkey sign-in failed. Use password or Google, then register a new passkey from Security settings.', { context: 'Login with passkey' }))
     } finally {
       setPasskeyLoading(false)
+    }
+  }
+
+  const handleStaffSignIn = async (event) => {
+    event.preventDefault()
+    setError('')
+    setInfo('')
+    if (!auth || !functions) {
+      setError('Staff login service is not available right now.')
+      return
+    }
+    const workspaceCode = staffWorkspaceCode.trim().toUpperCase()
+    const staffId = staffLoginId.trim().toUpperCase()
+    const pin = staffPin.trim()
+    if (!workspaceCode || !staffId || !pin) {
+      setError('Workspace code, Staff ID, aur PIN enter karein.')
+      return
+    }
+    setStaffSubmitting(true)
+    try {
+      await authPersistenceReady
+      const loginStaff = httpsCallable(functions, 'teamStaffLogin')
+      const response = await loginStaff({ workspaceCode, staffLoginId: staffId, pin })
+      const result = response?.data || {}
+      if (!result.success || !result.customToken) {
+        setError('Staff login details verify nahi ho sakay.')
+        return
+      }
+      const credentials = await signInWithCustomToken(auth, result.customToken)
+      recordLoginHistory({
+        method: 'team-pin',
+        status: 'success',
+        userId: credentials.user.uid,
+        email: result.staff?.email || credentials.user.email || '',
+      }).catch(() => {})
+      trackAnalyticsEvent('login_completed', {
+        userId: credentials.user.uid,
+        page: '/login',
+        status: 'team-pin',
+        role: result.staff?.role || 'staff',
+      }).catch(() => {})
+      window.sessionStorage.removeItem('nexora:loginNotice')
+      navigate(WORKSPACE_ROUTE, { replace: true })
+    } catch (err) {
+      trackAnalyticsEvent('login_failed', { page: '/login', status: err?.code || 'team_pin_failed' }).catch(() => {})
+      recordLoginHistory({ method: 'team-pin', status: 'failed', error: err?.code || err?.message || 'team_pin_failed' }).catch(() => {})
+      setError(clientSafeMessage(err, 'Staff login failed. Workspace code, Staff ID, aur PIN check karein.', { context: 'Staff PIN login' }))
+    } finally {
+      setStaffSubmitting(false)
     }
   }
 
@@ -412,6 +467,74 @@ export default function Login() {
               </span>
               {passkeyLoading ? 'Opening passkey…' : 'Sign in with Passkey'}
             </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setStaffLoginOpen((open) => !open)
+                setError('')
+                setInfo('')
+              }}
+              className="mt-2.5 flex h-10 w-full items-center justify-center gap-2.5 rounded-xl border border-indigo-200 bg-indigo-50 text-[13px] font-black text-indigo-700 transition hover:bg-indigo-100 active:scale-[0.99]"
+            >
+              <HiOutlineKey className="h-[18px] w-[18px]" />
+              {staffLoginOpen ? 'Hide Staff / Cashier Login' : 'Staff / Cashier Login'}
+            </button>
+
+            {staffLoginOpen ? (
+              <form className="mt-3 space-y-2.5 rounded-2xl border border-slate-200 bg-slate-50 p-3" onSubmit={handleStaffSignIn}>
+                <label className="block space-y-1 text-xs text-slate-700">
+                  <span className="font-semibold">Workspace code</span>
+                  <input
+                    type="text"
+                    required
+                    value={staffWorkspaceCode}
+                    onChange={(event) => setStaffWorkspaceCode(event.target.value.toUpperCase())}
+                    className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-[13px] font-bold uppercase text-slate-900 outline-none transition focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100"
+                    placeholder="NX1234"
+                    autoComplete="organization"
+                  />
+                </label>
+                <label className="block space-y-1 text-xs text-slate-700">
+                  <span className="font-semibold">Staff ID</span>
+                  <input
+                    type="text"
+                    required
+                    value={staffLoginId}
+                    onChange={(event) => setStaffLoginId(event.target.value.toUpperCase())}
+                    className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-[13px] font-bold uppercase text-slate-900 outline-none transition focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100"
+                    placeholder="CSH-1234"
+                    autoComplete="username"
+                  />
+                </label>
+                <label className="block space-y-1 text-xs text-slate-700">
+                  <span className="font-semibold">PIN</span>
+                  <input
+                    type="password"
+                    required
+                    value={staffPin}
+                    onChange={(event) => setStaffPin(event.target.value)}
+                    className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-[13px] font-bold text-slate-900 outline-none transition focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100"
+                    placeholder="6 digit PIN"
+                    autoComplete="current-password"
+                  />
+                </label>
+                <button
+                  type="submit"
+                  disabled={staffSubmitting}
+                  className="flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-slate-950 text-[13px] font-black text-white transition hover:bg-slate-900 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {staffSubmitting ? (
+                    <>
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                      Verifying…
+                    </>
+                  ) : (
+                    'Login as Staff / Cashier'
+                  )}
+                </button>
+              </form>
+            ) : null}
 
             <p className="mt-4 text-center text-xs text-slate-500">
               Don&apos;t have an account?{' '}

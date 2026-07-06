@@ -106,7 +106,14 @@ export function useInventoryTransactions(options = {}) {
         setTransactions([])
         setLoading(false)
       },
-      { businessType, orderByField: limitCount ? 'createdAt' : '', orderDirection: 'desc', limitCount },
+      {
+        businessType,
+        businessTypeFallbacks: ['Retail / POS', 'General CRM'],
+        includeMissingBusinessType: true,
+        orderByField: limitCount ? 'createdAt' : '',
+        orderDirection: 'desc',
+        limitCount,
+      },
     )
 
     return () => unsub?.()

@@ -183,7 +183,13 @@ const footerGroups = {
     ['WhatsApp CRM', '/solutions/whatsapp-crm'],
     ['Reports', '/solutions/reports'],
   ],
-  resources: ['Blog', 'Help Center', 'Documentation', 'Privacy Policy', 'Terms & Conditions'],
+  resources: [
+    ['Blog', '/blog'],
+    ['Help Center', '/help-center'],
+    ['Documentation', '/documentation'],
+    ['Privacy Policy', '/privacy-policy'],
+    ['Terms & Conditions', '/terms'],
+  ],
 }
 
 function ModuleIcon({ icon: Icon, tone }) {
@@ -757,8 +763,10 @@ function App({ initialSectionId = '' }) {
             <div>
               <h3 className="text-sm font-extrabold">Resources</h3>
               <div className="mt-5 grid gap-3 text-sm text-blue-100">
-                {footerGroups.resources.map((resource) => (
-                  <span key={resource}>{resource}</span>
+                {footerGroups.resources.map(([label, to]) => (
+                  <Link key={label} to={to} className="hover:text-white">
+                    {label}
+                  </Link>
                 ))}
               </div>
             </div>

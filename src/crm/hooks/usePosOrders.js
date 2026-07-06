@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createUserDoc, removeUserDoc, subscribeUserCollection } from '../lib/firestore.js'
 import { useUser } from './useUser.js'
+import { useWorkspaceAccess } from './useWorkspaceAccess.js'
 import { clientSafeMessage } from '../utils/messages.js'
 import { db } from '../lib/firebase.js'
 
@@ -96,6 +97,11 @@ export function normalizePosOrder(order = {}) {
     shiftStartedAt: order.shiftStartedAt || null,
     notes: order.notes || '',
     source: order.source || 'pos',
+    orderSource: order.orderSource || order.source || 'pos_front_till',
+    moduleKey: order.moduleKey || 'retail_pos',
+    cashierId: order.cashierId || order.staffId || '',
+    staffId: order.staffId || order.cashierId || '',
+    cashierName: order.cashierName || order.cashier || order.createdByName || '',
     createdBy: order.createdBy || '',
     createdByName: order.createdByName || order.cashier || '',
     createdByEmail: order.createdByEmail || '',
@@ -108,7 +114,8 @@ export function normalizePosOrder(order = {}) {
 }
 
 export function usePosOrders(options = {}) {
-  const { workspaceId, userId } = useUser()
+  const { workspaceId, userId, staffId, role, userDoc, firebaseUser, isOwner, isAdmin, isStaff } = useUser()
+  const access = useWorkspaceAccess()
   const enabled = options.enabled !== false
   const effectiveBusinessType = options.businessType || POS_BUSINESS_TYPE
   const readBusinessType = options.readBusinessType === false ? '' : effectiveBusinessType
@@ -188,19 +195,41 @@ export function usePosOrders(options = {}) {
     async createOrder(payload) {
       if (!workspaceId || !userId) return { ok: false, error: 'Please login first.' }
       if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now.' }
+      const canCreate = access.isOwner || access.isAdmin || access.hasModulePermission('posOrders', 'create') || access.hasModulePermission('pos', 'create')
+      if (!canCreate) return { ok: false, error: 'You do not have permission to perform this action.' }
       const localId = `local-${Date.now()}-${Math.random().toString(36).slice(2)}`
       const nowIso = new Date().toISOString()
-      const localOrder = {
-        ...payload,
-        id: localId,
-        source: 'pos',
-        status: payload.status || 'completed',
-        paymentStatus: payload.paymentStatus || 'paid',
-        createdBy: userId,
+      const ownerSale = Boolean(isOwner || isAdmin || userId === workspaceId || firebaseUser?.uid === workspaceId)
+      const staffSale = Boolean(isStaff && !ownerSale)
+      const cashierId = staffSale ? String(staffId || userDoc?.staffId || userId || '') : ''
+      const cashierName = payload.cashierName || payload.cashier || payload.createdByName || userDoc?.displayName || userDoc?.fullName || userDoc?.name || firebaseUser?.displayName || firebaseUser?.email || 'Cashier'
+      const createdByRole = payload.createdByRole || (ownerSale ? 'owner' : role || userDoc?.role || 'staff')
+      const orderMeta = {
         ownerId: workspaceId,
         userId: workspaceId,
         workspaceId,
         businessType: effectiveBusinessType,
+        moduleKey: 'retail_pos',
+        orderSource: 'pos_front_till',
+        source: 'pos_front_till',
+        cashierId,
+        staffId: cashierId,
+        cashierName,
+        cashier: cashierName,
+        createdBy: userId,
+        createdByName: payload.createdByName || cashierName,
+        createdByEmail: payload.createdByEmail || firebaseUser?.email || userDoc?.email || '',
+        createdByRole,
+        createdByStaff: staffSale,
+        registerId: payload.registerId || payload.shiftId || '',
+        branchId: payload.branchId || '',
+      }
+      const localOrder = {
+        ...payload,
+        ...orderMeta,
+        id: localId,
+        status: payload.status || 'completed',
+        paymentStatus: payload.paymentStatus || 'paid',
         localOnly: true,
         syncStatus: 'pending',
         createdAt: nowIso,
@@ -211,10 +240,9 @@ export function usePosOrders(options = {}) {
 
       createUserDoc(workspaceId, 'posOrders', {
         ...payload,
-        source: 'pos',
+        ...orderMeta,
         status: payload.status || 'completed',
         paymentStatus: payload.paymentStatus || 'paid',
-        createdBy: userId,
       }, { businessType: effectiveBusinessType })
         .then((ref) => {
           const syncedOrder = {
@@ -286,6 +314,8 @@ export function usePosOrders(options = {}) {
       if (!id) return { ok: false, error: 'Order ID is required.' }
       if (!workspaceId || !userId) return { ok: false, error: 'Please login first.' }
       if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now.' }
+      const canDelete = access.isOwner || access.isAdmin || access.hasModulePermission('posOrders', 'delete') || access.hasModulePermission('pos', 'delete')
+      if (!canDelete) return { ok: false, error: 'You do not have permission to perform this action.' }
       try {
         await removeUserDoc(workspaceId, 'posOrders', id)
         forgetLocalOrder(workspaceId, id)
@@ -295,5 +325,5 @@ export function usePosOrders(options = {}) {
         return { ok: false, error: clientSafeMessage(error, 'Unable to delete POS order.') }
       }
     },
-  }), [effectiveBusinessType, orders, loading, error, userId, workspaceId])
+  }), [access, effectiveBusinessType, error, firebaseUser, isAdmin, isOwner, isStaff, loading, orders, role, staffId, userDoc, userId, workspaceId])
 }

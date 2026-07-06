@@ -1,9 +1,7 @@
+import DefaultSeo from './components/DefaultSeo.jsx'
 import { Component, Suspense, lazy, useEffect } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import PageLoader from './crm/components/ui/PageLoader.jsx'
-import { useUser } from './crm/hooks/useUser.js'
-import { useWorkspaceAccess } from './crm/hooks/useWorkspaceAccess.js'
-import { isDeveloperOwnerAccount, moduleByRoute } from './crm/data/moduleAccess.js'
 
 const MarketingRoute = lazy(() => import('./pages/public/MarketingRoute.jsx'))
 const UpgradeBusiness = lazy(() => import('./pages/UpgradeBusiness.jsx'))
@@ -16,8 +14,19 @@ const RootRequireAuth = lazy(() => import('./layouts/RequireAuth.jsx'))
 const RequireAdmin = lazy(() => import('./layouts/RequireAdmin.jsx'))
 const AnalyticsTracker = lazy(() => import('./components/AnalyticsTracker.jsx'))
 const PricingPage = lazy(() => import('./pages/public/PricingPage.jsx'))
+const AboutPage = lazy(() => import('./pages/public/AboutPage.jsx'))
+const ProjectsPage = lazy(() => import('./pages/public/ProjectsPage.jsx'))
+const ContactPage = lazy(() => import('./pages/public/ContactPage.jsx'))
+const PrivacyPolicyPage = lazy(() => import('./pages/public/PrivacyPolicyPage.jsx'))
+const TermsPage = lazy(() => import('./pages/public/TermsPage.jsx'))
+const RefundPolicyPage = lazy(() => import('./pages/public/RefundPolicyPage.jsx'))
+const HtmlSitemapPage = lazy(() => import('./pages/public/HtmlSitemapPage.jsx'))
+const HelpCenterPage = lazy(() => import('./pages/public/HelpCenterPage.jsx'))
+const DocumentationPage = lazy(() => import('./pages/public/DocumentationPage.jsx'))
 const SolutionPage = lazy(() => import('./pages/public/SolutionPage.jsx'))
 const PublicBusinessServicesPage = lazy(() => import('./pages/public/BusinessServicesPage.jsx'))
+const BlogIndexPage = lazy(() => import('./pages/public/BlogIndexPage.jsx'))
+const BlogArticlePage = lazy(() => import('./pages/public/BlogArticlePage.jsx'))
 const DashboardLayout = lazy(() => import('./crm/layouts/DashboardLayout.jsx'))
 const AdminLayout = lazy(() => import('./layouts/AdminLayout.jsx'))
 const DashboardHomePage = lazy(() => import('./crm/pages/DashboardHome.jsx'))
@@ -50,6 +59,7 @@ const QuotationsPage = lazy(() => import('./crm/pages/Quotations.jsx'))
 const ProductsServicesPage = lazy(() => import('./crm/pages/ProductsServices.jsx'))
 const BusinessServicesPage = lazy(() => import('./crm/pages/BusinessServices.jsx'))
 const FollowUpsPage = lazy(() => import('./crm/pages/FollowUps.jsx'))
+const TeamPage = lazy(() => import('./crm/pages/Team.jsx'))
 const SchoolPayrollPage = lazy(() => import('./crm/pages/SchoolPayroll.jsx'))
 const HRDashboardPage = lazy(() => import('./crm/pages/HRDashboard.jsx'))
 const InvoicesPage = lazy(() => import('./crm/pages/Invoices.jsx'))
@@ -186,29 +196,6 @@ function RetailPosRoute() {
   )
 }
 
-function RestaurantTillRoute() {
-  const access = useWorkspaceAccess()
-  const { firebaseUser, userDoc, isAdmin, isOwner } = useUser()
-  const module = moduleByRoute('/app/orders')
-  const developerOverride = isDeveloperOwnerAccount(userDoc, firebaseUser)
-  const ownerAdminBypass = developerOverride || isAdmin || isOwner || access.isAdmin
-  if (access.loading) return <PageLoader stage="permissions" />
-  if (!ownerAdminBypass && module && !access.hasModulePermission(module.key, 'view')) {
-    return <Navigate to="/app/dashboard" replace state={{ deniedModule: module.key }} />
-  }
-  if (import.meta.env.DEV) {
-    console.log('[Restaurant POS Till Route] module access', { path: '/app/orders', module: 'orders' })
-    console.log('[Restaurant POS Till Route] gated result', 'standalone authenticated till permission checked')
-  }
-  return (
-    <InvoiceRouteBoundary>
-      <LazyPage>
-        <RestaurantOrdersPage />
-      </LazyPage>
-    </InvoiceRouteBoundary>
-  )
-}
-
 function UpgradeRouteGuard() {
   const location = useLocation()
   const cameFromUpgrade = Boolean(location.state?.fromUpgradeBusiness)
@@ -303,19 +290,43 @@ function useModalScrollLock() {
 
 export default function AppRouter() {
   useModalScrollLock()
+  const location = useLocation()
+
+  useEffect(() => {
+    if (import.meta.env.DEV) {
+      console.log('[AppRouterTrace] route-render', { pathname: location.pathname })
+    }
+  }, [location.pathname])
 
   return (
     <>
+        <DefaultSeo />
       <Suspense fallback={null}>
         <AnalyticsTracker />
       </Suspense>
       <Routes>
         <Route path="/" element={<LazyPage><MarketingRoute /></LazyPage>} />
         <Route path="/features" element={<LazyPage><MarketingRoute sectionId="services" /></LazyPage>} />
+        <Route path="/services" element={<LazyPage><PublicBusinessServicesPage /></LazyPage>} />
         <Route path="/pricing" element={<LazyPage><PricingPage /></LazyPage>} />
         <Route path="/business-services" element={<LazyPage><PublicBusinessServicesPage /></LazyPage>} />
-        <Route path="/contact" element={<LazyPage><MarketingRoute sectionId="contact" /></LazyPage>} />
+        <Route path="/contact" element={<LazyPage><ContactPage /></LazyPage>} />
         <Route path="/industries" element={<LazyPage><MarketingRoute sectionId="products" /></LazyPage>} />
+        <Route path="/projects" element={<LazyPage><ProjectsPage /></LazyPage>} />
+        <Route path="/about" element={<LazyPage><AboutPage /></LazyPage>} />
+        <Route path="/privacy-policy" element={<LazyPage><PrivacyPolicyPage /></LazyPage>} />
+        <Route path="/terms" element={<LazyPage><TermsPage /></LazyPage>} />
+        <Route path="/refund-policy" element={<LazyPage><RefundPolicyPage /></LazyPage>} />
+        <Route path="/sitemap" element={<LazyPage><HtmlSitemapPage /></LazyPage>} />
+        <Route path="/help-center" element={<LazyPage><HelpCenterPage /></LazyPage>} />
+        <Route path="/documentation" element={<LazyPage><DocumentationPage /></LazyPage>} />
+        <Route path="/blog" element={<LazyPage><BlogIndexPage /></LazyPage>} />
+        <Route path="/blog/:slug" element={<LazyPage><BlogArticlePage /></LazyPage>} />
+        <Route path="/restaurant-pos" element={<LazyPage><SolutionPage solutionSlug="pos" /></LazyPage>} />
+        <Route path="/retail-pos" element={<LazyPage><SolutionPage solutionSlug="retail-pos" /></LazyPage>} />
+        <Route path="/school-erp" element={<LazyPage><SolutionPage solutionSlug="school-erp" /></LazyPage>} />
+        <Route path="/transport" element={<LazyPage><SolutionPage solutionSlug="transport-rental" /></LazyPage>} />
+        <Route path="/whatsapp-crm" element={<LazyPage><SolutionPage solutionSlug="whatsapp-crm" /></LazyPage>} />
         <Route path="/solutions/:solutionSlug" element={<LazyPage><SolutionPage /></LazyPage>} />
 
       <Route path="/login" element={<LazyPage><Login /></LazyPage>} />
@@ -325,17 +336,6 @@ export default function AppRouter() {
         <Route path="/workspace" element={<LazyPage><WorkspaceSelection /></LazyPage>} />
       </Route>
       <Route path="/upgrade-business" element={<UpgradeRouteGuard />} />
-
-      <Route
-        path="/app/orders"
-        element={
-          <LazyPage>
-            <CrmRequireAuth>
-              <RestaurantTillRoute />
-            </CrmRequireAuth>
-          </LazyPage>
-        }
-      />
 
       <Route
         path="/app"
@@ -350,6 +350,7 @@ export default function AppRouter() {
         <Route index element={<Navigate to="/app/dashboard" replace />} />
         <Route path="dashboard" element={<LazyPage><DashboardHomePage /></LazyPage>} />
         <Route path="restaurant-pos" element={<LazyPage><RestaurantPOSPage /></LazyPage>} />
+        <Route path="orders" element={<InvoiceRouteBoundary><LazyPage><RestaurantOrdersPage /></LazyPage></InvoiceRouteBoundary>} />
         <Route path="menu-management" element={<LazyPage><RestaurantMenuManagementPage /></LazyPage>} />
         <Route path="tables" element={<LazyPage><RestaurantTablesPage /></LazyPage>} />
         <Route path="orders-kot" element={<LazyPage><RestaurantOrdersKotPage /></LazyPage>} />
@@ -377,7 +378,7 @@ export default function AppRouter() {
         <Route path="products-services" element={<LazyPage><ProductsServicesPage /></LazyPage>} />
         <Route path="business-services" element={<LazyPage><BusinessServicesPage /></LazyPage>} />
         <Route path="follow-ups" element={<LazyPage><FollowUpsPage /></LazyPage>} />
-        <Route path="team" element={<Navigate to="/app/dashboard" replace />} />
+        <Route path="team" element={<LazyPage><TeamPage /></LazyPage>} />
         <Route path="payroll" element={<LazyPage><SchoolPayrollPage /></LazyPage>} />
         <Route path="hr" element={<LazyPage><HRDashboardPage /></LazyPage>} />
         <Route path="invoices" element={<InvoiceRouteBoundary><LazyPage><InvoicesPage /></LazyPage></InvoiceRouteBoundary>} />

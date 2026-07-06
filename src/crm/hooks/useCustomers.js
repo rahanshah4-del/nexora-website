@@ -113,6 +113,8 @@ export function useCustomers({ limitCount = DEFAULT_CUSTOMER_LIST_LIMIT, paginat
         workspaceId,
         collectionName: 'customers',
         businessType,
+        businessTypeFallbacks: ['Retail / POS', 'General CRM'],
+        includeMissingBusinessType: true,
         orderByField: 'createdAt',
         orderDirection: 'desc',
         limitCount: customerPageLimit,
@@ -224,6 +226,8 @@ export function useCustomers({ limitCount = DEFAULT_CUSTOMER_LIST_LIMIT, paginat
       workspaceId,
       collectionName: 'customers',
       businessType,
+      businessTypeFallbacks: ['Retail / POS', 'General CRM'],
+      includeMissingBusinessType: true,
       limitCount: customerListLimit,
       diagnostics: { currentUserUid: userId, role },
       onData(data) {

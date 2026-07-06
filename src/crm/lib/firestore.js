@@ -27,6 +27,18 @@ function belongsToWorkspace(data, workspaceId) {
   return !data?.workspaceId || data.workspaceId === workspaceId
 }
 
+function legacyBusinessFallbackAllowed(row, options = {}) {
+  if (options?.includeMissingBusinessType && !row?.businessType && !row?.selectedBusinessType) return true
+  const fallbackBusinessTypes = Array.isArray(options?.businessTypeFallbacks)
+    ? options.businessTypeFallbacks.map((item) => normalizeBusinessType(item))
+    : []
+  return Boolean(
+    fallbackBusinessTypes.length &&
+      (row?.businessType || row?.selectedBusinessType) &&
+      fallbackBusinessTypes.includes(normalizeBusinessType(row.businessType || row.selectedBusinessType)),
+  )
+}
+
 export function belongsToBusiness(data, businessType) {
   const currentBusinessType = normalizeBusinessType(businessType)
   if (!data?.businessType && !data?.selectedBusinessType) return false
@@ -136,6 +148,8 @@ export function listenToWorkspaceCollection({
   workspaceId,
   collectionName,
   businessType,
+  businessTypeFallbacks = [],
+  includeMissingBusinessType = false,
   orderByField = 'createdAt',
   orderDirection = 'desc',
   limitCount = 100,
@@ -150,8 +164,20 @@ export function listenToWorkspaceCollection({
   }
 
   const normalizedBusinessType = normalizeBusinessType(businessType)
+  const hasLegacyFallback = includeMissingBusinessType || (Array.isArray(businessTypeFallbacks) && businessTypeFallbacks.length > 0)
   if (!normalizedBusinessType) {
     return subscribeUserCollection(workspaceId, collectionName, onData, onError, { businessType })
+  }
+  if (hasLegacyFallback && !whereFilters.length) {
+    return subscribeUserCollection(workspaceId, collectionName, onData, onError, {
+      businessType,
+      businessTypeFallbacks,
+      includeMissingBusinessType,
+      orderByField,
+      orderDirection,
+      limitCount,
+      diagnostics,
+    })
   }
 
   const collectionPath = workspaceCollectionPath(workspaceId, collectionName)
@@ -190,6 +216,8 @@ export async function fetchWorkspaceCollectionPage({
   workspaceId,
   collectionName,
   businessType,
+  businessTypeFallbacks = [],
+  includeMissingBusinessType = false,
   orderByField = 'createdAt',
   orderDirection = 'desc',
   limitCount = 50,
@@ -208,11 +236,12 @@ export async function fetchWorkspaceCollectionPage({
   }
 
   const normalizedBusinessType = normalizeBusinessType(businessType)
+  const hasLegacyFallback = includeMissingBusinessType || (Array.isArray(businessTypeFallbacks) && businessTypeFallbacks.length > 0)
   const pageLimit = Number.isFinite(Number(limitCount)) && Number(limitCount) > 0
     ? Math.floor(Number(limitCount))
     : 50
   const constraints = [
-    ...(normalizedBusinessType ? [where('businessType', '==', normalizedBusinessType)] : []),
+    ...(normalizedBusinessType && !hasLegacyFallback ? [where('businessType', '==', normalizedBusinessType)] : []),
     ...whereFilters.map(whereConstraintFromFilter).filter(Boolean),
   ]
   if (orderByField) constraints.push(orderBy(orderByField, orderDirection))
@@ -225,6 +254,7 @@ export async function fetchWorkspaceCollectionPage({
       rows: snap.docs
         .map((d) => ({ id: d.id, ...d.data() }))
         .filter((row) => belongsToWorkspace(row, workspaceId))
+        .filter((row) => !normalizedBusinessType || belongsToBusiness(row, normalizedBusinessType) || legacyBusinessFallbackAllowed(row, { businessTypeFallbacks, includeMissingBusinessType }))
         .map((row) => withWorkspaceFallback(row.id, row, workspaceId)),
       lastDoc: snap.docs.at(-1) || null,
       hasMore: snap.docs.length === pageLimit,

@@ -10,6 +10,12 @@ import { isDeveloperOwnerAccount, labelForBusinessModule, labelForBusinessType, 
 import { resolveWorkspaceName } from '../../../lib/workspaceName.js'
 import { HiOutlineBanknotes, HiOutlineSquares2X2 } from 'react-icons/hi2'
 
+function traceSidebar(event, payload = {}) {
+  if (import.meta.env.DEV) {
+    console.log(`[SidebarTrace] ${event}`, payload)
+  }
+}
+
 const priorityRoutes = [
   '/app/dashboard',
   '/app/client-portal',
@@ -53,11 +59,7 @@ const orderedSidebarItems = [
 ]
 
 function markDisabledModules(items) {
-  return items.map((item) => (
-    item.key === 'team' || item.to === '/app/team'
-      ? { ...item, label: item.label || 'Team Management', comingSoon: true }
-      : item
-  ))
+  return items
 }
 
 const SALES_HUB_SIDEBAR_ORDER = [
@@ -71,7 +73,7 @@ const SALES_HUB_SIDEBAR_ORDER = [
   'quotations',
   'invoices',
   'salesProducts',
-  'businessServices',
+  'business_services',
   'expenses',
   'accounts',
   'accountStatements',
@@ -472,13 +474,24 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
       })
     }
     const disabledItems = markDisabledModules(items)
-    if (normalizedType === 'General CRM') return orderSalesHubSidebar(disabledItems)
-    if (normalizedType === 'Retail / POS') return orderRetailPosSidebar(disabledItems)
-    if (normalizedType === 'School ERP') return orderSchoolErpSidebar(disabledItems)
-    if (normalizedType === 'Restaurant POS') return orderRestaurantPosSidebar(disabledItems)
-    if (normalizedType === 'Transport / Rental') return orderTransportRentalSidebar(disabledItems)
-    if (normalizedType === 'WhatsApp CRM') return orderWhatsappCrmSidebar(disabledItems)
-    return disabledItems
+    const orderedItems =
+      normalizedType === 'General CRM' ? orderSalesHubSidebar(disabledItems)
+        : normalizedType === 'Retail / POS' ? orderRetailPosSidebar(disabledItems)
+          : normalizedType === 'School ERP' ? orderSchoolErpSidebar(disabledItems)
+            : normalizedType === 'Restaurant POS' ? orderRestaurantPosSidebar(disabledItems)
+              : normalizedType === 'Transport / Rental' ? orderTransportRentalSidebar(disabledItems)
+                : normalizedType === 'WhatsApp CRM' ? orderWhatsappCrmSidebar(disabledItems)
+                  : disabledItems
+    traceSidebar('module-filter-result', {
+      role: role || access.role || '',
+      staffAccount,
+      workspaceId: workspaceId || '',
+      businessType,
+      enabledModules: Array.isArray(userDoc?.enabledModules) ? userDoc.enabledModules : [],
+      modules: orderedItems.map((item) => item.key),
+      routes: orderedItems.map((item) => item.to),
+    })
+    return orderedItems
   }, [access, accessPlan, businessType, developerOverride, ownerAdminBypass, role, staffAccount, userDoc?.enabledModules, userDoc?.isStaff, userDoc?.onboardingCompleted, workspaceId])
 
   const handleSwitchProduct = useCallback(() => {

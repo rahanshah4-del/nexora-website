@@ -1,4 +1,4 @@
-export const workspaceRoles = ['owner', 'admin', 'accountant', 'manager', 'support', 'staff']
+export const workspaceRoles = ['owner', 'admin', 'manager', 'cashier', 'sales_staff', 'accountant', 'support_staff', 'data_entry', 'viewer', 'support', 'staff', 'sales']
 export const platformAdminRoles = ['platform_admin', 'super_admin']
 export const backendAdminEmails = [
   'admin@nexora.com',
@@ -62,7 +62,7 @@ export function workspacePermissionDefaults(role) {
       settingsAccess: false,
     }
   }
-  if (value === 'support') {
+  if (value === 'support_staff' || value === 'support') {
     return {
       followUpEdit: false,
       followUpDelete: false,
@@ -71,6 +71,19 @@ export function workspacePermissionDefaults(role) {
       invoices: false,
       reports: false,
       support: true,
+      hrDashboard: false,
+      settingsAccess: false,
+    }
+  }
+  if (value === 'cashier') {
+    return {
+      followUpEdit: false,
+      followUpDelete: false,
+      customerManagement: false,
+      leadsManagement: false,
+      invoices: false,
+      reports: false,
+      support: false,
       hrDashboard: false,
       settingsAccess: false,
     }

@@ -12,6 +12,7 @@ import {
   HiOutlineCog6Tooth,
   HiOutlineCreditCard,
   HiOutlineCurrencyDollar,
+  HiOutlineDocumentText,
   HiOutlineEnvelope,
   HiOutlineHome,
   HiOutlineKey,
@@ -101,6 +102,7 @@ import { listWorkerUpgradeRequests, updateWorkerUpgradeRequestStatus } from '../
 import { createWorkspaceNotification, workspaceNotificationTargets } from '../../crm/lib/notifications.js'
 import EmailMarketing from './EmailMarketing.jsx'
 import AdminBusinessServices from './BusinessServices.jsx'
+import BlogManager from './BlogManager.jsx'
 import { adminForceLogoutUser, adminListPasskeySecurity, adminUpdatePasskey } from '../../lib/passkeys.js'
 
 function needsBackendWarning(actionId = '') {
@@ -196,6 +198,7 @@ const navGroups = [
     label: 'Communication',
     items: [
       ['emailMarketing', 'Email Marketing', HiOutlineEnvelope],
+      ['blogCms', 'Blog CMS', HiOutlineDocumentText],
       ['announcements', 'Announcements', HiOutlineMegaphone],
       ['commandCenter', 'Command Center', HiOutlineChatBubbleLeftRight],
       ['support', 'Support Tickets', HiOutlineLifebuoy],
@@ -4110,6 +4113,8 @@ export default function ControlCentre() {
         return SecurityPasskeys()
       case 'emailMarketing':
         return <EmailMarketing embedded />
+      case 'blogCms':
+        return <BlogManager />
       case 'announcements':
         return Announcements()
       case 'commandCenter':

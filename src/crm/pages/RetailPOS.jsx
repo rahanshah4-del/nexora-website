@@ -515,6 +515,7 @@ export default function RetailPOSPage() {
       const cashierEmail = firebaseUser?.email || userDoc?.email || ''
       const ownerSale = Boolean(isOwner || isAdmin || userId === workspaceId || firebaseUser?.uid === workspaceId)
       const isStaffSale = Boolean(isStaff && !ownerSale)
+      const cashierId = isStaffSale ? String(userDoc?.staffId || userId || firebaseUser?.uid || '') : ''
       const result = await ordersApi.createOrder({
         orderNumber,
         createdBy: userId || firebaseUser?.uid || workspaceId,
@@ -522,7 +523,14 @@ export default function RetailPOSPage() {
         customerPhone: customerSnapshot.phone,
         customerId: customerSnapshot.id,
         branch: 'Main Branch',
+        branchId: retailPosSettings.branchId || '',
+        registerId: activeShift.id,
         cashier: cashierName,
+        cashierId,
+        staffId: cashierId,
+        cashierName,
+        moduleKey: 'retail_pos',
+        orderSource: 'pos_front_till',
         createdByName: cashierName,
         createdByEmail: cashierEmail,
         createdByRole: ownerSale ? 'owner' : userDoc?.role || '',
@@ -620,6 +628,13 @@ export default function RetailPOSPage() {
       batch.set(doc(queueCollection), {
         orderId: result.id || '',
         orderNumber,
+        cashierId,
+        staffId: cashierId,
+        cashierName,
+        moduleKey: 'retail_pos',
+        orderSource: 'pos_front_till',
+        registerId: activeShift.id,
+        branchId: retailPosSettings.branchId || '',
         task: shouldPrint ? 'receipt_print_and_stock_sync' : 'stock_sync',
         status: 'queued',
         priority: 'normal',

@@ -2,10 +2,10 @@ import { useState } from 'react'
 import logoUrl from '../../assets/logo/nexora-logo.svg'
 
 const SIZE_MAP = {
-  sm: { icon: 'h-11 w-11', title: 'text-sm tracking-[0.18em]', sub: 'text-[0.65rem] tracking-[0.2em]' },
-  md: { icon: 'h-14 w-14', title: 'text-sm tracking-[0.18em]', sub: 'text-[0.65rem] tracking-[0.2em]' },
-  lg: { icon: 'h-16 w-16', title: 'text-xl tracking-[0.22em]', sub: 'text-[0.7rem] tracking-[0.22em]' },
-  xl: { icon: 'h-20 w-20', title: 'text-2xl tracking-[0.22em]', sub: 'text-xs tracking-[0.24em]' },
+  sm: { icon: 'h-11 w-11', imageSize: 44, title: 'text-sm tracking-[0.18em]', sub: 'text-[0.65rem] tracking-[0.2em]' },
+  md: { icon: 'h-14 w-14', imageSize: 56, title: 'text-sm tracking-[0.18em]', sub: 'text-[0.65rem] tracking-[0.2em]' },
+  lg: { icon: 'h-16 w-16', imageSize: 64, title: 'text-xl tracking-[0.22em]', sub: 'text-[0.7rem] tracking-[0.22em]' },
+  xl: { icon: 'h-20 w-20', imageSize: 80, title: 'text-2xl tracking-[0.22em]', sub: 'text-xs tracking-[0.24em]' },
 }
 
 export default function NexoraLogo({ className = '', compact = false, size, hideText = false, invert = false, iconClassName = '', textClassName = '' }) {
@@ -21,7 +21,10 @@ export default function NexoraLogo({ className = '', compact = false, size, hide
         {!loadError ? (
           <img
             src={logoUrl}
-            alt="Nexora logo"
+            alt="Nexora Solution software company logo"
+            width={resolved.imageSize}
+            height={resolved.imageSize}
+            decoding="async"
             className={`h-full w-full object-contain ${iconClassName}`}
             onError={() => setLoadError(true)}
           />

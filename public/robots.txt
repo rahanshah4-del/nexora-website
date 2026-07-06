@@ -1,3 +1,10 @@
 User-agent: *
+Disallow: /app/
+Disallow: /admin/
+Disallow: /login
+Disallow: /signup
 Allow: /
+
+Host: https://nexorasolution.online
 Sitemap: https://nexorasolution.online/sitemap.xml
+Sitemap: https://nexorasolution.online/blog-sitemap.xml

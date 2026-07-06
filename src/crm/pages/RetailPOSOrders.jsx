@@ -8,6 +8,7 @@ import Table from '../components/ui/Table.jsx'
 import PageHeader from '../components/ui/PageHeader.jsx'
 import { usePosOrders } from '../hooks/usePosOrders.js'
 import { usePosWalletPayments } from '../hooks/usePosWalletPayments.js'
+import { useWorkspaceAccess } from '../hooks/useWorkspaceAccess.js'
 import { formatCurrency } from '../utils/format.js'
 import { confirmAction } from '../components/ui/dialogActions.js'
 import { openBrowserPrintHtml } from '../lib/printerService.js'
@@ -43,6 +44,7 @@ function escapeHtml(value) {
 export default function RetailPOSOrdersPage() {
   const { orders, loading, error, deleteOrder } = usePosOrders({ limitCount: 100, readBusinessType: false })
   const walletPaymentsApi = usePosWalletPayments({ limitCount: 100 })
+  const access = useWorkspaceAccess()
   const [actionMessage, setActionMessage] = useState('')
   const todayOrders = useMemo(() => orders.filter((order) => isToday(order.createdAt)), [orders])
   const todayWalletPayments = useMemo(() => walletPaymentsApi.payments.filter((payment) => isToday(payment.createdAt)), [walletPaymentsApi.payments])
@@ -53,6 +55,7 @@ export default function RetailPOSOrdersPage() {
     return summary
   }, { sales: 0, profit: 0, items: 0 })
   const walletSettledTotal = walletPaymentsApi.payments.reduce((sum, payment) => sum + Number(payment.amount || 0), 0)
+  const canDeleteOrders = access.isOwner || access.isAdmin || access.hasModulePermission('posOrders', 'delete') || access.hasModulePermission('pos', 'delete')
   const todayTotals = todayOrders.reduce((summary, order) => {
     summary.gross += Number(order.total || 0)
     summary.sales += Number(order.paidAmount || 0)
@@ -202,9 +205,11 @@ export default function RetailPOSOrdersPage() {
           <button type="button" onClick={() => printOrder(row)} className="grid h-9 w-9 place-items-center rounded-xl border border-blue-100 bg-blue-50 text-blue-700 transition hover:bg-blue-100" title="Print order">
             <HiOutlinePrinter className="h-4 w-4" />
           </button>
-          <button type="button" onClick={() => handleDeleteOrder(row)} className="grid h-9 w-9 place-items-center rounded-xl border border-rose-100 bg-rose-50 text-rose-600 transition hover:bg-rose-100" title="Delete order">
-            <HiOutlineTrash className="h-4 w-4" />
-          </button>
+          {canDeleteOrders ? (
+            <button type="button" onClick={() => handleDeleteOrder(row)} className="grid h-9 w-9 place-items-center rounded-xl border border-rose-100 bg-rose-50 text-rose-600 transition hover:bg-rose-100" title="Delete order">
+              <HiOutlineTrash className="h-4 w-4" />
+            </button>
+          ) : null}
         </div>
       ),
     },
@@ -232,7 +237,7 @@ export default function RetailPOSOrdersPage() {
         <Stat icon={HiOutlinePrinter} label="Orders" value={orders.length} />
       </div>
       <Card className="rounded-[1.4rem] border-slate-200/80 bg-white p-4">
-        {error ? <p className="mb-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700">{error}</p> : null}
+        {error || walletPaymentsApi.error ? <p className="mb-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700">{error || walletPaymentsApi.error}</p> : null}
         {actionMessage ? <p className="mb-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800">{actionMessage}</p> : null}
         {loading ? (
           <div className="rounded-2xl border border-dashed border-slate-200 py-12 text-center text-sm font-semibold text-slate-500">Loading POS orders...</div>

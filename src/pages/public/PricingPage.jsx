@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import PageSeo from '../../components/PageSeo.jsx'
+import { getSeoForPath } from '../../lib/seoMetadata.js'
 import {
   HiOutlineArrowRight,
   HiOutlineChartBarSquare,
@@ -97,9 +99,11 @@ function renderComparisonValue(value) {
 
 export default function PricingPage() {
   const [billingCycle, setBillingCycle] = useState('monthly')
+  const seo = getSeoForPath('/pricing')
 
   return (
     <PublicPageShell>
+      <PageSeo {...seo} faqItems={faqs} />
       <section className="relative overflow-hidden bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_72%,#ffffff_100%)] pb-16 pt-12 sm:pb-20 sm:pt-14 lg:pb-24 lg:pt-16">
         <div className="soft-arc-bg pointer-events-none" />
         <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-200 to-transparent" />

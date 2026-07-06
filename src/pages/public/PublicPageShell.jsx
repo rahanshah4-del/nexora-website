@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from 'react'
 import Header from '../../components/Header.jsx'
 import { MaintenanceBlock } from '../../components/MaintenanceMode.jsx'
+import PublicAnalytics from '../../components/PublicAnalytics.jsx'
 import usePlatformMaintenance from '../../hooks/usePlatformMaintenance.js'
 import PublicFooter from './PublicFooter.jsx'
 import TawkChat from './TawkChat.jsx'
@@ -25,6 +26,7 @@ export default function PublicPageShell({ children }) {
       {maintenance.active ? null : (
         <>
           <Header />
+          <PublicAnalytics />
           <main>{children}</main>
           <PublicFooter />
           <TawkChat />

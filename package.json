@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "prebuild": "node scripts/generate-sitemap.mjs",
     "build": "vite build",
     "audit:sales-hub": "node scripts/audit-sales-hub-calculations.mjs",
     "audit:retail-pos": "node scripts/audit-retail-pos-calculations.mjs",
@@ -26,6 +27,7 @@
     "passkeys:secret:key": "wrangler secret put FIREBASE_PRIVATE_KEY --config workers/nexora-passkeys-api/wrangler.toml"
   },
   "dependencies": {
+    "react-helmet-async": "^2.2.0",
     "@simplewebauthn/browser": "^13.3.0",
     "@simplewebauthn/server": "^13.3.2",
     "firebase": "^12.0.0",

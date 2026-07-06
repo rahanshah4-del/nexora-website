@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom'
 import { HiOutlineArrowLeft, HiOutlineArrowRight, HiOutlineCheckCircle, HiOutlineSparkles } from 'react-icons/hi2'
 import BusinessServicesSection from '../../components/BusinessServicesSection.jsx'
+import PageSeo from '../../components/PageSeo.jsx'
+import { getSeoForPath } from '../../lib/seoMetadata.js'
 import PublicPageShell from './PublicPageShell.jsx'
 
 const serviceStats = [
@@ -9,9 +11,42 @@ const serviceStats = [
   ['Nexora', 'Managed review'],
 ]
 
+const relatedServiceLinks = [
+  {
+    label: 'CRM Software',
+    to: '/solutions/crm',
+    text: 'Keep leads, customers, tasks and service requests connected in one workspace.',
+  },
+  {
+    label: 'Retail POS',
+    to: '/retail-pos',
+    text: 'Connect store billing, products and customer records with daily operations.',
+  },
+  {
+    label: 'WhatsApp CRM',
+    to: '/whatsapp-crm',
+    text: 'Use conversations, follow-ups and campaigns alongside managed services.',
+  },
+]
+
 export default function PublicBusinessServicesPage() {
+  const seo = getSeoForPath('/services')
+
   return (
     <PublicPageShell>
+      <PageSeo
+        {...seo}
+        softwareApplication={{
+          name: 'Nexora Business Services',
+          description: seo.description,
+          applicationCategory: 'BusinessApplication',
+        }}
+      />
+      <nav aria-label="Breadcrumb" className="sr-only">
+        <Link to="/">Home</Link>
+        <span> / </span>
+        <span aria-current="page">Business Services</span>
+      </nav>
       <section className="relative overflow-hidden bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_64%,#eef7ff_100%)] pb-10 pt-12 sm:pb-14 sm:pt-16 lg:pb-16">
         <div className="soft-arc-bg pointer-events-none" />
         <div className="pointer-events-none absolute left-[7%] top-12 hidden h-48 w-48 rotate-3 bg-[radial-gradient(circle,#bfdbfe_1px,transparent_1px)] [background-size:17px_17px] opacity-55 lg:block" />
@@ -84,6 +119,41 @@ export default function PublicBusinessServicesPage() {
       </section>
 
       <BusinessServicesSection />
+
+      <section data-reveal className="bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] py-16 sm:py-20 lg:py-24">
+        <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <span className="inline-flex rounded-full border border-blue-100 bg-white px-4 py-2 text-xs font-extrabold uppercase tracking-[0.18em] text-blue-700 shadow-sm">
+                Related Software
+              </span>
+              <h2 className="website-section-heading mt-5 max-w-3xl text-3xl font-black tracking-tight text-slate-950 sm:text-5xl">
+                Software that supports your service workflow
+              </h2>
+            </div>
+            <Link to="/contact" className="premium-button-secondary w-max">
+              Contact Nexora
+            </Link>
+          </div>
+
+          <div className="mt-10 grid gap-5 md:grid-cols-3">
+            {relatedServiceLinks.map((item) => (
+              <Link
+                key={item.label}
+                to={item.to}
+                className="group rounded-[1.35rem] border border-blue-100 bg-white p-6 shadow-[0_22px_62px_-44px_rgba(37,99,235,0.32)] transition hover:-translate-y-1 hover:border-blue-200 hover:shadow-[0_30px_78px_-48px_rgba(37,99,235,0.46)]"
+              >
+                <p className="text-lg font-black text-slate-950">{item.label}</p>
+                <p className="mt-3 text-sm leading-7 text-slate-600">{item.text}</p>
+                <span className="mt-5 inline-flex items-center gap-2 text-sm font-black text-blue-700">
+                  View solution
+                  <HiOutlineArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
     </PublicPageShell>
   )
 }

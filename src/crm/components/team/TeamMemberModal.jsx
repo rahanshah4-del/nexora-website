@@ -7,10 +7,10 @@ import Input from '../ui/Input.jsx'
 import Select from '../ui/Select.jsx'
 import Badge from '../ui/Badge.jsx'
 
-const roles = ['Owner', 'Admin', 'Manager', 'Sales Staff', 'Support Agent', 'Accountant', 'Custom Role']
+const roles = ['Owner', 'Admin', 'Manager', 'Cashier', 'Sales Staff', 'Accountant', 'Support Staff', 'Data Entry', 'Viewer']
 const statuses = ['Active', 'Invited', 'Disabled']
 
-function TeamMemberModal({ open, mode = 'add', member, permissionKeys, ownerProtected = false, onClose, onSave }) {
+function TeamMemberModal({ open, mode = 'add', member, ownerProtected = false, onClose, onSave }) {
   const [draft, setDraft] = useState(member || null)
 
   useEffect(() => {
@@ -49,7 +49,7 @@ function TeamMemberModal({ open, mode = 'add', member, permissionKeys, ownerProt
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="text-base font-semibold text-slate-900 dark:text-white">{title}</p>
-                    <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Roles, permissions, and status.</p>
+                    <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Basic member details only. Staff login access is managed from Staff Access.</p>
                   </div>
                   <Badge variant="purple">Team</Badge>
                 </div>
@@ -105,30 +105,8 @@ function TeamMemberModal({ open, mode = 'add', member, permissionKeys, ownerProt
                     </div>
 
                     <div className="min-w-0 sm:col-span-2">
-                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Permissions</label>
-                      <div className="mt-2 grid min-w-0 gap-2 sm:grid-cols-2">
-                        {permissionKeys.map((p) => {
-                          const checked = ownerProtected || draft.permissions?.includes(p)
-                          return (
-                            <label key={p} className="glass-muted flex min-w-0 items-center justify-between gap-3 rounded-2xl p-3">
-                              <span className="min-w-0 break-words text-sm text-slate-800 dark:text-slate-100">{p}</span>
-                              <input
-                                type="checkbox"
-                                checked={checked}
-                                disabled={ownerProtected}
-                                onChange={(e) => {
-                                  setDraft((d) => {
-                                    const next = new Set(d.permissions || [])
-                                    if (e.target.checked) next.add(p)
-                                    else next.delete(p)
-                                    return { ...d, permissions: Array.from(next) }
-                                  })
-                                }}
-                                className="h-4 w-4 shrink-0 rounded border-white/30 bg-white/40 text-indigo-600 dark:border-white/10 dark:bg-slate-900/40"
-                              />
-                            </label>
-                          )
-                        })}
+                      <div className="rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3 text-xs font-semibold leading-5 text-sky-800">
+                        Module access, POS permissions, and staff PIN login are handled in the Staff Access tab.
                       </div>
                     </div>
                   </div>
@@ -142,7 +120,7 @@ function TeamMemberModal({ open, mode = 'add', member, permissionKeys, ownerProt
                     type="button"
                     onClick={() => {
                       if (!draft) return
-                      onSave?.(ownerProtected ? { ...draft, role: 'Owner', status: 'Active', permissions: permissionKeys } : draft)
+                      onSave?.(ownerProtected ? { ...draft, role: 'Owner', status: 'Active' } : draft)
                     }}
                   >
                     Save

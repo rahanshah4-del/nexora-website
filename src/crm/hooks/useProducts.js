@@ -121,7 +121,14 @@ export function useProducts(options = {}) {
         setProducts([])
         setLoading(false)
       },
-      { businessType, orderByField: limitCount ? 'createdAt' : '', orderDirection: 'desc', limitCount },
+      {
+        businessType,
+        businessTypeFallbacks: ['Retail / POS', 'General CRM'],
+        includeMissingBusinessType: true,
+        orderByField: limitCount ? 'createdAt' : '',
+        orderDirection: 'desc',
+        limitCount,
+      },
     )
 
     return () => unsub?.()

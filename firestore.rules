@@ -1,1376 +1,935 @@
 rules_version = '2';
-
 service cloud.firestore {
-  match /databases/{database}/documents {
-    // Promo model: promoCodes/{UPPERCASE_CODE}. Backend admins own lifecycle
-    // management; signed-in clients may only get a currently usable exact code.
-    // Upgrade/payment records store the original, discount, and final amounts.
-    function signedIn() {
-      return request.auth != null;
-    }
-
-    function backendAdmin() {
-      return signedIn()
-        && request.auth.token.email_verified == true
-        && request.auth.token.email in ['admin@nexora.com', 'rahanshah2@gmail.com'];
-    }
-
-    function paymentWorker() {
-      return signedIn() && request.auth.uid == 's1CRduKudqM96Tp6g9E7XcTVzHF2';
-    }
-
-    function validPaymentRequestUpdate() {
-      return paymentWorker()
-        && resource.data.get('automaticVerification', false) == true
-        && resource.data.get('paymentMethodId', '') == 'nowpayments'
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-          'status',
-          'approvalStatus',
-          'paymentStatus',
-          'amountPaid',
-          'paidCurrency',
-          'nowPaymentsPaymentId',
-          'lastIpnAt',
-          'autoApprovedAt',
-          'approvedAt',
-          'approvedBy',
-          'subscriptionExpiresAt',
-          'nextBillingDate',
-          'updatedAt'
-        ])
-        && request.resource.data.nowPaymentsPaymentId is string
-        && request.resource.data.nowPaymentsPaymentId.size() > 0
-        && request.resource.data.nowPaymentsPaymentId.size() <= 128
-        && request.resource.data.lastIpnAt is timestamp
-        && request.resource.data.updatedAt is timestamp
-        && (
-          (
-            request.resource.data.status == 'approved'
-            && request.resource.data.approvalStatus == 'approved'
-            && request.resource.data.paymentStatus == 'paid'
-            && request.resource.data.amountPaid is number
-            && request.resource.data.amountPaid >= 0
-            && request.resource.data.paidCurrency is string
-            && request.resource.data.paidCurrency.size() <= 20
-            && request.resource.data.autoApprovedAt is timestamp
-            && request.resource.data.approvedAt is timestamp
-            && request.resource.data.approvedBy is string
-            && request.resource.data.approvedBy.matches('^nowpayments:[A-Za-z0-9_-]+$')
-            && request.resource.data.subscriptionExpiresAt is timestamp
-            && request.resource.data.nextBillingDate is timestamp
-          )
-          ||
-          (
-            request.resource.data.status in ['waiting', 'confirming', 'confirmed', 'sending', 'partially_paid', 'failed', 'refunded', 'expired']
-            && request.resource.data.paymentStatus == request.resource.data.status
-            && request.resource.data.approvalStatus == resource.data.approvalStatus
-          )
-        );
-    }
-
-    function validPaymentSubscriptionCore() {
-      let checkoutId = request.resource.data.paymentCheckoutId;
-      let approval = getAfter(/databases/$(database)/documents/upgradeRequests/$(checkoutId)).data;
-      return paymentWorker()
-        && checkoutId is string
-        && checkoutId.matches('^[A-Za-z0-9_-]{20,120}$')
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-          'plan',
-          'planStatus',
-          'subscriptionStatus',
-          'billingCycle',
-          'billingCurrency',
-          'subscriptionStartedAt',
-          'subscriptionExpiresAt',
-          'nextBillingDate',
-          'expiresAt',
-          'isTrialActive',
-          'upgradedAt',
-          'approvedAt',
-          'approvedBy',
-          'approvedByEmail',
-          'paymentCheckoutId',
-          'updatedAt'
-        ])
-        && request.resource.data.plan is string
-        && request.resource.data.plan.size() > 0
-        && request.resource.data.plan.size() <= 80
-        && request.resource.data.planStatus == 'active'
-        && request.resource.data.subscriptionStatus == 'active'
-        && request.resource.data.billingCycle in ['monthly', 'yearly']
-        && request.resource.data.billingCurrency is string
-        && request.resource.data.billingCurrency.size() > 0
-        && request.resource.data.billingCurrency.size() <= 10
-        && request.resource.data.subscriptionStartedAt is timestamp
-        && request.resource.data.subscriptionStartedAt >= request.time - duration.value(5, 'm')
-        && request.resource.data.subscriptionStartedAt <= request.time + duration.value(5, 'm')
-        && request.resource.data.subscriptionExpiresAt is timestamp
-        && request.resource.data.subscriptionExpiresAt > request.resource.data.subscriptionStartedAt
-        && request.resource.data.subscriptionExpiresAt <= request.resource.data.subscriptionStartedAt + duration.value(367, 'd')
-        && request.resource.data.nextBillingDate is timestamp
-        && request.resource.data.expiresAt is timestamp
-        && request.resource.data.isTrialActive == false
-        && request.resource.data.upgradedAt is timestamp
-        && request.resource.data.approvedAt is timestamp
-        && request.resource.data.approvedBy is string
-        && request.resource.data.approvedBy.matches('^nowpayments:[A-Za-z0-9_-]+$')
-        && request.resource.data.approvedByEmail == ''
-        && request.resource.data.updatedAt is timestamp
-        && approval.get('automaticVerification', false) == true
-        && approval.get('paymentMethodId', '') == 'nowpayments'
-        && approval.status == 'approved'
-        && approval.approvalStatus == 'approved'
-        && approval.paymentStatus == 'paid'
-        && approval.approvedBy == request.resource.data.approvedBy;
-    }
-
-    function validPaymentUserUpdate(uid) {
-      let approval = getAfter(/databases/$(database)/documents/upgradeRequests/$(request.resource.data.paymentCheckoutId)).data;
-      return validPaymentSubscriptionCore() && approval.ownerId == uid;
-    }
-
-    function validPaymentWorkspaceUpdate(workspaceId) {
-      let approval = getAfter(/databases/$(database)/documents/upgradeRequests/$(request.resource.data.paymentCheckoutId)).data;
-      return validPaymentSubscriptionCore() && approval.workspaceId == workspaceId;
-    }
-
-    function validPlatformPaymentWrite() {
-      let checkoutId = request.resource.data.sourceId;
-      let approval = getAfter(/databases/$(database)/documents/upgradeRequests/$(checkoutId)).data;
-      return paymentWorker()
-        && request.resource.data.keys().hasOnly([
-          'clientEmail',
-          'workspaceId',
-          'workspaceName',
-          'plan',
-          'amount',
-          'originalAmount',
-          'discountAmount',
-          'promoCode',
-          'promoCodeId',
-          'currency',
-          'cryptoAmountPaid',
-          'cryptoCurrency',
-          'transactionId',
-          'paymentMethod',
-          'status',
-          'paymentStatus',
-          'approvedBy',
-          'approvedAt',
-          'subscriptionExpiresAt',
-          'nextBillingDate',
-          'source',
-          'sourceId',
-          'updatedAt'
-        ])
-        && checkoutId is string
-        && checkoutId.matches('^[A-Za-z0-9_-]{20,120}$')
-        && request.resource.data.workspaceId == approval.workspaceId
-        && request.resource.data.clientEmail is string
-        && request.resource.data.clientEmail.size() <= 254
-        && request.resource.data.workspaceName is string
-        && request.resource.data.workspaceName.size() <= 200
-        && request.resource.data.plan == approval.requestedPlan
-        && request.resource.data.plan is string
-        && request.resource.data.plan.size() <= 80
-        && request.resource.data.amount is number
-        && request.resource.data.amount >= 0
-        && request.resource.data.originalAmount is number
-        && request.resource.data.originalAmount >= request.resource.data.amount
-        && request.resource.data.discountAmount is number
-        && request.resource.data.discountAmount >= 0
-        && request.resource.data.promoCode is string
-        && request.resource.data.promoCode.size() <= 32
-        && request.resource.data.promoCodeId == request.resource.data.promoCode
-        && (
-          request.resource.data.promoCode == ''
-          || request.resource.data.promoCode.matches('^[A-Z0-9_-]{3,32}$')
-        )
-        && request.resource.data.currency is string
-        && request.resource.data.currency.size() > 0
-        && request.resource.data.currency.size() <= 10
-        && request.resource.data.cryptoAmountPaid is number
-        && request.resource.data.cryptoAmountPaid >= 0
-        && request.resource.data.cryptoCurrency is string
-        && request.resource.data.cryptoCurrency.size() <= 20
-        && request.resource.data.transactionId is string
-        && request.resource.data.transactionId.size() > 0
-        && request.resource.data.transactionId.size() <= 128
-        && request.resource.data.paymentMethod == 'Crypto (NOWPayments)'
-        && request.resource.data.status == 'paid'
-        && request.resource.data.paymentStatus == 'paid'
-        && request.resource.data.approvedBy == approval.approvedBy
-        && request.resource.data.approvedAt is timestamp
-        && request.resource.data.subscriptionExpiresAt is timestamp
-        && request.resource.data.nextBillingDate is timestamp
-        && request.resource.data.source == 'nowpayments-ipn'
-        && request.resource.data.updatedAt is timestamp
-        && approval.get('automaticVerification', false) == true
-        && approval.get('originalAmount', approval.amount) == request.resource.data.originalAmount
-        && approval.get('discountAmount', 0) == request.resource.data.discountAmount
-        && approval.get('promoCode', '') == request.resource.data.promoCode
-        && approval.get('paymentMethodId', '') == 'nowpayments'
-        && approval.status == 'approved'
-        && approval.approvalStatus == 'approved'
-        && approval.paymentStatus == 'paid';
-    }
-
-    function validPromoCode(data, promoId) {
-      return data.keys().hasAll([
-          'code', 'description', 'discountType', 'discountValue', 'maxDiscount',
-          'minOrderAmount', 'applicablePlanIds', 'billingCycles', 'startsAt',
-          'expiresAt', 'usageLimit', 'usedCount', 'active',
-          'createdAt', 'createdBy', 'updatedAt', 'updatedBy'
-        ])
-        && data.keys().hasOnly([
-          'code', 'description', 'discountType', 'discountValue', 'maxDiscount',
-          'minOrderAmount', 'applicablePlanIds', 'billingCycles', 'startsAt',
-          'expiresAt', 'usageLimit', 'usedCount', 'active',
-          'createdAt', 'createdBy', 'updatedAt', 'updatedBy'
-        ])
-        && data.code == promoId
-        && data.code is string
-        && data.code.matches('^[A-Z0-9_-]{3,32}$')
-        && data.description is string
-        && data.description.size() <= 200
-        && data.discountType in ['percentage', 'fixed']
-        && data.discountValue is number
-        && data.discountValue > 0
-        && data.discountValue <= (data.discountType == 'percentage' ? 100 : 100000000)
-        && data.maxDiscount is number
-        && data.maxDiscount >= 0
-        && data.maxDiscount <= 100000000
-        && data.minOrderAmount is number
-        && data.minOrderAmount >= 0
-        && data.minOrderAmount <= 100000000
-        && data.applicablePlanIds is list
-        && data.applicablePlanIds.size() > 0
-        && data.applicablePlanIds.size() <= 10
-        && data.applicablePlanIds[0] is string
-        && data.billingCycles is list
-        && data.billingCycles.size() > 0
-        && data.billingCycles.size() <= 2
-        && data.billingCycles.hasOnly(['monthly', 'yearly'])
-        && data.startsAt is timestamp
-        && data.expiresAt is timestamp
-        && data.expiresAt > data.startsAt
-        && data.expiresAt <= data.startsAt + duration.value(3660, 'd')
-        && data.usageLimit is int
-        && data.usageLimit >= 0
-        && data.usageLimit <= 10000000
-        && data.usedCount is int
-        && data.usedCount >= 0
-        && (data.usageLimit == 0 || data.usedCount <= data.usageLimit)
-        && data.active is bool
-        && data.createdAt is timestamp
-        && data.createdBy is string
-        && data.createdBy.size() > 0
-        && data.createdBy.size() <= 128
-        && data.updatedAt is timestamp
-        && data.updatedBy is string
-        && data.updatedBy.size() > 0
-        && data.updatedBy.size() <= 128;
-    }
-
-    function validAnalyticsEvent() {
-      return request.resource.data.keys().hasOnly([
-          'eventType',
-          'page',
-          'buttonLabel',
-          'moduleName',
-          'userId',
-          'email',
-          'phone',
-          'workspaceId',
-          'businessType',
-          'status',
-          'sessionId',
-          'visitorId',
-          'referrer',
-          'deviceType',
-          'browser',
-          'os',
-          'country',
-          'userAgent',
-          'sessionDurationMs',
-          'timestamp',
-          'createdAt'
-        ])
-        && request.resource.data.keys().hasAll([
-          'eventType',
-          'page',
-          'sessionId',
-          'visitorId',
-          'timestamp',
-          'createdAt'
-        ])
-        && request.resource.data.eventType is string
-        && request.resource.data.eventType.size() > 0
-        && request.resource.data.eventType.size() <= 80
-        && request.resource.data.page is string
-        && request.resource.data.page.size() <= 200
-        && request.resource.data.buttonLabel is string
-        && request.resource.data.buttonLabel.size() <= 160
-        && request.resource.data.moduleName is string
-        && request.resource.data.moduleName.size() <= 120
-        && request.resource.data.userId is string
-        && request.resource.data.userId.size() <= 128
-        && request.resource.data.email is string
-        && request.resource.data.email.size() <= 254
-        && request.resource.data.phone is string
-        && request.resource.data.phone.size() <= 40
-        && request.resource.data.workspaceId is string
-        && request.resource.data.workspaceId.size() <= 128
-        && request.resource.data.businessType is string
-        && request.resource.data.businessType.size() <= 80
-        && request.resource.data.status is string
-        && request.resource.data.status.size() <= 120
-        && request.resource.data.sessionId is string
-        && request.resource.data.sessionId.size() > 0
-        && request.resource.data.sessionId.size() <= 160
-        && request.resource.data.visitorId is string
-        && request.resource.data.visitorId.size() > 0
-        && request.resource.data.visitorId.size() <= 160
-        && request.resource.data.referrer is string
-        && request.resource.data.referrer.size() <= 500
-        && request.resource.data.deviceType is string
-        && request.resource.data.deviceType.size() <= 40
-        && request.resource.data.browser is string
-        && request.resource.data.browser.size() <= 40
-        && request.resource.data.os is string
-        && request.resource.data.os.size() <= 40
-        && request.resource.data.country is string
-        && request.resource.data.country.size() <= 80
-        && request.resource.data.userAgent is string
-        && request.resource.data.userAgent.size() <= 500
-        && request.resource.data.sessionDurationMs is number
-        && request.resource.data.sessionDurationMs >= 0
-        && request.resource.data.sessionDurationMs <= 86400000
-        && request.resource.data.timestamp == request.time
-        && request.resource.data.createdAt == request.time;
-    }
-
-    function validBusinessService(data) {
-      return data.keys().hasAll([
-          'title',
-          'description',
-          'startingPrice',
-          'priceType',
-          'enabled',
-          'featured',
-          'sortOrder',
-          'createdAt',
-          'updatedAt'
-        ])
-        && data.keys().hasOnly([
-          'title',
-          'description',
-          'startingPrice',
-          'priceType',
-          'enabled',
-          'featured',
-          'sortOrder',
-          'createdAt',
-          'updatedAt'
-        ])
-        && data.title is string
-        && data.title.size() > 0
-        && data.title.size() <= 100
-        && data.description is string
-        && data.description.size() > 0
-        && data.description.size() <= 500
-        && data.startingPrice is number
-        && data.startingPrice >= 0
-        && data.startingPrice <= 100000000
-        && data.priceType in ['monthly', 'one-time', 'custom']
-        && data.enabled is bool
-        && data.featured is bool
-        && data.sortOrder is number
-        && data.sortOrder >= 0
-        && data.sortOrder <= 100000
-        && data.createdAt is timestamp
-        && data.updatedAt is timestamp;
-    }
-
-    function validBusinessServiceRequest(data) {
-      return data.keys().hasAll([
-          'serviceId',
-          'serviceTitle',
-          'companyName',
-          'contactNumber',
-          'email',
-          'supportDetails',
-          'engagementType',
-          'preferredWorkingHours',
-          'notes',
-          'status',
-          'createdAt',
-          'updatedAt'
-        ])
-        && data.keys().hasOnly([
-          'serviceId',
-          'serviceTitle',
-          'companyName',
-          'contactNumber',
-          'email',
-          'supportDetails',
-          'engagementType',
-          'preferredWorkingHours',
-          'notes',
-          'status',
-          'workspaceId',
-          'ownerId',
-          'userId',
-          'latestAdminRemark',
-          'latestClientComment',
-          'lastActivityAt',
-          'createdAt',
-          'updatedAt'
-        ])
-        && data.serviceId is string
-        && data.serviceId.size() > 0
-        && data.serviceId.size() <= 120
-        && data.serviceTitle is string
-        && data.serviceTitle.size() > 0
-        && data.serviceTitle.size() <= 100
-        && data.companyName is string
-        && data.companyName.size() > 0
-        && data.companyName.size() <= 160
-        && data.contactNumber is string
-        && data.contactNumber.size() > 0
-        && data.contactNumber.size() <= 40
-        && data.email is string
-        && data.email.size() > 0
-        && data.email.size() <= 254
-        && data.email.matches('^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$')
-        && data.supportDetails is string
-        && data.supportDetails.size() > 0
-        && data.supportDetails.size() <= 1500
-        && data.engagementType in ['Full Time', 'Part Time']
-        && data.preferredWorkingHours is string
-        && data.preferredWorkingHours.size() <= 120
-        && data.notes is string
-        && data.notes.size() <= 1000
-        && data.status == 'New'
-        && (!('userId' in data) || (data.userId is string && data.userId.size() <= 128 && (!signedIn() || data.userId == request.auth.uid)))
-        && (!('workspaceId' in data) || (data.workspaceId is string && data.workspaceId.size() <= 128))
-        && (!('ownerId' in data) || (data.ownerId is string && data.ownerId.size() <= 128))
-        && (!('latestAdminRemark' in data) || (data.latestAdminRemark is string && data.latestAdminRemark.size() <= 1000))
-        && (!('latestClientComment' in data) || (data.latestClientComment is string && data.latestClientComment.size() <= 1000))
-        && (!('lastActivityAt' in data) || data.lastActivityAt == request.time)
-        && data.createdAt == request.time
-        && data.updatedAt == request.time;
-    }
-
-    function validBusinessServiceRequestStatusUpdate(data) {
-      return data.diff(resource.data).affectedKeys().hasOnly(['status', 'latestAdminRemark', 'lastActivityAt', 'updatedAt'])
-        && data.status in ['New', 'Under Review', 'Proposal Sent', 'Approved', 'Active', 'Rejected', 'Closed']
-        && data.latestAdminRemark is string
-        && data.latestAdminRemark.size() <= 1000
-        && data.lastActivityAt is timestamp
-        && data.updatedAt is timestamp;
-    }
-
-    function validBusinessServiceRequestClientCommentUpdate(data) {
-      return signedIn()
-        && resource.data.userId == request.auth.uid
-        && data.diff(resource.data).affectedKeys().hasOnly(['latestClientComment', 'lastActivityAt', 'updatedAt'])
-        && data.latestClientComment is string
-        && data.latestClientComment.size() > 0
-        && data.latestClientComment.size() <= 1000
-        && data.lastActivityAt is timestamp
-        && data.updatedAt is timestamp;
-    }
-
-    function businessServiceRequestMember() {
-      return signedIn()
-        && (
-          resource.data.userId == request.auth.uid
-          || (resource.data.workspaceId is string && resource.data.workspaceId.size() > 0 && workspaceMember(resource.data.workspaceId))
-        );
-    }
-
-    function businessServiceRequestParentMember(requestId) {
-      let parent = get(/databases/$(database)/documents/businessServiceRequests/$(requestId)).data;
-      return signedIn()
-        && (
-          parent.userId == request.auth.uid
-          || (parent.workspaceId is string && parent.workspaceId.size() > 0 && workspaceMember(parent.workspaceId))
-        );
-    }
-
-    function validBusinessServiceRequestTimeline(data) {
-      return data.keys().hasOnly(['type', 'title', 'message', 'status', 'actor', 'actorId', 'actorEmail', 'createdAt'])
-        && data.type is string
-        && data.type.size() > 0
-        && data.type.size() <= 40
-        && data.title is string
-        && data.title.size() > 0
-        && data.title.size() <= 160
-        && data.message is string
-        && data.message.size() <= 1200
-        && (!('status' in data) || (data.status is string && data.status.size() <= 40))
-        && data.actor in ['client', 'admin', 'system']
-        && data.actorId is string
-        && data.actorId.size() <= 128
-        && data.actorEmail is string
-        && data.actorEmail.size() <= 254
-        && data.createdAt == request.time;
-    }
-
-    function validBusinessServiceRequestComment(data) {
-      return data.keys().hasOnly(['message', 'actor', 'actorId', 'actorEmail', 'createdAt'])
-        && data.message is string
-        && data.message.size() > 0
-        && data.message.size() <= 1000
-        && data.actor == 'client'
-        && data.actorId == request.auth.uid
-        && data.actorEmail is string
-        && data.actorEmail.size() <= 254
-        && data.createdAt == request.time;
-    }
-
-    function marketingAdmin() {
-      return backendAdmin()
-        || (
-          signedIn()
-          && request.auth.token.email_verified != false
-          && (
-            request.auth.token.admin == true
-            || request.auth.token.owner == true
-            || request.auth.token.role in ['admin', 'Admin', 'ADMIN', 'owner', 'Owner', 'OWNER']
-          )
-        );
-    }
-
-    function userDoc(uid) {
-      return get(/databases/$(database)/documents/users/$(uid)).data;
-    }
-
-    function hasUserDoc() {
-      return signedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid));
-    }
-
-    function userStatusActive() {
-      // Safe field access — a missing `status` field would otherwise raise an
-      // evaluation error that denies the request (see workspaceActive).
-      return !hasUserDoc()
-        || !(userDoc(request.auth.uid).get('status', 'active') in ['blocked', 'Blocked', 'BLOCKED', 'disabled', 'Disabled', 'DISABLED', 'inactive', 'Inactive', 'INACTIVE']);
-    }
-
-    function workspaceDoc(workspaceId) {
-      return get(/databases/$(database)/documents/workspaces/$(workspaceId)).data;
-    }
-
-    function workspaceExists(workspaceId) {
-      return exists(/databases/$(database)/documents/workspaces/$(workspaceId));
-    }
-
-    function workspaceActive(workspaceId) {
-      // Use .get(field, default) — accessing a field that does not exist on the
-      // document raises an evaluation error that DENIES the whole rule. Bootstrap
-      // -created trial workspaces have no `accountStatus` (and may lack `status`),
-      // which silently broke every workspace update + member-gated subcollection
-      // write (the "could not create your first workspace" permission error).
-      return workspaceExists(workspaceId)
-        && !(workspaceDoc(workspaceId).get('status', 'active') in ['blocked', 'Blocked', 'BLOCKED', 'disabled', 'Disabled', 'DISABLED', 'inactive', 'Inactive', 'INACTIVE'])
-        && !(workspaceDoc(workspaceId).get('accountStatus', 'active') in ['blocked', 'Blocked', 'BLOCKED', 'disabled', 'Disabled', 'DISABLED', 'inactive', 'Inactive', 'INACTIVE']);
-    }
-
-    function activeSignedIn() {
-      return signedIn() && userStatusActive();
-    }
-
-    function isOwnerRole(role) {
-      return role in ['owner', 'Owner', 'OWNER'];
-    }
-
-    function isAdminRole(role) {
-      return role in ['admin', 'Admin', 'ADMIN'];
-    }
-
-    function isManagerRole(role) {
-      return role in ['manager', 'Manager', 'MANAGER'];
-    }
-
-    function isSalesRole(role) {
-      return role in ['sales', 'Sales', 'SALES', 'sales staff', 'Sales Staff', 'STAFF', 'staff', 'Staff'];
-    }
-
-    function isAccountantRole(role) {
-      return role in ['accountant', 'Accountant', 'ACCOUNTANT'];
-    }
-
-    function profileWorkspaceMatches(workspaceId) {
-      return hasUserDoc()
-        && (
-          request.auth.uid == workspaceId
-          || userDoc(request.auth.uid).workspaceId == workspaceId
-          || userDoc(request.auth.uid).ownerId == workspaceId
-          || userDoc(request.auth.uid).companyId == workspaceId
-          || userDoc(request.auth.uid).userId == workspaceId
-          || (userDoc(request.auth.uid).workspaceIds is list && workspaceId in userDoc(request.auth.uid).workspaceIds)
-          || (userDoc(request.auth.uid).workspaces is list && workspaceId in userDoc(request.auth.uid).workspaces)
-        );
-    }
-
-    function workspaceOwner(workspaceId) {
-      return activeSignedIn()
-        && workspaceActive(workspaceId)
-        && (
-          request.auth.uid == workspaceId
-          || workspaceDoc(workspaceId).ownerId == request.auth.uid
-          || workspaceDoc(workspaceId).createdBy == request.auth.uid
-          || workspaceDoc(workspaceId).userId == request.auth.uid
-          || workspaceDoc(workspaceId).uid == request.auth.uid
-          || (profileWorkspaceMatches(workspaceId) && isOwnerRole(userDoc(request.auth.uid).role))
-        );
-    }
-
-    function workspaceAdmin(workspaceId) {
-      return backendAdmin()
-        || workspaceOwner(workspaceId)
-        || (
-          activeSignedIn()
-          && workspaceActive(workspaceId)
-          && profileWorkspaceMatches(workspaceId)
-          && isAdminRole(userDoc(request.auth.uid).role)
-        );
-    }
-
-    function workspaceMember(workspaceId) {
-      return workspaceAdmin(workspaceId)
-        || (
-          activeSignedIn()
-          && workspaceActive(workspaceId)
-          && profileWorkspaceMatches(workspaceId)
-        );
-    }
-
-    function memberRole() {
-      return hasUserDoc() ? userDoc(request.auth.uid).role : '';
-    }
-
-    function permissionDocId() {
-      return hasUserDoc() && userDoc(request.auth.uid).staffId is string
-        ? userDoc(request.auth.uid).staffId
-        : request.auth.uid;
-    }
-
-    function permissionDoc(workspaceId) {
-      return get(/databases/$(database)/documents/workspaces/$(workspaceId)/permissions/$(permissionDocId())).data;
-    }
-
-    function hasPermission(workspaceId, key) {
-      return workspaceAdmin(workspaceId)
-        || (
-          workspaceMember(workspaceId)
-          && exists(/databases/$(database)/documents/workspaces/$(workspaceId)/permissions/$(permissionDocId()))
-          && permissionDoc(workspaceId)[key] == true
-        );
-    }
-
-    function hasModulePermission(workspaceId, moduleKey, action) {
-      return hasPermission(workspaceId, 'module.' + moduleKey + '.' + action);
-    }
-
-    function canCreatePosSale(workspaceId) {
-      return workspaceAdmin(workspaceId)
-        || hasModulePermission(workspaceId, 'pos', 'create')
-        || hasModulePermission(workspaceId, 'posOrders', 'create');
-    }
-
-    function canDeleteModule(workspaceId, moduleKey) {
-      return workspaceAdmin(workspaceId) || hasModulePermission(workspaceId, moduleKey, 'delete');
-    }
-
-    function canApproveModule(workspaceId, moduleKey) {
-      return workspaceAdmin(workspaceId) || hasModulePermission(workspaceId, moduleKey, 'approve');
-    }
-
-    function canManageWorkspace(workspaceId) {
-      return workspaceAdmin(workspaceId)
-        || (workspaceMember(workspaceId) && isManagerRole(memberRole()));
-    }
-
-    function canWriteSales(workspaceId) {
-      return workspaceAdmin(workspaceId)
-        || (workspaceMember(workspaceId) && (isManagerRole(memberRole()) || isSalesRole(memberRole())))
-        || hasPermission(workspaceId, 'leadsManagement')
-        || hasPermission(workspaceId, 'customerManagement')
-        || hasPermission(workspaceId, 'invoices');
-    }
-
-    function canWriteAccounting(workspaceId) {
-      return workspaceAdmin(workspaceId)
-        || (workspaceMember(workspaceId) && (isManagerRole(memberRole()) || isAccountantRole(memberRole())))
-        || hasPermission(workspaceId, 'invoices')
-        || hasPermission(workspaceId, 'reports');
-    }
-
-    function safeCreate(workspaceId) {
-      return request.resource.data.workspaceId == workspaceId
-        && request.resource.data.createdBy == request.auth.uid
-        && (!request.resource.data.keys().hasAny(['ownerId']) || request.resource.data.ownerId == workspaceId || request.resource.data.ownerId == workspaceDoc(workspaceId).ownerId);
-    }
-
-    function safeUpdate(workspaceId) {
-      return (!request.resource.data.keys().hasAny(['workspaceId']) || request.resource.data.workspaceId == workspaceId)
-        && (!resource.data.keys().hasAny(['workspaceId']) || request.resource.data.workspaceId == resource.data.workspaceId)
-        && (!request.resource.data.keys().hasAny(['ownerId']) || request.resource.data.ownerId == workspaceId || request.resource.data.ownerId == workspaceDoc(workspaceId).ownerId)
-        && (!resource.data.keys().hasAny(['ownerId']) || request.resource.data.ownerId == resource.data.ownerId);
-    }
-
-    function protectedWorkspaceFieldsUnchanged() {
-      return !request.resource.data.diff(resource.data).affectedKeys().hasAny([
-        'plan',
-        'planStatus',
-        'subscriptionStatus',
-        'billingCycle',
-        'role',
-        'isAdmin',
-        'trialStartAt',
-        'trialStartedAt',
-        'trialEndsAt',
-        'isTrialActive',
-        'billingCurrency',
-        'nextBillingDate',
-        'subscriptionStartedAt',
-        'subscriptionExpiresAt',
-        'expiresAt'
-      ]);
-    }
-
-    function ownerMemberTarget(workspaceId, memberId) {
-      return memberId == workspaceId
-        || memberId == workspaceDoc(workspaceId).ownerId
-        || request.resource.data.uid == workspaceDoc(workspaceId).ownerId
-        || request.resource.data.staffId == workspaceDoc(workspaceId).ownerId
-        || isOwnerRole(request.resource.data.role);
-    }
-
-    function ownerMemberResource(workspaceId, memberId) {
-      return memberId == workspaceId
-        || memberId == workspaceDoc(workspaceId).ownerId
-        || resource.data.uid == workspaceDoc(workspaceId).ownerId
-        || resource.data.staffId == workspaceDoc(workspaceId).ownerId
-        || isOwnerRole(resource.data.role);
-    }
-
-    function ownerMemberWriteSafe(workspaceId, memberId) {
-      return (!ownerMemberTarget(workspaceId, memberId) || (isOwnerRole(request.resource.data.role) && !(request.resource.data.status in ['blocked', 'disabled', 'inactive', 'Blocked', 'Disabled', 'Inactive'])))
-        && (!ownerMemberResource(workspaceId, memberId) || isOwnerRole(request.resource.data.role));
-    }
-
-    function validStaffUserProfile(data, uid) {
-      return data.keys().hasOnly([
-          'uid',
-          'name',
-          'fullName',
-          'displayName',
-          'email',
-          'username',
-          'usernameLower',
-          'role',
-          'status',
-          'createdBy',
-          'ownerId',
-          'companyId',
-          'workspaceId',
-          'userId',
-          'staffId',
-          'permissions',
-          'businessPermissions',
-          'businessType',
-          'selectedBusinessType',
-          'currentBusinessType',
-          'primaryBusinessType',
-          'allowedBusinessTypes',
-          'selectedWorkspace',
-          'enabledModules',
-          'plan',
-          'planStatus',
-          'billingCycle',
-          'provider',
-          'inviteStatus',
-          'emailVerifiedCustom',
-          'emailVerifiedCustomAt',
-          'onboardingCompleted',
-          'invitedAt',
-          'invitedBy',
-          'acceptedAt',
-          'lastLoginAt',
-          'inviteEmailStatus',
-          'inviteEmailError',
-          'inviteEmailSentAt',
-          'passwordSetPending',
-          'createdAt',
-          'updatedAt',
-          'updatedBy',
-          'authCreated',
-          'isStaff',
-          'isOwner'
-        ])
-        && data.uid == uid
-        && data.userId == uid
-        && data.staffId == uid
-        && data.workspaceId is string
-        && data.workspaceId.size() > 0
-        && data.workspaceId.size() <= 128
-        && data.workspaceId != uid
-        && data.ownerId == data.workspaceId
-        && data.email is string
-        && data.email.size() > 3
-        && data.email.size() <= 254
-        && data.role is string
-        && !isOwnerRole(data.role)
-        && !(data.role in ['superadmin', 'Superadmin', 'SUPERADMIN'])
-        && data.status in ['active', 'blocked', 'disabled', 'inactive', 'Active', 'Blocked', 'Disabled', 'Inactive']
-        && data.emailVerifiedCustom == true
-        && data.onboardingCompleted == true
-        && (!data.keys().hasAny(['authCreated']) || data.authCreated is bool)
-        && (!data.keys().hasAny(['isStaff']) || data.isStaff == true)
-        && (!data.keys().hasAny(['isOwner']) || data.isOwner == false)
-        && (!data.keys().hasAny(['isAdmin']) || data.isAdmin == false);
-    }
-
-    function adminCanWriteStaffUser(uid) {
-      return signedIn()
-        && request.resource.data.workspaceId is string
-        && workspaceAdmin(request.resource.data.workspaceId)
-        && validStaffUserProfile(request.resource.data, uid);
-    }
-
-    function adminCanReadStaffUser() {
-      return signedIn()
-        && resource.data.workspaceId is string
-        && workspaceAdmin(resource.data.workspaceId)
-        && !isOwnerRole(resource.data.get('role', ''));
-    }
-
-    function selfUserUpdateSafe(uid) {
-      return signedIn()
-        && request.auth.uid == uid
-        && (
-          (
-            isOwnerRole(resource.data.get('role', 'owner'))
-            && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
-              'uid',
-              'userId',
-              'ownerId',
-              'workspaceId',
-              'role',
-              'isAdmin',
-              'plan',
-              'planStatus',
-              'subscriptionStatus',
-              'billingCycle',
-              'trialStartAt',
-              'trialStartedAt',
-              'trialEndsAt',
-              'isTrialActive',
-              'expiresAt'
-            ])
-          )
-          ||
-          (
-            !isOwnerRole(resource.data.get('role', 'owner'))
-            && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
-              'uid',
-              'userId',
-              'staffId',
-              'ownerId',
-              'companyId',
-              'workspaceId',
-              'role',
-              'isAdmin',
-              'permissions',
-              'businessPermissions',
-              'businessType',
-              'selectedBusinessType',
-              'currentBusinessType',
-              'primaryBusinessType',
-              'allowedBusinessTypes',
-              'selectedWorkspace',
-              'enabledModules',
-              'plan',
-              'planStatus',
-              'subscriptionStatus',
-              'billingCycle',
-              'trialStartAt',
-              'trialStartedAt',
-              'trialEndsAt',
-              'isTrialActive',
-              'expiresAt'
-            ])
-          )
-        );
-    }
-
-    match /users/{uid} {
-      allow create: if (signedIn() && request.auth.uid == uid)
-        || adminCanWriteStaffUser(uid);
-      allow read: if backendAdmin() || (signedIn() && request.auth.uid == uid) || adminCanReadStaffUser();
-      allow update: if backendAdmin()
-        || (paymentWorker() && validPaymentUserUpdate(uid))
-        || adminCanWriteStaffUser(uid)
-        || selfUserUpdateSafe(uid);
-      allow delete: if backendAdmin();
-
-      match /{subPath=**} {
-        allow read, write: if backendAdmin() || (signedIn() && request.auth.uid == uid);
-      }
-    }
-
-    match /staffInviteClaims/{uid} {
-      allow read: if backendAdmin()
-        || (signedIn() && request.auth.uid == uid)
-        || (signedIn() && resource.data.workspaceId is string && workspaceAdmin(resource.data.workspaceId));
-      allow create, update: if adminCanWriteStaffUser(uid);
-      allow delete: if backendAdmin()
-        || (signedIn() && resource.data.workspaceId is string && workspaceAdmin(resource.data.workspaceId));
-    }
-
-    match /staffInviteEmails/{emailKey} {
-      allow read: if backendAdmin()
-        || (signedIn() && resource.data.email is string && request.auth.token.email == resource.data.email)
-        || (signedIn() && resource.data.workspaceId is string && workspaceAdmin(resource.data.workspaceId));
-      allow create, update: if signedIn()
-        && request.resource.data.uid is string
-        && adminCanWriteStaffUser(request.resource.data.uid);
-      allow delete: if backendAdmin()
-        || (signedIn() && resource.data.workspaceId is string && workspaceAdmin(resource.data.workspaceId));
-    }
-
-    match /phoneRegistry/{phoneId} {
-      // Single-doc reads are public so the signup form can check phone
-      // uniqueness BEFORE the user is authenticated. `get` only reveals whether
-      // a phone you already know is taken; `list` (bulk enumeration) stays
-      // admin-only to prevent harvesting the registry.
-      allow get: if true;
-      allow list: if backendAdmin();
-      allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if backendAdmin();
-    }
-
-    match /workspaces/{workspaceId} {
-      allow create: if activeSignedIn()
-        && request.resource.data.ownerId == request.auth.uid
-        && request.resource.data.workspaceId == workspaceId
-        && request.resource.data.createdBy == request.auth.uid;
-      // The owner can always read their OWN workspace doc (workspaces/{uid}),
-      // even if it doesn't exist yet (brand-new account, pre-onboarding) or is
-      // blocked. This prevents a permission-denied read from being mistaken for
-      // "account blocked", and lets the app read an explicit blocked status to
-      // show the proper screen. Subcollections still require workspaceMember
-      // (active), so a blocked workspace's DATA stays protected.
-      allow read: if backendAdmin()
-        || (signedIn() && request.auth.uid == workspaceId)
-        || workspaceMember(workspaceId);
-      allow update: if backendAdmin()
-        || (paymentWorker() && validPaymentWorkspaceUpdate(workspaceId))
-        || (workspaceAdmin(workspaceId) && protectedWorkspaceFieldsUnchanged());
-      allow delete: if backendAdmin();
-
-      match /permissions/{staffId} {
-        allow read: if workspaceAdmin(workspaceId) || (workspaceMember(workspaceId) && staffId == permissionDocId());
-        allow create, update, delete: if canManageWorkspace(workspaceId) && staffId != workspaceId && staffId != workspaceDoc(workspaceId).ownerId;
-      }
-
-      match /staff/{staffId} {
-        allow read: if workspaceAdmin(workspaceId) || (workspaceMember(workspaceId) && staffId == permissionDocId());
-        allow create: if canManageWorkspace(workspaceId) && safeCreate(workspaceId) && ownerMemberWriteSafe(workspaceId, staffId);
-        allow update: if canManageWorkspace(workspaceId) && safeUpdate(workspaceId) && ownerMemberWriteSafe(workspaceId, staffId);
-        allow delete: if canManageWorkspace(workspaceId) && !ownerMemberResource(workspaceId, staffId);
-      }
-
-      match /teamMembers/{memberId} {
-        allow read: if workspaceMember(workspaceId);
-        allow create: if canManageWorkspace(workspaceId) && safeCreate(workspaceId) && ownerMemberWriteSafe(workspaceId, memberId);
-        allow update: if canManageWorkspace(workspaceId) && safeUpdate(workspaceId) && ownerMemberWriteSafe(workspaceId, memberId);
-        allow delete: if canManageWorkspace(workspaceId) && !ownerMemberResource(workspaceId, memberId);
-      }
-
-      match /teamPermissions/{permissionId} {
-        allow read: if workspaceMember(workspaceId);
-        allow create, update, delete: if canManageWorkspace(workspaceId);
-      }
-
-      match /businessSettings/{settingId} {
-        allow read: if workspaceMember(workspaceId);
-        allow create, update, delete: if workspaceAdmin(workspaceId) || hasPermission(workspaceId, 'settingsAccess');
-      }
-
-      match /whatsappSettings/{settingId} {
-        allow read: if workspaceMember(workspaceId);
-        allow create, update, delete: if workspaceAdmin(workspaceId) || hasPermission(workspaceId, 'settingsAccess');
-      }
-
-      match /customers/{docId} {
-        allow read: if workspaceMember(workspaceId);
-        allow create: if canWriteSales(workspaceId) && safeCreate(workspaceId);
-        allow update: if (canWriteSales(workspaceId) || canCreatePosSale(workspaceId)) && safeUpdate(workspaceId);
-        allow delete: if canDeleteModule(workspaceId, 'customers');
-      }
-
-      match /leads/{docId} {
-        allow read: if workspaceMember(workspaceId);
-        allow create: if canWriteSales(workspaceId) && safeCreate(workspaceId);
-        allow update: if canWriteSales(workspaceId) && safeUpdate(workspaceId);
-        allow delete: if canDeleteModule(workspaceId, 'leads');
-      }
-
-      match /salesDeals/{docId} {
-        allow read: if workspaceMember(workspaceId);
-        allow create: if canWriteSales(workspaceId) && safeCreate(workspaceId);
-        allow update: if canWriteSales(workspaceId) && safeUpdate(workspaceId);
-        allow delete: if canDeleteModule(workspaceId, 'deals') || canDeleteModule(workspaceId, 'salesPipeline');
-      }
-
-      match /salesTasks/{docId} {
-        allow read: if workspaceMember(workspaceId);
-        allow create: if canWriteSales(workspaceId) && safeCreate(workspaceId);
-        allow update: if canWriteSales(workspaceId) && safeUpdate(workspaceId);
-        allow delete: if canDeleteModule(workspaceId, 'tasks') || canDeleteModule(workspaceId, 'followUps');
-      }
-
-      match /salesActivities/{docId} {
-        allow read: if workspaceMember(workspaceId);
-        allow create: if canWriteSales(workspaceId) && safeCreate(workspaceId);
-        allow update: if canWriteSales(workspaceId) && safeUpdate(workspaceId);
-        allow delete: if canDeleteModule(workspaceId, 'activities');
-      }
-
-      match /salesQuotes/{docId} {
-        allow read: if workspaceMember(workspaceId);
-        allow create: if canWriteSales(workspaceId) && safeCreate(workspaceId);
-        allow update: if canWriteSales(workspaceId) && safeUpdate(workspaceId);
-        allow delete: if canDeleteModule(workspaceId, 'quotations');
-      }
-
-      match /salesProducts/{docId} {
-        allow read: if workspaceMember(workspaceId);
-        allow create: if canWriteSales(workspaceId) && safeCreate(workspaceId);
-        allow update: if canWriteSales(workspaceId) && safeUpdate(workspaceId);
-        allow delete: if canDeleteModule(workspaceId, 'salesProducts') || canDeleteModule(workspaceId, 'products');
-      }
-
-      match /products/{docId} {
-        allow read: if workspaceMember(workspaceId);
-        allow create: if (canWriteSales(workspaceId) || hasModulePermission(workspaceId, 'inventory', 'create')) && safeCreate(workspaceId);
-        allow update: if (canWriteSales(workspaceId) || hasModulePermission(workspaceId, 'inventory', 'edit') || canCreatePosSale(workspaceId)) && safeUpdate(workspaceId);
-        allow delete: if canDeleteModule(workspaceId, 'products') || canDeleteModule(workspaceId, 'inventory');
-      }
-
-      match /salesInvoices/{docId} {
-        allow read: if workspaceMember(workspaceId);
-        allow create: if canWriteAccounting(workspaceId) && safeCreate(workspaceId);
-        allow update: if canWriteAccounting(workspaceId) && safeUpdate(workspaceId);
-        allow delete: if canDeleteModule(workspaceId, 'invoices');
-      }
-
-      match /salesExpenses/{docId} {
-        allow read: if workspaceMember(workspaceId);
-        allow create: if canWriteAccounting(workspaceId) && safeCreate(workspaceId);
-        allow update: if canWriteAccounting(workspaceId) && safeUpdate(workspaceId);
-        allow delete: if canDeleteModule(workspaceId, 'expenses');
-      }
-
-      match /posOrders/{docId} {
-        allow read: if workspaceMember(workspaceId);
-        allow create: if canCreatePosSale(workspaceId) && safeCreate(workspaceId);
-        allow update: if (workspaceAdmin(workspaceId) || hasModulePermission(workspaceId, 'posOrders', 'edit')) && safeUpdate(workspaceId);
-        allow delete: if canDeleteModule(workspaceId, 'posOrders') || canDeleteModule(workspaceId, 'pos');
-      }
-
-      match /inventoryTransactions/{docId} {
-        allow read: if workspaceMember(workspaceId);
-        allow create: if (canCreatePosSale(workspaceId) || hasModulePermission(workspaceId, 'inventory', 'create') || hasModulePermission(workspaceId, 'inventory', 'edit')) && safeCreate(workspaceId);
-        allow update: if false;
-        allow delete: if canDeleteModule(workspaceId, 'inventory');
-      }
-
-      match /posQueueJobs/{docId} {
-        allow read: if workspaceMember(workspaceId);
-        allow create: if canCreatePosSale(workspaceId) && safeCreate(workspaceId);
-        allow update: if workspaceAdmin(workspaceId) || hasModulePermission(workspaceId, 'pos', 'edit');
-        allow delete: if workspaceAdmin(workspaceId) || canDeleteModule(workspaceId, 'pos');
-      }
-
-      match /posWalletPayments/{docId} {
-        allow read: if workspaceMember(workspaceId);
-        allow create: if (workspaceAdmin(workspaceId) || hasModulePermission(workspaceId, 'payments', 'create') || hasModulePermission(workspaceId, 'pos', 'create')) && safeCreate(workspaceId);
-        allow update: if (workspaceAdmin(workspaceId) || hasModulePermission(workspaceId, 'payments', 'edit')) && safeUpdate(workspaceId);
-        allow delete: if canDeleteModule(workspaceId, 'payments') || canDeleteModule(workspaceId, 'pos');
-      }
-
-      match /orders/{docId} {
-        allow read: if workspaceMember(workspaceId);
-        allow create: if workspaceMember(workspaceId) && safeCreate(workspaceId);
-        allow update: if workspaceMember(workspaceId) && safeUpdate(workspaceId);
-        allow delete: if canDeleteModule(workspaceId, 'orders');
-      }
-
-      match /menuItems/{docId} {
-        allow read: if workspaceMember(workspaceId);
-        allow create: if canManageWorkspace(workspaceId) && safeCreate(workspaceId);
-        allow update: if canManageWorkspace(workspaceId) && safeUpdate(workspaceId);
-        allow delete: if canDeleteModule(workspaceId, 'menuManagement');
-      }
-
-      match /tables/{docId} {
-        allow read: if workspaceMember(workspaceId);
-        allow create: if canManageWorkspace(workspaceId) && safeCreate(workspaceId);
-        allow update: if workspaceMember(workspaceId) && safeUpdate(workspaceId);
-        allow delete: if canDeleteModule(workspaceId, 'tables');
-      }
-
-      match /kot/{docId} {
-        allow read: if workspaceMember(workspaceId);
-        allow create: if workspaceMember(workspaceId) && safeCreate(workspaceId);
-        allow update: if workspaceMember(workspaceId) && safeUpdate(workspaceId);
-        allow delete: if canDeleteModule(workspaceId, 'ordersKot');
-      }
-
-      match /bills/{docId} {
-        allow read: if workspaceMember(workspaceId);
-        allow create: if workspaceMember(workspaceId) && safeCreate(workspaceId);
-        allow update: if canWriteAccounting(workspaceId) && safeUpdate(workspaceId);
-        allow delete: if canDeleteModule(workspaceId, 'invoices') || canDeleteModule(workspaceId, 'orders');
-      }
-
-      match /restaurantSettings/{docId} {
-        allow read: if workspaceMember(workspaceId);
-        allow create, update, delete: if workspaceAdmin(workspaceId) || hasPermission(workspaceId, 'settingsAccess');
-      }
-
-      match /reports/{docId} {
-        allow read: if workspaceMember(workspaceId) || hasPermission(workspaceId, 'reports');
-        allow create: if workspaceMember(workspaceId) && safeCreate(workspaceId);
-        allow update, delete: if canManageWorkspace(workspaceId);
-      }
-
-      match /approvals/{docId} {
-        allow read: if workspaceMember(workspaceId);
-        allow create: if workspaceMember(workspaceId) && safeCreate(workspaceId);
-        allow update: if (canApproveModule(workspaceId, 'approvals') || canApproveModule(workspaceId, 'invoices') || canApproveModule(workspaceId, 'payments') || canApproveModule(workspaceId, 'expenses') || canApproveModule(workspaceId, 'accounts')) && safeUpdate(workspaceId);
-        allow delete: if canDeleteModule(workspaceId, 'approvals');
-      }
-
-      match /invoices/{docId} {
-        allow read: if workspaceMember(workspaceId);
-        allow create: if canWriteAccounting(workspaceId) && safeCreate(workspaceId);
-        allow update: if canWriteAccounting(workspaceId) && safeUpdate(workspaceId);
-        allow delete: if canDeleteModule(workspaceId, 'invoices');
-      }
-
-      match /payments/{docId} {
-        allow read: if workspaceMember(workspaceId);
-        allow create: if canWriteAccounting(workspaceId) && safeCreate(workspaceId);
-        allow update: if canWriteAccounting(workspaceId) && safeUpdate(workspaceId);
-        allow delete: if canDeleteModule(workspaceId, 'payments') || canDeleteModule(workspaceId, 'invoices');
-      }
-
-      match /expenses/{docId} {
-        allow read: if workspaceMember(workspaceId);
-        allow create: if canWriteAccounting(workspaceId) && safeCreate(workspaceId);
-        allow update: if canWriteAccounting(workspaceId) && safeUpdate(workspaceId);
-        allow delete: if canDeleteModule(workspaceId, 'expenses');
-      }
-
-      match /accountTransactions/{docId} {
-        allow read: if workspaceMember(workspaceId);
-        allow create: if canWriteAccounting(workspaceId) && safeCreate(workspaceId);
-        allow update: if canWriteAccounting(workspaceId) && safeUpdate(workspaceId);
-        allow delete: if canDeleteModule(workspaceId, 'accounts') || canDeleteModule(workspaceId, 'accountStatements');
-      }
-
-      match /activityLogs/{docId} {
-        allow read: if workspaceMember(workspaceId);
-        allow create: if workspaceMember(workspaceId)
-          && request.resource.data.workspaceId == workspaceId
-          && request.resource.data.createdBy == request.auth.uid;
-        allow update, delete: if false;
-      }
-
-      match /notifications/{docId} {
-        allow read: if workspaceMember(workspaceId);
-        allow create, update, delete: if workspaceMember(workspaceId);
-      }
-
-      match /supportTickets/{docId} {
-        allow read: if backendAdmin() || workspaceMember(workspaceId);
-        allow create: if workspaceMember(workspaceId) && safeCreate(workspaceId);
-        allow update: if backendAdmin() || (workspaceMember(workspaceId) && safeUpdate(workspaceId));
-        allow delete: if backendAdmin() || canDeleteModule(workspaceId, 'support');
-      }
-
-      match /{collectionName}/{docId} {
-        allow read: if workspaceMember(workspaceId);
-        allow create: if workspaceMember(workspaceId) && safeCreate(workspaceId);
-        allow update: if workspaceMember(workspaceId) && safeUpdate(workspaceId);
-        allow delete: if canManageWorkspace(workspaceId);
-      }
-    }
-
-    match /upgradeRequests/{requestId} {
-      allow create: if backendAdmin() || (activeSignedIn() && request.resource.data.userId == request.auth.uid);
-      allow read: if backendAdmin() || paymentWorker() || (activeSignedIn() && resource.data.userId == request.auth.uid);
-      allow update: if backendAdmin() || validPaymentRequestUpdate();
-      allow delete: if backendAdmin();
-
-      match /timeline/{timelineId} {
-        allow read: if backendAdmin()
-          || paymentWorker()
-          || (
-            activeSignedIn()
-            && get(/databases/$(database)/documents/upgradeRequests/$(requestId)).data.userId == request.auth.uid
-          );
-        allow create: if backendAdmin()
-          || (
-            activeSignedIn()
-            && get(/databases/$(database)/documents/upgradeRequests/$(requestId)).data.userId == request.auth.uid
-            && request.resource.data.actor == 'client'
-            && request.resource.data.message is string
-            && request.resource.data.message.size() > 0
-            && request.resource.data.message.size() <= 2000
-            && request.resource.data.createdAt is timestamp
-          );
-        allow update, delete: if false;
-      }
-    }
-
-    match /platformSettings/{docId} {
-      allow read: if true;
-      allow write: if backendAdmin();
-    }
-
-    match /platformPlans/{docId} {
-      allow read: if true;
-      allow write: if backendAdmin();
-    }
-
-    match /promoCodes/{promoId} {
-      allow get: if paymentWorker() || (
-        activeSignedIn()
-          && resource.data.active == true
-          && resource.data.startsAt <= request.time
-          && resource.data.expiresAt > request.time
-          && (resource.data.usageLimit == 0 || resource.data.usedCount < resource.data.usageLimit)
-        );
-      allow list: if backendAdmin();
-      allow create: if backendAdmin()
-        && validPromoCode(request.resource.data, promoId)
-        && request.resource.data.createdAt == request.time
-        && request.resource.data.updatedAt == request.time
-        && request.resource.data.createdBy == request.auth.uid
-        && request.resource.data.updatedBy == request.auth.uid
-        && request.resource.data.usedCount == 0;
-      allow update: if (
-          backendAdmin()
-          && validPromoCode(request.resource.data, promoId)
-          && request.resource.data.code == resource.data.code
-          && request.resource.data.createdAt == resource.data.createdAt
-          && request.resource.data.createdBy == resource.data.createdBy
-          && request.resource.data.updatedAt >= request.time - duration.value(5, 'm')
-          && request.resource.data.updatedAt <= request.time + duration.value(5, 'm')
-          && request.resource.data.updatedBy == request.auth.uid
-        ) || (
-          paymentWorker()
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['usedCount', 'updatedAt'])
-          && request.resource.data.usedCount == resource.data.usedCount + 1
-          && request.resource.data.updatedAt >= request.time - duration.value(5, 'm')
-          && request.resource.data.updatedAt <= request.time + duration.value(5, 'm')
-          && (resource.data.usageLimit == 0 || request.resource.data.usedCount <= resource.data.usageLimit)
-        );
-      allow delete: if backendAdmin();
-    }
-
-    match /whatsappPricing/{docId} {
-      allow read: if true;
-      allow write: if backendAdmin();
-    }
-
-    match /platformPayments/{docId} {
-      allow read: if backendAdmin();
-      allow create, update: if backendAdmin() || validPlatformPaymentWrite();
-      allow delete: if backendAdmin();
-    }
-
-    match /platformSubscriptions/{docId} {
-      allow read, write: if backendAdmin();
-    }
-
-    match /marketingSubscribers/{docId} {
-      allow read, write: if marketingAdmin();
-    }
-
-    match /marketingCampaigns/{docId} {
-      allow read, write: if marketingAdmin();
-    }
-
-    match /marketingEmailLogs/{docId} {
-      allow read, write: if marketingAdmin();
-    }
-
-    match /announcements/{docId} {
-      allow read: if true;
-      allow write: if backendAdmin();
-    }
-
-    match /businessServices/{docId} {
-      allow read: if true;
-      allow create, update: if backendAdmin() && validBusinessService(request.resource.data);
-      allow delete: if backendAdmin();
-    }
-
-    match /businessServiceRequests/{docId} {
-      allow create: if validBusinessServiceRequest(request.resource.data);
-      allow read: if backendAdmin() || businessServiceRequestMember();
-      allow delete: if backendAdmin();
-      allow update: if (backendAdmin() && validBusinessServiceRequestStatusUpdate(request.resource.data))
-        || validBusinessServiceRequestClientCommentUpdate(request.resource.data);
-
-      match /timeline/{timelineId} {
-        allow read: if backendAdmin() || businessServiceRequestParentMember(docId);
-        allow create: if (backendAdmin() || businessServiceRequestParentMember(docId))
-          && validBusinessServiceRequestTimeline(request.resource.data);
-        allow update, delete: if false;
-      }
-
-      match /comments/{commentId} {
-        allow read: if backendAdmin() || businessServiceRequestParentMember(docId);
-        allow create: if businessServiceRequestParentMember(docId)
-          && validBusinessServiceRequestComment(request.resource.data);
-        allow update, delete: if false;
-      }
-    }
-
-    match /supportTickets/{docId} {
-      allow create: if activeSignedIn();
-      allow read, update, delete: if backendAdmin() || (activeSignedIn() && resource.data.createdBy == request.auth.uid);
-    }
-
-    match /backendStaff/{docId} {
-      allow read, write: if backendAdmin();
-    }
-
-    match /backendActivityLogs/{docId} {
-      allow read, write: if backendAdmin();
-    }
-
-    match /analyticsEvents/{docId} {
-      allow create: if validAnalyticsEvent();
-      allow read, update, delete: if backendAdmin();
-    }
-
-    match /userSessions/{docId} {
-      allow create: if activeSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow read, update, delete: if backendAdmin() || (activeSignedIn() && resource.data.userId == request.auth.uid);
-    }
-
-    match /{document=**} {
-      allow read, write: if backendAdmin();
-    }
-  }
+match /databases/{database}/documents {
+function signedIn() {
+return request.auth!=null;
+}
+function backendAdmin() {
+return signedIn()
+&& request.auth.token.email_verified==true
+&& request.auth.token.email in ['admin@nexora.com','rahanshah2@gmail.com','farhanshah2@gmail.com'];
+}
+function paymentWorker() {
+return signedIn()&&request.auth.uid=='s1CRduKudqM96Tp6g9E7XcTVzHF2';
+}
+function nowPaymentsActor(value) {
+return value is string&&value.matches('^nowpayments:[A-Za-z0-9_-]+$');
+}
+function validCheckoutId(value) {
+return value is string&&value.matches('^[A-Za-z0-9_-]{20,120}$');
+}
+function validPaymentRequestFields() {
+return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','approvalStatus','paymentStatus','amountPaid','paidCurrency','nowPaymentsPaymentId','lastIpnAt','autoApprovedAt','approvedAt','approvedBy','subscriptionExpiresAt','nextBillingDate','updatedAt']);
+}
+function validPaymentRequestBase() {
+return paymentWorker()
+&& resource.data.get('automaticVerification',false)==true
+&& resource.data.get('paymentMethodId','')=='nowpayments'
+&& validPaymentRequestFields()
+&& request.resource.data.nowPaymentsPaymentId is string
+&& request.resource.data.nowPaymentsPaymentId.size()>0
+&& request.resource.data.nowPaymentsPaymentId.size()<=128
+&& request.resource.data.lastIpnAt is timestamp
+&& request.resource.data.updatedAt is timestamp;
+}
+function validApprovedPaymentRequest() {
+return request.resource.data.status=='approved'
+&& request.resource.data.approvalStatus=='approved'
+&& request.resource.data.paymentStatus=='paid'
+&& request.resource.data.amountPaid is number
+&& request.resource.data.amountPaid>=0
+&& request.resource.data.paidCurrency is string
+&& request.resource.data.paidCurrency.size()<=20
+&& request.resource.data.autoApprovedAt is timestamp
+&& request.resource.data.approvedAt is timestamp
+&& nowPaymentsActor(request.resource.data.approvedBy)
+&& request.resource.data.subscriptionExpiresAt is timestamp
+&& request.resource.data.nextBillingDate is timestamp;
+}
+function validPendingPaymentRequest() {
+return request.resource.data.status in ['waiting','confirming','confirmed','sending','partially_paid','failed','refunded','expired']
+&& request.resource.data.paymentStatus==request.resource.data.status
+&& request.resource.data.approvalStatus==resource.data.approvalStatus;
+}
+function validPaymentRequestUpdate() {
+return validPaymentRequestBase()
+&& (validApprovedPaymentRequest()||validPendingPaymentRequest());
+}
+function validPaymentSubscriptionFields() {
+return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['plan','planStatus','subscriptionStatus','billingCycle','billingCurrency','subscriptionStartedAt','subscriptionExpiresAt','nextBillingDate','expiresAt','isTrialActive','upgradedAt','approvedAt','approvedBy','approvedByEmail','paymentCheckoutId','updatedAt']);
+}
+function validPaymentSubscriptionPlan() {
+return request.resource.data.plan is string
+&& request.resource.data.plan.size()>0
+&& request.resource.data.plan.size()<=80
+&& request.resource.data.planStatus=='active'
+&& request.resource.data.subscriptionStatus=='active'
+&& request.resource.data.billingCycle in ['monthly','yearly']
+&& request.resource.data.billingCurrency is string
+&& request.resource.data.billingCurrency.size()>0
+&& request.resource.data.billingCurrency.size()<=10;
+}
+function validPaymentSubscriptionDates() {
+return request.resource.data.subscriptionStartedAt is timestamp
+&& request.resource.data.subscriptionStartedAt>=request.time - duration.value(5,'m')
+&& request.resource.data.subscriptionStartedAt<=request.time + duration.value(5,'m')
+&& request.resource.data.subscriptionExpiresAt is timestamp
+&& request.resource.data.subscriptionExpiresAt>request.resource.data.subscriptionStartedAt
+&& request.resource.data.subscriptionExpiresAt<=request.resource.data.subscriptionStartedAt + duration.value(367,'d')
+&& request.resource.data.nextBillingDate is timestamp
+&& request.resource.data.expiresAt is timestamp;
+}
+function validPaymentSubscriptionApproval() {
+return request.resource.data.upgradedAt is timestamp
+&& request.resource.data.approvedAt is timestamp
+&& nowPaymentsActor(request.resource.data.approvedBy)
+&& request.resource.data.approvedByEmail==''
+&& request.resource.data.updatedAt is timestamp;
+}
+function validPaymentSubscriptionApprovalDoc(approval) {
+return approval.get('automaticVerification',false)==true
+&& approval.get('paymentMethodId','')=='nowpayments'
+&& approval.status=='approved'
+&& approval.approvalStatus=='approved'
+&& approval.paymentStatus=='paid'
+&& approval.approvedBy==request.resource.data.approvedBy;
+}
+function validPaymentSubscriptionCore() {
+let checkoutId = request.resource.data.paymentCheckoutId;
+let approval = getAfter(/databases/$(database)/documents/upgradeRequests/$(checkoutId)).data;
+return paymentWorker()
+&& validCheckoutId(checkoutId)
+&& validPaymentSubscriptionFields()
+&& validPaymentSubscriptionPlan()
+&& validPaymentSubscriptionDates()
+&& request.resource.data.isTrialActive==false
+&& validPaymentSubscriptionApproval()
+&& validPaymentSubscriptionApprovalDoc(approval);
+}
+function validPaymentUserUpdate(uid) {
+let approval = getAfter(/databases/$(database)/documents/upgradeRequests/$(request.resource.data.paymentCheckoutId)).data;
+return validPaymentSubscriptionCore()&&approval.ownerId==uid;
+}
+function validPaymentWorkspaceUpdate(workspaceId) {
+let approval = getAfter(/databases/$(database)/documents/upgradeRequests/$(request.resource.data.paymentCheckoutId)).data;
+return validPaymentSubscriptionCore()&&approval.workspaceId==workspaceId;
+}
+function validPlatformPaymentFields() {
+return request.resource.data.keys().hasOnly(['clientEmail','workspaceId','workspaceName','plan','amount','originalAmount','discountAmount','promoCode','promoCodeId','currency','cryptoAmountPaid','cryptoCurrency','transactionId','paymentMethod','status','paymentStatus','approvedBy','approvedAt','subscriptionExpiresAt','nextBillingDate','source','sourceId','updatedAt']);
+}
+function validPlatformPaymentClient(approval) {
+return request.resource.data.workspaceId==approval.workspaceId
+&& request.resource.data.clientEmail is string
+&& request.resource.data.clientEmail.size()<=254
+&& request.resource.data.workspaceName is string
+&& request.resource.data.workspaceName.size()<=200
+&& request.resource.data.plan==approval.requestedPlan
+&& request.resource.data.plan is string
+&& request.resource.data.plan.size()<=80;
+}
+function validPlatformPaymentAmounts(approval) {
+return request.resource.data.amount is number
+&& request.resource.data.amount>=0
+&& request.resource.data.originalAmount is number
+&& request.resource.data.originalAmount>=request.resource.data.amount
+&& request.resource.data.discountAmount is number
+&& request.resource.data.discountAmount>=0
+&& request.resource.data.promoCode is string
+&& request.resource.data.promoCode.size()<=32
+&& request.resource.data.promoCodeId==request.resource.data.promoCode
+&& (
+request.resource.data.promoCode==''
+|| request.resource.data.promoCode.matches('^[A-Z0-9_-]{3,32}$')
+)
+&& approval.get('originalAmount',approval.amount)==request.resource.data.originalAmount
+&& approval.get('discountAmount',0)==request.resource.data.discountAmount
+&& approval.get('promoCode','')==request.resource.data.promoCode;
+}
+function validPlatformPaymentCrypto() {
+return request.resource.data.currency is string
+&& request.resource.data.currency.size()>0
+&& request.resource.data.currency.size()<=10
+&& request.resource.data.cryptoAmountPaid is number
+&& request.resource.data.cryptoAmountPaid>=0
+&& request.resource.data.cryptoCurrency is string
+&& request.resource.data.cryptoCurrency.size()<=20
+&& request.resource.data.transactionId is string
+&& request.resource.data.transactionId.size()>0
+&& request.resource.data.transactionId.size()<=128;
+}
+function validPlatformPaymentStatus(approval) {
+return request.resource.data.paymentMethod=='Crypto (NOWPayments)'
+&& request.resource.data.status=='paid'
+&& request.resource.data.paymentStatus=='paid'
+&& request.resource.data.approvedBy==approval.approvedBy
+&& request.resource.data.approvedAt is timestamp
+&& request.resource.data.subscriptionExpiresAt is timestamp
+&& request.resource.data.nextBillingDate is timestamp
+&& request.resource.data.source=='nowpayments-ipn'
+&& request.resource.data.updatedAt is timestamp;
+}
+function validPlatformPaymentApprovalDoc(approval) {
+return approval.get('automaticVerification',false)==true
+&& approval.get('paymentMethodId','')=='nowpayments'
+&& approval.status=='approved'
+&& approval.approvalStatus=='approved'
+&& approval.paymentStatus=='paid';
+}
+function validPlatformPaymentWrite() {
+let checkoutId = request.resource.data.sourceId;
+let approval = getAfter(/databases/$(database)/documents/upgradeRequests/$(checkoutId)).data;
+return paymentWorker()
+&& validPlatformPaymentFields()
+&& validCheckoutId(checkoutId)
+&& validPlatformPaymentClient(approval)
+&& validPlatformPaymentAmounts(approval)
+&& validPlatformPaymentCrypto()
+&& validPlatformPaymentStatus(approval)
+&& validPlatformPaymentApprovalDoc(approval);
+}
+function validPromoCode(data,promoId) {
+return data.keys().hasAll(['code','discountType','discountValue','startsAt','expiresAt','usageLimit','usedCount','active'])
+&& data.keys().hasOnly(['code','description','discountType','discountValue','maxDiscount','minOrderAmount','applicablePlanIds','billingCycles','startsAt','expiresAt','usageLimit','usedCount','active','createdAt','createdBy','updatedAt','updatedBy'])
+&& data.code==promoId
+&& data.code is string
+&& data.code.matches('^[A-Z0-9_-]{3,32}$')
+&& data.discountType in ['percentage','fixed']
+&& data.discountValue is number
+&& data.discountValue>0
+&& data.discountValue<=(data.discountType=='percentage' ? 100 : 100000000)
+&& (!('maxDiscount' in data)||(data.maxDiscount is number&&data.maxDiscount>=0&&data.maxDiscount<=100000000))
+&& (!('minOrderAmount' in data)||(data.minOrderAmount is number&&data.minOrderAmount>=0&&data.minOrderAmount<=100000000))
+&& data.startsAt is timestamp
+&& data.expiresAt is timestamp
+&& data.expiresAt>data.startsAt
+&& data.usageLimit is int
+&& data.usageLimit>=0
+&& data.usedCount is int
+&& data.usedCount>=0
+&& (data.usageLimit==0||data.usedCount<=data.usageLimit)
+&& data.active is bool;
+}
+function validAnalyticsEvent() {
+return request.resource.data.keys().hasAll(['eventType','page','sessionId','visitorId','timestamp','createdAt'])
+&& request.resource.data.keys().hasOnly(['eventType','page','buttonLabel','moduleName','userId','email','phone','workspaceId','businessType','status','sessionId','visitorId','referrer','deviceType','browser','os','country','userAgent','sessionDurationMs','timestamp','createdAt'])
+&& request.resource.data.eventType is string
+&& request.resource.data.eventType.size()>0
+&& request.resource.data.page is string
+&& request.resource.data.sessionId is string
+&& request.resource.data.sessionId.size()>0
+&& request.resource.data.visitorId is string
+&& request.resource.data.visitorId.size()>0
+&& request.resource.data.timestamp==request.time
+&& request.resource.data.createdAt==request.time;
+}
+function validBlogPost(data) {
+return data.keys().hasAll(['slug','title','seoTitle','metaDescription','excerpt','category','tags','status','featuredImage','featuredImageAlt','sections','faqs','author','createdAt','updatedAt'])
+&& data.keys().hasOnly(['slug','title','seoTitle','metaDescription','excerpt','category','tags','status','featuredImage','featuredImageAlt','sections','faqs','author','publishDate','createdAt','updatedAt','createdBy','createdByEmail'])
+&& data.slug is string
+&& data.slug.matches('^[a-z0-9-]{3,120}$')
+&& data.title is string
+&& data.title.size()>0
+&& data.title.size()<=180
+&& data.seoTitle is string
+&& data.seoTitle.size()>0
+&& data.seoTitle.size()<=220
+&& data.metaDescription is string
+&& data.metaDescription.size()>0
+&& data.metaDescription.size()<=220
+&& data.excerpt is string
+&& data.excerpt.size()<=300
+&& data.category is string
+&& data.category.size()>0
+&& data.category.size()<=80
+&& data.tags is list
+&& data.tags.size()<=20
+&& data.status in ['draft','published']
+&& data.featuredImage is string
+&& data.featuredImage.size()>0
+&& data.featuredImage.size()<=1000
+&& data.featuredImageAlt is string
+&& data.featuredImageAlt.size()>0
+&& data.featuredImageAlt.size()<=180
+&& data.sections is list
+&& data.sections.size()>0
+&& data.sections.size()<=20
+&& data.faqs is list
+&& data.faqs.size()<=20
+&& data.author is map
+&& data.createdAt is timestamp
+&& data.updatedAt is timestamp;
+}
+function validBusinessService(data) {
+return data.keys().hasAll(['title','description','startingPrice','priceType','enabled','featured','sortOrder','createdAt','updatedAt'])
+&& data.keys().hasOnly(['title','description','startingPrice','priceType','enabled','featured','sortOrder','createdAt','updatedAt'])
+&& data.title is string
+&& data.title.size()>0
+&& data.description is string
+&& data.description.size()>0
+&& data.startingPrice is number
+&& data.startingPrice>=0
+&& data.priceType in ['monthly','one-time','custom']
+&& data.enabled is bool
+&& data.featured is bool
+&& data.sortOrder is number
+&& data.createdAt is timestamp
+&& data.updatedAt is timestamp;
+}
+function validBusinessServiceRequest(data) {
+return data.keys().hasAll(['serviceId','serviceTitle','companyName','contactNumber','email','supportDetails','engagementType','status','createdAt','updatedAt'])
+&& data.keys().hasOnly(['serviceId','serviceTitle','companyName','contactNumber','email','supportDetails','engagementType','preferredWorkingHours','notes','status','workspaceId','ownerId','userId','latestAdminRemark','latestClientComment','lastActivityAt','createdAt','updatedAt'])
+&& data.serviceId is string
+&& data.serviceId.size()>0
+&& data.serviceTitle is string
+&& data.companyName is string
+&& data.contactNumber is string
+&& data.email is string
+&& data.supportDetails is string
+&& data.engagementType in ['Full Time','Part Time']
+&& data.status=='New'
+&& (!('userId' in data)||(!signedIn()||data.userId==request.auth.uid))
+&& data.createdAt==request.time
+&& data.updatedAt==request.time;
+}
+function validBusinessServiceRequestStatusUpdate(data) {
+return data.diff(resource.data).affectedKeys().hasOnly(['status','latestAdminRemark','lastActivityAt','updatedAt'])
+&& data.status in ['New','Under Review','Proposal Sent','Approved','Active','Rejected','Closed']
+&& data.latestAdminRemark is string
+&& data.latestAdminRemark.size()<=1000
+&& data.lastActivityAt is timestamp
+&& data.updatedAt is timestamp;
+}
+function validBusinessServiceRequestClientCommentUpdate(data) {
+return signedIn()
+&& resource.data.userId==request.auth.uid
+&& data.diff(resource.data).affectedKeys().hasOnly(['latestClientComment','lastActivityAt','updatedAt'])
+&& data.latestClientComment is string
+&& data.latestClientComment.size()>0
+&& data.latestClientComment.size()<=1000
+&& data.lastActivityAt is timestamp
+&& data.updatedAt is timestamp;
+}
+function businessServiceRequestMember() {
+return signedIn()
+&& (
+resource.data.userId==request.auth.uid
+|| (resource.data.workspaceId is string&&resource.data.workspaceId.size()>0&&workspaceMember(resource.data.workspaceId))
+);
+}
+function businessServiceRequestParentMember(requestId) {
+let parent = get(/databases/$(database)/documents/businessServiceRequests/$(requestId)).data;
+return signedIn()
+&& (
+parent.userId==request.auth.uid
+|| (parent.workspaceId is string&&parent.workspaceId.size()>0&&workspaceMember(parent.workspaceId))
+);
+}
+function validBusinessServiceRequestTimeline(data) {
+return data.keys().hasOnly(['type','title','message','status','actor','actorId','actorEmail','createdAt'])
+&& data.type is string
+&& data.title is string
+&& data.message is string
+&& data.actor in ['client','admin','system']
+&& data.actorId is string
+&& data.createdAt==request.time;
+}
+function validBusinessServiceRequestComment(data) {
+return data.keys().hasOnly(['message','actor','actorId','actorEmail','createdAt'])
+&& data.message is string
+&& data.actor=='client'
+&& data.actorId==request.auth.uid
+&& data.createdAt==request.time;
+}
+function marketingAdmin() {
+return backendAdmin()
+|| (
+signedIn()
+&& request.auth.token.email_verified!=false
+&& (
+request.auth.token.admin==true
+|| request.auth.token.owner==true
+|| request.auth.token.role in ['admin','Admin','ADMIN','owner','Owner','OWNER']
+)
+);
+}
+function userDoc(uid) {
+return get(/databases/$(database)/documents/users/$(uid)).data;
+}
+function hasUserDoc() {
+return signedIn()&&exists(/databases/$(database)/documents/users/$(request.auth.uid));
+}
+function userStatusActive() {
+return !hasUserDoc()
+|| !(userDoc(request.auth.uid).get('status','active') in ['blocked','Blocked','BLOCKED','disabled','Disabled','DISABLED','inactive','Inactive','INACTIVE']);
+}
+function workspaceDoc(workspaceId) {
+return get(/databases/$(database)/documents/workspaces/$(workspaceId)).data;
+}
+function workspaceExists(workspaceId) {
+return exists(/databases/$(database)/documents/workspaces/$(workspaceId));
+}
+function workspaceActive(workspaceId) {
+return workspaceExists(workspaceId)
+&& !(workspaceDoc(workspaceId).get('status','active') in ['blocked','Blocked','BLOCKED','disabled','Disabled','DISABLED','inactive','Inactive','INACTIVE'])
+&& !(workspaceDoc(workspaceId).get('accountStatus','active') in ['blocked','Blocked','BLOCKED','disabled','Disabled','DISABLED','inactive','Inactive','INACTIVE']);
+}
+function activeSignedIn() {
+return signedIn()&&userStatusActive();
+}
+function isOwnerRole(role) {
+return role in ['owner','Owner','OWNER'];
+}
+function isAdminRole(role) {
+return role in ['admin','Admin','ADMIN'];
+}
+function profileWorkspaceMatches(workspaceId) {
+return hasUserDoc()
+&& (
+request.auth.uid==workspaceId
+|| userDoc(request.auth.uid).workspaceId==workspaceId
+|| userDoc(request.auth.uid).ownerId==workspaceId
+|| userDoc(request.auth.uid).companyId==workspaceId
+|| userDoc(request.auth.uid).userId==workspaceId
+|| (userDoc(request.auth.uid).workspaceIds is list&&workspaceId in userDoc(request.auth.uid).workspaceIds)
+|| (userDoc(request.auth.uid).workspaces is list&&workspaceId in userDoc(request.auth.uid).workspaces)
+);
+}
+function workspaceOwner(workspaceId) {
+return activeSignedIn()
+&& workspaceActive(workspaceId)
+&& (
+request.auth.uid==workspaceId
+|| workspaceDoc(workspaceId).ownerId==request.auth.uid
+|| workspaceDoc(workspaceId).createdBy==request.auth.uid
+|| workspaceDoc(workspaceId).userId==request.auth.uid
+|| workspaceDoc(workspaceId).uid==request.auth.uid
+|| (profileWorkspaceMatches(workspaceId)&&isOwnerRole(userDoc(request.auth.uid).role))
+);
+}
+function workspaceAdmin(workspaceId) {
+return backendAdmin()
+|| workspaceOwner(workspaceId)
+|| (
+activeSignedIn()
+&& workspaceActive(workspaceId)
+&& profileWorkspaceMatches(workspaceId)
+&& isAdminRole(userDoc(request.auth.uid).role)
+);
+}
+function workspaceMember(workspaceId) {
+return workspaceAdmin(workspaceId)
+|| (
+activeSignedIn()
+&& workspaceActive(workspaceId)
+&& profileWorkspaceMatches(workspaceId)
+);
+}
+function permissionDocId() {
+return hasUserDoc()&&userDoc(request.auth.uid).staffId is string
+? userDoc(request.auth.uid).staffId
+: request.auth.uid;
+}
+function permissionDoc(workspaceId) {
+return get(/databases/$(database)/documents/workspaces/$(workspaceId)/permissions/$(permissionDocId())).data;
+}
+function permissionDocExists(workspaceId) {
+return exists(/databases/$(database)/documents/workspaces/$(workspaceId)/permissions/$(permissionDocId()));
+}
+function permissionValue(workspaceId,key) {
+return permissionDoc(workspaceId).get(key,false)==true;
+}
+function hasStaffPermission(workspaceId,key) {
+return workspaceMember(workspaceId)
+&& permissionDocExists(workspaceId)
+&& permissionValue(workspaceId,key);
+}
+function hasPermission(workspaceId,key) {
+return workspaceAdmin(workspaceId)||hasStaffPermission(workspaceId,key);
+}
+function hasModulePermission(workspaceId,moduleKey,action) {
+return permissionValue(workspaceId,'module.' + moduleKey + '.' + action);
+}
+function hasAnyModulePermission(workspaceId,moduleKey,action) {
+return hasModulePermission(workspaceId,moduleKey,action)
+|| (moduleKey=='business_services'&&hasModulePermission(workspaceId,'businessServices',action))
+|| (moduleKey=='businessServices'&&hasModulePermission(workspaceId,'business_services',action))
+|| (moduleKey=='pos'&&(hasModulePermission(workspaceId,'retail_pos',action)||hasModulePermission(workspaceId,'retail',action)))
+|| (moduleKey=='retail_pos'&&(hasModulePermission(workspaceId,'pos',action)||hasModulePermission(workspaceId,'retail',action)))
+|| (moduleKey=='posOrders'&&(hasModulePermission(workspaceId,'pos_orders',action)||hasModulePermission(workspaceId,'retail_pos_orders',action)))
+|| (moduleKey=='pos_orders'&&hasModulePermission(workspaceId,'posOrders',action));
+}
+function canReadModule(workspaceId,moduleKey) {
+return workspaceAdmin(workspaceId)
+|| (workspaceMember(workspaceId)&&permissionDocExists(workspaceId)&&hasAnyModulePermission(workspaceId,moduleKey,'view'));
+}
+function canCreateModule(workspaceId,moduleKey) {
+return workspaceAdmin(workspaceId)
+|| (workspaceMember(workspaceId)&&permissionDocExists(workspaceId)&&hasAnyModulePermission(workspaceId,moduleKey,'create'));
+}
+function canEditModule(workspaceId,moduleKey) {
+return workspaceAdmin(workspaceId)
+|| (workspaceMember(workspaceId)&&permissionDocExists(workspaceId)&&hasAnyModulePermission(workspaceId,moduleKey,'edit'));
+}
+function canDeleteModule(workspaceId,moduleKey) {
+return workspaceAdmin(workspaceId)||(workspaceMember(workspaceId)&&permissionDocExists(workspaceId)&&hasAnyModulePermission(workspaceId,moduleKey,'delete'));
+}
+function canCreatePosSale(workspaceId) {
+return workspaceAdmin(workspaceId)
+|| canCreateModule(workspaceId,'pos')
+|| canCreateModule(workspaceId,'posOrders')
+|| canCreateModule(workspaceId,'orders');
+}
+function canManageWorkspace(workspaceId) {
+return workspaceAdmin(workspaceId);
+}
+function safeCreate(workspaceId) {
+return request.resource.data.workspaceId==workspaceId
+&& request.resource.data.createdBy==request.auth.uid
+&& (!request.resource.data.keys().hasAny(['ownerId'])||request.resource.data.ownerId==workspaceId||request.resource.data.ownerId==workspaceDoc(workspaceId).ownerId);
+}
+function safeUpdate(workspaceId) {
+return (!request.resource.data.keys().hasAny(['workspaceId'])||request.resource.data.workspaceId==workspaceId)
+&& (!resource.data.keys().hasAny(['workspaceId'])||request.resource.data.workspaceId==resource.data.workspaceId)
+&& (!request.resource.data.keys().hasAny(['ownerId'])||request.resource.data.ownerId==workspaceId||request.resource.data.ownerId==workspaceDoc(workspaceId).ownerId)
+&& (!resource.data.keys().hasAny(['ownerId'])||request.resource.data.ownerId==resource.data.ownerId);
+}
+function protectedWorkspaceFieldsUnchanged() {
+return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['plan','planStatus','subscriptionStatus','billingCycle','role','isAdmin','trialStartAt','trialStartedAt','trialEndsAt','isTrialActive','billingCurrency','nextBillingDate','subscriptionStartedAt','subscriptionExpiresAt','expiresAt']);
+}
+function ownerMemberTarget(workspaceId,memberId) {
+return memberId==workspaceId
+|| memberId==workspaceDoc(workspaceId).ownerId
+|| request.resource.data.uid==workspaceDoc(workspaceId).ownerId
+|| request.resource.data.staffId==workspaceDoc(workspaceId).ownerId
+|| isOwnerRole(request.resource.data.role);
+}
+function ownerMemberResource(workspaceId,memberId) {
+return memberId==workspaceId
+|| memberId==workspaceDoc(workspaceId).ownerId
+|| resource.data.uid==workspaceDoc(workspaceId).ownerId
+|| resource.data.staffId==workspaceDoc(workspaceId).ownerId
+|| isOwnerRole(resource.data.role);
+}
+function ownerMemberWriteSafe(workspaceId,memberId) {
+return (!ownerMemberTarget(workspaceId,memberId)||(isOwnerRole(request.resource.data.role)&&!(request.resource.data.status in ['blocked','disabled','inactive','Blocked','Disabled','Inactive'])))
+&& (!ownerMemberResource(workspaceId,memberId)||isOwnerRole(request.resource.data.role));
+}
+function validStaffUserProfileFields(data) {
+return data.keys().hasOnly(['uid','name','fullName','displayName','email','username','usernameLower','workspaceCode','teamWorkspaceCode','staffLoginId','staffShortCode','loginKey','pinLoginEnabled','pinUpdatedAt','failedLoginCount','lastFailedLoginAt','blockReason','role','status','createdBy','ownerId','companyId','workspaceId','userId','staffId','permissions','businessPermissions','businessType','selectedBusinessType','currentBusinessType','primaryBusinessType','allowedBusinessTypes','selectedWorkspace','enabledModules','plan','planStatus','billingCycle','provider','inviteStatus','emailVerifiedCustom','emailVerifiedCustomAt','onboardingCompleted','invitedAt','invitedBy','acceptedAt','lastLoginAt','inviteEmailStatus','inviteEmailError','inviteEmailSentAt','passwordSetPending','createdAt','updatedAt','updatedBy','authCreated','isStaff','isOwner','isAdmin']);
+}
+function validStaffLoginProfileFields(data) {
+return (!data.keys().hasAny(['workspaceCode'])||(data.workspaceCode is string&&data.workspaceCode.size()>2&&data.workspaceCode.size()<=32))
+&& (!data.keys().hasAny(['teamWorkspaceCode'])||(data.teamWorkspaceCode is string&&data.teamWorkspaceCode.size()>2&&data.teamWorkspaceCode.size()<=32))
+&& (!data.keys().hasAny(['staffLoginId'])||(data.staffLoginId is string&&data.staffLoginId.size()>2&&data.staffLoginId.size()<=32))
+&& (!data.keys().hasAny(['staffShortCode'])||(data.staffShortCode is string&&data.staffShortCode.size()>2&&data.staffShortCode.size()<=32))
+&& (!data.keys().hasAny(['loginKey'])||(data.loginKey is string&&data.loginKey.size()>4&&data.loginKey.size()<=80))
+&& (!data.keys().hasAny(['pinLoginEnabled'])||data.pinLoginEnabled is bool)
+&& (!data.keys().hasAny(['failedLoginCount'])||data.failedLoginCount is int);
+}
+function validStaffWorkspaceProfile(data,uid) {
+return data.uid==uid
+&& data.userId==uid
+&& data.staffId==uid
+&& data.workspaceId is string
+&& data.workspaceId.size()>0
+&& data.workspaceId.size()<=128
+&& data.workspaceId!=uid
+&& data.ownerId==data.workspaceId
+&& data.email is string
+&& data.email.size()>3
+&& data.email.size()<=254;
+}
+function validStaffRoleProfile(data) {
+return data.role is string
+&& !isOwnerRole(data.role)
+&& !(data.role in ['superadmin','Superadmin','SUPERADMIN'])
+&& data.status in ['active','blocked','disabled','inactive','Active','Blocked','Disabled','Inactive']
+&& data.emailVerifiedCustom==true
+&& data.onboardingCompleted==true;
+}
+function validStaffBooleanFlags(data) {
+return (!data.keys().hasAny(['authCreated'])||data.authCreated is bool)
+&& (!data.keys().hasAny(['isStaff'])||data.isStaff==true)
+&& (!data.keys().hasAny(['isOwner'])||data.isOwner==false)
+&& (!data.keys().hasAny(['isAdmin'])||data.isAdmin==false);
+}
+function validStaffUserProfile(data,uid) {
+return validStaffUserProfileFields(data)
+&& validStaffLoginProfileFields(data)
+&& validStaffWorkspaceProfile(data,uid)
+&& validStaffRoleProfile(data)
+&& validStaffBooleanFlags(data);
+}
+function adminCanWriteStaffUser(uid) {
+return signedIn()
+&& request.resource.data.workspaceId is string
+&& workspaceAdmin(request.resource.data.workspaceId)
+&& validStaffUserProfile(request.resource.data,uid);
+}
+function adminCanReadStaffUser() {
+return signedIn()
+&& resource.data.workspaceId is string
+&& workspaceAdmin(resource.data.workspaceId)
+&& !isOwnerRole(resource.data.get('role',''));
+}
+function ownerSelfUserUpdateSafe() {
+return isOwnerRole(resource.data.get('role','owner'))
+&& !request.resource.data.diff(resource.data).affectedKeys().hasAny(['uid','userId','ownerId','workspaceId','role','isAdmin','plan','planStatus','subscriptionStatus','billingCycle','trialStartAt','trialStartedAt','trialEndsAt','isTrialActive','expiresAt']);
+}
+function staffSelfUserUpdateSafe() {
+return !isOwnerRole(resource.data.get('role','owner'))
+&& !request.resource.data.diff(resource.data).affectedKeys().hasAny(['uid','userId','staffId','ownerId','companyId','workspaceId','role','isAdmin','permissions','businessPermissions','businessType','selectedBusinessType','currentBusinessType','primaryBusinessType','allowedBusinessTypes','selectedWorkspace','enabledModules','plan','planStatus','subscriptionStatus','billingCycle','trialStartAt','trialStartedAt','trialEndsAt','isTrialActive','expiresAt']);
+}
+function selfUserUpdateSafe(uid) {
+return signedIn()
+&& request.auth.uid==uid
+&& (ownerSelfUserUpdateSafe()||staffSelfUserUpdateSafe());
+}
+match /users/{uid} {
+allow create: if (signedIn()&&request.auth.uid==uid)
+|| adminCanWriteStaffUser(uid);
+allow read: if backendAdmin()||(signedIn()&&request.auth.uid==uid)||adminCanReadStaffUser();
+allow update: if backendAdmin()
+|| (paymentWorker()&&validPaymentUserUpdate(uid))
+|| adminCanWriteStaffUser(uid)
+|| selfUserUpdateSafe(uid);
+allow delete: if backendAdmin();
+match /{subPath=**} {
+allow read,write: if backendAdmin()||(signedIn()&&request.auth.uid==uid);
+}
+}
+match /staffInviteClaims/{uid} {
+allow read: if backendAdmin()
+|| (signedIn()&&request.auth.uid==uid)
+|| (signedIn()&&resource.data.workspaceId is string&&workspaceAdmin(resource.data.workspaceId));
+allow create,update: if adminCanWriteStaffUser(uid);
+allow delete: if backendAdmin()
+|| (signedIn()&&resource.data.workspaceId is string&&workspaceAdmin(resource.data.workspaceId));
+}
+match /staffInviteEmails/{emailKey} {
+allow read: if backendAdmin()
+|| (signedIn()&&resource.data.email is string&&request.auth.token.email==resource.data.email)
+|| (signedIn()&&resource.data.workspaceId is string&&workspaceAdmin(resource.data.workspaceId));
+allow create,update: if signedIn()
+&& request.resource.data.uid is string
+&& adminCanWriteStaffUser(request.resource.data.uid);
+allow delete: if backendAdmin()
+|| (signedIn()&&resource.data.workspaceId is string&&workspaceAdmin(resource.data.workspaceId));
+}
+match /staffLoginSecrets/{secretId} {
+allow read,create,update,delete: if false;
+}
+match /phoneRegistry/{phoneId} {
+allow get: if true;
+allow list: if backendAdmin();
+allow create: if signedIn()&&request.resource.data.userId==request.auth.uid;
+allow update,delete: if backendAdmin();
+}
+match /workspaces/{workspaceId} {
+allow create: if activeSignedIn()
+&& request.resource.data.ownerId==request.auth.uid
+&& request.resource.data.workspaceId==workspaceId
+&& request.resource.data.createdBy==request.auth.uid;
+allow read: if backendAdmin()
+|| (signedIn()&&request.auth.uid==workspaceId)
+|| workspaceMember(workspaceId);
+allow update: if backendAdmin()
+|| (paymentWorker()&&validPaymentWorkspaceUpdate(workspaceId))
+|| (workspaceAdmin(workspaceId)&&protectedWorkspaceFieldsUnchanged());
+allow delete: if backendAdmin();
+match /permissions/{staffId} {
+allow read: if workspaceAdmin(workspaceId)||(workspaceMember(workspaceId)&&staffId==permissionDocId());
+allow create,update,delete: if canManageWorkspace(workspaceId)&&staffId!=workspaceId&&staffId!=workspaceDoc(workspaceId).ownerId;
+}
+match /staff/{staffId} {
+allow read: if workspaceAdmin(workspaceId)||(workspaceMember(workspaceId)&&staffId==permissionDocId());
+allow create: if canManageWorkspace(workspaceId)&&safeCreate(workspaceId)&&ownerMemberWriteSafe(workspaceId,staffId);
+allow update: if canManageWorkspace(workspaceId)&&safeUpdate(workspaceId)&&ownerMemberWriteSafe(workspaceId,staffId);
+allow delete: if canManageWorkspace(workspaceId)&&!ownerMemberResource(workspaceId,staffId);
+}
+match /teamMembers/{memberId} {
+allow read: if canReadModule(workspaceId,'team');
+allow create: if canManageWorkspace(workspaceId)&&safeCreate(workspaceId)&&ownerMemberWriteSafe(workspaceId,memberId);
+allow update: if canManageWorkspace(workspaceId)&&safeUpdate(workspaceId)&&ownerMemberWriteSafe(workspaceId,memberId);
+allow delete: if canManageWorkspace(workspaceId)&&!ownerMemberResource(workspaceId,memberId);
+}
+match /teamPermissions/{permissionId} {
+allow read: if canReadModule(workspaceId,'team');
+allow create,update,delete: if canManageWorkspace(workspaceId);
+}
+match /businessSettings/{settingId} {
+allow read: if canReadModule(workspaceId,'settings')||canReadModule(workspaceId,'pos')||canReadModule(workspaceId,'posOrders')||canReadModule(workspaceId,'orders')||canReadModule(workspaceId,'ordersKot');
+allow create,update,delete: if workspaceAdmin(workspaceId)||hasPermission(workspaceId,'settingsAccess');
+}
+match /whatsappSettings/{settingId} {
+allow read: if canReadModule(workspaceId,'whatsappTemplates')||canReadModule(workspaceId,'settings');
+allow create,update,delete: if workspaceAdmin(workspaceId)||hasPermission(workspaceId,'settingsAccess');
+}
+match /customers/{docId} {
+allow read: if canReadModule(workspaceId,'customers')||canReadModule(workspaceId,'pos')||canReadModule(workspaceId,'orders')||canReadModule(workspaceId,'transportCustomers');
+allow create: if (canCreateModule(workspaceId,'customers')||canCreatePosSale(workspaceId)||canCreateModule(workspaceId,'transportCustomers'))&&safeCreate(workspaceId);
+allow update: if (canEditModule(workspaceId,'customers')||canCreatePosSale(workspaceId)||canEditModule(workspaceId,'transportCustomers'))&&safeUpdate(workspaceId);
+allow delete: if canDeleteModule(workspaceId,'customers');
+}
+match /salesDeals/{docId} {
+allow read: if canReadModule(workspaceId,'salesPipeline')||canReadModule(workspaceId,'deals');
+allow create: if (canCreateModule(workspaceId,'salesPipeline')||canCreateModule(workspaceId,'deals'))&&safeCreate(workspaceId);
+allow update: if (canEditModule(workspaceId,'salesPipeline')||canEditModule(workspaceId,'deals'))&&safeUpdate(workspaceId);
+allow delete: if canDeleteModule(workspaceId,'deals')||canDeleteModule(workspaceId,'salesPipeline');
+}
+match /salesTasks/{docId} {
+allow read: if canReadModule(workspaceId,'tasks')||canReadModule(workspaceId,'followUps')||canReadModule(workspaceId,'whatsappFollowUps');
+allow create: if (canCreateModule(workspaceId,'tasks')||canCreateModule(workspaceId,'followUps')||canCreateModule(workspaceId,'whatsappFollowUps'))&&safeCreate(workspaceId);
+allow update: if (canEditModule(workspaceId,'tasks')||canEditModule(workspaceId,'followUps')||canEditModule(workspaceId,'whatsappFollowUps'))&&safeUpdate(workspaceId);
+allow delete: if canDeleteModule(workspaceId,'tasks')||canDeleteModule(workspaceId,'followUps');
+}
+match /salesActivities/{docId} {
+allow read: if canReadModule(workspaceId,'activities');
+allow create: if canCreateModule(workspaceId,'activities')&&safeCreate(workspaceId);
+allow update: if canEditModule(workspaceId,'activities')&&safeUpdate(workspaceId);
+allow delete: if canDeleteModule(workspaceId,'activities');
+}
+match /salesQuotes/{docId} {
+allow read: if canReadModule(workspaceId,'quotations');
+allow create: if canCreateModule(workspaceId,'quotations')&&safeCreate(workspaceId);
+allow update: if canEditModule(workspaceId,'quotations')&&safeUpdate(workspaceId);
+allow delete: if canDeleteModule(workspaceId,'quotations');
+}
+match /salesProducts/{docId} {
+allow read: if canReadModule(workspaceId,'salesProducts')||canReadModule(workspaceId,'products');
+allow create: if (canCreateModule(workspaceId,'salesProducts')||canCreateModule(workspaceId,'products'))&&safeCreate(workspaceId);
+allow update: if (canEditModule(workspaceId,'salesProducts')||canEditModule(workspaceId,'products'))&&safeUpdate(workspaceId);
+allow delete: if canDeleteModule(workspaceId,'salesProducts')||canDeleteModule(workspaceId,'products');
+}
+match /products/{docId} {
+allow read: if canReadModule(workspaceId,'products')||canReadModule(workspaceId,'inventory')||canReadModule(workspaceId,'pos')||canReadModule(workspaceId,'orders')||canReadModule(workspaceId,'menuManagement');
+allow create: if (canCreateModule(workspaceId,'products')||canCreateModule(workspaceId,'inventory')||canCreateModule(workspaceId,'menuManagement'))&&safeCreate(workspaceId);
+allow update: if (canEditModule(workspaceId,'products')||canEditModule(workspaceId,'inventory')||canCreatePosSale(workspaceId)||canEditModule(workspaceId,'menuManagement'))&&safeUpdate(workspaceId);
+allow delete: if canDeleteModule(workspaceId,'products')||canDeleteModule(workspaceId,'inventory');
+}
+match /posOrders/{docId} {
+allow read: if canReadModule(workspaceId,'posOrders')||canReadModule(workspaceId,'pos');
+allow create: if canCreatePosSale(workspaceId)&&safeCreate(workspaceId);
+allow update: if (workspaceAdmin(workspaceId)||canEditModule(workspaceId,'posOrders')||canEditModule(workspaceId,'pos'))&&safeUpdate(workspaceId);
+allow delete: if canDeleteModule(workspaceId,'posOrders')||canDeleteModule(workspaceId,'pos');
+}
+match /posWalletPayments/{docId} {
+allow read: if canReadModule(workspaceId,'posOrders')||canReadModule(workspaceId,'pos');
+allow create: if canCreatePosSale(workspaceId)&&safeCreate(workspaceId);
+allow update: if (workspaceAdmin(workspaceId)||canEditModule(workspaceId,'posOrders')||canEditModule(workspaceId,'pos'))&&safeUpdate(workspaceId);
+allow delete: if canDeleteModule(workspaceId,'posOrders')||canDeleteModule(workspaceId,'pos');
+}
+match /posQueueJobs/{docId} {
+allow read: if workspaceAdmin(workspaceId)||canReadModule(workspaceId,'posOrders')||canReadModule(workspaceId,'pos');
+allow create: if canCreatePosSale(workspaceId)&&safeCreate(workspaceId);
+allow update,delete: if workspaceAdmin(workspaceId);
+}
+match /inventoryTransactions/{docId} {
+allow read: if canReadModule(workspaceId,'inventory')||canReadModule(workspaceId,'pos');
+allow create: if (canCreatePosSale(workspaceId)||canCreateModule(workspaceId,'inventory')||canEditModule(workspaceId,'inventory'))&&safeCreate(workspaceId);
+allow update: if false;
+allow delete: if canDeleteModule(workspaceId,'inventory');
+}
+match /menuItems/{docId} {
+allow read: if canReadModule(workspaceId,'menuManagement')||canReadModule(workspaceId,'orders')||canReadModule(workspaceId,'ordersKot');
+allow create: if canCreateModule(workspaceId,'menuManagement')&&safeCreate(workspaceId);
+allow update: if canEditModule(workspaceId,'menuManagement')&&safeUpdate(workspaceId);
+allow delete: if canDeleteModule(workspaceId,'menuManagement');
+}
+match /kot/{docId} {
+allow read: if canReadModule(workspaceId,'ordersKot')||canReadModule(workspaceId,'orders');
+allow create: if (canCreateModule(workspaceId,'ordersKot')||canCreateModule(workspaceId,'orders'))&&safeCreate(workspaceId);
+allow update: if (canEditModule(workspaceId,'ordersKot')||canEditModule(workspaceId,'orders'))&&safeUpdate(workspaceId);
+allow delete: if canDeleteModule(workspaceId,'ordersKot');
+}
+match /bills/{docId} {
+allow read: if canReadModule(workspaceId,'invoices')||canReadModule(workspaceId,'orders');
+allow create: if (canCreateModule(workspaceId,'invoices')||canCreateModule(workspaceId,'orders'))&&safeCreate(workspaceId);
+allow update: if (canEditModule(workspaceId,'invoices')||canEditModule(workspaceId,'orders'))&&safeUpdate(workspaceId);
+allow delete: if canDeleteModule(workspaceId,'invoices')||canDeleteModule(workspaceId,'orders');
+}
+match /activityLogs/{docId} {
+allow read: if canReadModule(workspaceId,'activity')||canReadModule(workspaceId,'team');
+allow create: if workspaceMember(workspaceId)
+&& request.resource.data.workspaceId==workspaceId
+&& request.resource.data.createdBy==request.auth.uid;
+allow update,delete: if false;
+}
+match /supportTickets/{docId} {
+allow read: if backendAdmin()||canReadModule(workspaceId,'support');
+allow create: if canCreateModule(workspaceId,'support')&&safeCreate(workspaceId);
+allow update: if backendAdmin()||(canEditModule(workspaceId,'support')&&safeUpdate(workspaceId));
+allow delete: if backendAdmin()||canDeleteModule(workspaceId,'support');
+}
+match /attendanceDevices/{docId} {
+allow read: if canReadModule(workspaceId,'attendance');
+allow create: if canCreateModule(workspaceId,'attendance')&&safeCreate(workspaceId);
+allow update: if canEditModule(workspaceId,'attendance')&&safeUpdate(workspaceId);
+allow delete: if canDeleteModule(workspaceId,'attendance');
+}
+match /whatsappContacts/{docId} {
+allow read: if canReadModule(workspaceId,'whatsappInbox')||canReadModule(workspaceId,'whatsappLeads');
+allow create: if (canCreateModule(workspaceId,'whatsappInbox')||canCreateModule(workspaceId,'whatsappLeads'))&&safeCreate(workspaceId);
+allow update: if (canEditModule(workspaceId,'whatsappInbox')||canEditModule(workspaceId,'whatsappLeads'))&&safeUpdate(workspaceId);
+allow delete: if canDeleteModule(workspaceId,'whatsappInbox')||canDeleteModule(workspaceId,'whatsappLeads');
+}
+match /businessServiceRequests/{docId} {
+allow read: if canReadModule(workspaceId,'business_services');
+allow create: if canCreateModule(workspaceId,'business_services')&&safeCreate(workspaceId);
+allow update: if canEditModule(workspaceId,'business_services')&&safeUpdate(workspaceId);
+allow delete: if canDeleteModule(workspaceId,'business_services');
+}
+match /{collectionName}/{docId} {
+allow read: if canReadModule(workspaceId,collectionName);
+allow create: if canCreateModule(workspaceId,collectionName)&&safeCreate(workspaceId);
+allow update: if canEditModule(workspaceId,collectionName)&&safeUpdate(workspaceId);
+allow delete: if canDeleteModule(workspaceId,collectionName);
+}
+}
+match /upgradeRequests/{requestId} {
+allow create: if backendAdmin()||(activeSignedIn()&&request.resource.data.userId==request.auth.uid);
+allow read: if backendAdmin()||paymentWorker()||(activeSignedIn()&&resource.data.userId==request.auth.uid);
+allow update: if backendAdmin()||validPaymentRequestUpdate();
+allow delete: if backendAdmin();
+match /timeline/{timelineId} {
+allow read: if backendAdmin()
+|| paymentWorker()
+|| (
+activeSignedIn()
+&& get(/databases/$(database)/documents/upgradeRequests/$(requestId)).data.userId==request.auth.uid
+);
+allow create: if backendAdmin()
+|| (
+activeSignedIn()
+&& get(/databases/$(database)/documents/upgradeRequests/$(requestId)).data.userId==request.auth.uid
+&& request.resource.data.actor=='client'
+&& request.resource.data.message is string
+&& request.resource.data.message.size()>0
+&& request.resource.data.message.size()<=2000
+&& request.resource.data.createdAt is timestamp
+);
+allow update,delete: if false;
+}
+}
+match /platformSettings/{docId} {
+allow read: if true;
+allow write: if backendAdmin();
+}
+match /platformPlans/{docId} {
+allow read: if true;
+allow write: if backendAdmin();
+}
+match /promoCodes/{promoId} {
+allow get: if paymentWorker()||(
+activeSignedIn()
+&& resource.data.active==true
+&& resource.data.startsAt<=request.time
+&& resource.data.expiresAt>request.time
+&& (resource.data.usageLimit==0||resource.data.usedCount<resource.data.usageLimit)
+);
+allow list: if backendAdmin();
+allow create: if backendAdmin()
+&& validPromoCode(request.resource.data,promoId)
+&& request.resource.data.createdAt==request.time
+&& request.resource.data.updatedAt==request.time
+&& request.resource.data.createdBy==request.auth.uid
+&& request.resource.data.updatedBy==request.auth.uid
+&& request.resource.data.usedCount==0;
+allow update: if (
+backendAdmin()
+&& validPromoCode(request.resource.data,promoId)
+&& request.resource.data.code==resource.data.code
+&& request.resource.data.createdAt==resource.data.createdAt
+&& request.resource.data.createdBy==resource.data.createdBy
+&& request.resource.data.updatedAt>=request.time - duration.value(5,'m')
+&& request.resource.data.updatedAt<=request.time + duration.value(5,'m')
+&& request.resource.data.updatedBy==request.auth.uid
+)||(
+paymentWorker()
+&& request.resource.data.diff(resource.data).affectedKeys().hasOnly(['usedCount','updatedAt'])
+&& request.resource.data.usedCount==resource.data.usedCount + 1
+&& request.resource.data.updatedAt>=request.time - duration.value(5,'m')
+&& request.resource.data.updatedAt<=request.time + duration.value(5,'m')
+&& (resource.data.usageLimit==0||request.resource.data.usedCount<=resource.data.usageLimit)
+);
+allow delete: if backendAdmin();
+}
+match /whatsappPricing/{docId} {
+allow read: if true;
+allow write: if backendAdmin();
+}
+match /platformPayments/{docId} {
+allow read: if backendAdmin();
+allow create,update: if backendAdmin()||validPlatformPaymentWrite();
+allow delete: if backendAdmin();
+}
+match /platformSubscriptions/{docId} {
+allow read,write: if backendAdmin();
+}
+match /marketingSubscribers/{docId} {
+allow read,write: if marketingAdmin();
+}
+match /marketingCampaigns/{docId} {
+allow read,write: if marketingAdmin();
+}
+match /marketingEmailLogs/{docId} {
+allow read,write: if marketingAdmin();
+}
+match /announcements/{docId} {
+allow read: if true;
+allow write: if backendAdmin();
+}
+match /blogPosts/{slug} {
+allow read: if backendAdmin()||resource.data.status=='published';
+allow create,update: if backendAdmin()
+&& request.resource.data.slug==slug
+&& validBlogPost(request.resource.data);
+allow delete: if backendAdmin();
+}
+match /businessServices/{docId} {
+allow read: if true;
+allow create,update: if backendAdmin()&&validBusinessService(request.resource.data);
+allow delete: if backendAdmin();
+}
+match /businessServiceRequests/{docId} {
+allow create: if validBusinessServiceRequest(request.resource.data);
+allow read: if backendAdmin()||businessServiceRequestMember();
+allow delete: if backendAdmin();
+allow update: if (backendAdmin()&&validBusinessServiceRequestStatusUpdate(request.resource.data))
+|| validBusinessServiceRequestClientCommentUpdate(request.resource.data);
+match /timeline/{timelineId} {
+allow read: if backendAdmin()||businessServiceRequestParentMember(docId);
+allow create: if (backendAdmin()||businessServiceRequestParentMember(docId))
+&& validBusinessServiceRequestTimeline(request.resource.data);
+allow update,delete: if false;
+}
+match /comments/{commentId} {
+allow read: if backendAdmin()||businessServiceRequestParentMember(docId);
+allow create: if businessServiceRequestParentMember(docId)
+&& validBusinessServiceRequestComment(request.resource.data);
+allow update,delete: if false;
+}
+}
+match /supportTickets/{docId} {
+allow create: if activeSignedIn();
+allow read,update,delete: if backendAdmin()||(activeSignedIn()&&resource.data.createdBy==request.auth.uid);
+}
+match /backendStaff/{docId} {
+allow read,write: if backendAdmin();
+}
+match /backendActivityLogs/{docId} {
+allow read,write: if backendAdmin();
+}
+match /analyticsEvents/{docId} {
+allow create: if validAnalyticsEvent();
+allow read,update,delete: if backendAdmin();
+}
+match /userSessions/{docId} {
+allow create: if activeSignedIn()&&request.resource.data.userId==request.auth.uid;
+allow read,update,delete: if backendAdmin()||(activeSignedIn()&&resource.data.userId==request.auth.uid);
+}
+match /{document=**} {
+allow read,write: if backendAdmin();
+}
+}
 }

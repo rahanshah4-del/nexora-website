@@ -16,6 +16,8 @@ import {
   HiOutlineTruck,
   HiOutlineUserGroup,
 } from 'react-icons/hi2'
+import PageSeo from '../../components/PageSeo.jsx'
+import { getSeoForSolutionSlug } from '../../lib/seoMetadata.js'
 import PublicPageShell from './PublicPageShell.jsx'
 
 const whatsappLeadLink = `https://wa.me/923194329754?text=${encodeURIComponent(
@@ -27,6 +29,41 @@ const commonFaqs = [
   ['Can my team have different permissions?', 'Yes. Owners can control role-based access for managers, sales teams, accountants and operational staff.'],
   ['Do you provide onboarding support?', 'Yes. Nexora offers guided setup, demo sessions and support for moving teams into the right workflow.'],
 ]
+
+const publicSolutionLinks = [
+  { key: 'pos', label: 'Restaurant POS', to: '/restaurant-pos', text: 'Run tables, orders, billing and restaurant workflows from one counter.' },
+  { key: 'retail-pos', label: 'Retail POS', to: '/retail-pos', text: 'Manage retail checkout, inventory, receipts and customer sales.' },
+  { key: 'school-erp', label: 'School ERP', to: '/school-erp', text: 'Organize students, attendance, fees and school operations.' },
+  { key: 'transport-rental', label: 'Transport Software', to: '/transport', text: 'Manage fleet bookings, customers, payments and rental records.' },
+  { key: 'whatsapp-crm', label: 'WhatsApp CRM', to: '/whatsapp-crm', text: 'Turn conversations into leads, follow-ups and customer activity.' },
+  { key: 'crm', label: 'CRM Software', to: '/solutions/crm', text: 'Track leads, customers, invoices, tasks and sales teams.' },
+  { key: 'medical-store-pos', label: 'Medical Store POS', to: '/solutions/medical-store-pos', text: 'Handle pharmacy billing, medicine stock and expiry control.' },
+  { key: 'property-erp', label: 'Property ERP', to: '/solutions/property-erp', text: 'Manage tenants, rent, leases and maintenance requests.' },
+  { key: 'reports', label: 'Business Reports', to: '/solutions/reports', text: 'Review KPIs, exports and performance insights across modules.' },
+]
+
+const relatedSolutionKeys = {
+  crm: ['whatsapp-crm', 'retail-pos', 'reports'],
+  'school-erp': ['crm', 'whatsapp-crm', 'reports'],
+  'property-erp': ['crm', 'reports', 'whatsapp-crm'],
+  pos: ['retail-pos', 'crm', 'whatsapp-crm'],
+  'retail-pos': ['pos', 'crm', 'whatsapp-crm'],
+  'whatsapp-crm': ['crm', 'retail-pos', 'pos'],
+  'transport-rental': ['crm', 'retail-pos', 'reports'],
+  'medical-store-pos': ['retail-pos', 'crm', 'reports'],
+  reports: ['crm', 'retail-pos', 'school-erp'],
+}
+
+function getRelatedSolutions(solutionSlug) {
+  const linkByKey = new Map(publicSolutionLinks.map((item) => [item.key, item]))
+  const keys = relatedSolutionKeys[solutionSlug] || publicSolutionLinks.map((item) => item.key)
+
+  return keys
+    .filter((key) => key !== solutionSlug)
+    .map((key) => linkByKey.get(key))
+    .filter(Boolean)
+    .slice(0, 3)
+}
 
 const solutionPages = {
   'crm': {
@@ -154,6 +191,37 @@ const solutionPages = {
     faqs: [
       ['Can Nexora POS print receipts?', 'Yes. POS workflows support receipt printing, email-ready receipts and reporting sync.'],
       ['Can it support multiple counters?', 'Yes. Nexora POS is built for multi-user and multi-counter workflows.'],
+    ],
+  },
+  'retail-pos': {
+    eyebrow: 'Retail POS Solution',
+    productName: 'Nexora Retail POS',
+    headlineBefore: 'Modern retail checkout and inventory for stores, counters and ',
+    headlineHighlight: 'fast sales.',
+    description: 'Manage retail sales, barcode scanning, inventory updates, customer receipts and store analytics with Nexora Retail POS.',
+    icon: HiOutlineShoppingCart,
+    previewTitle: 'Retail Checkout Workspace',
+    previewLabel: 'Retail POS dashboard',
+    sidebar: ['Counter', 'Products', 'Inventory', 'Receipts', 'Reports', 'Customers'],
+    stats: [
+      ['Today Sales', 'PKR 198K', '+16%'],
+      ['Stock Alerts', '14', 'Low stock'],
+      ['Receipts', '412', 'Printed'],
+    ],
+    rows: ['Retail sale billed', 'Stock synced', 'Customer saved', 'Receipt emailed'],
+    features: [
+      ['Retail Billing', 'Process barcode sales, returns, discounts and quick receipts.', HiOutlineShoppingCart],
+      ['Inventory Control', 'Track stock levels, pricing and reorder alerts.', HiOutlineChartBarSquare],
+      ['Customer Records', 'Keep buyer profiles, loyalty details and purchase history.', HiOutlineUserGroup],
+      ['Receipt Printing', 'Print, email and save receipts instantly.', HiOutlineDocumentChartBar],
+      ['Store Reports', 'View product, sales and cashier performance summaries.', HiOutlineChartBarSquare],
+      ['Multi-user Access', 'Give store owners, managers and cashiers the right permissions.', HiOutlineUserGroup],
+    ],
+    benefits: ['Speed up store checkout', 'Keep retail stock accurate', 'Track customer purchase history', 'Make store reporting simple'],
+    useCases: ['Retail stores', 'Clothing shops', 'Grocery stores', 'Boutiques'],
+    faqs: [
+      ['Can Nexora handle returns and refunds?', 'Yes. Retail POS supports returns, refunds and sales adjustments with inventory sync.'],
+      ['Can I manage customer records?', 'Yes. Customer profiles and loyalty details are part of retail workflows.'],
     ],
   },
   'whatsapp-crm': {
@@ -425,17 +493,34 @@ function GrowthPathStrip() {
   )
 }
 
-export default function SolutionPage() {
-  const { solutionSlug } = useParams()
+export default function SolutionPage({ solutionSlug: solutionSlugProp } = {}) {
+  const { solutionSlug: solutionSlugParam } = useParams()
+  const solutionSlug = solutionSlugProp || solutionSlugParam
   const page = solutionPages[solutionSlug]
+  const seo = getSeoForSolutionSlug(solutionSlug)
 
   if (!page) return <Navigate to="/" replace />
 
   const Icon = page.icon
   const faqs = [...page.faqs, ...commonFaqs]
+  const relatedSolutions = getRelatedSolutions(solutionSlug)
 
   return (
     <PublicPageShell>
+      <PageSeo
+        {...seo}
+        faqItems={faqs}
+        softwareApplication={{
+          name: page.productName,
+          description: page.description,
+          applicationCategory: 'BusinessApplication',
+        }}
+      />
+      <nav aria-label="Breadcrumb" className="sr-only">
+        <Link to="/">Home</Link>
+        <span> / </span>
+        <span aria-current="page">{page.productName}</span>
+      </nav>
       <section className="relative overflow-hidden bg-[linear-gradient(180deg,#ffffff_0%,#f7fbff_72%,#ffffff_100%)] pb-16 pt-12 sm:pb-20 sm:pt-14 lg:pb-24 lg:pt-16">
         <div className="soft-arc-bg pointer-events-none" />
         <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-200 to-transparent" />
@@ -545,6 +630,43 @@ export default function SolutionPage() {
           </div>
         </div>
       </section>
+
+      {relatedSolutions.length > 0 ? (
+        <section data-reveal className="bg-[linear-gradient(180deg,#f8fbff_0%,#ffffff_100%)] py-16 sm:py-20 lg:py-24">
+          <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <span className="inline-flex rounded-full border border-blue-100 bg-white px-4 py-2 text-xs font-extrabold uppercase tracking-[0.18em] text-blue-700 shadow-sm">
+                  Related Solutions
+                </span>
+                <h2 className="website-section-heading mt-5 max-w-3xl text-3xl font-black tracking-tight text-slate-950 sm:text-5xl">
+                  Software that works with {page.productName}
+                </h2>
+              </div>
+              <Link to="/pricing" className="premium-button-secondary w-max">
+                Compare Pricing
+              </Link>
+            </div>
+
+            <div className="mt-10 grid gap-5 md:grid-cols-3">
+              {relatedSolutions.map((item) => (
+                <Link
+                  key={item.key}
+                  to={item.to}
+                  className="group rounded-[1.35rem] border border-blue-100 bg-white p-6 shadow-[0_22px_62px_-44px_rgba(37,99,235,0.32)] transition hover:-translate-y-1 hover:border-blue-200 hover:shadow-[0_30px_78px_-48px_rgba(37,99,235,0.46)]"
+                >
+                  <p className="text-lg font-black text-slate-950">{item.label}</p>
+                  <p className="mt-3 text-sm leading-7 text-slate-600">{item.text}</p>
+                  <span className="mt-5 inline-flex items-center gap-2 text-sm font-black text-blue-700">
+                    View solution
+                    <HiOutlineArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       <section data-reveal className="bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] py-16 sm:py-20 lg:py-24">
         <div className="mx-auto max-w-5xl px-5 sm:px-6 lg:px-8">

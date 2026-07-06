@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { collection, deleteDoc, doc, getDocs, query, setDoc, where } from 'firebase/firestore'
+import { httpsCallable } from 'firebase/functions'
 import { db } from '../lib/firebase.js'
+import { functions } from '../../lib/firebase.js'
 import { createUserDoc, patchUserDoc, removeUserDoc, subscribeUserCollection } from '../lib/firestore.js'
 import { useUser } from './useUser.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
@@ -58,6 +60,7 @@ async function removeStaffAccessRecords(workspaceId, member) {
 
   for (const id of ids) {
     deletes.push(deleteDoc(doc(db, 'workspaces', workspaceId, 'staff', id)).catch(() => {}))
+    deletes.push(deleteDoc(doc(db, 'workspaces', workspaceId, 'teamMembers', id)).catch(() => {}))
     deletes.push(deleteDoc(doc(db, 'workspaces', workspaceId, 'permissions', id)).catch(() => {}))
     deletes.push(deleteDoc(doc(db, 'staffInviteClaims', id)).catch(() => {}))
     deletes.push(setDoc(doc(db, 'users', id), {
@@ -71,7 +74,7 @@ async function removeStaffAccessRecords(workspaceId, member) {
 
   if (email) {
     deletes.push(deleteDoc(doc(db, 'staffInviteEmails', staffInviteEmailKey(email))).catch(() => {}))
-    for (const collectionName of ['staff', 'permissions']) {
+    for (const collectionName of ['staff', 'teamMembers', 'permissions']) {
       const snap = await getDocs(query(collection(db, 'workspaces', workspaceId, collectionName), where('email', '==', email))).catch(() => null)
       snap?.docs?.forEach((item) => {
         deletes.push(deleteDoc(item.ref).catch(() => {}))
@@ -82,6 +85,9 @@ async function removeStaffAccessRecords(workspaceId, member) {
   }
 
   for (const id of ids) {
+    deletes.push(deleteDoc(doc(db, 'workspaces', workspaceId, 'staff', id)).catch(() => {}))
+    deletes.push(deleteDoc(doc(db, 'workspaces', workspaceId, 'teamMembers', id)).catch(() => {}))
+    deletes.push(deleteDoc(doc(db, 'workspaces', workspaceId, 'permissions', id)).catch(() => {}))
     deletes.push(deleteDoc(doc(db, 'staffInviteClaims', id)).catch(() => {}))
     deletes.push(setDoc(doc(db, 'users', id), {
       ...disabledProfileBase,
@@ -93,6 +99,19 @@ async function removeStaffAccessRecords(workspaceId, member) {
   }
 
   await Promise.all(deletes)
+}
+
+async function deleteTeamStaffWithFunction(workspaceId, member) {
+  if (!functions || !workspaceId || !member) return null
+  const callable = httpsCallable(functions, 'deleteTeamStaff')
+  const response = await callable({
+    workspaceId,
+    staffId: member.staffId || member.uid || member.userId || member.id || '',
+    id: member.id || '',
+    userId: member.userId || '',
+    email: member.email || '',
+  })
+  return response?.data || null
 }
 
 function logTeamPermissionIssue(error, details = {}) {
@@ -279,8 +298,11 @@ export function useTeamMembers() {
         setRows((prev) => prev.filter((m) => m.id !== id))
         if (!db || !workspaceId || !userId || source !== 'firestore') return { ok: true }
         try {
-          await removeStaffAccessRecords(workspaceId, member)
-          await removeUserDoc(workspaceId, 'teamMembers', id)
+          const functionResult = await deleteTeamStaffWithFunction(workspaceId, member)
+          if (!functionResult?.success) {
+            await removeStaffAccessRecords(workspaceId, member)
+            await removeUserDoc(workspaceId, 'teamMembers', id)
+          }
           await logActivity({
             workspaceId,
             userId,
@@ -293,7 +315,7 @@ export function useTeamMembers() {
             targetName: member?.name || id,
             metadata: { email: member?.email || '' },
           })
-          return { ok: true }
+          return { ok: true, message: `${member?.email || member?.name || 'Team member'} deleted successfully.` }
         } catch (e) {
           logTeamPermissionIssue(e, {
             userId,

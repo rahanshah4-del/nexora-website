@@ -1,7 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { signOut } from 'firebase/auth'
 import {
   HiOutlineArrowLeft,
   HiOutlineArrowRight,
@@ -44,10 +43,15 @@ import {
   workspaceRoute,
 } from '../lib/workspaceSession.js'
 import { goToWorkspace } from '../../lib/workspaceNavigation.js'
-import { auth } from '../../lib/firebase.js'
 import logoUrl from '../../assets/logo/nexora-logo.svg'
 
 const WORKSPACE_INACTIVITY_LIMIT_MS = 15 * 60 * 1000
+
+function traceDashboardLoop(event, payload = {}) {
+  if (import.meta.env.DEV) {
+    console.log(`[DashboardRouteTrace] ${event}`, payload)
+  }
+}
 
 function formatAccessDate(value) {
   const date = typeof value?.toDate === 'function' ? value.toDate() : value instanceof Date ? value : value ? new Date(value) : null
@@ -347,6 +351,7 @@ export default function DashboardLayout() {
     isAdmin: userIsAdmin,
     isOwner: userIsOwner,
     role: userRole,
+    accessStatusReady,
   } = useUser()
   const workspaceAccess = useWorkspaceAccess()
   const screen = useScreenSize()
@@ -376,16 +381,8 @@ export default function DashboardLayout() {
         return
       }
       expired = true
-      try {
-        window.sessionStorage.setItem('nexora:loginNotice', 'Your workspace session expired after 15 minutes of inactivity. Please sign in again. If you enabled passkey, use "Sign in with Passkey".')
-      } catch {
-        // Non-fatal in private browsing.
-      }
-      try {
-        if (auth) await signOut(auth)
-      } catch {
-        // Navigation below still returns the user to login.
-      }
+      // Do not call Firebase signOut here: auth persistence is shared across tabs,
+      // so an idle POS tab would log out the owner's previous dashboard tab too.
       navigate('/login', { replace: true, state: { reason: 'workspace_inactivity' } })
     }
     const resetTimer = () => {
@@ -447,7 +444,7 @@ export default function DashboardLayout() {
     !hasActiveAccess &&
     !developerOverride &&
     !billingRenewalRoute
-  const accountBlocked = ready && isAuthenticated && !userLoading && Boolean(userDoc) && isBlocked
+  const accountBlocked = ready && isAuthenticated && !userLoading && accessStatusReady && Boolean(userDoc) && isBlocked
   const currentModule = moduleByRoute(location.pathname)
   const isOwnerAdmin = Boolean(developerOverride || userIsOwner || userIsAdmin || workspaceAccess.isAdmin)
   const normalizedBusinessType = normalizeBusinessType(businessType)
@@ -459,15 +456,14 @@ export default function DashboardLayout() {
   const isCompactPosRoute = location.pathname === '/app/orders'
   const isStandalonePosBillingRoute = location.pathname === '/app/pos'
   const staffAccount = Boolean(userDoc?.isStaff === true || workspaceAccess.isStaff)
-  const staffEnabledModules = new Set(Array.isArray(userDoc?.enabledModules) ? userDoc.enabledModules : [])
+  const accessReady = Boolean(!workspaceAccess.loading && workspaceAccess.accessReady !== false)
   const staffModuleGranted = Boolean(
     !isOwnerAdmin &&
     staffAccount &&
     currentModule &&
     (
       currentModule.alwaysEnabled ||
-      staffEnabledModules.has(currentModule.key) ||
-      (!workspaceAccess.loading && workspaceAccess.hasModulePermission(currentModule.key, 'view'))
+      (accessReady && workspaceAccess.hasModulePermission(currentModule.key, 'view'))
     ),
   )
   const allowedModules = useMemo(
@@ -514,7 +510,7 @@ export default function DashboardLayout() {
     !userLoading &&
     Boolean(userDoc) &&
     Boolean(currentModule) &&
-    !workspaceAccess.loading &&
+    accessReady &&
     !developerOverride &&
     !isOwnerAdmin &&
     !currentModule.alwaysEnabled &&
@@ -866,9 +862,22 @@ export default function DashboardLayout() {
 
   const firstAllowedRoute = useMemo(() => {
     const allowedSet = new Set(allowedModules)
-    const module = workspaceAccess.permissionKeys.find((item) => item.action === 'view' && allowedSet.has(item.moduleKey) && item.route && !item.comingSoon)
+    const roleValue = String(userDoc?.role || workspaceAccess.role || '').trim().toLowerCase()
+    const cashierPriority = normalizedBusinessType === 'Restaurant POS'
+      ? ['orders', 'ordersKot', 'tables']
+      : ['pos', 'posOrders']
+    const cashierModule = staffAccount && roleValue === 'cashier'
+      ? cashierPriority.find((moduleKey) => allowedSet.has(moduleKey))
+      : ''
+    if (cashierModule) {
+      return workspaceAccess.permissionKeys.find((item) => item.action === 'view' && item.moduleKey === cashierModule && item.route && !item.comingSoon)?.route || '/app/pos'
+    }
+    const staffPreferredModule = staffAccount
+      ? workspaceAccess.permissionKeys.find((item) => item.action === 'view' && !['dashboard', 'customers'].includes(item.moduleKey) && allowedSet.has(item.moduleKey) && item.route && !item.comingSoon)
+      : null
+    const module = staffPreferredModule || workspaceAccess.permissionKeys.find((item) => item.action === 'view' && allowedSet.has(item.moduleKey) && item.route && !item.comingSoon)
     return module?.route || '/app/dashboard'
-  }, [allowedModules, workspaceAccess.permissionKeys])
+  }, [allowedModules, normalizedBusinessType, staffAccount, userDoc?.role, workspaceAccess.permissionKeys, workspaceAccess.role])
 
   const backToWorkspace = useCallback(() => {
     if (!isOwnerAdmin && workspaceAccess.isStaff) {
@@ -879,16 +888,51 @@ export default function DashboardLayout() {
   }, [firstAllowedRoute, isOwnerAdmin, location, navigate, workspaceAccess.isStaff])
 
   useEffect(() => {
-    if (!routePermissionBlocked || !staffAccount) return
+    traceDashboardLoop('route-state', {
+      pathname: location.pathname,
+      role: userDoc?.role || workspaceAccess.role || '',
+      staffId: userDoc?.staffId || workspaceAccess.staffId || '',
+      workspaceId,
+      businessType,
+      enabledModules: Array.isArray(userDoc?.enabledModules) ? userDoc.enabledModules : [],
+      permissions: workspaceAccess.permissions,
+      allowedModules,
+      firstAllowedRoute,
+      currentModule: currentModule?.key || '',
+      accessReady,
+      routePermissionBlocked,
+      routeBusinessBlocked,
+      routePlanBlocked,
+    })
+    if (!accessReady || !routePermissionBlocked || !staffAccount) return
     if (location.pathname === firstAllowedRoute) return
+    traceDashboardLoop('navigate', {
+      reason: 'route_permission_blocked',
+      from: location.pathname,
+      to: firstAllowedRoute,
+    })
     navigate(firstAllowedRoute, { replace: true })
-  }, [firstAllowedRoute, location.pathname, navigate, routePermissionBlocked, staffAccount])
+  }, [accessReady, allowedModules, businessType, currentModule?.key, firstAllowedRoute, location.pathname, navigate, routeBusinessBlocked, routePermissionBlocked, routePlanBlocked, staffAccount, userDoc?.enabledModules, userDoc?.role, userDoc?.staffId, workspaceAccess, workspaceId])
+
+  useEffect(() => {
+    if (!staffAccount || isOwnerAdmin || !accessReady) return
+    const roleValue = String(userDoc?.role || workspaceAccess.role || '').trim().toLowerCase()
+    const cashierCustomerRoute = roleValue === 'cashier' && location.pathname === '/app/customers'
+    if (!cashierCustomerRoute) return
+    if (firstAllowedRoute === location.pathname) return
+    traceDashboardLoop('navigate', {
+      reason: 'cashier_customer_route_blocked',
+      from: location.pathname,
+      to: firstAllowedRoute,
+    })
+    navigate(firstAllowedRoute, { replace: true })
+  }, [accessReady, firstAllowedRoute, isOwnerAdmin, location.pathname, navigate, staffAccount, userDoc?.role, workspaceAccess.role])
 
   const openProductSwitcher = useCallback(() => {
     setProductModalOpen(true)
   }, [])
 
-  if (ready && isAuthenticated && userLoading) {
+  if (ready && isAuthenticated && (userLoading || !accessStatusReady)) {
     return (
       <div className="nexora-bg grid min-h-dvh place-items-center overflow-x-hidden px-4 py-10">
         <PageLoader stage="permissions" businessType={userDoc?.businessType} />

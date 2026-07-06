@@ -17,6 +17,8 @@ const FieldValue = admin.firestore.FieldValue
 
 const FROM_EMAIL = process.env.FROM_EMAIL || 'support@nexorasolution.com'
 const FROM_NAME = process.env.FROM_NAME || 'Nexora Solution'
+const EMAIL_WORKER_URL = process.env.EMAIL_WORKER_URL || 'https://nexora-email-api.rahanshah4.workers.dev/send-email'
+const EMAIL_WORKER_ORIGIN = process.env.EMAIL_WORKER_ORIGIN || 'https://nexorasolution.online'
 const ADMIN_EMAILS = new Set(
   (process.env.ADMIN_EMAILS || 'admin@nexora.com,rahanshah2@gmail.com')
     .split(',')
@@ -127,6 +129,182 @@ function isAdminOrOwner(auth) {
 
 function hashSecret(secret) {
   return crypto.createHash('sha256').update(String(secret || '')).digest('hex')
+}
+
+function teamLoginKey(workspaceCode, staffLoginId) {
+  return `${clean(workspaceCode).toUpperCase()}:${clean(staffLoginId).toUpperCase()}`.toLowerCase()
+}
+
+function teamPinHash({ workspaceCode, staffLoginId, pin }) {
+  return hashSecret(`${clean(workspaceCode).toUpperCase()}:${clean(staffLoginId).toUpperCase()}:${clean(pin)}`)
+}
+
+function randomChars(length = 5, alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789') {
+  const bytes = crypto.randomBytes(length)
+  return Array.from(bytes).map((byte) => alphabet[byte % alphabet.length]).join('')
+}
+
+function staffInviteEmailKey(email) {
+  return lower(email).replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'staff-email'
+}
+
+function normalizeStaffRole(role) {
+  const value = lower(role || 'staff')
+  if (value === 'owner') return 'owner'
+  if (value === 'admin') return 'admin'
+  if (value === 'accountant') return 'accountant'
+  if (value === 'manager') return 'manager'
+  if (value === 'cashier') return 'cashier'
+  if (value === 'support' || value === 'support agent' || value === 'support_staff') return 'support_staff'
+  if (value === 'sales' || value === 'sales staff' || value === 'sales_staff' || value === 'staff') return 'sales_staff'
+  if (value === 'data entry' || value === 'data_entry') return 'data_entry'
+  if (value === 'viewer' || value === 'view only' || value === 'readonly') return 'viewer'
+  return 'viewer'
+}
+
+function normalizeTeamBusinessType(type) {
+  const raw = clean(type)
+  const value = raw.toLowerCase().replace(/_/g, '-')
+  if (['restaurant-pos', 'restaurant pos', 'restaurant'].includes(value) || value.includes('restaurant') || value.includes('kot') || value.includes('kitchen')) return 'Restaurant POS'
+  if (['retail-pos', 'retail pos', 'retail', 'pos'].includes(value) || value.includes('retail') || value.includes('inventory')) return 'Retail / POS'
+  if (value.includes('school')) return 'School ERP'
+  if (value.includes('transport') || value.includes('rental') || value.includes('fleet')) return 'Transport / Rental'
+  if (value.includes('whatsapp')) return 'WhatsApp CRM'
+  if (value.includes('property') || value.includes('rent')) return 'Property ERP'
+  return raw || 'General CRM'
+}
+
+function teamBusinessPermissionKey(type) {
+  return normalizeTeamBusinessType(type)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '') || 'general-crm'
+}
+
+function teamWorkspaceIdForBusiness(type) {
+  const key = teamBusinessPermissionKey(type)
+  if (key === 'restaurant-pos') return 'restaurant-pos'
+  if (key === 'retail-pos') return 'retail-pos'
+  if (key === 'school-erp') return 'school-erp'
+  if (key === 'transport-rental') return 'transport-rental'
+  if (key === 'whatsapp-crm') return 'whatsapp-crm'
+  if (key === 'property-erp') return 'property-erp'
+  return 'general-crm'
+}
+
+function permissionModuleKey(permissionKey) {
+  const match = String(permissionKey || '').match(/^module\.([^.]+)\./)
+  return match?.[1] || ''
+}
+
+function normalizeTeamModuleKey(moduleKey) {
+  const value = clean(moduleKey)
+  const normalized = value.toLowerCase().replace(/[-\s]+/g, '_')
+  if (normalized === 'retail_pos' || normalized === 'retail' || normalized === 'pos') return 'pos'
+  if (normalized === 'pos_orders' || normalized === 'retail_pos_orders') return 'posOrders'
+  return value
+}
+
+function selectedModulesFromPermissions(permissions = {}) {
+  const modules = Object.entries(permissions || {})
+    .filter(([key, value]) => value === true && String(key).startsWith('module.') && String(key).endsWith('.view'))
+    .map(([key]) => normalizeTeamModuleKey(permissionModuleKey(key)))
+    .filter(Boolean)
+  return Array.from(new Set(modules))
+}
+
+function inferBusinessTypeFromModules(modules = [], fallback = '') {
+  const selected = new Set((Array.isArray(modules) ? modules : []).map(clean).filter(Boolean))
+  if (selected.has('orders') || selected.has('ordersKot') || selected.has('tables') || selected.has('kitchenDisplay') || selected.has('menuManagement')) return 'Restaurant POS'
+  if (selected.has('pos') || selected.has('posOrders') || selected.has('posDiscounts') || selected.has('inventory')) return 'Retail / POS'
+  return normalizeTeamBusinessType(fallback)
+}
+
+function resolveTeamStaffAccess({ role, businessType, businessKey, selectedWorkspace, permissions = {}, enabledModules = [], selectedModuleKeys = [] } = {}) {
+  const cleanPermissions = permissions && typeof permissions === 'object' ? { ...permissions } : {}
+  const requestedModules = Array.from(new Set([
+    ...selectedModulesFromPermissions(cleanPermissions),
+    ...(Array.isArray(enabledModules) ? enabledModules : []),
+    ...(Array.isArray(selectedModuleKeys) ? selectedModuleKeys : []),
+  ].map(normalizeTeamModuleKey).filter(Boolean)))
+  const hintedBusiness = businessKey || businessType || selectedWorkspace
+  const normalizedBusinessType = inferBusinessTypeFromModules(requestedModules, hintedBusiness)
+  const normalizedBusinessKey = teamBusinessPermissionKey(normalizedBusinessType)
+  const normalizedWorkspace = teamWorkspaceIdForBusiness(normalizedBusinessType)
+  const cashierRole = normalizeStaffRole(role) === 'cashier'
+  const allowedCashierModules = normalizedBusinessKey === 'restaurant-pos'
+    ? new Set(['dashboard', 'orders', 'ordersKot', 'tables'])
+    : normalizedBusinessKey === 'retail-pos'
+      ? new Set(['dashboard', 'pos', 'posOrders'])
+      : new Set()
+  const allowedModules = cashierRole && allowedCashierModules.size
+    ? requestedModules.filter((moduleKey) => allowedCashierModules.has(moduleKey))
+    : requestedModules
+  const resolvedModules = Array.from(new Set(
+    cashierRole && allowedCashierModules.size
+      ? allowedModules
+      : allowedModules.length
+        ? allowedModules
+        : selectedModulesFromPermissions(cleanPermissions),
+  ))
+  const moduleSet = new Set(resolvedModules)
+  const resolvedPermissions = Object.fromEntries(
+    Object.entries(cleanPermissions).filter(([key]) => {
+      const moduleKey = normalizeTeamModuleKey(permissionModuleKey(key))
+      if (!moduleKey) return true
+      return !cashierRole || !allowedCashierModules.size || allowedCashierModules.has(moduleKey)
+    }),
+  )
+  resolvedModules.forEach((moduleKey) => {
+    resolvedPermissions[`module.${moduleKey}.view`] = true
+  })
+  ;['view', 'create', 'edit', 'delete', 'print', 'export', 'approve'].forEach((action) => {
+    if (resolvedPermissions[`module.pos.${action}`] === true) resolvedPermissions[`module.retail_pos.${action}`] = true
+    if (resolvedPermissions[`module.retail_pos.${action}`] === true) resolvedPermissions[`module.pos.${action}`] = true
+    if (resolvedPermissions[`module.posOrders.${action}`] === true) resolvedPermissions[`module.pos_orders.${action}`] = true
+    if (resolvedPermissions[`module.pos_orders.${action}`] === true) resolvedPermissions[`module.posOrders.${action}`] = true
+  })
+  if (cashierRole) {
+    Object.keys(resolvedPermissions).forEach((key) => {
+      const moduleKey = normalizeTeamModuleKey(permissionModuleKey(key))
+      if (moduleKey && allowedCashierModules.size && !allowedCashierModules.has(moduleKey)) delete resolvedPermissions[key]
+      if (key.endsWith('.delete') || key.endsWith('.export') || key.endsWith('.approve')) resolvedPermissions[key] = false
+      if ((moduleKey === 'settings' || moduleKey === 'reports' || moduleKey === 'inventory' || moduleKey === 'products' || moduleKey === 'purchases') && !moduleSet.has(moduleKey)) delete resolvedPermissions[key]
+    })
+  }
+  const resolvedEnabledModules = Array.from(new Set([
+    ...resolvedModules,
+    ...(moduleSet.has('pos') ? ['retail_pos'] : []),
+    ...(moduleSet.has('posOrders') ? ['pos_orders'] : []),
+  ]))
+  return {
+    businessType: normalizedBusinessType,
+    businessKey: normalizedBusinessKey,
+    selectedWorkspace: selectedWorkspace && teamBusinessPermissionKey(selectedWorkspace) === normalizedBusinessKey ? clean(selectedWorkspace) : normalizedWorkspace,
+    permissions: resolvedPermissions,
+    enabledModules: resolvedEnabledModules,
+  }
+}
+
+function staffRolePrefix(role) {
+  const value = normalizeStaffRole(role)
+  if (value === 'manager') return 'MGR'
+  if (value === 'cashier') return 'CSH'
+  if (value === 'sales_staff') return 'SLS'
+  if (value === 'accountant') return 'ACC'
+  if (value === 'admin') return 'ADM'
+  if (value === 'support_staff') return 'SUP'
+  if (value === 'data_entry') return 'DTE'
+  if (value === 'viewer') return 'VWR'
+  return 'STF'
+}
+
+function generateStaffLoginId(role) {
+  return `${staffRolePrefix(role)}-${randomChars(4, '23456789ABCDEFGHJKLMNPQRSTUVWXYZ')}`
+}
+
+function generatePin() {
+  return Array.from(crypto.randomBytes(6)).map((byte) => String(byte % 10)).join('')
 }
 
 function randomSecret() {
@@ -244,6 +422,24 @@ async function writeLoginHistory({ userId = '', email = '', workspaceId = '', me
   await db.collection('loginHistory').add(payload)
 }
 
+async function writeWorkspaceAudit({ workspaceId = '', userId = '', staffId = '', action = '', target = '', moduleKey = 'team', createdBy = '', metadata = {} }) {
+  if (!workspaceId) return
+  await db.collection('workspaces').doc(workspaceId).collection('activityLogs').add({
+    workspaceId,
+    ownerId: workspaceId,
+    userId,
+    staffId,
+    action,
+    target,
+    moduleKey,
+    module: moduleKey === 'team' ? 'Team' : moduleKey,
+    createdBy: createdBy || userId || staffId,
+    metadata,
+    createdAt: FieldValue.serverTimestamp(),
+    timestamp: FieldValue.serverTimestamp(),
+  })
+}
+
 function dateKey(value) {
   const date = value ? new Date(value) : new Date()
   if (Number.isNaN(date.getTime())) return new Date().toISOString().slice(0, 10)
@@ -268,11 +464,15 @@ async function assertWorkspaceAdmin(auth, workspaceId) {
   const workspace = workspaceSnap.data() || {}
   const user = userSnap.data() || {}
   const role = lower(user.role || auth.token?.role)
-  const profileMatches =
+  const authEmail = lower(auth.token?.email || user.email)
+  const ownerMatches =
     auth.uid === workspaceId ||
     workspace.ownerId === auth.uid ||
     workspace.createdBy === auth.uid ||
     workspace.userId === auth.uid ||
+    lower(workspace.ownerEmail || workspace.email) === authEmail
+  const profileMatches =
+    ownerMatches ||
     user.workspaceId === workspaceId ||
     user.ownerId === workspaceId ||
     user.companyId === workspaceId ||
@@ -280,8 +480,9 @@ async function assertWorkspaceAdmin(auth, workspaceId) {
     (Array.isArray(user.workspaceIds) && user.workspaceIds.includes(workspaceId)) ||
     (Array.isArray(user.workspaces) && user.workspaces.includes(workspaceId))
 
+  if (ownerMatches) return true
   if (profileMatches && ['owner', 'admin'].includes(role)) return true
-  throw new HttpsError('permission-denied', 'Only workspace owner/admin can manage attendance devices.')
+  throw new HttpsError('permission-denied', 'Only workspace owner/admin can manage team staff.')
 }
 
 function normalizePunch(row = {}, device = {}) {
@@ -419,10 +620,31 @@ async function sendWithSendGrid({ to, subject, html, text }) {
   }
 }
 
+async function sendWithEmailWorker({ to, subject, html, text }) {
+  const response = await fetch(EMAIL_WORKER_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Origin: EMAIL_WORKER_ORIGIN,
+    },
+    body: JSON.stringify({
+      to,
+      subject,
+      html,
+      text: text || undefined,
+    }),
+  })
+  const data = await response.json().catch(() => null)
+  if (!response.ok || data?.success !== true) {
+    throw new Error(data?.error || `Email worker rejected the email with status ${response.status}.`)
+  }
+}
+
 async function sendEmail(payload) {
   if (providerName() === 'resend') return sendWithResend(payload)
   if (providerName() === 'sendgrid') return sendWithSendGrid(payload)
-  throw new HttpsError('failed-precondition', 'RESEND_API_KEY or SENDGRID_API_KEY is required.')
+  if (EMAIL_WORKER_URL) return sendWithEmailWorker(payload)
+  throw new HttpsError('failed-precondition', 'RESEND_API_KEY, SENDGRID_API_KEY, or EMAIL_WORKER_URL is required.')
 }
 
 function htmlEscape(value) {
@@ -432,6 +654,44 @@ function htmlEscape(value) {
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#39;')
+}
+
+function staffInviteEmail({ staffName = 'Staff User', workspaceName = 'Nexora Workspace', workspaceCode = '', staffLoginId = '', pin = '', role = 'staff', businessType = '', modules = [], loginUrl = process.env.APP_URL || 'https://nexorasolution.online/login' } = {}) {
+  const moduleItems = Array.isArray(modules) && modules.length
+    ? modules.slice(0, 10).map((item) => `<li>${htmlEscape(item)}</li>`).join('')
+    : '<li>Assigned modules will appear after login.</li>'
+  return {
+    subject: `${workspaceName} invited you to Nexora`,
+    html: `<!doctype html>
+<html>
+  <body style="margin:0;background:#f8fafc;font-family:Arial,Helvetica,sans-serif;color:#0f172a;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="padding:24px;background:#f8fafc;">
+      <tr><td align="center">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;background:#ffffff;border:1px solid #e2e8f0;border-radius:18px;overflow:hidden;">
+          <tr><td style="padding:22px 24px;background:#0f172a;color:#ffffff;">
+            <div style="font-size:18px;font-weight:900;">Nexora Staff Access</div>
+            <div style="font-size:13px;color:#cbd5e1;margin-top:6px;">${htmlEscape(workspaceName)}</div>
+          </td></tr>
+          <tr><td style="padding:24px;">
+            <p style="font-size:15px;line-height:24px;margin:0 0 16px;">Hi ${htmlEscape(staffName)}, you have been invited to access your assigned Nexora modules.</p>
+            <table width="100%" cellspacing="0" cellpadding="0" style="border:1px solid #e2e8f0;border-radius:14px;margin:0 0 18px;">
+              <tr><td style="padding:10px 14px;font-weight:700;">Workspace Code</td><td style="padding:10px 14px;">${htmlEscape(workspaceCode)}</td></tr>
+              <tr><td style="padding:10px 14px;font-weight:700;">Staff ID</td><td style="padding:10px 14px;">${htmlEscape(staffLoginId)}</td></tr>
+              <tr><td style="padding:10px 14px;font-weight:700;">PIN</td><td style="padding:10px 14px;">${htmlEscape(pin)}</td></tr>
+              <tr><td style="padding:10px 14px;font-weight:700;">Role</td><td style="padding:10px 14px;">${htmlEscape(role)}</td></tr>
+              <tr><td style="padding:10px 14px;font-weight:700;">Business Type</td><td style="padding:10px 14px;">${htmlEscape(businessType)}</td></tr>
+            </table>
+            <div style="font-weight:800;margin-bottom:8px;">Allowed modules</div>
+            <ul style="margin:0 0 20px 20px;padding:0;color:#334155;">${moduleItems}</ul>
+            <a href="${htmlEscape(loginUrl)}" style="display:inline-block;background:#0f172a;color:#ffffff;text-decoration:none;border-radius:12px;padding:12px 18px;font-weight:800;">Open Nexora</a>
+            <p style="font-size:12px;line-height:20px;color:#64748b;margin:18px 0 0;">Do not share these credentials. Your owner/admin can update or disable access any time.</p>
+          </td></tr>
+        </table>
+      </td></tr>
+    </table>
+  </body>
+</html>`,
+  }
 }
 
 function supportTicketEmailBase({ title, preview, body, ticketNumber, status }) {
@@ -990,6 +1250,823 @@ export const recordLoginHistory = onCall(
       error: clean(request.data?.error),
     })
     return { success: true }
+  },
+)
+
+export const teamStaffLogin = onCall(
+  { region: FUNCTION_REGION, timeoutSeconds: 30, memory: '256MiB' },
+  async (request) => {
+    try {
+      const workspaceCode = clean(request.data?.workspaceCode).toUpperCase()
+      const staffLoginId = clean(request.data?.staffLoginId || request.data?.staffId || request.data?.emailOrStaffId).toUpperCase()
+      const pin = clean(request.data?.pin || request.data?.password)
+      if (!workspaceCode || !staffLoginId || !pin) {
+        throw new HttpsError('invalid-argument', 'Workspace code, staff ID, and PIN are required.')
+      }
+      const loginKey = teamLoginKey(workspaceCode, staffLoginId)
+      const directStaffUid = `${workspaceCode}-${staffLoginId}`.replace(/[^A-Z0-9_-]/g, '-')
+      const directSecretRef = db.collection('staffLoginSecrets').doc(directStaffUid)
+      let secretRef = directSecretRef
+      let secretSnap = await directSecretRef.get()
+      if (!secretSnap.exists) {
+        const secretQuery = await db.collection('staffLoginSecrets').where('loginKey', '==', loginKey).limit(1).get()
+        if (secretQuery.empty) throw new HttpsError('permission-denied', 'Invalid team login details.')
+        secretRef = secretQuery.docs[0].ref
+        secretSnap = secretQuery.docs[0]
+      }
+      const secret = secretSnap.exists ? secretSnap.data() || {} : {}
+      const workspaceId = clean(secret.workspaceId || secret.ownerId)
+      const staffUid = clean(secret.staffId || secret.uid || secretRef.id || directStaffUid)
+      if (!workspaceId || !staffUid) throw new HttpsError('permission-denied', 'Invalid team login details.')
+
+      let staffRef = db.collection('workspaces').doc(workspaceId).collection('staff').doc(staffUid)
+      let staffSnap = await staffRef.get()
+      if (!staffSnap.exists) {
+        staffRef = db.collection('workspaces').doc(workspaceId).collection('teamMembers').doc(staffUid)
+        staffSnap = await staffRef.get()
+      }
+      const staff = staffSnap.exists ? staffSnap.data() || {} : secret
+      const status = lower(staff.status || 'active')
+      const disabled = ['blocked', 'disabled', 'inactive'].includes(status) || staff.pinLoginEnabled === false || secret.pinLoginEnabled === false
+      if (disabled) {
+        await writeWorkspaceAudit({
+          workspaceId,
+          userId: staffUid,
+          staffId: staffUid,
+          action: 'staff_login_denied',
+          target: staffUid,
+          moduleKey: 'team',
+          metadata: { reason: 'disabled', staffLoginId, role: clean(staff.role || secret.role || '') },
+        }).catch(() => {})
+        throw new HttpsError('permission-denied', 'This staff access is disabled.')
+      }
+
+      const failedCount = Number(secret.failedLoginCount || staff.failedLoginCount || 0)
+      if (failedCount >= 10) {
+        await Promise.all([
+          staffRef.set({ status: 'blocked', updatedAt: FieldValue.serverTimestamp(), blockReason: 'Too many failed PIN attempts.' }, { merge: true }),
+          secretRef.set({ failedLoginCount: failedCount, lockedAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() }, { merge: true }),
+          writeWorkspaceAudit({
+            workspaceId,
+            userId: staffUid,
+            staffId: staffUid,
+            action: 'staff_login_locked',
+            target: staffUid,
+            moduleKey: 'team',
+            metadata: { staffLoginId, failedLoginCount: failedCount },
+          }).catch(() => {}),
+        ])
+        throw new HttpsError('permission-denied', 'This staff access is locked. Contact the owner.')
+      }
+
+      const expected = clean(secret.pinHash)
+      const actual = teamPinHash({ workspaceCode, staffLoginId, pin })
+      if (!expected || expected !== actual) {
+        const failPatch = {
+          failedLoginCount: failedCount + 1,
+          lastFailedLoginAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
+        }
+        await Promise.all([
+          staffRef.set(failPatch, { merge: true }),
+          secretRef.set(failPatch, { merge: true }),
+          writeWorkspaceAudit({
+            workspaceId,
+            userId: staffUid,
+            staffId: staffUid,
+            action: 'staff_login_failed',
+            target: staffUid,
+            moduleKey: 'team',
+            metadata: { staffLoginId, failedLoginCount: failedCount + 1, role: clean(staff.role || secret.role || '') },
+          }).catch(() => {}),
+        ])
+        throw new HttpsError('permission-denied', 'Invalid team login details.')
+      }
+
+      const nowPatch = {
+        failedLoginCount: 0,
+        inviteStatus: 'accepted',
+        acceptedAt: staff.acceptedAt || FieldValue.serverTimestamp(),
+        lastLoginAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      }
+      const staffAccessScope = resolveTeamStaffAccess({
+        role: staff.role,
+        businessType: staff.businessType || staff.selectedBusinessType || staff.currentBusinessType || staff.primaryBusinessType || '',
+        businessKey: staff.businessKey || '',
+        selectedWorkspace: staff.selectedWorkspace || '',
+        permissions: staff.permissions && typeof staff.permissions === 'object' ? staff.permissions : {},
+        enabledModules: Array.isArray(staff.enabledModules) ? staff.enabledModules.map(clean).filter(Boolean) : [],
+      })
+      const staffBusinessType = staffAccessScope.businessType
+      const userPatch = {
+        ...nowPatch,
+        uid: staffUid,
+        userId: staffUid,
+        staffId: staffUid,
+        workspaceId,
+        ownerId: workspaceId,
+        companyId: workspaceId,
+        role: clean(staff.role || 'staff'),
+        email: lower(staff.email),
+        name: clean(staff.name),
+        fullName: clean(staff.fullName || staff.name),
+        displayName: clean(staff.displayName || staff.name),
+        isStaff: true,
+        isOwner: false,
+        isAdmin: false,
+        emailVerifiedCustom: true,
+        onboardingCompleted: true,
+        provider: 'team-pin',
+        permissions: staffAccessScope.permissions,
+        businessPermissions: {
+          ...(staff.businessPermissions && typeof staff.businessPermissions === 'object' ? staff.businessPermissions : {}),
+          [staffAccessScope.businessKey]: staffAccessScope.permissions,
+        },
+        enabledModules: staffAccessScope.enabledModules,
+        businessType: staffBusinessType,
+        selectedBusinessType: staffBusinessType,
+        currentBusinessType: staffBusinessType,
+        primaryBusinessType: staffBusinessType,
+        allowedBusinessTypes: staffBusinessType ? [staffBusinessType] : [],
+        selectedWorkspace: staffAccessScope.selectedWorkspace,
+      }
+      await Promise.all([
+        staffRef.set({
+          ...nowPatch,
+          permissions: staffAccessScope.permissions,
+          businessPermissions: {
+            ...(staff.businessPermissions && typeof staff.businessPermissions === 'object' ? staff.businessPermissions : {}),
+            [staffAccessScope.businessKey]: staffAccessScope.permissions,
+          },
+          enabledModules: staffAccessScope.enabledModules,
+          businessType: staffBusinessType,
+          selectedBusinessType: staffBusinessType,
+          currentBusinessType: staffBusinessType,
+          primaryBusinessType: staffBusinessType,
+          allowedBusinessTypes: staffBusinessType ? [staffBusinessType] : [],
+          selectedWorkspace: staffAccessScope.selectedWorkspace,
+        }, { merge: true }),
+        secretRef.set({ failedLoginCount: 0, lastLoginAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() }, { merge: true }),
+        db.collection('workspaces').doc(workspaceId).collection('teamMembers').doc(staffUid).set({
+          ...nowPatch,
+          permissions: staffAccessScope.permissions,
+          businessPermissions: {
+            ...(staff.businessPermissions && typeof staff.businessPermissions === 'object' ? staff.businessPermissions : {}),
+            [staffAccessScope.businessKey]: staffAccessScope.permissions,
+          },
+          enabledModules: staffAccessScope.enabledModules,
+          businessType: staffBusinessType,
+          selectedBusinessType: staffBusinessType,
+          currentBusinessType: staffBusinessType,
+          primaryBusinessType: staffBusinessType,
+          allowedBusinessTypes: staffBusinessType ? [staffBusinessType] : [],
+          selectedWorkspace: staffAccessScope.selectedWorkspace,
+        }, { merge: true }),
+        db.collection('users').doc(staffUid).set(userPatch, { merge: true }),
+        writeLoginHistory({
+          userId: staffUid,
+          email: lower(staff.email),
+          workspaceId,
+          method: 'password',
+          status: 'success',
+          userAgent: clean(request.rawRequest?.headers?.['user-agent']),
+          ip: clean(request.rawRequest?.ip || request.rawRequest?.headers?.['x-forwarded-for']),
+        }).catch(() => {}),
+        writeWorkspaceAudit({
+          workspaceId,
+          userId: staffUid,
+          staffId: staffUid,
+          action: normalizeStaffRole(staff.role) === 'cashier' ? 'cashier_login' : 'staff_login',
+          target: staffUid,
+          moduleKey: normalizeStaffRole(staff.role) === 'cashier' ? 'pos' : 'team',
+          metadata: { staffLoginId, role: clean(staff.role || 'staff') },
+        }).catch(() => {}),
+      ])
+
+      const customToken = await admin.auth().createCustomToken(staffUid, {
+        staff: true,
+        role: clean(staff.role || 'staff'),
+        workspaceId,
+        ownerId: workspaceId,
+        staffLoginId,
+      })
+      return {
+        success: true,
+        customToken,
+        staff: {
+          uid: staffUid,
+          staffId: staffUid,
+          staffLoginId,
+          workspaceId,
+          ownerId: workspaceId,
+          role: clean(staff.role || 'staff'),
+          name: clean(staff.name),
+          email: lower(staff.email),
+        },
+      }
+    } catch (error) {
+      if (error instanceof HttpsError) throw error
+      logger.error('teamStaffLogin failed', { message: error?.message, stack: error?.stack })
+      throw new HttpsError('internal', error?.message || 'Unable to complete team login.')
+    }
+  },
+)
+
+export const createTeamStaff = onCall(
+  { region: FUNCTION_REGION, timeoutSeconds: 60, memory: '256MiB' },
+  async (request) => {
+    try {
+      const workspaceId = clean(request.data?.workspaceId)
+      const name = clean(request.data?.name)
+      const email = lower(request.data?.email)
+      const username = clean(request.data?.username)
+      const usernameLower = lower(username)
+      const role = normalizeStaffRole(request.data?.role)
+      const status = lower(request.data?.status || 'active') || 'active'
+      const requestedBusinessType = clean(request.data?.businessType || request.data?.selectedBusinessType || '')
+      const requestedSelectedWorkspace = clean(request.data?.selectedWorkspace)
+      const requestedPermissions = request.data?.permissions && typeof request.data.permissions === 'object' ? request.data.permissions : {}
+      const requestedBusinessKey = clean(request.data?.businessKey || '')
+      const requestedEnabledModules = Array.isArray(request.data?.enabledModules) ? request.data.enabledModules.map(clean).filter(Boolean) : []
+      const requestedSelectedModuleKeys = Array.isArray(request.data?.selectedModuleKeys) ? request.data.selectedModuleKeys.map(clean).filter(Boolean) : []
+      const accessScope = resolveTeamStaffAccess({
+        role,
+        businessType: requestedBusinessType,
+        businessKey: requestedBusinessKey,
+        selectedWorkspace: requestedSelectedWorkspace,
+        permissions: requestedPermissions,
+        enabledModules: requestedEnabledModules,
+        selectedModuleKeys: requestedSelectedModuleKeys,
+      })
+      const businessType = accessScope.businessType
+      const selectedWorkspace = accessScope.selectedWorkspace
+      const permissions = accessScope.permissions
+      const businessKey = accessScope.businessKey
+      const enabledModules = accessScope.enabledModules
+      const workspaceCodeInput = clean(request.data?.workspaceCode).toUpperCase()
+
+      if (!workspaceId) throw new HttpsError('invalid-argument', 'Workspace ID is required.')
+      if (!name) throw new HttpsError('invalid-argument', 'Staff name is required.')
+      if (!email) throw new HttpsError('invalid-argument', 'Staff email is required.')
+      await assertWorkspaceAdmin(request.auth, workspaceId)
+
+      const [workspaceSnap, userSnap] = await Promise.all([
+        db.collection('workspaces').doc(workspaceId).get(),
+        db.collection('users').doc(request.auth.uid).get(),
+      ])
+      const workspace = workspaceSnap.data() || {}
+      const owner = userSnap.data() || {}
+      const ownerEmail = lower(request.auth.token?.email || owner.email)
+      if (ownerEmail && ownerEmail === email) {
+        throw new HttpsError('invalid-argument', 'Owner/admin email cannot be used for staff access.')
+      }
+
+      const duplicateSnap = await db.collection('workspaces').doc(workspaceId).collection('staff').where('email', '==', email).limit(1).get()
+      if (!duplicateSnap.empty) {
+        throw new HttpsError('already-exists', 'This email is already added as staff.')
+      }
+
+      const seed = clean(workspace.companyName || workspace.name || workspaceId).replace(/[^a-zA-Z0-9]/g, '').slice(0, 3).toUpperCase() || 'NX'
+      const workspaceCode = workspaceCodeInput || clean(workspace.workspaceCode || workspace.teamWorkspaceCode).toUpperCase() || `${seed}${randomChars(4)}`
+      const staffLoginId = generateStaffLoginId(role)
+      const pin = generatePin()
+      const staffId = `${workspaceCode}-${staffLoginId}`.replace(/[^A-Z0-9_-]/g, '-')
+      const loginKey = teamLoginKey(workspaceCode, staffLoginId)
+      const pinHash = teamPinHash({ workspaceCode, staffLoginId, pin })
+      const now = FieldValue.serverTimestamp()
+      const baseStaff = {
+        uid: staffId,
+        staffId,
+        name,
+        fullName: name,
+        displayName: name,
+        email,
+        username,
+        usernameLower,
+        workspaceCode,
+        teamWorkspaceCode: workspaceCode,
+        staffLoginId,
+        staffShortCode: staffLoginId,
+        loginKey,
+        pinLoginEnabled: true,
+        pinUpdatedAt: now,
+        failedLoginCount: 0,
+        role,
+        status,
+        isStaff: true,
+        isOwner: false,
+        isAdmin: false,
+        permissions,
+        businessPermissions: { [businessKey]: permissions },
+        businessType,
+        selectedBusinessType: businessType,
+        currentBusinessType: businessType,
+        primaryBusinessType: businessType,
+        allowedBusinessTypes: businessType ? [businessType] : [],
+        selectedWorkspace,
+        enabledModules,
+        ownerId: workspaceId,
+        companyId: workspaceId,
+        workspaceId,
+        userId: staffId,
+        createdBy: request.auth.uid,
+        passwordSetPending: false,
+        inviteStatus: 'sent',
+        inviteEmailStatus: 'pending',
+        inviteEmailError: '',
+        emailVerifiedCustom: true,
+        onboardingCompleted: true,
+        authCreated: false,
+        provider: 'team-pin',
+        plan: owner.plan || 'Free',
+        planStatus: owner.planStatus || 'active',
+        billingCycle: owner.billingCycle || 'monthly',
+        invitedAt: now,
+        invitedBy: request.auth.uid,
+        createdAt: now,
+        updatedAt: now,
+      }
+
+      const batch = db.batch()
+      batch.set(db.collection('workspaces').doc(workspaceId), { workspaceCode, teamWorkspaceCode: workspaceCode, updatedAt: now, updatedBy: request.auth.uid }, { merge: true })
+      batch.set(db.collection('workspaces').doc(workspaceId).collection('staff').doc(staffId), baseStaff, { merge: true })
+      batch.set(db.collection('workspaces').doc(workspaceId).collection('teamMembers').doc(staffId), baseStaff, { merge: true })
+      batch.set(db.collection('workspaces').doc(workspaceId).collection('permissions').doc(staffId), {
+        ...permissions,
+        businessType,
+        businessPermissions: { [businessKey]: permissions },
+        staffId,
+        workspaceCode,
+        staffLoginId,
+        loginKey,
+        email,
+        ownerId: workspaceId,
+        workspaceId,
+        userId: staffId,
+        updatedBy: request.auth.uid,
+        updatedAt: now,
+      }, { merge: true })
+      batch.set(db.collection('staffInviteClaims').doc(staffId), baseStaff, { merge: true })
+      batch.set(db.collection('staffInviteEmails').doc(staffInviteEmailKey(email)), baseStaff, { merge: true })
+      batch.set(db.collection('staffLoginSecrets').doc(staffId), {
+        staffId,
+        staffLoginId,
+        workspaceCode,
+        loginKey,
+        pinHash,
+        pinLoginEnabled: true,
+        failedLoginCount: 0,
+        workspaceId,
+        ownerId: workspaceId,
+        email,
+        role,
+        createdBy: request.auth.uid,
+        createdAt: now,
+        updatedAt: now,
+      }, { merge: true })
+      batch.set(db.collection('users').doc(staffId), baseStaff, { merge: true })
+      await batch.commit()
+
+      let inviteEmailStatus = 'sent'
+      let inviteEmailError = ''
+      try {
+        await sendEmail({
+          to: email,
+          ...staffInviteEmail({
+            staffName: name,
+            workspaceName: clean(workspace.companyName || workspace.schoolName || workspace.name || 'Nexora Workspace'),
+            workspaceCode,
+            staffLoginId,
+            pin,
+            role,
+            businessType,
+            modules: enabledModules,
+          }),
+        })
+      } catch (emailError) {
+        inviteEmailStatus = 'failed'
+        inviteEmailError = emailError?.message || 'Email could not be sent.'
+      }
+      const emailPatch = {
+        inviteEmailStatus,
+        inviteEmailError,
+        inviteEmailSentAt: inviteEmailStatus == 'sent' ? FieldValue.serverTimestamp() : null,
+        updatedAt: FieldValue.serverTimestamp(),
+      }
+      const emailBatch = db.batch()
+      emailBatch.set(db.collection('workspaces').doc(workspaceId).collection('staff').doc(staffId), emailPatch, { merge: true })
+      emailBatch.set(db.collection('workspaces').doc(workspaceId).collection('teamMembers').doc(staffId), emailPatch, { merge: true })
+      emailBatch.set(db.collection('staffInviteClaims').doc(staffId), emailPatch, { merge: true })
+      emailBatch.set(db.collection('staffInviteEmails').doc(staffInviteEmailKey(email)), emailPatch, { merge: true })
+      emailBatch.set(db.collection('users').doc(staffId), emailPatch, { merge: true })
+      await emailBatch.commit()
+
+      await writeWorkspaceAudit({
+        workspaceId,
+        userId: request.auth.uid,
+        staffId,
+        action: 'staff_created',
+        target: staffId,
+        moduleKey: 'team',
+        createdBy: request.auth.uid,
+        metadata: { email, role, enabledModules, businessType, emailSent: inviteEmailStatus == 'sent', emailError: inviteEmailError },
+      }).catch(() => {})
+
+      return { success: true, staffId, workspaceCode, staffLoginId, email, role, emailSent: inviteEmailStatus == 'sent', emailError: inviteEmailError }
+    } catch (error) {
+      if (error instanceof HttpsError) throw error
+      logger.error('createTeamStaff failed', { message: error?.message, stack: error?.stack })
+      throw new HttpsError('internal', error?.message || 'Unable to create staff.')
+    }
+  },
+)
+
+export const syncTeamStaffAccess = onCall(
+  { region: FUNCTION_REGION, timeoutSeconds: 60, memory: '256MiB' },
+  async (request) => {
+    try {
+      const workspaceId = clean(request.data?.workspaceId)
+      const staffId = clean(request.data?.staffId)
+      const email = lower(request.data?.email)
+      const requestedBusinessType = clean(request.data?.businessType)
+      const requestedBusinessKey = clean(request.data?.businessKey || '')
+      const requestedPermissions = request.data?.permissions && typeof request.data.permissions === 'object' ? request.data.permissions : {}
+      const requestedEnabledModules = Array.isArray(request.data?.enabledModules) ? request.data.enabledModules.map(clean).filter(Boolean) : []
+      const requestedSelectedModuleKeys = Array.isArray(request.data?.selectedModuleKeys) ? request.data.selectedModuleKeys.map(clean).filter(Boolean) : []
+      if (!workspaceId) throw new HttpsError('invalid-argument', 'Workspace ID is required.')
+      if (!staffId) throw new HttpsError('invalid-argument', 'Staff ID is required.')
+      await assertWorkspaceAdmin(request.auth, workspaceId)
+
+      const staffRef = db.collection('workspaces').doc(workspaceId).collection('staff').doc(staffId)
+      const teamRef = db.collection('workspaces').doc(workspaceId).collection('teamMembers').doc(staffId)
+      const [staffSnap, teamSnap] = await Promise.all([staffRef.get(), teamRef.get()])
+      const staff = staffSnap.exists ? staffSnap.data() || {} : teamSnap.data() || {}
+      const resolvedEmail = email || lower(staff.email)
+      const accessScope = resolveTeamStaffAccess({
+        role: staff.role || request.data?.role,
+        businessType: requestedBusinessType || staff.businessType || staff.selectedBusinessType || staff.currentBusinessType || '',
+        businessKey: requestedBusinessKey,
+        selectedWorkspace: request.data?.selectedWorkspace || staff.selectedWorkspace || '',
+        permissions: requestedPermissions,
+        enabledModules: requestedEnabledModules,
+        selectedModuleKeys: requestedSelectedModuleKeys,
+      })
+      const businessType = accessScope.businessType
+      const businessKey = accessScope.businessKey
+      const permissions = accessScope.permissions
+      const enabledModules = accessScope.enabledModules
+      const nextBusinessPermissions = {
+        ...(staff.businessPermissions || {}),
+        [businessKey]: permissions,
+      }
+      const patch = {
+        permissions,
+        businessPermissions: nextBusinessPermissions,
+        enabledModules,
+        businessType,
+        selectedBusinessType: businessType,
+        currentBusinessType: businessType,
+        primaryBusinessType: businessType,
+        allowedBusinessTypes: businessType ? [businessType] : [],
+        selectedWorkspace: accessScope.selectedWorkspace,
+        workspaceId,
+        ownerId: workspaceId,
+        companyId: workspaceId,
+        staffId,
+        userId: staffId,
+        email: resolvedEmail,
+        role: normalizeStaffRole(staff.role || request.data?.role),
+        isStaff: true,
+        isOwner: false,
+        isAdmin: false,
+        updatedBy: request.auth.uid,
+        updatedAt: FieldValue.serverTimestamp(),
+      }
+
+      const batch = db.batch()
+      batch.set(db.collection('workspaces').doc(workspaceId).collection('permissions').doc(staffId), {
+        ...permissions,
+        ...patch,
+      }, { merge: true })
+      batch.set(staffRef, patch, { merge: true })
+      batch.set(teamRef, patch, { merge: true })
+      batch.set(db.collection('staffInviteClaims').doc(staffId), patch, { merge: true })
+      batch.set(db.collection('users').doc(staffId), patch, { merge: true })
+      if (resolvedEmail) batch.set(db.collection('staffInviteEmails').doc(staffInviteEmailKey(resolvedEmail)), patch, { merge: true })
+      await batch.commit()
+
+      await writeWorkspaceAudit({
+        workspaceId,
+        userId: request.auth.uid,
+        staffId,
+        action: 'staff_permissions_synced',
+        target: staffId,
+        moduleKey: 'team',
+        createdBy: request.auth.uid,
+        metadata: { email: resolvedEmail, role: patch.role, enabledModules, businessType },
+      }).catch(() => {})
+
+      return { success: true, staffId, email: resolvedEmail, enabledModules }
+    } catch (error) {
+      if (error instanceof HttpsError) throw error
+      logger.error('syncTeamStaffAccess failed', { message: error?.message, stack: error?.stack })
+      throw new HttpsError('internal', error?.message || 'Unable to sync staff access.')
+    }
+  },
+)
+
+export const deleteTeamStaff = onCall(
+  { region: FUNCTION_REGION, timeoutSeconds: 60, memory: '256MiB' },
+  async (request) => {
+    const workspaceId = clean(request.data?.workspaceId)
+    const staffId = clean(request.data?.staffId || request.data?.id || request.data?.userId)
+    const email = lower(request.data?.email)
+    if (!workspaceId) throw new HttpsError('invalid-argument', 'Workspace ID is required.')
+    if (!staffId && !email) throw new HttpsError('invalid-argument', 'Staff ID or email is required.')
+    await assertWorkspaceAdmin(request.auth, workspaceId)
+
+    const ids = new Set([staffId].filter(Boolean))
+    const emails = new Set([email].filter(Boolean))
+    const workspaceCollections = ['staff', 'teamMembers', 'permissions']
+
+    for (const id of Array.from(ids)) {
+      for (const collectionName of workspaceCollections) {
+        const snap = await db.collection('workspaces').doc(workspaceId).collection(collectionName).doc(id).get()
+        if (snap.exists) {
+          const row = snap.data() || {}
+          if (row.staffId) ids.add(clean(row.staffId))
+          if (row.uid) ids.add(clean(row.uid))
+          if (row.userId) ids.add(clean(row.userId))
+          if (row.email) emails.add(lower(row.email))
+        }
+      }
+      const claimSnap = await db.collection('staffInviteClaims').doc(id).get()
+      if (claimSnap.exists) {
+        const row = claimSnap.data() || {}
+        if (row.staffId) ids.add(clean(row.staffId))
+        if (row.uid) ids.add(clean(row.uid))
+        if (row.userId) ids.add(clean(row.userId))
+        if (row.email) emails.add(lower(row.email))
+      }
+    }
+
+    for (const currentEmail of Array.from(emails)) {
+      if (!currentEmail) continue
+      for (const collectionName of workspaceCollections) {
+        const snap = await db.collection('workspaces').doc(workspaceId).collection(collectionName).where('email', '==', currentEmail).get()
+        snap.docs.forEach((docSnap) => {
+          ids.add(docSnap.id)
+          const row = docSnap.data() || {}
+          if (row.staffId) ids.add(clean(row.staffId))
+          if (row.uid) ids.add(clean(row.uid))
+          if (row.userId) ids.add(clean(row.userId))
+        })
+      }
+      const claimsSnap = await db.collection('staffInviteClaims').where('email', '==', currentEmail).get()
+      claimsSnap.docs.forEach((docSnap) => {
+        ids.add(docSnap.id)
+        const row = docSnap.data() || {}
+        if (row.staffId) ids.add(clean(row.staffId))
+        if (row.uid) ids.add(clean(row.uid))
+        if (row.userId) ids.add(clean(row.userId))
+      })
+    }
+
+    const normalizedIds = Array.from(ids).map(clean).filter(Boolean)
+    const normalizedEmails = Array.from(emails).map(lower).filter(Boolean)
+    const deletedPaths = []
+    const writer = db.bulkWriter()
+    writer.onWriteError((error) => {
+      logger.warn('deleteTeamStaff write retry', { path: error.documentRef?.path, code: error.code, failedAttempts: error.failedAttempts })
+      return error.failedAttempts < 3
+    })
+
+    for (const id of normalizedIds) {
+      for (const collectionName of workspaceCollections) {
+        const ref = db.collection('workspaces').doc(workspaceId).collection(collectionName).doc(id)
+        writer.delete(ref)
+        deletedPaths.push(ref.path)
+      }
+      for (const collectionName of ['staffInviteClaims', 'staffLoginSecrets']) {
+        const ref = db.collection(collectionName).doc(id)
+        writer.delete(ref)
+        deletedPaths.push(ref.path)
+      }
+      const userRef = db.collection('users').doc(id)
+      writer.set(userRef, {
+        status: 'deleted',
+        accountStatus: 'deleted',
+        inviteStatus: 'revoked',
+        pinLoginEnabled: false,
+        isStaff: true,
+        workspaceId,
+        ownerId: workspaceId,
+        deletedAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      }, { merge: true })
+      deletedPaths.push(userRef.path)
+    }
+
+    for (const currentEmail of normalizedEmails) {
+      const ref = db.collection('staffInviteEmails').doc(currentEmail.replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'staff-email')
+      writer.delete(ref)
+      deletedPaths.push(ref.path)
+    }
+
+    await writer.close()
+
+    for (const id of normalizedIds) {
+      try {
+        await admin.auth().revokeRefreshTokens(id)
+      } catch (error) {
+        logger.warn('deleteTeamStaff revoke token skipped', { staffId: id, message: error?.message })
+      }
+    }
+
+    await writeWorkspaceAudit({
+      workspaceId,
+      userId: request.auth.uid,
+      staffId: normalizedIds[0] || '',
+      action: 'staff_deleted',
+      target: normalizedIds.join(','),
+      moduleKey: 'team',
+      createdBy: request.auth.uid,
+      metadata: { deletedIds: normalizedIds, deletedEmails: normalizedEmails },
+    }).catch(() => {})
+
+    return { success: true, deletedIds: normalizedIds, deletedEmails: normalizedEmails, deletedPaths: deletedPaths.length }
+  },
+)
+
+export const rotateTeamStaffPin = onCall(
+  { region: FUNCTION_REGION, timeoutSeconds: 60, memory: '256MiB' },
+  async (request) => {
+    try {
+      const workspaceId = clean(request.data?.workspaceId)
+      const staffId = clean(request.data?.staffId)
+      if (!workspaceId) throw new HttpsError('invalid-argument', 'Workspace ID is required.')
+      if (!staffId) throw new HttpsError('invalid-argument', 'Staff ID is required.')
+      await assertWorkspaceAdmin(request.auth, workspaceId)
+
+      const staffRef = db.collection('workspaces').doc(workspaceId).collection('staff').doc(staffId)
+      const teamRef = db.collection('workspaces').doc(workspaceId).collection('teamMembers').doc(staffId)
+      const [staffSnap, teamSnap, workspaceSnap] = await Promise.all([
+        staffRef.get(),
+        teamRef.get(),
+        db.collection('workspaces').doc(workspaceId).get(),
+      ])
+      const staff = staffSnap.exists ? staffSnap.data() || {} : teamSnap.data() || {}
+      if (!staffSnap.exists && !teamSnap.exists) throw new HttpsError('not-found', 'Staff record was not found.')
+
+      const workspace = workspaceSnap.data() || {}
+      const workspaceCode = clean(staff.workspaceCode || staff.teamWorkspaceCode || workspace.workspaceCode || workspace.teamWorkspaceCode).toUpperCase()
+      const staffLoginId = clean(staff.staffLoginId || staff.staffShortCode || staffId).toUpperCase()
+      if (!workspaceCode || !staffLoginId) throw new HttpsError('failed-precondition', 'Staff login credentials are incomplete.')
+      const pin = generatePin()
+      const loginKey = teamLoginKey(workspaceCode, staffLoginId)
+      const role = normalizeStaffRole(staff.role)
+      const patch = {
+        workspaceCode,
+        teamWorkspaceCode: workspaceCode,
+        staffLoginId,
+        staffShortCode: staffLoginId,
+        loginKey,
+        pinLoginEnabled: true,
+        failedLoginCount: 0,
+        inviteStatus: 'sent',
+        pinUpdatedAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+        updatedBy: request.auth.uid,
+      }
+
+      const batch = db.batch()
+      batch.set(staffRef, patch, { merge: true })
+      batch.set(teamRef, patch, { merge: true })
+      batch.set(db.collection('staffLoginSecrets').doc(staffId), {
+        staffId,
+        staffLoginId,
+        workspaceCode,
+        loginKey,
+        pinHash: teamPinHash({ workspaceCode, staffLoginId, pin }),
+        pinLoginEnabled: true,
+        failedLoginCount: 0,
+        workspaceId,
+        ownerId: workspaceId,
+        email: lower(staff.email),
+        role,
+        updatedBy: request.auth.uid,
+        updatedAt: FieldValue.serverTimestamp(),
+      }, { merge: true })
+      batch.set(db.collection('staffInviteClaims').doc(staffId), patch, { merge: true })
+      batch.set(db.collection('users').doc(staffId), patch, { merge: true })
+      if (staff.email) batch.set(db.collection('staffInviteEmails').doc(staffInviteEmailKey(staff.email)), patch, { merge: true })
+      await batch.commit()
+
+      let inviteEmailStatus = 'sent'
+      let inviteEmailError = ''
+      try {
+        await sendEmail({
+          to: lower(staff.email),
+          ...staffInviteEmail({
+            staffName: clean(staff.name || staff.fullName || 'Staff User'),
+            workspaceName: clean(workspace.companyName || workspace.schoolName || workspace.name || 'Nexora Workspace'),
+            workspaceCode,
+            staffLoginId,
+            pin,
+            role,
+            businessType: clean(staff.businessType || staff.selectedBusinessType || ''),
+            modules: Array.isArray(staff.enabledModules) ? staff.enabledModules : [],
+          }),
+        })
+      } catch (emailError) {
+        inviteEmailStatus = 'failed'
+        inviteEmailError = emailError?.message || 'Email could not be sent.'
+      }
+      const emailPatch = {
+        inviteEmailStatus,
+        inviteEmailError,
+        inviteEmailSentAt: inviteEmailStatus == 'sent' ? FieldValue.serverTimestamp() : null,
+        updatedAt: FieldValue.serverTimestamp(),
+      }
+      const emailBatch = db.batch()
+      emailBatch.set(staffRef, emailPatch, { merge: true })
+      emailBatch.set(teamRef, emailPatch, { merge: true })
+      emailBatch.set(db.collection('staffInviteClaims').doc(staffId), emailPatch, { merge: true })
+      emailBatch.set(db.collection('users').doc(staffId), emailPatch, { merge: true })
+      if (staff.email) emailBatch.set(db.collection('staffInviteEmails').doc(staffInviteEmailKey(staff.email)), emailPatch, { merge: true })
+      await emailBatch.commit()
+
+      await writeWorkspaceAudit({
+        workspaceId,
+        userId: request.auth.uid,
+        staffId,
+        action: 'staff_pin_rotated',
+        target: staffId,
+        moduleKey: 'team',
+        createdBy: request.auth.uid,
+        metadata: { staffLoginId, role, emailSent: inviteEmailStatus == 'sent', emailError: inviteEmailError },
+      }).catch(() => {})
+
+      return { success: true, staffId, workspaceCode, staffLoginId, email: lower(staff.email), role, emailSent: inviteEmailStatus == 'sent', emailError: inviteEmailError }
+    } catch (error) {
+      if (error instanceof HttpsError) throw error
+      logger.error('rotateTeamStaffPin failed', { message: error?.message, stack: error?.stack })
+      throw new HttpsError('internal', error?.message || 'Unable to rotate staff PIN.')
+    }
+  },
+)
+
+export const updateTeamStaffStatus = onCall(
+  { region: FUNCTION_REGION, timeoutSeconds: 60, memory: '256MiB' },
+  async (request) => {
+    try {
+      const workspaceId = clean(request.data?.workspaceId)
+      const staffId = clean(request.data?.staffId)
+      const status = lower(request.data?.status || 'active')
+      if (!workspaceId) throw new HttpsError('invalid-argument', 'Workspace ID is required.')
+      if (!staffId) throw new HttpsError('invalid-argument', 'Staff ID is required.')
+      if (!['active', 'blocked', 'disabled', 'inactive'].includes(status)) throw new HttpsError('invalid-argument', 'Invalid staff status.')
+      await assertWorkspaceAdmin(request.auth, workspaceId)
+
+      const staffRef = db.collection('workspaces').doc(workspaceId).collection('staff').doc(staffId)
+      const staffSnap = await staffRef.get()
+      const staff = staffSnap.data() || {}
+      if (normalizeStaffRole(staff.role) === 'owner' || staffId === workspaceId) {
+        throw new HttpsError('permission-denied', 'Workspace owner cannot be disabled or downgraded.')
+      }
+      const patch = {
+        status,
+        pinLoginEnabled: !['blocked', 'disabled', 'inactive'].includes(status),
+        updatedAt: FieldValue.serverTimestamp(),
+        updatedBy: request.auth.uid,
+      }
+      const batch = db.batch()
+      batch.set(staffRef, patch, { merge: true })
+      batch.set(db.collection('workspaces').doc(workspaceId).collection('teamMembers').doc(staffId), patch, { merge: true })
+      batch.set(db.collection('users').doc(staffId), patch, { merge: true })
+      batch.set(db.collection('staffInviteClaims').doc(staffId), patch, { merge: true })
+      batch.set(db.collection('staffLoginSecrets').doc(staffId), patch, { merge: true })
+      if (staff.email) batch.set(db.collection('staffInviteEmails').doc(staffInviteEmailKey(staff.email)), patch, { merge: true })
+      await batch.commit()
+
+      await writeWorkspaceAudit({
+        workspaceId,
+        userId: request.auth.uid,
+        staffId,
+        action: status === 'blocked' ? 'staff_disabled' : 'staff_status_updated',
+        target: staffId,
+        moduleKey: 'team',
+        createdBy: request.auth.uid,
+        metadata: { status, email: lower(staff.email), role: normalizeStaffRole(staff.role) },
+      }).catch(() => {})
+
+      return { success: true, staffId, status }
+    } catch (error) {
+      if (error instanceof HttpsError) throw error
+      logger.error('updateTeamStaffStatus failed', { message: error?.message, stack: error?.stack })
+      throw new HttpsError('internal', error?.message || 'Unable to update staff status.')
+    }
   },
 )
 

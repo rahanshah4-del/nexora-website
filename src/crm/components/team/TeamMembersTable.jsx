@@ -14,7 +14,7 @@ function statusVariant(status) {
 
 const OWNER_PROTECTION_MESSAGE = 'Workspace owner cannot be disabled or downgraded.'
 
-export default function TeamMembersTable({ members, permissionKeys, ownerId, currentUserId, currentUserEmail, onAdd, onUpdate, onDelete }) {
+export default function TeamMembersTable({ members, ownerId, currentUserId, currentUserEmail, onAdd, onAddClick, onUpdate, onDelete }) {
   const [open, setOpen] = useState(false)
   const [mode, setMode] = useState('add')
   const [active, setActive] = useState(null)
@@ -91,6 +91,10 @@ export default function TeamMembersTable({ members, permissionKeys, ownerId, cur
           className="rounded-2xl"
           type="button"
           onClick={() => {
+            if (onAddClick) {
+              onAddClick()
+              return
+            }
             setActive(null)
             setMode('add')
             setOpen(true)
@@ -106,7 +110,6 @@ export default function TeamMembersTable({ members, permissionKeys, ownerId, cur
         open={open}
         mode={mode}
         member={active}
-        permissionKeys={permissionKeys}
         ownerProtected={
           String(active?.id || '') === String(ownerId || '') ||
           (String(active?.id || '') === String(currentUserId || '') && String(active?.email || '').toLowerCase() === String(currentUserEmail || '').toLowerCase())
