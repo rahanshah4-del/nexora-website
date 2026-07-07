@@ -5,6 +5,7 @@ import {
   initPublicAnalytics,
   trackPublicEvent,
 } from '../lib/publicAnalytics.js'
+import { safeTrackMetaEvent } from '../lib/metaPixel.js'
 
 function serviceNameFromPath(pathname) {
   const servicePages = {
@@ -65,6 +66,9 @@ export default function PublicAnalytics() {
       if (!target) return
       const classified = classifyPublicClick(target)
       if (!classified) return
+      if (classified.eventName === 'whatsapp_click' || classified.eventName === 'contact_button_click') {
+        safeTrackMetaEvent('Contact')
+      }
       trackPublicEvent(classified.eventName, {
         button_label: classified.label,
         target_url: target.getAttribute('href') || target.getAttribute('to') || '',

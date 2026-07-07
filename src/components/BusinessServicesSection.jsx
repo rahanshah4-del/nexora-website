@@ -16,6 +16,7 @@ import {
   submitBusinessServiceRequest,
 } from '../lib/businessServicesApi.js'
 import { auth } from '../lib/firebase.js'
+import { safeTrackMetaEventOnce } from '../lib/metaPixel.js'
 
 const emptyForm = {
   companyName: '',
@@ -154,7 +155,10 @@ export default function BusinessServicesSection({ compact = false, variant = com
     setError('')
     setMessage('')
     try {
-      await submitBusinessServiceRequest(selectedService, form)
+      const requestId = await submitBusinessServiceRequest(selectedService, form)
+      if (variant === 'public') {
+        safeTrackMetaEventOnce('Lead', undefined, `nexora_meta_lead:${requestId}`, 'session')
+      }
       setMessage('Your service request has been submitted. Nexora team will contact you soon.')
       setForm(emptyForm)
     } catch (submitError) {

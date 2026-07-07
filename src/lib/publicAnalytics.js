@@ -118,7 +118,7 @@ export function classifyPublicClick(element) {
 
   if (href.includes('linkedin.com') || href.includes('facebook.com') || href.includes('twitter.com') || href.includes('wa.me/?text=')) return { eventName: 'blog_share', label }
   if (href.includes('wa.me') || target.includes('whatsapp')) return { eventName: 'whatsapp_click', label }
-  if (href.startsWith('mailto:') || target.includes('/contact') || target.includes('contact')) return { eventName: 'contact_button_click', label }
+  if (href.startsWith('mailto:') || href.startsWith('tel:') || target.includes('/contact') || target.includes('contact')) return { eventName: 'contact_button_click', label }
   if (target.includes('/pricing') || target.includes('pricing')) return { eventName: 'pricing_cta_click', label }
   if (target.includes('/signup') || target.includes('free trial') || target.includes('get started free')) return { eventName: 'start_free_trial', label }
   return null
