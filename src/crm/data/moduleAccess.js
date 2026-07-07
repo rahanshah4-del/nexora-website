@@ -543,8 +543,7 @@ export function businessWorkspaceForSelection(value) {
 }
 
 export function teamManagementEnabledForBusinessType(type) {
-  const normalized = normalizeBusinessType(type)
-  return normalized === 'Restaurant POS' || normalized === 'Retail / POS'
+  return false
 }
 
 export function labelForBusinessType(type) {

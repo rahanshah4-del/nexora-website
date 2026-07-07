@@ -42,6 +42,8 @@ const LOGIN_MODULES = [
   { name: 'WhatsApp CRM', icon: HiOutlineChatBubbleLeftRight, tone: 'bg-gradient-to-br from-green-400 to-emerald-600 shadow-lg shadow-green-500/30' },
 ]
 
+const SHOW_STAFF_CASHIER_LOGIN = false
+
 export default function Login() {
   const { user, loading } = useAuth()
   const navigate = useNavigate()
@@ -468,20 +470,22 @@ export default function Login() {
               {passkeyLoading ? 'Opening passkey…' : 'Sign in with Passkey'}
             </button>
 
-            <button
-              type="button"
-              onClick={() => {
-                setStaffLoginOpen((open) => !open)
-                setError('')
-                setInfo('')
-              }}
-              className="mt-2.5 flex h-10 w-full items-center justify-center gap-2.5 rounded-xl border border-indigo-200 bg-indigo-50 text-[13px] font-black text-indigo-700 transition hover:bg-indigo-100 active:scale-[0.99]"
-            >
-              <HiOutlineKey className="h-[18px] w-[18px]" />
-              {staffLoginOpen ? 'Hide Staff / Cashier Login' : 'Staff / Cashier Login'}
-            </button>
+            {SHOW_STAFF_CASHIER_LOGIN ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setStaffLoginOpen((open) => !open)
+                  setError('')
+                  setInfo('')
+                }}
+                className="mt-2.5 flex h-10 w-full items-center justify-center gap-2.5 rounded-xl border border-indigo-200 bg-indigo-50 text-[13px] font-black text-indigo-700 transition hover:bg-indigo-100 active:scale-[0.99]"
+              >
+                <HiOutlineKey className="h-[18px] w-[18px]" />
+                {staffLoginOpen ? 'Hide Staff / Cashier Login' : 'Staff / Cashier Login'}
+              </button>
+            ) : null}
 
-            {staffLoginOpen ? (
+            {SHOW_STAFF_CASHIER_LOGIN && staffLoginOpen ? (
               <form className="mt-3 space-y-2.5 rounded-2xl border border-slate-200 bg-slate-50 p-3" onSubmit={handleStaffSignIn}>
                 <label className="block space-y-1 text-xs text-slate-700">
                   <span className="font-semibold">Workspace code</span>
