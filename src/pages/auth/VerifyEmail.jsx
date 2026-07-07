@@ -78,6 +78,7 @@ export default function VerifyEmail() {
   const [cooldown, setCooldown] = useState(0)
   const inputsRef = useRef([])
   const autoSubmittedOtpRef = useRef('')
+  const completeRegistrationTrackedRef = useRef(false)
 
   const otp = digits.join('')
 
@@ -125,6 +126,10 @@ export default function VerifyEmail() {
     setSuccess(true)
     runBackgroundProvisioning(currentUser, source)
     const route = getPostVerificationRoute({ ...currentUser, emailVerifiedCustom: true })
+    if (!completeRegistrationTrackedRef.current && typeof window.fbq === 'function') {
+      completeRegistrationTrackedRef.current = true
+      window.fbq('track', 'CompleteRegistration')
+    }
     // Brief success animation, then redirect.
     window.setTimeout(() => navigate(route, { replace: true }), 1100)
   }, [navigate, runBackgroundProvisioning])
