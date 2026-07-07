@@ -25,8 +25,13 @@ function trackCompleteRegistrationOnce() {
   let attempts = 0
   const fire = () => {
     attempts += 1
+    console.log(`Retry attempt ${attempts}`)
+    console.log('typeof window.fbq', typeof window.fbq)
+    console.log(`fbq available: ${typeof window.fbq === 'function'}`)
     if (typeof window.fbq === 'function') {
-      window.fbq('track', 'CompleteRegistration')
+      const result = window.fbq('track', 'CompleteRegistration')
+      console.log('CompleteRegistration fired')
+      console.log('CompleteRegistration result', result)
       window.sessionStorage.setItem(COMPLETE_REGISTRATION_TRACKED_KEY, '1')
       return
     }
@@ -143,6 +148,7 @@ export default function VerifyEmail() {
   }, [])
 
   const goToWorkspaceAfterSuccess = useCallback((currentUser, source) => {
+    console.log('OTP verification success')
     setSuccess(true)
     runBackgroundProvisioning(currentUser, source)
     const route = getPostVerificationRoute({ ...currentUser, emailVerifiedCustom: true })
