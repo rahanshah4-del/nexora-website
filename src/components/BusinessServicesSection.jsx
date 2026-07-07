@@ -156,7 +156,7 @@ export default function BusinessServicesSection({ compact = false, variant = com
     setMessage('')
     try {
       const requestId = await submitBusinessServiceRequest(selectedService, form)
-      if (variant === 'public') {
+      if (variant === 'public' || variant === 'workspace') {
         safeTrackMetaEventOnce('Lead', undefined, `nexora_meta_lead:${requestId}`, 'session')
       }
       setMessage('Your service request has been submitted. Nexora team will contact you soon.')

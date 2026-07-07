@@ -12,6 +12,7 @@ import NexoraLogo from '../../components/brand/NexoraLogo.jsx'
 import { clientSafeMessage } from '../../lib/errorHandler.js'
 import { sendCustomVerificationEmail } from '../../lib/emailVerificationService.js'
 import { trackAnalyticsEvent } from '../../lib/analyticsTracking.js'
+import { safeTrackMetaEventOnce } from '../../lib/metaPixel.js'
 
 function normalizePhone(raw) {
   return String(raw || '').replace(/\D/g, '')
@@ -245,7 +246,7 @@ export default function Signup() {
       if (signedUser?.uid) {
         await updateProfile(signedUser, { displayName: trimmedFullName }).catch(() => {})
         // Google accounts are already email-verified, so provisioning runs now.
-        await ensureUserWorkspace(signedUser, {
+        const workspaceResult = await ensureUserWorkspace(signedUser, {
           fullName: trimmedFullName,
           company: form.company.trim(),
           email: signedUser.email || form.email.trim().toLowerCase(),
@@ -253,6 +254,9 @@ export default function Signup() {
           phoneNormalized: normalizedPhone,
           provider: 'google',
         })
+        if (workspaceResult?.workspaceId) {
+          safeTrackMetaEventOnce('StartTrial', undefined, `nexora_meta_starttrial:${signedUser.uid}`, 'local')
+        }
       }
 
       trackAnalyticsEvent('signup_completed', { userId: signedUser.uid, email: signedUser.email || '', phone: trimmedPhone, page: '/signup', status: 'google' }).catch(() => {})

@@ -9,6 +9,7 @@ import { ensureUserWorkspace } from '../../lib/accountProvisioning.js'
 import { clientSafeMessage } from '../../lib/errorHandler.js'
 import { getCustomEmailVerificationStatus, sendCustomVerificationEmail, verifyCustomEmailOtp } from '../../lib/emailVerificationService.js'
 import { trackAnalyticsEvent } from '../../lib/analyticsTracking.js'
+import { safeTrackMetaEventOnce } from '../../lib/metaPixel.js'
 import NexoraLogo from '../../components/brand/NexoraLogo.jsx'
 import Toast from '../../crm/components/ui/Toast.jsx'
 import { getPostVerificationRoute } from '../../lib/authRouteState.js'
@@ -112,6 +113,9 @@ export default function VerifyEmail() {
           uid: currentUser.uid,
           workspaceId: workspaceResult?.workspaceId || '',
         })
+        if (workspaceResult?.workspaceId) {
+          safeTrackMetaEventOnce('StartTrial', undefined, `nexora_meta_starttrial:${currentUser.uid}`, 'local')
+        }
       })
       .catch((bgError) => {
         console.warn('[OTP Flow] background workspace ensure failed', { source, error: bgError?.message || bgError })

@@ -14,6 +14,7 @@ import {
   planPriceLabel,
 } from '../lib/platformPlans.js'
 import { trackAnalyticsEvent } from '../lib/analyticsTracking.js'
+import { safeTrackMetaEventOnce } from '../lib/metaPixel.js'
 import { sendWorkerEmail, upgradeRequestReceivedEmail } from '../lib/transactionalEmail.js'
 import { submitManualUpgradeRequest } from '../lib/upgradeWorker.js'
 import { evaluatePromoCode, normalizePromoCode, PROMO_CODE_COLLECTION } from '../lib/promoCodes.js'
@@ -561,6 +562,7 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
       setSubmitError(checkoutError)
       return
     }
+    safeTrackMetaEventOnce('InitiateCheckout', { currency: 'PKR', value: Number(finalAmount || originalAmount || 0) }, 'nexora_meta_initiatecheckout')
     setCryptoCheckoutLoading(true)
     try {
       const idToken = await user.getIdToken()
@@ -588,6 +590,7 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
 
   async function handleSubmit() {
     setSubmitError('')
+    safeTrackMetaEventOnce('InitiateCheckout', { currency: 'PKR', value: Number(paidAmount || finalAmount || originalAmount || 0) }, 'nexora_meta_initiatecheckout')
     const requestContext = upgradeRequestContext()
     console.info('Upgrade Request Validation:', requestContext)
     const validationError = validateUpgradeRequest()

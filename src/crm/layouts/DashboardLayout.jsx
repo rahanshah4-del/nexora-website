@@ -43,6 +43,7 @@ import {
   workspaceRoute,
 } from '../lib/workspaceSession.js'
 import { goToWorkspace } from '../../lib/workspaceNavigation.js'
+import { safeTrackMetaEventOnce } from '../../lib/metaPixel.js'
 import logoUrl from '../../assets/logo/nexora-logo.svg'
 
 const WORKSPACE_INACTIVITY_LIMIT_MS = 15 * 60 * 1000
@@ -951,7 +952,7 @@ export default function DashboardLayout() {
         subscriptionExpired={isSubscriptionExpired || (isWorkspaceExpired && !isTrialExpired)}
         trialEndsAt={trialEndsAt}
         onBackToWorkspace={backToWorkspace}
-        onUpgrade={() => navigate('/upgrade-business', { state: { fromUpgradeBusiness: true } })}
+        onUpgrade={() => { safeTrackMetaEventOnce('InitiateCheckout', undefined, 'nexora_meta_initiatecheckout', 'session'); navigate('/upgrade-business', { state: { fromUpgradeBusiness: true } }) }}
       />
     )
   }
@@ -973,7 +974,7 @@ export default function DashboardLayout() {
       <UpgradeRequiredBlock
         moduleLabel={currentModule?.label}
         onBackToDashboard={() => navigate('/app/dashboard')}
-        onUpgrade={() => navigate('/upgrade-business', { state: { fromUpgradeBusiness: true } })}
+        onUpgrade={() => { safeTrackMetaEventOnce('InitiateCheckout', undefined, 'nexora_meta_initiatecheckout', 'session'); navigate('/upgrade-business', { state: { fromUpgradeBusiness: true } }) }}
       />
     )
   }

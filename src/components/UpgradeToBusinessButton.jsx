@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import { safeTrackMetaEventOnce } from '../lib/metaPixel.js'
 
 export default function UpgradeToBusinessButton({ className = '', children = 'Upgrade to Business' }) {
   const navigate = useNavigate()
@@ -6,7 +7,10 @@ export default function UpgradeToBusinessButton({ className = '', children = 'Up
   return (
     <button
       type="button"
-      onClick={() => navigate('/upgrade-business', { state: { fromUpgradeBusiness: true } })}
+      onClick={() => {
+        safeTrackMetaEventOnce('InitiateCheckout', undefined, 'nexora_meta_initiatecheckout', 'session')
+        navigate('/upgrade-business', { state: { fromUpgradeBusiness: true } })
+      }}
       className={className}
     >
       {children}

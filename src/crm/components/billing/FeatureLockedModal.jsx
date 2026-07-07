@@ -4,6 +4,7 @@ import Badge from '../ui/Badge.jsx'
 import Button from '../ui/Button.jsx'
 import Card from '../ui/Card.jsx'
 import { goToWorkspace } from '../../../lib/workspaceNavigation.js'
+import { safeTrackMetaEventOnce } from '../../../lib/metaPixel.js'
 
 export default function FeatureLockedModal({
   title = 'Paid Package Feature',
@@ -24,7 +25,7 @@ export default function FeatureLockedModal({
         <h1 className="mt-4 text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">{title}</h1>
         <p className="mx-auto mt-3 max-w-md text-sm leading-7 text-slate-600 dark:text-slate-300">{message}</p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
-          <Button className="rounded-2xl" type="button" onClick={() => navigate('/upgrade-business')}>
+          <Button className="rounded-2xl" type="button" onClick={() => { safeTrackMetaEventOnce('InitiateCheckout', undefined, 'nexora_meta_initiatecheckout'); navigate('/upgrade-business') }}>
             Upgrade
           </Button>
           <Button
