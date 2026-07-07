@@ -22,6 +22,7 @@ import { labelForBusinessType } from '../crm/data/moduleAccess.js'
 const PAYMENTS_WORKER_URL = String(
   import.meta.env.VITE_NOWPAYMENTS_WORKER_URL || 'https://nexora-payments-api.rahanshah4.workers.dev',
 ).replace(/\/$/, '')
+const META_PURCHASE_TRACKED_PREFIX = 'nexora_meta_purchase_tracked:'
 
 function Section({ children, className = '' }) {
   return <section className={`mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 ${className}`}>{children}</section>
@@ -67,6 +68,53 @@ function formatTimelineDate(value) {
 function normalizeRequestStatus(row = {}) {
   const safe = row || {}
   return String(safe.approvalStatus || safe.status || safe.paymentStatus || 'pending').toLowerCase()
+}
+
+function normalizedText(value) {
+  return String(value || '').trim().toLowerCase()
+}
+
+function purchaseAmount(request = {}) {
+  return positiveAmount(request.amount ?? request.finalAmount ?? request.planPrice ?? request.amountPaid)
+}
+
+function isApprovedPaidUpgrade(request = {}) {
+  const approvalStatus = normalizedText(request.approvalStatus || request.status)
+  const paymentStatus = normalizedText(request.paymentStatus)
+  return approvalStatus === 'approved' && paymentStatus === 'paid'
+}
+
+function workspaceHasActivatedPlan(workspace = {}, request = {}) {
+  const activeSubscription = ['active', 'paid'].includes(normalizedText(workspace.subscriptionStatus || workspace.planStatus))
+  const requestedPlan = normalizedText(request.requestedPlan || request.selectedPlan || request.plan)
+  const activePlan = normalizedText(workspace.plan || workspace.selectedPlan)
+  return activeSubscription && (!requestedPlan || !activePlan || requestedPlan === activePlan)
+}
+
+function trackMetaPurchaseOnce(request = {}) {
+  if (typeof window === 'undefined') return
+  const amount = purchaseAmount(request)
+  if (amount <= 0) return
+  const purchaseId = String(request.id || request.sourceId || request.transactionId || request.nowPaymentsPaymentId || '').trim()
+  if (!purchaseId) return
+  const storageKey = `${META_PURCHASE_TRACKED_PREFIX}${purchaseId}`
+  if (window.localStorage.getItem(storageKey) === '1') return
+
+  let attempts = 0
+  const fire = () => {
+    attempts += 1
+    if (typeof window.fbq === 'function') {
+      window.fbq('track', 'Purchase', {
+        value: amount,
+        currency: 'PKR',
+      })
+      window.localStorage.setItem(storageKey, '1')
+      return
+    }
+    if (attempts < 10) window.setTimeout(fire, 300)
+  }
+
+  fire()
 }
 
 function isClosedUpgradeRequest(row = {}) {
@@ -379,6 +427,13 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
   const previewUrl = useMemo(() => (proofFile ? URL.createObjectURL(proofFile) : ''), [proofFile])
   const paidAmount = positiveAmount(form.amountPaid)
   const hasOpenUpgradeRequest = Boolean(activeRequest && !isClosedUpgradeRequest(activeRequest))
+
+  useEffect(() => {
+    if (!activeRequest || !workspaceDoc) return
+    if (!isApprovedPaidUpgrade(activeRequest)) return
+    if (!workspaceHasActivatedPlan(workspaceDoc, activeRequest)) return
+    trackMetaPurchaseOnce(activeRequest)
+  }, [activeRequest, workspaceDoc])
 
   useEffect(() => {
     if (!previewUrl) return undefined
