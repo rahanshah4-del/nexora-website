@@ -16,32 +16,6 @@ import { clearAllUserCache } from '../../lib/authIsolation.js'
 
 const OTP_LENGTH = 6
 const RESEND_COOLDOWN_SECONDS = 45
-const COMPLETE_REGISTRATION_TRACKED_KEY = 'nexora_complete_registration_tracked'
-
-function trackCompleteRegistrationOnce() {
-  if (typeof window === 'undefined') return
-  if (window.sessionStorage.getItem(COMPLETE_REGISTRATION_TRACKED_KEY) === '1') return
-
-  let attempts = 0
-  const fire = () => {
-    attempts += 1
-    console.log(`Retry attempt ${attempts}`)
-    console.log('typeof window.fbq', typeof window.fbq)
-    console.log(`fbq available: ${typeof window.fbq === 'function'}`)
-    if (typeof window.fbq === 'function') {
-      const result = window.fbq('track', 'CompleteRegistration')
-      console.log('CompleteRegistration fired')
-      console.log('CompleteRegistration result', result)
-      window.sessionStorage.setItem(COMPLETE_REGISTRATION_TRACKED_KEY, '1')
-      return
-    }
-    if (attempts < 10) {
-      window.setTimeout(fire, 300)
-    }
-  }
-
-  fire()
-}
 
 function logAutoLogoutTrace(functionName, reason) {
   console.warn('[AUTO LOGOUT TRACE]', {
@@ -148,11 +122,9 @@ export default function VerifyEmail() {
   }, [])
 
   const goToWorkspaceAfterSuccess = useCallback((currentUser, source) => {
-    console.log('OTP verification success')
     setSuccess(true)
     runBackgroundProvisioning(currentUser, source)
     const route = getPostVerificationRoute({ ...currentUser, emailVerifiedCustom: true })
-    trackCompleteRegistrationOnce()
     // Brief success animation, then redirect.
     window.setTimeout(() => navigate(route, { replace: true }), 1100)
   }, [navigate, runBackgroundProvisioning])
@@ -384,20 +356,6 @@ export default function VerifyEmail() {
                 </motion.span>
                 <h1 className="mt-5 text-xl font-bold tracking-tight text-slate-950">Email verified</h1>
                 <p className="mt-2 text-sm text-slate-500">Setting up your workspace…</p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (typeof window.fbq === 'function') {
-                      const result = window.fbq('track', 'CompleteRegistration')
-                      console.log('Test CompleteRegistration fired', result)
-                      return
-                    }
-                    console.log('Test CompleteRegistration failed: fbq unavailable', typeof window.fbq)
-                  }}
-                  className="mt-5 rounded-xl bg-slate-950 px-4 py-2 text-sm font-bold text-white transition hover:bg-slate-800"
-                >
-                  Test CompleteRegistration
-                </button>
               </motion.div>
             ) : (
               <motion.div key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
