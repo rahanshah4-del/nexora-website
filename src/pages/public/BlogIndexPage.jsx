@@ -31,6 +31,7 @@ function tagsWithCounts(articles) {
 export default function BlogIndexPage() {
   const [params, setParams] = useSearchParams()
   const [searchValue, setSearchValue] = useState(params.get('q') || '')
+  const [filtersOpen, setFiltersOpen] = useState(false)
   const { articles, loading } = usePublishedBlogArticles()
   const category = params.get('category') || 'All'
   const tag = params.get('tag') || ''
@@ -103,7 +104,18 @@ export default function BlogIndexPage() {
       <section className="bg-white pb-16 sm:pb-20 lg:pb-24">
         <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
           <div className="grid gap-6 lg:grid-cols-[18rem_1fr]">
-            <aside className="h-max rounded-[1.35rem] border border-blue-100 bg-white p-5 shadow-[0_22px_62px_-44px_rgba(37,99,235,0.32)]">
+            <div className="lg:hidden">
+              <button
+                type="button"
+                onClick={() => setFiltersOpen((open) => !open)}
+                className="flex min-h-12 w-full items-center justify-between rounded-2xl border border-blue-100 bg-white px-4 text-sm font-black text-slate-800 shadow-sm transition active:scale-[0.98]"
+              >
+                <span>Search & filters</span>
+                <span className="rounded-full bg-blue-50 px-3 py-1 text-xs text-blue-700">{filtersOpen ? 'Close' : 'Open'}</span>
+              </button>
+            </div>
+
+            <aside className={`${filtersOpen ? 'block' : 'hidden'} h-max rounded-[1.35rem] border border-blue-100 bg-white p-5 shadow-[0_22px_62px_-44px_rgba(37,99,235,0.32)] lg:block`}>
               <form onSubmit={submitSearch} className="relative">
                 <HiOutlineMagnifyingGlass className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
                 <input
@@ -120,7 +132,7 @@ export default function BlogIndexPage() {
                   <button
                     type="button"
                     onClick={() => updateFilter({ category: '', tag: '' })}
-                    className={`rounded-xl px-3 py-2 text-left text-sm font-bold ${category === 'All' && !tag ? 'bg-slate-950 text-white' : 'bg-slate-50 text-slate-700 hover:bg-blue-50 hover:text-blue-700'}`}
+                    className={`rounded-xl px-3 py-2 text-left text-sm font-bold transition active:scale-[0.98] ${category === 'All' && !tag ? 'bg-slate-950 text-white' : 'bg-slate-50 text-slate-700 hover:bg-blue-50 hover:text-blue-700'}`}
                   >
                     All Articles
                   </button>
@@ -129,7 +141,7 @@ export default function BlogIndexPage() {
                       type="button"
                       key={item.category}
                       onClick={() => updateFilter({ category: item.category, tag: '' })}
-                      className={`flex items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-bold ${category === item.category ? 'bg-slate-950 text-white' : 'bg-slate-50 text-slate-700 hover:bg-blue-50 hover:text-blue-700'}`}
+                      className={`flex items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-bold transition active:scale-[0.98] ${category === item.category ? 'bg-slate-950 text-white' : 'bg-slate-50 text-slate-700 hover:bg-blue-50 hover:text-blue-700'}`}
                     >
                       <span>{item.category}</span>
                       <span>{item.count}</span>
@@ -146,7 +158,7 @@ export default function BlogIndexPage() {
                       type="button"
                       key={item.tag}
                       onClick={() => updateFilter({ tag: item.tag })}
-                      className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-black ${tag === item.tag ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-700 hover:bg-blue-100'}`}
+                      className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-black transition active:scale-[0.96] ${tag === item.tag ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-700 hover:bg-blue-100'}`}
                     >
                       <HiOutlineTag className="h-3.5 w-3.5" />
                       {item.tag}
@@ -162,7 +174,7 @@ export default function BlogIndexPage() {
                   {loading ? 'Loading latest articles...' : `Showing ${visibleArticles.length} of ${filteredArticles.length} articles`}
                 </p>
                 {(category !== 'All' || tag || params.get('q')) && (
-                  <button type="button" onClick={() => { setSearchValue(''); setParams({}) }} className="w-max text-sm font-black text-blue-700">
+                  <button type="button" onClick={() => { setSearchValue(''); setParams({}) }} className="w-max text-sm font-black text-blue-700 transition active:scale-[0.96]">
                     Clear filters
                   </button>
                 )}
@@ -170,8 +182,8 @@ export default function BlogIndexPage() {
 
               <div className="grid gap-5 md:grid-cols-2">
                 {visibleArticles.map((article) => (
-                  <article key={article.slug} className="rounded-[1.35rem] border border-blue-100 bg-white p-5 shadow-[0_22px_62px_-44px_rgba(37,99,235,0.32)]">
-                    <Link to={`/blog/${article.slug}`} className="block overflow-hidden rounded-[1.1rem] border border-blue-50 bg-blue-50">
+                  <article key={article.slug} className="overflow-hidden rounded-[1.35rem] border border-blue-100 bg-white shadow-[0_22px_62px_-44px_rgba(37,99,235,0.32)] transition active:scale-[0.99]">
+                    <Link to={`/blog/${article.slug}`} className="grid h-[190px] place-items-center overflow-hidden bg-slate-50 sm:h-[220px] lg:h-[250px]">
                       <img
                         src={article.featuredImage}
                         alt={article.featuredImageAlt}
@@ -179,35 +191,37 @@ export default function BlogIndexPage() {
                         decoding="async"
                         width="640"
                         height="360"
-                        className="h-44 w-full object-contain p-8"
+                        className="h-full w-full object-contain object-center"
                       />
                     </Link>
-                    <div className="mt-5 flex flex-wrap items-center gap-2 text-xs font-black text-blue-700">
-                      <span className="rounded-full bg-blue-50 px-3 py-1">{article.category}</span>
-                      <span className="text-slate-400">{article.readingTime}</span>
-                    </div>
-                    <h2 className="mt-4 text-2xl font-black tracking-tight text-slate-950">
-                      <Link to={`/blog/${article.slug}`} className="hover:text-blue-700">
-                        {article.title}
-                      </Link>
-                    </h2>
-                    <p className="mt-3 text-sm leading-7 text-slate-600">{article.excerpt}</p>
-                    <div className="mt-5 flex flex-wrap gap-2">
-                      {article.tags.slice(0, 3).map((item) => (
-                        <button
+                    <div className="p-5">
+                      <div className="flex flex-wrap items-center gap-2 text-xs font-black text-blue-700">
+                        <span className="rounded-full bg-blue-50 px-3 py-1">{article.category}</span>
+                        <span className="text-slate-400">{article.readingTime}</span>
+                      </div>
+                      <h2 className="mt-4 text-2xl font-black tracking-tight text-slate-950">
+                        <Link to={`/blog/${article.slug}`} className="hover:text-blue-700">
+                          {article.title}
+                        </Link>
+                      </h2>
+                      <p className="mt-3 text-sm leading-7 text-slate-600">{article.excerpt}</p>
+                      <div className="mt-5 flex flex-wrap gap-2">
+                        {article.tags.slice(0, 3).map((item) => (
+                          <button
                           type="button"
                           key={item}
                           onClick={() => updateFilter({ tag: item })}
-                          className="rounded-full bg-slate-50 px-3 py-1 text-xs font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-700"
-                        >
-                          #{item}
-                        </button>
-                      ))}
+                          className="rounded-full bg-slate-50 px-3 py-1 text-xs font-bold text-slate-600 transition hover:bg-blue-50 hover:text-blue-700 active:scale-[0.96]"
+                          >
+                            #{item}
+                          </button>
+                        ))}
+                      </div>
+                      <Link to={`/blog/${article.slug}`} className="mt-6 inline-flex items-center gap-2 text-sm font-black text-blue-700 transition active:scale-[0.96]">
+                        Read article
+                        <HiOutlineArrowRight className="h-4 w-4" />
+                      </Link>
                     </div>
-                    <Link to={`/blog/${article.slug}`} className="mt-6 inline-flex items-center gap-2 text-sm font-black text-blue-700">
-                      Read article
-                      <HiOutlineArrowRight className="h-4 w-4" />
-                    </Link>
                   </article>
                 ))}
               </div>
@@ -222,7 +236,7 @@ export default function BlogIndexPage() {
                       nextParams.set('page', String(item))
                       setParams(nextParams)
                     }}
-                    className={`grid h-10 w-10 place-items-center rounded-full text-sm font-black ${safePage === item ? 'bg-slate-950 text-white' : 'bg-slate-50 text-slate-700 hover:bg-blue-50 hover:text-blue-700'}`}
+                    className={`grid h-10 w-10 place-items-center rounded-full text-sm font-black transition active:scale-[0.94] ${safePage === item ? 'bg-slate-950 text-white' : 'bg-slate-50 text-slate-700 hover:bg-blue-50 hover:text-blue-700'}`}
                   >
                     {item}
                   </button>

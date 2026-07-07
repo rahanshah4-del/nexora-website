@@ -1,0 +1,30 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function backendAdmin() {
+      return signedIn()
+        && request.auth.token.email_verified == true
+        && request.auth.token.email in ['admin@nexora.com', 'rahanshah2@gmail.com', 'farhanshah2@gmail.com'];
+    }
+
+    function validBlogImage() {
+      return request.resource != null
+        && request.resource.size <= 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+    }
+
+    match /public-blog/{allPaths=**} {
+      allow read: if true;
+      allow create, update: if backendAdmin() && validBlogImage();
+      allow delete: if backendAdmin();
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

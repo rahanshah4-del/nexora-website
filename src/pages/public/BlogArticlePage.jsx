@@ -25,10 +25,24 @@ function shareLinks(article) {
   ]
 }
 
+function ShareButton({ label, href }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      aria-label={`Share on ${label}`}
+      className="inline-flex h-9 items-center justify-center rounded-full border border-slate-200 bg-white px-3 text-xs font-black text-slate-600 transition hover:border-slate-950 hover:bg-slate-950 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 active:scale-[0.96]"
+    >
+      <span>{label}</span>
+    </a>
+  )
+}
+
 function ArticleCard({ article, label }) {
   if (!article) return null
   return (
-    <Link to={`/blog/${article.slug}`} className="block rounded-[1.25rem] border border-blue-100 bg-white p-5 shadow-[0_22px_62px_-44px_rgba(37,99,235,0.32)] hover:border-blue-200">
+    <Link to={`/blog/${article.slug}`} className="block rounded-[1.25rem] border border-blue-100 bg-white p-5 shadow-[0_22px_62px_-44px_rgba(37,99,235,0.32)] transition hover:border-blue-200 active:scale-[0.98]">
       {label ? <p className="text-xs font-black uppercase tracking-[0.16em] text-blue-700">{label}</p> : null}
       <p className="mt-2 text-lg font-black text-slate-950">{article.title}</p>
       <p className="mt-2 text-sm leading-6 text-slate-600">{article.excerpt}</p>
@@ -107,12 +121,12 @@ export default function BlogArticlePage() {
         <header className="relative overflow-hidden bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_72%,#ffffff_100%)] pb-12 pt-12 sm:pb-16 sm:pt-14 lg:pb-20 lg:pt-16">
           <div className="soft-arc-bg pointer-events-none" />
           <div className="relative mx-auto max-w-5xl px-5 sm:px-6 lg:px-8">
-            <Link to="/blog" className="inline-flex min-h-10 items-center gap-2 rounded-full border border-blue-100 bg-white px-4 text-sm font-black text-blue-700 shadow-sm hover:border-blue-200 hover:bg-blue-50">
+            <Link to="/blog" className="inline-flex min-h-10 items-center gap-2 rounded-full border border-blue-100 bg-white px-4 text-sm font-black text-blue-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 active:scale-[0.97]">
               <HiOutlineArrowLeft className="h-4 w-4" />
               Back to Blog
             </Link>
             <div className="mt-8 flex flex-wrap items-center gap-2 text-xs font-black text-blue-700">
-              <Link to={`/blog?category=${encodeURIComponent(article.category)}`} className="rounded-full bg-blue-50 px-3 py-1">
+              <Link to={`/blog?category=${encodeURIComponent(article.category)}`} className="rounded-full bg-blue-50 px-3 py-1 transition active:scale-[0.96]">
                 {article.category}
               </Link>
               <span className="text-slate-400">{article.readingTime}</span>
@@ -143,9 +157,9 @@ export default function BlogArticlePage() {
           <div className="mx-auto grid max-w-7xl gap-8 px-5 sm:px-6 lg:grid-cols-[18rem_1fr] lg:px-8">
             <aside className="h-max rounded-[1.35rem] border border-blue-100 bg-white p-5 shadow-[0_22px_62px_-44px_rgba(37,99,235,0.32)] lg:sticky lg:top-24">
               <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">Table of Contents</p>
-              <div className="mt-4 grid gap-2">
+              <div className="mt-4 grid max-h-52 gap-2 overflow-y-auto pr-1 lg:max-h-none lg:overflow-visible lg:pr-0">
                 {article.sections.map((section) => (
-                  <a key={section.id} href={`#${section.id}`} className="rounded-xl px-3 py-2 text-sm font-bold text-slate-700 hover:bg-blue-50 hover:text-blue-700">
+                  <a key={section.id} href={`#${section.id}`} className="rounded-xl px-3 py-2 text-sm font-bold text-slate-700 transition hover:bg-blue-50 hover:text-blue-700 active:scale-[0.98]">
                     {section.heading}
                   </a>
                 ))}
@@ -158,23 +172,21 @@ export default function BlogArticlePage() {
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {shareLinks(article).map(([label, href]) => (
-                    <a key={label} href={href} target="_blank" rel="noreferrer" className="rounded-full bg-blue-50 px-3 py-1.5 text-xs font-black text-blue-700 hover:bg-blue-100">
-                      {label}
-                    </a>
+                    <ShareButton key={label} label={label} href={href} />
                   ))}
                 </div>
               </div>
             </aside>
 
             <div>
-              <div className="overflow-hidden rounded-[1.8rem] border border-blue-100 bg-blue-50 shadow-[0_30px_90px_-60px_rgba(37,99,235,0.44)]">
+              <div className="grid max-h-[260px] place-items-center overflow-hidden rounded-[1.35rem] border border-blue-100 bg-slate-50 shadow-[0_28px_76px_-52px_rgba(37,99,235,0.42)] sm:rounded-[1.6rem] md:max-h-[420px] lg:max-h-[520px]">
                 <img
                   src={article.featuredImage}
                   alt={article.featuredImageAlt}
                   width="1200"
-                  height="630"
+                  height="675"
                   decoding="async"
-                  className="h-72 w-full object-contain p-10"
+                  className="max-h-[260px] w-full object-contain object-center md:max-h-[420px] lg:max-h-[520px]"
                 />
               </div>
 
@@ -205,7 +217,7 @@ export default function BlogArticlePage() {
 
               <div className="mt-10 flex flex-wrap gap-2">
                 {article.tags.map((item) => (
-                  <Link key={item} to={`/blog?tag=${encodeURIComponent(item)}`} className="inline-flex items-center gap-1 rounded-full bg-slate-50 px-3 py-1.5 text-xs font-black text-slate-600 hover:bg-blue-50 hover:text-blue-700">
+                  <Link key={item} to={`/blog?tag=${encodeURIComponent(item)}`} className="inline-flex items-center gap-1 rounded-full bg-slate-50 px-3 py-1.5 text-xs font-black text-slate-600 transition hover:bg-blue-50 hover:text-blue-700 active:scale-[0.96]">
                     <HiOutlineTag className="h-3.5 w-3.5" />
                     {item}
                   </Link>
@@ -239,7 +251,7 @@ export default function BlogArticlePage() {
                       Keep reading
                     </h2>
                   </div>
-                  <Link to="/blog" className="premium-button-secondary w-max">
+                  <Link to="/blog" className="premium-button-secondary w-max transition active:scale-[0.97]">
                     View Blog
                     <HiOutlineArrowRight className="h-5 w-5" />
                   </Link>

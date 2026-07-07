@@ -18,6 +18,7 @@ import { useUser } from '../hooks/useUser.js'
 import ActivityTimeline from '../components/activity/ActivityTimeline.jsx'
 import { clientSafeMessage } from '../utils/messages.js'
 import { showGlobalToast } from '../lib/globalToast.js'
+import { teamManagementEnabledForBusinessType } from '../data/moduleAccess.js'
 
 function Field({ label, children }) {
   return (
@@ -377,13 +378,14 @@ function AccessControlTab({ staffApi, members, onToast, currentUserEmail, curren
   const { usage } = usePreferences()
   const [invitePulse, setInvitePulse] = useState(null)
   const [inviteBusy, setInviteBusy] = useState(false)
+  const availableRolePresets = useMemo(() => Object.entries(rolePresets).filter(([key]) => key === 'cashier'), [])
   const [draft, setDraft] = useState({
     name: '',
     email: '',
     username: '',
-    role: 'sales',
+    role: 'cashier',
     status: 'active',
-    permissions: buildRolePermissions('sales', staffApi.permissionKeys),
+    permissions: buildRolePermissions('cashier', staffApi.permissionKeys),
   })
   const staffLimit = Number(usage?.teamMembersLimit || 0)
   const groups = useMemo(() => permissionGroups(staffApi.permissionKeys), [staffApi.permissionKeys])
@@ -456,9 +458,9 @@ function AccessControlTab({ staffApi, members, onToast, currentUserEmail, curren
       name: '',
       email: '',
       username: '',
-      role: 'sales',
+      role: 'cashier',
       status: 'active',
-      permissions: buildRolePermissions('sales', staffApi.permissionKeys),
+      permissions: buildRolePermissions('cashier', staffApi.permissionKeys),
     })
   }
 
@@ -533,7 +535,7 @@ function AccessControlTab({ staffApi, members, onToast, currentUserEmail, curren
                 <Badge variant="purple">{roleLabel(draft.role)}</Badge>
               </div>
               <div className="grid gap-2 md:grid-cols-2">
-                {Object.entries(rolePresets).map(([key, preset]) => (
+                {availableRolePresets.map(([key, preset]) => (
                   <button
                     key={key}
                     type="button"
@@ -730,7 +732,7 @@ function AccessControlTab({ staffApi, members, onToast, currentUserEmail, curren
 }
 
 export default function TeamPage() {
-  const { userId, workspaceId, workspaceDoc, firebaseUser, userDoc } = useUser()
+  const { userId, workspaceId, workspaceDoc, firebaseUser, userDoc, businessType } = useUser()
   const { members, loading, source, error, addMember, updateMember, deleteMember } = useTeamMembers()
   const [toast, setToast] = useState(null)
   const [searchParams, setSearchParams] = useSearchParams()
@@ -747,6 +749,7 @@ export default function TeamPage() {
   }, [members, memberSearch])
   const staffApi = useStaffPermissions()
   const activity = useActivityLogs()
+  const teamManagementEnabled = teamManagementEnabledForBusinessType(businessType)
 
   const showToast = (tone, message, timeout = 2200) => {
     setToast({ tone, message })
@@ -789,6 +792,20 @@ export default function TeamPage() {
     window.setTimeout(() => {
       document.getElementById('staff-access-onboarding')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }, 80)
+  }
+
+  if (!teamManagementEnabled) {
+    return (
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
+        <PageHeader
+          title="Team Management"
+          subtitle="Team Management is currently enabled only for Restaurant POS and Retail POS cashier accounts."
+        />
+        <Card className="mt-4 p-5">
+          <p className="text-sm font-semibold text-slate-600">Is module ke liye Team Management abhi hidden hai. Restaurant POS ya Retail POS workspace select karein.</p>
+        </Card>
+      </motion.div>
+    )
   }
 
   return (
@@ -839,6 +856,7 @@ export default function TeamPage() {
                 ownerId={workspaceDoc?.ownerId || workspaceId || userId}
                 currentUserId={userId}
                 currentUserEmail={firebaseUser?.email || userDoc?.email || ''}
+                cashierOnly
                 onAddClick={openStaffAccessCreator}
                 onAdd={async (m) => {
                   const res = await addMember(m)
@@ -878,6 +896,7 @@ export default function TeamPage() {
                 ownerId={workspaceDoc?.ownerId || workspaceId || userId}
                 currentUserId={userId}
                 currentUserEmail={firebaseUser?.email || userDoc?.email || ''}
+                cashierOnly
                 onAddClick={openStaffAccessCreator}
                 onAdd={async (m) => {
                   const res = await addMember(m)

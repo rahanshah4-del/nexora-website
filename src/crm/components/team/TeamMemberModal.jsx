@@ -8,17 +8,18 @@ import Select from '../ui/Select.jsx'
 import Badge from '../ui/Badge.jsx'
 
 const roles = ['Owner', 'Admin', 'Manager', 'Cashier', 'Sales Staff', 'Accountant', 'Support Staff', 'Data Entry', 'Viewer']
+const cashierOnlyRoles = ['Cashier']
 const statuses = ['Active', 'Invited', 'Disabled']
 
-function TeamMemberModal({ open, mode = 'add', member, ownerProtected = false, onClose, onSave }) {
+function TeamMemberModal({ open, mode = 'add', member, ownerProtected = false, cashierOnly = false, onClose, onSave }) {
   const [draft, setDraft] = useState(member || null)
 
   useEffect(() => {
     if (!open) return
     Promise.resolve().then(() =>
-      setDraft(member || { name: '', email: '', phone: '', role: 'Sales Staff', status: 'Active', permissions: [] }),
+      setDraft(member || { name: '', email: '', phone: '', role: cashierOnly ? 'Cashier' : 'Sales Staff', status: 'Active', permissions: [] }),
     )
-  }, [open, member])
+  }, [cashierOnly, open, member])
 
   const title = mode === 'edit' ? 'Edit Team Member' : 'Add Team Member'
 
@@ -78,7 +79,7 @@ function TeamMemberModal({ open, mode = 'add', member, ownerProtected = false, o
                         disabled={ownerProtected}
                         onChange={(e) => setDraft((d) => ({ ...d, role: e.target.value }))}
                       >
-                        {roles.map((r) => (
+                        {(cashierOnly && !ownerProtected ? cashierOnlyRoles : roles).map((r) => (
                           <option key={r} value={r}>
                             {r}
                           </option>

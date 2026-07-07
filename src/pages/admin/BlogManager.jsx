@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { serverTimestamp } from 'firebase/firestore'
 import { HiOutlinePhoto, HiOutlinePlus, HiOutlineTrash } from 'react-icons/hi2'
-import { blogCategories } from '../../lib/blogData.js'
+import { blogCategories, mergeBlogArticles } from '../../lib/blogData.js'
 import {
   deleteBlogPost,
   listenAdminBlogPosts,
@@ -40,6 +40,15 @@ function dateLabel(value) {
   return date && !Number.isNaN(date.getTime()) ? date.toLocaleString() : '-'
 }
 
+function imageUploadErrorMessage(error) {
+  const code = String(error?.code || '')
+  const message = String(error?.message || '')
+  if (code === 'storage/unauthorized') return 'Image upload denied. Firebase Storage rules are not deployed or this admin email is not allowed.'
+  if (code === 'storage/canceled') return 'Image upload timed out. Firebase Storage bucket setup/rules check karein.'
+  if (message.includes('timed out')) return message
+  return message || 'Unable to upload image.'
+}
+
 function parseFaqs(text) {
   return String(text || '')
     .split('\n')
@@ -68,6 +77,7 @@ function draftFromArticle(article) {
     content: (article.sections || []).flatMap((section) => section.paragraphs || []).join('\n\n'),
     faqsText: (article.faqs || []).map(([question, answer]) => `${question} | ${answer}`).join('\n'),
     createdAt: article.createdAt,
+    source: article.source || 'cms',
   }
 }
 
@@ -81,17 +91,20 @@ function Field({ label, children, className = '' }) {
 }
 
 export default function BlogManager() {
-  const [posts, setPosts] = useState([])
+  const [cmsPosts, setCmsPosts] = useState([])
   const [draft, setDraft] = useState(emptyDraft)
   const [editingSlug, setEditingSlug] = useState('')
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
   const [notice, setNotice] = useState('')
   const [error, setError] = useState('')
 
-  useEffect(() => listenAdminBlogPosts(setPosts, (loadError) => {
+  useEffect(() => listenAdminBlogPosts(setCmsPosts, (loadError) => {
     setError(loadError?.message || 'Unable to load blog posts.')
   }), [])
+
+  const posts = useMemo(() => mergeBlogArticles(cmsPosts), [cmsPosts])
 
   const stats = useMemo(() => ({
     total: posts.length,
@@ -152,7 +165,7 @@ export default function BlogManager() {
           heading: draft.contentHeading.trim() || 'Article guide',
           paragraphs,
         }],
-        faqs: parseFaqs(draft.faqsText),
+        faqs: parseFaqs(draft.faqsText).map(([question, answer]) => ({ question, answer })),
         author: {
           name: 'Nexora Solution Editorial Team',
           url: 'https://nexorasolution.online',
@@ -162,7 +175,7 @@ export default function BlogManager() {
         createdBy: auth?.currentUser?.uid || '',
         createdByEmail: auth?.currentUser?.email || '',
       })
-      if (editingSlug && editingSlug !== slug) await deleteBlogPost(editingSlug)
+      if (editingSlug && editingSlug !== slug && draft.source === 'cms') await deleteBlogPost(editingSlug)
       setNotice(draft.status === 'published' ? 'Blog post published.' : 'Blog draft saved.')
       setEditingSlug(slug)
     } catch (saveError) {
@@ -175,15 +188,17 @@ export default function BlogManager() {
   const uploadImage = async (file) => {
     if (!file) return
     setUploading(true)
+    setUploadProgress(0)
     setError('')
     try {
-      const url = await uploadBlogImage(draft.slug || draft.title || 'blog', file)
+      const url = await uploadBlogImage(draft.slug || draft.title || 'blog', file, setUploadProgress)
       updateDraft('featuredImage', url)
       setNotice('Image uploaded and attached.')
     } catch (uploadError) {
-      setError(uploadError?.message || 'Unable to upload image.')
+      setError(imageUploadErrorMessage(uploadError))
     } finally {
       setUploading(false)
+      window.setTimeout(() => setUploadProgress(0), 1200)
     }
   }
 
@@ -231,8 +246,16 @@ export default function BlogManager() {
           <Field label="Upload Image">
             <label className="inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-black text-slate-700">
               <HiOutlinePhoto className="h-5 w-5" />
-              {uploading ? 'Uploading...' : 'Choose Image'}
-              <input type="file" accept="image/*" className="sr-only" onChange={(event) => uploadImage(event.target.files?.[0])} />
+              {uploading ? `Uploading ${uploadProgress || 1}%` : 'Choose Image'}
+              <input
+                type="file"
+                accept="image/*"
+                className="sr-only"
+                onChange={(event) => {
+                  uploadImage(event.target.files?.[0])
+                  event.target.value = ''
+                }}
+              />
             </label>
           </Field>
           <Field label="Content Heading" className="lg:col-span-4"><input className={inputClass} value={draft.contentHeading} onChange={(event) => updateDraft('contentHeading', event.target.value)} /></Field>
@@ -248,11 +271,11 @@ export default function BlogManager() {
 
       <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
         <p className="mb-3 text-sm font-black text-slate-950">Blog Posts</p>
-        {!posts.length ? <p className="rounded-xl bg-slate-50 p-4 text-sm font-semibold text-slate-500">No blog posts in Firestore yet.</p> : (
+        {!posts.length ? <p className="rounded-xl bg-slate-50 p-4 text-sm font-semibold text-slate-500">No blog posts found.</p> : (
           <div className="overflow-auto">
             <table className="min-w-full text-left text-sm">
               <thead className="bg-slate-50 text-xs font-black uppercase tracking-wide text-slate-500">
-                <tr><th className="px-4 py-3">Title</th><th className="px-4 py-3">Category</th><th className="px-4 py-3">Status</th><th className="px-4 py-3">Updated</th><th className="px-4 py-3">Actions</th></tr>
+                <tr><th className="px-4 py-3">Title</th><th className="px-4 py-3">Category</th><th className="px-4 py-3">Status</th><th className="px-4 py-3">Source</th><th className="px-4 py-3">Updated</th><th className="px-4 py-3">Actions</th></tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {posts.map((post) => (
@@ -260,14 +283,19 @@ export default function BlogManager() {
                     <td className="px-4 py-3"><p className="font-black text-slate-950">{post.title}</p><p className="text-xs text-slate-500">/blog/{post.slug}</p></td>
                     <td className="px-4 py-3">{post.category}</td>
                     <td className="px-4 py-3"><span className={`rounded-full px-2 py-1 text-xs font-black ${post.status === 'published' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>{post.status}</span></td>
+                    <td className="px-4 py-3"><span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-black text-slate-600">{post.source === 'cms' ? 'CMS' : 'Static'}</span></td>
                     <td className="px-4 py-3">{dateLabel(post.updatedAt || post.publishDate)}</td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-2">
                         <button type="button" onClick={() => edit(post)} className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700">Edit</button>
-                        <button type="button" onClick={() => window.confirm(`Delete ${post.title}?`) && deleteBlogPost(post.slug)} className="inline-flex items-center gap-1 rounded-xl border border-rose-200 px-3 py-2 text-xs font-bold text-rose-700">
-                          <HiOutlineTrash className="h-4 w-4" />
-                          Delete
-                        </button>
+                        {post.source === 'cms' ? (
+                          <button type="button" onClick={() => window.confirm(`Delete ${post.title}?`) && deleteBlogPost(post.slug)} className="inline-flex items-center gap-1 rounded-xl border border-rose-200 px-3 py-2 text-xs font-bold text-rose-700">
+                            <HiOutlineTrash className="h-4 w-4" />
+                            Delete
+                          </button>
+                        ) : (
+                          <span className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-400">Save edit to CMS</span>
+                        )}
                       </div>
                     </td>
                   </tr>

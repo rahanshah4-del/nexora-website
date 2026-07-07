@@ -6,7 +6,7 @@ import { memo, useCallback, useMemo } from 'react'
 import { useUser } from '../../hooks/useUser.js'
 import { useWorkspaceAccess } from '../../hooks/useWorkspaceAccess.js'
 import logoUrl from '../../../assets/logo/nexora-logo.svg'
-import { isDeveloperOwnerAccount, labelForBusinessModule, labelForBusinessType, moduleCatalog, normalizeBusinessType, selectedModulesForSidebar } from '../../data/moduleAccess.js'
+import { isDeveloperOwnerAccount, labelForBusinessModule, labelForBusinessType, moduleCatalog, normalizeBusinessType, selectedModulesForSidebar, teamManagementEnabledForBusinessType } from '../../data/moduleAccess.js'
 import { resolveWorkspaceName } from '../../../lib/workspaceName.js'
 import { HiOutlineBanknotes, HiOutlineSquares2X2 } from 'react-icons/hi2'
 
@@ -390,6 +390,7 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
             .filter((permission) => permission.action === 'view' && access.hasModulePermission(permission.moduleKey, 'view'))
             .map((permission) => permission.moduleKey),
         ]))
+          .filter((moduleKey) => moduleKey !== 'team' || teamManagementEnabledForBusinessType(businessType))
           .map((moduleKey) => {
             const module = moduleCatalog.find((item) => item.key === moduleKey)
             return module

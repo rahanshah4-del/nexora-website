@@ -542,6 +542,11 @@ export function businessWorkspaceForSelection(value) {
   return businessWorkspaceForId(value) || businessWorkspaceForType(value)
 }
 
+export function teamManagementEnabledForBusinessType(type) {
+  const normalized = normalizeBusinessType(type)
+  return normalized === 'Restaurant POS' || normalized === 'Retail / POS'
+}
+
 export function labelForBusinessType(type) {
   return businessWorkspaceForType(type).title
 }
@@ -549,7 +554,8 @@ export function labelForBusinessType(type) {
 export function businessModuleKeys(type) {
   const workspace = businessWorkspaceForType(type)
   const forcedModules = normalizeBusinessType(type) === 'Transport / Rental' ? ['dashboard'] : ['dashboard', 'approvals']
-  return Array.from(new Set([...workspace.modules, ...forcedModules]))
+  const modules = workspace.modules.filter((moduleKey) => moduleKey !== 'team' || teamManagementEnabledForBusinessType(type))
+  return Array.from(new Set([...modules, ...forcedModules]))
 }
 
 export function labelForBusinessModule(moduleKey, type) {
@@ -706,6 +712,7 @@ export function selectedModulesForSidebar({ enabledModules, onboardingCompleted,
     const normalizedType = normalizeBusinessType(businessType)
     return moduleCatalog
       .filter((module) => normalizedType === 'General CRM' || module.key !== 'salesPipeline')
+      .filter((module) => module.key !== 'team' || teamManagementEnabledForBusinessType(businessType))
       .map((module) => ({
         ...module,
         comingSoon: false,

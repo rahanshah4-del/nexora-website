@@ -588,6 +588,8 @@ export const blogArticles = articleConfigs.map((config, index) => {
     wordCount,
     readingTime: `${estimateReadingTime(wordCount)} min read`,
     order: index + 1,
+    status: 'published',
+    source: 'static',
   }
 })
 
