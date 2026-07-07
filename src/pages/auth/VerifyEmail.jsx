@@ -384,6 +384,20 @@ export default function VerifyEmail() {
                 </motion.span>
                 <h1 className="mt-5 text-xl font-bold tracking-tight text-slate-950">Email verified</h1>
                 <p className="mt-2 text-sm text-slate-500">Setting up your workspace…</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (typeof window.fbq === 'function') {
+                      const result = window.fbq('track', 'CompleteRegistration')
+                      console.log('Test CompleteRegistration fired', result)
+                      return
+                    }
+                    console.log('Test CompleteRegistration failed: fbq unavailable', typeof window.fbq)
+                  }}
+                  className="mt-5 rounded-xl bg-slate-950 px-4 py-2 text-sm font-bold text-white transition hover:bg-slate-800"
+                >
+                  Test CompleteRegistration
+                </button>
               </motion.div>
             ) : (
               <motion.div key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
