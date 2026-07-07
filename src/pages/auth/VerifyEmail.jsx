@@ -16,6 +16,27 @@ import { clearAllUserCache } from '../../lib/authIsolation.js'
 
 const OTP_LENGTH = 6
 const RESEND_COOLDOWN_SECONDS = 45
+const COMPLETE_REGISTRATION_TRACKED_KEY = 'nexora_complete_registration_tracked'
+
+function trackCompleteRegistrationOnce() {
+  if (typeof window === 'undefined') return
+  if (window.sessionStorage.getItem(COMPLETE_REGISTRATION_TRACKED_KEY) === '1') return
+
+  let attempts = 0
+  const fire = () => {
+    attempts += 1
+    if (typeof window.fbq === 'function') {
+      window.fbq('track', 'CompleteRegistration')
+      window.sessionStorage.setItem(COMPLETE_REGISTRATION_TRACKED_KEY, '1')
+      return
+    }
+    if (attempts < 10) {
+      window.setTimeout(fire, 300)
+    }
+  }
+
+  fire()
+}
 
 function logAutoLogoutTrace(functionName, reason) {
   console.warn('[AUTO LOGOUT TRACE]', {
@@ -78,7 +99,6 @@ export default function VerifyEmail() {
   const [cooldown, setCooldown] = useState(0)
   const inputsRef = useRef([])
   const autoSubmittedOtpRef = useRef('')
-  const completeRegistrationTrackedRef = useRef(false)
 
   const otp = digits.join('')
 
@@ -126,10 +146,7 @@ export default function VerifyEmail() {
     setSuccess(true)
     runBackgroundProvisioning(currentUser, source)
     const route = getPostVerificationRoute({ ...currentUser, emailVerifiedCustom: true })
-    if (!completeRegistrationTrackedRef.current && typeof window.fbq === 'function') {
-      completeRegistrationTrackedRef.current = true
-      window.fbq('track', 'CompleteRegistration')
-    }
+    trackCompleteRegistrationOnce()
     // Brief success animation, then redirect.
     window.setTimeout(() => navigate(route, { replace: true }), 1100)
   }, [navigate, runBackgroundProvisioning])
