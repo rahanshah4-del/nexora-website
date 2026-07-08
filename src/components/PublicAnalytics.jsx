@@ -28,7 +28,11 @@ export default function PublicAnalytics() {
 
   useEffect(() => {
     if (!import.meta.env.PROD) return
-    initPublicAnalytics()
+    // Defer analytics init to avoid blocking initial paint
+    const deferInit = typeof window.requestIdleCallback === 'function'
+      ? window.requestIdleCallback
+      : (fn) => window.setTimeout(fn, 1)
+    deferInit(() => initPublicAnalytics())
   }, [])
 
   useEffect(() => {

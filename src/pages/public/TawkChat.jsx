@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 
 const TAWK_SCRIPT_ID = 'nexora-tawk-to-widget'
@@ -30,6 +30,7 @@ function removeTawkWidget() {
 export default function TawkChat() {
   const { pathname } = useLocation()
   const shouldLoad = canLoadTawk(pathname)
+  const loadTimerRef = useRef(null)
 
   useEffect(() => {
     console.log('[Tawk] config', {
@@ -42,6 +43,10 @@ export default function TawkChat() {
 
   useEffect(() => {
     if (!shouldLoad) {
+      if (loadTimerRef.current) {
+        window.clearTimeout(loadTimerRef.current)
+        loadTimerRef.current = null
+      }
       window.Tawk_API?.hideWidget?.()
       removeTawkWidget()
       return undefined
@@ -51,21 +56,37 @@ export default function TawkChat() {
     window.Tawk_LoadStart = new Date()
 
     if (!document.getElementById(TAWK_SCRIPT_ID)) {
-      const script = document.createElement('script')
-      script.id = TAWK_SCRIPT_ID
-      script.async = true
-      script.src = `https://embed.tawk.to/${TAWK_PROPERTY_ID}/${TAWK_WIDGET_ID}`
-      script.charset = 'UTF-8'
-      script.setAttribute('crossorigin', '*')
-      document.body.appendChild(script)
-      console.log('[Tawk] script injected', { src: script.src })
+      const deferFn = typeof window.requestIdleCallback === 'function'
+        ? (fn) => window.requestIdleCallback(fn, { timeout: 3000 })
+        : (fn) => window.setTimeout(fn, 1)
+      const targetPathname = pathname
+      // Store the defer handle for cleanup
+      const deferredId = deferFn(() => {
+        loadTimerRef.current = null
+        if (!canLoadTawk(targetPathname)) return
+        if (document.getElementById(TAWK_SCRIPT_ID)) return
+        const script = document.createElement('script')
+        script.id = TAWK_SCRIPT_ID
+        script.async = true
+        script.src = `https://embed.tawk.to/${TAWK_PROPERTY_ID}/${TAWK_WIDGET_ID}`
+        script.charset = 'UTF-8'
+        script.setAttribute('crossorigin', '*')
+        document.body.appendChild(script)
+        console.log('[Tawk] script injected', { src: script.src })
+      })
+      // requestIdleCallback returns an id (possibly undefined for setTimeout)
+      if (typeof deferredId === 'number') loadTimerRef.current = deferredId
     }
 
     return () => {
+      if (loadTimerRef.current) {
+        window.cancelIdleCallback?.(loadTimerRef.current) || window.clearTimeout(loadTimerRef.current)
+        loadTimerRef.current = null
+      }
       window.Tawk_API?.hideWidget?.()
       removeTawkWidget()
     }
-  }, [shouldLoad])
+  }, [shouldLoad, pathname])
 
   return null
 }

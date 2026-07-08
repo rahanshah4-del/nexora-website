@@ -25,6 +25,7 @@ export default function NexoraLogo({ className = '', compact = false, size, hide
             width={resolved.imageSize}
             height={resolved.imageSize}
             decoding="async"
+            fetchpriority="high"
             className={`h-full w-full object-contain ${iconClassName}`}
             onError={() => setLoadError(true)}
           />
