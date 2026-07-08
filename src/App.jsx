@@ -105,7 +105,9 @@ function App({ initialSectionId = '' }) {
                   <div key={badge.title} className="rounded-2xl border border-slate-200/80 bg-white/80 p-4 shadow-[0_18px_50px_-40px_rgba(15,23,42,0.5)] backdrop-blur"><badge.icon className="text-2xl text-blue-600" /><div className="mt-3 min-w-0"><p className="text-xs font-extrabold leading-4 text-slate-900">{badge.title}</p><p className="mt-1 text-[0.68rem] leading-4 text-slate-500">{badge.text}</p></div></div>
                 ))}
               </div>
-              <div className="mt-12 sm:mt-14"><DashboardPreview /></div>
+              {/* DashboardPreview is hidden on mobile to avoid heavy SVG rendering
+                  below the fold (mobile LCP fix). Desktop shows the full mockup. */}
+              <div className="hidden sm:block sm:mt-14"><DashboardPreview /></div>
             </div>
           </div>
         </section>

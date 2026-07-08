@@ -301,6 +301,13 @@ body.business-service-modal-open {
     .marketing-page [data-reveal] {
       transform: none;
     }
+
+    /* Kill entrance animation on hero for instant LCP after hydration */
+    .marketing-page main > section:first-child {
+      animation: none;
+      opacity: 1;
+      transform: none;
+    }
   }
 
   .fixed.inset-0[class*='backdrop-blur'],

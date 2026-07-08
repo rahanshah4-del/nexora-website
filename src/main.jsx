@@ -5,6 +5,14 @@ import './index.css'
 
 const AppProviders = lazy(() => import('./components/AppProviders.jsx'))
 
+/* Remove static hero shell before React mounts for instant mobile FCP */
+const shell = document.getElementById('s-shell')
+if (shell) {
+  shell.style.setProperty('transition', 'opacity 180ms ease')
+  shell.style.opacity = '0'
+  setTimeout(() => { shell.style.display = 'none' }, 200)
+}
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>
