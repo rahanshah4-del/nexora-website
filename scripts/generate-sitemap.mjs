@@ -22,12 +22,22 @@ const PUBLIC_ROUTE_ALLOWLIST = new Set([
   '/sitemap',
   '/help-center',
   '/documentation',
+  '/faq',
+  '/support-center',
   '/blog',
   '/restaurant-pos',
   '/retail-pos',
   '/school-erp',
   '/transport',
   '/whatsapp-crm',
+  '/solutions/crm',
+  '/solutions/property-erp',
+  '/solutions/medical-store-pos',
+  '/solutions/reports',
+  '/solutions/email-marketing',
+  '/solutions/inventory-management',
+  '/solutions/team-permissions',
+  '/solutions/reports-analytics',
 ])
 
 async function readRoutes() {
@@ -43,6 +53,8 @@ async function readRoutes() {
     const final = cleanRoutePath(p.replace(/:\w+/g, ''))
     if (PUBLIC_ROUTE_ALLOWLIST.has(final)) routes.add(final)
   }
+  // Always include allowlist routes — even if not found as explicit paths
+  for (const route of PUBLIC_ROUTE_ALLOWLIST) routes.add(route)
   routes.add('/')
   return Array.from(routes).sort()
 }

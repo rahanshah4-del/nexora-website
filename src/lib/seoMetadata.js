@@ -21,7 +21,7 @@ export const seoMetadata = {
   '/': buildPage({
     path: '/',
     title: 'Nexora POS Software Pakistan | Nexora Solution',
-    description: 'Nexora offers Pakistan’s leading POS software for restaurant, retail, school ERP and WhatsApp CRM teams with unified business workflows.',
+    description: 'Nexora offers Pakistan\'s leading POS software for restaurant, retail, school ERP and WhatsApp CRM teams with unified business workflows.',
     keyword: 'POS Software Pakistan',
     image: `${HOST}/nexora-brand-logo.png`,
   }),
@@ -112,6 +112,18 @@ export const seoMetadata = {
     description: 'Browse Nexora public documentation for POS, ERP, CRM, WhatsApp CRM, blog guides and support resources.',
     keyword: 'Nexora Documentation',
   }),
+  '/faq': buildPage({
+    path: '/faq',
+    title: 'FAQ | Nexora Solution',
+    description: 'Get answers to frequently asked questions about Nexora POS, CRM, ERP, pricing, and business software in Pakistan.',
+    keyword: 'Nexora FAQ',
+  }),
+  '/support-center': buildPage({
+    path: '/support-center',
+    title: 'Support Center | Nexora Solution',
+    description: 'Get support for Nexora POS, CRM, ERP and business software. Contact us via WhatsApp, email, or browse documentation.',
+    keyword: 'Nexora Support Center',
+  }),
   '/projects': buildPage({
     path: '/projects',
     title: 'Software Projects and Use Cases Pakistan | Nexora Solution',
@@ -148,6 +160,54 @@ export const seoMetadata = {
     description: 'Nexora WhatsApp CRM Pakistan turns conversations into leads, broadcasts, follow-ups and sales workflows for business teams.',
     keyword: 'WhatsApp CRM',
   }),
+  '/solutions/crm': buildPage({
+    path: '/solutions/crm',
+    title: 'CRM Software Pakistan | Nexora CRM System',
+    description: 'Nexora CRM helps Pakistani businesses track leads, customers, invoices, tasks and sales teams from one cloud dashboard.',
+    keyword: 'CRM Software Pakistan',
+  }),
+  '/solutions/property-erp': buildPage({
+    path: '/solutions/property-erp',
+    title: 'Property ERP Software Pakistan | Nexora Property Management',
+    description: 'Nexora Property ERP Pakistan helps agencies manage tenants, rent collection, leases, maintenance and owner reporting.',
+    keyword: 'Property ERP Software',
+  }),
+  '/solutions/medical-store-pos': buildPage({
+    path: '/solutions/medical-store-pos',
+    title: 'Medical Store POS Pakistan | Nexora Pharmacy Software',
+    description: 'Nexora Medical Store POS Pakistan handles pharmacy billing, medicine inventory, batch expiry control and daily sales reports.',
+    keyword: 'Medical Store POS Pakistan',
+  }),
+  '/solutions/reports': buildPage({
+    path: '/solutions/reports',
+    title: 'Business Reports Software Pakistan | Nexora Analytics',
+    description: 'Nexora Reports Pakistan provides KPI dashboards, PDF reports, Excel exports and business intelligence for growing teams.',
+    keyword: 'Business Reports Software',
+  }),
+  '/solutions/email-marketing': buildPage({
+    path: '/solutions/email-marketing',
+    title: 'Email Marketing Software Pakistan | Nexora Campaigns',
+    description: 'Nexora Email Marketing helps Pakistani businesses send campaigns, track opens, manage subscribers and grow engagement.',
+    keyword: 'Email Marketing Software Pakistan',
+  }),
+  '/solutions/inventory-management': buildPage({
+    path: '/solutions/inventory-management',
+    title: 'Inventory Management Software Pakistan | Nexora Stock Control',
+    description: 'Nexora Inventory Management helps Pakistan businesses track stock, purchases, suppliers and warehouse movement.',
+    keyword: 'Inventory Management Software Pakistan',
+  }),
+  '/solutions/team-permissions': buildPage({
+    path: '/solutions/team-permissions',
+    title: 'Team Management Software Pakistan | Nexora Permissions',
+    description: 'Nexora Team & Permissions helps Pakistani businesses control roles, access rights and team member visibility.',
+    keyword: 'Team Management Software Pakistan',
+  }),
+  '/solutions/reports-analytics': buildPage({
+    path: '/solutions/reports-analytics',
+    title: 'Reports and Analytics Software Pakistan | Nexora BI',
+    description: 'Nexora Reports & Analytics provides KPI dashboards, BI tools, PDF exports and business insights for Pakistani teams.',
+    keyword: 'Business Analytics Software Pakistan',
+  }),
 }
 
 export const solutionPathMap = {
@@ -156,6 +216,14 @@ export const solutionPathMap = {
   'school-erp': seoMetadata['/school-erp'],
   'transport-rental': seoMetadata['/transport'],
   'whatsapp-crm': seoMetadata['/whatsapp-crm'],
+  crm: seoMetadata['/solutions/crm'],
+  'property-erp': seoMetadata['/solutions/property-erp'],
+  'medical-store-pos': seoMetadata['/solutions/medical-store-pos'],
+  reports: seoMetadata['/solutions/reports'],
+  'email-marketing': seoMetadata['/solutions/email-marketing'],
+  'inventory-management': seoMetadata['/solutions/inventory-management'],
+  'team-permissions': seoMetadata['/solutions/team-permissions'],
+  'reports-analytics': seoMetadata['/solutions/reports-analytics'],
 }
 
 export function getSeoForPath(pathname) {

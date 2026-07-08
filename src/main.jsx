@@ -1,7 +1,40 @@
-import { lazy, StrictMode, Suspense } from 'react'
+import { Component, lazy, StrictMode, Suspense } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import './index.css'
+
+/* Root-level error boundary to catch lazy-load failures (stale chunks, SW cache, etc.) */
+class RootErrorBoundary extends Component {
+  state = { error: null }
+  static getDerivedStateFromError(error) { return { error } }
+  render() {
+    if (this.state.error) {
+      return (
+        <main className="grid min-h-screen place-items-center bg-slate-50 px-4 text-slate-950" style={{ fontFamily: 'system-ui, sans-serif' }}>
+          <section className="w-full max-w-xl rounded-3xl border border-rose-200 bg-white p-6 shadow-sm">
+            <p className="text-sm font-black uppercase tracking-[0.2em] text-rose-600">Nexora</p>
+            <h1 className="mt-3 text-2xl font-black tracking-tight">Page could not finish loading</h1>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              A runtime error was caught while loading the app. This is often caused by a stale cache or service worker.
+            </p>
+            <pre className="mt-4 max-h-44 overflow-auto rounded-2xl bg-slate-950 p-4 text-xs text-rose-100">
+              {this.state.error?.message || String(this.state.error)}
+            </pre>
+            <div className="mt-5 flex flex-wrap gap-2">
+              <button type="button" className="rounded-2xl bg-slate-950 px-5 py-3 text-sm font-bold text-white" onClick={() => window.location.reload()}>
+                Reload Page
+              </button>
+              <button type="button" className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-bold text-slate-700" onClick={() => { navigator.serviceWorker?.getRegistrations?.().then((r) => r.forEach((reg) => reg.unregister())).then(() => window.location.reload()) }}>
+                Clear Cache &amp; Reload
+              </button>
+            </div>
+          </section>
+        </main>
+      )
+    }
+    return this.props.children
+  }
+}
 
 const AppProviders = lazy(() => import('./components/AppProviders.jsx'))
 
@@ -15,11 +48,13 @@ if (shell) {
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <BrowserRouter>
-      <Suspense fallback={null}>
-        <AppProviders />
-      </Suspense>
-    </BrowserRouter>
+    <RootErrorBoundary>
+      <BrowserRouter>
+        <Suspense fallback={null}>
+          <AppProviders />
+        </Suspense>
+      </BrowserRouter>
+    </RootErrorBoundary>
   </StrictMode>,
 )
 

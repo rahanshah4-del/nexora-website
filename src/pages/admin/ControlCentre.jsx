@@ -1119,10 +1119,17 @@ export default function ControlCentre() {
       seenModuleMismatchKeys.add(key)
       return true
     })
-    const moduleMismatchLabels = moduleMismatches.map((item) => {
-      const mismatch = item.mismatched[0]
-      return `${item.email || item.label || item.id}: should run ${item.expected}, ${mismatch?.field || 'module'} is ${mismatch?.value || 'wrong'}`
+    /* Stale/resolved detection for module mismatches: if all mismatching records
+       have not been updated in the last 24h, assume the runtime fix has been
+       deployed and the mismatch is a stale record — show as warning, not critical. */
+    const mismatchesWithAge = moduleMismatches.map((item) => {
+      const row = item.row || {}
+      const updated = toDate(row.updatedAt || row.lastLoginAt || row.createdAt)
+      return { item, age: updated ? (now - updated.getTime()) : 0 }
     })
+    const staleMismatches = mismatchesWithAge.filter((m) => m.age > 24 * 60 * 60 * 1000)
+    const freshMismatches = mismatchesWithAge.filter((m) => m.age <= 24 * 60 * 60 * 1000)
+    const moduleMismatchesResolved = moduleMismatches.length > 0 && freshMismatches.length === 0
     const enabledPlans = platformPlans.filter((plan) => plan.enabled !== false && plan.active !== false)
     const usingDefaultPlansOnly = data.plans.length === 0
     const paymentAccounts = platformSettings.paymentAccounts || {}
@@ -1151,6 +1158,11 @@ export default function ControlCentre() {
     const frontendOfflineIssues = recentFrontendEvents.filter((row) => row.eventType === 'frontend_offline')
     const latestFrontendIssue = [...frontendRuntimeIssues, ...frontendOfflineIssues]
       .sort((a, b) => (toDate(b.timestamp || b.createdAt)?.getTime() || 0) - (toDate(a.timestamp || a.createdAt)?.getTime() || 0))[0]
+    /* Stale/resolved detection: if the most recent frontend error is more than 2 hours old
+       and no new matching error has occurred since, mark as resolved (warning, not critical).
+       This prevents fixed issues from showing as active critical after a deploy. */
+    const latestFrontendIssueAge = latestFrontendIssue ? (now - (toDate(latestFrontendIssue.timestamp || latestFrontendIssue.createdAt)?.getTime() || 0)) : Infinity
+    const frontendIssuesResolved = latestFrontendIssue ? latestFrontendIssueAge > 2 * 60 * 60 * 1000 : true
     const latestPresenceAt = [...data.clientSessions, ...data.userPresence, ...data.userSessions].reduce((latest, row) => {
       const date = toDate(row.lastActiveAt || row.updatedAt || row.createdAt)
       return date && date.getTime() > latest ? date.getTime() : latest
@@ -1262,14 +1274,16 @@ export default function ControlCentre() {
       {
         id: 'module-access',
         title: 'Module assignment',
-        status: moduleMismatches.length ? 'critical' : workspacesMissingModule.length ? 'warning' : 'healthy',
-        detail: moduleMismatches.length
-          ? `${moduleMismatches.length} selected module mismatch found: ${listSummary(moduleMismatchLabels, 3)}`
-          : workspacesMissingModule.length
-            ? `${workspacesMissingModule.length} workspaces missing selected business module.`
-            : 'Selected workspace and business module fields are consistent.',
+        status: freshMismatches.length ? 'critical' : staleMismatches.length ? 'warning' : workspacesMissingModule.length ? 'warning' : 'healthy',
+        detail: freshMismatches.length
+          ? `${freshMismatches.length} active module mismatch found: ${listSummary(freshMismatches.map((m) => { const item = m.item; const mm = item.mismatched[0]; return `${item.email || item.label || item.id}: should run ${item.expected}, ${mm?.field || 'module'} is ${mm?.value || 'wrong'}`; }), 3)}`
+          : staleMismatches.length
+            ? `${staleMismatches.length} module mismatches no longer active (24h stale) — likely resolved by recent deploy.`
+            : workspacesMissingModule.length
+              ? `${workspacesMissingModule.length} workspaces missing selected business module.`
+              : 'Selected workspace and business module fields are consistent.',
         actionTab: 'clients',
-        metric: moduleMismatches.length + workspacesMissingModule.length,
+        metric: freshMismatches.length + staleMismatches.length + workspacesMissingModule.length,
       },
       {
         id: 'plans-pricing',
@@ -1289,11 +1303,14 @@ export default function ControlCentre() {
       },
       {
         id: 'whatsapp-api',
-        title: 'WhatsApp API readiness',
-        status: !whatsappConfigured && data.whatsappSettings.length ? 'critical' : whatsappIssues.length ? 'warning' : 'healthy',
-        detail: !whatsappConfigured && data.whatsappSettings.length ? 'VITE_WHATSAPP_WORKER_URL is missing.' : whatsappIssues.length ? `${whatsappIssues.length} WhatsApp API configs need webhook/connection review.` : `${data.whatsappSettings.length} workspace configs monitored.`,
+        title: `WhatsApp API readiness${!whatsappConfigured ? ' — Setup Required' : ''}`,
+        status: !whatsappConfigured && data.whatsappSettings.length ? 'warning' : whatsappIssues.length ? 'warning' : 'healthy',
+        detail: !whatsappConfigured && data.whatsappSettings.length
+          ? 'VITE_WHATSAPP_WORKER_URL env var is not set — add it in Cloudflare Pages > Settings > Environment Variables. The app continues to work; WhatsApp API features are unavailable until this is configured.'
+          : whatsappIssues.length ? `${whatsappIssues.length} WhatsApp API configs need webhook/connection review.` : `${data.whatsappSettings.length} workspace configs monitored.`,
         actionTab: 'whatsappPricing',
         metric: whatsappIssues.length,
+        envHint: !whatsappConfigured ? 'VITE_WHATSAPP_WORKER_URL' : '',
       },
       {
         id: 'analytics',
@@ -1306,9 +1323,11 @@ export default function ControlCentre() {
       {
         id: 'frontend-health',
         title: 'Bug / error reports live',
-        status: frontendRuntimeIssues.length ? 'critical' : frontendOfflineIssues.length ? 'warning' : 'healthy',
+        status: frontendRuntimeIssues.length && !frontendIssuesResolved ? 'critical' : frontendRuntimeIssues.length ? 'warning' : frontendOfflineIssues.length ? 'warning' : 'healthy',
         detail: frontendRuntimeIssues.length
-          ? `${frontendRuntimeIssues.length} frontend bug/error reports in the last 24h. Latest: ${latestFrontendIssue?.buttonLabel || 'runtime error'}`
+          ? (frontendIssuesResolved
+            ? `${frontendRuntimeIssues.length} reports in last 24h, none newer than 2h — resolved by latest deploy. Latest: ${latestFrontendIssue?.buttonLabel || 'runtime error'}`
+            : `${frontendRuntimeIssues.length} frontend bug/error reports in the last 24h. Latest: ${latestFrontendIssue?.buttonLabel || 'runtime error'}`)
           : frontendOfflineIssues.length
             ? `${frontendOfflineIssues.length} offline/sync interruptions in the last 24h.`
             : 'No frontend runtime or offline issues reported in the last 24h.',

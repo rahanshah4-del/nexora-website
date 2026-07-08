@@ -1,8 +1,20 @@
-import { lazy, Suspense, useEffect } from 'react'
+import { Component, lazy, Suspense, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { HiOutlineArrowRight, HiOutlinePlayCircle } from 'react-icons/hi2'
 import Header from './components/Header'
 import trustBadges from './components/trustBadges'
+
+/* Isolated error boundary for each lazy section so a stale chunk never crashes the whole page */
+class SectionErrorBoundary extends Component {
+  state = { error: null }
+  static getDerivedStateFromError(error) { return { error } }
+  render() {
+    if (this.state.error) {
+      return <div className="hidden" />
+    }
+    return this.props.children
+  }
+}
 
 const DashboardPreview = lazy(() => import('./components/DashboardPreview.jsx'))
 const TawkChat = lazy(() => import('./pages/public/TawkChat.jsx'))
@@ -47,7 +59,7 @@ function App({ initialSectionId = '' }) {
               </div>
               {/* DashboardPreview is hidden on mobile to avoid heavy SVG rendering
                   below the fold (mobile LCP fix). Desktop shows the full mockup. */}
-              <div className="hidden sm:block sm:mt-14"><DashboardPreview /></div>
+              <div className="hidden sm:block sm:mt-14"><Suspense fallback={null}><SectionErrorBoundary><DashboardPreview /></SectionErrorBoundary></Suspense></div>
             </div>
           </div>
         </section>
@@ -62,10 +74,12 @@ function App({ initialSectionId = '' }) {
       <div id="contact" style={{ scrollMarginTop: '5.5rem' }} />
 
       <Suspense fallback={null}>
-        <HomepageSections />
+        <SectionErrorBoundary>
+          <HomepageSections />
+        </SectionErrorBoundary>
       </Suspense>
 
-      <Suspense fallback={null}><TawkChat /></Suspense>
+      <Suspense fallback={null}><SectionErrorBoundary><TawkChat /></SectionErrorBoundary></Suspense>
     </div>
   )
 }

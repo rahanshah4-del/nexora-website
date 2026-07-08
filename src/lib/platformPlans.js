@@ -1,5 +1,6 @@
 export const DEFAULT_SAAS_CURRENCY = 'PKR'
 export const PLATFORM_PLAN_COLLECTION = 'platformPlans'
+export const PLATFORM_YEARLY_DISCOUNT = 0.8 // 20% savings on yearly
 
 export const defaultPaymentAccounts = {
   jazzcash: {
@@ -48,33 +49,76 @@ export const defaultPlatformSettings = {
   paymentAccounts: defaultPaymentAccounts,
 }
 
+/* Free Trial — used only on the public website pricing page.
+   NOT included in defaultPlatformPlans so it never appears in UpgradeBusiness. */
+export const freeTrialConfig = {
+  id: 'free-trial',
+  name: '7-Day Free Trial',
+  monthlyPrice: 0,
+  yearlyPrice: 0,
+  price: 0,
+  priceLabel: 'PKR 0',
+  priceNote: 'No credit card required',
+  description: 'Experience the complete Nexora platform before subscribing.',
+  currency: DEFAULT_SAAS_CURRENCY,
+  active: true,
+  recommended: false,
+  badge: null,
+  features: [
+    'Full access to ALL Nexora modules',
+    'Unlimited users during trial',
+    'Unlimited storage during trial',
+    'All premium features enabled',
+    'Team Management enabled',
+    'Reports & Analytics',
+    'Cloud Sync',
+    'Email Support',
+    'No credit card required',
+  ],
+}
+
 export const defaultPlatformPlans = [
   {
     id: 'basic',
     planName: 'Basic',
     name: 'Basic',
-    monthlyPrice: 2999,
-    yearlyPrice: 2999 * 12,
-    price: 2999,
+    monthlyPrice: 2000,
+    yearlyPrice: Math.round(2000 * 12 * 0.8),
+    price: 2000,
+    description: 'Perfect for small businesses using a single Nexora solution.',
     currency: DEFAULT_SAAS_CURRENCY,
     billingCycle: 'monthly',
     active: true,
     enabled: true,
     recommended: false,
-    features: ['CRM Module', 'Up to 2 Users', '5GB Storage', 'Email Support'],
+    badge: null,
+    features: [
+      'Choose ANY ONE Nexora Business Module (Restaurant POS, Retail POS, School ERP, Transport, Medical Store POS, CRM, WhatsApp CRM, or any future module)',
+      'Up to 2 Team Members',
+      'Team Management (maximum 2 users)',
+      'Role & Permission Management',
+      'Dashboard & Reports',
+      'Invoice & Billing',
+      '5 GB Secure Cloud Storage',
+      'Automatic Backup & Restore',
+      'Email Support',
+      'Free Updates',
+      'Secure Cloud Sync',
+    ],
   },
   {
     id: 'standard',
     planName: 'Standard',
     name: 'Standard',
     monthlyPrice: 5999,
-    yearlyPrice: 5999 * 12,
+    yearlyPrice: Math.round(5999 * 12 * 0.8),
     price: 5999,
     currency: DEFAULT_SAAS_CURRENCY,
     billingCycle: 'monthly',
     active: true,
     enabled: true,
     recommended: true,
+    badge: 'Recommended',
     features: ['All Basic Features', 'One Business Module', 'Up to 5 Users', '20GB Storage', 'Priority Support'],
   },
   {
@@ -89,6 +133,7 @@ export const defaultPlatformPlans = [
     active: true,
     enabled: true,
     recommended: false,
+    badge: null,
     features: ['All Standard Features', 'Unlimited Users', 'Custom Integrations', 'Dedicated Support', 'Custom Development'],
   },
 ]

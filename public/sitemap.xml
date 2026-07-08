@@ -31,6 +31,11 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://nexorasolution.online/faq</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://nexorasolution.online/features</loc>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
@@ -87,6 +92,51 @@
   </url>
   <url>
     <loc>https://nexorasolution.online/sitemap</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://nexorasolution.online/solutions/crm</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://nexorasolution.online/solutions/email-marketing</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://nexorasolution.online/solutions/inventory-management</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://nexorasolution.online/solutions/medical-store-pos</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://nexorasolution.online/solutions/property-erp</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://nexorasolution.online/solutions/reports</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://nexorasolution.online/solutions/reports-analytics</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://nexorasolution.online/solutions/team-permissions</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://nexorasolution.online/support-center</loc>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>

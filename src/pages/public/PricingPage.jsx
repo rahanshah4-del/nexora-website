@@ -14,81 +14,64 @@ import {
 } from 'react-icons/hi2'
 import BusinessServicesSection from '../../components/BusinessServicesSection.jsx'
 import PublicPageShell from './PublicPageShell.jsx'
+import { defaultPlatformPlans, freeTrialConfig, PLATFORM_YEARLY_DISCOUNT } from '../../lib/platformPlans.js'
 
-const yearlyDiscount = 0.8
-
-const pricingPlans = [
-  {
-    name: 'Free Forever',
-    label: 'Free Forever',
-    priceLabel: 'Rs 0',
-    priceNote: 'No credit card required',
-    description: 'For founders and small teams that want to keep Nexora running after the trial.',
-    features: ['1 workspace', '1 user', '50 customers', '20 leads', '10 invoices/month', 'Basic CRM', 'Basic dashboard'],
-    ctaLabel: 'Start Free Trial',
-    ctaTo: '/signup',
-  },
-  {
-    name: 'Standard',
-    label: 'Paid Standard',
-    monthly: 5999,
-    description: 'For growing businesses that need unlimited records, team controls and support.',
-    features: ['More users', 'Unlimited customers/leads/invoices', 'Reports', 'Analytics', 'Team management', 'Support tickets', 'Priority support'],
-    featured: true,
-    ctaLabel: 'Upgrade When Business Grows',
-    ctaTo: '/signup',
-  },
-  {
-    name: 'Enterprise',
-    label: 'Enterprise Plan',
-    custom: true,
-    description: 'For organizations that need custom modules, users and integrations.',
-    features: ['All Business Features', 'Unlimited Users', 'Custom Integrations', 'Dedicated Support', 'Custom Development', 'SLA Options'],
-    ctaLabel: 'Book Demo',
-    ctaTo: '/contact',
-  },
+const BASIC_FEATURES_SHORT = [
+  'Choose Any 1 Nexora Module',
+  'Up to 2 Users',
+  'Team Management',
+  'Dashboard & Reports',
+  '5 GB Cloud Storage',
+  'Email Support',
+  'Free Updates',
 ]
 
+const paidPlans = defaultPlatformPlans.filter((p) => p.active !== false).map((plan) => ({
+  ...plan,
+  features: plan.id === 'basic' ? BASIC_FEATURES_SHORT : plan.features,
+  ctaLabel: plan.monthlyPrice === 'custom' ? 'Book Demo' : plan.id === 'basic' ? 'Start Free Trial' : 'Upgrade Now',
+  ctaTo: plan.monthlyPrice === 'custom' ? '/contact' : '/signup',
+}))
+
 const comparisonRows = [
-  ['Workspace included', '1', true, true],
-  ['Users included', '1', 'More users', 'Unlimited'],
-  ['Customers', '50', 'Unlimited', 'Unlimited'],
-  ['Leads', '20', 'Unlimited', 'Unlimited'],
-  ['Invoices', '10/month', 'Unlimited', 'Unlimited'],
-  ['Basic CRM and dashboard', true, true, true],
-  ['Reports and analytics', false, true, true],
-  ['Team management', false, true, true],
-  ['Support tickets', false, true, true],
-  ['Priority support', false, true, true],
-  ['Custom integrations', false, false, true],
-  ['Enterprise SLA', false, false, true],
+  ['Nexora Business Modules', 'All modules', 'Choose ANY ONE', '1 + upgrade', 'All'],
+  ['Team Members', 'Unlimited', 'Up to 2', 'Up to 5', 'Unlimited'],
+  ['Team Management', true, 'Yes (max 2)', true, true],
+  ['Role & Permission Management', true, true, true, true],
+  ['Dashboard & Reports', true, true, true, true],
+  ['Invoice & Billing', true, true, true, true],
+  ['Cloud Storage', 'Unlimited', '5 GB', '20 GB', 'Custom'],
+  ['Cloud Sync', true, true, true, true],
+  ['Automatic Backup & Restore', true, true, true, true],
+  ['Email Support', true, true, true, true],
+  ['Priority Support', false, false, true, true],
+  ['Free Updates', true, true, true, true],
+  ['Custom Integrations', false, false, false, true],
+  ['Dedicated Support', false, false, false, true],
+  ['Custom Development', false, false, false, true],
 ]
 
 const faqs = [
-  ['Is Free Forever really free?', 'Yes. After the trial, you can continue on Free Forever with 1 workspace, 1 user, Basic CRM and starter limits.'],
-  ['Do I need a credit card to start?', 'No. Nexora lets you start a free trial without a credit card, then continue free or upgrade when ready.'],
-  ['When should I upgrade to Standard?', 'Upgrade when your team needs more users, unlimited customers, unlimited leads, unlimited invoices, reports, analytics and support tickets.'],
-  ['Can I start with one module?', 'Yes. You can start with CRM or the solution you need most, then upgrade as your operations grow.'],
+  ['Is there a free trial?', 'Yes. Start a free 7-day trial with full access to all Nexora modules, unlimited users and unlimited storage. No credit card required.'],
+  ['Do I need a credit card to start?', 'No. Nexora lets you start a free trial without a credit card.'],
+  ['What happens after the free trial?', 'You can continue with Basic at PKR 2,000/month with one business module and up to 2 users, or upgrade to Standard or Enterprise anytime.'],
+  ['Can I choose any business module on Basic?', 'Yes. Basic lets you pick any ONE Nexora Business Module — Restaurant POS, Retail POS, School ERP, Transport, Medical Store POS, CRM, WhatsApp CRM, or any future module.'],
+  ['What are the Basic plan limits?', 'Basic allows one active module, up to 2 team members, and 5 GB of cloud storage.'],
+  ['When should I upgrade to Standard?', 'Upgrade when your team needs more than 2 users, more than 5 GB storage, or priority support.'],
   ['Do yearly plans save money?', 'Yes. Yearly billing applies a 20% saving compared with monthly billing.'],
   ['Can I request a custom plan?', 'Yes. Enterprise plans are tailored for larger teams, custom workflows and integrations.'],
-  ['Is onboarding included?', 'Standard and Enterprise plans include guided setup support so your team can launch faster.'],
 ]
 
 const highlightCards = [
-  ['Start safely', 'Try Nexora without a credit card and continue Free Forever after trial.', HiOutlineCloud],
-  ['Scale clearly', 'Upgrade to Standard when users, records, reports and support needs grow.', HiOutlineShieldCheck],
-  ['Sell with confidence', 'CRM, invoices, analytics and support are packaged around business growth.', HiOutlineDocumentChartBar],
+  ['Start safely', 'Try Nexora for 7 days free with full access. No credit card required.', HiOutlineCloud],
+  ['Scale clearly', 'Choose Basic with one module, or upgrade to Standard when your team grows.', HiOutlineShieldCheck],
+  ['Sell with confidence', 'All plans include Dashboard & Reports, Invoice & Billing, Cloud Sync and Email Support.', HiOutlineDocumentChartBar],
 ]
+
+const UPGRADE_NOTE = 'Only one business module can be active. Upgrade to Standard anytime for more modules, users and storage.'
 
 function formatPrice(amount) {
   return new Intl.NumberFormat('en-PK').format(amount)
-}
-
-function getPrice(plan, billingCycle) {
-  if (plan.custom) return 'Custom Pricing'
-  if (plan.priceLabel) return plan.priceLabel
-  if (billingCycle === 'yearly') return `Rs ${formatPrice(Math.round(plan.monthly * 12 * yearlyDiscount))}`
-  return `Rs ${formatPrice(plan.monthly)}`
 }
 
 function renderComparisonValue(value) {
@@ -97,9 +80,18 @@ function renderComparisonValue(value) {
   return <span className="text-center text-xs font-extrabold text-blue-700">{value}</span>
 }
 
+function getPlanPrice(plan, billingCycle) {
+  if (plan.id === 'free-trial') return 'PKR 0'
+  if (plan.monthlyPrice === 'custom') return 'Custom Pricing'
+  if (billingCycle === 'yearly') return `PKR ${formatPrice(Math.round(Number(plan.monthlyPrice) * 12 * PLATFORM_YEARLY_DISCOUNT))}`
+  return `PKR ${formatPrice(Number(plan.monthlyPrice))}`
+}
+
 export default function PricingPage() {
   const [billingCycle, setBillingCycle] = useState('monthly')
   const seo = getSeoForPath('/pricing')
+
+  const displayPlans = [freeTrialConfig, ...paidPlans]
 
   return (
     <PublicPageShell>
@@ -112,16 +104,16 @@ export default function PricingPage() {
             Nexora Pricing
           </span>
           <h1 className="website-hero-heading mx-auto mt-6 max-w-5xl text-[2.85rem] font-black leading-[0.98] tracking-tight text-slate-950 sm:text-[4.4rem] lg:text-[5.7rem]">
-            Start free, stay free, then upgrade when <span className="marker-highlight marker-highlight-blue">business grows.</span>
+            Start free, then choose the plan that <span className="marker-highlight marker-highlight-blue">fits your business.</span>
           </h1>
           <p className="mx-auto mt-6 max-w-3xl text-base leading-8 text-slate-600 sm:text-lg">
-            Try Nexora with no credit card, continue Free Forever after the trial, and move to Standard when your team needs unlimited growth tools.
+            Try Nexora free for 7 days with full access to all modules. No credit card required — upgrade when you're ready.
           </p>
           <div className="mx-auto mt-7 grid max-w-4xl gap-3 text-left sm:grid-cols-3">
             {[
-              ['Start Free Trial', 'Explore Nexora with guided CRM, invoices and dashboards.'],
-              ['Continue Free Forever', 'Keep 1 workspace, 1 user and starter CRM limits after trial.'],
-              ['Upgrade When Ready', 'Unlock unlimited records, teams, reports and support tickets.'],
+              ['Start Free Trial', 'Experience the complete Nexora platform with all modules, unlimited users and unlimited storage.'],
+              ['Choose Basic', 'Continue at PKR 2,000/month with one business module, up to 2 users and 5 GB storage.'],
+              ['Upgrade When Ready', 'Unlock more modules, more users, larger storage and priority support.'],
             ].map(([title, text]) => (
               <div key={title} className="rounded-[1.2rem] border border-blue-100 bg-white/85 p-4 shadow-[0_22px_58px_-46px_rgba(37,99,235,0.38)]">
                 <p className="text-sm font-black text-slate-950">{title}</p>
@@ -149,46 +141,67 @@ export default function PricingPage() {
 
       <section data-reveal className="bg-white pb-16 sm:pb-20 lg:pb-24">
         <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
-          <div className="grid items-stretch gap-5 lg:grid-cols-3">
-            {pricingPlans.map((plan) => (
+          <div className="grid items-stretch gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {displayPlans.map((plan) => (
               <article
-                key={plan.name}
-                className={`relative flex h-full min-h-[32rem] flex-col rounded-[1.65rem] border bg-white p-6 shadow-[0_28px_80px_-50px_rgba(15,23,42,0.34)] ${
-                  plan.featured ? 'border-blue-300 bg-blue-50/50 ring-2 ring-blue-100' : 'border-slate-200'
+                key={plan.id}
+                className={`relative flex flex-col rounded-[1.65rem] border bg-white p-6 shadow-[0_28px_80px_-50px_rgba(15,23,42,0.34)] ${
+                  plan.recommended ? 'border-blue-300 bg-blue-50/50 ring-2 ring-blue-100' : plan.id === 'free-trial' ? 'border-emerald-200 bg-emerald-50/40' : 'border-slate-200'
                 }`}
               >
                 <div className="mb-4 flex min-h-7 justify-center">
-                  {plan.featured && (
+                  {plan.recommended && (
                     <span className="rounded-full bg-slate-950 px-3 py-1 text-[0.68rem] font-extrabold text-white">
                       Most Popular
                     </span>
                   )}
+                  {plan.id === 'free-trial' && (
+                    <span className="rounded-full bg-emerald-600 px-3 py-1 text-[0.68rem] font-extrabold text-white">
+                      Free
+                    </span>
+                  )}
                 </div>
-                <h2 className={`text-center text-2xl font-black ${plan.featured ? 'text-blue-600' : 'text-slate-950'}`}>{plan.label}</h2>
-                <p className="mt-3 text-center text-sm leading-6 text-slate-500">{plan.description}</p>
+                <h2 className={`text-center text-2xl font-black ${plan.recommended ? 'text-blue-600' : plan.id === 'free-trial' ? 'text-emerald-700' : 'text-slate-950'}`}>
+                  {plan.id === 'free-trial' ? '7-Day Free Trial' : plan.name}
+                </h2>
+                <p className={`${plan.id === 'basic' ? 'mt-2' : 'mt-3'} text-center text-sm leading-6 text-slate-500`}>
+                  {plan.id === 'free-trial' ? 'Experience the complete Nexora platform before subscribing.' : plan.id === 'basic' ? 'One module, two users, all the essentials.' : plan.description || ''}
+                </p>
                 <div className="mt-6 text-center">
-                  <p className="text-3xl font-black text-slate-950 sm:text-4xl">{getPrice(plan, billingCycle)}</p>
-                  {!plan.custom && <p className="mt-1 text-sm text-slate-500">{plan.priceNote || `/${billingCycle === 'monthly' ? 'month' : 'year'}`}</p>}
+                  <p className="text-3xl font-black text-slate-950 sm:text-4xl">{getPlanPrice(plan, billingCycle)}</p>
+                  {plan.monthlyPrice !== 'custom' && plan.id !== 'free-trial' && (
+                    <p className="mt-1 text-sm text-slate-500">/{billingCycle === 'monthly' ? 'month' : 'year'}</p>
+                  )}
+                  {plan.id === 'free-trial' && (
+                    <p className="mt-1 text-sm text-slate-500">No credit card required</p>
+                  )}
                 </div>
 
-                <div className="mt-7 flex-1 space-y-3">
+                <div className="mt-5 flex-1 space-y-3">
                   {plan.features.map((feature) => (
                     <div key={feature} className="flex items-start gap-3 text-sm text-slate-700">
-                      <HiOutlineCheckCircle className="mt-0.5 shrink-0 text-blue-600" />
+                      <HiOutlineCheckCircle className={`mt-0.5 shrink-0 ${plan.id === 'free-trial' ? 'text-emerald-500' : 'text-blue-600'}`} />
                       <span className="leading-6">{feature}</span>
                     </div>
                   ))}
+                  {plan.id === 'basic' && (
+                    <p className="pt-2 text-center text-xs leading-5 text-slate-500">{UPGRADE_NOTE}</p>
+                  )}
                 </div>
 
                 <Link
-                  to={plan.ctaTo}
-                  className={`mt-8 inline-flex min-h-12 items-center justify-center rounded-full border px-5 text-sm font-extrabold ${
-                    plan.featured
-                      ? 'border-slate-950 bg-slate-950 text-white hover:bg-blue-700'
-                      : 'border-slate-200 bg-white text-slate-950 hover:border-blue-300 hover:text-blue-600'
+                  to={plan.ctaTo || '/signup'}
+                  className={`mt-auto inline-flex min-h-11 w-full items-center justify-center rounded-xl px-5 text-sm font-extrabold tracking-wide transition-all duration-200 ${
+                    plan.recommended
+                      ? 'bg-gradient-to-br from-blue-600 to-violet-600 text-white shadow-[0_4px_20px_-6px_rgba(99,102,241,0.5)] hover:shadow-[0_6px_28px_-6px_rgba(99,102,241,0.65)] hover:-translate-y-[1px] active:translate-y-0'
+                      : plan.id === 'free-trial'
+                        ? 'bg-gradient-to-br from-emerald-500 to-green-600 text-white shadow-[0_4px_20px_-6px_rgba(16,185,129,0.45)] hover:shadow-[0_6px_28px_-6px_rgba(16,185,129,0.6)] hover:-translate-y-[1px] active:translate-y-0'
+                        : plan.id === 'enterprise'
+                          ? 'border-2 border-slate-800 bg-white text-slate-900 shadow-sm hover:bg-slate-50 hover:shadow-md hover:-translate-y-[1px] active:translate-y-0'
+                          : 'border-2 border-slate-300 bg-white text-slate-700 shadow-sm hover:border-blue-400 hover:text-blue-600 hover:shadow-md hover:-translate-y-[1px] active:translate-y-0'
                   }`}
                 >
-                  {plan.ctaLabel}
+                  {plan.id === 'free-trial' ? 'Start Free Trial' : plan.ctaLabel}
                 </Link>
               </article>
             ))}
@@ -217,23 +230,23 @@ export default function PricingPage() {
               Feature comparison
             </h2>
             <p className="mx-auto mt-5 max-w-2xl text-base leading-8 text-slate-600">
-              Compare the Free Forever starter plan with Standard and Enterprise growth packages.
+              Compare Free Trial, Basic, Standard and Enterprise plans to find the right fit for your business.
             </p>
           </div>
 
           <div className="mt-10 overflow-x-auto rounded-[1.65rem] border border-slate-200 bg-white shadow-[0_28px_80px_-54px_rgba(15,23,42,0.4)]">
-            <div className="min-w-[46rem]">
-              <div className="grid grid-cols-[1.35fr_0.8fr_0.95fr_0.9fr] border-b border-slate-100 bg-slate-950 text-white">
-                {['Feature', 'Free Forever', 'Standard', 'Enterprise'].map((header) => (
+            <div className="min-w-[58rem]">
+              <div className="grid grid-cols-[1.35fr_0.7fr_0.7fr_0.85fr_0.8fr] border-b border-slate-100 bg-slate-950 text-white">
+                {['Feature', 'Free Trial', 'Basic', 'Standard', 'Enterprise'].map((header) => (
                   <div key={header} className="px-3 py-4 text-xs font-black uppercase tracking-[0.14em] sm:px-5">
                     {header}
                   </div>
                 ))}
               </div>
-              {comparisonRows.map(([feature, free, standard, enterprise]) => (
-                <div key={feature} className="grid grid-cols-[1.35fr_0.8fr_0.95fr_0.9fr] border-b border-slate-100 last:border-b-0">
+              {comparisonRows.map(([feature, freeTrial, basic, standard, enterprise]) => (
+                <div key={feature} className="grid grid-cols-[1.35fr_0.7fr_0.7fr_0.85fr_0.8fr] border-b border-slate-100 last:border-b-0">
                   <div className="px-3 py-4 text-sm font-bold text-slate-800 sm:px-5">{feature}</div>
-                  {[free, standard, enterprise].map((value, index) => (
+                  {[freeTrial, basic, standard, enterprise].map((value, index) => (
                     <div key={`${feature}-${index}`} className="grid place-items-center border-l border-slate-100 px-2 py-4 text-center">
                       {renderComparisonValue(value)}
                     </div>
@@ -271,9 +284,9 @@ export default function PricingPage() {
               <HiOutlineChartBarSquare className="text-3xl" />
               <HiOutlineChatBubbleLeftRight className="text-3xl" />
             </div>
-            <h2 className="text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">Start free today. Keep growing on your terms.</h2>
+            <h2 className="text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">Start free today. Choose the plan that fits.</h2>
             <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
-              Start a free trial with no credit card, continue Free Forever after trial, or upgrade to Standard when your team needs unlimited capacity.
+              Start a 7-day free trial with full access, choose Basic to stay lean with one module, or upgrade to Standard for more capacity.
             </p>
           </div>
           <div className="flex flex-col gap-3 min-[420px]:flex-row">

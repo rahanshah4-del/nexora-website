@@ -342,11 +342,11 @@ export function UserProvider({ children }) {
       workspaceDoc?.selectedBusinessType ||
       workspaceDoc?.currentBusinessType ||
       workspaceDoc?.businessType
-    : workspaceDoc?.primaryBusinessType ||
+    : userDoc?.primaryBusinessType ||
+      workspaceDoc?.primaryBusinessType ||
       workspaceDoc?.selectedBusinessType ||
       workspaceDoc?.currentBusinessType ||
       workspaceDoc?.businessType ||
-      userDoc?.primaryBusinessType ||
       userDoc?.selectedBusinessType ||
       userDoc?.currentBusinessType ||
       userDoc?.businessType
@@ -371,7 +371,7 @@ export function UserProvider({ children }) {
       ? lockedBusinessType || userDoc?.selectedWorkspace
       : developerOverride
       ? selectedBusinessWorkspace || userDoc?.selectedWorkspace || userDoc?.selectedBusinessType || userDoc?.businessType
-      : storedBusinessAllowed
+      : storedBusinessAllowed && storedBusinessType === normalizeBusinessType(lockedBusinessType)
         ? selectedBusinessWorkspace
       : specialModuleAccess && requestedBusinessAllowed
         ? requestedBusinessType

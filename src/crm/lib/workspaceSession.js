@@ -1,6 +1,6 @@
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore'
 import { db } from './firebase.js'
-import { accessPlanForUser, businessWorkspaceCatalog, businessWorkspaceForId, businessWorkspaceForSelection, businessWorkspaceForType, labelForBusinessType } from '../data/moduleAccess.js'
+import { accessPlanForUser, businessWorkspaceCatalog, businessWorkspaceForId, businessWorkspaceForSelection, businessWorkspaceForType, labelForBusinessType, normalizeBusinessType } from '../data/moduleAccess.js'
 
 export const SELECTED_WORKSPACE_KEY = 'selectedWorkspace'
 export const SELECTED_WORKSPACE_USER_KEY = 'selectedWorkspaceUserId'
@@ -170,6 +170,7 @@ export async function persistWorkspaceSession(session) {
         userId: workspaceId,
         workspaceId,
         selectedWorkspace,
+        primaryBusinessType: businessType,
         selectedBusinessType: businessType,
         currentBusinessType: businessType,
         businessType,
@@ -185,6 +186,7 @@ export async function persistWorkspaceSession(session) {
       doc(db, 'users', uid),
       {
         selectedWorkspace,
+        primaryBusinessType: businessType,
         selectedBusinessType: businessType,
         currentBusinessType: businessType,
         businessType,

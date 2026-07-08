@@ -1,4 +1,5 @@
 import DefaultSeo from './components/DefaultSeo.jsx'
+import ScrollToTop from './components/ScrollToTop.jsx'
 import { Component, Suspense, lazy, useEffect } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import PageLoader from './crm/components/ui/PageLoader.jsx'
@@ -27,6 +28,8 @@ const SolutionPage = lazy(() => import('./pages/public/SolutionPage.jsx'))
 const PublicBusinessServicesPage = lazy(() => import('./pages/public/BusinessServicesPage.jsx'))
 const BlogIndexPage = lazy(() => import('./pages/public/BlogIndexPage.jsx'))
 const BlogArticlePage = lazy(() => import('./pages/public/BlogArticlePage.jsx'))
+const FaqPage = lazy(() => import('./pages/public/FaqPage.jsx'))
+const SupportCenterPage = lazy(() => import('./pages/public/SupportCenterPage.jsx'))
 const DashboardLayout = lazy(() => import('./crm/layouts/DashboardLayout.jsx'))
 const AdminLayout = lazy(() => import('./layouts/AdminLayout.jsx'))
 const DashboardHomePage = lazy(() => import('./crm/pages/DashboardHome.jsx'))
@@ -300,10 +303,11 @@ export default function AppRouter() {
 
   return (
     <>
-        <DefaultSeo />
+        <Suspense fallback={null}><DefaultSeo /></Suspense>
       <Suspense fallback={null}>
         <AnalyticsTracker />
       </Suspense>
+      <ScrollToTop />
       <Routes>
         <Route path="/" element={<LazyPage><MarketingRoute /></LazyPage>} />
         <Route path="/features" element={<LazyPage><MarketingRoute sectionId="services" /></LazyPage>} />
@@ -319,6 +323,8 @@ export default function AppRouter() {
         <Route path="/refund-policy" element={<LazyPage><RefundPolicyPage /></LazyPage>} />
         <Route path="/sitemap" element={<LazyPage><HtmlSitemapPage /></LazyPage>} />
         <Route path="/help-center" element={<LazyPage><HelpCenterPage /></LazyPage>} />
+        <Route path="/faq" element={<LazyPage><FaqPage /></LazyPage>} />
+        <Route path="/support-center" element={<LazyPage><SupportCenterPage /></LazyPage>} />
         <Route path="/documentation" element={<LazyPage><DocumentationPage /></LazyPage>} />
         <Route path="/blog" element={<LazyPage><BlogIndexPage /></LazyPage>} />
         <Route path="/blog/:slug" element={<LazyPage><BlogArticlePage /></LazyPage>} />

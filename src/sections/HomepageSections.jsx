@@ -8,6 +8,7 @@ import {
   HiOutlineCloud,
   HiOutlineDevicePhoneMobile,
   HiOutlineDocumentChartBar,
+  HiOutlineGlobeAlt,
   HiOutlineMapPin,
   HiOutlinePlayCircle,
   HiOutlineShieldCheck,
@@ -15,6 +16,13 @@ import {
   HiOutlineTruck,
   HiOutlineUserGroup,
 } from 'react-icons/hi2'
+import {
+  FaFacebook,
+  FaInstagram,
+  FaLinkedin,
+  FaYoutube,
+  FaWhatsapp,
+} from 'react-icons/fa6'
 import NexoraLogo from '../components/brand/NexoraLogo'
 
 const whatsappNumberDisplay = '+92 319 432 9754'
@@ -61,11 +69,44 @@ const posFeatures = [
   { title: 'Multi-Device Ready', text: 'Run the same POS experience from desktop counters, web dashboards and mobile views.', icon: HiOutlineDevicePhoneMobile },
 ]
 
-const footerGroups = {
-  quickLinks: [['Home', '/'], ['Solutions', '/#services'], ['Pricing', '/pricing'], ['Industries', '/industries'], ['About Us', '/#about'], ['Contact Us', '/contact']],
-  modules: [['CRM', '/solutions/crm'], ['School ERP', '/solutions/school-erp'], ['Property ERP', '/solutions/property-erp'], ['POS', '/solutions/pos'], ['Medical Store POS', '/solutions/medical-store-pos'], ['Transport / Rental', '/solutions/transport-rental'], ['WhatsApp CRM', '/solutions/whatsapp-crm'], ['Reports', '/solutions/reports']],
-  resources: [['Blog', '/blog'], ['Help Center', '/help-center'], ['Documentation', '/documentation'], ['Privacy Policy', '/privacy-policy'], ['Terms & Conditions', '/terms']],
-}
+const socialLinks = [
+  { icon: FaFacebook, href: 'https://facebook.com/nexorasolution', label: 'Facebook' },
+  { icon: FaInstagram, href: 'https://instagram.com/nexorasolution', label: 'Instagram' },
+  { icon: FaLinkedin, href: 'https://linkedin.com/company/nexorasolution', label: 'LinkedIn' },
+  { icon: FaYoutube, href: '#TODO-youtube', label: 'YouTube' },
+  { icon: FaWhatsapp, href: whatsappLink, label: 'WhatsApp' },
+]
+
+const productLinks = [
+  ['Nexora CRM', '/solutions/crm'],
+  ['Restaurant POS', '/restaurant-pos'],
+  ['Retail POS', '/retail-pos'],
+  ['Medical Store POS', '/solutions/medical-store-pos'],
+  ['School ERP', '/school-erp'],
+  ['Transport Management', '/transport'],
+  ['WhatsApp CRM', '/whatsapp-crm'],
+  ['Property ERP', '/solutions/property-erp'],
+]
+
+const companyLinks = [
+  ['Home', '/'],
+  ['About', '/about'],
+  ['Pricing', '/pricing'],
+  ['Business Services', '/business-services'],
+  ['Industries', '/industries'],
+  ['Blog', '/blog'],
+  ['Contact', '/contact'],
+]
+
+const resourceLinks = [
+  ['Documentation', '/documentation'],
+  ['Help Center', '/help-center'],
+  ['FAQ', '/faq'],
+  ['Privacy Policy', '/privacy-policy'],
+  ['Terms & Conditions', '/terms'],
+  ['Refund Policy', '/refund-policy'],
+  ['Support Center', '/support-center'],
+]
 
 function ModuleIcon({ icon: Icon, tone }) {
   const tones = { blue: 'bg-blue-50 text-blue-600', green: 'bg-emerald-50 text-emerald-600', purple: 'bg-violet-50 text-violet-600', orange: 'bg-orange-50 text-orange-500', rose: 'bg-rose-50 text-rose-600', cyan: 'bg-cyan-50 text-cyan-600', emerald: 'bg-green-50 text-green-600', sky: 'bg-sky-50 text-sky-600' }
@@ -203,18 +244,96 @@ export default function HomepageSections() {
 
       <footer className="bg-[linear-gradient(135deg,#071d35_0%,#062b52_100%)] text-white">
         <div className="mx-auto max-w-7xl px-5 py-12 sm:px-6 lg:px-8">
-          <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-[1.25fr_0.7fr_0.7fr_0.8fr_1fr]">
-            <div><NexoraLogo compact textClassName="[&>p]:text-white" /><p className="mt-5 max-w-sm text-sm leading-7 text-blue-100">Nexora Business Suite is an all-in-one platform to manage your entire business from one secure dashboard.</p><div className="mt-6 flex gap-3">{['f', 'ig', 'in', 'yt'].map((item) => (<span key={item} className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-xs font-extrabold text-white">{item}</span>))}</div></div>
-            <div><h3 className="text-sm font-extrabold">Quick Links</h3><div className="mt-5 grid gap-3 text-sm text-blue-100">{footerGroups.quickLinks.map(([l, h]) => (<a key={l} href={h} className="hover:text-white">{l}</a>))}</div></div>
-            <div><h3 className="text-sm font-extrabold">Modules</h3><div className="mt-5 grid gap-3 text-sm text-blue-100">{footerGroups.modules.map(([m, to]) => (<Link key={m} to={to} className="hover:text-white">{m}</Link>))}</div></div>
-            <div><h3 className="text-sm font-extrabold">Resources</h3><div className="mt-5 grid gap-3 text-sm text-blue-100">{footerGroups.resources.map(([l, to]) => (<Link key={l} to={to} className="hover:text-white">{l}</Link>))}</div></div>
-            <div><h3 className="text-sm font-extrabold">Contact Us</h3><div className="mt-5 grid gap-4 text-sm text-blue-100">
-              <a href={whatsappLink} target="_blank" rel="noreferrer" className="flex gap-3 hover:text-white"><HiOutlineChatBubbleLeftRight className="mt-0.5 shrink-0 text-lg" /><span>{whatsappNumberDisplay}</span></a>
-              <a href={`mailto:${contactEmail}`} className="flex gap-3 hover:text-white"><HiOutlineDocumentChartBar className="mt-0.5 shrink-0 text-lg" /><span>{contactEmail}</span></a>
-              <div className="flex gap-3"><HiOutlineMapPin className="mt-0.5 shrink-0 text-lg" /><span>Software company serving businesses across Pakistan</span></div>
-            </div></div>
+          <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-[1.25fr_1fr_0.9fr_1fr_1.1fr]">
+
+            {/* Column 1 — Brand */}
+            <div>
+              <NexoraLogo compact textClassName="[&>p]:text-white" />
+              <p className="mt-5 text-sm leading-7 text-blue-100">
+                Business software platform for Restaurants, Retail, Schools, Transport, Medical Stores and Enterprises.
+              </p>
+              <div className="mt-5 flex flex-wrap gap-3">
+                {socialLinks.map(({ icon: Icon, href, label }) => (
+                  <a
+                    key={label}
+                    href={href}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label={label}
+                    className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-sm text-white transition hover:bg-white/20"
+                  >
+                    <Icon />
+                  </a>
+                ))}
+              </div>
+            </div>
+
+            {/* Column 2 — Products */}
+            <div>
+              <h3 className="text-sm font-extrabold">Products</h3>
+              <div className="mt-5 grid gap-3 text-sm text-blue-100">
+                {productLinks.map(([label, to]) => (
+                  <Link key={label} to={to} className="hover:text-white">{label}</Link>
+                ))}
+              </div>
+            </div>
+
+            {/* Column 3 — Company */}
+            <div>
+              <h3 className="text-sm font-extrabold">Company</h3>
+              <div className="mt-5 grid gap-3 text-sm text-blue-100">
+                {companyLinks.map(([label, to]) => (
+                  <Link key={label} to={to} className="hover:text-white">{label}</Link>
+                ))}
+              </div>
+            </div>
+
+            {/* Column 4 — Resources */}
+            <div>
+              <h3 className="text-sm font-extrabold">Resources</h3>
+              <div className="mt-5 grid gap-3 text-sm text-blue-100">
+                {resourceLinks.map(([label, to]) => (
+                  <Link key={label} to={to} className="hover:text-white">{label}</Link>
+                ))}
+              </div>
+            </div>
+
+            {/* Column 5 — Contact */}
+            <div>
+              <h3 className="text-sm font-extrabold">Contact</h3>
+              <div className="mt-5 grid gap-4 text-sm text-blue-100">
+                <a href={whatsappLink} target="_blank" rel="noreferrer" className="flex gap-3 hover:text-white">
+                  <HiOutlineChatBubbleLeftRight className="mt-0.5 shrink-0 text-lg" />
+                  <span>{whatsappNumberDisplay}</span>
+                </a>
+                <a href={`mailto:${contactEmail}`} className="flex gap-3 hover:text-white">
+                  <HiOutlineDocumentChartBar className="mt-0.5 shrink-0 text-lg" />
+                  <span>{contactEmail}</span>
+                </a>
+                <a href="https://nexorasolution.online" target="_blank" rel="noreferrer" className="flex gap-3 hover:text-white">
+                  <HiOutlineGlobeAlt className="mt-0.5 shrink-0 text-lg" />
+                  <span>nexorasolution.online</span>
+                </a>
+                <div className="flex gap-3">
+                  <HiOutlineMapPin className="mt-0.5 shrink-0 text-lg" />
+                  <span>Pakistan</span>
+                </div>
+                <span className="inline-block w-max rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-extrabold text-white">
+                  Available Worldwide
+                </span>
+              </div>
+            </div>
           </div>
-          <p className="mt-10 border-t border-white/10 pt-6 text-center text-sm text-blue-100">NEXORA SOLUTION — All rights reserved 2019-2026.</p>
+
+          {/* Bottom Bar */}
+          <div className="mt-10 flex flex-col items-center justify-between gap-2 border-t border-white/10 pt-6 text-sm text-blue-100 sm:flex-row">
+            <p>&copy; 2019–2026 Nexora Solution. All Rights Reserved.</p>
+            <div className="flex gap-4">
+              <Link to="/privacy-policy" className="hover:text-white">Privacy</Link>
+              <Link to="/terms" className="hover:text-white">Terms</Link>
+              <Link to="/privacy-policy" className="hover:text-white">Cookies</Link>
+            </div>
+          </div>
         </div>
       </footer>
     </>

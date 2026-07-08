@@ -1,11 +1,22 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import {
+  HiOutlineAcademicCap,
   HiOutlineArrowRight,
   HiOutlineBars3,
+  HiOutlineBuildingOffice2,
+  HiOutlineChartBarSquare,
+  HiOutlineChatBubbleLeftRight,
   HiOutlineChevronDown,
+  HiOutlineCloud,
+  HiOutlineDevicePhoneMobile,
+  HiOutlineDocumentChartBar,
+  HiOutlineShieldCheck,
+  HiOutlineShoppingCart,
   HiOutlineSparkles,
+  HiOutlineTruck,
   HiOutlineUserCircle,
+  HiOutlineUserGroup,
   HiOutlineXMark,
 } from 'react-icons/hi2'
 import NexoraLogo from './brand/NexoraLogo'
@@ -17,15 +28,34 @@ const mainLinks = [
   { label: 'Industries', to: '/industries' },
 ]
 
+const solutionIconMap = {
+  CRM: HiOutlineUserGroup,
+  'Restaurant POS': HiOutlineShoppingCart,
+  'Retail POS': HiOutlineShoppingCart,
+  'School ERP': HiOutlineAcademicCap,
+  'Property ERP': HiOutlineBuildingOffice2,
+  'Medical Store POS': HiOutlineShieldCheck,
+  'Transport / Rental': HiOutlineTruck,
+  'WhatsApp CRM': HiOutlineChatBubbleLeftRight,
+  'Email Marketing': HiOutlineDevicePhoneMobile,
+  'Reports & Analytics': HiOutlineChartBarSquare,
+  'Inventory Management': HiOutlineDocumentChartBar,
+  'Team & Permissions': HiOutlineUserGroup,
+}
+
 const solutionLinks = [
   { label: 'CRM', to: '/solutions/crm' },
-  { label: 'School ERP', to: '/solutions/school-erp' },
+  { label: 'Restaurant POS', to: '/restaurant-pos' },
+  { label: 'Retail POS', to: '/retail-pos' },
+  { label: 'School ERP', to: '/school-erp' },
   { label: 'Property ERP', to: '/solutions/property-erp' },
-  { label: 'POS', to: '/solutions/pos' },
   { label: 'Medical Store POS', to: '/solutions/medical-store-pos' },
-  { label: 'Transport / Rental', to: '/solutions/transport-rental' },
-  { label: 'WhatsApp CRM', to: '/solutions/whatsapp-crm' },
-  { label: 'Reports', to: '/solutions/reports' },
+  { label: 'Transport / Rental', to: '/transport' },
+  { label: 'WhatsApp CRM', to: '/whatsapp-crm' },
+  { label: 'Email Marketing', to: '/solutions/email-marketing' },
+  { label: 'Reports & Analytics', to: '/solutions/reports-analytics' },
+  { label: 'Inventory Management', to: '/solutions/inventory-management' },
+  { label: 'Team & Permissions', to: '/solutions/team-permissions' },
 ]
 
 function Header() {
@@ -38,15 +68,31 @@ function Header() {
     if (!mobileMenuOpen) return undefined
 
     const onKeyDown = (event) => {
-      if (event.key === 'Escape') setMobileMenuOpen(false)
+      if (event.key === 'Escape') {
+        setMobileMenuOpen(false)
+        setActiveDropdown(null)
+      }
+    }
+
+    const onClickOutside = (event) => {
+      if (!event.target.closest('[data-dropdown-wrapper]') && !event.target.closest('[data-solutions-button]')) {
+        setActiveDropdown(null)
+      }
     }
 
     window.addEventListener('keydown', onKeyDown)
+    window.addEventListener('click', onClickOutside, true)
 
     return () => {
       window.removeEventListener('keydown', onKeyDown)
+      window.removeEventListener('click', onClickOutside, true)
     }
   }, [mobileMenuOpen])
+
+  /* Close dropdown on route change */
+  useEffect(() => {
+    setActiveDropdown(null)
+  }, [location.pathname])
 
   useEffect(() => () => {
     if (dropdownCloseTimer.current) window.clearTimeout(dropdownCloseTimer.current)
@@ -106,15 +152,16 @@ function Header() {
           {renderMainLink(mainLinks[0])}
 
           <div
-            className="relative py-3"
-            onMouseEnter={() => openDropdown('solutions')}
-            onMouseLeave={scheduleDropdownClose}
+            className="relative"
+            data-dropdown-wrapper
           >
             <button
               type="button"
+              data-solutions-button
               onClick={() => toggleDropdown('solutions')}
+              onMouseEnter={() => openDropdown('solutions')}
               className={`nav-link inline-flex h-9 items-center gap-1 rounded-full px-2.5 text-sm font-bold hover:bg-blue-50 hover:text-blue-600 xl:px-3 ${
-                location.pathname.startsWith('/solutions') ? 'active text-blue-600' : 'text-slate-900'
+                location.pathname.startsWith('/solutions') || location.pathname === '/restaurant-pos' || location.pathname === '/retail-pos' || location.pathname === '/school-erp' || location.pathname === '/transport' || location.pathname === '/whatsapp-crm' ? 'active text-blue-600' : 'text-slate-900'
               }`}
               aria-expanded={activeDropdown === 'solutions'}
             >
@@ -122,25 +169,30 @@ function Header() {
               <HiOutlineChevronDown className="text-base" />
             </button>
 
-            <div className="absolute left-1/2 top-full h-3 w-72 -translate-x-1/2" aria-hidden="true" />
+            <div className="absolute left-1/2 top-full h-3 w-[32rem] -translate-x-1/2" aria-hidden="true" />
             <div
               onMouseEnter={() => openDropdown('solutions')}
               onMouseLeave={scheduleDropdownClose}
-              className={`absolute left-1/2 top-[calc(100%+0.55rem)] w-72 -translate-x-1/2 rounded-2xl border border-slate-200/80 bg-white/95 p-2 shadow-[0_28px_80px_-48px_rgba(15,23,42,0.55)] backdrop-blur-xl ${
+              className={`absolute left-1/2 top-[calc(100%+0.55rem)] w-[32rem] -translate-x-1/2 rounded-2xl border border-slate-200/80 bg-white/95 p-3 shadow-[0_28px_80px_-48px_rgba(15,23,42,0.55)] backdrop-blur-xl ${
                 activeDropdown === 'solutions' ? 'pointer-events-auto translate-y-0 opacity-100' : 'pointer-events-none -translate-y-1 opacity-0'
               }`}
             >
-              {solutionLinks.map((link) => (
-                <Link
-                  key={link.label}
-                  to={link.to}
-                  onClick={closeAll}
-                  className="flex items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-blue-50 hover:text-blue-600"
-                >
-                  <span>{link.label}</span>
-                  <HiOutlineArrowRight className="text-slate-400" />
-                </Link>
-              ))}
+              <div className="grid grid-cols-2 gap-1">
+                {solutionLinks.map((link) => {
+                  const Icon = solutionIconMap[link.label]
+                  return (
+                    <Link
+                      key={link.label}
+                      to={link.to}
+                      onClick={closeAll}
+                      className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-blue-50 hover:text-blue-600"
+                    >
+                      {Icon && <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-blue-50 text-blue-600"><Icon className="text-base" /></span>}
+                      <span>{link.label}</span>
+                    </Link>
+                  )
+                })}
+              </div>
             </div>
           </div>
 
@@ -225,18 +277,21 @@ function Header() {
 
             <div className="mt-5 rounded-lg border border-slate-200 bg-slate-50 p-3">
               <p className="px-2 pb-2 text-xs font-extrabold uppercase tracking-[0.16em] text-slate-500">Solutions</p>
-              <div className="grid gap-1">
-                {solutionLinks.map((link) => (
-                  <Link
-                    key={link.label}
-                    to={link.to}
-                    onClick={closeAll}
-                    className="flex items-center justify-between rounded-md px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-white hover:text-blue-600"
-                  >
-                    {link.label}
-                    <HiOutlineArrowRight className="text-slate-400" />
-                  </Link>
-                ))}
+              <div className="grid grid-cols-2 gap-1">
+                {solutionLinks.map((link) => {
+                  const Icon = solutionIconMap[link.label]
+                  return (
+                    <Link
+                      key={link.label}
+                      to={link.to}
+                      onClick={closeAll}
+                      className="flex items-center gap-2 rounded-md px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-white hover:text-blue-600"
+                    >
+                      {Icon && <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-blue-50 text-blue-600"><Icon className="text-xs" /></span>}
+                      <span>{link.label}</span>
+                    </Link>
+                  )
+                })}
               </div>
             </div>
 
