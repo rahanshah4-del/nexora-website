@@ -14,6 +14,7 @@ import { sendCustomVerificationEmail } from '../../lib/emailVerificationService.
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 import { clientSafeMessage } from '../utils/messages.js'
 import { clearAllUserCache } from '../../lib/authIsolation.js'
+import { setStorageScope } from '../lib/localDataEvents.js'
 
 const AuthContext = createContext(null)
 
@@ -176,6 +177,7 @@ export function AuthProvider({ children }) {
 
       // Clear all user-scoped caches BEFORE signOut
       clearAllUserCache(currentUid)
+      setStorageScope('', '')
 
       // Sign out from Firebase
       logAutoLogoutTrace('logout', 'user_initiated_logout')

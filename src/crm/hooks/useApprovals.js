@@ -5,6 +5,7 @@ import {
   doc,
   getDoc,
   onSnapshot,
+  runTransaction,
   serverTimestamp,
   writeBatch,
 } from 'firebase/firestore'
@@ -527,78 +528,81 @@ export function useApprovals() {
       }
 
       try {
-        const batch = writeBatch(db)
-        const now = serverTimestamp()
         const row = approval.row || {}
-        if (approval.approvalRecordId) {
-          batch.set(doc(db, workspaceCollectionPath(workspaceId, 'approvals'), approval.approvalRecordId), {
-            status: 'approved',
-            approvalStatus: 'approved',
-            businessType,
-            approvedBy: userId,
-            approvedAt: now,
-            updatedAt: now,
-          }, { merge: true })
-        }
-
-        if (approval.sourceCollection === 'invoices') {
-          const invoiceRef = doc(db, workspaceCollectionPath(workspaceId, 'invoices'), approval.sourceId)
-          batch.update(invoiceRef, {
-            status: 'approved',
-            approvalStatus: 'approved',
-            businessType,
-            requiresApproval: false,
-            approvedBy: userId,
-            approvedAt: now,
-            updatedAt: now,
-          })
-        }
 
         if (approval.sourceCollection === 'payments') {
+          // ── Payment approval — wrapped in runTransaction ──
           const paymentRef = doc(db, workspaceCollectionPath(workspaceId, 'payments'), approval.sourceId)
-          let walletAmount = amountValue(row)
-          if (isClosedStatus(row.paymentStatus || row.status)) return { ok: false, error: 'This payment has already been reviewed.' }
-          batch.update(paymentRef, {
-            status: 'paid',
-            paymentStatus: 'paid',
-            approvalStatus: 'approved',
-            businessType,
-            approvedBy: userId,
-            approvedAt: now,
-            paidAt: now,
-            amountPaid: walletAmount,
-            appliedAmount: walletAmount,
-            requiresApproval: false,
-            updatedAt: now,
-          })
+          const invoiceRef = approval.invoiceId ? doc(db, workspaceCollectionPath(workspaceId, 'invoices'), approval.invoiceId) : null
+          const transactionRef = doc(db, workspaceCollectionPath(workspaceId, 'accountTransactions'), `income-payment-${approval.sourceId}`)
+          const txnId = `${workspaceId}-income-${approval.sourceId}-${Date.now()}`
 
-          if (approval.invoiceId) {
-            const invoiceRef = doc(db, workspaceCollectionPath(workspaceId, 'invoices'), approval.invoiceId)
-            const invoiceSnap = await getDoc(invoiceRef)
-            if (invoiceSnap.exists()) {
-              const invoiceData = { id: approval.invoiceId, ...invoiceSnap.data() }
-              const invoiceAmount = invoiceValue(invoiceData) || amountValue(row)
-              const currentPaid = amountPaidValue(invoiceData)
-              const remainingDue = balanceDueValue(invoiceData, invoiceAmount)
-              walletAmount = Math.min(walletAmount, remainingDue > 0 ? remainingDue : invoiceAmount)
-              const nextPaid = Math.min(invoiceAmount, currentPaid + walletAmount)
-              const nextBalance = calculateBalanceDue(invoiceAmount, nextPaid)
-              const fullyPaid = nextBalance <= 0.005
-              const stockAdjusted = fullyPaid ? await addInventoryAdjustments(batch, workspaceId, invoiceData, now, businessType) : false
-              batch.update(invoiceRef, {
+          await runTransaction(db, async (transaction) => {
+            // Read payment inside txn
+            const paySnap = await transaction.get(paymentRef)
+            if (!paySnap.exists()) throw new Error('Payment record not found.')
+            const payData = paySnap.data()
+
+            // Idempotency: skip if already reviewed
+            if (isClosedStatus(statusValue(payData.paymentStatus || payData.status, ''))) {
+              throw new Error('This payment has already been reviewed.')
+            }
+
+            // Read income transaction — skip if already exists
+            const incSnap = await transaction.get(transactionRef)
+            if (incSnap.exists()) throw new Error('Income transaction already recorded for this payment.')
+
+            let walletAmount = amountValue(row)
+            let nextPaid = 0
+            let nextBalance = 0
+            let fullyPaid = false
+            let invoiceAmount = 0
+
+            if (invoiceRef) {
+              const invSnap = await transaction.get(invoiceRef)
+              if (invSnap.exists()) {
+                const invData = { id: approval.invoiceId, ...invSnap.data() }
+                invoiceAmount = invoiceValue(invData) || amountValue(row)
+                const currentPaid = amountPaidValue(invData)
+                const remainingDue = balanceDueValue(invData, invoiceAmount)
+                walletAmount = Math.min(walletAmount, remainingDue > 0 ? remainingDue : invoiceAmount)
+                nextPaid = Math.min(invoiceAmount, currentPaid + walletAmount)
+                nextBalance = calculateBalanceDue(invoiceAmount, nextPaid)
+                fullyPaid = nextBalance <= 0.005
+              }
+            }
+
+            // Update payment doc
+            transaction.update(paymentRef, {
+              status: 'paid',
+              paymentStatus: 'paid',
+              approvalStatus: 'approved',
+              businessType,
+              approvedBy: userId,
+              approvedAt: serverTimestamp(),
+              paidAt: serverTimestamp(),
+              amountPaid: walletAmount,
+              appliedAmount: walletAmount,
+              requiresApproval: false,
+              updatedAt: serverTimestamp(),
+            })
+
+            // Update invoice if linked
+            if (invoiceRef && invoiceAmount > 0) {
+              const updatePayload = {
                 status: fullyPaid ? 'paid' : 'partial_paid',
                 paymentStatus: fullyPaid ? 'paid' : 'partial_paid',
                 approvalStatus: 'approved',
                 businessType,
                 requiresApproval: !fullyPaid,
                 approvedBy: userId,
-                approvedAt: now,
-                paidAt: fullyPaid ? now : invoiceData.paidAt || null,
+                approvedAt: serverTimestamp(),
+                paidAt: fullyPaid ? serverTimestamp() : null,
                 amountPaid: nextPaid,
                 partialPaidAmount: nextPaid,
                 balanceDue: nextBalance,
-                lastPaymentAt: now,
-                lastPaymentDate: now,
+                lastPaymentAt: serverTimestamp(),
+                lastPaymentDate: serverTimestamp(),
                 paymentHistory: arrayUnion({
                   amount: walletAmount,
                   appliedAmount: walletAmount,
@@ -608,47 +612,77 @@ export function useApprovals() {
                   approvedBy: userId,
                   approvedAt: new Date().toISOString(),
                 }),
-                updatedAt: now,
-                ...(fullyPaid && stockAdjusted ? { inventoryAdjustedAt: now } : {}),
-              })
+                updatedAt: serverTimestamp(),
+              }
+              transaction.update(invoiceRef, updatePayload)
             }
-          }
-          const transactionRef = doc(db, workspaceCollectionPath(workspaceId, 'accountTransactions'), `income-payment-${approval.sourceId}`)
-          const transactionId = `${workspaceId}-income-${approval.sourceId}-${Date.now()}`
-          batch.set(transactionRef, {
-            transactionId,
-            type: 'income',
-            source: row.source || 'invoice',
-            sourceModule: 'invoice',
-            seedBatchId: row.seedBatchId || '',
-            amount: walletAmount,
-            currency: row.currency || approval.currency || 'PKR',
-            method: row.paymentMethod || 'Manual Approval',
-            status: 'approved',
-            approvalStatus: 'approved',
-            title: `Invoice payment - ${row.invoiceNumber || approval.invoiceId || approval.sourceId}`,
-            description: `${approval.customer} payment approved.`,
-            relatedId: approval.invoiceId || row.invoiceId || approval.sourceId,
-            invoiceId: approval.invoiceId || row.invoiceId || '',
-            paymentId: approval.sourceId,
-            customerName: approval.customer,
-            createdBy: userId,
-            approvedBy: userId,
-            approvedAt: now,
-            ownerId: workspaceId,
-            userId: workspaceId,
-            workspaceId,
-            businessType,
-            createdAt: now,
-            updatedAt: now,
-            metadata: {
-              oldValue: { status: row.status || '', paymentStatus: row.paymentStatus || '' },
-              newValue: { status: 'approved', paymentStatus: 'paid' },
-            },
+
+            // Create income transaction
+            transaction.set(transactionRef, {
+              transactionId: txnId,
+              type: 'income',
+              source: row.source || 'invoice',
+              sourceModule: 'invoice',
+              seedBatchId: row.seedBatchId || '',
+              amount: walletAmount,
+              currency: row.currency || approval.currency || 'PKR',
+              method: row.paymentMethod || 'Manual Approval',
+              status: 'approved',
+              approvalStatus: 'approved',
+              title: `Invoice payment - ${row.invoiceNumber || approval.invoiceId || approval.sourceId}`,
+              description: `${approval.customer} payment approved.`,
+              relatedId: approval.invoiceId || row.invoiceId || approval.sourceId,
+              invoiceId: approval.invoiceId || row.invoiceId || '',
+              paymentId: approval.sourceId,
+              customerName: approval.customer,
+              createdBy: userId,
+              approvedBy: userId,
+              approvedAt: serverTimestamp(),
+              ownerId: workspaceId,
+              userId: workspaceId,
+              workspaceId,
+              businessType,
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp(),
+              metadata: {
+                oldValue: { status: row.status || '', paymentStatus: row.paymentStatus || '' },
+                newValue: { status: 'approved', paymentStatus: 'paid' },
+              },
+            })
+
+            // Update approval record if exists
+            if (approval.approvalRecordId) {
+              transaction.set(doc(db, workspaceCollectionPath(workspaceId, 'approvals'), approval.approvalRecordId), {
+                status: 'approved',
+                approvalStatus: 'approved',
+                businessType,
+                approvedBy: userId,
+                approvedAt: serverTimestamp(),
+                updatedAt: serverTimestamp(),
+              }, { merge: true })
+            }
           })
         }
 
+        if (approval.sourceCollection === 'invoices') {
+          const invBatch = writeBatch(db)
+          const invNow = serverTimestamp()
+          const invoiceRef = doc(db, workspaceCollectionPath(workspaceId, 'invoices'), approval.sourceId)
+          invBatch.update(invoiceRef, {
+            status: 'approved',
+            approvalStatus: 'approved',
+            businessType,
+            requiresApproval: false,
+            approvedBy: userId,
+            approvedAt: invNow,
+            updatedAt: invNow,
+          })
+          await invBatch.commit()
+        }
+
         if (approval.sourceCollection === 'upgradeRequests') {
+          const upBatch = writeBatch(db)
+          const now = serverTimestamp()
           const plan = row.requestedPlan || row.selectedPlan || row.plan || 'Business'
           const subscriptionPayload = buildApprovedSubscriptionPayload({
             plan,
@@ -658,7 +692,7 @@ export function useApprovals() {
             approvedBy: userId,
             approvedByEmail: firebaseUser?.email || '',
           })
-          batch.update(doc(db, 'upgradeRequests', approval.sourceId), {
+          upBatch.update(doc(db, 'upgradeRequests', approval.sourceId), {
             approvalStatus: 'approved',
             paymentStatus: 'paid',
             approvedBy: subscriptionPayload.approvedBy,
@@ -673,8 +707,8 @@ export function useApprovals() {
               ...subscriptionPayload,
               paidAt: subscriptionPayload.approvedAt,
             }
-            batch.set(doc(db, 'users', row.userId), planPatch, { merge: true })
-            batch.set(
+            upBatch.set(doc(db, 'users', row.userId), planPatch, { merge: true })
+            upBatch.set(
               doc(db, 'workspaces', row.workspaceId || row.userId),
               {
                 ...planPatch,
@@ -685,47 +719,65 @@ export function useApprovals() {
               { merge: true },
             )
           }
+          await upBatch.commit()
         }
 
         if (approval.sourceCollection === 'teamMembers') {
+          const tmBatch = writeBatch(db)
+          const tmNow = serverTimestamp()
           const patch = {
             status: 'active',
             approvalStatus: 'approved',
             businessType,
             approvedBy: userId,
-            approvedAt: now,
-            updatedAt: now,
+            approvedAt: tmNow,
+            updatedAt: tmNow,
           }
-          batch.set(doc(db, workspaceCollectionPath(workspaceId, 'teamMembers'), approval.sourceId), patch, { merge: true })
+          tmBatch.set(doc(db, workspaceCollectionPath(workspaceId, 'teamMembers'), approval.sourceId), patch, { merge: true })
+          await tmBatch.commit()
         }
 
         if (approval.sourceCollection === 'clients') {
-          batch.update(doc(db, workspaceCollectionPath(workspaceId, 'clients'), approval.sourceId), {
+          const clBatch = writeBatch(db)
+          const clNow = serverTimestamp()
+          clBatch.update(doc(db, workspaceCollectionPath(workspaceId, 'clients'), approval.sourceId), {
             status: 'Active',
             approvalStatus: 'approved',
             businessType,
             approvedBy: userId,
-            approvedAt: now,
-            updatedAt: now,
+            approvedAt: clNow,
+            updatedAt: clNow,
           })
+          await clBatch.commit()
         }
 
         if (approval.sourceCollection === 'expenses') {
-          batch.update(doc(db, workspaceCollectionPath(workspaceId, 'expenses'), approval.sourceId), {
-            approvalStatus: 'approved',
-            status: 'paid',
-            paymentStatus: 'paid',
-            businessType,
-            requiresApproval: false,
-            approvedBy: userId,
-            approvedAt: now,
-            paidAt: now,
-            updatedAt: now,
+          const expenseRef = doc(db, workspaceCollectionPath(workspaceId, 'expenses'), approval.sourceId)
+          await runTransaction(db, async (transaction) => {
+            const snap = await transaction.get(expenseRef)
+            if (!snap.exists()) throw new Error('Expense not found.')
+            const data = snap.data()
+            // Idempotency: skip if already reviewed
+            if (isClosedStatus(statusValue(data.approvalStatus || data.status, ''))) {
+              throw new Error('This expense has already been reviewed.')
+            }
+            transaction.update(expenseRef, {
+              approvalStatus: 'approved',
+              status: 'paid',
+              paymentStatus: 'paid',
+              businessType,
+              requiresApproval: false,
+              approvedBy: userId,
+              approvedAt: serverTimestamp(),
+              paidAt: serverTimestamp(),
+              updatedAt: serverTimestamp(),
+            })
           })
         }
 
         if (approval.sourceCollection === 'staffSalaryPayments') {
           const salaryAmount = amountValue(row)
+          const batch = writeBatch(db)
           batch.update(doc(db, workspaceCollectionPath(workspaceId, 'staffSalaryPayments'), approval.sourceId), {
             approvalStatus: 'approved',
             status: 'paid',
@@ -733,9 +785,9 @@ export function useApprovals() {
             businessType,
             requiresApproval: false,
             approvedBy: userId,
-            approvedAt: now,
-            paidAt: now,
-            updatedAt: now,
+            approvedAt: serverTimestamp(),
+            paidAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
           })
           batch.set(doc(db, workspaceCollectionPath(workspaceId, 'expenses'), `salary-${approval.sourceId}`), {
             title: `Salary - ${row.staffName || approval.customer}`,
@@ -757,47 +809,55 @@ export function useApprovals() {
             staffName: row.staffName || approval.customer,
             salaryMonth: row.salaryMonth || '',
             approvedBy: userId,
-            approvedAt: now,
-            paidAt: now,
+            approvedAt: serverTimestamp(),
+            paidAt: serverTimestamp(),
             ownerId: workspaceId,
             userId: workspaceId,
             workspaceId,
             businessType,
             createdBy: row.createdBy || userId,
-            createdAt: row.createdAt || now,
-            updatedAt: now,
+            createdAt: row.createdAt || serverTimestamp(),
+            updatedAt: serverTimestamp(),
           }, { merge: true })
+          await batch.commit()
         }
 
         if (approval.sourceCollection === 'accountTransactions') {
-          if (isClosedStatus(row.approvalStatus || row.status)) return { ok: false, error: 'This transaction has already been reviewed.' }
-          batch.update(doc(db, workspaceCollectionPath(workspaceId, 'accountTransactions'), approval.sourceId), {
-            approvalStatus: 'approved',
-            status: 'paid',
-            businessType,
-            requiresApproval: false,
-            approvedBy: userId,
-            approvedAt: now,
-            updatedAt: now,
-          })
-          if (statusValue(row.type, '') === 'expense' && row.relatedId) {
-            batch.set(
-              doc(db, workspaceCollectionPath(workspaceId, 'expenses'), row.relatedId),
-              {
+          const txnRef = doc(db, workspaceCollectionPath(workspaceId, 'accountTransactions'), approval.sourceId)
+          const expenseRef = statusValue(row.type, '') === 'expense' && row.relatedId
+            ? doc(db, workspaceCollectionPath(workspaceId, 'expenses'), row.relatedId)
+            : null
+          await runTransaction(db, async (transaction) => {
+            const snap = await transaction.get(txnRef)
+            if (!snap.exists()) throw new Error('Transaction not found.')
+            const data = snap.data()
+            // Idempotency: skip if already reviewed
+            if (isClosedStatus(statusValue(data.approvalStatus || data.status, ''))) {
+              throw new Error('This transaction has already been reviewed.')
+            }
+            transaction.update(txnRef, {
+              approvalStatus: 'approved',
+              status: 'paid',
+              businessType,
+              requiresApproval: false,
+              approvedBy: userId,
+              approvedAt: serverTimestamp(),
+              updatedAt: serverTimestamp(),
+            })
+            if (expenseRef) {
+              transaction.set(expenseRef, {
                 approvalStatus: 'approved',
                 status: 'paid',
                 businessType,
                 approvedBy: userId,
-                approvedAt: now,
-                paidAt: now,
-                updatedAt: now,
-              },
-              { merge: true },
-            )
-          }
+                approvedAt: serverTimestamp(),
+                paidAt: serverTimestamp(),
+                updatedAt: serverTimestamp(),
+              }, { merge: true })
+            }
+          })
         }
 
-        await batch.commit()
         await logActivity({
           workspaceId,
           userId,

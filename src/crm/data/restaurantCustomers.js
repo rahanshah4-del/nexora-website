@@ -14,10 +14,22 @@ export const restaurantCustomersSeed = [
   },
 ]
 
+import { migrateKey, notifyLocalDataChanged, scopedKey } from '../lib/localDataEvents.js'
+
+const _BASE = 'nexora.restaurant.customers.v2'
+
+function _key() {
+  const k = scopedKey(_BASE)
+  if (k !== _BASE) {
+    migrateKey(_BASE, k)
+  }
+  return k
+}
+
 export function loadRestaurantCustomers() {
   if (typeof window === 'undefined') return restaurantCustomersSeed
   try {
-    const stored = window.localStorage.getItem(restaurantCustomersStorageKey)
+    const stored = window.localStorage.getItem(_key())
     const parsed = stored ? JSON.parse(stored) : null
     return Array.isArray(parsed) && parsed.length ? parsed : restaurantCustomersSeed
   } catch {
@@ -27,8 +39,9 @@ export function loadRestaurantCustomers() {
 
 export function saveRestaurantCustomers(customers) {
   if (typeof window === 'undefined') return
-  window.localStorage.setItem(restaurantCustomersStorageKey, JSON.stringify(customers))
-  notifyLocalDataChanged(restaurantCustomersStorageKey)
+  const k = _key()
+  window.localStorage.setItem(k, JSON.stringify(customers))
+  notifyLocalDataChanged(k)
 }
 
 export function applyRestaurantCustomerPayment(customers, customerId, payment) {
@@ -57,4 +70,3 @@ export function applyRestaurantCustomerPayment(customers, customerId, payment) {
     }
   })
 }
-import { notifyLocalDataChanged } from '../lib/localDataEvents.js'

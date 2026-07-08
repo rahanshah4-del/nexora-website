@@ -1,8 +1,26 @@
 import { safeMoney } from '../lib/transportCalculations.js'
-import { notifyLocalDataChanged } from '../lib/localDataEvents.js'
+import { migrateKey, notifyLocalDataChanged, scopedKey } from '../lib/localDataEvents.js'
 
-export const transportCustomersStorageKey = 'nexora.transport.customers.v1'
-const transportBookingsStorageKey = 'nexora.transport.bookings.v1'
+const _CUST_BASE = 'nexora.transport.customers.v1'
+const _BOOK_BASE = 'nexora.transport.bookings.v1'
+/** @deprecated Use scopedKey() from localDataEvents instead. Kept for backward compat. */
+export const transportCustomersStorageKey = _CUST_BASE
+
+function _custKey() {
+  const k = scopedKey(_CUST_BASE)
+  if (k !== _CUST_BASE) {
+    migrateKey(_CUST_BASE, k)
+  }
+  return k
+}
+
+function _bookKey() {
+  const k = scopedKey(_BOOK_BASE)
+  if (k !== _BOOK_BASE) {
+    migrateKey(_BOOK_BASE, k)
+  }
+  return k
+}
 
 const seedCustomers = [
   {
@@ -22,7 +40,7 @@ const seedCustomers = [
 function readStoredCustomers() {
   if (typeof window === 'undefined') return seedCustomers
   try {
-    const stored = window.localStorage.getItem(transportCustomersStorageKey)
+    const stored = window.localStorage.getItem(_custKey())
     if (!stored) return seedCustomers
     const parsed = JSON.parse(stored)
     if (!Array.isArray(parsed) || !parsed.length) return seedCustomers
@@ -35,7 +53,7 @@ function readStoredCustomers() {
 function cancelledBookingNumbers() {
   if (typeof window === 'undefined') return new Set()
   try {
-    const stored = window.localStorage.getItem(transportBookingsStorageKey)
+    const stored = window.localStorage.getItem(_bookKey())
     const parsed = stored ? JSON.parse(stored) : []
     if (!Array.isArray(parsed)) return new Set()
     return new Set(
@@ -69,8 +87,9 @@ export function loadTransportCustomers() {
 
 export function saveTransportCustomers(customers) {
   if (typeof window === 'undefined') return
-  window.localStorage.setItem(transportCustomersStorageKey, JSON.stringify(Array.isArray(customers) ? customers : []))
-  notifyLocalDataChanged(transportCustomersStorageKey)
+  const k = _custKey()
+  window.localStorage.setItem(k, JSON.stringify(Array.isArray(customers) ? customers : []))
+  notifyLocalDataChanged(k)
 }
 
 export function getNextCustomerId(customers = loadTransportCustomers()) {

@@ -5,6 +5,7 @@ import { useAuth } from '../hooks/useAuth.js'
 import { usePreferences } from '../hooks/usePreferences.js'
 import { ensureUserWorkspace, isStaffWorkspaceProfile } from '../../lib/accountProvisioning.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
+import { setStorageScope } from '../lib/localDataEvents.js'
 import { normalizeFinanceRole } from '../lib/financeAccess.js'
 import { isPlatformAdminDoc } from '../../lib/roles.js'
 import {
@@ -19,7 +20,7 @@ import {
   trialEndDate,
 } from '../data/moduleAccess.js'
 import { ensureWorkspaceAccessFields, workspaceAccessState } from '../lib/workspaceAccess.js'
-import { readSelectedWorkspace } from '../lib/workspaceSession.js'
+import { readSelectedWorkspace, saveSelectedWorkspace } from '../lib/workspaceSession.js'
 
 const UserContext = createContext(null)
 
@@ -332,30 +333,26 @@ export function UserProvider({ children }) {
   const allModulesAccess = staffProfile ? false : workspaceDoc?.allModulesAccess === true || userDoc?.allModulesAccess === true
   const specialModuleAccess = staffProfile ? false : allModulesAccess || workspaceDoc?.specialModuleAccess === true || userDoc?.specialModuleAccess === true
   const staffAccessBusinessType = staffProfile ? inferBusinessTypeFromStaffAccess(userDoc) : ''
+  // CRITICAL: lockedBusinessType must resolve ONLY from Firestore primary fields.
+  // selectedBusinessType and currentBusinessType are UI/temp fields that must
+  // never participate in primary module identity. If primary is missing, we
+  // fall back to businessType (the field set during onboarding) — never guess.
   const lockedBusinessType = staffProfile
     ? staffAccessBusinessType ||
       userDoc?.primaryBusinessType ||
-      userDoc?.selectedBusinessType ||
-      userDoc?.currentBusinessType ||
-      userDoc?.businessType ||
       workspaceDoc?.primaryBusinessType ||
-      workspaceDoc?.selectedBusinessType ||
-      workspaceDoc?.currentBusinessType ||
+      userDoc?.businessType ||
       workspaceDoc?.businessType
     : userDoc?.primaryBusinessType ||
       workspaceDoc?.primaryBusinessType ||
-      workspaceDoc?.selectedBusinessType ||
-      workspaceDoc?.currentBusinessType ||
-      workspaceDoc?.businessType ||
-      userDoc?.selectedBusinessType ||
-      userDoc?.currentBusinessType ||
-      userDoc?.businessType
+      userDoc?.businessType ||
+      workspaceDoc?.businessType
+  // CRITICAL: requestedBusinessType must derive only from businessType
+  // (set during onboarding), never from selectedBusinessType or
+  // currentBusinessType which are UI/temp fields that can overwrite
+  // the locked primary module.
   const requestedBusinessType = normalizeBusinessType(
-    workspaceDoc?.selectedBusinessType ||
-      workspaceDoc?.currentBusinessType ||
-      workspaceDoc?.businessType ||
-      userDoc?.selectedBusinessType ||
-      userDoc?.currentBusinessType ||
+    workspaceDoc?.businessType ||
       userDoc?.businessType,
   )
   const requestedBusinessAllowed = allModulesAccess || allowedBusinessTypes.includes(requestedBusinessType) || requestedBusinessType === normalizeBusinessType(lockedBusinessType)
@@ -366,33 +363,43 @@ export function UserProvider({ children }) {
     allowedBusinessTypes.includes(storedBusinessType) ||
     storedBusinessType === normalizeBusinessType(lockedBusinessType)
   )
+  // CRITICAL: selectedWorkspace (e.g. "general-crm") must NEVER enter this chain.
+  // It is a UI workspace ID, not a business type. Passing it through
+  // businessWorkspaceForSelection() would incorrectly resolve to Nexora Sales Hub,
+  // overwriting Transport/Rental and other primary modules.
+  // Similarly, selectedBusinessType and currentBusinessType are UI/temp fields
+  // that must never decide the locked primary module.
   const selectedBusiness = businessWorkspaceForSelection(
     staffProfile
-      ? lockedBusinessType || userDoc?.selectedWorkspace
+      ? lockedBusinessType || userDoc?.businessType
       : developerOverride
-      ? selectedBusinessWorkspace || userDoc?.selectedWorkspace || userDoc?.selectedBusinessType || userDoc?.businessType
+      ? selectedBusinessWorkspace || userDoc?.businessType
       : storedBusinessAllowed && storedBusinessType === normalizeBusinessType(lockedBusinessType)
         ? selectedBusinessWorkspace
       : specialModuleAccess && requestedBusinessAllowed
         ? requestedBusinessType
-        : lockedBusinessType || workspaceDoc?.selectedWorkspace || userDoc?.selectedWorkspace,
+        : lockedBusinessType,
   )
-  const businessType = normalizeBusinessType(
-    staffProfile
+  // CRITICAL: Guard against defaulting to "General CRM" when no primary exists.
+  // normalizeBusinessType('') or normalizeBusinessType(null) always returns
+  // "General CRM" via default fallback. We must return empty instead.
+  const rawBusinessType =
+    (staffProfile
       ? selectedBusiness?.type ||
         lockedBusinessType ||
-        userDoc?.selectedBusinessType ||
         userDoc?.businessType ||
-        workspaceDoc?.selectedBusinessType ||
         workspaceDoc?.businessType
       : selectedBusiness?.type ||
         lockedBusinessType ||
-        workspaceDoc?.selectedBusinessType ||
         workspaceDoc?.businessType ||
-        userDoc?.selectedBusinessType ||
-        userDoc?.businessType,
-  )
-  const businessWorkspaceId = selectedBusiness?.id || businessWorkspaceForType(businessType).id
+        userDoc?.businessType) || ''
+  const businessType = rawBusinessType
+    ? normalizeBusinessType(rawBusinessType)
+    : ''
+  const primaryBusinessTypeMissing = !rawBusinessType
+  const businessWorkspaceId = businessType
+    ? (selectedBusiness?.id || businessWorkspaceForType(businessType).id)
+    : ''
   const staffId = userDoc?.staffId || user?.uid || null
   const isPlatformAdmin = isPlatformAdminDoc({ email: user?.email || '' })
   const userStatus = String(userDoc?.status || '').trim().toLowerCase()
@@ -414,6 +421,13 @@ export function UserProvider({ children }) {
   const isOwner = !staffProfile && (role === 'owner' || ownsWorkspace)
   const isAdmin = isOwner || role === 'admin'
   const isStaff = staffProfile || !isAdmin
+
+  // Activate scoped localStorage once both user.uid and workspaceId are confirmed.
+  useEffect(() => {
+    if (user?.uid && workspaceId) {
+      setStorageScope(workspaceId, user.uid)
+    }
+  }, [user?.uid, workspaceId])
 
   useEffect(() => {
     if (!ready || loading || !user?.uid || !isBlocked || !isStaff) return
@@ -594,6 +608,128 @@ export function UserProvider({ children }) {
     }
   }, [user?.uid])
 
+  // ── Module / Workspace isolation health check ──────────────────────
+  // Detects and reports conflict between:
+  //   - Firestore primary module (source of truth)
+  //   - localStorage selected (UI selection)
+  //   - Resolved businessType
+  // Also surfaces:
+  //   - Missing primary (no primaryBusinessType or businessType on Firestore)
+  //   - Dangerous fields (selectedWorkspace, selectedBusinessType,
+  //     currentBusinessType) that should never affect module identity.
+  // When conflict is found, localStorage is reset to prevent override.
+  useEffect(() => {
+    if (!user?.uid || !workspaceId || !userDoc || !workspaceDoc || loading || !profileStatusReady) return
+
+    const healthIssues = []
+
+    // --- Dangerous field detection: Firestore must not hold these as identity ---
+    const dangerousFields = []
+    if (userDoc?.selectedWorkspace && businessType && !isStaffWorkspaceProfile(userDoc, user.uid)) {
+      dangerousFields.push(`users/{uid}.selectedWorkspace = "${String(userDoc.selectedWorkspace).slice(0, 40)}"`)
+    }
+    if (workspaceDoc?.selectedWorkspace) {
+      dangerousFields.push(`workspaces/{wid}.selectedWorkspace = "${String(workspaceDoc.selectedWorkspace).slice(0, 40)}"`)
+    }
+    if (userDoc?.selectedBusinessType) {
+      dangerousFields.push(`users/{uid}.selectedBusinessType = "${userDoc.selectedBusinessType}"`)
+    }
+    if (workspaceDoc?.selectedBusinessType) {
+      dangerousFields.push(`workspaces/{wid}.selectedBusinessType = "${workspaceDoc.selectedBusinessType}"`)
+    }
+    if (userDoc?.currentBusinessType) {
+      dangerousFields.push(`users/{uid}.currentBusinessType = "${userDoc.currentBusinessType}"`)
+    }
+    if (workspaceDoc?.currentBusinessType) {
+      dangerousFields.push(`workspaces/{wid}.currentBusinessType = "${workspaceDoc.currentBusinessType}"`)
+    }
+    if (dangerousFields.length > 0) {
+      healthIssues.push({
+        type: 'DANGEROUS_FIRESTORE_FIELDS',
+        detail: `Fields that can overwrite primary module identity found: ${dangerousFields.join(', ')}`,
+        severity: 'WARNING',
+        fields: dangerousFields,
+      })
+    }
+
+    // --- Primary module source of truth ---
+    const firestorePrimary =
+      userDoc?.primaryBusinessType ||
+      workspaceDoc?.primaryBusinessType ||
+      workspaceDoc?.businessType ||
+      userDoc?.businessType
+
+    if (!firestorePrimary) {
+      healthIssues.push({
+        type: 'PRIMARY_MODULE_MISSING',
+        detail: 'No primaryBusinessType or businessType found on Firestore user or workspace doc. Cannot determine locked primary module.',
+        severity: 'CRITICAL',
+      })
+      console.error('[System Health] Primary module missing — no fallback to default', {
+        uid: user.uid,
+        workspaceId,
+        timestamp: new Date().toISOString(),
+      })
+      window.dispatchEvent(new CustomEvent('nexora:healthCheckFailed', {
+        detail: { issues: healthIssues, uid: user.uid, workspaceId },
+      }))
+      return
+    }
+
+    const firestoreNormalized = normalizeBusinessType(firestorePrimary)
+    const resolvedNormalized = normalizeBusinessType(businessType)
+    const storedSelected = readSelectedWorkspace(user.uid)
+    const storedSelectedType = storedSelected
+      ? normalizeBusinessType(businessWorkspaceForSelection(storedSelected)?.type)
+      : ''
+
+    // --- localStorage vs Firestore conflict ---
+    if (storedSelectedType && storedSelectedType !== firestoreNormalized) {
+      healthIssues.push({
+        type: 'LOCALSTORAGE_CONFLICT',
+        detail: `localStorage selected module "${storedSelectedType}" conflicts with Firestore primary "${firestoreNormalized}"`,
+        severity: 'CRITICAL',
+      })
+      // Reset localStorage — UI selection must never override Firestore primary.
+      const correctWorkspace = businessWorkspaceForType(firestoreNormalized).id
+      saveSelectedWorkspace(user.uid, correctWorkspace)
+      console.warn('[System Health] localStorage selectedWorkspace reset to Firestore primary', {
+        from: storedSelected,
+        to: correctWorkspace,
+        firestorePrimary: firestoreNormalized,
+      })
+    }
+
+    // --- Resolved module vs Firestore mismatch ---
+    if (resolvedNormalized !== firestoreNormalized) {
+      healthIssues.push({
+        type: 'MODULE_ISOLATION_MISMATCH',
+        detail: `Resolved module "${resolvedNormalized}" does not match Firestore primary "${firestoreNormalized}"`,
+        severity: 'CRITICAL',
+      })
+    }
+
+    if (healthIssues.length > 0) {
+      console.error('[System Health] Module isolation violation detected', {
+        issues: healthIssues,
+        uid: user.uid,
+        workspaceId,
+        firestorePrimary: firestoreNormalized,
+        resolvedBusinessType: resolvedNormalized,
+        localStorageSelectedModule: storedSelectedType || '(none)',
+        dangerousFields: dangerousFields.length > 0 ? dangerousFields : '(none)',
+        timestamp: new Date().toISOString(),
+      })
+      window.dispatchEvent(new CustomEvent('nexora:healthCheckFailed', {
+        detail: { issues: healthIssues, uid: user.uid, workspaceId },
+      }))
+    } else {
+      window.dispatchEvent(new CustomEvent('nexora:healthCheckPassed', {
+        detail: { uid: user.uid, workspaceId },
+      }))
+    }
+  }, [businessType, loading, profileStatusReady, user?.uid, userDoc, workspaceDoc, workspaceId])
+
   const accessState = workspaceAccessState(workspaceDoc || {}, userDoc || {}, db ? 'Free' : localPlan ?? 'Free')
   const effectivePlan = normalizePlan(accessState.plan ?? (db ? 'Free' : localPlan ?? 'Free'))
   const accessPlan = accessState.accessPlan || accessPlanForUser(userDoc || {}, effectivePlan)
@@ -668,6 +804,7 @@ export function UserProvider({ children }) {
       isAccountant: role === 'accountant',
       isManager: role === 'manager',
       isSales: role === 'sales',
+      primaryBusinessTypeMissing,
     }),
     [
       user,
@@ -701,6 +838,7 @@ export function UserProvider({ children }) {
       isOwner,
       isAdmin,
       isStaff,
+      primaryBusinessTypeMissing,
     ],
   )
 

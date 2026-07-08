@@ -1,12 +1,22 @@
 import { safeMoney } from '../lib/transportCalculations.js'
-import { notifyLocalDataChanged } from '../lib/localDataEvents.js'
+import { migrateKey, notifyLocalDataChanged, scopedKey } from '../lib/localDataEvents.js'
 
-export const transportPaymentsStorageKey = 'nexora.transport.payments.v1'
+const _BASE = 'nexora.transport.payments.v1'
+/** @deprecated Use scopedKey() from localDataEvents instead. Kept for backward compat. */
+export const transportPaymentsStorageKey = _BASE
 
-function readStoredPayments() {
+function _key() {
+  const k = scopedKey(_BASE)
+  if (k !== _BASE) {
+    migrateKey(_BASE, k)
+  }
+  return k
+}
+
+function _readStoredPayments() {
   if (typeof window === 'undefined') return []
   try {
-    const stored = window.localStorage.getItem(transportPaymentsStorageKey)
+    const stored = window.localStorage.getItem(_key())
     const parsed = stored ? JSON.parse(stored) : []
     return Array.isArray(parsed) ? parsed : []
   } catch {
@@ -15,13 +25,14 @@ function readStoredPayments() {
 }
 
 export function loadTransportPayments() {
-  return readStoredPayments().map((payment) => normalizeTransportPayment(payment)).filter((payment) => payment.id)
+  return _readStoredPayments().map((payment) => normalizeTransportPayment(payment)).filter((payment) => payment.id)
 }
 
 export function saveTransportPayments(payments) {
   if (typeof window === 'undefined') return
-  window.localStorage.setItem(transportPaymentsStorageKey, JSON.stringify(Array.isArray(payments) ? payments : []))
-  notifyLocalDataChanged(transportPaymentsStorageKey)
+  const k = _key()
+  window.localStorage.setItem(k, JSON.stringify(Array.isArray(payments) ? payments : []))
+  notifyLocalDataChanged(k)
 }
 
 export function getNextPaymentId(payments = loadTransportPayments()) {

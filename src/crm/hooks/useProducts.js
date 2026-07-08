@@ -123,8 +123,6 @@ export function useProducts(options = {}) {
       },
       {
         businessType,
-        businessTypeFallbacks: ['Retail / POS', 'General CRM'],
-        includeMissingBusinessType: true,
         orderByField: limitCount ? 'createdAt' : '',
         orderDirection: 'desc',
         limitCount,

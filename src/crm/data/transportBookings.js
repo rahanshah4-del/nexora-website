@@ -1,15 +1,25 @@
 import { computeBookingTotals, normalizeRateType, rentalUnitsFor, safeMoney } from '../lib/transportCalculations.js'
 import { loadTransportVehicles, saveTransportVehicles } from './transportVehicles.js'
-import { notifyLocalDataChanged } from '../lib/localDataEvents.js'
+import { migrateKey, notifyLocalDataChanged, scopedKey } from '../lib/localDataEvents.js'
 
-export const transportBookingsStorageKey = 'nexora.transport.bookings.v1'
+const _BASE = 'nexora.transport.bookings.v1'
+/** @deprecated Use scopedKey() from localDataEvents instead. Kept for backward compat. */
+export const transportBookingsStorageKey = _BASE
+
+function _key() {
+  const k = scopedKey(_BASE)
+  if (k !== _BASE) {
+    migrateKey(_BASE, k)
+  }
+  return k
+}
 
 export const bookingStatuses = ['reserved', 'active', 'returned', 'cancelled']
 
 function readStoredBookings() {
   if (typeof window === 'undefined') return []
   try {
-    const stored = window.localStorage.getItem(transportBookingsStorageKey)
+    const stored = window.localStorage.getItem(_key())
     const parsed = stored ? JSON.parse(stored) : []
     return Array.isArray(parsed) ? parsed : []
   } catch {
@@ -23,8 +33,9 @@ export function loadTransportBookings() {
 
 export function saveTransportBookings(bookings) {
   if (typeof window === 'undefined') return
-  window.localStorage.setItem(transportBookingsStorageKey, JSON.stringify(Array.isArray(bookings) ? bookings : []))
-  notifyLocalDataChanged(transportBookingsStorageKey)
+  const k = _key()
+  window.localStorage.setItem(k, JSON.stringify(Array.isArray(bookings) ? bookings : []))
+  notifyLocalDataChanged(k)
 }
 
 export function getNextBookingNumber(bookings = loadTransportBookings()) {

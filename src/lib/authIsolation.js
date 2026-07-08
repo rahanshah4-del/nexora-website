@@ -1,10 +1,13 @@
 /**
  * Auth Isolation — safely clear all user-scoped localStorage/sessionStorage
  * when a user logs out, so the next login starts with a clean slate.
+ *
+ * Uses scope-aware cleanup: only removes keys matching the current
+ * workspace+user session, never another workspace's cache.
  */
 
-// All localStorage keys that are user-scoped and must be cleared on logout.
-const LOCAL_STORAGE_KEYS_TO_CLEAR = [
+// Legacy localStorage keys (pre-scoping) that must be cleared on logout.
+const LEGACY_LOCAL_KEYS = [
   'selectedWorkspace',
   'selectedWorkspaceUserId',
   'selectedProduct',
@@ -40,8 +43,8 @@ export function clearAllUserCache(userId) {
   if (typeof window === 'undefined') return
 
   try {
-    // Clear known user-scoped localStorage keys
-    LOCAL_STORAGE_KEYS_TO_CLEAR.forEach((key) => {
+    // 1. Clear legacy unscoped localStorage keys
+    LEGACY_LOCAL_KEYS.forEach((key) => {
       try {
         window.localStorage.removeItem(key)
       } catch {
@@ -49,7 +52,7 @@ export function clearAllUserCache(userId) {
       }
     })
 
-    // Clear user-scoped localStorage keys (pattern: key:userId)
+    // 2. Clear user-scoped legacy keys (pattern: key:userId)
     if (userId) {
       try {
         window.localStorage.removeItem(`selectedWorkspace:${userId}`)
@@ -63,7 +66,24 @@ export function clearAllUserCache(userId) {
       }
     }
 
-    // Clear unscoped sessionStorage keys (no userId prefix)
+    // 3. Clear ALL scoped nexora.* keys for this user+workspace session.
+    //    Scoped format: nexora.<module>.<workspaceId>.<userId>
+    //    We remove any nexora.* key that matches the current userId pattern.
+    if (userId) {
+      try {
+        const allKeys = Object.keys(window.localStorage)
+        allKeys.forEach((key) => {
+          // Match: nexora.module.workspaceId.userId (scoped key)
+          if (key.startsWith('nexora.') && key.endsWith(`.${userId}`)) {
+            window.localStorage.removeItem(key)
+          }
+        })
+      } catch {
+        // Ignore
+      }
+    }
+
+    // 4. Clear unscoped sessionStorage keys
     UNSCoped_SESSION_KEYS.forEach((key) => {
       try {
         window.sessionStorage.removeItem(key)
@@ -72,7 +92,7 @@ export function clearAllUserCache(userId) {
       }
     })
 
-    // Clear known sessionStorage prefixes (all keys starting with prefix)
+    // 5. Clear known sessionStorage prefixes (all keys starting with prefix)
     SESSION_STORAGE_PREFIXES_TO_CLEAR.forEach((prefix) => {
       try {
         Object.keys(window.sessionStorage).forEach((key) => {
@@ -85,7 +105,7 @@ export function clearAllUserCache(userId) {
       }
     })
 
-    // Clear user-scoped session keys
+    // 6. Clear user-scoped session keys
     if (userId) {
       try {
         window.sessionStorage.removeItem(`nexoraSessionId:${userId}`)
@@ -109,8 +129,7 @@ export function clearAllUserCache(userId) {
       }
     }
 
-    // Clear ALL remaining sessionStorage keys that start with known prefixes
-    // (catch any wildcard keys that survived the targeted clears)
+    // 7. Clear ALL remaining sessionStorage keys that start with known prefixes
     try {
       const allPrefixes = [...SESSION_STORAGE_PREFIXES_TO_CLEAR, ...UNSCoped_SESSION_KEYS]
       const remainingKeys = Object.keys(window.sessionStorage)

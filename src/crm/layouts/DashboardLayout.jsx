@@ -43,6 +43,7 @@ import {
   saveSelectedWorkspace,
   workspaceRoute,
 } from '../lib/workspaceSession.js'
+import { setStorageScope } from '../lib/localDataEvents.js'
 import { goToWorkspace } from '../../lib/workspaceNavigation.js'
 import { safeTrackMetaEventOnce } from '../../lib/metaPixel.js'
 import logoUrl from '../../assets/logo/nexora-logo.svg'
@@ -425,17 +426,17 @@ export default function DashboardLayout() {
       workspaceDoc?.businessType ||
       businessType,
   )
+  // CRITICAL: Only businessType fields — never selectedWorkspace (UI selection).
+  // selectedWorkspace is a workspace ID ("general-crm"), not a business type string.
+  // Using it here would resolve to "General CRM" / Nexora Sales Hub via normalizeBusinessType,
+  // which incorrectly overwrites Transport/Rental and other primary modules.
+  // Likewise, selectedBusinessType and currentBusinessType are UI/temp fields
+  // that must never participate in primary module identity.
   const lockedWorkspaceSource =
     userDoc?.primaryBusinessType ||
     workspaceDoc?.primaryBusinessType ||
-    userDoc?.currentBusinessType ||
-    workspaceDoc?.currentBusinessType ||
-    userDoc?.selectedBusinessType ||
-    workspaceDoc?.selectedBusinessType ||
     userDoc?.businessType ||
-    workspaceDoc?.businessType ||
-    userDoc?.selectedWorkspace ||
-    workspaceDoc?.selectedWorkspace
+    workspaceDoc?.businessType
   const lockedWorkspaceId = businessWorkspaceId || (workspaceOnboardingCompleted && lockedWorkspaceSource ? businessWorkspaceForType(lockedWorkspaceSource).id : '')
   const teamOverride = workspaceAccess.isAdmin || workspaceAccess.hasPermission('settingsAccess')
   const crmAccessBlocked =
@@ -830,6 +831,8 @@ export default function DashboardLayout() {
     setProductModalOpen(false)
     markModalSeen()
 
+    setStorageScope(workspaceId, userId)
+
     const nextSession = buildWorkspaceSession({ user, userDoc, selectedWorkspace: workspace, workspaceId })
     setSessionInfo(nextSession)
     persistedKeyRef.current = `${nextSession.sessionId}:${nextSession.selectedWorkspace}:${nextSession.planType}:${nextSession.trialStatus}`
@@ -854,7 +857,7 @@ export default function DashboardLayout() {
   ])
 
   const continueLastWorkspace = useCallback(() => {
-    const workspace = developerOverride ? selectedWorkspace || readSelectedWorkspace(userId) || 'general-crm' : lockedWorkspaceId
+    const workspace = developerOverride ? selectedWorkspace || readSelectedWorkspace(userId) : lockedWorkspaceId
     if (!workspace) {
       navigate('/workspace', { replace: true })
       return

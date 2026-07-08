@@ -27,8 +27,7 @@ export default function AboutPage() {
   return (
     <PublicPageShell>
       <PageSeo {...seo} />
-      <section className="relative overflow-hidden bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_72%,#ffffff_100%)] py-16 sm:py-20 lg:py-24">
-        <div className="soft-arc-bg pointer-events-none" />
+      <section className="relative bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_72%,#ffffff_100%)] py-16 sm:py-20 lg:pb-28 lg:pt-24">
         <div className="mx-auto max-w-6xl px-5 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-3xl text-center">
             <p className="text-sm font-extrabold uppercase tracking-[0.2em] text-blue-600">About Us</p>
@@ -40,7 +39,7 @@ export default function AboutPage() {
 
           <div className="mt-12 grid gap-8 lg:grid-cols-3">
             {companyCards.map(([title, text]) => (
-              <article key={title} className="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-8 shadow-sm">
+              <article key={title} className="rounded-[1.75rem] border border-blue-100 bg-white p-8 shadow-[0_22px_62px_-44px_rgba(37,99,235,0.32)]">
                 <h2 className="text-lg font-black text-slate-950">{title}</h2>
                 <p className="mt-3 text-sm leading-7 text-slate-600">{text}</p>
               </article>

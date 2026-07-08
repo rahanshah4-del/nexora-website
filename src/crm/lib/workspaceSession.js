@@ -129,8 +129,12 @@ export async function persistWorkspaceSession(session) {
 
   const uid = session.userId
   const sessionId = session.sessionId || getSessionId(uid)
-  const selectedWorkspace = isValidWorkspace(session.selectedWorkspace) ? session.selectedWorkspace : businessWorkspaceCatalog[0].id
-  const businessType = businessWorkspaceForSelection(selectedWorkspace)?.type || businessWorkspaceCatalog[0].type
+  // Guard: never fallback to a default workspace. If selectedWorkspace is
+  // invalid, skip the entire session persist rather than silently writing a
+  // wrong primaryBusinessType / module to Firestore.
+  if (!isValidWorkspace(session.selectedWorkspace)) return
+  const businessType = businessWorkspaceForSelection(session.selectedWorkspace)?.type
+  if (!businessType) return
   const workspaceId = session.workspaceId || uid
   const ownerId = session.ownerId || workspaceId
   const isStaffSession = Boolean(workspaceId && workspaceId !== uid)
@@ -141,7 +145,7 @@ export async function persistWorkspaceSession(session) {
     email: session.email || '',
     loginTime: session.loginTime || session.sessionStartTime,
     lastLogin: session.lastLogin || session.loginTime || session.sessionStartTime,
-    selectedWorkspace,
+    selectedWorkspace: session.selectedWorkspace,
     businessType,
     selectedBusinessType: businessType,
     sessionStartTime: session.sessionStartTime,
@@ -163,17 +167,18 @@ export async function persistWorkspaceSession(session) {
   ]
 
   if (!isStaffSession) {
+    // CRITICAL: Do NOT write selectedWorkspace to the workspace doc.
+    // A workspace's primary module/businessType is set during onboarding
+    // and must never be overwritten by a UI session. Writing selectedWorkspace
+    // here would create a self-reinforcing loop where "general-crm" gets
+    // persisted and then re-read via workspaceDoc?.selectedWorkspace in
+    // lockedWorkspaceSource, overwriting Transport/Rental accounts.
     writes.push(setDoc(
       doc(db, 'workspaces', workspaceId),
       {
         ownerId,
         userId: workspaceId,
         workspaceId,
-        selectedWorkspace,
-        primaryBusinessType: businessType,
-        selectedBusinessType: businessType,
-        currentBusinessType: businessType,
-        businessType,
         currentSessionId: sessionId,
         sessionStartTime: session.sessionStartTime,
         planType: payload.planType,
@@ -182,14 +187,13 @@ export async function persistWorkspaceSession(session) {
       },
       { merge: true },
     ))
+    // CRITICAL: Do NOT write selectedWorkspace to users doc either. The
+    // user doc is consumed via onSnapshot in UserContext and its fields
+    // participate in businessType resolution chains. Persisting a UI
+    // workspace ID here would re-seed the wrong module on next login.
     writes.push(setDoc(
       doc(db, 'users', uid),
       {
-        selectedWorkspace,
-        primaryBusinessType: businessType,
-        selectedBusinessType: businessType,
-        currentBusinessType: businessType,
-        businessType,
         lastLogin: payload.lastLogin,
         updatedAt: serverTimestamp(),
       },

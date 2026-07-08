@@ -93,16 +93,12 @@ export function useExpenses({ limitCount = null, enabled = true } = {}) {
           workspaceId,
           collectionName: 'expenses',
           businessType,
-          businessTypeFallbacks: ['Retail / POS', 'General CRM'],
-          includeMissingBusinessType: true,
           limitCount: recentLimit,
           onData: handleRows,
           onError: handleError,
         })
       : subscribeUserCollection(workspaceId, 'expenses', handleRows, handleError, {
           businessType,
-          businessTypeFallbacks: ['Retail / POS', 'General CRM'],
-          includeMissingBusinessType: true,
         })
 
     return () => unsub?.()

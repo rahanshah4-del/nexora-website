@@ -387,11 +387,6 @@ return hasUserDoc()
 && (
 request.auth.uid==workspaceId
 || userDoc(request.auth.uid).workspaceId==workspaceId
-|| userDoc(request.auth.uid).ownerId==workspaceId
-|| userDoc(request.auth.uid).companyId==workspaceId
-|| userDoc(request.auth.uid).userId==workspaceId
-|| (userDoc(request.auth.uid).workspaceIds is list&&workspaceId in userDoc(request.auth.uid).workspaceIds)
-|| (userDoc(request.auth.uid).workspaces is list&&workspaceId in userDoc(request.auth.uid).workspaces)
 );
 }
 function workspaceOwner(workspaceId) {
@@ -620,7 +615,7 @@ match /staffLoginSecrets/{secretId} {
 allow read,create,update,delete: if false;
 }
 match /phoneRegistry/{phoneId} {
-allow get: if true;
+allow get: if signedIn();
 allow list: if backendAdmin();
 allow create: if signedIn()&&request.resource.data.userId==request.auth.uid;
 allow update,delete: if backendAdmin();
@@ -921,7 +916,7 @@ match /backendActivityLogs/{docId} {
 allow read,write: if backendAdmin();
 }
 match /analyticsEvents/{docId} {
-allow create: if validAnalyticsEvent();
+allow create: if signedIn() && validAnalyticsEvent();
 allow read,update,delete: if backendAdmin();
 }
 match /userSessions/{docId} {

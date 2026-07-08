@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { arrayUnion, collection, doc, getDoc, getDocs, query, serverTimestamp, where, writeBatch } from 'firebase/firestore'
+import { arrayUnion, collection, doc, getDoc, getDocs, query, runTransaction, serverTimestamp, where, writeBatch } from 'firebase/firestore'
 import { db } from '../lib/firebase.js'
 import { createUserDoc, fetchWorkspaceCollectionPage, listenToWorkspaceCollection, patchUserDoc, removeUserDoc, workspaceCollectionPath } from '../lib/firestore.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
@@ -744,9 +744,9 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
         const appliedAmount = remainingBalance
         try {
           const now = serverTimestamp()
-          const batch = writeBatch(db)
-          const invoiceRef = doc(db, workspaceCollectionPath(workspaceId, 'invoices'), id)
           if (requiresSchoolFeeApproval(businessType)) {
+            const batch = writeBatch(db)
+            const schoolFeeInvoiceRef = doc(db, workspaceCollectionPath(workspaceId, 'invoices'), id)
             const approvalMeta = approvalMetaForBusiness(businessType)
             const paymentRef = doc(db, workspaceCollectionPath(workspaceId, 'payments'), pendingInvoicePaymentId(id, currentPaid))
             const pendingPayment = {
@@ -780,7 +780,7 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
               createdAt: now,
               updatedAt: now,
             }
-            batch.update(invoiceRef, {
+            batch.update(schoolFeeInvoiceRef, {
               status: 'pending_approval',
               paymentStatus: 'pending_verification',
               approvalStatus: 'pending',
@@ -864,91 +864,124 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
             })
             return { ok: true, pendingApproval: true }
           }
-          const canEditAllInvoiceFields = permissions.canEditAllInvoiceFields
-          const stockAdjusted = canEditAllInvoiceFields ? await addInventoryAdjustments(batch, workspaceId, invoice, now, businessType) : false
-          batch.update(invoiceRef, {
-            paymentStatus: 'paid',
-            approvalStatus: 'approved',
-            businessType,
-            requiresApproval: false,
-            paidAt: now,
-            approvedBy: userId,
-            approvedAt: now,
-            amountPaid: total,
-            partialPaidAmount: total,
-            balanceDue: 0,
-            lastPaymentAt: now,
-            lastPaymentDate: now,
-            paymentHistory: arrayUnion({
-              amount: appliedAmount,
-              attemptedAmount: requestedAmount,
-              appliedAmount,
-              paymentMethod,
-              status: 'paid',
-              recordedBy: userId,
-              recordedAt: new Date().toISOString(),
-            }),
-            ...(canEditAllInvoiceFields ? { status: 'paid', lastPaymentBy: userId } : {}),
-            ...(stockAdjusted ? { inventoryAdjustedAt: now } : {}),
-          })
+          // ── Direct payment (non-school-fee) — wrapped in runTransaction ──
+          const invoiceRef = doc(db, workspaceCollectionPath(workspaceId, 'invoices'), id)
           const paymentRef = doc(db, workspaceCollectionPath(workspaceId, 'payments'), `invoice-${id}-paid`)
-          const transactionId = `${workspaceId}-income-${id}-${Date.now()}`
-          batch.set(paymentRef, {
-            invoiceId: id,
-            invoiceNumber: invoice.invoiceNumber || id,
-            customerName: invoice.customerName || '',
-            amount: appliedAmount,
-            amountPaid: appliedAmount,
-            amountUsd: appliedAmount,
-            appliedAmount,
-            attemptedAmount: requestedAmount,
-            currency: invoice.currency || 'PKR',
-            paymentMethod,
-            paymentStatus: 'paid',
-            status: 'paid',
-            approvedBy: userId,
-            approvedAt: now,
-            paidAt: now,
-            ownerId: workspaceId,
-            userId: workspaceId,
-            workspaceId,
-            businessType,
-            createdBy: userId,
-            createdAt: now,
-            updatedAt: now,
-          })
           const transactionRef = doc(db, workspaceCollectionPath(workspaceId, 'accountTransactions'), `income-invoice-${id}`)
-          batch.set(transactionRef, {
-            transactionId,
-            type: 'income',
-            source: 'invoice',
-            amount: total,
-            currency: invoice.currency || 'PKR',
-            method: paymentMethod,
-            status: 'approved',
-            approvalStatus: 'approved',
-            title: `Invoice payment - ${invoice.invoiceNumber || id}`,
-            description: `${invoice.customerName || 'Customer'} invoice payment was added to wallet.`,
-            relatedId: id,
-            invoiceId: id,
-            paymentId: paymentRef.id,
-            customerName: invoice.customerName || '',
-            createdBy: userId,
-            approvedBy: userId,
-            approvedAt: now,
-            ownerId: workspaceId,
-            userId: workspaceId,
-            workspaceId,
-            businessType,
-            createdAt: now,
-            updatedAt: now,
-            metadata: {
-              oldValue: { status: invoice.status, paymentStatus: invoice.paymentStatus, amountPaid: currentPaid },
-              newValue: { status: 'paid', paymentStatus: 'paid', amountPaid: total },
+          const transactionId = `${workspaceId}-income-${id}-${Date.now()}`
+
+          await runTransaction(db, async (transaction) => {
+            // Fresh read inside transaction
+            const snap = await transaction.get(invoiceRef)
+            if (!snap.exists()) throw new Error('Invoice not found')
+            const txnInvoice = { id, ...snap.data() }
+
+            // Validate idempotency — payment doc must not exist
+            const paySnap = await transaction.get(paymentRef)
+            if (paySnap.exists()) throw new Error('Payment already recorded for this invoice.')
+
+            // Validate idempotency — income transaction must not exist
+            const incSnap = await transaction.get(transactionRef)
+            if (incSnap.exists()) throw new Error('Income transaction already recorded for this invoice.')
+
+            // Validate financial constraints
+            if (getInvoiceStatus(txnInvoice) === 'paid') throw new Error('This invoice is already paid.')
+            if (isRejectedRecord(txnInvoice)) throw new Error('Cancelled or rejected invoices cannot be paid.')
+
+            const txnTotal = invoiceValue(txnInvoice)
+            if (txnTotal === 0) throw new Error('Invoice total is zero.')
+            const txnCurrentPaid = toNumber(txnInvoice.amountPaid ?? txnInvoice.partialPaidAmount, 0)
+            const txnRemaining = calculateBalanceDue(txnTotal, txnCurrentPaid)
+            if (txnRemaining <= 0) throw new Error('This invoice has no remaining balance.')
+            if (requestedAmount + PAYMENT_EPSILON < txnRemaining) throw new Error('Amount is less than remaining balance. Use partial payment instead.')
+
+            // ── All validations passed — write atomically ──
+            transaction.update(invoiceRef, {
+              paymentStatus: 'paid',
+              approvalStatus: 'approved',
+              businessType,
+              requiresApproval: false,
+              paidAt: serverTimestamp(),
+              approvedBy: userId,
+              approvedAt: serverTimestamp(),
+              amountPaid: txnTotal,
+              partialPaidAmount: txnTotal,
+              balanceDue: 0,
+              lastPaymentAt: serverTimestamp(),
+              lastPaymentDate: serverTimestamp(),
+              paymentHistory: arrayUnion({
+                amount: appliedAmount,
+                attemptedAmount: requestedAmount,
+                appliedAmount,
+                paymentMethod,
+                status: 'paid',
+                recordedBy: userId,
+                recordedAt: new Date().toISOString(),
+              }),
+              ...(permissions.canEditAllInvoiceFields ? { status: 'paid', lastPaymentBy: userId } : {}),
+            })
+
+            transaction.set(paymentRef, {
+              invoiceId: id,
+              invoiceNumber: txnInvoice.invoiceNumber || id,
+              customerName: txnInvoice.customerName || '',
+              amount: appliedAmount,
+              amountPaid: appliedAmount,
+              amountUsd: appliedAmount,
               appliedAmount,
-            },
+              attemptedAmount: requestedAmount,
+              currency: txnInvoice.currency || 'PKR',
+              paymentMethod,
+              paymentStatus: 'paid',
+              status: 'paid',
+              approvedBy: userId,
+              approvedAt: serverTimestamp(),
+              paidAt: serverTimestamp(),
+              ownerId: workspaceId,
+              userId: workspaceId,
+              workspaceId,
+              businessType,
+              createdBy: userId,
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp(),
+            })
+
+            transaction.set(transactionRef, {
+              transactionId,
+              type: 'income',
+              source: 'invoice',
+              amount: txnTotal,
+              currency: txnInvoice.currency || 'PKR',
+              method: paymentMethod,
+              status: 'approved',
+              approvalStatus: 'approved',
+              title: `Invoice payment - ${txnInvoice.invoiceNumber || id}`,
+              description: `${txnInvoice.customerName || 'Customer'} invoice payment was added to wallet.`,
+              relatedId: id,
+              invoiceId: id,
+              paymentId: paymentRef.id,
+              customerName: txnInvoice.customerName || '',
+              createdBy: userId,
+              approvedBy: userId,
+              approvedAt: serverTimestamp(),
+              ownerId: workspaceId,
+              userId: workspaceId,
+              workspaceId,
+              businessType,
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp(),
+              metadata: {
+                oldValue: { status: txnInvoice.status, paymentStatus: txnInvoice.paymentStatus, amountPaid: txnCurrentPaid },
+                newValue: { status: 'paid', paymentStatus: 'paid', amountPaid: txnTotal },
+                appliedAmount,
+              },
+            })
           })
-          await batch.commit()
+
+          // ── Post-transaction side-effects (no data race) ──
+          if (permissions.canEditAllInvoiceFields) {
+            await addInventoryAdjustments(writeBatch(db), workspaceId, { ...invoice, id }, serverTimestamp(), businessType).catch(() => {})
+          }
           patchLoadedInvoice(id, {
             paymentStatus: 'paid',
             approvalStatus: 'approved',
@@ -961,8 +994,7 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
             balanceDue: 0,
             lastPaymentAt: new Date().toISOString(),
             lastPaymentDate: new Date().toISOString(),
-            ...(canEditAllInvoiceFields ? { status: 'paid', lastPaymentBy: userId } : {}),
-            ...(stockAdjusted ? { inventoryAdjustedAt: new Date().toISOString() } : {}),
+            ...(permissions.canEditAllInvoiceFields ? { status: 'paid', lastPaymentBy: userId } : {}),
           })
           await logActivity({
             workspaceId,
@@ -1233,128 +1265,160 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
             })
             return { ok: true, pendingApproval: true }
           }
-          const canEditAllInvoiceFields = permissions.canEditAllInvoiceFields
-          const stockAdjusted = fullyPaid && canEditAllInvoiceFields ? await addInventoryAdjustments(batch, workspaceId, invoice, now, businessType) : false
-          batch.update(invoiceRef, {
-            paymentStatus: fullyPaid ? 'paid' : 'partial_paid',
-            approvalStatus: fullyPaid ? 'approved' : invoice.approvalStatus || 'pending',
-            businessType,
-            requiresApproval: fullyPaid ? false : invoice.requiresApproval ?? true,
-            amountPaid: nextPaid,
-            partialPaidAmount: nextPaid,
-            balanceDue: calculateBalanceDue(total, nextPaid),
-            paidAt: fullyPaid ? now : invoice.paidAt || null,
-            approvedBy: fullyPaid ? userId : invoice.approvedBy || null,
-            approvedAt: fullyPaid ? now : invoice.approvedAt || null,
-            lastPaymentAt: now,
-            lastPaymentDate: now,
-            paymentHistory: arrayUnion({
-              amount: appliedAmount,
-              attemptedAmount: amount,
-              appliedAmount,
-              paymentMethod,
-              status: fullyPaid ? 'paid' : 'partial_paid',
-              recordedBy: userId,
-              recordedAt: new Date().toISOString(),
-            }),
-            ...(canEditAllInvoiceFields ? { status: fullyPaid ? 'paid' : 'partial_paid', lastPaymentBy: userId } : {}),
-            ...(stockAdjusted ? { inventoryAdjustedAt: now } : {}),
-          })
-          const paymentRef = doc(collection(db, workspaceCollectionPath(workspaceId, 'payments')))
-          const transactionId = `${workspaceId}-income-${id}-${Date.now()}`
-          batch.set(paymentRef, {
-            invoiceId: id,
-            invoiceNumber: invoice.invoiceNumber || id,
-            customerName: invoice.customerName || '',
-            amount: appliedAmount,
-            amountUsd: appliedAmount,
-            appliedAmount,
-            attemptedAmount: amount,
-            currency: invoice.currency || 'PKR',
-            paymentMethod,
-            paymentStatus: fullyPaid ? 'paid' : 'partial_paid',
-            status: fullyPaid ? 'paid' : 'partial_paid',
-            approvedBy: userId,
-            approvedAt: now,
-            paidAt: now,
-            ownerId: workspaceId,
-            userId: workspaceId,
-            workspaceId,
-            businessType,
-            createdBy: userId,
-            createdAt: now,
-            updatedAt: now,
-          })
-          if (fullyPaid) {
-            const transactionRef = doc(db, workspaceCollectionPath(workspaceId, 'accountTransactions'), `income-invoice-${id}`)
-            batch.set(transactionRef, {
-              transactionId,
-              type: 'income',
-              source: 'invoice',
-              amount: total,
-              currency: invoice.currency || 'PKR',
-              method: paymentMethod,
-              status: 'approved',
-              approvalStatus: 'approved',
-              title: `Invoice payment - ${invoice.invoiceNumber || id}`,
-              description: `${invoice.customerName || 'Customer'} invoice payment was added to wallet.`,
-              relatedId: id,
+          // ── Partial payment (non-school-fee) — wrapped in runTransaction ──
+          const canEditAllFields = permissions.canEditAllInvoiceFields
+          const partialInvoiceRef = doc(db, workspaceCollectionPath(workspaceId, 'invoices'), id)
+          const partialPaymentRef = doc(collection(db, workspaceCollectionPath(workspaceId, 'payments')))
+          const partialTransRef = doc(db, workspaceCollectionPath(workspaceId, 'accountTransactions'), `income-invoice-${id}`)
+          const partialTransactionId = `${workspaceId}-income-${id}-${Date.now()}`
+
+          let txnFullyPaid = false
+          let txnApplied = 0
+          let txnNextPaid = 0
+          let txnTotal = 0
+          let txnCurrentPaid = 0
+
+          await runTransaction(db, async (transaction) => {
+            const snap = await transaction.get(partialInvoiceRef)
+            if (!snap.exists()) throw new Error('Invoice not found')
+            const txnInv = { id, ...snap.data() }
+
+            if (getInvoiceStatus(txnInv) === 'paid') throw new Error('This invoice is already paid.')
+            if (isRejectedRecord(txnInv)) throw new Error('Cancelled or rejected invoices cannot be paid.')
+
+            const incSnap = await transaction.get(partialTransRef)
+            if (incSnap.exists()) throw new Error('Income transaction already recorded for this invoice.')
+
+            txnTotal = invoiceValue(txnInv)
+            txnCurrentPaid = toNumber(txnInv.amountPaid ?? txnInv.partialPaidAmount, 0)
+            const txnRemaining = calculateBalanceDue(txnTotal, txnCurrentPaid)
+            if (txnRemaining <= 0) throw new Error('This invoice has no remaining balance.')
+
+            txnApplied = Math.min(amount, txnRemaining)
+            txnNextPaid = Math.min(txnTotal, txnCurrentPaid + txnApplied)
+            txnFullyPaid = calculateBalanceDue(txnTotal, txnNextPaid) <= PAYMENT_EPSILON
+
+            transaction.update(partialInvoiceRef, {
+              paymentStatus: txnFullyPaid ? 'paid' : 'partial_paid',
+              approvalStatus: txnFullyPaid ? 'approved' : txnInv.approvalStatus || 'pending',
+              businessType,
+              requiresApproval: txnFullyPaid ? false : txnInv.requiresApproval ?? true,
+              amountPaid: txnNextPaid,
+              partialPaidAmount: txnNextPaid,
+              balanceDue: calculateBalanceDue(txnTotal, txnNextPaid),
+              paidAt: txnFullyPaid ? serverTimestamp() : txnInv.paidAt || null,
+              approvedBy: txnFullyPaid ? userId : txnInv.approvedBy || null,
+              approvedAt: txnFullyPaid ? serverTimestamp() : txnInv.approvedAt || null,
+              lastPaymentAt: serverTimestamp(),
+              lastPaymentDate: serverTimestamp(),
+              paymentHistory: arrayUnion({
+                amount: txnApplied,
+                attemptedAmount: amount,
+                appliedAmount: txnApplied,
+                paymentMethod,
+                status: txnFullyPaid ? 'paid' : 'partial_paid',
+                recordedBy: userId,
+                recordedAt: new Date().toISOString(),
+              }),
+              ...(canEditAllFields ? { status: txnFullyPaid ? 'paid' : 'partial_paid', lastPaymentBy: userId } : {}),
+            })
+
+            transaction.set(partialPaymentRef, {
               invoiceId: id,
-              paymentId: paymentRef.id,
-              customerName: invoice.customerName || '',
-              createdBy: userId,
+              invoiceNumber: txnInv.invoiceNumber || id,
+              customerName: txnInv.customerName || '',
+              amount: txnApplied,
+              amountUsd: txnApplied,
+              appliedAmount: txnApplied,
+              attemptedAmount: amount,
+              currency: txnInv.currency || 'PKR',
+              paymentMethod,
+              paymentStatus: txnFullyPaid ? 'paid' : 'partial_paid',
+              status: txnFullyPaid ? 'paid' : 'partial_paid',
               approvedBy: userId,
-              approvedAt: now,
+              approvedAt: serverTimestamp(),
+              paidAt: serverTimestamp(),
               ownerId: workspaceId,
               userId: workspaceId,
               workspaceId,
               businessType,
-              createdAt: now,
-              updatedAt: now,
-              metadata: {
-                oldValue: { status: invoice.status, paymentStatus: invoice.paymentStatus, amountPaid: currentPaid },
-                newValue: { status: 'paid', paymentStatus: 'paid', amountPaid: total },
-              },
+              createdBy: userId,
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp(),
             })
+
+            if (txnFullyPaid) {
+              transaction.set(partialTransRef, {
+                transactionId: partialTransactionId,
+                type: 'income',
+                source: 'invoice',
+                amount: txnTotal,
+                currency: txnInv.currency || 'PKR',
+                method: paymentMethod,
+                status: 'approved',
+                approvalStatus: 'approved',
+                title: `Invoice payment - ${txnInv.invoiceNumber || id}`,
+                description: `${txnInv.customerName || 'Customer'} invoice payment was added to wallet.`,
+                relatedId: id,
+                invoiceId: id,
+                paymentId: partialPaymentRef.id,
+                customerName: txnInv.customerName || '',
+                createdBy: userId,
+                approvedBy: userId,
+                approvedAt: serverTimestamp(),
+                ownerId: workspaceId,
+                userId: workspaceId,
+                workspaceId,
+                businessType,
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp(),
+                metadata: {
+                  oldValue: { status: txnInv.status, paymentStatus: txnInv.paymentStatus, amountPaid: txnCurrentPaid },
+                  newValue: { status: 'paid', paymentStatus: 'paid', amountPaid: txnTotal },
+                },
+              })
+            }
+          })
+
+          if (txnFullyPaid && canEditAllFields) {
+            await addInventoryAdjustments(writeBatch(db), workspaceId, { ...invoice, id }, serverTimestamp(), businessType).catch(() => {})
           }
-          await batch.commit()
           patchLoadedInvoice(id, {
-            paymentStatus: fullyPaid ? 'paid' : 'partial_paid',
-            approvalStatus: fullyPaid ? 'approved' : invoice.approvalStatus || 'pending',
-            requiresApproval: fullyPaid ? false : invoice.requiresApproval ?? true,
-            amountPaid: nextPaid,
-            partialPaidAmount: nextPaid,
-            balanceDue: calculateBalanceDue(total, nextPaid),
-            paidAt: fullyPaid ? new Date().toISOString() : invoice.paidAt || null,
-            approvedBy: fullyPaid ? userId : invoice.approvedBy || null,
-            approvedAt: fullyPaid ? new Date().toISOString() : invoice.approvedAt || null,
+            paymentStatus: txnFullyPaid ? 'paid' : 'partial_paid',
+            approvalStatus: txnFullyPaid ? 'approved' : invoice.approvalStatus || 'pending',
+            requiresApproval: txnFullyPaid ? false : invoice.requiresApproval ?? true,
+            amountPaid: txnNextPaid,
+            partialPaidAmount: txnNextPaid,
+            balanceDue: calculateBalanceDue(txnTotal, txnNextPaid),
+            paidAt: txnFullyPaid ? new Date().toISOString() : invoice.paidAt || null,
+            approvedBy: txnFullyPaid ? userId : invoice.approvedBy || null,
+            approvedAt: txnFullyPaid ? new Date().toISOString() : invoice.approvedAt || null,
             lastPaymentAt: new Date().toISOString(),
             lastPaymentDate: new Date().toISOString(),
-            ...(canEditAllInvoiceFields ? { status: fullyPaid ? 'paid' : 'partial_paid', lastPaymentBy: userId } : {}),
-            ...(stockAdjusted ? { inventoryAdjustedAt: new Date().toISOString() } : {}),
+            ...(canEditAllFields ? { status: txnFullyPaid ? 'paid' : 'partial_paid', lastPaymentBy: userId } : {}),
           })
           await logActivity({
             workspaceId,
             userId,
             businessType,
             ...userActivityInfo(userDoc, firebaseUser),
-            action: fullyPaid ? 'Invoice paid' : 'Partial payment recorded',
+            action: txnFullyPaid ? 'Invoice paid' : 'Partial payment recorded',
             module: 'Invoices',
-            description: `${appliedAmount} ${invoice.currency || 'PKR'} was recorded for ${invoice.invoiceNumber || id}.`,
+            description: `${txnApplied} ${invoice.currency || 'PKR'} was recorded for ${invoice.invoiceNumber || id}.`,
             targetId: id,
             targetName: invoice.invoiceNumber || id,
             metadata: {
-              amount: appliedAmount,
-              appliedAmount,
+              amount: txnApplied,
+              appliedAmount: txnApplied,
               attemptedAmount: amount,
               currency: invoice.currency,
               paymentMethod,
-              fullyPaid,
+              fullyPaid: txnFullyPaid,
               oldValue: { status: invoice.status, paymentStatus: invoice.paymentStatus, amountPaid: currentPaid },
-              newValue: { status: fullyPaid ? 'paid' : 'partial', paymentStatus: fullyPaid ? 'paid' : 'partial', amountPaid: nextPaid },
+              newValue: { status: txnFullyPaid ? 'paid' : 'partial', paymentStatus: txnFullyPaid ? 'paid' : 'partial', amountPaid: txnNextPaid },
             },
           })
-          if (fullyPaid) {
+          if (txnFullyPaid) {
             await logActivity({
               workspaceId,
               userId,
@@ -1366,11 +1430,11 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
               targetId: id,
               targetName: invoice.invoiceNumber || id,
               metadata: {
-                amount: total,
+                amount: txnTotal,
                 currency: invoice.currency,
                 paymentMethod,
                 oldValue: { status: invoice.status, paymentStatus: invoice.paymentStatus, amountPaid: currentPaid },
-                newValue: { status: 'paid', paymentStatus: 'paid', amountPaid: total },
+                newValue: { status: 'paid', paymentStatus: 'paid', amountPaid: txnTotal },
               },
             })
           }
@@ -1379,14 +1443,14 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
             userId,
             businessType,
             type: 'Payments',
-            priority: fullyPaid ? 'medium' : 'low',
-            title: fullyPaid ? 'Invoice fully paid' : 'Partial payment recorded',
-            message: `${appliedAmount} ${invoice.currency || 'PKR'} was recorded for ${invoice.invoiceNumber || id}.`,
+            priority: txnFullyPaid ? 'medium' : 'low',
+            title: txnFullyPaid ? 'Invoice fully paid' : 'Partial payment recorded',
+            message: `${txnApplied} ${invoice.currency || 'PKR'} was recorded for ${invoice.invoiceNumber || id}.`,
             relatedId: id,
             route: '/app/invoices',
             createdBy: userId,
             createdByEmail: firebaseUser?.email || userDoc?.email || '',
-            metadata: { amount: appliedAmount, currency: invoice.currency, fullyPaid },
+            metadata: { amount: txnApplied, currency: invoice.currency, fullyPaid: txnFullyPaid },
           })
           return { ok: true }
         } catch (e) {

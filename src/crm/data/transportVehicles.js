@@ -1,7 +1,17 @@
 import { safeMoney } from '../lib/transportCalculations.js'
-import { notifyLocalDataChanged } from '../lib/localDataEvents.js'
+import { migrateKey, notifyLocalDataChanged, scopedKey } from '../lib/localDataEvents.js'
 
-export const transportVehiclesStorageKey = 'nexora.transport.vehicles.v1'
+const _BASE = 'nexora.transport.vehicles.v1'
+/** @deprecated Use scopedKey() from localDataEvents instead. Kept for backward compat. */
+export const transportVehiclesStorageKey = _BASE
+
+function _key() {
+  const k = scopedKey(_BASE)
+  if (k !== _BASE) {
+    migrateKey(_BASE, k)
+  }
+  return k
+}
 
 export const vehicleCategories = ['Car', 'SUV', 'Van', 'Bus', 'Truck', 'Bike']
 export const vehicleFeatureOptions = ['AC', 'GPS', 'Bluetooth', 'Sunroof', 'Rear Camera', 'Child Seat', 'Cruise Control']
@@ -76,7 +86,7 @@ const seedVehicles = [
 function readStoredVehicles() {
   if (typeof window === 'undefined') return seedVehicles
   try {
-    const stored = window.localStorage.getItem(transportVehiclesStorageKey)
+    const stored = window.localStorage.getItem(_key())
     if (!stored) return seedVehicles
     const parsed = JSON.parse(stored)
     return Array.isArray(parsed) ? parsed : seedVehicles
@@ -91,8 +101,9 @@ export function loadTransportVehicles() {
 
 export function saveTransportVehicles(vehicles) {
   if (typeof window === 'undefined') return
-  window.localStorage.setItem(transportVehiclesStorageKey, JSON.stringify(Array.isArray(vehicles) ? vehicles : []))
-  notifyLocalDataChanged(transportVehiclesStorageKey)
+  const k = _key()
+  window.localStorage.setItem(k, JSON.stringify(Array.isArray(vehicles) ? vehicles : []))
+  notifyLocalDataChanged(k)
 }
 
 export function getNextVehicleId(vehicles = loadTransportVehicles()) {

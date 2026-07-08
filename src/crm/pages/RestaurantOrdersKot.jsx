@@ -32,8 +32,18 @@ import {
 } from '../lib/restaurantBusinessDay.js'
 import { directPrinterAvailable, printThermalText } from '../lib/printerService.js'
 
+import { migrateKey, scopedKey } from '../lib/localDataEvents.js'
+
+const _TABLES_BASE = 'nexora.restaurant.tables.v1'
+function tablesKey() {
+  const k = scopedKey(_TABLES_BASE)
+  if (k !== _TABLES_BASE) {
+    migrateKey(_TABLES_BASE, k)
+  }
+  return k
+}
+
 const filters = ['Today', 'Pending', 'Preparing', 'Served', 'Paid', 'Due', 'Cancelled']
-const restaurantTablesStorageKey = 'nexora.restaurant.tables.v1'
 
 function moneyValue(value) {
   const number = Number(value)
@@ -60,7 +70,7 @@ const statusTone = {
 function releaseRestaurantTable(tableId) {
   if (typeof window === 'undefined' || !tableId) return
   try {
-    const stored = window.localStorage.getItem(restaurantTablesStorageKey)
+    const stored = window.localStorage.getItem(tablesKey())
     const floors = stored ? JSON.parse(stored) : []
     if (!Array.isArray(floors)) return
     const nextFloors = floors.map((floor) => ({
@@ -82,7 +92,7 @@ function releaseRestaurantTable(tableId) {
           ))
         : [],
     }))
-    window.localStorage.setItem(restaurantTablesStorageKey, JSON.stringify(nextFloors))
+    window.localStorage.setItem(tablesKey(), JSON.stringify(nextFloors))
   } catch {
     // Local table state is best-effort; order cancellation still continues.
   }
@@ -113,7 +123,7 @@ function occupyRestaurantTable(tableId, order) {
           ))
         : [],
     }))
-    window.localStorage.setItem(restaurantTablesStorageKey, JSON.stringify(nextFloors))
+    window.localStorage.setItem(tablesKey(), JSON.stringify(nextFloors))
   } catch {
     // Local table state is best-effort; order edit still continues.
   }
@@ -202,7 +212,14 @@ export default function RestaurantOrdersKotPage() {
     freeTable: false,
   })
   const [editError, setEditError] = useState('')
-  const savedOrders = useMemo(() => [...loadRestaurantOrders(), ...normalizeInvoiceOrders(invoices)], [invoices, ordersVersion])
+  const savedOrders = useMemo(() => {
+    const merged = new Map()
+    ;[...loadRestaurantOrders(), ...normalizeInvoiceOrders(invoices)].forEach((order) => {
+      const key = order.orderNumber || order.id || ''
+      if (key) merged.set(key, order)
+    })
+    return Array.from(merged.values())
+  }, [invoices, ordersVersion])
   const todayKey = restaurantBusinessDateKey(new Date(), settings)
   const businessDayLabel = formatRestaurantBusinessWindow(settings)
   const todayOrders = useMemo(

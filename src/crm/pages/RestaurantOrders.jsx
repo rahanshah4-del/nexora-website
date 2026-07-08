@@ -69,7 +69,17 @@ const initialQuickBill = {
   printKot: true,
 }
 
-const restaurantTablesStorageKey = 'nexora.restaurant.tables.v1'
+import { migrateKey, scopedKey } from '../lib/localDataEvents.js'
+
+const _TABLES_BASE = 'nexora.restaurant.tables.v1'
+function tablesKey() {
+  const k = scopedKey(_TABLES_BASE)
+  if (k !== _TABLES_BASE) {
+    migrateKey(_TABLES_BASE, k)
+  }
+  return k
+}
+const restaurantTablesStorageKey = _TABLES_BASE
 const outsideTablePrefix = 'Outside '
 
 function isOutsideTable(tableId = '') {
@@ -97,7 +107,7 @@ function getOutsideTableId(orderNumber = '', preferredName = '') {
 function loadRestaurantTableOptions() {
   if (typeof window === 'undefined') return []
   try {
-    const stored = window.localStorage.getItem(restaurantTablesStorageKey)
+    const stored = window.localStorage.getItem(tablesKey())
     const floors = stored ? JSON.parse(stored) : []
     if (!Array.isArray(floors)) return []
     return floors
@@ -113,7 +123,7 @@ function loadRestaurantTableOptions() {
 function loadRestaurantFloors() {
   if (typeof window === 'undefined') return []
   try {
-    const stored = window.localStorage.getItem(restaurantTablesStorageKey)
+    const stored = window.localStorage.getItem(tablesKey())
     const floors = stored ? JSON.parse(stored) : []
     return Array.isArray(floors) ? floors : []
   } catch {
@@ -123,7 +133,7 @@ function loadRestaurantFloors() {
 
 function saveRestaurantFloors(floors) {
   if (typeof window === 'undefined') return
-  window.localStorage.setItem(restaurantTablesStorageKey, JSON.stringify(Array.isArray(floors) ? floors : []))
+  window.localStorage.setItem(tablesKey(), JSON.stringify(Array.isArray(floors) ? floors : []))
 }
 
 function updateRestaurantTableOrder(tableId, order) {

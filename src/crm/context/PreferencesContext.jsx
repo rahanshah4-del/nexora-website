@@ -1,8 +1,17 @@
 import { createContext, useEffect, useMemo, useState } from 'react'
+import { migrateKey, scopedKey } from '../lib/localDataEvents.js'
 
 const PreferencesContext = createContext(null)
 
-const STORAGE_KEY = 'nexora_preferences_v1'
+const _BASE = 'nexora.preferences.v1'
+
+function _key() {
+  const k = scopedKey(_BASE)
+  if (k !== _BASE) {
+    migrateKey(_BASE, k)
+  }
+  return k
+}
 
 const defaultState = {
   currency: 'PKR',
@@ -48,7 +57,7 @@ const defaultState = {
 
 function loadInitial() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
+    const raw = localStorage.getItem(_key())
     if (!raw) return defaultState
     const parsed = JSON.parse(raw)
     return {
@@ -67,7 +76,7 @@ export function PreferencesProvider({ children }) {
   const [state, setState] = useState(loadInitial)
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+    localStorage.setItem(_key(), JSON.stringify(state))
   }, [state])
 
   const value = useMemo(

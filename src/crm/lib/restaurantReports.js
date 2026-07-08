@@ -1,5 +1,14 @@
 import { finalItemPrice, safeMoney } from './restaurantPosCalculations.js'
 
+function isBilledOrder(order = {}) {
+  const status = String(order.orderStatus || '').toLowerCase()
+  const paymentStatus = String(order.paymentStatus || '').toLowerCase()
+  if (status === 'cancelled') return false
+  // KOT orders that are still pending (not yet billed) should not count as revenue.
+  // Only count orders that have been billed/paid.
+  return ['paid', 'partial', 'due'].includes(paymentStatus)
+}
+
 function safeNumber(value) {
   const amount = Number(value)
   return Number.isFinite(amount) ? amount : 0
@@ -8,12 +17,13 @@ function safeNumber(value) {
 export function calculateRestaurantOrderSummary(orders = []) {
   const rows = Array.isArray(orders) ? orders : []
   const activeOrders = rows.filter((order) => String(order.orderStatus || '').toLowerCase() !== 'cancelled')
-  const totalSales = activeOrders.reduce((sum, order) => sum + safeMoney(order.total ?? order.totals?.total), 0)
+  const billedOrders = activeOrders.filter((order) => isBilledOrder(order))
+  const totalSales = billedOrders.reduce((sum, order) => sum + safeMoney(order.total ?? order.totals?.total), 0)
   const paidAmount = activeOrders.reduce((sum, order) => sum + safeMoney(order.paidAmount), 0)
   const dueAmount = activeOrders.reduce((sum, order) => sum + safeMoney(order.dueAmount ?? order.due), 0)
-  const discounts = activeOrders.reduce((sum, order) => sum + safeMoney(order.totals?.discount), 0)
-  const tax = activeOrders.reduce((sum, order) => sum + safeMoney(order.totals?.tax), 0)
-  const serviceCharges = activeOrders.reduce((sum, order) => sum + safeMoney(order.totals?.serviceCharges), 0)
+  const discounts = billedOrders.reduce((sum, order) => sum + safeMoney(order.totals?.discount), 0)
+  const tax = billedOrders.reduce((sum, order) => sum + safeMoney(order.totals?.tax), 0)
+  const serviceCharges = billedOrders.reduce((sum, order) => sum + safeMoney(order.totals?.serviceCharges), 0)
   return {
     totalOrders: rows.length,
     activeOrders: activeOrders.length,
@@ -24,7 +34,7 @@ export function calculateRestaurantOrderSummary(orders = []) {
     discounts,
     tax,
     serviceCharges,
-    averageOrderValue: activeOrders.length ? totalSales / activeOrders.length : 0,
+    averageOrderValue: billedOrders.length ? totalSales / billedOrders.length : 0,
   }
 }
 
@@ -48,15 +58,18 @@ export function buildRestaurantReport(orders = [], customers = [], options = {})
 
   orderRows.forEach((order) => {
     const isCancelled = String(order.orderStatus || '').toLowerCase() === 'cancelled'
+    const isKotOnly = !isCancelled && !isBilledOrder(order)
     const isInvoiceOrder = order.sourceKind === 'invoice'
     const total = safeMoney(order.total ?? order.totals?.total)
-    const paidAmount = isCancelled ? 0 : safeMoney(order.paidAmount)
-    const dueAmount = isCancelled ? 0 : safeMoney(order.dueAmount ?? order.due)
+    const paidAmount = isCancelled || isKotOnly ? 0 : safeMoney(order.paidAmount)
+    const dueAmount = isCancelled || isKotOnly ? 0 : safeMoney(order.dueAmount ?? order.due)
 
     if (!isCancelled && isInvoiceOrder) invoiceOrderSales += total
-    if (!isCancelled && !isInvoiceOrder) simpleOrderSales += total
-    salesByType[order.orderType] = safeNumber(salesByType[order.orderType]) + (isCancelled ? 0 : total)
-    salesByPayment[order.paymentMethod] = safeNumber(salesByPayment[order.paymentMethod]) + (isCancelled ? 0 : total)
+    if (!isCancelled && !isKotOnly && !isInvoiceOrder) simpleOrderSales += total
+    if (!isCancelled && !isKotOnly) {
+      salesByType[order.orderType] = safeNumber(salesByType[order.orderType]) + total
+      salesByPayment[order.paymentMethod] = safeNumber(salesByPayment[order.paymentMethod]) + total
+    }
 
     ;(order.cartRows || []).forEach((row) => {
       const item = row.item || row
@@ -65,16 +78,16 @@ export function buildRestaurantReport(orders = [], customers = [], options = {})
       const current = itemMap.get(id) || { id, name: item.name || 'Menu item', quantity: 0, revenue: 0, discount: 0 }
       const unitPrice = finalItemPrice(item)
       current.quantity += quantity
-      current.revenue += isCancelled ? 0 : unitPrice * quantity
-      current.discount += isCancelled ? 0 : Math.max(0, safeNumber(item.price) - unitPrice) * quantity
+      current.revenue += isCancelled || isKotOnly ? 0 : unitPrice * quantity
+      current.discount += isCancelled || isKotOnly ? 0 : Math.max(0, safeNumber(item.price) - unitPrice) * quantity
       itemMap.set(id, current)
-      itemCost += isCancelled ? 0 : safeNumber(item.costPrice) * quantity
+      itemCost += isCancelled || isKotOnly ? 0 : safeNumber(item.costPrice) * quantity
     })
 
     if (order.table) {
       const current = tableMap.get(order.table) || { id: order.table, table: order.table, orders: 0, sales: 0, status: 'available' }
-      current.orders += isCancelled ? 0 : 1
-      current.sales += isCancelled ? 0 : total
+      current.orders += isCancelled || isKotOnly ? 0 : 1
+      current.sales += isCancelled || isKotOnly ? 0 : total
       current.status = String(order.orderStatus || '').toLowerCase() === 'served' ? 'occupied' : order.orderStatus
       tableMap.set(order.table, current)
     }
@@ -124,8 +137,7 @@ export function buildRestaurantReport(orders = [], customers = [], options = {})
     salesByPayment,
     onlineSales: Array.from(onlineMethods).reduce((sum, method) => sum + safeNumber(salesByPayment[method]), 0),
     duePartialSales: orderRows
-      .filter((order) => String(order.orderStatus || '').toLowerCase() !== 'cancelled')
-      .filter((order) => ['due', 'partial'].includes(String(order.paymentStatus || '').toLowerCase()))
+      .filter((order) => isBilledOrder(order) && ['due', 'partial'].includes(String(order.paymentStatus || '').toLowerCase()))
       .reduce((sum, order) => sum + safeMoney(order.totals?.total ?? order.total), 0),
     itemRows,
     kot,

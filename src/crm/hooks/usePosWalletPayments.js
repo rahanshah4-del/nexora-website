@@ -68,8 +68,6 @@ export function usePosWalletPayments(options = {}) {
       },
       {
         businessType,
-        businessTypeFallbacks: ['Retail / POS', 'General CRM'],
-        includeMissingBusinessType: true,
         orderByField: 'createdAt',
         orderDirection: 'desc',
         limitCount,

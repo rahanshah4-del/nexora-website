@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { serverTimestamp } from 'firebase/firestore'
+import { doc, runTransaction, serverTimestamp } from 'firebase/firestore'
 import { db } from '../lib/firebase.js'
-import { createUserDoc, patchUserDoc, removeUserDoc, subscribeUserCollection } from '../lib/firestore.js'
+import { createUserDoc, patchUserDoc, removeUserDoc, subscribeUserCollection, workspaceCollectionPath } from '../lib/firestore.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 import { useUser } from './useUser.js'
 import { clientSafeMessage } from '../utils/messages.js'
@@ -233,14 +233,22 @@ export function useAccountTransactions({ enabled = true, limitCount = null } = {
       if (!canApprove) return { ok: false, error: 'You do not have permission to approve requests.' }
       if (!db || !workspaceId || !userId) return { ok: false, error: 'Secure Cloud Sync is not available right now.' }
       if (!isPendingTransaction(transaction)) return { ok: false, error: 'This transaction has already been reviewed.' }
+      const txnRef = doc(db, workspaceCollectionPath(workspaceId, 'accountTransactions'), transaction.id)
       try {
-        await patchUserDoc(workspaceId, 'accountTransactions', transaction.id, {
-          status: 'approved',
-          approvalStatus: 'approved',
-          approvedBy: userId,
-          approvedAt: serverTimestamp(),
-          requiresApproval: false,
-        }, { businessType })
+        await runTransaction(db, async (txn) => {
+          const snap = await txn.get(txnRef)
+          if (!snap.exists()) throw new Error('Transaction not found.')
+          const data = snap.data()
+          // Idempotency: skip if already reviewed
+          if (!isPendingTransaction({ ...transaction, ...data })) throw new Error('This transaction has already been reviewed.')
+          txn.update(txnRef, {
+            status: 'approved',
+            approvalStatus: 'approved',
+            approvedBy: userId,
+            approvedAt: serverTimestamp(),
+            requiresApproval: false,
+          })
+        })
         await logActivity({
           workspaceId,
           userId,

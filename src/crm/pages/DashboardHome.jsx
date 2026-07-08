@@ -1,3 +1,5 @@
+import { useUser } from '../hooks/useUser.js'
+import { calculateRetailPosRevenue } from '../lib/retailRevenueDedup.js'
 import { Link } from 'react-router-dom'
 import { memo, useEffect, useMemo } from 'react'
 import {
@@ -53,7 +55,6 @@ import { usePosOrders } from '../hooks/usePosOrders.js'
 import { usePosWalletPayments } from '../hooks/usePosWalletPayments.js'
 import { useSchoolAttendanceSummary } from '../hooks/useSchoolAttendanceSummary.js'
 import WhatsappDashboard from '../components/dashboard/WhatsappDashboard.jsx'
-import { useUser } from '../hooks/useUser.js'
 import {
   calculateConversionRate,
   invoiceBalanceDue,
@@ -729,8 +730,7 @@ export default function DashboardHomePage() {
   const retailInventoryStats = useInventoryStats(retailProductsApi.products, retailTransactionsApi.transactions)
   const retailPosSales = useMemo(
     () =>
-      retailPosOrdersApi.orders.reduce((sum, order) => sum + toFiniteNumber(order.paidAmount), 0) +
-      retailWalletPaymentsApi.payments.reduce((sum, payment) => sum + toFiniteNumber(payment.amount), 0),
+      calculateRetailPosRevenue(retailPosOrdersApi.orders, retailWalletPaymentsApi.payments),
     [retailPosOrdersApi.orders, retailWalletPaymentsApi.payments],
   )
   const retailLoading = isRetail && (retailProductsApi.loading || retailTransactionsApi.loading || retailPosOrdersApi.loading || retailWalletPaymentsApi.loading)
@@ -810,11 +810,7 @@ export default function DashboardHomePage() {
       }),
     [accountsApi.transactions, customersApi.customers, expensesApi.expenses, invoicesApi.invoices, invoicesApi.payments, leadsApi.leads],
   )
-  const retailTotalRevenue = useMemo(
-    () => dashboardStats.totalRevenue + retailPosSales,
-    [dashboardStats.totalRevenue, retailPosSales],
-  )
-  const totalRevenueUsd = isRetail ? retailTotalRevenue : dashboardStats.totalRevenue
+  const totalRevenueUsd = isRetail ? retailPosSales : dashboardStats.totalRevenue
   const pendingRevenueUsd = useMemo(
     () => pendingInvoices.reduce((sum, invoice) => sum + invoiceBalanceDue(invoice), 0),
     [pendingInvoices],

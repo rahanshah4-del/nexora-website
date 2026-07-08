@@ -1,12 +1,22 @@
 import { calculateRestaurantBill, safeMoney } from '../lib/restaurantPosCalculations.js'
-import { notifyLocalDataChanged } from '../lib/localDataEvents.js'
+import { migrateKey, notifyLocalDataChanged, scopedKey } from '../lib/localDataEvents.js'
 
-export const restaurantOrdersStorageKey = 'nexora.restaurant.orders.v2'
+const _BASE = 'nexora.restaurant.orders.v2'
+/** @deprecated Use scopedKey() from localDataEvents instead. Kept for backward compat. */
+export const restaurantOrdersStorageKey = _BASE
+
+function _key() {
+  const k = scopedKey(_BASE)
+  if (k !== _BASE) {
+    migrateKey(_BASE, k)
+  }
+  return k
+}
 
 function readStoredOrders() {
   if (typeof window === 'undefined') return []
   try {
-    const stored = window.localStorage.getItem(restaurantOrdersStorageKey)
+    const stored = window.localStorage.getItem(_key())
     const parsed = stored ? JSON.parse(stored) : []
     return Array.isArray(parsed) ? parsed : []
   } catch {
@@ -20,14 +30,16 @@ export function loadRestaurantOrders() {
 
 export function saveRestaurantOrders(orders) {
   if (typeof window === 'undefined') return
-  window.localStorage.setItem(restaurantOrdersStorageKey, JSON.stringify(Array.isArray(orders) ? orders : []))
-  notifyLocalDataChanged(restaurantOrdersStorageKey)
+  const k = _key()
+  window.localStorage.setItem(k, JSON.stringify(Array.isArray(orders) ? orders : []))
+  notifyLocalDataChanged(k)
 }
 
 export function clearRestaurantOrders() {
   if (typeof window === 'undefined') return
-  window.localStorage.removeItem(restaurantOrdersStorageKey)
-  notifyLocalDataChanged(restaurantOrdersStorageKey)
+  const k = _key()
+  window.localStorage.removeItem(k)
+  notifyLocalDataChanged(k)
 }
 
 export function getNextRestaurantOrderNumber(seed = 45265) {

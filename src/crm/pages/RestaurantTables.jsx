@@ -21,6 +21,16 @@ import PageHeader from '../components/ui/PageHeader.jsx'
 import Select from '../components/ui/Select.jsx'
 import { cn } from '../utils/cn.js'
 import { loadRestaurantOrders } from '../data/restaurantOrders.js'
+import { migrateKey, scopedKey } from '../lib/localDataEvents.js'
+
+const _TABLES_BASE = 'nexora.restaurant.tables.v1'
+function tablesKey() {
+  const k = scopedKey(_TABLES_BASE)
+  if (k !== _TABLES_BASE) {
+    migrateKey(_TABLES_BASE, k)
+  }
+  return k
+}
 
 const floorAreas = ['Ground Floor', 'Family Hall', 'Outdoor/VIP']
 const statusOptions = ['available', 'occupied', 'reserved', 'cleaning']
@@ -48,8 +58,6 @@ const initialFloors = [
   },
 ]
 
-const restaurantTablesStorageKey = 'nexora.restaurant.tables.v1'
-
 function normalizeFloors(value) {
   const storedFloors = Array.isArray(value) ? value : []
   const normalizedInitial = initialFloors.map((floor) => {
@@ -71,7 +79,7 @@ function normalizeFloors(value) {
 function loadRestaurantFloors() {
   if (typeof window === 'undefined') return initialFloors
   try {
-    const stored = window.localStorage.getItem(restaurantTablesStorageKey)
+    const stored = window.localStorage.getItem(tablesKey())
     return normalizeFloors(stored ? JSON.parse(stored) : initialFloors)
   } catch {
     return initialFloors
@@ -80,7 +88,7 @@ function loadRestaurantFloors() {
 
 function saveRestaurantFloors(floors) {
   if (typeof window === 'undefined') return
-  window.localStorage.setItem(restaurantTablesStorageKey, JSON.stringify(normalizeFloors(floors)))
+  window.localStorage.setItem(tablesKey(), JSON.stringify(normalizeFloors(floors)))
 }
 
 function syncFloorsWithActiveOrders(floors) {
