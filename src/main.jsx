@@ -1,29 +1,16 @@
-import { StrictMode } from 'react'
+import { lazy, StrictMode, Suspense } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import './index.css'
-import AppRouter from './AppRouter.jsx'
-import AuthProvider from './context/AuthProvider.jsx'
-import AppErrorBoundary from './components/AppErrorBoundary.jsx'
-import CRMProviders from './crm/CRMProviders.jsx'
-import { LanguageProvider } from './lib/i18n.jsx'
-import GlobalConfirmDialog from './crm/components/ui/GlobalConfirmDialog.jsx'
-import GlobalToast from './crm/components/ui/GlobalToast.jsx'
+
+const AppProviders = lazy(() => import('./components/AppProviders.jsx'))
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>
-      <AuthProvider>
-        <CRMProviders>
-          <LanguageProvider>
-            <AppErrorBoundary>
-              <AppRouter />
-              <GlobalConfirmDialog />
-              <GlobalToast />
-            </AppErrorBoundary>
-          </LanguageProvider>
-        </CRMProviders>
-      </AuthProvider>
+      <Suspense fallback={null}>
+        <AppProviders />
+      </Suspense>
     </BrowserRouter>
   </StrictMode>,
 )

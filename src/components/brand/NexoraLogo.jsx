@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { memo, useMemo, useState } from 'react'
 import logoUrl from '../../assets/logo/nexora-logo.svg'
 
 const SIZE_MAP = {
@@ -8,9 +8,9 @@ const SIZE_MAP = {
   xl: { icon: 'h-20 w-20', imageSize: 80, title: 'text-2xl tracking-[0.22em]', sub: 'text-xs tracking-[0.24em]' },
 }
 
-export default function NexoraLogo({ className = '', compact = false, size, hideText = false, invert = false, iconClassName = '', textClassName = '' }) {
+function NexoraLogo({ className = '', compact = false, size, hideText = false, invert = false, iconClassName = '', textClassName = '' }) {
   const [loadError, setLoadError] = useState(false)
-  const resolved = SIZE_MAP[size] || (compact ? SIZE_MAP.sm : SIZE_MAP.md)
+  const resolved = useMemo(() => SIZE_MAP[size] || (compact ? SIZE_MAP.sm : SIZE_MAP.md), [size, compact])
   const titleColor = invert ? 'text-white' : 'text-slate-950'
   const subColor = invert ? 'text-slate-400' : 'text-slate-500'
   const iconBorder = invert ? 'border-white/15' : 'border-slate-200'
@@ -44,3 +44,5 @@ export default function NexoraLogo({ className = '', compact = false, size, hide
     </div>
   )
 }
+
+export default memo(NexoraLogo)

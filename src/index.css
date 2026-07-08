@@ -97,45 +97,18 @@ body.business-service-modal-open {
 }
 
 @layer components {
-  .glass-card {
-    @apply rounded-[2rem] border border-slate-200/70 bg-white/90 shadow-soft backdrop-blur-xl;
+  .premium-card {
+    @apply rounded-[1.65rem] border border-slate-200/80 bg-white/90 shadow-[0_28px_80px_-48px_rgba(15,23,42,0.38)] backdrop-blur hover:border-blue-200;
   }
-  .glass-panel {
-    @apply rounded-[1.75rem] border border-slate-200/80 bg-white/80 p-6 shadow-[0_28px_60px_-28px_rgba(15,23,42,0.2)] hover:bg-white;
+  .premium-button-primary {
+    @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-slate-950 px-7 text-sm font-extrabold text-white shadow-[0_20px_46px_-28px_rgba(15,23,42,0.95)] hover:bg-blue-700;
   }
-  .section-heading {
-    @apply font-display text-slate-950 text-2xl font-semibold tracking-tight sm:text-4xl;
+  .premium-button-secondary {
+    @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-slate-200 bg-white/90 px-7 text-sm font-extrabold text-slate-950 shadow-[0_18px_42px_-34px_rgba(15,23,42,0.55)] hover:border-blue-300 hover:text-blue-700;
   }
-  .section-copy {
-    @apply max-w-2xl text-sm leading-7 text-slate-600 sm:text-base sm:leading-8;
-  }
-	  .feature-pill {
-	    @apply inline-flex items-center rounded-full border border-sky-200/80 bg-sky-50 px-3 py-1.5 text-xs font-semibold text-sky-700 sm:px-4 sm:py-2 sm:text-sm;
-	  }
-	  .premium-card {
-	    @apply rounded-[1.65rem] border border-slate-200/80 bg-white/90 shadow-[0_28px_80px_-48px_rgba(15,23,42,0.38)] backdrop-blur hover:border-blue-200;
-	  }
-	  .premium-button-primary {
-	    @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-slate-950 px-7 text-sm font-extrabold text-white shadow-[0_20px_46px_-28px_rgba(15,23,42,0.95)] hover:bg-blue-700;
-	  }
-	  .premium-button-secondary {
-	    @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-slate-200 bg-white/90 px-7 text-sm font-extrabold text-slate-950 shadow-[0_18px_42px_-34px_rgba(15,23,42,0.55)] hover:border-blue-300 hover:text-blue-700;
-	  }
-	}
+}
 
 @layer utilities {
-  .highlight-ring {
-    box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.18), 0 24px 80px rgba(56, 189, 248, 0.14);
-  }
-
-  .page-enter {
-    animation: public-fade-up 420ms ease-out both;
-  }
-
-  .hero-enter {
-    animation: public-fade-up 480ms ease-out both;
-  }
-
   .marketing-page {
     animation: public-page-in 360ms ease-out both;
   }
@@ -260,24 +233,14 @@ body.business-service-modal-open {
     transform: none;
   }
 
-  .glow-blob {
-    animation: public-soft-pulse 7s ease-in-out infinite;
+  .pos-reveal-card {
+    animation: public-fade-up 520ms ease-out both;
   }
 
-  .logo-shell {
-    box-shadow:
-      inset 0 0 0 1px rgba(148, 163, 184, 0.28),
-      0 20px 50px -35px rgba(56, 189, 248, 0.4);
+  .pos-preview-shell {
+    position: relative;
+    transform: translateZ(0);
   }
-
-  .hero-float {
-    animation: public-float 6s ease-in-out infinite;
-  }
-
-	  .pos-preview-shell {
-	    position: relative;
-	    transform: translateZ(0);
-	  }
 
   .pos-preview-shell::after {
     position: absolute;
@@ -291,10 +254,6 @@ body.business-service-modal-open {
   }
 
   .pos-float-card {
-    animation: public-fade-up 520ms ease-out both;
-  }
-
-  .pos-reveal-card {
     animation: public-fade-up 520ms ease-out both;
   }
 
@@ -329,24 +288,6 @@ body.business-service-modal-open {
     }
   }
 
-  @keyframes public-float {
-    0%, 100% {
-      transform: translateY(0);
-    }
-    50% {
-      transform: translateY(-6px);
-    }
-  }
-
-  @keyframes public-soft-pulse {
-    0%, 100% {
-      opacity: 0.72;
-    }
-    50% {
-      opacity: 1;
-    }
-  }
-
   @keyframes public-shine {
     0%, 70%, 100% {
       transform: translateX(-55%);
@@ -373,10 +314,6 @@ body.business-service-modal-open {
       scroll-behavior: auto;
     }
 
-    .page-enter,
-    .hero-enter,
-    .glow-blob,
-    .hero-float,
     .pos-float-card,
     .pos-preview-shell::after,
     .pos-reveal-card {

@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import {
   HiOutlineAcademicCap,
@@ -19,7 +19,8 @@ import {
 } from 'react-icons/hi2'
 import Header from './components/Header'
 import NexoraLogo from './components/brand/NexoraLogo'
-import TawkChat from './pages/public/TawkChat.jsx'
+
+const TawkChat = lazy(() => import('./pages/public/TawkChat.jsx'))
 
 const whatsappNumberDisplay = '+92 319 432 9754'
 const whatsappLink = 'https://wa.me/923194329754'
@@ -796,7 +797,9 @@ function App({ initialSectionId = '' }) {
         </div>
       </footer>
 
-      <TawkChat />
+      <Suspense fallback={null}>
+        <TawkChat />
+      </Suspense>
     </div>
   )
 }
