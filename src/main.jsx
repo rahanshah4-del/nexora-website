@@ -8,9 +8,9 @@ const AppProviders = lazy(() => import('./components/AppProviders.jsx'))
 /* Remove static hero shell before React mounts for instant mobile FCP */
 const shell = document.getElementById('s-shell')
 if (shell) {
-  shell.style.setProperty('transition', 'opacity 180ms ease')
+  shell.style.setProperty('transition', 'opacity 100ms ease')
   shell.style.opacity = '0'
-  setTimeout(() => { shell.style.display = 'none' }, 200)
+  setTimeout(() => { shell.style.display = 'none' }, 120)
 }
 
 createRoot(document.getElementById('root')).render(
