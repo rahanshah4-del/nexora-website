@@ -482,7 +482,108 @@ const solutionPages = {
   },
 }
 
-function SoftwareMockup({ page }) {
+const solutionPreviewRows = {
+  crm: [
+    ['Leads', '184', '+18%', HiOutlineUserGroup],
+    ['Pipeline', 'PKR 2.4M', '12 deals', HiOutlineChartBarSquare],
+    ['Invoices', '48', 'This month', HiOutlineDocumentChartBar],
+    ['Tasks', '23', 'Pending', HiOutlineCheckCircle],
+    ['Revenue', 'PKR 8.6M', '+22%', HiOutlineArrowRight],
+    ['Follow-ups', '47', 'Today', HiOutlineChatBubbleLeftRight],
+  ],
+  'school-erp': [
+    ['Students', '1,284', '+42', HiOutlineAcademicCap],
+    ['Attendance', '94%', 'Today', HiOutlineCheckCircle],
+    ['Fees', 'PKR 3.1M', 'Collected', HiOutlineDocumentChartBar],
+    ['Exams', '6', 'Scheduled', HiOutlineChartBarSquare],
+    ['Results', '88%', 'Pass rate', HiOutlineAcademicCap],
+    ['Transport', '18', 'Routes', HiOutlineTruck],
+  ],
+  'property-erp': [
+    ['Tenants', '86', 'Active', HiOutlineUserGroup],
+    ['Units', '124', 'Total', HiOutlineBuildingOffice2],
+    ['Rent', 'PKR 5.8M', '+9%', HiOutlineDocumentChartBar],
+    ['Maintenance', '12', 'Open', HiOutlineShieldCheck],
+    ['Occupancy', '72%', '+5%', HiOutlineChartBarSquare],
+    ['Payments', 'PKR 2.1M', 'Pending', HiOutlineArrowRight],
+  ],
+  pos: [
+    ['Tables', '24', '8 occupied', HiOutlineBuildingOffice2],
+    ['Dine-in', '16', 'Orders', HiOutlineShoppingCart],
+    ['Takeaway', '9', 'Orders', HiOutlineCloud],
+    ['Today Sales', 'PKR 184K', '+22%', HiOutlineChartBarSquare],
+    ['KOT Pending', '7', 'Kitchen', HiOutlineDocumentChartBar],
+    ['Menu Items', '142', 'Active', HiOutlineCheckCircle],
+  ],
+  'retail-pos': [
+    ['Barcode Sales', 'PKR 198K', '+16%', HiOutlineShoppingCart],
+    ['Cart Items', '34', 'Pending', HiOutlineChartBarSquare],
+    ['Stock Alerts', '14', 'Low', HiOutlineShieldCheck],
+    ['Customers', '86', 'Today', HiOutlineUserGroup],
+    ['Sales Report', 'PKR 1.2M', 'This month', HiOutlineDocumentChartBar],
+    ['Inventory', '2,184', 'Items', HiOutlineCheckCircle],
+  ],
+  'whatsapp-crm': [
+    ['Inbox', '312', 'Unread', HiOutlineChatBubbleLeftRight],
+    ['Contacts', '2.4K', '+12%', HiOutlineUserGroup],
+    ['Campaigns', '24', 'Sent', HiOutlineArrowRight],
+    ['Auto Replies', '89%', 'Rate', HiOutlineCloud],
+    ['Lead Capture', '184', '+18%', HiOutlineChartBarSquare],
+    ['Message Status', '94%', 'Delivered', HiOutlineCheckCircle],
+  ],
+  'transport-rental': [
+    ['Vehicles', '42', 'Active', HiOutlineTruck],
+    ['Trips', '128', 'This month', HiOutlineMapPin],
+    ['Drivers', '36', 'Available', HiOutlineUserGroup],
+    ['Bookings', '18', 'Live', HiOutlineCheckCircle],
+    ['Fuel', 'PKR 284K', 'Expenses', HiOutlineDocumentChartBar],
+    ['Fleet Reports', '96%', 'Uptime', HiOutlineChartBarSquare],
+  ],
+  'medical-store-pos': [
+    ['Medicine Search', '12K', 'Items', HiOutlineShieldCheck],
+    ['Batch Expiry', '23', 'Alert', HiOutlineDocumentChartBar],
+    ['Stock', '4,826', 'Units', HiOutlineCheckCircle],
+    ['Billing', 'PKR 126K', 'Today', HiOutlineShoppingCart],
+    ['Suppliers', '48', 'Active', HiOutlineUserGroup],
+    ['Low Stock', '18', 'Reorder', HiOutlineChartBarSquare],
+  ],
+  'reports': [
+    ['Sales Charts', 'PKR 8.6M', '+17%', HiOutlineChartBarSquare],
+    ['Revenue', 'PKR 8.6M', '+22%', HiOutlineArrowRight],
+    ['Profit', 'PKR 2.1M', '+14%', HiOutlineCheckCircle],
+    ['Expenses', 'PKR 4.2M', '-8%', HiOutlineDocumentChartBar],
+    ['Top Modules', '6', 'Active', HiOutlineCloud],
+    ['Export Report', 'PDF/Excel', 'Ready', HiOutlineDocumentChartBar],
+  ],
+  'email-marketing': [
+    ['Campaigns', '24', 'Sent', HiOutlineArrowRight],
+    ['Subscribers', '8.2K', '+12%', HiOutlineUserGroup],
+    ['Open Rate', '34%', '+5%', HiOutlineChartBarSquare],
+    ['Click Rate', '18%', '+3%', HiOutlineCloud],
+    ['Templates', '12', 'Active', HiOutlineDocumentChartBar],
+    ['Analytics', '92%', 'Delivered', HiOutlineCheckCircle],
+  ],
+  'inventory-management': [
+    ['Products', '1,842', '+8%', HiOutlineShoppingCart],
+    ['Stock Levels', '4.2K', 'Units', HiOutlineCheckCircle],
+    ['Purchase Orders', '126', 'This month', HiOutlineDocumentChartBar],
+    ['Suppliers', '64', 'Active', HiOutlineUserGroup],
+    ['Low Stock', '34', 'Alert', HiOutlineShieldCheck],
+    ['Inventory Value', 'PKR 12.4M', '+6%', HiOutlineChartBarSquare],
+  ],
+  'team-permissions': [
+    ['Team Members', '24', 'Active', HiOutlineUserGroup],
+    ['Roles', '6', 'Configured', HiOutlineShieldCheck],
+    ['Permissions', '18', 'Rules', HiOutlineDocumentChartBar],
+    ['Access Controls', '92%', 'Secure', HiOutlineCheckCircle],
+    ['Active Users', '18', 'Online', HiOutlineCloud],
+    ['Security Audit', 'Clean', 'Passed', HiOutlineChartBarSquare],
+  ],
+}
+
+function SoftwareMockup({ page, solutionSlug }) {
+  const previewRows = solutionPreviewRows[solutionSlug] || solutionPreviewRows['crm']
+
   return (
     <div className="relative mx-auto w-full max-w-[60rem]">
       <div className="pos-float-card absolute -left-5 top-16 z-10 hidden w-48 rounded-[1.45rem] border border-blue-100 bg-white/95 p-4 shadow-[0_28px_72px_-38px_rgba(15,23,42,0.42)] backdrop-blur xl:block">
@@ -554,31 +655,19 @@ function SoftwareMockup({ page }) {
               ))}
             </div>
 
-            <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_16rem]">
-              <div className="rounded-[1.3rem] border border-white bg-white p-4 shadow-[0_20px_58px_-46px_rgba(15,23,42,0.5)]">
-                <div className="mb-3 flex items-center justify-between">
-                  <p className="text-sm font-extrabold text-slate-950">Performance Overview</p>
-                  <span className="rounded-full border border-slate-200 px-2 py-1 text-[0.6rem] font-bold text-slate-500">This month</span>
+            <div className="mt-4 grid grid-cols-3 gap-3">
+              {previewRows.map(([label, value, note, Icon]) => (
+                <div key={label} className="flex items-center gap-2 rounded-[1.2rem] border border-white bg-white p-3 shadow-[0_20px_58px_-46px_rgba(15,23,42,0.5)]">
+                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-blue-50 text-blue-600">
+                    <Icon className="text-sm" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="truncate text-[0.58rem] font-bold text-slate-500">{label}</p>
+                    <p className="truncate text-sm font-black text-slate-950">{value}</p>
+                    <p className="truncate text-[0.55rem] font-bold text-blue-600">{note}</p>
+                  </div>
                 </div>
-                <svg viewBox="0 0 420 160" className="h-40 w-full text-blue-600" fill="none" aria-hidden="true">
-                  <path d="M12 138 L54 92 L92 108 L132 58 L174 84 L214 42 L254 102 L294 52 L334 76 L376 34 L410 18" stroke="currentColor" strokeWidth="5" strokeLinecap="round" />
-                  <path d="M12 138 L54 92 L92 108 L132 58 L174 84 L214 42 L254 102 L294 52 L334 76 L376 34 L410 18 L410 160 L12 160 Z" fill="currentColor" opacity="0.08" />
-                </svg>
-              </div>
-
-              <div className="rounded-[1.3rem] border border-white bg-white p-4 shadow-[0_20px_58px_-46px_rgba(15,23,42,0.5)]">
-                <p className="text-sm font-extrabold text-slate-950">Recent Activity</p>
-                <div className="mt-3 space-y-2">
-                  {page.rows.map((row) => (
-                    <div key={row} className="flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-2">
-                      <span className="h-8 w-8 rounded-xl bg-blue-50 text-blue-600">
-                        <HiOutlineCheckCircle className="m-2 text-base" />
-                      </span>
-                      <span className="min-w-0 flex-1 truncate text-xs font-bold text-slate-700">{row}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              ))}
             </div>
           </div>
         </div>
@@ -682,7 +771,7 @@ export default function SolutionPage({ solutionSlug: solutionSlugProp } = {}) {
             </div>
           </div>
 
-          <SoftwareMockup page={page} />
+          <SoftwareMockup page={page} solutionSlug={solutionSlug} />
         </div>
       </section>
 
