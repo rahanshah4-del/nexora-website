@@ -46,9 +46,10 @@ export default function RetailPOSOrdersPage() {
   const walletPaymentsApi = usePosWalletPayments({ limitCount: 100 })
   const access = useWorkspaceAccess()
   const [actionMessage, setActionMessage] = useState('')
-  const todayOrders = useMemo(() => orders.filter((order) => isToday(order.createdAt)), [orders])
+  const todayOrders = useMemo(() => orders.filter((order) => isToday(order.createdAt) && order.refundStatus !== 'refunded' && !order.refundedAt), [orders])
   const todayWalletPayments = useMemo(() => walletPaymentsApi.payments.filter((payment) => isToday(payment.createdAt)), [walletPaymentsApi.payments])
-  const totals = orders.reduce((summary, order) => {
+  const activeOrders = useMemo(() => orders.filter((o) => o.refundStatus !== 'refunded' && !o.refundedAt), [orders])
+  const totals = activeOrders.reduce((summary, order) => {
     summary.sales += Number(order.paidAmount || 0)
     summary.profit += Number(order.profit || 0)
     summary.items += order.itemCount

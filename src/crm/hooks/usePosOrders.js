@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { createUserDoc, removeUserDoc, subscribeUserCollection } from '../lib/firestore.js'
+import { doc, runTransaction, serverTimestamp } from 'firebase/firestore'
+import { createUserDoc, removeUserDoc, subscribeUserCollection, workspaceCollectionPath } from '../lib/firestore.js'
 import { useUser } from './useUser.js'
 import { useWorkspaceAccess } from './useWorkspaceAccess.js'
 import { clientSafeMessage } from '../utils/messages.js'
 import { db } from '../lib/firebase.js'
+import { restoreInventoryItems } from '../lib/inventoryRestore.js'
+import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 
 const POS_BUSINESS_TYPE = 'Retail / POS'
 const MAX_RETRY_COUNT = 3
@@ -418,6 +421,33 @@ export function usePosOrders(options = {}) {
     const canDelete = access.isOwner || access.isAdmin || access.hasModulePermission('posOrders', 'delete') || access.hasModulePermission('pos', 'delete')
     if (!canDelete) return { ok: false, error: 'You do not have permission to perform this action.' }
     try {
+      // ── Restore inventory before deletion ──
+      const order = orders.find((o) => o.id === id)
+      const orderSource = String(order?.orderSource || order?.source || '').toLowerCase()
+      const isKotOrUnbilled = orderSource.includes('kot') || order?.status === 'draft'
+      const isRefunded = order?.refundStatus === 'refunded' || order?.refundedAt
+      const restoreNeeded = order?.items?.length && !isKotOrUnbilled && !isRefunded
+
+      if (restoreNeeded) {
+        const restoreRs = await restoreInventoryItems({
+          db,
+          workspaceId,
+          businessType: effectiveBusinessType,
+          userId,
+          items: order.items.map((item) => ({
+            productId: item.productId,
+            quantity: item.quantity,
+            productName: item.productName || item.name || '',
+            sku: item.sku || '',
+          })),
+          referenceId: id,
+          reference: order.orderNumber || id,
+        })
+        if (!restoreRs.ok) {
+          return { ok: false, error: 'Unable to restore inventory before deletion. The order was not deleted.' }
+        }
+      }
+
       await removeUserDoc(workspaceId, 'posOrders', id)
       forgetLocalOrder(workspaceId, id)
       setOrders((current) => current.filter((order) => order.id !== id))
@@ -425,7 +455,173 @@ export function usePosOrders(options = {}) {
     } catch (error) {
       return { ok: false, error: clientSafeMessage(error, 'Unable to delete POS order.') }
     }
-  }, [access, userId, workspaceId])
+  }, [access, userId, workspaceId, orders, effectiveBusinessType])
+
+  const refundOrder = useCallback(async (id) => {
+    if (!id) return { ok: false, error: 'Order ID is required.' }
+    if (!workspaceId || !userId) return { ok: false, error: 'Please login first.' }
+    if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now.' }
+    const canRefund = access.isOwner || access.isAdmin || access.hasModulePermission('posOrders', 'create') || access.hasModulePermission('pos', 'create')
+    if (!canRefund) return { ok: false, error: 'You do not have permission to perform this action.' }
+
+    const order = orders.find((o) => o.id === id)
+    if (!order) return { ok: false, error: 'Order not found.' }
+
+    // ── Duplicate protection: already refunded ──
+    if (order.refundStatus === 'refunded' || order.refundedAt) {
+      return { ok: false, error: 'This order has already been refunded.' }
+    }
+
+    const orderSource = String(order?.orderSource || order?.source || '').toLowerCase()
+    const isKotOrUnbilled = orderSource.includes('kot') || order?.status === 'draft'
+    if (isKotOrUnbilled) {
+      return { ok: false, error: 'KOT/draft orders cannot be refunded. Delete the order instead.' }
+    }
+
+    const refundAmount = Number(order.paidAmount || order.total || 0)
+    if (refundAmount <= 0) {
+      return { ok: false, error: 'No paid amount to refund on this order.' }
+    }
+
+    try {
+      const refundId = `refund_${id}_${Date.now()}`
+      const orderRef = doc(db, workspaceCollectionPath(workspaceId, 'posOrders'), id)
+      const refundTxnRef = doc(db, workspaceCollectionPath(workspaceId, 'accountTransactions'), `refund-pos-${id}`)
+      const customerRef = order.customerId ? doc(db, workspaceCollectionPath(workspaceId, 'customers'), order.customerId) : null
+      const refundItems = (order.items || []).map((item) => ({
+        productId: item.productId,
+        quantity: item.quantity,
+        productName: item.productName || item.name || '',
+        sku: item.sku || '',
+      }))
+
+      await runTransaction(db, async (txn) => {
+        // ── Refund transaction duplicate check (idempotency) ──
+        const existingTxn = await txn.get(refundTxnRef)
+        if (existingTxn.exists()) {
+          throw new Error('Refund transaction already recorded for this order.')
+        }
+
+        // ── Order duplicate check ──
+        const orderSnap = await txn.get(orderRef)
+        if (!orderSnap.exists()) throw new Error('Order not found.')
+        const currentOrder = orderSnap.data()
+        if (currentOrder.refundStatus === 'refunded' || currentOrder.refundedAt) {
+          throw new Error('This order has already been refunded.')
+        }
+
+        // ── Mark order as refunded ──
+        txn.update(orderRef, {
+          refundStatus: 'refunded',
+          refundedAt: serverTimestamp(),
+          refundedBy: userId,
+          refundAmount,
+          refundId,
+          refundNote: `Refund — ${refundAmount} refunded`,
+          status: 'refunded',
+          paymentStatus: 'refunded',
+          updatedAt: serverTimestamp(),
+        })
+
+        // ── Reverse customer ledger ──
+        if (customerRef && order.customerId) {
+          const cSnap = await txn.get(customerRef)
+          if (cSnap.exists()) {
+            const customer = cSnap.data()
+            txn.update(customerRef, {
+              lifetimeSpend: Math.max(0, Number(customer.lifetimeSpend || 0) - refundAmount),
+              posOrdersCount: Math.max(0, Number(customer.posOrdersCount || 0) - 1),
+              updatedAt: serverTimestamp(),
+            })
+          }
+        }
+
+        // ── Create refund accountTransaction (outflow) ──
+        txn.set(refundTxnRef, {
+          transactionId: refundId,
+          type: 'refund',
+          source: 'pos_refund',
+          amount: refundAmount,
+          currency: order.currency || 'PKR',
+          method: order.paymentMethod || 'Cash',
+          status: 'approved',
+          approvalStatus: 'approved',
+          title: `POS refund — ${order.orderNumber || id}`,
+          description: `Refund for ${order.customerName || 'Walk-in Customer'} — ${order.orderNumber || id}`,
+          relatedId: id,
+          orderId: id,
+          orderNumber: order.orderNumber || '',
+          customerName: order.customerName || '',
+          createdBy: userId,
+          approvedBy: userId,
+          approvedAt: serverTimestamp(),
+          ownerId: workspaceId,
+          userId: workspaceId,
+          workspaceId,
+          businessType: effectiveBusinessType,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          metadata: {
+            oldValue: { status: order.status, paymentStatus: order.paymentStatus },
+            newValue: { status: 'refunded', paymentStatus: 'refunded', refundAmount },
+          },
+        })
+      })
+
+      // ── Restore inventory (duplicate-protected inside restoreInventoryItems) ──
+      if (refundItems.length) {
+        const restoreRs = await restoreInventoryItems({
+          db,
+          workspaceId,
+          businessType: effectiveBusinessType,
+          userId,
+          items: refundItems,
+          referenceId: id,
+          reference: order.orderNumber || id,
+        })
+        if (!restoreRs.ok) {
+          // Inventory restore failed but refund is recorded — log but don't fail
+          console.warn('[POS Refund] inventory restore had errors', restoreRs.errors)
+        }
+      }
+
+      // ── Optimistic UI update ──
+      setOrders((current) =>
+        current.map((o) =>
+          o.id === id
+            ? {
+                ...o,
+                refundStatus: 'refunded',
+                refundedAt: new Date().toISOString(),
+                refundedBy: userId,
+                refundAmount,
+                refundId,
+                status: 'refunded' ,
+                paymentStatus: 'refunded',
+              }
+            : o,
+        ),
+      )
+
+      // ── Activity log ──
+      await logActivity({
+        workspaceId,
+        userId,
+        businessType: effectiveBusinessType,
+        ...userActivityInfo(userDoc, firebaseUser),
+        action: 'POS refund',
+        module: 'Retail POS',
+        description: `${order.orderNumber || id} was refunded (${refundAmount} ${order.currency || 'PKR'}).`,
+        targetId: id,
+        targetName: order.orderNumber || id,
+        metadata: { refundAmount, itemCount: refundItems.length },
+      }).catch(() => {})
+
+      return { ok: true, refundAmount }
+    } catch (e) {
+      return { ok: false, error: clientSafeMessage(e, 'Unable to refund order.') }
+    }
+  }, [access, db, effectiveBusinessType, firebaseUser, orders, userDoc, userId, workspaceId])
 
   return useMemo(() => ({
     orders,
@@ -433,5 +629,6 @@ export function usePosOrders(options = {}) {
     error,
     createOrder,
     deleteOrder,
-  }), [orders, loading, error, createOrder, deleteOrder])
+    refundOrder,
+  }), [orders, loading, error, createOrder, deleteOrder, refundOrder])
 }

@@ -3,6 +3,7 @@ import { arrayUnion, collection, doc, getDoc, getDocs, query, runTransaction, se
 import { db } from '../lib/firebase.js'
 import { createUserDoc, fetchWorkspaceCollectionPage, listenToWorkspaceCollection, patchUserDoc, removeUserDoc, workspaceCollectionPath } from '../lib/firestore.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
+import { restoreInventoryItems } from '../lib/inventoryRestore.js'
 import { useUser } from './useUser.js'
 import { clientSafeMessage } from '../utils/messages.js'
 import { useWorkspaceAccess } from './useWorkspaceAccess.js'
@@ -1695,6 +1696,27 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
             now,
             userId,
           })
+
+          // ── Inventory restore ──
+          const hadStockDeducted = invoice.inventoryAdjustedAt || invoice.stockAdjustedAt
+          let restoreOk = false
+          if (hadStockDeducted && !invoice.inventoryRestoredAt) {
+            const restoreRs = await restoreInventoryItems({
+              db,
+              workspaceId,
+              businessType,
+              userId,
+              items: invoice.items,
+              referenceId: id,
+              reference: invoice.invoiceNumber || id,
+            })
+            restoreOk = restoreRs.ok
+          }
+
+          const restoreFields = hadStockDeducted && !invoice.inventoryRestoredAt && restoreOk
+            ? { inventoryRestoredAt: serverTimestamp() }
+            : {}
+
           batch.update(doc(db, workspaceCollectionPath(workspaceId, 'invoices'), id), {
             ...(permissions.canEditAllInvoiceFields ? { status: 'sent' } : {}),
             paymentStatus: 'pending',
@@ -1713,6 +1735,7 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
               recordedBy: userId,
               recordedAt: new Date().toISOString(),
             }),
+            ...restoreFields,
             updatedAt: now,
           })
           await batch.commit()
@@ -1725,6 +1748,7 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
             paidAt: null,
             lastPaymentAt: null,
             lastPaymentDate: null,
+            ...(hadStockDeducted && !invoice.inventoryRestoredAt && restoreOk ? { inventoryRestoredAt: new Date().toISOString() } : {}),
           })
           await logActivity({
             workspaceId,
@@ -1760,6 +1784,163 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
           return { ok: true }
         } catch (e) {
           return { ok: false, error: clientSafeMessage(e, 'Unable to mark invoice as unpaid.') }
+        }
+      },
+      async refundInvoice(id) {
+        if (!permissions.canRecordPayment) return { ok: false, error: 'Only owner, admin, or accountant can refund invoices.' }
+        if (!userId || !workspaceId) return { ok: false, error: 'Please login first' }
+        if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now' }
+        const invoice = invoices.find((item) => item.id === id)
+        if (!invoice) return { ok: false, error: 'Invoice not found' }
+        if (getInvoiceStatus(invoice) !== 'paid') return { ok: false, error: 'Only paid invoices can be refunded.' }
+        if (invoice.refundStatus === 'refunded' || invoice.refundedAt) return { ok: false, error: 'This invoice has already been refunded.' }
+
+        const totalPaid = invoicePaidAmount(invoice)
+        if (totalPaid <= 0) return { ok: false, error: 'No paid amount to refund on this invoice.' }
+
+        try {
+          const now = serverTimestamp()
+          const refundTxnRef = doc(db, workspaceCollectionPath(workspaceId, 'accountTransactions'), `refund-invoice-${id}`)
+          const invoiceRef = doc(db, workspaceCollectionPath(workspaceId, 'invoices'), id)
+
+          await runTransaction(db, async (txn) => {
+            // ── Idempotency: refund transaction must not exist ──
+            const refundSnap = await txn.get(refundTxnRef)
+            if (refundSnap.exists()) throw new Error('Refund transaction already recorded for this invoice.')
+
+            const snap = await txn.get(invoiceRef)
+            if (!snap.exists()) throw new Error('Invoice not found.')
+            const current = snap.data()
+            if (current.refundStatus === 'refunded' || current.refundedAt) throw new Error('This invoice has already been refunded.')
+
+            // ── Cancel linked payments and transactions ──
+            const batch = writeBatch(db)
+            const reversed = await cancelInvoiceFinanceDocs({ batch, workspaceId, invoice, now, userId })
+            await batch.commit()
+            // note: the batch is committed here — remaining writes via txn
+
+            // ── Restore inventory ──
+            const hadStockDeducted = invoice.inventoryAdjustedAt || invoice.stockAdjustedAt
+            let restoreOk = false
+            if (hadStockDeducted && !invoice.inventoryRestoredAt) {
+              const restoreRs = await restoreInventoryItems({
+                db,
+                workspaceId,
+                businessType,
+                userId,
+                items: invoice.items,
+                referenceId: id,
+                reference: invoice.invoiceNumber || id,
+              })
+              restoreOk = restoreRs.ok
+            }
+
+            const restoreFields = hadStockDeducted && !invoice.inventoryRestoredAt && restoreOk
+              ? { inventoryRestoredAt: serverTimestamp() }
+              : {}
+
+            txn.update(invoiceRef, {
+              ...(permissions.canEditAllInvoiceFields ? { status: 'refunded' } : {}),
+              paymentStatus: 'refunded',
+              refundStatus: 'refunded',
+              refundedAt: serverTimestamp(),
+              refundedBy: userId,
+              refundAmount: totalPaid,
+              refundNote: `Full refund — ${totalPaid} ${invoice.currency || 'PKR'}`,
+              amountPaid: 0,
+              partialPaidAmount: 0,
+              balanceDue: 0,
+              paidAt: null,
+              lastPaymentAt: null,
+              lastPaymentDate: null,
+              paymentHistory: arrayUnion({
+                amount: totalPaid,
+                appliedAmount: 0,
+                status: 'refunded',
+                reversedPayments: reversed.payments,
+                reversedTransactions: reversed.transactions,
+                recordedBy: userId,
+                recordedAt: new Date().toISOString(),
+              }),
+              ...restoreFields,
+              updatedAt: now,
+            })
+
+            // ── Refund accountTransaction (outflow) for audit trail ──
+            txn.set(refundTxnRef, {
+              transactionId: `refund-invoice-${id}-${Date.now()}`,
+              type: 'refund',
+              source: 'invoice_refund',
+              amount: totalPaid,
+              currency: invoice.currency || 'PKR',
+              method: invoice.paymentMethod || 'Bank Transfer',
+              status: 'approved',
+              approvalStatus: 'approved',
+              title: `Invoice refund — ${invoice.invoiceNumber || id}`,
+              description: `Refund for ${invoice.customerName || 'Customer'} — ${invoice.invoiceNumber || id}`,
+              relatedId: id,
+              invoiceId: id,
+              invoiceNumber: invoice.invoiceNumber || '',
+              customerName: invoice.customerName || '',
+              createdBy: userId,
+              approvedBy: userId,
+              approvedAt: serverTimestamp(),
+              ownerId: workspaceId,
+              userId: workspaceId,
+              workspaceId,
+              businessType,
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp(),
+              metadata: {
+                oldValue: { status: invoice.status, paymentStatus: invoice.paymentStatus, amountPaid: totalPaid },
+                newValue: { status: 'refunded', paymentStatus: 'refunded', amountPaid: 0, refundAmount: totalPaid },
+              },
+            })
+          })
+
+          patchLoadedInvoice(id, {
+            ...(permissions.canEditAllInvoiceFields ? { status: 'refunded' } : {}),
+            paymentStatus: 'refunded',
+            refundStatus: 'refunded',
+            refundedAt: new Date().toISOString(),
+            refundedBy: userId,
+            refundAmount: totalPaid,
+            amountPaid: 0,
+            partialPaidAmount: 0,
+            balanceDue: 0,
+            paidAt: null,
+            lastPaymentAt: null,
+            lastPaymentDate: null,
+          })
+
+          await logActivity({
+            workspaceId,
+            userId,
+            businessType,
+            ...userActivityInfo(userDoc, firebaseUser),
+            action: 'Invoice refunded',
+            module: 'Invoices',
+            description: `${invoice.invoiceNumber || id} was refunded (${totalPaid} ${invoice.currency || 'PKR'}).`,
+            targetId: id,
+            targetName: invoice.invoiceNumber || id,
+            metadata: { refundAmount: totalPaid, currency: invoice.currency },
+          })
+          await createWorkspaceNotification({
+            workspaceId,
+            userId,
+            businessType,
+            type: 'Payments',
+            priority: 'high',
+            title: 'Invoice refunded',
+            message: `${invoice.invoiceNumber || id} was refunded (${totalPaid} ${invoice.currency || 'PKR'}).`,
+            relatedId: id,
+            route: '/app/invoices',
+            createdBy: userId,
+            createdByEmail: firebaseUser?.email || userDoc?.email || '',
+          })
+          return { ok: true, refundAmount: totalPaid }
+        } catch (e) {
+          return { ok: false, error: clientSafeMessage(e, 'Unable to refund invoice.') }
         }
       },
       async duplicateInvoice(id) {
@@ -1815,6 +1996,24 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
         if (!permissions.canDelete) return { ok: false, error: 'Only owner or admin can delete invoices.' }
         if (!workspaceId) return { ok: false, error: 'Please login first' }
         const invoice = invoices.find((item) => item.id === id)
+
+        // ── Restore inventory if stock was deducted and never restored ──
+        const hadStockDeducted = invoice?.inventoryAdjustedAt || invoice?.stockAdjustedAt
+        if (hadStockDeducted && !invoice?.inventoryRestoredAt) {
+          const restoreRs = await restoreInventoryItems({
+            db,
+            workspaceId,
+            businessType,
+            userId,
+            items: invoice.items,
+            referenceId: id,
+            reference: invoice.invoiceNumber || id,
+          })
+          if (!restoreRs.ok) {
+            return { ok: false, error: 'Unable to restore inventory before deletion. The invoice was not deleted.' }
+          }
+        }
+
         await removeUserDoc(workspaceId, 'invoices', id)
         removeLoadedInvoice(id)
         await createWorkspaceNotification({

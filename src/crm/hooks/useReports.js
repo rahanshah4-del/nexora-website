@@ -17,7 +17,7 @@ export const REPORT_SECTION_OPTIONS = [
 
 const REPORT_SECTION_COLLECTIONS = {
   overview: ['invoices', 'payments', 'expenses', 'accountTransactions', 'customers', 'leads'],
-  finance: ['invoices', 'payments', 'expenses', 'accountTransactions'],
+  finance: ['invoices', 'payments', 'expenses', 'accountTransactions', 'purchases', 'suppliers'],
   sales: ['leads', 'pipelines', 'customers'],
   activity: ['activityLogs', 'tasks', 'teamMembers', 'staff'],
   support: [SUPPORT_TICKET_COLLECTION],

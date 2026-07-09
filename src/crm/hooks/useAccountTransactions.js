@@ -56,6 +56,7 @@ function actionLabel(type, approved = false) {
   if (value === 'cash_payment') return approved ? 'Cash payment approved' : 'Cash payment made'
   if (value === 'expense') return approved ? 'Expense payment approved' : 'Expense payment requested'
   if (value === 'income') return 'Invoice payment added to wallet'
+  if (value === 'supplier_payment') return approved ? 'Supplier payment approved' : 'Supplier payment recorded'
   return approved ? 'Wallet transaction approved' : 'Wallet transaction requested'
 }
 

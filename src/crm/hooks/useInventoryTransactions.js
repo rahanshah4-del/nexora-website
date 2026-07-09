@@ -1,15 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
-import { arrayUnion, doc, getDoc } from 'firebase/firestore'
+import { arrayUnion, collection, doc, runTransaction, serverTimestamp } from 'firebase/firestore'
 import { db } from '../lib/firebase.js'
 import {
-  createUserDoc,
-  patchUserDoc,
   subscribeUserCollection,
   workspaceCollectionPath,
 } from '../lib/firestore.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 import { useUser } from './useUser.js'
 import { clientSafeMessage } from '../utils/messages.js'
+import { normalizeBusinessType } from '../data/moduleAccess.js'
 
 // Movement types and how each affects on-hand stock.
 //  +1 => increases stock, -1 => decreases stock,
@@ -18,7 +17,9 @@ export const MOVEMENT_TYPES = {
   stock_in: { label: 'Stock In', direction: 1, tone: 'success' },
   opening: { label: 'Opening Stock', direction: 1, tone: 'info' },
   returned: { label: 'Returned Stock', direction: 1, tone: 'info' },
+  sales_return: { label: 'Sales Return', direction: 1, tone: 'info' },
   purchase: { label: 'Purchase', direction: 1, tone: 'success' },
+  purchase_return: { label: 'Purchase Return', direction: -1, tone: 'warning' },
   stock_out: { label: 'Stock Out', direction: -1, tone: 'warning' },
   sale: { label: 'Sale', direction: -1, tone: 'purple' },
   damaged: { label: 'Damaged Stock', direction: -1, tone: 'danger' },
@@ -54,6 +55,7 @@ function normalizeTransaction(txn) {
     totalCost: toNumber(txn.totalCost),
     note: txn.note || '',
     reference: txn.reference || '',
+    referenceId: txn.referenceId || '',
     supplierId: txn.supplierId || '',
     supplierName: txn.supplierName || '',
     fromBranch: txn.fromBranch || '',
@@ -139,88 +141,128 @@ export function useInventoryTransactions(options = {}) {
         }
 
         try {
-          // Read current stock from the products collection (source of truth).
           const productRef = doc(db, workspaceCollectionPath(workspaceId, 'products'), productId)
-          const snap = await getDoc(productRef)
-          if (!snap.exists()) return { ok: false, error: 'Product not found' }
-          const product = snap.data()
-          const previousQuantity = toNumber(product.stockQuantity ?? product.stock, 0)
+          const referenceId = String(input?.referenceId || '').trim()
 
-          let newQuantity = previousQuantity
-          if (config.direction === 1) newQuantity = previousQuantity + quantity
-          else if (config.direction === -1) newQuantity = Math.max(0, previousQuantity - quantity)
-          else if (config.direction === 'set') newQuantity = Math.max(0, toNumber(input?.quantity))
-          // 'none' (transfer) leaves on-hand stock unchanged.
+          // Deterministic ledger doc ID for purchase movements — enables atomic
+          // duplicate detection. All other movements use a random ID as before.
+          const ledgerId = referenceId && type === 'purchase'
+            ? `purchase_${referenceId}_${productId}`
+            : doc(collection(db, workspaceCollectionPath(workspaceId, 'inventoryTransactions'))).id
+          const ledgerRef = doc(db, workspaceCollectionPath(workspaceId, 'inventoryTransactions'), ledgerId)
 
-          const delta = newQuantity - previousQuantity
-          const movementQty = config.direction === 'set' ? Math.abs(delta) : quantity
-          const unitCost = toNumber(input?.unitCost, toNumber(product.costPrice))
-          const productName = product.name || input?.productName || 'Product'
-          const sku = product.sku || input?.sku || ''
+          const now = new Date().toISOString()
+          const normalizedBT = normalizeBusinessType(businessType)
 
-          // 1) Update product stock + append to its stock history (skip when neutral).
-          if (config.direction !== 'none') {
-            await patchUserDoc(
+          const { newQuantity, movementQty, unitCost, productName, sku, previousQuantity, delta, alreadyExists } =
+            await runTransaction(db, async (txn) => {
+              // ── Atomic duplicate check for purchase movements ──
+              if (type === 'purchase' && referenceId) {
+                const dupSnap = await txn.get(ledgerRef)
+                if (dupSnap.exists()) {
+                  return { alreadyExists: true, newQuantity: 0, movementQty: 0, unitCost: 0, productName: '', sku: '', previousQuantity: 0, delta: 0 }
+                }
+              }
+
+              const snap = await txn.get(productRef)
+              if (!snap.exists()) throw new Error('Product not found')
+              const product = snap.data()
+              const prevQty = toNumber(product.stockQuantity ?? product.stock, 0)
+
+              let newQty = prevQty
+              if (config.direction === 1) newQty = prevQty + quantity
+              else if (config.direction === -1) {
+                if (prevQty < quantity)
+                  throw new Error(
+                    `Insufficient stock. Available: ${prevQty}, requested: ${quantity}`,
+                  )
+                newQty = prevQty - quantity
+              } else if (config.direction === 'set') newQty = toNumber(input?.quantity)
+              // 'none' (transfer) leaves on-hand stock unchanged.
+
+              const d = newQty - prevQty
+              const movQty = config.direction === 'set' ? Math.abs(d) : quantity
+              const uCost = toNumber(input?.unitCost, toNumber(product.costPrice))
+              const pName = product.name || input?.productName || 'Product'
+              const s = product.sku || input?.sku || ''
+
+              if (config.direction !== 'none') {
+                txn.update(productRef, {
+                  stockQuantity: newQty,
+                  stockHistory: arrayUnion({
+                    type,
+                    quantity: movQty,
+                    previousQuantity: prevQty,
+                    newQuantity: newQty,
+                    delta: d,
+                    note: String(input?.note || movementLabel(type)),
+                    createdAt: now,
+                    createdBy: userId,
+                  }),
+                  ownerId: workspaceId,
+                  userId: workspaceId,
+                  workspaceId,
+                  businessType: normalizedBT,
+                  updatedAt: serverTimestamp(),
+                })
+              }
+
+              txn.set(ledgerRef, {
+                type,
+                productId,
+                productName: pName,
+                sku: s,
+                quantity: movQty,
+                delta: d,
+                previousQuantity: prevQty,
+                newQuantity: newQty,
+                unitCost: uCost,
+                totalCost: uCost * movQty,
+                note: String(input?.note || ''),
+                reference: String(input?.reference || ''),
+                referenceId,
+                supplierId: String(input?.supplierId || ''),
+                supplierName: String(input?.supplierName || ''),
+                fromBranch: String(input?.fromBranch || ''),
+                toBranch: String(input?.toBranch || ''),
+                createdBy: userId,
+                ownerId: workspaceId,
+                userId: workspaceId,
+                workspaceId,
+                businessType: normalizedBT,
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp(),
+              })
+
+              return {
+                newQuantity: newQty,
+                movementQty: movQty,
+                unitCost: uCost,
+                productName: pName,
+                sku: s,
+                previousQuantity: prevQty,
+                delta: d,
+                alreadyExists: false,
+              }
+            })
+
+          // Skip activity log for duplicate — already logged on first receive.
+          if (!alreadyExists) {
+            await logActivity({
               workspaceId,
-              'products',
-              productId,
-              {
-                stockQuantity: newQuantity,
-                stockHistory: arrayUnion({
-                  type,
-                  quantity: movementQty,
-                  previousQuantity,
-                  newQuantity,
-                  delta,
-                  note: String(input?.note || movementLabel(type)),
-                  createdAt: new Date().toISOString(),
-                  createdBy: userId,
-                }),
-              },
-              { businessType },
-            )
+              userId,
+              businessType,
+              ...userActivityInfo(userDoc, firebaseUser),
+              action: `Stock ${movementLabel(type)}`,
+              module: 'Inventory',
+              description: `${movementLabel(type)} of ${movementQty} for ${productName}.`,
+              targetId: productId,
+              targetName: productName,
+              metadata: { type, quantity: movementQty, previousQuantity, newQuantity },
+            })
           }
 
-          // 2) Write the immutable transaction ledger record.
-          const ref = await createUserDoc(
-            workspaceId,
-            'inventoryTransactions',
-            {
-              type,
-              productId,
-              productName,
-              sku,
-              quantity: movementQty,
-              delta,
-              previousQuantity,
-              newQuantity,
-              unitCost,
-              totalCost: unitCost * movementQty,
-              note: String(input?.note || ''),
-              reference: String(input?.reference || ''),
-              supplierId: String(input?.supplierId || ''),
-              supplierName: String(input?.supplierName || ''),
-              fromBranch: String(input?.fromBranch || ''),
-              toBranch: String(input?.toBranch || ''),
-              createdBy: userId,
-            },
-            { businessType },
-          )
-
-          await logActivity({
-            workspaceId,
-            userId,
-            businessType,
-            ...userActivityInfo(userDoc, firebaseUser),
-            action: `Stock ${movementLabel(type)}`,
-            module: 'Inventory',
-            description: `${movementLabel(type)} of ${movementQty} for ${productName}.`,
-            targetId: productId,
-            targetName: productName,
-            metadata: { type, quantity: movementQty, previousQuantity, newQuantity },
-          })
-
-          return { ok: true, id: ref.id, newQuantity }
+          return { ok: true, id: ledgerRef.id, newQuantity, alreadyExists }
         } catch (e) {
           return { ok: false, error: clientSafeMessage(e, 'Unable to record stock movement.') }
         }

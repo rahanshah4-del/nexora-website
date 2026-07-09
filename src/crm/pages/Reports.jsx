@@ -13,6 +13,7 @@ import {
   HiOutlineCheckCircle,
   HiOutlineCurrencyDollar,
   HiOutlineDocumentText,
+  HiOutlineExclamationTriangle,
   HiOutlineFire,
   HiOutlineKey,
   HiOutlinePrinter,
@@ -63,6 +64,14 @@ import { useInvoices } from '../hooks/useInvoices.js'
 import { useExpenses } from '../hooks/useExpenses.js'
 import { useContracts } from '../hooks/useContracts.js'
 import { useMaintenance } from '../hooks/useMaintenance.js'
+import {
+  calculateTotalPayables,
+  calculateSuppliersPayableSummary,
+  calculateWalletBalance,
+  calculateCashBalance,
+  calculateBankBalance,
+} from '../lib/financeCalculations.js'
+import { calculateSupplierBalance } from '../lib/financeCalculations.js'
 import { contractDisplayStatus, contractOutstandingBalance, contractStats, maintenanceBalanceDue, maintenanceStats } from '../lib/propertyCalculations.js'
 import { formatRestaurantCurrency } from '../lib/restaurantPosCalculations.js'
 import { buildRestaurantReport } from '../lib/restaurantReports.js'
@@ -446,7 +455,10 @@ function RetailPOSReports() {
 
   const retailReport = useMemo(() => {
     const inRange = (rows) => (Array.isArray(rows) ? rows.filter((row) => withinDateWindow(row, activeWindow)) : [])
-    const orders = inRange(posOrdersApi.orders)
+    const rawOrders = inRange(posOrdersApi.orders)
+    // Exclude refunded/cancelled/deleted from active financials
+    const orders = rawOrders.filter((o) => o.refundStatus !== 'refunded' && !o.refundedAt && o.status !== 'refunded' && o.paymentStatus !== 'refunded')
+    const refundedOrders = rawOrders.filter((o) => o.refundStatus === 'refunded' || o.refundedAt || o.status === 'refunded' || o.paymentStatus === 'refunded')
     const walletPayments = inRange(walletApi.payments)
     const expenses = inRange(reports.data.expenses)
     const customers = inRange(reports.data.customers)
@@ -490,14 +502,20 @@ function RetailPOSReports() {
     const walletSettled = walletPayments.reduce((sum, payment) => sum + safeNumber(payment.amount), 0)
     const cost = orders.reduce((sum, order) => sum + safeNumber(order.cost), 0)
     const profit = orders.reduce((sum, order) => sum + safeNumber(order.profit), 0)
+    const refundCount = refundedOrders.length
+    const refundTotal = refundedOrders.reduce((sum, o) => sum + safeNumber(o.refundAmount || o.paidAmount || o.total), 0)
     const expensesAmount = calculateApprovedExpenses(expenses)
 
     return {
       orders,
+      refundedOrders,
       walletPayments,
       customers,
       expenses,
       orderCount: orders.length,
+      orderCountIncRefunds: rawOrders.length,
+      refundCount,
+      refundTotal,
       settlementCount: walletPayments.length,
       itemCount,
       grossSales,
@@ -656,11 +674,16 @@ function RetailPOSReports() {
         </Card>
       ) : null}
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <MetricCard icon={HiOutlineReceiptPercent} label="Orders" value={retailReport.orderCount} helper={`${retailReport.itemCount} items sold`} tone="sky" />
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        <MetricCard icon={HiOutlineReceiptPercent} label="Orders" value={retailReport.orderCount} helper={`${retailReport.itemCount} items sold · ${retailReport.refundCount} refunded`} tone="sky" />
         <MetricCard icon={HiOutlineBanknotes} label="Cashflow" value={formatMoney(retailReport.collected + retailReport.walletSettled, filters.currency)} helper={`${retailReport.settlementCount} due settlements included`} tone="emerald" />
         <MetricCard icon={HiOutlineCalculator} label="Tax & Discount" value={formatMoney(retailReport.tax - retailReport.discount, filters.currency)} helper={`${formatMoney(retailReport.tax, filters.currency)} tax minus ${formatMoney(retailReport.discount, filters.currency)} discount`} tone="amber" />
         <MetricCard icon={HiOutlineChartPie} label="Cost / Profit" value={formatMoney(retailReport.profit, filters.currency)} helper={`${formatMoney(retailReport.cost, filters.currency)} product cost`} tone="violet" />
+        {retailReport.refundCount > 0 ? (
+          <MetricCard icon={HiOutlineDocumentText} label="Refunds" value={`-${formatMoney(retailReport.refundTotal, filters.currency)}`} helper={`${retailReport.refundCount} orders refunded`} tone="rose" />
+        ) : (
+          <MetricCard icon={HiOutlineDocumentText} label="Refunds" value="0" helper="No refunds this period" tone="default" />
+        )}
       </div>
 
       <div className="grid gap-5 xl:grid-cols-2">
@@ -737,7 +760,12 @@ function GenericReports() {
     const tickets = filtered(reports.data.supportTickets)
     const activityLogs = filtered(reports.data.activityLogs)
     const staff = filtered([...(reports.data.teamMembers || []), ...(reports.data.staff || [])])
-    const posOrders = filtered(posOrdersApi.orders)
+    const purchases = filtered(reports.data.purchases || [])
+    const suppliers = filtered(reports.data.suppliers || [])
+    const posOrdersRaw = filtered(posOrdersApi.orders)
+    // Exclude refunded/cancelled from active financial counts
+    const posOrders = posOrdersRaw.filter((o) => o.refundStatus !== 'refunded' && !o.refundedAt && o.status !== 'refunded' && o.paymentStatus !== 'refunded')
+    const posRefundedOrders = posOrdersRaw.filter((o) => o.refundStatus === 'refunded' || o.refundedAt || o.status === 'refunded' || o.paymentStatus === 'refunded')
     const posWalletPayments = filtered(posWalletPaymentsApi.payments)
 
     const paidInvoices = invoices.filter((invoice) => getInvoiceStatus(invoice) === 'paid')
@@ -756,7 +784,15 @@ function GenericReports() {
     const pipelineUsd = deals.reduce((sum, deal) => sum + dealValue(deal), 0)
     const customerSpendUsd = customers.reduce((sum, customer) => sum + safeNumber(customer.spendUsd ?? customer.spend ?? customer.totalSpendUsd), 0)
     const posSalesUsd = posOrders.reduce((sum, order) => sum + safeNumber(order.paidAmount), 0) + posWalletPayments.reduce((sum, payment) => sum + safeNumber(payment.amount), 0)
+    const posRefundTotal = posRefundedOrders.reduce((sum, o) => sum + safeNumber(o.refundAmount || o.paidAmount || o.total), 0)
+    const posNetSales = posSalesUsd - posRefundTotal
     const posProfitUsd = posOrders.reduce((sum, order) => sum + safeNumber(order.profit), 0)
+    const posCostUsd = posOrders.reduce((sum, order) => sum + safeNumber(order.cost), 0)
+
+    // Wallet / Cash / Bank balances from accountTransactions
+    const walletBalance = calculateWalletBalance({ invoices, payments, expenses, transactions })
+    const cashBalance = calculateCashBalance({ invoices, payments, expenses, transactions })
+    const bankBalance = calculateBankBalance(transactions)
 
     return {
       invoices,
@@ -788,7 +824,16 @@ function GenericReports() {
       pipelineUsd,
       customerSpendUsd,
       posSalesUsd,
+      posRefundTotal,
+      posNetSales,
       posProfitUsd,
+      posCostUsd,
+      posRefundedOrders,
+      purchases,
+      suppliers,
+      walletBalance,
+      cashBalance,
+      bankBalance,
       hasData:
         invoices.length ||
         payments.length ||
@@ -800,6 +845,8 @@ function GenericReports() {
         tickets.length ||
         activityLogs.length ||
         staff.length ||
+        purchases.length ||
+        suppliers.length ||
         posOrders.length ||
         posWalletPayments.length,
     }
@@ -838,6 +885,11 @@ function GenericReports() {
   const activityRows = reportData.activityLogs.slice(0, 8)
   const staffRows = reportData.staff.slice(0, 8)
   const ticketRows = reportData.tickets.slice(0, 8)
+  const totalPayables = useMemo(() => calculateTotalPayables(reportData.purchases || []), [reportData.purchases])
+  const supplierPayableRows = useMemo(
+    () => calculateSuppliersPayableSummary(reportData.suppliers || [], reportData.purchases || []),
+    [reportData.suppliers, reportData.purchases],
+  )
   const showFinanceSections = reportSection === 'overview' || reportSection === 'finance'
   const showSalesSections = reportSection === 'overview' || reportSection === 'sales'
   const showActivitySections = reportSection === 'activity'
@@ -1123,7 +1175,7 @@ function GenericReports() {
           </Card>
         ) : null}
 
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-${isRetailReport ? 5 : 4}">
           <MetricCard
             icon={HiOutlineCurrencyDollar}
             label={isRetailReport ? 'POS collection report' : 'Revenue report'}
@@ -1152,13 +1204,51 @@ function GenericReports() {
             helper={`${percent(reportData.paidInvoices.length, reportData.invoices.length)} paid - ${reportData.overdueInvoices.length} overdue`}
             tone="amber"
           />
+          {isRetailReport ? (
+            <MetricCard
+              icon={HiOutlineExclamationTriangle}
+              label="POS Refunds"
+              value={formatMoney(reportData.posRefundTotal, filters.currency)}
+              helper={`${reportData.posRefundedOrders.length} orders refunded · Net POS: ${formatMoney(reportData.posNetSales, filters.currency)}`}
+              tone="rose"
+            />
+          ) : null}
         </div>
+
+        {/* Wallet / Cash / Bank balance cards */}
+        {showFinanceSections ? (
+          <div className="grid gap-4 md:grid-cols-3">
+            <MetricCard
+              icon={HiOutlineBanknotes}
+              label="Wallet Balance"
+              value={formatMoney(reportData.walletBalance, filters.currency)}
+              helper="All revenue minus all outflows (expenses, bank transfers, cash withdrawals, supplier payments, refunds)"
+              tone="emerald"
+            />
+            <MetricCard
+              icon={HiOutlineBanknotes}
+              label="Cash Balance"
+              value={formatMoney(reportData.cashBalance, filters.currency)}
+              helper="Wallet balance plus bank transfers — what's physically in the cash drawer"
+              tone="sky"
+            />
+            <MetricCard
+              icon={HiOutlineBuildingStorefront}
+              label="Bank Balance"
+              value={formatMoney(reportData.bankBalance, filters.currency)}
+              helper="Total approved bank transfers (money moved out of wallet to bank)"
+              tone="violet"
+            />
+          </div>
+        ) : null}
 
         <div className="grid gap-5 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
           <ReportSection title="Executive summary" badge="Summary">
             <div className="grid gap-3 sm:grid-cols-2">
               <SummaryRow label="Lead pipeline" value={`${reportData.leads.length} leads / ${reportData.hotLeads.length} hot`} />
               {isRetailReport ? <SummaryRow label="POS collected" value={`${formatMoney(reportData.posSalesUsd, filters.currency)} / ${reportData.posOrders.length} orders`} /> : null}
+              {isRetailReport ? <SummaryRow label="POS refunds" value={formatMoney(reportData.posRefundTotal, filters.currency)} /> : null}
+              {isRetailReport ? <SummaryRow label="POS net sales" value={formatMoney(reportData.posNetSales, filters.currency)} /> : null}
               {isRetailReport ? <SummaryRow label="Wallet due settled" value={`${formatMoney(reportData.posWalletPayments.reduce((sum, payment) => sum + safeNumber(payment.amount), 0), filters.currency)} / ${reportData.posWalletPayments.length} payments`} /> : null}
               {isRetailReport ? <SummaryRow label="Invoice sale" value={formatMoney(reportData.totalRevenueUsd, filters.currency)} /> : null}
               {isRetailReport ? <SummaryRow label="POS profit" value={formatMoney(reportData.posProfitUsd, filters.currency)} /> : null}
@@ -1205,6 +1295,29 @@ function GenericReports() {
                 { key: 'category', label: 'Category', render: (row) => safeText(row.category, 'General') },
                 { key: 'approvalStatus', label: 'Status', render: (row) => safeText(row.approvalStatus || row.status, 'Pending') },
                 { key: 'amount', label: 'Amount', render: (row) => formatMoney(expenseValue(row), filters.currency) },
+              ]}
+            />
+          </ReportSection>
+        ) : null}
+
+        {showFinanceSections ? (
+          <ReportSection title="Supplier payables" badge="AP">
+            <div className="mb-4 grid gap-3 sm:grid-cols-4">
+              <SummaryRow label="Total purchases" value={formatMoney(totalPayables.totalPurchases, filters.currency)} />
+              <SummaryRow label="Total paid" value={formatMoney(totalPayables.totalPaid, filters.currency)} />
+              <SummaryRow label="Total due" value={formatMoney(totalPayables.totalDue, filters.currency)} />
+              <SummaryRow label="Status" value={`${totalPayables.unpaidCount} unpaid / ${totalPayables.partialCount} partial / ${totalPayables.paidCount} paid`} />
+            </div>
+            <DataTable
+              rows={supplierPayableRows}
+              empty="No supplier data yet."
+              columns={[
+                { key: 'name', label: 'Supplier', render: (row) => row.name },
+                { key: 'totalPurchases', label: 'Purchases', render: (row) => formatMoney(row.totalPurchases, filters.currency) },
+                { key: 'totalPaid', label: 'Paid', render: (row) => formatMoney(row.totalPaid, filters.currency) },
+                { key: 'balanceDue', label: 'Balance due', render: (row) => (
+                  <span className={row.balanceDue > 0 ? 'font-semibold text-rose-600' : ''}>{formatMoney(row.balanceDue, filters.currency)}</span>
+                ) },
               ]}
             />
           </ReportSection>

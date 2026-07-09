@@ -1,11 +1,12 @@
-import { useEffect, useMemo, useState } from 'react'
-import { collection, doc, serverTimestamp, writeBatch } from 'firebase/firestore'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { arrayUnion, collection, doc, getDocs, limit, query, runTransaction, serverTimestamp, where, writeBatch } from 'firebase/firestore'
 import { db } from '../lib/firebase.js'
 import { createUserDoc, patchUserDoc, removeUserDoc, subscribeUserCollection, workspaceCollectionPath } from '../lib/firestore.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 import { useUser } from './useUser.js'
 import { clientSafeMessage } from '../utils/messages.js'
 import { createWorkspaceNotification } from '../lib/notifications.js'
+import { normalizeBusinessType } from '../data/moduleAccess.js'
 
 function normalizeProduct(product) {
   return {
@@ -64,6 +65,35 @@ function sanitizeProduct(payload) {
   }
 }
 
+/**
+ * Check whether sku or barcode already exists on another product in the same
+ * workspace + businessType scope.
+ * @returns {string|undefined} error message, or undefined if both are clear.
+ */
+async function checkProductUniqueness({ workspaceId, businessType, sku, barcode, excludeId }) {
+  const productColl = collection(db, workspaceCollectionPath(workspaceId, 'products'))
+
+  if (sku) {
+    const skuQuery = excludeId
+      ? query(productColl, where('sku', '==', sku), where('businessType', '==', businessType), limit(2))
+      : query(productColl, where('sku', '==', sku), where('businessType', '==', businessType), limit(1))
+    const skuSnap = await getDocs(skuQuery)
+    const skuMatch = skuSnap.docs.find((d) => d.id !== excludeId)
+    if (skuMatch) return `SKU "${sku}" is already used by another product`
+  }
+
+  if (barcode) {
+    const barcodeQuery = excludeId
+      ? query(productColl, where('barcode', '==', barcode), where('businessType', '==', businessType), limit(2))
+      : query(productColl, where('barcode', '==', barcode), where('businessType', '==', businessType), limit(1))
+    const barcodeSnap = await getDocs(barcodeQuery)
+    const barcodeMatch = barcodeSnap.docs.find((d) => d.id !== excludeId)
+    if (barcodeMatch) return `Barcode "${barcode}" is already used by another product`
+  }
+
+  return undefined
+}
+
 export function useProducts(options = {}) {
   const { userId, workspaceId, businessType, userDoc, firebaseUser } = useUser()
   const enabled = options.enabled !== false
@@ -72,6 +102,7 @@ export function useProducts(options = {}) {
   const [loading, setLoading] = useState(true)
   const [source, setSource] = useState(db ? 'firestore' : 'none')
   const [error, setError] = useState('')
+  const submittingRef = useRef(false)
 
   useEffect(() => {
     if (!enabled) {
@@ -144,7 +175,23 @@ export function useProducts(options = {}) {
         const product = sanitizeProduct(payload)
         if (!product.name) return { ok: false, error: 'Product name is required' }
         if (!product.sku) return { ok: false, error: 'SKU is required' }
+
+        // Double-click guard
+        if (submittingRef.current) {
+          return { ok: false, error: 'Product is already being saved. Please wait.' }
+        }
+        submittingRef.current = true
+
         try {
+          // SKU / barcode uniqueness
+          const uniquenessError = await checkProductUniqueness({
+            workspaceId,
+            businessType,
+            sku: product.sku,
+            barcode: product.barcode,
+          })
+          if (uniquenessError) return { ok: false, error: uniquenessError }
+
           const ref = await createUserDoc(workspaceId, 'products', {
             ...product,
             stockHistory: [
@@ -186,6 +233,8 @@ export function useProducts(options = {}) {
           return { ok: true }
         } catch (e) {
           return { ok: false, error: clientSafeMessage(e, 'Unable to create product.') }
+        } finally {
+          submittingRef.current = false
         }
       },
       async loadSeedProducts(seedProducts = [], seedSource = '') {
@@ -304,29 +353,99 @@ export function useProducts(options = {}) {
         const product = sanitizeProduct(payload)
         if (!product.name) return { ok: false, error: 'Product name is required' }
         if (!product.sku) return { ok: false, error: 'SKU is required' }
+
+        // Double-click guard
+        if (submittingRef.current) {
+          return { ok: false, error: 'Product is already being saved. Please wait.' }
+        }
+        submittingRef.current = true
+
         try {
-          const current = products.find((item) => item.id === id)
-          const stockChanged = current && Number(current.stockQuantity) !== Number(product.stockQuantity)
-          await patchUserDoc(workspaceId, 'products', id, {
-            ...product,
-            updatedAt: serverTimestamp(),
-            ...(stockChanged
-              ? {
-                  stockHistory: [
-                    ...(current.stockHistory || []),
-                    {
+          // SKU / barcode uniqueness (ignore current product)
+          const uniquenessError = await checkProductUniqueness({
+            workspaceId,
+            businessType,
+            sku: product.sku,
+            barcode: product.barcode,
+            excludeId: id,
+          })
+          if (uniquenessError) return { ok: false, error: uniquenessError }
+
+          const newQty = Number(product.stockQuantity) || 0
+
+          // ── Always read fresh stock from Firestore before deciding ──
+          // We use runTransaction to atomically read the current stock,
+          // compare with the submitted value, and update both the product
+          // and the inventoryTransactions ledger. This eliminates stale
+          // local-state races when another tab/user has changed stock.
+          const productRef = doc(db, workspaceCollectionPath(workspaceId, 'products'), id)
+          const ledgerRef = doc(collection(db, workspaceCollectionPath(workspaceId, 'inventoryTransactions')))
+          const normalizedBT = normalizeBusinessType(businessType)
+          const now = new Date().toISOString()
+
+          await runTransaction(db, async (txn) => {
+            const snap = await txn.get(productRef)
+            if (!snap.exists()) throw new Error('Product not found')
+            const freshPrev = Number(snap.data().stockQuantity ?? snap.data().stock ?? 0)
+            const delta = newQty - freshPrev
+            const stockChanged = delta !== 0
+
+            txn.update(productRef, {
+              ...product,
+              stockQuantity: newQty,
+              ...(stockChanged
+                ? {
+                    stockHistory: arrayUnion({
                       type: 'manual_adjustment',
-                      previousQuantity: Number(current.stockQuantity) || 0,
-                      quantity: product.stockQuantity,
-                      delta: product.stockQuantity - (Number(current.stockQuantity) || 0),
+                      previousQuantity: freshPrev,
+                      quantity: newQty,
+                      delta,
                       note: 'Product workspace update',
-                      createdAt: new Date().toISOString(),
+                      createdAt: now,
                       createdBy: userId,
-                    },
-                  ],
-                }
-              : {}),
-          }, { businessType })
+                    }),
+                  }
+                : {}),
+              ownerId: workspaceId,
+              userId: workspaceId,
+              workspaceId,
+              businessType: normalizedBT,
+              updatedAt: serverTimestamp(),
+            })
+
+            // ── Write ledger entry only when stock actually changes ──
+            if (stockChanged) {
+              txn.set(ledgerRef, {
+                type: 'adjustment',
+                productId: id,
+                productName: product.name,
+                sku: product.sku,
+                quantity: newQty,
+                delta,
+                previousQuantity: freshPrev,
+                newQuantity: newQty,
+                unitCost: 0,
+                totalCost: 0,
+                note: `Manual adjustment from ${freshPrev} to ${newQty}`,
+                reference: '',
+                referenceId: '',
+                supplierId: '',
+                supplierName: '',
+                fromBranch: '',
+                toBranch: '',
+                createdBy: userId,
+                ownerId: workspaceId,
+                userId: workspaceId,
+                workspaceId,
+                businessType: normalizedBT,
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp(),
+              })
+            }
+          })
+
+          const currentProduct = products.find((item) => item.id === id)
+          const stockChangedHint = newQty !== (currentProduct ? Number(currentProduct.stockQuantity) || 0 : 0)
           await logActivity({
             workspaceId,
             userId,
@@ -344,8 +463,8 @@ export function useProducts(options = {}) {
             userId,
             businessType,
             type: 'Inventory',
-            priority: stockChanged && product.stockQuantity <= product.minStockAlert ? 'high' : 'low',
-            title: stockChanged ? 'Product stock updated' : 'Product updated',
+            priority: stockChangedHint && product.stockQuantity <= product.minStockAlert ? 'high' : 'low',
+            title: stockChangedHint ? 'Product stock updated' : 'Product updated',
             message: `${product.name} was updated.`,
             relatedId: id,
             route: '/app/products',
@@ -355,6 +474,8 @@ export function useProducts(options = {}) {
           return { ok: true }
         } catch (e) {
           return { ok: false, error: clientSafeMessage(e, 'Unable to update product.') }
+        } finally {
+          submittingRef.current = false
         }
       },
       async deleteProduct(id) {
@@ -404,6 +525,7 @@ export function useProducts(options = {}) {
           ...original,
           name: `${original.name} Copy`,
           sku: original.sku ? `${original.sku}-COPY` : '',
+          stockQuantity: 0,
           status: 'active',
         })
         try {
@@ -412,7 +534,7 @@ export function useProducts(options = {}) {
             stockHistory: [
               {
                 type: 'duplicated',
-                quantity: product.stockQuantity,
+                quantity: 0,
                 note: `Duplicated from ${original.name}`,
                 createdAt: new Date().toISOString(),
                 createdBy: userId,

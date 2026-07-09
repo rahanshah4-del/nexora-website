@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   HiOutlineArrowDownTray,
   HiOutlineArrowPath,
@@ -8,6 +8,7 @@ import {
   HiOutlineCircleStack,
   HiOutlineClipboardDocumentList,
   HiOutlineCube,
+  HiOutlineCurrencyDollar,
   HiOutlineExclamationTriangle,
   HiOutlineMagnifyingGlass,
   HiOutlinePencilSquare,
@@ -35,6 +36,12 @@ import { PAKISTAN_SHOP_SEED_SOURCE, pakistanShopProducts } from '../data/pakista
 import { useCategories } from '../hooks/useCategories.js'
 import { useSuppliers } from '../hooks/useSuppliers.js'
 import { usePurchases } from '../hooks/usePurchases.js'
+import { useAccountTransactions } from '../hooks/useAccountTransactions.js'
+import {
+  calculatePurchasePaymentStatus,
+  calculateSuppliersPayableSummary,
+  calculateTotalPayables,
+} from '../lib/financeCalculations.js'
 import {
   MOVEMENT_TYPES,
   movementLabel,
@@ -155,6 +162,98 @@ function SimpleTable({ columns, rows, empty }) {
   )
 }
 
+function ReturnForm({ open, purchase, onClose, onReturn, currency }) {
+  const [quantities, setQuantities] = useState({})
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (open && purchase?.items) {
+      const initial = {}
+      purchase.items.forEach((item) => { initial[item.productId] = 0 })
+      setQuantities(initial)
+      setSaving(false)
+      setError('')
+    }
+  }, [open, purchase])
+
+  if (!open || !purchase) return null
+
+  const items = purchase.items || []
+  const returnItems = items
+    .filter((item) => toNumber(quantities[item.productId], 0) > 0)
+    .map((item) => ({
+      productId: item.productId,
+      productName: item.productName || item.name || '',
+      sku: item.sku || '',
+      quantity: toNumber(quantities[item.productId], 0),
+    }))
+  const totalReturnValue = returnItems.reduce((sum, ri) => {
+    const found = items.find((i) => i.productId === ri.productId)
+    return sum + ri.quantity * toNumber(found?.unitCost, 0)
+  }, 0)
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    if (!returnItems.length) { setError('Enter return qty for at least one item'); return }
+    setSaving(true)
+    setError('')
+    const result = await onReturn(purchase.id, returnItems)
+    setSaving(false)
+    if (result?.ok) {
+      onClose()
+    } else {
+      setError(result?.error || 'Return failed')
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-[70] grid place-items-center bg-slate-950/45 p-3 backdrop-blur-sm" onClick={onClose}>
+      <div className="w-full max-w-lg rounded-2xl bg-white p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
+        <p className="text-base font-semibold text-slate-950">Return to Supplier</p>
+        <p className="mt-1 text-sm text-slate-500">{purchase.reference || purchase.id}</p>
+
+        <form onSubmit={handleSubmit} className="mt-4 space-y-3">
+          {items.map((item) => (
+            <div key={item.productId} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold text-slate-900">{item.productName || item.productId}</p>
+                <p className="text-xs text-slate-500">Received: {toNumber(item.quantity)} · Unit cost: {formatCurrency(toNumber(item.unitCost), currency)}</p>
+              </div>
+              <Input
+                className="h-9 w-20 rounded-xl text-center"
+                inputMode="numeric"
+                value={quantities[item.productId] ?? 0}
+                onChange={(e) => {
+                  const val = Math.min(Math.max(0, Number(e.target.value || 0)), toNumber(item.quantity))
+                  setQuantities((prev) => ({ ...prev, [item.productId]: val }))
+                }}
+              />
+            </div>
+          ))}
+
+          {totalReturnValue > 0 ? (
+            <p className="text-right text-sm font-semibold text-slate-700">
+              Return value: {formatCurrency(totalReturnValue, currency)}
+            </p>
+          ) : null}
+
+          {error ? <p className="text-xs font-semibold text-rose-600">{error}</p> : null}
+
+          <div className="flex gap-2">
+            <Button className="rounded-xl" type="submit" disabled={saving}>
+              {saving ? 'Returning...' : 'Return Items'}
+            </Button>
+            <Button variant="subtle" className="rounded-xl" type="button" onClick={onClose}>
+              Cancel
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 function IconAction({ label, danger, onClick, children }) {
   return (
     <button
@@ -172,6 +271,78 @@ function IconAction({ label, danger, onClick, children }) {
   )
 }
 
+function PaymentForm({ open, purchase, onClose, onPay, currency }) {
+  const [amount, setAmount] = useState('')
+  const [method, setMethod] = useState('Cash')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (open) {
+      setAmount(String(purchase?.balanceDue || purchase?.total || ''))
+      setMethod('Cash')
+      setSaving(false)
+      setError('')
+    }
+  }, [open, purchase])
+
+  if (!open || !purchase) return null
+
+  const due = toNumber(purchase.balanceDue, toNumber(purchase.total))
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    const paymentAmount = toNumber(amount, 0)
+    if (paymentAmount <= 0) { setError('Enter a valid amount'); return }
+    setSaving(true)
+    setError('')
+    const result = await onPay(purchase.id, paymentAmount, { paymentMethod: method })
+    setSaving(false)
+    if (result?.ok) {
+      onClose()
+    } else {
+      setError(result?.error || 'Payment failed')
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-[70] grid place-items-center bg-slate-950/45 p-3 backdrop-blur-sm" onClick={onClose}>
+      <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
+        <p className="text-base font-semibold text-slate-950">Record Payment</p>
+        <p className="mt-1 text-sm text-slate-500">{purchase.reference || purchase.id} — Due: {formatCurrency(due, currency)}</p>
+
+        <form onSubmit={handleSubmit} className="mt-4 space-y-3">
+          <div>
+            <p className="text-xs font-semibold text-slate-600">Amount *</p>
+            <Input className="mt-1 h-9 rounded-xl" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-slate-600">Payment Method</p>
+            <Select className="mt-1 h-9 rounded-xl" value={method} onChange={(e) => setMethod(e.target.value)}>
+              <option>Cash</option>
+              <option>Bank Transfer</option>
+              <option>Cheque</option>
+              <option>JazzCash</option>
+              <option>EasyPaisa</option>
+            </Select>
+          </div>
+
+          {error ? <p className="text-xs font-semibold text-rose-600">{error}</p> : null}
+
+          <div className="flex gap-2">
+            <Button className="rounded-xl" type="submit" disabled={saving}>
+              {saving ? 'Recording...' : 'Record Payment'}
+            </Button>
+            <Button variant="subtle" className="rounded-xl" type="button" onClick={onClose}>
+              Cancel
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 export default function Inventory() {
   console.log('[Inventory Route] render start')
   const [tab, setTab] = useState('dashboard')
@@ -182,6 +353,7 @@ export default function Inventory() {
   const suppliersApi = useSuppliers()
   const purchasesApi = usePurchases()
   const transactionsApi = useInventoryTransactions()
+  const accountApi = useAccountTransactions({ enabled: true, limitCount: 50 })
 
   const { products } = productsApi
   const stats = useInventoryStats(products, transactionsApi.transactions)
@@ -196,6 +368,8 @@ export default function Inventory() {
   const [categoryModal, setCategoryModal] = useState({ open: false, category: null })
   const [supplierModal, setSupplierModal] = useState({ open: false, supplier: null })
   const [purchaseModal, setPurchaseModal] = useState({ open: false, purchase: null })
+  const [paymentModal, setPaymentModal] = useState({ open: false, purchase: null })
+  const [returnModal, setReturnModal] = useState({ open: false, purchase: null })
 
   const [productSearch, setProductSearch] = useState('')
   const [txnTypeFilter, setTxnTypeFilter] = useState('all')
@@ -393,6 +567,8 @@ export default function Inventory() {
               await handleResult(purchasesApi.receivePurchase(purchase.id, transactionsApi.recordMovement), 'Stock received')
             }
           }}
+          onPay={(purchase) => setPaymentModal({ open: true, purchase })}
+          onReturn={(purchase) => setReturnModal({ open: true, purchase })}
           onDelete={async (purchase) => {
             if (await confirmAction({ title: 'Delete purchase order?', message: `Delete ${purchase.reference || 'this purchase order'}? This cannot be undone.`, confirmLabel: 'Delete Order' })) {
               handleResult(purchasesApi.deletePurchase(purchase.id), 'Purchase deleted')
@@ -480,6 +656,29 @@ export default function Inventory() {
             setPurchaseModal({ open: false, purchase: null })
           }
           return result
+        }}
+      />
+
+      <PaymentForm
+        open={paymentModal.open}
+        purchase={paymentModal.purchase}
+        currency={currency}
+        onClose={() => setPaymentModal({ open: false, purchase: null })}
+        onPay={async (id, amount, opts) => {
+          return purchasesApi.recordPurchasePayment(id, amount, {
+            ...opts,
+            createTransaction: accountApi.createTransaction,
+          })
+        }}
+      />
+
+      <ReturnForm
+        open={returnModal.open}
+        purchase={returnModal.purchase}
+        currency={currency}
+        onClose={() => setReturnModal({ open: false, purchase: null })}
+        onReturn={async (id, returnItems) => {
+          return purchasesApi.returnPurchaseItems(id, returnItems, transactionsApi.recordMovement)
         }}
       />
     </div>
@@ -723,15 +922,17 @@ function CategoriesTab({ categories, products, onAdd, onEdit, onDelete }) {
   )
 }
 
+function paymentStatusTone(status) {
+  if (status === 'paid') return 'success'
+  if (status === 'partial') return 'warning'
+  return 'default'
+}
+
 function SuppliersTab({ suppliers, purchases, currency, onAdd, onEdit, onDelete }) {
-  const purchaseTotals = useMemo(() => {
-    const map = {}
-    purchases.forEach((purchase) => {
-      if (!purchase.supplierId) return
-      map[purchase.supplierId] = (map[purchase.supplierId] || 0) + toNumber(purchase.total)
-    })
-    return map
-  }, [purchases])
+  const supplierSummaries = useMemo(
+    () => calculateSuppliersPayableSummary(suppliers, purchases),
+    [suppliers, purchases],
+  )
 
   return (
     <Card className="p-4 sm:p-5">
@@ -746,22 +947,27 @@ function SuppliersTab({ suppliers, purchases, currency, onAdd, onEdit, onDelete 
           columns={[
             { key: 'name', header: 'Supplier', cell: (row) => (
               <div className="min-w-0">
-                <p className="truncate font-semibold text-slate-900 dark:text-white">{row.name}</p>
-                <p className="truncate text-xs text-slate-500">{row.company || row.email || '—'}</p>
+                <p className="truncate font-semibold text-slate-900 dark:text-white">{row.supplier.name}</p>
+                <p className="truncate text-xs text-slate-500">{row.supplier.company || row.supplier.email || '—'}</p>
               </div>
             ) },
-            { key: 'phone', header: 'Phone', cell: (row) => row.phone || '—' },
-            { key: 'purchases', header: 'Purchase total', cell: (row) => formatCurrency(purchaseTotals[row.id] || 0, currency) },
-            { key: 'openingBalance', header: 'Opening balance', cell: (row) => formatCurrency(row.openingBalance, currency) },
-            { key: 'status', header: 'Status', cell: (row) => <Badge variant={row.status === 'active' ? 'success' : 'default'}>{row.status}</Badge> },
+            { key: 'phone', header: 'Phone', cell: (row) => row.supplier.phone || '—' },
+            { key: 'purchases', header: 'Purchases', cell: (row) => formatCurrency(row.totalPurchases, currency) },
+            { key: 'paid', header: 'Paid', cell: (row) => formatCurrency(row.totalPaid, currency) },
+            { key: 'due', header: 'Balance Due', cell: (row) => (
+              <span className={row.totalDue > 0 ? 'font-semibold text-rose-600' : 'text-slate-600'}>
+                {formatCurrency(row.balanceDue, currency)}
+              </span>
+            ) },
+            { key: 'status', header: 'Status', cell: (row) => <Badge variant={row.supplier.status === 'active' ? 'success' : 'default'}>{row.supplier.status}</Badge> },
             { key: 'actions', header: '', cell: (row) => (
               <div className="flex items-center justify-end gap-1.5">
-                <IconAction label="Edit" onClick={() => onEdit(row)}><HiOutlinePencilSquare className="h-4 w-4" /></IconAction>
-                <IconAction label="Delete" danger onClick={() => onDelete(row)}><HiOutlineTrash className="h-4 w-4" /></IconAction>
+                <IconAction label="Edit" onClick={() => onEdit(row.supplier)}><HiOutlinePencilSquare className="h-4 w-4" /></IconAction>
+                <IconAction label="Delete" danger onClick={() => onDelete(row.supplier)}><HiOutlineTrash className="h-4 w-4" /></IconAction>
               </div>
             ) },
           ]}
-          rows={suppliers}
+          rows={supplierSummaries}
           empty="No suppliers yet."
         />
       ) : (
@@ -777,7 +983,7 @@ function purchaseStatusTone(status) {
   return 'warning'
 }
 
-function PurchasesTab({ purchases, currency, onAdd, onEdit, onReceive, onDelete }) {
+function PurchasesTab({ purchases, currency, onAdd, onEdit, onReceive, onPay, onReturn, onDelete }) {
   return (
     <Card className="p-4 sm:p-5">
       <div className="mb-4 flex items-center justify-between">
@@ -793,6 +999,12 @@ function PurchasesTab({ purchases, currency, onAdd, onEdit, onReceive, onDelete 
             { key: 'supplierName', header: 'Supplier', cell: (row) => row.supplierName || '—' },
             { key: 'items', header: 'Items', cell: (row) => row.items?.length || 0 },
             { key: 'total', header: 'Total', cell: (row) => formatCurrency(row.total, row.currency || currency) },
+            { key: 'paid', header: 'Paid', cell: (row) => formatCurrency(row.paidAmount || 0, row.currency || currency) },
+            { key: 'due', header: 'Due', cell: (row) => {
+              const due = row.balanceDue || row.total
+              return <span className={due > 0 ? 'font-semibold text-rose-600' : 'text-emerald-600'}>{formatCurrency(due, row.currency || currency)}</span>
+            } },
+            { key: 'paymentStatus', header: 'Payment', cell: (row) => <Badge variant={paymentStatusTone(row.paymentStatus || 'unpaid')}>{row.paymentStatus || 'unpaid'}</Badge> },
             { key: 'status', header: 'Status', cell: (row) => <Badge variant={purchaseStatusTone(row.status)} className="capitalize">{row.status}</Badge> },
             { key: 'createdAt', header: 'Created', cell: (row) => formatDate(row.createdAt) },
             { key: 'actions', header: '', cell: (row) => (
@@ -801,7 +1013,18 @@ function PurchasesTab({ purchases, currency, onAdd, onEdit, onReceive, onDelete 
                   <Button variant="subtle" className="h-8 rounded-lg px-2 text-xs" type="button" onClick={() => onReceive(row)}>
                     <HiOutlineArrowDownTray className="h-4 w-4" /> Receive
                   </Button>
-                ) : null}
+                ) : (
+                  <>
+                    {row.paymentStatus !== 'paid' ? (
+                      <Button variant="subtle" className="h-8 rounded-lg bg-emerald-50 px-2 text-xs text-emerald-700 hover:bg-emerald-100" type="button" onClick={() => onPay(row)}>
+                        <HiOutlineCurrencyDollar className="h-4 w-4" /> Pay
+                      </Button>
+                    ) : null}
+                    <Button variant="subtle" className="h-8 rounded-lg bg-amber-50 px-2 text-xs text-amber-700 hover:bg-amber-100" type="button" onClick={() => onReturn(row)}>
+                      <HiOutlineArrowPath className="h-4 w-4" /> Return
+                    </Button>
+                  </>
+                )}
                 <IconAction label="Edit" onClick={() => onEdit(row)}><HiOutlinePencilSquare className="h-4 w-4" /></IconAction>
                 <IconAction label="Delete" danger onClick={() => onDelete(row)}><HiOutlineTrash className="h-4 w-4" /></IconAction>
               </div>

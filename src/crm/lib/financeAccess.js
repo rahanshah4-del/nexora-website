@@ -36,5 +36,5 @@ export function canApproveFinance(role) {
 }
 
 export function outflowTransaction(type) {
-  return ['bank_transfer', 'cash_withdrawal', 'cash_payment', 'expense'].includes(String(type || '').toLowerCase())
+  return ['bank_transfer', 'cash_withdrawal', 'cash_payment', 'expense', 'supplier_payment', 'refund'].includes(String(type || '').toLowerCase())
 }
