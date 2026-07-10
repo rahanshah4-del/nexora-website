@@ -67,7 +67,7 @@ const statusTone = {
   cancelled: 'default',
 }
 
-function releaseRestaurantTable(tableId) {
+function releaseRestaurantTable(tableId, expectedOrderNumber = '') {
   if (typeof window === 'undefined' || !tableId) return
   try {
     const stored = window.localStorage.getItem(tablesKey())
@@ -76,8 +76,12 @@ function releaseRestaurantTable(tableId) {
     const nextFloors = floors.map((floor) => ({
       ...floor,
       tables: Array.isArray(floor.tables)
-        ? floor.tables.map((table) => (
-            table.id === tableId
+        ? floor.tables.map((table) => {
+            // Only release if the table's current order matches the expected one
+            if (table.id === tableId && expectedOrderNumber && table.orderNumber && table.orderNumber !== expectedOrderNumber) {
+              return table
+            }
+            return table.id === tableId
               ? {
                   ...table,
                   status: 'available',
@@ -89,7 +93,7 @@ function releaseRestaurantTable(tableId) {
                   customer: '',
                 }
               : table
-          ))
+          })
         : [],
     }))
     window.localStorage.setItem(tablesKey(), JSON.stringify(nextFloors))
@@ -101,7 +105,7 @@ function releaseRestaurantTable(tableId) {
 function occupyRestaurantTable(tableId, order) {
   if (typeof window === 'undefined' || !tableId) return
   try {
-    const stored = window.localStorage.getItem(restaurantTablesStorageKey)
+    const stored = window.localStorage.getItem(tablesKey())
     const floors = stored ? JSON.parse(stored) : []
     if (!Array.isArray(floors)) return
     const nextFloors = floors.map((floor) => ({
@@ -347,6 +351,18 @@ export default function RestaurantOrdersKotPage() {
 
   function saveEditedOrder() {
     if (!editTarget) return
+    const currentStatus = String(editTarget.orderStatus || '').toLowerCase()
+    const currentPayment = String(editTarget.paymentStatus || '').toLowerCase()
+    // ── Idempotency: cancelled orders cannot be re-opened ──
+    if (currentStatus === 'cancelled') {
+      setEditError('Cancelled orders cannot be edited.')
+      return
+    }
+    // ── Paid order guard: block ALL edits (status + payment + cancel) on paid orders ──
+    if (currentPayment === 'paid') {
+      setEditError('Paid orders cannot be edited. Use refund in the Retail POS or Invoice module if needed.')
+      return
+    }
     const nextOrderStatus = String(editForm.orderStatus || 'pending').toLowerCase()
     const nextPaymentStatus = String(editForm.paymentStatus || 'due').toLowerCase()
     if (nextOrderStatus === 'cancelled' && !editForm.cancelReason.trim()) {
@@ -371,7 +387,7 @@ export default function RestaurantOrdersKotPage() {
     upsertRestaurantOrder(nextOrder)
     if (nextOrder.table) {
       if (editForm.freeTable || nextPaymentStatus === 'paid' || nextOrderStatus === 'cancelled') {
-        releaseRestaurantTable(nextOrder.table)
+        releaseRestaurantTable(nextOrder.table, nextOrder.orderNumber)
       } else {
         occupyRestaurantTable(nextOrder.table, nextOrder)
       }
@@ -394,6 +410,11 @@ export default function RestaurantOrdersKotPage() {
       navigate('/app/invoices')
       return
     }
+    // ── Idempotency: already cancelled ──
+    if (String(cancelTarget.orderStatus || '').toLowerCase() === 'cancelled') {
+      setCancelError('This order is already cancelled.')
+      return
+    }
     if (!cancelReason.trim()) {
       setCancelError('Cancel reason is required.')
       return
@@ -405,7 +426,7 @@ export default function RestaurantOrdersKotPage() {
       cancelReason: cancelReason.trim(),
       cancelledAt: new Date().toISOString(),
     })
-    releaseRestaurantTable(cancelTarget.table)
+    releaseRestaurantTable(cancelTarget.table, cancelTarget.orderNumber)
     setCancelTarget(null)
     setOrdersVersion((current) => current + 1)
     setActiveFilter('Cancelled')

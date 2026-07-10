@@ -999,7 +999,7 @@ export default function DashboardLayout() {
         data-sidebar={effectiveSidebarCollapsed ? 'collapsed' : 'expanded'}
         data-business-type={normalizedBusinessType}
       >
-        <Sidebar collapsed={effectiveSidebarCollapsed} onToggleCollapse={toggleCollapse} onSwitchProduct={openProductSwitcher} />
+        {isCompactPosRoute ? null : <Sidebar collapsed={effectiveSidebarCollapsed} onToggleCollapse={toggleCollapse} onSwitchProduct={openProductSwitcher} />}
         <div
           className="app-main relative z-10 flex min-h-dvh min-w-0 flex-col print:ml-0"
         >
@@ -1030,7 +1030,7 @@ export default function DashboardLayout() {
       data-business-type={normalizedBusinessType}
       data-compact-pos={isCompactPosRoute ? 'true' : 'false'}
     >
-      <Sidebar collapsed={effectiveSidebarCollapsed} onToggleCollapse={toggleCollapse} onSwitchProduct={openProductSwitcher} />
+      {isCompactPosRoute ? null : <Sidebar collapsed={effectiveSidebarCollapsed} onToggleCollapse={toggleCollapse} onSwitchProduct={openProductSwitcher} />}
 
       <div
         className="app-main relative z-10 flex min-h-dvh min-w-0 flex-col print:ml-0"
@@ -1044,7 +1044,7 @@ export default function DashboardLayout() {
         }`}>
           <div className="workspace-fluid-container mx-auto min-w-0 print:max-w-none">
             <Outlet />
-            <p className="mt-6 pb-1 text-center text-xs font-semibold uppercase tracking-[0.16em] text-slate-400 print:hidden">
+            <p className={`mt-6 pb-1 text-center text-xs font-semibold uppercase tracking-[0.16em] text-slate-400 print:hidden ${isCompactPosRoute ? 'hidden' : ''}`}>
               NEXORA SOLUTION — All rights reserved 2019-2026.
             </p>
           </div>

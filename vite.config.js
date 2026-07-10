@@ -8,6 +8,13 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     target: 'es2020',
+    modulePreload: {
+      resolveDependencies(filename, deps, { hostType }) {
+        if (hostType !== 'html') return deps
+        return deps.filter((dep) => !/(^|\/)public-(pricing|services)-/.test(dep))
+      },
+    },
+    cssCodeSplit: true,
     chunkSizeWarningLimit: 700,
     reportCompressedSize: false,
     sourcemap: false,
@@ -18,16 +25,27 @@ export default defineConfig({
             return 'vendor-react'
           }
           if (id.includes('node_modules/firebase/') || id.includes('node_modules/@firebase/')) {
-            return 'vendor-firebase'
+            if (id.includes('/auth') || id.includes('@firebase/auth')) return 'vendor-firebase-auth'
+            if (id.includes('/firestore') || id.includes('@firebase/firestore')) return 'vendor-firebase-firestore'
+            if (id.includes('/storage') || id.includes('@firebase/storage')) return 'vendor-firebase-storage'
+            if (id.includes('/functions') || id.includes('@firebase/functions')) return 'vendor-firebase-functions'
+            if (id.includes('/analytics') || id.includes('@firebase/analytics')) return 'vendor-firebase-analytics'
+            return 'vendor-firebase-core'
           }
           if (id.includes('node_modules/react-icons/')) {
             return 'vendor-icons'
           }
-          if (id.includes('node_modules/recharts/') || id.includes('node_modules/d3-')) {
-            return 'vendor-charts'
+          if (id.includes('node_modules/recharts/')) {
+            return 'vendor-recharts'
           }
-          if (id.includes('node_modules/jspdf') || id.includes('node_modules/html2canvas') || id.includes('node_modules/dompurify')) {
-            return 'vendor-documents'
+          if (id.includes('node_modules/d3-')) {
+            return 'vendor-d3'
+          }
+          if (id.includes('node_modules/jspdf')) {
+            return 'vendor-jspdf'
+          }
+          if (id.includes('node_modules/html2canvas') || id.includes('node_modules/dompurify')) {
+            return 'vendor-document-render'
           }
           if (id.includes('node_modules/@simplewebauthn/')) {
             return 'vendor-passkeys'

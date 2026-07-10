@@ -2,10 +2,16 @@ import {
   calculateExpenseBreakdown,
   calculateRejectedRevenueBreakdown,
   calculateRevenueBreakdown,
+  expenseValue,
+  getInvoiceStatus,
   invoiceBalanceDue,
+  invoiceValue,
+  isApprovedExpense,
   isOutstandingInvoice,
+  isPaidRecord,
   isApprovedTransaction,
   normalizeCurrency,
+  paymentValue,
   statusValue,
   toNumber,
   transactionAmount,
@@ -165,6 +171,122 @@ export function calculateMonthlyExpenses({ expenses = [], transactions = [], now
 
 export function normalizeFinanceCurrency(value) {
   return normalizeCurrency(value || 'PKR')
+}
+
+// ── Enterprise Report Aggregation Helpers ──
+// Pure computation functions. Accept raw data arrays, return summary objects.
+// Each corresponds to an 'aggregations' entry in REPORT_CATALOG.
+
+/** Group POS orders by payment method with counts and amounts */
+export function aggregateSalesByMethod(posOrders = [], payments = []) {
+  const methodMap = {}
+  ;[...posOrders, ...payments].forEach((row) => {
+    const method = row.paymentMethod || row.method || 'Cash'
+    const amount = row.paidAmount || row.total || paymentValue(row) || 0
+    methodMap[method] = methodMap[method] || { method, count: 0, amount: 0 }
+    methodMap[method].count += 1
+    methodMap[method].amount += toNumber(amount, 0)
+  })
+  return Object.values(methodMap).sort((a, b) => b.amount - a.amount)
+}
+
+/** Product-level sales quantities, revenue, and cost */
+export function aggregateSalesByProduct(posOrders = []) {
+  const productMap = {}
+  ;(posOrders || []).forEach((order) => {
+    ;(order.items || []).forEach((item) => {
+      const id = item.productId || item.name || 'unknown'
+      const qty = toNumber(item.quantity, 0)
+      const total = toNumber(item.lineTotal || item.price * qty, 0)
+      const cost = toNumber(item.costPrice, 0) * qty
+      productMap[id] = productMap[id] || { productId: id, name: item.name || 'Product', quantity: 0, revenue: 0, cost: 0 }
+      productMap[id].quantity += qty
+      productMap[id].revenue += total
+      productMap[id].cost += cost
+    })
+  })
+  return Object.values(productMap).sort((a, b) => b.revenue - a.revenue)
+}
+
+/** Customer-level sales totals */
+export function aggregateSalesByCustomer(orders = [], invoices = []) {
+  const customerMap = {}
+  ;[...orders, ...invoices].forEach((row) => {
+    const name = row.customerName || row.customer?.name || 'Unknown'
+    const total = toNumber(row.total || row.paidAmount, 0)
+    customerMap[name] = customerMap[name] || { customerName: name, orderCount: 0, total: 0 }
+    customerMap[name].orderCount += 1
+    customerMap[name].total += total
+  })
+  return Object.values(customerMap).sort((a, b) => b.total - a.total)
+}
+
+/** Staff/cashier sales performance */
+export function aggregateSalesByStaff(posOrders = []) {
+  const staffMap = {}
+  ;(posOrders || []).forEach((order) => {
+    const name = order.cashierName || order.cashier || order.createdByName || 'Unknown'
+    const total = toNumber(order.paidAmount || order.total, 0)
+    const items = order.itemCount || (order.items || []).reduce((s, i) => s + toNumber(i.quantity, 0), 0)
+    const profit = toNumber(order.profit, 0)
+    staffMap[name] = staffMap[name] || { staffName: name, orderCount: 0, revenue: 0, items: 0, profit: 0 }
+    staffMap[name].orderCount += 1
+    staffMap[name].revenue += total
+    staffMap[name].items += items
+    staffMap[name].profit += profit
+  })
+  return Object.values(staffMap).sort((a, b) => b.revenue - a.revenue)
+}
+
+/** Product-level profit margin analysis */
+export function aggregateProductProfitability(products = [], transactions = [], posOrders = []) {
+  const sold = aggregateSalesByProduct(posOrders)
+  const productData = {}
+  ;(products || []).forEach((p) => {
+    productData[p.id] = { costPrice: toNumber(p.costPrice, 0), price: toNumber(p.price, 0) }
+  })
+  return sold.map((item) => {
+    const prod = productData[item.productId] || {}
+    const costPrice = prod.costPrice || (item.quantity > 0 ? item.cost / item.quantity : 0)
+    const margin = item.revenue - item.cost
+    const marginPct = item.revenue > 0 ? (margin / item.revenue) * 100 : 0
+    return { ...item, costPrice, margin, marginPct }
+  })
+}
+
+/** Aggregate income by category: invoice, pos, transport, etc. */
+export function aggregateIncome(invoices = [], payments = [], transactions = [], posOrders = []) {
+  const invoiceIncome = invoices
+    .filter((inv) => ['paid', 'approved'].includes(getInvoiceStatus(inv)))
+    .reduce((sum, inv) => sum + invoiceValue(inv), 0)
+  const paymentIncome = payments.filter(isPaidRecord).reduce((sum, p) => sum + paymentValue(p), 0)
+  const txnIncome = transactions
+    .filter((t) => isApprovedTransaction(t) && incomeTypes.has(transactionTypeValue(t)))
+    .reduce((sum, t) => sum + transactionAmount(t), 0)
+  const posIncome = (posOrders || []).reduce((sum, o) => sum + toNumber(o.paidAmount || o.total, 0), 0)
+  return { invoiceIncome, paymentIncome, txnIncome, posIncome, total: invoiceIncome + paymentIncome + txnIncome + posIncome }
+}
+
+/** Aggregate expenses by category */
+export function aggregateExpensesByCategory(expenses = [], transactions = []) {
+  const categoryMap = {}
+  expenses.filter(isApprovedExpense).forEach((exp) => {
+    const cat = exp.category || 'General'
+    categoryMap[cat] = categoryMap[cat] || { category: cat, amount: 0, count: 0 }
+    categoryMap[cat].amount += expenseValue(exp)
+    categoryMap[cat].count += 1
+  })
+  return Object.values(categoryMap).sort((a, b) => b.amount - a.amount)
+}
+
+/** Customer payment summary */
+export function aggregateCustomerPayments(payments = [], transactions = [], posOrders = []) {
+  const paymentTotal = payments.filter(isPaidRecord).reduce((s, p) => s + paymentValue(p), 0)
+  const txnIncome = transactions
+    .filter((t) => isApprovedTransaction(t) && incomeTypes.has(transactionTypeValue(t)))
+    .reduce((s, t) => s + transactionAmount(t), 0)
+  const posTotal = (posOrders || []).reduce((s, o) => s + toNumber(o.paidAmount || o.total, 0), 0)
+  return { invoicePayments: paymentTotal, transactionIncome: txnIncome, posCollections: posTotal, total: paymentTotal + txnIncome + posTotal }
 }
 
 // ── Purchase Payment Helpers ──

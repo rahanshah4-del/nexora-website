@@ -1,12 +1,27 @@
 # Cloudflare Pages headers — static asset caching
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
+  Vary: Accept-Encoding
 
 /assets/vendor-*
   Cache-Control: public, max-age=31536000, immutable
+  Vary: Accept-Encoding
 
 /assets/public-*
   Cache-Control: public, max-age=31536000, immutable
+  Vary: Accept-Encoding
+
+/*.png
+  Cache-Control: public, max-age=31536000, immutable
+  Vary: Accept-Encoding
+
+/*.jpg
+  Cache-Control: public, max-age=31536000, immutable
+  Vary: Accept-Encoding
+
+/*.svg
+  Cache-Control: public, max-age=31536000, immutable
+  Vary: Accept-Encoding
 
 /favicon*
   Cache-Control: public, max-age=86400
@@ -23,4 +38,5 @@
   Cache-Control: public, max-age=0, must-revalidate
 
 /*
+  Cache-Control: public, max-age=0, must-revalidate
   X-Content-Type-Options: nosniff

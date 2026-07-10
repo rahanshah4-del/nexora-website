@@ -60,6 +60,7 @@ import { loadRestaurantCustomers } from '../data/restaurantCustomers.js'
 import { restaurantCustomersStorageKey } from '../data/restaurantCustomers.js'
 import { loadRestaurantOrders, restaurantOrdersStorageKey } from '../data/restaurantOrders.js'
 import { normalizeInvoiceOrders } from '../data/restaurantInvoiceOrders.js'
+import RestaurantReportsPage from '../reports/restaurant/RestaurantReportsPage.jsx'
 import { useInvoices } from '../hooks/useInvoices.js'
 import { useExpenses } from '../hooks/useExpenses.js'
 import { useContracts } from '../hooks/useContracts.js'
@@ -1686,7 +1687,79 @@ const restaurantReportRanges = [
 const restaurantOrderTypes = ['All', 'Dine-in', 'Takeaway', 'Delivery', 'Invoice Order']
 const restaurantPaymentMethods = ['All', 'Cash', 'Card', 'JazzCash', 'Easypaisa', 'Bank', 'Due', 'Invoice']
 
+const RESTAURANT_REPORT_INVOICE_LIMIT = 50
+const RESTAURANT_REPORT_EXPENSE_LIMIT = 1000
+const RESTAURANT_REPORT_SOURCE_LIMITATION = 'Restaurant invoice and expense totals are based on the records currently loaded. Very large date ranges may require server-side report summaries.'
+
+function restaurantReportDedupeKey(order = {}, index = 0) {
+  const sourceKind = String(order.sourceKind || (order.invoice ? 'invoice' : 'restaurant')).trim().toLowerCase() || 'restaurant'
+  const identity = String(
+    order.id ||
+    order.invoice?.id ||
+    order.orderNumber ||
+    order.invoiceNumber ||
+    order.billNumber ||
+    order.number ||
+    '',
+  ).trim()
+  return identity ? `${sourceKind}:${identity}` : `${sourceKind}:row-${index}`
+}
+
+function dedupeRestaurantReportOrders(normalOrders = [], invoiceOrders = []) {
+  const seen = new Set()
+  return [...normalOrders, ...invoiceOrders].filter((order, index) => {
+    const key = restaurantReportDedupeKey(order, index)
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+}
+
 function RestaurantReports() {
+  const { profile, currency: preferredCurrency } = usePreferences()
+  const { userDoc } = useUser()
+  const invoicesApi = useInvoices({ limitCount: RESTAURANT_REPORT_INVOICE_LIMIT })
+  const businessSettingsApi = useBusinessSettings()
+  const settings = businessSettingsApi.settings || {}
+  const expensesApi = useExpenses({ limitCount: RESTAURANT_REPORT_EXPENSE_LIMIT })
+  const { data: customers = [] } = useLocalData(loadRestaurantCustomers, [restaurantCustomersStorageKey])
+  const { data: savedRestaurantOrders = [] } = useLocalData(loadRestaurantOrders, [restaurantOrdersStorageKey])
+  const invoiceOrders = useMemo(() => normalizeInvoiceOrders(invoicesApi.invoices), [invoicesApi.invoices])
+  const reportOrders = useMemo(
+    () => dedupeRestaurantReportOrders(savedRestaurantOrders, invoiceOrders),
+    [invoiceOrders, savedRestaurantOrders],
+  )
+  const openingCash = safeNumber(
+    settings.openingCash ?? settings.cashDrawerOpening ?? settings.openingBalance ?? settings.cashInHand ?? 0,
+  )
+  const sourceWarnings = [
+    RESTAURANT_REPORT_SOURCE_LIMITATION,
+    invoicesApi.error ? `Invoice data warning: ${invoicesApi.error}` : '',
+    expensesApi.error ? `Expense data warning: ${expensesApi.error}` : '',
+    businessSettingsApi.error ? `Settings warning: ${businessSettingsApi.error}` : '',
+  ].filter(Boolean).join(' ')
+  const currency = preferredCurrency || settings.currency || 'PKR'
+  const restaurantName = settings.businessName || profile?.companyName || userDoc?.company || userDoc?.workspaceName || 'Restaurant'
+  const workspaceLabel = userDoc?.workspaceName || userDoc?.company || settings.businessName || 'Workspace'
+
+  return (
+    <RestaurantReportsPage
+      orders={reportOrders}
+      customers={Array.isArray(customers) ? customers : []}
+      expenses={Array.isArray(expensesApi.expenses) ? expensesApi.expenses : []}
+      openingCash={openingCash}
+      currency={currency}
+      restaurantName={restaurantName}
+      workspaceLabel={workspaceLabel}
+      loading={businessSettingsApi.loading || invoicesApi.loading || expensesApi.loading}
+      error=""
+      sourceLimitations={sourceWarnings}
+      settings={settings}
+    />
+  )
+}
+
+function LegacyRestaurantReports() {
   const { invoices } = useInvoices({ limitCount: 50 })
   const businessSettingsApi = useBusinessSettings()
   const settings = businessSettingsApi.settings || {}
@@ -2661,25 +2734,26 @@ function ReportTable({ title, rows = [], columns = [] }) {
 // the existing generic workspace reports.
 export default function ReportsPage() {
   const { businessType } = useUser()
-  if (normalizeBusinessType(businessType) === 'WhatsApp CRM') {
+  const normalized = normalizeBusinessType(businessType)
+  if (normalized === 'WhatsApp CRM') {
     return <WhatsappReports />
   }
-  if (normalizeBusinessType(businessType) === 'General CRM') {
+  if (normalized === 'General CRM') {
     return <SalesHubReports />
   }
-  if (normalizeBusinessType(businessType) === 'Retail / POS') {
+  if (normalized === 'Retail / POS') {
     return <RetailPOSReports />
   }
-  if (normalizeBusinessType(businessType) === 'Restaurant POS') {
+  if (normalized === 'Restaurant POS') {
     return <RestaurantReports />
   }
-  if (normalizeBusinessType(businessType) === 'Property ERP') {
+  if (normalized === 'Property ERP') {
     return <PropertyReports />
   }
-  if (normalizeBusinessType(businessType) === 'School ERP') {
+  if (normalized === 'School ERP') {
     return <Navigate to="/app/school-reports" replace />
   }
-  if (normalizeBusinessType(businessType) === 'Transport / Rental') {
+  if (normalized === 'Transport / Rental') {
     return <TransportReports />
   }
   return <GenericReports />

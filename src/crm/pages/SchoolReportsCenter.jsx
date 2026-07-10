@@ -25,6 +25,7 @@ import { useCustomers } from '../hooks/useCustomers.js'
 import { useBusinessSettings } from '../hooks/useBusinessSettings.js'
 import { formatCurrency } from '../utils/format.js'
 import { listenToWorkspaceCollection } from '../lib/firestore.js'
+import { activeStudent } from '../lib/schoolDashboardCalculations.js'
 import {
   SCHOOL_REPORT_DEFS,
   buildSchoolReport,
@@ -449,7 +450,7 @@ export default function SchoolReportsCenter() {
   const expenseTotal = expenseRows.reduce((sum, row) => sum + Number(row.amount || 0), 0)
 
   const statCards = [
-    { label: 'Total Students', value: students.length.toLocaleString(), meta: 'Active student records', icon: HiOutlineUserGroup, tone: 'from-violet-50 to-white border-violet-100 text-violet-700' },
+    { label: 'Total Students', value: students.filter(activeStudent).length.toLocaleString(), meta: 'Active student records', icon: HiOutlineUserGroup, tone: 'from-violet-50 to-white border-violet-100 text-violet-700' },
     { label: 'Total Teachers', value: staff.length.toLocaleString(), meta: 'Staff & teacher records', icon: HiOutlineAcademicCap, tone: 'from-emerald-50 to-white border-emerald-100 text-emerald-700' },
     { label: 'Fee Collection', value: formatCurrency(feeCollectionTotal, currency), meta: `${reportByKey.get('fee_collection')?.sourceCount || 0} source records`, icon: HiOutlineBanknotes, tone: 'from-sky-50 to-white border-sky-100 text-sky-700' },
     { label: 'Salary Paid', value: formatCurrency(salaryPaidTotal, currency), meta: `${reportByKey.get('salary')?.sourceCount || 0} payroll records`, icon: HiOutlineCurrencyDollar, tone: 'from-amber-50 to-white border-amber-100 text-amber-700' },

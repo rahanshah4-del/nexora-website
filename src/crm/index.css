@@ -178,6 +178,31 @@
     width: 100%;
   }
 
+  .crm-shell[data-compact-pos='true'] {
+    min-height: 100dvh;
+    background: rgb(248 250 252);
+  }
+
+  .crm-shell[data-compact-pos='true']::before,
+  .crm-shell[data-compact-pos='true']::after {
+    display: none;
+  }
+
+  .crm-shell[data-compact-pos='true'] .app-main {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+
+  .crm-shell[data-compact-pos='true'] .crm-main {
+    padding: 0 !important;
+  }
+
+  .crm-shell[data-compact-pos='true'] .workspace-fluid-container {
+    width: 100%;
+    max-width: none;
+    padding-inline: 0;
+  }
+
   .crm-shell .sidebar-shell,
   .crm-shell .sidebar-mobile {
     width: 100%;

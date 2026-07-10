@@ -13,12 +13,14 @@ import {
 import {
   HiArrowPath,
   HiCheckCircle,
+  HiOutlineCloudArrowUp,
   HiOutlineMagnifyingGlass,
   HiOutlineMinus,
   HiOutlinePencilSquare,
   HiOutlinePlus,
   HiOutlinePrinter,
   HiOutlineReceiptPercent,
+  HiOutlineTableCells,
   HiOutlineXCircle,
 } from 'react-icons/hi2'
 import Badge from '../components/ui/Badge.jsx'
@@ -48,8 +50,10 @@ import { useUser } from '../hooks/useUser.js'
 import { enqueueBackgroundJob } from '../lib/backgroundJobs.js'
 import { createWorkspaceNotification } from '../lib/notifications.js'
 import { directPrinterAvailable, printThermalText } from '../lib/printerService.js'
+import { useRestaurantPayments } from '../hooks/useRestaurantPayments.js'
 
 const initialCart = []
+const submittingOrderRef = { current: false }
 
 const initialQuickBill = {
   orderType: 'Quick Bill',
@@ -161,7 +165,7 @@ function updateRestaurantTableOrder(tableId, order) {
   saveRestaurantFloors(nextFloors)
 }
 
-function releaseRestaurantTableOrder(tableId) {
+function releaseRestaurantTableOrder(tableId, expectedOrderNumber = '') {
   if (!tableId) return
   const floors = loadRestaurantFloors()
   const nextFloors = floors.map((floor) => ({
@@ -169,8 +173,12 @@ function releaseRestaurantTableOrder(tableId) {
     tables: Array.isArray(floor?.tables)
       ? floor.tables
               .filter((table) => !(table?.id === tableId && (table?.temporaryOutside || isOutsideTable(table?.id))))
-          .map((table) => (
-            table?.id === tableId
+          .map((table) => {
+            // Only release if the table's current order matches the expected one
+            if (table?.id === tableId && expectedOrderNumber && table?.orderNumber && table.orderNumber !== expectedOrderNumber) {
+              return table
+            }
+            return table?.id === tableId
               ? {
                   ...table,
                   status: 'available',
@@ -183,10 +191,33 @@ function releaseRestaurantTableOrder(tableId) {
                   server: 'Open',
                 }
               : table
-          ))
+          })
       : [],
   }))
   saveRestaurantFloors(nextFloors)
+}
+
+function isTableOccupiedByOtherOrder(tableId, excludeOrderNumber = '') {
+  if (!tableId) return false
+  const orders = loadRestaurantOrders()
+  return orders.some((order) => {
+    if (order.orderNumber === excludeOrderNumber) return false
+    if (order.table !== tableId) return false
+    const status = String(order.orderStatus || '').toLowerCase()
+    const paymentStatus = String(order.paymentStatus || '').toLowerCase()
+    if (status === 'cancelled') return false
+    if (paymentStatus === 'paid' && (status === 'served' || status === 'ready')) return false
+    return true
+  })
+}
+
+function checkTableOccupancyError(excludeOrderNumber = '') {
+  const tableId = resolvedOrderTable()
+  if (!tableId) return ''
+  if (isTableOccupiedByOtherOrder(tableId, excludeOrderNumber)) {
+    return `Table ${tableId} already has an active unpaid order. Please select a different table or complete the existing order first.`
+  }
+  return ''
 }
 
 function ensureOutsideTableOrder(tableId, order) {
@@ -300,6 +331,7 @@ export default function RestaurantOrdersPage() {
   const location = useLocation()
   const { settings } = useBusinessSettings()
   const { userId, workspaceId, businessType, userDoc, firebaseUser } = useUser()
+  const { recordPayment } = useRestaurantPayments({ enabled: Boolean(workspaceId) })
   const restaurantPrintSettings = {
     restaurantName: settings?.restaurantPos?.restaurantName || settings?.businessName || 'Nexora Restaurant',
     legalName: settings?.restaurantPos?.legalName || settings?.businessName || '',
@@ -327,6 +359,7 @@ export default function RestaurantOrdersPage() {
   const [printPreview, setPrintPreview] = useState(null)
   const [flowMessage, setFlowMessage] = useState('')
   const [billingActionStatus, setBillingActionStatus] = useState(null)
+  const [paymentSyncStatus, setPaymentSyncStatus] = useState(null)
   const [paymentOpen, setPaymentOpen] = useState(false)
   const [paymentDetails, setPaymentDetails] = useState({ method: 'Cash', amount: '', note: '' })
   const [orderNumber, setOrderNumber] = useState(() => getNextRestaurantOrderNumber())
@@ -334,6 +367,7 @@ export default function RestaurantOrdersPage() {
   const [cancelOpen, setCancelOpen] = useState(false)
   const [cancelReason, setCancelReason] = useState('')
   const [cancelError, setCancelError] = useState('')
+  const [tablePanelOpen, setTablePanelOpen] = useState(false)
   const [menuItems] = useState(() => [...loadRestaurantMenuItems(), ...ordersPageExtraMenuItems])
   const [menuCategories] = useState(() => loadRestaurantMenuCategories())
   const [tableOptions] = useState(() => loadRestaurantTableOptions())
@@ -477,6 +511,48 @@ export default function RestaurantOrdersPage() {
     currentSavedOrder &&
     String(currentSavedOrder.orderStatus || '').toLowerCase() !== 'cancelled',
   )
+  const tablePanelRows = useMemo(() => {
+    const floors = loadRestaurantFloors()
+    const savedOrders = loadRestaurantOrders()
+    const tableRows = floors.flatMap((floor) =>
+      (Array.isArray(floor?.tables) ? floor.tables : []).map((table) => {
+        const activeOrder = savedOrders.find((order) => {
+          if (order.table !== table?.id) return false
+          const status = String(order.orderStatus || '').toLowerCase()
+          const paymentStatus = String(order.paymentStatus || '').toLowerCase()
+          if (status === 'cancelled') return false
+          if (paymentStatus === 'paid' && (status === 'served' || status === 'ready')) return false
+          return true
+        })
+        return {
+          id: table?.id || '',
+          floor: floor?.name || table?.floor || 'Floor',
+          seats: table?.seats || '',
+          status: activeOrder ? 'occupied' : String(table?.status || 'available').toLowerCase(),
+          orderNumber: activeOrder?.orderNumber || table?.orderNumber || table?.order || '',
+          customer: activeOrder?.customer || activeOrder?.customerName || table?.customer || '',
+          total: activeOrder?.total ? formatRestaurantCurrency(activeOrder.total) : table?.total || '',
+        }
+      }),
+    ).filter((table) => table.id)
+    if (tableRows.length) return tableRows
+    return tableOptions.map((table) => ({
+      id: table,
+      floor: 'Restaurant',
+      seats: '',
+      status: 'available',
+      orderNumber: '',
+      customer: '',
+      total: '',
+    }))
+  }, [ordersVersion, tableOptions])
+  const localOrderSaved = Boolean(currentSavedOrder)
+  const queueReady = Boolean(workspaceId && userId)
+  const activeOrderState = currentSavedOrder
+    ? String(currentSavedOrder.paymentStatus || currentSavedOrder.orderStatus || 'saved').replace(/_/g, ' ')
+    : cartRows.length
+      ? 'draft'
+      : 'new'
   const paidAmount = quickBill.paymentMethod === 'Due' ? 0 : Math.max(0, Number(quickBill.paidAmount || 0))
   const effectivePaidAmount = quickBill.paidAmount === '' && quickBill.paymentMethod !== 'Due' ? total : paidAmount
   const dueAmount = Math.max(0, total - effectivePaidAmount)
@@ -532,11 +608,22 @@ export default function RestaurantOrdersPage() {
     if (quickBill.orderType === 'Dine-in' && !quickBill.tableNumber) {
       setFlowMessage(`No table selected. System will save this as ${getOutsideTableId(orderNumber, quickBill.outsideTableName)}.`)
     }
+    // ── Table occupancy guard: prevent assigning table to two active unpaid orders ──
+    const tableForOrder = resolvedOrderTable()
+    if (tableForOrder && isTableOccupiedByOtherOrder(tableForOrder, currentSavedOrder?.orderNumber || orderNumber)) {
+      setFlowMessage(`Table ${tableForOrder} already has an active unpaid order. Please select a different table or complete the existing order first.`)
+      return false
+    }
     return true
   }
 
-  function saveOrderRecord(orderStatus = 'served') {
-    const paymentStatus = dueAmount ? (effectivePaidAmount > 0 ? 'partial' : 'due') : 'paid'
+  function saveOrderRecord(orderStatus = 'served', paymentStatusOverride = null) {
+    // paymentStatusOverride lets KOT-only saves force 'due' regardless of what
+    // effectivePaidAmount computes to (the blank-paid-amount → total fallthrough
+    // bug). Bill saves pass null so the normal logic runs.
+    const paymentStatus = paymentStatusOverride !== null
+      ? paymentStatusOverride
+      : (dueAmount ? (effectivePaidAmount > 0 ? 'partial' : 'due') : 'paid')
     const context = billContext()
     const tableForOrder = context.table
     const orderPayload = {
@@ -552,7 +639,7 @@ export default function RestaurantOrdersPage() {
     setOrdersVersion((current) => current + 1)
     if (orderPayload.table) {
       if (orderStatus === 'served' && paymentStatus === 'paid') {
-        releaseRestaurantTableOrder(orderPayload.table)
+        releaseRestaurantTableOrder(orderPayload.table, orderPayload.orderNumber)
       } else if (isOutsideTable(orderPayload.table) || !tableOptions.includes(orderPayload.table)) {
         ensureOutsideTableOrder(orderPayload.table, orderPayload)
         setQuickBill((current) => ({ ...current, tableNumber: orderPayload.table }))
@@ -604,6 +691,24 @@ export default function RestaurantOrdersPage() {
         paymentMethod: quickBill.paymentMethod,
       }),
     )
+    // ── Payment ledger: non-blocking sync on bill save ──
+    if (effectivePaidAmount > 0) {
+      recordPayment({
+        orderId: orderNumber,
+        customerId: selectedCustomerId,
+        paymentType: 'initial',
+        paymentMethod: quickBill.paymentMethod || 'Cash',
+        amount: effectivePaidAmount,
+        paymentDate: new Date().toISOString(),
+        status: 'completed',
+        notes: quickBill.notes || '',
+        referenceNumber: orderNumber,
+      }).then((r) => {
+        if (r?.ok) setPaymentSyncStatus({ synced: true, duplicate: Boolean(r.duplicate), created: Boolean(r.created) })
+      }).catch(() => {
+        setPaymentSyncStatus({ synced: false, failed: true, error: 'Cloud payment sync failed. Order saved locally.' })
+      })
+    }
   }
 
   function openPaymentModal() {
@@ -677,6 +782,18 @@ export default function RestaurantOrdersPage() {
 
   function savePayment({ printBill = false } = {}) {
     if (!hasRequiredTable()) return
+    // ── Duplicate payment guard ──
+    if (submittingOrderRef.current) {
+      setFlowMessage('Payment already in progress. Please wait.')
+      return
+    }
+    submittingOrderRef.current = true
+    try {
+    const existing = currentSavedOrder
+    if (existing && (existing.paymentStatus === 'paid' || existing.orderStatus === 'cancelled')) {
+      setFlowMessage('This order is already paid or cancelled.')
+      return
+    }
     const paid = Math.max(0, Number(paymentDetails.amount || 0))
     const nextPaidAmount = Math.min(total, effectivePaidAmount + paid)
     const nextDueAmount = Math.max(0, total - nextPaidAmount)
@@ -698,7 +815,7 @@ export default function RestaurantOrdersPage() {
     setOrdersVersion((current) => current + 1)
     if (context.table) {
       if (nextPaymentStatus === 'paid') {
-        releaseRestaurantTableOrder(context.table)
+        releaseRestaurantTableOrder(context.table, context.orderNumber)
       } else {
         const tablePayload = {
           ...context,
@@ -734,47 +851,102 @@ export default function RestaurantOrdersPage() {
       priority: nextPaymentStatus === 'paid' ? 'medium' : 'high',
       dedupeKey: `restaurant-payment-${orderNumber}-${nextPaymentStatus}`,
     })
+    // ── Payment ledger: non-blocking sync ──
+    if (paid > 0) {
+      const prevPaymentStatus = String(existing?.paymentStatus || '').toLowerCase()
+      const ledgerPaymentType = prevPaymentStatus === 'due' ? 'due_recovery' : 'partial'
+      recordPayment({
+        orderId: orderNumber,
+        customerId: selectedCustomerId,
+        paymentType: ledgerPaymentType,
+        paymentMethod: paymentDetails.method || 'Cash',
+        amount: paid,
+        paymentDate: new Date().toISOString(),
+        status: 'completed',
+        notes: paymentDetails.note || quickBill.notes || '',
+        referenceNumber: orderNumber,
+      }).then((r) => {
+        if (r?.ok) setPaymentSyncStatus({ synced: true, duplicate: Boolean(r.duplicate), created: Boolean(r.created) })
+      }).catch(() => {
+        setPaymentSyncStatus({ synced: false, failed: true, error: 'Cloud payment sync failed. Order saved locally.' })
+      })
+    }
+    } finally {
+      submittingOrderRef.current = false
+    }
   }
 
   function quickPaidBill() {
     if (!hasRequiredTable()) return
-    const paymentMethod = quickBill.paymentMethod === 'Due' ? 'Cash' : quickBill.paymentMethod
-    const context = {
-      ...billContext(),
-      paidAmount: total,
-      paymentMethod,
+    // ── Duplicate payment guard ──
+    if (submittingOrderRef.current) {
+      setFlowMessage('Payment already in progress. Please wait.')
+      return
     }
-    upsertRestaurantOrder({
-      ...context,
-      customerId: selectedCustomerId,
-      customer: selectedCustomer?.name || 'Walk-in Guest',
-      phone: selectedCustomer?.phone || quickBill.customerPhone || '',
-      orderStatus: 'served',
-      paymentStatus: 'paid',
-    })
-    setOrdersVersion((current) => current + 1)
-    if (context.table) {
-      releaseRestaurantTableOrder(context.table)
-    }
-    setRestaurantCustomers((current) =>
-      applyRestaurantCustomerPayment(current, selectedCustomerId, {
-        orderNumber,
-        total,
+    submittingOrderRef.current = true
+    try {
+      const paymentMethod = quickBill.paymentMethod === 'Due' ? 'Cash' : quickBill.paymentMethod
+      const context = {
+        ...billContext(),
         paidAmount: total,
         paymentMethod,
-      }),
-    )
-    setPrintPreview(null)
-    queueRestaurantJob('restaurant.bill.save', 'Restaurant paid bill processing', context, { total: 1 })
-    prepareNextOrderAfterPaid()
-    setFlowMessage('Bill paid and saved. Ready for next bill.')
-    setBillingActionStatus({ type: 'payment', status: 'success', message: 'Paid. Next bill ready' })
-    notifyRestaurantOrder({
-      title: 'Restaurant bill paid',
-      message: `${orderNumber} was paid and saved.`,
-      priority: 'medium',
-      dedupeKey: `restaurant-paid-${orderNumber}`,
-    })
+      }
+      // ── Idempotency: skip if already paid ──
+      const existing = currentSavedOrder
+      if (existing && (existing.paymentStatus === 'paid' || existing.orderStatus === 'cancelled')) {
+        setFlowMessage('This order is already paid or cancelled.')
+        return
+      }
+      upsertRestaurantOrder({
+        ...context,
+        customerId: selectedCustomerId,
+        customer: selectedCustomer?.name || 'Walk-in Guest',
+        phone: selectedCustomer?.phone || quickBill.customerPhone || '',
+        orderStatus: 'served',
+        paymentStatus: 'paid',
+      })
+      setOrdersVersion((current) => current + 1)
+      if (context.table) {
+        releaseRestaurantTableOrder(context.table, context.orderNumber)
+      }
+      setRestaurantCustomers((current) =>
+        applyRestaurantCustomerPayment(current, selectedCustomerId, {
+          orderNumber,
+          total,
+          paidAmount: total,
+          paymentMethod,
+        }),
+      )
+      setPrintPreview(null)
+      queueRestaurantJob('restaurant.bill.save', 'Restaurant paid bill processing', context, { total: 1 })
+      prepareNextOrderAfterPaid()
+      setFlowMessage('Bill paid and saved. Ready for next bill.')
+      setBillingActionStatus({ type: 'payment', status: 'success', message: 'Paid. Next bill ready' })
+      notifyRestaurantOrder({
+        title: 'Restaurant bill paid',
+        message: `${orderNumber} was paid and saved.`,
+        priority: 'medium',
+        dedupeKey: `restaurant-paid-${orderNumber}`,
+      })
+      // ── Payment ledger: non-blocking sync ──
+      recordPayment({
+        orderId: orderNumber,
+        customerId: selectedCustomerId,
+        paymentType: 'initial',
+        paymentMethod: paymentMethod || 'Cash',
+        amount: total,
+        paymentDate: new Date().toISOString(),
+        status: 'completed',
+        notes: quickBill.notes || '',
+        referenceNumber: orderNumber,
+      }).then((r) => {
+        if (r?.ok) setPaymentSyncStatus({ synced: true, duplicate: Boolean(r.duplicate), created: Boolean(r.created) })
+      }).catch(() => {
+        setPaymentSyncStatus({ synced: false, failed: true, error: 'Cloud payment sync failed. Order saved locally.' })
+      })
+    } finally {
+      submittingOrderRef.current = false
+    }
   }
 
   function saveBill() {
@@ -793,14 +965,30 @@ export default function RestaurantOrdersPage() {
 
   function saveKot() {
     if (!hasRequiredTable()) return
-    saveOrderRecord('pending')
+    // ── Duplicate KOT guard ──
+    if (submittingOrderRef.current) {
+      setFlowMessage('KOT already being saved. Please wait.')
+      return
+    }
+    submittingOrderRef.current = true
+    try {
+    saveOrderRecord('pending', 'due')
     prepareNextOrderAfterSave()
     setFlowMessage('KOT saved for kitchen. Ready for next order.')
     setBillingActionStatus({ type: 'kot', status: 'success', message: 'KOT saved. New order ready' })
+    } finally {
+      submittingOrderRef.current = false
+    }
   }
 
   async function savePrintBill() {
     if (!hasRequiredTable()) return
+    // ── Duplicate bill guard ──
+    if (submittingOrderRef.current) {
+      setFlowMessage('Bill already being saved. Please wait.')
+      return
+    }
+    submittingOrderRef.current = true
     setBillingActionStatus({ type: 'bill', status: 'loading', message: 'Queueing bill...' })
     try {
       saveBillRecord()
@@ -829,11 +1017,19 @@ export default function RestaurantOrdersPage() {
       const message = error?.message || 'Unable to save bill. Please try again.'
       setFlowMessage(message)
       setBillingActionStatus({ type: 'bill', status: 'error', message })
+    } finally {
+      submittingOrderRef.current = false
     }
   }
 
   async function savePrintKot() {
     if (!hasRequiredTable()) return
+    // ── Duplicate KOT guard ──
+    if (submittingOrderRef.current) {
+      setFlowMessage('KOT already being saved. Please wait.')
+      return
+    }
+    submittingOrderRef.current = true
     setBillingActionStatus({ type: 'kot', status: 'loading', message: 'Queueing KOT...' })
     try {
       const context = billContext()
@@ -843,7 +1039,7 @@ export default function RestaurantOrdersPage() {
           if (!printed) setPrintPreview({ title: '58mm KOT Preview', type: 'kot', data: buildKotPrintData(context) })
         })
       }
-      saveOrderRecord('pending')
+      saveOrderRecord('pending', 'due')
       queueRestaurantJob('restaurant.bill.save', 'Restaurant KOT save processing', context, { total: 1, priority: 'high' })
       prepareNextOrderAfterSave()
       setFlowMessage('KOT saved for kitchen. Ready for next order.')
@@ -856,6 +1052,8 @@ export default function RestaurantOrdersPage() {
       const message = error?.message || 'Unable to save KOT. Please try again.'
       setFlowMessage(message)
       setBillingActionStatus({ type: 'kot', status: 'error', message })
+    } finally {
+      submittingOrderRef.current = false
     }
   }
 
@@ -901,7 +1099,7 @@ export default function RestaurantOrdersPage() {
       cancelReason: cancelReason.trim(),
       cancelledAt: new Date().toISOString(),
     })
-    if (currentSavedOrder.table) releaseRestaurantTableOrder(currentSavedOrder.table)
+    if (currentSavedOrder.table) releaseRestaurantTableOrder(currentSavedOrder.table, currentSavedOrder.orderNumber)
     setOrdersVersion((current) => current + 1)
     setCancelOpen(false)
     prepareNextOrderAfterSave()
@@ -957,6 +1155,18 @@ export default function RestaurantOrdersPage() {
     updateQuickBill('orderType', value)
   }
 
+  function selectTableFromPanel(tableId) {
+    if (!tableId) return
+    setQuickBill((current) => ({
+      ...current,
+      orderType: 'Dine-in',
+      tableNumber: tableId,
+      outsideTableName: isOutsideTable(tableId) ? tableId : current.outsideTableName,
+    }))
+    setTablePanelOpen(false)
+    setFlowMessage(`Table ${tableId} selected for this order.`)
+  }
+
   function closeQuickBill() {
     setQuickBillOpen(false)
   }
@@ -976,12 +1186,100 @@ export default function RestaurantOrdersPage() {
               <Badge variant="warning">Restaurant Billing</Badge>
               <h1 className="mt-1.5 text-xl font-semibold tracking-tight text-slate-950 dark:text-white">POS Till</h1>
               <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-300">Full-screen restaurant billing for menu orders, KOT, and payment.</p>
+              <div className="mt-2 flex min-w-0 flex-wrap gap-1.5">
+                <span className={cn('inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10.5px] font-black', localOrderSaved ? 'border-emerald-100 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-white text-slate-500')}>
+                  {localOrderSaved ? <HiCheckCircle className="h-3.5 w-3.5" /> : <HiArrowPath className="h-3.5 w-3.5" />}
+                  {localOrderSaved ? 'Order list saved' : 'Draft not saved'}
+                </span>
+                <span className={cn('inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10.5px] font-black', queueReady ? 'border-sky-100 bg-sky-50 text-sky-700' : 'border-amber-100 bg-amber-50 text-amber-700')}>
+                  <HiOutlineCloudArrowUp className="h-3.5 w-3.5" />
+                  {queueReady ? 'Cloud queue ready' : 'Local mode'}
+                </span>
+                <span className="inline-flex items-center gap-1 rounded-full border border-violet-100 bg-violet-50 px-2.5 py-1 text-[10.5px] font-black capitalize text-violet-700">
+                  #{orderNumber.replace(/^#/, '')} · {activeOrderState}
+                </span>
+              </div>
             </div>
-            <Button type="button" className="h-9 w-full px-3 text-xs lg:w-auto" onClick={newOrder}>
-              <HiOutlinePlus className="h-4 w-4" />
-              New Order
-            </Button>
+            <div className="relative flex w-full flex-col gap-2 sm:flex-row lg:w-auto lg:items-center">
+              <button
+                type="button"
+                onClick={() => setTablePanelOpen((open) => !open)}
+                className={cn(
+                  'group inline-flex h-9 items-center justify-center gap-2 rounded-xl border px-3 text-xs font-black shadow-sm transition',
+                  tablePanelOpen
+                    ? 'border-sky-300 bg-sky-600 text-white shadow-sky-100'
+                    : 'border-slate-200 bg-white text-slate-700 hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700',
+                )}
+                aria-expanded={tablePanelOpen}
+                aria-label="Show restaurant tables"
+              >
+                <HiOutlineTableCells className="h-4 w-4" />
+                Tables
+                {quickBill.tableNumber ? <span className="rounded-full bg-white/20 px-1.5 py-0.5 text-[10px]">{quickBill.tableNumber}</span> : null}
+              </button>
+              <Button type="button" className="h-9 w-full px-3 text-xs sm:w-auto" onClick={newOrder}>
+                <HiOutlinePlus className="h-4 w-4" />
+                New Order
+              </Button>
+            </div>
           </div>
+
+          {tablePanelOpen ? (
+            <div className="mt-2 overflow-hidden rounded-[1rem] border border-slate-200 bg-white shadow-xl shadow-slate-200/70">
+              <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-slate-50 px-3 py-2">
+                <div className="min-w-0">
+                  <p className="text-xs font-black uppercase tracking-[0.14em] text-sky-700">Table View</p>
+                  <p className="truncate text-xs font-semibold text-slate-500">{quickBill.tableNumber ? `Selected ${quickBill.tableNumber}` : 'Select table for dine-in order'}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setTablePanelOpen(false)}
+                  className="grid h-8 w-8 shrink-0 place-items-center rounded-xl border border-slate-200 bg-white text-sm font-black text-slate-500 hover:bg-slate-50"
+                  aria-label="Close table view"
+                >
+                  ×
+                </button>
+              </div>
+              <div className="max-h-56 overflow-y-auto p-3">
+                {tablePanelRows.length ? (
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">
+                    {tablePanelRows.map((table) => {
+                      const occupied = table.status === 'occupied'
+                      const selected = quickBill.tableNumber === table.id
+                      return (
+                        <button
+                          key={`${table.floor}-${table.id}`}
+                          type="button"
+                          onClick={() => selectTableFromPanel(table.id)}
+                          className={cn(
+                            'min-w-0 rounded-xl border p-2.5 text-left transition',
+                            selected
+                              ? 'border-sky-400 bg-sky-50 text-sky-900 shadow-sm'
+                              : occupied
+                                ? 'border-amber-200 bg-amber-50 text-amber-900 hover:border-amber-300'
+                                : 'border-slate-200 bg-white text-slate-700 hover:border-sky-200 hover:bg-sky-50',
+                          )}
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="truncate text-sm font-black">{table.id}</span>
+                            <span className={cn('shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black', occupied ? 'bg-amber-100 text-amber-800' : 'bg-emerald-50 text-emerald-700')}>
+                              {occupied ? 'Active' : 'Open'}
+                            </span>
+                          </div>
+                          <p className="mt-1 truncate text-[11px] font-semibold text-slate-500">{table.floor}{table.seats ? ` · ${table.seats} seats` : ''}</p>
+                          {occupied ? <p className="mt-1 truncate text-[11px] font-bold text-amber-800">{table.orderNumber || 'Active order'} {table.total ? `· ${table.total}` : ''}</p> : null}
+                        </button>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-dashed border-slate-200 py-8 text-center text-xs font-semibold text-slate-500">
+                    No restaurant tables saved yet.
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : null}
 
           <div className="mt-2 shrink-0 space-y-1.5">
             <div className="flex min-w-0 flex-wrap gap-1.5">

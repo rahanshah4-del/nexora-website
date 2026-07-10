@@ -2,13 +2,29 @@ import { NavLink } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { navItems } from '../../data/navigation.js'
 import { cn } from '../../utils/cn.js'
-import { memo, useCallback, useMemo } from 'react'
+import React, { memo, useCallback, useMemo, useState } from 'react'
 import { useUser } from '../../hooks/useUser.js'
 import { useWorkspaceAccess } from '../../hooks/useWorkspaceAccess.js'
 import logoUrl from '../../../assets/logo/nexora-logo.svg'
 import { isDeveloperOwnerAccount, labelForBusinessModule, labelForBusinessType, moduleCatalog, normalizeBusinessType, selectedModulesForSidebar, teamManagementEnabledForBusinessType } from '../../data/moduleAccess.js'
 import { resolveWorkspaceName } from '../../../lib/workspaceName.js'
-import { HiOutlineBanknotes, HiOutlineSquares2X2 } from 'react-icons/hi2'
+import { REPORT_CATEGORIES, categoriesForModule, reportsForModule } from '../../lib/reportCatalog.js'
+import {
+  HiOutlineBanknotes,
+  HiOutlineChartBar,
+  HiOutlineChevronDown,
+  HiOutlineChevronRight,
+  HiOutlineClipboardDocumentList,
+  HiOutlineCube,
+  HiOutlineDocumentChartBar,
+  HiOutlineFire,
+  HiOutlineShoppingBag,
+  HiOutlineSquares2X2,
+  HiOutlineTruck,
+  HiOutlineUserGroup,
+  HiOutlineBuildingOffice2,
+  HiOutlineChartPie,
+} from 'react-icons/hi2'
 
 function traceSidebar(event, payload = {}) {
   if (import.meta.env.DEV) {
@@ -350,6 +366,68 @@ const SidebarNavItem = memo(function SidebarNavItem({ item, collapsed, onNavigat
   )
 })
 
+const CATEGORY_ICON_MAP = {
+  finance: HiOutlineBanknotes,
+  sales: HiOutlineShoppingBag,
+  purchase: HiOutlineClipboardDocumentList,
+  inventory: HiOutlineCube,
+  customer: HiOutlineUserGroup,
+  supplier: HiOutlineTruck,
+  crm: HiOutlineChartBar,
+  school: HiOutlineBuildingOffice2,
+  transport: HiOutlineTruck,
+  restaurant: HiOutlineFire,
+  overview: HiOutlineChartPie,
+}
+
+/**
+ * ReportsNavGroup — expandable sub-menu under the Reports sidebar item.
+ * Shows category headings with a dot indicator, exactly like an enterprise ERP.
+ * Module isolation: only categories/reports available for the current businessType.
+ */
+function ReportsNavGroup({ collapsed, onNavigate, businessType }) {
+  const normalized = normalizeBusinessType(businessType || '')
+  const categories = useMemo(() => categoriesForModule(normalized), [normalized])
+  const reports = useMemo(() => reportsForModule(normalized), [normalized])
+  const [expanded, setExpanded] = useState(false)
+
+  // Don't render at all if collapsed or no reports available
+  if (collapsed || !categories.length) return null
+
+  const activeCat = null // Future: could track active report category
+
+  return (
+    <div className="ml-1 mt-0.5 space-y-0.5 border-l-2 border-slate-100 pl-2">
+      {categories.map((cat) => {
+        const CatIcon = CATEGORY_ICON_MAP[cat.key] || HiOutlineDocumentChartBar
+        const catReportCount = reports.filter((r) => r.category === cat.key).length
+        if (!catReportCount) return null
+        return (
+          <NavLink
+            key={cat.key}
+            to={`/app/reports?category=${cat.key}`}
+            onClick={onNavigate}
+            title={cat.description}
+            className={({ isActive }) =>
+              cn(
+                'focus-ring group relative flex items-center rounded-lg text-xs font-medium transition-colors duration-150 ease-out',
+                'gap-2 px-3 py-1.5',
+                isActive
+                  ? 'bg-sky-50 text-sky-700'
+                  : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700',
+              )
+            }
+          >
+            <span className="inline-flex h-1.5 w-1.5 shrink-0 rounded-full bg-slate-300 group-hover:bg-sky-400" />
+            <CatIcon className="h-3.5 w-3.5 shrink-0 opacity-60" />
+            <span className="truncate">{cat.label}</span>
+          </NavLink>
+        )
+      })}
+    </div>
+  )
+}
+
 function Brand({ collapsed, workspaceName, businessTitle }) {
   return (
     <div className={`flex items-center ${collapsed ? 'justify-center' : 'gap-2.5'} px-2 py-1.5`}>
@@ -513,9 +591,21 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
       </div>
 
       <nav className={`mt-2 min-h-0 flex-1 overflow-y-auto px-2 pb-2 pr-1.5 ${shouldCollapse ? 'space-y-1.5' : 'space-y-0.5'}`}>
-        {sidebarItems.map((item) => (
-          <SidebarNavItem key={item.to} item={item} collapsed={shouldCollapse} onNavigate={onNavigate} />
-        ))}
+        {sidebarItems.map((item) => {
+          const isReports = item.key === 'reports' && item.to === '/app/reports'
+          return (
+            <React.Fragment key={item.to}>
+              <SidebarNavItem item={item} collapsed={shouldCollapse} onNavigate={onNavigate} />
+              {isReports && (
+                <ReportsNavGroup
+                  collapsed={shouldCollapse}
+                  onNavigate={onNavigate}
+                  businessType={businessType}
+                />
+              )}
+            </React.Fragment>
+          )
+        })}
       </nav>
 
       {!shouldCollapse && (

@@ -3,7 +3,6 @@ import { browserLocalPersistence, getAuth, setPersistence } from 'firebase/auth'
 import { getFirestore } from 'firebase/firestore'
 import { getStorage } from 'firebase/storage'
 import { getFunctions } from 'firebase/functions'
-import { getAnalytics, isSupported as analyticsIsSupported } from 'firebase/analytics'
 
 const publicFirebaseConfig = {
   apiKey: 'AIzaSyDOdQnY-Vjkwdl-0F7FnuVjVB-tAO-cnWc',
@@ -64,6 +63,7 @@ export let analytics = null
 async function initializeAnalytics(appInstance) {
   if (!appInstance || typeof window === 'undefined') return null
   try {
+    const { getAnalytics, isSupported: analyticsIsSupported } = await import('firebase/analytics')
     if (await analyticsIsSupported()) {
       return getAnalytics(appInstance)
     }

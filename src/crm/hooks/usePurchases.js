@@ -305,14 +305,17 @@ export function usePurchases() {
         if (!userId || !workspaceId) return { ok: false, error: 'Please login first' }
         if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now' }
 
-        const purchase = purchases.find((item) => item.id === id)
-        if (!purchase) return { ok: false, error: 'Purchase order not found' }
+        // ── Fresh Firestore read — avoids stale local state race ──
+        const purchaseRef = doc(db, workspaceCollectionPath(workspaceId, 'purchases'), id)
+        const freshSnap = await getDoc(purchaseRef)
+        if (!freshSnap.exists()) return { ok: false, error: 'Purchase order not found' }
+        const freshPurchase = { id, ...freshSnap.data() }
 
         const paymentAmount = Math.max(toNumber(amount, 0), 0)
         if (paymentAmount <= 0) return { ok: false, error: 'Payment amount must be greater than zero' }
 
-        const total = toNumber(purchase.total, 0)
-        const currentPaid = toNumber(purchase.paidAmount, 0)
+        const total = toNumber(freshPurchase.total, 0)
+        const currentPaid = toNumber(freshPurchase.paidAmount, 0)
         if (currentPaid >= total) return { ok: false, error: 'Purchase is already fully paid' }
 
         // ── Wallet balance guard ──
@@ -341,7 +344,7 @@ export function usePurchases() {
           const createTransaction = options.createTransaction
           if (typeof createTransaction === 'function' && acceptedAmount > 0) {
             const paymentMethod = options.paymentMethod || 'Manual'
-            const supplierName = purchase.supplierName || ''
+            const supplierName = freshPurchase.supplierName || ''
             const txnResult = await createTransaction({
               type: 'supplier_payment',
               amount: acceptedAmount,
@@ -350,19 +353,19 @@ export function usePurchases() {
               status: 'approved',
               approvalStatus: 'approved',
               requiresApproval: false,
-              title: `Supplier payment — ${purchase.reference || id}`,
-              description: `Payment of ${acceptedAmount} for purchase order ${purchase.reference || id} from ${supplierName}`,
+              title: `Supplier payment — ${freshPurchase.reference || id}`,
+              description: `Payment of ${acceptedAmount} for purchase order ${freshPurchase.reference || id} from ${supplierName}`,
               relatedId: id,
               availableBalance,
               allowNegativeWallet: options.allowNegativeWallet,
-              reference: purchase.reference || id,
-              supplierId: purchase.supplierId || '',
+              reference: freshPurchase.reference || id,
+              supplierId: freshPurchase.supplierId || '',
               supplierName,
               paidTo: supplierName,
               metadata: {
                 purchaseId: id,
-                purchaseReference: purchase.reference || id,
-                supplierId: purchase.supplierId || '',
+                purchaseReference: freshPurchase.reference || id,
+                supplierId: freshPurchase.supplierId || '',
                 supplierName,
                 totalPaid: newPaid,
                 balanceDue: newBalanceDue,
@@ -380,9 +383,9 @@ export function usePurchases() {
             ...userActivityInfo(userDoc, firebaseUser),
             action: 'Purchase payment recorded',
             module: 'Inventory',
-            description: `${purchase.reference || id} payment of ${paymentAmount} was recorded.`,
+            description: `${freshPurchase.reference || id} payment of ${paymentAmount} was recorded.`,
             targetId: id,
-            targetName: purchase.reference || id,
+            targetName: freshPurchase.reference || id,
             metadata: { paymentAmount, newPaid, newBalanceDue, paymentStatus: newPaymentStatus },
           })
 
@@ -397,8 +400,11 @@ export function usePurchases() {
         if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now' }
         if (typeof recordMovement !== 'function') return { ok: false, error: 'Stock handler unavailable' }
 
-        const purchase = purchases.find((item) => item.id === id)
-        if (!purchase) return { ok: false, error: 'Purchase order not found' }
+        // ── Fresh Firestore read — avoids stale local state race ──
+        const purchaseRef = doc(db, workspaceCollectionPath(workspaceId, 'purchases'), id)
+        const freshSnap = await getDoc(purchaseRef)
+        if (!freshSnap.exists()) return { ok: false, error: 'Purchase order not found' }
+        const purchase = { id, ...freshSnap.data() }
         if (purchase.status !== 'received') return { ok: false, error: 'Only received purchases can be returned' }
 
         const items = (returnItems || []).filter(

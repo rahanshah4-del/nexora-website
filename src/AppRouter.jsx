@@ -294,6 +294,7 @@ function useModalScrollLock() {
 export default function AppRouter() {
   useModalScrollLock()
   const location = useLocation()
+  const enableCrmAnalytics = location.pathname.startsWith('/app') || location.pathname.startsWith('/admin')
 
   useEffect(() => {
     if (import.meta.env.DEV) {
@@ -303,10 +304,12 @@ export default function AppRouter() {
 
   return (
     <>
-        <Suspense fallback={null}><DefaultSeo /></Suspense>
-      <Suspense fallback={null}>
-        <AnalyticsTracker />
-      </Suspense>
+      <Suspense fallback={null}><DefaultSeo /></Suspense>
+      {enableCrmAnalytics ? (
+        <Suspense fallback={null}>
+          <AnalyticsTracker />
+        </Suspense>
+      ) : null}
       <ScrollToTop />
       <Routes>
         <Route path="/" element={<LazyPage><MarketingRoute /></LazyPage>} />

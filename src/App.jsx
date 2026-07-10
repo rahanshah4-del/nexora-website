@@ -1,4 +1,4 @@
-import { Component, lazy, Suspense, useEffect } from 'react'
+import { Component, lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { HiOutlineArrowRight, HiOutlinePlayCircle } from 'react-icons/hi2'
 import Header from './components/Header'
@@ -20,7 +20,57 @@ const DashboardPreview = lazy(() => import('./components/DashboardPreview.jsx'))
 const TawkChat = lazy(() => import('./pages/public/TawkChat.jsx'))
 const HomepageSections = lazy(() => import('./sections/HomepageSections.jsx'))
 
+function useIdleVisible(rootMargin = '900px') {
+  const ref = useRef(null)
+  const [ready, setReady] = useState(false)
+
+  useEffect(() => {
+    if (ready) return undefined
+    let cancelled = false
+    let idleId = null
+    let timeoutId = null
+    const markReady = () => {
+      if (!cancelled) setReady(true)
+    }
+
+    if (typeof window === 'undefined' || typeof IntersectionObserver === 'undefined') {
+      timeoutId = window.setTimeout(markReady, 1)
+      return () => {
+        cancelled = true
+        window.clearTimeout(timeoutId)
+      }
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) return
+        observer.disconnect()
+        if ('requestIdleCallback' in window) {
+          idleId = window.requestIdleCallback(markReady, { timeout: 1200 })
+        } else {
+          timeoutId = window.setTimeout(markReady, 120)
+        }
+      },
+      { rootMargin },
+    )
+
+    if (ref.current) observer.observe(ref.current)
+    return () => {
+      cancelled = true
+      observer.disconnect()
+      if (idleId) window.cancelIdleCallback?.(idleId)
+      if (timeoutId) window.clearTimeout(timeoutId)
+    }
+  }, [ready, rootMargin])
+
+  return [ref, ready]
+}
+
 function App({ initialSectionId = '' }) {
+  const [previewRef, previewReady] = useIdleVisible('700px')
+  const [sectionsRef, sectionsReady] = useIdleVisible('1000px')
+  const [chatReady, setChatReady] = useState(false)
+
   useEffect(() => {
     document.documentElement.classList.add('public-website')
     document.body.classList.add('public-website')
@@ -32,6 +82,25 @@ function App({ initialSectionId = '' }) {
     const handle = window.requestAnimationFrame(() => { document.getElementById(initialSectionId)?.scrollIntoView({ behavior: 'auto', block: 'start' }) })
     return () => window.cancelAnimationFrame(handle)
   }, [initialSectionId])
+
+  useEffect(() => {
+    let cancelled = false
+    let idleId = null
+    let timeoutId = null
+    const showChat = () => {
+      if (!cancelled) setChatReady(true)
+    }
+    if ('requestIdleCallback' in window) {
+      idleId = window.requestIdleCallback(showChat, { timeout: 5000 })
+    } else {
+      timeoutId = window.setTimeout(showChat, 3500)
+    }
+    return () => {
+      cancelled = true
+      if (idleId) window.cancelIdleCallback?.(idleId)
+      if (timeoutId) window.clearTimeout(timeoutId)
+    }
+  }, [])
 
   return (
     <div className="marketing-page min-h-screen overflow-x-hidden bg-white text-slate-950">
@@ -59,7 +128,9 @@ function App({ initialSectionId = '' }) {
               </div>
               {/* DashboardPreview is hidden on mobile to avoid heavy SVG rendering
                   below the fold (mobile LCP fix). Desktop shows the full mockup. */}
-              <div className="hidden sm:block sm:mt-14"><Suspense fallback={null}><SectionErrorBoundary><DashboardPreview /></SectionErrorBoundary></Suspense></div>
+              <div ref={previewRef} className="hidden sm:block sm:mt-14">
+                {previewReady ? <Suspense fallback={null}><SectionErrorBoundary><DashboardPreview /></SectionErrorBoundary></Suspense> : null}
+              </div>
             </div>
           </div>
         </section>
@@ -73,13 +144,17 @@ function App({ initialSectionId = '' }) {
       <div id="pricing" style={{ scrollMarginTop: '5.5rem' }} />
       <div id="contact" style={{ scrollMarginTop: '5.5rem' }} />
 
-      <Suspense fallback={null}>
-        <SectionErrorBoundary>
-          <HomepageSections />
-        </SectionErrorBoundary>
-      </Suspense>
+      <div ref={sectionsRef}>
+        {sectionsReady ? (
+          <Suspense fallback={null}>
+            <SectionErrorBoundary>
+              <HomepageSections />
+            </SectionErrorBoundary>
+          </Suspense>
+        ) : null}
+      </div>
 
-      <Suspense fallback={null}><SectionErrorBoundary><TawkChat /></SectionErrorBoundary></Suspense>
+      {chatReady ? <Suspense fallback={null}><SectionErrorBoundary><TawkChat /></SectionErrorBoundary></Suspense> : null}
     </div>
   )
 }

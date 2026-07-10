@@ -7,7 +7,7 @@ import Avatar from '../ui/Avatar.jsx'
 import Badge from '../ui/Badge.jsx'
 import Dropdown from '../ui/Dropdown.jsx'
 import Button from '../ui/Button.jsx'
-import { memo, useCallback, useMemo, useState } from 'react'
+import { memo, useCallback, useEffect, useMemo, useState } from 'react'
 import { usePreferences } from '../../hooks/usePreferences.js'
 import { useAuth } from '../../hooks/useAuth.js'
 import { useUser } from '../../hooks/useUser.js'
@@ -61,14 +61,74 @@ function Toast({ message, onClose }) {
   )
 }
 
+const POS_STATUS_ROUTES = new Set([
+  '/app/orders',
+  '/app/pos',
+  '/app/pos-orders',
+  '/app/pos-discounts',
+  '/app/restaurant-pos',
+  '/app/tables',
+  '/app/orders-kot',
+  '/app/kitchen-display',
+  '/app/menu-management',
+])
+
+function PosLiveIndicator({ issue }) {
+  const live = !issue
+  const label = live ? 'Live' : 'Issue'
+  const title = live ? 'POS is live and ready to start work' : 'POS has an issue. Check internet or account access.'
+  const tone = live
+    ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200'
+    : 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200'
+  const dotTone = live ? 'bg-emerald-500' : 'bg-rose-500'
+
+  return (
+    <div
+      className={`inline-flex h-10 shrink-0 items-center gap-2 rounded-2xl border px-3 text-xs font-black uppercase ${tone}`}
+      title={title}
+      aria-label={title}
+      role="status"
+    >
+      <span className="relative flex h-3 w-3 shrink-0" aria-hidden="true">
+        <span className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-75 ${dotTone}`} />
+        <span className={`relative inline-flex h-3 w-3 rounded-full ${dotTone}`} />
+      </span>
+      <span className="hidden sm:inline">{label}</span>
+    </div>
+  )
+}
+
 function TopNav({ onOpenSidebar, onSwitchProduct }) {
   const { notifications, profile } = usePreferences()
   const { logout, busy } = useAuth()
-  const { firebaseUser, userDoc, plan, role, businessType, isTrialActive, isTrialExpired, trialDaysRemaining, trialEndsAt } = useUser()
+  const { firebaseUser, userDoc, plan, role, businessType, isTrialActive, isTrialExpired, trialDaysRemaining, trialEndsAt, isBlocked } = useUser()
   const navigate = useNavigate()
   const location = useLocation()
   const [toast, setToast] = useState(null)
+  const [online, setOnline] = useState(() => (typeof navigator === 'undefined' ? true : navigator.onLine))
   const businessTypeLabel = labelForBusinessType(businessType)
+  const showPosLiveIndicator = useMemo(() => {
+    const normalizedBusiness = String(businessTypeLabel || '').toLowerCase()
+    const isPosBusiness = normalizedBusiness.includes('restaurant') || normalizedBusiness.includes('retail') || normalizedBusiness.includes('pos')
+    const isPosRoute = POS_STATUS_ROUTES.has(location.pathname) || location.pathname.startsWith('/app/restaurant-')
+    return isPosBusiness || isPosRoute
+  }, [businessTypeLabel, location.pathname])
+  const posHasIssue = Boolean(!online || isBlocked || isTrialExpired)
+
+  useEffect(() => {
+    function handleOnline() {
+      setOnline(true)
+    }
+    function handleOffline() {
+      setOnline(false)
+    }
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+    return () => {
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+    }
+  }, [])
   const profileSummary = useMemo(
     () => {
       const planStatus = isTrialExpired ? 'expired' : userDoc?.planStatus || 'trial'
@@ -201,6 +261,7 @@ function TopNav({ onOpenSidebar, onSwitchProduct }) {
               </span>
               Switch Product
             </Button>
+            {showPosLiveIndicator ? <PosLiveIndicator issue={posHasIssue} /> : null}
             <NotificationBell enabled={notifications.enabled} />
 
             <Dropdown

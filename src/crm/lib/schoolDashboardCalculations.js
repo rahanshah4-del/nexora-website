@@ -17,7 +17,7 @@ function statusText(value) {
   return String(value || '').trim().toLowerCase().replace(/\s+/g, '_')
 }
 
-function activeStudent(student = {}) {
+export function activeStudent(student = {}) {
   return !['inactive', 'archived', 'deleted', 'rejected', 'left', 'withdrawn'].includes(statusText(student.status || 'active'))
 }
 

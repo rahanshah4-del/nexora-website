@@ -55,11 +55,18 @@ export default function RestaurantKitchenDisplayPage() {
     [orders],
   )
 
+  const validTransitions = { pending: 'preparing', preparing: 'ready', ready: 'served' }
+
   function updateStatus(orderId, nextStatus) {
     setOrders((current) =>
       current
         .map((order) => {
           if (order.id !== orderId) return order
+          // ── Transition safety: only allow forward progress ──
+          if (validTransitions[order.status] !== nextStatus) {
+            console.warn(`KITchen: invalid transition ${order.status} → ${nextStatus} for ${orderId}`)
+            return order
+          }
           upsertRestaurantOrder({ ...order.raw, orderStatus: nextStatus })
           return { ...order, status: nextStatus, raw: { ...order.raw, orderStatus: nextStatus } }
         })

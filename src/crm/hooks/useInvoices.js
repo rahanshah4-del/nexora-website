@@ -4,6 +4,7 @@ import { db } from '../lib/firebase.js'
 import { createUserDoc, fetchWorkspaceCollectionPage, listenToWorkspaceCollection, patchUserDoc, removeUserDoc, workspaceCollectionPath } from '../lib/firestore.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 import { restoreInventoryItems } from '../lib/inventoryRestore.js'
+import { generateInvoiceNumber } from '../lib/invoiceHelpers.js'
 import { useUser } from './useUser.js'
 import { clientSafeMessage } from '../utils/messages.js'
 import { useWorkspaceAccess } from './useWorkspaceAccess.js'
@@ -15,6 +16,7 @@ import {
   calculateBalanceDue,
   calculateInvoiceTotals,
   getInvoiceStatus,
+  invoiceValue,
   isRejectedRecord,
   normalizeCurrency,
   paymentValue,
@@ -589,6 +591,18 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
         if (!invoice.items.length) return { ok: false, error: 'Add at least one invoice item' }
         if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now' }
         try {
+          // ── Duplicate invoice number guard: verify uniqueness in Firestore ──
+          let safeInvNo = invNo
+          for (let attempt = 0; attempt < 3; attempt++) {
+            const invQuery = query(
+              collection(db, workspaceCollectionPath(workspaceId, 'invoices')),
+              where('invoiceNumber', '==', safeInvNo),
+            )
+            const invSnap = await getDocs(invQuery)
+            if (invSnap.empty) break
+            safeInvNo = generateInvoiceNumber()
+          }
+
           const schoolApprovalOnly = requiresSchoolFeeApproval(businessType)
           const initialStatus = statusValue(invoice.status, 'pending')
           const requestedStatus = schoolApprovalOnly && ['paid', 'approved', 'partial_paid'].includes(initialStatus)
@@ -613,7 +627,7 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
           const docPayload = {
             workspaceId,
             businessType,
-            invoiceNumber: invNo,
+            invoiceNumber: safeInvNo,
             customerName: name,
             customerEmail: email,
             customerPhone: invoice.customerPhone || '',
@@ -682,9 +696,9 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
             ...userActivityInfo(userDoc, firebaseUser),
             action: 'Invoice created',
             module: 'Invoices',
-            description: `${invNo} was created for ${name}.`,
+            description: `${safeInvNo} was created for ${name}.`,
             targetId: ref.id,
-            targetName: invNo,
+            targetName: safeInvNo,
             metadata: { customerName: name, total: invoice.total, currency: invoice.currency },
           })
           await createWorkspaceNotification({
@@ -695,15 +709,15 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
             priority: requiresApproval ? 'high' : 'medium',
             title: requiresApproval ? 'Invoice approval needed' : 'Invoice created',
             message: requiresApproval
-              ? `${invNo} for ${name} is waiting for approval.`
-              : `${invNo} was created for ${name}.`,
+              ? `${safeInvNo} for ${name} is waiting for approval.`
+              : `${safeInvNo} was created for ${name}.`,
             relatedId: ref.id,
             route: requiresApproval ? '/app/approvals' : '/app/invoices',
             createdBy: userId,
             createdByEmail: firebaseUser?.email || userDoc?.email || '',
-            metadata: { invoiceNumber: invNo, total: invoice.total, currency: invoice.currency },
+            metadata: { invoiceNumber: safeInvNo, total: invoice.total, currency: invoice.currency },
           })
-          return { ok: true, id: ref.id, invoice: { id: ref.id, ...docPayload, invoiceNumber: invNo } }
+          return { ok: true, id: ref.id, invoice: { id: ref.id, ...docPayload, invoiceNumber: safeInvNo } }
         } catch (e) {
           return { ok: false, error: clientSafeMessage(e, 'Unable to create invoice.') }
         }

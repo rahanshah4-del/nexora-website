@@ -521,14 +521,32 @@ export function useProducts(options = {}) {
         if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now' }
         const original = products.find((item) => item.id === id)
         if (!original) return { ok: false, error: 'Product not found' }
+        const existingSkus = new Set(products.map((item) => String(item.sku || '').trim()).filter(Boolean))
+        const baseSku = original.sku ? `${original.sku}-COPY` : ''
+        let nextSku = baseSku
+        let copyIndex = 2
+        while (nextSku && existingSkus.has(nextSku)) {
+          nextSku = `${baseSku}-${copyIndex}`
+          copyIndex += 1
+        }
         const product = sanitizeProduct({
           ...original,
           name: `${original.name} Copy`,
-          sku: original.sku ? `${original.sku}-COPY` : '',
+          sku: nextSku,
+          barcode: '',
           stockQuantity: 0,
           status: 'active',
         })
+        if (!product.sku) return { ok: false, error: 'Original product must have a SKU before it can be duplicated' }
         try {
+          const uniquenessError = await checkProductUniqueness({
+            workspaceId,
+            businessType,
+            sku: product.sku,
+            barcode: product.barcode,
+          })
+          if (uniquenessError) return { ok: false, error: uniquenessError }
+
           const ref = await createUserDoc(workspaceId, 'products', {
             ...product,
             stockHistory: [

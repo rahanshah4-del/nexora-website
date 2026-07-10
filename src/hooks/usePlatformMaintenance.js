@@ -1,6 +1,4 @@
 import { useEffect, useMemo, useState } from 'react'
-import { doc, getDoc } from 'firebase/firestore'
-import { firestoreDb as db } from '../lib/firebase.js'
 import { getMaintenanceState, normalizeMaintenanceConfig } from '../lib/maintenanceMode.js'
 
 const MAINTENANCE_CACHE_KEY = 'nexora-platform-maintenance-cache-v1'
@@ -38,7 +36,6 @@ export default function usePlatformMaintenance(context) {
   const [config, setConfig] = useState(() => readCachedConfig() || normalizeMaintenanceConfig())
 
   useEffect(() => {
-    if (!db) return undefined
     let cancelled = false
     async function loadConfig() {
       const cached = readCachedConfig()
@@ -47,6 +44,11 @@ export default function usePlatformMaintenance(context) {
         return
       }
       try {
+        const [{ doc, getDoc }, { firestoreDb: db }] = await Promise.all([
+          import('firebase/firestore'),
+          import('../lib/firebase.js'),
+        ])
+        if (!db || cancelled) return
         const snapshot = await getDoc(doc(db, 'platformSettings', 'main'))
         if (cancelled) return
         const next = configFromData(snapshot.exists() ? snapshot.data() : {})

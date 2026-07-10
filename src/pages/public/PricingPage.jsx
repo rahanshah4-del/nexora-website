@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import PageSeo from '../../components/PageSeo.jsx'
 import { getSeoForPath } from '../../lib/seoMetadata.js'
@@ -12,9 +12,10 @@ import {
   HiOutlineShieldCheck,
   HiOutlineUserGroup,
 } from 'react-icons/hi2'
-import BusinessServicesSection from '../../components/BusinessServicesSection.jsx'
 import PublicPageShell from './PublicPageShell.jsx'
 import { defaultPlatformPlans, freeTrialConfig, PLATFORM_YEARLY_DISCOUNT } from '../../lib/platformPlans.js'
+
+const BusinessServicesSection = lazy(() => import('../../components/BusinessServicesSection.jsx'))
 
 const BASIC_FEATURES_SHORT = [
   'Choose Any 1 Nexora Module',
@@ -87,8 +88,44 @@ function getPlanPrice(plan, billingCycle) {
   return `PKR ${formatPrice(Number(plan.monthlyPrice))}`
 }
 
+function useVisibleSection(rootMargin = '900px') {
+  const ref = useRef(null)
+  const [visible, setVisible] = useState(false)
+
+  useEffect(() => {
+    if (visible) return undefined
+    let cancelled = false
+    const markVisible = () => {
+      if (!cancelled) setVisible(true)
+    }
+    if (typeof IntersectionObserver === 'undefined') {
+      const timeoutId = window.setTimeout(markVisible, 1)
+      return () => {
+        cancelled = true
+        window.clearTimeout(timeoutId)
+      }
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) return
+        observer.disconnect()
+        markVisible()
+      },
+      { rootMargin },
+    )
+    if (ref.current) observer.observe(ref.current)
+    return () => {
+      cancelled = true
+      observer.disconnect()
+    }
+  }, [rootMargin, visible])
+
+  return [ref, visible]
+}
+
 export default function PricingPage() {
   const [billingCycle, setBillingCycle] = useState('monthly')
+  const [servicesRef, servicesVisible] = useVisibleSection()
   const seo = getSeoForPath('/pricing')
 
   const displayPlans = [freeTrialConfig, ...paidPlans]
@@ -274,7 +311,13 @@ export default function PricingPage() {
         </div>
       </section>
 
-      <BusinessServicesSection />
+      <div ref={servicesRef}>
+        {servicesVisible ? (
+          <Suspense fallback={null}>
+            <BusinessServicesSection />
+          </Suspense>
+        ) : null}
+      </div>
 
       <section data-reveal className="bg-white px-5 pb-16 sm:px-6 sm:pb-20 lg:px-8">
         <div className="mx-auto grid max-w-7xl items-center gap-6 rounded-[2rem] border border-blue-100 bg-[linear-gradient(135deg,#eff6ff_0%,#ffffff_58%,#e0f2fe_100%)] p-6 shadow-[0_30px_90px_-60px_rgba(37,99,235,0.44)] sm:p-8 lg:grid-cols-[1fr_auto]">

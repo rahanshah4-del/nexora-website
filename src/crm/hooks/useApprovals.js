@@ -14,7 +14,7 @@ import { workspaceCollectionPath } from '../lib/firestore.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 import { useUser } from './useUser.js'
 import { clientSafeMessage } from '../utils/messages.js'
-import { amountValue, calculateBalanceDue, invoiceValue, statusValue, toNumber } from '../lib/calculations.js'
+import { amountValue, calculateBalanceDue, invoiceValue, isRejectedRecord, statusValue, toNumber } from '../lib/calculations.js'
 import { canApproveFinance } from '../lib/financeAccess.js'
 import { normalizeBusinessType } from '../data/moduleAccess.js'
 import { buildApprovedSubscriptionPayload } from '../../lib/subscriptionApproval.js'
@@ -665,19 +665,27 @@ export function useApprovals() {
         }
 
         if (approval.sourceCollection === 'invoices') {
-          const invBatch = writeBatch(db)
+          const invRef = doc(db, workspaceCollectionPath(workspaceId, 'invoices'), approval.sourceId)
           const invNow = serverTimestamp()
-          const invoiceRef = doc(db, workspaceCollectionPath(workspaceId, 'invoices'), approval.sourceId)
-          invBatch.update(invoiceRef, {
-            status: 'approved',
-            approvalStatus: 'approved',
-            businessType,
-            requiresApproval: false,
-            approvedBy: userId,
-            approvedAt: invNow,
-            updatedAt: invNow,
+          await runTransaction(db, async (txn) => {
+            const snap = await txn.get(invRef)
+            if (!snap.exists()) throw new Error('Invoice not found.')
+            const invData = snap.data()
+            // Idempotency: skip if already approved
+            if (invData.approvalStatus === 'approved' || invData.status === 'approved' || isClosedStatus(statusValue(invData.approvalStatus || invData.status, ''))) {
+              throw new Error('This invoice has already been approved.')
+            }
+            if (isRejectedRecord(invData)) throw new Error('Cancelled or rejected invoices cannot be approved.')
+            txn.update(invRef, {
+              status: 'approved',
+              approvalStatus: 'approved',
+              businessType,
+              requiresApproval: false,
+              approvedBy: userId,
+              approvedAt: invNow,
+              updatedAt: invNow,
+            })
           })
-          await invBatch.commit()
         }
 
         if (approval.sourceCollection === 'upgradeRequests') {

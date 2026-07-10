@@ -2,7 +2,6 @@ import { getApps, initializeApp } from 'firebase/app'
 import { browserLocalPersistence, getAuth, setPersistence } from 'firebase/auth'
 import { getFirestore } from 'firebase/firestore'
 import { getStorage } from 'firebase/storage'
-import { getAnalytics, isSupported } from 'firebase/analytics'
 
 // Vite env vars (create a `.env` file at project root)
 // VITE_FIREBASE_API_KEY=...
@@ -76,10 +75,10 @@ export const storage = app && firebaseConfig.storageBucket ? getStorage(app) : n
 
 export let analytics = null
 if (app) {
-  isSupported()
-    .then((ok) => {
+  import('firebase/analytics')
+    .then(({ getAnalytics, isSupported }) => isSupported().then((ok) => {
       analytics = ok ? getAnalytics(app) : null
-    })
+    }))
     .catch(() => {
       analytics = null
     })

@@ -4,6 +4,17 @@ import { listenToWorkspaceCollection } from '../lib/firestore.js'
 import { useWorkspaceAccess } from './useWorkspaceAccess.js'
 import { clientSafeMessage } from '../utils/messages.js'
 import { calculateApprovedExpenses, calculateProfit, calculateRevenue, getInvoiceStatus, isPaidRecord, paymentValue } from '../lib/calculations.js'
+import { normalizeBusinessType } from '../data/moduleAccess.js'
+import {
+  reportById,
+  reportsByCategory,
+  reportsForModule,
+  defaultReportForCategory,
+  categoriesForModule,
+  collectionsForReports,
+  REPORT_CATEGORIES,
+  REPORT_CATALOG,
+} from '../lib/reportCatalog.js'
 
 const SUPPORT_TICKET_COLLECTION = 'supportTickets'
 
@@ -130,6 +141,7 @@ function isActiveSub(s) {
 export function useReports({ section = 'overview', limitCount = DEFAULT_DETAIL_LIMIT, dateWindow = null } = {}) {
   const access = useWorkspaceAccess()
   const { workspaceId, businessType } = access
+  const normalizedBusinessType = normalizeBusinessType(businessType || '')
   const canReadReports = access.isAdmin || access.hasPermission('reports')
   const canReadSupportTickets = access.hasModulePermission('support', 'view')
   const selectedSection = safeSection(section)
@@ -336,7 +348,23 @@ export function useReports({ section = 'overview', limitCount = DEFAULT_DETAIL_L
       loadedCollections: collectionPlan,
       limitCount: detailLimit,
       canReadSupportTickets,
+      // ── Enterprise Report Catalogue (filtered by businessType) ──
+      catalog: reportsForModule(normalizedBusinessType),
+      categories: Object.fromEntries(
+        reportsForModule(normalizedBusinessType)
+          .reduce((acc, r) => {
+            if (!acc.has(r.category)) acc.set(r.category, REPORT_CATEGORIES[r.category])
+            return acc
+          }, new Map())
+          .entries()
+      ),
+      reportById,
+      reportsByCategory,
+      reportsForModule: (module) => reportsForModule(module),
+      defaultReportForCategory: (cat) => defaultReportForCategory(cat),
+      categoriesForModule: (module) => categoriesForModule(module),
+      collectionsForReports: (ids) => collectionsForReports(ids),
     }),
-    [canReadSupportTickets, collectionPlan, data, computed, detailLimit, error, loading, selectedSection, source],
+    [canReadSupportTickets, collectionPlan, data, computed, detailLimit, error, loading, normalizedBusinessType, selectedSection, source],
   )
 }

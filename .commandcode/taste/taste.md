@@ -18,3 +18,9 @@
 # File Access
 - Before opening additional files beyond those initially specified, stop and ask for permission. Do not search the entire repository — limit file access to explicitly listed files. Confidence: 0.78
 
+# Firestore Transactions
+- Use fresh Firestore reads (getDoc) instead of stale local state before critical write operations (payments, status changes, inventory mutations). Confidence: 0.80
+
+# Data Layer
+- Data-model and validation helpers must be pure functions with no side effects: no Firebase imports, no browser APIs, no localStorage, no random ID generation, no input mutation — only serializable plain objects returned. Confidence: 0.65
+

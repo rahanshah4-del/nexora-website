@@ -38,7 +38,7 @@ export function addDaysInput(days = 7) {
 
 export function generateInvoiceNumber() {
   const stamp = new Date().toISOString().slice(0, 10).replaceAll('-', '')
-  const rand = Math.floor(1000 + Math.random() * 9000)
+  const rand = Math.floor(100000 + Math.random() * 900000)
   return `INV-${stamp}-${rand}`
 }
 
