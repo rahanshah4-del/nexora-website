@@ -113,8 +113,9 @@ function App({ initialSectionId = '' }) {
           <div className="pointer-events-none absolute right-[11%] top-28 hidden h-48 w-48 -rotate-6 bg-[radial-gradient(circle,#bae6fd_1px,transparent_1px)] [background-size:18px_18px] opacity-60 lg:block" />
           <div className="relative mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-5xl text-center">
+              <h1 className="sr-only">Nexora POS &amp; Business Management Software</h1>
               <span className="inline-flex rounded-full border border-blue-100 bg-blue-50/70 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.18em] text-blue-700 shadow-sm">Nexora Business Suite</span>
-              <h1 className="website-hero-heading mx-auto mt-6 max-w-5xl text-[2.85rem] font-black leading-[0.98] tracking-tight text-slate-950 sm:text-[4.4rem] lg:text-[5.7rem]">All your business on <span className="marker-highlight">one platform.</span></h1>
+              <p className="website-hero-heading mx-auto mt-6 max-w-5xl text-[2.85rem] font-black leading-[0.98] tracking-tight text-slate-950 sm:text-[4.4rem] lg:text-[5.7rem]">All your business on <span className="marker-highlight">one platform.</span></p>
               <p className="hero-script-line mx-auto mt-5 max-w-3xl text-3xl leading-tight text-slate-900 sm:text-4xl">Simple, efficient, yet powerful.</p>
               <p className="mx-auto mt-5 max-w-3xl text-base leading-8 text-slate-600 sm:text-lg">Nexora Business Suite helps you manage customers, students, tenants, sales, invoices, reports and team access from one secure dashboard.</p>
               <div className="mt-7 flex flex-col justify-center gap-3 min-[390px]:flex-row">
