@@ -20,6 +20,7 @@ import {
   HiOutlinePlus,
   HiOutlinePrinter,
   HiOutlineReceiptPercent,
+  HiOutlineShieldExclamation,
   HiOutlineTableCells,
   HiOutlineXCircle,
 } from 'react-icons/hi2'
@@ -51,6 +52,10 @@ import { enqueueBackgroundJob } from '../lib/backgroundJobs.js'
 import { createWorkspaceNotification } from '../lib/notifications.js'
 import { directPrinterAvailable, printThermalText } from '../lib/printerService.js'
 import { useRestaurantPayments } from '../hooks/useRestaurantPayments.js'
+import { useRestaurantRefunds } from '../hooks/useRestaurantRefunds.js'
+import { useRestaurantCashSessions } from '../hooks/useRestaurantCashSessions.js'
+import { useRestaurantCashMovements } from '../hooks/useRestaurantCashMovements.js'
+import RestaurantSettlementPanel from '../components/restaurant/RestaurantSettlementPanel.jsx'
 
 const initialCart = []
 const submittingOrderRef = { current: false }
@@ -330,24 +335,9 @@ function MenuImagePlaceholder({ item }) {
 export default function RestaurantOrdersPage() {
   const location = useLocation()
   const { settings } = useBusinessSettings()
-  const { userId, workspaceId, businessType, userDoc, firebaseUser } = useUser()
-  const { recordPayment } = useRestaurantPayments({ enabled: Boolean(workspaceId) })
-  const restaurantPrintSettings = {
-    restaurantName: settings?.restaurantPos?.restaurantName || settings?.businessName || 'Nexora Restaurant',
-    legalName: settings?.restaurantPos?.legalName || settings?.businessName || '',
-    branchName: settings?.restaurantPos?.branchName || '',
-    branchCode: settings?.restaurantPos?.branchCode || '',
-    address: settings?.restaurantPos?.address || settings?.address || '',
-    phone: settings?.restaurantPos?.phone || settings?.phone || '',
-    whatsappPhone: settings?.restaurantPos?.whatsappPhone || '',
-    taxNumber: settings?.restaurantPos?.taxNumber || settings?.taxNumber || '',
-    salesTaxNumber: settings?.restaurantPos?.salesTaxNumber || '',
-    fbrPosId: settings?.restaurantPos?.fbrPosId || '',
-    foodLicenseNumber: settings?.restaurantPos?.foodLicenseNumber || '',
-    footerMessage: settings?.restaurantPos?.footerMessage || settings?.receiptFooter || '',
-    logoUrl: settings?.restaurantPos?.logoUrl || settings?.restaurantPos?.logoDataUrl || settings?.logoUrl || '',
-    ...(settings?.restaurantPos || {}),
-  }
+  const { userId, workspaceId, businessType, userDoc, firebaseUser, role, isOwner, isAdmin, isManager } = useUser()
+
+  // ── State declarations (before hooks that depend on them) ──
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState('All Menu')
   const [cart, setCart] = useState(initialCart)
@@ -367,10 +357,102 @@ export default function RestaurantOrdersPage() {
   const [cancelOpen, setCancelOpen] = useState(false)
   const [cancelReason, setCancelReason] = useState('')
   const [cancelError, setCancelError] = useState('')
+  const [refundOpen, setRefundOpen] = useState(false)
+  const [refundType, setRefundType] = useState('full')
+  const [refundAmount, setRefundAmount] = useState('')
+  const [refundReason, setRefundReason] = useState('')
+  const [refundProcessing, setRefundProcessing] = useState(false)
+  const [refundResult, setRefundResult] = useState(null)
+  const [cashOpenDialog, setCashOpenDialog] = useState(false)
+  const [openingCashInput, setOpeningCashInput] = useState('')
+  const [cashSessionSubmitting, setCashSessionSubmitting] = useState(false)
+  const [cashSessionError, setCashSessionError] = useState('')
+  const [closeConfirmOpen, setCloseConfirmOpen] = useState(false)
+  const [actualClosingCashInput, setActualClosingCashInput] = useState('')
+  const [closeNotes, setCloseNotes] = useState('')
+  const [closeManagerApproval, setCloseManagerApproval] = useState('')
+  const [closeLiveExpectedCash, setCloseLiveExpectedCash] = useState(0)
+  const [closeLiveDifference, setCloseLiveDifference] = useState(0)
+  const [movementDialog, setMovementDialog] = useState(null) // null | type string
+  const [movementAmount, setMovementAmount] = useState('')
+  const [movementReason, setMovementReason] = useState('')
+  const [movementManagerApproval, setMovementManagerApproval] = useState('')
+  const [movementSubmitting, setMovementSubmitting] = useState(false)
+  const [movementError, setMovementError] = useState('')
   const [tablePanelOpen, setTablePanelOpen] = useState(false)
+  const [settlementPanelOpen, setSettlementPanelOpen] = useState(false)
   const [menuItems] = useState(() => [...loadRestaurantMenuItems(), ...ordersPageExtraMenuItems])
   const [menuCategories] = useState(() => loadRestaurantMenuCategories())
   const [tableOptions] = useState(() => loadRestaurantTableOptions())
+
+  // currentSavedOrder (moved before hooks that reference it — TDZ fix)
+  const currentSavedOrder = useMemo(() => {
+    const savedOrders = loadRestaurantOrders()
+    return (
+      savedOrders.find((order) => order.orderNumber === orderNumber) ||
+      savedOrders.find(
+        (order) =>
+          quickBill.tableNumber &&
+          order.table === quickBill.tableNumber &&
+          String(order.orderStatus || '').toLowerCase() !== 'cancelled',
+      ) ||
+      null
+    )
+  }, [orderNumber, ordersVersion, quickBill.tableNumber])
+  const maxRefundAmount = useMemo(() => {
+    if (!currentSavedOrder) return 0
+    return Math.max(0, Number(currentSavedOrder.paidAmount || currentSavedOrder.total || 0))
+  }, [currentSavedOrder, ordersVersion])
+
+  const { recordPayment } = useRestaurantPayments({ enabled: Boolean(workspaceId) })
+  const { payments: orderPayments } = useRestaurantPayments({
+    orderId: currentSavedOrder?.orderNumber || undefined,
+    enabled: Boolean(workspaceId && currentSavedOrder?.orderNumber),
+    limitCount: 50,
+  })
+  const { recordRefund } = useRestaurantRefunds({ enabled: false })
+  const {
+    canOpenSession,
+    canCloseSession,
+    activeSession,
+    openSession,
+    closeSession,
+    sessions: allSessions,
+    pendingSettlements,
+    approveSession,
+    rejectSession,
+    lockSession,
+    reopenSession,
+  } = useRestaurantCashSessions({
+    enabled: Boolean(workspaceId),
+    settings,
+  })
+
+  const {
+    movements: cashMovements,
+    totals: cashMovementTotals,
+    canRecordMovement,
+    recordMovement,
+  } = useRestaurantCashMovements({
+    sessionId: activeSession?.id || '',
+    enabled: Boolean(workspaceId && activeSession?.id),
+  })
+  const restaurantPrintSettings = {
+    restaurantName: settings?.restaurantPos?.restaurantName || settings?.businessName || 'Nexora Restaurant',
+    legalName: settings?.restaurantPos?.legalName || settings?.businessName || '',
+    branchName: settings?.restaurantPos?.branchName || '',
+    branchCode: settings?.restaurantPos?.branchCode || '',
+    address: settings?.restaurantPos?.address || settings?.address || '',
+    phone: settings?.restaurantPos?.phone || settings?.phone || '',
+    whatsappPhone: settings?.restaurantPos?.whatsappPhone || '',
+    taxNumber: settings?.restaurantPos?.taxNumber || settings?.taxNumber || '',
+    salesTaxNumber: settings?.restaurantPos?.salesTaxNumber || '',
+    fbrPosId: settings?.restaurantPos?.fbrPosId || '',
+    foodLicenseNumber: settings?.restaurantPos?.foodLicenseNumber || '',
+    footerMessage: settings?.restaurantPos?.footerMessage || settings?.receiptFooter || '',
+    logoUrl: settings?.restaurantPos?.logoUrl || settings?.restaurantPos?.logoDataUrl || settings?.logoUrl || '',
+    ...(settings?.restaurantPos || {}),
+  }
 
   function notifyRestaurantOrder({ title, message, priority = 'medium', relatedId = orderNumber, dedupeKey = '' } = {}) {
     createWorkspaceNotification({
@@ -468,6 +550,217 @@ export default function RestaurantOrdersPage() {
     })
   }, [category, menuItems, query])
 
+  function openRefundOrder() {
+    if (!canRefundCurrentOrder) {
+      setFlowMessage(currentSavedOrder ? 'This order is not paid or already cancelled.' : 'Save this order first before refunding it.')
+      return
+    }
+    setRefundType('full')
+    setRefundAmount(String(Math.round(Number(currentSavedOrder?.paidAmount || currentSavedOrder?.total || 0))))
+    setRefundReason('')
+    setRefundResult(null)
+    setRefundOpen(true)
+  }
+
+  function closeRefundOrder() {
+    setRefundOpen(false)
+    setRefundResult(null)
+  }
+
+  async function confirmRefundOrder() {
+    if (!currentSavedOrder) return
+    if (!refundReason.trim()) return
+    setRefundProcessing(true)
+    setRefundResult(null)
+    try {
+      const savedPaid = Number(currentSavedOrder?.paidAmount || 0)
+      const savedTotal = Number(currentSavedOrder?.total || 0)
+      const amount = refundType === 'full'
+        ? savedPaid
+        : Number(refundAmount)
+      if (amount <= 0) {
+        setRefundResult({ ok: false, error: 'Refund amount must be greater than zero.' })
+        setRefundProcessing(false)
+        return
+      }
+      if (amount > savedPaid) {
+        setRefundResult({ ok: false, error: `Refund amount (${amount}) exceeds paid amount (${savedPaid}).` })
+        setRefundProcessing(false)
+        return
+      }
+      const completedPayments = Array.isArray(orderPayments)
+        ? orderPayments.filter((p) => String(p.status || '').toLowerCase() === 'completed')
+        : []
+      const paymentIds = completedPayments.map((p) => p.id).filter(Boolean)
+      if (!paymentIds.length) {
+        setRefundResult({ ok: false, error: 'Legacy order cannot be refunded because no payment ledger exists.' })
+        setRefundProcessing(false)
+        return
+      }
+      const totalPaidOnLedger = completedPayments.reduce((sum, p) => sum + Math.max(0, Number(p.amount || 0)), 0)
+      if (amount > totalPaidOnLedger) {
+        setRefundResult({ ok: false, error: `Refund amount (${formatRestaurantCurrency(amount)}) exceeds total paid on ledger (${formatRestaurantCurrency(totalPaidOnLedger)}).` })
+        setRefundProcessing(false)
+        return
+      }
+      const paymentsToReverse = completedPayments.length === 1
+        ? completedPayments.map((p) => ({
+            paymentId: p.id,
+            amount,
+          }))
+        : completedPayments.map((p) => {
+            const paymentAmount = Math.max(0, Number(p.amount || 0))
+            const ratio = totalPaidOnLedger > 0 ? paymentAmount / totalPaidOnLedger : 0
+            return {
+              paymentId: p.id,
+              amount: Math.round(amount * ratio * 100) / 100,
+            }
+          })
+      const orderSnapshot = {
+        orderNumber: currentSavedOrder.orderNumber,
+        total: savedTotal,
+        paidAmount: savedPaid,
+      }
+      const rs = await recordRefund({
+        orderId: currentSavedOrder.orderNumber || orderNumber,
+        customerId: currentSavedOrder.customerId || selectedCustomerId,
+        paymentIds,
+        refundType,
+        refundTotal: amount,
+        requestedRefundAmount: amount,
+        reason: refundReason.trim(),
+        status: 'completed',
+        originalSubtotal: currentSavedOrder.totals?.subtotal || currentSavedOrder.subtotal || 0,
+        originalDiscount: currentSavedOrder.totals?.discount || currentSavedOrder.discount || 0,
+        originalTax: currentSavedOrder.totals?.tax || currentSavedOrder.tax || 0,
+        originalServiceCharges: currentSavedOrder.totals?.serviceCharges || currentSavedOrder.serviceCharges || 0,
+        originalTotal: savedTotal || 0,
+      }, {
+        paymentsToReverse,
+        orderSnapshot,
+      })
+      setRefundResult(rs)
+      if (rs.ok && rs.created) {
+        // ── Update local order snapshot ──
+        let nextPaid = savedPaid
+        let nextDue = savedTotal
+        let nextPaymentStatus = 'due'
+        if (refundType === 'full') {
+          nextPaid = 0
+          nextDue = savedTotal
+          nextPaymentStatus = 'due'
+        } else {
+          nextPaid = Math.max(0, savedPaid - amount)
+          const currentPaymentStatus = String(currentSavedOrder.paymentStatus || '').toLowerCase()
+          nextDue = savedTotal - nextPaid
+          nextPaymentStatus = currentPaymentStatus === 'partial' ? 'partial' : nextPaid > 0 ? 'partial' : 'due'
+        }
+        upsertRestaurantOrder({
+          ...currentSavedOrder,
+          paidAmount: nextPaid,
+          dueAmount: Math.max(0, nextDue),
+          paymentStatus: nextPaymentStatus,
+          updatedAt: new Date().toISOString(),
+        })
+        setOrdersVersion((current) => current + 1)
+        setFlowMessage(`Refund of ${formatRestaurantCurrency(Number(amount))} recorded. Order updated.`)
+        setBillingActionStatus({ type: 'refund', status: 'success', message: 'Refund recorded' })
+        closeRefundOrder()
+      } else if (rs.duplicate) {
+        setFlowMessage('This refund was already recorded.')
+        setRefundResult({ ok: true, duplicate: true, error: 'Duplicate — refund already exists.' })
+      }
+    } catch (err) {
+      setRefundResult({ ok: false, error: err?.message || 'Unable to process refund.' })
+    } finally {
+      setRefundProcessing(false)
+    }
+  }
+
+  function openCashSessionDialog() {
+    setOpeningCashInput('')
+    setCashSessionError('')
+    setCashOpenDialog(true)
+  }
+
+  function cancelCashSessionDialog() {
+    setCashOpenDialog(false)
+    setCashSessionError('')
+    setOpeningCashInput('')
+  }
+
+  async function confirmOpenCashSession() {
+    const amount = Math.max(0, Number(openingCashInput || 0))
+    if (amount < 0) {
+      setCashSessionError('Opening cash cannot be negative.')
+      return
+    }
+    setCashSessionSubmitting(true)
+    setCashSessionError('')
+    try {
+      const rs = await openSession({ openingCash: amount })
+      if (rs.ok) {
+        setCashOpenDialog(false)
+        setOpeningCashInput('')
+        setFlowMessage('Cash session opened.')
+      } else {
+        setCashSessionError(rs.error || 'Unable to open session.')
+      }
+    } catch (err) {
+      setCashSessionError(err?.message || 'Unable to open session.')
+    } finally {
+      setCashSessionSubmitting(false)
+    }
+  }
+
+  function openCloseSessionConfirm() {
+    setCashSessionError('')
+    setActualClosingCashInput('')
+    setCloseNotes('')
+    setCloseManagerApproval('')
+    if (activeSession) {
+      const opening = Number(activeSession.openingCash) || 0
+      // Use cached movement totals for live expected cash estimate
+      const mv = cashMovementTotals || { deposits: 0, withdrawals: 0, expenses: 0, adjustments: 0 }
+      const expected = opening + mv.deposits - mv.withdrawals - mv.expenses + mv.adjustments
+      setCloseLiveExpectedCash(expected)
+    }
+    setCloseLiveDifference(0)
+    setCloseConfirmOpen(true)
+  }
+
+  function cancelCloseSessionConfirm() {
+    setCloseConfirmOpen(false)
+    setCashSessionError('')
+  }
+
+  async function confirmCloseCashSession() {
+    const actual = Number(actualClosingCashInput || 0)
+    if (actual < 0) {
+      setCashSessionError('Actual closing cash cannot be negative.')
+      return
+    }
+    setCashSessionSubmitting(true)
+    setCashSessionError('')
+    try {
+      const rs = await closeSession({
+        actualClosingCash: actual,
+        notes: closeNotes.trim(),
+        managerApprovedBy: closeManagerApproval.trim(),
+      })
+      if (rs.ok) {
+        setCloseConfirmOpen(false)
+        setFlowMessage(`Cash session closed. Expected ${closeLiveExpectedCash}, Actual ${actual}, Difference ${rs.cashDifference !== undefined ? rs.cashDifference : actual - closeLiveExpectedCash}.`)
+      } else {
+        setCashSessionError(rs.error || 'Unable to close session.')
+      }
+    } catch (err) {
+      setCashSessionError(err?.message || 'Unable to close session.')
+    } finally {
+      setCashSessionSubmitting(false)
+    }
+  }
+
   const cartRows = useMemo(
     () =>
       cart.map((row) => {
@@ -494,22 +787,15 @@ export default function RestaurantOrdersPage() {
       .filter((customer) => [customer.name, customer.phone].filter(Boolean).some((value) => String(value).toLowerCase().includes(needle)))
       .slice(0, 4)
   }, [customerSearch, restaurantCustomers])
-  const currentSavedOrder = useMemo(() => {
-    const savedOrders = loadRestaurantOrders()
-    return (
-      savedOrders.find((order) => order.orderNumber === orderNumber) ||
-      savedOrders.find(
-        (order) =>
-          quickBill.tableNumber &&
-          order.table === quickBill.tableNumber &&
-          String(order.orderStatus || '').toLowerCase() !== 'cancelled',
-      ) ||
-      null
-    )
-  }, [orderNumber, ordersVersion, quickBill.tableNumber])
   const canCancelCurrentOrder = Boolean(
     currentSavedOrder &&
     String(currentSavedOrder.orderStatus || '').toLowerCase() !== 'cancelled',
+  )
+  const canRefundCurrentOrder = Boolean(
+    currentSavedOrder &&
+    String(currentSavedOrder.orderStatus || '').toLowerCase() !== 'cancelled' &&
+    (String(currentSavedOrder.paymentStatus || '').toLowerCase() === 'paid' ||
+     String(currentSavedOrder.paymentStatus || '').toLowerCase() === 'partial'),
   )
   const tablePanelRows = useMemo(() => {
     const floors = loadRestaurantFloors()
@@ -1457,6 +1743,77 @@ export default function RestaurantOrdersPage() {
               </div>
               <Badge variant="success" className="shrink-0 px-2 py-0.5 text-[10px]">{quickBill.paymentMethod}</Badge>
             </div>
+            <div className="flex items-center gap-1.5">
+              {canOpenSession ? (
+                <button
+                  type="button"
+                  onClick={openCashSessionDialog}
+                  disabled={cashSessionSubmitting}
+                  className="inline-flex h-6 items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2 text-[10px] font-black text-emerald-700 transition hover:bg-emerald-100 disabled:pointer-events-none disabled:opacity-60"
+                >
+                  <HiCheckCircle className="h-3 w-3" />
+                  Open Shift
+                </button>
+              ) : null}
+              {canCloseSession ? (
+                <button
+                  type="button"
+                  onClick={openCloseSessionConfirm}
+                  disabled={cashSessionSubmitting}
+                  className="inline-flex h-6 items-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-2 text-[10px] font-black text-amber-700 transition hover:bg-amber-100 disabled:pointer-events-none disabled:opacity-60"
+                >
+                  <HiOutlineXCircle className="h-3 w-3" />
+                  Close Shift
+                </button>
+              ) : null}
+              {activeSession ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700">
+                  <HiCheckCircle className="h-2.5 w-2.5" />
+                  Shift Open
+                </span>
+              ) : null}
+              {(isOwner || isManager) ? (
+                <button
+                  type="button"
+                  onClick={() => setSettlementPanelOpen(true)}
+                  className="inline-flex h-6 items-center gap-1 rounded-lg border border-violet-200 bg-violet-50 px-2 text-[10px] font-black text-violet-700 transition hover:bg-violet-100"
+                >
+                  <HiOutlineShieldExclamation className="h-3 w-3" />
+                  Settlements
+                  {pendingSettlements?.length > 0 ? (
+                    <span className="rounded-full bg-violet-200 px-1 py-0.5 text-[8px]">{pendingSettlements.length}</span>
+                  ) : null}
+                </button>
+              ) : null}
+            </div>
+
+            {activeSession ? (
+              <div className="flex flex-wrap items-center gap-1">
+                <span className="text-[9px] font-semibold text-slate-400">Cash:</span>
+                {[
+                  { type: 'deposit', label: '+Deposit', cls: 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100' },
+                  { type: 'withdrawal', label: '-Withdrawal', cls: 'border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100' },
+                  { type: 'expense', label: '💸Expense', cls: 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100' },
+                  { type: 'adjustment', label: '±Adjust', cls: 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100' },
+                ].map(({ type, label, cls }) => (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => {
+                      setMovementDialog(type)
+                      setMovementAmount('')
+                      setMovementReason('')
+                      setMovementManagerApproval('')
+                      setMovementError('')
+                    }}
+                    disabled={movementSubmitting}
+                    className={`inline-flex h-5 items-center rounded-md border px-1.5 text-[9px] font-bold transition disabled:pointer-events-none disabled:opacity-50 ${cls}`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            ) : null}
 
             <div className="grid grid-cols-2 gap-1.5">
               <div className="col-span-2 rounded-xl border border-slate-200 bg-slate-50 p-1.5">
@@ -1666,6 +2023,17 @@ export default function RestaurantOrdersPage() {
                 Cancel Order
               </button>
             ) : null}
+            {canRefundCurrentOrder ? (
+              <button
+                type="button"
+                onClick={openRefundOrder}
+                disabled={billingActionStatus?.status === 'loading' || refundProcessing}
+                className="mt-1 inline-flex h-7 w-full items-center justify-center gap-1.5 rounded-lg border border-amber-100 bg-amber-50 text-[11px] font-black text-amber-700 transition hover:bg-amber-100 disabled:pointer-events-none disabled:opacity-60"
+              >
+                <HiArrowPath className="h-3.5 w-3.5" />
+                Refund
+              </button>
+            ) : null}
             <button
               type="button"
               className="mt-1 w-full text-center text-[11px] font-semibold text-sky-700 hover:text-sky-900"
@@ -1821,6 +2189,379 @@ export default function RestaurantOrdersPage() {
         </div>
       ) : null}
 
+      {refundOpen ? (
+        <div className="fixed inset-0 z-[86] grid place-items-center bg-slate-950/45 px-3 py-4 backdrop-blur-sm">
+          <div className="w-full max-w-md overflow-hidden rounded-[1.25rem] border border-slate-200 bg-white shadow-2xl">
+            <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-4 py-3">
+              <div className="min-w-0">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-600">Refund</p>
+                <h2 className="mt-1 text-lg font-black text-slate-950">{currentSavedOrder?.orderNumber || orderNumber}</h2>
+                <p className="mt-1 text-xs font-semibold text-slate-500">
+                  Paid {formatRestaurantCurrency(Number(currentSavedOrder?.paidAmount || currentSavedOrder?.total || 0))} · Max refund {formatRestaurantCurrency(maxRefundAmount)}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closeRefundOrder}
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-slate-200 text-sm font-black text-slate-500 hover:bg-slate-50"
+                aria-label="Close refund"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="space-y-3 px-4 py-4">
+              <Field label="Refund Type">
+                <select
+                  value={refundType}
+                  onChange={(event) => {
+                    setRefundType(event.target.value)
+                    if (event.target.value === 'full') {
+                      setRefundAmount(String(Math.round(Number(currentSavedOrder?.paidAmount || currentSavedOrder?.total || 0))))
+                    }
+                  }}
+                  className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none focus:border-amber-300"
+                >
+                  <option value="full">Full Refund</option>
+                  <option value="partial">Partial Amount Refund</option>
+                </select>
+              </Field>
+              {refundType === 'partial' ? (
+                <Field label="Refund Amount">
+                  <input
+                    type="number"
+                    min="0"
+                    max={maxRefundAmount}
+                    value={refundAmount}
+                    onChange={(event) => setRefundAmount(event.target.value)}
+                    className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm font-semibold outline-none focus:border-amber-300"
+                    placeholder={String(Math.round(maxRefundAmount))}
+                  />
+                </Field>
+              ) : null}
+              <Field label="Refund Reason">
+                <textarea
+                  value={refundReason}
+                  onChange={(event) => setRefundReason(event.target.value)}
+                  className="min-h-24 w-full resize-none rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-amber-300"
+                  placeholder="Example: customer returned, wrong item, billing error..."
+                />
+              </Field>
+              {refundResult && !refundResult.ok ? (
+                <p className="text-xs font-semibold text-rose-600">{refundResult.error}</p>
+              ) : null}
+              {refundResult?.duplicate ? (
+                <p className="text-xs font-semibold text-amber-600">Duplicate refund detected — this refund was already recorded.</p>
+              ) : null}
+              {refundResult?.ok && refundResult?.created ? (
+                <p className="text-xs font-semibold text-emerald-600">Refund recorded successfully.</p>
+              ) : null}
+              <div className="rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800">
+                Refund ke liye reason zaroori hai. Duplicate refunds block kiye jayenge.
+              </div>
+            </div>
+
+            <div className="grid gap-2 border-t border-slate-100 bg-slate-50 px-4 py-3 sm:grid-cols-2">
+              <Button type="button" variant="subtle" onClick={closeRefundOrder}>Back</Button>
+              <button
+                type="button"
+                onClick={confirmRefundOrder}
+                disabled={refundProcessing || !refundReason.trim() || (refundType === 'partial' && (!refundAmount || Number(refundAmount) <= 0))}
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-amber-600 px-3 text-sm font-black text-white shadow-sm transition hover:bg-amber-700 disabled:pointer-events-none disabled:opacity-60"
+              >
+                {refundProcessing ? (
+                  <HiArrowPath className="h-4 w-4 animate-spin" />
+                ) : (
+                  <HiArrowPath className="h-4 w-4" />
+                )}
+                {refundProcessing ? 'Processing...' : refundType === 'full' ? 'Full Refund' : `Refund ${formatRestaurantCurrency(Number(refundAmount || 0))}`}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {cashOpenDialog ? (
+        <div className="fixed inset-0 z-[86] grid place-items-center bg-slate-950/45 px-3 py-4 backdrop-blur-sm">
+          <div className="w-full max-w-md overflow-hidden rounded-[1.25rem] border border-slate-200 bg-white shadow-2xl">
+            <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-4 py-3">
+              <div className="min-w-0">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-600">Open Shift</p>
+                <h2 className="mt-1 text-lg font-black text-slate-950">Opening Cash</h2>
+              </div>
+              <button
+                type="button"
+                onClick={cancelCashSessionDialog}
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-slate-200 text-sm font-black text-slate-500 hover:bg-slate-50"
+                aria-label="Close open shift"
+              >
+                ×
+              </button>
+            </div>
+            <div className="space-y-3 px-4 py-4">
+              <label className="block">
+                <span className="mb-1.5 block text-xs font-semibold text-slate-500">Opening Cash Amount</span>
+                <input
+                  type="number"
+                  min="0"
+                  value={openingCashInput}
+                  onChange={(event) => {
+                    setOpeningCashInput(event.target.value)
+                    setCashSessionError('')
+                  }}
+                  className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm font-semibold outline-none focus:border-emerald-300"
+                  placeholder="0"
+                />
+              </label>
+              {cashSessionError ? <p className="text-xs font-semibold text-rose-600">{cashSessionError}</p> : null}
+              <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800">
+                Shift open karne ke liye opening cash amount enter karein. Ek baar mein sirf ek shift open ho sakti hai.
+              </div>
+            </div>
+            <div className="grid gap-2 border-t border-slate-100 bg-slate-50 px-4 py-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={cancelCashSessionDialog}
+                className="inline-flex h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmOpenCashSession}
+                disabled={cashSessionSubmitting}
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-3 text-sm font-black text-white shadow-sm transition hover:bg-emerald-700 disabled:pointer-events-none disabled:opacity-60"
+              >
+                {cashSessionSubmitting ? 'Opening...' : 'Open Shift'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {closeConfirmOpen ? (
+        <div className="fixed inset-0 z-[86] grid place-items-center bg-slate-950/45 px-3 py-4 backdrop-blur-sm">
+          <div className="w-full max-w-md overflow-hidden rounded-[1.25rem] border border-slate-200 bg-white shadow-2xl">
+            <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-4 py-3">
+              <div className="min-w-0">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-600">Close Shift</p>
+                <h2 className="mt-1 text-lg font-black text-slate-950">Confirm Close Shift</h2>
+              </div>
+              <button
+                type="button"
+                onClick={cancelCloseSessionConfirm}
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-slate-200 text-sm font-black text-slate-500 hover:bg-slate-50"
+                aria-label="Close confirm"
+              >
+                ×
+              </button>
+            </div>
+            <div className="space-y-3 px-4 py-4">
+              {cashSessionError ? <p className="text-xs font-semibold text-rose-600">{cashSessionError}</p> : null}
+
+              {/* ── Read-only breakdown ── */}
+              {activeSession ? (
+                <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">Opening Cash</span>
+                    <span className="font-semibold text-slate-700">{formatRestaurantCurrency(Number(activeSession.openingCash) || 0)}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">Cash Deposits</span>
+                    <span className="font-semibold text-emerald-700">{formatRestaurantCurrency(cashMovementTotals?.deposits || 0)}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">Cash Withdrawals</span>
+                    <span className="font-semibold text-rose-700">-{formatRestaurantCurrency(cashMovementTotals?.withdrawals || 0)}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">Cash Expenses</span>
+                    <span className="font-semibold text-rose-700">-{formatRestaurantCurrency(cashMovementTotals?.expenses || 0)}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">Cash Adjustments</span>
+                    <span className="font-semibold text-slate-700">{cashMovementTotals?.adjustments > 0 ? '+' : ''}{formatRestaurantCurrency(cashMovementTotals?.adjustments || 0)}</span>
+                  </div>
+                  <div className="border-t border-slate-200 pt-1.5 mt-1.5">
+                    <div className="flex items-center justify-between font-bold">
+                      <span className="text-slate-600">Expected Cash</span>
+                      <span className="text-amber-700">{formatRestaurantCurrency(closeLiveExpectedCash)}</span>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+
+              <label className="block">
+                <span className="mb-1.5 block text-xs font-semibold text-slate-500">Actual Closing Cash</span>
+                <input
+                  type="number"
+                  min="0"
+                  value={actualClosingCashInput}
+                  onChange={(event) => {
+                    const val = event.target.value
+                    setActualClosingCashInput(val)
+                    const actual = Number(val || 0)
+                    setCloseLiveDifference(actual - closeLiveExpectedCash)
+                    setCashSessionError('')
+                  }}
+                  className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm font-semibold outline-none focus:border-amber-300"
+                  placeholder="0"
+                />
+              </label>
+              <div className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm font-bold">
+                <span className="text-slate-600">Difference</span>
+                <span className={closeLiveDifference >= 0 ? 'text-emerald-700' : 'text-rose-700'}>
+                  {closeLiveDifference >= 0 ? '+' : ''}{formatRestaurantCurrency(closeLiveDifference)}
+                </span>
+              </div>
+              <label className="block">
+                <span className="mb-1.5 block text-xs font-semibold text-slate-500">Notes</span>
+                <textarea
+                  value={closeNotes}
+                  onChange={(event) => setCloseNotes(event.target.value)}
+                  className="min-h-16 w-full resize-none rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-amber-300"
+                  placeholder="Optional notes"
+                />
+              </label>
+              <label className="block">
+                <span className="mb-1.5 block text-xs font-semibold text-slate-500">Manager Approval (optional)</span>
+                <input
+                  value={closeManagerApproval}
+                  onChange={(event) => setCloseManagerApproval(event.target.value)}
+                  className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm font-semibold outline-none focus:border-amber-300"
+                  placeholder="Manager name or ID"
+                />
+              </label>
+            </div>
+            <div className="grid gap-2 border-t border-slate-100 bg-slate-50 px-4 py-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={cancelCloseSessionConfirm}
+                className="inline-flex h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmCloseCashSession}
+                disabled={cashSessionSubmitting}
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-amber-600 px-3 text-sm font-black text-white shadow-sm transition hover:bg-amber-700 disabled:pointer-events-none disabled:opacity-60"
+              >
+                {cashSessionSubmitting ? 'Closing...' : 'Close Shift'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {/* ── Cash movement dialog ── */}
+      {movementDialog ? (
+        <div className="fixed inset-0 z-[86] grid place-items-center bg-slate-950/45 px-3 py-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm overflow-hidden rounded-[1.25rem] border border-slate-200 bg-white shadow-2xl">
+            <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-4 py-3">
+              <div className="min-w-0">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                  {movementDialog === 'deposit' && 'Deposit'}
+                  {movementDialog === 'withdrawal' && 'Withdrawal'}
+                  {movementDialog === 'expense' && 'Cash Expense'}
+                  {movementDialog === 'adjustment' && 'Cash Adjustment'}
+                </p>
+                <h2 className="mt-1 text-lg font-black text-slate-950">
+                  Record {movementDialog === 'deposit' ? 'Deposit' : movementDialog === 'withdrawal' ? 'Withdrawal' : movementDialog === 'expense' ? 'Expense' : 'Adjustment'}
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setMovementDialog(null)}
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-slate-200 text-sm font-black text-slate-500 hover:bg-slate-50"
+                aria-label="Close movement"
+              >
+                ×
+              </button>
+            </div>
+            <div className="space-y-3 px-4 py-4">
+              {movementError ? <p className="text-xs font-semibold text-rose-600">{movementError}</p> : null}
+              <label className="block">
+                <span className="mb-1.5 block text-xs font-semibold text-slate-500">Amount</span>
+                <input
+                  type="number"
+                  min={movementDialog === 'adjustment' ? undefined : '0'}
+                  value={movementAmount}
+                  onChange={(e) => setMovementAmount(e.target.value)}
+                  className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm font-semibold outline-none focus:border-sky-300"
+                  placeholder="0"
+                />
+              </label>
+              <label className="block">
+                <span className="mb-1.5 block text-xs font-semibold text-slate-500">Reason</span>
+                <textarea
+                  value={movementReason}
+                  onChange={(e) => setMovementReason(e.target.value)}
+                  className="min-h-14 w-full resize-none rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-sky-300"
+                  placeholder="Reason for this movement"
+                />
+              </label>
+              <label className="block">
+                <span className="mb-1.5 block text-xs font-semibold text-slate-500">Manager Approval (optional)</span>
+                <input
+                  value={movementManagerApproval}
+                  onChange={(e) => setMovementManagerApproval(e.target.value)}
+                  className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm font-semibold outline-none focus:border-sky-300"
+                  placeholder="Manager name or ID"
+                />
+              </label>
+            </div>
+            <div className="grid gap-2 border-t border-slate-100 bg-slate-50 px-4 py-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => setMovementDialog(null)}
+                className="inline-flex h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  const amount = Number(movementAmount || 0)
+                  if (!amount || (movementDialog !== 'adjustment' && amount < 0)) {
+                    setMovementError('Please enter a valid amount.')
+                    return
+                  }
+                  if (!movementReason.trim()) {
+                    setMovementError('Reason is required.')
+                    return
+                  }
+                  setMovementSubmitting(true)
+                  setMovementError('')
+                  try {
+                    const rs = await recordMovement({
+                      type: movementDialog,
+                      amount,
+                      reason: movementReason.trim(),
+                      managerApprovedBy: movementManagerApproval.trim(),
+                    })
+                    if (rs.ok) {
+                      setMovementDialog(null)
+                      setFlowMessage(`Cash ${movementDialog} recorded.`)
+                    } else {
+                      setMovementError(rs.error || 'Unable to record.')
+                    }
+                  } catch (err) {
+                    setMovementError(err?.message || 'Unable to record.')
+                  } finally {
+                    setMovementSubmitting(false)
+                  }
+                }}
+                disabled={movementSubmitting}
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-sky-600 px-3 text-sm font-black text-white shadow-sm transition hover:bg-sky-700 disabled:pointer-events-none disabled:opacity-60"
+              >
+                {movementSubmitting ? 'Recording...' : 'Record'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {paymentOpen ? (
         <div className="fixed inset-0 z-[85] grid place-items-center bg-slate-950/45 px-3 py-4 backdrop-blur-sm">
           <div className="w-full max-w-md overflow-hidden rounded-[1.25rem] border border-slate-200 bg-white shadow-2xl">
@@ -1924,6 +2665,21 @@ export default function RestaurantOrdersPage() {
             </div>
           </div>
         </div>
+      ) : null}
+
+      {/* ── Settlement Manager Panel ── */}
+      {settlementPanelOpen ? (
+        <RestaurantSettlementPanel
+          sessions={allSessions || []}
+          pendingSettlements={pendingSettlements || []}
+          onClose={() => setSettlementPanelOpen(false)}
+          onApprove={approveSession}
+          onReject={rejectSession}
+          onLock={lockSession}
+          onReopen={reopenSession}
+          isOwner={Boolean(isOwner)}
+          isManager={Boolean(isManager)}
+        />
       ) : null}
     </>
   )

@@ -232,6 +232,12 @@ export const moduleCatalog = [
   { key: 'whatsappTemplates', label: 'WhatsApp Templates', route: '/app/whatsapp-templates', minPlan: 'Basic' },
   { key: 'autoReplies', label: 'Auto Replies', route: '/app/coming-soon/auto-replies', comingSoon: true },
   { key: 'campaigns', label: 'Campaigns', route: '/app/coming-soon/campaigns', comingSoon: true },
+  { key: 'delivery', label: 'Delivery Management', route: '/app/delivery', minPlan: 'Basic' },
+  { key: 'deliveryDrivers', label: 'Delivery Drivers', route: '/app/delivery/drivers', minPlan: 'Basic' },
+  { key: 'deliveryZones', label: 'Delivery Zones', route: '/app/delivery/zones', minPlan: 'Basic' },
+  { key: 'driverDashboard', label: 'Driver Dashboard', route: '/app/driver', minPlan: 'Basic' },
+  { key: 'reservations', label: 'Reservations', route: '/app/reservations', minPlan: 'Basic' },
+  { key: 'kitchenProduction', label: 'Kitchen Production', route: '/app/kitchen-production', minPlan: 'Basic' },
 ]
 
 export const DEVELOPER_OWNER_EMAIL = 'ownertast@gmail.com'
@@ -405,6 +411,12 @@ export const businessWorkspaceCatalog = [
       'customers',
       'tables',
       'kitchenDisplay',
+      'delivery',
+      'deliveryDrivers',
+      'deliveryZones',
+      'driverDashboard',
+      'reservations',
+      'kitchenProduction',
       'invoices',
       'expenses',
       'accounts',

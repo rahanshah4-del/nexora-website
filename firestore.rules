@@ -743,6 +743,116 @@ allow create: if (canCreateModule(workspaceId,'invoices')||canCreateModule(works
 allow update: if (canEditModule(workspaceId,'invoices')||canEditModule(workspaceId,'orders'))&&safeUpdate(workspaceId);
 allow delete: if canDeleteModule(workspaceId,'invoices')||canDeleteModule(workspaceId,'orders');
 }
+match /loyaltyAccounts/{docId} {
+allow read: if canReadModule(workspaceId,'loyalty')||canReadModule(workspaceId,'customers');
+allow create: if canCreateModule(workspaceId,'loyalty')&&safeCreate(workspaceId);
+allow update: if canEditModule(workspaceId,'loyalty')&&safeUpdate(workspaceId);
+allow delete: if canDeleteModule(workspaceId,'loyalty');
+}
+match /loyaltyTiers/{docId} {
+allow read: if canReadModule(workspaceId,'loyalty');
+allow create: if canCreateModule(workspaceId,'loyalty')&&safeCreate(workspaceId);
+allow update: if canEditModule(workspaceId,'loyalty')&&safeUpdate(workspaceId);
+allow delete: if canDeleteModule(workspaceId,'loyalty');
+}
+match /loyaltyPointsLedger/{docId} {
+allow read: if canReadModule(workspaceId,'loyalty');
+allow create: if canCreateModule(workspaceId,'loyalty')&&safeCreate(workspaceId);
+allow update: if false;
+allow delete: if false;
+}
+match /loyaltyRewards/{docId} {
+allow read: if canReadModule(workspaceId,'loyalty');
+allow create: if canCreateModule(workspaceId,'loyalty')&&safeCreate(workspaceId);
+allow update: if canEditModule(workspaceId,'loyalty')&&safeUpdate(workspaceId);
+allow delete: if canDeleteModule(workspaceId,'loyalty');
+}
+match /loyaltyRedemptions/{docId} {
+allow read: if canReadModule(workspaceId,'loyalty');
+allow create: if canCreateModule(workspaceId,'loyalty')&&safeCreate(workspaceId);
+allow update: if false;
+allow delete: if false;
+}
+match /loyaltyCoupons/{docId} {
+allow read: if canReadModule(workspaceId,'loyalty')||canCreatePosSale(workspaceId);
+allow create: if canCreateModule(workspaceId,'loyalty')&&safeCreate(workspaceId);
+allow update: if canEditModule(workspaceId,'loyalty')&&safeUpdate(workspaceId);
+allow delete: if canDeleteModule(workspaceId,'loyalty');
+}
+match /loyaltyReferrals/{docId} {
+allow read: if canReadModule(workspaceId,'loyalty');
+allow create: if canCreateModule(workspaceId,'loyalty')&&safeCreate(workspaceId);
+allow update: if canEditModule(workspaceId,'loyalty')&&safeUpdate(workspaceId);
+allow delete: if false;
+}
+match /loyaltyWallet/{docId} {
+allow read: if canReadModule(workspaceId,'loyalty')||canReadModule(workspaceId,'customers');
+allow create: if canCreateModule(workspaceId,'loyalty')&&safeCreate(workspaceId);
+allow update: if canEditModule(workspaceId,'loyalty')&&safeUpdate(workspaceId);
+allow delete: if false;
+}
+match /loyaltyCampaigns/{docId} {
+allow read: if canReadModule(workspaceId,'loyalty');
+allow create: if canCreateModule(workspaceId,'loyalty')&&safeCreate(workspaceId);
+allow update: if canEditModule(workspaceId,'loyalty')&&safeUpdate(workspaceId);
+allow delete: if canDeleteModule(workspaceId,'loyalty');
+}
+match /loyaltySettings/{docId} {
+allow read: if canReadModule(workspaceId,'loyalty')||canReadModule(workspaceId,'settings');
+allow create: if (workspaceAdmin(workspaceId)||hasPermission(workspaceId,'settingsAccess'))&&safeCreate(workspaceId);
+allow update: if workspaceAdmin(workspaceId)||hasPermission(workspaceId,'settingsAccess');
+allow delete: if workspaceAdmin(workspaceId)||hasPermission(workspaceId,'settingsAccess');
+}
+match /loyaltyBirthdayQueue/{docId} {
+allow read: if canReadModule(workspaceId,'loyalty');
+allow create: if canCreateModule(workspaceId,'loyalty')&&safeCreate(workspaceId);
+allow update: if canEditModule(workspaceId,'loyalty')&&safeUpdate(workspaceId);
+allow delete: if canDeleteModule(workspaceId,'loyalty');
+}
+match /deliveryZones/{docId} {
+allow read: if canReadModule(workspaceId,'delivery');
+allow create: if canCreateModule(workspaceId,'delivery')&&safeCreate(workspaceId);
+allow update: if canEditModule(workspaceId,'delivery')&&safeUpdate(workspaceId);
+allow delete: if canDeleteModule(workspaceId,'delivery');
+}
+match /deliveryDrivers/{docId} {
+allow read: if canReadModule(workspaceId,'delivery')||canReadModule(workspaceId,'orders');
+allow create: if canCreateModule(workspaceId,'delivery')&&safeCreate(workspaceId);
+allow update: if canEditModule(workspaceId,'delivery')&&safeUpdate(workspaceId);
+allow delete: if canDeleteModule(workspaceId,'delivery');
+}
+match /deliveryOrders/{docId} {
+allow read: if canReadModule(workspaceId,'delivery')||canReadModule(workspaceId,'orders')||canReadModule(workspaceId,'ordersKot');
+allow create: if canCreateModule(workspaceId,'delivery')&&safeCreate(workspaceId);
+allow update: if canEditModule(workspaceId,'delivery')||canEditModule(workspaceId,'orders')||canEditModule(workspaceId,'ordersKot');
+allow delete: if canDeleteModule(workspaceId,'delivery');
+}
+match /deliveryTracking/{docId} {
+allow read: if canReadModule(workspaceId,'delivery')||canReadModule(workspaceId,'orders');
+allow create: if canCreateModule(workspaceId,'delivery')&&safeCreate(workspaceId);
+allow update: if canEditModule(workspaceId,'delivery')&&safeUpdate(workspaceId);
+allow delete: if false;
+}
+match /deliveryProofs/{docId} {
+allow read: if canReadModule(workspaceId,'delivery')||canReadModule(workspaceId,'orders');
+allow create: if canCreateModule(workspaceId,'delivery')&&safeCreate(workspaceId);
+allow update: if false;
+allow delete: if false;
+}
+match /deliverySettlements/{docId} {
+allow read: if canReadModule(workspaceId,'delivery');
+allow create: if canCreateModule(workspaceId,'delivery')&&safeCreate(workspaceId);
+allow update: if canEditModule(workspaceId,'delivery')&&safeUpdate(workspaceId);
+allow delete: if false;
+}
+match /onlineOrders/{docId} {
+allow read: if canReadModule(workspaceId,'delivery')||canReadModule(workspaceId,'orders')||(signedIn()&&resource.data.customerUid==request.auth.uid);
+allow create: if signedIn()&&request.resource.data.customerUid==request.auth.uid
+&& request.resource.data.workspaceId==workspaceId
+&& request.resource.data.createdBy==request.auth.uid;
+allow update: if canEditModule(workspaceId,'delivery')||canEditModule(workspaceId,'orders');
+allow delete: if false;
+}
 match /activityLogs/{docId} {
 allow read: if canReadModule(workspaceId,'activity')||canReadModule(workspaceId,'team');
 allow create: if workspaceMember(workspaceId)
@@ -922,6 +1032,52 @@ allow read,update,delete: if backendAdmin();
 match /userSessions/{docId} {
 allow create: if activeSignedIn()&&request.resource.data.userId==request.auth.uid;
 allow read,update,delete: if backendAdmin()||(activeSignedIn()&&resource.data.userId==request.auth.uid);
+}
+match /restaurantReservations/{docId} {
+allow read: if canReadModule(workspaceId,'reservations')||canReadModule(workspaceId,'orders')||canReadModule(workspaceId,'tables');
+allow create: if canCreateModule(workspaceId,'reservations')&&safeCreate(workspaceId);
+allow update: if canEditModule(workspaceId,'reservations')&&safeUpdate(workspaceId);
+allow delete: if canDeleteModule(workspaceId,'reservations');
+}
+match /restaurantWaitlist/{docId} {
+allow read: if canReadModule(workspaceId,'reservations')||canReadModule(workspaceId,'orders');
+allow create: if canCreateModule(workspaceId,'reservations')&&safeCreate(workspaceId);
+allow update: if canEditModule(workspaceId,'reservations')&&safeUpdate(workspaceId);
+allow delete: if canDeleteModule(workspaceId,'reservations');
+}
+match /restaurantReservationSettings/{docId} {
+allow read: if canReadModule(workspaceId,'reservations')||canReadModule(workspaceId,'settings');
+allow create,update,delete: if workspaceAdmin(workspaceId)||hasPermission(workspaceId,'settingsAccess');
+}
+match /restaurantReservationHistory/{docId} {
+allow read: if canReadModule(workspaceId,'reservations');
+allow create: if canCreateModule(workspaceId,'reservations')&&safeCreate(workspaceId);
+allow update: if false;
+allow delete: if false;
+}
+match /restaurantProductionBatches/{docId} {
+allow read: if canReadModule(workspaceId,'kitchenProduction');
+allow create: if canCreateModule(workspaceId,'kitchenProduction')&&safeCreate(workspaceId);
+allow update: if canEditModule(workspaceId,'kitchenProduction')&&safeUpdate(workspaceId);
+allow delete: if canDeleteModule(workspaceId,'kitchenProduction');
+}
+match /restaurantKitchenPrep/{docId} {
+allow read: if canReadModule(workspaceId,'kitchenProduction');
+allow create: if canCreateModule(workspaceId,'kitchenProduction')&&safeCreate(workspaceId);
+allow update: if canEditModule(workspaceId,'kitchenProduction')&&safeUpdate(workspaceId);
+allow delete: if canDeleteModule(workspaceId,'kitchenProduction');
+}
+match /restaurantProductionWaste/{docId} {
+allow read: if canReadModule(workspaceId,'kitchenProduction');
+allow create: if canCreateModule(workspaceId,'kitchenProduction')&&safeCreate(workspaceId);
+allow update: if workspaceAdmin(workspaceId);
+allow delete: if workspaceAdmin(workspaceId);
+}
+match /restaurantFinishedInventory/{docId} {
+allow read: if canReadModule(workspaceId,'kitchenProduction')||canReadModule(workspaceId,'inventory')||canReadModule(workspaceId,'menuManagement');
+allow create: if canCreateModule(workspaceId,'kitchenProduction')&&safeCreate(workspaceId);
+allow update: if canEditModule(workspaceId,'kitchenProduction')&&safeUpdate(workspaceId);
+allow delete: if canDeleteModule(workspaceId,'kitchenProduction');
 }
 match /{document=**} {
 allow read,write: if backendAdmin();

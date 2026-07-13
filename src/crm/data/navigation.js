@@ -29,6 +29,12 @@ import {
   HiOutlinePresentationChartBar,
   HiOutlineSquaresPlus,
   HiOutlineTruck,
+  HiOutlineStar,
+  HiOutlineGift,
+  HiOutlineMapPin,
+  HiOutlineFire,
+  HiOutlineCube,
+  HiOutlineExclamationTriangle,
 } from 'react-icons/hi2'
 import { GiRoundTable } from 'react-icons/gi'
 
@@ -81,6 +87,22 @@ export const navItems = [
   { label: 'WhatsApp Follow-Ups', to: '/app/whatsapp-followups', icon: HiOutlineBell },
   { label: 'WhatsApp Templates', to: '/app/whatsapp-templates', icon: HiOutlineDocumentText },
   { label: 'Settings', to: '/app/settings', icon: HiOutlineCog6Tooth },
+  { label: 'Loyalty & Rewards', to: '/app/loyalty', icon: HiOutlineStar },
+  { label: 'Loyalty Rewards', to: '/app/loyalty/rewards', icon: HiOutlineGift },
+  { label: 'Loyalty Coupons', to: '/app/loyalty/coupons', icon: HiOutlineTag },
+  { label: 'Loyalty Campaigns', to: '/app/loyalty/campaigns', icon: HiOutlineSparkles },
+  { label: 'Delivery Dashboard', to: '/app/delivery', icon: HiOutlineTruck },
+  { label: 'Delivery Orders', to: '/app/delivery/orders', icon: HiOutlineClipboardDocumentList },
+  { label: 'Delivery Drivers', to: '/app/delivery/drivers', icon: HiOutlineUserGroup },
+  { label: 'Delivery Zones', to: '/app/delivery/zones', icon: HiOutlineMapPin },
+  { label: 'Driver Dashboard', to: '/app/driver', icon: HiOutlineTruck },
+  { label: 'Reservations', to: '/app/reservations', icon: HiOutlineCalendarDays },
+  { label: 'Reservation Calendar', to: '/app/reservations/calendar', icon: HiOutlineCalendarDays },
+  { label: 'Waitlist', to: '/app/reservations/waitlist', icon: HiOutlineUserGroup },
+  { label: 'Kitchen Production', to: '/app/kitchen-production', icon: HiOutlineFire },
+  { label: 'Production Batches', to: '/app/kitchen-production/batches', icon: HiOutlineCube },
+  { label: 'Kitchen Prep', to: '/app/kitchen-production/prep', icon: HiOutlineClipboardDocumentCheck },
+  { label: 'Prod. Waste', to: '/app/kitchen-production/waste', icon: HiOutlineExclamationTriangle },
 ]
 
 

@@ -2,6 +2,9 @@ import { useUser } from '../hooks/useUser.js'
 import { calculateRetailPosRevenue } from '../lib/retailRevenueDedup.js'
 import { Link } from 'react-router-dom'
 import { memo, useEffect, useMemo } from 'react'
+import { useFeatureDiscovery } from '../hooks/useFeatureDiscovery.js'
+import { featureKeyForRoute } from '../lib/featureRegistry.js'
+import FeatureBadge from '../components/ui/FeatureBadge.jsx'
 import {
   HiOutlineBolt,
   HiOutlineChartBar,
@@ -53,6 +56,7 @@ import { useInventoryTransactions } from '../hooks/useInventoryTransactions.js'
 import { useInventoryStats } from '../hooks/useInventory.js'
 import { usePosOrders } from '../hooks/usePosOrders.js'
 import { usePosWalletPayments } from '../hooks/usePosWalletPayments.js'
+import { useLoyaltyAnalytics } from '../hooks/useLoyaltyAnalytics.js'
 import { useSchoolAttendanceSummary } from '../hooks/useSchoolAttendanceSummary.js'
 import WhatsappDashboard from '../components/dashboard/WhatsappDashboard.jsx'
 import {
@@ -279,11 +283,18 @@ const ProgressRow = memo(function ProgressRow({ label, value, max, tone = 'bg-sk
 })
 
 const QuickAction = memo(function QuickAction({ to, icon: Icon, title, detail }) {
+  const { isNew, markSeen } = useFeatureDiscovery()
+  const featureKey = featureKeyForRoute(to)
+  const showBadge = featureKey && isNew(featureKey)
   return (
     <Link
       to={to}
-      className="group flex min-w-0 items-center gap-3 rounded-[1.15rem] border border-slate-100 bg-white/70 p-3 transition-colors duration-100 hover:border-sky-100 hover:bg-white dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
+      onClick={() => { if (featureKey) markSeen(featureKey) }}
+      className="group relative flex min-w-0 items-center gap-3 rounded-[1.15rem] border border-slate-100 bg-white/70 p-3 transition-colors duration-100 hover:border-sky-100 hover:bg-white dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
     >
+      {showBadge ? (
+        <span className="absolute -right-1 -top-1 z-10"><FeatureBadge /></span>
+      ) : null}
       <HdDashboardIcon icon={Icon} tone={hdToneForText(`${title} ${detail} ${to}`)} />
       <span className="min-w-0">
         <span className="block truncate text-sm font-semibold text-slate-950 dark:text-white">{title}</span>

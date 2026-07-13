@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { doc, getDoc, runTransaction, serverTimestamp } from 'firebase/firestore'
 import { clientSafeMessage } from '../utils/messages.js'
 import { db } from '../lib/firebase.js'
-import { listenToWorkspaceCollection } from '../lib/firestore.js'
+import { listenToWorkspaceCollection, workspaceCollectionPath } from '../lib/firestore.js'
 import { useUser } from './useUser.js'
 import {
   createRestaurantRefundRecord,
@@ -161,7 +161,7 @@ export function useRestaurantRefunds(options = {}) {
   /* ── recordRefund ───────────────────────────────────────────── */
 
   const recordRefund = useCallback(
-    async (input = {}) => {
+    async (input = {}, options = {}) => {
       // ── Workspace / auth guards ──────────────────────────────
       if (!workspaceId) {
         return { ok: false, created: false, duplicate: false, refund: null, error: 'Workspace is required.' }
@@ -179,6 +179,14 @@ export function useRestaurantRefunds(options = {}) {
       if (refundAmount <= 0) {
         return { ok: false, created: false, duplicate: false, refund: null, error: 'Refund amount must be greater than zero.' }
       }
+
+      // ── Payments to reverse (only for full refunds) ────────────
+      const paymentsToReverse = Array.isArray(options?.paymentsToReverse)
+        ? options.paymentsToReverse.filter(Boolean)
+        : []
+
+      // ── Capture original order snapshot (used for local order update) ──
+      const orderSnapshot = options?.orderSnapshot || {}
 
       // ── Identity override — cashier MUST come from auth only ──
       const safeInput = {
@@ -213,27 +221,61 @@ export function useRestaurantRefunds(options = {}) {
           record.businessDay,
         )
 
-        const path = `workspaces/${workspaceId}/restaurantRefunds/${refundId}`
-        const refundRef = doc(db, path)
+        const refundPath = `workspaces/${workspaceId}/restaurantRefunds/${refundId}`
+        const refundRef = doc(db, refundPath)
 
-        // ── Firestore transaction ──────────────────────────────
+        // ── Firestore transaction (refund + payment reversals) ──
         const result = await runTransaction(db, async (txn) => {
+          // Duplicate check
           const existingSnap = await txn.get(refundRef)
-
           if (existingSnap.exists()) {
-            return { created: false, duplicate: true, refund: { id: existingSnap.id, ...existingSnap.data() } }
+            return { created: false, duplicate: true, refund: { id: existingSnap.id, ...existingSnap.data() }, reversals: [] }
           }
 
+          // Reverse each payment inside the same transaction
+          const reversals = []
+          for (const p of paymentsToReverse) {
+            const paymentPath = `workspaces/${workspaceId}/restaurantPayments/${p.paymentId}`
+            const paymentRef = doc(db, paymentPath)
+            const paymentSnap = await txn.get(paymentRef)
+
+            if (!paymentSnap.exists()) {
+              throw new Error(`Payment ${p.paymentId} not found. Refund cancelled.`)
+            }
+
+            const paymentData = paymentSnap.data()
+            if (paymentData?.status === 'reversed') {
+              throw new Error(`Payment ${p.paymentId} is already reversed. Cannot refund the same payment twice.`)
+            }
+
+            txn.update(paymentRef, {
+              status: 'reversed',
+              reversedAt: serverTimestamp(),
+              reversedBy: firebaseUser.uid,
+              reversedByRefundId: refundId,
+              notes: (paymentData?.notes || '') + ` | Reversed by refund ${refundId}`,
+              updatedAt: serverTimestamp(),
+            })
+
+            reversals.push({ paymentId: p.paymentId, amount: p.amount, reversed: true })
+          }
+
+          // Create refund record
           txn.set(refundRef, {
             ...record,
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
           })
 
-          return { created: true, duplicate: false, refund: { id: refundId, ...record } }
+          return {
+            created: true,
+            duplicate: false,
+            refund: { id: refundId, ...record },
+            reversals,
+          }
         })
 
-        return { ok: true, ...result }
+        return { ok: true, ...result, orderSnapshot }
       } catch (err) {
         return {
           ok: false,

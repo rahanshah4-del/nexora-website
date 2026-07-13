@@ -1,6 +1,7 @@
 import fs from 'fs/promises'
 import path from 'path'
 import { blogArticles } from '../src/lib/blogData.js'
+import { submitIndexNow } from './indexnow.mjs'
 
 const ROOT = process.cwd()
 const APP_ROUTER = path.join(ROOT, 'src', 'AppRouter.jsx')
@@ -127,9 +128,41 @@ function rssXml(articles) {
   return lines.join('\n')
 }
 
+// Parse an existing sitemap into a map of loc -> lastmod so the next build can
+// detect which public URLs were created, updated (lastmod changed) or removed.
+function parseSitemapEntries(xml) {
+  const entries = new Map()
+  if (!xml) return entries
+  const urlRegex = /<url>([\s\S]*?)<\/url>/g
+  let block
+  while ((block = urlRegex.exec(xml))) {
+    const loc = /<loc>([\s\S]*?)<\/loc>/.exec(block[1])?.[1]?.trim()
+    if (!loc) continue
+    const lastmod = /<lastmod>([\s\S]*?)<\/lastmod>/.exec(block[1])?.[1]?.trim() || ''
+    entries.set(loc, lastmod)
+  }
+  return entries
+}
+
+// Changed URLs = added, removed, or whose lastmod moved since the previous build.
+function diffChangedUrls(previous, current) {
+  const changed = new Set()
+  for (const [loc, lastmod] of current) {
+    if (!previous.has(loc) || previous.get(loc) !== lastmod) changed.add(loc)
+  }
+  for (const loc of previous.keys()) {
+    if (!current.has(loc)) changed.add(loc)
+  }
+  return Array.from(changed)
+}
+
 export async function buildSitemap() {
   const routes = await readRoutes()
   const htmlFiles = await readPublicHtmlFiles()
+
+  const previousSitemap = await fs
+    .readFile(path.join(PUBLIC_DIR, 'sitemap.xml'), 'utf8')
+    .catch(() => '')
 
   const urls = []
   for (const r of routes) {
@@ -155,6 +188,14 @@ export async function buildSitemap() {
   console.log('Wrote public/sitemap.xml with', urls.length, 'entries')
   console.log('Wrote public/blog-sitemap.xml with', blogUrls.length, 'entries')
   console.log('Wrote public/rss.xml with', blogArticles.length, 'entries')
+
+  // Notify IndexNow about URLs that changed vs. the previous sitemap. On the very
+  // first build (no previous sitemap) every URL is treated as new. Best-effort:
+  // this never throws, so it cannot break the build.
+  const currentEntries = parseSitemapEntries(sitemapXml(urls))
+  const changedUrls = diffChangedUrls(parseSitemapEntries(previousSitemap), currentEntries)
+  const result = await submitIndexNow(changedUrls, { reason: 'sitemap-build' })
+  if (result?.submitted) console.log('IndexNow: submitted', result.submitted, 'changed URL(s)')
 }
 
 if (import.meta.url === `file://${process.argv[1]}` || process.argv[1] && process.argv[1].endsWith('generate-sitemap.mjs')) {

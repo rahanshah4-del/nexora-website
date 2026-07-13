@@ -26,6 +26,15 @@ export default {
       backgroundImage: {
         'sparkle-grid': 'radial-gradient(circle at top left, rgba(56, 189, 248, 0.18), transparent 30%), radial-gradient(circle at 80% 20%, rgba(168, 85, 247, 0.16), transparent 25%)',
       },
+      animation: {
+        'feature-pulse': 'featurePulse 3s ease-in-out infinite',
+      },
+      keyframes: {
+        featurePulse: {
+          '0%, 100%': { opacity: '1', transform: 'scale(1)' },
+          '50%': { opacity: '0.8', transform: 'scale(1.06)' },
+        },
+      },
     },
   },
   plugins: [],

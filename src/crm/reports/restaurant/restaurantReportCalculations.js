@@ -1,9 +1,16 @@
 import { normalizeRestaurantReportOrders, restaurantReportNumber } from './restaurantReportNormalizer.js'
+import { computeBusinessIntelligence } from './restaurantBusinessIntelligence.js'
+import { classifyDetailedRestaurantCashVariance } from '../../data/restaurantCashData.js'
 
 const onlineMethods = new Set(['Card', 'JazzCash', 'Easypaisa', 'Bank'])
 
 function money(value) {
   return restaurantReportNumber(value)
+}
+
+function rawNumber(value) {
+  const n = Number(value)
+  return Number.isFinite(n) ? n : 0
 }
 
 function emptyObject(keys = []) {
@@ -59,6 +66,12 @@ export function buildRestaurantReportModel({
   openingCash = 0,
   filters = {},
   settings = {},
+  cashSessions = [],        // closed sessions with reconciliation data
+  cashRefundsTotal,     // (legacy) overridden by cashSessions if present
+  cashWithdrawalsTotal, // (legacy) overridden by cashSessions if present
+  cashExpensesTotal,    // (legacy) overridden by cashSessions if present
+  cashAdjustmentsTotal, // (legacy) overridden by cashSessions if present
+  cashDepositsTotal,    // (legacy) overridden by cashSessions if present
 } = {}) {
   const normalizedOrders = normalizeRestaurantReportOrders(orders, { settings }).filter((order) => passesFilters(order, filters))
   const customerRowsSource = Array.isArray(customers) ? customers : []
@@ -157,13 +170,85 @@ export function buildRestaurantReportModel({
   const totalSales = billedOrders.reduce((sum, order) => sum + order.total, 0)
   const cashReceived = billedOrders.filter((order) => order.paymentMethod === 'Cash').reduce((sum, order) => sum + order.paidAmount, 0)
   const onlineReceived = billedOrders.filter((order) => onlineMethods.has(order.paymentMethod)).reduce((sum, order) => sum + order.paidAmount, 0)
+  const cardReceived = billedOrders.filter((order) => order.paymentMethod === 'Card').reduce((sum, order) => sum + order.paidAmount, 0)
+  const digitalPayments = billedOrders.filter((order) => ['JazzCash', 'Easypaisa', 'Bank', 'Card'].includes(order.paymentMethod)).reduce((sum, order) => sum + order.paidAmount, 0)
   const itemRows = rankItemRows(Array.from(itemMap.values()))
   const tableRows = Array.from(tableMap.values()).sort((a, b) => b.sales - a.sales)
   const customerRows = Array.from(customerMap.values()).sort((a, b) => b.sales - a.sales)
   const kotOrders = normalizedOrders.filter((order) => !order.isInvoice && !order.isCancelled)
   const normalOrderSales = normalBilledOrders.reduce((sum, order) => sum + order.total, 0)
   const invoiceOrderSales = invoiceBilledOrders.reduce((sum, order) => sum + order.total, 0)
+  const expenseSummary = {
+    total: approvedExpenses,
+    count: Array.isArray(expenses) ? expenses.filter((e) => {
+      const status = String(e?.approvalStatus || e?.status || '').toLowerCase()
+      return !status || ['approved', 'paid', 'complete', 'completed', 'verified'].includes(status)
+    }).length : 0,
+  }
 
+  // ── Cash reconciliation ─────────────────────────────────────
+  const cashReconciliation = (() => {
+    const closedSessions = (Array.isArray(cashSessions) ? cashSessions : []).filter((s) => s.status === 'closed' || s.status === 'approved' || s.status === 'locked')
+    const hasSessions = closedSessions.length > 0
+
+    const aggCashSales = hasSessions ? closedSessions.reduce((sum, s) => sum + money(s.cashSales), 0) : money(cashReceived)
+    const aggCashRefunds = hasSessions ? closedSessions.reduce((sum, s) => sum + money(s.cashRefunds), 0) : money(cashRefundsTotal || 0)
+    const aggCashDeposits = hasSessions ? closedSessions.reduce((sum, s) => sum + money(s.cashDeposits), 0) : money(cashDepositsTotal || 0)
+    const aggCashWithdrawals = hasSessions ? closedSessions.reduce((sum, s) => sum + money(s.cashWithdrawals), 0) : money(cashWithdrawalsTotal || 0)
+    const aggCashExpenses = hasSessions ? closedSessions.reduce((sum, s) => sum + money(s.cashExpenses), 0) : money(cashExpensesTotal || 0)
+    const aggCashAdjustments = hasSessions ? closedSessions.reduce((sum, s) => sum + money(s.cashAdjustments), 0) : money(cashAdjustmentsTotal || 0)
+
+    const latest = closedSessions[0] || {}
+    const expectedCash = money(openingCash) + aggCashSales + aggCashDeposits - aggCashRefunds - aggCashWithdrawals - aggCashExpenses + aggCashAdjustments
+    const actualClosingCash = latest.actualClosingCash != null ? rawNumber(latest.actualClosingCash) : null
+    const cashDifference = actualClosingCash != null ? actualClosingCash - expectedCash : null
+    const varianceStatus = latest.varianceStatus || null
+
+    return {
+      expectedCash, actualClosingCash, cashDifference,
+      cashReconciliationAvailable: true, unavailableReason: '',
+      cashSales: aggCashSales, cashRefunds: aggCashRefunds, cashDeposits: aggCashDeposits,
+      cashWithdrawals: aggCashWithdrawals, cashExpenses: aggCashExpenses, cashAdjustments: aggCashAdjustments,
+      varianceStatus, openingCash: money(openingCash),
+      cashSessions: Array.isArray(cashSessions) ? cashSessions : [],
+      totalTransactions: hasSessions ? closedSessions.reduce((sum, s) => sum + (Number(s.totalTransactions) || 0), 0) : 0,
+      averageSale: latest.averageSale || null, largestSale: latest.largestSale || null, largestRefund: latest.largestRefund || null,
+
+      // ── Settlement summary fields ───────────────────────────
+      settlementCounts: hasSessions
+        ? {
+            total: closedSessions.length,
+            pendingReview: closedSessions.filter((s) => (s.settlementStatus || s.status) === 'pending_review' || (s.status === 'closed' && !s.settlementStatus)).length,
+            approved: closedSessions.filter((s) => s.settlementStatus === 'approved').length,
+            rejected: closedSessions.filter((s) => s.settlementStatus === 'rejected').length,
+            locked: closedSessions.filter((s) => s.settlementStatus === 'locked').length,
+          }
+        : { total: 0, pendingReview: 0, approved: 0, rejected: 0, locked: 0 },
+      settlementReviewers: hasSessions
+        ? closedSessions
+            .filter((s) => s.settledBy || s.approvedBy)
+            .map((s) => ({ cashier: s.cashierName, settledBy: s.settledBy, approvedBy: s.approvedBy, rejectedBy: s.rejectedBy, lockedBy: s.lockedBy }))
+        : [],
+      settlementVarianceClassifications: hasSessions
+        ? closedSessions
+            .filter((s) => s.cashDifference)
+            .map((s) => ({
+              sessionId: s.id,
+              cashierName: s.cashierName,
+              cashDifference: rawNumber(s.cashDifference),
+              classification: classifyDetailedRestaurantCashVariance({
+                cashDifference: s.cashDifference,
+                cashSales: s.cashSales,
+                cashRefunds: s.cashRefunds,
+                cashExpenses: s.cashExpenses,
+                cashDeposits: s.cashDeposits,
+              }),
+            }))
+        : [],
+    }
+  })()
+
+  // ── Build return object ─────────────────────────────────────
   return {
     orders: normalizedOrders,
     billedOrders,
@@ -223,16 +308,98 @@ export function buildRestaurantReportModel({
       approvedExpenses,
       netProfit,
     },
-    cashReconciliation: {
-      expectedCash: null,
-      actualClosingCash: null,
-      cashDifference: null,
-      cashReconciliationAvailable: false,
-      unavailableReason: 'Actual closing cash, reliable cash expense source, cash refunds, and cash withdrawals are not stored in the Restaurant report source data.',
-    },
+    // ── Auto-aggregate from closed cash sessions ────────────────
+    cashReconciliation,
     cashReceived,
     onlineReceived,
+    cardReceived,
+    digitalPayments,
     periodOrderOutstanding: outstandingAmount,
     storedCustomerCreditBalance: customerRows.reduce((sum, row) => sum + money(row.storedCustomerCreditBalance), 0),
+
+    // ── Executive insights ──────────────────────────────────────
+    averageCustomerSpend: customerRows.length > 0
+      ? totalSales / customerRows.length
+      : 0,
+    mostUsedPaymentMethod: (() => {
+      const counts = {}
+      billedOrders.forEach((o) => {
+        const m = o.paymentMethod || 'Unknown'
+        counts[m] = (counts[m] || 0) + 1
+      })
+      let maxCount = 0
+      let mode = 'N/A'
+      Object.entries(counts).forEach(([method, count]) => {
+        if (count > maxCount) { maxCount = count; mode = method }
+      })
+      return mode
+    })(),
+    peakSalesHour: (() => {
+      const entries = Object.entries(ordersByHour || {})
+      if (!entries.length) return { hour: 'N/A', orders: 0 }
+      let maxOrders = 0
+      let peakHour = 'N/A'
+      entries.forEach(([hour, count]) => {
+        if (count > maxOrders) { maxOrders = Number(count); peakHour = hour }
+      })
+      return { hour: `${String(peakHour).padStart(2, '0')}:00`, orders: maxOrders }
+    })(),
+    largestDiscount: discountRows.length > 0
+      ? Math.max(...discountRows.map((o) => money(o.discount)))
+      : 0,
+    largestBill: billedOrders.length > 0
+      ? Math.max(...billedOrders.map((o) => money(o.total)))
+      : 0,
+    bestSellingItem: (() => {
+      const sorted = [...itemRows].sort((a, b) => b.quantity - a.quantity)
+      return sorted.length > 0 ? sorted[0] : null
+    })(),
+    bestCategory: (() => {
+      const cats = Array.from(categoryMap.values()).sort((a, b) => b.revenue - a.revenue)
+      return cats.length > 0 ? cats[0] : null
+    })(),
+    fastestSellingItem: (() => {
+      const sorted = [...itemRows].sort((a, b) => b.quantity - a.quantity)
+      return sorted.length > 0 ? sorted[0] : null
+    })(),
+    paymentMethodBreakdown: (() => {
+      const total = collectedAmount || 1
+      const breakdown = {}
+      Object.entries(collectionsByPaymentMethod).forEach(([method, amount]) => {
+        breakdown[method] = {
+          amount: money(amount),
+          percentage: (money(amount) / total) * 100,
+        }
+      })
+      return breakdown
+    })(),
+    expenseSummary,
+    customerCount: customerRows.length,
+
+    // ── Business Intelligence ─────────────────────────────────────
+    businessIntelligence: computeBusinessIntelligence({
+      billedOrders: { length: billedOrders.length },
+      orders: { length: normalizedOrders.length },
+      netSales,
+      averageOrderValue: billedOrders.length ? netSales / billedOrders.length : 0,
+      collectedAmount,
+      outstandingAmount,
+      approvedExpenses,
+      netProfit,
+      discounts,
+      cashReceived,
+      cancellations: { count: cancellationRows.length },
+      cashReconciliation: {
+        cashRefunds: cashReconciliation?.cashRefunds || 0,
+        cashDifference: cashReconciliation?.cashDifference || 0,
+        expectedCash: cashReconciliation?.expectedCash || 0,
+        cashSales: cashReconciliation?.cashSales || 0,
+      },
+      customerPerformance: Array.from(customerMap.values()).map((c) => ({
+        billedOrders: c.billedOrders,
+        sales: c.sales,
+        paid: c.paid,
+      })),
+    }),
   }
 }

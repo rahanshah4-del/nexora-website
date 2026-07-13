@@ -87,6 +87,29 @@ const WhatsappLeadsPage = lazy(() => import('./crm/pages/WhatsappLeads.jsx'))
 const WhatsappFollowUpsPage = lazy(() => import('./crm/pages/WhatsappFollowUps.jsx'))
 const WhatsappTemplatesPage = lazy(() => import('./crm/pages/WhatsappTemplates.jsx'))
 const WhatsappConnectPage = lazy(() => import('./crm/pages/WhatsappConnect.jsx'))
+const LoyaltyPage = lazy(() => import('./crm/pages/Loyalty.jsx'))
+const LoyaltyRewardsPage = lazy(() => import('./crm/pages/LoyaltyRewards.jsx'))
+const LoyaltyCouponsPage = lazy(() => import('./crm/pages/LoyaltyCoupons.jsx'))
+const LoyaltyCampaignsPage = lazy(() => import('./crm/pages/LoyaltyCampaigns.jsx'))
+const LoyaltySettingsPage = lazy(() => import('./crm/pages/LoyaltySettings.jsx'))
+const DeliveryDashboardPage = lazy(() => import('./crm/pages/DeliveryDashboard.jsx'))
+const DeliveryOrdersPage = lazy(() => import('./crm/pages/DeliveryOrders.jsx'))
+const DeliveryDriversPage = lazy(() => import('./crm/pages/DeliveryDrivers.jsx'))
+const DeliveryZonesPage = lazy(() => import('./crm/pages/DeliveryZones.jsx'))
+const DeliverySettingsPage = lazy(() => import('./crm/pages/DeliverySettings.jsx'))
+const DriverDashboardPage = lazy(() => import('./crm/pages/DriverDashboard.jsx'))
+const OnlineOrderingPortalPage = lazy(() => import('./crm/pages/OnlineOrderingPortal.jsx'))
+const CustomerOrderTrackingPage = lazy(() => import('./crm/pages/CustomerOrderTracking.jsx'))
+const RestaurantReservationDashboardPage = lazy(() => import('./crm/pages/RestaurantReservationDashboard.jsx'))
+const RestaurantReservationsPage = lazy(() => import('./crm/pages/RestaurantReservations.jsx'))
+const RestaurantReservationCalendarPage = lazy(() => import('./crm/pages/RestaurantReservationCalendar.jsx'))
+const RestaurantWaitlistPage = lazy(() => import('./crm/pages/RestaurantWaitlist.jsx'))
+const RestaurantReservationSettingsPage = lazy(() => import('./crm/pages/RestaurantReservationSettings.jsx'))
+const KitchenProductionDashboardPage = lazy(() => import('./crm/pages/KitchenProductionDashboard.jsx'))
+const KitchenProductionBatchesPage = lazy(() => import('./crm/pages/KitchenProductionBatches.jsx'))
+const KitchenPrepSheetPage = lazy(() => import('./crm/pages/KitchenPrepSheet.jsx'))
+const KitchenProductionWastePage = lazy(() => import('./crm/pages/KitchenProductionWaste.jsx'))
+const KitchenProductionReportsPage = lazy(() => import('./crm/pages/KitchenProductionReports.jsx'))
 const UpgradeRequests = lazy(() => import('./pages/admin/UpgradeRequests.jsx'))
 const ControlCentrePage = lazy(() => import('./pages/admin/ControlCentre.jsx'))
 const ClientCommandCenterPage = lazy(() => import('./pages/admin/ClientCommandCenter.jsx'))
@@ -412,6 +435,29 @@ export default function AppRouter() {
         <Route path="whatsapp-templates" element={<LazyPage><WhatsappTemplatesPage /></LazyPage>} />
         <Route path="whatsapp-connect" element={<LazyPage><WhatsappConnectPage /></LazyPage>} />
         <Route path="settings" element={<LazyPage><SettingsPage /></LazyPage>} />
+        <Route path="loyalty" element={<LazyPage><LoyaltyPage /></LazyPage>} />
+        <Route path="loyalty/rewards" element={<LazyPage><LoyaltyRewardsPage /></LazyPage>} />
+        <Route path="loyalty/coupons" element={<LazyPage><LoyaltyCouponsPage /></LazyPage>} />
+        <Route path="loyalty/campaigns" element={<LazyPage><LoyaltyCampaignsPage /></LazyPage>} />
+        <Route path="loyalty/settings" element={<LazyPage><LoyaltySettingsPage /></LazyPage>} />
+        <Route path="delivery" element={<LazyPage><DeliveryDashboardPage /></LazyPage>} />
+        <Route path="delivery/orders" element={<LazyPage><DeliveryOrdersPage /></LazyPage>} />
+        <Route path="delivery/drivers" element={<LazyPage><DeliveryDriversPage /></LazyPage>} />
+        <Route path="delivery/zones" element={<LazyPage><DeliveryZonesPage /></LazyPage>} />
+        <Route path="delivery/settings" element={<LazyPage><DeliverySettingsPage /></LazyPage>} />
+        <Route path="driver" element={<LazyPage><DriverDashboardPage /></LazyPage>} />
+        <Route path="menu/:slug" element={<LazyPage><OnlineOrderingPortalPage /></LazyPage>} />
+        <Route path="track/:orderNumber" element={<LazyPage><CustomerOrderTrackingPage /></LazyPage>} />
+        <Route path="reservations" element={<LazyPage><RestaurantReservationDashboardPage /></LazyPage>} />
+        <Route path="reservations/list" element={<LazyPage><RestaurantReservationsPage /></LazyPage>} />
+        <Route path="reservations/calendar" element={<LazyPage><RestaurantReservationCalendarPage /></LazyPage>} />
+        <Route path="reservations/waitlist" element={<LazyPage><RestaurantWaitlistPage /></LazyPage>} />
+        <Route path="reservations/settings" element={<LazyPage><RestaurantReservationSettingsPage /></LazyPage>} />
+        <Route path="kitchen-production" element={<LazyPage><KitchenProductionDashboardPage /></LazyPage>} />
+        <Route path="kitchen-production/batches" element={<LazyPage><KitchenProductionBatchesPage /></LazyPage>} />
+        <Route path="kitchen-production/prep" element={<LazyPage><KitchenPrepSheetPage /></LazyPage>} />
+        <Route path="kitchen-production/waste" element={<LazyPage><KitchenProductionWastePage /></LazyPage>} />
+        <Route path="kitchen-production/reports" element={<LazyPage><KitchenProductionReportsPage /></LazyPage>} />
         <Route path="coming-soon/:moduleId" element={<LazyPage><DashboardHomePage /></LazyPage>} />
       </Route>
 

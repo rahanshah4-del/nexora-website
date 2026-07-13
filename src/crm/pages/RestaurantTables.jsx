@@ -76,7 +76,7 @@ function normalizeFloors(value) {
   return [...normalizedInitial, ...customFloors]
 }
 
-function loadRestaurantFloors() {
+export function loadRestaurantFloors() {
   if (typeof window === 'undefined') return initialFloors
   try {
     const stored = window.localStorage.getItem(tablesKey())

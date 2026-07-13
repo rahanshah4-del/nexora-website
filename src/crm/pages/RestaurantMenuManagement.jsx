@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
-import { motion } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import {
   HiOutlineBars3,
+  HiOutlineBeaker,
   HiOutlineDocumentDuplicate,
   HiOutlineMagnifyingGlass,
   HiOutlineNoSymbol,
@@ -20,6 +21,10 @@ import Select from '../components/ui/Select.jsx'
 import { hasRestaurantOffer, loadRestaurantMenuCategories, loadRestaurantMenuItems, saveRestaurantMenuCategories, saveRestaurantMenuItems } from '../data/restaurantMenu.js'
 import { finalItemPrice, formatRestaurantCurrency, normalizeDiscountType, safeMoney } from '../lib/restaurantPosCalculations.js'
 import { cn } from '../utils/cn.js'
+import { useUser } from '../hooks/useUser.js'
+import { useRestaurantIngredients, useRestaurantRecipes } from '../hooks/useRestaurantRecipes.js'
+import { useRestaurantWasteTracking } from '../hooks/useRestaurantWasteTracking.js'
+import RestaurantInventoryPanel from '../components/restaurant/RestaurantInventoryPanel.jsx'
 
 const blankItem = {
   name: '',
@@ -64,6 +69,11 @@ function ToggleField({ label, checked, onChange }) {
 }
 
 export default function RestaurantMenuManagementPage() {
+  const { workspaceId, businessType } = useUser()
+  const { ingredients, addIngredient } = useRestaurantIngredients({ enabled: Boolean(workspaceId) })
+  const { recipes, saveRecipe } = useRestaurantRecipes({ enabled: Boolean(workspaceId) })
+  const { wasteRecords, recordWaste } = useRestaurantWasteTracking({ enabled: Boolean(workspaceId) })
+  const [inventoryOpen, setInventoryOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState('All Menu')
   const [statusFilter, setStatusFilter] = useState('all')
@@ -223,6 +233,22 @@ export default function RestaurantMenuManagementPage() {
 
   return (
     <>
+      <AnimatePresence>
+        {inventoryOpen ? (
+          <RestaurantInventoryPanel
+            ingredients={ingredients}
+            recipes={recipes}
+            wasteRecords={wasteRecords}
+            itemSales={[]}
+            menuItems={items}
+            currency="PKR"
+            onSaveIngredient={(data) => addIngredient(data)}
+            onSaveRecipe={(data) => saveRecipe(data)}
+            onRecordWaste={(data) => recordWaste(data)}
+            onClose={() => setInventoryOpen(false)}
+          />
+        ) : null}
+      </AnimatePresence>
       <motion.div
         className="min-w-0 space-y-5"
         initial={{ opacity: 0, y: 10 }}
@@ -238,10 +264,16 @@ export default function RestaurantMenuManagementPage() {
                 Manage menu items, pricing, availability, offers, and discounts.
               </p>
             </div>
-            <Button type="button" onClick={() => openModal()}>
-              <HiOutlinePlus className="h-4 w-4" />
-              Add Item
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button type="button" variant="subtle" onClick={() => setInventoryOpen(true)}>
+                <HiOutlineBeaker className="h-4 w-4" />
+                Inventory Intelligence
+              </Button>
+              <Button type="button" onClick={() => openModal()}>
+                <HiOutlinePlus className="h-4 w-4" />
+                Add Item
+              </Button>
+            </div>
           </div>
 
           <div className="mt-5 grid min-w-0 gap-3 lg:grid-cols-[minmax(0,1fr)_180px_160px_160px_auto]">

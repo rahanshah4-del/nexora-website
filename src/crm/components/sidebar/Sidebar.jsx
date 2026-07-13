@@ -5,6 +5,9 @@ import { cn } from '../../utils/cn.js'
 import React, { memo, useCallback, useMemo, useState } from 'react'
 import { useUser } from '../../hooks/useUser.js'
 import { useWorkspaceAccess } from '../../hooks/useWorkspaceAccess.js'
+import { useFeatureDiscovery } from '../../hooks/useFeatureDiscovery.js'
+import FeatureBadge from '../ui/FeatureBadge.jsx'
+import { featureKeyForRoute } from '../../lib/featureRegistry.js'
 import logoUrl from '../../../assets/logo/nexora-logo.svg'
 import { isDeveloperOwnerAccount, labelForBusinessModule, labelForBusinessType, moduleCatalog, normalizeBusinessType, selectedModulesForSidebar, teamManagementEnabledForBusinessType } from '../../data/moduleAccess.js'
 import { resolveWorkspaceName } from '../../../lib/workspaceName.js'
@@ -143,6 +146,11 @@ const RESTAURANT_POS_SIDEBAR_ORDER = [
   'customers',
   'tables',
   'kitchenDisplay',
+  'reservations',
+  'kitchenProduction',
+  'delivery',
+  'deliveryDrivers',
+  'deliveryZones',
   'invoices',
   'expenses',
   'accounts',
@@ -297,6 +305,15 @@ const SidebarNavItem = memo(function SidebarNavItem({ item, collapsed, onNavigat
   const label = item.label || compactLabels[item.to]
   const disabled = Boolean(item.comingSoon)
   const tone = iconToneForItem(item)
+  const { isNew, markSeen } = useFeatureDiscovery()
+  const featureKey = featureKeyForRoute(item.to)
+  const showBadge = featureKey && isNew(featureKey)
+
+  function handleNav() {
+    if (featureKey) markSeen(featureKey)
+    onNavigate?.()
+  }
+
   const content = (
     <>
       {!disabled ? null : (
@@ -304,8 +321,13 @@ const SidebarNavItem = memo(function SidebarNavItem({ item, collapsed, onNavigat
           Soon
         </span>
       )}
+      {showBadge && !collapsed ? (
+        <span className="absolute right-2 top-1/2 -translate-y-1/2 z-10">
+          <FeatureBadge />
+        </span>
+      ) : null}
       <HdSidebarIcon icon={Icon} tone={tone} disabled={disabled} />
-      {!collapsed ? <span className="truncate pr-9">{label}</span> : null}
+      {!collapsed ? <span className={`truncate ${showBadge ? 'pr-14' : 'pr-9'}`}>{label}</span> : null}
       {collapsed ? (
         <span className="sidebar-tooltip pointer-events-none absolute left-full top-1/2 z-50 ml-3 hidden -translate-y-1/2 whitespace-nowrap rounded-xl border border-slate-200 bg-slate-950 px-3 py-1.5 text-xs font-bold text-white shadow-lg group-hover:block">
           {label}
@@ -340,7 +362,7 @@ const SidebarNavItem = memo(function SidebarNavItem({ item, collapsed, onNavigat
           console.log('[Inventory Route] clicked')
           console.log('[Inventory Route] target', item.to)
         }
-        onNavigate?.()
+        handleNav()
       }}
       title={label}
       className={({ isActive }) =>

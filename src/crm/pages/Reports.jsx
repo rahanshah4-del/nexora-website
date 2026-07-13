@@ -76,6 +76,7 @@ import { calculateSupplierBalance } from '../lib/financeCalculations.js'
 import { contractDisplayStatus, contractOutstandingBalance, contractStats, maintenanceBalanceDue, maintenanceStats } from '../lib/propertyCalculations.js'
 import { formatRestaurantCurrency } from '../lib/restaurantPosCalculations.js'
 import { buildRestaurantReport } from '../lib/restaurantReports.js'
+import { useRestaurantCashSessions } from '../hooks/useRestaurantCashSessions.js'
 import { loadTransportBookings, transportBookingsStorageKey } from '../data/transportBookings.js'
 import { loadTransportVehicles, transportVehiclesStorageKey } from '../data/transportVehicles.js'
 import { loadTransportCustomers, transportCustomersStorageKey } from '../data/transportCustomers.js'
@@ -1717,7 +1718,7 @@ function dedupeRestaurantReportOrders(normalOrders = [], invoiceOrders = []) {
 
 function RestaurantReports() {
   const { profile, currency: preferredCurrency } = usePreferences()
-  const { userDoc } = useUser()
+  const { userDoc, workspaceId: reportsWorkspaceId } = useUser()
   const invoicesApi = useInvoices({ limitCount: RESTAURANT_REPORT_INVOICE_LIMIT })
   const businessSettingsApi = useBusinessSettings()
   const settings = businessSettingsApi.settings || {}
@@ -1732,6 +1733,10 @@ function RestaurantReports() {
   const openingCash = safeNumber(
     settings.openingCash ?? settings.cashDrawerOpening ?? settings.openingBalance ?? settings.cashInHand ?? 0,
   )
+  const { sessions: cashSessions } = useRestaurantCashSessions({
+    enabled: true,
+    settings,
+  })
   const sourceWarnings = [
     RESTAURANT_REPORT_SOURCE_LIMITATION,
     invoicesApi.error ? `Invoice data warning: ${invoicesApi.error}` : '',
@@ -1755,6 +1760,7 @@ function RestaurantReports() {
       error=""
       sourceLimitations={sourceWarnings}
       settings={settings}
+      cashSessions={Array.isArray(cashSessions) ? cashSessions.filter((s) => s.status === 'closed') : []}
     />
   )
 }

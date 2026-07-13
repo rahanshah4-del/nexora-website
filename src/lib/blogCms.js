@@ -13,10 +13,22 @@ import {
 import { getDownloadURL, ref, uploadBytesResumable } from 'firebase/storage'
 import { firestoreDb as db, storage } from './firebase.js'
 import { mergeBlogArticles, normalizeBlogArticleDoc } from './blogData.js'
+import { notifyIndexNow } from './indexNow.js'
 
 export const BLOG_POSTS_COLLECTION = 'blogPosts'
 const BLOG_IMAGE_MAX_BYTES = 5 * 1024 * 1024
 const BLOG_IMAGE_UPLOAD_TIMEOUT_MS = 60000
+
+// Absolute canonical URL for a blog post + the blog index, used to notify
+// IndexNow when a public post is created, updated or removed.
+function blogUrlsForSlug(slug) {
+  const clean = String(slug || '').trim()
+  if (!clean) return []
+  return [
+    `https://nexorasolution.online/blog/${clean}`,
+    'https://nexorasolution.online/blog',
+  ]
+}
 
 export function listenPublishedBlogPosts(onRows, onError) {
   if (!db) {
@@ -64,11 +76,15 @@ export async function saveBlogPost(slug, payload) {
     updatedAt: serverTimestamp(),
     createdAt: payload.createdAt || serverTimestamp(),
   }, { merge: true })
+  // Only public (published) posts belong in search indexes. Fire-and-forget.
+  if (payload?.status === 'published') notifyIndexNow(blogUrlsForSlug(slug))
 }
 
 export async function deleteBlogPost(slug) {
   if (!db) throw new Error('Firebase is not configured.')
   await deleteDoc(doc(db, BLOG_POSTS_COLLECTION, slug))
+  // Notify so engines re-crawl the removed URL and the blog index. Fire-and-forget.
+  notifyIndexNow(blogUrlsForSlug(slug))
 }
 
 export async function uploadBlogImage(slug, file, onProgress) {
