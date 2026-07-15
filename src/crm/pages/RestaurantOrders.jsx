@@ -337,6 +337,15 @@ export default function RestaurantOrdersPage() {
   const { settings } = useBusinessSettings()
   const { userId, workspaceId, businessType, userDoc, firebaseUser, role, isOwner, isAdmin, isManager } = useUser()
 
+  /* Heartbeat — lets sidebar know this POS Till tab is open */
+  useEffect(() => {
+    sessionStorage.setItem('nexora:posTill:open', String(Date.now()))
+    const pulse = setInterval(() => {
+      sessionStorage.setItem('nexora:posTill:open', String(Date.now()))
+    }, 3000)
+    return () => { clearInterval(pulse); sessionStorage.removeItem('nexora:posTill:open') }
+  }, [])
+
   // ── State declarations (before hooks that depend on them) ──
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState('All Menu')

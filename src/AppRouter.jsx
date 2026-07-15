@@ -38,7 +38,8 @@ const DashboardHomePage = lazy(() => import('./crm/pages/DashboardHome.jsx'))
 import('./crm/pages/DashboardHome.jsx').catch(() => {})
 const RestaurantPOSPage = lazy(() => import('./crm/pages/RestaurantPOS.jsx'))
 const RestaurantOrdersPage = lazy(() => import('./crm/pages/RestaurantOrders.jsx'))
-// Preload RestaurantOrders chunk — POS Till opens in new window
+// Preload RestaurantPOS chunk — POS Till opens in new tab; also prefetch RestaurantOrders for the /orders route
+import('./crm/pages/RestaurantPOS.jsx').catch(() => {})
 import('./crm/pages/RestaurantOrders.jsx').catch(() => {})
 const RestaurantMenuManagementPage = lazy(() => import('./crm/pages/RestaurantMenuManagement.jsx'))
 const RestaurantTablesPage = lazy(() => import('./crm/pages/RestaurantTables.jsx'))
@@ -157,37 +158,55 @@ class InvoiceRouteBoundary extends Component {
 }
 
 function LazyPage({ children }) {
-  return <Suspense fallback={<AppleSkeleton />}>{children}</Suspense>
+  return <Suspense fallback={<PageSkeleton />}>{children}</Suspense>
 }
 
-function AppleSkeleton() {
+/* Apple-style shimmer skeleton — no icons, no logos, no spinners */
+const SKELETON_CSS = `
+@keyframes skShimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+@keyframes skFadeIn { 0% { opacity: 0; } 100% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .sk-shim { display: none !important; } .sk-box { opacity: .15 !important; } }
+.sk-wrap { overflow: hidden; position: relative; }
+.sk-shim { position: absolute; inset: 0; background: linear-gradient(90deg,transparent 0%,rgba(255,255,255,0.6) 50%,transparent 100%); animation: skShimmer 1.8s ease-in-out infinite; }
+.sk-box { border-radius: .75rem; background: #e2e8f0; animation: skFadeIn .4s ease-out both; }
+`
+
+function PageSkeleton() {
   return (
-    <div className="grid min-h-[75dvh] place-items-center bg-white px-5">
-      <style>{`
-        @keyframes applePulse { 0%,100% { opacity: 0.35; transform: scale(0.96); } 50% { opacity: 0.75; transform: scale(1.04); } }
-        @keyframes appleSlideUp { 0% { opacity: 0; transform: translateY(8px); } 100% { opacity: 1; transform: translateY(0); } }
-        @keyframes appleShimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
-        @media (prefers-reduced-motion: reduce) {
-          .ap { animation: none !important; opacity: 0.25 !important; }
-          .ap-shimmer { display: none !important; }
-        }
-        .ap { animation: applePulse 2s ease-in-out infinite; }
-        .ap-up { animation: appleSlideUp 0.6s ease-out both; }
-        .ap-shimmer-wrap { overflow: hidden; position: relative; }
-        .ap-shimmer { position: absolute; inset: 0; background: linear-gradient(90deg,transparent 0%,rgba(255,255,255,0.5) 50%,transparent 100%); animation: appleShimmer 1.8s ease-in-out infinite; }
-        .ap-box { border-radius: 0.75rem; background: #e2e8f0; }
-        .ap-box-pulse { border-radius: 0.75rem; background: #e2e8f0; animation: applePulse 2s ease-in-out infinite; }
-      `}</style>
-      <div className="flex flex-col items-center gap-3 ap-up" style={{ animationDelay: '0.1s' }}>
-        <div className="grid h-10 w-10 place-items-center rounded-xl border border-slate-200/80 bg-white shadow-sm">
-          <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none">
-            <path d="M12 4a8 8 0 100 16 8 8 0 000-16zm0 12a4 4 0 110-8 4 4 0 010 8z" fill="#0b82c5" fillOpacity="0.9"/>
-          </svg>
+    <div className="min-h-screen bg-white">
+      <style>{SKELETON_CSS}</style>
+      {/* Header skeleton */}
+      <div className="flex h-14 items-center justify-between border-b border-slate-100 px-5 sm:px-8">
+        <div className="h-7 w-28 sk-box sk-wrap" style={{ animationDelay: '.05s' }}><div className="sk-shim" /></div>
+        <div className="flex items-center gap-3">
+          <div className="h-7 w-20 sk-box sk-wrap" style={{ animationDelay: '.1s' }}><div className="sk-shim" /></div>
+          <div className="h-7 w-7 sk-box sk-wrap" style={{ animationDelay: '.12s' }}><div className="sk-shim" /></div>
         </div>
-        <div className="h-2 w-16 ap-box" />
-        <div className="mt-1 space-y-2">
-          <div className="h-3 w-48 ap-box-pulse" />
-          <div className="h-3 w-36 ap-box-pulse" />
+      </div>
+      <div className="mx-auto max-w-7xl px-5 sm:px-8">
+        <div className="flex gap-8 pt-8">
+          {/* Sidebar skeleton (hidden on mobile) */}
+          <div className="hidden w-56 shrink-0 space-y-3 lg:block">
+            {[.15, .2, .25, .3, .35, .4].map((d) => (
+              <div key={d} className="h-8 sk-box sk-wrap" style={{ animationDelay: `${d}s` }}><div className="sk-shim" /></div>
+            ))}
+          </div>
+          {/* Main content */}
+          <div className="min-w-0 flex-1 space-y-5">
+            <div className="h-10 w-3/5 sk-box sk-wrap" style={{ animationDelay: '.1s' }}><div className="sk-shim" /></div>
+            <div className="h-4 w-full max-w-lg sk-box sk-wrap" style={{ animationDelay: '.18s' }}><div className="sk-shim" /></div>
+            <div className="h-4 w-2/3 sk-box sk-wrap" style={{ animationDelay: '.22s' }}><div className="sk-shim" /></div>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {[.25, .3, .35].map((d) => (
+                <div key={d} className="h-44 rounded-xl sk-box sk-wrap" style={{ animationDelay: `${d}s` }}><div className="sk-shim" /></div>
+              ))}
+            </div>
+            <div className="h-32 rounded-xl sk-box sk-wrap" style={{ animationDelay: '.38s' }}><div className="sk-shim" /></div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="h-24 rounded-xl sk-box sk-wrap" style={{ animationDelay: '.42s' }}><div className="sk-shim" /></div>
+              <div className="h-24 rounded-xl sk-box sk-wrap" style={{ animationDelay: '.46s' }}><div className="sk-shim" /></div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

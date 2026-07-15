@@ -498,15 +498,15 @@ const RestaurantAccordionSidebar = memo(function RestaurantAccordionSidebar({ it
   const [posTillOpen, setPosTillOpen] = useState(false)
 
   useEffect(() => {
-    /* Poll sessionStorage to detect if POS Till tab is still open.
-     * The POS Till page (RestaurantOrders.jsx) writes a heartbeat.
-     * If the heartbeat stops for more than 10s, show closed state. */
+    /* Fast poll to detect if POS Till tab is still open (within ~3s).
+     * RestaurantPOS.jsx and RestaurantOrders.jsx write a heartbeat every 3s.
+     * If the heartbeat stops for more than 5s, show closed state. */
     const check = setInterval(() => {
       const ts = sessionStorage.getItem('nexora:posTill:open')
       if (!ts) { setPosTillOpen(false); return }
       const age = Date.now() - Number(ts)
-      if (age > 12000) setPosTillOpen(false)
-    }, 2000)
+      if (age > 5000) setPosTillOpen(false)
+    }, 1500)
     return () => clearInterval(check)
   }, [])
 
@@ -525,9 +525,29 @@ const RestaurantAccordionSidebar = memo(function RestaurantAccordionSidebar({ it
     setPosTillOpen(true)
   }
 
+  /* Apple-style single-accordion: opening one group closes all others */
   const toggleGroup = useCallback((id) => {
-    setGroups(prev => ({ ...prev, [id]: !prev[id] }))
+    setGroups(prev => {
+      const next = {}
+      for (const key of Object.keys(prev)) {
+        next[key] = key === id ? !prev[key] : false
+      }
+      return next
+    })
   }, [])
+
+  /* Sync active group when pathname changes — closes stale groups */
+  useEffect(() => {
+    setGroups(() => {
+      const next = {}
+      for (const g of RESTAURANT_ACCORDION_GROUPS) {
+        const hasActive = items.some(item => g.moduleKeys.includes(item.key) && pathname.startsWith(item.to))
+        next[g.id] = hasActive
+      }
+      next.reports = pathname.startsWith('/app/reports')
+      return next
+    })
+  }, [pathname, items])
 
   return (
     <nav className="sidebar-scrollbar mt-2 min-h-0 flex-1 overflow-y-auto px-2 pb-2">
@@ -588,7 +608,10 @@ const RestaurantAccordionSidebar = memo(function RestaurantAccordionSidebar({ it
 
       {/* Accordion groups */}
       {RESTAURANT_ACCORDION_GROUPS.map((group) => {
-        const groupItems = items.filter(item => group.moduleKeys.includes(item.key) && item.key !== 'orders' || (group.id === 'menu' && (item.key === 'recipes' || item.key === 'ingredients' || item.key === 'inventory')))
+        const groupItems = items.filter(item =>
+          (group.moduleKeys.includes(item.key) && item.key !== 'orders') ||
+          (group.id === 'menu' && (item.key === 'recipes' || item.key === 'ingredients' || item.key === 'inventory'))
+        )
         if (!groupItems.length) return null
         const GroupIcon = group.icon
         const isOpen = groups[group.id] || false
@@ -597,7 +620,8 @@ const RestaurantAccordionSidebar = memo(function RestaurantAccordionSidebar({ it
             {/* Group header */}
             <button
               type="button"
-              onClick={() => toggleGroup(group.id)}
+              onClick={(e) => { e.stopPropagation(); toggleGroup(group.id) }}
+              onKeyDown={(e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggleGroup(group.id) } }}
               className="focus-ring flex w-full items-center gap-2 rounded-xl px-2.5 py-1 text-xs font-semibold text-slate-500 transition-colors duration-150 hover:bg-slate-50 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800/40 dark:hover:text-slate-200"
               aria-expanded={isOpen}
             >
@@ -606,16 +630,21 @@ const RestaurantAccordionSidebar = memo(function RestaurantAccordionSidebar({ it
               </span>
               <span className="flex-1 truncate text-left">{group.label}</span>
               <motion.span
-                animate={{ rotate: isOpen ? 0 : -90 }}
-                transition={{ duration: 0.18, ease: 'easeOut' }}
+                animate={{ rotate: isOpen ? 0 : -180 }}
+                transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
                 className="shrink-0"
               >
                 <HiOutlineChevronDown className="h-3 w-3" />
               </motion.span>
             </button>
 
-            {/* Group items — animated height */}
-            <div className="restaurant-group-collapse" style={{ height: isOpen ? 'auto' : 0, opacity: isOpen ? 1 : 0 }}>
+            {/* Group items — smooth framer-motion height animation */}
+            <motion.div
+              initial={false}
+              animate={{ height: isOpen ? 'auto' : 0, opacity: isOpen ? 1 : 0 }}
+              transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+              className="overflow-hidden"
+            >
               <div className="ml-2 space-y-0.5 border-l-2 border-slate-100 pl-2 dark:border-slate-700">
                 {groupItems.map(item => (
                   <SidebarNavItem key={item.key} item={item} collapsed={collapsed} onNavigate={onNavigate} />
@@ -626,7 +655,7 @@ const RestaurantAccordionSidebar = memo(function RestaurantAccordionSidebar({ it
                   </>
                 )}
               </div>
-            </div>
+            </motion.div>
           </div>
         )
       })}

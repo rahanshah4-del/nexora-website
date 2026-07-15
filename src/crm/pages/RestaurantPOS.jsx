@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import {
@@ -34,6 +35,15 @@ const modules = [
 
 export default function RestaurantPOSPage() {
   const navigate = useNavigate()
+
+  /* Heartbeat — lets sidebar know this tab is open */
+  useEffect(() => {
+    sessionStorage.setItem('nexora:posTill:open', String(Date.now()))
+    const pulse = setInterval(() => {
+      sessionStorage.setItem('nexora:posTill:open', String(Date.now()))
+    }, 3000)
+    return () => { clearInterval(pulse); sessionStorage.removeItem('nexora:posTill:open') }
+  }, [])
 
   return (
     <motion.div

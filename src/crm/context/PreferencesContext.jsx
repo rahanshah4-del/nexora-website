@@ -57,7 +57,8 @@ const defaultState = {
 
 function loadInitial() {
   try {
-    const raw = localStorage.getItem(_key())
+    let raw
+    try { raw = localStorage.getItem(_key()) } catch { return defaultState }
     if (!raw) return defaultState
     const parsed = JSON.parse(raw)
     return {
@@ -76,7 +77,24 @@ export function PreferencesProvider({ children }) {
   const [state, setState] = useState(loadInitial)
 
   useEffect(() => {
-    localStorage.setItem(_key(), JSON.stringify(state))
+    try {
+      localStorage.setItem(_key(), JSON.stringify(state))
+    } catch (e) {
+      if (e.name === 'QuotaExceededError' || e.code === 22) {
+        /* localStorage full — clear stale nexora keys to free space */
+        const keep = [_key(), 'nexora:activeUid', 'nexora:sw-reset-v3']
+        for (let i = localStorage.length - 1; i >= 0; i--) {
+          const k = localStorage.key(i)
+          if (k && k.startsWith('nexora.') && !keep.includes(k)) {
+            localStorage.removeItem(k)
+          }
+        }
+        /* Retry once after cleanup */
+        try { localStorage.setItem(_key(), JSON.stringify(state)) } catch {}
+      } else {
+        console.warn('[Preferences] localStorage write failed', e)
+      }
+    }
   }, [state])
 
   const value = useMemo(
