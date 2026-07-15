@@ -1,6 +1,6 @@
 import { initializeApp, getApps } from 'firebase/app'
 import { browserLocalPersistence, getAuth, setPersistence } from 'firebase/auth'
-import { getFirestore } from 'firebase/firestore'
+import { initializeFirestore, persistentLocalCache, persistentSingleTabManager } from 'firebase/firestore'
 import { getStorage } from 'firebase/storage'
 import { getFunctions } from 'firebase/functions'
 
@@ -54,8 +54,14 @@ export const authPersistenceReady = auth
       })
     })
   : Promise.resolve()
-export const firestoreDb = app ? getFirestore(app) : null
-export const db = firestoreDb
+export const db = app
+  ? initializeFirestore(app, {
+      localCache: persistentLocalCache({
+        tabManager: persistentSingleTabManager(),
+      }),
+    })
+  : null
+export const firestoreDb = db
 export const storage = app && hasStorageConfig ? getStorage(app) : null
 export const functions = app ? getFunctions(app, 'us-central1') : null
 export let analytics = null

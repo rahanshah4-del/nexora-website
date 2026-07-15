@@ -407,6 +407,73 @@
         { "fieldPath": "businessType", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "restaurantIngredients",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "businessType", "order": "ASCENDING" },
+        { "fieldPath": "name", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "restaurantRecipes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "businessType", "order": "ASCENDING" },
+        { "fieldPath": "menuItemName", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "restaurantWaste",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "businessType", "order": "ASCENDING" },
+        { "fieldPath": "occurredAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "restaurantCashSessions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "businessType", "order": "ASCENDING" },
+        { "fieldPath": "openedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "blogComments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "slug", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "blogComments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "slug", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "blogComments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "slug", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "blogComments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "slug", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "rating", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

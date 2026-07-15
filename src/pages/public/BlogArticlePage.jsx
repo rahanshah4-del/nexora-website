@@ -13,6 +13,17 @@ import { getBlogArticle } from '../../lib/blogData.js'
 import usePublishedBlogArticles from '../../hooks/usePublishedBlogArticles.js'
 import { absoluteUrl, createArticleSchema } from '../../lib/seoStructuredData.js'
 import PublicPageShell from './PublicPageShell.jsx'
+import BlogComments from '../../components/BlogComments.jsx'
+
+function calculateReadingTime(article) {
+  const text = [
+    ...article.sections.flatMap((s) => [s.heading, ...s.paragraphs]),
+    ...article.faqs.flatMap(([q, a]) => [q, a]),
+  ].join(' ')
+  const words = text.split(/\s+/).filter(Boolean).length
+  const mins = Math.max(1, Math.ceil(words / 200))
+  return { readingTime: `${mins} min read`, wordCount: words }
+}
 
 function shareLinks(article) {
   const url = encodeURIComponent(article.canonical)
@@ -42,10 +53,17 @@ function ShareButton({ label, href }) {
 function ArticleCard({ article, label }) {
   if (!article) return null
   return (
-    <Link to={`/blog/${article.slug}`} className="block rounded-[1.25rem] border border-blue-100 bg-white p-5 shadow-[0_22px_62px_-44px_rgba(37,99,235,0.32)] transition hover:border-blue-200 active:scale-[0.98]">
-      {label ? <p className="text-xs font-black uppercase tracking-[0.16em] text-blue-700">{label}</p> : null}
-      <p className="mt-2 text-lg font-black text-slate-950">{article.title}</p>
-      <p className="mt-2 text-sm leading-6 text-slate-600">{article.excerpt}</p>
+    <Link
+      to={`/blog/${article.slug}`}
+      className="group block rounded-2xl border border-slate-100 bg-white p-5 shadow-[0_8px_30px_-12px_rgba(15,23,42,0.08)] transition-all duration-300 hover:-translate-y-0.5 hover:border-blue-100 hover:shadow-[0_24px_60px_-16px_rgba(37,99,235,0.24)] active:scale-[0.98]"
+    >
+      {label ? (
+        <span className="inline-flex items-center rounded-lg border border-blue-100/60 bg-white/80 px-2.5 py-1 text-[0.6rem] font-extrabold uppercase tracking-[0.14em] text-blue-700 shadow-sm backdrop-blur-sm">
+          {label}
+        </span>
+      ) : null}
+      <p className="mt-3 text-lg font-black text-slate-950 transition-colors duration-200 group-hover:text-blue-700">{article.title}</p>
+      <p className="mt-2 text-sm leading-6 text-slate-500 line-clamp-2">{article.excerpt}</p>
     </Link>
   )
 }
@@ -67,6 +85,7 @@ export default function BlogArticlePage() {
 
   if (!article) return <Navigate to="/blog" replace />
 
+  const { readingTime, wordCount } = calculateReadingTime(article)
   const articleIndex = articles.findIndex((item) => item.slug === article.slug)
   const adjacent = {
     previous: articleIndex > 0 ? articles[articleIndex - 1] : null,
@@ -126,11 +145,11 @@ export default function BlogArticlePage() {
               Back to Blog
             </Link>
             <div className="mt-8 flex flex-wrap items-center gap-2 text-xs font-black text-blue-700">
-              <Link to={`/blog?category=${encodeURIComponent(article.category)}`} className="rounded-full bg-blue-50 px-3 py-1 transition active:scale-[0.96]">
+              <Link to={`/blog?category=${encodeURIComponent(article.category)}`} className="rounded-lg border border-blue-100/60 bg-white/80 px-3 py-1.5 text-[0.7rem] font-extrabold uppercase tracking-[0.12em] text-blue-700 shadow-sm backdrop-blur-sm transition hover:bg-blue-100 active:scale-[0.96]">
                 {article.category}
               </Link>
-              <span className="text-slate-400">{article.readingTime}</span>
-              <span className="text-slate-400">{article.wordCount.toLocaleString('en-PK')} words</span>
+              <span className="text-slate-400">{readingTime}</span>
+              <span className="text-slate-400">{wordCount.toLocaleString('en-PK')} words</span>
             </div>
             <h1 className="website-hero-heading mt-5 text-[2.55rem] font-black leading-[0.98] tracking-tight text-slate-950 sm:text-[4rem] lg:text-[5rem]">
               {article.title}
@@ -179,14 +198,26 @@ export default function BlogArticlePage() {
             </aside>
 
             <div>
-              <div className="grid max-h-[260px] place-items-center overflow-hidden rounded-[1.35rem] border border-blue-100 bg-slate-50 shadow-[0_28px_76px_-52px_rgba(37,99,235,0.42)] sm:rounded-[1.6rem] md:max-h-[420px] lg:max-h-[520px]">
+              <div className="relative grid max-h-[260px] place-items-center overflow-hidden rounded-[1.35rem] border border-blue-100 bg-gradient-to-br from-slate-50 to-blue-50 shadow-[0_28px_76px_-52px_rgba(37,99,235,0.42)] sm:rounded-[1.6rem] md:max-h-[420px] lg:max-h-[520px]">
+                <div aria-hidden="true" className="absolute inset-0 bg-slate-200/60" style={{ animation: 'nexoraImgShimmer 1.5s ease-in-out infinite' }} />
                 <img
                   src={article.featuredImage}
                   alt={article.featuredImageAlt}
                   width="1200"
                   height="675"
                   decoding="async"
-                  className="max-h-[260px] w-full object-contain object-center md:max-h-[420px] lg:max-h-[520px]"
+                  fetchpriority="high"
+                  className="relative max-h-[260px] w-full object-contain object-center md:max-h-[420px] lg:max-h-[520px]"
+                  style={{ aspectRatio: '1200 / 675' }}
+                  onLoad={(e) => {
+                    const s = e.currentTarget.previousElementSibling
+                    if (s) s.style.display = 'none'
+                    e.currentTarget.classList.add('nexora-img-fade-in')
+                  }}
+                  onError={(e) => {
+                    const s = e.currentTarget.previousElementSibling
+                    if (s) s.style.display = 'none'
+                  }}
                 />
               </div>
 
@@ -215,10 +246,10 @@ export default function BlogArticlePage() {
                 ))}
               </div>
 
-              <div className="mt-10 flex flex-wrap gap-2">
+              <div className="mt-10 flex flex-wrap gap-1.5">
                 {article.tags.map((item) => (
-                  <Link key={item} to={`/blog?tag=${encodeURIComponent(item)}`} className="inline-flex items-center gap-1 rounded-full bg-slate-50 px-3 py-1.5 text-xs font-black text-slate-600 transition hover:bg-blue-50 hover:text-blue-700 active:scale-[0.96]">
-                    <HiOutlineTag className="h-3.5 w-3.5" />
+                  <Link key={item} to={`/blog?tag=${encodeURIComponent(item)}`} className="inline-flex items-center gap-1.5 rounded-full border border-slate-100 bg-slate-50/70 px-3 py-1.5 text-[0.7rem] font-bold text-slate-500 shadow-sm transition-all duration-200 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 active:scale-[0.96]">
+                    <HiOutlineTag className="h-3 w-3" />
                     {item}
                   </Link>
                 ))}
@@ -244,7 +275,7 @@ export default function BlogArticlePage() {
               <section className="mt-14">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                   <div>
-                    <span className="inline-flex rounded-full border border-blue-100 bg-white px-4 py-2 text-xs font-extrabold uppercase tracking-[0.18em] text-blue-700 shadow-sm">
+                    <span className="inline-flex rounded-lg border border-blue-100/60 bg-white/80 px-3.5 py-2 text-[0.7rem] font-extrabold uppercase tracking-[0.16em] text-blue-700 shadow-sm backdrop-blur-sm">
                       Related Articles
                     </span>
                     <h2 className="website-section-heading mt-5 text-3xl font-black tracking-tight text-slate-950 sm:text-5xl">
@@ -262,6 +293,8 @@ export default function BlogArticlePage() {
                   ))}
                 </div>
               </section>
+
+              <BlogComments slug={article.slug} />
             </div>
           </div>
         </section>

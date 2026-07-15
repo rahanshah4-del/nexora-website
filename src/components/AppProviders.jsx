@@ -1,11 +1,11 @@
 import { lazy, Suspense } from 'react'
 import AppErrorBoundary from './AppErrorBoundary.jsx'
 import AppRouter from '../AppRouter.jsx'
+import CrmProviderShell from './CrmProviderShell.jsx'
 import { useLocation } from 'react-router-dom'
 
 const ROOT_AUTH_PREFIXES = ['/login', '/signup', '/verify-email', '/workspace', '/upgrade-business', '/admin']
 const WORKSPACE_PROVIDER_PREFIXES = ['/workspace']
-const CrmProviderShell = lazy(() => import('./CrmProviderShell.jsx'))
 const RootAuthProviderShell = lazy(() => import('./RootAuthProviderShell.jsx'))
 const WorkspaceProviderShell = lazy(() => import('./WorkspaceProviderShell.jsx'))
 
@@ -17,18 +17,14 @@ function RouteScopedProviders({ children }) {
   const needsRootAuthProvider = ROOT_AUTH_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))
 
   if (needsCrmProviders) {
-    return (
-      <Suspense fallback={null}>
-        <CrmProviderShell>{children}</CrmProviderShell>
-      </Suspense>
-    )
+    // CrmProviderShell is inlined to avoid the lazy chunk waterfall.
+    // Auth/User/Theme providers initialize immediately on first render.
+    return <CrmProviderShell>{children}</CrmProviderShell>
   }
 
-  // /workspace uses the root auth user but also renders the CRM support-tickets
-  // widget, so it needs the CRM UserProvider stack nested inside the root shell.
   if (needsWorkspaceProvider) {
     return (
-      <Suspense fallback={null}>
+      <Suspense fallback={<div className="grid min-h-dvh place-items-center bg-white"><div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-slate-950" /></div>}>
         <WorkspaceProviderShell>{children}</WorkspaceProviderShell>
       </Suspense>
     )
@@ -36,7 +32,7 @@ function RouteScopedProviders({ children }) {
 
   if (needsRootAuthProvider) {
     return (
-      <Suspense fallback={null}>
+      <Suspense fallback={<div className="grid min-h-dvh place-items-center bg-white"><div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-slate-950" /></div>}>
         <RootAuthProviderShell>{children}</RootAuthProviderShell>
       </Suspense>
     )

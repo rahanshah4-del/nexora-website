@@ -334,3 +334,20 @@ body.business-service-modal-open {
     }
   }
 }
+
+/* ── Blog image skeleton shimmer ── */
+@keyframes nexoraImgShimmer {
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
+}
+
+/* ── Blog image fade-in after load ── */
+@keyframes nexoraImgFadeIn {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+.nexora-img-fade-in {
+  animation: nexoraImgFadeIn 0.4s ease-out forwards;
+}

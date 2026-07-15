@@ -77,6 +77,8 @@ import { contractDisplayStatus, contractOutstandingBalance, contractStats, maint
 import { formatRestaurantCurrency } from '../lib/restaurantPosCalculations.js'
 import { buildRestaurantReport } from '../lib/restaurantReports.js'
 import { useRestaurantCashSessions } from '../hooks/useRestaurantCashSessions.js'
+import { useRestaurantRefunds } from '../hooks/useRestaurantRefunds.js'
+import { loadRestaurantMenuItems } from '../data/restaurantMenu.js'
 import { loadTransportBookings, transportBookingsStorageKey } from '../data/transportBookings.js'
 import { loadTransportVehicles, transportVehiclesStorageKey } from '../data/transportVehicles.js'
 import { loadTransportCustomers, transportCustomersStorageKey } from '../data/transportCustomers.js'
@@ -1737,6 +1739,8 @@ function RestaurantReports() {
     enabled: true,
     settings,
   })
+  const { refunds } = useRestaurantRefunds({ enabled: true, limitCount: 500 })
+  const { data: menuItems = [] } = useLocalData(loadRestaurantMenuItems, [])
   const sourceWarnings = [
     RESTAURANT_REPORT_SOURCE_LIMITATION,
     invoicesApi.error ? `Invoice data warning: ${invoicesApi.error}` : '',
@@ -1761,6 +1765,8 @@ function RestaurantReports() {
       sourceLimitations={sourceWarnings}
       settings={settings}
       cashSessions={Array.isArray(cashSessions) ? cashSessions.filter((s) => s.status === 'closed') : []}
+      refunds={Array.isArray(refunds) ? refunds : []}
+      menuItems={Array.isArray(menuItems) ? menuItems : []}
     />
   )
 }

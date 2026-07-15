@@ -66,6 +66,8 @@ export function buildRestaurantReportModel({
   openingCash = 0,
   filters = {},
   settings = {},
+  menuItems = [],           // for category resolution
+  refunds = [],             // Firestore restaurantRefunds records
   cashSessions = [],        // closed sessions with reconciliation data
   cashRefundsTotal,     // (legacy) overridden by cashSessions if present
   cashWithdrawalsTotal, // (legacy) overridden by cashSessions if present
@@ -73,7 +75,7 @@ export function buildRestaurantReportModel({
   cashAdjustmentsTotal, // (legacy) overridden by cashSessions if present
   cashDepositsTotal,    // (legacy) overridden by cashSessions if present
 } = {}) {
-  const normalizedOrders = normalizeRestaurantReportOrders(orders, { settings }).filter((order) => passesFilters(order, filters))
+  const normalizedOrders = normalizeRestaurantReportOrders(orders, { settings, menuItems }).filter((order) => passesFilters(order, filters))
   const customerRowsSource = Array.isArray(customers) ? customers : []
   const billedOrders = normalizedOrders.filter((order) => order.contributesToRevenue)
   const normalBilledOrders = billedOrders.filter((order) => !order.isInvoice)
@@ -186,6 +188,158 @@ export function buildRestaurantReportModel({
     }).length : 0,
   }
 
+  // ── Refund analysis ─────────────────────────────────────────
+  const refundAnalysis = (() => {
+    const rows = Array.isArray(refunds) ? refunds : []
+    const completedRefunds = rows.filter((r) => {
+      const s = String(r.status || r.approvalStatus || '').toLowerCase()
+      return s === 'completed' || s === 'approved'
+    })
+    const totalRefundAmount = completedRefunds.reduce((sum, r) => sum + money(r.refundTotal), 0)
+    const refundReasons = {}
+    const refundByMethod = {}
+    const refundByCustomer = {}
+    const refundByStaff = {}
+    completedRefunds.forEach((r) => {
+      const reason = textValue(r.reason || 'Other')
+      refundReasons[reason] = money(refundReasons[reason]) + money(r.refundTotal)
+      const method = textValue(r.refundMethod || r.paymentMethod || 'Unknown')
+      refundByMethod[method] = money(refundByMethod[method]) + money(r.refundTotal)
+      const cKey = r.customerId || 'unknown'
+      const cName = r.customerName || textValue(r.customer || r.customerName || 'Unknown')
+      refundByCustomer[cKey] = { name: cName, total: money(refundByCustomer[cKey]?.total || 0) + money(r.refundTotal), count: (refundByCustomer[cKey]?.count || 0) + 1 }
+      const sKey = r.cashierId || r.createdBy || 'unknown'
+      refundByStaff[sKey] = { name: r.cashierName || sKey, total: money(refundByStaff[sKey]?.total || 0) + money(r.refundTotal), count: (refundByStaff[sKey]?.count || 0) + 1 }
+    })
+    return {
+      count: completedRefunds.length,
+      totalAmount: totalRefundAmount,
+      refundPercentage: totalSales > 0 ? (totalRefundAmount / totalSales) * 100 : 0,
+      reasons: refundReasons,
+      byPaymentMethod: refundByMethod,
+      byCustomer: Object.entries(refundByCustomer).map(([id, v]) => ({ customerId: id, ...v })),
+      byStaff: Object.entries(refundByStaff).map(([id, v]) => ({ staffId: id, ...v })),
+      rows: completedRefunds.map((r) => ({
+        id: r.id, refundTotal: money(r.refundTotal), reason: r.reason || 'Other',
+        refundMethod: r.refundMethod || r.paymentMethod || 'Cash',
+        customerName: r.customerName || r.customer || 'Unknown',
+        cashierName: r.cashierName || '', createdAt: r.createdAt || '',
+        refundType: r.refundType || 'full',
+      })),
+      monthlyTrend: (() => {
+        const months = {}
+        completedRefunds.forEach((r) => {
+          const d = dateValue(r.createdAt)
+          if (!d) return
+          const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+          months[key] = money(months[key]) + money(r.refundTotal)
+        })
+        return Object.entries(months).sort(([a], [b]) => a.localeCompare(b)).map(([month, amount]) => ({ month, amount }))
+      })(),
+    }
+  })()
+
+  // ── Staff / Cashier performance ─────────────────────────────
+  const staffPerformance = (() => {
+    const staffMap = new Map()
+    normalizedOrders.forEach((o) => {
+      const sid = o.cashierId || o.staffId || ''
+      if (!sid) return
+      const sname = o.cashierName || o.staffName || sid
+      const staff = staffMap.get(sid) || { staffId: sid, name: sname, sales: 0, orders: 0, refunds: 0, discounts: 0, collected: 0 }
+      if (o.contributesToRevenue) { staff.sales += o.total; staff.collected += o.paidAmount; staff.discounts += o.discount }
+      if (o.isBilled) staff.orders += 1
+      staffMap.set(sid, staff)
+    })
+    // merge refunds by cashier
+    if (Array.isArray(refunds)) {
+      refunds.forEach((r) => {
+        const sid = r.cashierId || r.createdBy || ''
+        if (!sid || !staffMap.has(sid)) return
+        staffMap.get(sid).refunds += money(r.refundTotal)
+      })
+    }
+    const rows = Array.from(staffMap.values()).sort((a, b) => b.sales - a.sales)
+    const totalSalesForRank = rows.reduce((s, r) => s + r.sales, 0) || 1
+    return {
+      rows: rows.map((r) => ({
+        ...r,
+        averageTicket: r.orders > 0 ? r.sales / r.orders : 0,
+        performancePct: (r.sales / totalSalesForRank) * 100,
+      })),
+      topCashier: rows.length > 0 ? rows[0] : null,
+      slowestCashier: rows.length > 0 ? rows[rows.length - 1] : null,
+    }
+  })()
+
+  // ── Expense breakdown by status ─────────────────────────────
+  const expenseBreakdown = (() => {
+    const rows = Array.isArray(expenses) ? expenses : []
+    const byStatus = { approved: 0, pending: 0, rejected: 0, other: 0 }
+    const byCategory = {}
+    const byDay = {}
+    const byMonth = {}
+    rows.forEach((e) => {
+      const status = String(e?.approvalStatus || e?.status || '').toLowerCase()
+      const amount = money(e?.amount ?? e?.total)
+      if (['approved', 'paid', 'complete', 'completed', 'verified'].includes(status)) byStatus.approved += amount
+      else if (status === 'pending' || status === 'draft') byStatus.pending += amount
+      else if (status === 'rejected' || status === 'cancelled') byStatus.rejected += amount
+      else byStatus.other += amount
+      const cat = textValue(e.category || e.expenseCategory || 'Other')
+      byCategory[cat] = money(byCategory[cat]) + amount
+      const d = dateValue(e.date || e.createdAt)
+      if (d) {
+        const dayKey = d.toISOString().slice(0, 10)
+        byDay[dayKey] = money(byDay[dayKey]) + amount
+        const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+        byMonth[monthKey] = money(byMonth[monthKey]) + amount
+      }
+    })
+    const total = byStatus.approved + byStatus.pending + byStatus.rejected + byStatus.other
+    return { byStatus, byCategory, byDay, byMonth, total, approvedCount: expenseSummary.count }
+  })()
+
+  // ── Customer unified summary ────────────────────────────────
+  const customerUnified = (() => {
+    const merged = new Map()
+    // Add refund totals per customer
+    const refundTotals = {}
+    if (Array.isArray(refunds)) {
+      refunds.forEach((r) => {
+        const cid = r.customerId || 'cust-walkin'
+        refundTotals[cid] = money(refundTotals[cid]) + money(r.refundTotal)
+      })
+    }
+    customerRows.forEach((c) => {
+      const cid = c.id
+      const refundTotal = refundTotals[cid] || 0
+      merged.set(cid, {
+        ...c,
+        totalRefunds: refundTotal,
+        netSales: money(c.sales) - refundTotal,
+        lifetimeValue: money(c.sales) - refundTotal + money(c.storedCustomerCreditBalance || 0),
+        averageOrderValue: c.billedOrders > 0 ? (c.sales || 0) / c.billedOrders : 0,
+        visits: c.orders || 0,
+      })
+    })
+    return Array.from(merged.values()).sort((a, b) => b.sales - a.sales)
+  })()
+
+  // ── Payment progress / recovery history ─────────────────────
+  const paymentProgress = (() => {
+    const paid = billedOrders.filter((o) => o.isPaid)
+    const partial = billedOrders.filter((o) => o.isPartial)
+    const due = billedOrders.filter((o) => o.isDue)
+    const totalBilled = billedOrders.length || 1
+    return {
+      fullyPaid: { count: paid.length, amount: paid.reduce((s, o) => s + o.total, 0), pct: (paid.length / totalBilled) * 100 },
+      partiallyPaid: { count: partial.length, amount: partial.reduce((s, o) => s + o.paidAmount, 0), remaining: partial.reduce((s, o) => s + o.dueAmount, 0), pct: (partial.length / totalBilled) * 100 },
+      due: { count: due.length, amount: due.reduce((s, o) => s + o.total, 0), pct: (due.length / totalBilled) * 100 },
+      collectionRate: outstandingAmount + collectedAmount > 0 ? (collectedAmount / (outstandingAmount + collectedAmount)) * 100 : 100,
+    }
+  })()
+
   // ── Cash reconciliation ─────────────────────────────────────
   const cashReconciliation = (() => {
     const closedSessions = (Array.isArray(cashSessions) ? cashSessions : []).filter((s) => s.status === 'closed' || s.status === 'approved' || s.status === 'locked')
@@ -274,14 +428,22 @@ export function buildRestaurantReportModel({
     categorySales: Array.from(categoryMap.values()).sort((a, b) => b.revenue - a.revenue),
     tablePerformance: tableRows,
     customerPerformance: customerRows,
-    kotStatus: {
-      total: kotOrders.length,
-      pending: kotOrders.filter((order) => order.orderStatus === 'pending').length,
-      preparing: kotOrders.filter((order) => order.orderStatus === 'preparing').length,
-      ready: kotOrders.filter((order) => order.orderStatus === 'ready').length,
-      served: kotOrders.filter((order) => order.orderStatus === 'served').length,
-      averagePreparationTime: kotOrders.length ? Math.round(kotOrders.reduce((sum, order) => sum + order.prepTime, 0) / kotOrders.length) : 0,
-    },
+    kotStatus: (() => {
+      const prepTimes = kotOrders.map((o) => o.prepTime).filter((t) => t > 0)
+      const avg = prepTimes.length ? Math.round(prepTimes.reduce((a, b) => a + b, 0) / prepTimes.length) : 0
+      return {
+        total: kotOrders.length,
+        pending: kotOrders.filter((o) => o.orderStatus === 'pending').length,
+        preparing: kotOrders.filter((o) => o.orderStatus === 'preparing').length,
+        ready: kotOrders.filter((o) => o.orderStatus === 'ready').length,
+        served: kotOrders.filter((o) => o.orderStatus === 'served').length,
+        averagePreparationTime: avg,
+        fastestPrepTime: prepTimes.length ? Math.min(...prepTimes) : 0,
+        slowestPrepTime: prepTimes.length ? Math.max(...prepTimes) : 0,
+        kitchenUtilization: kotOrders.length && normalBilledOrders.length
+          ? Math.round((kotOrders.length / normalBilledOrders.length) * 100) : 0,
+      }
+    })(),
     invoiceVsNormal: {
       normalOrders: normalBilledOrders.length,
       invoiceOrders: invoiceBilledOrders.length,
@@ -374,7 +536,12 @@ export function buildRestaurantReportModel({
       return breakdown
     })(),
     expenseSummary,
+    expenseBreakdown,
     customerCount: customerRows.length,
+    customerUnified,
+    refundAnalysis,
+    staffPerformance,
+    paymentProgress,
 
     // ── Business Intelligence ─────────────────────────────────────
     businessIntelligence: computeBusinessIntelligence({

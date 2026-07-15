@@ -1,7 +1,7 @@
 /**
  * Firestore-backed Restaurant POS waste tracking hook.
  *
- * workspaceId-scoped collection: workspaces/{workspaceId}/restaurantWaste
+ * workspaceId-scoped collection: workspaces/{workspaceId}/restaurantProductionWaste
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
@@ -55,7 +55,7 @@ export function useRestaurantWasteTracking(options = {}) {
       return
     }
     setLoading(true)
-    const path = workspaceCollectionPath(workspaceId, 'restaurantWaste')
+    const path = workspaceCollectionPath(workspaceId, 'restaurantProductionWaste')
     if (!path) { setLoading(false); return }
     const ref = collection(db, path)
     const q = query(ref, orderBy('occurredAt', 'desc'), queryLimit(MAXIMUM_LIMIT))
@@ -95,7 +95,7 @@ export function useRestaurantWasteTracking(options = {}) {
         return { ok: false, error: validation.errors.join('; ') }
       }
 
-      const wastePath = workspaceCollectionPath(workspaceId, 'restaurantWaste')
+      const wastePath = workspaceCollectionPath(workspaceId, 'restaurantProductionWaste')
       const ingPath = workspaceCollectionPath(workspaceId, 'restaurantIngredients')
       const wasteRef = doc(collection(db, wastePath))
       const ingRef = doc(db, ingPath, record.ingredientId)

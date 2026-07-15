@@ -522,7 +522,7 @@ function wordCountForSections(sections, faqs) {
 }
 
 function estimateReadingTime(wordCount) {
-  return Math.max(6, Math.ceil(wordCount / 210))
+  return Math.max(1, Math.ceil(wordCount / 200))
 }
 
 function dateString(value, fallback = new Date().toISOString().slice(0, 10)) {

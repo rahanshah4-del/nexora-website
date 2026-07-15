@@ -180,50 +180,82 @@ export default function BlogIndexPage() {
                 )}
               </div>
 
-              <div className="grid gap-5 md:grid-cols-2">
-                {visibleArticles.map((article) => (
-                  <article key={article.slug} className="overflow-hidden rounded-[1.35rem] border border-blue-100 bg-white shadow-[0_22px_62px_-44px_rgba(37,99,235,0.32)] transition active:scale-[0.99]">
-                    <Link to={`/blog/${article.slug}`} className="grid h-[190px] place-items-center overflow-hidden bg-slate-50 sm:h-[220px] lg:h-[250px]">
-                      <img
-                        src={article.featuredImage}
-                        alt={article.featuredImageAlt}
-                        loading="lazy"
-                        decoding="async"
-                        width="640"
-                        height="360"
-                        className="h-full w-full object-contain object-center"
-                      />
-                    </Link>
-                    <div className="p-5">
-                      <div className="flex flex-wrap items-center gap-2 text-xs font-black text-blue-700">
-                        <span className="rounded-full bg-blue-50 px-3 py-1">{article.category}</span>
-                        <span className="text-slate-400">{article.readingTime}</span>
-                      </div>
-                      <h2 className="mt-4 text-2xl font-black tracking-tight text-slate-950">
-                        <Link to={`/blog/${article.slug}`} className="hover:text-blue-700">
-                          {article.title}
-                        </Link>
-                      </h2>
-                      <p className="mt-3 text-sm leading-7 text-slate-600">{article.excerpt}</p>
-                      <div className="mt-5 flex flex-wrap gap-2">
-                        {article.tags.slice(0, 3).map((item) => (
-                          <button
-                          type="button"
-                          key={item}
-                          onClick={() => updateFilter({ tag: item })}
-                          className="rounded-full bg-slate-50 px-3 py-1 text-xs font-bold text-slate-600 transition hover:bg-blue-50 hover:text-blue-700 active:scale-[0.96]"
-                          >
-                            #{item}
-                          </button>
-                        ))}
-                      </div>
-                      <Link to={`/blog/${article.slug}`} className="mt-6 inline-flex items-center gap-2 text-sm font-black text-blue-700 transition active:scale-[0.96]">
-                        Read article
-                        <HiOutlineArrowRight className="h-4 w-4" />
+              <div className="grid gap-6 md:grid-cols-2">
+                {visibleArticles.map((article, i) => {
+                  const text = [
+                    ...article.sections.flatMap((s) => [s.heading, ...s.paragraphs]),
+                    ...article.faqs.flatMap(([q, a]) => [q, a]),
+                  ].join(' ')
+                  const wordCount = text.split(/\s+/).filter(Boolean).length
+                  const rTime = `${Math.max(1, Math.ceil(wordCount / 200))} min read`
+                  return (
+                    <article
+                      key={article.slug}
+                      className="group overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-[0_8px_30px_-12px_rgba(15,23,42,0.08)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_24px_60px_-16px_rgba(37,99,235,0.28)] active:scale-[0.99]"
+                    >
+                      <Link
+                        to={`/blog/${article.slug}`}
+                        className="relative grid h-[190px] place-items-center overflow-hidden bg-gradient-to-br from-slate-50 to-blue-50 sm:h-[220px] lg:h-[250px]"
+                      >
+                        <div aria-hidden="true" className="absolute inset-0 bg-slate-200/60" style={{ animation: 'nexoraImgShimmer 1.5s ease-in-out infinite' }} />
+                        <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-t from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                        <img
+                          src={article.featuredImage}
+                          alt={article.featuredImageAlt}
+                          loading={i < 2 ? 'eager' : 'lazy'}
+                          decoding="async"
+                          fetchpriority={i < 2 ? 'high' : 'low'}
+                          width="640"
+                          height="360"
+                          className="relative h-full w-full object-contain object-center transition-transform duration-500 group-hover:scale-105"
+                          style={{ aspectRatio: '640 / 360' }}
+                          onLoad={(e) => {
+                            const s = e.currentTarget.previousElementSibling?.previousElementSibling
+                            if (s) s.style.display = 'none'
+                            e.currentTarget.classList.add('nexora-img-fade-in')
+                          }}
+                          onError={(e) => {
+                            const s = e.currentTarget.previousElementSibling?.previousElementSibling
+                            if (s) s.style.display = 'none'
+                          }}
+                        />
                       </Link>
-                    </div>
-                  </article>
-                ))}
+                      <div className="p-5 sm:p-6">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="inline-flex items-center rounded-lg border border-blue-100/60 bg-white/80 px-2.5 py-1 text-[0.7rem] font-extrabold uppercase tracking-[0.12em] text-blue-700 shadow-sm backdrop-blur-sm">
+                            {article.category}
+                          </span>
+                          <span className="text-[0.7rem] font-semibold text-slate-400">{rTime}</span>
+                        </div>
+                        <h2 className="mt-3 text-xl font-black tracking-tight text-slate-950 sm:text-2xl">
+                          <Link to={`/blog/${article.slug}`} className="transition-colors duration-200 hover:text-blue-700">
+                            {article.title}
+                          </Link>
+                        </h2>
+                        <p className="mt-2.5 text-sm leading-7 text-slate-500 line-clamp-3">{article.excerpt}</p>
+                        <div className="mt-4 flex flex-wrap gap-1.5">
+                          {article.tags.slice(0, 3).map((item) => (
+                            <button
+                              type="button"
+                              key={item}
+                              onClick={() => updateFilter({ tag: item })}
+                              className="rounded-full border border-slate-100 bg-slate-50/70 px-2.5 py-1 text-[0.65rem] font-bold text-slate-500 transition-all duration-200 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 active:scale-[0.96]"
+                            >
+                              #{item}
+                            </button>
+                          ))}
+                        </div>
+                        <Link
+                          to={`/blog/${article.slug}`}
+                          className="mt-5 inline-flex items-center gap-2 rounded-xl border border-blue-100 bg-gradient-to-r from-blue-50 to-white px-4 py-2 text-sm font-bold text-blue-700 shadow-sm transition-all duration-200 hover:border-blue-200 hover:from-blue-100 hover:shadow-md active:scale-[0.97]"
+                        >
+                          <span>Read article</span>
+                          <HiOutlineArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+                        </Link>
+                      </div>
+                    </article>
+                  )
+                })}
               </div>
 
               <div className="mt-10 flex flex-wrap justify-center gap-2">

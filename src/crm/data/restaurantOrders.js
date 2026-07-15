@@ -13,16 +13,24 @@ function _key() {
   return k
 }
 
+/** In-memory cache: avoids re-parsing localStorage JSON on every call.
+ * Invalidated whenever orders are written. */
+let _cache = null
+
 function readStoredOrders() {
   if (typeof window === 'undefined') return []
+  if (_cache) return _cache
   try {
     const stored = window.localStorage.getItem(_key())
     const parsed = stored ? JSON.parse(stored) : []
-    return Array.isArray(parsed) ? parsed : []
+    _cache = Array.isArray(parsed) ? parsed : []
+    return _cache
   } catch {
     return []
   }
 }
+
+function invalidateCache() { _cache = null }
 
 export function loadRestaurantOrders() {
   return readStoredOrders().map((order) => normalizeRestaurantOrder(order)).filter((order) => order.orderNumber)
@@ -31,6 +39,7 @@ export function loadRestaurantOrders() {
 export function saveRestaurantOrders(orders) {
   if (typeof window === 'undefined') return
   const k = _key()
+  invalidateCache()
   window.localStorage.setItem(k, JSON.stringify(Array.isArray(orders) ? orders : []))
   notifyLocalDataChanged(k)
 }
@@ -38,6 +47,7 @@ export function saveRestaurantOrders(orders) {
 export function clearRestaurantOrders() {
   if (typeof window === 'undefined') return
   const k = _key()
+  invalidateCache()
   window.localStorage.removeItem(k)
   notifyLocalDataChanged(k)
 }
@@ -96,6 +106,8 @@ export function normalizeRestaurantOrder(order = {}) {
     paidAmount,
     prepTime: Math.max(0, Number(order.prepTime || 0) || 0),
     notes: order.notes || '',
+    deliveryAddress: order.deliveryAddress || '',
+    riderNotes: order.riderNotes || '',
     cancelReason: order.cancelReason || '',
     cancelledAt: order.cancelledAt || '',
     createdAt,

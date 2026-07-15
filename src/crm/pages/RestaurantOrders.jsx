@@ -348,6 +348,15 @@ export default function RestaurantOrdersPage() {
   const [customerSearch, setCustomerSearch] = useState('')
   const [printPreview, setPrintPreview] = useState(null)
   const [flowMessage, setFlowMessage] = useState('')
+
+  // Signal to sidebar that POS Till tab is open (used for lock icon state)
+  useEffect(() => {
+    sessionStorage.setItem('nexora:posTill:open', String(Date.now()))
+    const keepAlive = setInterval(() => {
+      sessionStorage.setItem('nexora:posTill:open', String(Date.now()))
+    }, 5000)
+    return () => { clearInterval(keepAlive); sessionStorage.removeItem('nexora:posTill:open') }
+  }, [])
   const [billingActionStatus, setBillingActionStatus] = useState(null)
   const [paymentSyncStatus, setPaymentSyncStatus] = useState(null)
   const [paymentOpen, setPaymentOpen] = useState(false)
@@ -532,6 +541,8 @@ export default function RestaurantOrdersPage() {
       paidAmount: existingOrder.paidAmount ? String(existingOrder.paidAmount) : current.paidAmount,
       customerName: existingOrder.customer || existingOrder.customerName || current.customerName,
       customerPhone: existingOrder.phone || existingOrder.customerPhone || current.customerPhone,
+      deliveryAddress: existingOrder.deliveryAddress || current.deliveryAddress,
+      riderNotes: existingOrder.riderNotes || current.riderNotes,
       notes: existingOrder.notes || current.notes,
     }))
     setFlowMessage(`Loaded active order ${existingOrder.orderNumber} for table ${existingOrder.table || table}.`)
@@ -1156,6 +1167,36 @@ export default function RestaurantOrdersPage() {
       }).catch(() => {
         setPaymentSyncStatus({ synced: false, failed: true, error: 'Cloud payment sync failed. Order saved locally.' })
       })
+      // ── Inventory deduction: non-blocking background sync ──
+      if (nextPaymentStatus === 'paid' || paid > 0) {
+        import('../lib/restaurantPosIntegration.js').then(({ deductIngredientsForOrder, awardLoyaltyPointsForOrder, createDeliveryFromOrder }) => {
+          deductIngredientsForOrder({
+            workspaceId, businessType, orderNumber,
+            cartRows: cartRows.map(r => ({ itemId: r.itemId, item: r.item, qty: r.qty })),
+            staff: { id: staffId, name: userDoc?.name || '' },
+            settings: t,
+          }).catch(() => {})
+
+          if (selectedCustomerId && selectedCustomerId !== 'cust-walkin' && paid > 0) {
+            awardLoyaltyPointsForOrder({
+              workspaceId, businessType,
+              customerId: selectedCustomerId,
+              orderId: orderNumber,
+              orderTotal: paid,
+              cashierName: userDoc?.name || '',
+            }).catch(() => {})
+          }
+
+          if (quickBill.orderType === 'Delivery' && nextPaymentStatus === 'paid') {
+            createDeliveryFromOrder({
+              workspaceId, businessType,
+              order: { orderNumber, customer, phone: quickBill.customerPhone, cartRows, total, paymentStatus: 'paid', paymentMethod: paymentDetails.method || 'Cash' },
+              deliveryAddress: quickBill.deliveryAddress || '',
+              riderNotes: quickBill.riderNotes || '',
+            }).catch(() => {})
+          }
+        }).catch(() => {})
+      }
     }
     } finally {
       submittingOrderRef.current = false
@@ -1230,6 +1271,34 @@ export default function RestaurantOrdersPage() {
       }).catch(() => {
         setPaymentSyncStatus({ synced: false, failed: true, error: 'Cloud payment sync failed. Order saved locally.' })
       })
+      // ── Inventory deduction: non-blocking background sync ──
+      import('../lib/restaurantPosIntegration.js').then(({ deductIngredientsForOrder, awardLoyaltyPointsForOrder, createDeliveryFromOrder }) => {
+        deductIngredientsForOrder({
+          workspaceId, businessType, orderNumber,
+          cartRows: cartRows.map(r => ({ itemId: r.itemId, item: r.item, qty: r.qty })),
+          staff: { id: staffId, name: userDoc?.name || '' },
+          settings: t,
+        }).catch(() => {})
+
+        if (selectedCustomerId && selectedCustomerId !== 'cust-walkin' && total > 0) {
+          awardLoyaltyPointsForOrder({
+            workspaceId, businessType,
+            customerId: selectedCustomerId,
+            orderId: orderNumber,
+            orderTotal: total,
+            cashierName: userDoc?.name || '',
+          }).catch(() => {})
+        }
+
+        if (quickBill.orderType === 'Delivery') {
+          createDeliveryFromOrder({
+            workspaceId, businessType,
+            order: { orderNumber, customer, phone: quickBill.customerPhone, cartRows, total, paymentStatus: 'paid', paymentMethod },
+            deliveryAddress: quickBill.deliveryAddress || '',
+            riderNotes: quickBill.riderNotes || '',
+          }).catch(() => {})
+        }
+      }).catch(() => {})
     } finally {
       submittingOrderRef.current = false
     }
@@ -1853,6 +1922,28 @@ export default function RestaurantOrdersPage() {
                   ) : null}
                 </div>
               </div>
+
+              {/* Delivery details — prominent when order type is Delivery */}
+              {quickBill.orderType === 'Delivery' && (quickBill.deliveryAddress || quickBill.riderNotes) ? (
+                <div className="col-span-2 rounded-xl border border-amber-100 bg-gradient-to-r from-amber-50/80 via-white to-orange-50/80 p-2.5">
+                  <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-amber-700">
+                    <span>📍</span> Delivery Details
+                  </div>
+                  {quickBill.deliveryAddress ? (
+                    <p className="mt-1 flex items-start gap-1.5 text-[11px] font-medium text-slate-700">
+                      <span className="mt-0.5 shrink-0">🏠</span>
+                      <span>{quickBill.deliveryAddress}</span>
+                    </p>
+                  ) : null}
+                  {quickBill.riderNotes ? (
+                    <p className="mt-0.5 flex items-start gap-1.5 text-[11px] italic text-slate-500">
+                      <span className="mt-0.5 shrink-0">📝</span>
+                      <span>"{quickBill.riderNotes}"</span>
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
+
               <PanelField label="Payment Method">
                 <select
                   value={quickBill.paymentMethod}

@@ -1,4 +1,28 @@
 import { useCallback, useMemo, useState } from 'react'
+import {
+  HiOutlinePresentationChartBar,
+  HiOutlineCalendarDays,
+  HiOutlineBanknotes,
+  HiOutlineShoppingBag,
+  HiOutlineReceiptPercent,
+  HiOutlineTag,
+  HiOutlineClipboardDocumentList,
+  HiOutlineComputerDesktop,
+  HiOutlineUserGroup,
+  HiOutlineCurrencyDollar,
+  HiOutlineDocumentText,
+  HiOutlineClock,
+  HiOutlineArrowPath,
+  HiOutlineXCircle,
+  HiOutlineChartBarSquare,
+  HiOutlineCalculator,
+  HiOutlineArrowUturnLeft,
+  HiOutlineShieldCheck,
+  HiOutlineFire,
+  HiOutlineSparkles,
+  HiOutlineSquaresPlus,
+  HiOutlineRectangleStack,
+} from 'react-icons/hi2'
 import { buildRestaurantReportModel } from './restaurantReportCalculations.js'
 import {
   RESTAURANT_REPORT_DEFINITIONS,
@@ -20,6 +44,31 @@ import {
   exportRestaurantExcel,
   exportRestaurantPdf,
 } from './restaurantReportPrint.js'
+
+const RESTAURANT_REPORT_ICONS = {
+  'executive-summary': HiOutlinePresentationChartBar,
+  'daily-closing': HiOutlineCalendarDays,
+  'business-intelligence': HiOutlineSparkles,
+  'orders': HiOutlineClipboardDocumentList,
+  'item-sales': HiOutlineShoppingBag,
+  'category-sales': HiOutlineSquaresPlus,
+  'order-type-performance': HiOutlineFire,
+  'hourly-sales': HiOutlineClock,
+  'payment-collection': HiOutlineBanknotes,
+  'due-partial-payments': HiOutlineArrowPath,
+  'tax-service-charges': HiOutlineReceiptPercent,
+  'discounts': HiOutlineTag,
+  'table-performance': HiOutlineRectangleStack,
+  'kot-performance': HiOutlineComputerDesktop,
+  'cancellations': HiOutlineXCircle,
+  'customer-sales': HiOutlineUserGroup,
+  'cost-profit': HiOutlineCurrencyDollar,
+  'expenses': HiOutlineDocumentText,
+  'cash-drawer-reconciliation': HiOutlineCalculator,
+  'shift-settlement-report': HiOutlineChartBarSquare,
+  'refund-report': HiOutlineArrowUturnLeft,
+  'staff-cashier-performance': HiOutlineShieldCheck,
+}
 
 const defaultFilters = {
   datePreset: 'today',
@@ -244,6 +293,8 @@ export default function RestaurantReportsPage({
   sourceLimitations = '',
   settings = {},
   cashSessions = [],
+  refunds = [],
+  menuItems = [],
 }) {
   const [activeReportId, setActiveReportId] = useState('executive-summary')
   const [filters, setFilters] = useState(defaultFilters)
@@ -257,8 +308,8 @@ export default function RestaurantReportsPage({
   const allNormalizedOrders = useMemo(() => normalizeRestaurantReportOrders(orders, { settings }), [orders, settings])
   const filteredOrders = useMemo(() => filterOrdersForPage(orders, filters, range, settings), [orders, filters, range, settings])
   const model = useMemo(
-    () => buildRestaurantReportModel({ orders: filteredOrders, customers, expenses, openingCash, settings, cashSessions }),
-    [customers, expenses, filteredOrders, openingCash, settings, cashSessions],
+    () => buildRestaurantReportModel({ orders: filteredOrders, customers, expenses, openingCash, settings, cashSessions, refunds, menuItems }),
+    [customers, expenses, filteredOrders, openingCash, settings, cashSessions, refunds, menuItems],
   )
   const hasSourceData = allNormalizedOrders.length > 0
   const hasFilteredData = model.orders.length > 0
@@ -1388,12 +1439,14 @@ export default function RestaurantReportsPage({
   return (
     <ReportShell
       title={`${restaurantName} Reports`}
-      description={`${workspaceLabel} - selected range: ${rangeLabel(range)}`}
+      description={`${workspaceLabel}`}
       groups={RESTAURANT_REPORT_GROUPS}
       reports={RESTAURANT_REPORT_DEFINITIONS}
       activeReportId={activeReport.id}
       onReportChange={setActiveReportId}
       actions={reportActions()}
+      reportIcons={RESTAURANT_REPORT_ICONS}
+      rangeLabel={rangeLabelText}
     >
       <div className="space-y-4">
         <ReportFilters supportedFilters={activeReport.supportedFilters} values={filters} options={filterOptions} onChange={updateFilter} onReset={resetFilters} />

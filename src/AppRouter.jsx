@@ -2,7 +2,6 @@ import DefaultSeo from './components/DefaultSeo.jsx'
 import ScrollToTop from './components/ScrollToTop.jsx'
 import { Component, Suspense, lazy, useEffect } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
-import PageLoader from './crm/components/ui/PageLoader.jsx'
 
 const MarketingRoute = lazy(() => import('./pages/public/MarketingRoute.jsx'))
 const UpgradeBusiness = lazy(() => import('./pages/UpgradeBusiness.jsx'))
@@ -31,10 +30,16 @@ const BlogArticlePage = lazy(() => import('./pages/public/BlogArticlePage.jsx'))
 const FaqPage = lazy(() => import('./pages/public/FaqPage.jsx'))
 const SupportCenterPage = lazy(() => import('./pages/public/SupportCenterPage.jsx'))
 const DashboardLayout = lazy(() => import('./crm/layouts/DashboardLayout.jsx'))
+// Preload DashboardLayout chunk immediately — it's needed on every /app/* route
+import('./crm/layouts/DashboardLayout.jsx').catch(() => {})
 const AdminLayout = lazy(() => import('./layouts/AdminLayout.jsx'))
 const DashboardHomePage = lazy(() => import('./crm/pages/DashboardHome.jsx'))
+// Preload DashboardHome chunk — it's the default route after login
+import('./crm/pages/DashboardHome.jsx').catch(() => {})
 const RestaurantPOSPage = lazy(() => import('./crm/pages/RestaurantPOS.jsx'))
 const RestaurantOrdersPage = lazy(() => import('./crm/pages/RestaurantOrders.jsx'))
+// Preload RestaurantOrders chunk — POS Till opens in new window
+import('./crm/pages/RestaurantOrders.jsx').catch(() => {})
 const RestaurantMenuManagementPage = lazy(() => import('./crm/pages/RestaurantMenuManagement.jsx'))
 const RestaurantTablesPage = lazy(() => import('./crm/pages/RestaurantTables.jsx'))
 const RestaurantOrdersKotPage = lazy(() => import('./crm/pages/RestaurantOrdersKot.jsx'))
@@ -152,7 +157,9 @@ class InvoiceRouteBoundary extends Component {
 }
 
 function LazyPage({ children }) {
-  return <Suspense fallback={<PageLoader />}>{children}</Suspense>
+  // Minimal inline fallback — avoids a full-page loader flash for cached chunks.
+  // The premium PageLoader is reserved for auth/workspace init only.
+  return <Suspense fallback={<div className="min-h-[60dvh]" />}>{children}</Suspense>
 }
 
 class InventoryRouteBoundary extends Component {

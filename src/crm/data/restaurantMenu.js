@@ -29,12 +29,16 @@ export function hasRestaurantOffer(item) {
   return Boolean(item?.offerTitle || Number(item?.discountValue || 0) > 0 || item?.happyHour || item?.buyOneGetOne || item?.comboOffer)
 }
 
+let _menuItemsCache = null
+
 export function loadRestaurantMenuItems() {
   if (typeof window === 'undefined') return restaurantMenuItems
+  if (_menuItemsCache) return _menuItemsCache
   try {
     const stored = window.localStorage.getItem(_menuKey())
     const parsed = stored ? JSON.parse(stored) : null
-    return Array.isArray(parsed) && parsed.length ? parsed : restaurantMenuItems
+    _menuItemsCache = Array.isArray(parsed) && parsed.length ? parsed : restaurantMenuItems
+    return _menuItemsCache
   } catch {
     return restaurantMenuItems
   }
@@ -43,17 +47,22 @@ export function loadRestaurantMenuItems() {
 export function saveRestaurantMenuItems(items) {
   if (typeof window === 'undefined') return
   const k = _menuKey()
+  _menuItemsCache = null
   window.localStorage.setItem(k, JSON.stringify(Array.isArray(items) ? items : []))
   notifyLocalDataChanged(k)
 }
 
+let _menuCatCache = null
+
 export function loadRestaurantMenuCategories() {
   if (typeof window === 'undefined') return restaurantMenuCategories
+  if (_menuCatCache) return _menuCatCache
   try {
     const stored = window.localStorage.getItem(_catKey())
     const parsed = stored ? JSON.parse(stored) : []
     const merged = [...restaurantMenuCategories, ...(Array.isArray(parsed) ? parsed : [])]
-    return Array.from(new Set(merged.map((item) => String(item || '').trim()).filter(Boolean)))
+    _menuCatCache = Array.from(new Set(merged.map((item) => String(item || '').trim()).filter(Boolean)))
+    return _menuCatCache
   } catch {
     return restaurantMenuCategories
   }
@@ -62,6 +71,7 @@ export function loadRestaurantMenuCategories() {
 export function saveRestaurantMenuCategories(categories) {
   if (typeof window === 'undefined') return
   const k = _catKey()
+  _menuCatCache = null
   const cleaned = Array.from(new Set((Array.isArray(categories) ? categories : []).map((item) => String(item || '').trim()).filter(Boolean)))
   window.localStorage.setItem(k, JSON.stringify(cleaned))
   notifyLocalDataChanged(k)

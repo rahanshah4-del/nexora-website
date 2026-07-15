@@ -1,4 +1,4 @@
-import { Component, lazy, StrictMode, Suspense } from 'react'
+import { Component, StrictMode, Suspense } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import './index.css'
@@ -36,7 +36,7 @@ class RootErrorBoundary extends Component {
   }
 }
 
-const AppProviders = lazy(() => import('./components/AppProviders.jsx'))
+import AppProviders from './components/AppProviders.jsx'
 
 /* Remove static hero shell before React mounts for instant mobile FCP */
 const shell = document.getElementById('s-shell')
@@ -50,7 +50,7 @@ createRoot(document.getElementById('root')).render(
   <StrictMode>
     <RootErrorBoundary>
       <BrowserRouter>
-        <Suspense fallback={null}>
+        <Suspense fallback={<div className="grid min-h-screen place-items-center bg-slate-50" style={{ willChange: 'transform' }}><div className="grid h-11 w-11 place-items-center rounded-2xl border border-slate-200/80 bg-slate-950 shadow-sm" style={{ animation: 'nexoraInitPulse 1.6s ease-in-out infinite' }}><svg className="h-6 w-6" viewBox="0 0 24 24" fill="none"><path d="M12 4a8 8 0 100 16 8 8 0 000-16zm0 12a4 4 0 110-8 4 4 0 010 8z" fill="white" fillOpacity="0.9"/></svg></div><style>{`@keyframes nexoraInitPulse{0%,100%{opacity:0.5;transform:scale(0.96)}50%{opacity:1;transform:scale(1.04)}}`}</style></div>}>
           <AppProviders />
         </Suspense>
       </BrowserRouter>

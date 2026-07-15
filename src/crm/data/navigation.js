@@ -103,6 +103,9 @@ export const navItems = [
   { label: 'Production Batches', to: '/app/kitchen-production/batches', icon: HiOutlineCube },
   { label: 'Kitchen Prep', to: '/app/kitchen-production/prep', icon: HiOutlineClipboardDocumentCheck },
   { label: 'Prod. Waste', to: '/app/kitchen-production/waste', icon: HiOutlineExclamationTriangle },
+  { label: 'Kitchen Production Reports', to: '/app/kitchen-production/reports', icon: HiOutlineDocumentChartBar },
+  { label: 'Reservation Settings', to: '/app/reservations/settings', icon: HiOutlineCog6Tooth },
+  { label: 'Delivery Settings', to: '/app/delivery/settings', icon: HiOutlineCog6Tooth },
 ]
 
 

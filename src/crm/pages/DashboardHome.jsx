@@ -902,86 +902,64 @@ export default function DashboardHomePage() {
     [activityApi.logs],
   )
 
-  const kpis = useMemo(
-    () => [
-      {
-        icon: HiOutlineCurrencyDollar,
-        label: isSchool ? 'Monthly Fee Collection' : 'Revenue',
-        value: formatCurrency(totalRevenueUsd, currency),
-        helper: isSchool ? `${formatCompact(paidPayments.length || paidInvoices.length)} paid fee records` : `${formatCompact(paidPayments.length || paidInvoices.length)} paid records`,
-        tone: 'sky',
-        loading: invoicesApi.loading,
-      },
-      {
-        icon: HiOutlineUserGroup,
-        label: isSchool ? 'Total Students' : isRetail ? 'Products' : 'Customers',
-        value: formatCompact(isRetail ? retailInventoryStats.totalProducts : dashboardStats.totalCustomers),
-        helper: isSchool ? 'Active students' : isRetail ? `${formatCompact(retailInventoryStats.trackedProducts)} stock-tracked` : 'Active customers',
-        tone: 'cyan',
-        loading: isRetail ? retailProductsApi.loading : customersApi.loading,
-      },
-      {
-        icon: isRetail ? HiOutlineCircleStack : HiOutlineBolt,
-        label: isSchool ? 'Pending Fees' : showSalesPipeline ? 'Leads Pipeline' : isRetail ? 'Inventory Value' : 'Pending Billing',
-        value: isRetail ? formatCurrency(retailInventoryStats.inventoryValue, currency) : isSchool || !showSalesPipeline ? formatCompact(dashboardStats.pendingInvoices) : formatCompact(dashboardStats.activeLeads),
-        helper: isSchool
-          ? formatCurrency(pendingRevenueUsd, currency)
-          : showSalesPipeline
-            ? `${formatCompact(hotLeads.length)} high intent leads`
-            : isRetail
-              ? `${formatCompact(retailInventoryStats.totalStock)} units on hand`
-              : formatCurrency(pendingRevenueUsd, currency),
-        tone: 'violet',
-        loading: isRetail ? retailLoading : showSalesPipeline ? leadsApi.loading : invoicesApi.loading,
-      },
-      showSupportMetrics ? {
-        icon: HiOutlineTicket,
-        label: 'Support',
-        value: formatCompact(openTickets.length),
-        helper: 'Open or in-progress tickets',
-        tone: 'emerald',
-        loading: ticketsApi.loading,
-      } : {
-        icon: isRetail ? HiOutlineExclamationTriangle : HiOutlineDocumentText,
-        label: isRetail ? 'Stock Alerts' : 'Expenses',
-        value: isRetail ? formatCompact(retailInventoryStats.lowStockCount + retailInventoryStats.outOfStockCount) : formatCurrency(dashboardStats.expenses, currency),
-        helper: isRetail ? `${formatCompact(retailInventoryStats.lowStockCount)} low / ${formatCompact(retailInventoryStats.outOfStockCount)} out` : `${formatCompact(expensesApi.expenses.length)} expense records`,
-        tone: 'emerald',
-        loading: isRetail ? retailLoading : expensesApi.loading,
-      },
-    ],
-    [
-      currency,
-      customersApi.loading,
-      dashboardStats.activeLeads,
-      dashboardStats.expenses,
-      dashboardStats.pendingInvoices,
-      dashboardStats.totalCustomers,
-      expensesApi.expenses.length,
-      expensesApi.loading,
-      hotLeads.length,
-      invoicesApi.loading,
-      leadsApi.loading,
-      openTickets.length,
-      paidInvoices.length,
-      paidPayments.length,
-      ticketsApi.loading,
-      totalRevenueUsd,
-      isSchool,
-      isRetail,
-      retailInventoryStats.inventoryValue,
-      retailInventoryStats.lowStockCount,
-      retailInventoryStats.outOfStockCount,
-      retailInventoryStats.totalProducts,
-      retailInventoryStats.totalStock,
-      retailInventoryStats.trackedProducts,
-      retailLoading,
-      retailProductsApi.loading,
-      showSupportMetrics,
-      showSalesPipeline,
-      pendingRevenueUsd,
-    ],
+  const kpiRevenue = useMemo(
+    () => ({
+      icon: HiOutlineCurrencyDollar,
+      label: isSchool ? 'Monthly Fee Collection' : 'Revenue',
+      value: formatCurrency(totalRevenueUsd, currency),
+      helper: isSchool ? `${formatCompact(paidPayments.length || paidInvoices.length)} paid fee records` : `${formatCompact(paidPayments.length || paidInvoices.length)} paid records`,
+      tone: 'sky',
+      loading: invoicesApi.loading,
+    }),
+    [currency, invoicesApi.loading, isSchool, paidInvoices.length, paidPayments.length, totalRevenueUsd],
   )
+  const kpiCustomers = useMemo(
+    () => ({
+      icon: HiOutlineUserGroup,
+      label: isSchool ? 'Total Students' : isRetail ? 'Products' : 'Customers',
+      value: formatCompact(isRetail ? retailInventoryStats.totalProducts : dashboardStats.totalCustomers),
+      helper: isSchool ? 'Active students' : isRetail ? `${formatCompact(retailInventoryStats.trackedProducts)} stock-tracked` : 'Active customers',
+      tone: 'cyan',
+      loading: isRetail ? retailProductsApi.loading : customersApi.loading,
+    }),
+    [customersApi.loading, dashboardStats.totalCustomers, isRetail, isSchool, retailInventoryStats.totalProducts, retailInventoryStats.trackedProducts, retailProductsApi.loading],
+  )
+  const kpiPending = useMemo(
+    () => ({
+      icon: isRetail ? HiOutlineCircleStack : HiOutlineBolt,
+      label: isSchool ? 'Pending Fees' : showSalesPipeline ? 'Leads Pipeline' : isRetail ? 'Inventory Value' : 'Pending Billing',
+      value: isRetail ? formatCurrency(retailInventoryStats.inventoryValue, currency) : isSchool || !showSalesPipeline ? formatCompact(dashboardStats.pendingInvoices) : formatCompact(dashboardStats.activeLeads),
+      helper: isSchool
+        ? formatCurrency(pendingRevenueUsd, currency)
+        : showSalesPipeline
+          ? `${formatCompact(hotLeads.length)} high intent leads`
+          : isRetail
+            ? `${formatCompact(retailInventoryStats.totalStock)} units on hand`
+            : formatCurrency(pendingRevenueUsd, currency),
+      tone: 'violet',
+      loading: isRetail ? retailLoading : showSalesPipeline ? leadsApi.loading : invoicesApi.loading,
+    }),
+    [currency, dashboardStats.activeLeads, dashboardStats.pendingInvoices, hotLeads.length, invoicesApi.loading, isRetail, isSchool, leadsApi.loading, pendingRevenueUsd, retailInventoryStats.inventoryValue, retailInventoryStats.totalStock, retailLoading, showSalesPipeline],
+  )
+  const kpiSupport = useMemo(
+    () => showSupportMetrics ? {
+      icon: HiOutlineTicket,
+      label: 'Support',
+      value: formatCompact(openTickets.length),
+      helper: 'Open or in-progress tickets',
+      tone: 'emerald',
+      loading: ticketsApi.loading,
+    } : {
+      icon: isRetail ? HiOutlineExclamationTriangle : HiOutlineDocumentText,
+      label: isRetail ? 'Stock Alerts' : 'Expenses',
+      value: isRetail ? formatCompact(retailInventoryStats.lowStockCount + retailInventoryStats.outOfStockCount) : formatCurrency(dashboardStats.expenses, currency),
+      helper: isRetail ? `${formatCompact(retailInventoryStats.lowStockCount)} low / ${formatCompact(retailInventoryStats.outOfStockCount)} out` : `${formatCompact(expensesApi.expenses.length)} expense records`,
+      tone: 'emerald',
+      loading: isRetail ? retailLoading : expensesApi.loading,
+    },
+    [currency, dashboardStats.expenses, expensesApi.expenses.length, expensesApi.loading, isRetail, openTickets.length, retailInventoryStats.lowStockCount, retailInventoryStats.outOfStockCount, retailLoading, showSupportMetrics, ticketsApi.loading],
+  )
+  const kpis = useMemo(() => [kpiRevenue, kpiCustomers, kpiPending, kpiSupport], [kpiCustomers, kpiPending, kpiRevenue, kpiSupport])
 
   const invoiceRows = useMemo(
     () => [
@@ -1060,64 +1038,66 @@ export default function DashboardHomePage() {
     ],
   )
 
-  useEffect(() => {
-    if (!import.meta.env.DEV) return
-    console.log('[Dashboard] loading', {
+  if (import.meta.env.DEV) {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useEffect(() => {
+      console.log('[Dashboard] loading', {
+        loading,
+        limitCount: DASHBOARD_RECENT_LIMIT,
+        collections: ['invoices', 'payments', 'customers', 'leads', 'activityLogs', 'supportTickets', 'expenses'],
+      })
+    }, [loading])
+
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useEffect(() => {
+      if (loading) return
+      console.log('[Dashboard] recent data loaded', {
+        invoices: invoicesApi.invoices.length,
+        payments: invoicesApi.payments.length,
+        customers: customersApi.customers.length,
+        leads: leadsApi.leads.length,
+        activityLogs: activityApi.logs.length,
+        supportTickets: ticketsApi.tickets.length,
+        expenses: expensesApi.expenses.length,
+      })
+    }, [
+      activityApi.logs.length,
+      customersApi.customers.length,
+      expensesApi.expenses.length,
+      invoicesApi.invoices.length,
+      invoicesApi.payments.length,
+      leadsApi.leads.length,
       loading,
-      limitCount: DASHBOARD_RECENT_LIMIT,
-      collections: ['invoices', 'payments', 'customers', 'leads', 'activityLogs', 'supportTickets', 'expenses'],
-    })
-  }, [loading])
+      ticketsApi.tickets.length,
+    ])
 
-  useEffect(() => {
-    if (!import.meta.env.DEV) return
-    if (loading) return
-    console.log('[Dashboard] recent data loaded', {
-      invoices: invoicesApi.invoices.length,
-      payments: invoicesApi.payments.length,
-      customers: customersApi.customers.length,
-      leads: leadsApi.leads.length,
-      activityLogs: activityApi.logs.length,
-      supportTickets: ticketsApi.tickets.length,
-      expenses: expensesApi.expenses.length,
-    })
-  }, [
-    activityApi.logs.length,
-    customersApi.customers.length,
-    expensesApi.expenses.length,
-    invoicesApi.invoices.length,
-    invoicesApi.payments.length,
-    leadsApi.leads.length,
-    loading,
-    ticketsApi.tickets.length,
-  ])
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useEffect(() => {
+      if (loading) return
+      console.log('[Dashboard] summary ready', {
+        source: 'recent-limited-data',
+        futureSummaryDoc: 'workspaces/{workspaceId}/dashboardSummary/{businessType}',
+        totalRevenueUsd,
+        customers: dashboardStats.totalCustomers,
+        activeLeads: dashboardStats.activeLeads,
+        openTickets: openTickets.length,
+      })
+    }, [dashboardStats.activeLeads, dashboardStats.totalCustomers, loading, openTickets.length, totalRevenueUsd])
 
-  useEffect(() => {
-    if (!import.meta.env.DEV) return
-    if (loading) return
-    console.log('[Dashboard] summary ready', {
-      source: 'recent-limited-data',
-      futureSummaryDoc: 'workspaces/{workspaceId}/dashboardSummary/{businessType}',
-      totalRevenueUsd,
-      customers: dashboardStats.totalCustomers,
-      activeLeads: dashboardStats.activeLeads,
-      openTickets: openTickets.length,
-    })
-  }, [dashboardStats.activeLeads, dashboardStats.totalCustomers, loading, openTickets.length, totalRevenueUsd])
-
-  useEffect(() => {
-    if (!import.meta.env.DEV) return
-    if (loading) return
-    if (normalizedBusinessType !== 'Retail / POS') return
-    console.log('[Retail POS Dashboard Loaded]', {
-      source: 'DashboardHome',
-      businessType: normalizedBusinessType,
-      invoices: invoicesApi.invoices.length,
-      customers: customersApi.customers.length,
-      expenses: expensesApi.expenses.length,
-      totalRevenueUsd,
-    })
-  }, [customersApi.customers.length, expensesApi.expenses.length, invoicesApi.invoices.length, loading, normalizedBusinessType, totalRevenueUsd])
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useEffect(() => {
+      if (loading) return
+      if (normalizedBusinessType !== 'Retail / POS') return
+      console.log('[Retail POS Dashboard Loaded]', {
+        source: 'DashboardHome',
+        businessType: normalizedBusinessType,
+        invoices: invoicesApi.invoices.length,
+        customers: customersApi.customers.length,
+        expenses: expensesApi.expenses.length,
+        totalRevenueUsd,
+      })
+    }, [customersApi.customers.length, expensesApi.expenses.length, invoicesApi.invoices.length, loading, normalizedBusinessType, totalRevenueUsd])
+  }
 
   // WhatsApp CRM gets a dedicated, green-themed dashboard instead of the shared
   // CRM layout. All hooks above still run; only the rendered output differs.

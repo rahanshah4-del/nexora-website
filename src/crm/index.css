@@ -29,8 +29,8 @@
 
 @layer components {
   :root {
-    --nexora-sidebar-width: 16.5rem;
-    --nexora-sidebar-collapsed-width: 4.75rem;
+    --nexora-sidebar-width: 16rem;
+    --nexora-sidebar-collapsed-width: 4rem;
     --nexora-content-gap: 1rem;
   }
 
@@ -266,6 +266,17 @@
   .restaurant-cart-panel {
     min-height: 14rem;
     max-height: none;
+  }
+
+  /* Skip rendering off-screen menu items for instant scroll */
+  .restaurant-menu-scroll > div > div {
+    content-visibility: auto;
+    contain-intrinsic-size: 120px;
+  }
+
+  .restaurant-cart-panel > div > div {
+    content-visibility: auto;
+    contain-intrinsic-size: 48px;
   }
 
   .crm-shell [class*='grid-cols-['] {
@@ -676,5 +687,22 @@
   .print-break-inside-avoid {
     break-inside: avoid;
     page-break-inside: avoid;
+  }
+
+  /* ── Modern thin sidebar scrollbar ── */
+  .sidebar-scrollbar::-webkit-scrollbar { width: 6px; }
+  .sidebar-scrollbar::-webkit-scrollbar-track { background: transparent; }
+  .sidebar-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+  .sidebar-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  .sidebar-scrollbar { scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent; }
+  .dark .sidebar-scrollbar::-webkit-scrollbar-thumb { background: #475569; }
+  .dark .sidebar-scrollbar::-webkit-scrollbar-thumb:hover { background: #64748b; }
+  .dark .sidebar-scrollbar { scrollbar-color: #475569 transparent; }
+
+  /* ── Restaurant accordion group animations ── */
+  .restaurant-group-collapse {
+    overflow: hidden;
+    transition: height 200ms cubic-bezier(0.4, 0, 0.2, 1), opacity 200ms ease;
+    will-change: height, opacity;
   }
 }

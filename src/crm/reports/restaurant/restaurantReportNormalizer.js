@@ -33,7 +33,20 @@ function hourValue(date) {
   return date.getHours()
 }
 
-function normalizeItem(row = {}, index = 0, order = {}) {
+/**
+ * Resolve category for an item by checking row, item, and optional menuItems lookup.
+ */
+function resolveCategory(row = {}, item = {}, menuItems = []) {
+  const inline = textValue(row.category || item.category)
+  if (inline) return inline
+  if (!menuItems.length) return ''
+  const id = row.itemId || row.id || item.id || item.productId
+  if (!id) return ''
+  const found = menuItems.find((m) => m.id === id || m.itemId === id || m.productId === id)
+  return found?.category ? textValue(found.category) : ''
+}
+
+function normalizeItem(row = {}, index = 0, order = {}, menuItems = []) {
   const item = row.item || row
   const quantity = numberValue(row.quantity ?? row.qty)
   const sellingPrice = numberValue(row.sellingPrice ?? row.unitPrice ?? row.price ?? item.sellingPrice ?? item.unitPrice ?? item.price)
@@ -43,13 +56,14 @@ function normalizeItem(row = {}, index = 0, order = {}) {
   const discount = numberValue(row.itemDiscount ?? row.discount ?? item.discountAmount)
   const lineTotal = numberValue(row.lineTotal ?? finalPrice * quantity)
   const id = textValue(row.itemId || row.id || item.id || item.productId || item.name || `item-${index}`)
+  const category = resolveCategory(row, item, menuItems)
 
   return {
     id,
     itemId: id,
     productId: textValue(row.productId || item.productId || item.id || id),
     name: textValue(row.name || item.name || item.itemName || item.productName, 'Menu item'),
-    category: textValue(row.category || item.category),
+    category,
     quantity,
     sellingPrice: finalPrice,
     grossPrice,
@@ -73,7 +87,9 @@ function orderRows(order = {}) {
 export function normalizeRestaurantReportOrder(order = {}, options = {}) {
   const sourceKind = textValue(order.sourceKind, order.invoice ? 'invoice' : 'restaurant')
   const isInvoice = sourceKind === 'invoice'
-  const createdDate = dateValue(order.createdAt || order.date)
+
+  // ── Timestamp fallback: createdAt / date / createdOn / orderTime / businessDay ──
+  const createdDate = dateValue(order.createdAt || order.date || order.createdOn || order.orderTime || order.businessDay)
   const paymentStatus = statusValue(order.paymentStatus, 'pending')
   const orderStatus = statusValue(order.orderStatus || order.status, 'pending')
   const isCancelled = orderStatus === 'cancelled' || paymentStatus === 'cancelled'
@@ -82,7 +98,21 @@ export function normalizeRestaurantReportOrder(order = {}, options = {}) {
   const paidAmount = isBilled ? numberValue(order.paidAmount) : 0
   const total = numberValue(order.total ?? order.totals?.total)
   const dueAmount = isBilled ? numberValue(order.dueAmount ?? order.due ?? Math.max(0, total - paidAmount)) : 0
-  const items = orderRows(order).map((row, index) => normalizeItem(row, index, order)).filter((item) => item.quantity > 0)
+
+  // ── improved prepTime: compute from lifecycle timestamps if not stored ──
+  let prepTime = numberValue(order.prepTime)
+  if (!prepTime) {
+    const readyAt = dateValue(order.readyAt || order.markedReadyAt)
+    const preparingAt = dateValue(order.preparingAt || order.startedAt)
+    const servedAt = dateValue(order.servedAt || order.completedAt)
+    const createdAt = dateValue(order.createdAt || order.date)
+    if (readyAt && createdAt) prepTime = Math.round((readyAt.getTime() - createdAt.getTime()) / 60000)
+    else if (servedAt && createdAt) prepTime = Math.round((servedAt.getTime() - createdAt.getTime()) / 60000)
+    else if (preparingAt && createdAt) prepTime = Math.round((preparingAt.getTime() - createdAt.getTime()) / 60000)
+  }
+
+  const menuItems = Array.isArray(options.menuItems) ? options.menuItems : []
+  const items = orderRows(order).map((row, index) => normalizeItem(row, index, order, menuItems)).filter((item) => item.quantity > 0)
 
   return {
     id: textValue(order.id || order.orderNumber || order.billNumber),
@@ -110,8 +140,12 @@ export function normalizeRestaurantReportOrder(order = {}, options = {}) {
     dueAmount,
     items,
     cancelReason: textValue(order.cancelReason),
-    prepTime: numberValue(order.prepTime),
+    prepTime,
     notes: textValue(order.notes),
+    cashierId: textValue(order.cashierId || order.staffId || order.createdBy || ''),
+    staffId: textValue(order.staffId || order.cashierId || order.createdBy || ''),
+    cashierName: textValue(order.cashierName || order.staffName || order.createdByName || ''),
+    staffName: textValue(order.staffName || order.cashierName || order.createdByName || ''),
     isCancelled,
     isBilled,
     isPendingKot,

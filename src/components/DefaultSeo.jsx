@@ -26,6 +26,9 @@ const publicSeoPaths = new Set([
   '/whatsapp-crm',
 ])
 
+// Authentication / private areas must never be indexed.
+const NOINDEX_PREFIXES = ['/app', '/admin', '/login', '/signup', '/verify-email', '/workspace']
+
 function upsertTag(tagName, attrs = {}) {
   if (typeof document === 'undefined') return
   let el
@@ -84,17 +87,18 @@ export default function DefaultSeo() {
   const canonical = host + (pathname === '/' ? '/' : pathname.replace(/\/+$/,''))
   const cleanPathname = pathname === '/' ? '/' : pathname.replace(/\/+$/,'')
   const publicRoute = publicSeoPaths.has(cleanPathname) || cleanPathname.startsWith('/solutions/') || cleanPathname.startsWith('/blog/')
+  const noindex = NOINDEX_PREFIXES.some((prefix) => cleanPathname === prefix || cleanPathname.startsWith(`${prefix}/`))
 
   useEffect(() => {
-    upsertTag('link', { rel: 'canonical', href: canonical })
-    upsertTag('meta', { name: 'robots', content: pathname.startsWith('/app') || pathname.startsWith('/admin') ? 'noindex,nofollow' : 'index,follow' })
+    // Canonical is owned solely by PageSeo (per-page) to prevent duplicate canonicals.
+    upsertTag('meta', { name: 'robots', content: noindex ? 'noindex,nofollow' : 'index,follow' })
     upsertTag('meta', { property: 'og:url', content: canonical })
     upsertTag('meta', { property: 'og:site_name', content: 'Nexora Solution' })
     upsertTag('meta', { name: 'twitter:site', content: '@nexorasolution' })
     upsertJsonLd('nexora-jsonld-organization', publicRoute ? createOrganizationSchema() : null)
     upsertJsonLd('nexora-jsonld-website', publicRoute ? createWebSiteSchema() : null)
     upsertJsonLd('nexora-jsonld-localbusiness', publicRoute ? createLocalBusinessSchema() : null)
-  }, [canonical, pathname, publicRoute])
+  }, [canonical, pathname, publicRoute, noindex])
 
   return null
 }
