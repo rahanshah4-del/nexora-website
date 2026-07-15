@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import {
   HiOutlineArrowLeft,
@@ -14,6 +15,7 @@ import {
 import PageSeo from '../../components/PageSeo.jsx'
 import { getBlogArticle } from '../../lib/blogData.js'
 import usePublishedBlogArticles from '../../hooks/usePublishedBlogArticles.js'
+import { trackBlogView } from '../../lib/blogViews.js'
 import { absoluteUrl, createArticleSchema } from '../../lib/seoStructuredData.js'
 import PublicPageShell from './PublicPageShell.jsx'
 import BlogComments from '../../components/BlogComments.jsx'
@@ -172,6 +174,8 @@ export default function BlogArticlePage() {
   }
 
   if (!article) return <Navigate to="/blog" replace />
+
+  useEffect(() => { trackBlogView(article.slug) }, [article.slug])
 
   const { readingTime, wordCount } = calculateReadingTime(article)
   const articleIndex = articles.findIndex((item) => item.slug === article.slug)

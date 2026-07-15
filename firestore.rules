@@ -1021,6 +1021,18 @@ allow create: if validBlogComment(request.resource.data);
 allow update: if backendAdmin()&&validBlogCommentUpdate(request.resource.data);
 allow delete: if backendAdmin();
 }
+match /blogViews/{slug} {
+allow read: if true;
+allow create: if request.resource.data.keys().hasOnly(['slug','count','updatedAt'])
+&& request.resource.data.slug==slug
+&& request.resource.data.count==1
+&& request.resource.data.updatedAt is timestamp;
+allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['count','updatedAt'])
+&& request.resource.data.count==resource.data.count+1
+&& request.resource.data.count is number
+&& request.resource.data.count>=1
+&& request.resource.data.updatedAt is timestamp;
+}
 match /businessServices/{docId} {
 allow read: if true;
 allow create,update: if backendAdmin()&&validBusinessService(request.resource.data);

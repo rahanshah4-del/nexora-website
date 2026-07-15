@@ -9,6 +9,7 @@ import {
   uploadBlogImage,
 } from '../../lib/blogCms.js'
 import { auth } from '../../lib/firebase.js'
+import { getBlogViewCount } from '../../lib/blogViews.js'
 
 const emptyDraft = {
   title: '',
@@ -99,12 +100,25 @@ export default function BlogManager() {
   const [uploadProgress, setUploadProgress] = useState(0)
   const [notice, setNotice] = useState('')
   const [error, setError] = useState('')
+  const [viewCounts, setViewCounts] = useState({})
 
   useEffect(() => listenAdminBlogPosts(setCmsPosts, (loadError) => {
     setError(loadError?.message || 'Unable to load blog posts.')
   }), [])
 
   const posts = useMemo(() => mergeBlogArticles(cmsPosts), [cmsPosts])
+
+  /* Load view counts for all posts */
+  useEffect(() => {
+    const slugs = [...new Set(posts.map((p) => p.slug).filter(Boolean))]
+    if (!slugs.length) return
+    let cancelled = false
+    Promise.all(slugs.map(async (slug) => {
+      const count = await getBlogViewCount(slug)
+      if (!cancelled) setViewCounts((prev) => ({ ...prev, [slug]: count }))
+    })).catch(() => {})
+    return () => { cancelled = true }
+  }, [posts])
 
   const stats = useMemo(() => ({
     total: posts.length,
@@ -275,13 +289,14 @@ export default function BlogManager() {
           <div className="overflow-auto">
             <table className="min-w-full text-left text-sm">
               <thead className="bg-slate-50 text-xs font-black uppercase tracking-wide text-slate-500">
-                <tr><th className="px-4 py-3">Title</th><th className="px-4 py-3">Category</th><th className="px-4 py-3">Status</th><th className="px-4 py-3">Source</th><th className="px-4 py-3">Updated</th><th className="px-4 py-3">Actions</th></tr>
+                <tr><th className="px-4 py-3">Title</th><th className="px-4 py-3">Category</th><th className="px-4 py-3">Views</th><th className="px-4 py-3">Status</th><th className="px-4 py-3">Source</th><th className="px-4 py-3">Updated</th><th className="px-4 py-3">Actions</th></tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {posts.map((post) => (
                   <tr key={post.slug} className="align-top hover:bg-slate-50/80">
                     <td className="px-4 py-3"><p className="font-black text-slate-950">{post.title}</p><p className="text-xs text-slate-500">/blog/{post.slug}</p></td>
                     <td className="px-4 py-3">{post.category}</td>
+                    <td className="px-4 py-3"><span className="font-bold text-slate-950">{viewCounts[post.slug]?.toLocaleString?.('en-PK') || '0'}</span></td>
                     <td className="px-4 py-3"><span className={`rounded-full px-2 py-1 text-xs font-black ${post.status === 'published' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>{post.status}</span></td>
                     <td className="px-4 py-3"><span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-black text-slate-600">{post.source === 'cms' ? 'CMS' : 'Static'}</span></td>
                     <td className="px-4 py-3">{dateLabel(post.updatedAt || post.publishDate)}</td>
