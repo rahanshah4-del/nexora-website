@@ -50,7 +50,7 @@ createRoot(document.getElementById('root')).render(
   <StrictMode>
     <RootErrorBoundary>
       <BrowserRouter>
-        <Suspense fallback={<div className="grid min-h-screen place-items-center bg-slate-50" style={{ willChange: 'transform' }}><div className="grid h-11 w-11 place-items-center rounded-2xl border border-slate-200/80 bg-slate-950 shadow-sm" style={{ animation: 'nexoraInitPulse 1.6s ease-in-out infinite' }}><svg className="h-6 w-6" viewBox="0 0 24 24" fill="none"><path d="M12 4a8 8 0 100 16 8 8 0 000-16zm0 12a4 4 0 110-8 4 4 0 010 8z" fill="white" fillOpacity="0.9"/></svg></div><style>{`@keyframes nexoraInitPulse{0%,100%{opacity:0.5;transform:scale(0.96)}50%{opacity:1;transform:scale(1.04)}}`}</style></div>}>
+        <Suspense fallback={<div className="grid min-h-screen place-items-center bg-white"><style>{`@keyframes applePulse{0%,100%{opacity:0.35;transform:scale(0.96)}50%{opacity:0.75;transform:scale(1.04)}}@keyframes appleSlideUp{0%{opacity:0;transform:translateY(8px)}100%{opacity:1;transform:translateY(0)}}@media(prefers-reduced-motion:reduce){.ap-init{animation:none!important;opacity:0.25!important}}.ap-init{animation:appleSlideUp .6s ease-out both}.ap-init-pulse{animation:applePulse 2s ease-in-out infinite}`}</style><div className="flex flex-col items-center gap-3 ap-init"><div className="grid h-10 w-10 place-items-center rounded-xl border border-slate-200/80 bg-white shadow-sm"><svg className="h-5 w-5" viewBox="0 0 24 24" fill="none"><path d="M12 4a8 8 0 100 16 8 8 0 000-16zm0 12a4 4 0 110-8 4 4 0 010 8z" fill="#0b82c5" fillOpacity="0.9"/></svg></div><div className="h-2 w-16 rounded-xl bg-slate-100 ap-init-pulse" /></div></div>}>
           <AppProviders />
         </Suspense>
       </BrowserRouter>

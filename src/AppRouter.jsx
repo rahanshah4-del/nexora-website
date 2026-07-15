@@ -157,9 +157,41 @@ class InvoiceRouteBoundary extends Component {
 }
 
 function LazyPage({ children }) {
-  // Minimal inline fallback — avoids a full-page loader flash for cached chunks.
-  // The premium PageLoader is reserved for auth/workspace init only.
-  return <Suspense fallback={<div className="min-h-[60dvh]" />}>{children}</Suspense>
+  return <Suspense fallback={<AppleSkeleton />}>{children}</Suspense>
+}
+
+function AppleSkeleton() {
+  return (
+    <div className="grid min-h-[75dvh] place-items-center bg-white px-5">
+      <style>{`
+        @keyframes applePulse { 0%,100% { opacity: 0.35; transform: scale(0.96); } 50% { opacity: 0.75; transform: scale(1.04); } }
+        @keyframes appleSlideUp { 0% { opacity: 0; transform: translateY(8px); } 100% { opacity: 1; transform: translateY(0); } }
+        @keyframes appleShimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+        @media (prefers-reduced-motion: reduce) {
+          .ap { animation: none !important; opacity: 0.25 !important; }
+          .ap-shimmer { display: none !important; }
+        }
+        .ap { animation: applePulse 2s ease-in-out infinite; }
+        .ap-up { animation: appleSlideUp 0.6s ease-out both; }
+        .ap-shimmer-wrap { overflow: hidden; position: relative; }
+        .ap-shimmer { position: absolute; inset: 0; background: linear-gradient(90deg,transparent 0%,rgba(255,255,255,0.5) 50%,transparent 100%); animation: appleShimmer 1.8s ease-in-out infinite; }
+        .ap-box { border-radius: 0.75rem; background: #e2e8f0; }
+        .ap-box-pulse { border-radius: 0.75rem; background: #e2e8f0; animation: applePulse 2s ease-in-out infinite; }
+      `}</style>
+      <div className="flex flex-col items-center gap-3 ap-up" style={{ animationDelay: '0.1s' }}>
+        <div className="grid h-10 w-10 place-items-center rounded-xl border border-slate-200/80 bg-white shadow-sm">
+          <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none">
+            <path d="M12 4a8 8 0 100 16 8 8 0 000-16zm0 12a4 4 0 110-8 4 4 0 010 8z" fill="#0b82c5" fillOpacity="0.9"/>
+          </svg>
+        </div>
+        <div className="h-2 w-16 ap-box" />
+        <div className="mt-1 space-y-2">
+          <div className="h-3 w-48 ap-box-pulse" />
+          <div className="h-3 w-36 ap-box-pulse" />
+        </div>
+      </div>
+    </div>
+  )
 }
 
 class InventoryRouteBoundary extends Component {
