@@ -11,14 +11,14 @@
 html {
   min-height: 100%;
   scroll-behavior: auto;
-  overflow-x: hidden;
+  overflow-x: clip;
   overflow-y: auto;
 }
 
 body {
   margin: 0;
-  min-height: 100vh;
-  overflow-x: hidden;
+  min-height: 100%;
+  overflow-x: clip;
   overflow-y: auto;
   overscroll-behavior-y: auto;
   background-color: #f8fafc;
@@ -41,8 +41,8 @@ html[data-language='ar'] .nexora-i18n {
 }
 
 #root {
-  min-height: 100vh;
-  overflow-x: hidden;
+  min-height: 100%;
+  overflow-x: clip;
   overflow-y: visible;
 }
 
@@ -50,7 +50,7 @@ html.public-website,
 body.public-website {
   height: auto;
   min-height: 100%;
-  overflow-x: hidden;
+  overflow-x: clip;
   overflow-y: auto;
   overscroll-behavior-y: auto;
 }

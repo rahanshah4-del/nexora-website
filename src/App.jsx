@@ -4,13 +4,28 @@ import { HiOutlineArrowRight, HiOutlinePlayCircle } from 'react-icons/hi2'
 import Header from './components/Header'
 import trustBadges from './components/trustBadges'
 
-/* Isolated error boundary for each lazy section so a stale chunk never crashes the whole page */
+/* Isolated error boundary for each lazy section so a stale chunk never crashes the whole page.
+   On error, logs the issue and shows a visible retry section instead of silent <div className="hidden" />. */
 class SectionErrorBoundary extends Component {
   state = { error: null }
   static getDerivedStateFromError(error) { return { error } }
+  componentDidCatch(error) { console.error('[SectionErrorBoundary] Caught error:', error) }
   render() {
     if (this.state.error) {
-      return <div className="hidden" />
+      return (
+        <section className="grid min-h-[200px] place-items-center bg-white px-5 py-12">
+          <div className="text-center">
+            <p className="text-sm font-black text-slate-400">This section could not load.</p>
+            <button
+              type="button"
+              onClick={() => { this.setState({ error: null }); window.location.reload() }}
+              className="mt-3 inline-flex items-center gap-2 rounded-xl bg-slate-950 px-4 py-2 text-xs font-bold text-white"
+            >
+              Reload page
+            </button>
+          </div>
+        </section>
+      )
     }
     return this.props.children
   }
@@ -145,14 +160,31 @@ function App({ initialSectionId = '' }) {
       <div id="pricing" style={{ scrollMarginTop: '5.5rem' }} />
       <div id="contact" style={{ scrollMarginTop: '5.5rem' }} />
 
-      <div ref={sectionsRef}>
+      <div ref={sectionsRef} className="min-h-[200px]">
         {sectionsReady ? (
-          <Suspense fallback={null}>
+          <Suspense fallback={
+            <div className="space-y-6 px-5 py-12 sm:px-8">
+              <div className="mx-auto h-8 w-48 animate-pulse rounded-xl bg-slate-100" />
+              <div className="mx-auto grid max-w-5xl gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                {[1, 2, 3].map((i) => <div key={i} className="h-52 animate-pulse rounded-2xl bg-slate-100" />)}
+              </div>
+              <div className="h-32 animate-pulse rounded-2xl bg-slate-100" />
+            </div>
+          }>
             <SectionErrorBoundary>
               <HomepageSections />
             </SectionErrorBoundary>
           </Suspense>
-        ) : null}
+        ) : (
+          /* Initial skeleton while observer hasn't fired yet — prevents blank gap */
+          <div className="space-y-6 px-5 py-12 sm:px-8">
+            <div className="mx-auto h-8 w-48 animate-pulse rounded-xl bg-slate-100" />
+            <div className="mx-auto grid max-w-5xl gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {[1, 2, 3].map((i) => <div key={i} className="h-52 animate-pulse rounded-2xl bg-slate-100" />)}
+            </div>
+            <div className="h-32 animate-pulse rounded-2xl bg-slate-100" />
+          </div>
+        )}
       </div>
 
       {chatReady ? <Suspense fallback={null}><SectionErrorBoundary><TawkChat /></SectionErrorBoundary></Suspense> : null}
