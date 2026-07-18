@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import {
   HiOutlineAcademicCap,
@@ -166,6 +167,31 @@ function PosShowcasePreview() {
 }
 
 export default function HomepageSections() {
+  /* Scroll-triggered reveal — this chunk mounts lazily, so the observer must live
+     here (a shell-level observer registered before mount would never see these nodes).
+     Sections already on screen are revealed immediately; the rest reveal on scroll. */
+  useEffect(() => {
+    const targets = Array.from(document.querySelectorAll('.marketing-page [data-reveal]:not(.is-revealed)'))
+    if (!targets.length) return undefined
+    if (typeof IntersectionObserver === 'undefined') {
+      targets.forEach((el) => el.classList.add('is-revealed'))
+      return undefined
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-revealed')
+            observer.unobserve(entry.target)
+          }
+        })
+      },
+      { rootMargin: '60px', threshold: 0.05 },
+    )
+    targets.forEach((el) => observer.observe(el))
+    return () => observer.disconnect()
+  }, [])
+
   return (
     <>
       <section data-reveal className="bg-white py-16 sm:py-20 lg:py-24">
