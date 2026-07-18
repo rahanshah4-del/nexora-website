@@ -84,6 +84,14 @@ export default function BlogArticlePage() {
   const { articles, loading } = usePublishedBlogArticles()
   const article = articles.find((item) => item.slug === slug) || getBlogArticle(slug)
 
+  /* Hooks must run on every render — this effect was previously below the
+     early returns, which crashed with "Rendered more hooks than during the
+     previous render" when the skeleton swapped to the article. */
+  const articleSlug = article?.slug || ''
+  useEffect(() => {
+    if (articleSlug) trackBlogView(articleSlug)
+  }, [articleSlug])
+
   if (!article && loading) {
     return (
       <PublicPageShell>
@@ -174,8 +182,6 @@ export default function BlogArticlePage() {
   }
 
   if (!article) return <Navigate to="/blog" replace />
-
-  useEffect(() => { trackBlogView(article.slug) }, [article.slug])
 
   const { readingTime, wordCount } = calculateReadingTime(article)
   const articleIndex = articles.findIndex((item) => item.slug === article.slug)

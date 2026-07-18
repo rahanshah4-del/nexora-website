@@ -153,6 +153,20 @@ export default function VerifyEmail() {
     }
   }, [firebaseEmailVerified, loading, navigate, userEmail, userId])
 
+  // Auto-submit effect moved before early return to satisfy rules-of-hooks
+  useEffect(() => {
+    if (otp.length < OTP_LENGTH) {
+      autoSubmittedOtpRef.current = ''
+      return undefined
+    }
+    if (!/^\d{6}$/.test(otp) || verifying || success || autoSubmittedOtpRef.current === otp) return undefined
+    autoSubmittedOtpRef.current = otp
+    const timer = window.setTimeout(() => {
+      handleVerify()
+    }, 180)
+    return () => window.clearTimeout(timer)
+  }, [otp, verifying, success])
+
   if (!loading && !user) return <Navigate to="/login" replace />
 
   const focusBox = (index) => {
@@ -258,19 +272,6 @@ export default function VerifyEmail() {
       setVerifying(false)
     }
   }
-
-  useEffect(() => {
-    if (otp.length < OTP_LENGTH) {
-      autoSubmittedOtpRef.current = ''
-      return undefined
-    }
-    if (!/^\d{6}$/.test(otp) || verifying || success || autoSubmittedOtpRef.current === otp) return undefined
-    autoSubmittedOtpRef.current = otp
-    const timer = window.setTimeout(() => {
-      handleVerify()
-    }, 180)
-    return () => window.clearTimeout(timer)
-  }, [otp, verifying, success])
 
   const handleResend = async () => {
     const currentUser = auth?.currentUser || user
