@@ -377,6 +377,7 @@ export default function DashboardLayout() {
     if (!ready || !isAuthenticated || userLoading || !location.pathname.startsWith('/app')) return undefined
     let timer = null
     let expired = false
+    let lastReset = 0
     const expireSession = async () => {
       if (expired) return
       if (document.hidden) {
@@ -390,6 +391,12 @@ export default function DashboardLayout() {
     }
     const resetTimer = () => {
       if (expired) return
+      // Throttle: mousemove/scroll fire dozens of times per second — rebuilding
+      // the timeout that often burns main-thread time (INP). Once per 5s is
+      // ample resolution against a multi-minute inactivity limit.
+      const now = Date.now()
+      if (timer && now - lastReset < 5000) return
+      lastReset = now
       if (timer) window.clearTimeout(timer)
       timer = window.setTimeout(expireSession, WORKSPACE_INACTIVITY_LIMIT_MS)
     }

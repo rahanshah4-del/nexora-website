@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { memo, useCallback, useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useLocation } from 'react-router-dom'
 import {
@@ -216,15 +216,6 @@ function isTableOccupiedByOtherOrder(tableId, excludeOrderNumber = '') {
   })
 }
 
-function checkTableOccupancyError(excludeOrderNumber = '') {
-  const tableId = resolvedOrderTable()
-  if (!tableId) return ''
-  if (isTableOccupiedByOtherOrder(tableId, excludeOrderNumber)) {
-    return `Table ${tableId} already has an active unpaid order. Please select a different table or complete the existing order first.`
-  }
-  return ''
-}
-
 function ensureOutsideTableOrder(tableId, order) {
   if (!tableId) return
   const floors = loadRestaurantFloors()
@@ -321,7 +312,7 @@ function MenuImagePlaceholder({ item }) {
   return (
     <div className="relative h-14 overflow-hidden rounded-xl border border-slate-100 bg-slate-50 sm:h-16">
       {imageSrc ? (
-        <img src={imageSrc} alt={item.name} className="h-full w-full object-cover" loading="lazy" />
+        <img src={imageSrc} alt={item.name} width="180" height="64" className="h-full w-full object-cover" loading="lazy" decoding="async" />
       ) : (
         <div className="grid h-full w-full place-items-center bg-slate-100 text-slate-500">
           <CategoryIcon className="h-8 w-8" aria-hidden="true" />
@@ -332,18 +323,60 @@ function MenuImagePlaceholder({ item }) {
   )
 }
 
+/* Memoized menu card — the grid can hold hundreds of items; without memo every
+   keystroke in search/customer/payment fields re-rendered every card (INP). */
+const MenuItemCard = memo(function MenuItemCard({ item, inCartQty, onAdd, onAdjust }) {
+  return (
+    <div className="min-w-0 self-start rounded-[0.95rem] border border-slate-200 bg-white p-2 shadow-sm">
+      <MenuImagePlaceholder item={item} />
+      <div className="mt-1.5 min-w-0">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <p className="truncate text-xs font-semibold text-slate-950">{item.name}</p>
+            <p className="mt-0.5 line-clamp-2 min-h-7 text-[10.5px] leading-3.5 text-slate-500">{item.description}</p>
+          </div>
+          <div className="flex shrink-0 flex-col items-end gap-1">
+            <Badge variant="info" className="px-1.5 py-0.5 text-[9.5px]">{item.category}</Badge>
+            {hasRestaurantOffer(item) ? <Badge variant="warning" className="px-1.5 py-0.5 text-[9.5px]">Offer</Badge> : null}
+          </div>
+        </div>
+        <div className="mt-2 flex items-center justify-between gap-2">
+          <p className="text-xs font-black text-slate-950">{formatRestaurantCurrency(finalItemPrice(item))}</p>
+          {inCartQty ? (
+            <div className="flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 p-0.5">
+              <button type="button" onClick={() => onAdjust(item.id, -1)} className="grid h-6 w-6 place-items-center rounded-full bg-white text-slate-700 shadow-sm">
+                <HiOutlineMinus className="h-3.5 w-3.5" />
+              </button>
+              <span className="w-5 text-center text-xs font-bold text-slate-950">{inCartQty}</span>
+              <button type="button" onClick={() => onAdjust(item.id, 1)} className="grid h-6 w-6 place-items-center rounded-full bg-slate-950 text-white">
+                <HiOutlinePlus className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          ) : (
+            <Button type="button" className="h-7 px-2.5 py-1 text-xs" onClick={() => onAdd(item.id)}>
+              <HiOutlinePlus className="h-3.5 w-3.5" />
+              Add
+            </Button>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+})
+
 export default function RestaurantOrdersPage() {
   const location = useLocation()
   const { settings } = useBusinessSettings()
-  const { userId, workspaceId, businessType, userDoc, firebaseUser, role, isOwner, isAdmin, isManager } = useUser()
+  const { userId, workspaceId, businessType, userDoc, firebaseUser, staffId, role, isOwner, isAdmin, isManager } = useUser()
 
-  /* Heartbeat — lets sidebar know this POS Till tab is open */
+  /* Heartbeat — lets sidebar (in the dashboard tab) know this POS Till tab is open.
+     localStorage, not sessionStorage: the sidebar lives in another tab and
+     sessionStorage is per-tab, so it would never see this heartbeat. */
   useEffect(() => {
-    sessionStorage.setItem('nexora:posTill:open', String(Date.now()))
-    const pulse = setInterval(() => {
-      sessionStorage.setItem('nexora:posTill:open', String(Date.now()))
-    }, 3000)
-    return () => { clearInterval(pulse); sessionStorage.removeItem('nexora:posTill:open') }
+    const beat = () => { try { localStorage.setItem('nexora:posTill:open', String(Date.now())) } catch { /* quota — ignore */ } }
+    beat()
+    const pulse = setInterval(beat, 3000)
+    return () => { clearInterval(pulse); try { localStorage.removeItem('nexora:posTill:open') } catch { /* ignore */ } }
   }, [])
 
   // ── State declarations (before hooks that depend on them) ──
@@ -357,15 +390,6 @@ export default function RestaurantOrdersPage() {
   const [customerSearch, setCustomerSearch] = useState('')
   const [printPreview, setPrintPreview] = useState(null)
   const [flowMessage, setFlowMessage] = useState('')
-
-  // Signal to sidebar that POS Till tab is open (used for lock icon state)
-  useEffect(() => {
-    sessionStorage.setItem('nexora:posTill:open', String(Date.now()))
-    const keepAlive = setInterval(() => {
-      sessionStorage.setItem('nexora:posTill:open', String(Date.now()))
-    }, 5000)
-    return () => { clearInterval(keepAlive); sessionStorage.removeItem('nexora:posTill:open') }
-  }, [])
   const [billingActionStatus, setBillingActionStatus] = useState(null)
   const [paymentSyncStatus, setPaymentSyncStatus] = useState(null)
   const [paymentOpen, setPaymentOpen] = useState(false)
@@ -789,6 +813,12 @@ export default function RestaurantOrdersPage() {
       }).filter((row) => row.item),
     [cart, menuItems],
   )
+  /* O(1) cart lookup for the menu grid — avoids cartRows.find per card per render */
+  const cartByItemId = useMemo(() => {
+    const map = new Map()
+    cartRows.forEach((row) => map.set(row.itemId, row))
+    return map
+  }, [cartRows])
 
   const billTotals = useMemo(
     () => calculateRestaurantBill(cartRows, {
@@ -869,6 +899,11 @@ export default function RestaurantOrdersPage() {
     if (quickBill.orderType !== 'Dine-in' && !isOutsideTable(quickBill.tableNumber)) return ''
     return quickBill.tableNumber || getOutsideTableId(orderNumber, quickBill.outsideTableName)
   }
+
+  /* Memoized auto outside-table id for render-path labels — getOutsideTableId
+     JSON-parses floors + orders from localStorage on every call. */
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const autoOutsideTableId = useMemo(() => getOutsideTableId(orderNumber), [orderNumber, ordersVersion])
 
   function billContext() {
     return {
@@ -1183,7 +1218,7 @@ export default function RestaurantOrdersPage() {
             workspaceId, businessType, orderNumber,
             cartRows: cartRows.map(r => ({ itemId: r.itemId, item: r.item, qty: r.qty })),
             staff: { id: staffId, name: userDoc?.name || '' },
-            settings: t,
+            settings,
           }).catch(() => {})
 
           if (selectedCustomerId && selectedCustomerId !== 'cust-walkin' && paid > 0) {
@@ -1199,7 +1234,7 @@ export default function RestaurantOrdersPage() {
           if (quickBill.orderType === 'Delivery' && nextPaymentStatus === 'paid') {
             createDeliveryFromOrder({
               workspaceId, businessType,
-              order: { orderNumber, customer, phone: quickBill.customerPhone, cartRows, total, paymentStatus: 'paid', paymentMethod: paymentDetails.method || 'Cash' },
+              order: { orderNumber, customer: selectedCustomer?.name || 'Walk-in Guest', phone: quickBill.customerPhone, cartRows, total, paymentStatus: 'paid', paymentMethod: paymentDetails.method || 'Cash' },
               deliveryAddress: quickBill.deliveryAddress || '',
               riderNotes: quickBill.riderNotes || '',
             }).catch(() => {})
@@ -1286,7 +1321,7 @@ export default function RestaurantOrdersPage() {
           workspaceId, businessType, orderNumber,
           cartRows: cartRows.map(r => ({ itemId: r.itemId, item: r.item, qty: r.qty })),
           staff: { id: staffId, name: userDoc?.name || '' },
-          settings: t,
+          settings,
         }).catch(() => {})
 
         if (selectedCustomerId && selectedCustomerId !== 'cust-walkin' && total > 0) {
@@ -1302,7 +1337,7 @@ export default function RestaurantOrdersPage() {
         if (quickBill.orderType === 'Delivery') {
           createDeliveryFromOrder({
             workspaceId, businessType,
-            order: { orderNumber, customer, phone: quickBill.customerPhone, cartRows, total, paymentStatus: 'paid', paymentMethod },
+            order: { orderNumber, customer: selectedCustomer?.name || 'Walk-in Guest', phone: quickBill.customerPhone, cartRows, total, paymentStatus: 'paid', paymentMethod },
             deliveryAddress: quickBill.deliveryAddress || '',
             riderNotes: quickBill.riderNotes || '',
           }).catch(() => {})
@@ -1478,21 +1513,22 @@ export default function RestaurantOrdersPage() {
     })
   }
 
-  function addItem(itemId) {
+  /* Stable identities so memoized menu cards never re-render from callback
+     churn (INP: typing in search re-rendered every card). */
+  const addItem = useCallback((itemId) => {
     setCart((current) => {
       const exists = current.find((row) => row.itemId === itemId)
       if (exists) return current.map((row) => (row.itemId === itemId ? { ...row, qty: row.qty + 1 } : row))
       return [...current, { itemId, qty: 1, note: 'Kitchen note' }]
     })
-  }
-
-  function adjustQty(itemId, delta) {
+  }, [])
+  const adjustQty = useCallback((itemId, delta) => {
     setCart((current) =>
       current
         .map((row) => (row.itemId === itemId ? { ...row, qty: Math.max(0, row.qty + delta) } : row))
         .filter((row) => row.qty > 0),
     )
-  }
+  }, [])
 
   function updateQuickBill(field, value) {
     setFlowMessage('')
@@ -1689,7 +1725,7 @@ export default function RestaurantOrdersPage() {
                     value={quickBill.outsideTableName}
                     onChange={(event) => updateQuickBill('outsideTableName', event.target.value)}
                     className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-xs font-semibold outline-none focus:border-sky-300"
-                    placeholder={`No table? custom name or auto ${getOutsideTableId(orderNumber)}`}
+                    placeholder={`No table? custom name or auto ${autoOutsideTableId}`}
                   />
                   <button
                     type="button"
@@ -1701,7 +1737,7 @@ export default function RestaurantOrdersPage() {
                         : 'bg-white text-slate-700 ring-1 ring-slate-200 hover:text-sky-700',
                     )}
                   >
-                    Use {quickBill.outsideTableName.trim() || getOutsideTableId(orderNumber)}
+                    Use {quickBill.outsideTableName.trim() || autoOutsideTableId}
                   </button>
                 </div>
               </div>
@@ -1769,45 +1805,15 @@ export default function RestaurantOrdersPage() {
               </div>
             ) : null}
             <div className="grid min-w-0 grid-cols-[repeat(auto-fill,minmax(150px,1fr))] content-start gap-2 sm:grid-cols-[repeat(auto-fill,minmax(180px,1fr))] 2xl:grid-cols-[repeat(auto-fill,minmax(190px,1fr))]">
-            {visibleItems.map((item) => {
-              const inCart = cartRows.find((row) => row.itemId === item.id)
-              return (
-                <div key={item.id} className="min-w-0 self-start rounded-[0.95rem] border border-slate-200 bg-white p-2 shadow-sm">
-                  <MenuImagePlaceholder item={item} />
-                  <div className="mt-1.5 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="truncate text-xs font-semibold text-slate-950">{item.name}</p>
-                        <p className="mt-0.5 line-clamp-2 min-h-7 text-[10.5px] leading-3.5 text-slate-500">{item.description}</p>
-                      </div>
-                      <div className="flex shrink-0 flex-col items-end gap-1">
-                        <Badge variant="info" className="px-1.5 py-0.5 text-[9.5px]">{item.category}</Badge>
-                        {hasRestaurantOffer(item) ? <Badge variant="warning" className="px-1.5 py-0.5 text-[9.5px]">Offer</Badge> : null}
-                      </div>
-                    </div>
-                    <div className="mt-2 flex items-center justify-between gap-2">
-                      <p className="text-xs font-black text-slate-950">{formatRestaurantCurrency(finalItemPrice(item))}</p>
-                      {inCart ? (
-                        <div className="flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 p-0.5">
-                          <button type="button" onClick={() => adjustQty(item.id, -1)} className="grid h-6 w-6 place-items-center rounded-full bg-white text-slate-700 shadow-sm">
-                            <HiOutlineMinus className="h-3.5 w-3.5" />
-                          </button>
-                          <span className="w-5 text-center text-xs font-bold text-slate-950">{inCart.qty}</span>
-                          <button type="button" onClick={() => adjustQty(item.id, 1)} className="grid h-6 w-6 place-items-center rounded-full bg-slate-950 text-white">
-                            <HiOutlinePlus className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-                      ) : (
-                        <Button type="button" className="h-7 px-2.5 py-1 text-xs" onClick={() => addItem(item.id)}>
-                          <HiOutlinePlus className="h-3.5 w-3.5" />
-                          Add
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
+            {visibleItems.map((item) => (
+              <MenuItemCard
+                key={item.id}
+                item={item}
+                inCartQty={cartByItemId.get(item.id)?.qty || 0}
+                onAdd={addItem}
+                onAdjust={adjustQty}
+              />
+            ))}
             </div>
           </div>
         </Card>

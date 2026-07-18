@@ -500,12 +500,14 @@ const RestaurantAccordionSidebar = memo(function RestaurantAccordionSidebar({ it
   useEffect(() => {
     /* Fast poll to detect if POS Till tab is still open (within ~3s).
      * RestaurantPOS.jsx and RestaurantOrders.jsx write a heartbeat every 3s.
-     * If the heartbeat stops for more than 5s, show closed state. */
+     * localStorage (not sessionStorage) because the POS Till opens in a
+     * separate tab and sessionStorage is per-tab. If the heartbeat stops
+     * for more than 5s, show closed state. */
     const check = setInterval(() => {
-      const ts = sessionStorage.getItem('nexora:posTill:open')
+      const ts = localStorage.getItem('nexora:posTill:open') || sessionStorage.getItem('nexora:posTill:open')
       if (!ts) { setPosTillOpen(false); return }
       const age = Date.now() - Number(ts)
-      if (age > 5000) setPosTillOpen(false)
+      setPosTillOpen(age <= 5000)
     }, 1500)
     return () => clearInterval(check)
   }, [])

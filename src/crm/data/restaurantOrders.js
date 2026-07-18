@@ -16,6 +16,10 @@ function _key() {
 /** In-memory cache: avoids re-parsing localStorage JSON on every call.
  * Invalidated whenever orders are written. */
 let _cache = null
+/** Normalized-orders cache: normalizeRestaurantOrder runs bill calculation and
+ * date parsing per order, and loadRestaurantOrders is called from many hot
+ * paths (render memos, click handlers). Cache the normalized result too. */
+let _normalizedCache = null
 
 function readStoredOrders() {
   if (typeof window === 'undefined') return []
@@ -30,10 +34,20 @@ function readStoredOrders() {
   }
 }
 
-function invalidateCache() { _cache = null }
+function invalidateCache() { _cache = null; _normalizedCache = null }
+
+/* Cross-tab safety: POS Till, KOT and Kitchen Display run in separate tabs.
+ * When another tab writes orders, invalidate this tab's cache. */
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (event) => {
+    if (event.key && event.key.startsWith(_BASE)) invalidateCache()
+  })
+}
 
 export function loadRestaurantOrders() {
-  return readStoredOrders().map((order) => normalizeRestaurantOrder(order)).filter((order) => order.orderNumber)
+  if (_normalizedCache) return _normalizedCache
+  _normalizedCache = readStoredOrders().map((order) => normalizeRestaurantOrder(order)).filter((order) => order.orderNumber)
+  return _normalizedCache
 }
 
 export function saveRestaurantOrders(orders) {

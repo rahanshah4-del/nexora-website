@@ -30,17 +30,28 @@ const BlogArticlePage = lazy(() => import('./pages/public/BlogArticlePage.jsx'))
 const FaqPage = lazy(() => import('./pages/public/FaqPage.jsx'))
 const SupportCenterPage = lazy(() => import('./pages/public/SupportCenterPage.jsx'))
 const DashboardLayout = lazy(() => import('./crm/layouts/DashboardLayout.jsx'))
-// Preload DashboardLayout chunk immediately — it's needed on every /app/* route
-import('./crm/layouts/DashboardLayout.jsx').catch(() => {})
 const AdminLayout = lazy(() => import('./layouts/AdminLayout.jsx'))
 const DashboardHomePage = lazy(() => import('./crm/pages/DashboardHome.jsx'))
-// Preload DashboardHome chunk — it's the default route after login
-import('./crm/pages/DashboardHome.jsx').catch(() => {})
 const RestaurantPOSPage = lazy(() => import('./crm/pages/RestaurantPOS.jsx'))
 const RestaurantOrdersPage = lazy(() => import('./crm/pages/RestaurantOrders.jsx'))
-// Preload RestaurantPOS chunk — POS Till opens in new tab; also prefetch RestaurantOrders for the /orders route
-import('./crm/pages/RestaurantPOS.jsx').catch(() => {})
-import('./crm/pages/RestaurantOrders.jsx').catch(() => {})
+/* Warm the chunks needed right after login (layout, dashboard home, POS Till)
+   during idle time instead of at module evaluation — eager top-level import()
+   competed with the LCP-critical resources of whichever page loaded first.
+   Skipped on public marketing pages: those visitors never need CRM chunks. */
+if (typeof window !== 'undefined') {
+  const path = window.location.pathname
+  const wantsCrmChunks = path.startsWith('/app') || path === '/login' || path === '/workspace' || path === '/verify-email'
+  if (wantsCrmChunks) {
+    const warmChunks = () => {
+      import('./crm/layouts/DashboardLayout.jsx').catch(() => {})
+      import('./crm/pages/DashboardHome.jsx').catch(() => {})
+      import('./crm/pages/RestaurantPOS.jsx').catch(() => {})
+      import('./crm/pages/RestaurantOrders.jsx').catch(() => {})
+    }
+    if ('requestIdleCallback' in window) window.requestIdleCallback(warmChunks, { timeout: 6000 })
+    else window.setTimeout(warmChunks, 2500)
+  }
+}
 const RestaurantMenuManagementPage = lazy(() => import('./crm/pages/RestaurantMenuManagement.jsx'))
 const RestaurantTablesPage = lazy(() => import('./crm/pages/RestaurantTables.jsx'))
 const RestaurantOrdersKotPage = lazy(() => import('./crm/pages/RestaurantOrdersKot.jsx'))

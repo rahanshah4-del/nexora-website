@@ -36,13 +36,14 @@ const modules = [
 export default function RestaurantPOSPage() {
   const navigate = useNavigate()
 
-  /* Heartbeat — lets sidebar know this tab is open */
+  /* Heartbeat — lets sidebar (in the dashboard tab) know this tab is open.
+     localStorage, not sessionStorage: the sidebar lives in another tab and
+     sessionStorage is per-tab, so it would never see this heartbeat. */
   useEffect(() => {
-    sessionStorage.setItem('nexora:posTill:open', String(Date.now()))
-    const pulse = setInterval(() => {
-      sessionStorage.setItem('nexora:posTill:open', String(Date.now()))
-    }, 3000)
-    return () => { clearInterval(pulse); sessionStorage.removeItem('nexora:posTill:open') }
+    const beat = () => { try { localStorage.setItem('nexora:posTill:open', String(Date.now())) } catch { /* quota — ignore */ } }
+    beat()
+    const pulse = setInterval(beat, 3000)
+    return () => { clearInterval(pulse); try { localStorage.removeItem('nexora:posTill:open') } catch { /* ignore */ } }
   }, [])
 
   return (
