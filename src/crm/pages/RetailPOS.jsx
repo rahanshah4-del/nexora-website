@@ -29,6 +29,7 @@ import { db } from '../lib/firebase.js'
 import { printHtmlDocument } from '../lib/printerService.js'
 import { formatCurrency } from '../utils/format.js'
 import { retailPosPromoCodes } from '../data/retailPosPromos.js'
+import ApplePaySuccess from '../components/ui/ApplePaySuccess.jsx'
 
 const paymentMethods = ['Cash', 'Card', 'JazzCash', 'Easypaisa', 'UPI', 'Wallet']
 const shortcuts = [
@@ -184,6 +185,7 @@ export default function RetailPOSPage() {
   const [paidAmount, setPaidAmount] = useState('')
   const [message, setMessage] = useState('')
   const [successNotice, setSuccessNotice] = useState(null)
+  const [showApplePay, setShowApplePay] = useState(false)
   const [saving, setSaving] = useState(false)
   const [viewMode, setViewMode] = useState('grid')
   const [customerPanelOpen, setCustomerPanelOpen] = useState(false)
@@ -648,6 +650,7 @@ export default function RetailPOSPage() {
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       })
+      setShowApplePay(true)
       setSuccessNotice({
         orderNumber,
         text: 'Order saved. Till ready for next bill.',
@@ -1097,6 +1100,7 @@ export default function RetailPOSPage() {
 
         </aside>
       </section>
+      <ApplePaySuccess show={showApplePay} onDone={() => setShowApplePay(false)} />
     </motion.div>
   )
 }

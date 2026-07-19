@@ -1,5 +1,6 @@
 import {
   HiOutlineArrowRightOnRectangle,
+  HiOutlineCalendarDays,
   HiOutlineCog6Tooth,
   HiOutlineSquares2X2,
 } from 'react-icons/hi2'
@@ -13,8 +14,7 @@ import { useAuth } from '../../hooks/useAuth.js'
 import { useUser } from '../../hooks/useUser.js'
 import { useLocation, useNavigate } from 'react-router-dom'
 import NotificationBell from '../notifications/NotificationBell.jsx'
-import BranchSwitcher from '../system/BranchSwitcher.jsx'
-import OfflineStatus from '../system/OfflineStatus.jsx'
+import CloudSyncButton from '../system/CloudSyncButton.jsx'
 import { labelForBusinessType, packageNameForPlan } from '../../data/moduleAccess.js'
 import { resolveWorkspaceName } from '../../../lib/workspaceName.js'
 import { goToWorkspace } from '../../../lib/workspaceNavigation.js'
@@ -221,24 +221,24 @@ function TopNav({ onOpenSidebar, onSwitchProduct }) {
           </button>
 
           <div className="hidden min-w-0 flex-1 items-center gap-2 lg:flex">
-            <div className="hidden shrink-0 items-center gap-2 2xl:flex">
-              <OfflineStatus />
-              <BranchSwitcher />
-            </div>
-            <Badge
-              variant="info"
-              className="h-10 max-w-[min(24rem,34vw)] shrink items-center truncate px-4 text-sm font-extrabold"
-              title={`Current Business: ${businessTypeLabel}`}
-            >
-              <span className="truncate">Current Business: {businessTypeLabel}</span>
-            </Badge>
-            <Badge
-              variant={isTrialExpired ? 'danger' : isTrialActive ? 'warning' : 'success'}
-              className="h-10 max-w-[min(19rem,26vw)] shrink-0 items-center truncate px-4 text-sm font-extrabold"
-              title={profileSummary.accessLabel}
-            >
-              <span className="truncate">{profileSummary.accessLabel}</span>
-            </Badge>
+            <CloudSyncButton />
+            {isTrialActive ? (
+              <div className="inline-flex h-10 items-center gap-2 rounded-xl border border-amber-200/60 bg-amber-50/80 px-3.5 text-xs font-bold text-amber-700 shadow-sm backdrop-blur-sm">
+                <HiOutlineCalendarDays className="h-4 w-4" />
+                <span className="hidden sm:inline">{profileSummary.accessLabel}</span>
+                <span className="inline-flex h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
+              </div>
+            ) : isTrialExpired ? (
+              <div className="inline-flex h-10 items-center gap-2 rounded-xl border border-rose-200/60 bg-rose-50/80 px-3.5 text-xs font-bold text-rose-700 shadow-sm backdrop-blur-sm">
+                <HiOutlineCalendarDays className="h-4 w-4" />
+                <span className="hidden sm:inline">{profileSummary.accessLabel}</span>
+              </div>
+            ) : (
+              <div className="inline-flex h-10 items-center gap-2 rounded-xl border border-emerald-200/60 bg-emerald-50/80 px-3.5 text-xs font-bold text-emerald-700 shadow-sm backdrop-blur-sm">
+                <HiOutlineCalendarDays className="h-4 w-4" />
+                <span className="hidden sm:inline">{profileSummary.accessLabel}</span>
+              </div>
+            )}
           </div>
 
           <div className="ml-auto flex min-w-0 shrink-0 items-center justify-end gap-1.5 sm:gap-2">
@@ -268,24 +268,21 @@ function TopNav({ onOpenSidebar, onSwitchProduct }) {
               panelClassName="w-80 p-2"
               trigger={() => (
                 <button
-                  className="focus-ring inline-flex min-w-0 items-center gap-2 rounded-2xl border border-transparent px-1.5 py-1.5 transition hover:border-slate-200 hover:bg-white hover:shadow-sm dark:hover:bg-white/10 sm:px-2"
+                  className="inline-flex min-w-0 items-center gap-2.5 rounded-2xl border border-slate-200/60 bg-white/80 px-2 py-1.5 shadow-sm backdrop-blur-sm transition-all duration-200 hover:border-slate-300 hover:bg-white hover:shadow-md active:scale-[0.98]"
                   type="button"
                   aria-label="Open profile menu"
                 >
                   {profile.avatarDataUrl ? (
-                    <img src={profile.avatarDataUrl} alt="" className="h-9 w-9 shrink-0 rounded-2xl object-cover shadow-sm" />
+                    <img src={profile.avatarDataUrl} alt="" className="h-9 w-9 shrink-0 rounded-2xl object-cover ring-2 ring-slate-100" />
                   ) : (
-                    <Avatar name={profileSummary.displayName} className="h-9 w-9 shrink-0 rounded-2xl" />
+                    <Avatar name={profileSummary.displayName} className="h-9 w-9 shrink-0 rounded-2xl ring-2 ring-slate-100" />
                   )}
                   <div className="hidden max-w-[14rem] min-w-0 text-left xl:block 2xl:max-w-[16rem]">
-                    <p className="truncate text-sm font-semibold text-slate-950 dark:text-white">
+                    <p className="truncate text-[13px] font-bold text-slate-950">
                       {profileSummary.displayName}
                     </p>
-                    <p className="truncate text-xs font-medium text-slate-500 dark:text-slate-300">
+                    <p className="truncate text-[11px] font-semibold text-slate-500">
                       {profileSummary.roleLabel}
-                    </p>
-                    <p className="truncate text-[11px] font-medium text-slate-400 dark:text-slate-400">
-                      {profileSummary.displayEmail}
                     </p>
                   </div>
                 </button>

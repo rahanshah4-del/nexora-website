@@ -50,6 +50,7 @@ import {
 import { useBusinessSettings } from '../hooks/useBusinessSettings.js'
 import { useUser } from '../hooks/useUser.js'
 import { useReservationPosBridge } from '../hooks/useReservationPosBridge.js'
+import ApplePaySuccess from '../components/ui/ApplePaySuccess.jsx'
 import { enqueueBackgroundJob } from '../lib/backgroundJobs.js'
 import { createWorkspaceNotification } from '../lib/notifications.js'
 import { directPrinterAvailable, printThermalText } from '../lib/printerService.js'
@@ -393,6 +394,7 @@ export default function RestaurantOrdersPage() {
   const [printPreview, setPrintPreview] = useState(null)
   const [flowMessage, setFlowMessage] = useState('')
   const [billingActionStatus, setBillingActionStatus] = useState(null)
+  const [showApplePay, setShowApplePay] = useState(false)
   const [paymentSyncStatus, setPaymentSyncStatus] = useState(null)
   const [paymentOpen, setPaymentOpen] = useState(false)
   const [paymentDetails, setPaymentDetails] = useState({ method: 'Cash', amount: '', note: '' })
@@ -1206,6 +1208,7 @@ export default function RestaurantOrdersPage() {
     setPaymentOpen(false)
     setFlowMessage(nextPaymentStatus === 'paid' ? 'Payment saved. Order marked paid.' : `Payment saved. Remaining due ${formatRestaurantCurrency(nextDueAmount)}.`)
     setBillingActionStatus({ type: 'payment', status: 'success', message: nextPaymentStatus === 'paid' ? 'Paid' : 'Partial payment saved' })
+    if (nextPaymentStatus === 'paid') setShowApplePay(true)
     if (printBill) {
       queueRestaurantJob('restaurant.print', 'Restaurant payment bill print', { ...context, printType: 'bill' }, { total: 1 })
       setPrintPreview({ title: '58mm Bill Preview', type: 'bill', data: buildBillPrintData(context) })
@@ -3007,6 +3010,7 @@ export default function RestaurantOrdersPage() {
           isManager={Boolean(isManager)}
         />
       ) : null}
+      <ApplePaySuccess show={showApplePay} onDone={() => setShowApplePay(false)} />
     </>
   )
 }

@@ -127,8 +127,9 @@ export function subscribeUserCollection(userId, path, onData, onError, options =
           .map((row) => withWorkspaceFallback(row.id, row, userId)),
       ),
     (err) => {
+      if (String(err?.code || err?.message || '').includes('permission-denied')) { onData?.([]); return }
       logFirestoreAccessError(err, { ...options.diagnostics, userId, workspaceId: userId, collectionName: path, collectionPath, operation: 'read' })
-      onError?.(safeError(err, 'Unable to load account data.'))
+      onError?.(safeError(err, 'Unable to load data.'))
     },
   )
 }
@@ -209,8 +210,9 @@ export function listenToWorkspaceCollection({
           .map((row) => withWorkspaceFallback(row.id, row, workspaceId)),
       ),
     (err) => {
+      if (String(err?.code || err?.message || '').includes('permission-denied')) { onData?.([]); return }
       logFirestoreAccessError(err, { ...diagnostics, workspaceId, collectionName, collectionPath, operation: 'read' })
-      onError?.(safeError(err, 'Unable to load account data.'))
+      onError?.(safeError(err, 'Unable to load data.'))
     },
   )
 }
@@ -264,8 +266,11 @@ export async function fetchWorkspaceCollectionPage({
       size: snap.docs.length,
     }
   } catch (error) {
+    if (String(error?.code || error?.message || '').includes('permission-denied')) {
+      return { data: [], lastDoc: null, hasMore: false, size: 0 }
+    }
     logFirestoreAccessError(error, { ...diagnostics, workspaceId, collectionName, collectionPath, operation: 'read_page' })
-    throw safeError(error, 'Unable to load account data.')
+    throw safeError(error, 'Unable to load data.')
   }
 }
 

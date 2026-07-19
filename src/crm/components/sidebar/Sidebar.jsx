@@ -733,7 +733,11 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
       }),
     [userDoc, userId],
   )
+  // Don't render until Firebase data is available — prevents all-modules flash
+  const dataReady = Boolean(userDoc && businessType)
+
   const sidebarItems = useMemo(() => {
+    if (!dataReady) return []
     const staffPermissionModules = staffAccount
       ? Array.from(new Set([
           'dashboard',
@@ -844,7 +848,16 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
       </div>
 
       <nav className={`mt-2 min-h-0 flex-1 overflow-y-auto px-2 pb-2 pr-1.5 ${shouldCollapse ? 'space-y-1.5' : 'space-y-0.5'}`}>
-        {normalizeBusinessType(businessType) === 'Restaurant POS' && !shouldCollapse ? (
+        {!dataReady ? (
+          <div className="space-y-2 px-1 py-4">
+            {[1,2,3,4,5].map((i) => (
+              <div key={i} className="flex items-center gap-2.5 px-2.5 py-0.5">
+                <div className="h-8 w-8 shrink-0 animate-pulse rounded-xl bg-slate-100" />
+                <div className="h-3 w-24 animate-pulse rounded bg-slate-100" />
+              </div>
+            ))}
+          </div>
+        ) : normalizeBusinessType(businessType) === 'Restaurant POS' && !shouldCollapse ? (
           <RestaurantAccordionSidebar items={sidebarItems} collapsed={shouldCollapse} onNavigate={onNavigate} businessType={businessType} />
         ) : (
           sidebarItems.map((item) => {

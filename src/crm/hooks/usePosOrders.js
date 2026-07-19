@@ -9,7 +9,9 @@ import { restoreInventoryItems } from '../lib/inventoryRestore.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 
 const POS_BUSINESS_TYPE = 'Retail / POS'
-const MAX_RETRY_COUNT = 3
+const MAX_RETRY_COUNT = 5
+// Exponential backoff: 1s → 2s → 4s → 8s → 16s
+const RETRY_BACKOFF_MS = [1000, 2000, 4000, 8000, 16000]
 
 function localOrdersKey(workspaceId) {
   return `nexora.posOrders.${workspaceId || 'local'}`
@@ -150,18 +152,25 @@ async function syncOneOrder(workspaceId, userId, order) {
  * Scan localStorage for failed orders and retry them (up to MAX_RETRY_COUNT each).
  */
 async function retryFailedOrders(workspaceId, userId, ordersRef, limitCount) {
-  if (!workspaceId || !userId || !window?.navigator?.onLine) return
+  if (!workspaceId || !userId) return
+  const online = window?.navigator?.onLine
   const localOrders = readLocalOrders(workspaceId)
   let changed = false
 
   for (const order of localOrders) {
-    if (order.syncStatus !== 'failed') continue
+    if (order.syncStatus !== 'failed' && order.syncStatus !== 'pending') continue
     const retryCount = Number(order.retryCount ?? 0)
     if (retryCount >= MAX_RETRY_COUNT) continue
 
+    // Exponential backoff: wait before each retry attempt
+    const delay = RETRY_BACKOFF_MS[retryCount] || RETRY_BACKOFF_MS[RETRY_BACKOFF_MS.length - 1]
+    await new Promise((resolve) => setTimeout(resolve, delay))
+
+    // Re-check online status after waiting
+    if (!window?.navigator?.onLine) continue
+
     changed = true
 
-    // Mark as syncing
     const syncingOrder = {
       ...order,
       syncStatus: 'syncing',
@@ -186,11 +195,14 @@ async function retryFailedOrders(workspaceId, userId, ordersRef, limitCount) {
         mergeOrders(current.filter((o) => o.id !== order.id), [syncedOrder], limitCount),
       )
     } else {
+      const nextRetry = retryCount + 1
       const failedOrder = {
         ...order,
         syncStatus: 'failed',
-        syncError: result.error || 'Retry sync failed.',
-        retryCount: retryCount + 1,
+        syncError: nextRetry >= MAX_RETRY_COUNT
+          ? `Sync failed after ${MAX_RETRY_COUNT} attempts. ${result.error || ''}`
+          : `Retry ${nextRetry}/${MAX_RETRY_COUNT}: ${result.error || 'Sync failed.'}`,
+        retryCount: nextRetry,
         updatedAt: new Date().toISOString(),
       }
       rememberLocalOrder(workspaceId, failedOrder)
@@ -354,7 +366,7 @@ export function usePosOrders(options = {}) {
         paymentStatus: payload.paymentStatus || 'paid',
       }
 
-      // Optimistic local save
+      // Optimistic local save — return instantly, sync in background
       const localOrder = {
         ...firestorePayload,
         id: localId,
@@ -367,48 +379,25 @@ export function usePosOrders(options = {}) {
       rememberLocalOrder(workspaceId, localOrder)
       setOrders((current) => mergeOrders(current, [localOrder], limitCount))
 
-      // Firestore write
-      try {
-        const ref = await createUserDoc(workspaceId, 'posOrders', firestorePayload, {
-          businessType: effectiveBusinessType,
-        })
-        const syncedOrder = {
-          ...localOrder,
-          id: ref.id,
-          syncStatus: 'synced',
-          retryCount: 0,
-          syncError: '',
-          updatedAt: new Date().toISOString(),
-        }
+      // Fire-and-forget Firestore sync (doesn't block the UI)
+      window.dispatchEvent(new CustomEvent('nexora:sync:start'))
+      createUserDoc(workspaceId, 'posOrders', firestorePayload, {
+        businessType: effectiveBusinessType,
+      }).then((ref) => {
+        const syncedOrder = { ...localOrder, id: ref.id, syncStatus: 'synced', retryCount: 0, syncError: '', updatedAt: new Date().toISOString() }
         forgetLocalOrder(workspaceId, localId)
         rememberLocalOrder(workspaceId, syncedOrder)
-        setOrders((current) =>
-          mergeOrders(current.filter((o) => o.id !== localId), [syncedOrder], limitCount),
-        )
-        console.log('[Retail POS] order synced to Firestore', {
-          orderNumber: payload.orderNumber || '',
-          orderId: ref.id,
-          path: `workspaces/${workspaceId}/posOrders/${ref.id}`,
-        })
-        return { ok: true, id: ref.id }
-      } catch (writeError) {
-        const failedOrder = {
-          ...localOrder,
-          syncStatus: 'failed',
-          retryCount: 1,
-          syncError: writeError?.message || 'Firestore sync failed.',
-          updatedAt: new Date().toISOString(),
-        }
+        setOrders((current) => mergeOrders(current.filter((o) => o.id !== localId), [syncedOrder], limitCount))
+        window.dispatchEvent(new CustomEvent('nexora:sync:done'))
+      }).catch((writeError) => {
+        window.dispatchEvent(new CustomEvent('nexora:sync:done'))
+        const failedOrder = { ...localOrder, syncStatus: 'failed', retryCount: 1, syncError: writeError?.message || 'Firestore sync failed.', updatedAt: new Date().toISOString() }
         rememberLocalOrder(workspaceId, failedOrder)
         setOrders((current) => mergeOrders(current, [failedOrder], limitCount))
-        console.warn('[Retail POS] order kept locally; Firestore sync failed', {
-          orderNumber: payload.orderNumber || '',
-          code: writeError?.code || '',
-          message: writeError?.message || String(writeError || ''),
-          path: `workspaces/${workspaceId}/posOrders`,
-        })
-        return { ok: true, id: localId, local: true, error: 'Saved offline. Will sync when connection restores.' }
-      }
+      })
+
+      // Return instantly — caller doesn't wait for Firestore
+      return { ok: true, id: localId, local: true }
     } finally {
       submittingRef.current = false
     }

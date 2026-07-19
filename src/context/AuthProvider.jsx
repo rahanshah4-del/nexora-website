@@ -56,32 +56,24 @@ export default function AuthProvider({ children }) {
     const unsubscribe = onAuthStateChanged(auth, (nextUser) => {
       if (cancelled) return
 
-      console.warn('[AUTH STATE CHANGED]', {
-        uid: nextUser?.uid || 'none',
-        email: nextUser?.email || '',
-        route: window.location.pathname,
-        time: new Date().toISOString(),
-      })
-
-      // Account-switch isolation: if a DIFFERENT uid signs in within the same
-      // browser session, wipe the previous account's cached view and hard-reload
-      // so no stale in-memory/localStorage data (revenue totals, workspace,
-      // lists) from account A can ever surface under account B. After the reload
-      // the stored uid matches, so this never loops.
+      // Account-switch isolation: only reload when a GENUINELY different user
+      // signs in (e.g., logout→login as different account). Skip during first-
+      // time signup or OTP verification where the uid stays the same.
       if (nextUser?.uid) {
         try {
           const ACTIVE_UID_KEY = 'nexora:activeUid'
           const prevUid = window.localStorage.getItem(ACTIVE_UID_KEY)
-          window.localStorage.setItem(ACTIVE_UID_KEY, nextUser.uid)
-          if (prevUid && prevUid !== nextUser.uid) {
-            console.warn('[AUTH ISOLATION] account switch detected, hard reload', { prevUid, nextUid: nextUser.uid })
+          if (!prevUid) {
+            // First time ever — just store the uid, no reload needed
+            window.localStorage.setItem(ACTIVE_UID_KEY, nextUser.uid)
+          } else if (prevUid !== nextUser.uid) {
+            // Different account detected — clear stale cache and reload once
+            window.localStorage.setItem(ACTIVE_UID_KEY, nextUser.uid)
             clearAllUserCache(prevUid)
             window.location.reload()
             return
           }
-        } catch {
-          // localStorage unavailable (private mode) — non-fatal.
-        }
+        } catch { /* localStorage unavailable */ }
       }
 
       setUser(nextUser)

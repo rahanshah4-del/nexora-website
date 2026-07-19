@@ -111,25 +111,38 @@ export default function RetailPOSOrdersPage() {
 
   function printOrder(order) {
     const rows = (order.items || []).map((item) => `
-      <tr><td>${escapeHtml(item.name)}</td><td class="num">x${Number(item.quantity || 0)}</td><td class="num">${formatCurrency(Number(item.lineTotal || item.price * item.quantity || 0))}</td></tr>
+      <tr><td><span class="item-name">${escapeHtml(item.name)}</span><br><span class="item-qty">x${Number(item.quantity || 0)} @ ${formatCurrency(Number(item.price || 0))}</span></td><td class="num">${formatCurrency(Number(item.lineTotal || item.price * item.quantity || 0))}</td></tr>
     `).join('')
+    const customer = escapeHtml(order.customerName || 'Walk-in Customer')
+    const staff = escapeHtml(order.createdByName || order.cashier || 'Counter Staff')
     const html = `<!doctype html><html><head><title>${escapeHtml(order.orderNumber)}</title><style>
-      @page{size:58mm auto;margin:3mm}*{box-sizing:border-box}body{margin:0;background:#fff;color:#0f172a;font-family:Arial,sans-serif;font-size:10px}.receipt{width:52mm;margin:0 auto}.center{text-align:center}.brand{font-size:14px;font-weight:900;letter-spacing:.08em}.muted{color:#64748b}.line{border-top:1px dashed #0f172a;margin:6px 0}table{width:100%;border-collapse:collapse}td{padding:2px 0;vertical-align:top}.num{text-align:right;white-space:nowrap}.total{font-size:13px;font-weight:900}.pill{display:inline-block;border:1px solid #0f172a;border-radius:999px;padding:2px 8px;font-weight:800}
+      @page{size:58mm auto;margin:3mm}*{box-sizing:border-box;margin:0;padding:0}body{background:#fff;color:#111827;font-family:'Segoe UI',system-ui,sans-serif;font-size:10px;line-height:1.4}.receipt{width:52mm;margin:0 auto;padding:3mm 0}.center{text-align:center}.brand{font-size:15px;font-weight:900;letter-spacing:.06em;text-transform:uppercase}.sub-brand{font-size:7px;font-weight:700;color:#6b7280;letter-spacing:.12em;margin-bottom:3px}.badge{display:inline-block;border:1.5px solid #111827;border-radius:6px;padding:2px 10px;font-size:8px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}.divider{border-top:1px dashed #9ca3af;margin:5px 0}.divider-double{border-top:2px solid #111827;margin:5px 0}.info-row{display:flex;justify-content:space-between;font-size:9px;padding:1.5px 0}.info-row .label{color:#6b7280}.info-row .val{font-weight:700;text-align:right}table{width:100%;border-collapse:collapse}th{font-size:7px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#6b7280;text-align:left;padding:3px 0;border-bottom:1px solid #e5e7eb}td{padding:3px 0;vertical-align:top;font-size:9px;border-bottom:1px dotted #e5e7eb}.item-name{font-weight:700;color:#111827}.item-qty{font-size:8px;color:#6b7280}.num{text-align:right;font-weight:700;white-space:nowrap}.total-row{display:flex;justify-content:space-between;font-size:9px;padding:2px 0}.total-row.grand{font-size:14px;font-weight:900;border-top:1.5px solid #111827;padding-top:4px;margin-top:2px}.footer{text-align:center;font-size:7px;color:#9ca3af;margin-top:5px;border-top:1px solid #e5e7eb;padding-top:4px}
     </style></head><body><main class="receipt">
-      <div class="center"><div class="brand">NEXORA POS</div><div class="muted">${escapeHtml(order.orderNumber)}</div><span class="pill">${escapeHtml(order.paymentStatus || 'paid')}</span></div>
-      <div class="line"></div>
-      <p>Customer: <strong>${escapeHtml(order.customerName || 'Walk-in Customer')}</strong><br>Payment: <strong>${escapeHtml(order.paymentMethod || 'Cash')}</strong><br>${escapeHtml(dateText(order.createdAt))}</p>
-      <div class="line"></div><table>${rows}</table><div class="line"></div>
-      <table>
-        <tr><td>Subtotal</td><td class="num">${formatCurrency(order.subtotal)}</td></tr>
-        <tr><td>Promo</td><td class="num">${formatCurrency(order.discount)}</td></tr>
-        <tr><td>Tax</td><td class="num">${formatCurrency(order.tax)}</td></tr>
-        <tr class="total"><td>Total</td><td class="num">${formatCurrency(order.total)}</td></tr>
-        <tr><td>Paid</td><td class="num">${formatCurrency(order.paidAmount)}</td></tr>
-        <tr><td>Due</td><td class="num">${formatCurrency(order.dueAmount || 0)}</td></tr>
-        <tr><td>Change</td><td class="num">${formatCurrency(order.changeAmount)}</td></tr>
-      </table>
-      <div class="line"></div><p class="center muted">Thank you for shopping</p>
+      <div class="center">
+        <div class="brand">${escapeHtml(order.companyName || 'NEXORA SOLUTION')}</div>
+        <div class="sub-brand">RETAIL INVOICE</div>
+        <span class="badge">${escapeHtml(order.paymentStatus || 'PAID')}</span>
+      </div>
+      <div class="divider-double"></div>
+      <div class="info-row"><span class="label">Order #</span><span class="val">${escapeHtml(order.orderNumber)}</span></div>
+      <div class="info-row"><span class="label">Date</span><span class="val">${escapeHtml(dateText(order.createdAt))}</span></div>
+      <div class="info-row"><span class="label">Customer</span><span class="val">${customer}</span></div>
+      <div class="info-row"><span class="label">Staff</span><span class="val">${staff}</span></div>
+      <div class="info-row"><span class="label">Payment</span><span class="val">${escapeHtml(order.paymentMethod || 'Cash')}</span></div>
+      <div class="divider"></div>
+      <table><thead><tr><th>Item</th><th class="num">Amount</th></tr></thead><tbody>${rows}</tbody></table>
+      <div class="divider"></div>
+      <div class="total-row"><span>Subtotal</span><span>${formatCurrency(order.subtotal)}</span></div>
+      ${Number(order.discount) > 0 ? `<div class="total-row"><span>Discount</span><span>-${formatCurrency(order.discount)}</span></div>` : ''}
+      ${Number(order.tax) > 0 ? `<div class="total-row"><span>Tax</span><span>${formatCurrency(order.tax)}</span></div>` : ''}
+      <div class="total-row grand"><span>TOTAL</span><span>${formatCurrency(order.total)}</span></div>
+      <div class="total-row"><span>Paid</span><span>${formatCurrency(order.paidAmount)}</span></div>
+      ${Number(order.dueAmount || 0) > 0 ? `<div class="total-row"><span>Due</span><span>${formatCurrency(order.dueAmount)}</span></div>` : ''}
+      ${Number(order.changeAmount || 0) > 0 ? `<div class="total-row"><span>Change</span><span>${formatCurrency(order.changeAmount)}</span></div>` : ''}
+      <div class="footer">
+        <div>${escapeHtml(order.companyName || 'NEXORA SOLUTION')}</div>
+        <div>Nexora Solution &copy; 2019-2026 — All rights reserved</div>
+      </div>
     </main></body></html>`
     if (!openBrowserPrintHtml(html, { width: 300, height: 760 })) {
       setActionMessage('Print window blocked. Please allow popups and try again.')
@@ -151,6 +164,7 @@ export default function RetailPOSOrdersPage() {
 
   function printTodayReport() {
     const date = new Date().toLocaleString()
+    const company = escapeHtml(orders[0]?.companyName || 'NEXORA SOLUTION')
     const rows = todayOrders.map((order) => {
       const reason = order.dueAmount > 0 ? 'Partial payment / customer due' : order.paymentStatus === 'paid' ? 'Paid sale' : order.paymentStatus || order.status || 'Completed'
       return `
@@ -159,7 +173,7 @@ export default function RetailPOSOrdersPage() {
           <div class="muted">${escapeHtml(dateText(order.createdAt))}</div>
           <div class="muted">${escapeHtml(order.customerName || 'Walk-in Customer')} · ${Number(order.itemCount || 0)} items</div>
           <div class="row"><span>Gross</span><span>${formatCurrency(order.total)}</span></div>
-          <div class="row"><span>Due</span><span>${formatCurrency(order.dueAmount || 0)}</span></div>
+          ${Number(order.dueAmount || 0) > 0 ? `<div class="row"><span>Due</span><span>${formatCurrency(order.dueAmount)}</span></div>` : ''}
           <div class="row"><span>Promo / Tax</span><span>${formatCurrency(order.discount || 0)} / ${formatCurrency(order.tax || 0)}</span></div>
           <div class="muted">${escapeHtml(reason)}</div>
         </div>`
@@ -173,26 +187,31 @@ export default function RetailPOSOrdersPage() {
       </div>
     `).join('')
     const html = `<!doctype html><html><head><title>POS Today Report</title><style>
-      @page{size:58mm auto;margin:3mm}*{box-sizing:border-box}body{margin:0;background:#fff;color:#0f172a;font-family:Arial,sans-serif;font-size:10px}.report{width:52mm;margin:0 auto}.center{text-align:center}.brand{font-size:14px;font-weight:900;letter-spacing:.08em}.title{font-size:12px;font-weight:900}.muted{color:#64748b;font-size:9px;line-height:1.35}.line{border-top:1px dashed #0f172a;margin:6px 0}.row{display:flex;justify-content:space-between;gap:8px;padding:1px 0}.strong{font-weight:900}.total{font-size:12px;font-weight:900}.entry{border-bottom:1px dashed #cbd5e1;padding:5px 0}.empty{border:1px dashed #cbd5e1;border-radius:8px;padding:10px;text-align:center;color:#64748b}
+      @page{size:58mm auto;margin:3mm}*{box-sizing:border-box;margin:0;padding:0}body{background:#fff;color:#111827;font-family:'Segoe UI',system-ui,sans-serif;font-size:10px}.report{width:52mm;margin:0 auto;padding:3mm 0}.center{text-align:center}.brand{font-size:15px;font-weight:900;letter-spacing:.06em;text-transform:uppercase}.sub{font-size:7px;font-weight:700;color:#6b7280;letter-spacing:.1em;text-transform:uppercase}.muted{color:#6b7280;font-size:9px}.divider{border-top:1px dashed #9ca3af;margin:5px 0}.divider-solid{border-top:1.5px solid #111827;margin:5px 0}.row{display:flex;justify-content:space-between;gap:8px;padding:2px 0;font-size:9px}.strong{font-weight:900}.total{font-size:12px;font-weight:900;border-top:1.5px solid #111827;padding-top:3px;margin-top:2px}.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:3px;margin:4px 0}.kpi{border:1px solid #e5e7eb;border-radius:4px;padding:3px 5px}.kpi .lbl{font-size:6px;font-weight:800;color:#6b7280;text-transform:uppercase;letter-spacing:.04em}.kpi .val{font-size:10px;font-weight:900;color:#111827}.entry{border-bottom:1px dashed #cbd5e1;padding:4px 0}.empty{border:1px dashed #cbd5e1;border-radius:6px;padding:8px;text-align:center;color:#9ca3af;font-size:9px}.footer{text-align:center;font-size:7px;color:#9ca3af;margin-top:5px;border-top:1px solid #e5e7eb;padding-top:4px}
     </style></head><body><main class="report">
-      <div class="center"><div class="brand">NEXORA POS</div><div class="title">TODAY REPORT</div><div class="muted">${escapeHtml(date)}</div></div>
-      <div class="line"></div>
-      <div class="row"><span>Orders</span><strong>${todayOrders.length}</strong></div>
-      <div class="row"><span>Items</span><strong>${todayTotals.items}</strong></div>
-      <div class="row"><span>Gross bills</span><strong>${formatCurrency(todayTotals.gross)}</strong></div>
-      <div class="row total"><span>Collected</span><span>${formatCurrency(todayTotals.sales)}</span></div>
-      <div class="row"><span>Opening cash</span><strong>${formatCurrency(todayTotals.openingCash)}</strong></div>
-      <div class="row"><span>Cash sale/settle</span><strong>${formatCurrency(todayTotals.cashCollected)}</strong></div>
-      <div class="row"><span>Closing cash</span><strong>${formatCurrency(todayTotals.closingCash)}</strong></div>
-      <div class="row"><span>Order paid</span><strong>${formatCurrency(todayTotals.paid)}</strong></div>
-      <div class="row"><span>Wallet settled</span><strong>${formatCurrency(todayTotals.walletSettled)}</strong></div>
-      <div class="row"><span>Due left</span><strong>${formatCurrency(todayTotals.due)}</strong></div>
-      <div class="row"><span>Promo</span><strong>${formatCurrency(todayTotals.discount)}</strong></div>
-      <div class="row"><span>Tax</span><strong>${formatCurrency(todayTotals.tax)}</strong></div>
-      <div class="line"></div>
+      <div class="center">
+        <div class="brand">${company}</div>
+        <div class="sub">DAILY CLOSING REPORT</div>
+        <div class="muted">${escapeHtml(date)}</div>
+      </div>
+      <div class="divider-solid"></div>
+      <div class="kpi-grid">
+        <div class="kpi"><div class="lbl">Orders</div><div class="val">${todayOrders.length}</div></div>
+        <div class="kpi"><div class="lbl">Items Sold</div><div class="val">${todayTotals.items}</div></div>
+        <div class="kpi"><div class="lbl">Gross</div><div class="val">${formatCurrency(todayTotals.gross)}</div></div>
+        <div class="kpi"><div class="lbl">Collected</div><div class="val">${formatCurrency(todayTotals.sales)}</div></div>
+        <div class="kpi"><div class="lbl">Opening Cash</div><div class="val">${formatCurrency(todayTotals.openingCash)}</div></div>
+        <div class="kpi"><div class="lbl">Closing Cash</div><div class="val">${formatCurrency(todayTotals.closingCash)}</div></div>
+        <div class="kpi"><div class="lbl">Due Left</div><div class="val">${formatCurrency(todayTotals.due)}</div></div>
+        <div class="kpi"><div class="lbl">Promo / Tax</div><div class="val">${formatCurrency(todayTotals.discount)} / ${formatCurrency(todayTotals.tax)}</div></div>
+      </div>
+      <div class="divider"></div>
       ${todayOrders.length ? rows : '<div class="empty">No POS orders found today.</div>'}
-      ${todayWalletPayments.length ? `<div class="line"></div><div class="title">Due Settlements</div>${settlementRows}` : ''}
-      <div class="line"></div><p class="center muted">Opening/patti cash is separate. Revenue uses collected payments only.</p>
+      ${todayWalletPayments.length ? `<div class="divider"></div><div class="sub">Due Settlements</div>${settlementRows}` : ''}
+      <div class="footer">
+        <div>${company}</div>
+        <div>Nexora Solution &copy; 2019-2026 — All rights reserved</div>
+      </div>
     </main></body></html>`
     if (!openBrowserPrintHtml(html, { width: 300, height: 820 })) {
       setActionMessage('Report print window blocked. Please allow popups and try again.')
