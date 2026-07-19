@@ -138,10 +138,10 @@ export default function PublicFooter() {
                 <HiOutlineGlobeAlt className="mt-0.5 shrink-0 text-lg" />
                 <span>nexorasolution.online</span>
               </a>
-              <div className="flex gap-3">
-                <HiOutlineMapPin className="mt-0.5 shrink-0 text-lg" />
-                <span>Pakistan</span>
-              </div>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3.5 py-1.5 text-[11px] font-bold text-white backdrop-blur-sm">
+                <HiOutlineMapPin className="text-sm text-rose-400" />
+                Pakistan &amp; Dubai
+              </span>
               <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3.5 py-1.5 text-[11px] font-bold text-white backdrop-blur-sm transition hover:bg-white/20 hover:border-white/30">
                 <HiOutlineGlobeAlt className="text-sm" />
                 Available Worldwide
