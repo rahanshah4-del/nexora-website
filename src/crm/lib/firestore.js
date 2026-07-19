@@ -82,7 +82,10 @@ export function subscribeCollection(path, onData, onError) {
   return onSnapshot(
     ref,
     (snap) => onData(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
-    (err) => onError?.(safeError(err, 'Unable to load account data.')),
+    (err) => {
+      if (String(err?.code || err?.message || '').includes('permission-denied')) { onData([]); return }
+      onError?.(safeError(err, 'Unable to load data.'))
+    },
   )
 }
 
@@ -281,7 +284,10 @@ export function subscribeOwnedCollection(path, userId, onData, onError, ownerFie
           .map((d) => ({ id: d.id, ...d.data() }))
           .filter((row) => (options?.businessType ? belongsToBusiness(row, businessType) : true)),
       ),
-    (err) => onError?.(safeError(err, 'Unable to load account data.')),
+    (err) => {
+      if (String(err?.code || err?.message || '').includes('permission-denied')) { onData([]); return }
+      onError?.(safeError(err, 'Unable to load data.'))
+    },
   )
 }
 

@@ -46,12 +46,6 @@ import {
   HiOutlineInboxStack,
 } from 'react-icons/hi2'
 
-function traceSidebar(event, payload = {}) {
-  if (import.meta.env.DEV) {
-    console.log(`[SidebarTrace] ${event}`, payload)
-  }
-}
-
 const priorityRoutes = [
   '/app/dashboard',
   '/app/client-portal',
@@ -383,13 +377,7 @@ const SidebarNavItem = memo(function SidebarNavItem({ item, collapsed, onNavigat
       to={item.to}
       target={item.openInNewWindow ? '_blank' : undefined}
       rel={item.openInNewWindow ? 'noopener noreferrer' : undefined}
-      onClick={() => {
-        if (item.to === '/app/inventory') {
-          console.log('[Inventory Route] clicked')
-          console.log('[Inventory Route] target', item.to)
-        }
-        handleNav()
-      }}
+      onClick={handleNav}
       title={label}
       className={({ isActive }) =>
         cn(
@@ -507,8 +495,8 @@ const RestaurantAccordionSidebar = memo(function RestaurantAccordionSidebar({ it
       const ts = localStorage.getItem('nexora:posTill:open') || sessionStorage.getItem('nexora:posTill:open')
       if (!ts) { setPosTillOpen(false); return }
       const age = Date.now() - Number(ts)
-      setPosTillOpen(age <= 5000)
-    }, 1500)
+      setPosTillOpen((prev) => { const next = age <= 8000; return next !== prev ? next : prev })
+    }, 5000)
     return () => clearInterval(check)
   }, [])
 
@@ -793,25 +781,9 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
         item.to === '/app/reports'
       if (forceSchoolReports) return true
       if (staffAccount && !item.alwaysEnabled && !access.hasModulePermission(item.key, 'view')) {
-        console.warn('[Sales Hub Access Denied]', {
-          source: 'Sidebar',
-          role: role || access.role || '',
-          workspaceId: workspaceId || '',
-          moduleKey: item.key,
-          permissionKey: `module.${item.key}.view`,
-          denialReason: 'sidebar_missing_module_view_permission',
-        })
         return false
       }
       if (item.to === '/app/team' && staffAccount && !access.hasModulePermission('team', 'view')) {
-        console.warn('[Sales Hub Access Denied]', {
-          source: 'Sidebar',
-          role: role || access.role || '',
-          workspaceId: workspaceId || '',
-          moduleKey: 'team',
-          permissionKey: 'module.team.view',
-          denialReason: 'sidebar_missing_team_view_permission',
-        })
         return false
       }
       return allowedRoutes.has(item.to) || item.comingSoon
@@ -851,15 +823,6 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
               : normalizedType === 'Transport / Rental' ? orderTransportRentalSidebar(disabledItems)
                 : normalizedType === 'WhatsApp CRM' ? orderWhatsappCrmSidebar(disabledItems)
                   : disabledItems
-    traceSidebar('module-filter-result', {
-      role: role || access.role || '',
-      staffAccount,
-      workspaceId: workspaceId || '',
-      businessType,
-      enabledModules: Array.isArray(userDoc?.enabledModules) ? userDoc.enabledModules : [],
-      modules: orderedItems.map((item) => item.key),
-      routes: orderedItems.map((item) => item.to),
-    })
     return orderedItems
   }, [access, accessPlan, businessType, developerOverride, ownerAdminBypass, role, staffAccount, userDoc?.enabledModules, userDoc?.isStaff, userDoc?.onboardingCompleted, workspaceId])
 
@@ -916,13 +879,13 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
         </div>
       )}
     </div>
-  ), [businessTitle, handleSwitchProduct, onNavigate, shouldCollapse, sidebarItems, workspaceName])
+  ), [businessTitle, handleSwitchProduct, onNavigate, shouldCollapse, sidebarItems, workspaceName, businessType])
 
   if (!mobile) {
     return (
       <>
         <aside
-          className="sidebar-aside hidden print:hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-20 lg:block lg:border-r lg:border-slate-200/80 lg:bg-white/[0.95] lg:shadow-[12px_0_44px_-38px_rgba(15,23,42,0.45)] lg:backdrop-blur-sm"
+          className="sidebar-aside hidden print:hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-20 lg:block lg:border-r lg:border-slate-200/80 lg:bg-white/[0.95] lg:shadow-[12px_0_44px_-38px_rgba(15,23,42,0.45)] lg:backdrop-blur-sm" style={{ willChange: 'transform', transform: 'translateZ(0)' }}
           data-sidebar={shouldCollapse ? 'collapsed' : 'expanded'}
         >
           <div className={shouldCollapse ? 'sidebar-shell sidebar-shell-collapsed' : 'sidebar-shell sidebar-shell-expanded'}>

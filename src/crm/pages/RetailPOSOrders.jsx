@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { HiOutlineDocumentChartBar, HiOutlinePrinter, HiOutlineReceiptPercent, HiOutlineShoppingBag, HiOutlineTrash, HiOutlineBolt } from 'react-icons/hi2'
+import { HiOutlineDocumentChartBar, HiOutlineMagnifyingGlass, HiOutlinePrinter, HiOutlineReceiptPercent, HiOutlineShoppingBag, HiOutlineTrash, HiOutlineBolt, HiOutlineCalendarDays, HiOutlineXCircle } from 'react-icons/hi2'
 import Card from '../components/ui/Card.jsx'
 import Badge from '../components/ui/Badge.jsx'
 import Button from '../components/ui/Button.jsx'
@@ -46,15 +46,46 @@ export default function RetailPOSOrdersPage() {
   const walletPaymentsApi = usePosWalletPayments({ limitCount: 100 })
   const access = useWorkspaceAccess()
   const [actionMessage, setActionMessage] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
+
+  // ── Filtered orders ──
+  const filteredOrders = useMemo(() => {
+    let result = orders.filter((o) => o.refundStatus !== 'refunded' && !o.refundedAt)
+    const q = searchQuery.trim().toLowerCase()
+    if (q) {
+      result = result.filter((o) =>
+        (o.orderNumber || '').toLowerCase().includes(q) ||
+        (o.customerName || '').toLowerCase().includes(q) ||
+        (o.customerPhone || '').toLowerCase().includes(q) ||
+        (o.paymentMethod || '').toLowerCase().includes(q)
+      )
+    }
+    if (dateFrom) {
+      const from = new Date(dateFrom)
+      from.setHours(0, 0, 0, 0)
+      result = result.filter((o) => dateValue(o.createdAt) >= from)
+    }
+    if (dateTo) {
+      const to = new Date(dateTo)
+      to.setHours(23, 59, 59, 999)
+      result = result.filter((o) => dateValue(o.createdAt) <= to)
+    }
+    return result
+  }, [orders, searchQuery, dateFrom, dateTo])
+
+  const hasActiveFilters = searchQuery.trim() || dateFrom || dateTo
+
   const todayOrders = useMemo(() => orders.filter((order) => isToday(order.createdAt) && order.refundStatus !== 'refunded' && !order.refundedAt), [orders])
   const todayWalletPayments = useMemo(() => walletPaymentsApi.payments.filter((payment) => isToday(payment.createdAt)), [walletPaymentsApi.payments])
-  const activeOrders = useMemo(() => orders.filter((o) => o.refundStatus !== 'refunded' && !o.refundedAt), [orders])
-  const totals = activeOrders.reduce((summary, order) => {
+  const totals = filteredOrders.reduce((summary, order) => {
     summary.sales += Number(order.paidAmount || 0)
     summary.profit += Number(order.profit || 0)
     summary.items += order.itemCount
+    summary.due += Number(order.dueAmount || 0)
     return summary
-  }, { sales: 0, profit: 0, items: 0 })
+  }, { sales: 0, profit: 0, items: 0, due: 0 })
   const walletSettledTotal = walletPaymentsApi.payments.reduce((sum, payment) => sum + Number(payment.amount || 0), 0)
   const canDeleteOrders = access.isOwner || access.isAdmin || access.hasModulePermission('posOrders', 'delete') || access.hasModulePermission('pos', 'delete')
   const todayTotals = todayOrders.reduce((summary, order) => {
@@ -232,10 +263,51 @@ export default function RetailPOSOrdersPage() {
           </div>
         }
       />
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-4">
         <Stat icon={HiOutlineReceiptPercent} label="POS Collected" value={formatCurrency(totals.sales + walletSettledTotal)} />
         <Stat icon={HiOutlineShoppingBag} label="Items Sold" value={totals.items} />
-        <Stat icon={HiOutlinePrinter} label="Orders" value={orders.length} />
+        <Stat icon={HiOutlinePrinter} label="Orders" value={hasActiveFilters ? `${filteredOrders.length}/${orders.length}` : orders.length} />
+        <Stat icon={HiOutlineDocumentChartBar} label="Due" value={formatCurrency(totals.due)} />
+      </div>
+
+      {/* ── Search + Date Filter ── */}
+      <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+        <div className="relative flex-1 min-w-[180px]">
+          <HiOutlineMagnifyingGlass className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <input
+            type="search"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search order #, customer, phone..."
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm font-medium outline-none focus:border-sky-300 focus:bg-white focus:ring-1 focus:ring-sky-200"
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <HiOutlineCalendarDays className="h-4 w-4 text-slate-400 shrink-0" />
+          <input
+            type="date"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+            className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium outline-none focus:border-sky-300 focus:bg-white focus:ring-1 focus:ring-sky-200"
+          />
+          <span className="text-xs text-slate-400">to</span>
+          <input
+            type="date"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+            className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium outline-none focus:border-sky-300 focus:bg-white focus:ring-1 focus:ring-sky-200"
+          />
+          {hasActiveFilters ? (
+            <button
+              type="button"
+              onClick={() => { setSearchQuery(''); setDateFrom(''); setDateTo('') }}
+              className="inline-flex items-center gap-1 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-600 transition hover:bg-rose-100"
+            >
+              <HiOutlineXCircle className="h-3.5 w-3.5" />
+              Clear
+            </button>
+          ) : null}
+        </div>
       </div>
       <Card className="rounded-[1.4rem] border-slate-200/80 bg-white p-4">
         {error || walletPaymentsApi.error ? <p className="mb-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700">{error || walletPaymentsApi.error}</p> : null}
@@ -243,7 +315,12 @@ export default function RetailPOSOrdersPage() {
         {loading ? (
           <div className="rounded-2xl border border-dashed border-slate-200 py-12 text-center text-sm font-semibold text-slate-500">Loading POS orders...</div>
         ) : orders.length ? (
-          <Table columns={columns} rows={orders} />
+          <>
+            <Table columns={columns} rows={filteredOrders} />
+            {hasActiveFilters && !filteredOrders.length ? (
+              <p className="mt-3 text-center text-sm font-semibold text-slate-400">No orders match your search or date range.</p>
+            ) : null}
+          </>
         ) : (
           <div className="rounded-2xl border border-dashed border-slate-200 py-12 text-center text-sm font-semibold text-slate-500">No POS orders yet.</div>
         )}

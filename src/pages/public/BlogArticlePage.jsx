@@ -4,6 +4,7 @@ import {
   HiOutlineArrowLeft,
   HiOutlineArrowRight,
   HiOutlineCalendarDays,
+  HiOutlineChevronDown,
   HiOutlineClock,
   HiOutlineDocumentText,
   HiOutlineLanguage,
@@ -101,6 +102,7 @@ export default function BlogArticlePage() {
 
   /* ── Reader language: PK → Roman Urdu, IN → Hindi, else English ── */
   const [lang, setLang] = useState(() => detectPreferredBlogLanguage().lang)
+  const [langOpen, setLangOpen] = useState(false)
   const [translation, setTranslation] = useState(null)
 
   useEffect(() => {
@@ -280,23 +282,38 @@ export default function BlogArticlePage() {
               </Link>
               <span className="text-slate-400">{readingTime}</span>
               <span className="text-slate-400">{wordCount.toLocaleString('en-PK')} words</span>
-              <span className="ml-auto inline-flex items-center gap-1 rounded-full border border-blue-100/60 bg-white/80 p-1 shadow-sm backdrop-blur-sm">
-                <HiOutlineLanguage className="ml-1.5 h-4 w-4 text-blue-600" aria-hidden="true" />
-                {BLOG_LANGUAGES.map(({ code, label }) => (
-                  <button
-                    key={code}
-                    type="button"
-                    onClick={() => selectLanguage(code)}
-                    aria-pressed={lang === code}
-                    className={`rounded-full px-2.5 py-1 text-[0.68rem] font-extrabold transition ${
-                      lang === code
-                        ? 'bg-blue-600 text-white shadow-sm'
-                        : 'text-slate-500 hover:bg-blue-50 hover:text-blue-700'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
+              <span className="ml-auto relative">
+                <button
+                  type="button"
+                  onClick={() => setLangOpen((v) => !v)}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-blue-100/60 bg-white/80 px-3 py-1.5 text-[0.7rem] font-extrabold text-blue-700 shadow-sm backdrop-blur-sm transition hover:bg-blue-50"
+                >
+                  <HiOutlineLanguage className="h-4 w-4" />
+                  {BLOG_LANGUAGES.find((l) => l.code === lang)?.label || 'English'}
+                  <HiOutlineChevronDown className={`h-3 w-3 transition-transform ${langOpen ? 'rotate-180' : ''}`} />
+                </button>
+                {langOpen ? (
+                  <>
+                    <button type="button" className="fixed inset-0 z-10" onClick={() => setLangOpen(false)} aria-label="Close language menu" />
+                    <div className="absolute right-0 top-full z-20 mt-1.5 w-44 overflow-hidden rounded-xl border border-slate-200/60 bg-white/95 shadow-[0_12px_40px_-16px_rgba(15,23,42,0.25)] backdrop-blur-xl">
+                      {BLOG_LANGUAGES.map(({ code, label }) => (
+                        <button
+                          key={code}
+                          type="button"
+                          onClick={() => { selectLanguage(code); setLangOpen(false) }}
+                          className={`flex w-full items-center gap-2.5 px-3.5 py-2.5 text-xs font-bold transition ${
+                            lang === code
+                              ? 'bg-blue-50 text-blue-700'
+                              : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                          }`}
+                        >
+                          <span className={`flex h-2 w-2 shrink-0 rounded-full ${lang === code ? 'bg-blue-500' : 'bg-transparent'}`} />
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                ) : null}
               </span>
             </div>
             {lang !== 'en' && translating && !translation ? (
