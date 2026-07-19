@@ -112,7 +112,7 @@ export default function BlogComments({ slug }) {
   const [adminMenu, setAdminMenu] = useState(null)
   const [teamReplyText, setTeamReplyText] = useState({})
   const formRef = useRef(null)
-  const { isAdmin } = useAuth()
+  const { isAdmin, user } = useAuth()
   const [formRating, setFormRating] = useState(0)
 
   /* ── Load comments ── */

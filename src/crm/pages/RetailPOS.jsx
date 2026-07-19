@@ -187,7 +187,7 @@ export default function RetailPOSPage() {
   const [successNotice, setSuccessNotice] = useState(null)
   const [showApplePay, setShowApplePay] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [viewMode, setViewMode] = useState('grid')
+  const viewMode = 'grid'
   const [customerPanelOpen, setCustomerPanelOpen] = useState(false)
   const [promoPanelOpen, setPromoPanelOpen] = useState(false)
   const [shift, setShift] = useState(() => loadPosShift(workspaceId))
@@ -914,10 +914,6 @@ export default function RetailPOSPage() {
               <Select className="h-12 lg:max-w-56" value={category} onChange={(event) => setCategory(event.target.value)}>
                 {categories.map((item) => <option key={item}>{item}</option>)}
               </Select>
-              <div className="flex rounded-xl border border-slate-200 bg-slate-50 p-1">
-                <button type="button" onClick={() => setViewMode('grid')} className={`rounded-lg px-3 py-2 text-xs font-black ${viewMode === 'grid' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500'}`}>Grid</button>
-                <button type="button" onClick={() => setViewMode('list')} className={`rounded-lg px-3 py-2 text-xs font-black ${viewMode === 'list' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500'}`}>List</button>
-              </div>
             </div>
           </Card>
 
