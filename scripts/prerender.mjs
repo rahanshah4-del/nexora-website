@@ -17,6 +17,7 @@ import { fileURLToPath } from 'node:url'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
 const DIST = join(ROOT, 'dist')
+const PUBLIC = join(ROOT, 'public')
 const SITE = 'https://nexorasolution.online'
 const LOGO = `${SITE}/nexora-brand-logo.png`
 
@@ -270,10 +271,129 @@ function faqSchema(faqs) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+//  AUTO INTERNAL LINKING
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const INTERNAL_LINK_MAP = [
+  ['Restaurant POS', '/restaurant-pos'],
+  ['Retail POS', '/retail-pos'],
+  ['School ERP', '/school-erp'],
+  ['CRM', '/solutions/crm'],
+  ['Inventory', '/solutions/inventory-management'],
+  ['WhatsApp CRM', '/whatsapp-crm'],
+  ['Barcode', '/solutions/inventory-management'],
+  ['ERP', '/solutions/school-erp'],
+  ['POS', '/solutions/pos'],
+  ['Transport', '/transport'],
+  ['Property ERP', '/solutions/property-erp'],
+  ['Medical Store POS', '/solutions/medical-store-pos'],
+  ['Email Marketing', '/solutions/email-marketing'],
+  ['Reports', '/solutions/reports-analytics'],
+  ['Team Permissions', '/solutions/team-permissions'],
+]
+
+function autoLinkTerms(text) {
+  let result = text
+  for (const [term, url] of INTERNAL_LINK_MAP) {
+    const regex = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi')
+    let count = 0
+    result = result.replace(regex, (match) => {
+      if (count >= 1) return match // Only link first occurrence
+      count++
+      return `<a href="${url}">${match}</a>`
+    })
+  }
+  return result
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  AUTO RELATED ARTICLES (category + tags)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function computeRelatedArticles(current, allArticles, maxCount = 4) {
+  if (!allArticles || allArticles.length < 2) return []
+
+  const others = allArticles.filter((a) => a.slug !== current.slug)
+  const cat = (current.category || '').toLowerCase()
+  const tags = new Set((current.tags || []).map((t) => t.toLowerCase()))
+
+  // Score each article by relevance
+  const scored = others.map((a) => {
+    let score = 0
+    if ((a.category || '').toLowerCase() === cat) score += 3
+    for (const t of (a.tags || [])) {
+      if (tags.has(t.toLowerCase())) score += 2
+    }
+    return { article: a, score }
+  })
+
+  return scored
+    .filter((s) => s.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, maxCount)
+    .map((s) => s.article)
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  AUTO SEARCH INDEX (JSON for client-side search)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function buildSearchIndex(articles) {
+  const index = articles.map((a) => ({
+    slug: a.slug,
+    title: a.title,
+    excerpt: a.metaDescription || a.description || '',
+    category: a.category || '',
+    tags: a.tags || [],
+    url: `/blog/${a.slug}`,
+    words: (a.sections || []).reduce((sum, s) =>
+      sum + wordCount(s.heading || '') + (s.paragraphs || []).reduce((s2, p) => s2 + wordCount(p), 0), 0
+    ),
+  }))
+  return JSON.stringify(index)
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  ENHANCED RSS FEED
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function buildEnhancedRss(articles) {
+  const items = articles.map((a) => {
+    const body = (a.sections || []).map((s) => `<h2>${esc(s.heading)}</h2>\n${(s.paragraphs || []).map((p) => `<p>${esc(p)}</p>`).join('\n')}`).join('\n')
+    const words = (a.sections || []).reduce((sum, s) =>
+      sum + wordCount(s.heading || '') + (s.paragraphs || []).reduce((s2, p) => s2 + wordCount(p), 0), 0
+    )
+    return `  <item>
+    <title>${esc(a.title)}</title>
+    <link>${SITE}/blog/${esc(a.slug)}</link>
+    <guid isPermaLink="true">${SITE}/blog/${esc(a.slug)}</guid>
+    <description>${esc(a.metaDescription || a.description || '')}</description>
+    <content:encoded><![CDATA[${body}]]></content:encoded>
+    <category>${esc(a.category || '')}</category>
+    <pubDate>${new Date(a.publishDate).toUTCString()}</pubDate>
+    <author>nexora@nexorasolution.online (Nexora Solution Editorial Team)</author>
+  </item>`
+  }).join('\n')
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom">
+<channel>
+  <title>Nexora Solution Blog</title>
+  <link>${SITE}/blog</link>
+  <description>POS, ERP &amp; CRM insights for Pakistani businesses</description>
+  <language>en-pk</language>
+  <atom:link href="${SITE}/rss.xml" rel="self" type="application/rss+xml" />
+  <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
+${items}
+</channel>
+</rss>`
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 //  FULL BLOG ARTICLE HTML GENERATOR
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function buildFullBlogHtml(article) {
+function buildFullBlogHtml(article, allArticles = []) {
   const sections = article.sections || []
   const faqs = article.faqs || []
   const totalWords = sections.reduce((sum, s) => {
@@ -285,14 +405,17 @@ function buildFullBlogHtml(article) {
   const pubDate = formatDate(article.publishDate)
   const updDate = formatDate(article.updatedDate)
 
-  // ── Build article content HTML ──
+  // ── Compute related articles dynamically ──
+  const relatedArticles = computeRelatedArticles(article, allArticles)
+
+  // ── Build article content HTML with auto internal links ──
   let contentHtml = ''
   for (const section of sections) {
     const level = section.level || 2
     const htag = `h${Math.min(level, 3)}`
-    contentHtml += `\n    <${htag}>${esc(section.heading)}</${htag}>\n`
+    contentHtml += `\n    <${htag} id="${esc(section.id || '')}">${esc(section.heading)}</${htag}>\n`
     for (const p of (section.paragraphs || [])) {
-      contentHtml += `    <p>${esc(p)}</p>\n`
+      contentHtml += `    <p>${autoLinkTerms(esc(p))}</p>\n`
     }
   }
 
@@ -305,12 +428,12 @@ function buildFullBlogHtml(article) {
     }
   }
 
-  // ── Related articles ──
+  // ── Related articles (dynamic) ──
   let relatedHtml = ''
-  if (article.relatedSlugs && article.relatedSlugs.length) {
+  if (relatedArticles.length > 0) {
     relatedHtml = `\n    <h2>Related Articles</h2>\n    <ul>\n`
-    for (const slug of article.relatedSlugs) {
-      relatedHtml += `      <li><a href="/blog/${esc(slug)}">${esc(slugToTitle(slug))}</a></li>\n`
+    for (const ra of relatedArticles) {
+      relatedHtml += `      <li><a href="/blog/${esc(ra.slug)}">${esc(ra.title)}</a> — ${readingTime(wordCount(ra.title + (ra.metaDescription || '')))} min read</li>\n`
     }
     relatedHtml += '    </ul>\n'
   }
@@ -362,6 +485,7 @@ ${buildGtm()}
       <article>
         ${breadcrumbHtml}
         <h1>${esc(article.title)}</h1>
+        ${buildTocHtml(sections)}
         <div class="meta">
           <span>By Nexora Solution Editorial Team</span>
           <span>Published: ${pubDate}</span>
@@ -370,7 +494,7 @@ ${buildGtm()}
           <span>${totalWords.toLocaleString()} words</span>
           <span>Category: <a href="/blog?category=${encodeURIComponent(article.category || '')}">${esc(article.category || 'General')}</a></span>
         </div>
-        ${article.featuredImage ? `<img src="${esc(article.featuredImage)}" alt="${esc(article.title)}" width="1200" height="675" loading="eager" fetchpriority="high" decoding="async" />` : ''}
+        ${article.featuredImage ? `<img src="${esc(article.featuredImage)}" alt="${esc(article.seoTitle || article.title)}" title="${esc(article.seoTitle || article.title)}" width="1200" height="675" loading="eager" fetchpriority="high" decoding="async" sizes="(max-width: 768px) 100vw, 720px" srcset="${esc(article.featuredImage)} 1200w" />` : ''}
         ${article.excerpt ? `<p class="excerpt"><strong>${esc(article.excerpt)}</strong></p>` : `<p class="excerpt"><strong>${esc(article.metaDescription || article.description || '')}</strong></p>`}
         ${contentHtml}
         ${faqHtml}
@@ -392,10 +516,250 @@ ${buildGtm()}
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+//  PHASE 3: SOFTWARE APPLICATION SCHEMA
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const SOLUTION_PAGES = {
+  '/restaurant-pos': { name: 'Nexora Restaurant POS', cat: 'Restaurant POS', os: 'Web, Windows, Android, iOS', desc: 'Modern restaurant POS with table management, KOT, billing, inventory and cloud sync.' },
+  '/retail-pos': { name: 'Nexora Retail POS', cat: 'Retail POS', os: 'Web, Windows, Android, iOS', desc: 'Complete retail POS system with barcode billing, inventory management, discount engine.' },
+  '/school-erp': { name: 'Nexora School ERP', cat: 'School ERP', os: 'Web, Windows, Android, iOS', desc: 'Cloud-based school management with student records, fee collection, attendance, exams.' },
+  '/solutions/crm': { name: 'Nexora CRM', cat: 'CRM Software', os: 'Web, Windows, Android, iOS', desc: 'Customer relationship management with lead tracking, pipeline, follow-ups.' },
+  '/solutions/pos': { name: 'Nexora POS', cat: 'POS Software', os: 'Web, Windows, Android, iOS', desc: 'Complete POS solution for restaurants, retail, medical stores.' },
+  '/solutions/medical-store-pos': { name: 'Nexora Medical Store POS', cat: 'Pharmacy POS', os: 'Web, Windows, Android, iOS', desc: 'Pharmacy POS with medicine inventory, batch tracking, expiry alerts.' },
+  '/solutions/inventory-management': { name: 'Nexora Inventory Management', cat: 'Inventory Software', os: 'Web, Windows, Android, iOS', desc: 'Cloud inventory management with stock tracking, purchase orders.' },
+}
+
+function softwareAppSchema(path) {
+  const info = SOLUTION_PAGES[path]
+  if (!info) return ''
+  return `  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "${info.name}",
+  "applicationCategory": "BusinessApplication",
+  "operatingSystem": "${info.os}",
+  "description": "${escJson(info.desc)}",
+  "url": "${SITE}${path}",
+  "brand": { "@type": "Brand", "name": "Nexora Solution" },
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "PKR",
+    "description": "Free trial available"
+  }
+}
+</script>`
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  PHASE 3: TABLE OF CONTENTS BUILDER
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function buildTocHtml(sections) {
+  if (!sections || sections.length < 2) return ''
+  let html = '\n    <nav class="toc" aria-label="Table of Contents">\n      <h2>Table of Contents</h2>\n      <ol>\n'
+  for (const s of sections) {
+    html += `        <li><a href="#${esc(s.id || '')}">${esc(s.heading)}</a></li>\n`
+  }
+  html += '      </ol>\n    </nav>\n'
+  return html
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  PHASE 3: AUTHOR PAGE
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function buildAuthorPage() {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+${buildCommonHead()}
+${buildSeoHead({ path: '/author/nexora', title: 'Nexora Solution Editorial Team — Authors', description: 'Meet the Nexora Solution editorial team. Experts in POS, ERP and CRM software for Pakistani businesses.' })}
+${orgSchema()}
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Person",
+  "name": "Nexora Solution Editorial Team",
+  "url": "${SITE}/author/nexora",
+  "description": "Expert team covering POS, ERP and CRM software for Pakistani businesses.",
+  "sameAs": [
+    "https://facebook.com/nexorasolution",
+    "https://instagram.com/nexorasolution",
+    "https://linkedin.com/company/nexorasolution"
+  ],
+  "worksFor": { "@type": "Organization", "name": "Nexora Solution", "url": "${SITE}" }
+}
+</script>
+${breadcrumbSchema([{ name: 'Home', url: SITE }, { name: 'Authors', url: `${SITE}/author/nexora` }])}
+${buildGtm()}
+</head>
+<body>
+  <div id="root">
+    <header><a href="/">Nexora Solution</a><nav><a href="/">Home</a> <a href="/blog">Blog</a></nav></header>
+    <main>
+      <nav aria-label="Breadcrumb"><ol><li><a href="/">Home</a></li><li><span aria-current="page">Authors</span></li></ol></nav>
+      <h1>Nexora Solution Editorial Team</h1>
+      <p>Nexora Solution is Pakistan's leading POS, ERP and CRM software platform. Our editorial team covers practical guides, best practices and industry insights for restaurants, retail stores, schools, pharmacies, transport companies and service businesses.</p>
+      <h2>Expertise</h2>
+      <ul><li>Restaurant POS &amp; KOT Systems</li><li>Retail &amp; Inventory Management</li><li>School ERP &amp; Fee Management</li><li>CRM &amp; WhatsApp CRM</li><li>Transport &amp; Fleet Software</li><li>Pharmacy &amp; Medical Store POS</li><li>AI &amp; Business Automation</li><li>Cloud Security &amp; Data Protection</li></ul>
+      <h2>Published Articles</h2>
+      <p>Visit the <a href="/blog">Nexora Blog</a> for our complete article library.</p>
+      <h2>Connect</h2>
+      <ul>
+        <li><a href="https://facebook.com/nexorasolution">Facebook</a></li>
+        <li><a href="https://instagram.com/nexorasolution">Instagram</a></li>
+        <li><a href="https://linkedin.com/company/nexorasolution">LinkedIn</a></li>
+        <li><a href="https://youtube.com/@nexorasolution">YouTube</a></li>
+      </ul>
+    </main>
+    <footer><p>&copy; 2019–2026 Nexora Solution. All rights reserved.</p></footer>
+  </div>
+  <script type="module" src="/src/main.jsx"></script>
+  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PZJV65RW" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+</body>
+</html>`
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  PHASE 3: CATEGORY PAGES
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function buildCategoryPage(category, articles) {
+  const catArticles = articles.filter((a) => (a.category || '').toLowerCase() === category.toLowerCase())
+  const title = `${category} Articles — Nexora Blog`
+  const desc = `Read Nexora blog articles about ${category.toLowerCase()}. Expert guides, tips and best practices for Pakistani businesses.`
+  let listHtml = ''
+  for (const a of catArticles) {
+    listHtml += `      <li><a href="/blog/${esc(a.slug)}">${esc(a.title)}</a> — ${readingTime(wordCount(a.title + (a.metaDescription || '')))} min read</li>\n`
+  }
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+${buildCommonHead()}
+${buildSeoHead({ path: `/blog/category/${category.toLowerCase().replace(/\s+/g, '-')}`, title, description: desc })}
+${orgSchema()}
+${websiteSchema()}
+${breadcrumbSchema([{ name: 'Home', url: SITE }, { name: 'Blog', url: `${SITE}/blog` }, { name: category, url: `${SITE}/blog/category/${category.toLowerCase().replace(/\s+/g, '-')}` }])}
+${buildGtm()}
+</head>
+<body>
+  <div id="root">
+    <header><a href="/">Nexora Solution</a><nav><a href="/">Home</a> <a href="/blog">Blog</a></nav></header>
+    <main>
+      <nav aria-label="Breadcrumb"><ol><li><a href="/">Home</a></li><li><a href="/blog">Blog</a></li><li><span aria-current="page">${esc(category)}</span></li></ol></nav>
+      <h1>${esc(category)} Articles</h1>
+      <p>${esc(desc)}</p>
+      <ul>${listHtml}</ul>
+      <p><a href="/blog">← Back to all articles</a></p>
+    </main>
+    <footer><p>&copy; 2019–2026 Nexora Solution. All rights reserved.</p></footer>
+  </div>
+  <script type="module" src="/src/main.jsx"></script>
+  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PZJV65RW" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+</body>
+</html>`
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  PHASE 3: PAGINATION
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function buildPaginationPage(pageNum, totalPages, articles, perPage = 6) {
+  const start = (pageNum - 1) * perPage
+  const pageArticles = articles.slice(start, start + perPage)
+  let listHtml = ''
+  for (const a of pageArticles) {
+    listHtml += `      <li><a href="/blog/${esc(a.slug)}">${esc(a.title)}</a> — ${readingTime(wordCount(a.title + (a.metaDescription || '')))} min read</li>\n`
+  }
+  const prevLink = pageNum > 1 ? `<link rel="prev" href="${SITE}/blog/page/${pageNum - 1}" />` : ''
+  const nextLink = pageNum < totalPages ? `<link rel="next" href="${SITE}/blog/page/${pageNum + 1}" />` : ''
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+${buildCommonHead()}
+  <title>Nexora Blog — Page ${pageNum} of ${totalPages}</title>
+  <meta name="description" content="Nexora Solution blog articles — page ${pageNum} of ${totalPages}. POS, ERP and CRM insights for Pakistani businesses." />
+  <link rel="canonical" href="${SITE}/blog/page/${pageNum}" />
+  ${prevLink}${nextLink}
+${orgSchema()}
+${websiteSchema()}
+${buildGtm()}
+</head>
+<body>
+  <div id="root">
+    <header><a href="/">Nexora Solution</a><nav><a href="/">Home</a> <a href="/blog">Blog</a></nav></header>
+    <main>
+      <h1>Nexora Blog — Page ${pageNum}</h1>
+      <ul>${listHtml}</ul>
+      <nav class="pagination">
+        ${pageNum > 1 ? `<a href="/blog/page/${pageNum - 1}">← Previous</a>` : ''}
+        <span>Page ${pageNum} of ${totalPages}</span>
+        ${pageNum < totalPages ? `<a href="/blog/page/${pageNum + 1}">Next →</a>` : ''}
+      </nav>
+    </main>
+    <footer><p>&copy; 2019–2026 Nexora Solution. All rights reserved.</p></footer>
+  </div>
+  <script type="module" src="/src/main.jsx"></script>
+  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PZJV65RW" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+</body>
+</html>`
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  PHASE 3: SEARCH PAGE
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function buildSearchPage() {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+${buildCommonHead()}
+${buildSeoHead({ path: '/search', title: 'Search Nexora Solution — Find POS, ERP & CRM Information', description: 'Search the Nexora Solution website for POS software, ERP systems, CRM guides, pricing information and business resources.' })}
+${orgSchema()}
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "Nexora Solution",
+  "url": "${SITE}",
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": "${SITE}/search?q={search_term_string}",
+    "query-input": "required name=search_term_string"
+  }
+}
+</script>
+${buildGtm()}
+</head>
+<body>
+  <div id="root">
+    <header><a href="/">Nexora Solution</a><nav><a href="/">Home</a> <a href="/blog">Blog</a></nav></header>
+    <main>
+      <h1>Search Nexora Solution</h1>
+      <p>Search across all Nexora content — POS software, ERP systems, CRM guides, pricing plans and business resources.</p>
+      <form action="/search" method="get">
+        <input type="search" name="q" placeholder="Search..." aria-label="Search" />
+        <button type="submit">Search</button>
+      </form>
+      <p class="hint">Try searching for: <a href="/search?q=restaurant+pos">restaurant pos</a>, <a href="/search?q=inventory">inventory</a>, <a href="/search?q=pricing">pricing</a></p>
+    </main>
+    <footer><p>&copy; 2019–2026 Nexora Solution. All rights reserved.</p></footer>
+  </div>
+  <script type="module" src="/src/main.jsx"></script>
+  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PZJV65RW" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+</body>
+</html>`
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 //  PUBLIC PAGE HTML GENERATOR
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function buildPublicPageHtml(meta) {
+function buildPublicPageHtml(meta, path = '') {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -403,6 +767,7 @@ ${buildCommonHead()}
 ${buildSeoHead(meta)}
 ${orgSchema()}
 ${websiteSchema()}
+${softwareAppSchema(path)}
 ${meta.path === '/blog'
     ? `  <script type="application/ld+json">
 { "@context": "https://schema.org", "@type": "Blog", "name": "Nexora Solution Blog", "url": "${SITE}/blog" }
@@ -485,7 +850,7 @@ async function main() {
 
   // 1. Public routes
   for (const route of PUBLIC_ROUTES) {
-    const html = buildPublicPageHtml({ ...route, path: route.path })
+    const html = buildPublicPageHtml({ ...route, path: route.path }, route.path)
     const outPath = join(DIST, route.path === '/' ? 'index.html' : `${route.path.replace(/\/$/, '')}/index.html`)
     writePage(outPath, html)
     pageCount++
@@ -495,23 +860,59 @@ async function main() {
   // 2. Blog articles — full content
   const articles = await loadBlogArticles()
   for (const article of articles) {
-    const html = buildFullBlogHtml(article)
+    const html = buildFullBlogHtml(article, articles)
     writePage(join(DIST, 'blog', article.slug, 'index.html'), html)
     blogCount++
   }
   console.log(`[prerender] ✓ ${blogCount} blog articles (full content)`)
 
-  // 3. Sitemap
+  // ── Search index JSON ──
+  writeFileSync(join(PUBLIC, 'search-index.json'), buildSearchIndex(articles))
+  console.log('[prerender] ✓ Search index generated')
+
+  // ── Enhanced RSS ──
+  writeFileSync(join(PUBLIC, 'rss.xml'), buildEnhancedRss(articles))
+  console.log('[prerender] ✓ Enhanced RSS feed generated')
+
+  // ── Phase 3: Category pages ──
+  const categories = [...new Set(articles.map((a) => a.category).filter(Boolean))]
+  let catCount = 0
+  for (const cat of categories) {
+    const catSlug = `/blog/category/${cat.toLowerCase().replace(/\s+/g, '-')}`
+    writePage(join(DIST, catSlug, 'index.html'), buildCategoryPage(cat, articles))
+    catCount++
+  }
+  console.log(`[prerender] ✓ ${catCount} category pages`)
+
+  // ── Phase 3: Pagination ──
+  const perPage = 6
+  const totalPages = Math.ceil(articles.length / perPage)
+  for (let p = 2; p <= totalPages; p++) {
+    writePage(join(DIST, 'blog', 'page', String(p), 'index.html'), buildPaginationPage(p, totalPages, articles, perPage))
+  }
+  if (totalPages > 1) console.log(`[prerender] ✓ ${totalPages - 1} pagination pages (pages 2-${totalPages})`)
+
+  // ── Phase 3: Author page ──
+  writePage(join(DIST, 'author', 'nexora', 'index.html'), buildAuthorPage())
+  console.log('[prerender] ✓ Author page')
+
+  // ── Phase 3: Search page ──
+  writePage(join(DIST, 'search', 'index.html'), buildSearchPage())
+  console.log('[prerender] ✓ Search page')
+
+  // 3. Sitemap + Image sitemap
   try {
     const { execSync } = await import('node:child_process')
     execSync('node scripts/generate-sitemap.mjs', { cwd: ROOT, stdio: 'inherit' })
-    console.log('[prerender] ✓ Sitemap updated')
+    execSync('node scripts/generate-image-sitemap.mjs', { cwd: ROOT, stdio: 'inherit' })
+    console.log('[prerender] ✓ Sitemaps updated (main + image)')
   } catch {
-    console.warn('[prerender] ⚠ Sitemap skipped')
+    console.warn('[prerender] ⚠ Sitemap generation skipped')
   }
 
-  console.log(`[prerender] ✓ Done — ${pageCount + blogCount} pages generated`)
-  console.log('[prerender] Blog pages contain: H1, meta, OG, JSON-LD, breadcrumb, full content, reading time, author, dates')
+  const totalPages2 = pageCount + blogCount + catCount + (totalPages > 1 ? totalPages - 1 : 0) + 2 // +2 for author + search
+  console.log(`[prerender] ✓ Done — ${totalPages2} pages generated`)
+  console.log('[prerender] Phase 3 features: category pages, pagination, author page, search page, image sitemap, SoftwareApplication schema, SearchAction schema, TOC, internal linking')
 }
 
 main().catch((err) => {
