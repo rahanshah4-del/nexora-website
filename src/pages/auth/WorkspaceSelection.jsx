@@ -516,7 +516,7 @@ function WorkspaceCard({ workspace, index, emailVerified, selected, saving, onSe
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.22, delay: index * 0.03, ease: 'easeOut' }}
-      className={`rounded-lg border bg-white p-3 shadow-[0_12px_32px_-26px_rgba(15,23,42,0.42)] sm:p-4 ${
+      className={`rounded-xl border border-slate-200/60 bg-white/90 p-3 shadow-sm backdrop-blur-sm transition-all duration-200 hover:shadow-md sm:p-4 ${
         selected ? 'border-blue-500 ring-1 ring-blue-100' : 'border-slate-200'
       }`}
     >
@@ -571,7 +571,7 @@ function WorkspaceCard({ workspace, index, emailVerified, selected, saving, onSe
         onClick={() => onSelect?.(workspace)}
         className={`mt-3 flex h-10 w-full items-center justify-center gap-3 rounded-lg border text-[13px] font-bold transition sm:mt-4 ${
           workspace.active
-            ? 'border-blue-600 bg-blue-600 text-white hover:bg-blue-700'
+            ? 'border-blue-500/80 bg-blue-500/90 text-white shadow-sm backdrop-blur-sm hover:bg-blue-600 hover:shadow-md active:scale-[0.97]'
             : 'cursor-not-allowed border-slate-200 bg-white text-slate-700 opacity-70'
         }`}
       >
@@ -640,7 +640,7 @@ function WorkspaceListRow({ workspace, index, emailVerified, selected, saving, o
         onClick={() => onSelect?.(workspace)}
         className={`flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg border px-4 text-[13px] font-bold transition ${
           workspace.active
-            ? 'border-blue-600 bg-blue-600 text-white hover:bg-blue-700'
+            ? 'border-blue-500/80 bg-blue-500/90 text-white shadow-sm backdrop-blur-sm hover:bg-blue-600 hover:shadow-md active:scale-[0.97]'
             : 'cursor-not-allowed border-slate-200 bg-white text-slate-700 opacity-70'
         }`}
       >
@@ -674,7 +674,7 @@ function CreateWorkspaceListRow({ disabled, message, onOpen }) {
         className={`flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg border px-4 text-[13px] font-bold transition ${
           disabled
             ? 'cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400'
-            : 'border-blue-600 bg-white text-blue-600 hover:bg-blue-600 hover:text-white'
+            : 'border-blue-200/80 bg-white/80 text-blue-600 shadow-sm backdrop-blur-sm hover:bg-blue-50 hover:border-blue-300 hover:shadow-md active:scale-[0.97]'
         }`}
       >
         {disabled ? 'Creating...' : 'Create Workspace'}
@@ -711,7 +711,7 @@ function CreateWorkspaceCard({ disabled, message, onOpen }) {
         className={`mt-3 flex h-10 w-full items-center justify-center gap-3 rounded-lg border text-[13px] font-bold transition sm:mt-4 ${
           disabled
             ? 'cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400'
-            : 'border-blue-600 bg-white text-blue-600 hover:bg-blue-600 hover:text-white'
+            : 'border-blue-200/80 bg-white/80 text-blue-600 shadow-sm backdrop-blur-sm hover:bg-blue-50 hover:border-blue-300 hover:shadow-md active:scale-[0.97]'
         }`}
       >
         {disabled ? 'Creating...' : 'Create Workspace'}
@@ -802,7 +802,7 @@ function WorkspaceHelpCenter({
   const openCount = support.stats.open + support.stats.inProgress
 
   return (
-    <div className="fixed inset-0 z-[60] bg-slate-950/45 p-3 backdrop-blur-sm sm:p-5" role="dialog" aria-modal="true">
+    <div className="fixed inset-0 z-[60] bg-slate-950/30 p-3 backdrop-blur-md sm:p-5" role="dialog" aria-modal="true">
       <motion.section
         initial={{ opacity: 0, y: 18, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -867,7 +867,7 @@ function WorkspaceHelpCenter({
               <button
                 type="button"
                 onClick={onOpenLiveChat}
-                className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-black text-slate-800 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700"
+                className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-200/60 bg-white/80 px-4 text-sm font-bold text-slate-800 shadow-sm backdrop-blur-sm transition-all duration-200 hover:border-emerald-300 hover:bg-emerald-50/80 hover:text-emerald-700 hover:shadow-md active:scale-[0.97]"
               >
                 <HiOutlineChatBubbleLeftRight className="h-5 w-5" />
                 Live Chat
@@ -933,7 +933,7 @@ function WorkspaceHelpCenter({
                         type="button"
                         disabled={support.paginationLoading}
                         onClick={() => support.loadMoreTickets?.()}
-                        className="inline-flex h-10 items-center justify-center rounded-xl bg-slate-950 px-4 text-xs font-black text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                        className="inline-flex h-10 items-center justify-center rounded-xl bg-slate-950 px-4 text-xs font-bold text-white shadow-sm transition-all duration-200 hover:bg-slate-800 hover:shadow-md active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         {support.paginationLoading ? 'Loading...' : 'Load older tickets'}
                       </button>
