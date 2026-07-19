@@ -14,7 +14,7 @@
 //   - Skip duplicate submissions: identical URL is only ever sent once per run.
 
 export const INDEXNOW_HOST = 'nexorasolution.online'
-export const INDEXNOW_KEY = '9f40b606f587433f878215baac6eb464'
+export const INDEXNOW_KEY = 'e6dedaf56d5b4faab50a069a41eeb59e'
 export const INDEXNOW_KEY_LOCATION = `https://${INDEXNOW_HOST}/${INDEXNOW_KEY}.txt`
 export const INDEXNOW_ENDPOINT = 'https://api.indexnow.org/indexnow'
 

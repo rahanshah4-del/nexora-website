@@ -22,7 +22,7 @@
 // This client simply shortens the notification latency for live CMS edits.
 
 const HOST = 'nexorasolution.online'
-const KEY = '9f40b606f587433f878215baac6eb464'
+const KEY = 'e6dedaf56d5b4faab50a069a41eeb59e'
 const KEY_LOCATION = `https://${HOST}/${KEY}.txt`
 const ENDPOINT = 'https://api.indexnow.org/indexnow'
 
