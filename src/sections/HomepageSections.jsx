@@ -278,7 +278,7 @@ export default function HomepageSections() {
               <p className="mt-5 text-sm leading-7 text-blue-100">
                 Business software platform for Restaurants, Retail, Schools, Transport, Medical Stores and Enterprises.
               </p>
-              <div className="mt-5 flex flex-wrap gap-3">
+              <div className="mt-5 flex flex-wrap gap-2.5">
                 {socialLinks.map(({ icon: Icon, href, label }) => (
                   <a
                     key={label}
@@ -286,7 +286,7 @@ export default function HomepageSections() {
                     target="_blank"
                     rel="noreferrer"
                     aria-label={label}
-                    className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-sm text-white transition hover:bg-white/20"
+                    className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/10 text-base text-white backdrop-blur-sm transition-all duration-200 hover:scale-110 hover:bg-white/25 hover:border-white/30 hover:shadow-[0_0_20px_rgba(255,255,255,0.15)] active:scale-95"
                   >
                     <Icon />
                   </a>
@@ -328,8 +328,8 @@ export default function HomepageSections() {
             <div>
               <h3 className="text-sm font-extrabold">Contact</h3>
               <div className="mt-5 grid gap-4 text-sm text-blue-100">
-                <a href={whatsappLink} target="_blank" rel="noreferrer" className="flex gap-3 hover:text-white">
-                  <HiOutlineChatBubbleLeftRight className="mt-0.5 shrink-0 text-lg" />
+                <a href={whatsappLink} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-1.5 text-[11px] font-bold text-white backdrop-blur-sm transition hover:bg-white/20 hover:border-white/30 hover:text-white">
+                  <FaWhatsapp className="text-sm text-emerald-400" />
                   <span>{whatsappNumberDisplay}</span>
                 </a>
                 <a href={`mailto:${contactEmail}`} className="flex gap-3 hover:text-white">
@@ -344,7 +344,8 @@ export default function HomepageSections() {
                   <HiOutlineMapPin className="mt-0.5 shrink-0 text-lg" />
                   <span>Pakistan</span>
                 </div>
-                <span className="inline-block w-max rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-extrabold text-white">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3.5 py-1.5 text-[11px] font-bold text-white backdrop-blur-sm transition hover:bg-white/20 hover:border-white/30">
+                  <HiOutlineGlobeAlt className="text-sm" />
                   Available Worldwide
                 </span>
               </div>

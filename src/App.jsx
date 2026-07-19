@@ -154,11 +154,11 @@ function App({ initialSectionId = '' }) {
 
       {/* Anchor-link targets: ensure #services, #about, #products, #pricing, #contact
           always exist before the lazy sections load, so hash navigation works */}
-      <div id="services" style={{ scrollMarginTop: '5.5rem' }} />
-      <div id="about" style={{ scrollMarginTop: '5.5rem' }} />
-      <div id="products" style={{ scrollMarginTop: '5.5rem' }} />
-      <div id="pricing" style={{ scrollMarginTop: '5.5rem' }} />
-      <div id="contact" style={{ scrollMarginTop: '5.5rem' }} />
+      <div id="services" style={{ scrollMarginTop: '4rem' }} />
+      <div id="about" style={{ scrollMarginTop: '4rem' }} />
+      <div id="products" style={{ scrollMarginTop: '4rem' }} />
+      <div id="pricing" style={{ scrollMarginTop: '4rem' }} />
+      <div id="contact" style={{ scrollMarginTop: '4rem' }} />
 
       <div ref={sectionsRef} className="min-h-[200px]">
         {sectionsReady ? (
