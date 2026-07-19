@@ -8,6 +8,12 @@
 
 import { safePrintText, reportFileName } from '../../lib/printDocuments.js'
 import { openBrowserPrintHtml, printThermalText, directPrinterAvailable } from '../../lib/printerService.js'
+import {
+  buildModernDailyClosingThermalText,
+  buildModernDailyClosingPrintHtml,
+  buildModernCashReconciliationThermalText,
+  buildModernCashReconciliationPrintHtml,
+} from '../../lib/restaurantThermalTemplates.js'
 
 // ── Helpers ──────────────────────────────────────────────────────────────
 
@@ -643,15 +649,33 @@ export function buildRestaurantPrintableReport({
     }
   }
 
-  // ── Signature / approval area (daily closing) ──
+  // ── Signature / approval area (daily closing + cash drawer) ──
   let signatureArea = ''
-  if (activeReport.id === 'daily-closing' && hasData) {
+  if ((activeReport.id === 'daily-closing' || activeReport.id === 'cash-drawer-reconciliation') && hasData) {
     signatureArea = `
       <div class="signature-area page-break-safe">
-        <div class="sig-line"><span>Prepared By</span><span class="sig-space"></span></div>
-        <div class="sig-line"><span>Reviewed By</span><span class="sig-space"></span></div>
-        <div class="sig-line"><span>Approved By</span><span class="sig-space"></span></div>
-        <div class="sig-line notes"><span>Manager Notes</span><span class="sig-space" style="min-height:60px"></span></div>
+        <div class="sig-block">
+          <span class="sig-label">Prepared By (Cashier / Staff)</span>
+          <div class="sig-line"></div>
+          <span class="sig-name">Name &amp; Signature</span>
+        </div>
+        <div class="sig-block">
+          <span class="sig-label">Reviewed By (Manager / Supervisor)</span>
+          <div class="sig-line"></div>
+          <span class="sig-name">Name &amp; Signature</span>
+        </div>
+        <div class="sig-block notes">
+          <span class="sig-label">Manager Notes / Remarks</span>
+          <div class="sig-line"></div>
+        </div>
+      </div>
+      <div class="qr-section page-break-safe">
+        <div class="qr-placeholder">QR<br/>CODE</div>
+        <div class="qr-info">
+          <strong>${esc(restaurantName)} — ${esc(title)}</strong>
+          Report ID: ${esc(reportId)}<br/>
+          Generated: ${esc(printedDate)} ${esc(printedTime)} &middot; Nexora Solution
+        </div>
       </div>`
   }
 
@@ -659,84 +683,105 @@ export function buildRestaurantPrintableReport({
     ? `<div class="limitation"><p>${esc(limitationMessage)}</p></div>`
     : ''
 
-  // ── Executive template HTML ──
+  // ── Build header ──
+  const headerHtml = `
+    <div class="header">
+      <div class="header-left">
+        <span class="brand">Nexora Solution</span>
+        <h1>${esc(title)}</h1>
+        <h2>${esc(restaurantName)}${workspaceLabel ? ` · ${esc(workspaceLabel)}` : ''}</h2>
+      </div>
+      <div class="header-right">
+        <span class="report-id">${esc(reportId)}</span><br/>
+        Printed: ${esc(printedDate)} ${esc(printedTime)}
+      </div>
+    </div>
+    <div class="meta">
+      <div class="meta-item"><span class="meta-label">Period:</span><span class="meta-value">${esc(dateRangeLabel)}</span></div>
+      <div class="meta-item"><span class="meta-label">Filters:</span><span class="meta-value">${esc(activeFilterLabels || 'None')}</span></div>
+      <div class="meta-item"><span class="meta-label">Currency:</span><span class="meta-value">${esc(currency)}</span></div>
+    </div>`
+
+  // ── Compose HTML ──
   const html = `<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="utf-8"><title>${esc(title)} — ${esc(restaurantName)}</title>
 <style>
-  @page { margin: 22pt 32pt; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 10pt; color: #0f172a; line-height: 1.5; padding: 0; margin: 0; }
+  @page { margin: 12mm 10mm; size: A4; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; font-size: 9pt; color: #1e293b; line-height: 1.45; padding: 0; margin: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .page-break-safe { page-break-inside: avoid; }
-  .section-title { font-size: 11pt; font-weight: 900; color: #0f172a; margin: 18pt 0 8pt; padding-bottom: 4pt; border-bottom: 1.5pt solid #0f172a; text-transform: uppercase; letter-spacing: 0.05em; }
+  .section-title { font-size: 10pt; font-weight: 900; color: #0f172a; margin: 16pt 0 8pt; padding-bottom: 4pt; border-bottom: 2pt solid #0f172a; text-transform: uppercase; letter-spacing: 0.08em; }
 
-  /* Header */
-  .header { border-bottom: 2pt solid #0f172a; padding-bottom: 10pt; margin-bottom: 14pt; }
-  .header .brand { font-size: 8pt; font-weight: 800; letter-spacing: 0.15em; text-transform: uppercase; color: #6366f1; }
-  .header h1 { font-size: 18pt; font-weight: 900; margin: 2pt 0 0; letter-spacing: -0.02em; color: #0f172a; line-height: 1.2; }
-  .header h2 { font-size: 12pt; font-weight: 700; margin: 0; color: #334155; }
+  /* ── Header ── */
+  .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3pt solid #0f172a; padding-bottom: 10pt; margin-bottom: 12pt; }
+  .header-left { }
+  .header-left .brand { font-size: 7pt; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; color: #6366f1; }
+  .header-left h1 { font-size: 16pt; font-weight: 900; margin: 2pt 0 0; letter-spacing: -0.02em; color: #0f172a; line-height: 1.15; }
+  .header-left h2 { font-size: 10pt; font-weight: 700; margin: 2pt 0 0; color: #475569; }
+  .header-right { text-align: right; font-size: 7pt; color: #64748b; }
+  .header-right .report-id { font-weight: 800; color: #6366f1; font-size: 8pt; }
 
-  /* Meta */
-  .meta { display: grid; grid-template-columns: 1fr 1fr; gap: 2pt 20pt; font-size: 8.5pt; color: #475569; margin-bottom: 14pt; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6pt; padding: 8pt 12pt; }
-  .meta span { }
-  .meta .report-id { font-weight: 800; color: #6366f1; letter-spacing: 0.04em; }
+  /* ── Meta bar ── */
+  .meta { display: flex; justify-content: space-between; gap: 10pt; font-size: 7.5pt; color: #475569; margin-bottom: 14pt; background: #f8fafc; border: 1pt solid #e2e8f0; border-radius: 6pt; padding: 7pt 10pt; flex-wrap: wrap; }
+  .meta-item { display: flex; gap: 4pt; }
+  .meta-item .meta-label { font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; }
+  .meta-item .meta-value { font-weight: 600; color: #0f172a; }
 
-  /* KPI Summary Grid */
-  .summary-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(145px, 1fr)); gap: 6pt; margin-bottom: 16pt; }
-  .summary-card { border: 1px solid #e2e8f0; border-radius: 6pt; padding: 8pt 10pt; background: #fff; page-break-inside: avoid; }
-  .summary-card .label { font-size: 7pt; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; margin: 0 0 3pt; }
-  .summary-card .value { font-size: 11pt; font-weight: 900; margin: 0; word-break: break-word; }
-  .summary-card .subtitle { font-size: 6.5pt; color: #64748b; margin: 2pt 0 0; }
+  /* ── KPI Summary Grid ── */
+  .summary-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 5pt; margin-bottom: 14pt; }
+  .summary-card { border: 1pt solid #e2e8f0; border-radius: 5pt; padding: 7pt 9pt; background: #fff; page-break-inside: avoid; }
+  .summary-card .label { font-size: 6.5pt; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b; margin: 0 0 2pt; }
+  .summary-card .value { font-size: 11pt; font-weight: 900; margin: 0; word-break: break-word; color: #0f172a; }
+  .summary-card .subtitle { font-size: 6pt; color: #94a3b8; margin: 1pt 0 0; }
 
-  /* Tables */
-  .report-table { margin-bottom: 14pt; }
-  .report-table h3 { font-size: 10pt; font-weight: 800; color: #0f172a; margin: 0 0 6pt; text-transform: uppercase; letter-spacing: 0.04em; }
-  table { width: 100%; border-collapse: collapse; font-size: 8.5pt; margin-bottom: 0; }
+  /* ── Tables ── */
+  .report-table { margin-bottom: 12pt; }
+  .report-table h3 { font-size: 9pt; font-weight: 800; color: #0f172a; margin: 0 0 5pt; text-transform: uppercase; letter-spacing: 0.05em; }
+  table { width: 100%; border-collapse: collapse; font-size: 8pt; margin-bottom: 0; }
   thead { display: table-header-group; }
-  th { background: #1e293b; color: #fff; font-weight: 700; text-align: left; padding: 6pt 7pt; border: none; font-size: 7pt; text-transform: uppercase; letter-spacing: 0.05em; }
-  th.rn { width: 28px; text-align: center; color: #94a3b8; }
-  td { padding: 5pt 7pt; border-bottom: 1pt solid #e2e8f0; color: #0f172a; vertical-align: top; }
-  td.rn { text-align: center; color: #94a3b8; font-size: 7.5pt; }
-  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  th { background: #1e293b; color: #fff; font-weight: 700; text-align: left; padding: 5pt 6pt; border: none; font-size: 6.5pt; text-transform: uppercase; letter-spacing: 0.06em; }
+  th.rn { width: 24px; text-align: center; color: #94a3b8; }
+  th:first-child { border-radius: 4pt 0 0 0; }
+  th:last-child { border-radius: 0 4pt 0 0; }
+  td { padding: 4pt 6pt; border-bottom: 0.5pt solid #e2e8f0; color: #0f172a; vertical-align: top; }
+  td.rn { text-align: center; color: #94a3b8; font-size: 7pt; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
   tr.alt td { background: #f8fafc; }
-  tr.totals td { font-weight: 800; border-top: 1.5pt solid #0f172a; border-bottom: 2.5pt double #0f172a; background: #f1f5f9; padding: 6pt 7pt; }
+  tr.totals td { font-weight: 800; border-top: 1.5pt solid #0f172a; border-bottom: 2pt double #0f172a; background: #f1f5f9; padding: 5pt 6pt; font-size: 8.5pt; }
 
-  /* Signature */
-  .signature-area { margin-top: 20pt; padding-top: 12pt; border-top: 1pt solid #e2e8f0; display: grid; grid-template-columns: 1fr 1fr; gap: 16pt 24pt; }
-  .sig-line { display: flex; flex-direction: column; gap: 4pt; font-size: 9pt; font-weight: 600; color: #334155; }
-  .sig-space { border-bottom: 1pt solid #cbd5e1; min-height: 32px; margin-top: 2pt; }
+  /* ── Signature Area ── */
+  .signature-area { margin-top: 18pt; padding-top: 12pt; border-top: 1.5pt solid #e2e8f0; display: grid; grid-template-columns: 1fr 1fr; gap: 16pt 24pt; }
+  .sig-block { display: flex; flex-direction: column; gap: 3pt; }
+  .sig-block .sig-label { font-size: 8pt; font-weight: 700; color: #334155; }
+  .sig-line { border-bottom: 1pt solid #94a3b8; min-height: 28px; margin-top: 14pt; }
+  .sig-block .sig-name { font-size: 7pt; color: #64748b; text-align: center; margin-top: 2pt; }
+  .sig-block.notes { grid-column: 1 / -1; }
+  .sig-block.notes .sig-line { min-height: 50px; }
 
-  /* Empty / Limitation */
-  .empty, .empty-message { border: 1pt dashed #cbd5e1; border-radius: 6pt; padding: 16pt; text-align: center; font-size: 9pt; color: #64748b; }
-  .limitation { border: 1pt solid #fde68a; border-radius: 6pt; background: #fffbeb; padding: 6pt 10pt; margin-bottom: 10pt; font-size: 8.5pt; color: #92400e; }
+  /* ── Footer ── */
+  .footer { margin-top: 18pt; padding-top: 8pt; border-top: 1pt solid #e2e8f0; font-size: 7pt; color: #94a3b8; display: flex; justify-content: space-between; align-items: center; }
+  .footer .page-num { }
+  .footer .powered { }
 
-  /* Footer */
-  .footer { margin-top: 18pt; padding-top: 8pt; border-top: 1pt solid #e2e8f0; font-size: 7.5pt; color: #64748b; display: flex; justify-content: space-between; }
+  /* ── Misc ── */
+  .empty, .empty-message { border: 1pt dashed #cbd5e1; border-radius: 5pt; padding: 14pt; text-align: center; font-size: 8pt; color: #94a3b8; }
+  .limitation { border: 1pt solid #fde68a; border-radius: 5pt; background: #fffbeb; padding: 6pt 10pt; margin-bottom: 10pt; font-size: 7.5pt; color: #92400e; }
+  .qr-section { display: flex; align-items: center; gap: 10pt; margin-top: 12pt; padding: 8pt; border: 1pt solid #e2e8f0; border-radius: 6pt; background: #f8fafc; }
+  .qr-section .qr-placeholder { width: 48pt; height: 48pt; border: 1pt dashed #cbd5e1; border-radius: 4pt; display: flex; align-items: center; justify-content: center; font-size: 5pt; color: #94a3b8; text-align: center; }
+  .qr-section .qr-info { font-size: 7pt; color: #475569; }
+  .qr-section .qr-info strong { display: block; font-size: 8pt; color: #0f172a; }
 
-  @media print { .page-break-safe { page-break-inside: avoid; } thead { display: table-header-group; } }
+  @media print {
+    .page-break-safe { page-break-inside: avoid; }
+    thead { display: table-header-group; }
+    tr { page-break-inside: avoid; }
+    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
 </style></head>
 <body>
-  <!-- Executive Header -->
-  <div class="header page-break-safe">
-    <p class="brand">Nexora Business Suite</p>
-    <h1>${esc(restaurantName)}</h1>
-    <h2>${esc(title)}</h2>
-    <p style="margin:3pt 0 0;font-size:8.5pt;color:#475569">${esc(subtitle)}</p>
-  </div>
-
-  <!-- Meta Information -->
-  <div class="meta page-break-safe">
-    <span><b>Report ID:</b> <span class="report-id">${esc(reportId)}</span></span>
-    <span><b>Workspace:</b> ${esc(workspaceLabel)}</span>
-    <span><b>Business Date:</b> ${esc(dateRangeLabel)}</span>
-    <span><b>Printed:</b> ${esc(printedDate)} at ${esc(printedTime)}</span>
-    <span><b>Prepared By:</b> System Generated</span>
-    <span><b>Business Type:</b> Restaurant POS</span>
-    ${activeFilterLabels ? `<span style="grid-column:1/-1"><b>Filters:</b> ${esc(activeFilterLabels)}</span>` : ''}
-  </div>
+  ${headerHtml}
 
   ${limitationHtml}
-
-  <!-- Summary KPIs -->
   <div class="summary-grid page-break-safe">${summaryCards || `<p class="empty-message">${esc(activeReport.limitationMessage || 'No data for the selected report and filters.')}</p>`}</div>
 
   <!-- Tables -->
@@ -747,8 +792,8 @@ export function buildRestaurantPrintableReport({
 
   <!-- Footer -->
   <div class="footer page-break-safe">
-    <span>Nexora Business Suite — ${esc(restaurantName)}</span>
-    <span>${esc(activeReport.exportLabel || title)} | ${esc(dateRangeLabel)}</span>
+    <span>${esc(restaurantName)} &middot; Nexora Solution</span>
+    <span>${esc(printedDate)} ${esc(printedTime)}</span>
     <span>Page 1 of 1</span>
   </div>
 </body></html>`
@@ -765,7 +810,7 @@ export function printRestaurantA4Report(options = {}) {
   return { ok: true }
 }
 
-// ── 58mm Daily Closing ───────────────────────────────────────────────────
+// ── 58mm Thermal Daily Closing (MODERN) ─────────────────────────────────────
 
 function buildDailyClosingThermalText({
   model = {},
@@ -774,76 +819,116 @@ function buildDailyClosingThermalText({
   currency = 'PKR',
   generatedAt = '',
   isCashReconciliation = false,
+  settings = {},
+} = {}) {
+  if (isCashReconciliation) {
+    return buildModernCashReconciliationThermalText({ model, restaurantName, dateRangeLabel, currency, generatedAt })
+  }
+  return buildModernDailyClosingThermalText({ model, restaurantName, dateRangeLabel, currency, generatedAt, settings })
+}
+
+// ── 80mm Thermal Daily Closing (wider format) ──────────────────────────────
+
+function buildDailyClosing80mmText({
+  model = {},
+  restaurantName = 'Restaurant',
+  dateRangeLabel = '',
+  currency = 'PKR',
+  generatedAt = '',
+  isCashReconciliation = false,
 } = {}) {
   const rc = model.cashReconciliation || {}
-  const line = (label, value) => `${label}: ${value}`
-  const header = isCashReconciliation ? 'CASH RECONCILIATION' : 'DAILY CLOSING'
+  const refundTotal = model.refunds?.total || 0
+  const netSalesCalc = model.grossSales - model.discounts - refundTotal
+  const width = 42
+
+  const header = isCashReconciliation ? 'CASH DRAWER RECONCILIATION' : 'DAILY CLOSING REPORT'
+  const center = (text) => {
+    const pad = Math.max(0, Math.floor((width - text.length) / 2))
+    return ' '.repeat(pad) + text
+  }
+  const line2 = (label, value) => {
+    const combined = `${label}: ${value}`
+    return combined.padEnd(width)
+  }
+  const div = () => '-'.repeat(width)
+  const dbl = () => '='.repeat(width)
+  const sp = () => ''
 
   const base = [
-    restaurantName,
-    header,
-    dateRangeLabel,
-    '-'.repeat(32),
+    dbl(),
+    center(restaurantName.toUpperCase()),
+    center(header),
+    center(dateRangeLabel),
+    dbl(),
+    sp(),
   ]
 
   if (isCashReconciliation) {
     base.push(
-      line('Opening Cash', mv(model.openingCash, currency)),
-      line('Cash Sales', mv(rc.cashSales, currency)),
-      line('Cash Refunds', mv(rc.cashRefunds, currency)),
-      line('Cash Deposits', mv(rc.cashDeposits, currency)),
-      line('Cash Withdrawals', mv(rc.cashWithdrawals, currency)),
-      line('Cash Expenses', mv(rc.cashExpenses, currency)),
-      line('Cash Adjustments', mv(rc.cashAdjustments, currency)),
-      line('Expected Cash', mv(rc.expectedCash, currency)),
-      line('Difference', mv(rc.cashDifference, currency)),
-      line('Variance', rc.varianceStatus ? rc.varianceStatus.replace(/_/g, ' ') : 'N/A'),
+      center('--- CASH DRAWER ---'),
+      line2('Opening Cash', mv(model.openingCash, currency)),
+      line2('Cash Sales', mv(rc.cashSales, currency)),
+      line2('Cash Refunds', mv(rc.cashRefunds, currency)),
+      line2('Cash Deposits', mv(rc.cashDeposits, currency)),
+      line2('Cash Withdrawals', mv(rc.cashWithdrawals, currency)),
+      line2('Cash Expenses', mv(rc.cashExpenses, currency)),
+      line2('Cash Adjustments', mv(rc.cashAdjustments, currency)),
+      sp(),
+      line2('Expected Cash', mv(rc.expectedCash, currency)),
+      line2('Actual Cash', rc.actualClosingCash != null ? mv(rc.actualClosingCash, currency) : 'N/A'),
+      line2('Difference', mv(rc.cashDifference, currency)),
+      line2('Variance', rc.varianceStatus ? rc.varianceStatus.replace(/_/g, ' ') : 'N/A'),
     )
-    if (rc.settlementCounts?.total > 0) {
-      base.push(
-        '-'.repeat(32),
-        'SETTLEMENT SUMMARY',
-        line('Pending Review', nv(rc.settlementCounts.pendingReview || 0)),
-        line('Approved', nv(rc.settlementCounts.approved || 0)),
-        line('Rejected', nv(rc.settlementCounts.rejected || 0)),
-        line('Locked', nv(rc.settlementCounts.locked || 0)),
-      )
-    }
   } else {
     base.push(
-      line('Billed Orders', nv(model.billedOrders?.length)),
-      line('Cancelled Orders', nv(model.cancellations?.count)),
-      line('Gross Sales', mv(model.grossSales, currency)),
-      line('Discounts', mv(model.discounts, currency)),
-      line('Net Sales', mv(model.netSales, currency)),
-      line('Cash Collection', mv(model.cashReceived, currency)),
-      line('Online Collection', mv(model.onlineReceived, currency)),
-      line('Outstanding', mv(model.outstandingAmount, currency)),
-      line('Tax', mv(model.tax, currency)),
-      line('Service Charges', mv(model.serviceCharges, currency)),
-      line('COGS', mv(model.costOfGoodsSold, currency)),
-      line('Approved Expenses', mv(model.approvedExpenses, currency)),
-      line('Gross Profit', mv(model.grossProfit, currency)),
-      line('Net Profit', mv(model.netProfit, currency)),
+      center('--- ORDERS & SALES ---'),
+      line2('Billed Orders', nv(model.billedOrders?.length)),
+      line2('Cancelled Orders', nv(model.cancellations?.count || 0)),
+      line2('Gross Sales', mv(model.grossSales, currency)),
+      line2('Discounts', mv(model.discounts, currency)),
+      line2('Refunds', mv(refundTotal, currency)),
+      line2('Net Sales', mv(netSalesCalc, currency)),
+      sp(),
+      center('--- PAYMENTS ---'),
+      line2('Cash Received', mv(model.cashReceived, currency)),
+      line2('Online Received', mv(model.onlineReceived, currency)),
+      line2('Collected', mv(model.collectedAmount, currency)),
+      line2('Outstanding', mv(model.outstandingAmount, currency)),
+      sp(),
+      center('--- TAX & CHARGES ---'),
+      line2('Tax', mv(model.tax, currency)),
+      line2('Service Charges', mv(model.serviceCharges, currency)),
+      sp(),
+      center('--- CASH FLOW ---'),
+      line2('Opening Cash', mv(model.openingCash, currency)),
+      line2('Deposits', mv(rc.cashDeposits || 0, currency)),
+      line2('Withdrawals', mv(rc.cashWithdrawals || 0, currency)),
+      line2('Expenses', mv(model.approvedExpenses, currency)),
+      line2('Cash Refunded', mv(rc.cashRefunds || 0, currency)),
+      sp(),
+      center('--- PROFIT ---'),
+      line2('COGS', mv(model.costOfGoodsSold, currency)),
+      line2('Gross Profit', mv(model.grossProfit, currency)),
+      line2('Net Profit', mv(model.netProfit, currency)),
+      sp(),
+      center('--- CASH DRAWER ---'),
+      line2('Expected Cash', mv(rc.expectedCash || model.openingCash, currency)),
+      line2('Actual Cash', rc.actualClosingCash != null ? mv(rc.actualClosingCash, currency) : 'N/A'),
+      line2('Difference', rc.cashDifference != null ? mv(rc.cashDifference, currency) : 'N/A'),
     )
   }
 
-  if (!isCashReconciliation) {
-    base.push(
-      '-'.repeat(32),
-      'Cash reconciliation unavailable:',
-      'actual closing cash, refunds,',
-      'withdrawals, and reliable',
-      'cash-expense data are not stored.',
-    )
-  }
-
-  return base.concat([
-    '-'.repeat(32),
+  base.push(
+    sp(),
+    div(),
     `Generated: ${generatedAt}`,
-    `NEXORA SOLUTION - ${restaurantName}`,
-    'All rights reserved 2019-2026.',
-  ]).filter(Boolean).join('\n')
+    center('NEXORA SOLUTION'),
+    center('All rights reserved 2019-2026.'),
+    dbl(),
+  )
+
+  return base.filter(Boolean).join('\n')
 }
 
 export async function printRestaurantThermalClosing(options = {}) {
@@ -853,7 +938,6 @@ export async function printRestaurantThermalClosing(options = {}) {
   }
 
   const isCashReconciliation = activeReport.id === 'cash-drawer-reconciliation' || activeReport.id === 'shift-settlement-report'
-  // Ensure activeReport.id is available on the options for thermal text builders
   const text = buildDailyClosingThermalText({ ...options, isCashReconciliation })
 
   if (directPrinterAvailable(settings)) {
@@ -862,20 +946,43 @@ export async function printRestaurantThermalClosing(options = {}) {
     return { ok: false, error: result.error || 'Direct printer failed. Ensure the printer is connected and try again.' }
   }
 
-  // Fallback: open a small browser window for thermal-sized print preview
-  const previewHtml = `<!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>Daily Closing 58mm</title>
-<style>
-  @page { margin: 0; size: 58mm auto; }
-  body { font-family: 'Courier New', monospace; font-size: 10px; width: 58mm; padding: 4mm; margin: 0; white-space: pre-wrap; color: #000; }
-  .center { text-align: center; }
-  hr { border: none; border-top: 1px dashed #000; margin: 2mm 0; }
-</style></head>
-<body><pre>${esc(text)}</pre></body></html>`
+  // Fallback: modern HTML-styled 58mm browser print preview
+  const previewHtml = isCashReconciliation
+    ? buildModernCashReconciliationPrintHtml({ ...options })
+    : buildModernDailyClosingPrintHtml({ ...options })
 
   const opened = openBrowserPrintHtml(previewHtml, { width: 280, height: 700 })
   if (!opened) return { ok: false, error: 'Print window was blocked. Please allow pop-ups and try again.' }
-  return { ok: true, fallback: true, message: 'Thermal printer not connected. Opening browser print preview instead.' }
+  return { ok: true, fallback: true, message: 'Thermal printer not connected. Opening modern 58mm print preview instead.' }
+}
+
+/**
+ * Print the Daily Closing report formatted for an 80mm thermal printer.
+ * Falls back to browser print preview when no direct printer is connected.
+ */
+export async function printRestaurantThermal80mmClosing(options = {}) {
+  const { model = {}, restaurantName = 'Restaurant', settings = {}, activeReport = {} } = options
+  if (!model.billedOrders && !model.orders) {
+    return { ok: false, error: 'No daily closing data to print.' }
+  }
+
+  const isCashReconciliation = activeReport.id === 'cash-drawer-reconciliation' || activeReport.id === 'shift-settlement-report'
+  const text = buildDailyClosing80mmText({ ...options, isCashReconciliation })
+
+  if (directPrinterAvailable(settings)) {
+    const result = await printThermalText(text, settings)
+    if (result.ok) return { ok: true }
+    return { ok: false, error: result.error || 'Direct printer failed. Ensure the printer is connected and try again.' }
+  }
+
+  // Fallback: modern HTML-styled 80mm browser print preview
+  const previewHtml = isCashReconciliation
+    ? buildModernCashReconciliationPrintHtml({ ...options }).replace(/58mm/g, '80mm').replace(/width: 58mm/g, 'width: 80mm').replace(/padding: 3mm 2\.5mm/g, 'padding: 4mm 3mm')
+    : buildModernDailyClosingPrintHtml({ ...options }).replace(/58mm/g, '80mm').replace(/width: 58mm/g, 'width: 80mm').replace(/padding: 3mm 2\.5mm/g, 'padding: 4mm 3mm')
+
+  const opened = openBrowserPrintHtml(previewHtml, { width: 340, height: 700 })
+  if (!opened) return { ok: false, error: 'Print window was blocked. Please allow pop-ups and try again.' }
+  return { ok: true, fallback: true, message: '80mm thermal printer not connected. Opening modern 80mm print preview instead.' }
 }
 
 // ── CSV Export ────────────────────────────────────────────────────────────

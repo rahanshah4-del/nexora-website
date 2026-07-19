@@ -1,7 +1,8 @@
-import { memo } from 'react'
+import { memo, useMemo, useState } from 'react'
 import Badge from '../../components/ui/Badge.jsx'
 import Card from '../../components/ui/Card.jsx'
 import Select from '../../components/ui/Select.jsx'
+import { HiOutlineMagnifyingGlass } from 'react-icons/hi2'
 
 const capabilityTone = {
   ready: 'success',
@@ -97,12 +98,47 @@ const ReportNavIcon = memo(function ReportNavIcon({
   )
 })
 
-/* ── Sidebar navigation (desktop) ── */
+/* ── Sidebar navigation (desktop) ──
+   top offset clears the sticky TopNav (pt-3 + 64px pill ≈ 5.5rem) so the nav
+   never slides under/overlaps the header; max-height keeps it inside the
+   viewport below that offset so it scrolls internally instead of pushing
+   the report content down. */
 function ReportSidebar({ groups, reports, activeReportId, onReportChange, reportIcons = {} }) {
+  const [searchQuery, setSearchQuery] = useState('')
+
+  const filteredGroups = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase()
+    if (!query) return groups
+
+    return groups.map((group) => {
+      const groupReports = reports.filter((report) => {
+        if (report.group !== group.id) return false
+        return (
+          report.title.toLowerCase().includes(query) ||
+          (report.description || '').toLowerCase().includes(query) ||
+          report.id.toLowerCase().includes(query)
+        )
+      })
+      return { ...group, _reports: groupReports }
+    }).filter((g) => g._reports.length > 0)
+  }, [groups, reports, searchQuery])
+
   return (
-    <nav className="thin-scrollbar sticky top-4 max-h-[calc(100vh-10rem)] min-w-0 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-2 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-      {groups.map((group) => {
-        const groupReports = reports.filter((report) => report.group === group.id)
+    <nav className="thin-scrollbar sticky top-[5.75rem] z-10 max-h-[calc(100dvh-7rem)] w-full min-w-0 overflow-y-auto overscroll-contain rounded-2xl border border-slate-200 bg-white p-2.5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      {/* ── Search ── */}
+      <div className="relative mb-2">
+        <HiOutlineMagnifyingGlass className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+        <input
+          type="search"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search reports..."
+          className="w-full rounded-lg border border-slate-200 bg-slate-50 py-1.5 pl-7 pr-2 text-xs font-medium text-slate-700 outline-none placeholder:text-slate-400 focus:border-sky-300 focus:bg-white focus:ring-1 focus:ring-sky-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:placeholder:text-slate-500"
+        />
+      </div>
+
+      {filteredGroups.map((group) => {
+        const groupReports = group._reports || reports.filter((report) => report.group === group.id)
         if (!groupReports.length) return null
         return (
           <div key={group.id} className="mb-1 last:mb-0">
@@ -124,6 +160,10 @@ function ReportSidebar({ groups, reports, activeReportId, onReportChange, report
           </div>
         )
       })}
+
+      {filteredGroups.length === 0 ? (
+        <p className="px-2 py-6 text-center text-xs text-slate-400">No reports match "{searchQuery}"</p>
+      ) : null}
     </nav>
   )
 }
@@ -193,7 +233,7 @@ export default function ReportShell({
       <MobileSelect groups={grouped} reports={reports} activeReport={activeReport} onReportChange={onReportChange} />
 
       {/* ── Grid: sidebar + content ── */}
-      <div className="grid min-w-0 gap-4 lg:grid-cols-[172px_minmax(0,1fr)]">
+      <div className="grid min-w-0 gap-5 lg:grid-cols-[220px_minmax(0,1fr)]">
         {/* Desktop sidebar */}
         <div className="hidden lg:block">
           <ReportSidebar
@@ -208,7 +248,7 @@ export default function ReportShell({
         {/* Content */}
         <main className="min-w-0">
           {activeReport ? (
-            <Card className="mb-4 border border-slate-200 bg-white p-4 shadow-sm sm:p-5 dark:border-slate-700 dark:bg-slate-900">
+            <Card className="mb-5 border border-slate-200 bg-white p-4 shadow-sm sm:p-5 dark:border-slate-700 dark:bg-slate-900">
               <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
                   <div className="flex min-w-0 flex-wrap items-center gap-2">
@@ -227,7 +267,7 @@ export default function ReportShell({
               </div>
             </Card>
           ) : null}
-          {children}
+          <div className="min-w-0">{children}</div>
         </main>
       </div>
     </section>

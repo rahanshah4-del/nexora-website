@@ -1,6 +1,7 @@
 import Button from '../../components/ui/Button.jsx'
 import Input from '../../components/ui/Input.jsx'
 import Select from '../../components/ui/Select.jsx'
+import { HiOutlineMagnifyingGlass } from 'react-icons/hi2'
 
 export const REPORT_DATE_PRESETS = [
   { value: 'today', label: 'Today' },
@@ -121,13 +122,27 @@ export default function ReportFilters({
         ) : null}
 
         {fieldEnabled(supportedFilters, 'customerSearch') ? (
-          <FilterField label="Customer search">
-            <Input type="search" value={values.customerSearch || ''} placeholder="Search customer" onChange={(event) => update('customerSearch', event.target.value)} />
+          <FilterField label="Search customer">
+            <div className="relative">
+              <HiOutlineMagnifyingGlass className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+              <input
+                type="search"
+                value={values.customerSearch || ''}
+                placeholder="Search by name or phone..."
+                onChange={(event) => update('customerSearch', event.target.value)}
+                className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-8 pr-3 text-sm font-medium text-slate-700 outline-none placeholder:text-slate-400 focus:border-sky-300 focus:ring-1 focus:ring-sky-200"
+              />
+            </div>
           </FilterField>
         ) : null}
       </div>
 
-      <div className="mt-4 flex justify-end">
+      <div className="mt-4 flex items-center justify-between gap-2">
+        <span className="text-xs font-semibold text-slate-400">
+          {fieldEnabled(supportedFilters, 'customerSearch') && values.customerSearch ? (
+            <>Searching: <span className="text-sky-600">"{values.customerSearch}"</span></>
+          ) : null}
+        </span>
         <Button type="button" variant="subtle" onClick={onReset}>Reset filters</Button>
       </div>
     </div>

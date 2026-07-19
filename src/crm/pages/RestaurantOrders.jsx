@@ -13,6 +13,7 @@ import {
 import {
   HiArrowPath,
   HiCheckCircle,
+  HiOutlineCalendarDays,
   HiOutlineCloudArrowUp,
   HiOutlineMagnifyingGlass,
   HiOutlineMinus,
@@ -48,6 +49,7 @@ import {
 } from '../lib/restaurantPosCalculations.js'
 import { useBusinessSettings } from '../hooks/useBusinessSettings.js'
 import { useUser } from '../hooks/useUser.js'
+import { useReservationPosBridge } from '../hooks/useReservationPosBridge.js'
 import { enqueueBackgroundJob } from '../lib/backgroundJobs.js'
 import { createWorkspaceNotification } from '../lib/notifications.js'
 import { directPrinterAvailable, printThermalText } from '../lib/printerService.js'
@@ -422,7 +424,10 @@ export default function RestaurantOrdersPage() {
   const [movementSubmitting, setMovementSubmitting] = useState(false)
   const [movementError, setMovementError] = useState('')
   const [tablePanelOpen, setTablePanelOpen] = useState(false)
+  const [reservationPanelOpen, setReservationPanelOpen] = useState(false)
+  const [reservationSearch, setReservationSearch] = useState('')
   const [settlementPanelOpen, setSettlementPanelOpen] = useState(false)
+
   const [menuItems] = useState(() => [...loadRestaurantMenuItems(), ...ordersPageExtraMenuItems])
   const [menuCategories] = useState(() => loadRestaurantMenuCategories())
   const [tableOptions] = useState(() => loadRestaurantTableOptions())
@@ -882,6 +887,22 @@ export default function RestaurantOrdersPage() {
       total: '',
     }))
   }, [ordersVersion, tableOptions])
+
+  // ── Reservation ↔ POS Bridge ──
+  const reservationBridge = useReservationPosBridge({
+    workspaceId,
+    tables: tablePanelRows.map((t) => ({ id: t.id, seats: t.seats, floor: t.floor })),
+    activeOrderTableId: quickBill.tableNumber || '',
+  })
+  const {
+    searchResults: reservationResults,
+    isTableReserved,
+    getReservationForTable,
+    seatReservation,
+    reservedTableIds,
+    todayReservations,
+  } = reservationBridge
+
   const localOrderSaved = Boolean(currentSavedOrder)
   const queueReady = Boolean(workspaceId && userId)
   const activeOrderState = currentSavedOrder
@@ -954,6 +975,14 @@ export default function RestaurantOrdersPage() {
     if (tableForOrder && isTableOccupiedByOtherOrder(tableForOrder, currentSavedOrder?.orderNumber || orderNumber)) {
       setFlowMessage(`Table ${tableForOrder} already has an active unpaid order. Please select a different table or complete the existing order first.`)
       return false
+    }
+    // ── Reserved table guard: prevent orders on reserved tables unless opened from reservation ──
+    if (tableForOrder && isTableReserved(tableForOrder)) {
+      const res = getReservationForTable(tableForOrder)
+      if (res) {
+        setFlowMessage(`Table ${tableForOrder} is reserved for ${res.customerName || res.name || 'a guest'} (${res.time || res.reservationTime || ''}). Open from the Reservations panel or select a different table.`)
+        return false
+      }
     }
     return true
   }
@@ -1567,6 +1596,43 @@ export default function RestaurantOrdersPage() {
     setFlowMessage(`Table ${tableId} selected for this order.`)
   }
 
+  // ── Reservation: select and seat ──
+  function handleSelectReservation(reservation) {
+    if (!reservation) return
+    const tableId = reservation.tableId || reservation.tableNumber
+    if (!tableId) {
+      setFlowMessage('Reservation has no assigned table. Assign a table first.')
+      return
+    }
+
+    // Load the reserved table into POS
+    setQuickBill((current) => ({
+      ...current,
+      orderType: 'Dine-in',
+      tableNumber: tableId,
+      outsideTableName: isOutsideTable(tableId) ? tableId : current.outsideTableName,
+    }))
+
+    // Set customer from reservation
+    if (reservation.customerName || reservation.name) {
+      setSelectedCustomerId(reservation.customerId || reservation.customerName || reservation.name)
+    }
+
+    setReservationPanelOpen(false)
+    setReservationSearch('')
+
+    // Auto-seat the reservation
+    seatReservation(reservation, orderNumber).then((result) => {
+      if (result.ok) {
+        setFlowMessage(`Reservation seated — Table ${tableId} loaded. Order #${orderNumber} ready.`)
+      } else {
+        setFlowMessage(`Table ${tableId} loaded. Reservation seating sync: ${result.error}`)
+      }
+    }).catch(() => {
+      setFlowMessage(`Table ${tableId} loaded. Continue with order.`)
+    })
+  }
+
   function closeQuickBill() {
     setQuickBillOpen(false)
   }
@@ -1617,6 +1683,22 @@ export default function RestaurantOrdersPage() {
                 Tables
                 {quickBill.tableNumber ? <span className="rounded-full bg-white/20 px-1.5 py-0.5 text-[10px]">{quickBill.tableNumber}</span> : null}
               </button>
+              <button
+                type="button"
+                onClick={() => setReservationPanelOpen((open) => !open)}
+                className={cn(
+                  'group inline-flex h-9 items-center justify-center gap-2 rounded-xl border px-3 text-xs font-black shadow-sm transition',
+                  reservationPanelOpen
+                    ? 'border-indigo-300 bg-indigo-600 text-white shadow-indigo-100'
+                    : 'border-slate-200 bg-white text-slate-700 hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700',
+                )}
+                aria-expanded={reservationPanelOpen}
+                aria-label="Search reservations"
+              >
+                <HiOutlineCalendarDays className="h-4 w-4" />
+                Res.
+                {todayReservations.length > 0 ? <span className="rounded-full bg-white/20 px-1.5 py-0.5 text-[10px]">{todayReservations.length}</span> : null}
+              </button>
               <Button type="button" className="h-9 w-full px-3 text-xs sm:w-auto" onClick={newOrder}>
                 <HiOutlinePlus className="h-4 w-4" />
                 New Order
@@ -1645,29 +1727,45 @@ export default function RestaurantOrdersPage() {
                   <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">
                     {tablePanelRows.map((table) => {
                       const occupied = table.status === 'occupied'
+                      const reserved = !occupied && isTableReserved(table.id)
                       const selected = quickBill.tableNumber === table.id
+                      const reservation = reserved ? getReservationForTable(table.id) : null
+                      const isLocked = reserved && !selected
                       return (
                         <button
                           key={`${table.floor}-${table.id}`}
                           type="button"
-                          onClick={() => selectTableFromPanel(table.id)}
+                          onClick={() => isLocked ? null : selectTableFromPanel(table.id)}
+                          disabled={isLocked}
                           className={cn(
                             'min-w-0 rounded-xl border p-2.5 text-left transition',
                             selected
                               ? 'border-sky-400 bg-sky-50 text-sky-900 shadow-sm'
                               : occupied
                                 ? 'border-amber-200 bg-amber-50 text-amber-900 hover:border-amber-300'
-                                : 'border-slate-200 bg-white text-slate-700 hover:border-sky-200 hover:bg-sky-50',
+                                : reserved
+                                  ? 'border-indigo-200 bg-indigo-50/60 text-indigo-900 hover:border-indigo-300'
+                                  : 'border-slate-200 bg-white text-slate-700 hover:border-sky-200 hover:bg-sky-50',
+                            isLocked ? 'cursor-not-allowed opacity-70' : '',
                           )}
                         >
                           <div className="flex items-center justify-between gap-2">
                             <span className="truncate text-sm font-black">{table.id}</span>
-                            <span className={cn('shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black', occupied ? 'bg-amber-100 text-amber-800' : 'bg-emerald-50 text-emerald-700')}>
-                              {occupied ? 'Active' : 'Open'}
+                            <span className={cn('shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black',
+                              occupied ? 'bg-amber-100 text-amber-800' :
+                              reserved ? 'bg-indigo-100 text-indigo-700' :
+                              'bg-emerald-50 text-emerald-700'
+                            )}>
+                              {occupied ? 'Active' : reserved ? 'Reserved' : 'Open'}
                             </span>
                           </div>
                           <p className="mt-1 truncate text-[11px] font-semibold text-slate-500">{table.floor}{table.seats ? ` · ${table.seats} seats` : ''}</p>
                           {occupied ? <p className="mt-1 truncate text-[11px] font-bold text-amber-800">{table.orderNumber || 'Active order'} {table.total ? `· ${table.total}` : ''}</p> : null}
+                          {reserved && reservation ? (
+                            <p className="mt-1 truncate text-[10px] font-bold text-indigo-700">
+                              {reservation.customerName || reservation.name || 'Guest'} · {reservation.time || reservation.reservationTime || ''}
+                            </p>
+                          ) : null}
                         </button>
                       )
                     })}
@@ -1676,6 +1774,128 @@ export default function RestaurantOrdersPage() {
                   <div className="rounded-xl border border-dashed border-slate-200 py-8 text-center text-xs font-semibold text-slate-500">
                     No restaurant tables saved yet.
                   </div>
+                )}
+              </div>
+            </div>
+          ) : null}
+
+          {/* ── Reservation Search Panel ── */}
+          {reservationPanelOpen ? (
+            <div className="mt-2 overflow-hidden rounded-[1rem] border border-indigo-200 bg-white shadow-xl shadow-indigo-200/70">
+              <div className="flex items-center justify-between gap-3 border-b border-indigo-100 bg-indigo-50 px-3 py-2">
+                <div className="min-w-0">
+                  <p className="text-xs font-black uppercase tracking-[0.14em] text-indigo-700">Reservations</p>
+                  <p className="truncate text-xs font-semibold text-indigo-500">
+                    {todayReservations.length} today · Search by name, phone, ID or table
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => { setReservationPanelOpen(false); setReservationSearch('') }}
+                  className="grid h-8 w-8 shrink-0 place-items-center rounded-xl border border-indigo-200 bg-white text-sm font-black text-indigo-500 hover:bg-indigo-50"
+                  aria-label="Close reservations"
+                >
+                  ×
+                </button>
+              </div>
+              {/* Search input */}
+              <div className="relative border-b border-slate-100 px-3 py-2">
+                <HiOutlineMagnifyingGlass className="pointer-events-none absolute left-5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="search"
+                  value={reservationSearch}
+                  onChange={(e) => setReservationSearch(e.target.value)}
+                  placeholder="Search reservations..."
+                  className="w-full rounded-lg border border-slate-200 py-1.5 pl-8 pr-3 text-sm font-medium outline-none focus:border-indigo-300 focus:ring-1 focus:ring-indigo-200"
+                />
+              </div>
+              {/* Results */}
+              <div className="max-h-64 overflow-y-auto p-2">
+                {reservationSearch.trim() ? (
+                  reservationBridge.searchResults.length > 0 ? (
+                    <div className="grid gap-1.5">
+                      {reservationBridge.searchResults.map((r) => (
+                        <button
+                          key={r.id}
+                          type="button"
+                          onClick={() => handleSelectReservation(r)}
+                          disabled={r.status === 'cancelled' || r.status === 'no_show' || r.status === 'completed'}
+                          className={cn(
+                            'flex items-center justify-between gap-3 rounded-lg border p-2.5 text-left transition',
+                            r.status === 'confirmed' ? 'border-sky-200 bg-sky-50 hover:border-sky-300' :
+                            r.status === 'pending' ? 'border-amber-200 bg-amber-50 hover:border-amber-300' :
+                            r.status === 'seated' ? 'border-emerald-200 bg-emerald-50' :
+                            'border-slate-200 bg-white hover:border-indigo-200',
+                            (r.status === 'cancelled' || r.status === 'no_show' || r.status === 'completed') ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                          )}
+                        >
+                          <div className="min-w-0">
+                            <p className="text-sm font-bold text-slate-900">{r.customerName || r.name || 'Guest'}</p>
+                            <p className="text-xs text-slate-500">
+                              {r.phone || r.customerPhone || 'No phone'} · {r.time || r.reservationTime || '—'} · {r.partySize || r.guestCount || r.guests || 1} guests
+                            </p>
+                          </div>
+                          <div className="shrink-0 text-right">
+                            <span className={cn(
+                              'inline-flex rounded-full px-2 py-0.5 text-[10px] font-black',
+                              r.status === 'confirmed' ? 'bg-sky-100 text-sky-700' :
+                              r.status === 'pending' ? 'bg-amber-100 text-amber-700' :
+                              r.status === 'seated' ? 'bg-emerald-100 text-emerald-700' :
+                              'bg-slate-100 text-slate-500'
+                            )}>
+                              {r.status === 'confirmed' ? 'Upcoming' : r.status === 'pending' ? 'Pending' : r.status === 'seated' ? 'Seated' : r.status}
+                            </span>
+                            <p className="mt-0.5 text-[10px] font-bold text-slate-600">Table {r.tableId || r.tableNumber || 'Auto'}</p>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="py-8 text-center text-xs font-semibold text-slate-400">No reservations match your search.</div>
+                  )
+                ) : (
+                  // Today's reservations quick list
+                  todayReservations.length > 0 ? (
+                    <div className="grid gap-1.5">
+                      <p className="px-1 pb-1 text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">Today's Reservations</p>
+                      {todayReservations.map((r) => (
+                        <button
+                          key={r.id}
+                          type="button"
+                          onClick={() => handleSelectReservation(r)}
+                          disabled={r.status === 'cancelled' || r.status === 'no_show' || r.status === 'completed'}
+                          className={cn(
+                            'flex items-center justify-between gap-3 rounded-lg border p-2.5 text-left transition',
+                            r.status === 'confirmed' ? 'border-sky-200 bg-sky-50 hover:border-sky-300' :
+                            r.status === 'pending' ? 'border-amber-200 bg-amber-50 hover:border-amber-300' :
+                            r.status === 'seated' ? 'border-emerald-200 bg-emerald-50' :
+                            'border-slate-200 bg-white hover:border-indigo-200',
+                            (r.status === 'cancelled' || r.status === 'no_show' || r.status === 'completed') ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                          )}
+                        >
+                          <div className="min-w-0">
+                            <p className="text-sm font-bold text-slate-900">{r.customerName || r.name || 'Guest'}</p>
+                            <p className="text-xs text-slate-500">
+                              {r.time || r.reservationTime || '—'} · Table {r.tableId || r.tableNumber || 'Auto'} · {r.partySize || r.guestCount || r.guests || 1} guests
+                            </p>
+                          </div>
+                          <div className="shrink-0 text-right">
+                            <span className={cn(
+                              'inline-flex rounded-full px-2 py-0.5 text-[10px] font-black',
+                              r.status === 'confirmed' ? 'bg-sky-100 text-sky-700' :
+                              r.status === 'pending' ? 'bg-amber-100 text-amber-700' :
+                              r.status === 'seated' ? 'bg-emerald-100 text-emerald-700' :
+                              'bg-slate-100 text-slate-500'
+                            )}>
+                              {r.status === 'confirmed' ? 'Upcoming' : r.status === 'pending' ? 'Pending' : r.status === 'seated' ? 'Seated' : r.status}
+                            </span>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="py-8 text-center text-xs font-semibold text-slate-400">No reservations for today.</div>
+                  )
                 )}
               </div>
             </div>

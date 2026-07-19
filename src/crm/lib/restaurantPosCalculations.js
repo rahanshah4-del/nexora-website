@@ -1,3 +1,5 @@
+import { buildModernBillThermalText, buildModernKotThermalText } from './restaurantThermalTemplates.js'
+
 export function safeMoney(value) {
   const numeric = Number(value)
   return Number.isFinite(numeric) ? Math.max(0, numeric) : 0
@@ -147,63 +149,9 @@ export function buildKotPrintData({
 }
 
 export function buildBillPrintTemplate(input = {}) {
-  const data = buildBillPrintData(input)
-  const settings = data.settings || {}
-  const paidAmount = Number.isFinite(Number(data.paidAmount)) ? Number(data.paidAmount) : data.totals.total
-  const dueAmount = Math.max(0, safeMoney(data.totals.total) - safeMoney(paidAmount))
-  const changeAmount = Math.max(0, safeMoney(paidAmount) - safeMoney(data.totals.total))
-  const itemLines = data.rows.map((row) => `${row.quantity} x ${row.item?.name || row.name} @ ${formatRestaurantCurrency(row.unitPrice)}\n${formatRestaurantCurrency(row.lineTotal)}`).join('\n')
-  return [
-    data.restaurantName,
-    [settings.branchName, settings.branchCode].filter(Boolean).join(' - '),
-    settings.address,
-    settings.phone || data.phone,
-    settings.taxNumber ? `Tax: ${settings.taxNumber}` : '',
-    settings.salesTaxNumber ? `STRN: ${settings.salesTaxNumber}` : '',
-    settings.fbrPosId ? `POS ID: ${settings.fbrPosId}` : '',
-    settings.foodLicenseNumber ? `Food License: ${settings.foodLicenseNumber}` : '',
-    '58mm BILL',
-    `Order: ${data.orderNumber}`,
-    `Bill: ${data.billNumber}`,
-    `Type/Table: ${data.orderType} / ${data.table || '-'}`,
-    `Customer: ${data.customerName || 'Walk-in Guest'} ${data.customerPhone || ''}`.trim(),
-    `Date: ${new Date(data.date).toLocaleString()}`,
-    '--------------------------',
-    itemLines,
-    '--------------------------',
-    `Subtotal: ${formatRestaurantCurrency(data.totals.subtotal)}`,
-    `Discount: ${formatRestaurantCurrency(data.totals.discount)}`,
-    `Service: ${formatRestaurantCurrency(data.totals.serviceCharges)}`,
-    `Tax: ${formatRestaurantCurrency(data.totals.tax)}`,
-    `Total: ${formatRestaurantCurrency(data.totals.total)}`,
-    `Paid: ${formatRestaurantCurrency(paidAmount)}`,
-    `${changeAmount ? 'Change' : 'Due'}: ${formatRestaurantCurrency(changeAmount || dueAmount)}`,
-    `Payment: ${data.paymentMethod}`,
-    settings.enableBillQr ? `QR: ${settings.qrValue || data.orderNumber}` : '',
-    '--------------------------',
-    settings.footerMessage || 'Thank you for dining with us',
-    'NEXORA SOLUTION - All rights reserved 2019-2026.',
-  ].filter(Boolean).join('\n')
+  return buildModernBillThermalText(input)
 }
 
 export function buildKotPrintTemplate(input = {}) {
-  const data = buildKotPrintData(input)
-  const settings = data.settings || {}
-  const itemLines = data.rows.map((row) => `${row.quantity} x ${row.item?.name || row.name}${row.note ? `\n  ${row.note}` : ''}`).join('\n')
-  return [
-    'KITCHEN COPY',
-    data.restaurantName,
-    [settings.branchName, settings.branchCode].filter(Boolean).join(' - '),
-    `KOT: ${data.kotNumber}`,
-    `Order: ${data.orderNumber}`,
-    `Type/Table: ${data.orderType} / ${data.table || '-'}`,
-    `Time: ${new Date(data.date).toLocaleString()}`,
-    `Priority: ${data.priority}`,
-    '--------------------------',
-    itemLines,
-    data.notes ? `Notes: ${data.notes}` : '',
-    settings.enableKotQr ? `QR: ${settings.qrValue || data.kotNumber}` : '',
-    '--------------------------',
-    settings.footerMessage || 'Kitchen copy',
-  ].filter(Boolean).join('\n')
+  return buildModernKotThermalText(input)
 }

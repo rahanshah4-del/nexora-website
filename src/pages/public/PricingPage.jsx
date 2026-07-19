@@ -13,7 +13,9 @@ import {
   HiOutlineUserGroup,
 } from 'react-icons/hi2'
 import PublicPageShell from './PublicPageShell.jsx'
-import { defaultPlatformPlans, freeTrialConfig, PLATFORM_YEARLY_DISCOUNT } from '../../lib/platformPlans.js'
+import { defaultPlatformPlans, freeTrialConfig } from '../../lib/platformPlans.js'
+import { useMultiCurrency } from '../../context/MultiCurrencyProvider.jsx'
+import PricingCurrencySelector from '../../components/PricingCurrencySelector.jsx'
 
 const BusinessServicesSection = lazy(() => import('../../components/BusinessServicesSection.jsx'))
 
@@ -52,16 +54,18 @@ const comparisonRows = [
   ['Custom Development', false, false, false, true],
 ]
 
-const faqs = [
-  ['Is there a free trial?', 'Yes. Start a free 7-day trial with full access to all Nexora modules, unlimited users and unlimited storage. No credit card required.'],
-  ['Do I need a credit card to start?', 'No. Nexora lets you start a free trial without a credit card.'],
-  ['What happens after the free trial?', 'You can continue with Basic at PKR 2,000/month with one business module and up to 2 users, or upgrade to Standard or Enterprise anytime.'],
-  ['Can I choose any business module on Basic?', 'Yes. Basic lets you pick any ONE Nexora Business Module — Restaurant POS, Retail POS, School ERP, Transport, Medical Store POS, CRM, WhatsApp CRM, or any future module.'],
-  ['What are the Basic plan limits?', 'Basic allows one active module, up to 2 team members, and 5 GB of cloud storage.'],
-  ['When should I upgrade to Standard?', 'Upgrade when your team needs more than 2 users, more than 5 GB storage, or priority support.'],
-  ['Do yearly plans save money?', 'Yes. Yearly billing applies a 20% saving compared with monthly billing.'],
-  ['Can I request a custom plan?', 'Yes. Enterprise plans are tailored for larger teams, custom workflows and integrations.'],
-]
+function faqs(formatPrice) {
+  return [
+    ['Is there a free trial?', 'Yes. Start a free 7-day trial with full access to all Nexora modules, unlimited users and unlimited storage. No credit card required.'],
+    ['Do I need a credit card to start?', 'No. Nexora lets you start a free trial without a credit card.'],
+    ['What happens after the free trial?', `You can continue with Basic at ${formatPrice(2000)} with one business module and up to 2 users, or upgrade to Standard or Enterprise anytime.`],
+    ['Can I choose any business module on Basic?', 'Yes. Basic lets you pick any ONE Nexora Business Module — Restaurant POS, Retail POS, School ERP, Transport, Medical Store POS, CRM, WhatsApp CRM, or any future module.'],
+    ['What are the Basic plan limits?', 'Basic allows one active module, up to 2 team members, and 5 GB of cloud storage.'],
+    ['When should I upgrade to Standard?', 'Upgrade when your team needs more than 2 users, more than 5 GB storage, or priority support.'],
+    ['Do yearly plans save money?', 'Yes. Yearly billing applies a 20% saving compared with monthly billing.'],
+    ['Can I request a custom plan?', 'Yes. Enterprise plans are tailored for larger teams, custom workflows and integrations.'],
+  ]
+}
 
 const highlightCards = [
   ['Start safely', 'Try Nexora for 7 days free with full access. No credit card required.', HiOutlineCloud],
@@ -71,21 +75,10 @@ const highlightCards = [
 
 const UPGRADE_NOTE = 'Only one business module can be active. Upgrade to Standard anytime for more modules, users and storage.'
 
-function formatPrice(amount) {
-  return new Intl.NumberFormat('en-PK').format(amount)
-}
-
 function renderComparisonValue(value) {
   if (value === true) return <HiOutlineCheckCircle className="mx-auto text-2xl text-blue-600" />
   if (value === false) return <span className="text-sm font-bold text-slate-300">-</span>
   return <span className="text-center text-xs font-extrabold text-blue-700">{value}</span>
-}
-
-function getPlanPrice(plan, billingCycle) {
-  if (plan.id === 'free-trial') return 'PKR 0'
-  if (plan.monthlyPrice === 'custom') return 'Custom Pricing'
-  if (billingCycle === 'yearly') return `PKR ${formatPrice(Math.round(Number(plan.monthlyPrice) * 12 * PLATFORM_YEARLY_DISCOUNT))}`
-  return `PKR ${formatPrice(Number(plan.monthlyPrice))}`
 }
 
 function useVisibleSection(rootMargin = '900px') {
@@ -127,12 +120,13 @@ export default function PricingPage() {
   const [billingCycle, setBillingCycle] = useState('monthly')
   const [servicesRef, servicesVisible] = useVisibleSection()
   const seo = getSeoForPath('/pricing')
+  const { formatPlanPrice, formatPrice, getBillingSuffix } = useMultiCurrency()
 
   const displayPlans = [freeTrialConfig, ...paidPlans]
 
   return (
     <PublicPageShell>
-      <PageSeo {...seo} faqItems={faqs} />
+      <PageSeo {...seo} faqItems={faqs(formatPrice)} />
       <section className="relative overflow-hidden bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_72%,#ffffff_100%)] pb-16 pt-12 sm:pb-20 sm:pt-14 lg:pb-24 lg:pt-16">
         <div className="soft-arc-bg pointer-events-none" />
         <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-200 to-transparent" />
@@ -149,7 +143,7 @@ export default function PricingPage() {
           <div className="mx-auto mt-7 grid max-w-4xl gap-3 text-left sm:grid-cols-3">
             {[
               ['Start Free Trial', 'Experience the complete Nexora platform with all modules, unlimited users and unlimited storage.'],
-              ['Choose Basic', 'Continue at PKR 2,000/month with one business module, up to 2 users and 5 GB storage.'],
+              ['Choose Basic', `Continue at ${formatPrice(2000)} with one business module, up to 2 users and 5 GB storage.`],
               ['Upgrade When Ready', 'Unlock more modules, more users, larger storage and priority support.'],
             ].map(([title, text]) => (
               <div key={title} className="rounded-[1.2rem] border border-blue-100 bg-white/85 p-4 shadow-[0_22px_58px_-46px_rgba(37,99,235,0.38)]">
@@ -159,19 +153,22 @@ export default function PricingPage() {
             ))}
           </div>
 
-          <div className="mt-8 inline-flex rounded-full border border-slate-200 bg-white p-1 shadow-[0_18px_46px_-34px_rgba(15,23,42,0.45)]">
-            {['monthly', 'yearly'].map((cycle) => (
-              <button
-                key={cycle}
-                type="button"
-                onClick={() => setBillingCycle(cycle)}
-                className={`min-h-10 rounded-full px-5 text-sm font-bold ${
-                  billingCycle === cycle ? 'bg-slate-950 text-white shadow-sm' : 'text-slate-600 hover:text-blue-600'
-                }`}
-              >
-                {cycle === 'monthly' ? 'Monthly' : 'Yearly (Save 20%)'}
-              </button>
-            ))}
+          <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+            <div className="inline-flex rounded-full border border-slate-200 bg-white p-1 shadow-[0_18px_46px_-34px_rgba(15,23,42,0.45)]">
+              {['monthly', 'yearly'].map((cycle) => (
+                <button
+                  key={cycle}
+                  type="button"
+                  onClick={() => setBillingCycle(cycle)}
+                  className={`min-h-10 rounded-full px-5 text-sm font-bold ${
+                    billingCycle === cycle ? 'bg-slate-950 text-white shadow-sm' : 'text-slate-600 hover:text-blue-600'
+                  }`}
+                >
+                  {cycle === 'monthly' ? 'Monthly' : 'Yearly (Save 20%)'}
+                </button>
+              ))}
+            </div>
+            <PricingCurrencySelector />
           </div>
         </div>
       </section>
@@ -205,9 +202,9 @@ export default function PricingPage() {
                   {plan.id === 'free-trial' ? 'Experience the complete Nexora platform before subscribing.' : plan.id === 'basic' ? 'One module, two users, all the essentials.' : plan.description || ''}
                 </p>
                 <div className="mt-6 text-center">
-                  <p className="text-3xl font-black text-slate-950 sm:text-4xl">{getPlanPrice(plan, billingCycle)}</p>
+                  <p className="text-3xl font-black text-slate-950 sm:text-4xl">{formatPlanPrice(plan, billingCycle)}</p>
                   {plan.monthlyPrice !== 'custom' && plan.id !== 'free-trial' && (
-                    <p className="mt-1 text-sm text-slate-500">/{billingCycle === 'monthly' ? 'month' : 'year'}</p>
+                    <p className="mt-1 text-sm text-slate-500">{getBillingSuffix(plan, billingCycle)}</p>
                   )}
                   {plan.id === 'free-trial' && (
                     <p className="mt-1 text-sm text-slate-500">No credit card required</p>
@@ -301,7 +298,7 @@ export default function PricingPage() {
             <h2 className="website-section-heading text-3xl font-black tracking-tight text-slate-950 sm:text-5xl">Pricing FAQ</h2>
           </div>
           <div className="mt-10 grid gap-4">
-            {faqs.map(([question, answer]) => (
+            {faqs(formatPrice).map(([question, answer]) => (
               <article key={question} className="rounded-[1.35rem] border border-slate-200 bg-white p-5 shadow-[0_18px_54px_-42px_rgba(15,23,42,0.36)]">
                 <h3 className="text-base font-black text-slate-950">{question}</h3>
                 <p className="mt-2 text-sm leading-7 text-slate-600">{answer}</p>

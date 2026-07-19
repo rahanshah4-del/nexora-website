@@ -3,6 +3,7 @@ import AppErrorBoundary from './AppErrorBoundary.jsx'
 import AppRouter from '../AppRouter.jsx'
 import CrmProviderShell from './CrmProviderShell.jsx'
 import { useLocation } from 'react-router-dom'
+import { MultiCurrencyProvider } from '../context/MultiCurrencyProvider.jsx'
 
 const ROOT_AUTH_PREFIXES = ['/login', '/signup', '/verify-email', '/workspace', '/upgrade-business', '/admin']
 const WORKSPACE_PROVIDER_PREFIXES = ['/workspace']
@@ -43,8 +44,10 @@ function RouteScopedProviders({ children }) {
 
 export default function AppProviders() {
   return (
-    <RouteScopedProviders>
-      <AppRouter />
-    </RouteScopedProviders>
+    <MultiCurrencyProvider>
+      <RouteScopedProviders>
+        <AppRouter />
+      </RouteScopedProviders>
+    </MultiCurrencyProvider>
   )
 }

@@ -218,3 +218,21 @@ export function planPriceLabel(plan, cycle = 'monthly') {
     maximumFractionDigits: 0,
   }).format(Number(rawPrice || 0))
 }
+
+/**
+ * Extract the raw PKR amount from a plan for a given billing cycle.
+ * Used by the multi-currency conversion layer.
+ *
+ * @param {Object} plan
+ * @param {string} cycle — 'monthly' or 'yearly'
+ * @returns {number|null} — PKR amount or null for custom pricing
+ */
+export function getPlanPkrAmount(plan, cycle = 'monthly') {
+  if (!plan) return null
+  const raw = String(plan.monthlyPrice ?? plan.price ?? '').toLowerCase()
+  if (raw === 'custom') return null
+  if (cycle === 'yearly' && plan.yearlyPrice && String(plan.yearlyPrice).toLowerCase() !== 'custom') {
+    return Number(plan.yearlyPrice) || null
+  }
+  return Number(plan.monthlyPrice ?? plan.price) || 0
+}

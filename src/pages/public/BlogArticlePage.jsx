@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import {
   HiOutlineArrowLeft,
@@ -6,6 +6,7 @@ import {
   HiOutlineCalendarDays,
   HiOutlineClock,
   HiOutlineDocumentText,
+  HiOutlineLanguage,
   HiOutlineLink,
   HiOutlineListBullet,
   HiOutlineShare,
@@ -16,6 +17,12 @@ import PageSeo from '../../components/PageSeo.jsx'
 import { getBlogArticle } from '../../lib/blogData.js'
 import usePublishedBlogArticles from '../../hooks/usePublishedBlogArticles.js'
 import { trackBlogView } from '../../lib/blogViews.js'
+import {
+  BLOG_LANGUAGES,
+  detectPreferredBlogLanguage,
+  rememberBlogLanguage,
+  translateBlogArticle,
+} from '../../lib/blogTranslate.js'
 import { absoluteUrl, createArticleSchema } from '../../lib/seoStructuredData.js'
 import PublicPageShell from './PublicPageShell.jsx'
 import BlogComments from '../../components/BlogComments.jsx'
@@ -91,6 +98,25 @@ export default function BlogArticlePage() {
   useEffect(() => {
     if (articleSlug) trackBlogView(articleSlug)
   }, [articleSlug])
+
+  /* ── Reader language: PK → Roman Urdu, IN → Hindi, else English ── */
+  const [lang, setLang] = useState(() => detectPreferredBlogLanguage().lang)
+  const [translation, setTranslation] = useState(null)
+
+  useEffect(() => {
+    if (!articleSlug || lang === 'en') return undefined
+    let cancelled = false
+    const source = articles.find((item) => item.slug === articleSlug) || getBlogArticle(articleSlug)
+    translateBlogArticle(source, lang)
+      .then((next) => { if (!cancelled) setTranslation(next ? { ...next, slug: articleSlug, lang } : null) })
+      .catch(() => { if (!cancelled) setTranslation(null) })
+    return () => { cancelled = true }
+  }, [articleSlug, lang, articles])
+
+  const selectLanguage = (code) => {
+    setLang(code)
+    rememberBlogLanguage(code)
+  }
 
   if (!article && loading) {
     return (
@@ -184,6 +210,12 @@ export default function BlogArticlePage() {
   if (!article) return <Navigate to="/blog" replace />
 
   const { readingTime, wordCount } = calculateReadingTime(article)
+  /* Reader-facing copy: translated when a non-English language is active.
+     Slug+lang check prevents stale text flashing on article/language change.
+     SEO (PageSeo, schema, canonical) always uses the English source. */
+  const activeTranslation = lang !== 'en' && translation && translation.slug === article.slug && translation.lang === lang ? translation : null
+  const display = activeTranslation || article
+  const translating = lang !== 'en' && !activeTranslation
   const articleIndex = articles.findIndex((item) => item.slug === article.slug)
   const adjacent = {
     previous: articleIndex > 0 ? articles[articleIndex - 1] : null,
@@ -248,11 +280,35 @@ export default function BlogArticlePage() {
               </Link>
               <span className="text-slate-400">{readingTime}</span>
               <span className="text-slate-400">{wordCount.toLocaleString('en-PK')} words</span>
+              <span className="ml-auto inline-flex items-center gap-1 rounded-full border border-blue-100/60 bg-white/80 p-1 shadow-sm backdrop-blur-sm">
+                <HiOutlineLanguage className="ml-1.5 h-4 w-4 text-blue-600" aria-hidden="true" />
+                {BLOG_LANGUAGES.map(({ code, label }) => (
+                  <button
+                    key={code}
+                    type="button"
+                    onClick={() => selectLanguage(code)}
+                    aria-pressed={lang === code}
+                    className={`rounded-full px-2.5 py-1 text-[0.68rem] font-extrabold transition ${
+                      lang === code
+                        ? 'bg-blue-600 text-white shadow-sm'
+                        : 'text-slate-500 hover:bg-blue-50 hover:text-blue-700'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </span>
             </div>
-            <h1 className="website-hero-heading mt-5 text-[2.55rem] font-black leading-[0.98] tracking-tight text-slate-950 sm:text-[4rem] lg:text-[5rem]">
-              {article.title}
+            {lang !== 'en' && translating && !translation ? (
+              <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-[0.7rem] font-bold text-blue-700">
+                <span className="h-2 w-2 animate-pulse rounded-full bg-blue-500" />
+                Translating…
+              </p>
+            ) : null}
+            <h1 className="website-hero-heading mt-5 max-w-4xl text-[1.9rem] font-extrabold leading-[1.12] tracking-tight text-slate-950 sm:text-[2.5rem] sm:leading-[1.08] lg:text-[3.1rem] lg:leading-[1.06]">
+              {display.title}
             </h1>
-            <p className="mt-6 max-w-3xl text-base leading-8 text-slate-600 sm:text-lg">{article.excerpt}</p>
+            <p className="mt-6 max-w-3xl text-base leading-8 text-slate-600 sm:text-lg">{display.excerpt}</p>
             <div className="mt-7 grid gap-3 text-sm font-bold text-slate-600 sm:grid-cols-3">
               <span className="inline-flex items-center gap-2 rounded-2xl border border-blue-100 bg-white px-4 py-3">
                 <HiOutlineUserCircle className="h-5 w-5 text-blue-700" />
@@ -278,7 +334,7 @@ export default function BlogArticlePage() {
                 <p className="text-[0.65rem] font-extrabold uppercase tracking-[0.16em] text-slate-400">Table of Contents</p>
               </div>
               <div className="mt-4 grid max-h-52 gap-1 overflow-y-auto pr-1 lg:max-h-none lg:overflow-visible lg:pr-0">
-                {article.sections.map((section) => (
+                {display.sections.map((section) => (
                   <a
                     key={section.id}
                     href={`#${section.id}`}
@@ -340,7 +396,7 @@ export default function BlogArticlePage() {
               </div>
 
               <div className="prose prose-slate mt-10 max-w-none">
-                {article.sections.map((section) => (
+                {display.sections.map((section) => (
                   <section key={section.id} id={section.id} className="scroll-mt-28">
                     <h2 className="mt-10 text-3xl font-black tracking-tight text-slate-950">{section.heading}</h2>
                     {section.paragraphs.map((paragraph) => (
@@ -364,7 +420,7 @@ export default function BlogArticlePage() {
               <section className="mt-14 rounded-[1.8rem] border border-blue-100 bg-[linear-gradient(135deg,#eff6ff_0%,#ffffff_58%,#e0f2fe_100%)] p-6 sm:p-8">
                 <h2 className="text-3xl font-black tracking-tight text-slate-950">Frequently asked questions</h2>
                 <div className="mt-6 grid gap-4">
-                  {article.faqs.map(([question, answer]) => (
+                  {display.faqs.map(([question, answer]) => (
                     <div key={question} className="rounded-[1.2rem] bg-white p-5 shadow-sm">
                       <h3 className="text-base font-black text-slate-950">{question}</h3>
                       <p className="mt-2 text-sm leading-7 text-slate-600">{answer}</p>

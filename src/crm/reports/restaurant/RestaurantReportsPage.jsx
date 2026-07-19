@@ -37,9 +37,9 @@ import ReportChartCard from '../core/ReportChartCard.jsx'
 import { normalizeRestaurantReportOrders } from './restaurantReportNormalizer.js'
 import { restaurantBusinessDateKey, restaurantBusinessDayBounds } from '../../lib/restaurantBusinessDay.js'
 import {
-  buildRestaurantPrintableReport,
   printRestaurantA4Report,
   printRestaurantThermalClosing,
+  printRestaurantThermal80mmClosing,
   exportRestaurantCsv,
   exportRestaurantExcel,
   exportRestaurantPdf,
@@ -341,6 +341,11 @@ export default function RestaurantReportsPage({
 
   const isBlocked = activeReport.capability === 'blocked'
   const isDailyClosing = activeReport.id === 'daily-closing' || activeReport.id === 'cash-drawer-reconciliation'
+  const isExecutiveSummary = activeReport.id === 'executive-summary'
+
+  const handleQuickDailyClosing = useCallback(() => {
+    setActiveReportId('daily-closing')
+  }, [])
 
   const handlePrint = useCallback(() => {
     const opts = buildPrintOpts()
@@ -375,6 +380,19 @@ export default function RestaurantReportsPage({
       else setActionStatus({ type: 'error', message: result.error || '58mm print failed.' })
     }).catch(() => {
       setActionStatus({ type: 'error', message: '58mm print encountered an unexpected error.' })
+    })
+    setTimeout(() => setActionStatus(null), 6000)
+  }, [model, activeReport, filters, rangeLabelText, restaurantName, workspaceLabel, currency])
+
+  const handleThermal80mm = useCallback(() => {
+    const opts = buildPrintOpts()
+    setActionStatus({ type: 'loading', message: 'Sending to 80mm printer...' })
+    printRestaurantThermal80mmClosing(opts).then((result) => {
+      if (result.ok && !result.fallback) setActionStatus({ type: 'success', message: '80mm closing printed.' })
+      else if (result.ok && result.fallback) setActionStatus({ type: 'success', message: result.message || '80mm preview opened.' })
+      else setActionStatus({ type: 'error', message: result.error || '80mm print failed.' })
+    }).catch(() => {
+      setActionStatus({ type: 'error', message: '80mm print encountered an unexpected error.' })
     })
     setTimeout(() => setActionStatus(null), 6000)
   }, [model, activeReport, filters, rangeLabelText, restaurantName, workspaceLabel, currency])
@@ -415,7 +433,8 @@ export default function RestaurantReportsPage({
     !isBlocked ? ['PDF', handlePdfOpen] : null,
     !isBlocked ? ['CSV', handleCsv] : null,
     !isBlocked ? ['Excel', handleExcel] : null,
-    isDailyClosing ? ['58mm Closing', handleThermal] : null,
+    isDailyClosing ? ['58mm Thermal', handleThermal] : null,
+    isDailyClosing ? ['80mm Thermal', handleThermal80mm] : null,
   ].filter(Boolean)
 
   function updateFilter(key, value) {
@@ -427,10 +446,19 @@ export default function RestaurantReportsPage({
   }
 
   function reportActions() {
-    if (!actions.length) return null
+    if (!actions.length && !isExecutiveSummary) return null
     const isLoading = actionStatus?.type === 'loading'
     return (
       <div className="flex flex-wrap items-center gap-2">
+        {isExecutiveSummary && !isBlocked ? (
+          <button
+            type="button"
+            onClick={handleQuickDailyClosing}
+            className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700 shadow-sm transition hover:bg-emerald-100 hover:border-emerald-300"
+          >
+            Daily Closing
+          </button>
+        ) : null}
         {actions.map(([label, action]) => (
           <button
             key={label}
@@ -675,33 +703,294 @@ export default function RestaurantReportsPage({
   }
 
   function renderDailyClosing() {
+    const rc = model.cashReconciliation || {}
+    const hasCashReconciliation = rc.actualClosingCash != null
+    const hasExpenses = model.approvedExpenses > 0
+    const hasCancellations = model.cancellations?.rows?.length > 0
+    const hasCategories = model.categorySales?.length > 0
+    const hasItems = model.itemSales?.length > 0
+    const hasPayments = model.collectionsByPaymentMethod && Object.keys(model.collectionsByPaymentMethod).length > 0
+    const hasOrderTypes = model.salesByOrderType && Object.keys(model.salesByOrderType).length > 0
+    const hasRefunds = model.refunds?.count > 0 || model.refunds?.total > 0
+    const hasSettlements = rc.cashSessions?.filter((s) => s.status === 'closed' || s.status === 'approved' || s.status === 'locked').length > 0
+
+    // Net Sales = Gross Sales - Discounts - Refunds
+    const refundTotal = model.refunds?.total || 0
+    const netSalesCalc = model.grossSales - model.discounts - refundTotal
+    // Final Closing Balance = Opening Cash + Net Sales + Cash Deposits - Cash Withdrawals - Expenses
+    const finalClosingBalance = model.openingCash + (model.cashReceived || 0) + (rc.cashDeposits || 0) - (rc.cashWithdrawals || 0) - (rc.cashExpenses || 0) - model.approvedExpenses
+
     return (
       <div className="space-y-4">
-        <SectionCard title="Selected business day" note={rangeLabel(range)}>
+        {/* ── Business Day Header ── */}
+        <SectionCard title="Daily Closing Report" note={rangeLabel(range)}>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+              <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">Restaurant</p>
+              <p className="mt-1 text-base font-bold text-slate-950">{restaurantName}</p>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+              <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">Workspace</p>
+              <p className="mt-1 text-base font-bold text-slate-950">{workspaceLabel}</p>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+              <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">Report Period</p>
+              <p className="mt-1 text-base font-bold text-slate-950">{rangeLabel(range)}</p>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+              <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">Generated At</p>
+              <p className="mt-1 text-base font-bold text-slate-950">{new Date().toLocaleString()}</p>
+            </div>
+          </div>
+        </SectionCard>
+
+        {/* ── Orders & Sales Summary ── */}
+        <SectionCard title="Orders & Sales">
+          <ReportKpiGrid
+            currency={currency}
+            kpis={[
+              kpi('billedOrders', 'Billed Orders', model.billedOrders?.length || 0),
+              kpi('cancelledOrders', 'Cancelled Orders', model.cancellations?.count || 0),
+              kpi('grossSales', 'Gross Sales', model.grossSales),
+              kpi('discounts', 'Discounts', model.discounts),
+              kpi('refunds', 'Refunds', refundTotal),
+              kpi('netSales', 'Net Sales', netSalesCalc),
+              kpi('tax', 'Tax Collected', model.tax),
+              kpi('serviceCharges', 'Service Charges', model.serviceCharges),
+              kpi('averageOrderValue', 'Average Order', model.averageOrderValue),
+              kpi('largestBill', 'Largest Bill', model.largestBill),
+            ].filter(Boolean)}
+          />
+        </SectionCard>
+
+        {/* ── Order Type Summary ── */}
+        {hasOrderTypes ? (
+          <SectionCard title="Order Type Summary">
+            <ReportChartCard title="Sales by Order Type" barData={objectBars(model.salesByOrderType, currency)} />
+          </SectionCard>
+        ) : null}
+
+        {/* ── Payment Method Summary ── */}
+        {hasPayments ? (
+          <SectionCard title="Payment Method Summary">
+            <ReportChartCard title="Collections by Payment Method" barData={objectBars(model.collectionsByPaymentMethod, currency)} />
+            <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {Object.entries(model.collectionsByPaymentMethod || {}).map(([method, amount]) => (
+                <div key={method} className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+                  <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">{method}</p>
+                  <p className="mt-1 text-lg font-bold text-slate-950">{formatMoney(amount, currency)}</p>
+                </div>
+              ))}
+            </div>
+          </SectionCard>
+        ) : null}
+
+        {/* ── Category-wise Sales ── */}
+        {hasCategories ? (
+          <SectionCard title="Category-wise Sales">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {model.categorySales.slice(0, 8).map((cat) => (
+                <div key={cat.category} className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+                  <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">{cat.category}</p>
+                  <p className="mt-1 text-lg font-bold text-slate-950">{formatMoney(cat.revenue, currency)}</p>
+                  <p className="text-xs text-slate-500">{cat.quantity} items sold</p>
+                </div>
+              ))}
+            </div>
+          </SectionCard>
+        ) : null}
+
+        {/* ── Product-wise Sales ── */}
+        {hasItems ? (
+          <SectionCard title="Product-wise Sales (Top 10)">
+            <ReportDataTable
+              rows={model.itemSales.slice(0, 10)}
+              emptyState="No item sales for this period."
+              columns={[
+                { key: 'name', label: 'Product' },
+                { key: 'quantity', label: 'Qty Sold', numeric: true, render: (row) => formatNumber(row.quantity) },
+                { key: 'revenue', label: 'Revenue', numeric: true, render: (row) => formatMoney(row.revenue, currency) },
+                { key: 'discount', label: 'Discount', numeric: true, render: (row) => formatMoney(row.discount || 0, currency) },
+              ]}
+            />
+          </SectionCard>
+        ) : null}
+
+        {/* ── Cancellations ── */}
+        {hasCancellations ? (
+          <SectionCard title={`Cancellations (${model.cancellations.count} orders)`}>
+            <ReportDataTable
+              rows={model.cancellations.rows}
+              emptyState="No cancellations."
+              columns={[
+                { key: 'orderNumber', label: 'Order #' },
+                { key: 'customerName', label: 'Customer' },
+                { key: 'cancelReason', label: 'Cancellation Reason', render: (row) => row.cancelReason || '-' },
+                { key: 'total', label: 'Total', numeric: true, render: (row) => formatMoney(row.total, currency) },
+                { key: 'createdAt', label: 'Cancelled At', render: (row) => row.createdAt ? new Date(row.createdAt).toLocaleString() : '-' },
+              ]}
+            />
+          </SectionCard>
+        ) : null}
+
+        {/* ── Refunds ── */}
+        {hasRefunds ? (
+          <SectionCard title="Refund Summary">
+            <ReportKpiGrid
+              currency={currency}
+              kpis={[
+                kpi('refundCount', 'Refund Count', model.refunds?.count || 0),
+                kpi('refundTotal', 'Total Refunded', refundTotal),
+              ]}
+            />
+          </SectionCard>
+        ) : null}
+
+        {/* ── Cash In / Cash Out & Expenses ── */}
+        <SectionCard title="Cash Flow & Expenses">
           <ReportKpiGrid
             currency={currency}
             kpis={[
               kpi('openingCash', 'Opening Cash', model.openingCash),
-              kpi('billedOrders', 'Billed Orders', model.billedOrders.length),
-              kpi('cancelledOrders', 'Cancelled Orders', model.cancellations.count),
-              kpi('grossSales', 'Gross Sales', model.grossSales),
-              kpi('discounts', 'Discounts', model.discounts),
-              kpi('netSales', 'Net Sales', model.netSales),
-              kpi('cashReceived', 'Cash Collection', model.cashReceived),
-              kpi('onlineReceived', 'Online Collection', model.onlineReceived),
-              kpi('outstandingAmount', 'Outstanding Amount', model.outstandingAmount),
-              kpi('tax', 'Tax', model.tax),
-              kpi('serviceCharges', 'Service Charges', model.serviceCharges),
+              kpi('cashReceived', 'Cash In (Sales)', model.cashReceived || 0),
+              kpi('onlineReceived', 'Online Received', model.onlineReceived || 0),
+              kpi('cashDeposits', 'Deposits', rc.cashDeposits || 0),
+              kpi('cashWithdrawals', 'Withdrawals', rc.cashWithdrawals || 0),
               kpi('approvedExpenses', 'Expenses', model.approvedExpenses),
-              kpi('costOfGoodsSold', 'COGS', model.costOfGoodsSold),
-              kpi('grossProfit', 'Gross Profit', model.grossProfit),
-              kpi('netProfit', 'Net Profit', model.netProfit),
-              model.cashReconciliation?.cashDifference != null
-                ? kpi('cashDifference', 'Cash Difference', model.cashReconciliation.cashDifference)
-                : unavailableKpi('cashDifference', 'Cash Difference', 'Unavailable — actual closing cash, refunds, withdrawals, and reliable cash-expense source are not stored.'),
-            ]}
+              kpi('cashExpenses', 'Cash Expenses', rc.cashExpenses || 0),
+              kpi('cashRefunds', 'Cash Refunded', rc.cashRefunds || 0),
+            ].filter(Boolean)}
           />
         </SectionCard>
+
+        {/* ── Expense Breakdown ── */}
+        {hasExpenses && model.expenseSummary ? (
+          <SectionCard title="Expense Breakdown">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+                <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">Total Expenses</p>
+                <p className="mt-1 text-lg font-bold text-slate-950">{formatMoney(model.approvedExpenses, currency)}</p>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+                <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">Expense Count</p>
+                <p className="mt-1 text-lg font-bold text-slate-950">{model.expenseSummary?.count || 0}</p>
+              </div>
+              {model.expenseSummary?.byCategory ? (
+                Object.entries(model.expenseSummary.byCategory).slice(0, 6).map(([cat, amount]) => (
+                  <div key={cat} className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+                    <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">{cat}</p>
+                    <p className="mt-1 text-lg font-bold text-slate-950">{formatMoney(amount, currency)}</p>
+                  </div>
+                ))
+              ) : null}
+            </div>
+          </SectionCard>
+        ) : null}
+
+        {/* ── Reservation Summary ── */}
+        {model.reservations?.count > 0 || model.reservations?.total > 0 ? (
+          <SectionCard title="Reservation Summary">
+            <ReportKpiGrid
+              currency={currency}
+              kpis={[
+                kpi('reservationCount', 'Reservations', model.reservations?.count || 0),
+                kpi('reservationRevenue', 'Reservation Revenue', model.reservations?.total || 0),
+              ]}
+            />
+          </SectionCard>
+        ) : null}
+
+        {/* ── Tips ── */}
+        {model.tipsTotal > 0 ? (
+          <SectionCard title="Tips">
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3">
+              <p className="text-[10px] font-black uppercase tracking-[0.12em] text-emerald-700">Total Tips</p>
+              <p className="mt-1 text-2xl font-bold text-emerald-900">{formatMoney(model.tipsTotal, currency)}</p>
+            </div>
+          </SectionCard>
+        ) : null}
+
+        {/* ── Cash Drawer Reconciliation ── */}
+        <SectionCard title="Cash Drawer Reconciliation">
+          <ReportKpiGrid
+            currency={currency}
+            kpis={[
+              kpi('openingCash', 'Opening Cash', model.openingCash),
+              kpi('expectedCash', 'Expected Cash', rc.expectedCash || model.openingCash),
+              hasCashReconciliation
+                ? kpi('actualClosingCash', 'Actual Closing Cash', rc.actualClosingCash)
+                : unavailableKpi('actualClosingCash', 'Actual Cash', 'Not recorded — close shifts to capture actual cash.'),
+              hasCashReconciliation && rc.cashDifference != null
+                ? kpi('cashDifference', 'Cash Difference', rc.cashDifference)
+                : unavailableKpi('cashDifference', 'Cash Difference', 'Unavailable — settle shifts to see variance.'),
+              kpi('finalClosingBalance', 'Final Closing Balance', finalClosingBalance),
+              kpi('netSalesCalc', 'Net Sales', netSalesCalc),
+              kpi('totalExpenses', 'Total Expenses', model.approvedExpenses),
+            ].filter(Boolean)}
+          />
+          {hasCashReconciliation ? (
+            <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2">
+              <p className="text-sm font-semibold text-amber-800">
+                Variance: <span className={rc.cashDifference === 0 ? 'text-emerald-700' : rc.cashDifference > 0 ? 'text-emerald-700' : 'text-rose-700'}>
+                  {rc.varianceStatus ? rc.varianceStatus.replace(/_/g, ' ') : 'N/A'}
+                </span>
+                {rc.actualClosingCash != null ? <span className="ml-2">· Actual: {formatMoney(rc.actualClosingCash, currency)}</span> : null}
+              </p>
+            </div>
+          ) : null}
+        </SectionCard>
+
+        {/* ── Shift Settlements ── */}
+        {hasSettlements ? (
+          <SectionCard title="Shift Settlements">
+            <ReportDataTable
+              rows={rc.cashSessions.filter((s) => s.status === 'closed' || s.status === 'approved' || s.status === 'locked')}
+              columns={[
+                { key: 'cashierName', label: 'Cashier / Staff' },
+                { key: 'openingCash', label: 'Opening', numeric: true, render: (row) => formatMoney(row.openingCash, currency) },
+                { key: 'expectedCash', label: 'Expected', numeric: true, render: (row) => formatMoney(row.expectedCash, currency) },
+                { key: 'actualClosingCash', label: 'Actual', numeric: true, render: (row) => formatMoney(row.actualClosingCash, currency) },
+                { key: 'cashDifference', label: 'Difference', numeric: true, render: (row) => formatMoney(row.cashDifference, currency) },
+                { key: 'totalTransactions', label: 'Txns', numeric: true, render: (row) => String(row.totalTransactions || 0) },
+                { key: 'varianceStatus', label: 'Variance', render: (row) => String(row.varianceStatus || '').replace(/_/g, ' ') || '-' },
+                { key: 'settlementStatus', label: 'Settlement', render: (row) => String(row.settlementStatus || row.status || '').replace(/_/g, ' ') || '-' },
+                { key: 'settledBy', label: 'Settled By', render: (row) => row.settledBy || '-' },
+                { key: 'approvedBy', label: 'Approved By', render: (row) => row.approvedBy || '-' },
+                { key: 'differenceReason', label: 'Reason', render: (row) => row.differenceReason ? row.differenceReason.replace(/_/g, ' ') : '-' },
+              ]}
+              emptyState="No closed sessions in this period."
+            />
+          </SectionCard>
+        ) : null}
+
+        {/* ── Signature Area ── */}
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h3 className="text-sm font-black uppercase tracking-[0.1em] text-slate-400 mb-4">Sign-off & Approval</h3>
+          <div className="grid gap-5 sm:grid-cols-2">
+            <div className="border-b-2 border-slate-300 pb-2 pt-8">
+              <p className="text-xs font-bold text-slate-700">Prepared By (Cashier / Staff)</p>
+              <p className="text-[10px] text-slate-400 mt-1">Name &amp; Signature</p>
+            </div>
+            <div className="border-b-2 border-slate-300 pb-2 pt-8">
+              <p className="text-xs font-bold text-slate-700">Reviewed By (Manager / Supervisor)</p>
+              <p className="text-[10px] text-slate-400 mt-1">Name &amp; Signature</p>
+            </div>
+          </div>
+          <div className="mt-4 grid gap-4 sm:grid-cols-3">
+            <div className="rounded-xl bg-slate-50 p-3">
+              <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">Date</p>
+              <p className="mt-1 text-sm font-bold text-slate-700">{new Date().toLocaleDateString()}</p>
+            </div>
+            <div className="rounded-xl bg-slate-50 p-3">
+              <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">Time</p>
+              <p className="mt-1 text-sm font-bold text-slate-700">{new Date().toLocaleTimeString()}</p>
+            </div>
+            <div className="rounded-xl bg-slate-50 p-3">
+              <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">Report ID</p>
+              <p className="mt-1 text-sm font-bold text-slate-700 font-mono">RPT-DC-{new Date().getTime().toString(36).toUpperCase()}</p>
+            </div>
+          </div>
+        </div>
       </div>
     )
   }
@@ -1016,6 +1305,170 @@ export default function RestaurantReportsPage({
     return (
       <div className="space-y-4">
         <ReportKpiGrid currency={currency} kpis={[kpi('approvedExpenses', 'Approved Expense Total', model.approvedExpenses), kpi('netProfit', 'Net Profit', model.netProfit)]} />
+      </div>
+    )
+  }
+
+  function renderRefundReport() {
+    const ra = model.refundAnalysis
+    if (!ra || ra.count === 0) {
+      return (
+        <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-10 text-center text-sm font-semibold text-slate-500">
+          No refunds recorded for the selected period.
+        </div>
+      )
+    }
+
+    const reasonBars = Object.entries(ra.reasons || {}).map(([reason, amount]) => ({
+      id: reason, label: reason, value: amount, displayValue: formatMoney(amount, currency),
+    })).sort((a, b) => b.value - a.value)
+
+    const methodBars = Object.entries(ra.byPaymentMethod || {}).map(([method, amount]) => ({
+      id: method, label: method, value: amount, displayValue: formatMoney(amount, currency),
+    })).sort((a, b) => b.value - a.value)
+
+    return (
+      <div className="space-y-4">
+        {/* ── Refund Overview ── */}
+        <SectionCard title="Refund Overview">
+          <ReportKpiGrid
+            currency={currency}
+            kpis={[
+              kpi('refundCount', 'Total Refunds', ra.count),
+              kpi('refundAmount', 'Total Refunded', ra.totalAmount),
+              kpi('refundRate', 'Refund Rate', `${ra.refundPercentage?.toFixed(1) || 0}%`),
+            ]}
+          />
+        </SectionCard>
+
+        {/* ── Refund by Reason ── */}
+        {reasonBars.length > 0 ? (
+          <SectionCard title="Refunds by Reason">
+            <ReportChartCard title="Reason Breakdown" barData={reasonBars} />
+          </SectionCard>
+        ) : null}
+
+        {/* ── Refund by Payment Method ── */}
+        {methodBars.length > 0 ? (
+          <SectionCard title="Refunds by Payment Method">
+            <ReportChartCard title="Method Breakdown" barData={methodBars} />
+          </SectionCard>
+        ) : null}
+
+        {/* ── Refund by Staff ── */}
+        {ra.byStaff?.length > 0 ? (
+          <SectionCard title="Refunds by Staff">
+            <ReportDataTable
+              rows={ra.byStaff}
+              emptyState="No staff refund data."
+              columns={[
+                { key: 'name', label: 'Staff/Cashier' },
+                { key: 'count', label: 'Refunds', numeric: true, render: (row) => formatNumber(row.count) },
+                { key: 'total', label: 'Amount', numeric: true, render: (row) => formatMoney(row.total, currency) },
+              ]}
+            />
+          </SectionCard>
+        ) : null}
+
+        {/* ── Refund by Customer ── */}
+        {ra.byCustomer?.length > 0 ? (
+          <SectionCard title="Refunds by Customer">
+            <ReportDataTable
+              rows={ra.byCustomer?.slice(0, 10)}
+              emptyState="No customer refund data."
+              columns={[
+                { key: 'name', label: 'Customer' },
+                { key: 'count', label: 'Refunds', numeric: true, render: (row) => formatNumber(row.count) },
+                { key: 'total', label: 'Amount', numeric: true, render: (row) => formatMoney(row.total, currency) },
+              ]}
+            />
+          </SectionCard>
+        ) : null}
+
+        {/* ── All Refund Records ── */}
+        {ra.rows?.length > 0 ? (
+          <SectionCard title={`Refund Records (${ra.rows.length})`}>
+            <ReportDataTable
+              rows={ra.rows}
+              emptyState="No refund records."
+              columns={[
+                { key: 'customerName', label: 'Customer' },
+                { key: 'reason', label: 'Reason' },
+                { key: 'refundMethod', label: 'Method' },
+                { key: 'refundTotal', label: 'Amount', numeric: true, render: (row) => formatMoney(row.refundTotal, currency) },
+                { key: 'cashierName', label: 'Processed By', render: (row) => row.cashierName || '-' },
+                { key: 'createdAt', label: 'Date', render: (row) => row.createdAt ? new Date(row.createdAt).toLocaleString() : '-' },
+              ]}
+            />
+          </SectionCard>
+        ) : null}
+      </div>
+    )
+  }
+
+  function renderStaffCashierPerformance() {
+    const sp = model.staffPerformance
+    if (!sp || !sp.rows?.length) {
+      return (
+        <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-10 text-center text-sm font-semibold text-slate-500">
+          No staff/cashier performance data available for the selected period.
+        </div>
+      )
+    }
+
+    const ranked = sp.rows.sort((a, b) => b.sales - a.sales)
+    const topPerformer = ranked[0]
+    const lowestPerformer = ranked[ranked.length - 1]
+
+    return (
+      <div className="space-y-4">
+        {/* ── Top & Bottom Performers ── */}
+        <SectionCard title="Performance Highlights">
+          <div className="grid gap-3 sm:grid-cols-2">
+            {topPerformer ? (
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                <p className="text-[10px] font-black uppercase tracking-[0.12em] text-emerald-700">Top Performer</p>
+                <p className="mt-1 text-lg font-black text-emerald-900">{topPerformer.name}</p>
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  <div><p className="text-[10px] text-emerald-600">Sales</p><p className="text-sm font-bold text-emerald-800">{formatMoney(topPerformer.sales, currency)}</p></div>
+                  <div><p className="text-[10px] text-emerald-600">Orders</p><p className="text-sm font-bold text-emerald-800">{formatNumber(topPerformer.orders)}</p></div>
+                  <div><p className="text-[10px] text-emerald-600">Avg Ticket</p><p className="text-sm font-bold text-emerald-800">{formatMoney(topPerformer.averageTicket, currency)}</p></div>
+                  <div><p className="text-[10px] text-emerald-600">Share</p><p className="text-sm font-bold text-emerald-800">{topPerformer.performancePct?.toFixed(1)}%</p></div>
+                </div>
+              </div>
+            ) : null}
+            {lowestPerformer && lowestPerformer.staffId !== topPerformer?.staffId ? (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                <p className="text-[10px] font-black uppercase tracking-[0.12em] text-amber-700">Needs Attention</p>
+                <p className="mt-1 text-lg font-black text-amber-900">{lowestPerformer.name}</p>
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  <div><p className="text-[10px] text-amber-600">Sales</p><p className="text-sm font-bold text-amber-800">{formatMoney(lowestPerformer.sales, currency)}</p></div>
+                  <div><p className="text-[10px] text-amber-600">Orders</p><p className="text-sm font-bold text-amber-800">{formatNumber(lowestPerformer.orders)}</p></div>
+                  <div><p className="text-[10px] text-amber-600">Avg Ticket</p><p className="text-sm font-bold text-amber-800">{formatMoney(lowestPerformer.averageTicket, currency)}</p></div>
+                  <div><p className="text-[10px] text-amber-600">Share</p><p className="text-sm font-bold text-amber-800">{lowestPerformer.performancePct?.toFixed(1)}%</p></div>
+                </div>
+              </div>
+            ) : null}
+          </div>
+        </SectionCard>
+
+        {/* ── Performance Ranking Table ── */}
+        <SectionCard title={`Staff/Cashier Ranking (${ranked.length})`}>
+          <ReportDataTable
+            rows={ranked}
+            emptyState="No staff data."
+            columns={[
+              { key: 'name', label: 'Staff/Cashier' },
+              { key: 'orders', label: 'Orders', numeric: true, render: (row) => formatNumber(row.orders) },
+              { key: 'sales', label: 'Sales', numeric: true, render: (row) => formatMoney(row.sales, currency) },
+              { key: 'discounts', label: 'Discounts', numeric: true, render: (row) => formatMoney(row.discounts, currency) },
+              { key: 'refunds', label: 'Refunds', numeric: true, render: (row) => formatMoney(row.refunds, currency) },
+              { key: 'collected', label: 'Collected', numeric: true, render: (row) => formatMoney(row.collected, currency) },
+              { key: 'averageTicket', label: 'Avg Ticket', numeric: true, render: (row) => formatMoney(row.averageTicket, currency) },
+              { key: 'performancePct', label: 'Share %', numeric: true, render: (row) => `${row.performancePct?.toFixed(1)}%` },
+            ]}
+          />
+        </SectionCard>
       </div>
     )
   }
@@ -1433,6 +1886,8 @@ export default function RestaurantReportsPage({
     if (activeReport.id === 'customer-sales') return renderCustomerSales()
     if (activeReport.id === 'cost-profit') return renderCostProfit()
     if (activeReport.id === 'expenses') return renderExpenses()
+    if (activeReport.id === 'refund-report') return renderRefundReport()
+    if (activeReport.id === 'staff-cashier-performance') return renderStaffCashierPerformance()
     return renderExecutive()
   }
 

@@ -133,6 +133,51 @@ const ClientCommandCenterPage = lazy(() => import('./pages/admin/ClientCommandCe
 const AdminBusinessServicesPage = lazy(() => import('./pages/admin/BusinessServices.jsx'))
 const AdminLogin = lazy(() => import('./pages/admin/AdminLogin.jsx'))
 
+class PosRouteErrorBoundary extends Component {
+  state = { hasError: false, error: null }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error }
+  }
+
+  componentDidCatch(error) {
+    console.error('[PosRouteBoundary] POS page render error:', error)
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <section className="grid min-h-[400px] place-items-center bg-white px-5 py-12">
+          <div className="w-full max-w-md rounded-[1.35rem] border border-rose-200 bg-white p-6 shadow-sm text-center">
+            <p className="text-lg font-black tracking-tight text-slate-950">POS could not load</p>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              The POS Till encountered an error while loading. This may be caused by a stale cache or missing data.
+            </p>
+            <div className="mt-5 flex flex-wrap justify-center gap-2">
+              <button
+                type="button"
+                className="rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-bold text-white"
+                onClick={() => { this.setState({ hasError: false }); window.location.reload() }}
+              >
+                Reload POS
+              </button>
+              <a className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700" href="/app/dashboard">
+                Back to Dashboard
+              </a>
+            </div>
+            {this.state.error ? (
+              <pre className="mt-4 max-h-28 overflow-auto rounded-xl bg-slate-50 p-3 text-left text-[10px] text-slate-500">
+                {this.state.error?.message || String(this.state.error)}
+              </pre>
+            ) : null}
+          </div>
+        </section>
+      )
+    }
+    return this.props.children
+  }
+}
+
 class InvoiceRouteBoundary extends Component {
   state = { hasError: false }
 
@@ -451,7 +496,7 @@ export default function AppRouter() {
         <Route index element={<Navigate to="/app/dashboard" replace />} />
         <Route path="dashboard" element={<LazyPage><DashboardHomePage /></LazyPage>} />
         <Route path="restaurant-pos" element={<LazyPage><RestaurantPOSPage /></LazyPage>} />
-        <Route path="orders" element={<InvoiceRouteBoundary><LazyPage><RestaurantOrdersPage /></LazyPage></InvoiceRouteBoundary>} />
+        <Route path="orders" element={<PosRouteErrorBoundary><LazyPage><RestaurantOrdersPage /></LazyPage></PosRouteErrorBoundary>} />
         <Route path="menu-management" element={<LazyPage><RestaurantMenuManagementPage /></LazyPage>} />
         <Route path="tables" element={<LazyPage><RestaurantTablesPage /></LazyPage>} />
         <Route path="orders-kot" element={<LazyPage><RestaurantOrdersKotPage /></LazyPage>} />

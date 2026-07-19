@@ -19,6 +19,9 @@ import { sendWorkerEmail, upgradeRequestReceivedEmail } from '../lib/transaction
 import { submitManualUpgradeRequest } from '../lib/upgradeWorker.js'
 import { evaluatePromoCode, normalizePromoCode, PROMO_CODE_COLLECTION } from '../lib/promoCodes.js'
 import { labelForBusinessType } from '../crm/data/moduleAccess.js'
+import { useMultiCurrency } from '../context/MultiCurrencyProvider.jsx'
+import PricingCurrencySelector from '../components/PricingCurrencySelector.jsx'
+import { formatPriceLabel } from '../lib/multiCurrency.js'
 
 const PAYMENTS_WORKER_URL = String(
   import.meta.env.VITE_NOWPAYMENTS_WORKER_URL || 'https://nexora-payments-api.rahanshah4.workers.dev',
@@ -43,9 +46,14 @@ function Badge({ children, tone = 'slate' }) {
   return <span className={`inline-flex rounded-full px-3 py-1 text-xs font-black ring-1 ${tones[tone] || tones.slate}`}>{children}</span>
 }
 
-function money(value, currency = DEFAULT_SAAS_CURRENCY) {
+function money(value, currency = DEFAULT_SAAS_CURRENCY, displayCurrency = null, rates = null) {
   if (String(value).toLowerCase() === 'custom') return 'Custom'
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency, maximumFractionDigits: 0 }).format(Number(value || 0))
+  const amount = Number(value || 0)
+  // If a display currency is requested and differs from base, convert + format
+  if (displayCurrency && displayCurrency !== 'PKR' && rates) {
+    return formatPriceLabel(amount, displayCurrency, rates)
+  }
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency, maximumFractionDigits: 0 }).format(amount)
 }
 
 function positiveAmount(value) {
@@ -137,16 +145,16 @@ function requestTimelineSteps(request = {}, isAutomaticCrypto = false) {
   })
 }
 
-function planSavings(plan) {
+function planSavings(plan, displayCurrency = null, rates = null) {
   const monthly = Number(plan.monthlyPrice || 0)
   const yearly = Number(plan.yearlyPrice || 0)
   if (!monthly || !yearly || String(plan.yearlyPrice).toLowerCase() === 'custom') return ''
   const fullYear = monthly * 12
   const savings = Math.max(0, fullYear - yearly)
-  return savings ? `Save ${money(savings, plan.currency)}` : 'Best annual value'
+  return savings ? `Save ${money(savings, plan.currency, displayCurrency, rates)}` : 'Best annual value'
 }
 
-function PlanCard({ plan, selected, active, onSelect }) {
+function PlanCard({ plan, selected, active, onSelect, displayCurrency, displayRates }) {
   const disabled = plan.active === false
   return (
     <button
@@ -170,12 +178,12 @@ function PlanCard({ plan, selected, active, onSelect }) {
         </div>
       </div>
       <div className="mt-5">
-        <p className="text-3xl font-black tracking-tight text-slate-950">{planPriceLabel(plan, 'monthly')}</p>
+        <p className="text-3xl font-black tracking-tight text-slate-950">{displayCurrency && displayCurrency !== 'PKR' && displayRates ? formatPriceLabel(plan.monthlyPrice ?? plan.price, displayCurrency, displayRates) : planPriceLabel(plan, 'monthly')}</p>
         <p className="mt-1 text-sm font-semibold text-slate-500">per month</p>
       </div>
       <div className="mt-4 rounded-2xl bg-slate-50 p-3">
-        <p className="text-sm font-black text-slate-900">{planPriceLabel(plan, 'yearly')}</p>
-        <p className="mt-1 text-xs font-bold text-emerald-700">{planSavings(plan) || 'Yearly billing available'}</p>
+        <p className="text-sm font-black text-slate-900">{displayCurrency && displayCurrency !== 'PKR' && displayRates ? formatPriceLabel(plan.yearlyPrice ?? plan.monthlyPrice ?? plan.price, displayCurrency, displayRates) : planPriceLabel(plan, 'yearly')}</p>
+        <p className="mt-1 text-xs font-bold text-emerald-700">{planSavings(plan, displayCurrency, displayRates) || 'Yearly billing available'}</p>
       </div>
       <ul className="mt-5 flex-1 space-y-2 text-sm font-semibold text-slate-600">
         {(plan.features || []).slice(0, 5).map((feature) => (
@@ -413,6 +421,7 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
   const businessType = workspaceDoc?.selectedBusinessType || workspaceDoc?.businessType || userDoc?.selectedBusinessType || userDoc?.businessType || ''
   const businessTypeLabel = businessType ? labelForBusinessType(businessType) : ''
   const currency = selectedPlan?.currency || platformSettings.defaultCurrency || DEFAULT_SAAS_CURRENCY
+  const { currency: displayCurrency, rates: displayRates, formatPrice } = useMultiCurrency()
   const selectedAmount = billingCycle === 'yearly' ? selectedPlan?.yearlyPrice : selectedPlan?.monthlyPrice
   const originalAmount = positiveAmount(selectedAmount)
 
@@ -799,10 +808,11 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
                     </button>
                   ))}
                 </div>
+                <PricingCurrencySelector />
               </div>
               <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {platformPlans.map((plan) => (
-                  <PlanCard key={plan.id} plan={plan} selected={selectedPlan?.id === plan.id} active={String(currentPlan).toLowerCase() === String(plan.name).toLowerCase()} onSelect={selectPlan} />
+                  <PlanCard key={plan.id} plan={plan} selected={selectedPlan?.id === plan.id} active={String(currentPlan).toLowerCase() === String(plan.name).toLowerCase()} onSelect={selectPlan} displayCurrency={displayCurrency} displayRates={displayRates} />
                 ))}
               </div>
             </Panel>
@@ -823,8 +833,8 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
                     {activePlans.map((plan) => (
                       <tr key={plan.id}>
                         <td className="px-4 py-4 font-black">{plan.name}</td>
-                        <td className="px-4 py-4 font-bold">{planPriceLabel(plan, 'monthly')}</td>
-                        <td className="px-4 py-4 font-bold">{planPriceLabel(plan, 'yearly')}</td>
+                        <td className="px-4 py-4 font-bold">{formatPrice(plan.monthlyPrice ?? plan.price)}</td>
+                        <td className="px-4 py-4 font-bold">{formatPrice(plan.yearlyPrice ?? plan.monthlyPrice ?? plan.price)}</td>
                         <td className="px-4 py-4 text-slate-600">{(plan.features || []).join(' • ')}</td>
                       </tr>
                     ))}
@@ -886,7 +896,7 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
                 </label>
                 <label className="text-xs font-black text-slate-600">
                   Amount Paid <span className="font-semibold text-rose-500">(required)</span>
-                  <input required className="mt-1 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold disabled:bg-slate-100 disabled:text-slate-500" value={form.amountPaid} onChange={(event) => setForm((current) => ({ ...current, amountPaid: event.target.value }))} inputMode="decimal" placeholder={money(selectedAmount, currency)} disabled={promoResult?.valid === true} />
+                  <input required className="mt-1 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold disabled:bg-slate-100 disabled:text-slate-500" value={form.amountPaid} onChange={(event) => setForm((current) => ({ ...current, amountPaid: event.target.value }))} inputMode="decimal" placeholder={money(selectedAmount, currency, displayCurrency, displayRates)} disabled={promoResult?.valid === true} />
                 </label>
                 <label className="text-xs font-black text-slate-600">
                   Payment Date <span className="font-semibold text-rose-500">(required)</span>
@@ -922,11 +932,11 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
               <h2 className="mt-2 text-2xl font-black">{selectedPlan?.name}</h2>
               <div className="mt-4 space-y-3 text-sm font-bold text-slate-600">
                 <div className="flex justify-between gap-4"><span>Billing</span><span className="text-slate-950 capitalize">{billingCycle}</span></div>
-                <div className="flex justify-between gap-4"><span>Original amount</span><span className={discountAmount ? 'text-slate-400 line-through' : 'text-slate-950'}>{money(selectedAmount, currency)}</span></div>
-                {discountAmount ? <div className="flex justify-between gap-4 text-emerald-700"><span>Promo discount</span><span>-{money(discountAmount, currency)}</span></div> : null}
-                <div className="flex justify-between gap-4 border-t border-slate-100 pt-3"><span>Total</span><span className="text-base text-slate-950">{money(finalAmount || selectedAmount, currency)}</span></div>
+                <div className="flex justify-between gap-4"><span>Original amount</span><span className={discountAmount ? 'text-slate-400 line-through' : 'text-slate-950'}>{money(selectedAmount, currency, displayCurrency, displayRates)}</span></div>
+                {discountAmount ? <div className="flex justify-between gap-4 text-emerald-700"><span>Promo discount</span><span>-{money(discountAmount, currency, displayCurrency, displayRates)}</span></div> : null}
+                <div className="flex justify-between gap-4 border-t border-slate-100 pt-3"><span>Total</span><span className="text-base text-slate-950">{money(finalAmount || selectedAmount, currency, displayCurrency, displayRates)}</span></div>
                 <div className="flex justify-between gap-4"><span>Verification</span><span className="text-right text-slate-950">{isAutomaticCrypto ? 'Automatic' : proofFile ? 'Screenshot ready' : 'Screenshot required'}</span></div>
-                <div className="flex justify-between gap-4"><span>Currency</span><span className="text-slate-950">{currency}</span></div>
+                <div className="flex justify-between gap-4"><span>Currency</span><span className="text-slate-950">{displayCurrency || currency}</span></div>
                 <div className="flex justify-between gap-4"><span>Payment</span><span className="text-slate-950">{selectedMethod?.label}</span></div>
               </div>
               <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-3">
@@ -949,7 +959,7 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
                     {promoLoading ? 'Checking...' : 'Apply'}
                   </button>
                 </div>
-                {promoResult?.valid ? <p className="mt-2 text-xs font-bold text-emerald-700">{promoResult.promoCode} applied. You saved {money(promoResult.discountAmount, currency)}.</p> : null}
+                {promoResult?.valid ? <p className="mt-2 text-xs font-bold text-emerald-700">{promoResult.promoCode} applied. You saved {money(promoResult.discountAmount, currency, displayCurrency, displayRates)}.</p> : null}
                 {promoResult && !promoResult.valid ? <p className="mt-2 text-xs font-bold text-rose-700">{promoResult.error}</p> : null}
                 {appliedPromo?.description ? <p className="mt-1 text-xs font-semibold text-slate-500">{appliedPromo.description}</p> : null}
               </div>

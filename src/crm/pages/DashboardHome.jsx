@@ -78,6 +78,7 @@ import { contactStats, followUpStats, leadStats, templateStats } from '../lib/wh
 import { useSalesHubCollection } from '../hooks/useSalesHubCollection.js'
 import { calculateDealMetrics, calculatePipelineMetrics, calculateProductMetrics, calculateTaskMetrics, safeNumber } from '../lib/salesCalculations.js'
 import { restaurantDashboardMetrics, formatRestaurantCurrency } from '../lib/restaurantPosCalculations.js'
+import { useReservationPosBridge } from '../hooks/useReservationPosBridge.js'
 import { calculateRestaurantOrderSummary } from '../lib/restaurantReports.js'
 import { calculateSchoolDashboardStats } from '../lib/schoolDashboardCalculations.js'
 import { isWithinRestaurantBusinessDay, formatRestaurantBusinessWindow } from '../lib/restaurantBusinessDay.js'
@@ -349,10 +350,17 @@ const restaurantQuickActions = [
   { title: 'Create Bill', detail: 'Checkout and invoice', to: '/app/invoices/create', icon: HiOutlineReceiptPercent },
 ]
 
-function RestaurantDashboard({ workspaceName }) {
+function RestaurantDashboard({ workspaceName, workspaceId }) {
   const { invoices } = useInvoices({ limitCount: DASHBOARD_RECENT_LIMIT })
   const { settings } = useBusinessSettings()
   const { data: savedOrders } = useLocalData(loadRestaurantOrders, [restaurantOrdersStorageKey])
+
+  // ── Reservation POS Bridge ──
+  const reservationBridge = useReservationPosBridge({ workspaceId, tables: [] })
+  const { todayReservations, reservedTableIds } = reservationBridge
+  const upcomingReservations = todayReservations.filter((r) => r.status === 'confirmed' || r.status === 'pending')
+  const seatedReservations = todayReservations.filter((r) => r.status === 'seated')
+  const completedReservations = todayReservations.filter((r) => r.status === 'completed')
   const invoiceOrders = useMemo(() => normalizeInvoiceOrders(invoices), [invoices])
   const todaySimpleOrders = savedOrders.filter((order) => isWithinRestaurantBusinessDay(order.createdAt || order.date, settings))
   const todayInvoiceOrders = invoiceOrders.filter((order) => isWithinRestaurantBusinessDay(order.createdAt || order.date, settings))
@@ -439,12 +447,71 @@ function RestaurantDashboard({ workspaceName }) {
           <SectionTitle eyebrow="Floor View" title="Table occupancy" action={<Link to="/app/tables" className="text-xs font-semibold text-sky-700 hover:text-sky-900">Floor view</Link>} />
           <div className="mt-5 space-y-3">
             <DataRow label="Occupied" value={restaurantMetrics.occupiedTables} badge="Active dine-in tables" />
-            <DataRow label="Reserved" value="0" badge="No saved reservations" />
-            <DataRow label="Cleaning" value="0" badge="No saved cleaning state" />
-            <DataRow label="Available" value="0" badge="Use floor view to manage tables" />
+            <DataRow label="Reserved" value={reservedTableIds.size} badge={reservedTableIds.size > 0 ? `${upcomingReservations.length} upcoming today` : 'No saved reservations'} />
+            <DataRow label="Seated" value={seatedReservations.length} badge={seatedReservations.length > 0 ? 'Reservations in progress' : 'No seated reservations'} />
+            <DataRow label="Completed" value={completedReservations.length} badge={completedReservations.length > 0 ? 'Completed today' : 'No completions yet'} />
           </div>
         </Card>
       </section>
+
+      {/* ── Today's Reservations ── */}
+      {todayReservations.length > 0 ? (
+        <section>
+          <Card className="rounded-[1.6rem] border-slate-200/80 bg-white/90 p-5 sm:p-6">
+            <div className="flex items-center justify-between gap-3 mb-4">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.14em] text-indigo-600">Today's Reservations</p>
+                <h2 className="mt-1 text-lg font-bold text-slate-950">Reservation List</h2>
+              </div>
+              <Link to="/app/reservations/list" className="rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-bold text-indigo-700 hover:bg-indigo-100 transition">
+                View All
+              </Link>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead>
+                  <tr className="border-b border-slate-200 text-xs font-black uppercase tracking-[0.1em] text-slate-400">
+                    <th className="px-3 py-2 text-left">Customer</th>
+                    <th className="px-3 py-2 text-left">Table</th>
+                    <th className="px-3 py-2 text-left">Time</th>
+                    <th className="px-3 py-2 text-center">Guests</th>
+                    <th className="px-3 py-2 text-right">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {todayReservations.map((r) => {
+                    const statusColors = {
+                      confirmed: 'bg-sky-50 text-sky-700',
+                      pending: 'bg-amber-50 text-amber-700',
+                      seated: 'bg-emerald-50 text-emerald-700',
+                      completed: 'bg-emerald-100 text-emerald-800',
+                      cancelled: 'bg-rose-50 text-rose-700',
+                      no_show: 'bg-slate-100 text-slate-600',
+                    }
+                    const statusLabels = {
+                      confirmed: 'Upcoming', pending: 'Pending', seated: 'Seated',
+                      completed: 'Completed', cancelled: 'Cancelled', no_show: 'No Show',
+                    }
+                    return (
+                      <tr key={r.id} className="hover:bg-slate-50/50 transition">
+                        <td className="px-3 py-2.5 font-semibold text-slate-900">{r.customerName || r.name || 'Guest'}</td>
+                        <td className="px-3 py-2.5 text-slate-600 font-mono text-xs">{r.tableId || r.tableNumber || 'Auto'}</td>
+                        <td className="px-3 py-2.5 text-slate-600">{r.time || r.reservationTime || '—'}</td>
+                        <td className="px-3 py-2.5 text-center text-slate-600">{r.partySize || r.guestCount || r.guests || 1}</td>
+                        <td className="px-3 py-2.5 text-right">
+                          <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-black ${statusColors[r.status] || 'bg-slate-50 text-slate-600'}`}>
+                            {statusLabels[r.status] || r.status}
+                          </span>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        </section>
+      ) : null}
     </div>
   )
 }
@@ -1118,7 +1185,7 @@ export default function DashboardHomePage() {
   }
 
   if (isRestaurant) {
-    return <RestaurantDashboard workspaceName={workspaceDoc?.name || userDoc?.workspaceName || userDoc?.company || ''} />
+    return <RestaurantDashboard workspaceName={workspaceDoc?.name || userDoc?.workspaceName || userDoc?.company || ''} workspaceId={workspaceDoc?.id || userDoc?.workspaceId || ''} />
   }
 
   if (isSchool) {
