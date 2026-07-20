@@ -3638,11 +3638,12 @@ export default function WorkspaceSelection() {
 
       <div className="relative flex min-h-dvh flex-col bg-slate-50 lg:flex-row">
         <aside
-          className={`fixed inset-y-0 left-0 z-30 w-[260px] border-r border-white/60 bg-white/80 text-slate-900 backdrop-blur-xl transition-all duration-300 ease-in-out ${
+          className={`fixed inset-y-0 left-0 z-50 w-[280px] border-r border-white/20 bg-white/85 text-slate-900 shadow-2xl shadow-slate-950/10 backdrop-blur-2xl transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
             sidebarOpen ? 'translate-x-0' : '-translate-x-full'
           } lg:translate-x-0 ${
-            sidebarCollapsed ? 'lg:w-[68px]' : 'lg:w-[260px]'
-          } lg:z-20 lg:overflow-y-auto`}
+            sidebarCollapsed ? 'lg:w-[72px]' : 'lg:w-[260px]'
+          } lg:z-20 lg:shadow-none lg:border-white/60 lg:overflow-y-auto`}
+          style={{ WebkitBackdropFilter: 'saturate(180%) blur(20px)' }}
           aria-label="Workspace sidebar"
         >
           <div className="flex min-h-full flex-col px-4 py-5">
@@ -3898,18 +3899,18 @@ export default function WorkspaceSelection() {
         {/* Sidebar overlay for mobile/tablet */}
         {sidebarOpen ? (
           <div
-            className="fixed inset-0 z-20 bg-slate-950/45 backdrop-blur-sm lg:hidden"
+            className="fixed inset-0 z-40 bg-slate-950/50 backdrop-blur-md lg:hidden"
             onClick={() => setSidebarOpen(false)}
             aria-hidden="true"
           />
         ) : null}
 
         <section
-          className={`min-w-0 flex-1 overflow-x-clip transition-all duration-300 ease-in-out ${
-            sidebarCollapsed ? 'lg:ml-[68px]' : 'lg:ml-[260px]'
+          className={`min-w-0 flex-1 overflow-x-clip pb-16 transition-all duration-300 ease-in-out lg:pb-0 ${
+            sidebarCollapsed ? 'lg:ml-[72px]' : 'lg:ml-[260px]'
           }`}
         >
-          <header className="sticky top-0 z-20 flex min-h-14 items-center justify-between border-b border-white/60 bg-white/90 px-3 py-2 backdrop-blur-xl sm:h-[76px] sm:px-5 sm:py-0 lg:px-6">
+          <header className="sticky top-0 z-20 flex min-h-14 items-center justify-between border-b border-white/20 bg-white/80 px-3 py-2 backdrop-blur-2xl sm:h-[76px] sm:px-5 sm:py-0 lg:px-6" style={{ WebkitBackdropFilter: 'saturate(180%) blur(20px)' }}>
             <div className="flex min-w-0 items-center gap-3 sm:gap-5">
               <button
                 type="button"
@@ -4230,6 +4231,50 @@ export default function WorkspaceSelection() {
                 </div>
               ) : null}
             </section>
+
+            {/* ── Apple-style Mobile Bottom Navigation ── */}
+            <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/20 bg-white/80 backdrop-blur-2xl pb-[env(safe-area-inset-bottom)] lg:hidden" style={{ WebkitBackdropFilter: 'saturate(180%) blur(20px)' }}>
+              <div className="flex items-center justify-around h-14 px-2">
+                {[
+                  { icon: HiOutlineSquares2X2, label: 'Modules', active: workspaceView === 'all', onClick: () => { setWorkspaceView('all'); setSidebarOpen(false) } },
+                  { icon: HiOutlineLifebuoy, label: 'Support', active: supportCenterOpen, onClick: () => { setSupportCenterOpen(true); setSidebarOpen(false) } },
+                  { icon: HiOutlinePlus, label: 'Create', primary: true, onClick: handleOpenCreate },
+                  { icon: HiOutlineBell, label: 'Alerts', badge: notificationCount, onClick: () => { setNotificationsOpen(o => !o); setSidebarOpen(false) } },
+                  { icon: HiOutlineCog6Tooth, label: 'Settings', onClick: () => { setSettingsOpen(true); setSidebarOpen(false) } },
+                ].map(({ icon: Icon, label, active, primary, badge, onClick }) => (
+                  <button
+                    key={label}
+                    type="button"
+                    onClick={onClick}
+                    className={`relative flex flex-col items-center justify-center gap-0.5 min-w-0 flex-1 h-full rounded-xl transition-all duration-200 active:scale-90 ${
+                      primary
+                        ? 'text-white'
+                        : active
+                          ? 'text-[#007aff]'
+                          : 'text-[#8e8e93] hover:text-[#1d1d1f]'
+                    }`}
+                  >
+                    {primary ? (
+                      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#007aff] shadow-[0_4px_12px_rgba(0,122,255,0.4)]">
+                        <Icon className="h-5 w-5 text-white" />
+                      </span>
+                    ) : (
+                      <>
+                        <Icon className="h-5 w-5" />
+                        {badge ? (
+                          <span className="absolute -top-0.5 right-1/3 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">{badge > 9 ? '9+' : badge}</span>
+                        ) : null}
+                      </>
+                    )}
+                    <span className={`text-[10px] font-semibold tracking-[-0.01em] ${primary ? 'text-[#8e8e93]' : ''}`}>{label}</span>
+                    {active && !primary ? <span className="absolute -bottom-0.5 h-1 w-4 rounded-full bg-[#007aff]" /> : null}
+                  </button>
+                ))}
+              </div>
+            </nav>
+
+            {/* Spacer for mobile bottom nav */}
+            <div className="h-16 lg:hidden" />
 
             <footer className="py-4 text-center text-xs font-medium text-slate-500">
               NEXORA SOLUTION — All rights reserved 2019-2026.
