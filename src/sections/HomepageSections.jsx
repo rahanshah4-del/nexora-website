@@ -25,6 +25,7 @@ import {
   FaWhatsapp,
 } from 'react-icons/fa6'
 import NexoraLogo from '../components/brand/NexoraLogo'
+import PublicTestimonials from '../components/PublicTestimonials.jsx'
 
 const whatsappNumberDisplay = '+92 319 432 9754'
 const whatsappLink = 'https://wa.me/923194329754'
@@ -267,6 +268,9 @@ export default function HomepageSections() {
           <a href={whatsappLeadLink} target="_blank" rel="noreferrer" className="premium-button-primary px-8">Book Free Demo <HiOutlineArrowRight className="text-lg" /></a>
         </div>
       </section>
+
+      {/* ── Client Reviews / Testimonials ── */}
+      <PublicTestimonials />
 
       <footer className="bg-[linear-gradient(135deg,#071d35_0%,#062b52_100%)] text-white">
         <div className="mx-auto max-w-7xl px-5 py-12 sm:px-6 lg:px-8">

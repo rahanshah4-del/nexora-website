@@ -47,6 +47,8 @@ import { setStorageScope } from '../lib/localDataEvents.js'
 import { goToWorkspace } from '../../lib/workspaceNavigation.js'
 import { safeTrackMetaEventOnce } from '../../lib/metaPixel.js'
 import logoUrl from '../../assets/logo/nexora-logo.svg'
+import ReviewPromptModal from '../../components/review/ReviewPromptModal.jsx'
+import useReviewPrompt from '../hooks/useReviewPrompt.js'
 
 const WORKSPACE_INACTIVITY_LIMIT_MS = 15 * 60 * 1000
 
@@ -331,6 +333,7 @@ export default function DashboardLayout() {
   const [selectedWorkspace, setSelectedWorkspace] = useState(null)
   const [sessionInfo, setSessionInfo] = useState(null)
   const { user, ready } = useAuth()
+  const reviewPrompt = useReviewPrompt()
   const {
     userDoc,
     loading: userLoading,
@@ -1101,6 +1104,16 @@ export default function DashboardLayout() {
           </motion.div>
         ) : null}
       </AnimatePresence>
+
+      {/* ── Apple-style review prompt (appears after 3-4 days of usage) ── */}
+      <ReviewPromptModal
+        open={reviewPrompt.showPrompt}
+        onClose={reviewPrompt.handleClose}
+        onSubmit={reviewPrompt.handleSubmit}
+        submitting={reviewPrompt.submitting}
+        submitError={reviewPrompt.submitError}
+        workspaceName={workspaceDoc?.workspaceName || workspaceDoc?.companyName || workspaceDoc?.businessName || 'Nexora'}
+      />
     </div>
   )
 }

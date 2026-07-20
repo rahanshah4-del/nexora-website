@@ -21,6 +21,7 @@ import Select from '../components/ui/Select.jsx'
 import { hasRestaurantOffer, loadRestaurantMenuCategories, loadRestaurantMenuItems, saveRestaurantMenuCategories, saveRestaurantMenuItems } from '../data/restaurantMenu.js'
 import { hasDemoMenuLoaded, hasUserCreatedItems, markDemoMenuLoaded, removeDemoItems, restaurantDemoFloors, restaurantDemoItems } from '../data/restaurantMenuDemo.js'
 import { scopedKey } from '../lib/localDataEvents.js'
+import { useTrackFirstActivity } from '../hooks/useReviewPrompt.js'
 import { finalItemPrice, formatRestaurantCurrency, normalizeDiscountType, safeMoney } from '../lib/restaurantPosCalculations.js'
 import { cn } from '../utils/cn.js'
 import { useUser } from '../hooks/useUser.js'
@@ -72,6 +73,7 @@ function ToggleField({ label, checked, onChange }) {
 
 export default function RestaurantMenuManagementPage() {
   const { workspaceId, businessType } = useUser()
+  const trackFirstActivity = useTrackFirstActivity()
   const { ingredients, addIngredient } = useRestaurantIngredients({ enabled: Boolean(workspaceId) })
   const { recipes, saveRecipe } = useRestaurantRecipes({ enabled: Boolean(workspaceId) })
   const { wasteRecords, recordWaste } = useRestaurantWasteTracking({ enabled: Boolean(workspaceId) })
@@ -98,6 +100,7 @@ export default function RestaurantMenuManagementPage() {
   const showDemoButton = !demoLoaded && !hasUserCreatedItems(items)
 
   function loadDemoMenu() {
+    trackFirstActivity()
     setDemoLoading(true)
     // Small delay so the spinner shows briefly (perceived performance)
     setTimeout(() => {
@@ -168,6 +171,7 @@ export default function RestaurantMenuManagementPage() {
   }
 
   function saveItem() {
+    trackFirstActivity()
     const next = normalizedForm()
     const isRealItem = !String(next.id || '').startsWith('demo-')
     setItems((current) => {

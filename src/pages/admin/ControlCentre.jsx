@@ -21,6 +21,7 @@ import {
   HiOutlineMegaphone,
   HiOutlineMoon,
   HiOutlineShieldCheck,
+  HiOutlineStar,
   HiOutlineTag,
   HiOutlineUserGroup,
   HiOutlineUsers,
@@ -69,6 +70,8 @@ import {
   normalizeMaintenanceConfig,
 } from '../../lib/maintenanceMode.js'
 import logoUrl from '../../assets/logo/nexora-logo.svg'
+import { loadPublicReviews, updateReviewStatus } from '../../crm/data/reviewStorage.js'
+import ClientReviews from '../../crm/components/admin/ClientReviewsPanel.jsx'
 import {
   DEFAULT_SAAS_CURRENCY,
   PLATFORM_PLAN_COLLECTION,
@@ -202,6 +205,7 @@ const navGroups = [
       ['announcements', 'Announcements', HiOutlineMegaphone],
       ['commandCenter', 'Command Center', HiOutlineChatBubbleLeftRight],
       ['support', 'Support Tickets', HiOutlineLifebuoy],
+      ['reviews', 'Client Reviews', HiOutlineStar],
     ],
   },
   {
@@ -4140,6 +4144,8 @@ export default function ControlCentre() {
         return <ClientCommandCenter embedded />
       case 'support':
         return SupportTickets()
+      case 'reviews':
+        return <ClientReviews />
       case 'systemHealth':
         return SystemHealth()
       case 'maintenance':
