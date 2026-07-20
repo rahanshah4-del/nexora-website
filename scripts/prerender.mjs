@@ -21,6 +21,34 @@ const PUBLIC = join(ROOT, 'public')
 const SITE = 'https://nexorasolution.online'
 const LOGO = `${SITE}/nexora-brand-logo.png`
 
+// ── Extracted from vite's dist/index.html BEFORE prerender overwrites it ──
+let PRODUCTION_ASSETS = ''
+
+function captureProductionAssets() {
+  const viteIndexPath = join(DIST, 'index.html')
+  if (!existsSync(viteIndexPath)) return
+
+  const html = readFileSync(viteIndexPath, 'utf-8')
+  const tags = []
+
+  // <script type="module" crossorigin src="/assets/..."></script>
+  for (const m of html.matchAll(/<script\s+type="module"[^>]*\/assets\/[^"]*"[^>]*>\s*<\/script>/g))
+    tags.push(m[0])
+
+  // <link rel="modulepreload" crossorigin href="/assets/...">
+  for (const m of html.matchAll(/<link\s+rel="modulepreload"[^>]*\/assets\/[^"]*"[^>]*>/g))
+    tags.push(m[0])
+
+  // <link rel="stylesheet" crossorigin href="/assets/...">
+  for (const m of html.matchAll(/<link\s+rel="stylesheet"[^>]*\/assets\/[^"]*"[^>]*>/g))
+    tags.push(m[0])
+
+  if (tags.length > 0) {
+    PRODUCTION_ASSETS = tags.join('\n  ')
+    console.log(`[prerender] ✓ Captured ${tags.length} production asset tags`)
+  }
+}
+
 // ═══════════════════════════════════════════════════════════════════════════════
 //  UTILITIES
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -507,7 +535,7 @@ ${buildGtm()}
       <p>&copy; 2019–2026 Nexora Solution. All rights reserved.</p>
     </footer>
   </div>
-  <script type="module" src="/src/main.jsx"></script>
+  ${PRODUCTION_ASSETS || '<script type="module" src="/src/main.jsx"></script>'}
   <noscript>
     <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PZJV65RW" height="0" width="0" style="display:none;visibility:hidden"></iframe>
   </noscript>
@@ -616,7 +644,7 @@ ${buildGtm()}
     </main>
     <footer><p>&copy; 2019–2026 Nexora Solution. All rights reserved.</p></footer>
   </div>
-  <script type="module" src="/src/main.jsx"></script>
+  ${PRODUCTION_ASSETS || '<script type="module" src="/src/main.jsx"></script>'}
   <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PZJV65RW" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 </body>
 </html>`
@@ -657,7 +685,7 @@ ${buildGtm()}
     </main>
     <footer><p>&copy; 2019–2026 Nexora Solution. All rights reserved.</p></footer>
   </div>
-  <script type="module" src="/src/main.jsx"></script>
+  ${PRODUCTION_ASSETS || '<script type="module" src="/src/main.jsx"></script>'}
   <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PZJV65RW" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 </body>
 </html>`
@@ -703,7 +731,7 @@ ${buildGtm()}
     </main>
     <footer><p>&copy; 2019–2026 Nexora Solution. All rights reserved.</p></footer>
   </div>
-  <script type="module" src="/src/main.jsx"></script>
+  ${PRODUCTION_ASSETS || '<script type="module" src="/src/main.jsx"></script>'}
   <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PZJV65RW" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 </body>
 </html>`
@@ -749,7 +777,7 @@ ${buildGtm()}
     </main>
     <footer><p>&copy; 2019–2026 Nexora Solution. All rights reserved.</p></footer>
   </div>
-  <script type="module" src="/src/main.jsx"></script>
+  ${PRODUCTION_ASSETS || '<script type="module" src="/src/main.jsx"></script>'}
   <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PZJV65RW" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 </body>
 </html>`
@@ -778,7 +806,7 @@ ${buildGtm()}
 </head>
 <body>
   <div id="root"></div>
-  <script type="module" src="/src/main.jsx"></script>
+  ${PRODUCTION_ASSETS || '<script type="module" src="/src/main.jsx"></script>'}
   <noscript>
     <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PZJV65RW" height="0" width="0" style="display:none;visibility:hidden"></iframe>
   </noscript>
@@ -844,6 +872,9 @@ async function main() {
     console.error('[prerender] dist/index.html not found. Run "npm run build" first.')
     process.exit(1)
   }
+
+  // Capture production assets BEFORE overwriting vite's dist/index.html
+  captureProductionAssets()
 
   let pageCount = 0
   let blogCount = 0
