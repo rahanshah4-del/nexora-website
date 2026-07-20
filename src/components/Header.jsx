@@ -62,16 +62,7 @@ function Header() {
   const location = useLocation()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [activeDropdown, setActiveDropdown] = useState(null)
-  const [scrolled, setScrolled] = useState(false)
   const dropdownCloseTimer = useRef(null)
-
-  /* ── Scroll-aware background ── */
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 10)
-    onScroll()
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
 
   /* ── Escape / click-outside ── */
   useEffect(() => {
@@ -146,11 +137,8 @@ function Header() {
 
   return (
     <header
-      className={`site-header sticky top-0 z-50 transition-all duration-300 ${
-        scrolled
-          ? 'border-b border-slate-200/60 bg-white/80 backdrop-blur-xl supports-[backdrop-filter]:bg-white/70'
-          : 'border-b border-transparent bg-white/95'
-      }`}
+      className="site-header fixed inset-x-0 top-0 z-50 border-b border-white/20 bg-white/75 backdrop-blur-2xl"
+      style={{ WebkitBackdropFilter: 'saturate(180%) blur(20px)' }}
     >
       <div className="mx-auto flex h-14 max-w-7xl items-center gap-4 px-4 sm:px-6 lg:px-8">
         {/* ── Logo ── */}

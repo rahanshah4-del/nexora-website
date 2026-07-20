@@ -63,18 +63,20 @@ import TicketDrawer from '../../crm/components/support/TicketDrawer.jsx'
 import { useSupportTickets } from '../../crm/hooks/useSupportTickets.js'
 import BusinessServicesSection from '../../components/BusinessServicesSection.jsx'
 import UpgradeRequestTimelineCard from '../../components/upgrade/UpgradeRequestTimelineCard.jsx'
+import WorkspaceActivityPanel from '../../components/workspace/WorkspaceActivityPanel.jsx'
 import useLatestUpgradeRequest from '../../hooks/useLatestUpgradeRequest.js'
+import useWorkspaceActivity from '../../crm/hooks/useWorkspaceActivity.js'
 
 import { clearAllUserCache } from '../../lib/authIsolation.js'
 
 const workspaceIconMap = {
-  'General CRM': { icon: HiOutlineUserGroup, iconTone: 'bg-gradient-to-br from-sky-500 via-blue-600 to-indigo-700 text-white shadow-sm shadow-blue-500/25', color: 'bg-gradient-to-br from-sky-500 via-blue-600 to-indigo-700' },
-  'Retail / POS': { icon: HiOutlineBriefcase, iconTone: 'bg-orange-50 text-orange-500', color: 'bg-amber-500' },
-  'School ERP': { icon: HiOutlineBuildingLibrary, iconTone: 'bg-emerald-50 text-emerald-600', color: 'bg-emerald-500' },
-  'Property ERP': { icon: HiOutlineHomeModern, iconTone: 'bg-violet-50 text-violet-600', color: 'bg-violet-600' },
-  'Restaurant POS': { icon: HiOutlineBuildingOffice2, iconTone: 'bg-rose-50 text-rose-600', color: 'bg-rose-500' },
-  'Transport / Rental': { icon: HiOutlineTruck, iconTone: 'bg-cyan-50 text-cyan-600', color: 'bg-cyan-500' },
-  'WhatsApp CRM': { icon: HiOutlineChatBubbleLeftRight, iconTone: 'bg-green-50 text-green-600', color: 'bg-green-500' },
+  'General CRM': { icon: HiOutlineUserGroup, emoji: '📈', iconTone: 'bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-600 text-white shadow-sm shadow-blue-500/20', iconBg: 'bg-gradient-to-br from-sky-50 to-blue-100', emojiBg: 'from-sky-100 to-blue-200' },
+  'Retail / POS': { icon: HiOutlineBriefcase, emoji: '🛒', iconTone: 'bg-gradient-to-br from-amber-400 via-orange-500 to-red-500 text-white shadow-sm shadow-orange-500/20', iconBg: 'bg-gradient-to-br from-orange-50 to-amber-100', emojiBg: 'from-orange-100 to-amber-200' },
+  'School ERP': { icon: HiOutlineBuildingLibrary, emoji: '🎓', iconTone: 'bg-gradient-to-br from-emerald-400 via-green-500 to-teal-600 text-white shadow-sm shadow-emerald-500/20', iconBg: 'bg-gradient-to-br from-emerald-50 to-green-100', emojiBg: 'from-emerald-100 to-green-200' },
+  'Property ERP': { icon: HiOutlineHomeModern, emoji: '🏢', iconTone: 'bg-gradient-to-br from-violet-400 via-purple-500 to-fuchsia-600 text-white shadow-sm shadow-violet-500/20', iconBg: 'bg-gradient-to-br from-violet-50 to-purple-100', emojiBg: 'from-violet-100 to-purple-200' },
+  'Restaurant POS': { icon: HiOutlineBuildingOffice2, emoji: '🍽️', iconTone: 'bg-gradient-to-br from-rose-400 via-pink-500 to-red-600 text-white shadow-sm shadow-rose-500/20', iconBg: 'bg-gradient-to-br from-rose-50 to-pink-100', emojiBg: 'from-rose-100 to-pink-200' },
+  'Transport / Rental': { icon: HiOutlineTruck, emoji: '🚛', iconTone: 'bg-gradient-to-br from-cyan-400 via-sky-500 to-blue-600 text-white shadow-sm shadow-cyan-500/20', iconBg: 'bg-gradient-to-br from-cyan-50 to-sky-100', emojiBg: 'from-cyan-100 to-sky-200' },
+  'WhatsApp CRM': { icon: HiOutlineChatBubbleLeftRight, emoji: '💬', iconTone: 'bg-gradient-to-br from-green-400 via-emerald-500 to-teal-600 text-white shadow-sm shadow-green-500/20', iconBg: 'bg-gradient-to-br from-green-50 to-emerald-100', emojiBg: 'from-green-100 to-emerald-200' },
 }
 
 const moduleAccess = businessWorkspaceCatalog.map((workspace) => ({
@@ -505,11 +507,11 @@ function NotificationDropdown({ notifications, loading, onMarkRead, onClear, onC
   )
 }
 
-function WorkspaceCard({ workspace, index, emailVerified, selected, saving, onSelect }) {
+function WorkspaceCard({ workspace, index, emailVerified, selected, saving, onSelect, activity, onViewActivity }) {
   const navigate = useNavigate()
-  const Icon = workspace.icon
   const disabled = !workspace.active
   const businessTypeLabel = labelForBusinessType(workspace.type)
+  const hasActivity = activity && activity.hasActivity
 
   return (
     <motion.article
@@ -522,8 +524,8 @@ function WorkspaceCard({ workspace, index, emailVerified, selected, saving, onSe
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-3">
-          <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl sm:h-14 sm:w-14 ${workspace.iconTone}`}>
-            <Icon className="h-6 w-6 sm:h-7 sm:w-7" />
+          <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl sm:h-14 sm:w-14 text-xl sm:text-2xl bg-gradient-to-br ${workspace.emojiBg || 'from-sky-100 to-blue-200'} shadow-sm`}>
+            {workspace.emoji || '📈'}
           </span>
           <div className="min-w-0 pt-0.5">
             <div className="flex min-w-0 flex-wrap items-center gap-2">
@@ -553,17 +555,79 @@ function WorkspaceCard({ workspace, index, emailVerified, selected, saving, onSe
         ) : null}
       </div>
 
-      <div className="mt-3 grid grid-cols-2 gap-3 text-xs font-medium text-slate-500 sm:mt-5">
-        <span className="flex items-center gap-1.5">
-          <HiOutlineChartBarSquare className="h-4 w-4" />
-          Status
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className={`rounded px-1.5 py-0.5 text-[11px] font-bold ${workspace.statusTone}`}>
-            {workspace.status}
-          </span>
-        </span>
+      {/* Activity stats — Apple-style card */}
+      <div className="mt-3 overflow-hidden rounded-2xl bg-gradient-to-b from-[#f5f5f7] to-[#e8e8ed] p-[1px] sm:mt-4">
+        <div className="rounded-[15px] bg-white/95 px-4 py-4 backdrop-blur-xl">
+        {hasActivity ? (
+          <div className="flex items-center justify-between">
+            {/* Today count */}
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-violet-600 shadow-sm shadow-blue-200">
+                <span className="text-[11px] font-bold text-white">{activity.todayCount || 0}</span>
+              </span>
+              <div>
+                <p className="text-[17px] font-semibold leading-5 tracking-[-0.01em] text-[#1d1d1f]">{activity.todayCount || 0}</p>
+                <p className="text-[11px] font-medium tracking-[-0.01em] text-[#86868b]">Today</p>
+              </div>
+            </div>
+
+            {/* Divider */}
+            <span className="h-8 w-px bg-[#e5e5ea]" />
+
+            {/* Active hours */}
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 shadow-sm shadow-emerald-200">
+                <span className="text-[11px] font-bold text-white">{activity.activeHoursToday || 0}h</span>
+              </span>
+              <div>
+                <p className="text-[17px] font-semibold leading-5 tracking-[-0.01em] text-[#1d1d1f]">{activity.activeHoursToday || 0}<span className="text-xs text-[#86868b]">h</span></p>
+                <p className="text-[11px] font-medium tracking-[-0.01em] text-[#86868b]">Active</p>
+              </div>
+            </div>
+
+            {/* Divider */}
+            <span className="h-8 w-px bg-[#e5e5ea]" />
+
+            {/* Last active */}
+            <div className="flex items-center gap-2.5 min-w-0">
+              <span className={`flex h-2.5 w-2.5 shrink-0 rounded-full ${activity.lastActiveLabel === 'Just now' ? 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.5)]' : 'bg-[#007aff]'}`} />
+              <div className="min-w-0">
+                <p className="text-[13px] font-semibold leading-5 tracking-[-0.01em] text-[#1d1d1f] truncate">{activity.lastActiveLabel || '—'}</p>
+                <p className="text-[11px] font-medium tracking-[-0.01em] text-[#86868b]">Last seen</p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <span className="flex h-2.5 w-2.5 shrink-0 rounded-full bg-[#e5e5ea]" />
+              <span className="text-[13px] font-medium text-[#86868b] truncate">
+                {workspace.selected ? 'No activity yet — start using this module' : workspace.status}
+              </span>
+            </div>
+            {workspace.selected && onViewActivity ? (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); onViewActivity(workspace) }}
+                className="shrink-0 rounded-full bg-[#007aff] px-3.5 py-1.5 text-[11px] font-semibold text-white transition hover:bg-[#0070e9]"
+              >
+                View
+              </button>
+            ) : null}
+          </div>
+        )}
+        </div>
       </div>
+      {hasActivity && onViewActivity ? (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onViewActivity(workspace) }}
+          className="mt-2 flex h-7 w-full items-center justify-center gap-1.5 rounded-full bg-[#f5f5f7] text-[11px] font-medium tracking-[-0.01em] text-[#007aff] transition hover:bg-[#e8e8ed]"
+        >
+          <HiOutlineChartBarSquare className="h-3.5 w-3.5" />
+          View Activity
+        </button>
+      ) : null}
 
       <button
         type="button"
@@ -591,10 +655,10 @@ function WorkspaceCard({ workspace, index, emailVerified, selected, saving, onSe
   )
 }
 
-function WorkspaceListRow({ workspace, index, emailVerified, selected, saving, onSelect }) {
-  const Icon = workspace.icon
+function WorkspaceListRow({ workspace, index, emailVerified, selected, saving, onSelect, activity, onViewActivity }) {
   const disabled = !workspace.active
   const businessTypeLabel = labelForBusinessType(workspace.type)
+  const hasActivity = activity && activity.hasActivity
 
   return (
     <motion.div
@@ -605,8 +669,8 @@ function WorkspaceListRow({ workspace, index, emailVerified, selected, saving, o
         selected ? 'border-blue-500 ring-1 ring-blue-100' : 'border-slate-200'
       }`}
     >
-      <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${workspace.iconTone}`}>
-        <Icon className="h-6 w-6" />
+      <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-lg bg-gradient-to-br ${workspace.emojiBg || 'from-sky-100 to-blue-200'} shadow-sm`}>
+        {workspace.emoji || '📈'}
       </span>
 
       <div className="min-w-0 flex-1">
@@ -615,13 +679,36 @@ function WorkspaceListRow({ workspace, index, emailVerified, selected, saving, o
           {selected && emailVerified ? <VerificationBadge verified compact /> : null}
         </div>
         <p className="mt-0.5 truncate text-xs text-slate-500">Business type: {businessTypeLabel}</p>
+        {/* Activity indicator — Apple-style inline */}
+        {hasActivity ? (
+          <div className="mt-0.5 flex items-center gap-2 text-xs">
+            <span className="inline-flex items-center gap-1 font-semibold text-[#1d1d1f]">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#007aff]" />
+              {activity.todayCount || 0} today
+            </span>
+            <span className="text-[#c6c6c8]">·</span>
+            <span className="font-medium text-[#86868b]">{activity.lastActiveLabel}</span>
+          </div>
+        ) : null}
       </div>
 
+      {/* Activity mini-stat — Apple-style pill */}
       <div className="flex shrink-0 flex-col items-start gap-1.5 sm:w-[150px]">
         {workspace.plan ? (
-          <span className={`rounded px-1.5 py-0.5 text-[11px] font-bold ${workspace.planTone}`}>{workspace.plan}</span>
+          <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold tracking-[-0.01em] ${workspace.planTone}`}>{workspace.plan}</span>
         ) : null}
-        <span className={`rounded px-1.5 py-0.5 text-[11px] font-bold ${workspace.statusTone}`}>{workspace.status}</span>
+        {hasActivity ? (
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onViewActivity?.(workspace) }}
+            className="inline-flex items-center gap-1 rounded-full bg-[#f5f5f7] px-3 py-1 text-[11px] font-medium tracking-[-0.01em] text-[#007aff] transition hover:bg-[#e8e8ed]"
+          >
+            <HiOutlineChartBarSquare className="h-3 w-3" />
+            {activity.todayCount || 0} today
+          </button>
+        ) : (
+          <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold tracking-[-0.01em] ${workspace.statusTone}`}>{workspace.status}</span>
+        )}
       </div>
 
       <div className="hidden w-[150px] shrink-0 md:block">
@@ -651,20 +738,22 @@ function WorkspaceListRow({ workspace, index, emailVerified, selected, saving, o
   )
 }
 
-function CreateWorkspaceListRow({ disabled, message, onOpen }) {
+function CreateWorkspaceListRow({ disabled, creating, message, onOpen }) {
+  const label = creating ? 'Creating...' : disabled ? 'Create Workspace' : 'Create Workspace'
+  const subtext = message || (creating ? 'Setting up your workspace...' : disabled ? 'Select a module above first.' : 'Start a separate 7-day Nexora CRM trial workspace.')
   return (
     <div
       className={`flex flex-wrap items-center gap-3 rounded-lg border px-4 py-3 shadow-[0_12px_32px_-26px_rgba(15,23,42,0.42)] sm:flex-nowrap sm:gap-4 ${
         disabled ? 'border-slate-200 bg-white' : 'border-blue-100 bg-blue-50/35'
       }`}
     >
-      <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${disabled ? 'bg-slate-100 text-slate-400' : 'bg-blue-100 text-blue-600'}`}>
+      <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${creating ? 'bg-blue-100 text-blue-600' : disabled ? 'bg-slate-100 text-slate-400' : 'bg-blue-100 text-blue-600'}`}>
         <HiOutlinePlus className="h-6 w-6" />
       </span>
       <div className="min-w-0 flex-1">
         <h3 className="text-sm font-bold leading-5 text-slate-950">Create New Workspace</h3>
         <p className="mt-0.5 truncate text-xs text-slate-600">
-          {message || (disabled ? 'Workspace creation is already in progress.' : 'Start a separate 7-day Nexora CRM trial workspace.')}
+          {subtext}
         </p>
       </div>
       <button
@@ -672,19 +761,32 @@ function CreateWorkspaceListRow({ disabled, message, onOpen }) {
         disabled={disabled}
         onClick={onOpen}
         className={`flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg border px-4 text-[13px] font-bold transition ${
-          disabled
-            ? 'cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400'
-            : 'border-blue-200/80 bg-white/80 text-blue-600 shadow-sm backdrop-blur-sm hover:bg-blue-50 hover:border-blue-300 hover:shadow-md active:scale-[0.97]'
+          creating
+            ? 'cursor-wait border-blue-200/80 bg-blue-100 text-blue-600'
+            : disabled
+              ? 'cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400'
+              : 'border-blue-200/80 bg-white/80 text-blue-600 shadow-sm backdrop-blur-sm hover:bg-blue-50 hover:border-blue-300 hover:shadow-md active:scale-[0.97]'
         }`}
       >
-        {disabled ? 'Creating...' : 'Create Workspace'}
-        <HiOutlineArrowRight className="h-4 w-4" />
+        {creating ? (
+          <>
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-blue-400/40 border-t-blue-600" />
+            Creating...
+          </>
+        ) : (
+          <>
+            {label}
+            <HiOutlineArrowRight className="h-4 w-4" />
+          </>
+        )}
       </button>
     </div>
   )
 }
 
-function CreateWorkspaceCard({ disabled, message, onOpen }) {
+function CreateWorkspaceCard({ disabled, creating, message, onOpen }) {
+  const label = creating ? 'Creating...' : 'Create Workspace'
+  const subtext = message || (creating ? 'Setting up your workspace...' : disabled ? 'Select a module above first.' : 'Start a separate 7-day Nexora CRM trial workspace.')
   return (
     <article
       className={`rounded-lg border p-3 shadow-[0_12px_32px_-26px_rgba(15,23,42,0.42)] sm:p-4 ${
@@ -692,13 +794,13 @@ function CreateWorkspaceCard({ disabled, message, onOpen }) {
       }`}
     >
       <div className="flex min-h-0 items-center gap-3 sm:min-h-[110px] sm:gap-4">
-        <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full sm:h-14 sm:w-14 ${disabled ? 'bg-slate-100 text-slate-400' : 'bg-blue-100 text-blue-600'}`}>
+        <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full sm:h-14 sm:w-14 ${creating ? 'bg-blue-100 text-blue-600' : disabled ? 'bg-slate-100 text-slate-400' : 'bg-blue-100 text-blue-600'}`}>
           <HiOutlinePlus className="h-6 w-6 sm:h-7 sm:w-7" />
         </span>
         <div>
           <h2 className="text-[15px] font-bold text-slate-950">Create New Workspace</h2>
           <p className="mt-1 text-sm leading-5 text-slate-600 sm:mt-1.5">
-            {message || (disabled ? 'Workspace creation is already in progress.' : 'Start a separate 7-day Nexora CRM trial workspace.')}
+            {subtext}
           </p>
           {message ? <p className="mt-2 text-xs font-bold text-amber-700">{message}</p> : null}
         </div>
@@ -709,13 +811,24 @@ function CreateWorkspaceCard({ disabled, message, onOpen }) {
         disabled={disabled}
         onClick={onOpen}
         className={`mt-3 flex h-10 w-full items-center justify-center gap-3 rounded-lg border text-[13px] font-bold transition sm:mt-4 ${
-          disabled
-            ? 'cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400'
-            : 'border-blue-200/80 bg-white/80 text-blue-600 shadow-sm backdrop-blur-sm hover:bg-blue-50 hover:border-blue-300 hover:shadow-md active:scale-[0.97]'
+          creating
+            ? 'cursor-wait border-blue-200/80 bg-blue-100 text-blue-600'
+            : disabled
+              ? 'cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400'
+              : 'border-blue-200/80 bg-white/80 text-blue-600 shadow-sm backdrop-blur-sm hover:bg-blue-50 hover:border-blue-300 hover:shadow-md active:scale-[0.97]'
         }`}
       >
-        {disabled ? 'Creating...' : 'Create Workspace'}
-        <HiOutlineArrowRight className="h-4 w-4" />
+        {creating ? (
+          <>
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-blue-400/40 border-t-blue-600" />
+            Creating...
+          </>
+        ) : (
+          <>
+            {label}
+            <HiOutlineArrowRight className="h-4 w-4" />
+          </>
+        )}
       </button>
     </article>
   )
@@ -1090,7 +1203,6 @@ function SetupWizard({ creating, message, form, onChange, onCreate, onClose, can
           {step === 0 ? (
             <div className="grid gap-3 sm:grid-cols-2">
               {businessOptions.map((option) => {
-                const Icon = option.icon
                 const selected = option.type === businessType
                 return (
                   <button
@@ -1101,8 +1213,8 @@ function SetupWizard({ creating, message, form, onChange, onCreate, onClose, can
                       selected ? 'border-blue-500 bg-blue-50/60 ring-1 ring-blue-100' : 'border-slate-200 bg-white hover:border-slate-300'
                     }`}
                   >
-                    <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${option.iconTone}`}>
-                      <Icon className="h-5 w-5" />
+                    <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-lg bg-gradient-to-br ${option.emojiBg || 'from-sky-100 to-blue-200'}`}>
+                      {option.emoji || '📈'}
                     </span>
                     <span className="min-w-0">
                       <span className="block text-sm font-bold text-slate-900">{option.label}</span>
@@ -1432,6 +1544,7 @@ export default function WorkspaceSelection() {
   const [businessTypeSaving, setBusinessTypeSaving] = useState('')
   const [selectedBusinessType, setSelectedBusinessType] = useState('')
   const [welcomePromoCopied, setWelcomePromoCopied] = useState(false)
+  const [activityPanelModule, setActivityPanelModule] = useState(null)
   const supportTicketsApi = useSupportTickets({ limitCount: 50, paginated: true, includeAllBusinessTypes: true })
   const latestUpgradeRequest = useLatestUpgradeRequest(user?.uid, Boolean(user?.uid))
 
@@ -1745,6 +1858,9 @@ export default function WorkspaceSelection() {
       avatarEmoji: avatarEmojiFor(profileBusinessTypeSource),
     }
   }, [accountData, emailVerified, nowMs, onboardingCompleted, savedWorkspaceModule.businessType, user, workspaceData])
+
+  // Activity stats for the current workspace (must follow profile definition)
+  const workspaceActivity = useWorkspaceActivity(profile.workspaceId, { enabled: Boolean(profile.workspaceId), listen: true, limitCount: 200 })
 
   const welcomeModuleType = normalizeOptionalBusinessType(
     selectedBusinessType || onboardingForm.businessType || profile.businessType || savedWorkspaceModule.businessType,
@@ -3684,7 +3800,6 @@ export default function WorkspaceSelection() {
               ) : null}
               <div className={`${sidebarCollapsed ? 'space-y-2' : 'mt-3 space-y-2'}`}>
                 {visibleModuleAccess.map((module) => {
-                  const Icon = module.icon
                   const canOpenModule = Boolean(module.active && module.route)
 
                   return (
@@ -3704,8 +3819,8 @@ export default function WorkspaceSelection() {
                       }`}
                       aria-disabled={module.disabled ? 'true' : undefined}
                     >
-                      <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded ${module.color}`}>
-                        <Icon className="h-4 w-4 text-white" />
+                      <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-sm bg-gradient-to-br ${module.emojiBg || 'from-sky-100 to-blue-200'}`}>
+                        {module.emoji || '📈'}
                       </span>
                       {!sidebarCollapsed && <span className="truncate">{module.name}</span>}
                       {!sidebarCollapsed && module.disabled ? (
@@ -4059,10 +4174,14 @@ export default function WorkspaceSelection() {
                     selected={workspace.selected}
                     saving={businessTypeSaving === workspace.type}
                     onSelect={handleSelectBusinessWorkspace}
+                    activity={workspace.selected ? workspaceActivity : null}
+                    onViewActivity={(ws) => setActivityPanelModule(ws)}
                   />
                 ))}
-                <CreateWorkspaceCard disabled={createDisabled} message={createWorkspaceMessage} onOpen={handleOpenCreate} />
+                {/* Step 2: Support Tickets (after module selection) */}
                 <SupportTicketsWorkspaceCard disabled={!hasCrmWorkspace} onOpen={handleOpenSupportTickets} />
+                {/* Step 3: Create New Workspace (last step) */}
+                <CreateWorkspaceCard disabled={createDisabled} creating={creatingWorkspace} message={createWorkspaceMessage} onOpen={handleOpenCreate} />
               </div>
             ) : (
               <div className="mt-3 space-y-3 sm:mt-4">
@@ -4075,10 +4194,14 @@ export default function WorkspaceSelection() {
                     selected={workspace.selected}
                     saving={businessTypeSaving === workspace.type}
                     onSelect={handleSelectBusinessWorkspace}
+                    activity={workspace.selected ? workspaceActivity : null}
+                    onViewActivity={(ws) => setActivityPanelModule(ws)}
                   />
                 ))}
-                <CreateWorkspaceListRow disabled={createDisabled} message={createWorkspaceMessage} onOpen={handleOpenCreate} />
+                {/* Step 2: Support Tickets (after module selection) */}
                 <SupportTicketsListRow disabled={!hasCrmWorkspace} onOpen={handleOpenSupportTickets} />
+                {/* Step 3: Create New Workspace (last step) */}
+                <CreateWorkspaceListRow disabled={createDisabled} creating={creatingWorkspace} message={createWorkspaceMessage} onOpen={handleOpenCreate} />
               </div>
             )}
 
@@ -4180,6 +4303,12 @@ export default function WorkspaceSelection() {
         onClose={() => setActiveSupportTicket(null)}
         canEdit={false}
         canComment={false}
+      />
+      <WorkspaceActivityPanel
+        open={Boolean(activityPanelModule)}
+        onClose={() => setActivityPanelModule(null)}
+        activity={workspaceActivity}
+        moduleLabel={activityPanelModule?.name || activityPanelModule?.title || 'Workspace'}
       />
       {supportCenterOpen && supportToast ? (
         <div className="fixed bottom-5 left-1/2 z-[80] -translate-x-1/2 rounded-full bg-slate-950 px-4 py-2 text-sm font-bold text-white shadow-xl">

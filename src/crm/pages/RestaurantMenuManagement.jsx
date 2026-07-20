@@ -19,6 +19,8 @@ import Card from '../components/ui/Card.jsx'
 import Input from '../components/ui/Input.jsx'
 import Select from '../components/ui/Select.jsx'
 import { hasRestaurantOffer, loadRestaurantMenuCategories, loadRestaurantMenuItems, saveRestaurantMenuCategories, saveRestaurantMenuItems } from '../data/restaurantMenu.js'
+import { hasDemoMenuLoaded, hasUserCreatedItems, markDemoMenuLoaded, removeDemoItems, restaurantDemoFloors, restaurantDemoItems } from '../data/restaurantMenuDemo.js'
+import { scopedKey } from '../lib/localDataEvents.js'
 import { finalItemPrice, formatRestaurantCurrency, normalizeDiscountType, safeMoney } from '../lib/restaurantPosCalculations.js'
 import { cn } from '../utils/cn.js'
 import { useUser } from '../hooks/useUser.js'
@@ -89,6 +91,32 @@ export default function RestaurantMenuManagementPage() {
   const [editingCategory, setEditingCategory] = useState('')
   const [categoryName, setCategoryName] = useState('')
   const [confirmAction, setConfirmAction] = useState(null)
+  const [demoLoaded, setDemoLoaded] = useState(() => hasDemoMenuLoaded())
+  const [demoLoading, setDemoLoading] = useState(false)
+
+  // Show demo button only when: demo never loaded AND no user-created items exist
+  const showDemoButton = !demoLoaded && !hasUserCreatedItems(items)
+
+  function loadDemoMenu() {
+    setDemoLoading(true)
+    // Small delay so the spinner shows briefly (perceived performance)
+    setTimeout(() => {
+      // 1. Load demo menu items
+      setItems((current) => {
+        const existingKeys = new Set(current.map((item) => `${item.name}::${item.category}`))
+        const fresh = restaurantDemoItems.filter((demo) => !existingKeys.has(`${demo.name}::${demo.category}`))
+        return [...fresh, ...current]
+      })
+      // 2. Save demo tables to localStorage (same key used by RestaurantTables page)
+      try {
+        const tablesKey = scopedKey('nexora.restaurant.tables.v1')
+        window.localStorage.setItem(tablesKey, JSON.stringify(restaurantDemoFloors))
+      } catch { /* Ignore storage failures */ }
+      markDemoMenuLoaded()
+      setDemoLoaded(true)
+      setDemoLoading(false)
+    }, 400)
+  }
 
   useEffect(() => {
     saveRestaurantMenuItems(items)
@@ -141,9 +169,12 @@ export default function RestaurantMenuManagementPage() {
 
   function saveItem() {
     const next = normalizedForm()
+    const isRealItem = !String(next.id || '').startsWith('demo-')
     setItems((current) => {
-      if (editingItem) return current.map((item) => (item.id === editingItem.id ? next : item))
-      return [next, ...current]
+      // When saving the first real item after demo was loaded, remove all demo items
+      const base = isRealItem && demoLoaded ? removeDemoItems(current) : current
+      if (editingItem) return base.map((item) => (item.id === editingItem.id ? next : item))
+      return [next, ...base]
     })
     closeModal()
   }
@@ -265,6 +296,12 @@ export default function RestaurantMenuManagementPage() {
               </p>
             </div>
             <div className="flex items-center gap-2">
+              {showDemoButton ? (
+                <Button type="button" variant="subtle" onClick={loadDemoMenu} disabled={demoLoading}>
+                  <HiOutlineBeaker className="h-4 w-4" />
+                  {demoLoading ? 'Loading Demo...' : 'Load Demo Menu'}
+                </Button>
+              ) : null}
               <Button type="button" variant="subtle" onClick={() => setInventoryOpen(true)}>
                 <HiOutlineBeaker className="h-4 w-4" />
                 Inventory Intelligence

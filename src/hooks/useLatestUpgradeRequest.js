@@ -9,17 +9,56 @@ function timeMs(value) {
   return Number.isFinite(parsed) ? parsed : 0
 }
 
+function isWaitingCryptoCheckout(row = {}) {
+  const safe = row || {}
+  // Crypto checkouts auto-created by the payments worker before any payment is made.
+  // These should not appear on the workspace timeline until actual payment activity occurs —
+  // otherwise every "Pay with Crypto" click creates a zombie "pending" request.
+  const paymentStatus = String(safe.paymentStatus || '').toLowerCase()
+  const status = String(safe.status || '').toLowerCase()
+  if (paymentStatus === 'waiting' || status === 'waiting') return true
+  // Also exclude requests that have a NOWPayments order ID but never received any payment callback
+  if (safe.nowPaymentsOrderId && !safe.nowPaymentsPaymentId && paymentStatus !== 'processing' && paymentStatus !== 'paid' && paymentStatus !== 'confirmed' && paymentStatus !== 'finished' && paymentStatus !== 'partially_paid') return true
+  return false
+}
+
+function isStaleRequest(row = {}) {
+  const safe = row || {}
+  // Exclude requests with no actual payment data — these are abandoned checkouts or
+  // empty submissions with no transaction proof
+  const hasTransactionId = Boolean(String(safe.transactionId || '').trim())
+  const hasPaymentProof = Boolean(String(safe.screenshotUrl || safe.screenshotKey || safe.paymentProof || '').trim())
+  const hasCryptoPayment = Boolean(String(safe.nowPaymentsPaymentId || '').trim())
+  const hasActualPayment = hasTransactionId || hasPaymentProof || hasCryptoPayment
+  if (!hasActualPayment) {
+    const createdMs = timeMs(safe.createdAt)
+    const ageHours = createdMs ? (Date.now() - createdMs) / 3600000 : 0
+    // Allow up to 2 hours for the user to complete payment; hide stale requests after that
+    if (ageHours > 2) return true
+  }
+  return false
+}
+
+const CLOSED_STATUSES = ['approved', 'paid', 'active', 'completed', 'rejected', 'declined', 'failed', 'closed', 'expired', 'canceled', 'cancelled']
+
 function requestStatus(row = {}) {
   const safe = row || {}
   return String(safe.approvalStatus || safe.status || safe.paymentStatus || 'pending').toLowerCase()
 }
 
 export function latestRelevantUpgrade(rows = []) {
+  // Sort newest first
   const sorted = [...rows].sort((a, b) => (
     timeMs(b.createdAt || b.updatedAt || b.approvedAt || b.rejectedAt) -
     timeMs(a.createdAt || a.updatedAt || a.approvedAt || a.rejectedAt)
   ))
-  return sorted.find((row) => !['approved', 'paid', 'active', 'completed', 'rejected', 'declined', 'failed', 'closed'].includes(requestStatus(row))) || sorted[0] || null
+  // Find the first open request that has actual payment activity (not a stale/empty checkout)
+  return sorted.find((row) => {
+    if (isWaitingCryptoCheckout(row)) return false
+    if (isStaleRequest(row)) return false
+    if (CLOSED_STATUSES.includes(requestStatus(row))) return false
+    return true
+  }) || null
 }
 
 export default function useLatestUpgradeRequest(userId, enabled = true) {

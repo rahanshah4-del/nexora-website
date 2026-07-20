@@ -120,7 +120,7 @@ function App({ initialSectionId = '' }) {
   return (
     <div className="marketing-page min-h-screen overflow-x-hidden bg-white text-slate-950">
       <Header />
-      <main>
+      <main className="pt-14">
         <section id="hero" className="relative overflow-hidden bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_72%,#ffffff_100%)] pb-14 pt-12 sm:pb-16 sm:pt-14 lg:pb-20 lg:pt-16">
           <div className="soft-arc-bg pointer-events-none" />
           <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-200 to-transparent" />

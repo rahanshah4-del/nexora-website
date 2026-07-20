@@ -127,7 +127,15 @@ function trackMetaPurchaseOnce(request = {}) {
 }
 
 function isClosedUpgradeRequest(row = {}) {
-  return ['approved', 'rejected', 'active', 'closed', 'cancelled', 'canceled'].includes(normalizeRequestStatus(row))
+  const status = normalizeRequestStatus(row)
+  if (['approved', 'rejected', 'active', 'closed', 'cancelled', 'canceled', 'waiting', 'expired'].includes(status)) return true
+  // Also close stale crypto checkouts that were created but never received payment
+  if (row?.nowPaymentsOrderId && !row?.nowPaymentsPaymentId && status === 'pending') {
+    const createdMs = row?.createdAt ? (typeof row.createdAt?.toDate === 'function' ? row.createdAt.toDate().getTime() : new Date(row.createdAt).getTime()) : 0
+    const ageHours = createdMs ? (Date.now() - createdMs) / 3600000 : 0
+    if (ageHours > 2) return true
+  }
+  return false
 }
 
 function requestTimelineSteps(request = {}, isAutomaticCrypto = false) {
@@ -868,16 +876,26 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
                       type="button"
                       onClick={handleCryptoCheckout}
                       disabled={cryptoCheckoutLoading}
-                      className="inline-flex min-h-14 shrink-0 items-center justify-center rounded-xl border border-emerald-300/40 bg-emerald-400/10 px-4 shadow-lg transition hover:bg-emerald-400/20 focus:outline-none focus:ring-2 focus:ring-emerald-300 disabled:cursor-wait disabled:opacity-60"
+                      className="group inline-flex min-h-14 shrink-0 items-center gap-3 rounded-xl bg-gradient-to-r from-emerald-500 to-green-500 px-6 py-3.5 text-sm font-black text-white shadow-lg shadow-emerald-500/30 transition-all duration-200 hover:from-emerald-400 hover:to-green-400 hover:shadow-xl hover:shadow-emerald-500/40 hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:ring-offset-2 focus:ring-offset-slate-950 disabled:cursor-wait disabled:opacity-60 disabled:hover:scale-100"
                     >
                       {cryptoCheckoutLoading ? (
-                        <span className="px-4 text-sm font-black text-emerald-200">Opening secure checkout...</span>
+                        <>
+                          <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                          <span>Opening secure checkout...</span>
+                        </>
                       ) : (
-                        <img
-                          src={selectedMethod.buttonImageUrl}
-                          alt="Pay securely with cryptocurrency through NOWPayments"
-                          className="h-10 w-auto max-w-full"
-                        />
+                        <>
+                          {/* Bitcoin / Crypto inline SVG icon */}
+                          <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                            <circle cx="12" cy="12" r="11" stroke="currentColor" strokeWidth="1.8" fill="none" />
+                            <path d="M8.5 6.5h5.8c2.2 0 3.7 1.3 3.7 3s-1.3 2.6-2.9 2.8v.1c2 .1 3.5 1.2 3.5 3s-1.6 3.1-4 3.1H8.5v-12Z" stroke="currentColor" strokeWidth="1.8" fill="none" strokeLinejoin="round" />
+                            <path d="M10.8 4v3.8M10.8 16.2V20M13.2 4v3.8M13.2 16.2V20" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                          </svg>
+                          <span>Pay with Crypto</span>
+                          <svg className="h-4 w-4 transition-transform group-hover:translate-x-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <path d="M5 12h14M12 5l7 7-7 7" />
+                          </svg>
+                        </>
                       )}
                     </button>
                   </div>
