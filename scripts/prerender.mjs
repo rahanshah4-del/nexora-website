@@ -13,6 +13,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { formatBlogContentHtml } from '../src/lib/blogContentFormatter.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
@@ -443,7 +444,8 @@ function buildFullBlogHtml(article, allArticles = []) {
     const htag = `h${Math.min(level, 3)}`
     contentHtml += `\n    <${htag} id="${esc(section.id || '')}">${esc(section.heading)}</${htag}>\n`
     for (const p of (section.paragraphs || [])) {
-      contentHtml += `    <p>${autoLinkTerms(esc(p))}</p>\n`
+      const formatted = formatBlogContentHtml(p)
+      contentHtml += `    <p>${autoLinkTerms(formatted)}</p>\n`
     }
   }
 
@@ -524,6 +526,7 @@ ${buildGtm()}
         </div>
         ${article.featuredImage ? `<img src="${esc(article.featuredImage)}" alt="${esc(article.seoTitle || article.title)}" title="${esc(article.seoTitle || article.title)}" width="1200" height="675" loading="eager" fetchpriority="high" decoding="async" sizes="(max-width: 768px) 100vw, 720px" srcset="${esc(article.featuredImage)} 1200w" />` : ''}
         ${article.excerpt ? `<p class="excerpt"><strong>${esc(article.excerpt)}</strong></p>` : `<p class="excerpt"><strong>${esc(article.metaDescription || article.description || '')}</strong></p>`}
+        <div style="margin-top:1.5rem;position:relative;overflow:hidden;border-radius:1rem;border:1px solid rgba(255,255,255,0.3);background:linear-gradient(135deg,rgba(255,255,255,0.8),rgba(255,255,255,0.6),rgba(245,243,255,0.4));padding:1px;box-shadow:0 8px 32px -8px rgba(139,92,246,0.18);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);"><div style="position:absolute;right:-1rem;top:-1.5rem;width:4rem;height:4rem;border-radius:50%;background:linear-gradient(135deg,rgba(167,139,250,0.3),rgba(168,85,247,0.15));filter:blur(20px);pointer-events:none;animation:pulse 3s ease-in-out infinite;"></div><div style="position:absolute;left:-0.5rem;bottom:-1rem;width:3rem;height:3rem;border-radius:50%;background:linear-gradient(135deg,rgba(192,132,252,0.2),rgba(139,92,246,0.1));filter:blur(16px);pointer-events:none;"></div><div style="position:relative;display:flex;align-items:center;gap:1rem;border-radius:0.875rem;background:rgba(255,255,255,0.6);padding:0.875rem 1.25rem;"><span style="position:relative;display:flex;width:3rem;height:3rem;flex-shrink:0;align-items:center;justify-content:center;"><span style="position:absolute;inset:0;animation:pulse 3s ease-in-out infinite;border-radius:0.75rem;background:linear-gradient(135deg,#8b5cf6,#a855f7,#c084fc);opacity:0.4;filter:blur(3px);"></span><img src="/nexora-ai-logo.png" alt="Nexora AI" style="position:relative;width:2.75rem;height:2.75rem;border-radius:0.75rem;object-fit:cover;box-shadow:0 4px 16px rgba(123,97,255,0.45);border:2px solid rgba(255,255,255,0.5);"></span><div style="min-width:0;"><div style="display:flex;align-items:center;gap:0.5rem;"><p style="font-size:0.9375rem;font-weight:700;color:#1d1d1f;letter-spacing:-0.02em;margin:0;">Nexora AI</p><span style="display:inline-flex;align-items:center;gap:0.25rem;border-radius:9999px;background:linear-gradient(90deg,#ede9fe,#ddd6fe);padding:0.125rem 0.5rem;font-size:0.625rem;font-weight:600;color:#6d28d9;letter-spacing:-0.01em;"><span style="width:0.375rem;height:0.375rem;border-radius:50%;background:#8b5cf6;animation:pulse 2s ease-in-out infinite;"></span>Enhanced</span></div><p style="margin-top:0.125rem;font-size:0.75rem;font-weight:500;color:#86868b;letter-spacing:-0.01em;">Key business insights automatically highlighted by AI</p></div><svg style="width:1rem;height:1rem;flex-shrink:0;color:#c4b5fd;opacity:0.6;" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.5 5.5L19 9l-5.5 1.5L12 16l-1.5-5.5L5 9l5.5-1.5z" style="animation:pulse 2s ease-in-out infinite;"/><path d="M18 14l1 3.5L22.5 18l-3.5 1L18 22.5l-1-3.5-3.5-1 3.5-1z" opacity="0.5"/></svg></div></div>
         ${contentHtml}
         ${faqHtml}
         ${relatedHtml}
@@ -829,8 +832,14 @@ function writePage(outPath, html) {
 
 async function loadBlogArticles() {
   try {
-    // Dynamic import of the blog data module
-    const blogModule = await import(join(ROOT, 'src', 'lib', 'blogData.js'))
+    // Prefer AI-highlighted articles if available
+    let blogModule
+    try {
+      blogModule = await import(join(ROOT, 'src', 'lib', 'blogData.highlighted.js'))
+      console.log('[prerender] Using AI-highlighted blog articles')
+    } catch {
+      blogModule = await import(join(ROOT, 'src', 'lib', 'blogData.js'))
+    }
     const articles = blogModule.blogArticles || []
     return articles.filter((a) => a.slug && a.title)
   } catch (err) {

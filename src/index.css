@@ -378,3 +378,120 @@ body.business-service-modal-open {
 .nexora-img-fade-in {
   animation: nexoraImgFadeIn 0.4s ease-out forwards;
 }
+
+/* ── Blog content highlighting ── */
+
+/* Apple-style yellow marker highlight (==text==) */
+.blog-highlight {
+  background: linear-gradient(180deg, transparent 55%, #fde68a 55%);
+  padding: 0.06em 0.15em;
+  border-radius: 0.15em;
+  font-weight: 600;
+  color: #1e293b;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  cursor: help;
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  position: relative;
+}
+
+.blog-highlight:hover {
+  background: linear-gradient(180deg, transparent 50%, #fcd34d 50%);
+  box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.18);
+  border-radius: 0.25em;
+  transform: scale(1.02);
+  z-index: 1;
+}
+
+.blog-highlight::after {
+  content: '';
+  position: absolute;
+  inset: -2px -4px;
+  border-radius: inherit;
+  background: radial-gradient(ellipse at center, rgba(251,191,36,0.2) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.blog-highlight:hover::after {
+  opacity: 1;
+}
+
+/* Auto-detected business term highlight */
+.blog-term {
+  background: linear-gradient(180deg, transparent 62%, #bae6fd 62%);
+  padding: 0.04em 0.1em;
+  border-radius: 0.12em;
+  font-weight: 600;
+  color: #0c4a6e;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  cursor: help;
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  position: relative;
+}
+
+.blog-term:hover {
+  background: linear-gradient(180deg, transparent 58%, #7dd3fc 58%);
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.18);
+  border-radius: 0.2em;
+  transform: scale(1.02);
+  z-index: 1;
+}
+
+.blog-term::after {
+  content: '';
+  position: absolute;
+  inset: -2px -4px;
+  border-radius: inherit;
+  background: radial-gradient(ellipse at center, rgba(56,189,248,0.2) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.blog-term:hover::after {
+  opacity: 1;
+}
+
+/* AI sparkle animation for highlighted terms */
+@keyframes aiSparkle {
+  0%, 100% { opacity: 0; transform: scale(0.5) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1.2) rotate(180deg); }
+}
+
+.blog-highlight:hover .ai-sparkle,
+.blog-term:hover .ai-sparkle {
+  animation: aiSparkle 0.8s ease-in-out;
+}
+
+/* Tip / Note / Warning badge prefix */
+.blog-tip-badge {
+  display: inline-block;
+  padding: 0.15em 0.6em;
+  border-radius: 0.5em;
+  font-size: 0.82em;
+  font-weight: 700;
+  margin-right: 0.35em;
+  vertical-align: middle;
+  border: 1px solid;
+  letter-spacing: -0.01em;
+}
+
+.blog-tip-badge.border-amber-300 { border-color: #fcd34d; }
+.blog-tip-badge.bg-amber-50 { background: #fffbeb; }
+.blog-tip-badge.text-amber-900 { color: #78350f; }
+.blog-tip-badge.border-emerald-300 { border-color: #6ee7b7; }
+.blog-tip-badge.bg-emerald-50 { background: #ecfdf5; }
+.blog-tip-badge.text-emerald-900 { color: #064e3b; }
+.blog-tip-badge.border-blue-300 { border-color: #93c5fd; }
+.blog-tip-badge.bg-blue-50 { background: #eff6ff; }
+.blog-tip-badge.text-blue-900 { color: #1e3a5f; }
+
+/* Article prose enhancement — more readable paragraph spacing */
+.prose-slate p {
+  line-height: 1.85;
+}

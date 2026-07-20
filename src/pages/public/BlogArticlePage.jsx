@@ -27,6 +27,8 @@ import {
 import { absoluteUrl, createArticleSchema } from '../../lib/seoStructuredData.js'
 import PublicPageShell from './PublicPageShell.jsx'
 import BlogComments from '../../components/BlogComments.jsx'
+import AITermTooltip from '../../components/AITermTooltip.jsx'
+import { formatBlogContent } from '../../lib/blogContentFormatter.js'
 
 function calculateReadingTime(article) {
   const text = [
@@ -326,6 +328,35 @@ export default function BlogArticlePage() {
               {display.title}
             </h1>
             <p className="mt-6 max-w-3xl text-base leading-8 text-slate-600 sm:text-lg">{display.excerpt}</p>
+            {/* Nexora AI — Premium badge with custom logo */}
+            <div className="mt-6 group relative overflow-hidden rounded-2xl border border-white/30 bg-gradient-to-br from-white/80 via-white/60 to-violet-50/40 p-[1px] shadow-[0_8px_32px_-8px_rgba(139,92,246,0.18)] backdrop-blur-xl transition-all duration-500 hover:shadow-[0_12px_40px_-8px_rgba(139,92,246,0.28)]" style={{ WebkitBackdropFilter: 'saturate(180%) blur(20px)' }}>
+              {/* Animated glow orbs */}
+              <div className="pointer-events-none absolute -right-4 -top-6 h-16 w-16 rounded-full bg-gradient-to-br from-violet-400/30 to-purple-500/15 blur-xl animate-pulse" />
+              <div className="pointer-events-none absolute -left-2 -bottom-4 h-12 w-12 rounded-full bg-gradient-to-br from-fuchsia-400/20 to-violet-500/10 blur-lg" style={{ animationDelay: '1.5s' }} />
+              <div className="relative flex items-center gap-4 rounded-[14px] bg-white/60 px-5 py-3.5">
+                {/* AI Logo from image */}
+                <span className="relative flex h-12 w-12 shrink-0 items-center justify-center">
+                  <span className="absolute inset-0 animate-pulse rounded-xl bg-gradient-to-br from-violet-500/40 via-purple-500/30 to-fuchsia-500/40 blur-md" style={{ animationDuration: '3s' }} />
+                  <img src="/nexora-ai-logo.png" alt="Nexora AI" className="relative h-11 w-11 rounded-xl object-cover shadow-[0_4px_16px_rgba(123,97,255,0.45)] ring-2 ring-white/50" />
+                </span>
+                {/* Text content */}
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="text-[15px] font-bold tracking-[-0.02em] text-[#1d1d1f]">Nexora AI</p>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-violet-100 to-purple-100 px-2 py-0.5 text-[10px] font-semibold tracking-[-0.01em] text-violet-700">
+                      <span className="h-1.5 w-1.5 rounded-full bg-violet-500 animate-pulse" />
+                      Enhanced
+                    </span>
+                  </div>
+                  <p className="mt-0.5 text-[12px] font-medium tracking-[-0.01em] text-[#86868b]">Key business insights automatically highlighted by AI</p>
+                </div>
+                {/* Animated sparkles */}
+                <svg className="h-4 w-4 shrink-0 text-violet-400 opacity-70 group-hover:opacity-100 transition-opacity" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2l1.5 5.5L19 9l-5.5 1.5L12 16l-1.5-5.5L5 9l5.5-1.5z" className="animate-pulse" />
+                  <path d="M18 14l1 3.5L22.5 18l-3.5 1L18 22.5l-1-3.5-3.5-1 3.5-1z" opacity="0.5" style={{ animationDelay: '0.8s' }} />
+                </svg>
+              </div>
+            </div>
             <div className="mt-7 grid gap-3 text-sm font-bold text-slate-600 sm:grid-cols-3">
               <span className="inline-flex items-center gap-2 rounded-2xl border border-blue-100 bg-white px-4 py-3">
                 <HiOutlineUserCircle className="h-5 w-5 text-blue-700" />
@@ -417,9 +448,11 @@ export default function BlogArticlePage() {
                   <section key={section.id} id={section.id} className="scroll-mt-28">
                     <h2 className="mt-10 text-3xl font-black tracking-tight text-slate-950">{section.heading}</h2>
                     {section.paragraphs.map((paragraph) => (
-                      <p key={paragraph} className="mt-5 text-base leading-8 text-slate-600">
-                        {paragraph}
-                      </p>
+                      <p
+                        key={paragraph.slice(0, 40)}
+                        className="mt-5 text-base leading-8 text-slate-600"
+                        dangerouslySetInnerHTML={{ __html: formatBlogContent(paragraph.replace(/</g, '&lt;').replace(/>/g, '&gt;'), { html: true, autoHighlight: true }) }}
+                      />
                     ))}
                   </section>
                 ))}
@@ -478,6 +511,8 @@ export default function BlogArticlePage() {
           </div>
         </section>
       </article>
+      {/* Nexora AI — floating term tooltips on hover */}
+      <AITermTooltip />
     </PublicPageShell>
   )
 }
