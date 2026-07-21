@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Link, useLocation } from 'react-router-dom'
 import {
   HiOutlineAcademicCap,
@@ -259,28 +260,18 @@ function Header() {
         </button>
       </div>
 
-      {/* ── Mobile Menu ── */}
-      {mobileMenuOpen ? (
-        <div className="fixed inset-0 z-[60] lg:hidden">
-          {/* Backdrop */}
-          <button
-            type="button"
-            className="absolute inset-0 bg-black/50 backdrop-blur-md"
-            onClick={closeAll}
-            aria-label="Close menu"
-          />
-
-          {/* Drawer */}
-          <div
-            className="absolute right-0 top-0 h-full w-full max-w-[420px] bg-[#f5f5f7] shadow-2xl"
-            style={{
-              paddingTop: 'max(18px, env(safe-area-inset-top))',
-              paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-            }}
-            role="dialog"
-            aria-modal="true"
-            aria-label="Navigation menu"
-          >
+      {/* ── Mobile Menu — rendered at body level via Portal ── */}
+      {mobileMenuOpen && createPortal(
+        <div
+          className="fixed inset-0 z-[9999] overflow-y-auto bg-white lg:hidden"
+          style={{
+            paddingTop: 'max(18px, env(safe-area-inset-top))',
+            paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+          }}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Navigation menu"
+        >
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-[18px]">
               <NexoraLogo compact />
@@ -373,9 +364,9 @@ function Header() {
                 </Link>
               </div>
             </div>
-          </div>
-        </div>
-      ) : null}
+        </div>,
+        document.body
+      )}
     </header>
   )
 }
