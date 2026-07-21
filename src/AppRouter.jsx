@@ -368,40 +368,25 @@ function useModalScrollLock() {
     if (typeof window === 'undefined' || typeof document === 'undefined') return undefined
 
     let locked = false
-    let scrollY = 0
-    const original = {
-      overflow: document.body.style.overflow,
-      paddingRight: document.body.style.paddingRight,
-      position: document.body.style.position,
-      top: document.body.style.top,
-      width: document.body.style.width,
-    }
+    const originalOverflow = document.body.style.overflow
 
-    const hasOpenModal = () => Boolean(
-      document.querySelector('[aria-modal="true"]')
-      || document.body.classList.contains('business-service-modal-open')
-      || document.documentElement.classList.contains('business-service-modal-open'),
-    )
+    const hasOpenModal = () => {
+      if (window.innerWidth >= 1024) return false // never lock on desktop
+      return Boolean(
+        document.querySelector('[aria-modal="true"]')
+        || document.body.classList.contains('business-service-modal-open')
+        || document.documentElement.classList.contains('business-service-modal-open'),
+      )
+    }
 
     const applyLock = () => {
       const shouldLock = hasOpenModal()
       if (shouldLock && !locked) {
-        const scrollbarWidth = Math.max(0, window.innerWidth - document.documentElement.clientWidth)
-        scrollY = window.scrollY || document.documentElement.scrollTop || 0
         document.body.style.overflow = 'hidden'
-        document.body.style.position = 'fixed'
-        document.body.style.top = `-${scrollY}px`
-        document.body.style.width = '100%'
-        if (scrollbarWidth) document.body.style.paddingRight = `${scrollbarWidth}px`
         locked = true
       }
       if (!shouldLock && locked) {
-        document.body.style.overflow = original.overflow
-        document.body.style.paddingRight = original.paddingRight
-        document.body.style.position = original.position
-        document.body.style.top = original.top
-        document.body.style.width = original.width
-        window.scrollTo(0, scrollY)
+        document.body.style.overflow = originalOverflow
         locked = false
       }
     }
@@ -415,15 +400,20 @@ function useModalScrollLock() {
       attributeFilter: ['aria-modal', 'class'],
     })
 
+    // Safety: restore scroll on window resize to desktop
+    const onResize = () => {
+      if (window.innerWidth >= 1024 && locked) {
+        document.body.style.overflow = originalOverflow
+        locked = false
+      }
+    }
+    window.addEventListener('resize', onResize)
+
     return () => {
       observer.disconnect()
+      window.removeEventListener('resize', onResize)
       if (locked) {
-        document.body.style.overflow = original.overflow
-        document.body.style.paddingRight = original.paddingRight
-        document.body.style.position = original.position
-        document.body.style.top = original.top
-        document.body.style.width = original.width
-        window.scrollTo(0, scrollY)
+        document.body.style.overflow = originalOverflow
       }
     }
   }, [])

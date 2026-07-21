@@ -64,24 +64,9 @@ function Header() {
   const [activeDropdown, setActiveDropdown] = useState(null)
   const dropdownCloseTimer = useRef(null)
 
-  /* ── Escape / click-outside / body scroll lock (mobile only) ── */
+  /* ── Escape / click-outside ── */
   useEffect(() => {
-    // Never lock scroll on desktop
-    if (!mobileMenuOpen || window.innerWidth >= 1024) {
-      return undefined
-    }
-
-    // Save then lock
-    const prev = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-
-    // Restore on resize to desktop
-    const onResize = () => {
-      if (window.innerWidth >= 1024) {
-        document.body.style.overflow = prev
-      }
-    }
-    window.addEventListener('resize', onResize)
+    if (!mobileMenuOpen) return undefined
 
     const onKeyDown = (event) => {
       if (event.key === 'Escape') {
@@ -100,17 +85,10 @@ function Header() {
     window.addEventListener('click', onClickOutside, true)
 
     return () => {
-      document.body.style.overflow = prev
-      window.removeEventListener('resize', onResize)
       window.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('click', onClickOutside, true)
     }
   }, [mobileMenuOpen])
-
-  /* ── Safety: ensure scroll is restored on unmount ── */
-  useEffect(() => () => {
-    document.body.style.overflow = ''
-  }, [])
 
   /* Close dropdown on route change */
   useEffect(() => {
@@ -258,16 +236,24 @@ function Header() {
           aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
           aria-expanded={mobileMenuOpen}
         >
-          <span className="relative h-[18px] w-[18px]">
-            <span className={`absolute left-0 block h-[2px] w-[18px] rounded-full bg-slate-700 transition-all duration-350 ${
-              mobileMenuOpen ? 'top-[8px] -rotate-45' : 'top-[3px]'
-            }`}
-              style={{ transitionTimingFunction: 'cubic-bezier(0.32, 0.72, 0, 1)' }}
+          <span className="relative block h-[18px] w-[18px]">
+            <span
+              className="absolute left-0 block h-[2px] w-[18px] rounded-full bg-slate-700 transition-all"
+              style={{
+                top: mobileMenuOpen ? '8px' : '3px',
+                transform: mobileMenuOpen ? 'rotate(-45deg)' : 'rotate(0deg)',
+                transitionDuration: '350ms',
+                transitionTimingFunction: 'cubic-bezier(0.32, 0.72, 0, 1)',
+              }}
             />
-            <span className={`absolute left-0 block h-[2px] w-[18px] rounded-full bg-slate-700 transition-all duration-350 ${
-              mobileMenuOpen ? 'top-[8px] rotate-45' : 'top-[13px]'
-            }`}
-              style={{ transitionTimingFunction: 'cubic-bezier(0.32, 0.72, 0, 1)' }}
+            <span
+              className="absolute left-0 block h-[2px] w-[18px] rounded-full bg-slate-700 transition-all"
+              style={{
+                top: mobileMenuOpen ? '8px' : '13px',
+                transform: mobileMenuOpen ? 'rotate(45deg)' : 'rotate(0deg)',
+                transitionDuration: '350ms',
+                transitionTimingFunction: 'cubic-bezier(0.32, 0.72, 0, 1)',
+              }}
             />
           </span>
         </button>
