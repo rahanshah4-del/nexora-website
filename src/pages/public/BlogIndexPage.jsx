@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { HiOutlineArrowRight, HiOutlineMagnifyingGlass, HiOutlineTag, HiOutlineXMark } from 'react-icons/hi2'
 import PageSeo from '../../components/PageSeo.jsx'
@@ -32,16 +32,6 @@ export default function BlogIndexPage() {
   const [params, setParams] = useSearchParams()
   const [searchValue, setSearchValue] = useState(params.get('q') || '')
   const [filtersOpen, setFiltersOpen] = useState(false)
-
-  // Lock body scroll when mobile filter drawer is open
-  useEffect(() => {
-    if (filtersOpen) {
-      document.body.style.overflow = 'hidden'
-    } else {
-      document.body.style.overflow = ''
-    }
-    return () => { document.body.style.overflow = '' }
-  }, [filtersOpen])
 
   const { articles, loading } = usePublishedBlogArticles()
   const category = params.get('category') || 'All'
@@ -297,21 +287,22 @@ export default function BlogIndexPage() {
         </div>
 
         {/* ── Mobile: Apple-style bottom-sheet filter drawer ── */}
-        <div className={`fixed inset-0 z-[60] lg:hidden ${filtersOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}>
-          {/* Backdrop */}
-          <div
-            className={`absolute inset-0 bg-slate-900/20 backdrop-blur-[3px] transition-opacity duration-300 ease-out ${filtersOpen ? 'opacity-100' : 'opacity-0'}`}
-            onClick={() => setFiltersOpen(false)}
-            aria-hidden="true"
-          />
+        {filtersOpen ? (
+          <div className="fixed inset-0 z-[60] lg:hidden">
+            {/* Backdrop */}
+            <div
+              className="absolute inset-0 bg-slate-900/20 backdrop-blur-[3px] animate-[fadeIn_0.25s_ease-out_forwards]"
+              onClick={() => setFiltersOpen(false)}
+              aria-hidden="true"
+            />
 
-          {/* Sheet panel */}
-          <div
-            className={`absolute bottom-0 left-0 right-0 max-h-[85vh] overflow-y-auto rounded-t-[1.8rem] bg-white shadow-[0_-8px_40px_-12px_rgba(0,0,0,0.18)] transition-transform duration-300 ease-out ${filtersOpen ? 'translate-y-0' : 'translate-y-full'}`}
-            role="dialog"
-            aria-modal="true"
-            aria-label="Search filters"
-          >
+            {/* Sheet panel */}
+            <div
+              className="absolute bottom-0 left-0 right-0 max-h-[85vh] overflow-y-auto rounded-t-[1.8rem] bg-white shadow-[0_-8px_40px_-12px_rgba(0,0,0,0.18)] animate-[slideUp_0.3s_cubic-bezier(0.32,0.72,0,1)_forwards]"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Search filters"
+            >
             {/* Drag handle */}
             <div className="sticky top-0 z-10 flex justify-center bg-white pt-3 pb-1 rounded-t-[1.8rem]">
               <div className="h-1 w-10 rounded-full bg-slate-300/70" />
@@ -385,6 +376,7 @@ export default function BlogIndexPage() {
             </div>
           </div>
         </div>
+        ) : null}
       </section>
     </PublicPageShell>
   )

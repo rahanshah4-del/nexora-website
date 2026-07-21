@@ -61,6 +61,17 @@ body.business-service-modal-open {
   overscroll-behavior: none;
 }
 
+/* ── Apple-style bottom-sheet animations ── */
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
 ::selection {
   background: #38bdf8;
   color: #0f172a;

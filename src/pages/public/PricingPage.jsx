@@ -10,6 +10,7 @@ import {
   HiOutlineCloud,
   HiOutlineDocumentChartBar,
   HiOutlineShieldCheck,
+  HiOutlineSparkles,
   HiOutlineUserGroup,
 } from 'react-icons/hi2'
 import PublicPageShell from './PublicPageShell.jsx'
@@ -68,17 +69,23 @@ function faqs(formatPrice) {
 }
 
 const highlightCards = [
-  ['Start safely', 'Try Nexora for 7 days free with full access. No credit card required.', HiOutlineCloud],
-  ['Scale clearly', 'Choose Basic with one module, or upgrade to Standard when your team grows.', HiOutlineShieldCheck],
-  ['Sell with confidence', 'All plans include Dashboard & Reports, Invoice & Billing, Cloud Sync and Email Support.', HiOutlineDocumentChartBar],
+  { title: 'Start safely', text: 'Try Nexora for 7 days free with full access. No credit card required.', icon: HiOutlineCloud, tone: 'sky' },
+  { title: 'Scale clearly', text: 'Choose Basic with one module, or upgrade to Standard when your team grows.', icon: HiOutlineShieldCheck, tone: 'indigo' },
+  { title: 'Sell with confidence', text: 'All plans include Dashboard & Reports, Invoice & Billing, Cloud Sync and Email Support.', icon: HiOutlineDocumentChartBar, tone: 'violet' },
 ]
+
+const toneIcons = {
+  sky: 'bg-sky-100/80 text-sky-700',
+  indigo: 'bg-indigo-100/80 text-indigo-700',
+  violet: 'bg-violet-100/80 text-violet-700',
+}
 
 const UPGRADE_NOTE = 'Only one business module can be active. Upgrade to Standard anytime for more modules, users and storage.'
 
 function renderComparisonValue(value) {
-  if (value === true) return <HiOutlineCheckCircle className="mx-auto text-2xl text-blue-600" />
-  if (value === false) return <span className="text-sm font-bold text-slate-300">-</span>
-  return <span className="text-center text-xs font-extrabold text-blue-700">{value}</span>
+  if (value === true) return <HiOutlineCheckCircle className="mx-auto h-5 w-5 text-emerald-600" />
+  if (value === false) return <span className="text-sm font-medium text-slate-300">—</span>
+  return <span className="text-center text-xs font-semibold tracking-[-0.01em] text-slate-600">{value}</span>
 }
 
 function useVisibleSection(rootMargin = '900px') {
@@ -127,41 +134,52 @@ export default function PricingPage() {
   return (
     <PublicPageShell>
       <PageSeo {...seo} faqItems={faqs(formatPrice)} />
-      <section className="relative overflow-hidden bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_72%,#ffffff_100%)] pb-16 pt-12 sm:pb-20 sm:pt-14 lg:pb-24 lg:pt-16">
+
+      {/* ── Hero ── */}
+      <section className="relative overflow-hidden bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_60%,#f1f5f9_100%)] pb-16 pt-20 sm:pb-20 sm:pt-24 lg:pb-24 lg:pt-28">
         <div className="soft-arc-bg pointer-events-none" />
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-200 to-transparent" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-slate-300 to-transparent" />
         <div className="relative mx-auto max-w-7xl px-5 text-center sm:px-6 lg:px-8">
-          <span className="inline-flex rounded-full border border-blue-100 bg-blue-50/70 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.18em] text-blue-700 shadow-sm">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200/60 bg-white/70 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 shadow-sm backdrop-blur-xl">
+            <HiOutlineSparkles className="h-3.5 w-3.5 text-amber-500" />
             Nexora Pricing
           </span>
-          <h1 className="website-hero-heading mx-auto mt-6 max-w-5xl text-[2.85rem] font-black leading-[0.98] tracking-tight text-slate-950 sm:text-[4.4rem] lg:text-[5.7rem]">
-            Start free, then choose the plan that <span className="marker-highlight marker-highlight-blue">fits your business.</span>
+          <h1 className="mx-auto mt-6 max-w-5xl text-[2.5rem] font-bold leading-[1.06] tracking-[-0.02em] text-slate-950 sm:text-[3.5rem] lg:text-[4.2rem]">
+            Start free, then choose the plan that{' '}
+            <span className="bg-gradient-to-r from-blue-600 via-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
+              fits your business.
+            </span>
           </h1>
-          <p className="mx-auto mt-6 max-w-3xl text-base leading-8 text-slate-600 sm:text-lg">
+          <p className="mx-auto mt-6 max-w-3xl text-base leading-8 text-slate-500 sm:text-lg">
             Try Nexora free for 7 days with full access to all modules. No credit card required — upgrade when you're ready.
           </p>
-          <div className="mx-auto mt-7 grid max-w-4xl gap-3 text-left sm:grid-cols-3">
+
+          {/* How-it-works cards */}
+          <div className="mx-auto mt-8 grid max-w-4xl gap-3 text-left sm:grid-cols-3">
             {[
-              ['Start Free Trial', 'Experience the complete Nexora platform with all modules, unlimited users and unlimited storage.'],
-              ['Choose Basic', `Continue at ${formatPrice(2000)} with one business module, up to 2 users and 5 GB storage.`],
-              ['Upgrade When Ready', 'Unlock more modules, more users, larger storage and priority support.'],
-            ].map(([title, text]) => (
-              <div key={title} className="rounded-[1.2rem] border border-blue-100 bg-white/85 p-4 shadow-[0_22px_58px_-46px_rgba(37,99,235,0.38)]">
-                <p className="text-sm font-black text-slate-950">{title}</p>
-                <p className="mt-2 text-xs leading-5 text-slate-600">{text}</p>
+              { title: 'Start Free Trial', text: 'Experience the complete Nexora platform with all modules, unlimited users and unlimited storage.' },
+              { title: 'Choose Basic', text: `Continue at ${formatPrice(2000)} with one business module, up to 2 users and 5 GB storage.` },
+              { title: 'Upgrade When Ready', text: 'Unlock more modules, more users, larger storage and priority support.' },
+            ].map(({ title, text }) => (
+              <div key={title} className="rounded-[1.2rem] border border-slate-200/60 bg-white/80 p-5 shadow-[0_4px_20px_-8px_rgba(15,23,42,0.06)] backdrop-blur-xl">
+                <p className="text-sm font-semibold tracking-[-0.01em] text-slate-900">{title}</p>
+                <p className="mt-2 text-[13px] leading-[1.6] text-slate-500">{text}</p>
               </div>
             ))}
           </div>
 
+          {/* Billing toggle */}
           <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-            <div className="inline-flex rounded-full border border-slate-200 bg-white p-1 shadow-[0_18px_46px_-34px_rgba(15,23,42,0.45)]">
+            <div className="inline-flex rounded-full border border-slate-200/60 bg-white/70 p-1 shadow-[0_2px_12px_-4px_rgba(15,23,42,0.06)] backdrop-blur-xl">
               {['monthly', 'yearly'].map((cycle) => (
                 <button
                   key={cycle}
                   type="button"
                   onClick={() => setBillingCycle(cycle)}
-                  className={`min-h-10 rounded-full px-5 text-sm font-bold ${
-                    billingCycle === cycle ? 'bg-slate-950 text-white shadow-sm' : 'text-slate-600 hover:text-blue-600'
+                  className={`min-h-[38px] rounded-full px-5 text-[13px] font-semibold tracking-[-0.01em] transition-all duration-200 ${
+                    billingCycle === cycle
+                      ? 'bg-slate-900 text-white shadow-[0_2px_8px_-2px_rgba(15,23,42,0.2)]'
+                      : 'text-slate-500 hover:text-slate-700'
                   }`}
                 >
                   {cycle === 'monthly' ? 'Monthly' : 'Yearly (Save 20%)'}
@@ -173,83 +191,111 @@ export default function PricingPage() {
         </div>
       </section>
 
+      {/* ── Pricing Cards ── */}
       <section data-reveal className="bg-white pb-16 sm:pb-20 lg:pb-24">
         <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
           <div className="grid items-stretch gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {displayPlans.map((plan) => (
-              <article
-                key={plan.id}
-                className={`relative flex flex-col rounded-[1.65rem] border bg-white p-6 shadow-[0_28px_80px_-50px_rgba(15,23,42,0.34)] ${
-                  plan.recommended ? 'border-blue-300 bg-blue-50/50 ring-2 ring-blue-100' : plan.id === 'free-trial' ? 'border-emerald-200 bg-emerald-50/40' : 'border-slate-200'
-                }`}
-              >
-                <div className="mb-4 flex min-h-7 justify-center">
-                  {plan.recommended && (
-                    <span className="rounded-full bg-slate-950 px-3 py-1 text-[0.68rem] font-extrabold text-white">
-                      Most Popular
-                    </span>
-                  )}
-                  {plan.id === 'free-trial' && (
-                    <span className="rounded-full bg-emerald-600 px-3 py-1 text-[0.68rem] font-extrabold text-white">
-                      Free
-                    </span>
-                  )}
-                </div>
-                <h2 className={`text-center text-2xl font-black ${plan.recommended ? 'text-blue-600' : plan.id === 'free-trial' ? 'text-emerald-700' : 'text-slate-950'}`}>
-                  {plan.id === 'free-trial' ? '7-Day Free Trial' : plan.name}
-                </h2>
-                <p className={`${plan.id === 'basic' ? 'mt-2' : 'mt-3'} text-center text-sm leading-6 text-slate-500`}>
-                  {plan.id === 'free-trial' ? 'Experience the complete Nexora platform before subscribing.' : plan.id === 'basic' ? 'One module, two users, all the essentials.' : plan.description || ''}
-                </p>
-                <div className="mt-6 text-center">
-                  <p className="text-3xl font-black text-slate-950 sm:text-4xl">{formatPlanPrice(plan, billingCycle)}</p>
-                  {plan.monthlyPrice !== 'custom' && plan.id !== 'free-trial' && (
-                    <p className="mt-1 text-sm text-slate-500">{getBillingSuffix(plan, billingCycle)}</p>
-                  )}
-                  {plan.id === 'free-trial' && (
-                    <p className="mt-1 text-sm text-slate-500">No credit card required</p>
-                  )}
-                </div>
+            {displayPlans.map((plan) => {
+              const isPopular = plan.recommended
+              const isFree = plan.id === 'free-trial'
+              const isEnterprise = plan.id === 'enterprise'
 
-                <div className="mt-5 flex-1 space-y-3">
-                  {plan.features.map((feature) => (
-                    <div key={feature} className="flex items-start gap-3 text-sm text-slate-700">
-                      <HiOutlineCheckCircle className={`mt-0.5 shrink-0 ${plan.id === 'free-trial' ? 'text-emerald-500' : 'text-blue-600'}`} />
-                      <span className="leading-6">{feature}</span>
-                    </div>
-                  ))}
-                  {plan.id === 'basic' && (
-                    <p className="pt-2 text-center text-xs leading-5 text-slate-500">{UPGRADE_NOTE}</p>
-                  )}
-                </div>
-
-                <Link
-                  to={plan.ctaTo || '/signup'}
-                  className={`mt-auto inline-flex min-h-11 w-full items-center justify-center rounded-xl px-5 text-sm font-extrabold tracking-wide transition-all duration-200 ${
-                    plan.recommended
-                      ? 'bg-gradient-to-br from-blue-600 to-violet-600 text-white shadow-[0_4px_20px_-6px_rgba(99,102,241,0.5)] hover:shadow-[0_6px_28px_-6px_rgba(99,102,241,0.65)] hover:-translate-y-[1px] active:translate-y-0'
-                      : plan.id === 'free-trial'
-                        ? 'bg-gradient-to-br from-emerald-500 to-green-600 text-white shadow-[0_4px_20px_-6px_rgba(16,185,129,0.45)] hover:shadow-[0_6px_28px_-6px_rgba(16,185,129,0.6)] hover:-translate-y-[1px] active:translate-y-0'
-                        : plan.id === 'enterprise'
-                          ? 'border-2 border-slate-800 bg-white text-slate-900 shadow-sm hover:bg-slate-50 hover:shadow-md hover:-translate-y-[1px] active:translate-y-0'
-                          : 'border-2 border-slate-300 bg-white text-slate-700 shadow-sm hover:border-blue-400 hover:text-blue-600 hover:shadow-md hover:-translate-y-[1px] active:translate-y-0'
+              return (
+                <article
+                  key={plan.id}
+                  className={`relative flex flex-col overflow-hidden rounded-[1.35rem] border bg-white p-6 shadow-[0_4px_24px_-10px_rgba(15,23,42,0.08)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_44px_-16px_rgba(15,23,42,0.16)] ${
+                    isPopular
+                      ? 'border-violet-200/70 ring-1 ring-violet-100/60'
+                      : isFree
+                        ? 'border-emerald-200/70'
+                        : 'border-slate-200/60'
                   }`}
                 >
-                  {plan.id === 'free-trial' ? 'Start Free Trial' : plan.ctaLabel}
-                </Link>
-              </article>
-            ))}
+                  {/* Glow on popular */}
+                  {isPopular && (
+                    <div className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full bg-gradient-to-br from-violet-50 to-fuchsia-50 opacity-60 blur-xl" />
+                  )}
+
+                  <div className="relative mb-4 flex min-h-7 justify-center">
+                    {isPopular && (
+                      <span className="rounded-full bg-slate-900 px-3 py-1 text-[0.65rem] font-semibold tracking-[-0.01em] text-white">
+                        Most Popular
+                      </span>
+                    )}
+                    {isFree && (
+                      <span className="rounded-full bg-emerald-600 px-3 py-1 text-[0.65rem] font-semibold tracking-[-0.01em] text-white">
+                        Free
+                      </span>
+                    )}
+                  </div>
+
+                  <h2 className={`relative text-center text-xl font-bold tracking-[-0.02em] ${
+                    isPopular ? 'text-violet-700' : isFree ? 'text-emerald-700' : 'text-slate-900'
+                  }`}>
+                    {isFree ? '7-Day Free Trial' : plan.name}
+                  </h2>
+
+                  <p className={`${plan.id === 'basic' ? 'mt-1.5' : 'mt-2'} relative text-center text-[13px] leading-[1.6] text-slate-500`}>
+                    {isFree
+                      ? 'Experience the complete Nexora platform before subscribing.'
+                      : plan.id === 'basic'
+                        ? 'One module, two users, all the essentials.'
+                        : plan.description || ''}
+                  </p>
+
+                  <div className="relative mt-5 text-center">
+                    <p className="text-3xl font-bold tracking-[-0.02em] text-slate-950 sm:text-4xl">
+                      {formatPlanPrice(plan, billingCycle)}
+                    </p>
+                    {plan.monthlyPrice !== 'custom' && !isFree && (
+                      <p className="mt-0.5 text-[13px] text-slate-400">{getBillingSuffix(plan, billingCycle)}</p>
+                    )}
+                    {isFree && (
+                      <p className="mt-0.5 text-[13px] text-slate-400">No credit card required</p>
+                    )}
+                  </div>
+
+                  <div className="relative mt-5 flex-1 space-y-2.5">
+                    {plan.features.map((feature) => (
+                      <div key={feature} className="flex items-start gap-2.5 text-[13px] text-slate-600">
+                        <HiOutlineCheckCircle className={`mt-0.5 h-[17px] w-[17px] shrink-0 ${isFree ? 'text-emerald-500' : 'text-slate-400'}`} />
+                        <span className="leading-[1.55]">{feature}</span>
+                      </div>
+                    ))}
+                    {plan.id === 'basic' && (
+                      <p className="pt-2 text-center text-[11px] leading-5 text-slate-400">{UPGRADE_NOTE}</p>
+                    )}
+                  </div>
+
+                  <Link
+                    to={plan.ctaTo || '/signup'}
+                    className={`relative mt-auto inline-flex min-h-[42px] w-full items-center justify-center rounded-full px-5 text-sm font-semibold tracking-[-0.01em] transition-all duration-200 active:scale-[0.97] ${
+                      isPopular
+                        ? 'bg-slate-900 text-white shadow-[0_4px_16px_-6px_rgba(15,23,42,0.3)] hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-[0_8px_24px_-8px_rgba(15,23,42,0.4)]'
+                        : isFree
+                          ? 'bg-emerald-600 text-white shadow-[0_4px_16px_-6px_rgba(16,185,129,0.3)] hover:-translate-y-0.5 hover:bg-emerald-700 hover:shadow-[0_8px_24px_-8px_rgba(16,185,129,0.4)]'
+                          : isEnterprise
+                            ? 'border border-slate-300 bg-white text-slate-700 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.04)] hover:-translate-y-0.5 hover:border-slate-400 hover:text-slate-900 hover:shadow-[0_6px_20px_-8px_rgba(0,0,0,0.12)]'
+                            : 'border border-slate-200/60 bg-white text-slate-600 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.04)] hover:-translate-y-0.5 hover:border-slate-300 hover:text-slate-800 hover:shadow-[0_6px_20px_-8px_rgba(0,0,0,0.12)]'
+                    }`}
+                  >
+                    {isFree ? 'Start Free Trial' : plan.ctaLabel}
+                  </Link>
+                </article>
+              )
+            })}
           </div>
 
+          {/* Highlight cards */}
           <div className="mt-10 grid gap-4 md:grid-cols-3">
-            {highlightCards.map(([title, text, Icon]) => (
-              <article key={title} className="premium-card flex gap-4 p-5">
-                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-blue-50 text-blue-700">
-                  <Icon className="text-2xl" />
+            {highlightCards.map(({ title, text, icon: Icon, tone }) => (
+              <article key={title} className="flex gap-4 rounded-[1.2rem] border border-slate-200/60 bg-white p-5 shadow-[0_4px_20px_-8px_rgba(15,23,42,0.06)]">
+                <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl ${toneIcons[tone]}`}>
+                  <Icon className="h-[20px] w-[20px]" strokeWidth={1.8} />
                 </span>
                 <div>
-                  <h3 className="text-lg font-black text-slate-950">{title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">{text}</p>
+                  <h3 className="text-[17px] font-semibold tracking-[-0.01em] text-slate-900">{title}</h3>
+                  <p className="mt-1.5 text-[13px] leading-[1.6] text-slate-500">{text}</p>
                 </div>
               </article>
             ))}
@@ -257,31 +303,41 @@ export default function PricingPage() {
         </div>
       </section>
 
+      {/* ── Feature Comparison Table ── */}
       <section data-reveal className="bg-[linear-gradient(180deg,#f8fbff_0%,#ffffff_100%)] py-16 sm:py-20 lg:py-24">
         <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-3xl text-center">
-            <h2 className="website-section-heading text-3xl font-black tracking-tight text-slate-950 sm:text-5xl">
+            <h2 className="text-2xl font-bold tracking-[-0.02em] text-slate-950 sm:text-4xl">
               Feature comparison
             </h2>
-            <p className="mx-auto mt-5 max-w-2xl text-base leading-8 text-slate-600">
+            <p className="mx-auto mt-4 max-w-2xl text-[15px] leading-7 text-slate-500">
               Compare Free Trial, Basic, Standard and Enterprise plans to find the right fit for your business.
             </p>
           </div>
 
-          <div className="mt-10 overflow-x-auto rounded-[1.65rem] border border-slate-200 bg-white shadow-[0_28px_80px_-54px_rgba(15,23,42,0.4)]">
+          <div className="mt-10 overflow-x-auto rounded-[1.35rem] border border-slate-200/60 bg-white shadow-[0_8px_40px_-20px_rgba(15,23,42,0.1)]">
             <div className="min-w-[58rem]">
-              <div className="grid grid-cols-[1.35fr_0.7fr_0.7fr_0.85fr_0.8fr] border-b border-slate-100 bg-slate-950 text-white">
+              {/* Header row */}
+              <div className="grid grid-cols-[1.35fr_0.7fr_0.7fr_0.85fr_0.8fr] border-b border-slate-200/60 bg-slate-900 text-white">
                 {['Feature', 'Free Trial', 'Basic', 'Standard', 'Enterprise'].map((header) => (
-                  <div key={header} className="px-3 py-4 text-xs font-black uppercase tracking-[0.14em] sm:px-5">
+                  <div key={header} className="px-3 py-4 text-xs font-semibold uppercase tracking-[0.12em] sm:px-5">
                     {header}
                   </div>
                 ))}
               </div>
-              {comparisonRows.map(([feature, freeTrial, basic, standard, enterprise]) => (
-                <div key={feature} className="grid grid-cols-[1.35fr_0.7fr_0.7fr_0.85fr_0.8fr] border-b border-slate-100 last:border-b-0">
-                  <div className="px-3 py-4 text-sm font-bold text-slate-800 sm:px-5">{feature}</div>
-                  {[freeTrial, basic, standard, enterprise].map((value, index) => (
-                    <div key={`${feature}-${index}`} className="grid place-items-center border-l border-slate-100 px-2 py-4 text-center">
+              {/* Body rows */}
+              {comparisonRows.map(([feature, freeTrial, basic, standard, enterprise], i) => (
+                <div
+                  key={feature}
+                  className={`grid grid-cols-[1.35fr_0.7fr_0.7fr_0.85fr_0.8fr] border-b border-slate-100 last:border-b-0 ${
+                    i % 2 === 1 ? 'bg-slate-50/60' : ''
+                  }`}
+                >
+                  <div className="px-3 py-4 text-[13px] font-semibold tracking-[-0.01em] text-slate-800 sm:px-5">
+                    {feature}
+                  </div>
+                  {[freeTrial, basic, standard, enterprise].map((value, idx) => (
+                    <div key={`${feature}-${idx}`} className="grid place-items-center border-l border-slate-100 px-2 py-4 text-center">
                       {renderComparisonValue(value)}
                     </div>
                   ))}
@@ -292,22 +348,31 @@ export default function PricingPage() {
         </div>
       </section>
 
+      {/* ── FAQ ── */}
       <section data-reveal className="bg-white py-16 sm:py-20 lg:py-24">
         <div className="mx-auto max-w-5xl px-5 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h2 className="website-section-heading text-3xl font-black tracking-tight text-slate-950 sm:text-5xl">Pricing FAQ</h2>
+            <h2 className="text-2xl font-bold tracking-[-0.02em] text-slate-950 sm:text-4xl">
+              Pricing FAQ
+            </h2>
           </div>
-          <div className="mt-10 grid gap-4">
+          <div className="mt-10 grid gap-3">
             {faqs(formatPrice).map(([question, answer]) => (
-              <article key={question} className="rounded-[1.35rem] border border-slate-200 bg-white p-5 shadow-[0_18px_54px_-42px_rgba(15,23,42,0.36)]">
-                <h3 className="text-base font-black text-slate-950">{question}</h3>
-                <p className="mt-2 text-sm leading-7 text-slate-600">{answer}</p>
+              <article
+                key={question}
+                className="rounded-[1.2rem] border border-slate-200/60 bg-white p-5 shadow-[0_4px_20px_-8px_rgba(15,23,42,0.05)] sm:p-6"
+              >
+                <h3 className="text-[15px] font-semibold tracking-[-0.01em] text-slate-900">
+                  {question}
+                </h3>
+                <p className="mt-2 text-[14px] leading-[1.7] text-slate-500">{answer}</p>
               </article>
             ))}
           </div>
         </div>
       </section>
 
+      {/* ── Business Services (lazy) ── */}
       <div ref={servicesRef}>
         {servicesVisible ? (
           <Suspense fallback={null}>
@@ -316,25 +381,34 @@ export default function PricingPage() {
         ) : null}
       </div>
 
+      {/* ── Bottom CTA ── */}
       <section data-reveal className="bg-white px-5 pb-16 sm:px-6 sm:pb-20 lg:px-8">
-        <div className="mx-auto grid max-w-7xl items-center gap-6 rounded-[2rem] border border-blue-100 bg-[linear-gradient(135deg,#eff6ff_0%,#ffffff_58%,#e0f2fe_100%)] p-6 shadow-[0_30px_90px_-60px_rgba(37,99,235,0.44)] sm:p-8 lg:grid-cols-[1fr_auto]">
+        <div className="mx-auto grid max-w-7xl items-center gap-6 rounded-[1.8rem] border border-slate-200/60 bg-gradient-to-br from-slate-50 via-white to-blue-50/40 p-6 shadow-[0_8px_40px_-16px_rgba(15,23,42,0.08)] sm:p-8 lg:grid-cols-[1fr_auto]">
           <div>
-            <div className="mb-4 flex gap-3 text-blue-600">
-              <HiOutlineUserGroup className="text-3xl" />
-              <HiOutlineChartBarSquare className="text-3xl" />
-              <HiOutlineChatBubbleLeftRight className="text-3xl" />
+            <div className="mb-4 flex gap-2.5 text-slate-400">
+              <HiOutlineUserGroup className="h-7 w-7" strokeWidth={1.5} />
+              <HiOutlineChartBarSquare className="h-7 w-7" strokeWidth={1.5} />
+              <HiOutlineChatBubbleLeftRight className="h-7 w-7" strokeWidth={1.5} />
             </div>
-            <h2 className="text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">Start free today. Choose the plan that fits.</h2>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
+            <h2 className="text-2xl font-bold tracking-[-0.02em] text-slate-950 sm:text-3xl">
+              Start free today. Choose the plan that fits.
+            </h2>
+            <p className="mt-2 max-w-2xl text-[14px] leading-7 text-slate-500">
               Start a 7-day free trial with full access, choose Basic to stay lean with one module, or upgrade to Standard for more capacity.
             </p>
           </div>
           <div className="flex flex-col gap-3 min-[420px]:flex-row">
-            <Link to="/signup" className="premium-button-primary">
+            <Link
+              to="/signup"
+              className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-slate-900 px-6 text-sm font-semibold tracking-[-0.01em] text-white shadow-[0_4px_16px_-6px_rgba(15,23,42,0.3)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-[0_8px_24px_-8px_rgba(15,23,42,0.4)] active:scale-[0.97]"
+            >
               Start Free Trial
-              <HiOutlineArrowRight className="text-lg" />
+              <HiOutlineArrowRight className="h-[17px] w-[17px]" />
             </Link>
-            <Link to="/contact" className="premium-button-secondary">
+            <Link
+              to="/contact"
+              className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-slate-200/60 bg-white/80 px-6 text-sm font-semibold tracking-[-0.01em] text-slate-700 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.04)] backdrop-blur-xl transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300/70 hover:bg-white hover:text-slate-900 hover:shadow-[0_6px_20px_-8px_rgba(0,0,0,0.12)] active:scale-[0.97]"
+            >
               Book Demo
             </Link>
           </div>

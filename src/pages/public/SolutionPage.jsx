@@ -586,32 +586,32 @@ function SoftwareMockup({ page, solutionSlug }) {
 
   return (
     <div className="relative mx-auto w-full max-w-[60rem]">
-      <div className="pos-float-card absolute -left-5 top-16 z-10 hidden w-48 rounded-[1.45rem] border border-blue-100 bg-white/95 p-4 shadow-[0_28px_72px_-38px_rgba(15,23,42,0.42)] backdrop-blur xl:block">
-        <p className="text-[0.65rem] font-extrabold uppercase tracking-[0.16em] text-slate-400">{page.productName}</p>
-        <p className="mt-2 text-2xl font-black text-slate-950">{page.stats[0][1]}</p>
+      <div className="pos-float-card absolute -left-5 top-16 z-10 hidden w-48 rounded-[1.45rem] border border-slate-200/60 bg-white/95 p-4 shadow-[0_28px_72px_-38px_rgba(15,23,42,0.42)] backdrop-blur xl:block">
+        <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-slate-400">{page.productName}</p>
+        <p className="mt-2 text-2xl font-bold text-slate-950">{page.stats[0][1]}</p>
         <p className="mt-1 text-xs font-semibold text-emerald-600">{page.stats[0][2]}</p>
       </div>
 
       <div className="pos-float-card absolute -right-4 bottom-14 z-10 hidden w-52 rounded-[1.45rem] border border-sky-100 bg-white/95 p-4 shadow-[0_28px_72px_-38px_rgba(15,23,42,0.4)] backdrop-blur lg:block">
         <div className="flex items-center gap-3">
-          <span className="grid h-10 w-10 place-items-center rounded-xl bg-blue-50 text-blue-600">
+          <span className="grid h-10 w-10 place-items-center rounded-xl bg-slate-100 text-slate-500">
             <HiOutlineCloud className="text-xl" />
           </span>
           <div>
-            <p className="text-sm font-extrabold text-slate-950">Cloud Synced</p>
+            <p className="text-sm font-semibold text-slate-950">Cloud Synced</p>
             <p className="text-xs text-slate-500">Desktop, web, mobile</p>
           </div>
         </div>
       </div>
 
-      <div className="pos-preview-shell overflow-hidden rounded-[2rem] border border-blue-100/90 bg-white shadow-[0_44px_126px_-62px_rgba(15,23,42,0.58)] ring-1 ring-white/80">
+      <div className="pos-preview-shell overflow-hidden rounded-[2rem] border border-slate-200/60/90 bg-white shadow-[0_44px_126px_-62px_rgba(15,23,42,0.58)] ring-1 ring-white/80">
         <div className="flex items-center justify-between border-b border-slate-100 bg-white/90 px-4 py-3 sm:px-5">
           <div className="flex items-center gap-2">
             <span className="h-2.5 w-2.5 rounded-full bg-rose-300" />
             <span className="h-2.5 w-2.5 rounded-full bg-amber-300" />
             <span className="h-2.5 w-2.5 rounded-full bg-emerald-300" />
           </div>
-          <div className="hidden rounded-full border border-blue-100 bg-blue-50/70 px-3 py-1 text-[0.65rem] font-extrabold uppercase tracking-[0.14em] text-blue-700 sm:block">
+          <div className="hidden rounded-full border border-slate-200/60 bg-slate-100/70 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-slate-700 sm:block">
             {page.previewLabel}
           </div>
           <div className="flex items-center gap-2 text-[0.65rem] font-bold text-slate-500">
@@ -621,7 +621,7 @@ function SoftwareMockup({ page, solutionSlug }) {
         </div>
 
         <div className="grid min-h-[24rem] grid-cols-[6.2rem_1fr] bg-[linear-gradient(180deg,#fbfdff_0%,#edf6ff_100%)] sm:grid-cols-[8rem_1fr] lg:grid-cols-[9rem_1fr]">
-          <aside className="border-r border-blue-50 bg-white/70 px-2 py-4">
+          <aside className="border-r border-slate-100 bg-white/70 px-2 py-4">
             <div className="grid gap-1">
               {page.sidebar.map((item, index) => (
                 <span
@@ -639,18 +639,18 @@ function SoftwareMockup({ page, solutionSlug }) {
           <div className="min-w-0 p-3 sm:p-5">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-blue-600">Nexora Suite</p>
-                <h2 className="mt-1 text-xl font-black text-slate-950 sm:text-2xl">{page.previewTitle}</h2>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Nexora Suite</p>
+                <h2 className="mt-1 text-xl font-bold text-slate-950 sm:text-2xl">{page.previewTitle}</h2>
               </div>
-              <span className="w-max rounded-full bg-slate-950 px-4 py-2 text-xs font-extrabold text-white">Live workspace</span>
+              <span className="w-max rounded-full bg-slate-950 px-4 py-2 text-xs font-semibold text-white">Live workspace</span>
             </div>
 
             <div className="mt-5 grid gap-3 md:grid-cols-3">
               {page.stats.map(([label, value, note]) => (
                 <div key={label} className="rounded-[1.2rem] border border-white bg-white p-4 shadow-[0_20px_58px_-46px_rgba(15,23,42,0.5)]">
                   <p className="text-[0.65rem] font-bold text-slate-500">{label}</p>
-                  <p className="mt-2 text-lg font-black text-slate-950">{value}</p>
-                  <p className="mt-1 text-xs font-bold text-blue-600">{note}</p>
+                  <p className="mt-2 text-lg font-bold text-slate-950">{value}</p>
+                  <p className="mt-1 text-xs font-bold text-slate-500">{note}</p>
                 </div>
               ))}
             </div>
@@ -658,13 +658,13 @@ function SoftwareMockup({ page, solutionSlug }) {
             <div className="mt-4 grid grid-cols-3 gap-3">
               {previewRows.map(([label, value, note, Icon]) => (
                 <div key={label} className="flex items-center gap-2 rounded-[1.2rem] border border-white bg-white p-3 shadow-[0_20px_58px_-46px_rgba(15,23,42,0.5)]">
-                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-blue-50 text-blue-600">
+                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-slate-100 text-slate-500">
                     <Icon className="text-sm" />
                   </span>
                   <div className="min-w-0">
                     <p className="truncate text-[0.58rem] font-bold text-slate-500">{label}</p>
-                    <p className="truncate text-sm font-black text-slate-950">{value}</p>
-                    <p className="truncate text-[0.55rem] font-bold text-blue-600">{note}</p>
+                    <p className="truncate text-sm font-bold text-slate-950">{value}</p>
+                    <p className="truncate text-[0.55rem] font-bold text-slate-500">{note}</p>
                   </div>
                 </div>
               ))}
@@ -697,14 +697,14 @@ function GrowthPathStrip() {
 
   return (
     <section data-reveal className="bg-white px-5 pb-4 sm:px-6 lg:px-8">
-      <div className="mx-auto -mt-8 grid max-w-7xl gap-4 rounded-[1.8rem] border border-blue-100 bg-white/95 p-4 shadow-[0_28px_90px_-64px_rgba(37,99,235,0.42)] sm:p-5 lg:grid-cols-3">
+      <div className="mx-auto -mt-8 grid max-w-7xl gap-4 rounded-[1.8rem] border border-slate-200/60 bg-white/95 p-4 shadow-[0_8px_40px_-20px_rgba(15,23,42,0.12)] sm:p-5 lg:grid-cols-3">
         {steps.map(({ title, text, icon: Icon }) => (
           <article key={title} className="flex min-w-0 gap-4 rounded-[1.35rem] bg-[linear-gradient(180deg,#f8fbff_0%,#ffffff_100%)] p-4">
-            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-blue-50 text-blue-700">
+            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-slate-100 text-slate-700">
               <Icon className="text-2xl" />
             </span>
             <div className="min-w-0">
-              <h3 className="text-base font-black text-slate-950">{title}</h3>
+              <h3 className="text-base font-bold text-slate-950">{title}</h3>
               <p className="mt-2 text-sm leading-6 text-slate-600">{text}</p>
             </div>
           </article>
@@ -744,29 +744,29 @@ export default function SolutionPage({ solutionSlug: solutionSlugProp } = {}) {
       </nav>
       <section className="relative overflow-hidden bg-[linear-gradient(180deg,#ffffff_0%,#f7fbff_72%,#ffffff_100%)] pb-16 pt-12 sm:pb-20 sm:pt-14 lg:pb-24 lg:pt-16">
         <div className="soft-arc-bg pointer-events-none" />
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-200 to-transparent" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-slate-300 to-transparent" />
         <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-5 sm:px-6 lg:grid-cols-[0.92fr_1.08fr] lg:px-8">
           <div className="mx-auto max-w-2xl text-center lg:mx-0 lg:text-left">
-            <span className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50/70 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.18em] text-blue-700 shadow-sm">
+            <span className="inline-flex items-center gap-2 rounded-full border border-slate-200/60 bg-slate-100/70 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-700 shadow-sm">
               <Icon className="text-base" />
               {page.eyebrow}
             </span>
-            <h1 className="website-hero-heading mt-6 text-[2.75rem] font-black leading-[0.98] tracking-tight text-slate-950 sm:text-[4.2rem] lg:text-[5.2rem]">
+            <h1 className="mt-6 text-[2.75rem] font-bold leading-[0.98] tracking-tight text-slate-950 sm:text-[4.2rem] lg:text-[5.2rem]">
               {page.headlineBefore}
-              <span className="marker-highlight marker-highlight-blue">{page.headlineHighlight}</span>
+              <span className="bg-gradient-to-r from-blue-600 via-violet-600 to-fuchsia-600 bg-clip-text text-transparent">{page.headlineHighlight}</span>
             </h1>
             <p className="mt-6 text-base leading-8 text-slate-600 sm:text-lg">{page.description}</p>
-            <p className="mt-4 rounded-2xl border border-blue-100 bg-white/80 px-4 py-3 text-sm font-bold leading-6 text-slate-700 shadow-[0_18px_54px_-44px_rgba(37,99,235,0.32)]">
+            <p className="mt-4 rounded-2xl border border-slate-200/60 bg-white/80 px-4 py-3 text-sm font-bold leading-6 text-slate-700 shadow-[0_4px_16px_-8px_rgba(15,23,42,0.08)]">
               Start with a free trial, continue Free Forever after trial, then upgrade to Standard when your users, records and reports need more room.
             </p>
             <div className="mt-8 flex flex-col justify-center gap-3 min-[390px]:flex-row lg:justify-start">
-              <Link to="/signup" className="premium-button-primary">
+              <Link to="/signup" className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-slate-900 px-6 text-sm font-semibold tracking-[-0.01em] text-white shadow-[0_4px_16px_-6px_rgba(15,23,42,0.3)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-[0_8px_24px_-8px_rgba(15,23,42,0.4)] active:scale-[0.97]">
                 Start Free Trial
                 <HiOutlineArrowRight className="text-lg" />
               </Link>
-              <a href={whatsappLeadLink} target="_blank" rel="noreferrer" className="premium-button-secondary">
+              <a href={whatsappLeadLink} target="_blank" rel="noreferrer" className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-slate-200/60 bg-white/80 px-6 text-sm font-semibold tracking-[-0.01em] text-slate-700 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.04)] backdrop-blur-xl transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300/70 hover:bg-white hover:text-slate-900 hover:shadow-[0_6px_20px_-8px_rgba(0,0,0,0.12)] active:scale-[0.97]">
                 Book Demo
-                <HiOutlinePlayCircle className="text-xl text-blue-600" />
+                <HiOutlinePlayCircle className="text-xl text-slate-500" />
               </a>
             </div>
           </div>
@@ -780,8 +780,8 @@ export default function SolutionPage({ solutionSlug: solutionSlugProp } = {}) {
       <section data-reveal className="bg-white py-16 sm:py-20 lg:py-24">
         <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-3xl text-center">
-            <h2 className="website-section-heading text-3xl font-black tracking-tight text-slate-950 sm:text-5xl">
-              Key features for <span className="marker-highlight marker-highlight-blue">{page.productName}</span>
+            <h2 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-5xl">
+              Key features for <span className="bg-gradient-to-r from-blue-600 via-violet-600 to-fuchsia-600 bg-clip-text text-transparent">{page.productName}</span>
             </h2>
             <p className="mx-auto mt-5 max-w-2xl text-base leading-8 text-slate-600">
               Purpose-built tools, clean permissions and a premium workflow designed for daily business operations.
@@ -790,12 +790,12 @@ export default function SolutionPage({ solutionSlug: solutionSlugProp } = {}) {
 
           <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {page.features.map(([title, text, FeatureIcon]) => (
-              <article key={title} className="premium-card group flex min-h-48 gap-4 p-6">
-                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-blue-50 text-blue-700 group-hover:bg-slate-950 group-hover:text-white">
+              <article key={title} className="group flex min-h-48 gap-4 rounded-[1.2rem] border border-slate-200/60 bg-white p-6 shadow-[0_4px_20px_-8px_rgba(15,23,42,0.05)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_44px_-16px_rgba(15,23,42,0.14)]">
+                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-slate-100 text-slate-700 group-hover:bg-slate-950 group-hover:text-white">
                   <FeatureIcon className="text-2xl" />
                 </span>
                 <div>
-                  <h3 className="text-lg font-black text-slate-950">{title}</h3>
+                  <h3 className="text-lg font-bold text-slate-950">{title}</h3>
                   <p className="mt-2 text-sm leading-6 text-slate-600">{text}</p>
                 </div>
               </article>
@@ -807,10 +807,10 @@ export default function SolutionPage({ solutionSlug: solutionSlugProp } = {}) {
       <section data-reveal className="bg-[linear-gradient(180deg,#f8fbff_0%,#ffffff_100%)] py-16 sm:py-20 lg:py-24">
         <div className="mx-auto grid max-w-7xl gap-10 px-5 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:px-8">
           <div>
-            <span className="inline-flex rounded-full border border-blue-100 bg-white px-4 py-2 text-xs font-extrabold uppercase tracking-[0.18em] text-blue-700 shadow-sm">
+            <span className="inline-flex rounded-full border border-slate-200/60 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-700 shadow-sm">
               Business Benefits
             </span>
-            <h2 className="website-section-heading mt-5 text-3xl font-black tracking-tight text-slate-950 sm:text-5xl">
+            <h2 className="mt-5 text-3xl font-bold tracking-tight text-slate-950 sm:text-5xl">
               Better operations, faster teams and clearer ROI.
             </h2>
             <p className="mt-5 text-base leading-8 text-slate-600">
@@ -820,9 +820,9 @@ export default function SolutionPage({ solutionSlug: solutionSlugProp } = {}) {
 
           <div className="grid gap-4 sm:grid-cols-2">
             {page.benefits.map((benefit) => (
-              <div key={benefit} className="rounded-[1.35rem] border border-blue-100 bg-white p-5 shadow-[0_22px_62px_-44px_rgba(37,99,235,0.32)]">
-                <HiOutlineCheckCircle className="text-2xl text-blue-600" />
-                <p className="mt-4 text-lg font-black text-slate-950">{benefit}</p>
+              <div key={benefit} className="rounded-[1.35rem] border border-slate-200/60 bg-white p-5 shadow-[0_4px_20px_-8px_rgba(15,23,42,0.06)]">
+                <HiOutlineCheckCircle className="text-2xl text-slate-500" />
+                <p className="mt-4 text-lg font-bold text-slate-950">{benefit}</p>
               </div>
             ))}
           </div>
@@ -833,7 +833,7 @@ export default function SolutionPage({ solutionSlug: solutionSlugProp } = {}) {
         <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
           <div className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr]">
             <div>
-              <h2 className="website-section-heading text-3xl font-black tracking-tight text-slate-950 sm:text-5xl">Industry use cases</h2>
+              <h2 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-5xl">Industry use cases</h2>
               <p className="mt-5 text-base leading-8 text-slate-600">
                 Flexible enough for modern service, sales, education, property, retail and operations teams.
               </p>
@@ -844,7 +844,7 @@ export default function SolutionPage({ solutionSlug: solutionSlugProp } = {}) {
                   <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-slate-950 text-white">
                     <HiOutlineMapPin className="text-xl" />
                   </span>
-                  <p className="text-sm font-extrabold text-slate-900">{useCase}</p>
+                  <p className="text-sm font-semibold text-slate-900">{useCase}</p>
                 </div>
               ))}
             </div>
@@ -857,14 +857,14 @@ export default function SolutionPage({ solutionSlug: solutionSlugProp } = {}) {
           <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <span className="inline-flex rounded-full border border-blue-100 bg-white px-4 py-2 text-xs font-extrabold uppercase tracking-[0.18em] text-blue-700 shadow-sm">
+                <span className="inline-flex rounded-full border border-slate-200/60 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-700 shadow-sm">
                   Related Solutions
                 </span>
-                <h2 className="website-section-heading mt-5 max-w-3xl text-3xl font-black tracking-tight text-slate-950 sm:text-5xl">
+                <h2 className="mt-5 max-w-3xl text-3xl font-bold tracking-tight text-slate-950 sm:text-5xl">
                   Software that works with {page.productName}
                 </h2>
               </div>
-              <Link to="/pricing" className="premium-button-secondary w-max">
+              <Link to="/pricing" className="w-max inline-flex min-h-[44px] items-center gap-2 rounded-full border border-slate-200/60 bg-white/80 px-6 text-sm font-semibold tracking-[-0.01em] text-slate-700 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.04)] backdrop-blur-xl transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300/70 hover:bg-white hover:text-slate-900 hover:shadow-[0_6px_20px_-8px_rgba(0,0,0,0.12)] active:scale-[0.97]">
                 Compare Pricing
               </Link>
             </div>
@@ -874,11 +874,11 @@ export default function SolutionPage({ solutionSlug: solutionSlugProp } = {}) {
                 <Link
                   key={item.key}
                   to={item.to}
-                  className="group rounded-[1.35rem] border border-blue-100 bg-white p-6 shadow-[0_22px_62px_-44px_rgba(37,99,235,0.32)] transition hover:-translate-y-1 hover:border-blue-200 hover:shadow-[0_30px_78px_-48px_rgba(37,99,235,0.46)]"
+                  className="group rounded-[1.35rem] border border-slate-200/60 bg-white p-6 shadow-[0_4px_20px_-8px_rgba(15,23,42,0.06)] transition hover:-translate-y-1 hover:border-slate-300 hover:shadow-[0_16px_44px_-16px_rgba(15,23,42,0.14)]"
                 >
-                  <p className="text-lg font-black text-slate-950">{item.label}</p>
+                  <p className="text-lg font-bold text-slate-950">{item.label}</p>
                   <p className="mt-3 text-sm leading-7 text-slate-600">{item.text}</p>
-                  <span className="mt-5 inline-flex items-center gap-2 text-sm font-black text-blue-700">
+                  <span className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-slate-700">
                     View solution
                     <HiOutlineArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
                   </span>
@@ -892,12 +892,12 @@ export default function SolutionPage({ solutionSlug: solutionSlugProp } = {}) {
       <section data-reveal className="bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] py-16 sm:py-20 lg:py-24">
         <div className="mx-auto max-w-5xl px-5 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h2 className="website-section-heading text-3xl font-black tracking-tight text-slate-950 sm:text-5xl">Frequently asked questions</h2>
+            <h2 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-5xl">Frequently asked questions</h2>
           </div>
           <div className="mt-10 grid gap-4">
             {faqs.map(([question, answer]) => (
               <article key={question} className="rounded-[1.35rem] border border-slate-200 bg-white p-5 shadow-[0_18px_54px_-42px_rgba(15,23,42,0.36)]">
-                <h3 className="text-base font-black text-slate-950">{question}</h3>
+                <h3 className="text-base font-bold text-slate-950">{question}</h3>
                 <p className="mt-2 text-sm leading-7 text-slate-600">{answer}</p>
               </article>
             ))}
@@ -906,19 +906,19 @@ export default function SolutionPage({ solutionSlug: solutionSlugProp } = {}) {
       </section>
 
       <section data-reveal className="bg-white px-5 pb-16 sm:px-6 sm:pb-20 lg:px-8">
-        <div className="mx-auto grid max-w-7xl items-center gap-6 rounded-[2rem] border border-blue-100 bg-[linear-gradient(135deg,#eff6ff_0%,#ffffff_58%,#e0f2fe_100%)] p-6 shadow-[0_30px_90px_-60px_rgba(37,99,235,0.44)] sm:p-8 lg:grid-cols-[1fr_auto]">
+        <div className="mx-auto grid max-w-7xl items-center gap-6 rounded-[2rem] border border-slate-200/60 bg-[linear-gradient(135deg,#eff6ff_0%,#ffffff_58%,#e0f2fe_100%)] p-6 shadow-[0_8px_40px_-16px_rgba(15,23,42,0.08)] sm:p-8 lg:grid-cols-[1fr_auto]">
           <div>
-            <h2 className="text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">Ready to see {page.productName} in action?</h2>
+            <h2 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">Ready to see {page.productName} in action?</h2>
             <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
               Start a free trial with no credit card, stay on Free Forever after trial, or book a guided demo before upgrading to Standard.
             </p>
           </div>
           <div className="flex flex-col gap-3 min-[420px]:flex-row">
-            <Link to="/signup" className="premium-button-primary">
+            <Link to="/signup" className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-slate-900 px-6 text-sm font-semibold tracking-[-0.01em] text-white shadow-[0_4px_16px_-6px_rgba(15,23,42,0.3)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-[0_8px_24px_-8px_rgba(15,23,42,0.4)] active:scale-[0.97]">
               Start Free Trial
               <HiOutlineArrowRight className="text-lg" />
             </Link>
-            <a href={whatsappLeadLink} target="_blank" rel="noreferrer" className="premium-button-secondary">
+            <a href={whatsappLeadLink} target="_blank" rel="noreferrer" className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-slate-200/60 bg-white/80 px-6 text-sm font-semibold tracking-[-0.01em] text-slate-700 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.04)] backdrop-blur-xl transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300/70 hover:bg-white hover:text-slate-900 hover:shadow-[0_6px_20px_-8px_rgba(0,0,0,0.12)] active:scale-[0.97]">
               Book Demo
             </a>
           </div>
