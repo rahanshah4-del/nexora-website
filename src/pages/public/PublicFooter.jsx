@@ -88,7 +88,7 @@ export default function PublicFooter() {
 
           {/* Column 2 — Products */}
           <div>
-            <h3 className="text-sm font-semibold tracking-[-0.01em] text-white">Products</h3>
+            <h3 className="text-sm font-medium tracking-[-0.01em] text-white">Products</h3>
             <div className="mt-5 grid gap-3 text-sm text-blue-100">
               {productLinks.map(([label, to]) => (
                 <Link key={label} to={to} className="hover:text-white">
@@ -100,7 +100,7 @@ export default function PublicFooter() {
 
           {/* Column 3 — Company */}
           <div>
-            <h3 className="text-sm font-semibold tracking-[-0.01em] text-white">Company</h3>
+            <h3 className="text-sm font-medium tracking-[-0.01em] text-white">Company</h3>
             <div className="mt-5 grid gap-3 text-sm text-blue-100">
               {companyLinks.map(([label, to]) => (
                 <Link key={label} to={to} className="hover:text-white">
@@ -112,7 +112,7 @@ export default function PublicFooter() {
 
           {/* Column 4 — Resources */}
           <div>
-            <h3 className="text-sm font-semibold tracking-[-0.01em] text-white">Resources</h3>
+            <h3 className="text-sm font-medium tracking-[-0.01em] text-white">Resources</h3>
             <div className="mt-5 grid gap-3 text-sm text-blue-100">
               {resourceLinks.map(([label, to]) => (
                 <Link key={label} to={to} className="hover:text-white">
@@ -124,9 +124,9 @@ export default function PublicFooter() {
 
           {/* Column 5 — Contact */}
           <div>
-            <h3 className="text-sm font-semibold tracking-[-0.01em] text-white">Contact</h3>
+            <h3 className="text-sm font-medium tracking-[-0.01em] text-white">Contact</h3>
             <div className="mt-5 grid gap-4 text-sm text-blue-100">
-              <a href={whatsappLink} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-1.5 text-[11px] font-bold text-white backdrop-blur-sm transition hover:bg-white/20 hover:border-white/30 hover:text-white">
+              <a href={whatsappLink} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-1.5 text-[11px] font-medium text-white backdrop-blur-sm transition hover:bg-white/20 hover:border-white/30 hover:text-white">
                 <FaWhatsapp className="text-sm text-emerald-400" />
                 <span>{whatsappNumberDisplay}</span>
               </a>
@@ -138,11 +138,11 @@ export default function PublicFooter() {
                 <HiOutlineGlobeAlt className="mt-0.5 shrink-0 text-lg" />
                 <span>nexorasolution.online</span>
               </a>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3.5 py-1.5 text-[11px] font-bold text-white backdrop-blur-sm">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3.5 py-1.5 text-[11px] font-medium text-white backdrop-blur-sm">
                 <HiOutlineMapPin className="text-sm text-rose-400" />
                 Pakistan &amp; Dubai
               </span>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3.5 py-1.5 text-[11px] font-bold text-white backdrop-blur-sm transition hover:bg-white/20 hover:border-white/30">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3.5 py-1.5 text-[11px] font-medium text-white backdrop-blur-sm transition hover:bg-white/20 hover:border-white/30">
                 <HiOutlineGlobeAlt className="text-sm" />
                 Available Worldwide
               </span>

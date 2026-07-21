@@ -64,7 +64,7 @@ function ShareButton({ label, href }) {
       target="_blank"
       rel="noreferrer"
       aria-label={`Share on ${label}`}
-      className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200/70 bg-white text-slate-500 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-200 hover:bg-white hover:text-slate-800 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 active:scale-[0.92]"
+      className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200/70 bg-white text-slate-500 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-200 hover:bg-white hover:text-slate-500 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 active:scale-[0.92]"
     >
       {icons[label] || <HiOutlineLink className="h-4 w-4" />}
     </a>
@@ -79,11 +79,11 @@ function ArticleCard({ article, label }) {
       className="group block rounded-2xl border border-slate-100 bg-white p-5 shadow-[0_8px_30px_-12px_rgba(15,23,42,0.08)] transition-all duration-300 hover:-translate-y-0.5 hover:border-blue-100 hover:shadow-[0_24px_60px_-16px_rgba(37,99,235,0.24)] active:scale-[0.98]"
     >
       {label ? (
-        <span className="inline-flex items-center rounded-lg border border-blue-100/60 bg-white/80 px-2.5 py-1 text-[0.6rem] font-extrabold uppercase tracking-[0.14em] text-blue-700 shadow-sm backdrop-blur-sm">
+        <span className="inline-flex items-center rounded-lg border border-blue-100/60 bg-white/80 px-2.5 py-1 text-[0.6rem] font-medium uppercase tracking-[0.14em] text-blue-700 shadow-sm backdrop-blur-sm">
           {label}
         </span>
       ) : null}
-      <p className="mt-3 text-lg font-black text-slate-950 transition-colors duration-200 group-hover:text-blue-700">{article.title}</p>
+      <p className="mt-3 text-lg font-medium text-slate-900 transition-colors duration-200 group-hover:text-blue-700">{article.title}</p>
       <p className="mt-2 text-sm leading-6 text-slate-500 line-clamp-2">{article.excerpt}</p>
     </Link>
   )
@@ -276,13 +276,13 @@ export default function BlogArticlePage() {
           <div className="relative mx-auto max-w-5xl px-5 sm:px-6 lg:px-8">
             <Link
               to="/blog"
-              className="group inline-flex min-h-[38px] items-center gap-1.5 rounded-full border border-slate-200/60 bg-white/75 px-4 py-2 text-[13px] font-semibold tracking-[-0.01em] text-slate-600 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.04)] backdrop-blur-xl transition-all duration-200 hover:-translate-y-px hover:border-slate-300/70 hover:bg-white hover:text-slate-800 hover:shadow-[0_6px_20px_-8px_rgba(0,0,0,0.12)] active:scale-[0.97] active:shadow-[0_1px_3px_rgba(0,0,0,0.06)] sm:min-h-[42px] sm:px-5 sm:text-sm"
+              className="group inline-flex min-h-[38px] items-center gap-1.5 rounded-full border border-slate-200/60 bg-white/75 px-4 py-2 text-[13px] font-medium tracking-[-0.01em] text-slate-500 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.04)] backdrop-blur-xl transition-all duration-200 hover:-translate-y-px hover:border-slate-300/70 hover:bg-white hover:text-slate-500 hover:shadow-[0_6px_20px_-8px_rgba(0,0,0,0.12)] active:scale-[0.97] active:shadow-[0_1px_3px_rgba(0,0,0,0.06)] sm:min-h-[42px] sm:px-5 sm:text-sm"
             >
               <HiOutlineArrowLeft className="h-[17px] w-[17px] transition-transform duration-200 group-hover:-translate-x-0.5" />
               Back to Blog
             </Link>
-            <div className="mt-8 flex flex-wrap items-center gap-2 text-xs font-black text-blue-700">
-              <Link to={`/blog?category=${encodeURIComponent(article.category)}`} className="rounded-lg border border-blue-100/60 bg-white/80 px-3 py-1.5 text-[0.7rem] font-extrabold uppercase tracking-[0.12em] text-blue-700 shadow-sm backdrop-blur-sm transition hover:bg-blue-100 active:scale-[0.96]">
+            <div className="mt-8 flex flex-wrap items-center gap-2 text-xs font-medium text-blue-700">
+              <Link to={`/blog?category=${encodeURIComponent(article.category)}`} className="rounded-lg border border-blue-100/60 bg-white/80 px-3 py-1.5 text-[0.7rem] font-medium uppercase tracking-[0.12em] text-blue-700 shadow-sm backdrop-blur-sm transition hover:bg-blue-100 active:scale-[0.96]">
                 {article.category}
               </Link>
               <span className="text-slate-400">{readingTime}</span>
@@ -291,7 +291,7 @@ export default function BlogArticlePage() {
                 <button
                   type="button"
                   onClick={() => setLangOpen((v) => !v)}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-blue-100/60 bg-white/80 px-3 py-1.5 text-[0.7rem] font-extrabold text-blue-700 shadow-sm backdrop-blur-sm transition hover:bg-blue-50"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-blue-100/60 bg-white/80 px-3 py-1.5 text-[0.7rem] font-medium text-blue-700 shadow-sm backdrop-blur-sm transition hover:bg-blue-50"
                 >
                   <HiOutlineLanguage className="h-4 w-4" />
                   {BLOG_LANGUAGES.find((l) => l.code === lang)?.label || 'English'}
@@ -306,10 +306,10 @@ export default function BlogArticlePage() {
                           key={code}
                           type="button"
                           onClick={() => { selectLanguage(code); setLangOpen(false) }}
-                          className={`flex w-full items-center gap-2.5 px-3.5 py-2.5 text-xs font-bold transition ${
+                          className={`flex w-full items-center gap-2.5 px-3.5 py-2.5 text-xs font-medium transition ${
                             lang === code
                               ? 'bg-blue-50 text-blue-700'
-                              : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                              : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
                           }`}
                         >
                           <span className={`flex h-2 w-2 shrink-0 rounded-full ${lang === code ? 'bg-blue-500' : 'bg-transparent'}`} />
@@ -322,15 +322,15 @@ export default function BlogArticlePage() {
               </span>
             </div>
             {lang !== 'en' && translating && !translation ? (
-              <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-[0.7rem] font-bold text-blue-700">
+              <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-[0.7rem] font-medium text-blue-700">
                 <span className="h-2 w-2 animate-pulse rounded-full bg-blue-500" />
                 Translating…
               </p>
             ) : null}
-            <h1 className="website-hero-heading mt-5 max-w-4xl text-[1.9rem] font-extrabold leading-[1.12] tracking-tight text-slate-950 sm:text-[2.5rem] sm:leading-[1.08] lg:text-[3.1rem] lg:leading-[1.06]">
+            <h1 className="mt-5 max-w-4xl text-[1.9rem] font-semibold leading-[1.12] tracking-[-0.02em] text-slate-900 sm:text-[2.5rem] sm:leading-[1.08] lg:text-[3.1rem] lg:leading-[1.06]">
               {display.title}
             </h1>
-            <p className="mt-6 max-w-3xl text-base leading-8 text-slate-600 sm:text-lg">{display.excerpt}</p>
+            <p className="mt-6 max-w-3xl text-base leading-8 text-slate-500 sm:text-lg">{display.excerpt}</p>
             {/* Nexora AI — Premium badge with custom logo */}
             <div className="mt-6 group relative overflow-hidden rounded-2xl border border-white/30 bg-gradient-to-br from-white/80 via-white/60 to-violet-50/40 p-[1px] shadow-[0_8px_32px_-8px_rgba(139,92,246,0.18)] backdrop-blur-xl transition-all duration-500 hover:shadow-[0_12px_40px_-8px_rgba(139,92,246,0.28)]" style={{ WebkitBackdropFilter: 'saturate(180%) blur(20px)' }}>
               {/* Animated glow orbs */}
@@ -345,8 +345,8 @@ export default function BlogArticlePage() {
                 {/* Text content */}
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="text-[15px] font-bold tracking-[-0.02em] text-[#1d1d1f]">Nexora AI</p>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-violet-100 to-purple-100 px-2 py-0.5 text-[10px] font-semibold tracking-[-0.01em] text-violet-700">
+                    <p className="text-[15px] font-medium tracking-[-0.02em] text-[#1d1d1f]">Nexora AI</p>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-violet-100 to-purple-100 px-2 py-0.5 text-[10px] font-medium tracking-[-0.01em] text-violet-700">
                       <span className="h-1.5 w-1.5 rounded-full bg-violet-500 animate-pulse" />
                       Enhanced
                     </span>
@@ -360,7 +360,7 @@ export default function BlogArticlePage() {
                 </svg>
               </div>
             </div>
-            <div className="mt-7 grid gap-3 text-sm font-bold text-slate-600 sm:grid-cols-3">
+            <div className="mt-7 grid gap-3 text-sm font-medium text-slate-500 sm:grid-cols-3">
               <span className="inline-flex items-center gap-2 rounded-2xl border border-blue-100 bg-white px-4 py-3">
                 <HiOutlineUserCircle className="h-5 w-5 text-blue-700" />
                 {article.author.name}
@@ -382,14 +382,14 @@ export default function BlogArticlePage() {
             <aside className="h-max rounded-2xl border border-slate-200/70 bg-white/80 p-5 shadow-[0_8px_30px_-12px_rgba(15,23,42,0.06)] backdrop-blur-xl lg:sticky lg:top-24">
               <div className="flex items-center gap-2">
                 <HiOutlineDocumentText className="h-4 w-4 text-blue-600" />
-                <p className="text-[0.65rem] font-extrabold uppercase tracking-[0.16em] text-slate-400">Table of Contents</p>
+                <p className="text-[0.65rem] font-medium uppercase tracking-[0.16em] text-slate-400">Table of Contents</p>
               </div>
               <div className="mt-4 grid max-h-52 gap-1 overflow-y-auto pr-1 lg:max-h-none lg:overflow-visible lg:pr-0">
                 {display.sections.map((section) => (
                   <a
                     key={section.id}
                     href={`#${section.id}`}
-                    className="group flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold text-slate-600 transition-all duration-200 hover:bg-blue-50 hover:text-blue-700 active:scale-[0.97]"
+                    className="group flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-500 transition-all duration-200 hover:bg-blue-50 hover:text-blue-700 active:scale-[0.97]"
                   >
                     <HiOutlineListBullet className="h-3.5 w-3.5 flex-shrink-0 text-slate-300 transition-colors duration-200 group-hover:text-blue-400" />
                     <span className="leading-tight">{section.heading}</span>
@@ -400,7 +400,7 @@ export default function BlogArticlePage() {
               <div className="mt-5 border-t border-slate-100/60 pt-5">
                 <div className="flex items-center gap-2">
                   <HiOutlineShare className="h-4 w-4 text-blue-600" />
-                  <p className="text-[0.65rem] font-extrabold uppercase tracking-[0.16em] text-slate-400">Share</p>
+                  <p className="text-[0.65rem] font-medium uppercase tracking-[0.16em] text-slate-400">Share</p>
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {shareLinks(article).map(([label, href]) => (
@@ -435,12 +435,12 @@ export default function BlogArticlePage() {
               </div>
 
               <div className="mt-10 rounded-[1.8rem] border border-slate-200 bg-white p-6 shadow-[0_22px_62px_-48px_rgba(15,23,42,0.26)] sm:p-8">
-                <h2 className="text-2xl font-black tracking-tight text-slate-950">Key takeaways</h2>
+                <h2 className="text-2xl font-medium tracking-tight text-slate-900">Key takeaways</h2>
                 <div className="mt-5 grid gap-4 md:grid-cols-3">
                   {['Keep one shared workspace', 'Use role-based permissions', 'Review reports before scaling'].map((item) => (
                     <div key={item} className="rounded-[1.1rem] bg-slate-50 p-4">
-                      <h3 className="text-sm font-black text-slate-950">{item}</h3>
-                      <p className="mt-2 text-xs leading-5 text-slate-600">A simple operating rule that keeps the article practical for owners and teams.</p>
+                      <h3 className="text-sm font-medium text-slate-900">{item}</h3>
+                      <p className="mt-2 text-xs leading-5 text-slate-500">A simple operating rule that keeps the article practical for owners and teams.</p>
                     </div>
                   ))}
                 </div>
@@ -449,11 +449,11 @@ export default function BlogArticlePage() {
               <div className="prose prose-slate mt-10 max-w-none">
                 {display.sections.map((section) => (
                   <section key={section.id} id={section.id} className="scroll-mt-28">
-                    <h2 className="mt-10 text-3xl font-black tracking-tight text-slate-950">{section.heading}</h2>
+                    <h2 className="mt-10 text-3xl font-medium tracking-tight text-slate-900">{section.heading}</h2>
                     {section.paragraphs.map((paragraph) => (
                       <p
                         key={paragraph.slice(0, 40)}
-                        className="mt-5 text-base leading-8 text-slate-600"
+                        className="mt-5 text-base leading-8 text-slate-500"
                         dangerouslySetInnerHTML={{ __html: formatBlogContent(paragraph.replace(/</g, '&lt;').replace(/>/g, '&gt;'), { html: true, autoHighlight: true }) }}
                       />
                     ))}
@@ -463,7 +463,7 @@ export default function BlogArticlePage() {
 
               <div className="mt-10 flex flex-wrap gap-1.5">
                 {article.tags.map((item) => (
-                  <Link key={item} to={`/blog?tag=${encodeURIComponent(item)}`} className="inline-flex items-center gap-1.5 rounded-full border border-slate-100 bg-slate-50/70 px-3 py-1.5 text-[0.7rem] font-bold text-slate-500 shadow-sm transition-all duration-200 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 active:scale-[0.96]">
+                  <Link key={item} to={`/blog?tag=${encodeURIComponent(item)}`} className="inline-flex items-center gap-1.5 rounded-full border border-slate-100 bg-slate-50/70 px-3 py-1.5 text-[0.7rem] font-medium text-slate-500 shadow-sm transition-all duration-200 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 active:scale-[0.96]">
                     <HiOutlineTag className="h-3 w-3" />
                     {item}
                   </Link>
@@ -471,12 +471,12 @@ export default function BlogArticlePage() {
               </div>
 
               <section className="mt-14 rounded-[1.8rem] border border-blue-100 bg-[linear-gradient(135deg,#eff6ff_0%,#ffffff_58%,#e0f2fe_100%)] p-6 sm:p-8">
-                <h2 className="text-3xl font-black tracking-tight text-slate-950">Frequently asked questions</h2>
+                <h2 className="text-3xl font-medium tracking-tight text-slate-900">Frequently asked questions</h2>
                 <div className="mt-6 grid gap-4">
                   {display.faqs.map(([question, answer]) => (
                     <div key={question} className="rounded-[1.2rem] bg-white p-5 shadow-sm">
-                      <h3 className="text-base font-black text-slate-950">{question}</h3>
-                      <p className="mt-2 text-sm leading-7 text-slate-600">{answer}</p>
+                      <h3 className="text-base font-medium text-slate-900">{question}</h3>
+                      <p className="mt-2 text-sm leading-7 text-slate-500">{answer}</p>
                     </div>
                   ))}
                 </div>
@@ -490,10 +490,10 @@ export default function BlogArticlePage() {
               <section className="mt-14">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                   <div>
-                    <span className="inline-flex rounded-lg border border-blue-100/60 bg-white/80 px-3.5 py-2 text-[0.7rem] font-extrabold uppercase tracking-[0.16em] text-blue-700 shadow-sm backdrop-blur-sm">
+                    <span className="inline-flex rounded-lg border border-blue-100/60 bg-white/80 px-3.5 py-2 text-[0.7rem] font-medium uppercase tracking-[0.16em] text-blue-700 shadow-sm backdrop-blur-sm">
                       Related Articles
                     </span>
-                    <h2 className="website-section-heading mt-5 text-3xl font-black tracking-tight text-slate-950 sm:text-5xl">
+                    <h2 className="website-section-heading mt-5 text-3xl font-medium tracking-tight text-slate-900 sm:text-5xl">
                       Keep reading
                     </h2>
                   </div>

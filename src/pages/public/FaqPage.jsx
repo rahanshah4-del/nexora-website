@@ -25,11 +25,11 @@ export default function FaqPage() {
         <div className="soft-arc-bg pointer-events-none" />
         <div className="relative mx-auto max-w-3xl px-5 sm:px-6 lg:px-8">
           <div className="text-center">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200/60 bg-white/70 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 shadow-sm backdrop-blur-xl">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200/60 bg-white/70 px-4 py-2 text-xs font-medium uppercase tracking-[0.14em] text-slate-500 shadow-sm backdrop-blur-xl">
               <HiOutlineSparkles className="h-3.5 w-3.5 text-amber-500" />
               FAQ
             </span>
-            <h1 className="mt-6 text-4xl font-bold tracking-[-0.02em] text-slate-950 sm:text-5xl">Frequently Asked Questions</h1>
+            <h1 className="mt-6 text-4xl font-medium tracking-[-0.02em] text-slate-900 sm:text-5xl">Frequently Asked Questions</h1>
             <p className="mt-6 text-base leading-8 text-slate-500 sm:text-lg">
               Quick answers to common questions about Nexora Solution.
             </p>
@@ -38,7 +38,7 @@ export default function FaqPage() {
           <div className="mt-12 grid gap-3">
             {faqItems.map(({ q, a }) => (
               <article key={q} className="rounded-[1.2rem] border border-slate-200/60 bg-white p-5 shadow-[0_4px_20px_-8px_rgba(15,23,42,0.05)] sm:p-6">
-                <h2 className="text-[15px] font-semibold tracking-[-0.01em] text-slate-900">{q}</h2>
+                <h2 className="text-[15px] font-medium tracking-[-0.01em] text-slate-900">{q}</h2>
                 <p className="mt-2 text-[14px] leading-[1.7] text-slate-500">{a}</p>
               </article>
             ))}
@@ -47,7 +47,7 @@ export default function FaqPage() {
           <div className="mt-12 text-center">
             <p className="text-sm text-slate-500">
               Still have questions?{' '}
-              <Link to="/contact" className="font-semibold text-slate-900 underline decoration-slate-300 underline-offset-4 transition-colors hover:text-black hover:decoration-slate-900">
+              <Link to="/contact" className="font-medium text-slate-900 underline decoration-slate-300 underline-offset-4 transition-colors hover:text-black hover:decoration-slate-900">
                 Contact us
               </Link>
             </p>

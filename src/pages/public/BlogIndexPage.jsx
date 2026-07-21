@@ -83,20 +83,20 @@ export default function BlogIndexPage() {
           value={searchValue}
           onChange={(e) => setSearchValue(e.target.value)}
           placeholder="Search articles..."
-          className="h-12 w-full rounded-xl border border-slate-200/60 bg-slate-50 pl-11 pr-4 text-[14px] font-medium tracking-[-0.01em] text-slate-800 outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-slate-400 focus:bg-white"
+          className="h-12 w-full rounded-xl border border-slate-200/60 bg-slate-50 pl-11 pr-4 text-[14px] font-medium tracking-[-0.01em] text-slate-500 outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-slate-400 focus:bg-white"
         />
       </form>
 
       <div className="mt-7">
-        <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-slate-400">Categories</p>
+        <p className="text-[0.65rem] font-medium uppercase tracking-[0.16em] text-slate-400">Categories</p>
         <div className="mt-3 grid gap-1.5">
           <button
             type="button"
             onClick={() => { updateFilter({ category: '', tag: '' }); setFiltersOpen(false) }}
-            className={`rounded-lg px-3 py-2 text-left text-[13px] font-semibold tracking-[-0.01em] transition-all duration-200 active:scale-[0.98] ${
+            className={`rounded-lg px-3 py-2 text-left text-[13px] font-medium tracking-[-0.01em] transition-all duration-200 active:scale-[0.98] ${
               category === 'All' && !tag
                 ? 'bg-slate-900 text-white shadow-[0_2px_8px_-2px_rgba(15,23,42,0.2)]'
-                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
             }`}
           >
             All Articles
@@ -106,10 +106,10 @@ export default function BlogIndexPage() {
               key={item.category}
               type="button"
               onClick={() => { updateFilter({ category: item.category, tag: '' }); setFiltersOpen(false) }}
-              className={`flex items-center justify-between rounded-lg px-3 py-2 text-left text-[13px] font-semibold tracking-[-0.01em] transition-all duration-200 active:scale-[0.98] ${
+              className={`flex items-center justify-between rounded-lg px-3 py-2 text-left text-[13px] font-medium tracking-[-0.01em] transition-all duration-200 active:scale-[0.98] ${
                 category === item.category
                   ? 'bg-slate-900 text-white shadow-[0_2px_8px_-2px_rgba(15,23,42,0.2)]'
-                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                  : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
               }`}
             >
               <span>{item.category}</span>
@@ -120,17 +120,17 @@ export default function BlogIndexPage() {
       </div>
 
       <div className="mt-7">
-        <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-slate-400">Popular Tags</p>
+        <p className="text-[0.65rem] font-medium uppercase tracking-[0.16em] text-slate-400">Popular Tags</p>
         <div className="mt-3 flex flex-wrap gap-2">
           {tags.slice(0, 15).map((item) => (
             <button
               key={item.tag}
               type="button"
               onClick={() => { updateFilter({ tag: item.tag }); setFiltersOpen(false) }}
-              className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-semibold tracking-[-0.01em] transition-all duration-200 active:scale-[0.96] ${
+              className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-medium tracking-[-0.01em] transition-all duration-200 active:scale-[0.96] ${
                 tag === item.tag
                   ? 'bg-slate-900 text-white'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
+                  : 'bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-900'
               }`}
             >
               <HiOutlineTag className="h-3 w-3" />
@@ -144,7 +144,7 @@ export default function BlogIndexPage() {
         <button
           type="button"
           onClick={() => { setSearchValue(''); setParams({}); setFiltersOpen(false) }}
-          className="mt-7 inline-flex w-full items-center justify-center gap-1.5 rounded-full border border-slate-200/60 bg-white/80 py-2.5 text-[12px] font-semibold tracking-[-0.01em] text-slate-500 transition-all duration-200 hover:border-slate-300 hover:text-slate-700 active:scale-[0.97]"
+          className="mt-7 inline-flex w-full items-center justify-center gap-1.5 rounded-full border border-slate-200/60 bg-white/80 py-2.5 text-[12px] font-medium tracking-[-0.01em] text-slate-500 transition-all duration-200 hover:border-slate-300 hover:text-slate-500 active:scale-[0.97]"
         >
           Clear all filters
         </button>
@@ -173,11 +173,11 @@ export default function BlogIndexPage() {
       <section className="relative overflow-hidden bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_60%,#f1f5f9_100%)] pb-14 pt-20 sm:pb-18 sm:pt-24 lg:pb-22 lg:pt-28">
         <div className="soft-arc-bg pointer-events-none" />
         <div className="relative mx-auto max-w-7xl px-5 text-center sm:px-6 lg:px-8">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200/60 bg-white/70 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 shadow-sm backdrop-blur-xl">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200/60 bg-white/70 px-4 py-2 text-xs font-medium uppercase tracking-[0.14em] text-slate-500 shadow-sm backdrop-blur-xl">
             <HiOutlineSparkles className="h-3.5 w-3.5 text-amber-500" />
             Nexora Blog
           </span>
-          <h1 className="mx-auto mt-6 max-w-4xl text-[2.4rem] font-bold leading-[1.06] tracking-[-0.02em] text-slate-950 sm:text-[3.4rem] lg:text-[4rem]">
+          <h1 className="mx-auto mt-6 max-w-4xl text-[2.4rem] font-semibold leading-[1.06] tracking-[-0.02em] text-slate-900 sm:text-[3.4rem] lg:text-[4rem]">
             Business software guides for{' '}
             <span className="bg-gradient-to-r from-blue-600 via-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
               smarter growth.
@@ -199,13 +199,13 @@ export default function BlogIndexPage() {
               <button
                 type="button"
                 onClick={() => setFiltersOpen(true)}
-                className="flex h-12 w-full items-center justify-between rounded-xl border border-slate-200/60 bg-white/80 px-4 text-[14px] font-semibold tracking-[-0.01em] text-slate-700 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.04)] backdrop-blur-xl transition-all duration-200 hover:bg-white active:scale-[0.98]"
+                className="flex h-12 w-full items-center justify-between rounded-xl border border-slate-200/60 bg-white/80 px-4 text-[14px] font-medium tracking-[-0.01em] text-slate-500 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.04)] backdrop-blur-xl transition-all duration-200 hover:bg-white active:scale-[0.98]"
               >
                 <span className="flex items-center gap-2.5">
                   <HiOutlineMagnifyingGlass className="h-[18px] w-[18px] text-slate-400" />
                   Filters
                 </span>
-                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-500">
+                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-500">
                   {(category !== 'All' || tag || params.get('q')) ? 'Active' : 'All'}
                 </span>
               </button>
@@ -231,7 +231,7 @@ export default function BlogIndexPage() {
                   <button
                     type="button"
                     onClick={() => { setSearchValue(''); setParams({}) }}
-                    className="text-[12px] font-semibold text-slate-500 transition-colors hover:text-slate-700"
+                    className="text-[12px] font-medium text-slate-500 transition-colors hover:text-slate-500"
                   >
                     Clear filters
                   </button>
@@ -290,7 +290,7 @@ export default function BlogIndexPage() {
                         <div className="flex flex-1 flex-col p-5">
                           {/* Meta row */}
                           <div className="flex items-center gap-2.5">
-                            <span className="inline-flex items-center rounded-md border border-slate-200/60 bg-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500">
+                            <span className="inline-flex items-center rounded-md border border-slate-200/60 bg-white px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.1em] text-slate-500">
                               {article.category}
                             </span>
                             <span className="flex items-center gap-1 text-[11px] text-slate-400">
@@ -304,10 +304,10 @@ export default function BlogIndexPage() {
                           </div>
 
                           {/* Title */}
-                          <h2 className="mt-3 text-[17px] font-semibold leading-[1.35] tracking-[-0.01em] text-slate-900">
+                          <h2 className="mt-3 text-[17px] font-medium leading-[1.35] tracking-[-0.01em] text-slate-900">
                             <Link
                               to={`/blog/${article.slug}`}
-                              className="transition-colors duration-200 hover:text-slate-600"
+                              className="transition-colors duration-200 hover:text-slate-500"
                             >
                               {article.title}
                             </Link>
@@ -325,7 +325,7 @@ export default function BlogIndexPage() {
                                 key={item}
                                 type="button"
                                 onClick={() => updateFilter({ tag: item })}
-                                className="rounded-full border border-slate-100 bg-slate-50/70 px-2.5 py-1 text-[10px] font-medium text-slate-500 transition-all duration-200 hover:border-slate-200 hover:bg-white hover:text-slate-700 active:scale-[0.96]"
+                                className="rounded-full border border-slate-100 bg-slate-50/70 px-2.5 py-1 text-[10px] font-medium text-slate-500 transition-all duration-200 hover:border-slate-200 hover:bg-white hover:text-slate-500 active:scale-[0.96]"
                               >
                                 #{item}
                               </button>
@@ -335,7 +335,7 @@ export default function BlogIndexPage() {
                           {/* Read more */}
                           <Link
                             to={`/blog/${article.slug}`}
-                            className="mt-4 inline-flex items-center gap-1.5 text-[13px] font-semibold tracking-[-0.01em] text-slate-700 transition-all duration-200 hover:gap-2 hover:text-slate-900"
+                            className="mt-4 inline-flex items-center gap-1.5 text-[13px] font-medium tracking-[-0.01em] text-slate-500 transition-all duration-200 hover:gap-2 hover:text-slate-900"
                           >
                             Read article
                             <HiOutlineArrowRight className="h-[14px] w-[14px] transition-transform duration-200 group-hover:translate-x-0.5" />
@@ -347,12 +347,12 @@ export default function BlogIndexPage() {
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center py-20 text-center">
-                  <p className="text-[15px] font-semibold text-slate-400">No articles found</p>
+                  <p className="text-[15px] font-medium text-slate-400">No articles found</p>
                   <p className="mt-1 text-[13px] text-slate-400">Try adjusting your filters or search terms.</p>
                   <button
                     type="button"
                     onClick={() => { setSearchValue(''); setParams({}) }}
-                    className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-slate-200/60 bg-white/80 px-4 py-2 text-[13px] font-semibold tracking-[-0.01em] text-slate-600 transition-all duration-200 hover:bg-white active:scale-[0.97]"
+                    className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-slate-200/60 bg-white/80 px-4 py-2 text-[13px] font-medium tracking-[-0.01em] text-slate-500 transition-all duration-200 hover:bg-white active:scale-[0.97]"
                   >
                     Clear filters
                   </button>
@@ -372,10 +372,10 @@ export default function BlogIndexPage() {
                         setParams(np)
                         window.scrollTo({ top: 0, behavior: 'smooth' })
                       }}
-                      className={`grid h-9 w-9 place-items-center rounded-full text-[13px] font-semibold tracking-[-0.01em] transition-all duration-200 active:scale-[0.94] ${
+                      className={`grid h-9 w-9 place-items-center rounded-full text-[13px] font-medium tracking-[-0.01em] transition-all duration-200 active:scale-[0.94] ${
                         safePage === item
                           ? 'bg-slate-900 text-white shadow-[0_2px_8px_-2px_rgba(15,23,42,0.2)]'
-                          : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
+                          : 'text-slate-500 hover:bg-slate-100 hover:text-slate-500'
                       }`}
                     >
                       {item}
@@ -399,11 +399,11 @@ export default function BlogIndexPage() {
                 <div className="h-1 w-10 rounded-full bg-slate-300/70" />
               </div>
               <div className="flex items-center justify-between px-6 py-3">
-                <h2 className="text-[17px] font-semibold tracking-[-0.01em] text-slate-900">Filters</h2>
+                <h2 className="text-[17px] font-medium tracking-[-0.01em] text-slate-900">Filters</h2>
                 <button
                   type="button"
                   onClick={() => setFiltersOpen(false)}
-                  className="inline-flex h-[30px] w-[30px] items-center justify-center rounded-full bg-slate-100 text-slate-500 transition-all duration-200 hover:bg-slate-200 hover:text-slate-700 active:scale-95"
+                  className="inline-flex h-[30px] w-[30px] items-center justify-center rounded-full bg-slate-100 text-slate-500 transition-all duration-200 hover:bg-slate-200 hover:text-slate-500 active:scale-95"
                   aria-label="Close"
                 >
                   <HiOutlineXMark className="h-[18px] w-[18px]" strokeWidth={2} />

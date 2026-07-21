@@ -61,7 +61,7 @@ export default function PublicPageShell({ children }) {
   }, [maintenance.active])
 
   return (
-    <div className="marketing-page min-h-screen overflow-x-hidden bg-white text-slate-950">
+    <div className="marketing-page min-h-screen overflow-x-hidden bg-white text-slate-900">
       {maintenance.active ? <MaintenanceBlock state={maintenance} /> : null}
       {maintenance.active ? null : (
         <>

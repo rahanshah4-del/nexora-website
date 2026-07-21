@@ -91,18 +91,18 @@ export default function PublicBusinessServicesPage() {
           <div>
             <Link
               to="/"
-              className="group inline-flex min-h-[38px] items-center gap-1.5 rounded-full border border-slate-200/60 bg-white/75 px-4 py-2 text-[13px] font-semibold tracking-[-0.01em] text-slate-600 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.04)] backdrop-blur-xl transition-all duration-200 hover:-translate-y-px hover:border-slate-300/70 hover:bg-white hover:text-slate-800 hover:shadow-[0_6px_20px_-8px_rgba(0,0,0,0.12)] active:scale-[0.97] sm:min-h-[42px] sm:px-5 sm:text-sm"
+              className="group inline-flex min-h-[38px] items-center gap-1.5 rounded-full border border-slate-200/60 bg-white/75 px-4 py-2 text-[13px] font-medium tracking-[-0.01em] text-slate-500 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.04)] backdrop-blur-xl transition-all duration-200 hover:-translate-y-px hover:border-slate-300/70 hover:bg-white hover:text-slate-500 hover:shadow-[0_6px_20px_-8px_rgba(0,0,0,0.12)] active:scale-[0.97] sm:min-h-[42px] sm:px-5 sm:text-sm"
             >
               <HiOutlineArrowLeft className="h-[17px] w-[17px] transition-transform duration-200 group-hover:-translate-x-0.5" />
               Back to Website
             </Link>
 
-            <p className="mt-7 inline-flex items-center gap-1.5 rounded-full border border-slate-200/60 bg-white/70 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 shadow-sm backdrop-blur-xl">
+            <p className="mt-7 inline-flex items-center gap-1.5 rounded-full border border-slate-200/60 bg-white/70 px-4 py-2 text-xs font-medium uppercase tracking-[0.14em] text-slate-500 shadow-sm backdrop-blur-xl">
               <HiOutlineBriefcase className="h-3.5 w-3.5" />
               Business Services
             </p>
 
-            <h1 className="mt-5 max-w-4xl text-[2.5rem] font-bold leading-[1.06] tracking-[-0.02em] text-slate-950 sm:text-[3.5rem] lg:text-[4.2rem]">
+            <h1 className="mt-5 max-w-4xl text-[2.5rem] font-semibold leading-[1.06] tracking-[-0.02em] text-slate-900 sm:text-[3.5rem] lg:text-[4.2rem]">
               Back-office help that works with your{' '}
               <span className="bg-gradient-to-r from-blue-600 via-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
                 Nexora system.
@@ -117,14 +117,14 @@ export default function PublicBusinessServicesPage() {
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <a
                 href="#business-services"
-                className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-slate-900 px-6 text-sm font-semibold tracking-[-0.01em] text-white shadow-[0_4px_16px_-6px_rgba(15,23,42,0.3)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-[0_8px_24px_-8px_rgba(15,23,42,0.4)] active:scale-[0.97]"
+                className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-slate-900 px-6 text-sm font-medium tracking-[-0.01em] text-white shadow-[0_4px_16px_-6px_rgba(15,23,42,0.3)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-[0_8px_24px_-8px_rgba(15,23,42,0.4)] active:scale-[0.97]"
               >
                 View Services
                 <HiOutlineArrowRight className="h-[17px] w-[17px]" />
               </a>
               <Link
                 to="/pricing"
-                className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-slate-200/60 bg-white/80 px-6 text-sm font-semibold tracking-[-0.01em] text-slate-700 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.04)] backdrop-blur-xl transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300/70 hover:bg-white hover:text-slate-900 hover:shadow-[0_6px_20px_-8px_rgba(0,0,0,0.12)] active:scale-[0.97]"
+                className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-slate-200/60 bg-white/80 px-6 text-sm font-medium tracking-[-0.01em] text-slate-500 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.04)] backdrop-blur-xl transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300/70 hover:bg-white hover:text-slate-900 hover:shadow-[0_6px_20px_-8px_rgba(0,0,0,0.12)] active:scale-[0.97]"
               >
                 Software Pricing
               </Link>
@@ -135,10 +135,10 @@ export default function PublicBusinessServicesPage() {
           <aside className="rounded-[1.8rem] border border-slate-200/60 bg-white/80 p-6 shadow-[0_8px_40px_-16px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:p-7">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">
+                <p className="text-xs font-medium uppercase tracking-[0.14em] text-slate-400">
                   Support Window
                 </p>
-                <h2 className="mt-2 text-xl font-semibold tracking-[-0.01em] text-slate-950 sm:text-2xl">
+                <h2 className="mt-2 text-xl font-medium tracking-[-0.01em] text-slate-900 sm:text-2xl">
                   Request, review, approve, activate.
                 </h2>
               </div>
@@ -158,7 +158,7 @@ export default function PublicBusinessServicesPage() {
                   className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/70 p-3"
                 >
                   <HiOutlineCheckCircle className="h-[18px] w-[18px] shrink-0 text-emerald-600" />
-                  <p className="text-[13px] font-semibold tracking-[-0.01em] text-slate-700">
+                  <p className="text-[13px] font-medium tracking-[-0.01em] text-slate-500">
                     {item}
                   </p>
                 </div>
@@ -169,7 +169,7 @@ export default function PublicBusinessServicesPage() {
               {serviceStats.map(({ value, label, icon: Icon }) => (
                 <div key={label} className="rounded-xl bg-slate-50 p-3 text-center">
                   <Icon className="mx-auto h-[18px] w-[18px] text-slate-400" />
-                  <p className="mt-1 text-base font-bold tracking-[-0.01em] text-slate-900">
+                  <p className="mt-1 text-base font-medium tracking-[-0.01em] text-slate-900">
                     {value}
                   </p>
                   <p className="mt-0.5 text-[11px] font-medium leading-4 text-slate-500">
@@ -182,7 +182,7 @@ export default function PublicBusinessServicesPage() {
             <div className="mt-5 rounded-xl bg-slate-900 p-4 text-white">
               <div className="flex items-center gap-2">
                 <HiOutlineSparkles className="h-[18px] w-[18px] text-amber-400" />
-                <p className="text-[13px] font-semibold tracking-[-0.01em]">
+                <p className="text-[13px] font-medium tracking-[-0.01em]">
                   Built for daily operations, not just forms.
                 </p>
               </div>
@@ -206,16 +206,16 @@ export default function PublicBusinessServicesPage() {
         <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200/60 bg-white/70 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 shadow-sm backdrop-blur-xl">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200/60 bg-white/70 px-4 py-2 text-xs font-medium uppercase tracking-[0.14em] text-slate-500 shadow-sm backdrop-blur-xl">
                 Related Software
               </span>
-              <h2 className="mt-5 max-w-3xl text-2xl font-bold tracking-[-0.02em] text-slate-950 sm:text-4xl">
+              <h2 className="mt-5 max-w-3xl text-2xl font-medium tracking-[-0.02em] text-slate-900 sm:text-4xl">
                 Software that supports your service workflow
               </h2>
             </div>
             <Link
               to="/contact"
-              className="inline-flex min-h-[42px] w-max items-center gap-2 rounded-full border border-slate-200/60 bg-white/80 px-5 text-sm font-semibold tracking-[-0.01em] text-slate-700 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.04)] backdrop-blur-xl transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300/70 hover:bg-white hover:text-slate-900 hover:shadow-[0_6px_20px_-8px_rgba(0,0,0,0.12)] active:scale-[0.97]"
+              className="inline-flex min-h-[42px] w-max items-center gap-2 rounded-full border border-slate-200/60 bg-white/80 px-5 text-sm font-medium tracking-[-0.01em] text-slate-500 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.04)] backdrop-blur-xl transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300/70 hover:bg-white hover:text-slate-900 hover:shadow-[0_6px_20px_-8px_rgba(0,0,0,0.12)] active:scale-[0.97]"
             >
               Contact Nexora
             </Link>
@@ -233,14 +233,14 @@ export default function PublicBusinessServicesPage() {
                   <div
                     className={`pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full bg-gradient-to-br ${t.gradient} opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-60`}
                   />
-                  <p className="relative text-[17px] font-semibold tracking-[-0.01em] text-slate-900">
+                  <p className="relative text-[17px] font-medium tracking-[-0.01em] text-slate-900">
                     {item.label}
                   </p>
                   <p className="relative mt-2 text-[13px] leading-[1.65] text-slate-500">
                     {item.text}
                   </p>
                   <span
-                    className={`relative mt-auto inline-flex items-center gap-1.5 pt-4 text-[13px] font-semibold tracking-[-0.01em] ${t.text} transition-all duration-200 group-hover:gap-2`}
+                    className={`relative mt-auto inline-flex items-center gap-1.5 pt-4 text-[13px] font-medium tracking-[-0.01em] ${t.text} transition-all duration-200 group-hover:gap-2`}
                   >
                     View solution
                     <HiOutlineArrowRight className="h-[15px] w-[15px] transition-transform duration-200 group-hover:translate-x-0.5" />

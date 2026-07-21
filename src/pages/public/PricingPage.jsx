@@ -85,7 +85,7 @@ const UPGRADE_NOTE = 'Only one business module can be active. Upgrade to Standar
 function renderComparisonValue(value) {
   if (value === true) return <HiOutlineCheckCircle className="mx-auto h-5 w-5 text-emerald-600" />
   if (value === false) return <span className="text-sm font-medium text-slate-300">—</span>
-  return <span className="text-center text-xs font-semibold tracking-[-0.01em] text-slate-600">{value}</span>
+  return <span className="text-center text-xs font-medium tracking-[-0.01em] text-slate-500">{value}</span>
 }
 
 function useVisibleSection(rootMargin = '900px') {
@@ -140,11 +140,11 @@ export default function PricingPage() {
         <div className="soft-arc-bg pointer-events-none" />
         <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-slate-300 to-transparent" />
         <div className="relative mx-auto max-w-7xl px-5 text-center sm:px-6 lg:px-8">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200/60 bg-white/70 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 shadow-sm backdrop-blur-xl">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200/60 bg-white/70 px-4 py-2 text-xs font-medium uppercase tracking-[0.14em] text-slate-500 shadow-sm backdrop-blur-xl">
             <HiOutlineSparkles className="h-3.5 w-3.5 text-amber-500" />
             Nexora Pricing
           </span>
-          <h1 className="mx-auto mt-6 max-w-5xl text-[2.5rem] font-bold leading-[1.06] tracking-[-0.02em] text-slate-950 sm:text-[3.5rem] lg:text-[4.2rem]">
+          <h1 className="mx-auto mt-6 max-w-5xl text-[2.5rem] font-semibold leading-[1.06] tracking-[-0.02em] text-slate-900 sm:text-[3.5rem] lg:text-[4.2rem]">
             Start free, then choose the plan that{' '}
             <span className="bg-gradient-to-r from-blue-600 via-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
               fits your business.
@@ -162,7 +162,7 @@ export default function PricingPage() {
               { title: 'Upgrade When Ready', text: 'Unlock more modules, more users, larger storage and priority support.' },
             ].map(({ title, text }) => (
               <div key={title} className="rounded-[1.2rem] border border-slate-200/60 bg-white/80 p-5 shadow-[0_4px_20px_-8px_rgba(15,23,42,0.06)] backdrop-blur-xl">
-                <p className="text-sm font-semibold tracking-[-0.01em] text-slate-900">{title}</p>
+                <p className="text-sm font-medium tracking-[-0.01em] text-slate-900">{title}</p>
                 <p className="mt-2 text-[13px] leading-[1.6] text-slate-500">{text}</p>
               </div>
             ))}
@@ -176,10 +176,10 @@ export default function PricingPage() {
                   key={cycle}
                   type="button"
                   onClick={() => setBillingCycle(cycle)}
-                  className={`min-h-[38px] rounded-full px-5 text-[13px] font-semibold tracking-[-0.01em] transition-all duration-200 ${
+                  className={`min-h-[38px] rounded-full px-5 text-[13px] font-medium tracking-[-0.01em] transition-all duration-200 ${
                     billingCycle === cycle
                       ? 'bg-slate-900 text-white shadow-[0_2px_8px_-2px_rgba(15,23,42,0.2)]'
-                      : 'text-slate-500 hover:text-slate-700'
+                      : 'text-slate-500 hover:text-slate-500'
                   }`}
                 >
                   {cycle === 'monthly' ? 'Monthly' : 'Yearly (Save 20%)'}
@@ -218,18 +218,18 @@ export default function PricingPage() {
 
                   <div className="relative mb-4 flex min-h-7 justify-center">
                     {isPopular && (
-                      <span className="rounded-full bg-slate-900 px-3 py-1 text-[0.65rem] font-semibold tracking-[-0.01em] text-white">
+                      <span className="rounded-full bg-slate-900 px-3 py-1 text-[0.65rem] font-medium tracking-[-0.01em] text-white">
                         Most Popular
                       </span>
                     )}
                     {isFree && (
-                      <span className="rounded-full bg-emerald-600 px-3 py-1 text-[0.65rem] font-semibold tracking-[-0.01em] text-white">
+                      <span className="rounded-full bg-emerald-600 px-3 py-1 text-[0.65rem] font-medium tracking-[-0.01em] text-white">
                         Free
                       </span>
                     )}
                   </div>
 
-                  <h2 className={`relative text-center text-xl font-bold tracking-[-0.02em] ${
+                  <h2 className={`relative text-center text-xl font-medium tracking-[-0.02em] ${
                     isPopular ? 'text-violet-700' : isFree ? 'text-emerald-700' : 'text-slate-900'
                   }`}>
                     {isFree ? '7-Day Free Trial' : plan.name}
@@ -244,7 +244,7 @@ export default function PricingPage() {
                   </p>
 
                   <div className="relative mt-5 text-center">
-                    <p className="text-3xl font-bold tracking-[-0.02em] text-slate-950 sm:text-4xl">
+                    <p className="text-3xl font-medium tracking-[-0.02em] text-slate-900 sm:text-4xl">
                       {formatPlanPrice(plan, billingCycle)}
                     </p>
                     {plan.monthlyPrice !== 'custom' && !isFree && (
@@ -257,7 +257,7 @@ export default function PricingPage() {
 
                   <div className="relative mt-5 flex-1 space-y-2.5">
                     {plan.features.map((feature) => (
-                      <div key={feature} className="flex items-start gap-2.5 text-[13px] text-slate-600">
+                      <div key={feature} className="flex items-start gap-2.5 text-[13px] text-slate-500">
                         <HiOutlineCheckCircle className={`mt-0.5 h-[17px] w-[17px] shrink-0 ${isFree ? 'text-emerald-500' : 'text-slate-400'}`} />
                         <span className="leading-[1.55]">{feature}</span>
                       </div>
@@ -269,14 +269,14 @@ export default function PricingPage() {
 
                   <Link
                     to={plan.ctaTo || '/signup'}
-                    className={`relative mt-auto inline-flex min-h-[42px] w-full items-center justify-center rounded-full px-5 text-sm font-semibold tracking-[-0.01em] transition-all duration-200 active:scale-[0.97] ${
+                    className={`relative mt-auto inline-flex min-h-[42px] w-full items-center justify-center rounded-full px-5 text-sm font-medium tracking-[-0.01em] transition-all duration-200 active:scale-[0.97] ${
                       isPopular
                         ? 'bg-slate-900 text-white shadow-[0_4px_16px_-6px_rgba(15,23,42,0.3)] hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-[0_8px_24px_-8px_rgba(15,23,42,0.4)]'
                         : isFree
                           ? 'bg-emerald-600 text-white shadow-[0_4px_16px_-6px_rgba(16,185,129,0.3)] hover:-translate-y-0.5 hover:bg-emerald-700 hover:shadow-[0_8px_24px_-8px_rgba(16,185,129,0.4)]'
                           : isEnterprise
-                            ? 'border border-slate-300 bg-white text-slate-700 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.04)] hover:-translate-y-0.5 hover:border-slate-400 hover:text-slate-900 hover:shadow-[0_6px_20px_-8px_rgba(0,0,0,0.12)]'
-                            : 'border border-slate-200/60 bg-white text-slate-600 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.04)] hover:-translate-y-0.5 hover:border-slate-300 hover:text-slate-800 hover:shadow-[0_6px_20px_-8px_rgba(0,0,0,0.12)]'
+                            ? 'border border-slate-300 bg-white text-slate-500 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.04)] hover:-translate-y-0.5 hover:border-slate-400 hover:text-slate-900 hover:shadow-[0_6px_20px_-8px_rgba(0,0,0,0.12)]'
+                            : 'border border-slate-200/60 bg-white text-slate-500 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.04)] hover:-translate-y-0.5 hover:border-slate-300 hover:text-slate-500 hover:shadow-[0_6px_20px_-8px_rgba(0,0,0,0.12)]'
                     }`}
                   >
                     {isFree ? 'Start Free Trial' : plan.ctaLabel}
@@ -294,7 +294,7 @@ export default function PricingPage() {
                   <Icon className="h-[20px] w-[20px]" strokeWidth={1.8} />
                 </span>
                 <div>
-                  <h3 className="text-[17px] font-semibold tracking-[-0.01em] text-slate-900">{title}</h3>
+                  <h3 className="text-[17px] font-medium tracking-[-0.01em] text-slate-900">{title}</h3>
                   <p className="mt-1.5 text-[13px] leading-[1.6] text-slate-500">{text}</p>
                 </div>
               </article>
@@ -307,7 +307,7 @@ export default function PricingPage() {
       <section data-reveal className="bg-[linear-gradient(180deg,#f8fbff_0%,#ffffff_100%)] py-16 sm:py-20 lg:py-24">
         <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-3xl text-center">
-            <h2 className="text-2xl font-bold tracking-[-0.02em] text-slate-950 sm:text-4xl">
+            <h2 className="text-2xl font-medium tracking-[-0.02em] text-slate-900 sm:text-4xl">
               Feature comparison
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-[15px] leading-7 text-slate-500">
@@ -320,7 +320,7 @@ export default function PricingPage() {
               {/* Header row */}
               <div className="grid grid-cols-[1.35fr_0.7fr_0.7fr_0.85fr_0.8fr] border-b border-slate-200/60 bg-slate-900 text-white">
                 {['Feature', 'Free Trial', 'Basic', 'Standard', 'Enterprise'].map((header) => (
-                  <div key={header} className="px-3 py-4 text-xs font-semibold uppercase tracking-[0.12em] sm:px-5">
+                  <div key={header} className="px-3 py-4 text-xs font-medium uppercase tracking-[0.12em] sm:px-5">
                     {header}
                   </div>
                 ))}
@@ -333,7 +333,7 @@ export default function PricingPage() {
                     i % 2 === 1 ? 'bg-slate-50/60' : ''
                   }`}
                 >
-                  <div className="px-3 py-4 text-[13px] font-semibold tracking-[-0.01em] text-slate-800 sm:px-5">
+                  <div className="px-3 py-4 text-[13px] font-medium tracking-[-0.01em] text-slate-500 sm:px-5">
                     {feature}
                   </div>
                   {[freeTrial, basic, standard, enterprise].map((value, idx) => (
@@ -352,7 +352,7 @@ export default function PricingPage() {
       <section data-reveal className="bg-white py-16 sm:py-20 lg:py-24">
         <div className="mx-auto max-w-5xl px-5 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h2 className="text-2xl font-bold tracking-[-0.02em] text-slate-950 sm:text-4xl">
+            <h2 className="text-2xl font-medium tracking-[-0.02em] text-slate-900 sm:text-4xl">
               Pricing FAQ
             </h2>
           </div>
@@ -362,7 +362,7 @@ export default function PricingPage() {
                 key={question}
                 className="rounded-[1.2rem] border border-slate-200/60 bg-white p-5 shadow-[0_4px_20px_-8px_rgba(15,23,42,0.05)] sm:p-6"
               >
-                <h3 className="text-[15px] font-semibold tracking-[-0.01em] text-slate-900">
+                <h3 className="text-[15px] font-medium tracking-[-0.01em] text-slate-900">
                   {question}
                 </h3>
                 <p className="mt-2 text-[14px] leading-[1.7] text-slate-500">{answer}</p>
@@ -390,7 +390,7 @@ export default function PricingPage() {
               <HiOutlineChartBarSquare className="h-7 w-7" strokeWidth={1.5} />
               <HiOutlineChatBubbleLeftRight className="h-7 w-7" strokeWidth={1.5} />
             </div>
-            <h2 className="text-2xl font-bold tracking-[-0.02em] text-slate-950 sm:text-3xl">
+            <h2 className="text-2xl font-medium tracking-[-0.02em] text-slate-900 sm:text-3xl">
               Start free today. Choose the plan that fits.
             </h2>
             <p className="mt-2 max-w-2xl text-[14px] leading-7 text-slate-500">
@@ -400,14 +400,14 @@ export default function PricingPage() {
           <div className="flex flex-col gap-3 min-[420px]:flex-row">
             <Link
               to="/signup"
-              className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-slate-900 px-6 text-sm font-semibold tracking-[-0.01em] text-white shadow-[0_4px_16px_-6px_rgba(15,23,42,0.3)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-[0_8px_24px_-8px_rgba(15,23,42,0.4)] active:scale-[0.97]"
+              className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-slate-900 px-6 text-sm font-medium tracking-[-0.01em] text-white shadow-[0_4px_16px_-6px_rgba(15,23,42,0.3)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-[0_8px_24px_-8px_rgba(15,23,42,0.4)] active:scale-[0.97]"
             >
               Start Free Trial
               <HiOutlineArrowRight className="h-[17px] w-[17px]" />
             </Link>
             <Link
               to="/contact"
-              className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-slate-200/60 bg-white/80 px-6 text-sm font-semibold tracking-[-0.01em] text-slate-700 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.04)] backdrop-blur-xl transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300/70 hover:bg-white hover:text-slate-900 hover:shadow-[0_6px_20px_-8px_rgba(0,0,0,0.12)] active:scale-[0.97]"
+              className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-slate-200/60 bg-white/80 px-6 text-sm font-medium tracking-[-0.01em] text-slate-500 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.04)] backdrop-blur-xl transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300/70 hover:bg-white hover:text-slate-900 hover:shadow-[0_6px_20px_-8px_rgba(0,0,0,0.12)] active:scale-[0.97]"
             >
               Book Demo
             </Link>

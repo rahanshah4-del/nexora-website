@@ -3,8 +3,25 @@ import defaultTheme from 'tailwindcss/defaultTheme'
 export default {
   content: ['./index.html', './src/**/*.{js,jsx,ts,tsx}'],
   theme: {
+    container: {
+      center: true,
+      padding: {
+        DEFAULT: '1.25rem',
+        sm: '1.5rem',
+        lg: '2rem',
+      },
+      screens: {
+        sm: '640px',
+        md: '768px',
+        lg: '1024px',
+        xl: '1280px',
+        '2xl': '1440px',
+        '3xl': '1680px',
+      },
+    },
     extend: {
       screens: {
+        xs: '480px',
         '3xl': '1920px',
         '4xl': '2560px',
       },

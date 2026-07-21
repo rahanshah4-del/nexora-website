@@ -174,11 +174,11 @@ export default function IndustriesPage() {
         <div className="soft-arc-bg pointer-events-none" />
         <div className="relative mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-3xl text-center">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200/60 bg-white/70 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 shadow-sm backdrop-blur-xl">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200/60 bg-white/70 px-4 py-2 text-xs font-medium uppercase tracking-[0.14em] text-slate-500 shadow-sm backdrop-blur-xl">
               <HiOutlineSparkles className="h-3.5 w-3.5 text-amber-500" />
               Tailored by industry
             </span>
-            <h1 className="mt-6 text-[2.5rem] font-bold leading-[1.06] tracking-[-0.02em] text-slate-950 sm:text-[3.5rem] lg:text-[4.2rem]">
+            <h1 className="mt-6 text-[2.5rem] font-semibold leading-[1.06] tracking-[-0.02em] text-slate-900 sm:text-[3.5rem] lg:text-[4.2rem]">
               Software built for{' '}
               <span className="bg-gradient-to-r from-blue-600 via-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
                 your industry.
@@ -218,7 +218,7 @@ export default function IndustriesPage() {
                   </span>
 
                   {/* Title */}
-                  <h2 className="mt-4 text-[17px] font-semibold tracking-[-0.01em] text-slate-900">
+                  <h2 className="mt-4 text-[17px] font-medium tracking-[-0.01em] text-slate-900">
                     {industry.title}
                   </h2>
                   <p className="text-[13px] font-medium tracking-[-0.01em] text-slate-400">
@@ -235,7 +235,7 @@ export default function IndustriesPage() {
                     {industry.features.map((feat) => (
                       <span
                         key={feat}
-                        className="inline-flex rounded-lg border border-slate-100 bg-slate-50/70 px-2 py-1 text-[0.65rem] font-semibold text-slate-500"
+                        className="inline-flex rounded-lg border border-slate-100 bg-slate-50/70 px-2 py-1 text-[0.65rem] font-medium text-slate-500"
                       >
                         {feat}
                       </span>
@@ -244,7 +244,7 @@ export default function IndustriesPage() {
 
                   {/* CTA */}
                   <span
-                    className={`mt-auto inline-flex items-center gap-1.5 pt-4 text-[13px] font-semibold tracking-[-0.01em] ${t.text} transition-all duration-200 group-hover:gap-2`}
+                    className={`mt-auto inline-flex items-center gap-1.5 pt-4 text-[13px] font-medium tracking-[-0.01em] ${t.text} transition-all duration-200 group-hover:gap-2`}
                   >
                     Explore {industry.title}
                     <HiOutlineArrowRight className="h-[15px] w-[15px] transition-transform duration-200 group-hover:translate-x-0.5" />
@@ -257,11 +257,11 @@ export default function IndustriesPage() {
           {/* ── Bottom CTA banner ── */}
           <div className="mt-14 overflow-hidden rounded-[1.8rem] border border-slate-200/60 bg-gradient-to-br from-slate-50 via-white to-blue-50/40 p-[1px] shadow-[0_8px_40px_-16px_rgba(15,23,42,0.1)]">
             <div className="rounded-[1.75rem] bg-white/60 px-6 py-10 text-center backdrop-blur-xl sm:px-10 sm:py-14">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50/80 px-4 py-1.5 text-xs font-semibold text-blue-700 ring-1 ring-blue-200/50">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50/80 px-4 py-1.5 text-xs font-medium text-blue-700 ring-1 ring-blue-200/50">
                 <HiOutlineSparkles className="h-3.5 w-3.5" />
                 Not sure which fits?
               </span>
-              <h2 className="mt-5 text-2xl font-bold tracking-[-0.02em] text-slate-950 sm:text-3xl">
+              <h2 className="mt-5 text-2xl font-medium tracking-[-0.02em] text-slate-900 sm:text-3xl">
                 We'll help you find the right solution.
               </h2>
               <p className="mx-auto mt-3 max-w-lg text-[15px] leading-7 text-slate-500">
@@ -270,7 +270,7 @@ export default function IndustriesPage() {
               </p>
               <Link
                 to="/contact"
-                className="mt-6 inline-flex min-h-[44px] items-center gap-2 rounded-full bg-slate-900 px-6 text-sm font-semibold tracking-[-0.01em] text-white shadow-[0_4px_16px_-6px_rgba(15,23,42,0.3)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-[0_8px_24px_-8px_rgba(15,23,42,0.4)] active:scale-[0.97]"
+                className="mt-6 inline-flex min-h-[44px] items-center gap-2 rounded-full bg-slate-900 px-6 text-sm font-medium tracking-[-0.01em] text-white shadow-[0_4px_16px_-6px_rgba(15,23,42,0.3)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-[0_8px_24px_-8px_rgba(15,23,42,0.4)] active:scale-[0.97]"
               >
                 Talk to our team
                 <HiOutlineArrowRight className="h-[17px] w-[17px]" />

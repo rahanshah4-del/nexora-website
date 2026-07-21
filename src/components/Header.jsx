@@ -129,10 +129,10 @@ function Header() {
     || ['/restaurant-pos', '/retail-pos', '/school-erp', '/transport', '/whatsapp-crm'].includes(location.pathname)
 
   const navLinkClass = (link) =>
-    `nav-link relative inline-flex h-9 items-center gap-1 rounded-full px-3 text-[13px] font-bold transition-colors duration-200 ${
+    `nav-link relative inline-flex h-9 items-center gap-1 rounded-full px-3 text-[13px] font-medium transition-colors duration-200 ${
       isActiveLink(link)
-        ? 'text-slate-950 bg-slate-100'
-        : 'text-slate-800 hover:text-slate-950'
+        ? 'text-slate-900 bg-slate-100'
+        : 'text-slate-500 hover:text-slate-900'
     }`
 
   return (
@@ -158,10 +158,10 @@ function Header() {
               data-solutions-button
               onClick={() => toggleDropdown('solutions')}
               onMouseEnter={() => openDropdown('solutions')}
-              className={`nav-link relative inline-flex h-9 items-center gap-1 rounded-full px-3 text-[13px] font-bold transition-colors duration-200 ${
+              className={`nav-link relative inline-flex h-9 items-center gap-1 rounded-full px-3 text-[13px] font-medium transition-colors duration-200 ${
                 isSolutionsActive
-                  ? 'text-slate-950 bg-slate-100'
-                  : 'text-slate-800 hover:text-slate-950'
+                  ? 'text-slate-900 bg-slate-100'
+                  : 'text-slate-500 hover:text-slate-900'
               }`}
               aria-expanded={activeDropdown === 'solutions'}
             >
@@ -188,10 +188,10 @@ function Header() {
                       key={link.label}
                       to={link.to}
                       onClick={closeAll}
-                      className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-100 hover:text-slate-950"
+                      className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
                     >
                       {Icon && (
-                        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-slate-100 text-slate-600">
+                        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-slate-100 text-slate-500">
                           <Icon className="text-base" />
                         </span>
                       )}
@@ -215,13 +215,13 @@ function Header() {
         <div className="ml-auto hidden items-center gap-2 lg:flex">
           <Link
             to="/login"
-            className="inline-flex h-9 items-center justify-center rounded-full px-4 text-[13px] font-bold text-slate-600 transition-colors hover:text-slate-950 hover:bg-slate-100"
+            className="inline-flex h-9 items-center justify-center rounded-full px-4 text-[13px] font-medium text-slate-500 transition-colors hover:text-slate-900 hover:bg-slate-100"
           >
             Login
           </Link>
           <Link
             to="/signup"
-            className="inline-flex h-9 items-center justify-center gap-1.5 rounded-full bg-slate-950 px-4 text-[13px] font-bold text-white shadow-sm transition-all duration-200 hover:bg-slate-800 hover:shadow-md active:scale-[0.97]"
+            className="inline-flex h-9 items-center justify-center gap-1.5 rounded-full bg-slate-950 px-4 text-[13px] font-medium text-white shadow-sm transition-all duration-200 hover:bg-slate-800 hover:shadow-md active:scale-[0.97]"
           >
             Get Started Free
             <HiOutlineArrowRight className="text-sm" />
@@ -232,7 +232,7 @@ function Header() {
         <button
           type="button"
           onClick={() => setMobileMenuOpen((current) => !current)}
-          className="ml-auto inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-600 transition-colors hover:bg-slate-100 lg:hidden"
+          className="ml-auto inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 lg:hidden"
           aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
           aria-expanded={mobileMenuOpen}
         >
@@ -283,8 +283,8 @@ function Header() {
                     key={link.label}
                     to={link.to}
                     onClick={closeAll}
-                    className={`flex items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${
-                      active ? 'bg-slate-100 text-slate-950' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-950'
+                    className={`flex items-center justify-between rounded-xl px-4 py-3 text-sm font-medium transition-colors ${
+                      active ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
                     }`}
                   >
                     {link.label}
@@ -296,7 +296,7 @@ function Header() {
 
             {/* Solutions */}
             <div className="mt-4 rounded-xl border border-slate-100 bg-slate-50/80 p-3">
-              <p className="px-2 pb-2 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400">Solutions</p>
+              <p className="px-2 pb-2 text-[11px] font-medium uppercase tracking-[0.14em] text-slate-400">Solutions</p>
               <div className="grid gap-0.5">
                 {solutionLinks.map((link) => {
                   const Icon = solutionIconMap[link.label]
@@ -305,7 +305,7 @@ function Header() {
                       key={link.label}
                       to={link.to}
                       onClick={closeAll}
-                      className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-white hover:text-slate-950"
+                      className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-500 transition-colors hover:bg-white hover:text-slate-900"
                     >
                       {Icon && (
                         <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-white text-slate-500 shadow-sm">
@@ -324,7 +324,7 @@ function Header() {
               <Link
                 to="/login"
                 onClick={closeAll}
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-sm font-medium text-slate-500 transition-colors hover:bg-slate-50"
               >
                 <HiOutlineUserCircle className="text-lg" />
                 Login
@@ -332,7 +332,7 @@ function Header() {
               <Link
                 to="/signup"
                 onClick={closeAll}
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-slate-950 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-slate-800"
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-slate-950 text-sm font-medium text-white shadow-sm transition-colors hover:bg-slate-800"
               >
                 <HiOutlineSparkles className="text-lg" />
                 Get Started Free
