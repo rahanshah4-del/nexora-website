@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, useLocation } from 'react-router-dom'
 import {
@@ -139,6 +139,28 @@ function Header() {
   const toggleDropdown = (key) => {
     setActiveDropdown((current) => (current === key ? null : key))
   }
+
+  /* ── Search — filter all site content ── */
+  const allSearchItems = useMemo(() => [
+    ...mainLinks.map((l) => ({ label: l.label, to: l.to, kind: 'Page' })),
+    ...solutionLinks.map((l) => ({ label: l.label, to: l.to, kind: 'Solution' })),
+    { label: 'Industries', to: '/industries', kind: 'Page' },
+    { label: 'Blog', to: '/blog', kind: 'Page' },
+    { label: 'Contact', to: '/contact', kind: 'Page' },
+    { label: 'About', to: '/about', kind: 'Page' },
+    { label: 'Documentation', to: '/documentation', kind: 'Page' },
+    { label: 'Help Center', to: '/help-center', kind: 'Page' },
+    { label: 'FAQ', to: '/faq', kind: 'Page' },
+    { label: 'Support', to: '/support-center', kind: 'Page' },
+  ], [])
+
+  const searchResults = useMemo(() => {
+    if (!searchQuery.trim()) return []
+    const q = searchQuery.toLowerCase().trim()
+    return allSearchItems.filter((item) =>
+      item.label.toLowerCase().includes(q)
+    ).slice(0, 12)
+  }, [searchQuery, allSearchItems])
 
   const isActiveLink = (link) => {
     if (link.to === '/') return location.pathname === '/'
@@ -432,14 +454,29 @@ function Header() {
 
           {/* Results */}
           <div className="flex-1 overflow-y-auto px-5 py-6">
-            {searchQuery.trim() ? (
-              <div className="text-[15px] text-[#86868b]">
-                Search results for "{searchQuery}" will appear here.
+            {!searchQuery.trim() ? (
+              <p className="text-[15px] text-[#86868b]">
+                Start typing to search Nexora products, services, and blog articles.
+              </p>
+            ) : searchResults.length > 0 ? (
+              <div className="grid gap-1">
+                {searchResults.map((item) => (
+                  <Link
+                    key={item.label + item.to}
+                    to={item.to}
+                    onClick={() => { setSearchOpen(false); setSearchQuery('') }}
+                    className="flex items-center gap-3 rounded-lg px-2 py-3 text-[15px] font-medium text-[#1d1d1f] transition-colors hover:bg-[#f5f5f7]"
+                  >
+                    <HiOutlineMagnifyingGlass className="h-4 w-4 shrink-0 text-[#86868b]" strokeWidth={1.5} />
+                    <span>{item.label}</span>
+                    <span className="ml-auto text-[13px] text-[#86868b]">{item.kind}</span>
+                  </Link>
+                ))}
               </div>
             ) : (
-              <div className="text-[15px] text-[#86868b]">
-                Start typing to search Nexora products, services, and blog articles.
-              </div>
+              <p className="text-[15px] text-[#86868b]">
+                No results found for "{searchQuery}".
+              </p>
             )}
           </div>
         </div>,
