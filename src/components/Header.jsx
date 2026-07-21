@@ -228,24 +228,31 @@ function Header() {
           </Link>
         </div>
 
-        {/* ── Mobile menu button ── */}
+        {/* ── Apple-style 2-line hamburger ── */}
         <button
           type="button"
           onClick={() => setMobileMenuOpen((current) => !current)}
-          className="ml-auto inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 lg:hidden"
+          className="relative ml-auto inline-flex h-10 w-10 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 lg:hidden"
           aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
           aria-expanded={mobileMenuOpen}
         >
-          {mobileMenuOpen ? <HiOutlineXMark className="text-xl" /> : <HiOutlineBars3 className="text-xl" />}
+          <span className="absolute flex flex-col items-center gap-[5px]">
+            <span className={`block h-[2px] w-[18px] rounded-full bg-slate-700 transition-all duration-300 ${
+              mobileMenuOpen ? 'translate-y-[3.5px] -rotate-45' : ''
+            }`} />
+            <span className={`block h-[2px] w-[18px] rounded-full bg-slate-700 transition-all duration-300 ${
+              mobileMenuOpen ? 'translate-y-[-3.5px] rotate-45' : ''
+            }`} />
+          </span>
         </button>
       </div>
 
-      {/* ── Mobile Menu Overlay ── */}
-      <div className={`fixed inset-0 z-[60] lg:hidden ${mobileMenuOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}>
-        {/* Backdrop */}
+      {/* ── Apple-style Mobile Menu Overlay ── */}
+      <div className={`fixed inset-0 z-[60] lg:hidden ${mobileMenuOpen ? 'pointer-events-auto visible' : 'pointer-events-none invisible'}`}>
+        {/* Backdrop — dark, smooth fade */}
         <button
           type="button"
-          className={`absolute inset-0 bg-slate-950/20 backdrop-blur-sm transition-opacity duration-300 ${
+          className={`absolute inset-0 bg-black/40 backdrop-blur-md transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${
             mobileMenuOpen ? 'opacity-100' : 'opacity-0'
           }`}
           onClick={closeAll}
@@ -253,50 +260,55 @@ function Header() {
           tabIndex={mobileMenuOpen ? 0 : -1}
         />
 
-        {/* Drawer */}
+        {/* Drawer — slides from right, Apple spring curve */}
         <aside
-          className={`absolute right-2 top-2 flex h-[calc(100dvh-1rem)] w-[min(20rem,calc(100vw-1rem))] flex-col overflow-hidden rounded-2xl border border-slate-200/60 bg-white/95 shadow-[0_20px_60px_-20px_rgba(15,23,42,0.25)] backdrop-blur-2xl transition-all duration-300 ease-out ${
-            mobileMenuOpen ? 'translate-x-0 opacity-100' : 'translate-x-4 opacity-0'
+          className={`absolute right-0 top-0 flex h-full w-full max-w-[420px] flex-col overflow-hidden bg-white shadow-2xl transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+            mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
           }`}
         >
-          {/* Drawer header */}
-          <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+          {/* Drawer header — minimal */}
+          <div className="flex items-center justify-between px-5 py-[18px]">
             <NexoraLogo compact />
             <button
               type="button"
               onClick={closeAll}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition-all duration-200 hover:bg-slate-200 hover:text-slate-700 active:scale-95"
               aria-label="Close"
             >
-              <HiOutlineXMark className="text-lg" />
+              <HiOutlineXMark className="h-5 w-5" strokeWidth={1.5} />
             </button>
           </div>
 
-          {/* Drawer body */}
-          <div className="flex-1 overflow-y-auto px-4 py-4">
-            {/* Main links */}
-            <div className="grid gap-0.5">
-              {mainLinks.map((link) => {
+          {/* Thin separator */}
+          <div className="mx-5 h-px bg-slate-100" />
+
+          {/* Drawer body — staggered items */}
+          <div className="flex-1 overflow-y-auto px-5 py-6">
+            {/* Main links — Apple-style large touch targets */}
+            <div className="grid gap-1">
+              {mainLinks.map((link, i) => {
                 const active = link.to === '/' ? location.pathname === '/' : location.pathname.startsWith(link.to)
                 return (
                   <Link
                     key={link.label}
                     to={link.to}
                     onClick={closeAll}
-                    className={`flex items-center justify-between rounded-xl px-4 py-3 text-sm font-medium transition-colors ${
-                      active ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                    style={{ animationDelay: `${i * 60}ms` }}
+                    className={`flex items-center justify-between rounded-xl px-4 py-3.5 text-[28px] font-medium leading-none tracking-[-0.02em] transition-colors duration-200 ${
+                      mobileMenuOpen ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+                    } ${
+                      active ? 'text-slate-900' : 'text-slate-900 hover:text-slate-500'
                     }`}
                   >
                     {link.label}
-                    <HiOutlineArrowRight className="text-slate-400" />
                   </Link>
                 )
               })}
             </div>
 
-            {/* Solutions */}
-            <div className="mt-4 rounded-xl border border-slate-100 bg-slate-50/80 p-3">
-              <p className="px-2 pb-2 text-[11px] font-medium uppercase tracking-[0.14em] text-slate-400">Solutions</p>
+            {/* Solutions section */}
+            <div className="mt-8">
+              <p className="mb-3 px-1 text-[11px] font-medium uppercase tracking-[0.14em] text-slate-400">Solutions</p>
               <div className="grid gap-0.5">
                 {solutionLinks.map((link) => {
                   const Icon = solutionIconMap[link.label]
@@ -305,11 +317,11 @@ function Header() {
                       key={link.label}
                       to={link.to}
                       onClick={closeAll}
-                      className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-500 transition-colors hover:bg-white hover:text-slate-900"
+                      className="flex items-center gap-3 rounded-lg px-3 py-3 text-[15px] font-medium text-slate-500 transition-colors duration-200 hover:bg-slate-50 hover:text-slate-900"
                     >
                       {Icon && (
-                        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-white text-slate-500 shadow-sm">
-                          <Icon className="text-xs" />
+                        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-slate-100 text-slate-500">
+                          <Icon className="text-sm" />
                         </span>
                       )}
                       <span>{link.label}</span>
@@ -319,22 +331,21 @@ function Header() {
               </div>
             </div>
 
-            {/* Auth buttons */}
-            <div className="mt-5 grid gap-2">
+            {/* Auth buttons — Apple style */}
+            <div className="mt-8 grid gap-2.5 border-t border-slate-100 pt-6">
               <Link
                 to="/login"
                 onClick={closeAll}
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-sm font-medium text-slate-500 transition-colors hover:bg-slate-50"
+                className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border border-slate-200 bg-white text-[15px] font-medium text-slate-700 transition-all duration-200 hover:bg-slate-50 active:scale-[0.98]"
               >
-                <HiOutlineUserCircle className="text-lg" />
-                Login
+                <HiOutlineUserCircle className="h-5 w-5" />
+                Sign In
               </Link>
               <Link
                 to="/signup"
                 onClick={closeAll}
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-slate-950 text-sm font-medium text-white shadow-sm transition-colors hover:bg-slate-800"
+                className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full bg-slate-900 text-[15px] font-medium text-white transition-all duration-200 hover:bg-slate-800 active:scale-[0.98]"
               >
-                <HiOutlineSparkles className="text-lg" />
                 Get Started Free
               </Link>
             </div>
