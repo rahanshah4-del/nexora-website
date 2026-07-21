@@ -238,7 +238,7 @@ function Header() {
         >
           <span className="relative block h-[18px] w-[18px]">
             <span
-              className="absolute left-0 block h-[2px] w-[18px] rounded-full bg-slate-700 transition-all"
+              className="absolute left-0 block h-[2px] w-[18px] rounded-full bg-[#1d1d1f] transition-all"
               style={{
                 top: mobileMenuOpen ? '8px' : '3px',
                 transform: mobileMenuOpen ? 'rotate(-45deg)' : 'rotate(0deg)',
@@ -247,7 +247,7 @@ function Header() {
               }}
             />
             <span
-              className="absolute left-0 block h-[2px] w-[18px] rounded-full bg-slate-700 transition-all"
+              className="absolute left-0 block h-[2px] w-[18px] rounded-full bg-[#1d1d1f] transition-all"
               style={{
                 top: mobileMenuOpen ? '8px' : '13px',
                 transform: mobileMenuOpen ? 'rotate(45deg)' : 'rotate(0deg)',
@@ -259,43 +259,48 @@ function Header() {
         </button>
       </div>
 
-      {/* ── Apple-style Mobile Menu — full-screen overlay ── */}
-      <div
-        className={`fixed inset-0 z-[60] lg:hidden ${mobileMenuOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}
-        aria-hidden={!mobileMenuOpen}
-      >
-        {/* Full-screen menu panel */}
-        <div
-          className={`absolute inset-0 flex flex-col bg-[#f5f5f7] transition-all duration-500 ${
-            mobileMenuOpen ? 'opacity-100' : 'opacity-0'
-          }`}
-          style={{
-            transitionTimingFunction: 'cubic-bezier(0.32, 0.72, 0, 1)',
-            paddingTop: 'max(16px, env(safe-area-inset-top))',
-            paddingBottom: 'env(safe-area-inset-bottom, 16px)',
-          }}
-          role="dialog"
-          aria-modal="true"
-          aria-label="Navigation menu"
-        >
-          {/* Top bar: logo + close */}
-          <div className="flex shrink-0 items-center justify-between px-5 py-3">
-            <NexoraLogo compact />
-            <button
-              type="button"
-              onClick={closeAll}
-              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black/5 text-slate-500 transition-all duration-200 hover:bg-black/10 active:scale-95"
-              aria-label="Close menu"
-            >
-              <HiOutlineXMark className="h-5 w-5" strokeWidth={1.5} />
-            </button>
-          </div>
+      {/* ── Mobile Menu ── */}
+      {mobileMenuOpen ? (
+        <div className="fixed inset-0 z-[60] lg:hidden">
+          {/* Backdrop */}
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/50 backdrop-blur-md"
+            onClick={closeAll}
+            aria-label="Close menu"
+          />
 
-          {/* Scrollable content */}
-          <div className="flex-1 overflow-y-auto overscroll-contain">
-            <div className="flex min-h-full flex-col px-5 pb-10">
-              {/* Main nav — large Apple typography */}
-              <nav className="mt-6 flex flex-col">
+          {/* Drawer */}
+          <div
+            className="absolute right-0 top-0 h-full w-full max-w-[420px] bg-[#f5f5f7] shadow-2xl"
+            style={{
+              paddingTop: 'max(18px, env(safe-area-inset-top))',
+              paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+            }}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Navigation menu"
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-[18px]">
+              <NexoraLogo compact />
+              <button
+                type="button"
+                onClick={closeAll}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#e8e8ed] text-[#86868b] transition-all duration-200 hover:bg-[#dcdce0] active:scale-95"
+                aria-label="Close menu"
+              >
+                <HiOutlineXMark className="h-5 w-5" strokeWidth={1.5} />
+              </button>
+            </div>
+
+            {/* Divider */}
+            <div className="mx-5 h-px bg-[#d2d2d7]" />
+
+            {/* Body */}
+            <div className="overflow-y-auto px-5 pb-10 pt-4" style={{maxHeight:'calc(100vh - 80px)'}}>
+              {/* Main nav */}
+              <nav>
                 {mainLinks.map((link) => {
                   const active = link.to === '/' ? location.pathname === '/' : location.pathname.startsWith(link.to)
                   return (
@@ -303,8 +308,8 @@ function Header() {
                       key={link.label}
                       to={link.to}
                       onClick={closeAll}
-                      className={`py-3 text-[32px] font-medium leading-[1.1] tracking-[-0.02em] transition-colors duration-200 ${
-                        active ? 'text-black' : 'text-black/80 hover:text-black/50'
+                      className={`block py-3 text-[28px] font-medium leading-[1.15] tracking-[-0.02em] transition-all duration-200 ${
+                        active ? 'text-[#1d1d1f]' : 'text-[#1d1d1f]/90 hover:text-[#86868b]'
                       }`}
                     >
                       {link.label}
@@ -313,12 +318,12 @@ function Header() {
                 })}
               </nav>
 
-              {/* Solutions — collapsible */}
+              {/* Solutions */}
               <div className="mt-8">
                 <button
                   type="button"
                   onClick={() => setActiveDropdown(activeDropdown === 'mobile-solutions' ? null : 'mobile-solutions')}
-                  className="flex w-full items-center gap-1.5 py-2 text-[11px] font-medium uppercase tracking-[0.14em] text-slate-400 transition-colors hover:text-slate-600"
+                  className="flex items-center gap-1.5 py-2 text-[11px] font-medium uppercase tracking-[0.14em] text-[#86868b] transition-colors hover:text-[#1d1d1f]"
                 >
                   Solutions
                   <HiOutlineChevronDown className={`h-3 w-3 transition-transform duration-200 ${activeDropdown === 'mobile-solutions' ? 'rotate-180' : ''}`} />
@@ -335,10 +340,10 @@ function Header() {
                         key={link.label}
                         to={link.to}
                         onClick={closeAll}
-                        className="flex items-center gap-3 rounded-lg px-2 py-3 text-[16px] font-medium text-slate-500 transition-colors duration-200 hover:text-slate-900"
+                        className="flex items-center gap-3 rounded-lg px-2 py-3 text-[15px] font-medium text-[#1d1d1f]/75 transition-colors duration-200 hover:text-[#1d1d1f]"
                       >
                         {Icon && (
-                          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-white text-slate-500">
+                          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-white text-[#86868b] shadow-sm">
                             <Icon className="text-sm" />
                           </span>
                         )}
@@ -349,15 +354,12 @@ function Header() {
                 </div>
               </div>
 
-              {/* Spacer */}
-              <div className="mt-auto flex-1" />
-
               {/* CTA buttons */}
-              <div className="mt-8 grid gap-3">
+              <div className="mt-10 grid gap-3">
                 <Link
                   to="/login"
                   onClick={closeAll}
-                  className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full border border-slate-200 bg-white text-[16px] font-medium text-slate-700 transition-all duration-200 hover:bg-slate-50 active:scale-[0.98]"
+                  className="flex min-h-[48px] items-center justify-center gap-2 rounded-full border border-[#d2d2d7] bg-white text-[16px] font-medium text-[#1d1d1f] transition-all duration-200 hover:bg-[#f5f5f7] active:scale-[0.98]"
                 >
                   <HiOutlineUserCircle className="h-5 w-5" />
                   Sign In
@@ -365,7 +367,7 @@ function Header() {
                 <Link
                   to="/signup"
                   onClick={closeAll}
-                  className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-slate-900 text-[16px] font-medium text-white transition-all duration-200 hover:bg-slate-800 active:scale-[0.98]"
+                  className="flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-[#1d1d1f] text-[16px] font-medium text-white transition-all duration-200 hover:bg-black active:scale-[0.98]"
                 >
                   Get Started Free
                 </Link>
@@ -373,7 +375,7 @@ function Header() {
             </div>
           </div>
         </div>
-      </div>
+      ) : null}
     </header>
   )
 }
