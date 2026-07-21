@@ -5,6 +5,7 @@ import {
   HiOutlineAcademicCap,
   HiOutlineArrowRight,
   HiOutlineBars3,
+  HiOutlineMagnifyingGlass,
   HiOutlineBuildingOffice2,
   HiOutlineChartBarSquare,
   HiOutlineChatBubbleLeftRight,
@@ -62,18 +63,36 @@ const solutionLinks = [
 function Header() {
   const location = useLocation()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
   const [activeDropdown, setActiveDropdown] = useState(null)
   const dropdownCloseTimer = useRef(null)
+  const searchInputRef = useRef(null)
+
+  /* ── Autofocus search input ── */
+  useEffect(() => {
+    if (searchOpen && searchInputRef.current) {
+      searchInputRef.current.focus()
+    }
+  }, [searchOpen])
 
   /* ── Escape / click-outside ── */
   useEffect(() => {
-    if (!mobileMenuOpen) return undefined
+    if (!mobileMenuOpen && !searchOpen) return undefined
 
     const onKeyDown = (event) => {
       if (event.key === 'Escape') {
         setMobileMenuOpen(false)
+        setSearchOpen(false)
         setActiveDropdown(null)
       }
+    }
+
+    // Lock scroll when search is open
+    if (searchOpen) {
+      const prev = document.body.style.overflow
+      document.body.style.overflow = 'hidden'
+      return () => { document.body.style.overflow = prev }
     }
 
     const onClickOutside = (event) => {
@@ -89,7 +108,7 @@ function Header() {
       window.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('click', onClickOutside, true)
     }
-  }, [mobileMenuOpen])
+  }, [mobileMenuOpen, searchOpen])
 
   /* Close dropdown on route change */
   useEffect(() => {
@@ -103,6 +122,7 @@ function Header() {
   const closeAll = () => {
     if (dropdownCloseTimer.current) window.clearTimeout(dropdownCloseTimer.current)
     setMobileMenuOpen(false)
+    setSearchOpen(false)
     setActiveDropdown(null)
   }
 
@@ -229,14 +249,23 @@ function Header() {
           </Link>
         </div>
 
-        {/* ── Apple-style hamburger ── */}
-        <button
-          type="button"
-          onClick={() => setMobileMenuOpen((current) => !current)}
-          className="relative ml-auto inline-flex h-10 w-10 items-center justify-center lg:hidden"
-          aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
-          aria-expanded={mobileMenuOpen}
-        >
+        {/* ── Mobile: search + hamburger ── */}
+        <div className="ml-auto flex items-center gap-2 lg:hidden">
+          <button
+            type="button"
+            onClick={() => setSearchOpen(true)}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full text-[#1d1d1f]/70 transition-colors hover:bg-black/5"
+            aria-label="Search"
+          >
+            <HiOutlineMagnifyingGlass className="h-5 w-5" strokeWidth={1.5} />
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen((current) => !current)}
+            className="relative inline-flex h-10 w-10 items-center justify-center"
+            aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={mobileMenuOpen}
+          >
           <span className="relative block h-[18px] w-[18px]">
             <span
               className="absolute left-0 block h-[2px] w-[18px] rounded-full bg-[#1d1d1f] transition-all"
@@ -260,13 +289,14 @@ function Header() {
         </button>
       </div>
 
-      {/* ── Mobile Menu — rendered at body level via Portal ── */}
+      {/* ── Mobile Menu — Portal to body, Apple slide animation ── */}
       {mobileMenuOpen && createPortal(
         <div
           className="fixed inset-0 z-[9999] overflow-y-auto bg-white lg:hidden"
           style={{
             paddingTop: 'max(18px, env(safe-area-inset-top))',
             paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+            animation: 'slideIn 0.35s cubic-bezier(0.32, 0.72, 0, 1) forwards',
           }}
           role="dialog"
           aria-modal="true"
@@ -367,6 +397,55 @@ function Header() {
         </div>,
         document.body
       )}
+
+      {/* ── Apple-style Search Overlay ── */}
+      {searchOpen && createPortal(
+        <div
+          className="fixed inset-0 z-[9999] flex flex-col bg-white"
+          style={{
+            paddingTop: 'max(18px, env(safe-area-inset-top))',
+            animation: 'slideDown 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards',
+          }}
+        >
+          {/* Search header */}
+          <div className="flex items-center gap-3 px-5 py-[14px]">
+            <HiOutlineMagnifyingGlass className="h-5 w-5 shrink-0 text-[#86868b]" strokeWidth={1.5} />
+            <input
+              ref={searchInputRef}
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search nexora.com"
+              className="flex-1 bg-transparent text-[17px] font-normal text-[#1d1d1f] placeholder:text-[#86868b] outline-none"
+            />
+            <button
+              type="button"
+              onClick={() => { setSearchOpen(false); setSearchQuery('') }}
+              className="text-[15px] font-normal text-[#1d1d1f] transition-opacity hover:opacity-60"
+            >
+              Cancel
+            </button>
+          </div>
+
+          {/* Divider */}
+          <div className="mx-5 h-px bg-[#d2d2d7]" />
+
+          {/* Results */}
+          <div className="flex-1 overflow-y-auto px-5 py-6">
+            {searchQuery.trim() ? (
+              <div className="text-[15px] text-[#86868b]">
+                Search results for "{searchQuery}" will appear here.
+              </div>
+            ) : (
+              <div className="text-[15px] text-[#86868b]">
+                Start typing to search Nexora products, services, and blog articles.
+              </div>
+            )}
+          </div>
+        </div>,
+        document.body
+      )}
+      </div>
     </header>
   )
 }
