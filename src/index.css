@@ -136,8 +136,15 @@ body.business-service-modal-open {
 .apple-sheet-up {
   animation: slideUp 0.4s cubic-bezier(0.32, 0.72, 0, 1) forwards;
 }
+.apple-panel-right {
+  animation: slideRight 0.4s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
 .apple-fade-in {
   animation: fadeIn 0.25s ease-out forwards;
+}
+@keyframes slideRight {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
 }
 
 ::selection {

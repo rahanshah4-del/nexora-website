@@ -407,38 +407,113 @@ export default function BlogIndexPage() {
           </div>
         </div>
 
-        {/* ── Mobile filter drawer ── */}
+        {/* ── Mobile: Apple-style full-screen filter panel ── */}
         {filtersOpen ? (
           <div className="fixed inset-0 z-[70] lg:hidden">
-            {/* Backdrop */}
+            {/* Dark glass backdrop */}
             <div
-              className="absolute inset-0 bg-black/40 backdrop-blur-sm apple-fade-in"
+              className="absolute inset-0 bg-black/40 backdrop-blur-md apple-fade-in"
               onClick={() => setFiltersOpen(false)}
             />
 
-            {/* Sheet panel */}
-            <div className="absolute bottom-0 left-0 right-0 max-h-[90vh] overflow-y-auto rounded-t-[1.8rem] bg-white shadow-[0_-8px_40px_-12px_rgba(0,0,0,0.18)] apple-sheet-up">
-              {/* Drag handle */}
-              <div className="sticky top-0 z-10 flex justify-center rounded-t-[1.8rem] bg-white pt-3 pb-1">
-                <div className="h-1 w-10 rounded-full bg-slate-300/70" />
-              </div>
-
+            {/* Panel — slides from right, full screen */}
+            <div className="absolute right-0 top-0 flex h-full w-full max-w-[420px] flex-col bg-white shadow-2xl apple-panel-right">
               {/* Header */}
-              <div className="flex items-center justify-between px-6 py-3">
-                <h2 className="text-[17px] font-medium tracking-[-0.01em] text-slate-900">Filters</h2>
+              <div className="flex items-center justify-between px-5 py-[18px]">
+                <h2 className="text-[18px] font-medium tracking-[-0.01em] text-slate-900">Filters</h2>
                 <button
                   type="button"
                   onClick={() => setFiltersOpen(false)}
-                  className="inline-flex h-[30px] w-[30px] items-center justify-center rounded-full bg-slate-100 text-slate-500 transition-all duration-200 hover:bg-slate-200 active:scale-95"
-                  aria-label="Close filters"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition-all duration-200 hover:bg-slate-200 active:scale-95"
+                  aria-label="Close"
                 >
-                  <HiOutlineXMark className="h-[18px] w-[18px]" strokeWidth={2} />
+                  <HiOutlineXMark className="h-5 w-5" strokeWidth={1.5} />
                 </button>
               </div>
 
-              {/* Content */}
-              <div className="px-6 pb-10">
-                <FilterContent />
+              {/* Thin divider */}
+              <div className="mx-5 h-px bg-slate-100" />
+
+              {/* Scrollable content */}
+              <div className="flex-1 overflow-y-auto px-5 py-6">
+                {/* Search */}
+                <form onSubmit={(e) => { submitSearch(e); setFiltersOpen(false) }} className="relative">
+                  <HiOutlineMagnifyingGlass className="pointer-events-none absolute left-4 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-slate-400" />
+                  <input
+                    value={searchValue}
+                    onChange={(e) => setSearchValue(e.target.value)}
+                    placeholder="Search articles"
+                    className="h-12 w-full rounded-full border border-slate-200/60 bg-slate-50 pl-11 pr-4 text-[15px] font-normal text-slate-900 placeholder:text-slate-400 outline-none transition-all duration-200 focus:border-slate-300 focus:bg-white"
+                  />
+                </form>
+
+                {/* Categories */}
+                <div className="mt-8">
+                  <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-400">Categories</p>
+                  <div className="mt-3 grid gap-1">
+                    <button
+                      type="button"
+                      onClick={() => { updateFilter({ category: '', tag: '' }); setFiltersOpen(false) }}
+                      className={`rounded-lg px-4 py-3 text-left text-[16px] font-medium tracking-[-0.01em] transition-all duration-200 active:scale-[0.98] ${
+                        category === 'All' && !tag
+                          ? 'bg-slate-900 text-white'
+                          : 'text-slate-900 hover:bg-slate-50'
+                      }`}
+                    >
+                      All Articles
+                    </button>
+                    {categories.map((item) => (
+                      <button
+                        key={item.category}
+                        type="button"
+                        onClick={() => { updateFilter({ category: item.category, tag: '' }); setFiltersOpen(false) }}
+                        className={`flex items-center justify-between rounded-lg px-4 py-3 text-left text-[16px] font-medium tracking-[-0.01em] transition-all duration-200 active:scale-[0.98] ${
+                          category === item.category
+                            ? 'bg-slate-900 text-white'
+                            : 'text-slate-900 hover:bg-slate-50'
+                        }`}
+                      >
+                        <span>{item.category}</span>
+                        <span className={`text-[13px] ${category === item.category ? 'text-white/60' : 'text-slate-400'}`}>
+                          {item.count}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Tags */}
+                <div className="mt-8">
+                  <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-400">Tags</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {tags.slice(0, 18).map((item) => (
+                      <button
+                        key={item.tag}
+                        type="button"
+                        onClick={() => { updateFilter({ tag: item.tag }); setFiltersOpen(false) }}
+                        className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[13px] font-medium tracking-[-0.01em] transition-all duration-200 active:scale-[0.96] ${
+                          tag === item.tag
+                            ? 'bg-slate-900 text-white'
+                            : 'bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-900'
+                        }`}
+                      >
+                        <HiOutlineTag className="h-3 w-3" />
+                        {item.tag}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Clear all — at bottom */}
+                {(category !== 'All' || tag || params.get('q')) ? (
+                  <button
+                    type="button"
+                    onClick={() => { setSearchValue(''); setParams({}); setFiltersOpen(false) }}
+                    className="mt-8 inline-flex w-full items-center justify-center gap-1.5 rounded-full border border-slate-200 bg-white py-3 text-[14px] font-medium text-slate-500 transition-all duration-200 hover:border-slate-300 hover:text-slate-700 active:scale-[0.97]"
+                  >
+                    Clear all filters
+                  </button>
+                ) : null}
               </div>
             </div>
           </div>
