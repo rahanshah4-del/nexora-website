@@ -132,15 +132,12 @@ body.business-service-modal-open {
   transform: scale(0.97);
 }
 
-/* ── Apple-style bottom-sheet animations ── */
-@keyframes slideUp {
-  from { transform: translateY(100%); }
-  to   { transform: translateY(0); }
+/* ── Apple-style sheet utility classes ── */
+.apple-sheet-up {
+  animation: slideUp 0.4s cubic-bezier(0.32, 0.72, 0, 1) forwards;
 }
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+.apple-fade-in {
+  animation: fadeIn 0.25s ease-out forwards;
 }
 
 ::selection {

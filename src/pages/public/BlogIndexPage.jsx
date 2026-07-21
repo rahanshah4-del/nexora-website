@@ -194,20 +194,40 @@ export default function BlogIndexPage() {
         <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
           <div className="grid gap-8 lg:grid-cols-[16rem_1fr]">
 
-            {/* Mobile filter toggle */}
-            <div className="lg:hidden">
+            {/* ── Mobile: Apple-style search + filter ── */}
+            <div className="flex gap-2.5 lg:hidden">
+              {/* Search bar — Apple pill style */}
+              <form
+                onSubmit={(e) => { submitSearch(e) }}
+                className="relative flex-1"
+              >
+                <HiOutlineMagnifyingGlass className="pointer-events-none absolute left-4 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-slate-400" />
+                <input
+                  value={searchValue}
+                  onChange={(e) => setSearchValue(e.target.value)}
+                  placeholder="Search articles"
+                  className="h-12 w-full rounded-full border border-slate-200/60 bg-white/80 pl-11 pr-4 text-[15px] font-normal text-slate-900 placeholder:text-slate-400 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.04)] backdrop-blur-xl outline-none transition-all duration-200 focus:border-slate-300 focus:bg-white focus:shadow-[0_4px_16px_-6px_rgba(0,0,0,0.08)]"
+                />
+              </form>
+              {/* Filter button */}
               <button
                 type="button"
                 onClick={() => setFiltersOpen(true)}
-                className="flex h-12 w-full items-center justify-between rounded-xl border border-slate-200/60 bg-white/80 px-4 text-[14px] font-medium tracking-[-0.01em] text-slate-500 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.04)] backdrop-blur-xl transition-all duration-200 hover:bg-white active:scale-[0.98]"
+                className={`relative inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border shadow-[0_2px_8px_-2px_rgba(0,0,0,0.04)] backdrop-blur-xl transition-all duration-200 active:scale-95 ${
+                  (category !== 'All' || tag)
+                    ? 'border-slate-900 bg-slate-900 text-white'
+                    : 'border-slate-200/60 bg-white/80 text-slate-500 hover:bg-white'
+                }`}
+                aria-label="Filters"
               >
-                <span className="flex items-center gap-2.5">
-                  <HiOutlineMagnifyingGlass className="h-[18px] w-[18px] text-slate-400" />
-                  Filters
-                </span>
-                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-500">
-                  {(category !== 'All' || tag || params.get('q')) ? 'Active' : 'All'}
-                </span>
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                  <line x1="2" y1="5" x2="16" y2="5" />
+                  <line x1="5" y1="9" x2="13" y2="9" />
+                  <line x1="8" y1="13" x2="10" y2="13" />
+                </svg>
+                {(category !== 'All' || tag) ? (
+                  <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-white" />
+                ) : null}
               </button>
             </div>
 
@@ -388,37 +408,41 @@ export default function BlogIndexPage() {
         </div>
 
         {/* ── Mobile filter drawer ── */}
-        <div className={`fixed inset-0 z-[60] lg:hidden ${filtersOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}>
-          {/* Backdrop */}
-          <div
-            className={`absolute inset-0 bg-black/30 backdrop-blur-sm transition-opacity duration-300 ${filtersOpen ? 'opacity-100' : 'opacity-0'}`}
-            onClick={() => setFiltersOpen(false)}
-          />
+        {filtersOpen ? (
+          <div className="fixed inset-0 z-[70] lg:hidden">
+            {/* Backdrop */}
+            <div
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm apple-fade-in"
+              onClick={() => setFiltersOpen(false)}
+            />
 
-          {/* Sheet */}
-          <div
-            className={`absolute bottom-0 left-0 right-0 max-h-[85vh] overflow-y-auto rounded-t-[1.8rem] bg-white shadow-[0_-8px_40px_-12px_rgba(0,0,0,0.18)] transition-transform duration-350 ease-out ${filtersOpen ? 'translate-y-0' : 'translate-y-full'}`}
-            style={{ transitionDuration: '350ms', transitionTimingFunction: 'cubic-bezier(0.32, 0.72, 0, 1)' }}
-          >
-            <div className="sticky top-0 z-10 flex justify-center rounded-t-[1.8rem] bg-white pt-3 pb-1">
-              <div className="h-1 w-10 rounded-full bg-slate-300/70" />
-            </div>
-            <div className="flex items-center justify-between px-6 py-3">
-              <h2 className="text-[17px] font-medium tracking-[-0.01em] text-slate-900">Filters</h2>
-              <button
-                type="button"
-                onClick={() => setFiltersOpen(false)}
-                className="inline-flex h-[30px] w-[30px] items-center justify-center rounded-full bg-slate-100 text-slate-500 transition-all duration-200 hover:bg-slate-200 active:scale-95"
-                aria-label="Close filters"
-              >
-                <HiOutlineXMark className="h-[18px] w-[18px]" strokeWidth={2} />
-              </button>
-            </div>
-            <div className="px-6 pb-8">
-              <FilterContent />
+            {/* Sheet panel */}
+            <div className="absolute bottom-0 left-0 right-0 max-h-[90vh] overflow-y-auto rounded-t-[1.8rem] bg-white shadow-[0_-8px_40px_-12px_rgba(0,0,0,0.18)] apple-sheet-up">
+              {/* Drag handle */}
+              <div className="sticky top-0 z-10 flex justify-center rounded-t-[1.8rem] bg-white pt-3 pb-1">
+                <div className="h-1 w-10 rounded-full bg-slate-300/70" />
+              </div>
+
+              {/* Header */}
+              <div className="flex items-center justify-between px-6 py-3">
+                <h2 className="text-[17px] font-medium tracking-[-0.01em] text-slate-900">Filters</h2>
+                <button
+                  type="button"
+                  onClick={() => setFiltersOpen(false)}
+                  className="inline-flex h-[30px] w-[30px] items-center justify-center rounded-full bg-slate-100 text-slate-500 transition-all duration-200 hover:bg-slate-200 active:scale-95"
+                  aria-label="Close filters"
+                >
+                  <HiOutlineXMark className="h-[18px] w-[18px]" strokeWidth={2} />
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="px-6 pb-10">
+                <FilterContent />
+              </div>
             </div>
           </div>
-        </div>
+        ) : null}
       </section>
     </PublicPageShell>
   )
