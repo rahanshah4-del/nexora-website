@@ -299,7 +299,7 @@ export default function BlogArticlePage() {
                 </button>
                 {langOpen ? (
                   <>
-                    <button type="button" className="fixed inset-0 z-10" onClick={() => setLangOpen(false)} aria-label="Close language menu" />
+                    <button type="button" className="fixed inset-0 z-50" onClick={() => setLangOpen(false)} aria-label="Close language menu" />
                     <div className="absolute right-0 top-full z-20 mt-1.5 w-44 overflow-hidden rounded-xl border border-slate-200/60 bg-white/95 shadow-[0_12px_40px_-16px_rgba(15,23,42,0.25)] backdrop-blur-xl">
                       {BLOG_LANGUAGES.map(({ code, label }) => (
                         <button

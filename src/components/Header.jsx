@@ -64,9 +64,13 @@ function Header() {
   const [activeDropdown, setActiveDropdown] = useState(null)
   const dropdownCloseTimer = useRef(null)
 
-  /* ── Escape / click-outside ── */
+  /* ── Escape / click-outside / body scroll lock ── */
   useEffect(() => {
     if (!mobileMenuOpen) return undefined
+
+    // Lock body scroll
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
 
     const onKeyDown = (event) => {
       if (event.key === 'Escape') {
@@ -85,6 +89,7 @@ function Header() {
     window.addEventListener('click', onClickOutside, true)
 
     return () => {
+      document.body.style.overflow = prevOverflow
       window.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('click', onClickOutside, true)
     }
@@ -247,56 +252,64 @@ function Header() {
         </button>
       </div>
 
-      {/* ── Apple-style Mobile Menu Overlay ── */}
-      <div className={`fixed inset-0 z-[60] lg:hidden ${mobileMenuOpen ? 'pointer-events-auto visible' : 'pointer-events-none invisible'}`}>
-        {/* Backdrop — dark, smooth fade */}
+      {/* ── Apple-style Mobile Menu ── */}
+      <div
+        className={`fixed inset-0 z-[60] lg:hidden ${mobileMenuOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}
+        aria-hidden={!mobileMenuOpen}
+      >
+        {/* Backdrop */}
         <button
           type="button"
-          className={`absolute inset-0 bg-black/40 backdrop-blur-md transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+          className={`absolute inset-0 bg-black/40 backdrop-blur-md transition-opacity duration-400 ${
             mobileMenuOpen ? 'opacity-100' : 'opacity-0'
           }`}
+          style={{ transitionTimingFunction: 'cubic-bezier(0.32, 0.72, 0, 1)' }}
           onClick={closeAll}
           aria-label="Close menu"
           tabIndex={mobileMenuOpen ? 0 : -1}
         />
 
-        {/* Drawer — slides from right, Apple spring curve */}
+        {/* Drawer panel */}
         <aside
-          className={`absolute right-0 top-0 flex h-full w-full max-w-[420px] flex-col overflow-hidden bg-white shadow-2xl transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+          className={`absolute right-0 top-0 flex h-[100dvh] w-full max-w-[420px] flex-col bg-white shadow-2xl transition-transform duration-400 ${
             mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
           }`}
+          style={{ transitionTimingFunction: 'cubic-bezier(0.32, 0.72, 0, 1)' }}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Navigation menu"
         >
-          {/* Drawer header — minimal */}
-          <div className="flex items-center justify-between px-5 py-[18px]">
+          {/* Header — safe-area aware */}
+          <div
+            className="flex shrink-0 items-center justify-between px-5"
+            style={{ paddingTop: 'max(18px, env(safe-area-inset-top))', paddingBottom: '18px' }}
+          >
             <NexoraLogo compact />
             <button
               type="button"
               onClick={closeAll}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition-all duration-200 hover:bg-slate-200 hover:text-slate-700 active:scale-95"
-              aria-label="Close"
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition-all duration-200 hover:bg-slate-200 active:scale-95"
+              aria-label="Close menu"
             >
               <HiOutlineXMark className="h-5 w-5" strokeWidth={1.5} />
             </button>
           </div>
 
-          {/* Thin separator */}
-          <div className="mx-5 h-px bg-slate-100" />
+          {/* Divider */}
+          <div className="mx-5 h-px shrink-0 bg-slate-100" />
 
-          {/* Drawer body — staggered items */}
-          <div className="flex-1 overflow-y-auto px-5 py-6">
-            {/* Main links — Apple-style large touch targets */}
-            <div className="grid gap-1">
-              {mainLinks.map((link, i) => {
+          {/* Scrollable body */}
+          <div className="flex-1 overflow-y-auto overscroll-contain px-5 py-6">
+            {/* Main navigation links */}
+            <nav className="grid gap-1">
+              {mainLinks.map((link) => {
                 const active = link.to === '/' ? location.pathname === '/' : location.pathname.startsWith(link.to)
                 return (
                   <Link
                     key={link.label}
                     to={link.to}
                     onClick={closeAll}
-                    style={{ animationDelay: `${i * 60}ms` }}
-                    className={`flex items-center justify-between rounded-xl px-4 py-3.5 text-[28px] font-medium leading-none tracking-[-0.02em] transition-colors duration-200 ${
-                      mobileMenuOpen ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                    } ${
+                    className={`rounded-xl px-4 py-3.5 text-[28px] font-medium leading-none tracking-[-0.02em] transition-colors duration-200 ${
                       active ? 'text-slate-900' : 'text-slate-900 hover:text-slate-500'
                     }`}
                   >
@@ -304,9 +317,9 @@ function Header() {
                   </Link>
                 )
               })}
-            </div>
+            </nav>
 
-            {/* Solutions section */}
+            {/* Solutions */}
             <div className="mt-8">
               <p className="mb-3 px-1 text-[11px] font-medium uppercase tracking-[0.14em] text-slate-400">Solutions</p>
               <div className="grid gap-0.5">
@@ -331,7 +344,7 @@ function Header() {
               </div>
             </div>
 
-            {/* Auth buttons — Apple style */}
+            {/* CTA buttons */}
             <div className="mt-8 grid gap-2.5 border-t border-slate-100 pt-6">
               <Link
                 to="/login"
@@ -349,6 +362,9 @@ function Header() {
                 Get Started Free
               </Link>
             </div>
+
+            {/* Safe area for iPhone home indicator */}
+            <div style={{ height: 'env(safe-area-inset-bottom, 0px)' }} />
           </div>
         </aside>
       </div>
