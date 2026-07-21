@@ -271,11 +271,14 @@ export default function BlogArticlePage() {
       </nav>
 
       <article>
-        <header className="relative overflow-hidden bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_72%,#ffffff_100%)] pb-12 pt-12 sm:pb-16 sm:pt-14 lg:pb-20 lg:pt-16">
+        <header className="relative overflow-hidden bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_72%,#ffffff_100%)] pb-12 pt-20 sm:pb-16 sm:pt-24 lg:pb-20 lg:pt-28">
           <div className="soft-arc-bg pointer-events-none" />
           <div className="relative mx-auto max-w-5xl px-5 sm:px-6 lg:px-8">
-            <Link to="/blog" className="inline-flex min-h-10 items-center gap-2 rounded-full border border-blue-100 bg-white px-4 text-sm font-black text-blue-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 active:scale-[0.97]">
-              <HiOutlineArrowLeft className="h-4 w-4" />
+            <Link
+              to="/blog"
+              className="group inline-flex min-h-[38px] items-center gap-1.5 rounded-full border border-slate-200/60 bg-white/75 px-4 py-2 text-[13px] font-semibold tracking-[-0.01em] text-slate-600 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.04)] backdrop-blur-xl transition-all duration-200 hover:-translate-y-px hover:border-slate-300/70 hover:bg-white hover:text-slate-800 hover:shadow-[0_6px_20px_-8px_rgba(0,0,0,0.12)] active:scale-[0.97] active:shadow-[0_1px_3px_rgba(0,0,0,0.06)] sm:min-h-[42px] sm:px-5 sm:text-sm"
+            >
+              <HiOutlineArrowLeft className="h-[17px] w-[17px] transition-transform duration-200 group-hover:-translate-x-0.5" />
               Back to Blog
             </Link>
             <div className="mt-8 flex flex-wrap items-center gap-2 text-xs font-black text-blue-700">

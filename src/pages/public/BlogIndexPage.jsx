@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { HiOutlineArrowRight, HiOutlineMagnifyingGlass, HiOutlineTag } from 'react-icons/hi2'
+import { HiOutlineArrowRight, HiOutlineMagnifyingGlass, HiOutlineTag, HiOutlineXMark } from 'react-icons/hi2'
 import PageSeo from '../../components/PageSeo.jsx'
 import usePublishedBlogArticles from '../../hooks/usePublishedBlogArticles.js'
 import { absoluteUrl } from '../../lib/seoStructuredData.js'
@@ -32,6 +32,17 @@ export default function BlogIndexPage() {
   const [params, setParams] = useSearchParams()
   const [searchValue, setSearchValue] = useState(params.get('q') || '')
   const [filtersOpen, setFiltersOpen] = useState(false)
+
+  // Lock body scroll when mobile filter drawer is open
+  useEffect(() => {
+    if (filtersOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => { document.body.style.overflow = '' }
+  }, [filtersOpen])
+
   const { articles, loading } = usePublishedBlogArticles()
   const category = params.get('category') || 'All'
   const tag = params.get('tag') || ''
@@ -104,18 +115,25 @@ export default function BlogIndexPage() {
       <section className="bg-white pb-16 sm:pb-20 lg:pb-24">
         <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
           <div className="grid gap-6 lg:grid-cols-[18rem_1fr]">
+            {/* Mobile filter toggle — Apple style */}
             <div className="lg:hidden">
               <button
                 type="button"
-                onClick={() => setFiltersOpen((open) => !open)}
-                className="flex min-h-12 w-full items-center justify-between rounded-2xl border border-blue-100 bg-white px-4 text-sm font-black text-slate-800 shadow-sm transition active:scale-[0.98]"
+                onClick={() => setFiltersOpen(true)}
+                className="flex min-h-[48px] w-full items-center justify-between rounded-2xl border border-slate-200/60 bg-white/80 px-5 text-sm font-semibold tracking-[-0.01em] text-slate-700 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.04)] backdrop-blur-xl transition-all duration-200 hover:bg-white hover:shadow-[0_4px_16px_-6px_rgba(0,0,0,0.08)] active:scale-[0.98]"
               >
-                <span>Search & filters</span>
-                <span className="rounded-full bg-blue-50 px-3 py-1 text-xs text-blue-700">{filtersOpen ? 'Close' : 'Open'}</span>
+                <span className="flex items-center gap-2.5">
+                  <HiOutlineMagnifyingGlass className="h-[18px] w-[18px] text-slate-400" />
+                  Search & filters
+                </span>
+                <span className="rounded-full bg-slate-100/80 px-3 py-1 text-xs font-semibold tracking-[-0.01em] text-slate-500">
+                  {(category !== 'All' || tag || params.get('q')) ? 'Active' : 'All'}
+                </span>
               </button>
             </div>
 
-            <aside className={`${filtersOpen ? 'block' : 'hidden'} h-max rounded-[1.35rem] border border-blue-100 bg-white p-5 shadow-[0_22px_62px_-44px_rgba(37,99,235,0.32)] lg:block`}>
+            {/* Desktop sidebar — always visible */}
+            <aside className="hidden h-max rounded-[1.35rem] border border-blue-100 bg-white p-5 shadow-[0_22px_62px_-44px_rgba(37,99,235,0.32)] lg:block">
               <form onSubmit={submitSearch} className="relative">
                 <HiOutlineMagnifyingGlass className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
                 <input
@@ -273,6 +291,96 @@ export default function BlogIndexPage() {
                     {item}
                   </button>
                 ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Mobile: Apple-style bottom-sheet filter drawer ── */}
+        <div className={`fixed inset-0 z-[60] lg:hidden ${filtersOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}>
+          {/* Backdrop */}
+          <div
+            className={`absolute inset-0 bg-slate-900/20 backdrop-blur-[3px] transition-opacity duration-300 ease-out ${filtersOpen ? 'opacity-100' : 'opacity-0'}`}
+            onClick={() => setFiltersOpen(false)}
+            aria-hidden="true"
+          />
+
+          {/* Sheet panel */}
+          <div
+            className={`absolute bottom-0 left-0 right-0 max-h-[85vh] overflow-y-auto rounded-t-[1.8rem] bg-white shadow-[0_-8px_40px_-12px_rgba(0,0,0,0.18)] transition-transform duration-300 ease-out ${filtersOpen ? 'translate-y-0' : 'translate-y-full'}`}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Search filters"
+          >
+            {/* Drag handle */}
+            <div className="sticky top-0 z-10 flex justify-center bg-white pt-3 pb-1 rounded-t-[1.8rem]">
+              <div className="h-1 w-10 rounded-full bg-slate-300/70" />
+            </div>
+
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-3">
+              <h2 className="text-[17px] font-semibold tracking-[-0.01em] text-slate-900">Filters</h2>
+              <button
+                type="button"
+                onClick={() => setFiltersOpen(false)}
+                className="inline-flex h-[30px] w-[30px] items-center justify-center rounded-full bg-slate-100/80 text-slate-500 transition-all duration-200 hover:bg-slate-200/80 hover:text-slate-700 active:scale-95"
+                aria-label="Close filters"
+              >
+                <HiOutlineXMark className="h-[18px] w-[18px]" strokeWidth={2} />
+              </button>
+            </div>
+
+            {/* Filter content */}
+            <div className="px-6 pb-8">
+              <form onSubmit={(e) => { submitSearch(e); setFiltersOpen(false) }} className="relative">
+                <HiOutlineMagnifyingGlass className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                <input
+                  value={searchValue}
+                  onChange={(event) => setSearchValue(event.target.value)}
+                  placeholder="Search blog"
+                  className="min-h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-11 pr-4 text-sm font-bold text-slate-800 outline-none focus:border-blue-300 focus:bg-white"
+                />
+              </form>
+
+              <div className="mt-6">
+                <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">Categories</p>
+                <div className="mt-3 grid gap-2">
+                  <button
+                    type="button"
+                    onClick={() => { updateFilter({ category: '', tag: '' }); setFiltersOpen(false) }}
+                    className={`rounded-xl px-3 py-2 text-left text-sm font-bold transition active:scale-[0.98] ${category === 'All' && !tag ? 'bg-slate-950 text-white' : 'bg-slate-50 text-slate-700 hover:bg-blue-50 hover:text-blue-700'}`}
+                  >
+                    All Articles
+                  </button>
+                  {categories.map((item) => (
+                    <button
+                      type="button"
+                      key={item.category}
+                      onClick={() => { updateFilter({ category: item.category, tag: '' }); setFiltersOpen(false) }}
+                      className={`flex items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-bold transition active:scale-[0.98] ${category === item.category ? 'bg-slate-950 text-white' : 'bg-slate-50 text-slate-700 hover:bg-blue-50 hover:text-blue-700'}`}
+                    >
+                      <span>{item.category}</span>
+                      <span>{item.count}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-6">
+                <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">Tags</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {tags.slice(0, 18).map((item) => (
+                    <button
+                      type="button"
+                      key={item.tag}
+                      onClick={() => { updateFilter({ tag: item.tag }); setFiltersOpen(false) }}
+                      className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-black transition active:scale-[0.96] ${tag === item.tag ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-700 hover:bg-blue-100'}`}
+                    >
+                      <HiOutlineTag className="h-3.5 w-3.5" />
+                      {item.tag}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
