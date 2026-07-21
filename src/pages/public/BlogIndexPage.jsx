@@ -388,33 +388,37 @@ export default function BlogIndexPage() {
         </div>
 
         {/* ── Mobile filter drawer ── */}
-        {filtersOpen ? (
-          <div className="fixed inset-0 z-[60] lg:hidden">
-            <div
-              className="absolute inset-0 bg-slate-900/20 backdrop-blur-[3px] animate-[fadeIn_0.2s_ease-out_forwards]"
-              onClick={() => setFiltersOpen(false)}
-            />
-            <div className="absolute bottom-0 left-0 right-0 max-h-[85vh] overflow-y-auto rounded-t-[1.8rem] bg-white shadow-[0_-8px_40px_-12px_rgba(0,0,0,0.18)] animate-[slideUp_0.3s_cubic-bezier(0.32,0.72,0,1)_forwards]">
-              <div className="sticky top-0 z-10 flex justify-center bg-white pt-3 pb-1 rounded-t-[1.8rem]">
-                <div className="h-1 w-10 rounded-full bg-slate-300/70" />
-              </div>
-              <div className="flex items-center justify-between px-6 py-3">
-                <h2 className="text-[17px] font-medium tracking-[-0.01em] text-slate-900">Filters</h2>
-                <button
-                  type="button"
-                  onClick={() => setFiltersOpen(false)}
-                  className="inline-flex h-[30px] w-[30px] items-center justify-center rounded-full bg-slate-100 text-slate-500 transition-all duration-200 hover:bg-slate-200 hover:text-slate-500 active:scale-95"
-                  aria-label="Close"
-                >
-                  <HiOutlineXMark className="h-[18px] w-[18px]" strokeWidth={2} />
-                </button>
-              </div>
-              <div className="px-6 pb-8">
-                <FilterContent />
-              </div>
+        <div className={`fixed inset-0 z-[60] lg:hidden ${filtersOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}>
+          {/* Backdrop */}
+          <div
+            className={`absolute inset-0 bg-black/30 backdrop-blur-sm transition-opacity duration-300 ${filtersOpen ? 'opacity-100' : 'opacity-0'}`}
+            onClick={() => setFiltersOpen(false)}
+          />
+
+          {/* Sheet */}
+          <div
+            className={`absolute bottom-0 left-0 right-0 max-h-[85vh] overflow-y-auto rounded-t-[1.8rem] bg-white shadow-[0_-8px_40px_-12px_rgba(0,0,0,0.18)] transition-transform duration-350 ease-out ${filtersOpen ? 'translate-y-0' : 'translate-y-full'}`}
+            style={{ transitionDuration: '350ms', transitionTimingFunction: 'cubic-bezier(0.32, 0.72, 0, 1)' }}
+          >
+            <div className="sticky top-0 z-10 flex justify-center rounded-t-[1.8rem] bg-white pt-3 pb-1">
+              <div className="h-1 w-10 rounded-full bg-slate-300/70" />
+            </div>
+            <div className="flex items-center justify-between px-6 py-3">
+              <h2 className="text-[17px] font-medium tracking-[-0.01em] text-slate-900">Filters</h2>
+              <button
+                type="button"
+                onClick={() => setFiltersOpen(false)}
+                className="inline-flex h-[30px] w-[30px] items-center justify-center rounded-full bg-slate-100 text-slate-500 transition-all duration-200 hover:bg-slate-200 active:scale-95"
+                aria-label="Close filters"
+              >
+                <HiOutlineXMark className="h-[18px] w-[18px]" strokeWidth={2} />
+              </button>
+            </div>
+            <div className="px-6 pb-8">
+              <FilterContent />
             </div>
           </div>
-        ) : null}
+        </div>
       </section>
     </PublicPageShell>
   )
