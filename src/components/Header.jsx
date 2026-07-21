@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, useLocation } from 'react-router-dom'
+import { blogArticles } from '../lib/blogData.js'
 import {
   HiOutlineAcademicCap,
   HiOutlineArrowRight,
@@ -152,6 +153,7 @@ function Header() {
     { label: 'Help Center', to: '/help-center', kind: 'Page' },
     { label: 'FAQ', to: '/faq', kind: 'Page' },
     { label: 'Support', to: '/support-center', kind: 'Page' },
+    ...blogArticles.map((a) => ({ label: a.title, to: `/blog/${a.slug}`, kind: 'Article', keywords: a.excerpt + ' ' + a.tags.join(' ') })),
   ], [])
 
   const searchResults = useMemo(() => {
@@ -159,7 +161,8 @@ function Header() {
     const q = searchQuery.toLowerCase().trim()
     return allSearchItems.filter((item) =>
       item.label.toLowerCase().includes(q)
-    ).slice(0, 12)
+      || (item.keywords && item.keywords.toLowerCase().includes(q))
+    ).slice(0, 15)
   }, [searchQuery, allSearchItems])
 
   const isActiveLink = (link) => {
