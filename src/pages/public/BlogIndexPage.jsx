@@ -352,14 +352,32 @@ export default function BlogIndexPage() {
                             ))}
                           </div>
 
-                          {/* Read more */}
-                          <Link
-                            to={`/blog/${article.slug}`}
-                            className="mt-4 inline-flex items-center gap-1.5 text-[13px] font-medium tracking-[-0.01em] text-slate-500 transition-all duration-200 hover:gap-2 hover:text-slate-900"
-                          >
-                            Read article
-                            <HiOutlineArrowRight className="h-[14px] w-[14px] transition-transform duration-200 group-hover:translate-x-0.5" />
-                          </Link>
+                          {/* Like/Dislike + Read more row */}
+                          <div className="mt-4 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <button
+                                type="button"
+                                onClick={(e) => { e.preventDefault(); const key = `blog-like-${article.slug}`; const v = localStorage.getItem(key) === 'liked' ? null : 'liked'; v ? localStorage.setItem(key, v) : localStorage.removeItem(key); e.currentTarget.closest('.like-group')?.querySelector('.dislike-btn') && localStorage.removeItem(`blog-dislike-${article.slug}`); }}
+                                className="like-group flex items-center gap-1 text-[12px] text-slate-400 transition-all duration-200 hover:text-[#0071e3] active:scale-95"
+                              >
+                                <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z" /></svg>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => { e.preventDefault(); const key = `blog-dislike-${article.slug}`; const v = localStorage.getItem(key) === 'disliked' ? null : 'disliked'; v ? localStorage.setItem(key, v) : localStorage.removeItem(key); e.currentTarget.closest('.like-group')?.querySelector('.like-btn') && localStorage.removeItem(`blog-like-${article.slug}`); }}
+                                className="dislike-btn flex items-center gap-1 text-[12px] text-slate-400 transition-all duration-200 hover:text-rose-500 active:scale-95"
+                              >
+                                <svg className="h-4 w-4 rotate-180" viewBox="0 0 20 20" fill="currentColor"><path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z" /></svg>
+                              </button>
+                            </div>
+                            <Link
+                              to={`/blog/${article.slug}`}
+                              className="inline-flex items-center gap-1.5 text-[13px] font-medium tracking-[-0.01em] text-slate-500 transition-all duration-200 hover:gap-2 hover:text-slate-900"
+                            >
+                              Read article
+                              <HiOutlineArrowRight className="h-[14px] w-[14px] transition-transform duration-200 group-hover:translate-x-0.5" />
+                            </Link>
+                          </div>
                         </div>
                       </article>
                     )

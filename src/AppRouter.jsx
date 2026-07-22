@@ -5,6 +5,7 @@ import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 
 const MarketingRoute = lazy(() => import('./pages/public/MarketingRoute.jsx'))
 const IndustriesPage = lazy(() => import('./pages/public/IndustriesPage.jsx'))
+const ReviewsPage = lazy(() => import('./pages/public/ReviewsPage.jsx'))
 const UpgradeBusiness = lazy(() => import('./pages/UpgradeBusiness.jsx'))
 const Login = lazy(() => import('./pages/auth/Login.jsx'))
 const Signup = lazy(() => import('./pages/auth/Signup.jsx'))
@@ -447,6 +448,7 @@ export default function AppRouter() {
         <Route path="/business-services" element={<LazyPage><PublicBusinessServicesPage /></LazyPage>} />
         <Route path="/contact" element={<LazyPage><ContactPage /></LazyPage>} />
         <Route path="/industries" element={<LazyPage><IndustriesPage /></LazyPage>} />
+        <Route path="/reviews" element={<LazyPage><ReviewsPage /></LazyPage>} />
         <Route path="/projects" element={<LazyPage><ProjectsPage /></LazyPage>} />
         <Route path="/about" element={<LazyPage><AboutPage /></LazyPage>} />
         <Route path="/privacy-policy" element={<LazyPage><PrivacyPolicyPage /></LazyPage>} />

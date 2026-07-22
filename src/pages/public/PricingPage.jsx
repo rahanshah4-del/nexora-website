@@ -19,6 +19,8 @@ import { useMultiCurrency } from '../../context/MultiCurrencyProvider.jsx'
 import PricingCurrencySelector from '../../components/PricingCurrencySelector.jsx'
 
 const BusinessServicesSection = lazy(() => import('../../components/BusinessServicesSection.jsx'))
+const RoiCalculator = lazy(() => import('../../components/RoiCalculator.jsx'))
+const ReviewsSection = lazy(() => import('../../components/ReviewsSection.jsx'))
 
 const BASIC_FEATURES_SHORT = [
   'Choose Any 1 Nexora Module',
@@ -402,6 +404,9 @@ export default function PricingPage() {
       </section>
 
       {/* ── Business Services (lazy) ── */}
+      <Suspense fallback={null}><RoiCalculator /></Suspense>
+      <Suspense fallback={null}><ReviewsSection /></Suspense>
+
       <div ref={servicesRef}>
         {servicesVisible ? (
           <Suspense fallback={null}>

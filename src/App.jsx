@@ -35,6 +35,7 @@ const DashboardPreview = lazy(() => import('./components/DashboardPreview.jsx'))
 const TawkChat = lazy(() => import('./pages/public/TawkChat.jsx'))
 const NewUserOfferPopup = lazy(() => import('./components/NewUserOfferPopup.jsx'))
 const StickyCTA = lazy(() => import('./components/StickyCTA.jsx'))
+const ExitIntentPopup = lazy(() => import('./components/ExitIntentPopup.jsx'))
 const HomepageSections = lazy(() => import('./sections/HomepageSections.jsx'))
 
 function useIdleVisible(rootMargin = '900px') {
@@ -192,6 +193,7 @@ function App({ initialSectionId = '' }) {
       {chatReady ? <Suspense fallback={null}><SectionErrorBoundary><TawkChat /></SectionErrorBoundary></Suspense> : null}
       <Suspense fallback={null}><NewUserOfferPopup /></Suspense>
       <Suspense fallback={null}><StickyCTA /></Suspense>
+      <Suspense fallback={null}><ExitIntentPopup /></Suspense>
     </div>
   )
 }
