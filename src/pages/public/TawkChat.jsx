@@ -9,10 +9,7 @@ const BLOCKED_PATHS = new Set(['/login', '/signup', '/verify-email', '/workspace
 const BLOCKED_PREFIXES = ['/app', '/admin']
 
 function canLoadTawk(pathname) {
-  if (!TAWK_PROPERTY_ID) return false
-  if (BLOCKED_PATHS.has(pathname)) return false
-  if (BLOCKED_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))) return false
-  return PUBLIC_PATHS.has(pathname) || pathname.startsWith('/solutions/')
+  return false // Tawk.to temporarily disabled
 }
 
 function removeTawkWidget() {
@@ -55,6 +52,19 @@ export default function TawkChat() {
     window.Tawk_API = window.Tawk_API || {}
     window.Tawk_LoadStart = new Date()
 
+    // Position widget on the left side
+    window.Tawk_API.onLoad = function () {
+      window.Tawk_API?.setPosition?.('left')
+    }
+    // Also try CSS override as fallback
+    const styleId = 'tawk-left-override'
+    if (!document.getElementById(styleId)) {
+      const style = document.createElement('style')
+      style.id = styleId
+      style.textContent = 'iframe[title*="chat"]{left:20px!important;right:auto!important}'
+      document.head.appendChild(style)
+    }
+
     if (!document.getElementById(TAWK_SCRIPT_ID)) {
       const deferFn = typeof window.requestIdleCallback === 'function'
         ? (fn) => window.requestIdleCallback(fn, { timeout: 3000 })
@@ -85,6 +95,7 @@ export default function TawkChat() {
       }
       window.Tawk_API?.hideWidget?.()
       removeTawkWidget()
+      document.getElementById('tawk-left-override')?.remove()
     }
   }, [shouldLoad, pathname])
 
