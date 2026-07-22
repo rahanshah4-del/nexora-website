@@ -24,8 +24,8 @@ body {
   overflow-x: clip;
   overflow-y: auto;
   overscroll-behavior-y: auto;
-  background-color: #f8fafc;
-  color: #0f172a;
+  background-color: #f5f5f7;
+  color: #1d1d1f;
   font-family: var(--nexora-language-font);
 }
 
@@ -56,6 +56,7 @@ body.public-website {
   overflow-x: clip;
   overflow-y: auto;
   overscroll-behavior-y: auto;
+  background-color: #ffffff;
 }
 
 html.business-service-modal-open,
@@ -164,8 +165,8 @@ body.business-service-modal-open {
 }
 
 ::selection {
-  background: #38bdf8;
-  color: #0f172a;
+  background: #0071e3;
+  color: #ffffff;
 }
 
 @layer base {

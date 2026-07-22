@@ -47,14 +47,17 @@
     <!-- ── Early resource hints ── -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://firestore.googleapis.com" />
+    <link rel="preconnect" href="https://identitytoolkit.googleapis.com" />
     <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
     <link rel="dns-prefetch" href="https://connect.facebook.net" />
     <link rel="dns-prefetch" href="https://embed.tawk.to" />
+    <link rel="dns-prefetch" href="https://va.tawk.to" />
     <link rel="dns-prefetch" href="https://ipapi.co" />
     <link rel="dns-prefetch" href="https://open.er-api.com" />
-    <!-- ── Fonts: async load for fastest LCP ── -->
-    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Kalam:wght@700&family=Sora:wght@600;700;800&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
-    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Kalam:wght@700&family=Sora:wght@600;700;800&display=swap" /></noscript>
+    <!-- ── Fonts: reduced weights, async load ── -->
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@600;700&display=swap" /></noscript>
     <link rel="alternate" type="application/rss+xml" title="Nexora Solution Blog RSS Feed" href="/rss.xml" />
     <link rel="manifest" href="/manifest.json?v=20260628-pwa-install-icon-v2" />
     <link rel="icon" href="/favicon.ico?v=20260612-nexora-mark" sizes="any" />
@@ -64,6 +67,8 @@
     <link rel="icon" type="image/png" sizes="64x64" href="/favicon-64x64.png?v=20260612-nexora-mark" />
     <link rel="apple-touch-icon" sizes="180x180" href="/nexora-pwa-install-180.png?v=20260628-pwa-install-icon-v2" />
     <title>Nexora POS Software Pakistan | Nexora Solution</title>
+    <!-- Preload critical entry module -->
+    <link rel="modulepreload" href="/src/main.jsx" />
     <style>
       /* Static hero shell — visible before React mounts on mobile */
       .s-shell{background:linear-gradient(180deg,#fff 0%,#f8fbff 72%,#fff 100%);min-height:100dvh;position:relative;overflow:hidden;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#0f172a}

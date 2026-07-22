@@ -31,17 +31,29 @@ export default {
       },
       colors: {
         brand: {
-          DEFAULT: '#0ea5e9',
-          soft: '#38bdf8',
-          deep: '#0b82c5',
-          sky: '#7dd3fc',
+          DEFAULT: '#0071e3',
+          soft: '#2997ff',
+          deep: '#005ab8',
+          sky: '#81b9ff',
+          light: '#e8f4fd',
+        },
+        accent: {
+          rose: '#ff375f',
+          amber: '#ff9f0a',
+          emerald: '#30d158',
+          violet: '#af52de',
+          teal: '#40c8e0',
         },
       },
       boxShadow: {
-        soft: '0 28px 80px rgba(15, 23, 42, 0.1)',
+        soft: '0 8px 40px rgba(0, 0, 0, 0.06)',
+        card: '0 2px 12px rgba(0, 0, 0, 0.04)',
+        lift: '0 12px 40px rgba(0, 0, 0, 0.10)',
       },
       backgroundImage: {
-        'sparkle-grid': 'radial-gradient(circle at top left, rgba(56, 189, 248, 0.18), transparent 30%), radial-gradient(circle at 80% 20%, rgba(168, 85, 247, 0.16), transparent 25%)',
+        'sparkle-grid': 'radial-gradient(circle at top left, rgba(41, 151, 255, 0.15), transparent 30%), radial-gradient(circle at 80% 20%, rgba(175, 82, 222, 0.12), transparent 25%)',
+        'hero-gradient': 'linear-gradient(180deg, #ffffff 0%, #f5f5f7 60%, #f0f0f2 100%)',
+        'card-glow': 'linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.4) 100%)',
       },
       animation: {
         'feature-pulse': 'featurePulse 3s ease-in-out infinite',

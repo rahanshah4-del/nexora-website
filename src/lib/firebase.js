@@ -1,6 +1,6 @@
 import { initializeApp, getApps } from 'firebase/app'
 import { browserLocalPersistence, getAuth, setPersistence } from 'firebase/auth'
-import { initializeFirestore, persistentLocalCache, persistentSingleTabManager } from 'firebase/firestore'
+import { initializeFirestore, memoryLocalCache } from 'firebase/firestore'
 import { getStorage } from 'firebase/storage'
 import { getFunctions } from 'firebase/functions'
 
@@ -56,9 +56,7 @@ export const authPersistenceReady = auth
   : Promise.resolve()
 export const db = app
   ? initializeFirestore(app, {
-      localCache: persistentLocalCache({
-        tabManager: persistentSingleTabManager(),
-      }),
+      localCache: memoryLocalCache(),
     })
   : null
 export const firestoreDb = db
@@ -79,12 +77,14 @@ async function initializeAnalytics(appInstance) {
   return null
 }
 
-if (app) {
-  initializeAnalytics(app).then((analyticsInstance) => {
-    if (analyticsInstance) {
-      analytics = analyticsInstance
-    }
-  })
+if (app && typeof window !== 'undefined') {
+  // Defer analytics to idle to avoid blocking FCP/TBT
+  const init = () => initializeAnalytics(app).then((instance) => { if (instance) analytics = instance })
+  if ('requestIdleCallback' in window) {
+    window.requestIdleCallback(init, { timeout: 4000 })
+  } else {
+    setTimeout(init, 2000)
+  }
 }
 
 export const firebaseAuthEnabled = Boolean(app && auth)
