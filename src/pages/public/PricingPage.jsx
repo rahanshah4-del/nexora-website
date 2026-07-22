@@ -59,7 +59,7 @@ function faqs(formatPrice) {
   return [
     ['Is there a free trial?', 'Yes. Start a free 7-day trial with full access to all Nexora modules, unlimited users and unlimited storage. No credit card required.'],
     ['Do I need a credit card to start?', 'No. Nexora lets you start a free trial without a credit card.'],
-    ['What happens after the free trial?', `You can continue with Basic at ${formatPrice(2000)} with one business module and up to 2 users, or upgrade to Standard or Enterprise anytime.`],
+    ['What happens after the free trial?', `You can continue with Basic at ${formatPrice(1000)} with one business module and up to 2 users, or upgrade to Standard or Enterprise anytime.`],
     ['Can I choose any business module on Basic?', 'Yes. Basic lets you pick any ONE Nexora Business Module — Restaurant POS, Retail POS, School ERP, Transport, Medical Store POS, CRM, WhatsApp CRM, or any future module.'],
     ['What are the Basic plan limits?', 'Basic allows one active module, up to 2 team members, and 5 GB of cloud storage.'],
     ['When should I upgrade to Standard?', 'Upgrade when your team needs more than 2 users, more than 5 GB storage, or priority support.'],
@@ -144,7 +144,10 @@ export default function PricingPage() {
             <HiOutlineSparkles className="h-3.5 w-3.5 text-amber-500" />
             Nexora Pricing
           </span>
-          <h1 className="mx-auto mt-6 max-w-5xl text-[2.5rem] font-semibold leading-[1.06] tracking-[-0.02em] text-slate-900 sm:text-[3.5rem] lg:text-[4.2rem]">
+          <div className="mx-auto mt-4 inline-flex items-center gap-1.5 rounded-full border border-rose-200/60 bg-rose-50/70 px-4 py-2 text-xs font-medium tracking-[-0.01em] text-rose-700 shadow-sm backdrop-blur-xl">
+            🎉 50% OFF for New Users — Limited Time
+          </div>
+          <h1 className="mx-auto mt-5 max-w-5xl text-[2.5rem] font-semibold leading-[1.06] tracking-[-0.02em] text-slate-900 sm:text-[3.5rem] lg:text-[4.2rem]">
             Start free, then choose the plan that{' '}
             <span className="bg-gradient-to-r from-blue-600 via-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
               fits your business.
@@ -158,7 +161,7 @@ export default function PricingPage() {
           <div className="mx-auto mt-8 grid max-w-4xl gap-3 text-left sm:grid-cols-3">
             {[
               { title: 'Start Free Trial', text: 'Experience the complete Nexora platform with all modules, unlimited users and unlimited storage.' },
-              { title: 'Choose Basic', text: `Continue at ${formatPrice(2000)} with one business module, up to 2 users and 5 GB storage.` },
+              { title: 'Choose Basic', text: `Continue at ${formatPrice(1000)} with one business module, up to 2 users and 5 GB storage.` },
               { title: 'Upgrade When Ready', text: 'Unlock more modules, more users, larger storage and priority support.' },
             ].map(({ title, text }) => (
               <div key={title} className="rounded-[1.2rem] border border-slate-200/60 bg-white/80 p-5 shadow-[0_4px_20px_-8px_rgba(15,23,42,0.06)] backdrop-blur-xl">
@@ -217,7 +220,12 @@ export default function PricingPage() {
                   )}
 
                   <div className="relative mb-4 flex min-h-7 justify-center">
-                    {isPopular && (
+                    {plan.badge && (
+                      <span className="rounded-full bg-rose-600 px-3 py-1 text-[0.65rem] font-medium tracking-[-0.01em] text-white">
+                        {plan.badge}
+                      </span>
+                    )}
+                    {isPopular && !plan.badge && (
                       <span className="rounded-full bg-slate-900 px-3 py-1 text-[0.65rem] font-medium tracking-[-0.01em] text-white">
                         Most Popular
                       </span>
@@ -247,6 +255,11 @@ export default function PricingPage() {
                     <p className="text-3xl font-medium tracking-[-0.02em] text-slate-900 sm:text-4xl">
                       {formatPlanPrice(plan, billingCycle)}
                     </p>
+                    {plan.originalPrice && (
+                      <p className="mt-0.5 text-[14px] text-slate-400 line-through">
+                        PKR {plan.originalPrice.toLocaleString('en-PK')}
+                      </p>
+                    )}
                     {plan.monthlyPrice !== 'custom' && !isFree && (
                       <p className="mt-0.5 text-[13px] text-slate-400">{getBillingSuffix(plan, billingCycle)}</p>
                     )}

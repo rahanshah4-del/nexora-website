@@ -8,7 +8,7 @@ const faqItems = [
   { q: 'What is Nexora Solution?', a: 'Nexora is a business software platform for Restaurants, Retail, Schools, Transport, Medical Stores and Enterprises. It includes CRM, POS, ERP, and operations tools in one dashboard.' },
   { q: 'How do I start using Nexora?', a: 'Sign up for a free account at nexorasolution.online, select your business module, and start exploring your workspace. No credit card is required for the free trial.' },
   { q: 'Is there a free plan?', a: 'Yes. After the free trial, you can continue with Free Forever — 1 workspace, 1 user, 50 customers, 20 leads, 10 invoices per month, and basic CRM tools.' },
-  { q: 'Can I upgrade later?', a: 'Yes. The Standard plan at Rs 5,999/month adds unlimited users, records, reports, analytics, team management, and support tickets.' },
+  { q: 'Can I upgrade later?', a: 'Yes. The Standard plan at Rs 3,000/month (50% OFF for new users) adds unlimited users, records, reports, analytics, team management, and support tickets.' },
   { q: 'What modules does Nexora offer?', a: 'Nexora CRM, Restaurant POS, Retail POS, Medical Store POS, School ERP, Transport Management, WhatsApp CRM, and Property ERP.' },
   { q: 'Can my team use Nexora together?', a: 'Yes. Nexora supports multi-user access with role-based permissions so owners, managers, cashiers, and staff see only what they need.' },
   { q: 'Do you provide support?', a: 'Yes. Contact us via WhatsApp at +92 319 432 9754 or email rahanshah4@gmail.com for guidance, setup help, and support.' },

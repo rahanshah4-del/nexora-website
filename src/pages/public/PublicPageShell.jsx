@@ -6,6 +6,7 @@ import usePlatformMaintenance from '../../hooks/usePlatformMaintenance.js'
 import PublicFooter from './PublicFooter.jsx'
 
 const TawkChat = lazy(() => import('./TawkChat.jsx'))
+const NewUserOfferPopup = lazy(() => import('../../components/NewUserOfferPopup.jsx'))
 
 export default function PublicPageShell({ children }) {
   const maintenanceContext = useMemo(() => ({ surface: 'website' }), [])
@@ -70,6 +71,7 @@ export default function PublicPageShell({ children }) {
           <main>{children}</main>
           <PublicFooter />
           {chatReady ? <Suspense fallback={null}><TawkChat /></Suspense> : null}
+          <Suspense fallback={null}><NewUserOfferPopup /></Suspense>
         </>
       )}
     </div>

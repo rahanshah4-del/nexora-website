@@ -33,6 +33,7 @@ class SectionErrorBoundary extends Component {
 
 const DashboardPreview = lazy(() => import('./components/DashboardPreview.jsx'))
 const TawkChat = lazy(() => import('./pages/public/TawkChat.jsx'))
+const NewUserOfferPopup = lazy(() => import('./components/NewUserOfferPopup.jsx'))
 const HomepageSections = lazy(() => import('./sections/HomepageSections.jsx'))
 
 function useIdleVisible(rootMargin = '900px') {
@@ -188,6 +189,7 @@ function App({ initialSectionId = '' }) {
       </div>
 
       {chatReady ? <Suspense fallback={null}><SectionErrorBoundary><TawkChat /></SectionErrorBoundary></Suspense> : null}
+      <Suspense fallback={null}><NewUserOfferPopup /></Suspense>
     </div>
   )
 }

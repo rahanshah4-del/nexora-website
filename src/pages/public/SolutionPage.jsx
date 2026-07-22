@@ -690,7 +690,7 @@ function GrowthPathStrip() {
     },
     {
       title: 'Upgrade When Business Grows',
-      text: 'Move to Standard for Rs 5,999/month with more users, unlimited records, reports, analytics, team management and support tickets.',
+      text: 'Move to Standard for Rs 3,000/month (50% OFF for new users) with more users, unlimited records, reports, analytics, team management and support tickets.',
       icon: HiOutlineChartBarSquare,
     },
   ]

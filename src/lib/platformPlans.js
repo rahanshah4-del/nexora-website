@@ -1,6 +1,7 @@
 export const DEFAULT_SAAS_CURRENCY = 'PKR'
 export const PLATFORM_PLAN_COLLECTION = 'platformPlans'
 export const PLATFORM_YEARLY_DISCOUNT = 0.8 // 20% savings on yearly
+export const NEW_USER_DISCOUNT = 0.5 // 50% off for new users
 
 export const defaultPaymentAccounts = {
   jazzcash: {
@@ -82,9 +83,11 @@ export const defaultPlatformPlans = [
     id: 'basic',
     planName: 'Basic',
     name: 'Basic',
-    monthlyPrice: 2000,
-    yearlyPrice: Math.round(2000 * 12 * 0.8),
-    price: 2000,
+    monthlyPrice: 1000,
+    yearlyPrice: Math.round(1000 * 12 * 0.8),
+    price: 1000,
+    originalPrice: 2000,
+    badge: '50% OFF — New Users',
     description: 'Perfect for small businesses using a single Nexora solution.',
     currency: DEFAULT_SAAS_CURRENCY,
     billingCycle: 'monthly',
@@ -110,9 +113,10 @@ export const defaultPlatformPlans = [
     id: 'standard',
     planName: 'Standard',
     name: 'Standard',
-    monthlyPrice: 5999,
-    yearlyPrice: Math.round(5999 * 12 * 0.8),
-    price: 5999,
+    monthlyPrice: 3000,
+    yearlyPrice: Math.round(3000 * 12 * 0.8),
+    price: 3000,
+    originalPrice: 5999,
     currency: DEFAULT_SAAS_CURRENCY,
     billingCycle: 'monthly',
     active: true,
