@@ -2,16 +2,21 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { HiOutlineArrowRight, HiOutlineGift, HiOutlineXMark } from 'react-icons/hi2'
 
+const STORAGE_KEY = 'nexora-offer-popup-shown'
+
 export default function NewUserOfferPopup() {
   const [visible, setVisible] = useState(false)
   const [exiting, setExiting] = useState(false)
 
   useEffect(() => {
+    // Show once per session
+    if (sessionStorage.getItem(STORAGE_KEY)) return
     const timer = setTimeout(() => setVisible(true), 800)
     return () => clearTimeout(timer)
   }, [])
 
   const dismiss = () => {
+    sessionStorage.setItem(STORAGE_KEY, 'true')
     setExiting(true)
     setTimeout(() => {
       setVisible(false)
