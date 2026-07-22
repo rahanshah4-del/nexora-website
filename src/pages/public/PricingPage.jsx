@@ -157,6 +157,22 @@ export default function PricingPage() {
             Try Nexora free for 7 days with full access to all modules. No credit card required — upgrade when you're ready.
           </p>
 
+          {/* Trust badges */}
+          <div className="mx-auto mt-5 flex flex-wrap items-center justify-center gap-3 text-[13px] font-medium text-slate-500">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200/60 bg-emerald-50/60 px-3 py-1.5 text-emerald-700">
+              <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+              30 Day Money Back Guarantee
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-200/60 bg-blue-50/60 px-3 py-1.5 text-blue-700">
+              <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+              Lifetime Price Lock
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-200/60 bg-violet-50/60 px-3 py-1.5 text-violet-700">
+              <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+              Free Setup & Data Migration
+            </span>
+          </div>
+
           {/* How-it-works cards */}
           <div className="mx-auto mt-8 grid max-w-4xl gap-3 text-left sm:grid-cols-3">
             {[
