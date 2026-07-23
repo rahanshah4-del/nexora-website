@@ -25,6 +25,7 @@ import NexoraLogo from './brand/NexoraLogo'
 
 const mainLinks = [
   { label: 'Home', to: '/' },
+  { label: 'AI', to: '/ai' },
   { label: 'Pricing', to: '/pricing' },
   { label: 'Business Services', to: '/business-services' },
   { label: 'Industries', to: '/industries' },
@@ -250,11 +251,16 @@ function Header() {
           </div>
 
           {/* Pricing + rest — center position (skip Home) */}
-          {mainLinks.slice(1).map((link) => (
-            <Link key={link.label} to={link.to} onClick={closeAll} className={navLinkClass(link)}>
-              {link.label}
-            </Link>
-          ))}
+          {mainLinks.slice(1).map((link) => {
+            const isAi = link.label === 'AI'
+            return (
+              <Link key={link.label} to={link.to} onClick={closeAll}
+                className={`${navLinkClass(link)} ${isAi ? '!text-violet-600 font-bold' : ''}`}>
+                {isAi ? <HiOutlineSparkles className="text-sm mr-0.5" /> : null}
+                {link.label}
+              </Link>
+            )
+          })}
         </nav>
 
         {/* ── Right Actions ── */}

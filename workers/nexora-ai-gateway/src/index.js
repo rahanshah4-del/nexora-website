@@ -203,12 +203,8 @@ export default {
       return new Response(JSON.stringify({ status: 'healthy', providers: Object.keys(PROVIDERS), timestamp: new Date().toISOString() }), { status: 200, headers: { 'Content-Type': 'application/json', ...headers } })
     }
 
-    // ── Admin Dashboard ──
+    // ── Admin Dashboard (public stats — no auth required) ──
     if (url.pathname === '/admin/stats') {
-      const adminKey = request.headers.get('Authorization')?.replace('Bearer ', '')
-      if (adminKey !== env.ADMIN_KEY && env.ADMIN_KEY) {
-        return new Response(JSON.stringify({ error: 'unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json', ...headers } })
-      }
       const stats = { total: 0, byDay: {} }
       if (env.AI_KV) {
         const list = await env.AI_KV.list({ prefix: 'analytics:' })

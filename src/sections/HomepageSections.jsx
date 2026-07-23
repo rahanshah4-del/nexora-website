@@ -225,6 +225,113 @@ export default function HomepageSections() {
         </div>
       </section>
 
+      {/* ──────────────────────────────────────────────
+          AI ANNOUNCEMENT SECTION
+          ────────────────────────────────────────────── */}
+      <section data-reveal className="relative overflow-hidden bg-white py-16 sm:py-20 lg:py-24">
+        <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+          <div className="h-[500px] w-[600px] rounded-full bg-[radial-gradient(ellipse_at_center,rgba(139,92,246,0.06)_0%,rgba(168,85,247,0.03)_40%,transparent_70%)] blur-3xl" />
+        </div>
+        <div className="relative mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-4xl text-center">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-200/60 bg-violet-50/80 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.18em] text-violet-700 shadow-[0_0_24px_-4px_rgba(139,92,246,0.12)] backdrop-blur-xl">
+              <svg className="h-3.5 w-3.5 text-violet-500" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" /></svg>
+              Introducing Nexora AI
+            </span>
+            <h2 className="website-section-heading mt-5 text-3xl font-black tracking-tight text-slate-950 sm:text-5xl">
+              One intelligent AI powering <span className="bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 bg-clip-text text-transparent">every business module.</span>
+            </h2>
+            <p className="mx-auto mt-5 max-w-2xl text-base leading-8 text-slate-600">
+              Nexora AI is deeply integrated across the entire platform — it understands your menu, inventory, sales, customers, and reports to help you work smarter and faster.
+            </p>
+          </div>
+          <div className="mt-10 grid grid-cols-3 gap-2 sm:grid-cols-5 lg:grid-cols-9">
+            {[
+              { label: 'Restaurant POS', icon: '🍽️' },
+              { label: 'Retail POS', icon: '🛍️' },
+              { label: 'Pharmacy', icon: '💊' },
+              { label: 'CRM', icon: '📊' },
+              { label: 'Inventory', icon: '📦' },
+              { label: 'Billing', icon: '🧾' },
+              { label: 'HR', icon: '👥' },
+              { label: 'Reports', icon: '📈' },
+              { label: 'Marketing', icon: '📣' },
+            ].map((m) => (
+              <div key={m.label} className="flex items-center gap-1.5 rounded-xl border border-violet-100/60 bg-white/80 px-3 py-2.5 text-[11px] font-bold text-slate-600 shadow-sm backdrop-blur-xl transition-all duration-200 hover:border-violet-300 hover:shadow-[0_4px_16px_-6px_rgba(139,92,246,0.15)] hover:-translate-y-0.5">
+                <span className="text-sm">{m.icon}</span>
+                <span className="hidden sm:inline">{m.label}</span>
+                <span className="sm:hidden">{m.label.split(' ')[0]}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ──────────────────────────────────────────────
+          AI FEATURE CARDS
+          ────────────────────────────────────────────── */}
+      <section data-reveal className="bg-[linear-gradient(180deg,#faf5ff_0%,#ffffff_100%)] py-16 sm:py-20 lg:py-24">
+        <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-4xl text-center">
+            <span className="inline-flex rounded-full border border-violet-100 bg-violet-50/70 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.18em] text-violet-600 shadow-sm">AI Features</span>
+            <h2 className="website-section-heading mt-5 text-3xl font-black tracking-tight text-slate-950 sm:text-5xl">Intelligent tools <span className="bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">built for business.</span></h2>
+          </div>
+          <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              { title: 'AI Menu Import', desc: 'Upload a photo of any menu — AI extracts items, prices, and categories. Import 100+ items in seconds.', icon: '📸', tone: 'violet' },
+              { title: 'AI Business Assistant', desc: 'Ask questions about your business in plain English or Urdu. Get instant answers, reports, and recommendations.', icon: '💬', tone: 'purple' },
+              { title: 'AI Sales Insights', desc: 'AI analyzes your sales patterns and predicts trends. Know what sells, when, and at what price.', icon: '📊', tone: 'fuchsia' },
+              { title: 'AI Inventory Intelligence', desc: 'Smart stock predictions, low-stock alerts, and automatic purchase recommendations based on sales velocity.', icon: '📦', tone: 'indigo' },
+              { title: 'AI Reports', desc: 'Generate detailed business reports instantly. AI finds insights you might miss in raw data.', icon: '📄', tone: 'violet' },
+              { title: 'AI Customer Support', desc: '24/7 intelligent chatbot that answers customer queries, takes orders, and resolves issues automatically.', icon: '🤖', tone: 'purple' },
+            ].map((card) => (
+              <div key={card.title} className="group relative overflow-hidden rounded-[1.35rem] border border-violet-100/60 bg-white p-6 shadow-[0_8px_30px_-12px_rgba(139,92,246,0.08)] transition-all duration-300 hover:-translate-y-1 hover:border-violet-200 hover:shadow-[0_16px_44px_-16px_rgba(139,92,246,0.2)]">
+                <div className="pointer-events-none absolute -right-4 -top-4 h-24 w-24 rounded-full bg-gradient-to-br from-violet-50 to-purple-50 opacity-0 blur-xl transition-opacity duration-300 group-hover:opacity-70" />
+                <div className="relative">
+                  <span className="text-3xl">{card.icon}</span>
+                  <span className="ml-2 inline-flex rounded-full border border-violet-200/60 bg-violet-50 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-[0.12em] text-violet-600">AI</span>
+                </div>
+                <h3 className="relative mt-3 text-lg font-black text-slate-950">{card.title}</h3>
+                <p className="relative mt-2 text-[13px] leading-[1.65] text-slate-500">{card.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ──────────────────────────────────────────────
+          AI WORKFLOW SECTION
+          ────────────────────────────────────────────── */}
+      <section data-reveal className="bg-white py-16 sm:py-20 lg:py-24">
+        <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-4xl text-center">
+            <span className="inline-flex rounded-full border border-violet-100 bg-violet-50/70 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.18em] text-violet-600 shadow-sm">How It Works</span>
+            <h2 className="website-section-heading mt-5 text-3xl font-black tracking-tight text-slate-950 sm:text-5xl">
+              AI that <span className="bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">works for you.</span>
+            </h2>
+          </div>
+          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              { step: '01', title: 'Upload', desc: 'Upload your menu photo, inventory list, or sales data. AI handles any format.', icon: '📤' },
+              { step: '02', title: 'AI Understands', desc: 'Nexora AI reads, analyzes, and extracts structured data using advanced OCR and language models.', icon: '🧠' },
+              { step: '03', title: 'AI Organizes', desc: 'Data is categorized, validated, and matched against your existing records. Duplicates flagged.', icon: '📋' },
+              { step: '04', title: 'Ready to Use', desc: 'Review the results, make edits if needed, and import everything in one click. Done.', icon: '✅' },
+            ].map((item, idx) => (
+              <div key={item.step} className="group relative text-center">
+                <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br from-violet-500 via-purple-500 to-fuchsia-500 text-xl font-black text-white shadow-[0_8px_24px_-6px_rgba(139,92,246,0.3)] transition-all duration-300 group-hover:scale-105 group-hover:shadow-[0_12px_32px_-8px_rgba(139,92,246,0.4)]">
+                  {item.step}
+                </div>
+                {idx < 3 && (
+                  <div className="absolute left-[calc(50%+2.5rem)] top-8 hidden h-px w-[calc(100%-5rem)] bg-gradient-to-r from-violet-300 to-transparent lg:block" />
+                )}
+                <p className="mt-4 text-lg font-black text-slate-950">{item.title}</p>
+                <p className="mt-1.5 text-[13px] leading-[1.6] text-slate-500">{item.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section data-reveal className="relative overflow-hidden bg-[linear-gradient(180deg,#f8fbff_0%,#ffffff_42%,#eef7ff_100%)] py-16 sm:py-20 lg:py-24">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-200 to-transparent" />
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-sky-200 to-transparent" />
@@ -245,6 +352,33 @@ export default function HomepageSections() {
           </div>
           <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">{posIndustries.map((ind) => (<article key={ind.title} className="premium-card pos-reveal-card p-5"><span className="grid h-12 w-12 place-items-center rounded-2xl bg-blue-50 text-blue-700"><ind.icon className="text-2xl" /></span><h3 className="mt-4 text-lg font-black text-slate-950">{ind.title}</h3><p className="mt-2 text-sm leading-6 text-slate-600">{ind.text}</p></article>))}</div>
           <div id="features" className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-3">{posFeatures.map((f) => (<article key={f.title} className="premium-card pos-reveal-card flex min-h-40 gap-4 p-5"><span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-slate-950 text-white shadow-[0_18px_38px_-28px_rgba(15,23,42,0.8)]"><f.icon className="text-2xl" /></span><div><h3 className="text-lg font-black text-slate-950">{f.title}</h3><p className="mt-2 text-sm leading-6 text-slate-600">{f.text}</p></div></article>))}</div>
+        </div>
+      </section>
+
+      {/* ──────────────────────────────────────────────
+          AI CTA SECTION
+          ────────────────────────────────────────────── */}
+      <section data-reveal className="relative overflow-hidden bg-white px-5 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-24">
+        <div className="pointer-events-none absolute left-1/2 top-0 -translate-x-1/2">
+          <div className="h-[300px] w-[500px] rounded-full bg-[radial-gradient(ellipse_at_center,rgba(139,92,246,0.08)_0%,transparent_70%)] blur-3xl" />
+        </div>
+        <div className="relative mx-auto grid max-w-7xl items-center gap-6 rounded-[2rem] border border-violet-100/60 bg-[linear-gradient(135deg,#faf5ff_0%,#ffffff_48%,#f5f3ff_100%)] p-6 shadow-[0_30px_90px_-60px_rgba(139,92,246,0.3)] sm:p-8 lg:grid-cols-[1fr_auto]">
+          <div>
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-200/60 bg-white/80 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.18em] text-violet-700 shadow-sm backdrop-blur-xl">
+              <svg className="h-3.5 w-3.5 text-violet-500" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" /></svg>
+              Nexora AI
+            </span>
+            <h2 className="website-section-heading mt-5 text-3xl font-black tracking-tight text-slate-950 sm:text-5xl">Experience Nexora AI <span className="bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 bg-clip-text text-transparent">Today.</span></h2>
+            <p className="mt-4 max-w-2xl text-base leading-8 text-slate-600">Start your 7-day free trial — no credit card required. Or book a live demo and let our experts show you how Nexora AI transforms your business.</p>
+          </div>
+          <div className="flex flex-col gap-3 min-[420px]:flex-row lg:flex-col xl:flex-row">
+            <Link to="/signup" className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 px-6 py-3 text-sm font-bold text-white shadow-[0_6px_24px_-4px_rgba(139,92,246,0.4)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_32px_-6px_rgba(139,92,246,0.5)] active:scale-[0.97]">
+              Start Free Trial <HiOutlineArrowRight className="text-lg" />
+            </Link>
+            <Link to="/contact" className="inline-flex items-center gap-2 rounded-full border border-violet-200/60 bg-white/80 px-6 py-3 text-sm font-bold text-violet-700 shadow-sm backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:border-violet-300 hover:bg-white active:scale-[0.97]">
+              Book Live Demo <HiOutlinePlayCircle className="text-xl text-violet-500" />
+            </Link>
+          </div>
         </div>
       </section>
 

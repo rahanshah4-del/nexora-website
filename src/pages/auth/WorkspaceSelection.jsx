@@ -512,6 +512,7 @@ function WorkspaceCard({ workspace, index, emailVerified, selected, saving, onSe
   const disabled = !workspace.active
   const businessTypeLabel = labelForBusinessType(workspace.type)
   const hasActivity = activity && activity.hasActivity
+  const isRestaurant = workspace.type === 'Restaurant POS'
 
   return (
     <motion.article
@@ -519,7 +520,7 @@ function WorkspaceCard({ workspace, index, emailVerified, selected, saving, onSe
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.22, delay: index * 0.03, ease: 'easeOut' }}
       className={`rounded-xl border border-slate-200/60 bg-white/90 p-3 shadow-sm backdrop-blur-sm transition-all duration-200 hover:shadow-md sm:p-4 ${
-        selected ? 'border-blue-500 ring-1 ring-blue-100' : 'border-slate-200'
+        selected ? isRestaurant ? 'border-violet-400 ring-1 ring-violet-100' : 'border-blue-500 ring-1 ring-blue-100' : 'border-slate-200'
       }`}
     >
       <div className="flex items-start justify-between gap-3">
@@ -530,9 +531,20 @@ function WorkspaceCard({ workspace, index, emailVerified, selected, saving, onSe
           <div className="min-w-0 pt-0.5">
             <div className="flex min-w-0 flex-wrap items-center gap-2">
               <h2 className="truncate text-[15px] font-bold leading-5 text-slate-950">{workspace.name}</h2>
+              {selected && isRestaurant && (
+                <span className="inline-flex items-center gap-1 rounded-full border border-violet-200/60 bg-violet-50 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.1em] text-violet-600 shadow-[0_0_8px_-2px_rgba(139,92,246,0.12)]">
+                  <img src="/nexora-ai-logo.png" alt="AI" className="h-3 w-3 rounded object-cover" />
+                  AI-Powered
+                </span>
+              )}
               {selected && emailVerified ? <VerificationBadge verified compact /> : null}
             </div>
             <p className="mt-1 text-xs text-slate-500">Business type: {businessTypeLabel}</p>
+            {selected && isRestaurant && (
+              <p className="mt-1 text-[11px] font-medium text-violet-600">
+                ✨ AI Menu Import, smart billing &amp; AI-powered inventory included
+              </p>
+            )}
             {workspace.plan ? (
               <p className="mt-1 text-xs text-slate-500">
                 Plan:{' '}
@@ -659,6 +671,7 @@ function WorkspaceListRow({ workspace, index, emailVerified, selected, saving, o
   const disabled = !workspace.active
   const businessTypeLabel = labelForBusinessType(workspace.type)
   const hasActivity = activity && activity.hasActivity
+  const isRestaurant = workspace.type === 'Restaurant POS'
 
   return (
     <motion.div
@@ -666,7 +679,7 @@ function WorkspaceListRow({ workspace, index, emailVerified, selected, saving, o
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2, delay: index * 0.025, ease: 'easeOut' }}
       className={`flex flex-wrap items-center gap-3 rounded-lg border bg-white px-4 py-3 shadow-[0_12px_32px_-26px_rgba(15,23,42,0.42)] transition sm:flex-nowrap sm:gap-4 ${
-        selected ? 'border-blue-500 ring-1 ring-blue-100' : 'border-slate-200'
+        selected ? isRestaurant ? 'border-violet-400 ring-1 ring-violet-100' : 'border-blue-500 ring-1 ring-blue-100' : 'border-slate-200'
       }`}
     >
       <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-lg bg-gradient-to-br ${workspace.emojiBg || 'from-sky-100 to-blue-200'} shadow-sm`}>
@@ -676,9 +689,20 @@ function WorkspaceListRow({ workspace, index, emailVerified, selected, saving, o
       <div className="min-w-0 flex-1">
         <div className="flex min-w-0 flex-wrap items-center gap-2">
           <h3 className="truncate text-sm font-bold leading-5 text-slate-950">{workspace.name}</h3>
+          {selected && isRestaurant && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-violet-200/60 bg-violet-50 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.1em] text-violet-600 shadow-[0_0_8px_-2px_rgba(139,92,246,0.12)]">
+              <img src="/nexora-ai-logo.png" alt="AI" className="h-3 w-3 rounded object-cover" />
+              AI-Powered
+            </span>
+          )}
           {selected && emailVerified ? <VerificationBadge verified compact /> : null}
         </div>
         <p className="mt-0.5 truncate text-xs text-slate-500">Business type: {businessTypeLabel}</p>
+        {selected && isRestaurant && (
+          <p className="mt-0.5 text-[11px] font-medium text-violet-600">
+            ✨ AI Menu Import, smart billing &amp; AI-powered inventory included
+          </p>
+        )}
         {/* Activity indicator — Apple-style inline */}
         {hasActivity ? (
           <div className="mt-0.5 flex items-center gap-2 text-xs">

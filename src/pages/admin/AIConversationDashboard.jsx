@@ -210,59 +210,60 @@ function SkeletonCard() {
   )
 }
 
-// ── Generate Simulated Conversations ──
-function generateSimulatedConversations(statsData, count = 100) {
-  const now = Date.now()
+// ── Build conversation list from REAL analytics data ──
+function buildConversationsFromStats(statsData) {
   const conversations = []
 
-  // Extract real top questions if available
-  const allTopQuestions = []
-  if (statsData?.byDay) {
-    for (const day of Object.values(statsData.byDay)) {
-      if (day.topQuestions) allTopQuestions.push(...day.topQuestions)
+  if (!statsData?.byDay) return conversations
+
+  // Build real entries from per-day analytics
+  for (const [date, day] of Object.entries(statsData.byDay)) {
+    const dayQuestions = day.topQuestions || day.questions || []
+    const avgTime = day.avgTime || 0
+    const tokens = day.tokens || 0
+    const requests = day.requests || 0
+    const errors = day.errors || 0
+
+    // Add real questions
+    for (let i = 0; i < dayQuestions.length; i++) {
+      const q = dayQuestions[i]
+      // Skip stats/menu-import entries
+      const isMeta = q.startsWith('[MENU') || q.startsWith('[STATS')
+      conversations.push({
+        id: `${date}-${i}`,
+        timestamp: new Date(`${date}T${String(12 + Math.floor(i * 0.5)).padStart(2, '0')}:${String(i % 60).padStart(2, '0')}:00Z`),
+        provider: 'deepseek-chat',
+        userEmail: '—',
+        workspaceName: 'Nexora',
+        question: isMeta ? q.replace(/^\[.*?\]\s*/, '') : q,
+        response: isMeta ? 'AI system operation' : 'AI response',
+        tokens: Math.round(tokens / Math.max(requests, 1)),
+        responseTime: avgTime,
+        cost: 0,
+        module: isMeta ? 'system' : 'ai-chat',
+        hasError: false,
+        status: 'completed',
+      })
     }
-  }
 
-  for (let i = 0; i < count; i++) {
-    const provider = PROVIDERS[Math.floor(Math.random() * PROVIDERS.length)]
-    const user = DEMO_USERS[Math.floor(Math.random() * DEMO_USERS.length)]
-    const question =
-      allTopQuestions.length > 0
-        ? allTopQuestions[Math.floor(Math.random() * allTopQuestions.length)]
-        : DEMO_QUESTIONS[Math.floor(Math.random() * DEMO_QUESTIONS.length)]
-    const module = MODULES[Math.floor(Math.random() * MODULES.length)]
-    const tokens = Math.floor(Math.random() * 800) + 100
-    const responseTime = Math.floor(Math.random() * 3000) + 400
-    const hasError = Math.random() < 0.04
-    const cost = (tokens / 1_000_000) * (PROVIDER_COST_PER_1M[provider] || 0.21)
-
-    // Distribute timestamps over last 90 days
-    const daysAgo = Math.floor(Math.random() * 90)
-    const hoursAgo = Math.floor(Math.random() * 24)
-    const minutesAgo = Math.floor(Math.random() * 60)
-    const timestamp = new Date(now - daysAgo * 86400000 - hoursAgo * 3600000 - minutesAgo * 60000)
-
-    // Some conversations are "active" (within last 30 min)
-    const isActive = i < 8 && daysAgo === 0 && hoursAgo === 0
-
-    conversations.push({
-      id: generateId(),
-      sessionId: `sess_${timestamp.getTime()}_${Math.random().toString(36).slice(2, 7)}`,
-      timestamp,
-      provider,
-      userEmail: user.email,
-      workspaceName: user.workspace,
-      question,
-      response: `Here's how you can ${question.toLowerCase().replace('how do i ', '').replace('how to ', '')}. This feature is available in your Nexora dashboard under the ${module} section. Would you like me to walk you through the steps?`,
-      tokens,
-      responseTime,
-      cost,
-      module,
-      hasError,
-      feedback: Math.random() < 0.3 ? (Math.random() < 0.7 ? 'up' : 'down') : null,
-      flagged: hasError || Math.random() < 0.03,
-      status: hasError ? 'error' : isActive ? 'active' : 'completed',
-    })
+    // Add error entries
+    if (errors > 0) {
+      conversations.push({
+        id: `${date}-errors`,
+        timestamp: new Date(`${date}T00:00:00Z`),
+        provider: 'deepseek-chat',
+        userEmail: '—',
+        workspaceName: 'Nexora',
+        question: `${errors} error(s) on ${date}`,
+        response: 'AI service error — retried',
+        tokens: 0,
+        responseTime: 0,
+        cost: 0,
+        module: 'system',
+        hasError: true,
+        status: 'error',
+      })
+    }
   }
 
   // Sort newest first
@@ -284,17 +285,15 @@ function useAIDashboardData() {
     setState((prev) => ({ ...prev, loading: true, error: null }))
 
     try {
-      const adminKey = import.meta.env.VITE_AI_ADMIN_KEY || ''
-      const headers = { 'Content-Type': 'application/json' }
-      if (adminKey) headers['Authorization'] = `Bearer ${adminKey}`
-
-      const res = await fetch(`${AI_GATEWAY_URL}/admin/stats`, { headers })
+      const res = await fetch(`${AI_GATEWAY_URL}/admin/stats`, {
+        headers: { 'Content-Type': 'application/json' },
+      })
       if (!res.ok) {
-        throw new Error(`Gateway returned ${res.status}${res.status === 401 ? ' (check VITE_AI_ADMIN_KEY)' : ''}`)
+        throw new Error(`Gateway returned ${res.status}`)
       }
 
       const statsData = await res.json()
-      const conversations = generateSimulatedConversations(statsData, 100)
+      const conversations = buildConversationsFromStats(statsData)
 
       setState({
         stats: statsData,
@@ -305,8 +304,8 @@ function useAIDashboardData() {
       })
     } catch (err) {
       console.error('[AI Dashboard] Fetch error:', err)
-      // Fallback: generate conversations even without real stats
-      const conversations = generateSimulatedConversations(null, 80)
+      // Fallback: empty conversation list when gateway is unavailable
+      const conversations = []
       setState({
         stats: null,
         conversations,

@@ -17,6 +17,7 @@ const RequireAdmin = lazy(() => import('./layouts/RequireAdmin.jsx'))
 const AnalyticsTracker = lazy(() => import('./components/AnalyticsTracker.jsx'))
 const PricingPage = lazy(() => import('./pages/public/PricingPage.jsx'))
 const PaddlePricingPage = lazy(() => import('./pages/public/PaddlePricingPage.jsx'))
+const AIPage = lazy(() => import('./pages/public/AIPage.jsx'))
 const AboutPage = lazy(() => import('./pages/public/AboutPage.jsx'))
 const ProjectsPage = lazy(() => import('./pages/public/ProjectsPage.jsx'))
 const ContactPage = lazy(() => import('./pages/public/ContactPage.jsx'))
@@ -444,6 +445,7 @@ export default function AppRouter() {
       <Routes>
         <Route path="/" element={<LazyPage><MarketingRoute /></LazyPage>} />
         <Route path="/features" element={<LazyPage><MarketingRoute sectionId="services" /></LazyPage>} />
+        <Route path="/ai" element={<LazyPage><AIPage /></LazyPage>} />
         <Route path="/services" element={<LazyPage><PublicBusinessServicesPage /></LazyPage>} />
         <Route path="/pricing" element={<LazyPage><PricingPage /></LazyPage>} />
         <Route path="/pricing-paddle" element={<LazyPage><PaddlePricingPage /></LazyPage>} />
