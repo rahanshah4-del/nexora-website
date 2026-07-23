@@ -37,7 +37,7 @@ export async function extractMenuFromImage({
   language = 'auto',
   signal,
 } = {}) {
-  if (!imageUrl) throw new Error('imageUrl is required')
+  if (!imageUrl) throw new Error('No image data — upload may have failed. Please try again.')
 
   const isBase64 = imageUrl.startsWith('data:')
 

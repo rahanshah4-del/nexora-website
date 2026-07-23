@@ -195,7 +195,7 @@ export function useMenuImport({ workspaceId, existingItems = [], existingCategor
       const existingCatNames = existingCategories.filter(c => c !== 'All Menu')
 
       const result = await extractMenuFromImage({
-        imageUrl: downloadUrl,
+        imageUrl: downloadUrl || imageBase64,
         provider: resolved.ocrProvider,
         confidenceThreshold: resolved.confidenceThreshold,
         existingCategories: existingCatNames,
