@@ -1,0 +1,15 @@
+name = "nexora-ai-gateway"
+main = "src/index.js"
+compatibility_date = "2026-07-22"
+
+[vars]
+DEEPSEEK_BASE_URL = "https://api.deepseek.com"
+DEFAULT_MODEL = "deepseek-chat"
+MAX_TOKENS = 500
+RATE_LIMIT_REQUESTS = 100
+RATE_LIMIT_WINDOW = 60
+
+[[kv_namespaces]]
+binding = "AI_KV"
+id = "e7d51996639b4278b21acbf3500fda6e"
+preview_id = "e7d51996639b4278b21acbf3500fda6e"

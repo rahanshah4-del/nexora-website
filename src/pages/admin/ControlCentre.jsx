@@ -16,6 +16,7 @@ import {
   HiOutlineEnvelope,
   HiOutlineHome,
   HiOutlineKey,
+  HiOutlineSparkles,
   HiOutlineLifebuoy,
   HiOutlineBars3,
   HiOutlineMegaphone,
@@ -106,6 +107,7 @@ import { createWorkspaceNotification, workspaceNotificationTargets } from '../..
 import EmailMarketing from './EmailMarketing.jsx'
 import AdminBusinessServices from './BusinessServices.jsx'
 import BlogManager from './BlogManager.jsx'
+import AIConversationDashboard from './AIConversationDashboard.jsx'
 import { adminForceLogoutUser, adminListPasskeySecurity, adminUpdatePasskey } from '../../lib/passkeys.js'
 
 function needsBackendWarning(actionId = '') {
@@ -204,6 +206,7 @@ const navGroups = [
       ['blogCms', 'Blog CMS', HiOutlineDocumentText],
       ['announcements', 'Announcements', HiOutlineMegaphone],
       ['commandCenter', 'Command Center', HiOutlineChatBubbleLeftRight],
+      ['aiDashboard', 'AI Dashboard', HiOutlineSparkles],
       ['support', 'Support Tickets', HiOutlineLifebuoy],
       ['reviews', 'Client Reviews', HiOutlineStar],
     ],
@@ -4142,6 +4145,8 @@ export default function ControlCentre() {
         return Announcements()
       case 'commandCenter':
         return <ClientCommandCenter embedded />
+      case 'aiDashboard':
+        return <AIConversationDashboard />
       case 'support':
         return SupportTickets()
       case 'reviews':

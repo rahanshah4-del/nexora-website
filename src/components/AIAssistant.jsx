@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { HiOutlinePaperAirplane, HiOutlineSparkles, HiOutlineXMark } from 'react-icons/hi2'
 
-// Gemini API Key
-const GEMINI_KEY = import.meta.env.VITE_GEMINI_API_KEY || 'AIzaSyAb8RN6Jx4Oc6w8jr6BWeAuW7Cn-vIr7JnABRB3oFQnMYCHrNQg'
+// Nexora AI Gateway (Cloudflare Worker)
+const AI_GATEWAY_URL = import.meta.env.VITE_AI_GATEWAY_URL || 'https://nexora-ai-gateway.rahanshah4.workers.dev'
 const MAX_EXTERNAL_QUESTIONS = 5
 
 const SYSTEM_PROMPT = `You are Nexora AI, the official AI assistant for Nexora Solution — a Pakistani business software company (nexorasolution.online).
@@ -87,30 +87,27 @@ export default function AIAssistant() {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [externalCount, setExternalCount] = useState(0)
+  const [sessionId] = useState(() => 'sess_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8))
   const scrollRef = useRef(null)
   const inputRef = useRef(null)
 
   useEffect(() => { if (open) inputRef.current?.focus() }, [open])
   useEffect(() => { scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' }) }, [messages])
 
-  const callGemini = async (userMessage) => {
-    if (!GEMINI_KEY) return null
+  const callAI = async (userMessage) => {
     try {
-      const history = messages.slice(-6).map((m) => ({
-        role: m.from === 'user' ? 'user' : 'model',
-        parts: [{ text: m.text }],
-      }))
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`, {
+      const res = await fetch(`${AI_GATEWAY_URL}/chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-Session-Id': sessionId },
         body: JSON.stringify({
-          system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
-          contents: [...history, { role: 'user', parts: [{ text: userMessage }] }],
-          generationConfig: { maxOutputTokens: 200, temperature: 0.7 },
+          messages: [{ role: 'user', content: userMessage }],
+          sessionId,
+          maxTokens: 300,
         }),
       })
+      if (!res.ok) return null
       const data = await res.json()
-      return data.candidates?.[0]?.content?.parts?.[0]?.text || null
+      return data.text || null
     } catch { return null }
   }
 
@@ -148,7 +145,7 @@ export default function AIAssistant() {
     const isNexora = isNexoraQuestion(text.toLowerCase())
 
     // Try Gemini for ALL questions
-    const reply = await callGemini(text)
+    const reply = await callAI(text)
     if (reply) {
       // Count non-Nexora questions
       if (!isNexora) {
