@@ -48,6 +48,7 @@ export default defineConfig({
           if (id.includes('node_modules/date-fns') || id.includes('node_modules/clsx') || id.includes('node_modules/dexie')) return 'vendor-utils'
 
           // ── Public website splits (each lazy route gets its own chunk) ──
+          if (id.includes('/src/sections/AISections.jsx')) return 'public-ai-sections'
           if (id.includes('/src/App.jsx') || id.includes('/src/sections/')) return 'public-home'
           if (id.includes('/src/pages/public/SolutionPage.jsx')) return 'public-solutions'
           if (id.includes('/src/pages/public/PricingPage.jsx')) return 'public-pricing'

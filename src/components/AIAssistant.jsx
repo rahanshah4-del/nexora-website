@@ -107,20 +107,37 @@ export default function AIAssistant() {
   useEffect(() => { scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' }) }, [messages])
 
   const callAI = async (userMessage) => {
+    // Build conversation context (last 5 messages for history)
+    const recentHistory = messages.slice(-5).map(m => ({
+      role: m.from === 'user' ? 'user' : 'assistant',
+      content: m.text
+    }))
+    const allMsgs = [...recentHistory, { role: 'user', content: userMessage }]
+
     try {
       const res = await fetch(`${AI_GATEWAY_URL}/chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Session-Id': sessionId },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          messages: [{ role: 'user', content: userMessage }],
+          messages: allMsgs,
           sessionId,
-          maxTokens: 300,
+          maxTokens: 500,
         }),
       })
-      if (!res.ok) return null
+      if (!res.ok) {
+        console.warn('[NexoraAI] Gateway returned', res.status)
+        return null
+      }
       const data = await res.json()
-      return data.text || null
-    } catch { return null }
+      if (!data.text) {
+        console.warn('[NexoraAI] Empty response from gateway')
+        return null
+      }
+      return data.text
+    } catch (err) {
+      console.warn('[NexoraAI] Fetch failed:', err.message)
+      return null
+    }
   }
 
   const addMsg = (from, text) => setMessages((m) => [...m, { from, text }])

@@ -8,6 +8,7 @@ import {
   HiOutlineCheckCircle,
   HiOutlineCloud,
   HiOutlineDevicePhoneMobile,
+  HiOutlineSparkles,
   HiOutlineDocumentChartBar,
   HiOutlineMapPin,
   HiOutlinePlayCircle,
@@ -747,10 +748,16 @@ export default function SolutionPage({ solutionSlug: solutionSlugProp } = {}) {
         <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-slate-300 to-transparent" />
         <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-5 sm:px-6 lg:grid-cols-[0.92fr_1.08fr] lg:px-8">
           <div className="mx-auto max-w-2xl text-center lg:mx-0 lg:text-left">
-            <span className="inline-flex items-center gap-2 rounded-full border border-slate-200/60 bg-slate-100/70 px-4 py-2 text-xs font-medium uppercase tracking-[0.18em] text-slate-500 shadow-sm">
-              <Icon className="text-base" />
-              {page.eyebrow}
-            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-2 rounded-full border border-slate-200/60 bg-slate-100/70 px-4 py-2 text-xs font-medium uppercase tracking-[0.18em] text-slate-500 shadow-sm">
+                <Icon className="text-base" />
+                {page.eyebrow}
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-full border border-violet-200/60 bg-violet-50/80 px-3 py-2 text-[10px] font-extrabold uppercase tracking-[0.14em] text-violet-600 shadow-[0_0_12px_-2px_rgba(139,92,246,0.12)] backdrop-blur-sm">
+                <HiOutlineSparkles className="h-3 w-3 text-violet-500" />
+                AI-Powered
+              </span>
+            </div>
             <h1 className="mt-6 text-[2.75rem] font-semibold leading-[0.98] tracking-tight text-slate-900 sm:text-[4.2rem] lg:text-[5.2rem]">
               {page.headlineBefore}
               <span className="bg-gradient-to-r from-blue-600 via-violet-600 to-fuchsia-600 bg-clip-text text-transparent">{page.headlineHighlight}</span>
