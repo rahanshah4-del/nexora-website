@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getAuth, onAuthStateChanged } from 'firebase/auth'
-import { getFirestore, addDoc, collection, serverTimestamp, getDocs, query, where, orderBy, limit } from 'firebase/firestore'
+import { getFirestore, addDoc, collection, serverTimestamp, getDocs, query, where, orderBy, limit, setDoc, doc } from 'firebase/firestore'
 import { HiOutlineChatBubbleLeftRight, HiOutlinePaperAirplane, HiOutlinePlus, HiOutlineSparkles, HiOutlineTicket, HiOutlineXMark } from 'react-icons/hi2'
 
 // Nexora AI Gateway (Cloudflare Worker)
@@ -91,11 +91,42 @@ CRITICAL RULES:
 - Guide users to /signup for free trial or /contact for demo bookings.`
 
 const QUICK_ACTIONS = [
-  { label: 'Pricing', q: 'What are the pricing plans?' },
-  { label: 'Free Trial', q: 'Tell me about the free trial' },
-  { label: 'Restaurant', q: 'I run a restaurant, what do you offer?' },
-  { label: 'Retail', q: 'I have a retail shop' },
+  { label: '💰 Pricing', q: 'What are the pricing plans? Give me the details with plan links.' },
+  { label: '🆓 Free Trial', q: 'Tell me about the free trial and how to sign up' },
+  { label: '🍽️ Restaurant', q: 'I run a restaurant, what do you offer?' },
+  { label: '🛍️ Retail', q: 'I have a retail shop, what POS do you have?' },
+  { label: '📋 Support', q: 'I need help with a problem or want to file a complaint' },
+  { label: '💬 Demo', q: 'I want to book a live demo' },
 ]
+
+// Apple-style link button renderer — converts /route paths to clickable buttons in messages
+function renderMessageText(text) {
+  if (!text) return null
+  // Convert **bold** text
+  const parts = text.split(/(\*\*.*?\*\*)/g)
+  return parts.map((part, i) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={i} className="font-bold text-[#1d1d1f]">{part.slice(2, -2)}</strong>
+    }
+    // Detect URLs
+    const urlMatch = part.match(/https?:\/\/[^\s]+/)
+    if (urlMatch) {
+      const before = part.slice(0, part.indexOf(urlMatch[0]))
+      const after = part.slice(part.indexOf(urlMatch[0]) + urlMatch[0].length)
+      return <span key={i}>{before}<a href={urlMatch[0]} target="_blank" rel="noreferrer" className="text-violet-600 underline font-medium">{urlMatch[0]}</a>{after}</span>
+    }
+    return <span key={i}>{part}</span>
+  })
+}
+
+function QuickLinkButton({ to, children }) {
+  return (
+    <Link to={to} className="inline-flex items-center gap-1 rounded-full border border-violet-200/50 bg-violet-50/80 px-3 py-1.5 text-[11px] font-semibold text-violet-700 shadow-[0_1px_4px_rgba(139,92,246,0.08)] transition-all duration-200 hover:bg-violet-100 hover:border-violet-300 hover:-translate-y-0.5 active:scale-95">
+      {children}
+      <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </Link>
+  )
+}
 
 export default function AIAssistant() {
   const [authUser, setAuthUser] = useState(null)
@@ -132,6 +163,14 @@ export default function AIAssistant() {
         const tSnap = await getDocs(tQ)
         ctx.recentTickets = tSnap.docs.map(d => ({ status: d.data().status, msg: d.data().message?.slice(0, 80) }))
         ctx.openTickets = tSnap.docs.filter(d => d.data().status === 'Open').length
+
+        // Fetch past chat history
+        const chatDoc = await getDocs(query(collection(db, 'aiChatHistory'), where('userId', '==', authUser.uid), limit(1)))
+        if (!chatDoc.empty) {
+          const chat = chatDoc.docs[0].data()
+          ctx.pastSummary = chat.summary?.slice(0, 500) || ''
+          ctx.lastActive = chat.lastActive ? new Date(chat.lastActive.toDate()).toLocaleDateString() : 'unknown'
+        }
         setUserContext(ctx)
       } catch {}
     })()
@@ -171,7 +210,22 @@ export default function AIAssistant() {
   // Save chat to localStorage on every change
   useEffect(() => {
     try { localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify({ messages, extCount: externalCount, lastActive: Date.now() })) } catch {}
-  }, [messages, externalCount])
+    // Also persist to Firestore for logged-in users
+    if (isAuth && authUser && messages.length > 1) {
+      try {
+        const db = getFirestore()
+        const summary = messages.slice(-10).map(m => `${m.from === 'user' ? '👤' : '🤖'}: ${m.text.slice(0, 200)}`).join('\n')
+        setDoc(doc(db, 'aiChatHistory', authUser.uid), {
+          userId: authUser.uid,
+          email: authUser.email || '',
+          lastMessages: messages.slice(-20),
+          summary,
+          messageCount: messages.length,
+          lastActive: serverTimestamp(),
+        }).catch(() => {})
+      } catch {}
+    }
+  }, [messages, externalCount, isAuth, authUser])
 
   // Auto-close after 10 min idle
   const resetIdleTimer = useCallback(() => {
@@ -233,8 +287,9 @@ Business: ${userContext.businessType || 'Not set'}
 Workspace: ${userContext.workspaceName || 'Not set'}
 Open Support Tickets: ${userContext.openTickets || 0}
 ${userContext.recentTickets?.length ? 'Recent tickets: ' + userContext.recentTickets.map(t => `[${t.status}] ${t.msg}`).join('; ') : 'No recent tickets.'}
+${userContext.pastSummary ? `Past conversations (${userContext.lastActive}): ${userContext.pastSummary}` : 'No past conversations.'}
 
-When the user asks about their account, tickets, plan, or identity, refer to this data. If they ask something not covered here, answer normally.`
+IMPORTANT: The user may refer to past conversations. If they ask what they asked before or if you remember them, use the past conversation data. Be warm and say you remember them. When asked about account, tickets, plan, or identity, refer to this data. Answer normally for other questions.`
       })
     }
     allMsgs.push(...recentHistory, { role: 'user', content: userMessage })
@@ -570,17 +625,38 @@ When the user asks about their account, tickets, plan, or identity, refer to thi
             </div>
           ) : (
             <div ref={scrollRef} className="flex-1 overflow-y-auto bg-[#f5f5f7] px-4 py-4 space-y-3">
-            {messages.map((msg, i) => (
-              <div key={i} className={`flex ${msg.from === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-[13px] leading-[1.5] ${
-                  msg.from === 'user'
-                    ? 'bg-[#0071e3] text-white rounded-br-md'
-                    : 'bg-white text-[#1d1d1f] shadow-sm rounded-bl-md'
-                }`}>
-                  {msg.text}
+            {messages.map((msg, i) => {
+              const isAi = msg.from !== 'user'
+              const text = msg.text || ''
+              // Detect if AI message mentions specific topics for quick links
+              const showPricing = isAi && /pricing|plan|price|pkR|1,000|3,000/i.test(text)
+              const showTrial = isAi && /free trial|signup|sign up|start free/i.test(text)
+              const showDemo = isAi && /demo|book.*demo|contact/i.test(text)
+              const showSupport = isAi && /support|complaint|ticket|whatsapp|help/i.test(text)
+
+              return (
+                <div key={i}>
+                  <div className={`flex ${msg.from === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-[13px] leading-[1.5] ${
+                      msg.from === 'user'
+                        ? 'bg-[#0071e3] text-white rounded-br-md'
+                        : 'bg-white text-[#1d1d1f] shadow-sm rounded-bl-md'
+                    }`}>
+                      {isAi ? renderMessageText(text) : text}
+                    </div>
+                  </div>
+                  {/* Apple-style action buttons below AI message */}
+                  {isAi && (showPricing || showTrial || showDemo || showSupport) && (
+                    <div className="flex flex-wrap gap-1.5 mt-1.5 ml-0">
+                      {showPricing && <QuickLinkButton to="/pricing">View Pricing</QuickLinkButton>}
+                      {showTrial && <QuickLinkButton to="/signup">Start Free Trial</QuickLinkButton>}
+                      {showDemo && <QuickLinkButton to="/contact">Book Demo</QuickLinkButton>}
+                      {showSupport && <QuickLinkButton to="/support-center">Support Center</QuickLinkButton>}
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              )
+            })}
             {loading && (
               <div className="flex justify-start">
                 <div className="rounded-2xl rounded-bl-md bg-white px-4 py-3 shadow-sm">
@@ -598,10 +674,10 @@ When the user asks about their account, tickets, plan, or identity, refer to thi
           {/* Quick actions — chat tab only */}
           {activeTab === 'chat' && (
             <div className="shrink-0 border-t border-slate-100 bg-white px-3 py-2">
-              <div className="flex gap-1.5 overflow-x-auto pb-1">
+              <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
                 {QUICK_ACTIONS.map(({ label, q }) => (
                   <button key={label} type="button" onClick={() => { addMsg('user', q); handleSend(q); resetIdleTimer() }}
-                    className="shrink-0 rounded-full border border-slate-200/50 bg-white px-3 py-1.5 text-[11px] font-medium text-slate-500 shadow-[0_1px_4px_rgba(0,0,0,0.02)] transition-all duration-200 hover:border-violet-300 hover:text-violet-600 hover:shadow-[0_2px_8px_rgba(139,92,246,0.12)] active:scale-95"
+                    className="shrink-0 rounded-full border border-slate-200/50 bg-white px-3 py-1.5 text-[11px] font-semibold text-slate-600 shadow-[0_1px_3px_rgba(0,0,0,0.03)] transition-all duration-200 hover:border-violet-300 hover:text-violet-700 hover:bg-violet-50/50 hover:shadow-[0_2px_8px_rgba(139,92,246,0.1)] hover:-translate-y-0.5 active:scale-95"
                   >{label}</button>
                 ))}
               </div>
