@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getAuth, onAuthStateChanged } from 'firebase/auth'
+import { getFirestore, addDoc, collection, serverTimestamp, getDocs, query, where, orderBy, limit } from 'firebase/firestore'
 import { HiOutlineChatBubbleLeftRight, HiOutlinePaperAirplane, HiOutlinePlus, HiOutlineSparkles, HiOutlineTicket, HiOutlineXMark } from 'react-icons/hi2'
 
 // Nexora AI Gateway (Cloudflare Worker)
@@ -111,6 +112,31 @@ export default function AIAssistant() {
   }, [])
 
   const isAuth = authReady && authUser != null
+  const [userContext, setUserContext] = useState(null)
+
+  useEffect(() => {
+    if (!isAuth || !authUser) return
+    ;(async () => {
+      try {
+        const db = getFirestore()
+        const ctx = { name: authUser.displayName || authUser.email?.split('@')[0] || '', email: authUser.email || '' }
+        const wsQ = query(collection(db, 'workspaces'), where('ownerId', '==', authUser.uid), limit(1))
+        const wsSnap = await getDocs(wsQ)
+        if (!wsSnap.empty) {
+          const w = wsSnap.docs[0].data()
+          ctx.plan = w.plan || 'Free'; ctx.planStatus = w.planStatus || 'active'
+          ctx.businessType = w.selectedBusinessType || w.businessType || ''
+          ctx.workspaceName = w.workspaceName || ''
+        }
+        const tQ = query(collection(db, 'supportTickets'), where('userEmail', '==', authUser.email || ''), orderBy('createdAt', 'desc'), limit(3))
+        const tSnap = await getDocs(tQ)
+        ctx.recentTickets = tSnap.docs.map(d => ({ status: d.data().status, msg: d.data().message?.slice(0, 80) }))
+        ctx.openTickets = tSnap.docs.filter(d => d.data().status === 'Open').length
+        setUserContext(ctx)
+      } catch {}
+    })()
+  }, [isAuth, authUser])
+
   const [open, setOpen] = useState(false)
   const [activeTab, setActiveTab] = useState('chat')
   const [messages, setMessages] = useState(() => {
@@ -138,7 +164,9 @@ export default function AIAssistant() {
   const idleTimer = useRef(null)
 
   // Init messages if empty
-  const initMsg = { from: 'ai', text: 'Hi! I\'m Nexora AI — your business software assistant. What type of business do you run? 😊' }
+  const initMsg = isAuth && userContext
+    ? { from: 'ai', text: `Hi ${userContext.name}! 👋 I'm Nexora AI — your business assistant.\n\nI can see you're on the **${userContext.plan || 'Free'}** plan${userContext.businessType ? ` for **${userContext.businessType}**` : ''}.${userContext.openTickets > 0 ? `\n\n📋 You have **${userContext.openTickets}** open support ticket${userContext.openTickets > 1 ? 's' : ''}.` : ''}\n\nHow can I help you today? 😊` }
+    : { from: 'ai', text: 'Hi! I\'m Nexora AI — your business software assistant. What type of business do you run? 😊' }
 
   // Save chat to localStorage on every change
   useEffect(() => {
@@ -190,7 +218,26 @@ export default function AIAssistant() {
       role: m.from === 'user' ? 'user' : 'assistant',
       content: m.text
     }))
-    const allMsgs = [...recentHistory, { role: 'user', content: userMessage }]
+
+    // Include user context as system message if authenticated
+    const allMsgs = []
+    if (isAuth && userContext) {
+      allMsgs.push({
+        role: 'system',
+        content: `[USER CONTEXT — you are speaking to a logged-in Nexora user. Use this info to personalize responses. If asked "who am I", "what's my plan", "do I have tickets", "what's my account status", answer from this data. Be warm and use their name.]
+
+Name: ${userContext.name}
+Email: ${userContext.email}
+Plan: ${userContext.plan || 'Free'} (${userContext.planStatus || 'active'})
+Business: ${userContext.businessType || 'Not set'}
+Workspace: ${userContext.workspaceName || 'Not set'}
+Open Support Tickets: ${userContext.openTickets || 0}
+${userContext.recentTickets?.length ? 'Recent tickets: ' + userContext.recentTickets.map(t => `[${t.status}] ${t.msg}`).join('; ') : 'No recent tickets.'}
+
+When the user asks about their account, tickets, plan, or identity, refer to this data. If they ask something not covered here, answer normally.`
+      })
+    }
+    allMsgs.push(...recentHistory, { role: 'user', content: userMessage })
 
     try {
       const res = await fetch(`${AI_GATEWAY_URL}/chat`, {
@@ -490,9 +537,25 @@ export default function AIAssistant() {
                   <input value={complaintForm.email} onChange={e => setComplaintForm(f => ({ ...f, email: e.target.value }))} placeholder="Your email or phone" className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-[12px] outline-none focus:border-violet-300" />
                   <textarea value={complaintForm.message} onChange={e => setComplaintForm(f => ({ ...f, message: e.target.value }))} rows={3} placeholder="Describe your issue or complaint..." className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-[12px] outline-none focus:border-violet-300" />
                   <button
-                    onClick={() => {
+                    onClick={async () => {
                       if (complaintForm.name && complaintForm.message) {
-                        addMsg('ai', `📋 Support ticket received! We'll review your issue and respond within 24 hours.\n\n**Your ticket:** ${complaintForm.message.slice(0, 80)}...`)
+                        try {
+                          const db = getFirestore()
+                          await addDoc(collection(db, 'supportTickets'), {
+                            name: complaintForm.name,
+                            email: complaintForm.email || (authUser?.email || ''),
+                            message: complaintForm.message,
+                            status: 'Open',
+                            priority: 'Normal',
+                            source: 'ai-assistant',
+                            userId: authUser?.uid || '',
+                            userEmail: authUser?.email || complaintForm.email || '',
+                            createdAt: serverTimestamp(),
+                          })
+                          addMsg('ai', `📋 Ticket submitted! We'll review your issue and respond within 24 hours.\n\n**Your issue:** ${complaintForm.message.slice(0, 80)}...`)
+                        } catch (err) {
+                          addMsg('ai', `⚠️ Could not submit ticket: ${err.message}. Please try again or contact WhatsApp Support at +92 319 432 9754.`)
+                        }
                         setComplaintSent(true)
                         setActiveTab('chat')
                       }
