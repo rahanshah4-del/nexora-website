@@ -8,6 +8,7 @@ FIREBASE_API_KEY = "AIzaSyDOdQnY-Vjkwdl-0F7FnuVjVB-tAO-cnWc"
 APP_BASE_URL = "https://nexorasolution.online"
 ALLOWED_ORIGINS = "https://nexorasolution.online,https://www.nexorasolution.online,http://localhost:5173,http://127.0.0.1:5173"
 PKR_PER_USD = "278.2732"
+PADDLE_SANDBOX = "false"
 
 [[d1_databases]]
 binding = "UPGRADE_DB"
@@ -23,5 +24,8 @@ bucket_name = "nexora-upgrade-screenshots"
 # NOWPAYMENTS_IPN_SECRET
 # FIREBASE_PAYMENT_SERVICE_EMAIL
 # FIREBASE_PAYMENT_SERVICE_PASSWORD
+# PADDLE_API_KEY
+# PADDLE_WEBHOOK_SECRET
+# PADDLE_CLIENT_TOKEN
 # BACKEND_ADMIN_EMAILS (optional comma-separated list for D1 upgrade request review)
 # R2_PUBLIC_BASE_URL (optional, otherwise Worker screenshot route is used)

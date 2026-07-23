@@ -35,6 +35,13 @@ export const defaultPaymentAccounts = {
     buttonImageUrl: 'https://nowpayments.io/images/embeds/payment-button-white.svg',
     instructions: 'Secure crypto checkout with automatic payment verification and plan activation.',
   },
+  paddle: {
+    id: 'paddle',
+    label: 'Card / PayPal (Paddle)',
+    accountTitle: 'Paddle Checkout',
+    accountNumber: 'Card, PayPal, Apple Pay, Google Pay',
+    instructions: 'Secure card payment via Paddle. Instant activation after payment.',
+  },
   manual_payment: {
     id: 'manual_payment',
     label: 'Manual Payment',

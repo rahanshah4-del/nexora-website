@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import {
   HiOutlineBars3,
   HiOutlineBeaker,
+  HiOutlineCloudArrowUp,
   HiOutlineDocumentDuplicate,
   HiOutlineMagnifyingGlass,
   HiOutlineNoSymbol,
@@ -28,6 +29,10 @@ import { useUser } from '../hooks/useUser.js'
 import { useRestaurantIngredients, useRestaurantRecipes } from '../hooks/useRestaurantRecipes.js'
 import { useRestaurantWasteTracking } from '../hooks/useRestaurantWasteTracking.js'
 import RestaurantInventoryPanel from '../components/restaurant/RestaurantInventoryPanel.jsx'
+import MenuImportModal from '../components/restaurant/MenuImportModal.jsx'
+import MenuImportPreview from '../components/restaurant/MenuImportPreview.jsx'
+import MenuImportSummary from '../components/restaurant/MenuImportSummary.jsx'
+import { useMenuImport, IMPORT_STATE } from '../hooks/useMenuImport.js'
 
 const blankItem = {
   name: '',
@@ -95,6 +100,23 @@ export default function RestaurantMenuManagementPage() {
   const [confirmAction, setConfirmAction] = useState(null)
   const [demoLoaded, setDemoLoaded] = useState(() => hasDemoMenuLoaded())
   const [demoLoading, setDemoLoading] = useState(false)
+  const [importModalOpen, setImportModalOpen] = useState(false)
+
+  // AI Menu Import hook
+  const menuImport = useMenuImport({
+    workspaceId,
+    existingItems: items,
+    existingCategories: categories,
+    onImportComplete: (importedItems, newCategories) => {
+      setItems(current => [...importedItems, ...current])
+      if (newCategories.length > 0) {
+        setCategories(current => {
+          const merged = [...current, ...newCategories]
+          return [...new Set(merged)]
+        })
+      }
+    },
+  })
 
   // Show demo button only when: demo never loaded AND no user-created items exist
   const showDemoButton = !demoLoaded && !hasUserCreatedItems(items)
@@ -306,6 +328,10 @@ export default function RestaurantMenuManagementPage() {
                   {demoLoading ? 'Loading Demo...' : 'Load Demo Menu'}
                 </Button>
               ) : null}
+              <Button type="button" variant="subtle" onClick={() => setImportModalOpen(true)} className="!rounded-full !bg-white/80 !backdrop-blur-xl !border-slate-200/50 !shadow-[0_2px_12px_-2px_rgba(123,97,255,0.18)] hover:!shadow-[0_6px_20px_-4px_rgba(123,97,255,0.28)] hover:!-translate-y-px !transition-all !duration-300 !px-3.5 !gap-1.5">
+                <img src="/nexora-ai-logo.png" alt="AI" className="h-5 w-5 rounded-md object-cover shadow-[0_1px_4px_rgba(123,97,255,0.3)]" />
+                <span className="text-[12.5px] font-semibold tracking-[-0.01em] text-[#1d1d1f]">Import with AI</span>
+              </Button>
               <Button type="button" variant="subtle" onClick={() => setInventoryOpen(true)}>
                 <HiOutlineBeaker className="h-4 w-4" />
                 Inventory Intelligence
@@ -646,6 +672,45 @@ export default function RestaurantMenuManagementPage() {
           </div>
         </div>
       ) : null}
+
+      {/* ── AI Menu Import Modals ── */}
+      {importModalOpen && menuImport.state === IMPORT_STATE.PREVIEWING ? (
+        <div className="fixed inset-0 z-[80] grid place-items-center bg-slate-950/20 px-4 py-6 backdrop-blur-md">
+          <MenuImportPreview
+            items={menuImport.previewItems}
+            stats={menuImport.extractionStats}
+            onUpdateItem={menuImport.updatePreviewItem}
+            onToggleItem={menuImport.toggleItem}
+            onSelectAll={menuImport.selectAll}
+            onDeselectWarnings={menuImport.deselectWarnings}
+            onDeselectDuplicates={menuImport.deselectDuplicates}
+            onSave={menuImport.saveSelectedItems}
+            onBack={menuImport.backToUpload}
+          />
+        </div>
+      ) : importModalOpen && menuImport.state === IMPORT_STATE.DONE ? (
+        <div className="fixed inset-0 z-[80] grid place-items-center bg-slate-950/20 px-4 py-6 backdrop-blur-md">
+          <MenuImportSummary
+            summary={menuImport.summary}
+            stats={menuImport.extractionStats}
+            fileName={menuImport.file?.name}
+            onDone={() => {
+              menuImport.reset()
+              setImportModalOpen(false)
+            }}
+          />
+        </div>
+      ) : (
+        <MenuImportModal
+          open={importModalOpen}
+          onClose={() => {
+            menuImport.reset()
+            setImportModalOpen(false)
+          }}
+          importCtx={menuImport}
+        />
+      )}
+
     </>
   )
 }

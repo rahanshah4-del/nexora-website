@@ -17,10 +17,22 @@ service firebase.storage {
         && request.resource.contentType.matches('image/.*');
     }
 
+    function validMenuImportFile() {
+      return request.resource != null
+        && request.resource.size <= 10 * 1024 * 1024
+        && (request.resource.contentType.matches('image/.*') || request.resource.contentType == 'application/pdf');
+    }
+
     match /public-blog/{allPaths=**} {
       allow read: if true;
       allow create, update: if backendAdmin() && validBlogImage();
       allow delete: if backendAdmin();
+    }
+
+    match /menuImports/{workspaceId}/{allPaths=**} {
+      allow read: if signedIn();
+      allow create: if signedIn() && validMenuImportFile();
+      allow delete: if signedIn() && request.auth.uid == workspaceId;
     }
 
     match /{allPaths=**} {

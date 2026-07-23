@@ -9,6 +9,9 @@ MAX_TOKENS = 500
 RATE_LIMIT_REQUESTS = 100
 RATE_LIMIT_WINDOW = 60
 
+[ai]
+binding = "AI"
+
 [[kv_namespaces]]
 binding = "AI_KV"
 id = "e7d51996639b4278b21acbf3500fda6e"

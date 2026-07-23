@@ -177,6 +177,13 @@ const defaultPlatformSettings = {
     supportTickets: true,
     planUpgrades: true,
     maintenanceBanner: false,
+    aiMenuImport: true,
+  },
+  aiMenuImport: {
+    ocrProvider: 'gemini',
+    maxUploadSizeMB: 10,
+    allowedFileTypes: 'jpg,png,webp,pdf',
+    confidenceThreshold: 0.7,
   },
 }
 
@@ -3843,6 +3850,69 @@ export default function ControlCentre() {
                 </label>
               ))}
             </div>
+          </Panel>
+          <Panel title="AI Menu Import">
+            <div className="grid gap-3 lg:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-slate-500">OCR Provider</label>
+                <select
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
+                  value={settingsDraft.aiMenuImport?.ocrProvider || 'gemini'}
+                  onChange={(event) => setSettingsDraft((current) => ({
+                    ...current,
+                    aiMenuImport: { ...(current.aiMenuImport || defaultPlatformSettings.aiMenuImport), ocrProvider: event.target.value },
+                  }))}
+                >
+                  <option value="gemini">Gemini 2.0 Flash (Recommended)</option>
+                  <option value="openai">OpenAI GPT-4o Mini</option>
+                  <option value="claude">Claude 3 Haiku</option>
+                </select>
+              </div>
+              <div>
+                <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-slate-500">Max Upload Size (MB)</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="20"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
+                  value={settingsDraft.aiMenuImport?.maxUploadSizeMB ?? 10}
+                  onChange={(event) => setSettingsDraft((current) => ({
+                    ...current,
+                    aiMenuImport: { ...(current.aiMenuImport || defaultPlatformSettings.aiMenuImport), maxUploadSizeMB: Number(event.target.value) || 10 },
+                  }))}
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-slate-500">Allowed File Types</label>
+                <input
+                  type="text"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
+                  value={settingsDraft.aiMenuImport?.allowedFileTypes || 'jpg,png,webp,pdf'}
+                  onChange={(event) => setSettingsDraft((current) => ({
+                    ...current,
+                    aiMenuImport: { ...(current.aiMenuImport || defaultPlatformSettings.aiMenuImport), allowedFileTypes: event.target.value },
+                  }))}
+                />
+                <p className="mt-0.5 text-[10px] text-slate-400">Comma-separated extensions: jpg,png,webp,pdf</p>
+              </div>
+              <div>
+                <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-slate-500">Confidence Threshold (0–1)</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="1"
+                  step="0.05"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
+                  value={settingsDraft.aiMenuImport?.confidenceThreshold ?? 0.7}
+                  onChange={(event) => setSettingsDraft((current) => ({
+                    ...current,
+                    aiMenuImport: { ...(current.aiMenuImport || defaultPlatformSettings.aiMenuImport), confidenceThreshold: Number(event.target.value) || 0.7 },
+                  }))}
+                />
+                <p className="mt-0.5 text-[10px] text-slate-400">Items below this threshold are flagged as warnings</p>
+              </div>
+            </div>
+            <ShellButton className="mt-4" onClick={() => runAction('settings-save', saveSettings, 'AI Menu Import settings saved.')}>Save AI Import Settings</ShellButton>
           </Panel>
         </div>
         <Panel title="Email Template Settings">

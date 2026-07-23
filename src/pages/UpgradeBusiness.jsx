@@ -210,6 +210,7 @@ function PlanCard({ plan, selected, active, onSelect, displayCurrency, displayRa
 
 function PaymentCard({ method, selected, onSelect }) {
   const isNowPayments = method.id === 'nowpayments'
+  const isPaddle = method.id === 'paddle'
   const lines = [
     method.bankName,
     method.accountTitle ? `Account Title: ${method.accountTitle}` : '',
@@ -225,22 +226,30 @@ function PaymentCard({ method, selected, onSelect }) {
           ? selected
             ? 'border-emerald-300 bg-slate-950 text-white shadow-[0_24px_55px_-30px_rgba(16,185,129,0.8)] ring-2 ring-emerald-300/50'
             : 'border-slate-800 bg-slate-950 text-white shadow-[0_20px_50px_-34px_rgba(15,23,42,0.9)] hover:border-emerald-400'
-          : selected
-            ? 'border-violet-400 bg-violet-50'
-            : 'border-slate-200 bg-white hover:border-violet-200'
+          : isPaddle
+            ? selected
+              ? 'border-orange-400 bg-white ring-2 ring-orange-300/50 shadow-[0_8px_30px_-8px_rgba(249,115,22,0.2)]'
+              : 'border-slate-200 bg-white hover:border-orange-300'
+            : selected
+              ? 'border-violet-400 bg-violet-50'
+              : 'border-slate-200 bg-white hover:border-violet-200'
       }`}
     >
-      {isNowPayments ? <span className="absolute inset-y-0 left-0 w-1.5 bg-emerald-400" /> : null}
+      {isNowPayments ? <span className="absolute inset-y-0 left-0 w-1.5 bg-emerald-400" /> : isPaddle ? <span className="absolute inset-y-0 left-0 w-1.5 bg-orange-400" /> : null}
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          {isNowPayments ? <span className="mb-2 inline-flex rounded-full bg-emerald-400 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-slate-950">Recommended</span> : null}
+          {isNowPayments ? <span className="mb-2 inline-flex rounded-full bg-emerald-400 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-slate-950">Recommended</span> : isPaddle ? <span className="mb-2 inline-flex rounded-full bg-orange-400 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-white">Popular</span> : null}
           <p className={`text-sm font-black ${isNowPayments ? 'text-white' : 'text-slate-950'}`}>{method.label}</p>
         </div>
-        <span className={`h-5 w-5 shrink-0 rounded-full border-2 ${selected ? isNowPayments ? 'border-emerald-300 bg-emerald-400 ring-4 ring-emerald-400/15' : 'border-violet-500 bg-violet-500' : isNowPayments ? 'border-slate-500' : 'border-slate-300'}`} />
+        <span className={`h-5 w-5 shrink-0 rounded-full border-2 ${selected ? isNowPayments ? 'border-emerald-300 bg-emerald-400 ring-4 ring-emerald-400/15' : isPaddle ? 'border-orange-400 bg-orange-400 ring-4 ring-orange-400/15' : 'border-violet-500 bg-violet-500' : isNowPayments ? 'border-slate-500' : isPaddle ? 'border-slate-300' : 'border-slate-300'}`} />
       </div>
       {isNowPayments ? (
         <div className="mt-3 inline-flex rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-[11px] font-bold text-emerald-200">
           Crypto checkout • Global payments
+        </div>
+      ) : isPaddle ? (
+        <div className="mt-3 inline-flex rounded-lg border border-orange-200 bg-orange-50 px-2.5 py-1.5 text-[11px] font-bold text-orange-600">
+          Card / PayPal • Instant activation
         </div>
       ) : null}
       <div className={`mt-3 space-y-1 text-xs font-semibold ${isNowPayments ? 'text-slate-300' : 'text-slate-600'}`}>
@@ -422,6 +431,7 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
   const selectedPlan = platformPlans.find((plan) => plan.id === selectedPlanId) || platformPlans[1] || platformPlans[0]
   const selectedMethod = paymentMethods.find((method) => method.id === paymentMethod) || paymentMethods[0]
   const isAutomaticCrypto = selectedMethod?.id === 'nowpayments'
+  const isPaddleCheckout = selectedMethod?.id === 'paddle'
   const cryptoReturnStatus = new URLSearchParams(location.search).get('crypto')
   const currentPlan = workspaceDoc?.plan || workspaceDoc?.selectedPlan || userDoc?.plan || 'Basic'
   const workspaceId = userDoc?.workspaceId || workspaceDoc?.id || user?.uid || ''
@@ -556,7 +566,7 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
     if (!requestedPlan) return 'Plan is required.'
     if (!selectedMethod?.id) return 'Payment method is required.'
     if (hasOpenUpgradeRequest) return 'You already have an upgrade request under review. Track the live timeline below.'
-    if (isAutomaticCrypto) return ''
+    if (isAutomaticCrypto || isPaddleCheckout) return ''
     if (!form.transactionId.trim()) return 'Enter the transaction ID before submitting your upgrade request.'
     if (paidAmount <= 0) return 'Enter the paid amount before submitting your upgrade request.'
     if (!form.paymentDate) return 'Select the payment date before submitting your upgrade request.'
@@ -602,6 +612,66 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
       setSubmitError(clientSafeMessage(error, 'Unable to start crypto checkout. Please try again.', { context: 'NOWPayments checkout' }))
     } finally {
       setCryptoCheckoutLoading(false)
+    }
+  }
+
+  const [paddleLoading, setPaddleLoading] = useState(false)
+  async function handlePaddleCheckout() {
+    setSubmitError('')
+    const checkoutError = validateUpgradeRequest()
+    if (checkoutError) { setSubmitError(checkoutError); return }
+    setPaddleLoading(true)
+    try {
+      const configRes = await fetch(`${PAYMENTS_WORKER_URL}/api/paddle/config`)
+      const config = await configRes.json()
+      if (!config.clientToken) throw new Error('Paddle is not configured.')
+
+      // Load Paddle.js if not loaded
+      if (!window.Paddle) {
+        await new Promise((resolve, reject) => {
+          const script = document.createElement('script')
+          script.src = 'https://cdn.paddle.com/paddle/v2/paddle.js'
+          script.onload = resolve
+          script.onerror = () => reject(new Error('Failed to load Paddle.js'))
+          document.head.appendChild(script)
+        })
+      }
+
+      if (config.sandbox) window.Paddle.Environment.set('sandbox')
+      window.Paddle.Initialize({
+        token: config.clientToken,
+        eventCallback: function(data) {
+          if (data.name === 'checkout.completed') {
+            setCryptoCheckoutStarted(true)
+            setSubmitError('')
+            // Webhook will handle subscription activation
+            window.location.search = '?paddle=processing'
+          }
+        },
+      })
+
+      // Build checkout items from selected plan
+      const amountInCents = Math.round(Number(finalAmount || originalAmount || 0) * 100)
+      const currencyCode = (selectedPlan?.currency || 'PKR').toUpperCase()
+      const itemName = `${selectedPlan.name} Plan (${billingCycle})`
+
+      window.Paddle.Checkout.open({
+        settings: { displayMode: 'overlay', theme: 'light' },
+        items: [{
+          price: {
+            description: itemName,
+            unitPrice: { amount: String(amountInCents), currencyCode },
+            product: { name: itemName },
+          },
+          quantity: 1,
+        }],
+        customer: { email: user?.email || '' },
+      })
+    } catch (error) {
+      console.error('Paddle checkout error:', error)
+      setSubmitError(clientSafeMessage(error, 'Unable to start Paddle checkout.', { context: 'Paddle checkout' }))
+    } finally {
+      setPaddleLoading(false)
     }
   }
 
@@ -901,10 +971,45 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
                   </div>
                   </div>
                 </div>
+              ) : isPaddleCheckout ? (
+                <div className="mt-4 overflow-hidden rounded-[1.25rem] border border-orange-300 bg-white shadow-[0_8px_30px_-8px_rgba(249,115,22,0.15)]">
+                  <div className="h-1.5 bg-gradient-to-r from-orange-400 to-amber-400" />
+                  <div className="p-4 sm:p-5">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-base font-black text-[#1d1d1f]">Pay with Card or PayPal</p>
+                        <span className="rounded-full bg-orange-400 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-white">Popular</span>
+                      </div>
+                      <p className="mt-2 text-xs font-semibold leading-5 text-slate-500">Instant activation via Paddle. Card, PayPal, Apple Pay, and Google Pay accepted.</p>
+                      <p className="mt-2 text-[11px] font-bold text-orange-600">Secure checkout • Global payments • Automatic activation</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handlePaddleCheckout}
+                      disabled={paddleLoading}
+                      className="group inline-flex min-h-14 shrink-0 items-center gap-3 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 px-6 py-3.5 text-sm font-black text-white shadow-lg shadow-orange-500/30 transition-all duration-200 hover:from-orange-400 hover:to-amber-400 hover:shadow-xl hover:shadow-orange-500/40 hover:scale-[1.02] disabled:cursor-wait disabled:opacity-60 disabled:hover:scale-100"
+                    >
+                      {paddleLoading ? (
+                        <>
+                          <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                          <span>Opening Paddle checkout...</span>
+                        </>
+                      ) : (
+                        <>
+                          <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="M2 10h20"/></svg>
+                          <span>Pay with Card / PayPal</span>
+                          <svg className="h-4 w-4 transition-transform group-hover:translate-x-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  </div>
+                </div>
               ) : null}
             </Panel>
 
-            {!isAutomaticCrypto ? <Panel>
+            {!isAutomaticCrypto && !isPaddleCheckout ? <Panel>
               <h2 className="text-xl font-black">Transaction information</h2>
               <p className="mt-1 text-sm font-semibold text-slate-500">All transaction fields and payment proof screenshot are required for manual review.</p>
               <div className="mt-5 grid gap-4 md:grid-cols-2">
@@ -953,7 +1058,7 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
                 <div className="flex justify-between gap-4"><span>Original amount</span><span className={discountAmount ? 'text-slate-400 line-through' : 'text-slate-950'}>{money(selectedAmount, currency, displayCurrency, displayRates)}</span></div>
                 {discountAmount ? <div className="flex justify-between gap-4 text-emerald-700"><span>Promo discount</span><span>-{money(discountAmount, currency, displayCurrency, displayRates)}</span></div> : null}
                 <div className="flex justify-between gap-4 border-t border-slate-100 pt-3"><span>Total</span><span className="text-base text-slate-950">{money(finalAmount || selectedAmount, currency, displayCurrency, displayRates)}</span></div>
-                <div className="flex justify-between gap-4"><span>Verification</span><span className="text-right text-slate-950">{isAutomaticCrypto ? 'Automatic' : proofFile ? 'Screenshot ready' : 'Screenshot required'}</span></div>
+                <div className="flex justify-between gap-4"><span>Verification</span><span className="text-right text-slate-950">{(isAutomaticCrypto || isPaddleCheckout) ? 'Automatic' : proofFile ? 'Screenshot ready' : 'Screenshot required'}</span></div>
                 <div className="flex justify-between gap-4"><span>Currency</span><span className="text-slate-950">{displayCurrency || currency}</span></div>
                 <div className="flex justify-between gap-4"><span>Payment</span><span className="text-slate-950">{selectedMethod?.label}</span></div>
               </div>
@@ -991,6 +1096,10 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
               {isAutomaticCrypto ? (
                 <button type="button" disabled={cryptoCheckoutLoading || Boolean(validationError)} onClick={handleCryptoCheckout} className={`mt-5 w-full rounded-2xl px-5 py-4 text-sm font-black transition ${!cryptoCheckoutLoading && !validationError ? 'bg-emerald-500 text-slate-950 hover:bg-emerald-400' : 'cursor-not-allowed bg-slate-200 text-slate-500'}`}>
                   {cryptoCheckoutLoading ? 'Opening secure checkout...' : validationError ? 'Checkout unavailable' : 'Pay with Crypto'}
+                </button>
+              ) : isPaddleCheckout ? (
+                <button type="button" disabled={paddleLoading || Boolean(validationError)} onClick={handlePaddleCheckout} className={`mt-5 w-full rounded-2xl px-5 py-4 text-sm font-black transition ${!paddleLoading && !validationError ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white hover:from-orange-400 hover:to-amber-400' : 'cursor-not-allowed bg-slate-200 text-slate-500'}`}>
+                  {paddleLoading ? 'Opening Paddle checkout...' : validationError ? 'Checkout unavailable' : 'Pay with Card / PayPal'}
                 </button>
               ) : (
                 <button type="button" disabled={!canSubmit} onClick={handleSubmit} className={`mt-5 w-full rounded-2xl px-5 py-4 text-sm font-black transition ${canSubmit ? 'bg-slate-950 text-white hover:bg-violet-700' : 'cursor-not-allowed bg-slate-200 text-slate-500'}`}>
@@ -1069,8 +1178,27 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
       </Section>
 
       <div className="sticky bottom-0 z-30 border-t border-slate-200 bg-white/95 p-3 backdrop-blur xl:hidden">
-        <button type="button" disabled={isAutomaticCrypto ? cryptoCheckoutLoading || Boolean(validationError) : !canSubmit} onClick={isAutomaticCrypto ? handleCryptoCheckout : handleSubmit} className={`w-full rounded-2xl px-5 py-4 text-sm font-black ${isAutomaticCrypto ? !cryptoCheckoutLoading && !validationError ? 'bg-emerald-500 text-slate-950' : 'bg-slate-200 text-slate-500' : canSubmit ? 'bg-slate-950 text-white' : 'bg-slate-200 text-slate-500'}`}>
-          {isAutomaticCrypto ? cryptoCheckoutLoading ? 'Opening secure checkout...' : 'Pay with Crypto' : submitting ? 'Submitting...' : hasOpenUpgradeRequest ? 'Request Under Review' : submitted ? 'Submitted' : validationError ? 'Complete Payment Details' : 'Submit Upgrade Request'}
+        <button
+          type="button"
+          disabled={
+            isAutomaticCrypto ? cryptoCheckoutLoading || Boolean(validationError) :
+            isPaddleCheckout ? paddleLoading || Boolean(validationError) :
+            !canSubmit
+          }
+          onClick={
+            isAutomaticCrypto ? handleCryptoCheckout :
+            isPaddleCheckout ? handlePaddleCheckout :
+            handleSubmit
+          }
+          className={`w-full rounded-2xl px-5 py-4 text-sm font-black ${
+            isAutomaticCrypto ? (!cryptoCheckoutLoading && !validationError ? 'bg-emerald-500 text-slate-950' : 'bg-slate-200 text-slate-500') :
+            isPaddleCheckout ? (!paddleLoading && !validationError ? 'bg-orange-500 text-white' : 'bg-slate-200 text-slate-500') :
+            canSubmit ? 'bg-slate-950 text-white' : 'bg-slate-200 text-slate-500'
+          }`}
+        >
+          {isAutomaticCrypto ? (cryptoCheckoutLoading ? 'Opening secure checkout...' : 'Pay with Crypto') :
+           isPaddleCheckout ? (paddleLoading ? 'Opening Paddle checkout...' : 'Pay with Card / PayPal') :
+           submitting ? 'Submitting...' : hasOpenUpgradeRequest ? 'Request Under Review' : submitted ? 'Submitted' : validationError ? 'Complete Payment Details' : 'Submit Upgrade Request'}
         </button>
       </div>
     </main>

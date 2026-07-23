@@ -959,6 +959,195 @@ async function handleUpgradeScreenshot(request, env, requestId) {
   }
 }
 
+async function handlePaddleWebhook(request, env) {
+  const rawBody = await request.text()
+  const signature = request.headers.get('Paddle-Signature') || ''
+
+  // Verify signature if webhook secret is configured
+  if (env.PADDLE_WEBHOOK_SECRET) {
+    const encoder = new TextEncoder()
+    const key = await crypto.subtle.importKey('raw', encoder.encode(env.PADDLE_WEBHOOK_SECRET), { name: 'HMAC', hash: 'SHA-256' }, false, ['verify'])
+    const parts = signature.split(';').reduce((acc, part) => {
+      const [k, v] = part.split('='); if (k && v) acc[k.trim()] = v.trim(); return acc
+    }, {})
+    const ts = parts.ts || ''
+    const h1 = parts.h1 || ''
+    const signedPayload = `${ts}:${rawBody}`
+    const isValid = await crypto.subtle.verify('HMAC', key, hexToBytes(h1), encoder.encode(signedPayload))
+    if (!isValid) {
+      return jsonResponse(request, env, { ok: false, error: 'Invalid Paddle signature.' }, 401)
+    }
+  }
+
+  let event
+  try { event = JSON.parse(rawBody) } catch {
+    return jsonResponse(request, env, { ok: false, error: 'Invalid JSON.' }, 400)
+  }
+
+  const eventType = event.event_type || ''
+  const eventData = event.data || {}
+
+  console.log(`[Paddle Webhook] ${eventType}`)
+
+  try {
+    const serviceToken = await getPaymentServiceToken(env)
+
+    switch (eventType) {
+      case 'subscription.activated':
+      case 'transaction.completed': {
+        const subscriptionId = eventData.id || eventData.subscription_id || ''
+        const customerId = eventData.customer_id || ''
+        const customerEmail = eventData.customer?.email || eventData.email || ''
+        const items = eventData.items || []
+        const status = eventData.status || 'active'
+
+        if (!customerEmail) break
+
+        // Find user by email
+        const userDoc = await findUserByEmail(env, serviceToken, customerEmail)
+        if (!userDoc) break
+
+        const subscription = buildPaddleSubscription(eventData, customerEmail)
+
+        // Write subscription to Firestore
+        const writes = [
+          updateWrite(env, `users/${userDoc.uid}`, subscription, true),
+          updateWrite(env, `workspaces/${userDoc.workspaceId || userDoc.uid}`, subscription, true),
+          updateWrite(env, `platformPayments/${subscriptionId}`, {
+            clientEmail: customerEmail,
+            workspaceId: userDoc.workspaceId || userDoc.uid,
+            plan: subscription.plan,
+            amount: Number(eventData.recurring_transaction_details?.totals?.subtotal || 0),
+            currency: (eventData.currency_code || 'USD').toUpperCase(),
+            transactionId: subscriptionId,
+            paymentMethod: 'Paddle',
+            status: status === 'active' ? 'paid' : status,
+            paymentStatus: status === 'active' ? 'paid' : status,
+            approvedBy: `paddle:${subscriptionId}`,
+            approvedAt: subscription.updatedAt,
+            subscriptionExpiresAt: subscription.subscriptionExpiresAt,
+            nextBillingDate: subscription.nextBillingDate,
+            source: 'paddle-webhook',
+            sourceId: subscriptionId,
+            updatedAt: subscription.updatedAt,
+          }),
+        ]
+
+        await firestoreCommit(env, serviceToken, writes)
+        console.log(`[Paddle] Subscription activated for ${customerEmail}`)
+        break
+      }
+
+      case 'subscription.updated': {
+        const subId = eventData.id || ''
+        const customerEmail = eventData.customer?.email || ''
+        if (!customerEmail) break
+        const userDoc = await findUserByEmail(env, serviceToken, customerEmail)
+        if (!userDoc) break
+        const sub = buildPaddleSubscription(eventData, customerEmail)
+        const w = [
+          updateWrite(env, `users/${userDoc.uid}`, sub, true),
+          updateWrite(env, `workspaces/${userDoc.workspaceId || userDoc.uid}`, sub, true),
+        ]
+        await firestoreCommit(env, serviceToken, w)
+        break
+      }
+
+      case 'subscription.canceled':
+      case 'subscription.paused': {
+        const subId = eventData.id || ''
+        const customerEmail = eventData.customer?.email || ''
+        if (!customerEmail) break
+        const userDoc = await findUserByEmail(env, serviceToken, customerEmail)
+        if (!userDoc) break
+        const now = new Date().toISOString()
+        const cancelPayload = {
+          planStatus: eventType === 'subscription.canceled' ? 'canceled' : 'paused',
+          subscriptionStatus: eventType === 'subscription.canceled' ? 'canceled' : 'paused',
+          canceledAt: now,
+          updatedAt: now,
+        }
+        const w = [
+          updateWrite(env, `users/${userDoc.uid}`, cancelPayload, true),
+          updateWrite(env, `workspaces/${userDoc.workspaceId || userDoc.uid}`, cancelPayload, true),
+        ]
+        await firestoreCommit(env, serviceToken, w)
+        break
+      }
+    }
+
+    return jsonResponse(request, env, { ok: true, event: eventType })
+  } catch (error) {
+    console.error(`[Paddle Webhook Error] ${error.message}`)
+    return jsonResponse(request, env, { ok: false, error: error.message }, 500)
+  }
+}
+
+/**
+ * Find user by email from Firestore users collection.
+ */
+async function findUserByEmail(env, token, email) {
+  try {
+    const cleanEmail = lower(email)
+    const url = `${FIRESTORE_BASE}/projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents:runQuery`
+    const body = {
+      structuredQuery: {
+        from: [{ collectionId: 'users' }],
+        where: { fieldFilter: { field: { fieldPath: 'email' }, op: 'EQUAL', value: { stringValue: cleanEmail } } },
+        limit: 1,
+      },
+    }
+    const res = await fetch(url, { method: 'POST', headers: authHeaders(token), body: JSON.stringify(body) })
+    const docs = await res.json()
+    const doc = docs?.find?.((d) => d.document)
+    if (!doc?.document) return null
+    const fields = doc.document.fields || {}
+    return {
+      uid: doc.document.name.split('/').pop(),
+      email: fields.email?.stringValue || cleanEmail,
+      workspaceId: fields.workspaceId?.stringValue || '',
+    }
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Build subscription payload from Paddle event data matching existing format.
+ */
+function buildPaddleSubscription(eventData, email) {
+  const now = new Date().toISOString()
+  const nextBilling = eventData.next_billed_at || ''
+  const currentPeriodEnd = eventData.current_billing_period?.ends_at || nextBilling || ''
+  const cancelAt = eventData.scheduled_change?.effective_at || ''
+  const planId = eventData.items?.[0]?.price?.product_id || 'basic'
+  const billingCycle = eventData.items?.[0]?.price?.billing_cycle?.interval === 'year' ? 'yearly' : 'monthly'
+
+  return {
+    plan: planId,
+    planStatus: eventData.status === 'canceled' ? 'canceled' : 'active',
+    subscriptionStatus: eventData.status || 'active',
+    billingCycle,
+    billingCurrency: (eventData.currency_code || 'USD').toUpperCase(),
+    subscriptionStartedAt: eventData.created_at || now,
+    subscriptionExpiresAt: cancelAt || currentPeriodEnd,
+    nextBillingDate: nextBilling || currentPeriodEnd,
+    isTrialActive: eventData.status === 'trialing',
+    trialEndDate: eventData.trial_dates?.ends_at || null,
+    paddleSubscriptionId: eventData.id || '',
+    paddleCustomerId: eventData.customer_id || '',
+    approvedBy: `paddle:${eventData.id || ''}`,
+    approvedAt: now,
+    updatedAt: now,
+  }
+}
+
+function hexToBytes(hex) {
+  const bytes = new Uint8Array(hex.length / 2)
+  for (let i = 0; i < hex.length; i += 2) bytes[i / 2] = parseInt(hex.substring(i, i + 2), 16)
+  return bytes
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url)
@@ -994,6 +1183,15 @@ export default {
     }
     if (request.method === 'POST' && url.pathname === '/webhooks/nowpayments') {
       return handleNowPaymentsIpn(request, env)
+    }
+    if (request.method === 'GET' && url.pathname === '/api/paddle/config') {
+      return jsonResponse(request, env, {
+        sandbox: env.PADDLE_SANDBOX === 'true',
+        clientToken: env.PADDLE_CLIENT_TOKEN || '',
+      })
+    }
+    if (request.method === 'POST' && url.pathname === '/webhooks/paddle') {
+      return handlePaddleWebhook(request, env)
     }
     return jsonResponse(request, env, { ok: false, error: 'Not found.' }, 404)
   },

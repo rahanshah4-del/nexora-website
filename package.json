@@ -17,8 +17,8 @@
     "audit:whatsapp-crm": "node scripts/audit-whatsapp-crm-calculations.mjs",
     "audit:module-integrations": "node scripts/audit-module-integrations.mjs",
     "ai:highlight": "node scripts/aiHighlight.js",
-"ai:highlight:force": "node scripts/aiHighlight.js --force",
-"audit:all-modules": "npm run audit:sales-hub && npm run audit:school-erp && npm run audit:retail-pos && npm run audit:restaurant-pos && npm run audit:property-erp && npm run audit:transport-rental && npm run audit:whatsapp-crm && npm run audit:module-integrations",
+    "ai:highlight:force": "node scripts/aiHighlight.js --force",
+    "audit:all-modules": "npm run audit:sales-hub && npm run audit:school-erp && npm run audit:retail-pos && npm run audit:restaurant-pos && npm run audit:property-erp && npm run audit:transport-rental && npm run audit:whatsapp-crm && npm run audit:module-integrations",
     "lint": "eslint .",
     "preview": "vite preview",
     "worker:deploy": "wrangler deploy --config workers/nexora-email-api/wrangler.toml",
@@ -30,6 +30,7 @@
     "passkeys:secret:key": "wrangler secret put FIREBASE_PRIVATE_KEY --config workers/nexora-passkeys-api/wrangler.toml"
   },
   "dependencies": {
+    "@paddle/paddle-js": "^1.6.4",
     "@simplewebauthn/browser": "^13.3.0",
     "@simplewebauthn/server": "^13.3.2",
     "firebase": "^12.0.0",
