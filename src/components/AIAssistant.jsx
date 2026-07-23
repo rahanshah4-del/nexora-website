@@ -1,10 +1,13 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { HiOutlinePaperAirplane, HiOutlineSparkles, HiOutlineXMark } from 'react-icons/hi2'
+import { getAuth, onAuthStateChanged } from 'firebase/auth'
+import { HiOutlineChatBubbleLeftRight, HiOutlinePaperAirplane, HiOutlinePlus, HiOutlineSparkles, HiOutlineTicket, HiOutlineXMark } from 'react-icons/hi2'
 
 // Nexora AI Gateway (Cloudflare Worker)
 const AI_GATEWAY_URL = import.meta.env.VITE_AI_GATEWAY_URL || 'https://nexora-ai-gateway.rahanshah4.workers.dev'
 const MAX_EXTERNAL_QUESTIONS = 5
+const CHAT_IDLE_TIMEOUT = 10 * 60 * 1000 // 10 minutes
+const CHAT_STORAGE_KEY = 'nexora_ai_chat'
 
 const SYSTEM_PROMPT = `You are Nexora AI, the official AI assistant for Nexora Solution — a Pakistani business software company (nexorasolution.online).
 
@@ -94,17 +97,92 @@ const QUICK_ACTIONS = [
 ]
 
 export default function AIAssistant() {
+  const [authUser, setAuthUser] = useState(null)
+  const [authReady, setAuthReady] = useState(false)
+
+  useEffect(() => {
+    try {
+      const auth = getAuth()
+      return onAuthStateChanged(auth, (fbUser) => {
+        setAuthUser(fbUser)
+        setAuthReady(true)
+      })
+    } catch { setAuthReady(true) }
+  }, [])
+
+  const isAuth = authReady && authUser != null
   const [open, setOpen] = useState(false)
-  const [messages, setMessages] = useState([{ from: 'ai', text: 'Hi! I\'m Nexora AI — your business software assistant. What type of business do you run? 😊' }])
+  const [activeTab, setActiveTab] = useState('chat')
+  const [messages, setMessages] = useState(() => {
+    try { const saved = localStorage.getItem(CHAT_STORAGE_KEY); return saved ? JSON.parse(saved).messages || [] : [] } catch { return [] }
+  })
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
-  const [externalCount, setExternalCount] = useState(0)
+  const [externalCount, setExternalCount] = useState(() => { try { const s = localStorage.getItem(CHAT_STORAGE_KEY); return s ? JSON.parse(s).extCount || 0 : 0 } catch { return 0 } })
   const [sessionId] = useState(() => 'sess_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8))
+  // Prefill complaint form from auth user
+  const [complaintForm, setComplaintForm] = useState({ name: '', email: '', message: '' })
+  const [complaintSent, setComplaintSent] = useState(false)
+
+  useEffect(() => {
+    if (isAuth && authUser) {
+      setComplaintForm({
+        name: authUser.displayName || authUser.email?.split('@')[0] || '',
+        email: authUser.email || '',
+        message: '',
+      })
+    }
+  }, [isAuth, authUser])
   const scrollRef = useRef(null)
   const inputRef = useRef(null)
+  const idleTimer = useRef(null)
 
-  useEffect(() => { if (open) inputRef.current?.focus() }, [open])
+  // Init messages if empty
+  const initMsg = { from: 'ai', text: 'Hi! I\'m Nexora AI — your business software assistant. What type of business do you run? 😊' }
+
+  // Save chat to localStorage on every change
+  useEffect(() => {
+    try { localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify({ messages, extCount: externalCount, lastActive: Date.now() })) } catch {}
+  }, [messages, externalCount])
+
+  // Auto-close after 10 min idle
+  const resetIdleTimer = useCallback(() => {
+    if (idleTimer.current) clearTimeout(idleTimer.current)
+    if (open) {
+      idleTimer.current = setTimeout(() => setOpen(false), CHAT_IDLE_TIMEOUT)
+    }
+  }, [open])
+
+  useEffect(() => { resetIdleTimer(); return () => clearTimeout(idleTimer.current) }, [open, resetIdleTimer])
+
+  useEffect(() => { if (open) { inputRef.current?.focus(); resetIdleTimer() } }, [open, resetIdleTimer])
   useEffect(() => { scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' }) }, [messages])
+
+  const startNewChat = () => {
+    setMessages([initMsg])
+    setExternalCount(0)
+    setActiveTab('chat')
+    setComplaintSent(false)
+    setComplaintForm({ name: '', email: '', message: '' })
+  }
+
+  const toggleOpen = () => {
+    if (!open) {
+      // Restore chat from last session if within 10 min
+      try {
+        const saved = localStorage.getItem(CHAT_STORAGE_KEY)
+        if (saved) {
+          const data = JSON.parse(saved)
+          if (Date.now() - (data.lastActive || 0) > CHAT_IDLE_TIMEOUT) {
+            // Session expired — start fresh
+            setMessages([initMsg])
+            setExternalCount(0)
+          }
+        }
+      } catch {}
+    }
+    setOpen(!open)
+  }
 
   const callAI = async (userMessage) => {
     // Build conversation context (last 5 messages for history)
@@ -329,7 +407,7 @@ export default function AIAssistant() {
       {/* Floating button */}
       <button
         type="button"
-        onClick={() => setOpen(!open)}
+        onClick={toggleOpen}
         className={`fixed bottom-24 right-6 z-[54] hidden h-12 items-center gap-2 rounded-full bg-white/90 px-4 text-[13px] font-medium tracking-[-0.01em] text-[#1d1d1f] shadow-[0_2px_16px_-4px_rgba(0,0,0,0.12)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_28px_-8px_rgba(0,0,0,0.16)] active:scale-[0.97] sm:inline-flex ${
           open ? 'opacity-0 pointer-events-none' : ''
         }`}
@@ -341,8 +419,10 @@ export default function AIAssistant() {
 
       {/* Chat popup */}
       {open && (
-        <div className="fixed bottom-24 right-6 z-[54] flex h-[480px] w-[380px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-[1.25rem] border border-slate-200/60 bg-white shadow-2xl shadow-black/10"
+        <div className="fixed bottom-24 right-6 z-[54] flex h-[520px] w-[400px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-[1.25rem] border border-slate-200/60 bg-white shadow-2xl shadow-black/10"
           style={{ animation: 'applePopIn 0.35s cubic-bezier(0.32,0.72,0,1) forwards' }}
+          onClick={resetIdleTimer}
+          onKeyDown={resetIdleTimer}
         >
           {/* Header */}
           <div className="flex shrink-0 items-center justify-between bg-gradient-to-r from-violet-500 via-purple-500 to-fuchsia-500 px-4 py-3 text-white">
@@ -353,13 +433,80 @@ export default function AIAssistant() {
                 <p className="text-[10px] text-white/70">{loading ? 'Typing...' : 'Online'}</p>
               </div>
             </div>
-            <button onClick={() => setOpen(false)} className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/30 active:scale-90">
-              <HiOutlineXMark className="h-4 w-4" strokeWidth={2} />
-            </button>
+            <div className="flex items-center gap-1">
+              <button onClick={startNewChat} className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/30 active:scale-90 transition-all duration-200" title="New Chat">
+                <HiOutlinePlus className="h-4 w-4" strokeWidth={2} />
+              </button>
+              <button onClick={() => setOpen(false)} className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/30 active:scale-90 transition-all duration-200">
+                <HiOutlineXMark className="h-4 w-4" strokeWidth={2} />
+              </button>
+            </div>
           </div>
 
-          {/* Messages */}
-          <div ref={scrollRef} className="flex-1 overflow-y-auto bg-[#f5f5f7] px-4 py-4 space-y-3">
+          {/* Tab bar */}
+          <div className="flex shrink-0 border-b border-slate-100 bg-white">
+            {[
+              { key: 'chat', label: 'Chat', icon: HiOutlineChatBubbleLeftRight },
+              { key: 'support', label: 'Support', icon: HiOutlineTicket },
+            ].map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`flex flex-1 items-center justify-center gap-1.5 py-2.5 text-[12px] font-semibold tracking-[-0.01em] transition-all duration-200 ${
+                  activeTab === tab.key
+                    ? 'border-b-2 border-violet-500 text-violet-700'
+                    : 'text-slate-400 hover:text-slate-600'
+                }`}
+              >
+                <tab.icon className="h-4 w-4" />
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Tab content */}
+          {activeTab === 'support' ? (
+            <div className="flex-1 overflow-y-auto bg-[#f5f5f7] px-4 py-4">
+              {complaintSent ? (
+                <div className="flex flex-col items-center justify-center h-full text-center">
+                  <div className="grid h-14 w-14 place-items-center rounded-full bg-emerald-100 text-emerald-600"><HiOutlineTicket className="h-7 w-7" /></div>
+                  <p className="mt-3 text-[14px] font-semibold text-[#1d1d1f]">Ticket Submitted!</p>
+                  <p className="mt-1 text-[12px] text-slate-500">We&apos;ll get back to you within 24 hours.</p>
+                  <button onClick={() => { setComplaintSent(false); setComplaintForm({ name: '', email: '', message: '' }) }} className="mt-4 rounded-full bg-violet-100 px-4 py-2 text-[12px] font-semibold text-violet-700 hover:bg-violet-200 transition-colors">Submit Another</button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-[13px] font-semibold text-[#1d1d1f]">Submit a Support Ticket</p>
+                  {isAuth ? (
+                    <div className="rounded-xl border border-emerald-200/60 bg-emerald-50 p-3 text-[11px] text-emerald-700">
+                      ✅ Logged in as <strong>{authUser?.email || 'User'}</strong>. Your ticket will be linked to your account.
+                    </div>
+                  ) : (
+                    <div className="rounded-xl border border-amber-200/60 bg-amber-50 p-3 text-[11px] text-amber-700">
+                      ⚠️ Not logged in. <Link to="/login" className="font-bold underline">Login</Link> or <Link to="/signup" className="font-bold underline">Register</Link> for faster support.
+                    </div>
+                  )}
+                  <input value={complaintForm.name} onChange={e => setComplaintForm(f => ({ ...f, name: e.target.value }))} placeholder="Your name" className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-[12px] outline-none focus:border-violet-300" />
+                  <input value={complaintForm.email} onChange={e => setComplaintForm(f => ({ ...f, email: e.target.value }))} placeholder="Your email or phone" className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-[12px] outline-none focus:border-violet-300" />
+                  <textarea value={complaintForm.message} onChange={e => setComplaintForm(f => ({ ...f, message: e.target.value }))} rows={3} placeholder="Describe your issue or complaint..." className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-[12px] outline-none focus:border-violet-300" />
+                  <button
+                    onClick={() => {
+                      if (complaintForm.name && complaintForm.message) {
+                        addMsg('ai', `📋 Support ticket received! We'll review your issue and respond within 24 hours.\n\n**Your ticket:** ${complaintForm.message.slice(0, 80)}...`)
+                        setComplaintSent(true)
+                        setActiveTab('chat')
+                      }
+                    }}
+                    disabled={!complaintForm.name || !complaintForm.message}
+                    className="w-full rounded-full bg-gradient-to-r from-violet-500 to-purple-600 px-4 py-2.5 text-[13px] font-bold text-white shadow-[0_4px_12px_rgba(139,92,246,0.3)] transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.97] disabled:opacity-40 disabled:pointer-events-none"
+                  >
+                    Submit Ticket
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div ref={scrollRef} className="flex-1 overflow-y-auto bg-[#f5f5f7] px-4 py-4 space-y-3">
             {messages.map((msg, i) => (
               <div key={i} className={`flex ${msg.from === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-[13px] leading-[1.5] ${
@@ -383,42 +530,47 @@ export default function AIAssistant() {
               </div>
             )}
           </div>
+          )}
 
-          {/* Quick actions */}
-          <div className="shrink-0 border-t border-slate-100 bg-white px-3 py-2">
-            <div className="flex gap-1.5 overflow-x-auto pb-1">
-              {QUICK_ACTIONS.map(({ label, q }) => (
-                <button key={label} type="button" onClick={() => { addMsg('user', q); handleSend(q) }}
-                  className="shrink-0 rounded-full border border-slate-200/60 bg-white px-3 py-1.5 text-[11px] font-medium text-slate-500 transition-all duration-200 hover:border-slate-300 hover:text-slate-700 active:scale-95"
-                >{label}</button>
-              ))}
+          {/* Quick actions — chat tab only */}
+          {activeTab === 'chat' && (
+            <div className="shrink-0 border-t border-slate-100 bg-white px-3 py-2">
+              <div className="flex gap-1.5 overflow-x-auto pb-1">
+                {QUICK_ACTIONS.map(({ label, q }) => (
+                  <button key={label} type="button" onClick={() => { addMsg('user', q); handleSend(q); resetIdleTimer() }}
+                    className="shrink-0 rounded-full border border-slate-200/50 bg-white px-3 py-1.5 text-[11px] font-medium text-slate-500 shadow-[0_1px_4px_rgba(0,0,0,0.02)] transition-all duration-200 hover:border-violet-300 hover:text-violet-600 hover:shadow-[0_2px_8px_rgba(139,92,246,0.12)] active:scale-95"
+                  >{label}</button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* Input */}
-          <div className="shrink-0 border-t border-slate-100 bg-white px-3 py-3">
-            <div className="flex items-center gap-2">
-              <input
-                ref={inputRef}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                placeholder="Ask me anything..."
-                className="flex-1 rounded-full border border-slate-200/60 bg-[#f5f5f7] px-4 py-2 text-[13px] font-medium text-[#1d1d1f] outline-none placeholder:text-slate-400 focus:border-slate-300"
-                disabled={loading}
-              />
-              <button onClick={handleSend} disabled={loading} className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#0071e3] text-white transition-all duration-200 hover:bg-blue-600 active:scale-90 disabled:opacity-50">
-                <HiOutlinePaperAirplane className="h-4 w-4" />
-              </button>
+          {/* Input — chat tab only */}
+          {activeTab === 'chat' && (
+            <div className="shrink-0 border-t border-slate-100 bg-white px-3 py-3">
+              <div className="flex items-center gap-2">
+                <input
+                  ref={inputRef}
+                  value={input}
+                  onChange={(e) => { setInput(e.target.value); resetIdleTimer() }}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { handleSend(); resetIdleTimer() } }}
+                  placeholder={messages.length > 1 ? 'Ask a follow-up...' : 'Ask me anything...'}
+                  className="flex-1 rounded-full border border-slate-200/50 bg-[#f5f5f7] px-4 py-2 text-[13px] font-medium text-[#1d1d1f] outline-none placeholder:text-slate-400 focus:border-violet-300 focus:bg-white transition-all duration-200"
+                  disabled={loading}
+                />
+                <button onClick={() => { handleSend(); resetIdleTimer() }} disabled={loading} className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-violet-500 to-purple-600 text-white shadow-[0_2px_8px_rgba(139,92,246,0.3)] transition-all duration-200 hover:shadow-[0_4px_14px_rgba(139,92,246,0.4)] hover:scale-105 active:scale-90 disabled:opacity-40 disabled:hover:scale-100">
+                  <HiOutlinePaperAirplane className="h-4 w-4" />
+                </button>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Footer */}
           <div className="shrink-0 border-t border-slate-100 bg-white px-4 py-2 flex items-center justify-center gap-4">
-            <Link to="/signup" onClick={() => setOpen(false)} className="text-[11px] font-medium text-[#0071e3] hover:underline">Free Trial</Link>
-            <Link to="/contact" onClick={() => setOpen(false)} className="text-[11px] font-medium text-[#0071e3] hover:underline">Book Demo</Link>
-            <Link to="/pricing" onClick={() => setOpen(false)} className="text-[11px] font-medium text-[#0071e3] hover:underline">Pricing</Link>
-            <Link to="/reviews" onClick={() => setOpen(false)} className="text-[11px] font-medium text-[#0071e3] hover:underline">Reviews</Link>
+            <Link to="/signup" onClick={() => setOpen(false)} className="text-[11px] font-medium text-violet-600 hover:underline transition-colors">Free Trial</Link>
+            <Link to="/contact" onClick={() => setOpen(false)} className="text-[11px] font-medium text-violet-600 hover:underline transition-colors">Book Demo</Link>
+            <Link to="/pricing" onClick={() => setOpen(false)} className="text-[11px] font-medium text-violet-600 hover:underline transition-colors">Pricing</Link>
+            <Link to="/reviews" onClick={() => setOpen(false)} className="text-[11px] font-medium text-violet-600 hover:underline transition-colors">Reviews</Link>
           </div>
         </div>
       )}

@@ -142,10 +142,16 @@ export default function PricingPage() {
         <div className="soft-arc-bg pointer-events-none" />
         <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-slate-300 to-transparent" />
         <div className="relative mx-auto max-w-7xl px-5 text-center sm:px-6 lg:px-8">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200/60 bg-white/70 px-4 py-2 text-xs font-medium uppercase tracking-[0.14em] text-slate-500 shadow-sm backdrop-blur-xl">
-            <HiOutlineSparkles className="h-3.5 w-3.5 text-amber-500" />
-            Nexora Pricing
-          </span>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200/60 bg-white/70 px-4 py-2 text-xs font-medium uppercase tracking-[0.14em] text-slate-500 shadow-sm backdrop-blur-xl">
+              <HiOutlineSparkles className="h-3.5 w-3.5 text-amber-500" />
+              Nexora Pricing
+            </span>
+            <span className="inline-flex items-center gap-1 rounded-full border border-violet-200/60 bg-violet-50/80 px-3 py-2 text-[10px] font-extrabold uppercase tracking-[0.14em] text-violet-600 shadow-[0_0_12px_-2px_rgba(139,92,246,0.1)] backdrop-blur-sm">
+              <HiOutlineSparkles className="h-3 w-3 text-violet-500" />
+              AI-Powered Plans
+            </span>
+          </div>
           <div className="mx-auto mt-4 inline-flex items-center gap-1.5 rounded-full border border-rose-200/60 bg-rose-50/70 px-4 py-2 text-xs font-medium tracking-[-0.01em] text-rose-700 shadow-sm backdrop-blur-xl">
             🎉 50% OFF for New Users — Limited Time
           </div>
@@ -156,7 +162,7 @@ export default function PricingPage() {
             </span>
           </h1>
           <p className="mx-auto mt-6 max-w-3xl text-base leading-8 text-slate-500 sm:text-lg">
-            Try Nexora free for 7 days with full access to all modules. No credit card required — upgrade when you're ready.
+            Try Nexora free for 7 days with full access to all AI-powered modules. No credit card required — upgrade when you&apos;re ready.
           </p>
 
           {/* Trust badges */}
@@ -244,8 +250,9 @@ export default function PricingPage() {
                       </span>
                     )}
                     {isPopular && !plan.badge && (
-                      <span className="rounded-full bg-slate-900 px-3 py-1 text-[0.65rem] font-medium tracking-[-0.01em] text-white">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-slate-900 px-3 py-1 text-[0.65rem] font-medium tracking-[-0.01em] text-white">
                         Most Popular
+                        <span className="text-[0.55rem] opacity-70">✨ AI</span>
                       </span>
                     )}
                     {isFree && (

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, useLocation } from 'react-router-dom'
+import { getAuth, onAuthStateChanged } from 'firebase/auth'
 import { blogArticles } from '../lib/blogData.js'
 import {
   HiOutlineAcademicCap,
@@ -64,6 +65,22 @@ const solutionLinks = [
 
 function Header() {
   const location = useLocation()
+  const [authUser, setAuthUser] = useState(null)
+  const [authReady, setAuthReady] = useState(false)
+
+  useEffect(() => {
+    try {
+      const auth = getAuth()
+      return onAuthStateChanged(auth, (fbUser) => {
+        setAuthUser(fbUser)
+        setAuthReady(true)
+      })
+    } catch {
+      setAuthReady(true)
+    }
+  }, [])
+
+  const isAuth = authReady && authUser != null
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -265,19 +282,43 @@ function Header() {
 
         {/* ── Right Actions ── */}
         <div className="ml-auto hidden items-center gap-2 lg:flex">
-          <Link
-            to="/login"
-            className="inline-flex h-9 items-center justify-center rounded-full px-4 text-[13px] font-medium text-slate-500 transition-colors hover:text-slate-900 hover:bg-slate-100"
-          >
-            Login
-          </Link>
-          <Link
-            to="/signup"
-            className="inline-flex h-9 items-center justify-center gap-1.5 rounded-full bg-slate-950 px-4 text-[13px] font-medium text-white shadow-sm transition-all duration-200 hover:bg-slate-800 hover:shadow-md active:scale-[0.97]"
-          >
-            Get Started Free
-            <HiOutlineArrowRight className="text-sm" />
-          </Link>
+          {isAuth ? (
+            <>
+              <Link
+                to="/workspace"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 via-purple-500 to-fuchsia-500 text-white shadow-[0_2px_12px_rgba(139,92,246,0.35)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(139,92,246,0.45)] active:scale-95"
+                title={authUser?.email || 'Dashboard'}
+              >
+                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                  <circle cx="12" cy="7" r="4" />
+                </svg>
+              </Link>
+              <Link
+                to="/workspace"
+                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-full bg-gradient-to-r from-violet-600 to-purple-600 px-4 text-[13px] font-medium text-white shadow-[0_2px_8px_rgba(139,92,246,0.3)] transition-all duration-200 hover:shadow-[0_6px_20px_rgba(139,92,246,0.4)] hover:-translate-y-0.5 active:scale-[0.97]"
+              >
+                Dashboard
+                <HiOutlineArrowRight className="text-sm" />
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link
+                to="/login"
+                className="inline-flex h-9 items-center justify-center rounded-full px-4 text-[13px] font-medium text-slate-500 transition-colors hover:text-slate-900 hover:bg-slate-100"
+              >
+                Login
+              </Link>
+              <Link
+                to="/signup"
+                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-full bg-slate-950 px-4 text-[13px] font-medium text-white shadow-sm transition-all duration-200 hover:bg-slate-800 hover:shadow-md active:scale-[0.97]"
+              >
+                Get Started Free
+                <HiOutlineArrowRight className="text-sm" />
+              </Link>
+            </>
+          )}
         </div>
 
         {/* ── Mobile: search + hamburger ── */}
@@ -408,21 +449,39 @@ function Header() {
 
               {/* CTA buttons */}
               <div className="mt-10 grid gap-3">
-                <Link
-                  to="/login"
-                  onClick={closeAll}
-                  className="flex min-h-[48px] items-center justify-center gap-2 rounded-full border border-[#d2d2d7] bg-white text-[16px] font-medium text-[#1d1d1f] transition-all duration-200 hover:bg-[#f5f5f7] active:scale-[0.98]"
-                >
-                  <HiOutlineUserCircle className="h-5 w-5" />
-                  Sign In
-                </Link>
-                <Link
-                  to="/signup"
-                  onClick={closeAll}
-                  className="flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-[#1d1d1f] text-[16px] font-medium text-white transition-all duration-200 hover:bg-black active:scale-[0.98]"
-                >
-                  Get Started Free
-                </Link>
+                {isAuth ? (
+                  <>
+                    <Link
+                      to="/workspace"
+                      onClick={closeAll}
+                      className="flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-gradient-to-r from-violet-600 to-purple-600 text-[16px] font-medium text-white shadow-[0_4px_16px_rgba(139,92,246,0.3)] transition-all duration-200 hover:shadow-[0_8px_24px_rgba(139,92,246,0.4)] active:scale-[0.98]"
+                    >
+                      <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                      </svg>
+                      Dashboard
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      to="/login"
+                      onClick={closeAll}
+                      className="flex min-h-[48px] items-center justify-center gap-2 rounded-full border border-[#d2d2d7] bg-white text-[16px] font-medium text-[#1d1d1f] transition-all duration-200 hover:bg-[#f5f5f7] active:scale-[0.98]"
+                    >
+                      <HiOutlineUserCircle className="h-5 w-5" />
+                      Sign In
+                    </Link>
+                    <Link
+                      to="/signup"
+                      onClick={closeAll}
+                      className="flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-[#1d1d1f] text-[16px] font-medium text-white transition-all duration-200 hover:bg-black active:scale-[0.98]"
+                    >
+                      Get Started Free
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
         </div>,
