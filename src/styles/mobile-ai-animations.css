@@ -19,6 +19,19 @@
   [data-ai] { opacity: 1; }
 
   /* ══════════════════════════════════════════════════════════════════════
+     FLOATING AI LOGO — hero badge, gentle bounce + glow
+     ══════════════════════════════════════════════════════════════════════ */
+  @keyframes aiLogoFloat {
+    0%,100% { transform: translateY(0) scale(1); }
+    30%     { transform: translateY(-6px) scale(1.08); }
+    60%     { transform: translateY(-2px) scale(1.02); }
+  }
+  .ai-float-logo {
+    animation: aiLogoFloat 3.5s ease-in-out infinite;
+    filter: drop-shadow(0 0 8px rgba(139,92,246,0.3));
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════
      FADE UP — smooth upward reveal with slight scale (hero, CTAs, headings)
      ══════════════════════════════════════════════════════════════════════ */
   @keyframes aiFadeUp {

@@ -142,7 +142,8 @@ function App({ initialSectionId = '' }) {
             <div className="mx-auto max-w-5xl text-center">
               <h1 className="sr-only">Nexora POS &amp; Business Management Software</h1>
               <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-200/60 bg-violet-50/80 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.18em] text-violet-700 shadow-[0_0_24px_-4px_rgba(139,92,246,0.18)] backdrop-blur-xl">
-                <svg className="h-3.5 w-3.5 text-violet-500" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" /></svg>
+                <img src="/nexora-ai-logo.png" alt="Nexora AI" className="ai-float-logo hidden max-[767px]:block h-5 w-5 rounded-md object-cover" />
+                <svg className="h-3.5 w-3.5 text-violet-500 max-[767px]:hidden" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" /></svg>
                 ✨ Powered by Nexora AI
               </span>
               <p className="website-hero-heading mx-auto mt-6 max-w-5xl text-[clamp(2rem,8vw,2.85rem)] font-black leading-[0.98] tracking-tight text-slate-950 sm:text-[clamp(3rem,7vw,4.4rem)] lg:text-[5.7rem]">AI-Powered Business on <span className="marker-highlight">one platform.</span></p>
