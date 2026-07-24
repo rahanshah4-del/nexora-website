@@ -134,7 +134,7 @@ export default function AISections() {
             <span className="inline-flex rounded-full border border-violet-100 bg-violet-50/70 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.18em] text-violet-600 shadow-sm">AI Features</span>
             <h2 className="website-section-heading mt-5 text-3xl font-black tracking-tight text-slate-950 sm:text-5xl">Intelligent tools <span className="bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">built for business.</span></h2>
           </div>
-          <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div data-ai="cards" className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {AI_FEATURE_CARDS.map((card) => (
               <div key={card.title} className="group relative overflow-hidden rounded-[1.35rem] border border-violet-100/60 bg-white p-6 shadow-[0_8px_30px_-12px_rgba(139,92,246,0.08)] transition-all duration-300 hover:-translate-y-1 hover:border-violet-200 hover:shadow-[0_16px_44px_-16px_rgba(139,92,246,0.2)]">
                 <div className="pointer-events-none absolute -right-4 -top-4 h-24 w-24 rounded-full bg-gradient-to-br from-violet-50 to-purple-50 opacity-0 blur-xl transition-opacity duration-300 group-hover:opacity-70" />
@@ -154,7 +154,7 @@ export default function AISections() {
             <span className="inline-flex rounded-full border border-violet-100 bg-violet-50/70 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.18em] text-violet-600 shadow-sm">How It Works</span>
             <h2 className="website-section-heading mt-5 text-3xl font-black tracking-tight text-slate-950 sm:text-5xl">AI that <span className="bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">works for you.</span></h2>
           </div>
-          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div data-ai="cards" className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {AI_WORKFLOW_STEPS.map((item, idx) => (
               <div key={item.step} className="group relative text-center">
                 <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br from-violet-500 via-purple-500 to-fuchsia-500 text-xl font-black text-white shadow-[0_8px_24px_-6px_rgba(139,92,246,0.3)] transition-all duration-300 group-hover:scale-105 group-hover:shadow-[0_12px_32px_-8px_rgba(139,92,246,0.4)]">{item.step}</div>
@@ -167,7 +167,7 @@ export default function AISections() {
       </section>
 
       {/* PHASE 1 — AI CTA */}
-      <section data-reveal className="relative overflow-hidden bg-white px-5 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-24">
+      <section data-reveal data-ai="fade-up" className="relative overflow-hidden bg-white px-5 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-24">
         <div className="pointer-events-none absolute left-1/2 top-0 -translate-x-1/2">
           <div className="h-[300px] w-[500px] rounded-full bg-[radial-gradient(ellipse_at_center,rgba(139,92,246,0.08)_0%,transparent_70%)] blur-3xl" />
         </div>
@@ -193,7 +193,7 @@ export default function AISections() {
             <h2 className="website-section-heading mt-5 text-3xl font-black tracking-tight text-slate-950 sm:text-5xl">See Nexora AI <span className="bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 bg-clip-text text-transparent">in action.</span></h2>
             <p className="mx-auto mt-4 max-w-2xl text-base leading-8 text-slate-600">Real screens from real modules — every tool is powered by the same intelligent AI engine.</p>
           </div>
-          <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div data-ai="cards" className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {AI_SHOWCASE.map((item) => (
               <div key={item.label} className="group relative overflow-hidden rounded-[1.5rem] border border-slate-200/50 bg-white p-6 shadow-[0_2px_16px_-6px_rgba(0,0,0,0.06)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_32px_-12px_rgba(0,0,0,0.1)]">
                 <div className={`flex h-28 items-center justify-center rounded-2xl bg-gradient-to-br ${item.bg} transition-transform duration-300 group-hover:scale-[1.03]`}>
@@ -214,7 +214,7 @@ export default function AISections() {
             <span className="inline-flex rounded-full border border-violet-100 bg-violet-50/70 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.18em] text-violet-600 shadow-sm">Why Nexora AI</span>
             <h2 className="website-section-heading mt-5 text-3xl font-black tracking-tight text-slate-950 sm:text-5xl">Built for <span className="bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 bg-clip-text text-transparent">real business.</span></h2>
           </div>
-          <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+          <div data-ai="cards" className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
             {AI_WHY_CHOOSE.map((item) => (
               <div key={item.title} className="group rounded-2xl border border-violet-100/50 bg-white/80 p-5 shadow-sm backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-violet-200 hover:shadow-[0_8px_28px_-10px_rgba(139,92,246,0.15)]">
                 <span className="text-2xl">{item.icon}</span><h3 className="mt-3 text-[13px] font-black text-slate-950">{item.title}</h3><p className="mt-1.5 text-[11px] leading-[1.6] text-slate-500">{item.desc}</p>
@@ -300,7 +300,7 @@ export default function AISections() {
       </section>
 
       {/* PHASE 2 — FINAL PREMIUM CTA */}
-      <section data-reveal className="relative overflow-hidden bg-white px-5 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-24">
+      <section data-reveal data-ai="fade-up" className="relative overflow-hidden bg-white px-5 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-24">
         <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"><div className="h-[500px] w-[700px] rounded-full bg-[radial-gradient(ellipse_at_center,rgba(139,92,246,0.1)_0%,rgba(168,85,247,0.05)_40%,transparent_70%)] blur-3xl" /></div>
         <div className="relative mx-auto max-w-4xl text-center">
           <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-200/60 bg-violet-50/80 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.18em] text-violet-700 shadow-[0_0_24px_-4px_rgba(139,92,246,0.15)] backdrop-blur-xl"><HiOutlineSparkles className="h-3.5 w-3.5 text-violet-500" />Get Started Today</span>
