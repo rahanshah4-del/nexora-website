@@ -25,6 +25,7 @@ import {
   translateBlogArticle,
   loadBlogTranslationFromFirestore,
 } from '../../lib/blogTranslate.js'
+import { BLOG_SEO_LANGUAGES, buildLocalizedPath, buildLocalizedCanonical, extractLangFromPath, getHreflangMap } from '../../lib/blogLanguages.js'
 import { absoluteUrl, createArticleSchema } from '../../lib/seoStructuredData.js'
 import PublicPageShell from './PublicPageShell.jsx'
 import BlogComments from '../../components/BlogComments.jsx'
@@ -103,8 +104,12 @@ export default function BlogArticlePage() {
     if (articleSlug) trackBlogView(articleSlug)
   }, [articleSlug])
 
-  /* ── Reader language: PK → Roman Urdu, IN → Hindi, else English ── */
-  const [lang, setLang] = useState(() => detectPreferredBlogLanguage().lang)
+  /* ── Reader language: URL prefix > saved preference > auto-detect ── */
+  const { langCode: urlLang } = extractLangFromPath(window.location.pathname)
+  const [lang, setLang] = useState(() => {
+    if (urlLang !== 'en') return urlLang
+    return detectPreferredBlogLanguage().lang
+  })
   const [langOpen, setLangOpen] = useState(false)
   const [translation, setTranslation] = useState(null)
 
@@ -133,8 +138,14 @@ export default function BlogArticlePage() {
   }, [articleSlug, lang, articles])
 
   const selectLanguage = (code) => {
-    setLang(code)
+    if (code === lang) { setLangOpen(false); return }
     rememberBlogLanguage(code)
+    if (article?.slug) {
+      window.location.href = buildLocalizedPath(article.slug, code)
+    } else {
+      setLang(code)
+      setLangOpen(false)
+    }
   }
 
   if (!article && loading) {
@@ -266,16 +277,19 @@ export default function BlogArticlePage() {
   return (
     <PublicPageShell>
       <PageSeo
-        title={article.seoTitle}
-        description={article.metaDescription}
-        canonical={article.canonical}
-        path={article.path}
-        ogTitle={article.title}
-        ogDescription={article.metaDescription}
+        title={translation?.title || article.seoTitle}
+        description={translation?.excerpt || translation?.metaDescription || article.metaDescription}
+        canonical={buildLocalizedCanonical(article.slug, lang)}
+        path={buildLocalizedPath(article.slug, lang)}
+        ogTitle={translation?.title || article.title}
+        ogDescription={translation?.excerpt || translation?.metaDescription || article.metaDescription}
         ogImage={absoluteUrl(article.featuredImage)}
         twitterCard="summary_large_image"
-        faqItems={article.faqs}
+        faqItems={translation?.faqs || article.faqs}
         structuredData={[articleSchema]}
+        hreflangs={getHreflangMap(article.slug)}
+        currentLang={lang}
+        ogLocale={BLOG_SEO_LANGUAGES.find(l => l.code === lang)?.ogLocale || 'en_PK'}
       />
       <nav aria-label="Breadcrumb" className="sr-only">
         <Link to="/">Home</Link>

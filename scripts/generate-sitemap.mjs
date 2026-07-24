@@ -180,6 +180,14 @@ export async function buildSitemap() {
     { loc: `${HOST}/blog`, changefreq: 'daily', priority: '0.7' },
     ...blogArticles.map((article) => ({ loc: article.canonical, lastmod: article.updatedDate, changefreq: 'weekly', priority: '0.5' })),
   ]
+  // Multilingual blog URLs
+  const mlPrefixes = ['ur', 'hi', 'ar', 'bn']
+  for (const prefix of mlPrefixes) {
+    blogUrls.push({ loc: `${HOST}/${prefix}/blog`, changefreq: 'daily', priority: '0.5' })
+    for (const article of blogArticles) {
+      blogUrls.push({ loc: `${HOST}/${prefix}/blog/${article.slug}`, lastmod: article.updatedDate, changefreq: 'weekly', priority: '0.4' })
+    }
+  }
 
   await fs.mkdir(PUBLIC_DIR, { recursive: true })
   await fs.writeFile(path.join(PUBLIC_DIR, 'sitemap.xml'), sitemapXml(urls), 'utf8')

@@ -13,6 +13,7 @@ import PageSeo from '../../components/PageSeo.jsx'
 import usePublishedBlogArticles from '../../hooks/usePublishedBlogArticles.js'
 import { fetchBlogLikes, getUserReaction, toggleBlogReaction } from '../../lib/blogLikes.js'
 import { absoluteUrl } from '../../lib/seoStructuredData.js'
+import { buildLocalizedPath, extractLangFromPath } from '../../lib/blogLanguages.js'
 import PublicPageShell from './PublicPageShell.jsx'
 
 const pageSize = 6
@@ -42,6 +43,7 @@ export default function BlogIndexPage() {
   const [searchValue, setSearchValue] = useState(params.get('q') || '')
   const [filtersOpen, setFiltersOpen] = useState(false)
   const { articles, loading } = usePublishedBlogArticles()
+  const { langCode: currentLang } = extractLangFromPath(window.location.pathname)
 
   // Like / Dislike — Firestore-backed (persists for ALL users) + per-user localStorage
   const [reactions, setReactions] = useState({})
@@ -314,7 +316,7 @@ export default function BlogIndexPage() {
                       >
                         {/* Image */}
                         <Link
-                          to={`/blog/${article.slug}`}
+                          to={buildLocalizedPath(article.slug, currentLang)}
                           className="relative grid h-[200px] place-items-center overflow-hidden bg-gradient-to-br from-slate-50 to-slate-100 sm:h-[220px]"
                         >
                           <div
@@ -364,7 +366,7 @@ export default function BlogIndexPage() {
                           {/* Title */}
                           <h2 className="mt-3 text-[17px] font-medium leading-[1.35] tracking-[-0.01em] text-slate-900">
                             <Link
-                              to={`/blog/${article.slug}`}
+                              to={buildLocalizedPath(article.slug, currentLang)}
                               className="transition-colors duration-200 hover:text-slate-500"
                             >
                               {article.title}
@@ -420,7 +422,7 @@ export default function BlogIndexPage() {
                               </button>
                             </div>
                             <Link
-                              to={`/blog/${article.slug}`}
+                              to={buildLocalizedPath(article.slug, currentLang)}
                               className="inline-flex items-center gap-1.5 text-[13px] font-medium tracking-[-0.01em] text-slate-500 transition-all duration-200 hover:gap-2 hover:text-slate-900"
                             >
                               Read article

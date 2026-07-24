@@ -463,8 +463,18 @@ export default function AppRouter() {
         <Route path="/faq" element={<LazyPage><FaqPage /></LazyPage>} />
         <Route path="/support-center" element={<LazyPage><SupportCenterPage /></LazyPage>} />
         <Route path="/documentation" element={<LazyPage><DocumentationPage /></LazyPage>} />
+        {/* Blog — English (default) */}
         <Route path="/blog" element={<LazyPage><BlogIndexPage /></LazyPage>} />
         <Route path="/blog/:slug" element={<LazyPage><BlogArticlePage /></LazyPage>} />
+        {/* Blog — Multilingual (ur / hi / ar / bn) */}
+        <Route path="/ur/blog" element={<LazyPage><BlogIndexPage /></LazyPage>} />
+        <Route path="/ur/blog/:slug" element={<LazyPage><BlogArticlePage /></LazyPage>} />
+        <Route path="/hi/blog" element={<LazyPage><BlogIndexPage /></LazyPage>} />
+        <Route path="/hi/blog/:slug" element={<LazyPage><BlogArticlePage /></LazyPage>} />
+        <Route path="/ar/blog" element={<LazyPage><BlogIndexPage /></LazyPage>} />
+        <Route path="/ar/blog/:slug" element={<LazyPage><BlogArticlePage /></LazyPage>} />
+        <Route path="/bn/blog" element={<LazyPage><BlogIndexPage /></LazyPage>} />
+        <Route path="/bn/blog/:slug" element={<LazyPage><BlogArticlePage /></LazyPage>} />
         <Route path="/restaurant-pos" element={<LazyPage><SolutionPage solutionSlug="pos" /></LazyPage>} />
         <Route path="/retail-pos" element={<LazyPage><SolutionPage solutionSlug="retail-pos" /></LazyPage>} />
         <Route path="/school-erp" element={<LazyPage><SolutionPage solutionSlug="school-erp" /></LazyPage>} />

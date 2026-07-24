@@ -107,7 +107,7 @@ export function createLocalBusinessSchema() {
   })
 }
 
-export function createWebPageSchema({ path = '/', title = SITE_NAME, description = '', image = DEFAULT_LOGO } = {}) {
+export function createWebPageSchema({ path = '/', title = SITE_NAME, description = '', image = DEFAULT_LOGO, language = 'en-PK' } = {}) {
   const url = absoluteUrl(path)
   return compactObject({
     '@context': 'https://schema.org',
@@ -119,7 +119,7 @@ export function createWebPageSchema({ path = '/', title = SITE_NAME, description
     image,
     isPartOf: { '@id': `${SITE_URL}/#website` },
     about: { '@id': `${SITE_URL}/#organization` },
-    inLanguage: 'en-PK',
+    inLanguage: language,
   })
 }
 
@@ -206,7 +206,7 @@ export function createSoftwareApplicationSchema({
   })
 }
 
-export function createArticleSchema({
+export function createArticleSchema({ language = 'en-PK',
   path = '/',
   headline = '',
   description = '',
@@ -233,7 +233,7 @@ export function createArticleSchema({
     articleSection: category,
     keywords: Array.isArray(tags) ? tags.join(', ') : tags,
     wordCount,
-    inLanguage: 'en-PK',
+    inLanguage: language,
     author: {
       '@type': 'Organization',
       name: authorName,

@@ -1,9 +1,46 @@
 import { useEffect } from 'react'
 import { schemasForPage } from '../lib/seoStructuredData.js'
+import { BLOG_SEO_LANGUAGES, getLangConfig } from '../lib/blogLanguages.js'
 
 function setTitle(title) {
   if (typeof document === 'undefined') return
   document.title = title
+}
+
+function removeAllHreflangs() {
+  if (typeof document === 'undefined') return
+  document.querySelectorAll('link[rel="alternate"][hreflang]').forEach(el => el.remove())
+}
+
+function setHreflangs(hreflangMap) {
+  if (typeof document === 'undefined' || !hreflangMap) return
+  removeAllHreflangs()
+  Object.entries(hreflangMap).forEach(([hreflang, href]) => {
+    const el = document.createElement('link')
+    el.setAttribute('rel', 'alternate')
+    el.setAttribute('hreflang', hreflang)
+    el.setAttribute('href', href)
+    document.head.appendChild(el)
+  })
+}
+
+function setOgLocale(ogLocale) {
+  if (typeof document === 'undefined') return
+  // Remove existing og:locale and og:locale:alternate
+  document.querySelectorAll('meta[property="og:locale"], meta[property="og:locale:alternate"]').forEach(el => el.remove())
+  if (!ogLocale) return
+  // Set primary
+  const el = document.createElement('meta')
+  el.setAttribute('property', 'og:locale')
+  el.setAttribute('content', ogLocale)
+  document.head.appendChild(el)
+  // Add alternates for other languages
+  BLOG_SEO_LANGUAGES.filter(l => l.ogLocale !== ogLocale).forEach(l => {
+    const alt = document.createElement('meta')
+    alt.setAttribute('property', 'og:locale:alternate')
+    alt.setAttribute('content', l.ogLocale)
+    document.head.appendChild(alt)
+  })
 }
 
 function setLink(rel, href) {
@@ -65,6 +102,9 @@ export default function PageSeo({
   faqItems = [],
   softwareApplication = null,
   structuredData = [],
+  hreflangs = null,
+  currentLang = null,
+  ogLocale = null,
 }) {
   useEffect(() => {
     if (!window || !document) return
@@ -80,8 +120,14 @@ export default function PageSeo({
     if (ogTitle) setMeta('twitter:title', ogTitle)
     if (ogDescription) setMeta('twitter:description', ogDescription || description)
     if (ogImage) setMeta('twitter:image', ogImage)
+    // Hreflang & OG locale
+    if (hreflangs) setHreflangs(hreflangs)
+    else removeAllHreflangs()
+    const langCfg = currentLang ? getLangConfig(currentLang) : null
+    setOgLocale(ogLocale || langCfg?.ogLocale || 'en_PK')
     clearPageJsonLd()
     const pagePath = path || (canonical ? new URL(canonical).pathname : window.location.pathname)
+    const bcp47 = langCfg?.hreflang || 'en'
     const schemas = [
       ...schemasForPage({
         path: pagePath,
@@ -90,6 +136,7 @@ export default function PageSeo({
         image: ogImage,
         faqItems,
         softwareApplication,
+        language: bcp47,
       }),
       ...(Array.isArray(structuredData) ? structuredData : [structuredData]).filter(Boolean),
     ]
@@ -98,8 +145,8 @@ export default function PageSeo({
       setJsonLd(id, schema)
       document.getElementById(id)?.setAttribute('data-nexora-page-schema', 'true')
     })
-    return () => clearPageJsonLd()
-  }, [title, description, canonical, path, keywords, robots, ogTitle, ogDescription, ogImage, twitterCard, faqItems, softwareApplication, structuredData])
+    return () => { clearPageJsonLd(); removeAllHreflangs() }
+  }, [title, description, canonical, path, keywords, robots, ogTitle, ogDescription, ogImage, twitterCard, faqItems, softwareApplication, structuredData, hreflangs, currentLang, ogLocale])
 
   return null
 }

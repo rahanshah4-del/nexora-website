@@ -86,7 +86,8 @@ export default function DefaultSeo() {
   const pathname = location?.pathname || '/'
   const canonical = host + (pathname === '/' ? '/' : pathname.replace(/\/+$/,''))
   const cleanPathname = pathname === '/' ? '/' : pathname.replace(/\/+$/,'')
-  const publicRoute = publicSeoPaths.has(cleanPathname) || cleanPathname.startsWith('/solutions/') || cleanPathname.startsWith('/blog/')
+  const isLangBlog = ['/ur/blog', '/hi/blog', '/ar/blog', '/bn/blog'].some(p => cleanPathname === p || cleanPathname.startsWith(p + '/'))
+  const publicRoute = publicSeoPaths.has(cleanPathname) || cleanPathname.startsWith('/solutions/') || cleanPathname.startsWith('/blog/') || isLangBlog
   const noindex = NOINDEX_PREFIXES.some((prefix) => cleanPathname === prefix || cleanPathname.startsWith(`${prefix}/`))
 
   useEffect(() => {

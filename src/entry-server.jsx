@@ -23,6 +23,11 @@ export function render(url, options = {}) {
     </StaticRouter>,
   )
 
+  // Detect HTML lang from URL prefix
+  const langPrefixes = { ur: 'ur', hi: 'hi', ar: 'ar', bn: 'bn' }
+  const urlLang = Object.entries(langPrefixes).find(([prefix]) => url.startsWith(`/${prefix}/`))
+  const htmlLang = urlLang ? urlLang[1] : 'en'
+
   const meta = {
     title: options.title || 'Nexora POS Software Pakistan | Nexora Solution',
     description: options.description || 'Nexora offers Pakistan\'s leading POS software for restaurant, retail, school ERP and WhatsApp CRM teams with unified business workflows.',
@@ -33,7 +38,7 @@ export function render(url, options = {}) {
   }
 
   return `<!DOCTYPE html>
-<html lang="en">
+<html lang="${htmlLang}">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
