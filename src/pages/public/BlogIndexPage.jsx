@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import {
   HiOutlineArrowRight,
@@ -11,6 +11,7 @@ import {
 } from 'react-icons/hi2'
 import PageSeo from '../../components/PageSeo.jsx'
 import usePublishedBlogArticles from '../../hooks/usePublishedBlogArticles.js'
+import { fetchBlogLikes, getUserReaction, toggleBlogReaction } from '../../lib/blogLikes.js'
 import { absoluteUrl } from '../../lib/seoStructuredData.js'
 import PublicPageShell from './PublicPageShell.jsx'
 
@@ -42,36 +43,28 @@ export default function BlogIndexPage() {
   const [filtersOpen, setFiltersOpen] = useState(false)
   const { articles, loading } = usePublishedBlogArticles()
 
-  // Like / Dislike state — synced with localStorage so it survives page reloads
-  const [reactions, setReactions] = useState(() => {
+  // Like / Dislike — Firestore-backed (persists for ALL users) + per-user localStorage
+  const [reactions, setReactions] = useState({})
+  const [likeCounts, setLikeCounts] = useState({})
+
+  useEffect(() => {
+    // Load user's own reactions from localStorage
     const map = {}
     try {
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i)
-        if (key?.startsWith('blog-like-')) map[key.replace('blog-like-', '')] = 'liked'
-        else if (key?.startsWith('blog-dislike-')) map[key.replace('blog-dislike-', '')] = 'disliked'
-      }
-    } catch { /* localStorage blocked */ }
-    return map
-  })
+      const stored = JSON.parse(localStorage.getItem('nexora:blog:reactions') || '{}')
+      Object.entries(stored).forEach(([slug, type]) => { map[slug] = type })
+    } catch {}
+    setReactions(map)
+  }, [])
 
   function handleReaction(slug, type) {
-    const likeKey = `blog-like-${slug}`
-    const dislikeKey = `blog-dislike-${slug}`
-    setReactions((prev) => {
-      const current = prev[slug]
-      // Toggle off if same button clicked again
-      if (current === type) {
-        try { localStorage.removeItem(type === 'liked' ? likeKey : dislikeKey) } catch {}
+    toggleBlogReaction(slug, type).then((result) => {
+      setReactions((prev) => {
+        if (result.userReaction) return { ...prev, [slug]: result.userReaction }
         const next = { ...prev }; delete next[slug]; return next
-      }
-      // Set new reaction and clear opposite
-      try {
-        if (type === 'liked') { localStorage.setItem(likeKey, 'liked'); localStorage.removeItem(dislikeKey) }
-        else { localStorage.setItem(dislikeKey, 'disliked'); localStorage.removeItem(likeKey) }
-      } catch {}
-      return { ...prev, [slug]: type }
-    })
+      })
+      setLikeCounts((prev) => ({ ...prev, [slug]: { likes: result.likes, dislikes: result.dislikes } }))
+    }).catch(() => {})
   }
 
   const category = params.get('category') || 'All'
@@ -390,26 +383,27 @@ export default function BlogIndexPage() {
                               <button
                                 type="button"
                                 onClick={() => handleReaction(article.slug, 'liked')}
-                                className={`flex items-center gap-1 text-[12px] transition-all duration-200 active:scale-95 ${
+                                className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-all duration-200 active:scale-95 ${
                                   reactions[article.slug] === 'liked'
-                                    ? 'text-[#0071e3]'
-                                    : 'text-slate-400 hover:text-[#0071e3]'
+                                    ? 'bg-[#0071e3]/10 text-[#0071e3]'
+                                    : 'bg-slate-100 text-slate-500 hover:bg-[#0071e3]/10 hover:text-[#0071e3]'
                                 }`}
                                 aria-label={reactions[article.slug] === 'liked' ? 'Unlike' : 'Like'}
                               >
-                                <svg className="h-4 w-4" viewBox="0 0 20 20" fill={reactions[article.slug] === 'liked' ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={reactions[article.slug] === 'liked' ? '0' : '1.5'}><path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z" /></svg>
+                                <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill={reactions[article.slug] === 'liked' ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={reactions[article.slug] === 'liked' ? '0' : '1.5'}><path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z" /></svg>
+                                {(likeCounts[article.slug]?.likes > 0) ? <span>{likeCounts[article.slug].likes}</span> : null}
                               </button>
                               <button
                                 type="button"
                                 onClick={() => handleReaction(article.slug, 'disliked')}
-                                className={`flex items-center gap-1 text-[12px] transition-all duration-200 active:scale-95 ${
+                                className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-all duration-200 active:scale-95 ${
                                   reactions[article.slug] === 'disliked'
-                                    ? 'text-rose-500'
-                                    : 'text-slate-400 hover:text-rose-500'
+                                    ? 'bg-rose-100 text-rose-500'
+                                    : 'bg-slate-100 text-slate-500 hover:bg-rose-50 hover:text-rose-500'
                                 }`}
                                 aria-label={reactions[article.slug] === 'disliked' ? 'Remove dislike' : 'Dislike'}
                               >
-                                <svg className="h-4 w-4 rotate-180" viewBox="0 0 20 20" fill={reactions[article.slug] === 'disliked' ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={reactions[article.slug] === 'disliked' ? '0' : '1.5'}><path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z" /></svg>
+                                <svg className="h-3.5 w-3.5 rotate-180" viewBox="0 0 20 20" fill={reactions[article.slug] === 'disliked' ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={reactions[article.slug] === 'disliked' ? '0' : '1.5'}><path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z" /></svg>
                               </button>
                             </div>
                             <Link

@@ -322,12 +322,6 @@ export default function RestaurantMenuManagementPage() {
               </p>
             </div>
             <div className="flex items-center gap-2">
-              {showDemoButton ? (
-                <Button type="button" variant="subtle" onClick={loadDemoMenu} disabled={demoLoading}>
-                  <HiOutlineBeaker className="h-4 w-4" />
-                  {demoLoading ? 'Loading Demo...' : 'Load Demo Menu'}
-                </Button>
-              ) : null}
               <Button type="button" variant="subtle" onClick={() => setImportModalOpen(true)} className="!rounded-full !bg-white/80 !backdrop-blur-xl !border-slate-200/50 !shadow-[0_2px_12px_-2px_rgba(123,97,255,0.18)] hover:!shadow-[0_6px_20px_-4px_rgba(123,97,255,0.28)] hover:!-translate-y-px !transition-all !duration-300 !px-3.5 !gap-1.5">
                 <img src="/nexora-ai-logo.png" alt="AI" className="h-5 w-5 rounded-md object-cover shadow-[0_1px_4px_rgba(123,97,255,0.3)]" />
                 <span className="text-[12.5px] font-semibold tracking-[-0.01em] text-[#1d1d1f]">Import with AI</span>

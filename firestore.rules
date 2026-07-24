@@ -1021,7 +1021,19 @@ allow create: if validBlogComment(request.resource.data);
 allow update: if backendAdmin()&&validBlogCommentUpdate(request.resource.data);
 allow delete: if backendAdmin();
 }
-match /blogTranslations/{slug} {
+match /blogLikes/{slug} {
+    allow read: if true;
+    allow create: if request.resource.data.keys().hasOnly(['slug','likes','dislikes','updatedAt'])
+      && request.resource.data.slug == slug
+      && request.resource.data.likes is number
+      && request.resource.data.dislikes is number;
+    allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes','dislikes','updatedAt'])
+      && request.resource.data.likes is number
+      && request.resource.data.dislikes is number
+      && (request.resource.data.likes == resource.data.likes + 1 || request.resource.data.likes == resource.data.likes - 1 || request.resource.data.likes == resource.data.likes)
+      && (request.resource.data.dislikes == resource.data.dislikes + 1 || request.resource.data.dislikes == resource.data.dislikes - 1 || request.resource.data.dislikes == resource.data.dislikes);
+  }
+  match /blogTranslations/{slug} {
     allow read: if true;
     allow create, update: if backendAdmin();
     allow delete: if backendAdmin();
