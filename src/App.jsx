@@ -65,7 +65,7 @@ function useIdleVisible(rootMargin = '900px') {
         if (!entries.some((entry) => entry.isIntersecting)) return
         observer.disconnect()
         if ('requestIdleCallback' in window) {
-          idleId = window.requestIdleCallback(markReady, { timeout: 1200 })
+          idleId = window.requestIdleCallback(markReady, { timeout: 200 })
         } else {
           timeoutId = window.setTimeout(markReady, 120)
         }

@@ -1595,8 +1595,49 @@ export default function RestaurantOrdersPage() {
       tableNumber: tableId,
       outsideTableName: isOutsideTable(tableId) ? tableId : current.outsideTableName,
     }))
+
+    // Load active order for this table into billing
+    try {
+      const allOrders = loadRestaurantOrders()
+      // Find any order for this table that isn't fully paid or cancelled
+      const activeOrder = allOrders.find(o => {
+        const orderTable = String(o.table || o.tableNumber || '')
+        const tId = String(tableId)
+        const match = orderTable === tId
+        const notPaid = String(o.paymentStatus || '').toLowerCase() !== 'paid'
+        const notCancelled = String(o.orderStatus || o.status || '').toLowerCase() !== 'cancelled'
+        return match && notPaid && notCancelled
+      })
+      if (activeOrder) {
+        // Use cartRows (normalized) or rows (raw)
+        const srcRows = activeOrder.cartRows || activeOrder.rows || []
+        const items = srcRows.map(row => ({
+          item: row.item || { name: row.name || 'Item', price: row.price || 0 },
+          quantity: Number(row.qty || row.quantity || 1),
+          note: row.note || '',
+          unitPrice: row.unitPrice || row.item?.price || row.price || 0,
+          lineTotal: Number(row.lineTotal || (Number(row.item?.price || row.price || 0) * Number(row.qty || row.quantity || 1))),
+        }))
+        if (items.length > 0) {
+          setCart(items)
+          setFlowMessage(`Table ${tableId} — ${items.length} items loaded.`)
+        } else {
+          setCart([])
+          setFlowMessage(`Table ${tableId} — order has no items.`)
+        }
+        setOrderNumber(activeOrder.orderNumber || getNextRestaurantOrderNumber())
+        if (activeOrder.customer || activeOrder.customerName || activeOrder.customerId) {
+          setSelectedCustomerId(activeOrder.customerId || activeOrder.customer || activeOrder.customerName)
+        }
+      } else {
+        setCart([])
+        setFlowMessage(`Table ${tableId} — new order.`)
+      }
+    } catch (err) {
+      setFlowMessage(`Table ${tableId} — error: ${err.message}`)
+    }
+
     setTablePanelOpen(false)
-    setFlowMessage(`Table ${tableId} selected for this order.`)
   }
 
   // ── Reservation: select and seat ──

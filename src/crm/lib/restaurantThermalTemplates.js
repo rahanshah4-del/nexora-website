@@ -71,52 +71,94 @@ function thermalCss(extra = '') {
 body {
   width: 58mm;
   background: #fff;
-  color: #111827;
-  font-family: 'Courier New', Menlo, Monaco, monospace;
-  font-size: 9px;
-  line-height: 1.35;
-  padding: 3mm 2.5mm;
+  color: #1a1a1a;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
+  font-size: 8.5px;
+  line-height: 1.4;
+  padding: 2.5mm 2mm;
   -webkit-print-color-adjust: exact;
   print-color-adjust: exact;
 }
 .receipt { width: 100%; }
 .center { text-align: center; }
 .right { text-align: right; }
-.bold { font-weight: 900; }
-.brand { font-size: 13px; font-weight: 900; letter-spacing: 0.06em; text-transform: uppercase; }
-.subhead { font-size: 8px; color: #6b7280; margin-top: 1px; }
-.title-badge {
-  display: inline-block;
-  border: 1.5px solid #111827;
-  border-radius: 4px;
-  padding: 2px 10px;
-  font-size: 8px;
-  font-weight: 900;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  margin: 4px 0;
-}
-.divider { border-top: 1px dashed #9ca3af; margin: 4px 0; }
-.divider-solid { border-top: 1px solid #374151; margin: 4px 0; }
-.divider-double { border-top: 2px solid #111827; margin: 4px 0; }
-.info-row { display: flex; justify-content: space-between; gap: 8px; font-size: 9px; padding: 1px 0; }
-.info-row .label { color: #6b7280; white-space: nowrap; }
-.info-row .value { text-align: right; font-weight: 700; color: #111827; }
-.item-row { display: flex; align-items: flex-start; gap: 6px; padding: 2px 0; font-size: 9px; }
-.item-row .qty { width: 18px; text-align: center; font-weight: 900; flex-shrink: 0; }
-.item-row .name { flex: 1; font-weight: 600; min-width: 0; }
-.item-row .price { text-align: right; font-weight: 700; flex-shrink: 0; white-space: nowrap; }
-.item-row .note { font-size: 7px; color: #6b7280; padding-left: 24px; }
-.total-row { display: flex; justify-content: space-between; gap: 8px; font-size: 10px; padding: 2px 0; }
-.total-row.grand { font-size: 14px; font-weight: 900; border-top: 1.5px solid #111827; padding-top: 4px; margin-top: 2px; }
-.kpi-card { border: 1px solid #e5e7eb; border-radius: 4px; padding: 3px 5px; margin: 2px 0; }
-.kpi-card .kpi-label { font-size: 6px; font-weight: 800; color: #6b7280; text-transform: uppercase; letter-spacing: 0.06em; }
-.kpi-card .kpi-value { font-size: 10px; font-weight: 900; color: #111827; }
-.section-title { font-size: 8px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; background: #111827; color: #fff; padding: 3px 6px; border-radius: 3px; margin: 6px 0 3px; text-align: center; }
-.footer { margin-top: 6px; padding-top: 4px; border-top: 1px solid #d1d5db; text-align: center; font-size: 7px; color: #9ca3af; }
-.signature-line { border-bottom: 1px solid #9ca3af; margin: 12px 0 3px; }
-.qr-box { width: 54px; height: 54px; margin: 6px auto; border: 1px dashed #9ca3af; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 6px; font-weight: 800; color: #9ca3af; }
-.note-box { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 4px; padding: 4px 6px; font-size: 7px; color: #6b7280; }
+.bold { font-weight: 700; }
+
+/* ── Modern Brand Header ── */
+.brand-header { text-align: center; padding: 6px 0 8px; border-bottom: 2px solid #1a1a1a; margin-bottom: 6px; }
+.brand-logo { font-size: 15px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; }
+.brand-sub { font-size: 7px; color: #666; font-weight: 500; margin-top: 2px; letter-spacing: 0.04em; text-transform: uppercase; }
+.brand-tag { display: inline-block; font-size: 6.5px; font-weight: 700; background: #1a1a1a; color: #fff; padding: 2px 12px; border-radius: 10px; margin-top: 4px; letter-spacing: 0.08em; text-transform: uppercase; }
+
+/* ── Dividers ── */
+.divider { border-top: 1px dotted #ccc; margin: 5px 0; }
+.divider-solid { border-top: 1px solid #333; margin: 5px 0; }
+.divider-double { border-top: 2.5px solid #1a1a1a; margin: 5px 0; }
+.divider-accent { border-top: 1.5px solid #1a1a1a; margin: 6px 0; width: 60%; margin-left: auto; margin-right: auto; }
+
+/* ── Info Card ── */
+.info-card { background: #f8f8f8; border-radius: 6px; padding: 5px 6px; margin: 4px 0; }
+.info-row { display: flex; justify-content: space-between; gap: 6px; font-size: 8px; padding: 1.5px 0; }
+.info-row .label { color: #777; font-weight: 500; white-space: nowrap; font-size: 7.5px; }
+.info-row .value { text-align: right; font-weight: 600; color: #1a1a1a; font-size: 8px; }
+
+/* ── Items ── */
+.item-header { display: flex; gap: 4px; font-size: 7px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: 0.06em; padding: 3px 0 2px; border-bottom: 1px solid #eee; margin-bottom: 2px; }
+.item-header .iqty { width: 16px; text-align: center; }
+.item-header .iname { flex: 1; }
+.item-header .iprice { width: 52px; text-align: right; }
+.item-row { display: flex; align-items: flex-start; gap: 4px; padding: 2.5px 0; font-size: 8.5px; border-bottom: 0.5px solid #f5f5f5; }
+.item-row .qty { width: 16px; text-align: center; font-weight: 700; font-size: 8px; background: #f0f0f0; border-radius: 3px; padding: 1px 0; flex-shrink: 0; }
+.item-row .name { flex: 1; font-weight: 600; min-width: 0; font-size: 8.5px; }
+.item-row .price { text-align: right; font-weight: 700; flex-shrink: 0; white-space: nowrap; font-size: 8.5px; width: 52px; }
+.item-row .note { font-size: 7px; color: #999; padding-left: 20px; font-style: italic; }
+.item-variant { font-size: 7px; color: #888; padding-left: 20px; }
+
+/* ── Totals ── */
+.totals-block { margin-top: 5px; padding: 5px 6px; background: #fafafa; border-radius: 6px; }
+.total-row { display: flex; justify-content: space-between; gap: 8px; font-size: 8.5px; padding: 2px 0; }
+.total-row .tl { color: #666; font-weight: 500; }
+.total-row .tv { font-weight: 700; color: #1a1a1a; }
+.total-row.grand { font-size: 13px; font-weight: 800; border-top: 2px solid #1a1a1a; padding-top: 5px; margin-top: 3px; }
+.total-row.grand .tl { color: #1a1a1a; font-weight: 800; }
+.total-row.grand .tv { font-weight: 900; }
+
+/* ── Payment Badge ── */
+.pay-badge { display: inline-block; font-size: 7px; font-weight: 700; padding: 3px 10px; border-radius: 10px; margin: 4px 0; letter-spacing: 0.04em; }
+.pay-cash { background: #e8f5e9; color: #2e7d32; }
+.pay-card { background: #e3f2fd; color: #1565c0; }
+
+/* ── KOT Styling ── */
+.kot-header { background: #1a1a1a; color: #fff; text-align: center; padding: 8px 6px; border-radius: 8px; margin-bottom: 6px; }
+.kot-header .kot-title { font-size: 11px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; }
+.kot-header .kot-meta { font-size: 7px; color: #ccc; margin-top: 3px; font-weight: 500; }
+.kot-urgent { border: 2px solid #1a1a1a !important; }
+.kot-urgent .kot-header { background: #1a1a1a; }
+.kot-item { display: flex; gap: 4px; padding: 3px 0; font-size: 9px; font-weight: 700; align-items: center; border-bottom: 0.5px solid #eee; }
+.kot-item .kqty { font-size: 14px; font-weight: 900; min-width: 22px; text-align: center; }
+.kot-item .kname { flex: 1; font-weight: 700; }
+.kot-item .knote { font-size: 7px; font-weight: 500; color: #666; margin-left: 4px; }
+
+/* ── Sections ── */
+.section-title { font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; background: #1a1a1a; color: #fff; padding: 4px 8px; border-radius: 5px; margin: 8px 0 4px; text-align: center; }
+.section-chip { display: inline-block; font-size: 7px; font-weight: 700; border: 1px solid #ddd; border-radius: 8px; padding: 2px 8px; color: #666; text-transform: uppercase; letter-spacing: 0.06em; }
+
+/* ── Footer ── */
+.footer { margin-top: 8px; padding-top: 5px; border-top: 1.5px solid #1a1a1a; text-align: center; font-size: 6.5px; color: #999; line-height: 1.5; }
+.footer .thanks { font-size: 8px; font-weight: 700; color: #1a1a1a; margin-bottom: 3px; }
+.stamp-box { border: 1.5px dashed #ccc; border-radius: 8px; padding: 6px; margin: 8px 0; text-align: center; font-size: 7px; color: #aaa; text-transform: uppercase; letter-spacing: 0.08em; }
+
+/* ── QR ── */
+.qr-box { width: 48px; height: 48px; margin: 6px auto; border: 1.5px solid #e0e0e0; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 6px; font-weight: 700; color: #ccc; background: #fafafa; }
+.note-box { background: #fafafa; border: 1px solid #eee; border-radius: 6px; padding: 5px 7px; font-size: 7px; color: #888; margin: 4px 0; }
+.emoji-icon { font-size: 12px; }
+
+/* ── KPI Cards ── */
+.kpi-row { display: flex; gap: 3px; margin: 4px 0; }
+.kpi-card { flex: 1; background: #fafafa; border-radius: 6px; padding: 4px 5px; text-align: center; border: 1px solid #f0f0f0; }
+.kpi-card .kpi-label { font-size: 6px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: 0.05em; }
+.kpi-card .kpi-value { font-size: 11px; font-weight: 800; color: #1a1a1a; margin-top: 1px; }
+
 ${extra}
 @media print { body { width: 58mm; } }
 `
@@ -241,32 +283,43 @@ export function buildModernBillPrintHtml(data = {}) {
 <style>${thermalCss()}</style></head>
 <body>
 <div class="receipt">
-  <div class="center">
-    <div class="brand">${esc(data.restaurantName || s.restaurantName || 'Restaurant')}</div>
-    ${s.branchName ? `<div class="subhead">${esc(s.branchName)}</div>` : ''}
-    ${s.address ? `<div class="subhead">${esc(s.address)}</div>` : ''}
-    ${s.phone ? `<div class="subhead">Tel: ${esc(s.phone)}</div>` : ''}
-    ${s.taxNumber ? `<div class="subhead">Tax #: ${esc(s.taxNumber)}</div>` : ''}
-    <div class="divider-double"></div>
-    <div class="title-badge">Guest Check</div>
+  <div class="brand-header">
+    <div class="brand-logo">${esc(data.restaurantName || s.restaurantName || 'RESTAURANT')}</div>
+    ${s.branchName ? `<div class="brand-sub">${esc(s.branchName)}</div>` : ''}
+    ${s.address ? `<div class="brand-sub">${esc(s.address)}</div>` : ''}
+    ${s.phone ? `<div class="brand-sub">Tel: ${esc(s.phone)}</div>` : ''}
+    ${s.taxNumber ? `<div class="brand-sub">NTN: ${esc(s.taxNumber)}</div>` : ''}
+    <div class="brand-tag">🧾 Guest Check</div>
   </div>
-  <div class="divider"></div>
-  <div class="info-row"><span class="label">Order #</span><span class="value">${esc(data.orderNumber)}</span></div>
-  <div class="info-row"><span class="label">Bill #</span><span class="value">${esc(data.billNumber || `BILL-${String(data.orderNumber || '').replace(/^#/, '')}`)}</span></div>
-  <div class="info-row"><span class="label">Type</span><span class="value">${esc(data.orderType || 'Dine-in')}</span></div>
-  <div class="info-row"><span class="label">Table</span><span class="value">${esc(data.table || '---')}</span></div>
-  <div class="info-row"><span class="label">Guest</span><span class="value">${esc((data.customerName || 'Walk-in Guest').slice(0, 25))}</span></div>
-  <div class="info-row"><span class="label">Date</span><span class="value">${esc(new Date(data.date || Date.now()).toLocaleString())}</span></div>
-  <div class="divider"></div>
+
+  <div class="info-card">
+    <div class="info-row"><span class="label">Order #</span><span class="value">${esc(data.orderNumber || '---')}</span></div>
+    <div class="info-row"><span class="label">Bill #</span><span class="value">${esc(data.billNumber || `BILL-${String(data.orderNumber || '').replace(/^#/, '')}`)}</span></div>
+    <div class="info-row"><span class="label">Type</span><span class="value">${esc(data.orderType || 'Dine-in')}</span></div>
+    <div class="info-row"><span class="label">Table</span><span class="value">${esc(data.table || '---')}</span></div>
+    <div class="info-row"><span class="label">Guest</span><span class="value">${esc((data.customerName || 'Walk-in Guest').slice(0, 25))}</span></div>
+    <div class="info-row"><span class="label">Date</span><span class="value">${esc(new Date(data.date || Date.now()).toLocaleString())}</span></div>
+  </div>
+
+  <div class="item-header"><span class="iqty">QTY</span><span class="iname">ITEM</span><span class="iprice">AMOUNT</span></div>
   ${itemsHtml}
-  <div class="divider-solid"></div>
+
+  <div class="totals-block">
   ${totalRows.join('')}
-  <div class="divider"></div>
+  <div class="info-row" style="margin-top:3px;"><span class="label">Payment</span><span class="value">${esc(data.paymentMethod || 'Cash')}</span></div>
+  </div>
+
+  <div class="center" style="margin-top:8px;">
+    <span class="pay-badge ${(data.paymentMethod || '').toLowerCase().includes('card') ? 'pay-card' : 'pay-cash'}">${esc(data.paymentMethod || 'Cash')}</span>
+    ${paid > 0 && change > 0 ? `<div class="info-row" style="justify-content:center;gap:4px;"><span class="label">Paid</span><span class="value">${mv(paid)}</span><span class="label">Change</span><span class="value">${mv(change)}</span></div>` : due > 0 ? `<div class="info-row" style="justify-content:center;"><span class="label">Balance Due</span><span class="value bold">${mv(due)}</span></div>` : ''}
+  </div>
+
+  <div class="divider-accent"></div>
   <div class="center">
-    ${s.enableBillQr ? '<div class="qr-box">QR CODE</div>' : ''}
-    <div class="bold">THANK YOU</div>
-    <div class="subhead" style="margin-top:2px;">${esc(s.footerMessage || 'Please visit again')}</div>
-    <div class="footer">NEXORA SOLUTION &copy; 2019-2026</div>
+    ${s.enableBillQr ? '<div class="qr-box">QR</div>' : ''}
+    <div class="thanks">✨ Thank You!</div>
+    <div class="subhead">${esc(s.footerMessage || 'Please visit again')}</div>
+    <div class="footer">Powered by Nexora Solution</div>
   </div>
 </div>
 </body></html>`
@@ -335,37 +388,32 @@ export function buildModernKotPrintHtml(data = {}) {
 
   const priorityColor = priority === 'HIGH' ? '#dc2626' : priority === 'MEDIUM' ? '#d97706' : '#2563eb'
 
+  const priorityEmoji = priority === 'HIGH' ? '🔴' : priority === 'MEDIUM' ? '🟡' : '🔵'
   return `<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="utf-8"><title>KOT ${esc(data.kotNumber || '')}</title>
-<style>${thermalCss(`
-  .priority-badge {
-    display: inline-block; padding: 2px 10px; border-radius: 3px;
-    font-size: 10px; font-weight: 900; letter-spacing: 0.08em;
-    background: ${priorityColor}; color: #fff;
-  }
-`)}</style></head>
+<style>${thermalCss(`.priority-badge{display:inline-block;padding:3px 10px;border-radius:8px;font-size:8px;font-weight:800;letter-spacing:0.06em;background:${priorityColor};color:#fff;}`)}</style></head>
 <body>
-<div class="receipt">
-  <div class="center">
-    <div class="brand" style="font-size:15px;">KITCHEN COPY</div>
-    <div class="subhead" style="font-size:10px;font-weight:700;">${esc(data.restaurantName || s.restaurantName || 'Restaurant')}</div>
-    ${s.branchName ? `<div class="subhead">${esc(s.branchName)}</div>` : ''}
-    <div class="divider-double"></div>
+<div class="receipt ${priority === 'HIGH' ? 'kot-urgent' : ''}">
+  <div class="kot-header">
+    <div class="kot-title">🔥 KITCHEN ORDER</div>
+    <div class="kot-meta">${esc(data.restaurantName || s.restaurantName || 'Restaurant')}${s.branchName ? ' · ' + esc(s.branchName) : ''}</div>
   </div>
-  <div class="info-row"><span class="label">KOT #</span><span class="value" style="font-size:12px;font-weight:900;">${esc(data.kotNumber)}</span></div>
-  <div class="info-row"><span class="label">Order #</span><span class="value">${esc(data.orderNumber)}</span></div>
-  <div class="info-row"><span class="label">Type / Table</span><span class="value">${esc(data.orderType || 'Dine-in')} / ${esc(data.table || '---')}</span></div>
-  <div class="info-row"><span class="label">Time</span><span class="value">${esc(new Date(data.date || Date.now()).toLocaleString())}</span></div>
-  <div class="info-row"><span class="label">Priority</span><span class="value"><span class="priority-badge">${priority}</span></span></div>
-  <div class="divider-solid"></div>
-  <div class="section-title">ORDER ITEMS</div>
+
+  <div class="info-card">
+    <div class="info-row"><span class="label">KOT #</span><span class="value" style="font-size:11px;font-weight:900;">${esc(data.kotNumber || '---')}</span></div>
+    <div class="info-row"><span class="label">Order #</span><span class="value">${esc(data.orderNumber || '---')}</span></div>
+    <div class="info-row"><span class="label">Table</span><span class="value">${esc(data.table || '---')} · ${esc(data.orderType || 'Dine-in')}</span></div>
+    <div class="info-row"><span class="label">Time</span><span class="value">${esc(new Date(data.date || Date.now()).toLocaleString())}</span></div>
+    <div class="info-row"><span class="label">Priority</span><span class="value"><span class="priority-badge">${priorityEmoji} ${priority}</span></span></div>
+  </div>
+
+  <div class="section-title">📋 Order Items</div>
   ${itemsHtml}
-  ${data.notes ? `<div class="divider"></div><div class="note-box"><strong>Notes:</strong> ${esc(data.notes)}</div>` : ''}
-  <div class="divider-double"></div>
-  <div class="center">
-    <div style="font-size:8px;color:#9ca3af;">NEXORA KDS &copy; 2019-2026</div>
-  </div>
+
+  ${data.notes ? `<div class="note-box"><strong>📝 Notes:</strong> ${esc(data.notes)}</div>` : ''}
+  <div class="stamp-box">${priority === 'HIGH' ? '⚡ PREPARE IMMEDIATELY' : '✅ PREPARE IN ORDER'}</div>
+  <div class="footer">Nexora KDS · ${new Date().toLocaleDateString()}</div>
 </div>
 </body></html>`
 }

@@ -1,4 +1,5 @@
 import NexoraLogo from '../../../components/brand/NexoraLogo.jsx'
+import CopyEmailButton from '../../../components/CopyEmailButton.jsx'
 import Badge from '../ui/Badge.jsx'
 import { formatCurrency } from '../../utils/format.js'
 import InvoiceQrCode from './InvoiceQrCode.jsx'
@@ -104,7 +105,7 @@ export default function InvoicePreview({
           <p className="mt-2 font-bold text-slate-950">{company?.name || 'Nexora Solution'}</p>
           <p className="mt-1 leading-6 text-slate-600">{company?.address || '123 Business Avenue, Suite 100, Lahore, Pakistan'}</p>
           <p className="text-slate-600">{t('phone')}: {company?.phone || '+92 300 1234567'}</p>
-          <p className="text-slate-600">{t('email')}: {company?.email || 'info@nexora.com'}</p>
+          <p className="flex items-center text-slate-600"><span>{t('email')}: {company?.email || 'info@nexora.com'}</span><CopyEmailButton email={company?.email || 'info@nexora.com'} /></p>
           <p className="text-slate-600">{t('ntn')}: {company?.taxId || '1234567-8'}</p>
         </div>
         <div className="min-w-0">

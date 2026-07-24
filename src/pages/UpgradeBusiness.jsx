@@ -21,6 +21,7 @@ import { evaluatePromoCode, normalizePromoCode, PROMO_CODE_COLLECTION } from '..
 import { labelForBusinessType } from '../crm/data/moduleAccess.js'
 import { useMultiCurrency } from '../context/MultiCurrencyProvider.jsx'
 import PricingCurrencySelector from '../components/PricingCurrencySelector.jsx'
+import CopyEmailButton from '../components/CopyEmailButton.jsx'
 import { formatPriceLabel } from '../lib/multiCurrency.js'
 
 const PAYMENTS_WORKER_URL = String(
@@ -1170,7 +1171,7 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
               <div className="mt-4 space-y-3 text-sm font-semibold text-slate-600">
                 <p><span className="font-black text-slate-950">How long approval takes?</span><br />Crypto activates automatically after NOWPayments marks it finished.</p>
                 <p><span className="font-black text-slate-950">Can I change plans?</span><br />Submit a new request for the target plan.</p>
-                <p><span className="font-black text-slate-950">Need help?</span><br />Contact {platformSettings.supportEmail || 'support@nexorasolution.online'}.</p>
+                <p><span className="font-black text-slate-950">Need help?</span><br />Contact <span className="inline-flex items-center">{platformSettings.supportEmail || 'support@nexorasolution.online'}<CopyEmailButton email={platformSettings.supportEmail || 'support@nexorasolution.online'} /></span>.</p>
               </div>
             </Panel>
           </aside>

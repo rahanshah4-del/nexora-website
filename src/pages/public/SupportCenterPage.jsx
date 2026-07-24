@@ -10,7 +10,7 @@ const supportTopics = [
   { title: 'Help Center', text: 'Find quick links for setup, pricing, services, and contacting support.', to: '/help-center' },
   { title: 'FAQ', text: 'Get answers to the most common questions about Nexora.', to: '/faq' },
   { title: 'Contact via WhatsApp', text: 'Reach out directly on WhatsApp for immediate assistance.', to: 'https://wa.me/923194329754' },
-  { title: 'Email Support', text: 'Send an email and our team will respond promptly.', to: 'mailto:rahanshah4@gmail.com' },
+  { title: 'Email Support', text: 'Send an email and our team will respond promptly.', to: 'mailto:support@nexorasolution.online' },
 ]
 
 export default function SupportCenterPage() {

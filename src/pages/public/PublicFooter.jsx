@@ -13,10 +13,11 @@ import {
   FaWhatsapp,
 } from 'react-icons/fa6'
 import NexoraLogo from '../../components/brand/NexoraLogo.jsx'
+import CopyEmailButton from '../../components/CopyEmailButton.jsx'
 
 const whatsappNumberDisplay = '+92 319 432 9754'
 const whatsappLink = 'https://wa.me/923194329754'
-const contactEmail = 'rahanshah4@gmail.com'
+const contactEmail = 'hello@nexorasolution.online'
 const websiteUrl = 'https://nexorasolution.online'
 
 const socialLinks = [
@@ -130,10 +131,13 @@ export default function PublicFooter() {
                 <FaWhatsapp className="text-sm text-emerald-400" />
                 <span>{whatsappNumberDisplay}</span>
               </a>
-              <a href={`mailto:${contactEmail}`} className="flex gap-3 hover:text-white">
-                <HiOutlineDocumentChartBar className="mt-0.5 shrink-0 text-lg" />
-                <span>{contactEmail}</span>
-              </a>
+              <div className="flex items-center gap-3">
+                <a href={`mailto:${contactEmail}`} className="flex gap-3 hover:text-white">
+                  <HiOutlineDocumentChartBar className="mt-0.5 shrink-0 text-lg" />
+                  <span>{contactEmail}</span>
+                </a>
+                <CopyEmailButton email={contactEmail} />
+              </div>
               <a href={websiteUrl} target="_blank" rel="noreferrer" className="flex gap-3 hover:text-white">
                 <HiOutlineGlobeAlt className="mt-0.5 shrink-0 text-lg" />
                 <span>nexorasolution.online</span>

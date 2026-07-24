@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import PageSeo from '../../components/PageSeo.jsx'
 import { getSeoForPath } from '../../lib/seoMetadata.js'
 import { HiOutlineSparkles } from 'react-icons/hi2'
+import CopyEmailButton from '../../components/CopyEmailButton.jsx'
 import PublicPageShell from './PublicPageShell.jsx'
 
 const faqItems = [
@@ -11,7 +12,7 @@ const faqItems = [
   { q: 'Can I upgrade later?', a: 'Yes. The Standard plan at Rs 3,000/month (50% OFF for new users) adds unlimited users, records, reports, analytics, team management, and support tickets.' },
   { q: 'What modules does Nexora offer?', a: 'Nexora CRM, Restaurant POS, Retail POS, Medical Store POS, School ERP, Transport Management, WhatsApp CRM, and Property ERP.' },
   { q: 'Can my team use Nexora together?', a: 'Yes. Nexora supports multi-user access with role-based permissions so owners, managers, cashiers, and staff see only what they need.' },
-  { q: 'Do you provide support?', a: 'Yes. Contact us via WhatsApp at +92 319 432 9754 or email rahanshah4@gmail.com for guidance, setup help, and support.' },
+  { q: 'Do you provide support?', a: 'Yes. Contact us via WhatsApp at +92 319 432 9754 or email ', email: 'support@nexorasolution.online', b: ' for guidance, setup help, and support.' },
   { q: 'Is my data secure?', a: 'Yes. Nexora uses secure cloud infrastructure with role-based access control and data sync across devices.' },
 ]
 
@@ -36,10 +37,14 @@ export default function FaqPage() {
           </div>
 
           <div className="mt-12 grid gap-3">
-            {faqItems.map(({ q, a }) => (
+            {faqItems.map(({ q, a, email, b }) => (
               <article key={q} className="rounded-[1.2rem] border border-slate-200/60 bg-white p-5 shadow-[0_4px_20px_-8px_rgba(15,23,42,0.05)] sm:p-6">
                 <h2 className="text-[15px] font-medium tracking-[-0.01em] text-slate-900">{q}</h2>
-                <p className="mt-2 text-[14px] leading-[1.7] text-slate-500">{a}</p>
+                <p className="mt-2 text-[14px] leading-[1.7] text-slate-500">
+                  {a}
+                  {email ? <span className="inline-flex items-center"><a href={`mailto:${email}`} className="font-medium text-slate-900 underline decoration-slate-300 underline-offset-4">{email}</a><CopyEmailButton email={email} /></span> : null}
+                  {b || ''}
+                </p>
               </article>
             ))}
           </div>

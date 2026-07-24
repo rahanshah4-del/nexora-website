@@ -1,12 +1,13 @@
 import { Link } from 'react-router-dom'
 import { HiOutlineSparkles, HiOutlineChatBubbleLeftRight, HiOutlineEnvelope, HiOutlineMapPin, HiOutlinePhone, HiOutlineShieldCheck } from 'react-icons/hi2'
 import PageSeo from '../../components/PageSeo.jsx'
+import CopyEmailButton from '../../components/CopyEmailButton.jsx'
 import { getSeoForPath } from '../../lib/seoMetadata.js'
 import PublicPageShell from './PublicPageShell.jsx'
 
 const contactMethods = [
   { label: 'WhatsApp / Phone', value: '03194329754', href: 'https://wa.me/923194329754', icon: HiOutlinePhone },
-  { label: 'Email', value: 'rahanshah4@gmail.com', href: 'mailto:rahanshah4@gmail.com', icon: HiOutlineEnvelope },
+  { label: 'Email', value: 'info@nexorasolution.online', href: 'mailto:info@nexorasolution.online', icon: HiOutlineEnvelope },
   { label: 'Website', value: 'https://nexorasolution.online', href: '/', icon: HiOutlineShieldCheck },
 ]
 
@@ -86,7 +87,10 @@ export default function ContactPage() {
                   </span>
                   <span>
                     <span className="block text-[13px] font-medium tracking-[-0.01em] text-slate-900">{label}</span>
-                    <span className="mt-0.5 block text-[13px] text-slate-500">{value}</span>
+                    <span className="mt-0.5 inline-flex items-center text-[13px] text-slate-500">
+                      <span>{value}</span>
+                      {href.startsWith('mailto:') ? <CopyEmailButton email={value} /> : null}
+                    </span>
                   </span>
                 </a>
               ))}

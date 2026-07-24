@@ -1,6 +1,7 @@
-import { lazy, Suspense, useEffect } from 'react'
+import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
-const AISections = lazy(() => import('./AISections.jsx'))
+import CopyEmailButton from '../components/CopyEmailButton.jsx'
+import AISections from './AISections.jsx'
 import {
   HiOutlineAcademicCap,
   HiOutlineArrowRight,
@@ -33,7 +34,7 @@ const whatsappLink = 'https://wa.me/923194329754'
 const whatsappLeadLink = `${whatsappLink}?text=${encodeURIComponent(
   'Assalam o Alaikum, I want a free demo of Nexora Business Suite.',
 )}`
-const contactEmail = 'rahanshah4@gmail.com'
+const contactEmail = 'hello@nexorasolution.online'
 
 const moduleCards = [
   { title: 'CRM', text: 'Manage leads, customers, deals, follow-ups and invoices in one place.', icon: HiOutlineUserGroup, tone: 'blue', route: '/solutions/crm' },
@@ -226,10 +227,8 @@ export default function HomepageSections() {
         </div>
       </section>
 
-      {/* ── AI Sections (lazy-loaded for performance, see AISections.jsx) ── */}
-      <Suspense fallback={<div className="h-96 bg-white animate-pulse rounded-3xl mx-5 my-8 max-w-7xl sm:mx-6 lg:mx-8" />}>
-        <AISections />
-      </Suspense>
+      {/* ── AI Sections ── */}
+      <AISections />
 
       <section data-reveal className="bg-white px-5 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-24">
         <div className="mx-auto grid max-w-7xl items-center gap-6 rounded-[2rem] border border-blue-100 bg-[linear-gradient(135deg,#eff6ff_0%,#ffffff_58%,#e0f2fe_100%)] p-6 shadow-[0_30px_90px_-60px_rgba(37,99,235,0.44)] sm:p-8 lg:grid-cols-[1fr_auto]">
@@ -319,10 +318,13 @@ export default function HomepageSections() {
                   <FaWhatsapp className="text-sm text-emerald-400" />
                   <span>{whatsappNumberDisplay}</span>
                 </a>
-                <a href={`mailto:${contactEmail}`} className="flex gap-3 hover:text-white">
-                  <HiOutlineDocumentChartBar className="mt-0.5 shrink-0 text-lg" />
-                  <span>{contactEmail}</span>
-                </a>
+                <div className="flex items-center gap-3">
+                  <a href={`mailto:${contactEmail}`} className="flex gap-3 hover:text-white">
+                    <HiOutlineDocumentChartBar className="mt-0.5 shrink-0 text-lg" />
+                    <span>{contactEmail}</span>
+                  </a>
+                  <CopyEmailButton email={contactEmail} />
+                </div>
                 <a href="https://nexorasolution.online" target="_blank" rel="noreferrer" className="flex gap-3 hover:text-white">
                   <HiOutlineGlobeAlt className="mt-0.5 shrink-0 text-lg" />
                   <span>nexorasolution.online</span>
