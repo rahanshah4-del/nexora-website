@@ -2004,6 +2004,7 @@ function LegacyRestaurantReports() {
           <Button type="button" variant="subtle" className="rounded-2xl"><HiOutlineTruck className="h-4 w-4" />Delivery Collection Summary</Button>
         </div>
       </ReportSection>
+
     </motion.div>
     <RestaurantPrintableReport report={report} filters={filters} />
     </>

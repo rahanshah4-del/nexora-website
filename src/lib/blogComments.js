@@ -90,11 +90,9 @@ export async function submitComment({ slug, parentId, authorName, authorEmail, c
   setRateLimit()
   const payload = {
     slug,
-    parentId: parentId || null,
     authorName: authorName.trim().slice(0, MAX_NAME_LENGTH),
     authorEmail: authorEmail ? authorEmail.trim().slice(0, 254) : '',
     comment: comment.trim().slice(0, MAX_COMMENT_LENGTH),
-    rating: rating && rating >= 1 && rating <= 5 ? rating : null,
     status: 'pending',
     pinned: false,
     isTeamReply: false,
@@ -103,6 +101,10 @@ export async function submitComment({ slug, parentId, authorName, authorEmail, c
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   }
+  // Only include parentId if it's a truthy string (Firestore rule requires string, rejects null)
+  if (parentId) payload.parentId = parentId
+  // Only include rating if it's a valid number (Firestore rule rejects null)
+  if (rating && rating >= 1 && rating <= 5) payload.rating = rating
   const ref = await addDoc(collection(db, BLOG_COMMENTS_COLLECTION), payload)
   return ref.id
 }

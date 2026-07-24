@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   HiOutlinePresentationChartBar,
   HiOutlineCalendarDays,
@@ -36,6 +36,7 @@ import ReportDataTable from '../core/ReportDataTable.jsx'
 import ReportChartCard from '../core/ReportChartCard.jsx'
 import { normalizeRestaurantReportOrders } from './restaurantReportNormalizer.js'
 import { restaurantBusinessDateKey, restaurantBusinessDayBounds } from '../../lib/restaurantBusinessDay.js'
+import RestaurantDailyAIAnalysis from '../../components/restaurant/RestaurantDailyAIAnalysis.jsx'
 import {
   printRestaurantA4Report,
   printRestaurantThermalClosing,
@@ -303,6 +304,258 @@ export default function RestaurantReportsPage({
   const [pdfSignatures, setPdfSignatures] = useState({})
   const [pdfWatermark, setPdfWatermark] = useState('')
   const [pdfSubmitting, setPdfSubmitting] = useState(false) // { type: 'loading' | 'success' | 'error', message: '' }
+  const [aiReportsOpen, setAiReportsOpen] = useState(false)
+  const [aiGenerating, setAiGenerating] = useState(false)
+  const [aiReportText, setAiReportText] = useState('')
+  const [aiReportError, setAiReportError] = useState('')
+  const [aiLanguage, setAiLanguage] = useState('english')
+
+  // Auto-close AI reports popup on success, keep open on error/loading
+  useEffect(() => {
+    if (actionStatus?.type === 'success' && aiReportsOpen) {
+      const t = setTimeout(() => setAiReportsOpen(false), 1500)
+      return () => clearTimeout(t)
+    }
+  }, [actionStatus, aiReportsOpen])
+
+  const n = (v) => { const x = Number(v); return Number.isFinite(x) ? x : 0 }
+
+  async function handleGenerateAIReport() {
+    const orderCount = model.billedOrders?.length || model.orders?.length || 0
+    if (orderCount === 0) {
+      setAiReportError('No orders found for today.')
+      return
+    }
+    setAiGenerating(true)
+    setAiReportError('')
+    setAiReportText('')
+
+    // Build prompt with full data
+    const fmt = (v) => Math.round(n(v)).toLocaleString()
+    const topItems = (model.itemSales || []).slice(0, 5).map(i => `${i.name || '?'} (${n(i.quantity)} sold, PKR ${fmt(i.revenue)})`).join(', ')
+    const allItems = (model.itemSales || []).slice(0, 15).map(i => `${i.name || '?'}: ${n(i.quantity)}x, PKR ${fmt(i.revenue)}`).join(' | ')
+    const isDailyClosing = activeReport.id === 'daily-closing'
+    const closingData = isDailyClosing ? `
+━━━ DAILY CLOSING REPORT DATA ━━━
+CASH DRAWER:
+- Opening Cash: PKR ${fmt(model.openingCash)}
+- Cash Received: PKR ${fmt(model.cashReceived)}
+- Online Payments Received: PKR ${fmt(model.onlineReceived)}
+- Total Cash Sales: PKR ${fmt(model.cashReconciliation?.cashSales)}
+- Expected Cash in Drawer: PKR ${fmt(model.cashReconciliation?.expectedCash)}
+- Actual Cash Difference: PKR ${fmt(model.cashReconciliation?.cashDifference)}
+- Cash Refunds: PKR ${fmt(model.cashReconciliation?.cashRefunds)}
+- Cash Deposits: PKR ${fmt(model.cashReconciliation?.cashDeposits)}
+- Cash Withdrawals: PKR ${fmt(model.cashReconciliation?.cashWithdrawals)}
+- Cash Expenses Paid: PKR ${fmt(model.cashReconciliation?.cashExpenses)}
+
+SETTLEMENTS:
+- Total Settled Amount: PKR ${fmt(model.collectedAmount)}
+- Outstanding/Due Amount: PKR ${fmt(model.outstandingAmount)}
+- Total Billed: PKR ${fmt(model.collectedAmount + n(model.outstandingAmount))}
+
+PAYMENT METHODS BREAKDOWN:
+${Object.entries(model.collectionsByPaymentMethod || {}).map(([k,v]) => `- ${k}: PKR ${fmt(v)} (${n(model.netSales) > 0 ? (n(v)/n(model.netSales)*100).toFixed(1) : 0}%)`).join('\n')}
+
+ORDER BREAKDOWN:
+- Total Orders: ${orderCount} billed, ${model.cancellations?.count || 0} cancelled
+- Dine-in: PKR ${fmt(model.salesByOrderType?.['Dine-in'])} | Takeaway: PKR ${fmt(model.salesByOrderType?.Takeaway)} | Delivery: PKR ${fmt(model.salesByOrderType?.Delivery)}
+- Invoice Orders: PKR ${fmt(model.salesByOrderType?.['Invoice Order'])}
+- Simple Orders: ${fmt(model.billedOrders?.filter(o => !o.isInvoice)?.length || 0)}
+
+ALL ITEMS SOLD:
+${allItems || 'No items data'}
+
+FINANCIAL SUMMARY:
+- Gross Sales: PKR ${fmt(model.grossSales)}
+- Discounts: PKR ${fmt(model.discounts)}
+- Net Sales: PKR ${fmt(model.netSales)}
+- COGS: PKR ${fmt(model.costOfGoodsSold)}
+- Gross Profit: PKR ${fmt(model.grossProfit)}
+- Expenses: PKR ${fmt(model.approvedExpenses)}
+- Net Profit/Loss: PKR ${fmt(model.netProfit)} (${n(model.netSales) > 0 ? (n(model.netProfit)/n(model.netSales)*100).toFixed(1) : 0}% margin)
+
+CUSTOMERS:
+- Total Served: ${model.customerCount || 0}
+- New: ${model.newCustomers || 0} | Repeat: ${model.repeatCustomers || 0}
+- Avg Per Customer: PKR ${model.averageCustomerSpend ? fmt(model.averageCustomerSpend) : 'N/A'}` : ''
+
+    const prompt = `Analyze this restaurant ${isDailyClosing ? 'DAILY CLOSING (cash drawer settlement, end-of-day report)' : 'daily'} data and write a comprehensive business report:
+
+DATA:
+- Date: ${new Date().toLocaleDateString()}
+- Total Orders: ${orderCount} (${model.cancellations?.count || 0} cancelled, ${fmt(model.billedOrders?.length || orderCount)} billed)
+- Net Sales: PKR ${fmt(model.netSales)} | Gross: PKR ${fmt(model.grossSales)}
+- Gross Profit: PKR ${fmt(model.grossProfit)} | Net Profit: PKR ${fmt(model.netProfit)} (${n(model.netSales) > 0 ? (n(model.netProfit) / n(model.netSales) * 100).toFixed(1) : 0}% margin)
+- COGS: PKR ${fmt(model.costOfGoodsSold)} | Expenses: PKR ${fmt(model.approvedExpenses)}
+- Discounts: PKR ${fmt(model.discounts)} | Tax: PKR ${fmt(model.tax)} | Service Charges: PKR ${fmt(model.serviceCharges)}
+- Avg Order Value: PKR ${fmt(model.averageOrderValue)}
+- Total Customers: ${model.customerCount || 0}
+- New Customers: ${model.newCustomers || 0} | Repeat: ${model.repeatCustomers || 0}
+${allItems ? `- ALL ITEMS SOLD: ${allItems}` : ''}
+${topItems ? `- Top 5 Items: ${topItems}` : ''}
+${closingData}
+
+${isDailyClosing ? `Write a DAILY CLOSING REPORT (under 350 words). This is an end-of-day cash settlement report. Include:
+### Closing Summary
+(Overall settlement status — cash matched? Shortage/excess? All orders accounted for?)
+### Cash Drawer Reconciliation
+(Analyze opening cash, received, expected vs actual, difference, refunds, deposits, withdrawals)
+### Payment Collection
+(Breakdown by payment method — cash, card, online. Collection rate vs outstanding)
+### Sales & Orders
+(Sales by type, invoice vs simple orders, top items, cancellations)
+### Expenses & Profit
+(Expenses paid from cash, net profit after all costs, margin analysis)
+### Alerts
+(Cash difference > 1%, high refunds, unusual expenses, high outstanding)
+### Manager Actions
+(3-5 specific actions for the manager before next shift)
+### Tomorrow Prep
+(Opening cash recommendation, stock alerts, staffing notes)` : `Write a detailed report (under 300 words) with sections:
+### Executive Summary
+### Revenue & Profit
+### Sales & Orders Breakdown
+### Top Performing Items
+### Key Insights
+### Alerts & Risks
+### Recommendations (3-5 numbered)
+### Tomorrow Outlook`}
+${aiLanguage === 'urdu' ? 'IMPORTANT: Write the ENTIRE report in Roman Urdu (Urdu written with English alphabets, like "Assalamu Alaykum, aaj ki sales..."). Do NOT use Urdu script.' : aiLanguage === 'hindi' ? 'IMPORTANT: Write the ENTIRE report in Hindi language using Hindi script (देवनागरी).' : aiLanguage === 'arabic' ? 'IMPORTANT: Write the ENTIRE report in Arabic language using Arabic script.' : 'Write in English.'}
+Use PKR currency. Be direct and professional. No greetings or sign-offs.`
+
+const AI_GATEWAY = import.meta.env.VITE_AI_GATEWAY_URL || 'https://nexora-ai-gateway.rahanshah4.workers.dev'
+    console.log('[AI Report] Calling:', `${AI_GATEWAY}/chat`)
+
+    try {
+      const res = await fetch(`${AI_GATEWAY}/chat`, {
+        method: 'POST',
+        mode: 'cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: prompt }],
+          maxTokens: 500,
+        }),
+      })
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}))
+        throw new Error(errData.message || errData.error || `Server error (${res.status})`)
+      }
+
+      const data = await res.json()
+      const text = data.text || ''
+
+      if (!text || text.trim().length < 20) {
+        setAiReportError('AI returned an empty response. Please try again.')
+        return
+      }
+
+      setAiReportText(text)
+    } catch (err) {
+      console.error('[AI Report] Gateway failed, using local BI fallback:', err.message)
+      // Fallback: generate report from local business intelligence data
+      const bi = model.businessIntelligence
+      if (bi) {
+        const h = bi.health || {}
+        const f = bi.forecast || {}
+        const pi = bi.productIntelligence || {}
+        const al = bi.alerts || []
+        const allItemsList = (model.itemSales || []).slice(0, 10).map(i => `${i.name || '?'}: ${n(i.quantity)}x (PKR ${fmt(n(i.revenue))})`).join('\n')
+        const paymentMethods = Object.entries(model.collectionsByPaymentMethod || {}).map(([k,v]) => `- ${k}: PKR ${fmt(v)} (${n(model.netSales) > 0 ? (n(v)/n(model.netSales)*100).toFixed(0) : 0}%)`).join('\n')
+
+        const localReport = isDailyClosing ? [
+          '━━━ NEXORA AI DAILY CLOSING REPORT ━━━',
+          '',
+          '### 📋 Closing Summary',
+          `Cash drawer ${n(model.cashReconciliation?.cashDifference) === 0 ? 'BALANCED ✅' : n(model.cashReconciliation?.cashDifference) > 0 ? `EXCESS +PKR ${fmt(n(model.cashReconciliation?.cashDifference))} ⚠` : `SHORTAGE PKR ${fmt(Math.abs(n(model.cashReconciliation?.cashDifference)))} 🚨`}. Today processed ${orderCount} orders with PKR ${fmt(n(model.netSales))} total sales. ${n(model.netProfit) > 0 ? `Net profit PKR ${fmt(n(model.netProfit))}.` : 'No profit recorded.'}`,
+          '',
+          '### 💰 Cash Drawer Reconciliation',
+          `- Opening Cash: PKR ${fmt(model.openingCash)}`,
+          `- Cash Received: PKR ${fmt(model.cashReceived)}`,
+          `- Online Received: PKR ${fmt(model.onlineReceived)}`,
+          `- Expected in Drawer: PKR ${fmt(model.cashReconciliation?.expectedCash)}`,
+          `- Cash Difference: PKR ${fmt(n(model.cashReconciliation?.cashDifference))}`,
+          `- Cash Refunds: PKR ${fmt(n(model.cashReconciliation?.cashRefunds))}`,
+          `- Cash Deposits: PKR ${fmt(n(model.cashReconciliation?.cashDeposits))}`,
+          n(model.cashReconciliation?.cashDifference) !== 0 ? `⚠ Cash variance of PKR ${fmt(Math.abs(n(model.cashReconciliation?.cashDifference)))} needs investigation.` : '✅ Cash drawer balanced — no variance.',
+          '',
+          '### 💳 Payment Collection',
+          paymentMethods || 'No payment data',
+          `- Collection Rate: ${n(model.collectedAmount) > 0 && n(model.collectedAmount) + n(model.outstandingAmount) > 0 ? (n(model.collectedAmount) / (n(model.collectedAmount) + n(model.outstandingAmount)) * 100).toFixed(1) : 0}%`,
+          `- Outstanding: PKR ${fmt(n(model.outstandingAmount))}`,
+          '',
+          '### 📊 Sales & Orders',
+          `- Total Orders: ${orderCount} (${model.cancellations?.count || 0} cancelled)`,
+          `- Gross Sales: PKR ${fmt(model.grossSales)}`,
+          `- Discounts: PKR ${fmt(model.discounts)} (${n(model.grossSales) > 0 ? (n(model.discounts)/n(model.grossSales)*100).toFixed(1) : 0}%)`,
+          `- Net Sales: PKR ${fmt(model.netSales)}`,
+          `- Avg Order: PKR ${fmt(model.averageOrderValue)}`,
+          `- Dine-in: PKR ${fmt(n(model.salesByOrderType?.['Dine-in']))} | Takeaway: PKR ${fmt(n(model.salesByOrderType?.Takeaway))} | Delivery: PKR ${fmt(n(model.salesByOrderType?.Delivery))}`,
+          '',
+          '### 🍽️ Items Sold',
+          allItemsList || 'No item data',
+          '',
+          '### 💸 Expenses & Profit',
+          `- COGS: PKR ${fmt(model.costOfGoodsSold)}`,
+          `- Expenses: PKR ${fmt(n(model.approvedExpenses))}`,
+          `- Gross Profit: PKR ${fmt(model.grossProfit)}`,
+          `- Net Profit: PKR ${fmt(model.netProfit)} (${n(model.netSales) > 0 ? (n(model.netProfit)/n(model.netSales)*100).toFixed(1) : 0}% margin)`,
+          '',
+          '### ⚠ Alerts',
+          ...(al.length > 0 ? al.filter(a => a.severity === 'critical' || a.severity === 'warning').slice(0, 5).map(a => `- ${a.severity === 'critical' ? '🚨' : '⚠'} ${a.message}`) : ['✅ No alerts detected today.']),
+          '',
+          '### 👨‍💼 Manager Recommendations',
+          n(model.cashReconciliation?.cashDifference) !== 0 ? `1. INVESTIGATE cash variance of PKR ${fmt(Math.abs(n(model.cashReconciliation?.cashDifference)))} — recount drawer and verify all transactions.` : '1. Cash drawer is balanced — sign off and secure funds.',
+          n(model.outstandingAmount) > 0 ? `2. FOLLOW UP on PKR ${fmt(n(model.outstandingAmount))} in outstanding payments — contact customers before next shift.` : null,
+          n(model.discounts) > n(model.netSales) * 0.1 ? `3. REVIEW discounts of PKR ${fmt(n(model.discounts))} — ${(n(model.discounts)/Math.max(1, n(model.grossSales))*100).toFixed(0)}% of gross is above threshold. Verify approvals.` : null,
+          n(model.cancellations?.count) > 0 ? `4. CHECK ${model.cancellations?.count} cancelled orders — identify reason and reduce waste.` : null,
+          `5. Set opening cash for tomorrow: PKR ${fmt(Math.max(2000, Math.round(n(model.openingCash) * 0.3)))} recommended.`,
+          `6. ${n(model.netProfit) > 0 ? 'Good work today! Review top items and prepare stock accordingly.' : 'Review costs — margins need improvement. Schedule manager meeting.'}`,
+          n(model.cashReconciliation?.cashRefunds) > 500 ? `7. REFUNDS at PKR ${fmt(n(model.cashReconciliation?.cashRefunds))} — investigate quality/service issues.` : null,
+          '',
+          '### 📅 Tomorrow Preparation',
+          f.tomorrow?.sales ? `- Expected Revenue: ~PKR ${fmt(f.tomorrow.sales)} (${f.confidenceLabel || 'N/A'} confidence)` : '- Build order history for accurate forecasts',
+          `- Recommended Opening Cash: PKR ${fmt(Math.max(2000, Math.round(n(model.openingCash) * 0.3)))}`,
+          (pi.bestSelling || []).slice(0, 3).length > 0 ? `- Restock: ${(pi.bestSelling || []).slice(0, 3).map(i => i.name).join(', ')}` : '',
+          '',
+          `📊 Health Score: ${h.score || '?'}/100 | ⚡ Generated locally`,
+        ].filter(Boolean).join('\n') : [
+          '### Executive Summary',
+          `Today's business scored **${h.score || '?'}/100** (${h.level || 'N/A'}). Total revenue PKR **${fmt(n(model.netSales))}** with ${orderCount} orders. ${n(model.netProfit) > 0 ? 'Profitable day.' : 'Review expenses.'}`,
+          '',
+          '### Revenue & Profit',
+          `Net Sales: PKR ${fmt(n(model.netSales))} | Gross Profit: PKR ${fmt(n(model.grossProfit))} | Net Profit: PKR ${fmt(n(model.netProfit))} | Avg Order: PKR ${fmt(n(model.averageOrderValue))}`,
+          `Expenses: PKR ${fmt(n(model.approvedExpenses))} | Discounts: PKR ${fmt(n(model.discounts))}`,
+          '',
+          '### Key Insights',
+          (pi.bestSelling || []).slice(0, 3).map(i => i.name).join(', ') ? `Top items: ${(pi.bestSelling || []).slice(0, 3).map(i => i.name).join(', ')}.` : 'Review menu performance.',
+          n(model.salesByOrderType?.['Dine-in']) > 0 ? `Dine-in: PKR ${fmt(n(model.salesByOrderType?.['Dine-in']))}.` : '',
+          n(model.salesByOrderType?.Delivery) > 0 ? `Delivery: PKR ${fmt(n(model.salesByOrderType?.Delivery))}.` : '',
+          `All Items: ${allItemsList || 'N/A'}`,
+          '',
+          '### Risk Flags',
+          ...al.filter(a => a.severity === 'critical' || a.severity === 'warning').slice(0, 5).map(a => `- ⚠ ${a.message}`),
+          al.length === 0 ? 'No significant risks detected. ✅' : '',
+          '',
+          '### Recommendations',
+          ...(bi.executive?.recommendations || []).slice(0, 7).map((r, i) => `${i + 1}. ${r}`),
+          (bi.executive?.recommendations || []).length === 0 ? '1. Track daily performance for better trend data.' : '',
+          '',
+          '### Tomorrow Outlook',
+          f.tomorrow ? `Expected: ~PKR ${fmt(f.tomorrow.sales)} revenue, ${f.tomorrow.orders} orders (${f.confidenceLabel || 'Medium'} confidence).` : 'Collect more data for accurate forecasting.',
+          '',
+          `📊 Health Score: ${h.score || '?'}/100 | ⚡ Generated locally`,
+        ].filter(Boolean).join('\n')
+
+        setAiReportText(localReport)
+      } else {
+        setAiReportError('Cannot reach AI server and no local data available. Please check your internet connection.')
+      }
+    } finally {
+      setAiGenerating(false)
+    }
+  }
   const activeReport = restaurantReportById(activeReportId)
   const range = useMemo(() => selectedDateRange(filters, settings), [filters, settings])
   const allNormalizedOrders = useMemo(() => normalizeRestaurantReportOrders(orders, { settings }), [orders, settings])
@@ -429,10 +682,10 @@ export default function RestaurantReportsPage({
   }, [model, activeReport, filters, rangeLabelText, restaurantName, workspaceLabel, currency, pdfSignatures, pdfWatermark])
 
   const actions = [
-    !isBlocked ? ['Print A4', handlePrint] : null,
-    !isBlocked ? ['PDF', handlePdfOpen] : null,
-    !isBlocked ? ['CSV', handleCsv] : null,
-    !isBlocked ? ['Excel', handleExcel] : null,
+    !isBlocked && !isExecutiveSummary ? ['Print A4', handlePrint] : null,
+    !isBlocked && !isExecutiveSummary ? ['PDF', handlePdfOpen] : null,
+    !isBlocked && !isExecutiveSummary ? ['CSV', handleCsv] : null,
+    !isBlocked && !isExecutiveSummary ? ['Excel', handleExcel] : null,
     isDailyClosing ? ['58mm Thermal', handleThermal] : null,
     isDailyClosing ? ['80mm Thermal', handleThermal80mm] : null,
   ].filter(Boolean)
@@ -450,14 +703,28 @@ export default function RestaurantReportsPage({
     const isLoading = actionStatus?.type === 'loading'
     return (
       <div className="flex flex-wrap items-center gap-2">
-        {isExecutiveSummary && !isBlocked ? (
-          <button
-            type="button"
-            onClick={handleQuickDailyClosing}
-            className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700 shadow-sm transition hover:bg-emerald-100 hover:border-emerald-300"
-          >
-            Daily Closing
-          </button>
+        {(isExecutiveSummary || isDailyClosing) && !isBlocked ? (
+          <>
+            {isExecutiveSummary ? (
+              <button
+                type="button"
+                onClick={handleQuickDailyClosing}
+                className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700 shadow-sm transition hover:bg-emerald-100 hover:border-emerald-300"
+              >
+                Daily Closing
+              </button>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => { console.log('[AI Button] Clicked!'); setAiReportsOpen(true) }}
+              className="group inline-flex items-center gap-2.5 rounded-full border border-slate-200/60 bg-white/80 px-5 py-2.5 text-sm font-semibold text-slate-700 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.04)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:border-violet-300 hover:bg-white hover:text-violet-700 hover:shadow-[0_8px_24px_-6px_rgba(139,92,246,0.18)] active:scale-[0.97] dark:bg-slate-800/80 dark:border-slate-700 dark:text-slate-200 dark:hover:border-violet-600 dark:hover:text-violet-400"
+            >
+              <img src="/nexora-ai-logo.png" alt="Nexora AI" className="h-6 w-6 rounded-lg object-cover shadow-[0_2px_8px_-2px_rgba(139,92,246,0.3)] transition-transform duration-300 group-hover:scale-110" />
+              <span className="bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent group-hover:from-violet-700 group-hover:to-purple-700">
+                {isDailyClosing ? 'AI Daily Closing' : 'AI Reports'}
+              </span>
+            </button>
+          </>
         ) : null}
         {actions.map(([label, action]) => (
           <button
@@ -1913,54 +2180,172 @@ export default function RestaurantReportsPage({
         {!loading && !error && !hasSourceData ? <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-10 text-center text-sm font-semibold text-slate-500">No Restaurant data available yet.</div> : null}
         {!loading && !error && hasSourceData && !hasFilteredData && !range.error ? <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-10 text-center text-sm font-semibold text-slate-500">No data for the selected filters.</div> : null}
 
-        {!loading && !error && !range.error && (hasFilteredData || activeReport.capability === 'blocked') ? renderReport() : null}
+        {/* ── Nexora AI Reports ── */}
+      {aiReportsOpen && (activeReport.id === 'executive-summary' || activeReport.id === 'daily-closing') ? (
+        <div id="nexora-ai-reports" className="scroll-mt-20 space-y-4 rounded-2xl border border-violet-200/60 bg-white p-5 shadow-[0_4px_24px_-8px_rgba(139,92,246,0.1)] dark:bg-slate-800/80 dark:border-violet-500/20">
+          {/* Header */}
+          <div className="flex items-center justify-between border-b border-violet-100 pb-3 dark:border-violet-500/20">
+            <div className="flex items-center gap-2.5">
+              <img src="/nexora-ai-logo.png" alt="Nexora AI" className="h-6 w-6 rounded-lg object-cover" />
+              <h2 className="text-sm font-bold text-slate-900 dark:text-white">{isDailyClosing ? 'AI Daily Closing Report' : 'Nexora AI Report'}</h2>
+              {isDailyClosing ? (
+                <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-black text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400">CLOSING</span>
+              ) : (
+                <span className="rounded-full bg-violet-50 px-2.5 py-0.5 text-[10px] font-black text-violet-600 dark:bg-violet-500/15 dark:text-violet-400">BETA</span>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              {aiReportText ? (
+                <>
+                  <button type="button" onClick={() => { const w = window.open(''); w.document.write('<html><head><title>Nexora AI Report</title><style>body{font-family:system-ui,-apple-system,sans-serif;max-width:800px;margin:40px auto;padding:20px;line-height:1.8;color:#1e293b}' + (document.documentElement.classList.contains('dark') ? ';background:#0f172a;color:#e2e8f0' : '') + '}</style></head><body><h1 style="font-size:24px;margin-bottom:8px;display:flex;align-items:center;gap:8px"><img src="/nexora-ai-logo.png" style="width:28px;height:28px;border-radius:6px;object-fit:cover">Nexora AI Report</h1><p style="color:#64748b;font-size:14px;margin-bottom:24px">Generated ' + new Date().toLocaleString() + '</p><pre style="white-space:pre-line;font-family:inherit;font-size:15px">' + aiReportText + '</pre></body></html>'); w.document.close(); w.print() }} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-300">🖨️ Print Report</button>
+                  <button type="button" onClick={() => { setAiReportText(''); setAiReportError(''); setAiReportsOpen(false) }} className="grid h-7 w-7 place-items-center rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700">&times;</button>
+                </>
+              ) : (
+                <button type="button" onClick={() => setAiReportsOpen(false)} className="grid h-7 w-7 place-items-center rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700">&times;</button>
+              )}
+            </div>
+          </div>
+
+          {/* Error / Status */}
+          {aiReportError ? (
+            <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 dark:bg-rose-500/10 dark:border-rose-500/30 dark:text-rose-300">{aiReportError}</div>
+          ) : null}
+          {actionStatus?.type === 'error' ? (
+            <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 dark:bg-rose-500/10 dark:border-rose-500/30 dark:text-rose-300">{actionStatus.message}</div>
+          ) : null}
+
+          {/* Generate button */}
+          {!aiReportText && !aiGenerating ? (
+            <div className="space-y-4">
+              <div className="flex items-start gap-3 rounded-xl border border-violet-100 bg-violet-50/50 p-4 dark:bg-violet-500/5 dark:border-violet-500/20">
+                <HiOutlineSparkles className="mt-0.5 h-5 w-5 shrink-0 text-violet-500" />
+                <div>
+                  <p className="text-[13px] font-semibold text-violet-800 dark:text-violet-300">Nexora AI Business Analysis</p>
+                  <div className="mt-3 flex items-center gap-2">
+                    <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">Language:</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      <button type="button" onClick={() => setAiLanguage('english')} className={`rounded-lg px-2.5 py-1 text-[11px] font-bold transition ${aiLanguage === 'english' ? 'bg-violet-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300'}`}>English</button>
+                      <button type="button" onClick={() => setAiLanguage('urdu')} className={`rounded-lg px-2.5 py-1 text-[11px] font-bold transition ${aiLanguage === 'urdu' ? 'bg-violet-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300'}`}>Roman Urdu</button>
+                      <button type="button" onClick={() => setAiLanguage('hindi')} className={`rounded-lg px-2.5 py-1 text-[11px] font-bold transition ${aiLanguage === 'hindi' ? 'bg-violet-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300'}`}>हिन्दी</button>
+                      <button type="button" onClick={() => setAiLanguage('arabic')} className={`rounded-lg px-2.5 py-1 text-[11px] font-bold transition ${aiLanguage === 'arabic' ? 'bg-violet-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300'}`}>العربية</button>
+                    </div>
+                  </div>
+                  <p className="mt-1 text-[12px] text-violet-600 dark:text-violet-400">
+                    {isDailyClosing
+                      ? 'AI will analyze your complete daily closing — cash drawer, settlements, all orders, payment methods, expenses, refunds, and profit. Get a comprehensive closing report with cash reconciliation insights.'
+                      : 'AI will analyze today\'s orders, sales, profit, inventory and customer data to generate a complete business report with recommendations and tomorrow\'s forecast.'}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleGenerateAIReport}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 px-5 py-3 text-sm font-bold text-white shadow-[0_4px_16px_-4px_rgba(139,92,246,0.4)] transition hover:from-violet-700 hover:to-purple-700 active:scale-[0.98]"
+              >
+                <HiOutlineSparkles className="h-4 w-4" /> Generate Nexora AI Report
+              </button>
+            </div>
+          ) : null}
+
+          {/* Loading — AI Animation */}
+          {aiGenerating ? (
+            <div className="flex flex-col items-center gap-4 py-10">
+              {/* Animated logo pulse */}
+              <div className="relative">
+                <div className="absolute inset-0 animate-ping rounded-full bg-violet-400/30" style={{ width: 64, height: 64 }} />
+                <div className="absolute inset-0 animate-pulse rounded-full bg-purple-400/20" style={{ width: 64, height: 64, animationDelay: '0.3s' }} />
+                <img src="/nexora-ai-logo.png" alt="AI" className="relative h-16 w-16 rounded-xl object-cover shadow-[0_4px_20px_-4px_rgba(139,92,246,0.5)] animate-bounce" style={{ animationDuration: '1.5s' }} />
+              </div>
+              {/* Typing dots */}
+              <div className="flex flex-col items-center gap-2">
+                <p className="text-sm font-bold text-violet-700 dark:text-violet-300">
+                  AI is analyzing your restaurant
+                </p>
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] font-medium text-violet-500 dark:text-violet-400">Reading sales data</span>
+                  <span className="inline-flex gap-0.5">
+                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-violet-400" style={{ animationDelay: '0s' }} />
+                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-violet-500" style={{ animationDelay: '0.15s' }} />
+                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-violet-600" style={{ animationDelay: '0.3s' }} />
+                  </span>
+                </div>
+              </div>
+              {/* Progress bar */}
+              <div className="w-full max-w-xs overflow-hidden rounded-full bg-violet-100 dark:bg-violet-500/10">
+                <div className="h-1.5 animate-pulse rounded-full bg-gradient-to-r from-violet-500 to-purple-600" style={{ width: '70%', animationDuration: '2s' }} />
+              </div>
+            </div>
+          ) : null}
+
+          {/* AI Report content */}
+          {aiReportText ? (
+            <div>
+              <div className="rounded-xl border border-violet-100 bg-gradient-to-br from-violet-50/80 to-purple-50/50 p-5 dark:bg-violet-500/5 dark:border-violet-500/20">
+                <p className="mb-3 flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-[0.14em] text-violet-500 dark:text-violet-400"><img src="/nexora-ai-logo.png" alt="" className="h-4 w-4 rounded object-cover" /> Nexora AI Report</p>
+                <div className="prose prose-sm max-w-none text-[13px] leading-[1.8] text-slate-700 dark:text-slate-300 whitespace-pre-line">
+                  {aiReportText}
+                </div>
+              </div>
+              <div className="mt-3 flex items-center gap-2">
+                <button type="button" onClick={() => { const w = window.open(''); w.document.write('<html><head><title>Nexora AI Report</title><style>body{font-family:system-ui,-apple-system,sans-serif;max-width:800px;margin:40px auto;padding:20px;line-height:1.8;color:#1e293b}' + (document.documentElement.classList.contains('dark') ? ';background:#0f172a;color:#e2e8f0' : '') + '}</style></head><body><h1 style="font-size:24px;margin-bottom:8px;display:flex;align-items:center;gap:8px"><img src="/nexora-ai-logo.png" style="width:28px;height:28px;border-radius:6px;object-fit:cover">Nexora AI Report</h1><p style="color:#64748b;font-size:14px;margin-bottom:24px">Generated ' + new Date().toLocaleString() + '</p><pre style="white-space:pre-line;font-family:inherit;font-size:15px">' + aiReportText + '</pre></body></html>'); w.document.close(); w.print() }} className="inline-flex items-center gap-1.5 rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-violet-700">🖨️ Print</button>
+                <button type="button" onClick={handleExcel} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-300">📊 Excel</button>
+                <button type="button" onClick={() => { setAiReportText(''); setAiReportError('') }} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-300">🔄 Regenerate</button>
+              </div>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
+	        {!loading && !error && !range.error && (hasFilteredData || activeReport.capability === 'blocked') ? renderReport() : null}
+
+        {/* ── Nexora AI Business Analysis (Executive Summary only) ── */}
+        {!loading && !error && !range.error && hasFilteredData && activeReport.id === 'executive-summary' ? (
+          <div id="nexora-ai-analysis" style={{ scrollMarginTop: '5rem' }}>
+            <RestaurantDailyAIAnalysis
+              report={{
+                model,
+                netSales: model.netSales,
+                grossProfit: model.grossProfit,
+                netProfit: model.netProfit,
+                totalOrders: model.billedOrders?.length || model.orders?.length || 0,
+                cancelledOrders: model.cancellations?.count || 0,
+                averageOrderValue: model.averageOrderValue,
+                discounts: model.discounts,
+                totalExpenses: model.approvedExpenses,
+                onlineSales: model.onlineReceived,
+                salesByType: model.salesByOrderType || {},
+                salesByPayment: model.collectionsByPaymentMethod || {},
+                closing: {
+                  cashRefunds: model.cashReconciliation?.cashRefunds || 0,
+                },
+              }}
+            />
+          </div>
+        ) : null}
       </div>
 
       {/* ── PDF Export Dialog ── */}
       {pdfDialogOpen ? (
         <div className="fixed inset-0 z-[90] grid place-items-center bg-slate-950/45 px-3 py-4 backdrop-blur-sm">
-          <div className="w-full max-w-md overflow-hidden rounded-[1.25rem] border border-slate-200 bg-white shadow-2xl">
-            <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-4 py-3">
-              <div className="min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-sky-600">Export PDF</p>
-                <h2 className="mt-1 text-lg font-black text-slate-950">PDF Export Options</h2>
+          <div className="w-full max-w-sm overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:bg-slate-900 dark:border-slate-700">
+            <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4 dark:border-slate-700">
+              <h2 className="text-base font-bold text-slate-900 dark:text-white">Export PDF</h2>
+              <button type="button" onClick={() => setPdfDialogOpen(false)} className="grid h-8 w-8 place-items-center rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800" aria-label="Close">&times;</button>
+            </div>
+            <div className="px-5 py-4 space-y-3">
+              <p className="text-sm text-slate-500 dark:text-slate-400">Ready to export your restaurant report as a professional PDF document.</p>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <button type="button" onClick={() => setPdfDialogOpen(false)} className="inline-flex h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300">Cancel</button>
+                <button type="button" onClick={handlePdfExport} disabled={pdfSubmitting} className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-sky-600 px-3 text-sm font-bold text-white shadow-sm hover:bg-sky-700 disabled:pointer-events-none disabled:opacity-60">
+                  {pdfSubmitting ? 'Generating...' : 'Export PDF'}
+                </button>
               </div>
-              <button type="button" onClick={() => setPdfDialogOpen(false)} className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-slate-200 text-sm font-black text-slate-500 hover:bg-slate-50" aria-label="Close">&times;</button>
-            </div>
-            <div className="space-y-3 px-4 py-4">
-              <p className="text-xs font-semibold text-slate-500">Digital Signatures (optional)</p>
-              {['preparedBy', 'verifiedBy', 'managerApproval', 'ownerApproval'].map((field) => (
-                <label key={field} className="block">
-                  <span className="mb-1 block text-xs font-semibold text-slate-500 capitalize">{field.replace(/([A-Z])/g, ' $1').trim()}</span>
-                  <input
-                    value={pdfSignatures[field] || ''}
-                    onChange={(e) => setPdfSignatures((s) => ({ ...s, [field]: e.target.value }))}
-                    className="h-9 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-sky-300"
-                    placeholder={`Enter ${field.replace(/([A-Z])/g, ' $1').toLowerCase()}`}
-                  />
-                </label>
-              ))}
-              <label className="block">
-                <span className="mb-1 block text-xs font-semibold text-slate-500">Watermark</span>
-                <select value={pdfWatermark} onChange={(e) => setPdfWatermark(e.target.value)} className="h-9 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-sky-300">
-                  <option value="">None</option>
-                  <option value="CONFIDENTIAL">CONFIDENTIAL</option>
-                  <option value="DRAFT">DRAFT</option>
-                  <option value="FINAL">FINAL</option>
-                  <option value="PAID">PAID</option>
-                  <option value="INTERNAL USE ONLY">INTERNAL USE ONLY</option>
-                </select>
-              </label>
-            </div>
-            <div className="grid gap-2 border-t border-slate-100 bg-slate-50 px-4 py-3 sm:grid-cols-2">
-              <button type="button" onClick={() => setPdfDialogOpen(false)} className="inline-flex h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Cancel</button>
-              <button type="button" onClick={handlePdfExport} disabled={pdfSubmitting} className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-sky-600 px-3 text-sm font-black text-white shadow-sm transition hover:bg-sky-700 disabled:pointer-events-none disabled:opacity-60">
-                {pdfSubmitting ? 'Generating...' : 'Export PDF'}
-              </button>
             </div>
           </div>
         </div>
       ) : null}
+
+      
     </ReportShell>
   )
 }
