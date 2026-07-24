@@ -192,6 +192,19 @@ export default function BlogManager() {
       if (editingSlug && editingSlug !== slug && draft.source === 'cms') await deleteBlogPost(editingSlug)
       setNotice(draft.status === 'published' ? 'Blog post published.' : 'Blog draft saved.')
       setEditingSlug(slug)
+
+      // Auto-translate to all languages in background (published only — one-time cost)
+      if (draft.status === 'published') {
+        import('../../lib/blogTranslate.js').then(({ translateAndPublishAllLanguages }) => {
+          translateAndPublishAllLanguages({
+            slug,
+            title: draft.title.trim(),
+            excerpt: draft.excerpt.trim() || draft.metaDescription.trim(),
+            sections: [{ heading: draft.contentHeading?.trim() || 'Article guide', paragraphs }],
+            faqs: parseFaqs(draft.faqsText),
+          }).catch(() => { /* silent — translation is best-effort */ })
+        })
+      }
     } catch (saveError) {
       setError(saveError?.message || 'Unable to save blog post.')
     } finally {

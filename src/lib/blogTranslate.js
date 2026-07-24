@@ -1,14 +1,15 @@
 /**
- * Client-side blog translation via Google Translate API.
+ * Client-side blog translation.
  *
  *   English → English (passthrough)
- *   English → Roman Urdu (Hindi target + romanization — Google supports hi→Latin)
- *   English → Hindi (direct)
- *   English → Arabic (direct)
- *   English → Bengali (direct)
+ *   English → Roman Urdu (Nexora AI / DeepSeek)
+ *   English → Hindi (Google Translate)
+ *   English → Arabic (Google Translate)
+ *   English → Bengali (Google Translate)
  *
- * Uses translate.googleapis.com with sessionStorage caching, retry, and fallback.
- * SEO is unaffected — meta tags and schema always use the English source.
+ * Roman Urdu uses Nexora AI Gateway (DeepSeek) for natural, fluent translation.
+ * Other languages use translate.googleapis.com for speed.
+ * All translations cached in sessionStorage. SEO unaffected.
  */
 
 export const BLOG_LANGUAGES = [
@@ -24,6 +25,7 @@ const STORAGE_KEY = 'nexora:blog:lang'
 const MAX_CHUNK = 2800
 const MAX_RETRIES = 2
 const FETCH_TIMEOUT_MS = 8000
+const AI_GATEWAY_URL = import.meta.env.VITE_AI_GATEWAY_URL || 'https://nexora-ai-gateway.rahanshah4.workers.dev'
 
 /* ── Detection ──────────────────────────────────────────────────────────── */
 
@@ -108,60 +110,29 @@ async function callTranslateAPI(text, targetLang) {
   throw lastErr || new Error('Translation failed')
 }
 
-/* ── Roman Urdu via Hindi transliteration ─────────────────────────────── */
+/* ── Roman Urdu via Nexora AI (DeepSeek) ──────────────────────────────── */
 
 async function translateToRomanUrdu(text) {
   /**
-   * Google Translate doesn't support Urdu→Latin romanization.
-   * Strategy: translate EN→HI (Hindi), then use a phonetic mapping
-   * to produce Roman Urdu output.
-   *
-   * Step 1: Get Hindi translation (Devanagari script)
-   * Step 2: Convert Devanagari → Latin using phonetic transliteration
+   * Uses Nexora AI Gateway (DeepSeek) for natural Roman Urdu translation.
+   * DeepSeek natively understands Roman Urdu and produces fluent output.
    */
-  const hindiText = await callTranslateAPI(text, 'hi')
+  const res = await fetch(`${AI_GATEWAY_URL}/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      messages: [{
+        role: 'user',
+        content: `Translate this English text to Roman Urdu (Urdu written with English alphabets). Natural, conversational tone like a Pakistani professional would write. Preserve all formatting, line breaks, headings, and markdown exactly. Keep the same paragraph structure. Do NOT use Urdu/Arabic script. Do NOT add greetings, emojis, sales pitches, questions, or any extra text — output ONLY the direct translation:\n\n${text}`,
+      }],
+      maxTokens: Math.max(500, Math.ceil(text.length * 1.5)),
+    }),
+  })
 
-  // Devanagari → Latin phonetic map for Roman Urdu
-  // This covers all common Hindi/Urdu sounds
-  const devaToLatin = [
-    // Vowels
-    ['अ', 'a'], ['आ', 'aa'], ['ा', 'aa'], ['इ', 'i'], ['ई', 'ee'], ['ी', 'ee'],
-    ['उ', 'u'], ['ऊ', 'oo'], ['ू', 'oo'], ['ए', 'e'], ['े', 'e'], ['ऐ', 'ai'],
-    ['ै', 'ai'], ['ओ', 'o'], ['ो', 'o'], ['औ', 'au'], ['ौ', 'au'],
-    ['ऋ', 'ri'], ['अं', 'an'], ['अः', 'ah'], ['ं', 'n'], ['ः', 'h'],
-    // Consonants
-    ['क', 'k'], ['का', 'kaa'], ['कि', 'ki'], ['की', 'kee'], ['कु', 'ku'],
-    ['ख', 'kh'], ['ग', 'g'], ['घ', 'gh'], ['च', 'ch'], ['छ', 'chh'],
-    ['ज', 'j'], ['झ', 'jh'], ['ट', 't'], ['ठ', 'th'], ['ड', 'd'],
-    ['ढ', 'dh'], ['ण', 'n'], ['त', 't'], ['थ', 'th'], ['द', 'd'],
-    ['ध', 'dh'], ['न', 'n'], ['प', 'p'], ['फ', 'ph'], ['ब', 'b'],
-    ['भ', 'bh'], ['म', 'm'], ['य', 'y'], ['र', 'r'], ['ल', 'l'],
-    ['व', 'w'], ['श', 'sh'], ['ष', 'sh'], ['स', 's'], ['ह', 'h'],
-    ['क्ष', 'ksh'], ['त्र', 'tr'], ['ज्ञ', 'gy'], ['श्र', 'shr'],
-    ['ख़', 'kh'], ['ग़', 'gh'], ['ज़', 'z'], ['ड़', 'r'], ['ढ़', 'rh'],
-    ['फ़', 'f'], ['क़', 'q'],
-    // Special
-    ['्', ''], ['ा', 'aa'], ['ि', 'i'], ['ी', 'ee'], ['ु', 'u'],
-    ['ू', 'oo'], ['ृ', 'ri'], ['े', 'e'], ['ै', 'ai'], ['ो', 'o'],
-    ['ौ', 'au'], ['ॉ', 'o'],
-    // Punctuation / spacing
-    ['।', '.'], ['॥', '.'], ['॰', '.'],
-    // Common words post-processing handled below
-  ]
-
-  let latin = hindiText
-  // Apply longest matches first
-  const sorted = devaToLatin.sort((a, b) => b[0].length - a[0].length)
-  for (const [deva, lat] of sorted) {
-    latin = latin.split(deva).join(lat)
-  }
-
-  // Clean up: join broken vowel marks, remove leftover Devanagari
-  latin = latin.replace(/[ऀ-ॿ]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim()
-
-  return latin || hindiText
+  if (!res.ok) throw new Error(`AI Gateway error: ${res.status}`)
+  const data = await res.json()
+  const translated = (data.text || '').trim()
+  return translated || text // fallback to original if empty
 }
 
 /* ── Translate a batch of strings ─────────────────────────────────────── */
@@ -223,7 +194,7 @@ async function translateStrings(strings, langCode) {
 export async function translateBlogArticle(article, langCode) {
   if (!article || !VALID_CODES.has(langCode) || langCode === 'en') return null
 
-  const cacheKey = `nexora:blogTr:v2:${langCode}:${article.slug}`
+  const cacheKey = `nexora:blogTr:v3:${langCode}:${article.slug}`
   try {
     const cached = JSON.parse(sessionStorage.getItem(cacheKey) || 'null')
     if (cached?.title && Array.isArray(cached.sections)) return cached
@@ -258,4 +229,77 @@ export async function translateBlogArticle(article, langCode) {
 
   try { sessionStorage.setItem(cacheKey, JSON.stringify(next)) } catch { /* quota */ }
   return next
+}
+
+/* ── Firestore-backed translation persistence ──────────────────────────── */
+
+const BLOG_TRANSLATIONS_COLLECTION = 'blogTranslations'
+
+/**
+ * Save translations for all languages to Firestore.
+ * Called once at blog upload time — not per client visit.
+ */
+export async function saveBlogTranslationsToFirestore(slug, translations, { firestoreDb } = {}) {
+  if (!firestoreDb) {
+    try {
+      const { firestoreDb: db } = await import('./firebase.js')
+      firestoreDb = db
+    } catch { return }
+  }
+  if (!firestoreDb || !slug) return
+
+  const { doc, setDoc, serverTimestamp } = await import('firebase/firestore')
+  const payload = {
+    slug,
+    translations,
+    updatedAt: serverTimestamp(),
+  }
+  try {
+    await setDoc(doc(firestoreDb, BLOG_TRANSLATIONS_COLLECTION, slug), payload, { merge: true })
+  } catch (err) {
+    console.warn('[Blog Translate] Failed to save translations:', err.message)
+  }
+}
+
+/**
+ * Load pre-translated content from Firestore (fast, no API cost).
+ * Returns null if no cached translation exists.
+ */
+export async function loadBlogTranslationFromFirestore(slug, langCode) {
+  if (!slug || langCode === 'en') return null
+  try {
+    const { firestoreDb } = await import('./firebase.js')
+    if (!firestoreDb) return null
+    const { doc, getDoc } = await import('firebase/firestore')
+    const snap = await getDoc(doc(firestoreDb, BLOG_TRANSLATIONS_COLLECTION, slug))
+    if (!snap.exists()) return null
+    const data = snap.data()
+    return data?.translations?.[langCode] || null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Translate a blog article to ALL supported languages and save to Firestore.
+ * Call this once at blog upload/publish time.
+ */
+export async function translateAndPublishAllLanguages(article, { firestoreDb } = {}) {
+  if (!article?.slug) return
+  const targetLangs = BLOG_LANGUAGES.filter(l => l.code !== 'en')
+  const translations = {}
+
+  for (const { code } of targetLangs) {
+    try {
+      const translated = await translateBlogArticle(article, code)
+      if (translated) translations[code] = translated
+    } catch (err) {
+      console.warn(`[Blog Translate] Failed to translate to ${code}:`, err.message)
+    }
+  }
+
+  if (Object.keys(translations).length > 0) {
+    await saveBlogTranslationsToFirestore(article.slug, translations, { firestoreDb })
+  }
+  return translations
 }

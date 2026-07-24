@@ -23,6 +23,7 @@ import {
   detectPreferredBlogLanguage,
   rememberBlogLanguage,
   translateBlogArticle,
+  loadBlogTranslationFromFirestore,
 } from '../../lib/blogTranslate.js'
 import { absoluteUrl, createArticleSchema } from '../../lib/seoStructuredData.js'
 import PublicPageShell from './PublicPageShell.jsx'
@@ -108,12 +109,26 @@ export default function BlogArticlePage() {
   const [translation, setTranslation] = useState(null)
 
   useEffect(() => {
-    if (!articleSlug || lang === 'en') return undefined
+    if (!articleSlug || lang === 'en') { setTranslation(null); return undefined }
     let cancelled = false
     const source = articles.find((item) => item.slug === articleSlug) || getBlogArticle(articleSlug)
-    translateBlogArticle(source, lang)
-      .then((next) => { if (!cancelled) setTranslation(next ? { ...next, slug: articleSlug, lang } : null) })
-      .catch(() => { if (!cancelled) setTranslation(null) })
+    // 1. Try Firestore first (pre-translated at upload time — instant, no API cost)
+    loadBlogTranslationFromFirestore(articleSlug, lang)
+      .then((cached) => {
+        if (cancelled) return
+        if (cached) { setTranslation({ ...cached, slug: articleSlug, lang }); return }
+        // 2. Fallback: live translate via DeepSeek/Google
+        return translateBlogArticle(source, lang).then((next) => {
+          if (!cancelled) setTranslation(next ? { ...next, slug: articleSlug, lang } : null)
+        })
+      })
+      .catch(() => {
+        // 3. Final fallback: live translate
+        if (cancelled) return
+        translateBlogArticle(source, lang)
+          .then((next) => { if (!cancelled) setTranslation(next ? { ...next, slug: articleSlug, lang } : null) })
+          .catch(() => { if (!cancelled) setTranslation(null) })
+      })
     return () => { cancelled = true }
   }, [articleSlug, lang, articles])
 
@@ -299,8 +314,8 @@ export default function BlogArticlePage() {
                 </button>
                 {langOpen ? (
                   <>
-                    <button type="button" className="fixed inset-0 z-50" onClick={() => setLangOpen(false)} aria-label="Close language menu" />
-                    <div className="absolute right-0 top-full z-20 mt-1.5 w-44 overflow-hidden rounded-xl border border-slate-200/60 bg-white/95 shadow-[0_12px_40px_-16px_rgba(15,23,42,0.25)] backdrop-blur-xl">
+                    <button type="button" className="fixed inset-0 z-10" onClick={() => setLangOpen(false)} aria-label="Close language menu" />
+                    <div className="absolute right-0 top-full z-50 mt-1.5 w-44 overflow-hidden rounded-xl border border-slate-200/60 bg-white/95 shadow-[0_12px_40px_-16px_rgba(15,23,42,0.25)] backdrop-blur-xl">
                       {BLOG_LANGUAGES.map(({ code, label }) => (
                         <button
                           key={code}

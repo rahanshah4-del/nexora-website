@@ -1021,7 +1021,12 @@ allow create: if validBlogComment(request.resource.data);
 allow update: if backendAdmin()&&validBlogCommentUpdate(request.resource.data);
 allow delete: if backendAdmin();
 }
-match /blogViews/{slug} {
+match /blogTranslations/{slug} {
+    allow read: if true;
+    allow create, update: if backendAdmin();
+    allow delete: if backendAdmin();
+  }
+  match /blogViews/{slug} {
 allow read: if true;
 allow create: if request.resource.data.keys().hasOnly(['slug','count','updatedAt'])
 && request.resource.data.slug==slug
