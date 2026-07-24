@@ -129,7 +129,7 @@ function App({ initialSectionId = '' }) {
     <div className="marketing-page min-h-screen overflow-x-hidden bg-white text-slate-950">
       <Header />
       <main className="pt-14">
-        <section id="hero" data-ai-animate="floating-dots" data-ai-hero className="relative overflow-hidden bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_72%,#ffffff_100%)] pb-14 pt-12 sm:pb-16 sm:pt-14 lg:pb-20 lg:pt-16">
+        <section id="hero" className="relative overflow-hidden bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_72%,#ffffff_100%)] pb-14 pt-12 sm:pb-16 sm:pt-14 lg:pb-20 lg:pt-16">
           <div className="soft-arc-bg pointer-events-none" />
           {/* AI glow orbs */}
           <div className="pointer-events-none absolute left-1/2 top-20 -translate-x-1/2 hidden lg:block">

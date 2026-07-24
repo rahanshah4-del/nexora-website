@@ -100,7 +100,7 @@ export default function AISections() {
       {/* ═══════════════════════════════════════════
           PHASE 1 — AI ANNOUNCEMENT
           ═══════════════════════════════════════════ */}
-      <section data-reveal data-ai-reveal className="relative overflow-hidden bg-white py-16 sm:py-20 lg:py-24">
+      <section data-reveal className="relative overflow-hidden bg-white py-16 sm:py-20 lg:py-24">
         <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
           <div className="h-[500px] w-[600px] rounded-full bg-[radial-gradient(ellipse_at_center,rgba(139,92,246,0.06)_0%,rgba(168,85,247,0.03)_40%,transparent_70%)] blur-3xl" />
         </div>
@@ -128,7 +128,7 @@ export default function AISections() {
       </section>
 
       {/* PHASE 1 — AI FEATURE CARDS */}
-      <section data-reveal data-ai-reveal className="bg-[linear-gradient(180deg,#faf5ff_0%,#ffffff_100%)] py-16 sm:py-20 lg:py-24">
+      <section data-reveal className="bg-[linear-gradient(180deg,#faf5ff_0%,#ffffff_100%)] py-16 sm:py-20 lg:py-24">
         <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-4xl text-center">
             <span className="inline-flex rounded-full border border-violet-100 bg-violet-50/70 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.18em] text-violet-600 shadow-sm">AI Features</span>
@@ -148,7 +148,7 @@ export default function AISections() {
       </section>
 
       {/* PHASE 1 — AI WORKFLOW */}
-      <section data-reveal data-ai-reveal className="bg-white py-16 sm:py-20 lg:py-24">
+      <section data-reveal className="bg-white py-16 sm:py-20 lg:py-24">
         <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-4xl text-center">
             <span className="inline-flex rounded-full border border-violet-100 bg-violet-50/70 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.18em] text-violet-600 shadow-sm">How It Works</span>
@@ -167,7 +167,7 @@ export default function AISections() {
       </section>
 
       {/* PHASE 1 — AI CTA */}
-      <section data-reveal data-ai-reveal className="relative overflow-hidden bg-white px-5 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-24">
+      <section data-reveal className="relative overflow-hidden bg-white px-5 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-24">
         <div className="pointer-events-none absolute left-1/2 top-0 -translate-x-1/2">
           <div className="h-[300px] w-[500px] rounded-full bg-[radial-gradient(ellipse_at_center,rgba(139,92,246,0.08)_0%,transparent_70%)] blur-3xl" />
         </div>
