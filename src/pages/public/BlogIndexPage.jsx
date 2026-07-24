@@ -57,6 +57,19 @@ export default function BlogIndexPage() {
     setReactions(map)
   }, [])
 
+  // Load like counts from Firestore for all visible articles
+  useEffect(() => {
+    if (!articles.length) return
+    const slugs = articles.map(a => a.slug)
+    Promise.all(slugs.map(slug => fetchBlogLikes(slug).then(r => ({ slug, ...r }))))
+      .then(results => {
+        const map = {}
+        results.forEach(({ slug, likes, dislikes }) => { map[slug] = { likes, dislikes } })
+        setLikeCounts(map)
+      })
+      .catch(() => {})
+  }, [articles])
+
   function handleReaction(slug, type) {
     toggleBlogReaction(slug, type).then((result) => {
       setReactions((prev) => {
