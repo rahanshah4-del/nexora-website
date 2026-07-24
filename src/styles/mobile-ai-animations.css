@@ -1,117 +1,37 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   Mobile Premium Scroll Animations — Nexora
-   Apple/Stripe/Linear-quality reveals. CSS transforms + opacity only.
-   Desktop: 0 pixels affected (locked behind max-width:767px).
+   Mobile Animations — Performance Optimized (target: 75+ Lighthouse)
+   Minimal CSS. Only opacity + transform. No layout triggers.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 @media (max-width: 767px) {
 
   @media (prefers-reduced-motion: reduce) {
-    [class*="ai-"] { animation: none !important; opacity: 1 !important; transform: none !important; }
-  }
-  .ai-animations-paused [class*="ai-"] { animation-play-state: paused !important; }
-
-  /* ══════════════════════════════════════════════════════════════════════
-     BASE: elements start at final position — animation only adds polish.
-     If JS never runs, content is still visible. No blank page risk.
-     Keyframes use animation-fill-mode: backwards to hide ONLY during animation.
-     ══════════════════════════════════════════════════════════════════════ */
-  [data-ai] { opacity: 1; }
-
-  /* ══════════════════════════════════════════════════════════════════════
-     FLOATING AI LOGO — hero badge, gentle bounce + glow
-     ══════════════════════════════════════════════════════════════════════ */
-  @keyframes aiLogoFloat {
-    0%,100% { transform: translateY(0) scale(1); }
-    30%     { transform: translateY(-6px) scale(1.08); }
-    60%     { transform: translateY(-2px) scale(1.02); }
-  }
-  .ai-float-logo {
-    animation: aiLogoFloat 3.5s ease-in-out infinite;
-    filter: drop-shadow(0 0 8px rgba(139,92,246,0.3));
+    [data-ai], [data-ai] > *, .ai-float-logo {
+      animation: none !important; opacity: 1 !important; transform: none !important;
+    }
   }
 
-  /* ══════════════════════════════════════════════════════════════════════
-     FADE UP — smooth upward reveal with slight scale (hero, CTAs, headings)
-     ══════════════════════════════════════════════════════════════════════ */
+  /* ── Simple fade-up (hero, CTAs) ────────────────────────────────────── */
   @keyframes aiFadeUp {
-    0%   { opacity: 0; transform: translateY(36px) scale(0.97); }
-    100% { opacity: 1; transform: translateY(0) scale(1); }
+    0%   { opacity: 0; transform: translateY(20px); }
+    100% { opacity: 1; transform: translateY(0); }
   }
   [data-ai="fade-up"].ai-visible {
-    animation: aiFadeUp 0.65s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: aiFadeUp 0.5s ease-out both;
   }
 
-  /* ══════════════════════════════════════════════════════════════════════
-     CARD REVEAL — individual card with spring lift
-     Stagger via nth-child delays: 0ms, 80ms, 160ms, 240ms, 320ms, 400ms
-     ══════════════════════════════════════════════════════════════════════ */
-  @keyframes aiCardReveal {
-    0%   { opacity: 0; transform: translateY(40px) scale(0.94); }
-    60%  { opacity: 1; transform: translateY(-2px) scale(1.01); }
-    100% { opacity: 1; transform: translateY(0) scale(1); }
-  }
-  [data-ai="cards"].ai-visible > * { animation: aiCardReveal 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
-  [data-ai="cards"].ai-visible > *:nth-child(1) { animation-delay: 0s; }
-  [data-ai="cards"].ai-visible > *:nth-child(2) { animation-delay: 0.08s; }
-  [data-ai="cards"].ai-visible > *:nth-child(3) { animation-delay: 0.16s; }
-  [data-ai="cards"].ai-visible > *:nth-child(4) { animation-delay: 0.24s; }
-  [data-ai="cards"].ai-visible > *:nth-child(5) { animation-delay: 0.32s; }
-  [data-ai="cards"].ai-visible > *:nth-child(6) { animation-delay: 0.40s; }
-  [data-ai="cards"].ai-visible > *:nth-child(7) { animation-delay: 0.48s; }
-  [data-ai="cards"].ai-visible > *:nth-child(8) { animation-delay: 0.56s; }
-  [data-ai="cards"].ai-visible > *:nth-child(9) { animation-delay: 0.64s; }
+  /* ── Card stagger — only first 4 children, simple fade-up ──────────── */
+  [data-ai="cards"].ai-visible > *:nth-child(1) { animation: aiFadeUp 0.45s ease-out both; animation-delay: 0s; }
+  [data-ai="cards"].ai-visible > *:nth-child(2) { animation: aiFadeUp 0.45s ease-out both; animation-delay: 0.06s; }
+  [data-ai="cards"].ai-visible > *:nth-child(3) { animation: aiFadeUp 0.45s ease-out both; animation-delay: 0.12s; }
+  [data-ai="cards"].ai-visible > *:nth-child(4) { animation: aiFadeUp 0.45s ease-out both; animation-delay: 0.18s; }
 
-  /* ══════════════════════════════════════════════════════════════════════
-     SLIDE IN — from left or right (stats, feature highlights)
-     ══════════════════════════════════════════════════════════════════════ */
-  @keyframes aiSlideLeft {
-    0%   { opacity: 0; transform: translateX(-40px); }
-    100% { opacity: 1; transform: translateX(0); }
-  }
-  @keyframes aiSlideRight {
-    0%   { opacity: 0; transform: translateX(40px); }
-    100% { opacity: 1; transform: translateX(0); }
-  }
-  [data-ai="slide-left"].ai-visible {
-    animation: aiSlideLeft 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
-  }
-  [data-ai="slide-right"].ai-visible {
-    animation: aiSlideRight 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
-  }
-
-  /* ══════════════════════════════════════════════════════════════════════
-     SCALE IN — icons, logos, images gently grow into place
-     ══════════════════════════════════════════════════════════════════════ */
-  @keyframes aiScaleIn {
-    0%   { opacity: 0; transform: scale(0.8); }
-    100% { opacity: 1; transform: scale(1); }
-  }
-  [data-ai="scale-in"].ai-visible {
-    animation: aiScaleIn 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
-  }
-
-  /* ══════════════════════════════════════════════════════════════════════
-     FLOAT — subtle vertical drift for screenshots/images (infinite, gentle)
-     ══════════════════════════════════════════════════════════════════════ */
-  @keyframes aiFloat {
+  /* ── Floating AI logo (hero only, lightweight) ──────────────────────── */
+  @keyframes aiLogoFloat {
     0%,100% { transform: translateY(0); }
-    50%     { transform: translateY(-8px); }
+    50%     { transform: translateY(-4px); }
   }
-  [data-ai="float"].ai-visible {
-    animation: aiFloat 4s ease-in-out infinite;
-    animation-delay: 0.5s;
-  }
-
-  /* ══════════════════════════════════════════════════════════════════════
-     GLOW PULSE — subtle glow breathing on CTA / feature highlights
-     ══════════════════════════════════════════════════════════════════════ */
-  @keyframes aiGlow {
-    0%,100% { box-shadow: 0 0 0 0 rgba(139,92,246,0); }
-    50%     { box-shadow: 0 0 24px 4px rgba(139,92,246,0.12); }
-  }
-  [data-ai="glow"].ai-visible {
-    animation: aiGlow 3s ease-in-out infinite;
-    animation-delay: 1s;
+  .ai-float-logo {
+    animation: aiLogoFloat 4s ease-in-out infinite;
   }
 }
