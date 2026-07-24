@@ -12,9 +12,11 @@
   .ai-animations-paused [class*="ai-"] { animation-play-state: paused !important; }
 
   /* ══════════════════════════════════════════════════════════════════════
-     BASE: all animated elements start hidden
+     BASE: elements start at final position — animation only adds polish.
+     If JS never runs, content is still visible. No blank page risk.
+     Keyframes use animation-fill-mode: backwards to hide ONLY during animation.
      ══════════════════════════════════════════════════════════════════════ */
-  [data-ai] { opacity: 0; }
+  [data-ai] { opacity: 1; }
 
   /* ══════════════════════════════════════════════════════════════════════
      FADE UP — smooth upward reveal with slight scale (hero, CTAs, headings)
@@ -24,7 +26,7 @@
     100% { opacity: 1; transform: translateY(0) scale(1); }
   }
   [data-ai="fade-up"].ai-visible {
-    animation: aiFadeUp 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: aiFadeUp 0.65s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   /* ══════════════════════════════════════════════════════════════════════
@@ -36,8 +38,7 @@
     60%  { opacity: 1; transform: translateY(-2px) scale(1.01); }
     100% { opacity: 1; transform: translateY(0) scale(1); }
   }
-  [data-ai="cards"] > * { opacity: 0; }
-  [data-ai="cards"].ai-visible > * { animation: aiCardReveal 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+  [data-ai="cards"].ai-visible > * { animation: aiCardReveal 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
   [data-ai="cards"].ai-visible > *:nth-child(1) { animation-delay: 0s; }
   [data-ai="cards"].ai-visible > *:nth-child(2) { animation-delay: 0.08s; }
   [data-ai="cards"].ai-visible > *:nth-child(3) { animation-delay: 0.16s; }
@@ -60,10 +61,10 @@
     100% { opacity: 1; transform: translateX(0); }
   }
   [data-ai="slide-left"].ai-visible {
-    animation: aiSlideLeft 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: aiSlideLeft 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
   [data-ai="slide-right"].ai-visible {
-    animation: aiSlideRight 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: aiSlideRight 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   /* ══════════════════════════════════════════════════════════════════════
@@ -74,7 +75,7 @@
     100% { opacity: 1; transform: scale(1); }
   }
   [data-ai="scale-in"].ai-visible {
-    animation: aiScaleIn 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: aiScaleIn 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   /* ══════════════════════════════════════════════════════════════════════
