@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom'
 import { HiOutlineArrowRight, HiOutlinePlayCircle } from 'react-icons/hi2'
 import Header from './components/Header'
 import trustBadges from './components/trustBadges'
+import './styles/mobile-ai-animations.css'
+import { initMobileAiAnimations } from './lib/mobileAiAnimations.js'
 
 /* Isolated error boundary for each lazy section so a stale chunk never crashes the whole page.
    On error, logs the issue and shows a visible retry section instead of silent <div className="hidden" />. */
@@ -93,6 +95,8 @@ function App({ initialSectionId = '' }) {
   useEffect(() => {
     document.documentElement.classList.add('public-website')
     document.body.classList.add('public-website')
+    // Mobile AI animations — self-contained, only activates on <768px
+    initMobileAiAnimations()
     return () => { document.documentElement.classList.remove('public-website'); document.body.classList.remove('public-website') }
   }, [])
 
@@ -125,7 +129,7 @@ function App({ initialSectionId = '' }) {
     <div className="marketing-page min-h-screen overflow-x-hidden bg-white text-slate-950">
       <Header />
       <main className="pt-14">
-        <section id="hero" className="relative overflow-hidden bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_72%,#ffffff_100%)] pb-14 pt-12 sm:pb-16 sm:pt-14 lg:pb-20 lg:pt-16">
+        <section id="hero" data-ai-animate="floating-dots" className="relative overflow-hidden bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_72%,#ffffff_100%)] pb-14 pt-12 sm:pb-16 sm:pt-14 lg:pb-20 lg:pt-16">
           <div className="soft-arc-bg pointer-events-none" />
           {/* AI glow orbs */}
           <div className="pointer-events-none absolute left-1/2 top-20 -translate-x-1/2 hidden lg:block">

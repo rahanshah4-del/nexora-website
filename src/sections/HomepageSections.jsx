@@ -197,7 +197,7 @@ export default function HomepageSections() {
 
   return (
     <>
-      <section data-reveal className="bg-white py-16 sm:py-20 lg:py-24">
+      <section data-reveal data-ai-animate="glow-pulse" className="bg-white py-16 sm:py-20 lg:py-24">
         <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-4xl text-center">
             <h2 className="website-section-heading text-3xl font-black tracking-tight text-slate-950 sm:text-5xl">All Modules. <span className="marker-highlight marker-highlight-blue">One Platform.</span> Unlimited Possibilities.</h2>
@@ -216,7 +216,7 @@ export default function HomepageSections() {
         </div>
       </section>
 
-      <section data-reveal className="bg-white px-5 pb-16 pt-2 sm:px-6 sm:pb-20 lg:px-8 lg:pb-24">
+      <section data-reveal data-ai-animate="scan-line" className="bg-white px-5 pb-16 pt-2 sm:px-6 sm:pb-20 lg:px-8 lg:pb-24">
         <div className="mx-auto flex max-w-7xl flex-col gap-6 rounded-[2rem] border border-blue-100 bg-[linear-gradient(135deg,#eff6ff_0%,#ffffff_64%,#f8fafc_100%)] p-4 shadow-[0_30px_90px_-62px_rgba(37,99,235,0.42)] lg:p-5">
           <div className="rounded-[1.5rem] border border-blue-100 bg-white p-6 shadow-sm">
             <p className="text-xl font-black text-slate-950">Trusted by 500+ Businesses</p>
@@ -230,7 +230,7 @@ export default function HomepageSections() {
       {/* ── AI Sections ── */}
       <AISections />
 
-      <section data-reveal className="bg-white px-5 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-24">
+      <section data-reveal data-ai-animate="neural-pulse" className="bg-white px-5 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-24">
         <div className="mx-auto grid max-w-7xl items-center gap-6 rounded-[2rem] border border-blue-100 bg-[linear-gradient(135deg,#eff6ff_0%,#ffffff_58%,#e0f2fe_100%)] p-6 shadow-[0_30px_90px_-60px_rgba(37,99,235,0.44)] sm:p-8 lg:grid-cols-[1fr_auto]">
           <div>
             <span className="inline-flex rounded-full border border-blue-100 bg-white px-4 py-2 text-xs font-extrabold uppercase tracking-[0.18em] text-blue-700 shadow-sm">Dedicated Pricing</span>
@@ -241,7 +241,7 @@ export default function HomepageSections() {
         </div>
       </section>
 
-      <section data-reveal className="bg-white px-5 pb-16 sm:px-6 sm:pb-20 lg:px-8">
+      <section data-reveal data-ai-animate="data-stream" className="bg-white px-5 pb-16 sm:px-6 sm:pb-20 lg:px-8">
         <div className="mx-auto grid max-w-7xl items-center gap-6 rounded-[2rem] border border-blue-100 bg-[linear-gradient(135deg,#eff6ff_0%,#ffffff_58%,#e0f2fe_100%)] p-6 shadow-[0_30px_90px_-60px_rgba(37,99,235,0.44)] sm:p-8 lg:grid-cols-[1fr_auto]">
           <div className="flex items-center gap-5">
             <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600 ring-4 ring-white sm:h-20 sm:w-20 sm:ring-8"><HiOutlineChatBubbleLeftRight className="text-3xl sm:text-5xl" /></span>
