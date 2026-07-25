@@ -68,6 +68,17 @@ Be helpful and concise. Keep responses under 4 sentences unless showing feature 
 // ── Rate Limiter ──
 const rateLimiters = new Map()
 
+// ── KV Optimization: Module-scoped caches ──
+// Knowledge cache — avoids KV read on every request (10-min TTL)
+let knowledgeCache = null
+let knowledgeCacheTs = 0
+const KNOWLEDGE_CACHE_TTL = 10 * 60 * 1000
+
+// Analytics buffer — aggregates in memory, flushes every 15 min
+let analyticsBuffer = {}
+let lastAnalyticsFlush = 0
+const ANALYTICS_FLUSH_INTERVAL = 15 * 60 * 1000
+
 /**
  * Attempt to close a truncated JSON string by counting brackets.
  */
@@ -126,20 +137,30 @@ function corsHeaders(origin) {
   }
 }
 
-// ── Load Knowledge from KV ──
+// ── Fallback knowledge (static, zero KV reads) ──
+const FALLBACK_KNOWLEDGE = {
+  products: 'Restaurant POS, Retail POS, School ERP, Medical Store POS, Transport Software, Property ERP, CRM, WhatsApp CRM, Reports & Analytics, Inventory Management, Team & Permissions, Email Marketing.',
+  pricing: '7-Day Free Trial. Basic: PKR 1,000/mo (50% OFF, was PKR 2,000). Standard: PKR 3,000/mo (was PKR 5,999). Enterprise: Custom. All include cloud sync, backup, free updates. Yearly: 20% savings.',
+  guarantees: '30-Day Money Back Guarantee. Lifetime Price Lock. Free Setup & Data Migration. Free Staff Training. WhatsApp Support: +92 319 432 9754.',
+  routes: '/signup, /pricing, /blog, /industries, /business-services, /about, /contact, /reviews, /faq, /documentation, /help-center, /support-center.',
+  website: 'https://nexorasolution.online',
+}
+
+// ── Load Knowledge from KV (with 10-min in-memory cache) ──
 async function loadKnowledge(env) {
+  // Return cached version if still fresh
+  if (knowledgeCache && (Date.now() - knowledgeCacheTs) < KNOWLEDGE_CACHE_TTL) {
+    return knowledgeCache
+  }
   try {
     const cached = await env.AI_KV?.get('nexora-knowledge', 'json')
-    if (cached) return cached
+    if (cached) {
+      knowledgeCache = cached
+      knowledgeCacheTs = Date.now()
+      return cached
+    }
   } catch {}
-  // Fallback knowledge
-  return {
-    products: 'Restaurant POS, Retail POS, School ERP, Medical Store POS, Transport Software, Property ERP, CRM, WhatsApp CRM, Reports & Analytics, Inventory Management, Team & Permissions, Email Marketing.',
-    pricing: '7-Day Free Trial. Basic: PKR 1,000/mo (50% OFF, was PKR 2,000). Standard: PKR 3,000/mo (was PKR 5,999). Enterprise: Custom. All include cloud sync, backup, free updates. Yearly: 20% savings.',
-    guarantees: '30-Day Money Back Guarantee. Lifetime Price Lock. Free Setup & Data Migration. Free Staff Training. WhatsApp Support: +92 319 432 9754.',
-    routes: '/signup, /pricing, /blog, /industries, /business-services, /about, /contact, /reviews, /faq, /documentation, /help-center, /support-center.',
-    website: 'https://nexorasolution.online',
-  }
+  return FALLBACK_KNOWLEDGE
 }
 
 // ── Session Memory (KV) ──
@@ -151,27 +172,85 @@ async function getSession(sessionId, env) {
   } catch { return [] }
 }
 
-async function saveSession(sessionId, messages, env) {
-  if (!sessionId || !env.AI_KV) return
-  try {
-    await env.AI_KV.put(`session:${sessionId}`, JSON.stringify({ messages: messages.slice(-20), updated: Date.now() }), { expirationTtl: 3600 })
-  } catch {}
+// ── Session deduplication via content hash ──
+// Only writes to KV when session content actually changed
+let sessionHashes = new Map()
+let lastHashCleanup = Date.now()
+
+function hashMessages(messages) {
+  // Lightweight hash of last 3 messages (enough to detect meaningful change)
+  const last = messages.slice(-3)
+  let hash = 0
+  for (const m of last) {
+    const str = (m.role || '') + (m.content || '').slice(-80)
+    for (let i = 0; i < str.length; i++) {
+      hash = ((hash << 5) - hash + str.charCodeAt(i)) | 0
+    }
+  }
+  return hash
 }
 
-// ── Analytics Logging ──
-async function logAnalytics(env, data) {
-  if (!env.AI_KV) return
+async function saveSession(sessionId, messages, env) {
+  if (!sessionId || !env.AI_KV) return
+  // Periodic cleanup: prevent unbounded Map growth
+  if (Date.now() - lastHashCleanup > 3600000) { // Every hour
+    sessionHashes.clear()
+    lastHashCleanup = Date.now()
+  }
+  // Skip write if content hasn't changed since last save
+  const newHash = hashMessages(messages)
+  if (sessionHashes.get(sessionId) === newHash) return
+  sessionHashes.set(sessionId, newHash)
   try {
-    const today = new Date().toISOString().slice(0, 10)
-    const key = `analytics:${today}`
-    const existing = await env.AI_KV.get(key, 'json') || { requests: 0, tokens: 0, errors: 0, responseTimes: [], questions: [] }
-    existing.requests++
-    existing.tokens += data.tokens || 0
-    if (data.error) existing.errors++
-    if (data.responseTime) existing.responseTimes.push(data.responseTime)
-    if (data.question) existing.questions.push(data.question.slice(0, 100))
-    await env.AI_KV.put(key, JSON.stringify(existing), { expirationTtl: 7776000 })
-  } catch {}
+    await env.AI_KV.put(`session:${sessionId}`, JSON.stringify({ messages: messages.slice(-20), updated: Date.now() }), { expirationTtl: 3600 })
+  } catch (err) {
+    console.error('[saveSession] KV write failed:', err.message)
+  }
+}
+
+// ── Analytics: Buffered in-memory, flushed every 15 min via ctx.waitUntil ──
+function bufferAnalytics(data) {
+  const today = new Date().toISOString().slice(0, 10)
+  if (!analyticsBuffer[today]) {
+    analyticsBuffer[today] = { requests: 0, tokens: 0, errors: 0, responseTimes: [], questions: [] }
+  }
+  analyticsBuffer[today].requests++
+  analyticsBuffer[today].tokens += data.tokens || 0
+  if (data.error) analyticsBuffer[today].errors++
+  if (data.responseTime) analyticsBuffer[today].responseTimes.push(data.responseTime)
+  if (data.question) analyticsBuffer[today].questions.push(data.question.slice(0, 100))
+}
+
+function isFreePlan(env) {
+  return env.FREE_PLAN === 'true' || env.ENVIRONMENT === 'development'
+}
+
+async function flushAnalytics(env) {
+  if (isFreePlan(env) || !env.AI_KV) return
+  if (Date.now() - lastAnalyticsFlush < ANALYTICS_FLUSH_INTERVAL) return
+  const toFlush = analyticsBuffer
+  analyticsBuffer = {}
+  lastAnalyticsFlush = Date.now()
+  for (const [day, stats] of Object.entries(toFlush)) {
+    if (!stats.requests) continue
+    try {
+      const key = `analytics:${day}`
+      const existing = await env.AI_KV.get(key, 'json')
+      if (existing) {
+        existing.requests += stats.requests
+        existing.tokens += stats.tokens
+        existing.errors += stats.errors
+      }
+      const merged = existing || stats
+      await env.AI_KV.put(key, JSON.stringify(merged), { expirationTtl: 2592000 }) // 30 days
+    } catch {}
+  }
+}
+
+// Legacy wrapper — buffers instead of writing immediately
+async function logAnalytics(env, data) {
+  bufferAnalytics(data)
+  // Don't await — fire-and-forget flush
 }
 
 // ── Call AI Provider ──
@@ -211,22 +290,38 @@ export default {
 
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers })
 
+    // Flush buffered analytics to KV every 15 min (fire-and-forget via waitUntil)
+    ctx.waitUntil(flushAnalytics(env).catch((err) => console.error('[flushAnalytics] Error:', err.message)))
+
     // ── Health ──
     if (url.pathname === '/health') {
       return new Response(JSON.stringify({ status: 'healthy', providers: Object.keys(PROVIDERS), timestamp: new Date().toISOString() }), { status: 200, headers: { 'Content-Type': 'application/json', ...headers } })
     }
 
-    // ── Admin Dashboard (public stats — no auth required) ──
+    // ── Admin Dashboard (public stats — no auth required, last 7 days only) ──
     if (url.pathname === '/admin/stats') {
       const stats = { total: 0, byDay: {} }
+      // Also include buffered in-memory analytics (not yet flushed to KV)
+      for (const [day, buf] of Object.entries(analyticsBuffer)) {
+        stats.total += buf.requests || 0
+        stats.byDay[day] = { requests: buf.requests, tokens: buf.tokens, errors: buf.errors }
+      }
+      // Read only last 7 days from KV (not all keys)
       if (env.AI_KV) {
-        const list = await env.AI_KV.list({ prefix: 'analytics:' })
-        for (const key of list.keys) {
+        const days = []
+        for (let i = 0; i < 7; i++) {
+          const d = new Date()
+          d.setDate(d.getDate() - i)
+          days.push(d.toISOString().slice(0, 10))
+        }
+        for (const day of days) {
           try {
-            const day = await env.AI_KV.get(key.name, 'json')
-            if (day) {
-              stats.total += day.requests || 0
-              stats.byDay[key.name.replace('analytics:', '')] = { requests: day.requests, tokens: day.tokens, errors: day.errors, avgTime: day.responseTimes?.length ? Math.round(day.responseTimes.reduce((a,b) => a+b, 0) / day.responseTimes.length) : 0, topQuestions: day.questions?.slice(-5) || [] }
+            const existing = await env.AI_KV.get(`analytics:${day}`, 'json')
+            if (existing) {
+              stats.total += existing.requests || 0
+              stats.byDay[day] = stats.byDay[day]
+                ? { requests: stats.byDay[day].requests + (existing.requests || 0), tokens: (stats.byDay[day].tokens || 0) + (existing.tokens || 0), errors: (stats.byDay[day].errors || 0) + (existing.errors || 0) }
+                : { requests: existing.requests, tokens: existing.tokens, errors: existing.errors, avgTime: existing.responseTimes?.length ? Math.round(existing.responseTimes.reduce((a,b) => a+b, 0) / existing.responseTimes.length) : 0, topQuestions: existing.questions?.slice(-5) || [] }
             }
           } catch {}
         }
@@ -242,7 +337,22 @@ export default {
       }
       try {
         const knowledge = await request.json()
-        if (env.AI_KV) await env.AI_KV.put('nexora-knowledge', JSON.stringify(knowledge))
+        // Validate required fields before writing to KV
+        if (!knowledge || typeof knowledge !== 'object') {
+          return new Response(JSON.stringify({ error: 'invalid_payload', message: 'Knowledge must be a JSON object' }), { status: 400, headers: { 'Content-Type': 'application/json', ...headers } })
+        }
+        const required = ['products', 'pricing', 'guarantees', 'routes', 'website']
+        const missing = required.filter((k) => !knowledge[k] || typeof knowledge[k] !== 'string')
+        if (missing.length > 0) {
+          return new Response(JSON.stringify({ error: 'invalid_payload', message: `Missing or invalid fields: ${missing.join(', ')}` }), { status: 400, headers: { 'Content-Type': 'application/json', ...headers } })
+        }
+        if (env.AI_KV) {
+          try {
+            await env.AI_KV.put('nexora-knowledge', JSON.stringify(knowledge))
+            // Invalidate cache so next request picks up new knowledge
+            knowledgeCache = null
+          } catch {}
+        }
         return new Response(JSON.stringify({ success: true }), { status: 200, headers: { 'Content-Type': 'application/json', ...headers } })
       } catch (e) {
         return new Response(JSON.stringify({ error: e.message }), { status: 400, headers: { 'Content-Type': 'application/json', ...headers } })
@@ -299,9 +409,9 @@ export default {
 
         const responseTime = Date.now() - startTime
 
-        // Save session
+        // Save session in background — response never waits for KV
         if (sessionId) {
-          await saveSession(sessionId, [...allMessages, { role: 'assistant', content: result.text }], env)
+          ctx.waitUntil(saveSession(sessionId, [...allMessages, { role: 'assistant', content: result.text }], env))
         }
 
         // Log analytics
@@ -644,14 +754,15 @@ ${ocrText.slice(0, 12000)}
 
         ctx.waitUntil((async () => {
           await logAnalytics(env, { tokens: stats.tokensUsed, responseTime, question: `[MENU IMPORT] ${items.length} items` })
-          if (env.AI_KV) {
+          // Menu import stats: only write if not on free plan, with error guard
+          if (!isFreePlan(env) && env.AI_KV) {
             try {
               const today = new Date().toISOString().slice(0, 10)
               const key = `menu-import:${today}`
               const existing = await env.AI_KV.get(key, 'json') || { imports: 0, items: 0 }
               existing.imports++
               existing.items += items.length
-              await env.AI_KV.put(key, JSON.stringify(existing), { expirationTtl: 7776000 })
+              await env.AI_KV.put(key, JSON.stringify(existing), { expirationTtl: 2592000 })
             } catch {}
           }
         })())
@@ -794,7 +905,7 @@ ${text.slice(0, 15000)}
       }
     }
 
-    // ── Menu Import Stats (Admin) ──
+    // ── Menu Import Stats (Admin, last 7 days only) ──
     if (url.pathname === '/menu-import/stats' && request.method === 'GET') {
       const adminKey = request.headers.get('Authorization')?.replace('Bearer ', '')
       if (adminKey !== env.ADMIN_KEY && env.ADMIN_KEY) {
@@ -803,14 +914,19 @@ ${text.slice(0, 15000)}
       const importStats = { totalImports: 0, totalItemsExtracted: 0, byDay: {} }
       if (env.AI_KV) {
         try {
-          const list = await env.AI_KV.list({ prefix: 'menu-import:' })
-          for (const key of list.keys) {
+          const days = []
+          for (let i = 0; i < 7; i++) {
+            const d = new Date()
+            d.setDate(d.getDate() - i)
+            days.push(d.toISOString().slice(0, 10))
+          }
+          for (const day of days) {
             try {
-              const day = await env.AI_KV.get(key.name, 'json')
-              if (day) {
-                importStats.totalImports += day.imports || 0
-                importStats.totalItemsExtracted += day.items || 0
-                importStats.byDay[key.name.replace('menu-import:', '')] = day
+              const data = await env.AI_KV.get(`menu-import:${day}`, 'json')
+              if (data) {
+                importStats.totalImports += data.imports || 0
+                importStats.totalItemsExtracted += data.items || 0
+                importStats.byDay[day] = data
               }
             } catch {}
           }

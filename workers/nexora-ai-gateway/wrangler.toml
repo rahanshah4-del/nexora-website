@@ -8,6 +8,10 @@ DEFAULT_MODEL = "deepseek-v4-flash"
 MAX_TOKENS = 500
 RATE_LIMIT_REQUESTS = 100
 RATE_LIMIT_WINDOW = 60
+# Set FREE_PLAN=true to disable analytics KV writes (Free plan optimization)
+# Upgrade to paid: change to FREE_PLAN=false or remove this line
+FREE_PLAN = "true"
+ENVIRONMENT = "production"
 
 [ai]
 binding = "AI"
