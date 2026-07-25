@@ -1,7 +1,6 @@
-import { useEffect } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import CopyEmailButton from '../components/CopyEmailButton.jsx'
-import AISections from './AISections.jsx'
 import {
   HiOutlineAcademicCap,
   HiOutlineArrowRight,
@@ -169,6 +168,8 @@ function PosShowcasePreview() {
   )
 }
 
+const AISections = lazy(() => import('./AISections.jsx'))
+
 export default function HomepageSections() {
   /* Scroll-triggered reveal — this chunk mounts lazily, so the observer must live
      here (a shell-level observer registered before mount would never see these nodes).
@@ -228,7 +229,16 @@ export default function HomepageSections() {
       </section>
 
       {/* ── AI Sections ── */}
-      <AISections />
+      <Suspense fallback={
+        <div className="space-y-6 px-5 py-12 sm:px-8">
+          <div className="mx-auto h-8 w-48 animate-pulse rounded-xl bg-slate-100" />
+          <div className="mx-auto grid max-w-5xl gap-5 sm:grid-cols-2">
+            {[1, 2].map((i) => <div key={i} className="h-40 animate-pulse rounded-2xl bg-slate-100" />)}
+          </div>
+        </div>
+      }>
+        <AISections />
+      </Suspense>
 
       <section data-reveal data-ai="fade-up" className="bg-white px-5 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-24">
         <div className="mx-auto grid max-w-7xl items-center gap-6 rounded-[2rem] border border-blue-100 bg-[linear-gradient(135deg,#eff6ff_0%,#ffffff_58%,#e0f2fe_100%)] p-6 shadow-[0_30px_90px_-60px_rgba(37,99,235,0.44)] sm:p-8 lg:grid-cols-[1fr_auto]">

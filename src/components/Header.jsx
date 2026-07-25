@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, useLocation } from 'react-router-dom'
-import { getAuth, onAuthStateChanged } from 'firebase/auth'
 import { blogArticles } from '../lib/blogData.js'
 import {
   HiOutlineAcademicCap,
@@ -69,15 +68,28 @@ function Header() {
   const [authReady, setAuthReady] = useState(false)
 
   useEffect(() => {
-    try {
-      const auth = getAuth()
-      return onAuthStateChanged(auth, (fbUser) => {
-        setAuthUser(fbUser)
-        setAuthReady(true)
-      })
-    } catch {
-      setAuthReady(true)
+    let unsub = null
+    let cancelled = false
+    // Defer Firebase Auth import to idle so it never blocks LCP/TBT on public pages
+    const initAuth = () => {
+      import('firebase/auth')
+        .then(({ getAuth, onAuthStateChanged }) => {
+          if (cancelled) return
+          try {
+            const auth = getAuth()
+            unsub = onAuthStateChanged(auth, (fbUser) => {
+              if (!cancelled) { setAuthUser(fbUser); setAuthReady(true) }
+            })
+          } catch { if (!cancelled) setAuthReady(true) }
+        })
+        .catch(() => { if (!cancelled) setAuthReady(true) })
     }
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      const idleId = window.requestIdleCallback(initAuth, { timeout: 4000 })
+      return () => { cancelled = true; window.cancelIdleCallback?.(idleId); if (unsub) unsub() }
+    }
+    const timerId = window.setTimeout(initAuth, 2000)
+    return () => { cancelled = true; window.clearTimeout(timerId); if (unsub) unsub() }
   }, [])
 
   const isAuth = authReady && authUser != null

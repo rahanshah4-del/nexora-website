@@ -67,8 +67,8 @@
     <link rel="icon" type="image/png" sizes="64x64" href="/favicon-64x64.png?v=20260612-nexora-mark" />
     <link rel="apple-touch-icon" sizes="180x180" href="/nexora-pwa-install-180.png?v=20260628-pwa-install-icon-v2" />
     <title>Nexora POS Software Pakistan | Nexora Solution</title>
-    <!-- Preload critical entry module -->
-    <link rel="modulepreload" href="/src/main.jsx" />
+    <!-- Preload critical entry module with high priority for LCP -->
+    <link rel="modulepreload" href="/src/main.jsx" fetchpriority="high" />
     <style>
       /* Static hero shell — visible before React mounts on mobile */
       .s-shell{background:linear-gradient(180deg,#fff 0%,#f8fbff 72%,#fff 100%);min-height:100dvh;position:relative;overflow:hidden;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#0f172a}
