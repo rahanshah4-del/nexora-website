@@ -4,8 +4,8 @@
  * Usage: node scripts/aiHighlight.js [--dry-run] [--force]
  *
  * Two modes:
- *   1. Built-in NLP (always works, no API key) — fast, offline, immediate
- *   2. Gemini-enhanced (needs GEMINI_API_KEY) — better semantic understanding
+ *   1. Nexora AI Gateway (DeepSeek) — advanced semantic understanding, always branded "Nexora AI"
+ *   2. Built-in NLP (always works, no API key) — fast, offline, immediate fallback
  *
  * Output: src/lib/blogData.highlighted.js
  */
@@ -35,8 +35,7 @@ loadEnvFile(join(ROOT, '.env'))
 loadEnvFile(join(ROOT, '.env.production'))
 loadEnvFile(join(ROOT, '.env.local'))
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || ''
-const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent'
+const AI_GATEWAY_URL = process.env.VITE_AI_GATEWAY_URL || 'https://nexora-ai-gateway.rahanshah4.workers.dev'
 const isDryRun = process.argv.includes('--dry-run')
 const isForce = process.argv.includes('--force')
 const isDebug = process.argv.includes('--debug')
@@ -141,8 +140,79 @@ function applyHighlights(paragraph, keyPhrases) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-//  GEMINI ENHANCEMENT (optional, needs API key)
+//  NEXORA AI HIGHLIGHTER (DeepSeek via AI Gateway)
+//  Branded "Nexora AI" — backend uses DeepSeek, frontend shows Nexora AI
+//  Batches paragraphs for speed (1 API call per article, not per paragraph)
 // ═══════════════════════════════════════════════════════════════════════════
+
+async function nexoraAiHighlightBatch(paragraphs, articleContext = '') {
+  // Only process paragraphs that need highlighting
+  const candidates = paragraphs
+    .map((p, i) => ({ text: p, index: i }))
+    .filter(({ text }) => text.length >= 30 && !/==[^=]+==/.test(text))
+
+  if (candidates.length === 0) return {}
+
+  // Split into smaller batches (6 paragraphs each) to avoid overflowing context window
+  const BATCH_SIZE = 6
+  const allResults = {}
+
+  for (let batchStart = 0; batchStart < candidates.length; batchStart += BATCH_SIZE) {
+    const batch = candidates.slice(batchStart, batchStart + BATCH_SIZE)
+
+    const prompt = `You are Nexora AI. For each paragraph below, identify 2-4 KEY business phrases. Focus on: business terms (POS, CRM, ERP), numbers/prices, unique features, critical warnings.
+
+Article: ${articleContext || 'Business software'}
+
+${batch.map(({ text }, i) => `[P${i}] ${text.slice(0, 350)}`).join('\n\n')}
+
+Return ONLY a JSON object like {"0":["phrase1","phrase2"],"1":["phrase3"]}. No other text.`
+
+    try {
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 25000)
+      const res = await fetch(`${AI_GATEWAY_URL}/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: prompt }],
+          maxTokens: 600,
+          provider: 'deepseek',
+        }),
+        signal: controller.signal,
+      })
+      clearTimeout(timeout)
+      if (!res.ok) continue
+      const data = await res.json()
+      const text = data?.text || ''
+      const match = text.match(/\{[\s\S]*\}/)
+      if (!match) continue
+      const result = JSON.parse(match[0])
+      for (const [key, phrases] of Object.entries(result)) {
+        const candidateIdx = parseInt(key, 10)
+        if (!isNaN(candidateIdx) && candidateIdx < batch.length) {
+          allResults[batch[candidateIdx].index] = phrases
+        }
+      }
+    } catch {
+      // Silently continue to next batch
+    }
+
+    // Small delay between batches to respect rate limits
+    if (batchStart + BATCH_SIZE < candidates.length) {
+      await new Promise((r) => setTimeout(r, 500))
+    }
+  }
+
+  return Object.keys(allResults).length > 0 ? allResults : null
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  GEMINI FALLBACK (kept for backward compatibility if key exists)
+// ═══════════════════════════════════════════════════════════════════════════
+
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || ''
+const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent'
 
 async function geminiHighlight(paragraph, articleContext = '') {
   if (!GEMINI_API_KEY) return null
@@ -181,44 +251,56 @@ Key phrases (JSON array):`
 //  MAIN PROCESSOR
 // ═══════════════════════════════════════════════════════════════════════════
 
-async function processArticle(article, index, total, useGemini) {
+async function processArticle(article, index, total, useAi) {
   const context = `${article.category || 'Business'} — ${article.title || ''}`
   const sections = article.sections || []
   let aiCount = 0
   let builtinCount = 0
-  let paragraphCount = 0
 
+  // Collect all paragraphs first
+  const allParagraphs = []
+  for (const section of sections) {
+    const paragraphs = section.paragraphs || []
+    allParagraphs.push(...paragraphs)
+  }
+
+  // Try batch AI highlighting (1 API call for entire article)
+  let aiPhrases = null
+  if (useAi) {
+    aiPhrases = await nexoraAiHighlightBatch(allParagraphs, context)
+    if (aiPhrases && Object.keys(aiPhrases).length > 0) {
+      if (isDebug) log(`  🤖 Nexora AI batch: "${article.title}" → ${Object.keys(aiPhrases).length} paragraphs highlighted`)
+    }
+  }
+
+  // Apply highlights to each paragraph
+  let paraIdx = 0
   for (const section of sections) {
     const paragraphs = section.paragraphs || []
     for (let i = 0; i < paragraphs.length; i++) {
       const p = paragraphs[i]
-      paragraphCount++
-      if (!isForce && /==[^=]+==/.test(p)) continue // Already highlighted
-      if (p.length < 30) continue // Too short
+      if (!isForce && /==[^=]+==/.test(p)) { paraIdx++; continue } // Already highlighted
+      if (p.length < 30) { paraIdx++; continue } // Too short
 
-      // Try Gemini first, fall back to built-in
       let highlighted = false
-      if (useGemini) {
-        const phrases = await geminiHighlight(p, context)
-        if (phrases && phrases.length > 0) {
-          paragraphs[i] = applyHighlights(p, phrases)
-          aiCount++
-          highlighted = true
-          if (isDebug) log(`  🤖 Gemini: "${article.title}" p${i}`)
-        }
-        // Rate limit
-        if (paragraphCount % 12 === 0) await new Promise((r) => setTimeout(r, 5000))
+
+      // Use AI batch results
+      if (aiPhrases && aiPhrases[paraIdx] && Array.isArray(aiPhrases[paraIdx]) && aiPhrases[paraIdx].length > 0) {
+        paragraphs[i] = applyHighlights(p, aiPhrases[paraIdx])
+        aiCount++
+        highlighted = true
       }
 
       if (!highlighted) {
         paragraphs[i] = builtInHighlight(p)
         builtinCount++
       }
+      paraIdx++
     }
   }
 
-  const mode = useGemini ? `🤖+📊 ${aiCount}/${builtinCount}` : `📊 ${builtinCount}`
-  log(`[${index + 1}/${total}] "${article.title}" — ${mode} phrases highlighted`)
+  const mode = aiCount > 0 ? `🤖 Nexora AI: ${aiCount} | 📊 NLP: ${builtinCount}` : `📊 NLP: ${builtinCount}`
+  log(`[${index + 1}/${total}] "${article.title}" — ${mode}`)
   return article
 }
 
@@ -226,14 +308,10 @@ async function main() {
   log('═══════════════════════════════════════════')
   log('        Nexora AI — Article Highlighter')
   log('═══════════════════════════════════════════')
-  log(`Gemini API: ${GEMINI_API_KEY ? '✅ Connected (enhanced mode)' : '⚠️  Not set — using built-in NLP only'}`)
-  log(`Mode: ${isDryRun ? '🔍 DRY RUN' : isForce ? '🔄 FORCE' : '📝 Incremental'}`)
-  if (!GEMINI_API_KEY) {
-    log('')
-    log('💡 For AI-enhanced quality, get a free key:')
-    log('   https://aistudio.google.com/apikey')
-    log('   Then add to .env.local: GEMINI_API_KEY=your-key')
-  }
+  log(`AI Gateway: ${AI_GATEWAY_URL}`)
+  log(`Mode: ${isDryRun ? '🔍 DRY RUN' : isForce ? '🔄 FORCE (re-highlight all)' : '📝 Incremental (skip already highlighted)'}`)
+  log(`Backend: DeepSeek (branded as Nexora AI)`)
+  log(`Fallback: ${GEMINI_API_KEY ? '✅ Gemini ready' : '📊 Built-in NLP only (Gemini key not set)'}`)
   log('')
 
   // Load articles
@@ -260,7 +338,8 @@ async function main() {
         paragraphs: [...(s.paragraphs || [])],
       })),
     }
-    processed.push(await processArticle(article, i, articles.length, Boolean(GEMINI_API_KEY)))
+    // Always try Nexora AI (DeepSeek) first — falls back to built-in NLP automatically
+    processed.push(await processArticle(article, i, articles.length, true))
   }
 
   if (isDryRun) {
@@ -275,6 +354,7 @@ async function main() {
   const content = `// Generated by Nexora AI — do not edit manually.
 // Run: node scripts/aiHighlight.js --force  to regenerate.
 // Source: blogData.js
+// Backend: DeepSeek via Nexora AI Gateway
 
 export const blogArticles = ${JSON.stringify(processed, null, 2)};
 `

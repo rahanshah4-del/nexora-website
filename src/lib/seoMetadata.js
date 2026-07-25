@@ -1,7 +1,7 @@
 const HOST = 'https://nexorasolution.online'
 const DEFAULT_OG_IMAGE = `${HOST}/nexora-brand-logo.png`
 
-function buildPage({ path, title, description, keyword, image, section }) {
+function buildPage({ path, title, description, keyword, image, section, ...extra }) {
   return {
     path,
     title,
@@ -14,6 +14,7 @@ function buildPage({ path, title, description, keyword, image, section }) {
     twitterCard: 'summary_large_image',
     robots: 'index,follow',
     section,
+    ...extra,
   }
 }
 
@@ -24,6 +25,12 @@ export const seoMetadata = {
     description: 'Nexora offers Pakistan\'s leading POS software for restaurant, retail, school ERP and WhatsApp CRM teams with unified business workflows.',
     keyword: 'POS Software Pakistan',
     image: `${HOST}/nexora-brand-logo.png`,
+    softwareApplication: {
+      name: 'Nexora Business Suite',
+      description: 'AI-powered business operating system for restaurants, retail, pharmacy, CRM and ERP — POS, billing, inventory, school management, transport, WhatsApp CRM and property ERP.',
+      applicationCategory: 'BusinessApplication',
+      operatingSystem: 'Web',
+    },
   }),
   '/services': buildPage({
     path: '/services',
