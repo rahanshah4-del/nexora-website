@@ -821,6 +821,9 @@ ${buildGtm()}
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function buildPublicPageHtml(meta, path = '') {
+  // Generate static HTML content that crawlers can read before JS hydration
+  const appHtml = buildStaticShell(meta, path)
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -838,13 +841,127 @@ ${meta.jsonLd || ''}
 ${buildGtm()}
 </head>
 <body>
-  <div id="root"></div>
+  <div id="root">${appHtml}</div>
   ${PRODUCTION_ASSETS || '<script type="module" src="/src/main.jsx"></script>'}
   <noscript>
     <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PZJV65RW" height="0" width="0" style="display:none;visibility:hidden"></iframe>
   </noscript>
 </body>
 </html>`
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  STATIC SHELL GENERATOR — Bakes key page content into HTML for crawlers
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function escapeHtml(str) {
+  return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
+
+function buildStaticShell(meta, path) {
+  const title = escapeHtml(meta.title || 'Nexora Solution')
+  const desc = escapeHtml(meta.description || '')
+  const isHome = path === '/'
+
+  if (isHome) {
+    return `
+  <header style="position:sticky;top:0;z-index:50;border-bottom:1px solid rgba(226,232,240,.8);background:rgba(255,255,255,.9);backdrop-filter:blur(24px)">
+    <div style="display:flex;align-items:center;height:4rem;max-width:1280px;margin:0 auto;padding:0 1rem">
+      <div style="display:flex;align-items:center;gap:.5rem;font-size:1.25rem;font-weight:800;letter-spacing:.11em;color:#0f172a">
+        <span style="display:inline-flex;width:2rem;height:2rem;border-radius:.5rem;background:linear-gradient(135deg,#0ea5e9,#3b82f6);color:#fff;align-items:center;justify-content:center;font-size:.65rem;font-weight:900">N</span>
+        NEXORA
+      </div>
+      <nav style="margin-left:auto;display:flex;gap:1.5rem;font-size:.875rem;font-weight:600;color:#334155">
+        <a href="/" style="color:#0f172a;text-decoration:none">Home</a>
+        <a href="/pricing" style="color:#334155;text-decoration:none">Pricing</a>
+        <a href="/blog" style="color:#334155;text-decoration:none">Blog</a>
+        <a href="/contact" style="color:#334155;text-decoration:none">Contact</a>
+      </nav>
+    </div>
+  </header>
+  <main style="padding-top:3.5rem">
+    <section style="text-align:center;padding:3rem 1.25rem 2rem;background:linear-gradient(180deg,#fff 0%,#f8fbff 72%,#fff 100%)">
+      <span style="display:inline-flex;border-radius:9999px;border:1px solid #dbeafe;background:#eff6ff;padding:.5rem 1rem;font-size:.75rem;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:#1d4ed8">✨ Powered by Nexora AI</span>
+      <h1 style="margin:1.5rem auto 0;max-width:64rem;font-size:clamp(1.8rem,7.5vw,2.85rem);font-weight:900;line-height:.98;letter-spacing:-.015em;color:#0f172a">Nexora Solution – <span style="position:relative;display:inline-block">AI Business Operating System</span></h1>
+      <p style="margin:1rem auto 0;max-width:42rem;font-size:.82rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8">Restaurant POS • Retail POS • Pharmacy POS • CRM • ERP • AI Automation</p>
+      <p style="margin:1.25rem auto 0;font-size:1.875rem;font-family:Kalam,Sora,ui-rounded,system-ui,sans-serif;letter-spacing:-.01em;color:#0f172a">Simple, efficient, yet powerful.</p>
+      <p style="margin:1.25rem auto 0;max-width:48rem;font-size:1rem;line-height:2;color:#64748b">${escapeHtml('Nexora Business Suite helps you manage customers, students, tenants, sales, invoices, reports and team access from one secure dashboard.')}</p>
+      <div style="margin-top:1.75rem;display:flex;flex-direction:column;justify-content:center;gap:.75rem">
+        <a href="/signup" style="display:inline-flex;min-height:3rem;align-items:center;justify-content:center;gap:.5rem;border-radius:9999px;padding:.75rem 1.75rem;font-size:.875rem;font-weight:800;text-decoration:none;background:#0f172a;color:#fff">Start Free Trial →</a>
+        <a href="/contact" style="display:inline-flex;min-height:3rem;align-items:center;justify-content:center;gap:.5rem;border-radius:9999px;padding:.75rem 1.75rem;font-size:.875rem;font-weight:800;text-decoration:none;border:1px solid #e2e8f0;background:rgba(255,255,255,.9);color:#0f172a">Book a Demo ▸</a>
+      </div>
+      <div style="margin:2.25rem auto 0;max-width:56rem;display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem;text-align:left;padding-bottom:1rem">
+        <div style="border-radius:1rem;border:1px solid rgba(226,232,240,.8);background:rgba(255,255,255,.8);padding:1rem"><p style="font-size:.75rem;font-weight:800;color:#0f172a">Cloud Based</p><p style="font-size:.68rem;color:#64748b">Secure & reliable</p></div>
+        <div style="border-radius:1rem;border:1px solid rgba(226,232,240,.8);background:rgba(255,255,255,.8);padding:1rem"><p style="font-size:.75rem;font-weight:800;color:#0f172a">Multi Device</p><p style="font-size:.68rem;color:#64748b">Access anywhere</p></div>
+        <div style="border-radius:1rem;border:1px solid rgba(226,232,240,.8);background:rgba(255,255,255,.8);padding:1rem"><p style="font-size:.75rem;font-weight:800;color:#0f172a">Secure & Reliable</p><p style="font-size:.68rem;color:#64748b">Protected access</p></div>
+        <div style="border-radius:1rem;border:1px solid rgba(226,232,240,.8);background:rgba(255,255,255,.8);padding:1rem"><p style="font-size:.75rem;font-weight:800;color:#0f172a">Easy To Use</p><p style="font-size:.68rem;color:#64748b">No heavy training</p></div>
+      </div>
+    </section>
+    <section style="max-width:48rem;margin:0 auto;padding:3rem 1.25rem">
+      <h2 style="text-align:center;font-size:2rem;font-weight:900;color:#0f172a">Frequently Asked Questions</h2>
+      <dl style="margin-top:2rem;display:flex;flex-direction:column;gap:1.25rem">
+        <div style="border-radius:1rem;border:1px solid #e2e8f0;padding:1.25rem;background:#fff">
+          <dt style="font-weight:800;color:#0f172a">What is Nexora Solution?</dt>
+          <dd style="margin-top:.5rem;font-size:.875rem;line-height:1.6;color:#475569">${escapeHtml("Nexora Solution is Pakistan's AI-powered business operating system offering POS, CRM, ERP and automation software for restaurants, retail stores, pharmacies, schools, transport fleets and growing enterprises — all from one unified platform.")}</dd>
+        </div>
+        <div style="border-radius:1rem;border:1px solid #e2e8f0;padding:1.25rem;background:#fff">
+          <dt style="font-weight:800;color:#0f172a">Who is Nexora built for?</dt>
+          <dd style="margin-top:.5rem;font-size:.875rem;line-height:1.6;color:#475569">Nexora is built for Pakistani businesses of every size — from a single-counter restaurant or retail shop to multi-branch schools, pharmacy chains and transport fleets.</dd>
+        </div>
+        <div style="border-radius:1rem;border:1px solid #e2e8f0;padding:1.25rem;background:#fff">
+          <dt style="font-weight:800;color:#0f172a">What does Nexora cost?</dt>
+          <dd style="margin-top:.5rem;font-size:.875rem;line-height:1.6;color:#475569">Plans start at PKR 1,000/month (50% off for new users). Every plan includes a 7-day free trial, cloud sync, free updates, free data migration, free staff training and a 30-day money-back guarantee.</dd>
+        </div>
+        <div style="border-radius:1rem;border:1px solid #e2e8f0;padding:1.25rem;background:#fff">
+          <dt style="font-weight:800;color:#0f172a">Does Nexora work offline?</dt>
+          <dd style="margin-top:.5rem;font-size:.875rem;line-height:1.6;color:#475569">The POS modules support offline mode so you can keep billing even when the internet is down. Once you reconnect, all data syncs automatically to the cloud.</dd>
+        </div>
+        <div style="border-radius:1rem;border:1px solid #e2e8f0;padding:1.25rem;background:#fff">
+          <dt style="font-weight:800;color:#0f172a">How do I get started?</dt>
+          <dd style="margin-top:.5rem;font-size:.875rem;line-height:1.6;color:#475569">Sign up for a free 7-day trial at nexorasolution.online/signup — no credit card required. Or book a live demo and our team will walk you through the modules that fit your business.</dd>
+        </div>
+      </dl>
+    </section>
+    <section style="max-width:48rem;margin:0 auto;padding:2rem 1.25rem 3rem;text-align:center">
+      <h2 style="font-size:1.5rem;font-weight:900;color:#0f172a">All Modules. One Platform. Unlimited Possibilities.</h2>
+      <p style="margin-top:1rem;font-size:1rem;color:#475569;line-height:1.7">Nexora offers POS, CRM, School ERP, Property ERP, Medical Store POS, Transport/Rental, WhatsApp CRM, Reports, and more — all from one unified dashboard.</p>
+    </section>
+  </main>
+  <footer style="background:linear-gradient(135deg,#071d35,#062b52);color:#fff;padding:2rem 1.25rem;text-align:center;font-size:.875rem">
+    <p style="font-weight:800;margin-bottom:.5rem">Nexora Solution</p>
+    <p style="color:#94a3b8">Pakistan's AI-powered POS, CRM & ERP platform for restaurants, retail, schools and growing businesses.</p>
+    <p style="margin-top:1rem;color:#64748b">&copy; 2019–2026 Nexora Solution. All Rights Reserved.</p>
+    <p style="margin-top:.5rem"><a href="/" style="color:#60a5fa;text-decoration:none">nexorasolution.online</a></p>
+  </footer>`
+  }
+
+  // Generic shell for other public pages
+  return `
+  <header style="position:sticky;top:0;z-index:50;border-bottom:1px solid #e2e8f0;background:rgba(255,255,255,.9);backdrop-filter:blur(24px)">
+    <div style="display:flex;align-items:center;height:4rem;max-width:1280px;margin:0 auto;padding:0 1rem">
+      <a href="/" style="display:flex;align-items:center;gap:.5rem;font-size:1.25rem;font-weight:800;letter-spacing:.11em;color:#0f172a;text-decoration:none">
+        <span style="display:inline-flex;width:2rem;height:2rem;border-radius:.5rem;background:linear-gradient(135deg,#0ea5e9,#3b82f6);color:#fff;align-items:center;justify-content:center;font-size:.65rem;font-weight:900">N</span>
+        NEXORA
+      </a>
+      <nav style="margin-left:auto;display:flex;gap:1.5rem;font-size:.875rem;font-weight:600">
+        <a href="/" style="color:#0f172a;text-decoration:none">Home</a>
+        <a href="/pricing" style="color:#334155;text-decoration:none">Pricing</a>
+        <a href="/blog" style="color:#334155;text-decoration:none">Blog</a>
+        <a href="/contact" style="color:#334155;text-decoration:none">Contact</a>
+      </nav>
+    </div>
+  </header>
+  <main style="padding:3rem 1.25rem;max-width:48rem;margin:0 auto">
+    <h1 style="font-size:2rem;font-weight:900;color:#0f172a">${title}</h1>
+    <p style="margin-top:1rem;font-size:1rem;line-height:1.7;color:#475569">${desc}</p>
+    <div style="margin-top:2rem;display:flex;gap:.75rem">
+      <a href="/signup" style="display:inline-flex;min-height:3rem;align-items:center;justify-content:center;border-radius:9999px;padding:.75rem 1.75rem;font-size:.875rem;font-weight:800;text-decoration:none;background:#0f172a;color:#fff">Start Free Trial</a>
+      <a href="/contact" style="display:inline-flex;min-height:3rem;align-items:center;justify-content:center;border-radius:9999px;padding:.75rem 1.75rem;font-size:.875rem;font-weight:800;text-decoration:none;border:1px solid #e2e8f0;color:#0f172a">Book a Demo</a>
+    </div>
+  </main>
+  <footer style="background:linear-gradient(135deg,#071d35,#062b52);color:#fff;padding:2rem 1.25rem;text-align:center;font-size:.875rem">
+    <p>&copy; 2019–2026 Nexora Solution. All Rights Reserved.</p>
+  </footer>`
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
