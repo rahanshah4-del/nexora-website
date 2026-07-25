@@ -16,10 +16,14 @@ const ALLOWED_ORIGINS = [
 const PROVIDERS = {
   deepseek: {
     baseUrl: 'https://api.deepseek.com',
-    model: 'deepseek-chat',
+    model: 'deepseek-v4-flash',
     headers: (key) => ({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` }),
     body: (model, messages, maxTokens) => JSON.stringify({ model, messages, max_tokens: maxTokens, temperature: 0.7, stream: false }),
-    parse: (data) => ({ text: data.choices?.[0]?.message?.content || '', usage: data.usage || {}, model: data.model }),
+    parse: (data) => {
+      const msg = data.choices?.[0]?.message || {}
+      const text = msg.content || msg.reasoning_content || ''
+      return { text, usage: data.usage || {}, model: data.model }
+    },
   },
   openai: {
     baseUrl: 'https://api.openai.com',
@@ -171,9 +175,11 @@ async function logAnalytics(env, data) {
 
 // ── Call AI Provider ──
 async function callProvider(providerKey, messages, maxTokens, env) {
-  const provider = PROVIDERS[providerKey] || PROVIDERS.deepseek
-  const apiKey = env[`${providerKey.toUpperCase()}_API_KEY`] || env.DEEPSEEK_API_KEY
-  if (!apiKey) throw new Error(`No API key for provider: ${providerKey}`)
+  const provider = PROVIDERS[providerKey]
+  if (!provider) throw new Error(`Unknown provider: ${providerKey}`)
+
+  const apiKey = env[`${providerKey.toUpperCase()}_API_KEY`] || (providerKey === 'deepseek' ? env.DEEPSEEK_API_KEY : null)
+  if (!apiKey) throw new Error(`${providerKey}: No API key configured`)
 
   const knowledge = await loadKnowledge(env)
   const systemMsg = { role: 'system', content: `${BASE_PROMPT}\n\nNexora Products: ${knowledge.products}\nPricing: ${knowledge.pricing}\nGuarantees: ${knowledge.guarantees}\nRoutes: ${knowledge.routes}\nWebsite: ${knowledge.website}` }
@@ -184,8 +190,14 @@ async function callProvider(providerKey, messages, maxTokens, env) {
     headers: provider.headers(apiKey),
     body: provider.body(provider.model, [systemMsg, ...messages], maxTokens),
   })
-  if (!res.ok) throw new Error(`Provider error ${res.status}`)
-  return provider.parse(await res.json())
+  if (!res.ok) {
+    const errorText = await res.text().catch(() => 'unknown')
+    throw new Error(`${providerKey}: HTTP ${res.status} — ${errorText.slice(0, 200)}`)
+  }
+  const data = await res.json()
+  const parsed = provider.parse(data)
+  parsed.model = parsed.model || provider.model
+  return parsed
 }
 
 // ── Main Handler ──
@@ -262,8 +274,28 @@ export default {
         }
         const allMessages = [...history, ...messages]
 
+        // Try providers in order with automatic fallback — ensures AI never goes down
+        const FALLBACK_ORDER = [reqProvider, 'deepseek', 'gemini', 'openai', 'claude'].filter((p, i, a) => a.indexOf(p) === i) // dedupe
+        const errors = []
+        let result = null
+        let modelUsed = ''
         const startTime = Date.now()
-        const result = await callProvider(reqProvider, allMessages, Math.min(maxTokens, 500), env)
+
+        for (const providerKey of FALLBACK_ORDER) {
+          try {
+            result = await callProvider(providerKey, allMessages, Math.min(maxTokens, 500), env)
+            modelUsed = result.model || providerKey
+            break
+          } catch (e) {
+            errors.push(`${providerKey}: ${e.message}`)
+          }
+        }
+
+        if (!result) {
+          ctx.waitUntil(logAnalytics(env, { tokens: 0, error: true, question: `[ALL_FAILED] ${errors.join(' | ')}` }))
+          return new Response(JSON.stringify({ error: 'ai_service_error', message: 'AI service is temporarily unavailable. Please try again.', errors }), { status: 502, headers: { 'Content-Type': 'application/json', ...headers } })
+        }
+
         const responseTime = Date.now() - startTime
 
         // Save session
@@ -278,10 +310,10 @@ export default {
           question: messages[messages.length - 1]?.content || '',
         }))
 
-        return new Response(JSON.stringify({ text: result.text, usage: result.usage, model: result.model, responseTime }), { status: 200, headers: { 'Content-Type': 'application/json', ...headers } })
+        return new Response(JSON.stringify({ text: result.text, usage: result.usage, model: modelUsed, responseTime }), { status: 200, headers: { 'Content-Type': 'application/json', ...headers } })
 
       } catch (error) {
-        ctx.waitUntil(logAnalytics(env, { tokens: 0, error: true }))
+        ctx.waitUntil(logAnalytics(env, { tokens: 0, error: true, question: `[FATAL] ${error.message}` }))
         return new Response(JSON.stringify({ error: 'ai_service_error', message: 'Try again.' }), { status: 502, headers: { 'Content-Type': 'application/json', ...headers } })
       }
     }
