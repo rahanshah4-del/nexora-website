@@ -254,6 +254,38 @@ export default function HomepageSections() {
       {/* ── Client Reviews / Testimonials ── */}
       <PublicTestimonials />
 
+      {/* ── FAQ Section ── */}
+      <section data-reveal className="bg-white py-16 sm:py-20 lg:py-24">
+        <div className="mx-auto max-w-3xl px-5 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <span className="inline-flex rounded-full border border-blue-100 bg-blue-50/70 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.18em] text-blue-600 shadow-sm">FAQ</span>
+            <h2 className="website-section-heading mt-5 text-3xl font-black tracking-tight text-slate-950 sm:text-5xl">Frequently Asked <span className="marker-highlight marker-highlight-blue">Questions</span></h2>
+          </div>
+          <dl className="mt-10 space-y-5">
+            <div className="rounded-2xl border border-slate-200/60 bg-white p-6 shadow-sm">
+              <dt className="text-[15px] font-extrabold text-slate-900">What is Nexora Solution?</dt>
+              <dd className="mt-2 text-[14px] leading-relaxed text-slate-600">Nexora Solution is Pakistan&rsquo;s AI-powered business operating system offering POS, CRM, ERP and automation software for restaurants, retail stores, pharmacies, schools, transport fleets and growing enterprises — all from one unified platform.</dd>
+            </div>
+            <div className="rounded-2xl border border-slate-200/60 bg-white p-6 shadow-sm">
+              <dt className="text-[15px] font-extrabold text-slate-900">Who is Nexora built for?</dt>
+              <dd className="mt-2 text-[14px] leading-relaxed text-slate-600">Nexora is built for Pakistani businesses of every size — from a single-counter restaurant or retail shop to multi-branch schools, pharmacy chains and transport fleets. Our modules adapt to your workflow, not the other way around.</dd>
+            </div>
+            <div className="rounded-2xl border border-slate-200/60 bg-white p-6 shadow-sm">
+              <dt className="text-[15px] font-extrabold text-slate-900">What does Nexora cost?</dt>
+              <dd className="mt-2 text-[14px] leading-relaxed text-slate-600">Plans start at PKR 1,000/month (50% off for new users). Every plan includes a 7-day free trial, cloud sync, free updates, free data migration, free staff training and a 30-day money-back guarantee. Yearly billing saves 20%. Enterprise plans are custom-priced.</dd>
+            </div>
+            <div className="rounded-2xl border border-slate-200/60 bg-white p-6 shadow-sm">
+              <dt className="text-[15px] font-extrabold text-slate-900">Does Nexora work offline?</dt>
+              <dd className="mt-2 text-[14px] leading-relaxed text-slate-600">The POS modules support offline mode so you can keep billing even when the internet is down. Once you reconnect, all data syncs automatically to the cloud.</dd>
+            </div>
+            <div className="rounded-2xl border border-slate-200/60 bg-white p-6 shadow-sm">
+              <dt className="text-[15px] font-extrabold text-slate-900">How do I get started?</dt>
+              <dd className="mt-2 text-[14px] leading-relaxed text-slate-600">Sign up for a free 7-day trial at nexorasolution.online/signup — no credit card required. Or book a live demo and our team will walk you through the modules that fit your business.</dd>
+            </div>
+          </dl>
+        </div>
+      </section>
+
       <footer className="bg-[linear-gradient(135deg,#071d35_0%,#062b52_100%)] text-white">
         <div className="mx-auto max-w-7xl px-5 py-12 sm:px-6 lg:px-8">
           <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-[1.25fr_1fr_0.9fr_1fr_1.1fr]">

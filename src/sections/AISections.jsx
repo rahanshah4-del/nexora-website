@@ -15,11 +15,11 @@ const AI_MODULES = [
 ]
 
 const AI_FEATURE_CARDS = [
-  { title: 'AI Menu Import', desc: 'Upload a photo of any menu — AI extracts items, prices, and categories. Import 100+ items in seconds.', icon: '📸' },
-  { title: 'AI Business Assistant', desc: 'Ask questions about your business in plain English or Urdu. Get instant answers, reports, and recommendations.', icon: '💬' },
+  { title: 'Nexora Solution AI Menu Recognition', desc: 'Upload a photo of any menu — AI extracts items, prices, and categories. Import 100+ items in seconds.', icon: '📸' },
+  { title: 'Nexora Solution AI Business Intelligence', desc: 'Ask questions about your business in plain English or Urdu. Get instant answers, reports, and recommendations.', icon: '💬' },
   { title: 'AI Sales Insights', desc: 'AI analyzes your sales patterns and predicts trends. Know what sells, when, and at what price.', icon: '📊' },
   { title: 'AI Inventory Intelligence', desc: 'Smart stock predictions, low-stock alerts, and automatic purchase recommendations based on sales velocity.', icon: '📦' },
-  { title: 'AI Reports', desc: 'Generate detailed business reports instantly. AI finds insights you might miss in raw data.', icon: '📄' },
+  { title: 'Nexora Solution AI Analytics', desc: 'Generate detailed business reports instantly. AI finds insights you might miss in raw data.', icon: '📄' },
   { title: 'AI Customer Support', desc: '24/7 intelligent chatbot that answers customer queries, takes orders, and resolves issues automatically.', icon: '🤖' },
 ]
 
@@ -113,7 +113,10 @@ export default function AISections() {
             <h2 className="website-section-heading mt-5 text-3xl font-black tracking-tight text-slate-950 sm:text-5xl">
               One intelligent AI powering <span className="bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 bg-clip-text text-transparent">every business module.</span>
             </h2>
-            <p className="mx-auto mt-5 max-w-2xl text-base leading-8 text-slate-600">
+            <p className="mx-auto mt-4 max-w-3xl text-[15px] font-bold leading-relaxed text-slate-700 sm:text-base">
+              Nexora Solution is Pakistan&rsquo;s next-generation AI Business Operating System.
+            </p>
+            <p className="mx-auto mt-4 max-w-2xl text-base leading-8 text-slate-600">
               Nexora AI is deeply integrated across the entire platform — it understands your menu, inventory, sales, customers, and reports to help you work smarter and faster.
             </p>
           </div>
@@ -175,7 +178,7 @@ export default function AISections() {
           <div>
             <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-200/60 bg-white/80 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.18em] text-violet-700 shadow-sm backdrop-blur-xl">
               <svg className="h-3.5 w-3.5 text-violet-500" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" /></svg>Nexora AI</span>
-            <h2 className="website-section-heading mt-5 text-3xl font-black tracking-tight text-slate-950 sm:text-5xl">Experience Nexora AI <span className="bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 bg-clip-text text-transparent">Today.</span></h2>
+            <h2 className="website-section-heading mt-5 text-3xl font-black tracking-tight text-slate-950 sm:text-5xl">Experience Nexora Solution AI <span className="bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 bg-clip-text text-transparent">Today.</span></h2>
             <p className="mt-4 max-w-2xl text-base leading-8 text-slate-600">Start your 7-day free trial — no credit card required. Or book a live demo and let our experts show you how Nexora AI transforms your business.</p>
           </div>
           <div className="flex flex-col gap-3 min-[420px]:flex-row lg:flex-col xl:flex-row">

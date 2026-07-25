@@ -196,6 +196,7 @@ export function createSoftwareApplicationSchema({
     operatingSystem,
     image,
     publisher: { '@id': `${SITE_URL}/#organization` },
+    provider: { '@id': `${SITE_URL}/#organization` },
     offers: {
       '@type': 'Offer',
       price: '0',

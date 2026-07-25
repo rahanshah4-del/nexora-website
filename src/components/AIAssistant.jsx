@@ -531,7 +531,7 @@ IMPORTANT: The user may refer to past conversations. If they ask what they asked
         }`}
         aria-label="AI Assistant"
       >
-        <img src="/nexora-ai-logo.png" alt="AI" className="h-7 w-7 rounded-lg object-cover shadow-[0_2px_8px_rgba(123,97,255,0.35)]" />
+        <img src="/nexora-ai-logo.png" alt="Nexora AI Assistant" className="h-7 w-7 rounded-lg object-cover shadow-[0_2px_8px_rgba(123,97,255,0.35)]" />
         AI Assistant
       </button>
 
@@ -545,7 +545,7 @@ IMPORTANT: The user may refer to past conversations. If they ask what they asked
           {/* Header */}
           <div className="flex shrink-0 items-center justify-between bg-gradient-to-r from-violet-500 via-purple-500 to-fuchsia-500 px-4 py-3 text-white">
             <div className="flex items-center gap-2.5">
-              <img src="/nexora-ai-logo.png" alt="AI" className="h-8 w-8 rounded-lg object-cover ring-1 ring-white/30" />
+              <img src="/nexora-ai-logo.png" alt="Nexora AI Assistant" className="h-8 w-8 rounded-lg object-cover ring-1 ring-white/30" />
               <div>
                 <p className="text-[14px] font-semibold tracking-[-0.01em]">Nexora AI</p>
                 <p className="text-[10px] text-white/70">{loading ? 'Typing...' : 'Online'}</p>

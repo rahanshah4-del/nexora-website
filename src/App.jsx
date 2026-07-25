@@ -145,8 +145,8 @@ function App({ initialSectionId = '' }) {
                 <svg className="h-3.5 w-3.5 text-violet-500 max-[767px]:hidden" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" /></svg>
                 ✨ Powered by Nexora AI
               </span>
-              <h1 className="website-hero-heading mx-auto mt-6 max-w-5xl text-[clamp(2rem,8vw,2.85rem)] font-black leading-[0.98] tracking-tight text-slate-950 sm:text-[clamp(3rem,7vw,4.4rem)] lg:text-[5.7rem]">Nexora Solution <span className="marker-highlight">AI Business Suite</span></h1>
-              <p className="mx-auto mt-4 max-w-3xl text-sm font-bold tracking-wide text-slate-500 uppercase sm:text-base">for Restaurants · Retail · Pharmacy · CRM &amp; ERP</p>
+              <h1 className="website-hero-heading mx-auto mt-6 max-w-5xl text-[clamp(2rem,8vw,2.85rem)] font-black leading-[0.98] tracking-tight text-slate-950 sm:text-[clamp(3rem,7vw,4.4rem)] lg:text-[5.7rem]">Nexora Solution – <span className="marker-highlight">AI Business Operating System</span></h1>
+              <p className="mx-auto mt-4 max-w-3xl text-sm font-bold tracking-wide text-slate-500 uppercase sm:text-base">Restaurant POS • Retail POS • Pharmacy POS • CRM • ERP • AI Automation</p>
               <p className="hero-script-line mx-auto mt-5 max-w-3xl text-3xl leading-tight text-slate-900 sm:text-4xl">Simple, efficient, yet powerful.</p>
               <p className="mx-auto mt-5 max-w-3xl text-base leading-8 text-slate-600 sm:text-lg">Nexora Business Suite helps you manage customers, students, tenants, sales, invoices, reports and team access from one secure dashboard.</p>
               <div className="mt-7 flex flex-col justify-center gap-3 min-[390px]:flex-row">

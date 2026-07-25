@@ -539,6 +539,20 @@ export default function BlogArticlePage() {
               </section>
 
               <BlogComments slug={article.slug} />
+
+              {/* ── Nexora Solution brand footer ── */}
+              <footer className="mt-12 rounded-2xl border border-slate-200/60 bg-gradient-to-r from-slate-50 via-white to-slate-50 px-6 py-5 sm:px-8 text-center">
+                <p className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-slate-400">Powered by</p>
+                <p className="mt-1 text-[15px] font-black text-slate-900 tracking-tight">Nexora Solution</p>
+                <p className="mx-auto mt-2 max-w-xl text-[13px] leading-relaxed text-slate-500">
+                  Nexora Solution is Pakistan&rsquo;s AI-powered POS, CRM, ERP and Business Automation platform helping restaurants, retail stores, schools and growing businesses operate smarter with intelligent AI features.
+                </p>
+                <div className="mt-3 flex flex-wrap items-center justify-center gap-3 text-[12px] font-semibold">
+                  <a href="https://nexorasolution.online" className="text-blue-600 hover:underline">nexorasolution.online</a>
+                  <span className="text-slate-300">·</span>
+                  <Link to="/blog" className="text-blue-600 hover:underline">Nexora Blog</Link>
+                </div>
+              </footer>
             </div>
           </div>
         </section>
