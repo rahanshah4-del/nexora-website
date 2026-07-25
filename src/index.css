@@ -598,3 +598,48 @@ body.business-service-modal-open {
 .prose-slate p {
   line-height: 1.85;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   PERFORMANCE — Rendering & Paint Optimizations
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* Skip rendering for off-screen sections (huge LCP/INP win).
+   Browser auto-skips paint/layout for sections outside the viewport. */
+.marketing-page main > section,
+.marketing-page main > div > section {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 500px;
+}
+
+/* Optimize font rendering for visible headings — no layout shift from kerning */
+.marketing-page h1,
+.marketing-page h2,
+.marketing-page h3,
+.marketing-page .website-hero-heading,
+.marketing-page .hero-script-line {
+  text-rendering: optimizeSpeed;
+}
+
+/* ── Mobile-specific rendering savings ── */
+@media (max-width: 767px) {
+  /* Kill heavy background patterns on mobile to reduce paint cost */
+  .marketing-page section[class*="bg-[radial-gradient"] {
+    background-image: none !important;
+  }
+
+  /* Slow down the shine animation on mobile to reduce CPU paint ticks */
+  .marketing-page .pos-preview-shell::after {
+    animation-duration: 14s;
+  }
+}
+
+/* Respect user motion preferences globally */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

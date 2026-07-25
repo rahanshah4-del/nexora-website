@@ -37,8 +37,18 @@ function captureProductionAssets() {
     tags.push(m[0])
 
   // <link rel="modulepreload" crossorigin href="/assets/...">
-  for (const m of html.matchAll(/<link\s+rel="modulepreload"[^>]*\/assets\/[^"]*"[^>]*>/g))
-    tags.push(m[0])
+  // Only include critical modulepreloads (react, index, main, runtime, app-shell)
+  // to reduce network contention on slow mobile connections.
+  for (const m of html.matchAll(/<link\s+rel="modulepreload"[^>]*\/assets\/[^"]*"[^>]*>/g)) {
+    const href = (m[0].match(/href="([^"]*)"/) || [])[1] || ''
+    const isCritical =
+      href.includes('vendor-react-') ||
+      href.includes('index-') ||
+      href.includes('main-') ||
+      href.includes('rolldown-runtime') ||
+      href.includes('public-app-shell-')
+    if (isCritical) tags.push(m[0])
+  }
 
   // <link rel="stylesheet" crossorigin href="/assets/...">
   for (const m of html.matchAll(/<link\s+rel="stylesheet"[^>]*\/assets\/[^"]*"[^>]*>/g))
@@ -46,7 +56,7 @@ function captureProductionAssets() {
 
   if (tags.length > 0) {
     PRODUCTION_ASSETS = tags.join('\n  ')
-    console.log(`[prerender] ✓ Captured ${tags.length} production asset tags`)
+    console.log(`[prerender] ✓ Captured ${tags.length} critical production asset tags (filtered for speed)`)
   }
 }
 
@@ -189,9 +199,17 @@ function buildCommonHead() {
   <link rel="apple-touch-icon" sizes="180x180" href="/nexora-pwa-install-180.png?v=20260628-pwa-install-icon-v2" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://firestore.googleapis.com" />
+  <link rel="preconnect" href="https://identitytoolkit.googleapis.com" />
   <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
   <link rel="dns-prefetch" href="https://connect.facebook.net" />
-  <link rel="dns-prefetch" href="https://embed.tawk.to" />`
+  <link rel="dns-prefetch" href="https://embed.tawk.to" />
+  <link rel="dns-prefetch" href="https://va.tawk.to" />
+  <!-- Fonts: async load with display=swap to avoid render-blocking -->
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@600;700&display=swap" /></noscript>
+  <!-- Preload hero logo for LCP -->
+  <link rel="preload" as="image" href="/nexora-brand-logo.png" fetchpriority="high" />`
 }
 
 function buildGtm() {

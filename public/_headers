@@ -1,16 +1,24 @@
 # Cloudflare Pages headers — static asset caching
-/assets/*
+# JS/CSS assets — content-hashed, can cache forever
+/assets/*.js
   Cache-Control: public, max-age=31536000, immutable
   Vary: Accept-Encoding
 
+/assets/*.css
+  Cache-Control: public, max-age=31536000, immutable
+  Vary: Accept-Encoding
+
+# Vendor chunks change rarely — cache aggressively
 /assets/vendor-*
   Cache-Control: public, max-age=31536000, immutable
   Vary: Accept-Encoding
 
+# Public page chunks
 /assets/public-*
   Cache-Control: public, max-age=31536000, immutable
   Vary: Accept-Encoding
 
+# Images
 /*.png
   Cache-Control: public, max-age=31536000, immutable
   Vary: Accept-Encoding
@@ -23,20 +31,37 @@
   Cache-Control: public, max-age=31536000, immutable
   Vary: Accept-Encoding
 
+/*.webp
+  Cache-Control: public, max-age=31536000, immutable
+  Vary: Accept-Encoding
+
+# Font files (if self-hosted in future)
+/*.woff2
+  Cache-Control: public, max-age=31536000, immutable
+
+# Favicons — cache for 1 day
 /favicon*
   Cache-Control: public, max-age=86400
+
+# Manifest — cache for 1 hour
 /manifest.json
   Cache-Control: public, max-age=3600
+
+# RSS & sitemaps — cache for 1 hour
 /rss.xml
   Cache-Control: public, max-age=3600
 /blog-sitemap.xml
   Cache-Control: public, max-age=3600
 /sitemap.xml
   Cache-Control: public, max-age=3600
+/image-sitemap.xml
+  Cache-Control: public, max-age=3600
 
+# Service worker — never cache
 /service-worker.js
   Cache-Control: public, max-age=0, must-revalidate
 
+# HTML pages — validate before serving
 /*
   Cache-Control: public, max-age=0, must-revalidate
   X-Content-Type-Options: nosniff

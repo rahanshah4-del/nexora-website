@@ -10,21 +10,32 @@ export default defineConfig({
     target: 'es2020',
     // ── Smaller, faster chunks ──
     minify: 'esbuild',
-    assetsInlineLimit: 4096,
+    assetsInlineLimit: 8192,
     modulePreload: {
       polyfill: false,
       resolveDependencies(filename, deps, { hostType }) {
         if (hostType !== 'html') return deps
-        return deps.filter((dep) => !/(^|\/)public-(pricing|services)-/.test(dep))
+        // Only preload critical entry deps (react vendor, main CSS, entry chunk, app shell)
+        // Skip non-critical chunks to reduce network contention on slow connections
+        const isCritical = (dep) =>
+          /(^|\/)vendor-react-/.test(dep) ||
+          /(^|\/)index-/.test(dep) ||
+          /(^|\/)main-/.test(dep) ||
+          /(^|\/)rolldown-runtime/.test(dep) ||
+          /(^|\/)public-app-shell-/.test(dep)
+        return deps.filter((dep) => isCritical(dep))
       },
     },
     cssCodeSplit: true,
     cssMinify: true,
-    chunkSizeWarningLimit: 600,
+    chunkSizeWarningLimit: 500,
     reportCompressedSize: true,
     sourcemap: false,
     rollupOptions: {
       output: {
+        // ES2015+ output for smaller bundles (no transpilation bloat for modern browsers)
+        generatedCode: 'es2015',
+        compact: true,
         manualChunks(id) {
           // ── Vendor splits ──
           if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/') || id.includes('node_modules/react-router-dom/') || id.includes('node_modules/react-router/')) {
@@ -48,8 +59,10 @@ export default defineConfig({
           if (id.includes('node_modules/date-fns') || id.includes('node_modules/clsx') || id.includes('node_modules/dexie')) return 'vendor-utils'
 
           // ── Public website splits (each lazy route gets its own chunk) ──
+          if (id.includes('/src/App.jsx')) return 'public-app-shell'
           if (id.includes('/src/sections/AISections.jsx')) return 'public-ai-sections'
-          if (id.includes('/src/App.jsx') || id.includes('/src/sections/')) return 'public-home'
+          if (id.includes('/src/components/PublicTestimonials.jsx')) return 'public-testimonials'
+          if (id.includes('/src/sections/')) return 'public-home'
           if (id.includes('/src/pages/public/SolutionPage.jsx')) return 'public-solutions'
           if (id.includes('/src/pages/public/PricingPage.jsx')) return 'public-pricing'
           if (id.includes('/src/pages/public/BusinessServicesPage.jsx') || id.includes('/src/components/BusinessServicesSection.jsx')) return 'public-services'
