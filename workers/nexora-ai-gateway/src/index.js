@@ -21,7 +21,8 @@ const PROVIDERS = {
     body: (model, messages, maxTokens) => JSON.stringify({ model, messages, max_tokens: maxTokens, temperature: 0.7, stream: false }),
     parse: (data) => {
       const msg = data.choices?.[0]?.message || {}
-      const text = msg.content || msg.reasoning_content || ''
+      // ONLY use content — reasoning_content is internal chain-of-thought, not the answer
+      const text = msg.content || ''
       return { text, usage: data.usage || {}, model: data.model }
     },
   },
@@ -434,7 +435,7 @@ ${ocrText.slice(0, 12000)}
 
                 const dsUrl = 'https://api.deepseek.com/v1/chat/completions'
                 const dsBody = JSON.stringify({
-                  model: 'deepseek-chat',
+                  model: env.DEFAULT_MODEL || 'deepseek-v4-flash',
                   messages: [
                     { role: 'system', content: dsPrompt },
                     { role: 'user', content: 'Extract ALL menu items from this text. Return ONLY valid JSON inside ```json fences.' }
@@ -454,7 +455,7 @@ ${ocrText.slice(0, 12000)}
                   if (dsOutput.includes('"items"')) {
                     rawText = dsOutput
                     tokensUsed = (dsData.usage?.total_tokens || 0)
-                    modelUsed = 'cloudflare-ocr+deepseek-chat'
+                    modelUsed = 'cloudflare-ocr+deepseek-v4-flash'
                   } else {
                     errors.push(`CloudflareOCR: DeepSeek did not return structured items`)
                   }
@@ -702,7 +703,7 @@ ${text.slice(0, 15000)}
 
         const url = 'https://api.deepseek.com/v1/chat/completions'
         const dsBody = JSON.stringify({
-          model: 'deepseek-chat',
+          model: env.DEFAULT_MODEL || 'deepseek-v4-flash',
           messages: [
             { role: 'system', content: extractPrompt },
             { role: 'user', content: 'Extract ALL menu items from this text. Return ONLY valid JSON inside ```json fences.' }
