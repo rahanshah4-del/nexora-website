@@ -164,7 +164,7 @@ export default function BlogManager() {
       const paragraphs = draft.content.split(/\n{2,}/).map((item) => item.trim()).filter(Boolean)
       if (!paragraphs.length) throw new Error('Article content is required.')
 
-      await saveBlogPost(slug, {
+      const articleData = {
         title: draft.title.trim(),
         seoTitle: draft.seoTitle.trim() || `${draft.title.trim()} | Nexora Solution Blog`,
         metaDescription: draft.metaDescription.trim().slice(0, 180),
@@ -188,36 +188,45 @@ export default function BlogManager() {
         createdAt: draft.createdAt || serverTimestamp(),
         createdBy: auth?.currentUser?.uid || '',
         createdByEmail: auth?.currentUser?.email || '',
-      })
+      }
+
+      await saveBlogPost(slug, articleData)
       if (editingSlug && editingSlug !== slug && draft.source === 'cms') await deleteBlogPost(editingSlug)
-      setNotice(draft.status === 'published' ? 'Blog post published.' : 'Blog draft saved.')
       setEditingSlug(slug)
 
-      // Auto-translate to all languages in background (published only)
+      // ── Translate to all languages SYNCHRONOUSLY before showing "published" ──
+      // This ensures Firestore has translations before any client visits the blog.
+      let translationMessage = ''
       if (draft.status === 'published') {
-        import('../../lib/blogTranslate.js').then(({ translateAndPublishAllLanguages }) => {
-          const article = {
+        setNotice('Blog post saved. Translating to all languages…')
+        try {
+          const { translateAndPublishAllLanguages } = await import('../../lib/blogTranslate.js')
+          const { results } = await translateAndPublishAllLanguages({
             slug,
             title: draft.title.trim(),
             excerpt: draft.excerpt.trim() || draft.metaDescription.trim(),
+            seoTitle: draft.seoTitle.trim() || `${draft.title.trim()} | Nexora Solution Blog`,
+            metaDescription: draft.metaDescription.trim().slice(0, 180),
             sections: [{ heading: draft.contentHeading?.trim() || 'Article guide', paragraphs }],
             faqs: parseFaqs(draft.faqsText),
-          }
-          return translateAndPublishAllLanguages(article).then(({ results }) => {
-            const completed = Object.entries(results || {}).filter(([, r]) => r?.status === 'completed')
-            const failed = Object.entries(results || {}).filter(([, r]) => r?.status !== 'completed')
-            if (failed.length > 0) {
-              const failedLangs = failed.map(([code, r]) => `${code} (${r?.reason || 'unknown'})`).join(', ')
-              console.warn(`[Blog Manager] ⚠ Translation partial: ${completed.length} succeeded, ${failed.length} failed — ${failedLangs}`)
-            }
-            if (completed.length > 0) {
-              console.log(`[Blog Manager] ✓ Translations saved to Firestore: ${completed.map(([c]) => c).join(', ')}`)
-            }
           })
-        }).catch((err) => {
-          console.error('[Blog Manager] ✗ Translation pipeline failed:', err?.message || err)
-        })
+          const completed = Object.entries(results || {}).filter(([, r]) => r?.status === 'completed')
+          const failed = Object.entries(results || {}).filter(([, r]) => r?.status !== 'completed')
+          if (completed.length > 0) {
+            translationMessage = ` • Translated: ${completed.map(([c]) => c).join(', ')}`
+          }
+          if (failed.length > 0) {
+            const failedLangs = failed.map(([code, r]) => `${code} (${r?.reason || 'unknown'})`).join(', ')
+            translationMessage += ` • Failed: ${failedLangs}`
+            console.warn(`[Blog Manager] ⚠ Translation partial for [${slug}]: ${failedLangs}`)
+          }
+        } catch (transErr) {
+          translationMessage = ` • Translation failed: ${transErr?.message || 'Unknown error'}`
+          console.error(`[Blog Manager] ✗ Translation pipeline failed for [${slug}]:`, transErr)
+        }
       }
+
+      setNotice(`Blog post ${draft.status === 'published' ? 'published' : 'saved'}.${translationMessage}`)
     } catch (saveError) {
       setError(saveError?.message || 'Unable to save blog post.')
     } finally {

@@ -32,6 +32,14 @@ const FETCH_TIMEOUT_MS = 8000
 const AI_GATEWAY_TIMEOUT_MS = 15000
 const DEEPSEEK_MAX_RETRIES = 3
 const AI_GATEWAY_URL = import.meta.env.VITE_AI_GATEWAY_URL || 'https://nexora-ai-gateway.rahanshah4.workers.dev'
+const TRANSLATION_HARD_TIMEOUT_MS = 90000  // 90s total cap — never let UI spin >90s
+
+/** Detect AbortError across all browsers (Chrome, Firefox, Safari) */
+function isAbortError(err) {
+  if (!err) return false
+  const name = String(err?.name || '').toLowerCase()
+  return name === 'aborterror' || name === 'abort_error' || err?.code === 20 // err.code 20 = AbortError in some envs
+}
 
 /**
  * Maps display language codes to Firestore translation keys.
@@ -144,11 +152,13 @@ async function callTranslateAPI(text, targetLang) {
       return result.trim()
     } catch (err) {
       lastErr = err
-      if (err?.name === 'AbortError') break // don't retry timeouts
+      if (isAbortError(err)) break // don't retry timeouts
     }
   }
   throw lastErr || new Error('Translation failed')
 }
+
+/* ── Roman Urdu via Nexora AI (DeepSeek) ──────────────────────────────── */
 
 /* ── Roman Urdu via Nexora AI (DeepSeek) ──────────────────────────────── */
 
@@ -198,7 +208,7 @@ async function translateToRomanUrdu(text, { logContext = '' } = {}) {
     } catch (err) {
       lastErr = err
       logError(2, `DeepSeek attempt ${attempt + 1}/${DEEPSEEK_MAX_RETRIES} failed`, err)
-      if (err?.name === 'AbortError') {
+      if (isAbortError(err)) {
         logError(2, `DeepSeek timed out after ${AI_GATEWAY_TIMEOUT_MS}ms — aborting retries`)
         break
       }
@@ -307,11 +317,18 @@ export async function translateBlogArticle(article, langCode) {
     strings.push(String(q || ''), String(a || ''))
   })
 
+  // ── Hard timeout: never let translation spin the UI beyond 90 seconds ──
   let translated
   try {
-    translated = await translateStrings(strings, langCode)
-  } catch {
-    return null // silent fallback to English
+    translated = await Promise.race([
+      translateStrings(strings, langCode),
+      new Promise((_, reject) => {
+        setTimeout(() => reject(new Error(`Translation hard timeout after ${TRANSLATION_HARD_TIMEOUT_MS / 1000}s`)), TRANSLATION_HARD_TIMEOUT_MS)
+      }),
+    ])
+  } catch (err) {
+    logError(3, `Translation aborted [${langCode}] — ${err?.message || err}`)
+    return null
   }
 
   let index = 0

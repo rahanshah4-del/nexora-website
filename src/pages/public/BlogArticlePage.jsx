@@ -22,7 +22,6 @@ import {
   BLOG_LANGUAGES,
   detectPreferredBlogLanguage,
   rememberBlogLanguage,
-  translateBlogArticle,
   loadBlogTranslationFromFirestore,
 } from '../../lib/blogTranslate.js'
 import { BLOG_SEO_LANGUAGES, buildLocalizedPath, buildLocalizedCanonical, extractLangFromPath, getHreflangMap } from '../../lib/blogLanguages.js'
@@ -110,34 +109,33 @@ export default function BlogArticlePage() {
     if (urlLang !== 'en') return urlLang
     return detectPreferredBlogLanguage().lang
   })
+  // translation: undefined=loading, null=not-found(show English), {...}=found
+  const [translation, setTranslation] = useState(undefined)
   const [langOpen, setLangOpen] = useState(false)
-  const [translation, setTranslation] = useState(null)
 
   useEffect(() => {
-    if (!articleSlug || lang === 'en') { setTranslation(null); return undefined }
+    if (!articleSlug || lang === 'en') { setTranslation(lang === 'en' ? null : undefined); return undefined }
     let cancelled = false
-    const source = articles.find((item) => item.slug === articleSlug) || getBlogArticle(articleSlug)
-    // 1. Try Firestore first (pre-translated at upload time — instant, no API cost)
+    setTranslation(undefined) // start loading
+
+    /**
+     * Translation flow (single source of truth = Firestore):
+     *   1. Check Firestore for pre-translated content (saved at publish time).
+     *   2. If found with translationStatus='completed' → use it.
+     *   3. If NOT found → show English (NO live API call from client).
+     */
     loadBlogTranslationFromFirestore(articleSlug, lang)
       .then((cached) => {
         if (cancelled) return
         if (cached && cached.translationStatus === 'completed') {
           setTranslation({ ...cached, slug: articleSlug, lang })
-          return
+        } else {
+          setTranslation(null) // not found → show English
         }
-        // 2. Firestore has no completed translation → live translate via DeepSeek/Google
-        console.log(`[Blog Article] Firestore translation not found or incomplete for ${lang}, falling back to live translation`)
-        return translateBlogArticle(source, lang).then((next) => {
-          if (!cancelled) setTranslation(next ? { ...next, slug: articleSlug, lang } : null)
-        })
       })
       .catch(() => {
-        // 3. Firestore load errored → final fallback: live translate
         if (cancelled) return
-        console.log(`[Blog Article] Firestore load error for ${lang}, attempting live translation`)
-        translateBlogArticle(source, lang)
-          .then((next) => { if (!cancelled) setTranslation(next ? { ...next, slug: articleSlug, lang } : null) })
-          .catch(() => { if (!cancelled) setTranslation(null) })
+        setTranslation(null) // Firestore error → show English
       })
     return () => { cancelled = true }
   }, [articleSlug, lang, articles])
@@ -248,9 +246,10 @@ export default function BlogArticlePage() {
   /* Reader-facing copy: translated when a non-English language is active.
      Slug+lang check prevents stale text flashing on article/language change.
      SEO (PageSeo, schema, canonical) always uses the English source. */
+  // undefined = Firestore check in progress, null = no translation found
+  const translationLoading = lang !== 'en' && translation === undefined
   const activeTranslation = lang !== 'en' && translation && translation.slug === article.slug && translation.lang === lang ? translation : null
   const display = activeTranslation || article
-  const translating = lang !== 'en' && !activeTranslation
   const articleIndex = articles.findIndex((item) => item.slug === article.slug)
   const adjacent = {
     previous: articleIndex > 0 ? articles[articleIndex - 1] : null,
@@ -355,10 +354,15 @@ export default function BlogArticlePage() {
                 ) : null}
               </span>
             </div>
-            {lang !== 'en' && translating && !translation ? (
+            {translationLoading ? (
               <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-[0.7rem] font-medium text-blue-700">
                 <span className="h-2 w-2 animate-pulse rounded-full bg-blue-500" />
-                Translating…
+                Loading translation…
+              </p>
+            ) : null}
+            {lang !== 'en' && !translationLoading && !activeTranslation ? (
+              <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-slate-50 px-3 py-1 text-[0.7rem] font-medium text-slate-500">
+                Translation not available — showing English
               </p>
             ) : null}
             <h1 className="mt-5 max-w-4xl text-[1.9rem] font-semibold leading-[1.12] tracking-[-0.02em] text-slate-900 sm:text-[2.5rem] sm:leading-[1.08] lg:text-[3.1rem] lg:leading-[1.06]">
