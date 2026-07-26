@@ -25,6 +25,7 @@ const STORAGE_KEY = 'nexora:blog:lang'
 const MAX_CHUNK = 2800
 const MAX_RETRIES = 2
 const FETCH_TIMEOUT_MS = 8000
+const AI_GATEWAY_TIMEOUT_MS = 15000
 const AI_GATEWAY_URL = import.meta.env.VITE_AI_GATEWAY_URL || 'https://nexora-ai-gateway.rahanshah4.workers.dev'
 
 /* ── Detection ──────────────────────────────────────────────────────────── */
@@ -70,11 +71,11 @@ function resolveTarget(langCode) {
 
 /* ── Fetch with timeout ────────────────────────────────────────────────── */
 
-async function fetchWithTimeout(url, ms) {
+async function fetchWithTimeout(url, ms, init = {}) {
   const ctrl = new AbortController()
   const timer = setTimeout(() => ctrl.abort(), ms)
   try {
-    return await fetch(url, { signal: ctrl.signal })
+    return await fetch(url, { ...init, signal: ctrl.signal })
   } finally {
     clearTimeout(timer)
   }
@@ -116,23 +117,46 @@ async function translateToRomanUrdu(text) {
   /**
    * Uses Nexora AI Gateway (DeepSeek) for natural Roman Urdu translation.
    * DeepSeek natively understands Roman Urdu and produces fluent output.
+   * Falls back to Google Translate (hi→Roman) if AI Gateway is unreachable.
+   * Includes timeout + retries so the UI never hangs on a stuck request.
    */
-  const res = await fetch(`${AI_GATEWAY_URL}/chat`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      messages: [{
-        role: 'user',
-        content: `Translate this English text to Roman Urdu (Urdu written with English alphabets). Natural, conversational tone like a Pakistani professional would write. Preserve all formatting, line breaks, headings, and markdown exactly. Keep the same paragraph structure. Do NOT use Urdu/Arabic script. Do NOT add greetings, emojis, sales pitches, questions, or any extra text — output ONLY the direct translation:\n\n${text}`,
-      }],
-      maxTokens: Math.max(500, Math.ceil(text.length * 1.5)),
-    }),
-  })
+  let lastErr = null
 
-  if (!res.ok) throw new Error(`AI Gateway error: ${res.status}`)
-  const data = await res.json()
-  const translated = (data.text || '').trim()
-  return translated || text // fallback to original if empty
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      if (attempt > 0) await new Promise((r) => setTimeout(r, 500 * attempt))
+
+      const res = await fetchWithTimeout(`${AI_GATEWAY_URL}/chat`, AI_GATEWAY_TIMEOUT_MS, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [{
+            role: 'user',
+            content: `Translate this English text to Roman Urdu (Urdu written with English alphabets). Natural, conversational tone like a Pakistani professional would write. Preserve all formatting, line breaks, headings, and markdown exactly. Keep the same paragraph structure. Do NOT use Urdu/Arabic script. Do NOT add greetings, emojis, sales pitches, questions, or any extra text — output ONLY the direct translation:\n\n${text}`,
+          }],
+          maxTokens: Math.max(500, Math.ceil(text.length * 1.5)),
+        }),
+      })
+
+      if (!res.ok) throw new Error(`AI Gateway error: ${res.status}`)
+      const data = await res.json()
+      const translated = (data.text || '').trim()
+      if (translated) return translated
+      throw new Error('AI Gateway returned empty translation')
+    } catch (err) {
+      lastErr = err
+      if (err?.name === 'AbortError') break // don't retry timeouts
+    }
+  }
+
+  // ── Fallback: Google Translate (target 'hi' produces Roman script, works for Urdu) ──
+  console.warn('[Blog Translate] AI Gateway failed for Roman Urdu, falling back to Google Translate:', lastErr?.message)
+  try {
+    const result = await callTranslateAPI(text, 'hi')
+    if (result) return result
+  } catch { /* final fallback to original text */ }
+
+  throw lastErr || new Error('Roman Urdu translation failed')
 }
 
 /* ── Translate a batch of strings ─────────────────────────────────────── */
