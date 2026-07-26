@@ -200,17 +200,13 @@ function buildCommonHead() {
   <link rel="apple-touch-icon" sizes="180x180" href="/nexora-pwa-install-180.png?v=20260628-pwa-install-icon-v2" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="preconnect" href="https://firestore.googleapis.com" />
-  <link rel="preconnect" href="https://identitytoolkit.googleapis.com" />
+  <link rel="dns-prefetch" href="https://firestore.googleapis.com" />
+  <link rel="dns-prefetch" href="https://identitytoolkit.googleapis.com" />
   <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
-  <link rel="dns-prefetch" href="https://connect.facebook.net" />
   <link rel="dns-prefetch" href="https://embed.tawk.to" />
-  <link rel="dns-prefetch" href="https://va.tawk.to" />
-  <!-- Fonts: async load with display=swap to avoid render-blocking -->
+  <!-- Fonts: async load with display=swap -->
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
-  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@600;700&display=swap" /></noscript>
-  <!-- Preload hero logo for LCP -->
-  <link rel="preload" as="image" href="/nexora-brand-logo.png" fetchpriority="high" />`
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@600;700&display=swap" /></noscript>`
 }
 
 function buildGtm() {

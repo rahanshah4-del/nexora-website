@@ -15,13 +15,12 @@ export default defineConfig({
       polyfill: false,
       resolveDependencies(filename, deps, { hostType }) {
         if (hostType !== 'html') return deps
-        // Only preload critical entry deps (react vendor, main CSS, entry chunk, app shell)
-        // Skip non-critical chunks to reduce network contention on slow connections
+        // Only preload the absolute minimum needed for LCP:
+        // runtime + entry + react vendor + app shell CSS
         const isCritical = (dep) =>
-          /(^|\/)vendor-react-/.test(dep) ||
-          /(^|\/)index-/.test(dep) ||
-          /(^|\/)main-/.test(dep) ||
           /(^|\/)rolldown-runtime/.test(dep) ||
+          /(^|\/)index-/.test(dep) ||
+          /(^|\/)vendor-react-/.test(dep) ||
           /(^|\/)public-app-shell-/.test(dep)
         return deps.filter((dep) => isCritical(dep))
       },
@@ -62,7 +61,12 @@ export default defineConfig({
           if (id.includes('/src/App.jsx')) return 'public-app-shell'
           if (id.includes('/src/sections/AISections.jsx')) return 'public-ai-sections'
           if (id.includes('/src/components/PublicTestimonials.jsx')) return 'public-testimonials'
-          if (id.includes('/src/sections/')) return 'public-home'
+          if (id.includes('/src/components/CopyEmailButton.jsx') || id.includes('/src/components/LazySection.jsx')) return 'public-home-utils'
+          // Split HomepageSections into smaller chunks for mobile
+          if (id.includes('/src/sections/HomepageSections.jsx')) return 'public-home-content'
+          if (id.includes('/src/sections/')) return 'public-home-other'
+          // Split business services
+          if (id.includes('/src/components/BusinessServicesSection.jsx')) return 'public-business-services'
           if (id.includes('/src/pages/public/SolutionPage.jsx')) return 'public-solutions'
           if (id.includes('/src/pages/public/PricingPage.jsx')) return 'public-pricing'
           if (id.includes('/src/pages/public/BusinessServicesPage.jsx') || id.includes('/src/components/BusinessServicesSection.jsx')) return 'public-services'
