@@ -115,6 +115,16 @@ export async function republishSinglePost(post, { onProgress, firestoreDb } = {}
       rerr(8, 'IndexNow ping failed (non-blocking)', idxErr)
     }
 
+    // STEP 8.5: Blog Knowledge Ingestion (AI Brain learns from this blog)
+    progress(8, 'Blog Knowledge Ingestion')
+    try {
+      const { ingestBlogKnowledge } = await import('./blogKnowledge.js')
+      await ingestBlogKnowledge(post, { firestoreDb })
+      rlog(8, `Blog knowledge ingested [slug: ${slug}]`)
+    } catch (knowledgeErr) {
+      rerr(8, `Knowledge ingestion failed (non-blocking) [slug: ${slug}]`, knowledgeErr)
+    }
+
     // STEP 9: Complete
     progress(9, 'Republish Complete')
 

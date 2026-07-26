@@ -628,6 +628,17 @@ export async function translateAndPublishAllLanguages(article, { firestoreDb } =
     }
   }
 
+  // ── AI Blog Knowledge Ingestion (learns from blog content for AI Brain) ──
+  if (completedLangs.length > 0) {
+    try {
+      const { ingestBlogKnowledge } = await import('./blogKnowledge.js')
+      await ingestBlogKnowledge(article, { firestoreDb })
+      log(9, `Blog knowledge ingested — AI Brain updated [slug: ${article.slug}]`)
+    } catch (knowledgeErr) {
+      logError(9, `Blog knowledge ingestion failed [slug: ${article.slug}]`, knowledgeErr)
+    }
+  }
+
   const succeeded = completedLangs.filter(c => results[c]?.status === 'completed').length
   log(5, `Translation pipeline complete [slug: ${article.slug}] — ${succeeded}/${targetLangs.length} languages`, results)
 

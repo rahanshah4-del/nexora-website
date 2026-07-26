@@ -58,12 +58,93 @@ const PROVIDERS = {
   },
 }
 
-// ── System Prompt (lightweight, knowledge from KV) ──
-const BASE_PROMPT = `You are Nexora AI, the official assistant for Nexora Solution (nexorasolution.online) — a Pakistani business software company. NEVER say you are DeepSeek, OpenAI, Gemini, or Claude. Always identify as "Nexora AI".
+// ── Nexora AI Brain v2 — Permanent System Prompt ──
+const BASE_PROMPT = `=== NEXORA AI BRAIN — PERMANENT IDENTITY ===
 
-TONE (CRITICAL): Always be warm, polite, loving, and respectful — like speaking to a dear family member. NEVER sound cold, robotic, or dismissive. When you cannot help with something (weather, live data, etc.), apologize warmly, explain kindly, and offer an alternative. For Urdu/Hindi speakers, use "aap", "ji", "shukriya" generously. Use gentle emojis 😊🌸✨.
+You are Nexora AI, an AI Business Consultant built by Nexora Solution. You are NOT a generic chatbot. You are NOT DeepSeek, OpenAI, Gemini, or Claude. You ALWAYS identify as "Nexora AI" and represent nexorasolution.online.
 
-Be helpful and concise. Keep responses under 4 sentences unless showing feature lists. End with a helpful next step.`
+=== ROLE ===
+You are a professional Nexora Business Consultant. Your job is to help users understand, purchase, and use Nexora products. You answer confidently from the knowledge base provided. You NEVER invent features, pricing, or capabilities. If you don't know something, clearly say: "I don't have that information right now — please contact sales for details."
+
+=== ABOUT NEXORA SOLUTION ===
+Nexora Solution is a Pakistani business software company based at nexorasolution.online. We build AI-powered POS, ERP, CRM, and business automation software for restaurants, retail stores, pharmacies, schools, transport fleets, and growing enterprises across Pakistan, UAE, Saudi Arabia, Bahrain, India, Bangladesh, and Afghanistan.
+
+=== CORE PRODUCTS ===
+- Restaurant POS — AI-powered restaurant management with KOT, table management, billing, kitchen display, inventory, and cloud sync
+- Retail POS — Complete retail billing with barcode, discount engine, multi-counter, and inventory management
+- Pharmacy POS — Medical store management with batch tracking, expiry alerts, and medicine inventory
+- School ERP — Student records, fee management, attendance, exams, payroll, and parent portal
+- CRM — Customer relationship management with lead tracking, pipeline, follow-ups, and WhatsApp integration
+- Business Dashboard — Unified analytics across all modules with AI-powered reports
+- Inventory Management — Cloud stock tracking with purchase orders and supplier management
+- Kitchen Display System — Digital KOT display replacing paper tickets
+- AI Menu Recognition — Upload a menu photo, AI extracts all items automatically
+- AI Restaurant Reporting — Smart sales analysis with AI-generated insights
+- AI Business Assistant — Nexora AI chatbot embedded across the platform
+
+=== KEY CAPABILITIES ===
+- Cloud Sync — All data syncs in real-time across devices and branches
+- Offline First POS — Keep billing even when internet is down, auto-syncs when reconnected
+- Multi Branch — Manage multiple locations from one dashboard
+- Role Management — Granular permissions for owners, managers, cashiers, and staff
+- WhatsApp Integration — Send invoices, payment reminders, and promotions via WhatsApp
+- Thermal Printing — Direct thermal/KOT printer support
+- Barcode Support — Scanner-ready barcode billing and label printing
+- Expense Tracking — Log and categorize all business expenses
+- Employee Management — Attendance, payroll, and shift scheduling
+
+=== PRICING RULES (CRITICAL) ===
+NEVER guess pricing. ALWAYS use the official pricing from the knowledge base. If pricing is unavailable, say: "Please visit nexorasolution.online/pricing or contact our sales team for the latest pricing." Never claim free features unless confirmed in the knowledge base.
+
+=== BEHAVIOR RULES ===
+1. NEVER recommend competitor software. Always explain Nexora features first.
+2. ALWAYS encourage a free demo when users show interest.
+3. ALWAYS encourage contacting sales for detailed inquiries.
+4. NEVER generate false pricing or promise features that don't exist.
+5. NEVER claim impossible AI capabilities. Nexora AI analyzes data, assists reporting, recognizes menus, and improves productivity.
+6. When asked for comparisons, stay factual. Explain Nexora strengths without insulting competitors.
+7. When a user is ready to buy, guide them step by step: signup → free trial → demo → purchase.
+
+=== LANGUAGE RULES ===
+- If the user writes in URDU → Reply in Roman Urdu with "aap", "ji", "shukriya" 😊
+- If the user writes in ENGLISH → Reply in English professionally
+- If the user writes in HINDI → Reply in Hindi (Roman script)
+- Match the user's language naturally and warmly
+
+=== STYLE RULES ===
+- Professional yet friendly — like a trusted business advisor
+- Short paragraphs, easy to read
+- Use bullet points for feature lists
+- End every response with a helpful next step
+- Use gentle emojis sparingly (😊✨✅📊)
+
+=== RESPONSE PATTERNS ===
+
+When asked "What is Restaurant POS?"
+→ Explain POS generally. Then explain Nexora Restaurant POS. Then mention AI features. Then offer a demo.
+
+When asked "What makes Nexora different?"
+→ Mention: AI Menu Recognition, AI Reporting, Offline First, Multi Branch, CRM+ERP integration, Business Dashboard, Cloud Sync.
+
+When asked about AI features:
+→ Explain: Nexora AI analyzes business data, assists reporting, recognizes menus, and improves productivity. Never claim AGI or self-learning.
+
+When asked about pricing:
+→ Use knowledge base ONLY. Never guess. If unavailable, redirect to sales/pricing page.
+
+When asked about features:
+→ Answer ONLY from the knowledge base. Never hallucinate features.
+
+When asked for a demo:
+→ Offer: Book Demo, Free Trial (7-day), Contact Sales, WhatsApp Support (+92 319 432 9754).
+
+When user is ready to buy:
+→ Guide: 1) Visit nexorasolution.online/signup 2) Start free 7-day trial 3) Book a demo 4) Choose a plan 5) Contact sales for enterprise.
+
+=== OUTPUT QUALITY ===
+- Clear, professional, trustworthy, business-focused
+- Represent Nexora Solution as Pakistan's leading AI-powered business software platform
+- Every answer should make the user feel confident about choosing Nexora`
 
 // ── Rate Limiter ──
 const rateLimiters = new Map()
@@ -139,11 +220,81 @@ function corsHeaders(origin) {
 
 // ── Fallback knowledge (static, zero KV reads) ──
 const FALLBACK_KNOWLEDGE = {
-  products: 'Restaurant POS, Retail POS, School ERP, Medical Store POS, Transport Software, Property ERP, CRM, WhatsApp CRM, Reports & Analytics, Inventory Management, Team & Permissions, Email Marketing.',
-  pricing: '7-Day Free Trial. Basic: PKR 1,000/mo (50% OFF, was PKR 2,000). Standard: PKR 3,000/mo (was PKR 5,999). Enterprise: Custom. All include cloud sync, backup, free updates. Yearly: 20% savings.',
-  guarantees: '30-Day Money Back Guarantee. Lifetime Price Lock. Free Setup & Data Migration. Free Staff Training. WhatsApp Support: +92 319 432 9754.',
-  routes: '/signup, /pricing, /blog, /industries, /business-services, /about, /contact, /reviews, /faq, /documentation, /help-center, /support-center.',
+  products: `Restaurant POS — AI-powered restaurant management with KOT, table management, billing, kitchen display, inventory, cloud sync, waiter app.
+Retail POS — Complete retail billing, barcode support, discount engine, multi-counter, inventory, customer ledger, GST/tax reports.
+Pharmacy POS — Medical store management, batch tracking, expiry alerts, medicine inventory, sale/purchase, supplier management.
+School ERP — Student records, fee management, attendance tracking, exam management, payroll, parent portal, timetable.
+CRM — Lead tracking, pipeline management, customer follow-ups, deal tracking, invoice generation, WhatsApp integration.
+Business Dashboard — Unified analytics dashboard with AI-powered reports, sales trends, profit/loss, multi-module overview.
+Inventory Management — Cloud stock tracking, purchase orders, supplier management, stock alerts, barcode labels, GRN.
+Kitchen Display System — Digital KOT display replacing paper tickets, real-time order updates, multiple kitchen stations.
+AI Menu Recognition — Upload menu photo, AI extracts all items with names, prices, categories automatically.
+AI Restaurant Reporting — Smart sales analysis, peak hour detection, item popularity ranking, AI-generated insights.
+AI Business Assistant — Nexora AI chatbot embedded across all modules for instant help, reports, and navigation.`,
+  features: `Cloud Sync — Real-time data sync across all devices and branches.
+Offline First POS — Keep billing during internet downtime, auto-syncs when reconnected.
+Multi Branch — Manage multiple locations from a single dashboard.
+Role Management — Granular permissions for owners, managers, cashiers, staff.
+WhatsApp Integration — Send invoices, payment reminders, promotions via WhatsApp.
+Thermal Printing — Direct thermal printer and KOT printer support.
+Barcode Support — Scanner-ready barcode billing and barcode label printing.
+Expense Tracking — Log and categorize all business expenses.
+Employee Management — Attendance, payroll, shift scheduling, performance tracking.
+Multi Currency — Support for PKR, USD, AED, SAR, and more.
+Data Encryption — Enterprise-grade security with encrypted cloud storage.
+Daily Backup — Automatic daily cloud backups included in all plans.`,
+  ai_features: `Nexora AI analyzes business data to provide actionable insights.
+Nexora AI assists with automated reporting — sales reports, trend analysis, peak hour detection.
+Nexora AI recognizes menus from photos — extract items, prices, and categories in seconds.
+Nexora AI improves productivity by automating repetitive tasks like data entry and report generation.
+Nexora AI is embedded across all modules as a conversational assistant for instant help.`,
+  differentiators: `AI Menu Recognition — No other Pakistani POS offers camera-to-menu AI extraction.
+AI Reporting — Smart insights, not just raw numbers.
+Offline First — Works without internet, unlike most cloud POS systems.
+All-in-One — POS + CRM + ERP + Inventory in one unified platform.
+Pakistan Focused — Built specifically for Pakistani businesses with local tax, Urdu support, and local pricing.
+Cloud Sync — Real-time sync across unlimited devices and branches.
+Free Setup — Free data migration and staff training included.`,
+  pricing: `7-Day Free Trial — No credit card required.
+Basic Plan: PKR 1,000/month (50% OFF launch price, was PKR 2,000). 1 outlet, core POS, basic reports.
+Standard Plan: PKR 3,000/month (was PKR 5,999). Up to 3 outlets, CRM, inventory, advanced reports, WhatsApp integration.
+Enterprise Plan: Custom pricing. Unlimited outlets, all modules, API access, priority support, custom development.
+Yearly Plans: 20% savings on annual billing.
+All Plans Include: Cloud sync, daily backup, free updates, free setup, free data migration, free staff training.`,
+  guarantees: `30-Day Money Back Guarantee — Full refund if not satisfied.
+Lifetime Price Lock — Your subscription price never increases.
+Free Setup & Data Migration — We set up your account and migrate existing data at no cost.
+Free Staff Training — Live training for your team included.
+WhatsApp Support — Direct chat support at +92 319 432 9754.
+Email Support — hello@nexorasolution.online`,
+  routes: `/ — Homepage.
+/signup — Start free trial.
+/pricing — All pricing plans.
+/blog — Business insights and product guides.
+/industries — Industries we serve.
+/business-services — Custom development and consulting.
+/about — About Nexora Solution.
+/contact — Contact sales and support.
+/reviews — Customer testimonials.
+/faq — Frequently asked questions.
+/documentation — Product documentation and guides.
+/help-center — Help articles and troubleshooting.
+/support-center — Submit support tickets.
+/restaurant-pos — Restaurant POS details.
+/retail-pos — Retail POS details.
+/school-erp — School ERP details.
+/whatsapp-crm — WhatsApp CRM details.
+/solutions/crm — CRM software details.
+/solutions/pos — POS solutions overview.
+/solutions/inventory-management — Inventory management details.`,
   website: 'https://nexorasolution.online',
+  contact: `WhatsApp: +92 319 432 9754
+Email: hello@nexorasolution.online
+Website: https://nexorasolution.online
+Facebook: facebook.com/nexorasolution
+Instagram: instagram.com/nexorasolution
+LinkedIn: linkedin.com/company/nexorasolution
+YouTube: youtube.com/@nexorasolution`,
 }
 
 // ── Load Knowledge from KV (with 10-min in-memory cache) ──
@@ -262,7 +413,50 @@ async function callProvider(providerKey, messages, maxTokens, env) {
   if (!apiKey) throw new Error(`${providerKey}: No API key configured`)
 
   const knowledge = await loadKnowledge(env)
-  const systemMsg = { role: 'system', content: `${BASE_PROMPT}\n\nNexora Products: ${knowledge.products}\nPricing: ${knowledge.pricing}\nGuarantees: ${knowledge.guarantees}\nRoutes: ${knowledge.routes}\nWebsite: ${knowledge.website}` }
+
+  // Load latest blog knowledge for real-time awareness
+  let blogContext = ''
+  try {
+    const blogIndex = env.AI_KV ? await env.AI_KV.get('blog-index', 'json') : null
+    if (blogIndex?.blogs) {
+      const latest = Object.values(blogIndex.blogs)
+        .sort((a, b) => (b.publishDate || '').localeCompare(a.publishDate || ''))
+        .slice(0, 5)
+      if (latest.length > 0) {
+        blogContext = `\n=== LATEST BLOG KNOWLEDGE (auto-learned) ===\n${latest.map((b) => `• "${b.title}" — ${b.summary || ''} (Keywords: ${(b.keywords || []).slice(0, 5).join(', ')})`).join('\n')}\nWhen users ask about these topics, reference these articles. When users ask "what's new?", mention the most recent blog.`
+      }
+    }
+  } catch { /* blogs unavailable */ }
+
+  const systemMsg = { role: 'system', content: `${BASE_PROMPT}
+
+=== KNOWLEDGE BASE ===
+
+Products:
+${knowledge.products || 'See nexorasolution.online'}
+
+Features:
+${knowledge.features || 'See nexorasolution.online'}
+
+AI Capabilities:
+${knowledge.ai_features || 'AI analyzes data, assists reporting, recognizes menus, improves productivity.'}
+
+What Makes Nexora Different:
+${knowledge.differentiators || 'AI-powered, offline-first, all-in-one platform built for Pakistani businesses.'}
+
+Pricing:
+${knowledge.pricing || 'Free trial available. Visit nexorasolution.online/pricing.'}
+
+Guarantees:
+${knowledge.guarantees || '30-day money back. Free setup and training.'}
+
+Routes:
+${knowledge.routes || '/signup, /pricing, /contact'}
+
+Contact:
+${knowledge.contact || 'WhatsApp: +92 319 432 9754 | Email: hello@nexorasolution.online'}
+
+Website: ${knowledge.website || 'https://nexorasolution.online'}${blogContext}` }
 
   const url = provider.endpoint ? provider.endpoint(provider.baseUrl, apiKey) : `${provider.baseUrl}/v1/chat/completions`
   const res = await fetch(url, {
@@ -342,7 +536,12 @@ export default {
           return new Response(JSON.stringify({ error: 'invalid_payload', message: 'Knowledge must be a JSON object' }), { status: 400, headers: { 'Content-Type': 'application/json', ...headers } })
         }
         const required = ['products', 'pricing', 'guarantees', 'routes', 'website']
+        const optional = ['features', 'ai_features', 'differentiators', 'contact']
+        const allFields = [...required, ...optional]
+        // Validate required fields
         const missing = required.filter((k) => !knowledge[k] || typeof knowledge[k] !== 'string')
+        // Warn about unknown fields but don't reject
+        const unknownFields = Object.keys(knowledge).filter((k) => !allFields.includes(k))
         if (missing.length > 0) {
           return new Response(JSON.stringify({ error: 'invalid_payload', message: `Missing or invalid fields: ${missing.join(', ')}` }), { status: 400, headers: { 'Content-Type': 'application/json', ...headers } })
         }
@@ -353,7 +552,7 @@ export default {
             knowledgeCache = null
           } catch {}
         }
-        return new Response(JSON.stringify({ success: true }), { status: 200, headers: { 'Content-Type': 'application/json', ...headers } })
+        return new Response(JSON.stringify({ success: true, fields_saved: Object.keys(knowledge).length, unknown_fields: unknownFields.length > 0 ? unknownFields : undefined }), { status: 200, headers: { 'Content-Type': 'application/json', ...headers } })
       } catch (e) {
         return new Response(JSON.stringify({ error: e.message }), { status: 400, headers: { 'Content-Type': 'application/json', ...headers } })
       }
@@ -363,6 +562,100 @@ export default {
     if (url.pathname === '/admin/knowledge' && request.method === 'GET') {
       const knowledge = await loadKnowledge(env)
       return new Response(JSON.stringify(knowledge), { status: 200, headers: { 'Content-Type': 'application/json', ...headers } })
+    }
+
+    // ── Admin: Push Blog Knowledge (from client-side ingestion pipeline) ──
+    if (url.pathname === '/admin/blog-knowledge' && request.method === 'POST') {
+      const adminKey = request.headers.get('Authorization')?.replace('Bearer ', '')
+      if (adminKey !== env.ADMIN_KEY && env.ADMIN_KEY) {
+        return new Response(JSON.stringify({ error: 'unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json', ...headers } })
+      }
+      try {
+        const { slug, knowledge } = await request.json()
+        if (!slug || !knowledge) {
+          return new Response(JSON.stringify({ error: 'invalid_payload', message: 'slug and knowledge are required' }), { status: 400, headers: { 'Content-Type': 'application/json', ...headers } })
+        }
+        if (env.AI_KV) {
+          // Store individual blog knowledge
+          await env.AI_KV.put(`blog:${slug}`, JSON.stringify(knowledge), { expirationTtl: 7776000 }) // 90 days
+          // Update blog index
+          const indexRaw = await env.AI_KV.get('blog-index', 'json') || { blogs: {}, topics: {} }
+          indexRaw.blogs[slug] = { title: knowledge.title, summary: knowledge.summary, keywords: knowledge.keywords, publishDate: knowledge.publishDate }
+          // Index by keywords/topics
+          const terms = [...(knowledge.keywords || []), ...(knowledge.majorTopics || []), ...(knowledge.products || [])]
+          for (const term of terms) {
+            const key = String(term).toLowerCase().trim()
+            if (!key) continue
+            if (!indexRaw.topics[key]) indexRaw.topics[key] = []
+            if (!indexRaw.topics[key].includes(slug)) indexRaw.topics[key].push(slug)
+          }
+          // Keep max 100 blogs
+          const slugs = Object.keys(indexRaw.blogs)
+          if (slugs.length > 100) {
+            const oldest = slugs.sort((a, b) => (indexRaw.blogs[a]?.publishDate || '').localeCompare(indexRaw.blogs[b]?.publishDate || '')).slice(0, slugs.length - 100)
+            for (const s of oldest) {
+              delete indexRaw.blogs[s]
+              for (const t of Object.keys(indexRaw.topics)) {
+                indexRaw.topics[t] = indexRaw.topics[t].filter(x => x !== s)
+                if (indexRaw.topics[t].length === 0) delete indexRaw.topics[t]
+              }
+            }
+          }
+          await env.AI_KV.put('blog-index', JSON.stringify(indexRaw))
+          // Invalidate cache
+          knowledgeCache = null
+        }
+        return new Response(JSON.stringify({ success: true, slug }), { status: 200, headers: { 'Content-Type': 'application/json', ...headers } })
+      } catch (e) {
+        return new Response(JSON.stringify({ error: e.message }), { status: 400, headers: { 'Content-Type': 'application/json', ...headers } })
+      }
+    }
+
+    // ── Public: Get Latest Blogs ──
+    if (url.pathname === '/blog-knowledge/latest' && request.method === 'GET') {
+      try {
+        const indexRaw = env.AI_KV ? await env.AI_KV.get('blog-index', 'json') : null
+        const index = indexRaw || { blogs: {}, topics: {} }
+        const blogs = Object.values(index.blogs || {})
+          .sort((a, b) => (b.publishDate || '').localeCompare(a.publishDate || ''))
+          .slice(0, 5)
+        return new Response(JSON.stringify({ blogs }), { status: 200, headers: { 'Content-Type': 'application/json', ...headers } })
+      } catch {
+        return new Response(JSON.stringify({ blogs: [] }), { status: 200, headers: { 'Content-Type': 'application/json', ...headers } })
+      }
+    }
+
+    // ── Blog Knowledge Sync (from client ingestion pipeline) ──
+    // Uses a shared BLOG_SYNC_KEY so the client can push without full admin access
+    if (url.pathname === '/blog-knowledge/sync' && request.method === 'POST') {
+      const syncKey = request.headers.get('X-Blog-Sync-Key') || ''
+      if (!syncKey || (env.BLOG_SYNC_KEY && syncKey !== env.BLOG_SYNC_KEY)) {
+        return new Response(JSON.stringify({ error: 'unauthorized', message: 'Valid X-Blog-Sync-Key required' }), { status: 401, headers: { 'Content-Type': 'application/json', ...headers } })
+      }
+      try {
+        const { slug, knowledge } = await request.json()
+        if (!slug || !knowledge) {
+          return new Response(JSON.stringify({ error: 'invalid_payload' }), { status: 400, headers: { 'Content-Type': 'application/json', ...headers } })
+        }
+        if (env.AI_KV) {
+          await env.AI_KV.put(`blog:${slug}`, JSON.stringify(knowledge), { expirationTtl: 7776000 })
+          // Update index
+          const indexRaw = await env.AI_KV.get('blog-index', 'json') || { blogs: {}, topics: {} }
+          indexRaw.blogs[slug] = { title: knowledge.title, summary: knowledge.summary, keywords: knowledge.keywords || [], majorTopics: knowledge.majorTopics || [], publishDate: knowledge.publishDate }
+          const terms = [...(knowledge.keywords || []), ...(knowledge.majorTopics || []), ...(knowledge.products || [])]
+          for (const term of terms) {
+            const key = String(term).toLowerCase().trim()
+            if (!key) continue
+            if (!indexRaw.topics[key]) indexRaw.topics[key] = []
+            if (!indexRaw.topics[key].includes(slug)) indexRaw.topics[key].push(slug)
+          }
+          await env.AI_KV.put('blog-index', JSON.stringify(indexRaw))
+          knowledgeCache = null
+        }
+        return new Response(JSON.stringify({ success: true, slug }), { status: 200, headers: { 'Content-Type': 'application/json', ...headers } })
+      } catch (e) {
+        return new Response(JSON.stringify({ error: e.message }), { status: 400, headers: { 'Content-Type': 'application/json', ...headers } })
+      }
     }
 
     // ── Chat ──
