@@ -121,15 +121,20 @@ export default function BlogArticlePage() {
     loadBlogTranslationFromFirestore(articleSlug, lang)
       .then((cached) => {
         if (cancelled) return
-        if (cached) { setTranslation({ ...cached, slug: articleSlug, lang }); return }
-        // 2. Fallback: live translate via DeepSeek/Google
+        if (cached && cached.translationStatus === 'completed') {
+          setTranslation({ ...cached, slug: articleSlug, lang })
+          return
+        }
+        // 2. Firestore has no completed translation → live translate via DeepSeek/Google
+        console.log(`[Blog Article] Firestore translation not found or incomplete for ${lang}, falling back to live translation`)
         return translateBlogArticle(source, lang).then((next) => {
           if (!cancelled) setTranslation(next ? { ...next, slug: articleSlug, lang } : null)
         })
       })
       .catch(() => {
-        // 3. Final fallback: live translate
+        // 3. Firestore load errored → final fallback: live translate
         if (cancelled) return
+        console.log(`[Blog Article] Firestore load error for ${lang}, attempting live translation`)
         translateBlogArticle(source, lang)
           .then((next) => { if (!cancelled) setTranslation(next ? { ...next, slug: articleSlug, lang } : null) })
           .catch(() => { if (!cancelled) setTranslation(null) })

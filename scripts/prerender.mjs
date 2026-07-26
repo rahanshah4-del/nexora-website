@@ -1094,8 +1094,11 @@ async function main() {
         if (!snap.exists()) continue
         const translations = snap.data().translations || {}
         for (const lang of mlLangs) {
-          const translated = translations[lang.code]
+          // Try exact key first, then backward compat variants
+          let translated = translations[lang.code] || translations['ur'] || null
           if (!translated) continue
+          // Skip translations that explicitly failed or are pending
+          if (translated.translationStatus === 'failed' || translated.translationStatus === 'pending') continue
           const html = buildFullBlogHtml(article, articles, {
             langCode: lang.code, htmlLang: lang.htmlLang,
             ogLocale: lang.ogLocale, translation: translated,

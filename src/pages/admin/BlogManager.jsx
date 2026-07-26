@@ -193,16 +193,29 @@ export default function BlogManager() {
       setNotice(draft.status === 'published' ? 'Blog post published.' : 'Blog draft saved.')
       setEditingSlug(slug)
 
-      // Auto-translate to all languages in background (published only — one-time cost)
+      // Auto-translate to all languages in background (published only)
       if (draft.status === 'published') {
         import('../../lib/blogTranslate.js').then(({ translateAndPublishAllLanguages }) => {
-          translateAndPublishAllLanguages({
+          const article = {
             slug,
             title: draft.title.trim(),
             excerpt: draft.excerpt.trim() || draft.metaDescription.trim(),
             sections: [{ heading: draft.contentHeading?.trim() || 'Article guide', paragraphs }],
             faqs: parseFaqs(draft.faqsText),
-          }).catch(() => { /* silent — translation is best-effort */ })
+          }
+          return translateAndPublishAllLanguages(article).then(({ results }) => {
+            const completed = Object.entries(results || {}).filter(([, r]) => r?.status === 'completed')
+            const failed = Object.entries(results || {}).filter(([, r]) => r?.status !== 'completed')
+            if (failed.length > 0) {
+              const failedLangs = failed.map(([code, r]) => `${code} (${r?.reason || 'unknown'})`).join(', ')
+              console.warn(`[Blog Manager] ⚠ Translation partial: ${completed.length} succeeded, ${failed.length} failed — ${failedLangs}`)
+            }
+            if (completed.length > 0) {
+              console.log(`[Blog Manager] ✓ Translations saved to Firestore: ${completed.map(([c]) => c).join(', ')}`)
+            }
+          })
+        }).catch((err) => {
+          console.error('[Blog Manager] ✗ Translation pipeline failed:', err?.message || err)
         })
       }
     } catch (saveError) {
