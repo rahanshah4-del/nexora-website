@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { serverTimestamp } from 'firebase/firestore'
-import { HiOutlinePhoto, HiOutlinePlus, HiOutlineTrash } from 'react-icons/hi2'
+import { HiOutlineLanguage, HiOutlinePhoto, HiOutlinePlus, HiOutlineTrash } from 'react-icons/hi2'
 import { blogCategories, mergeBlogArticles } from '../../lib/blogData.js'
 import {
   deleteBlogPost,
@@ -101,6 +101,7 @@ export default function BlogManager() {
   const [notice, setNotice] = useState('')
   const [error, setError] = useState('')
   const [viewCounts, setViewCounts] = useState({})
+  const [retranslating, setRetranslating] = useState({}) // slug → 'translating' | 'done' | 'error: ...'
 
   useEffect(() => listenAdminBlogPosts(setCmsPosts, (loadError) => {
     setError(loadError?.message || 'Unable to load blog posts.')
@@ -234,6 +235,43 @@ export default function BlogManager() {
     }
   }
 
+  const retranslatePost = async (post) => {
+    if (!post?.slug || retranslating[post.slug] === 'translating') return
+    const slug = post.slug
+    setRetranslating((prev) => ({ ...prev, [slug]: 'translating' }))
+    try {
+      const { translateAndPublishAllLanguages } = await import('../../lib/blogTranslate.js')
+      const paragraphs = (post.sections || []).flatMap((s) => s.paragraphs || [])
+      const faqs = (post.faqs || []).map((f) => [f.question || f[0] || '', f.answer || f[1] || ''])
+      const { results } = await translateAndPublishAllLanguages({
+        slug,
+        title: post.title || '',
+        excerpt: post.excerpt || post.metaDescription || '',
+        seoTitle: post.seoTitle || post.title || '',
+        metaDescription: post.metaDescription || '',
+        sections: post.sections || [],
+        faqs,
+      })
+      const completed = Object.entries(results || {}).filter(([, r]) => r?.status === 'completed')
+      const failed = Object.entries(results || {}).filter(([, r]) => r?.status !== 'completed')
+      if (completed.length > 0 && failed.length === 0) {
+        setRetranslating((prev) => ({ ...prev, [slug]: 'done' }))
+        setNotice(`✓ Translation complete for "${post.title?.slice(0, 40)}…" — ${completed.map(([c]) => c).join(', ')}`)
+      } else if (completed.length > 0) {
+        setRetranslating((prev) => ({ ...prev, [slug]: `error: ${failed.length} failed` }))
+        setError(`⚠ Partial translation: ${completed.map(([c]) => c).join(', ')} done, ${failed.map(([c, r]) => `${c}(${r?.reason})`).join(', ')} failed`)
+      } else {
+        setRetranslating((prev) => ({ ...prev, [slug]: 'error: all failed' }))
+        setError(`✗ Translation failed for all languages for "${post.title?.slice(0, 40)}…"`)
+      }
+      setTimeout(() => { setRetranslating((prev) => { const n = {...prev}; delete n[slug]; return n }) }, 4000)
+    } catch (err) {
+      setRetranslating((prev) => ({ ...prev, [slug]: `error: ${err?.message || 'Unknown'}` }))
+      setError(`✗ Translation error: ${err?.message || 'Unknown error'}`)
+      setTimeout(() => { setRetranslating((prev) => { const n = {...prev}; delete n[slug]; return n }) }, 6000)
+    }
+  }
+
   const uploadImage = async (file) => {
     if (!file) return
     setUploading(true)
@@ -338,6 +376,25 @@ export default function BlogManager() {
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-2">
                         <button type="button" onClick={() => edit(post)} className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700">Edit</button>
+                        {post.status === 'published' ? (
+                          <button
+                            type="button"
+                            disabled={retranslating[post.slug] === 'translating'}
+                            onClick={() => retranslatePost(post)}
+                            className={`inline-flex items-center gap-1 rounded-xl border px-3 py-2 text-xs font-bold transition ${
+                              retranslating[post.slug] === 'done' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' :
+                              retranslating[post.slug]?.startsWith('error') ? 'border-rose-200 bg-rose-50 text-rose-700' :
+                              retranslating[post.slug] === 'translating' ? 'border-blue-200 bg-blue-50 text-blue-700' :
+                              'border-violet-200 bg-white text-violet-700 hover:bg-violet-50'
+                            }`}
+                          >
+                            <HiOutlineLanguage className="h-4 w-4" />
+                            {retranslating[post.slug] === 'translating' ? 'Translating…' :
+                             retranslating[post.slug] === 'done' ? 'Done ✓' :
+                             retranslating[post.slug]?.startsWith('error') ? 'Retry' :
+                             'Translate'}
+                          </button>
+                        ) : null}
                         {post.source === 'cms' ? (
                           <button type="button" onClick={() => window.confirm(`Delete ${post.title}?`) && deleteBlogPost(post.slug)} className="inline-flex items-center gap-1 rounded-xl border border-rose-200 px-3 py-2 text-xs font-bold text-rose-700">
                             <HiOutlineTrash className="h-4 w-4" />

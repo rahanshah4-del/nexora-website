@@ -275,13 +275,22 @@ async function translateStrings(strings, langCode) {
             out.push(isRomanUrdu
               ? (await translateToRomanUrdu(original)) || original
               : (await callTranslateAPI(original, target)) || original)
-          } catch {
+          } catch (err) {
+            // Roman Urdu: throw instead of silently saving English
+            if (isRomanUrdu) throw err
             out.push(original)
           }
         }
       }
-    } catch {
-      // Total failure — return originals
+    } catch (err) {
+      // Roman Urdu: NEVER silently return English originals.
+      // If DeepSeek fails, throw so translateBlogArticle returns null
+      // and translateSingleLanguage marks it as 'failed'.
+      // Google Translate (hi/ar/bn): fall back to originals as last resort.
+      if (isRomanUrdu) {
+        logError(3, `Roman Urdu batch translation failed — throwing to prevent English-as-Urdu save`, err)
+        throw err
+      }
       for (const original of batch) out.push(original)
     }
 
@@ -341,6 +350,15 @@ export async function translateBlogArticle(article, langCode) {
       paragraphs: (section.paragraphs || []).map(() => translated[index++] || ''),
     })),
     faqs: (article.faqs || []).map(() => [translated[index++] || '', translated[index++] || '']),
+  }
+
+  // Safety net: if translated title is identical to English original,
+  // the translation silently failed — don't pretend it's translated.
+  const originalTitle = String(article.title || '').trim()
+  const translatedTitle = String(next.title || '').trim()
+  if (originalTitle && translatedTitle === originalTitle) {
+    logError(3, `Translation produced identical title to English — treating as failed [${langCode}]`)
+    return null
   }
 
   try { sessionStorage.setItem(cacheKey, JSON.stringify(next)) } catch { /* quota */ }
