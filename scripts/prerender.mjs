@@ -14,6 +14,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { formatBlogContentHtml } from '../src/lib/blogContentFormatter.js'
+import { autoLinkTerms } from '../src/lib/blogInternalLinks.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
@@ -341,39 +342,8 @@ function faqSchema(faqs) {
 
 // ═══════════════════════════════════════════════════════════════════════════════
 //  AUTO INTERNAL LINKING
+//  Uses the shared route registry from src/lib/blogInternalLinks.js
 // ═══════════════════════════════════════════════════════════════════════════════
-
-const INTERNAL_LINK_MAP = [
-  ['Restaurant POS', '/restaurant-pos'],
-  ['Retail POS', '/retail-pos'],
-  ['School ERP', '/school-erp'],
-  ['CRM', '/solutions/crm'],
-  ['Inventory', '/solutions/inventory-management'],
-  ['WhatsApp CRM', '/whatsapp-crm'],
-  ['Barcode', '/solutions/inventory-management'],
-  ['ERP', '/solutions/school-erp'],
-  ['POS', '/solutions/pos'],
-  ['Transport', '/transport'],
-  ['Property ERP', '/solutions/property-erp'],
-  ['Medical Store POS', '/solutions/medical-store-pos'],
-  ['Email Marketing', '/solutions/email-marketing'],
-  ['Reports', '/solutions/reports-analytics'],
-  ['Team Permissions', '/solutions/team-permissions'],
-]
-
-function autoLinkTerms(text) {
-  let result = text
-  for (const [term, url] of INTERNAL_LINK_MAP) {
-    const regex = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi')
-    let count = 0
-    result = result.replace(regex, (match) => {
-      if (count >= 1) return match // Only link first occurrence
-      count++
-      return `<a href="${url}">${match}</a>`
-    })
-  }
-  return result
-}
 
 // ═══════════════════════════════════════════════════════════════════════════════
 //  AUTO RELATED ARTICLES (category + tags)

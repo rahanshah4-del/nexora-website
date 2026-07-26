@@ -102,6 +102,8 @@ export default function BlogManager() {
   const [error, setError] = useState('')
   const [viewCounts, setViewCounts] = useState({})
   const [retranslating, setRetranslating] = useState({}) // slug → 'translating' | 'done' | 'error: ...'
+  const [republishingState, setRepublishingState] = useState(null) // null | { mode, current, total, step, failed[], completed }
+  const [selectedPosts, setSelectedPosts] = useState(new Set())
 
   useEffect(() => listenAdminBlogPosts(setCmsPosts, (loadError) => {
     setError(loadError?.message || 'Unable to load blog posts.')
@@ -272,6 +274,53 @@ export default function BlogManager() {
     }
   }
 
+  const republishCurrentPost = async (post) => {
+    if (!post?.slug || republishingState) return
+    const slug = post.slug
+    setRepublishingState({ mode: 'single', current: 1, total: 1, step: 'Starting…', failed: [], completed: 0 })
+    try {
+      const { republishSinglePost } = await import('../../lib/blogRepublish.js')
+      const result = await republishSinglePost(post, {
+        onProgress: ({ step, stepIndex }) => {
+          setRepublishingState((prev) => prev ? { ...prev, step: `Step ${stepIndex + 1}/9: ${step}` } : null)
+        },
+      })
+      if (result.status === 'completed') {
+        setRepublishingState({ mode: 'single', current: 1, total: 1, step: 'Complete', failed: [], completed: 1 })
+        setNotice(`✓ Republished "${post.title?.slice(0, 40)}…" — ${result.languages?.length || 0} languages`)
+      } else {
+        setRepublishingState({ mode: 'single', current: 1, total: 1, step: 'Failed', failed: [result], completed: 0 })
+        setError(`✗ Republish failed: ${result.reason || 'Unknown'}`)
+      }
+    } catch (err) {
+      setRepublishingState({ mode: 'single', current: 1, total: 1, step: 'Error', failed: [{ slug, reason: err.message }], completed: 0 })
+      setError(`✗ Republish error: ${err.message}`)
+    }
+    setTimeout(() => setRepublishingState(null), 5000)
+  }
+
+  const republishAllPublished = async () => {
+    if (republishingState) return
+    const published = posts.filter((p) => p.status === 'published')
+    if (!published.length) { setError('No published posts to republish.'); return }
+    if (!window.confirm(`Republish ALL ${published.length} published posts? This may take several minutes.`)) return
+    setRepublishingState({ mode: 'all', current: 0, total: published.length, step: 'Starting…', failed: [], completed: 0 })
+    try {
+      const { republishAllPosts } = await import('../../lib/blogRepublish.js')
+      const { tracker } = await republishAllPosts(published, {
+        onProgress: ({ step, current, total }) => {
+          setRepublishingState((prev) => prev ? { ...prev, current, total, step, completed: tracker?.completed || prev.completed } : null)
+        },
+      })
+      setRepublishingState((prev) => prev ? { ...prev, step: 'Complete', completed: tracker?.completed || 0, failed: tracker?.failed || [] } : null)
+      setNotice(`✓ Republished ${tracker?.completed || 0}/${published.length} posts`)
+    } catch (err) {
+      setRepublishingState((prev) => prev ? { ...prev, step: 'Error' } : null)
+      setError(`✗ Republish All error: ${err.message}`)
+    }
+    setTimeout(() => setRepublishingState(null), 8000)
+  }
+
   const uploadImage = async (file) => {
     if (!file) return
     setUploading(true)
@@ -357,7 +406,46 @@ export default function BlogManager() {
       </section>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-        <p className="mb-3 text-sm font-black text-slate-950">Blog Posts</p>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm font-black text-slate-950">Blog Posts</p>
+          {posts.some((p) => p.status === 'published') ? (
+            <button
+              type="button"
+              disabled={!!republishingState}
+              onClick={republishAllPublished}
+              className="inline-flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-xs font-bold text-amber-700 hover:bg-amber-100 transition disabled:opacity-50"
+            >
+              <HiOutlineLanguage className="h-4 w-4" />
+              Republish All Published
+            </button>
+          ) : null}
+        </div>
+        {/* Progress indicator */}
+        {republishingState ? (
+          <div className="mb-3 rounded-xl border border-blue-200 bg-blue-50/80 p-3">
+            <div className="flex items-center gap-3">
+              <span className="h-2 w-2 animate-pulse rounded-full bg-blue-500" />
+              <p className="text-xs font-bold text-blue-700">
+                {republishingState.mode === 'all'
+                  ? `Republishing ${republishingState.current}/${republishingState.total} — ${republishingState.step}`
+                  : republishingState.step}
+              </p>
+              {republishingState.total > 1 ? (
+                <span className="text-xs text-blue-500">
+                  {republishingState.completed} done · {republishingState.failed?.length || 0} failed
+                </span>
+              ) : null}
+            </div>
+            {republishingState.total > 1 ? (
+              <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-blue-200">
+                <div
+                  className="h-full rounded-full bg-blue-500 transition-all duration-500"
+                  style={{ width: `${Math.round((republishingState.current / republishingState.total) * 100)}%` }}
+                />
+              </div>
+            ) : null}
+          </div>
+        ) : null}
         {!posts.length ? <p className="rounded-xl bg-slate-50 p-4 text-sm font-semibold text-slate-500">No blog posts found.</p> : (
           <div className="overflow-auto">
             <table className="min-w-full text-left text-sm">
@@ -377,6 +465,7 @@ export default function BlogManager() {
                       <div className="flex flex-wrap gap-2">
                         <button type="button" onClick={() => edit(post)} className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700">Edit</button>
                         {post.status === 'published' ? (
+                          <>
                           <button
                             type="button"
                             disabled={retranslating[post.slug] === 'translating'}
@@ -394,6 +483,16 @@ export default function BlogManager() {
                              retranslating[post.slug]?.startsWith('error') ? 'Retry' :
                              'Translate'}
                           </button>
+                          <button
+                            type="button"
+                            disabled={!!republishingState}
+                            onClick={() => republishCurrentPost(post)}
+                            className="inline-flex items-center gap-1 rounded-xl border border-amber-200 bg-white px-3 py-2 text-xs font-bold text-amber-700 hover:bg-amber-50 transition disabled:opacity-50"
+                          >
+                            <HiOutlineLanguage className="h-4 w-4" />
+                            Republish
+                          </button>
+                          </>
                         ) : null}
                         {post.source === 'cms' ? (
                           <button type="button" onClick={() => window.confirm(`Delete ${post.title}?`) && deleteBlogPost(post.slug)} className="inline-flex items-center gap-1 rounded-xl border border-rose-200 px-3 py-2 text-xs font-bold text-rose-700">

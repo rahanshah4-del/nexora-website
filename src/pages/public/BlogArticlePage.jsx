@@ -29,7 +29,8 @@ import { absoluteUrl, createArticleSchema } from '../../lib/seoStructuredData.js
 import PublicPageShell from './PublicPageShell.jsx'
 import BlogComments from '../../components/BlogComments.jsx'
 import AITermTooltip from '../../components/AITermTooltip.jsx'
-import { formatBlogContent } from '../../lib/blogContentFormatter.js'
+import AIHighlightTooltip from '../../components/AIHighlightTooltip.jsx'
+import { formatBlogContent, injectAiHighlightSpans } from '../../lib/blogContentFormatter.js'
 
 function calculateReadingTime(article) {
   const text = [
@@ -488,13 +489,17 @@ export default function BlogArticlePage() {
                 {display.sections.map((section) => (
                   <section key={section.id} id={section.id} className="scroll-mt-28">
                     <h2 className="mt-10 text-3xl font-medium tracking-tight text-slate-900">{section.heading}</h2>
-                    {section.paragraphs.map((paragraph) => (
-                      <p
-                        key={paragraph.slice(0, 40)}
-                        className="mt-5 text-base leading-8 text-slate-500"
-                        dangerouslySetInnerHTML={{ __html: formatBlogContent(paragraph.replace(/</g, '&lt;').replace(/>/g, '&gt;'), { html: true, autoHighlight: true }) }}
-                      />
-                    ))}
+                    {section.paragraphs.map((paragraph) => {
+                      const formatted = formatBlogContent(paragraph.replace(/</g, '&lt;').replace(/>/g, '&gt;'), { html: true, autoHighlight: true })
+                      const withHighlights = display.aiHighlights?.length ? injectAiHighlightSpans(formatted, display.aiHighlights) : formatted
+                      return (
+                        <p
+                          key={paragraph.slice(0, 40)}
+                          className="mt-5 text-base leading-8 text-slate-500"
+                          dangerouslySetInnerHTML={{ __html: withHighlights }}
+                        />
+                      )
+                    })}
                   </section>
                 ))}
               </div>
@@ -568,6 +573,7 @@ export default function BlogArticlePage() {
       </article>
       {/* Nexora AI — floating term tooltips on hover */}
       <AITermTooltip />
+      <AIHighlightTooltip />
     </PublicPageShell>
   )
 }

@@ -117,3 +117,54 @@ export function formatBlogContent(text, { html = false, autoHighlight = true } =
 export function formatBlogContentHtml(text) {
   return formatBlogContent(text, { html: true, autoHighlight: true })
 }
+
+/**
+ * Inject AI-generated highlight spans into an HTML string.
+ *
+ * Wraps verbatim text matches with:
+ *   <span class="ai-highlight" data-highlight-id="..." data-category="..."
+ *         data-explanation="..." data-link="..." data-color="...">text</span>
+ *
+ * - Sorts highlights by text length (longest first) to avoid substring collisions.
+ * - Only wraps the FIRST occurrence of each highlight per paragraph (single-pass).
+ * - Skips matches inside existing HTML tags.
+ * - No-op if aiHighlights is empty or undefined.
+ *
+ * @param {string} htmlString — the formatted HTML for a paragraph
+ * @param {Array} aiHighlights — array of { id, text, category, explanation, internalLink, color }
+ * @returns {string} — HTML with <span class="ai-highlight"> injected
+ */
+export function injectAiHighlightSpans(htmlString, aiHighlights) {
+  if (!aiHighlights || !aiHighlights.length) return htmlString
+  if (!htmlString || typeof htmlString !== 'string') return htmlString
+
+  // Sort by text length (longest first) to avoid substring overlap
+  const sorted = [...aiHighlights].sort((a, b) =>
+    String(b.text || '').length - String(a.text || '').length
+  )
+
+  let result = htmlString
+
+  for (const hl of sorted) {
+    const text = String(hl.text || '').trim()
+    if (!text || text.length < 2) continue
+
+    // Escape for regex
+    const escaped = text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    // Match only outside existing HTML tags (negative lookahead for >)
+    const regex = new RegExp(`(${escaped})(?![^<]*>)`, 'i')
+
+    const explanation = String(hl.explanation || '').replace(/"/g, '&quot;')
+    const link = hl.internalLink ? String(hl.internalLink).replace(/"/g, '&quot;') : ''
+    const category = String(hl.category || 'feature')
+    const color = String(hl.color || '').replace(/"/g, '&quot;')
+    const id = String(hl.id || '').replace(/"/g, '&quot;')
+
+    const replacement = `<span class="ai-highlight" data-highlight-id="${id}" data-category="${category}" data-explanation="${explanation}" data-link="${link}" data-color="${color}">$1</span>`
+
+    // Only replace first occurrence per highlight
+    result = result.replace(regex, replacement)
+  }
+
+  return result
+}

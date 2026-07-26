@@ -398,12 +398,29 @@ export async function saveBlogTranslationsToFirestore(slug, translationsByDispla
   }
   if (!firestoreDb || !slug) return
 
-  const { doc, setDoc, serverTimestamp } = await import('firebase/firestore')
+  const { doc, setDoc, getDoc, serverTimestamp } = await import('firebase/firestore')
+
+  // ── Backup before overwrite ──
+  try {
+    const existingSnap = await getDoc(doc(firestoreDb, BLOG_TRANSLATIONS_COLLECTION, slug))
+    if (existingSnap.exists()) {
+      const backupId = `${slug}_${Date.now()}`
+      await setDoc(doc(firestoreDb, 'blogBackups', backupId), {
+        ...existingSnap.data(),
+        backupId,
+        backedUpAt: serverTimestamp(),
+        originalSlug: slug,
+      })
+    }
+  } catch { /* backup is best-effort, don't block the save */ }
 
   // Build Firestore payload with both new (ur) and legacy (ur-roman) keys
   const firestoreTranslations = {}
 
   for (const [displayCode, translation] of Object.entries(translationsByDisplayCode)) {
+    // ── Manual-edit protection: skip languages marked as 'manual' ──
+    if (translation.translationStatus === 'manual') continue
+
     const fsKey = toFirestoreLangKey(displayCode)
     firestoreTranslations[fsKey] = translation
 
@@ -416,6 +433,7 @@ export async function saveBlogTranslationsToFirestore(slug, translationsByDispla
   const payload = {
     slug,
     translations: firestoreTranslations,
+    translationPipelineVersion: 'v2',
     updatedAt: serverTimestamp(),
   }
   try {
@@ -561,6 +579,7 @@ export async function translateAndPublishAllLanguages(article, { firestoreDb } =
       slug: article.slug,
       sections: article.sections || [],
       faqs: article.faqs || [],
+      aiHighlights: [],
       translationStatus: 'completed',
       updatedAt: new Date().toISOString(),
     },
@@ -587,13 +606,26 @@ export async function translateAndPublishAllLanguages(article, { firestoreDb } =
       await saveBlogTranslationsToFirestore(article.slug, translations, { firestoreDb })
     } catch (saveErr) {
       logError(4, 'Failed to persist translations to Firestore', saveErr)
-      // Mark all as failed since save didn't complete
       for (const code of completedLangs) {
         results[code] = { status: 'failed', reason: 'Firestore save failed' }
       }
     }
   } else {
     logError(4, `No translations completed for [slug: ${article.slug}] — nothing saved to Firestore`)
+  }
+
+  // ── AI Highlight Analysis (only if translations were saved) ──
+  if (completedLangs.length > 0) {
+    log(7, `Highlight analysis started [slug: ${article.slug}]`)
+    try {
+      const { analyzeAndEnhanceAllHighlights } = await import('./blogHighlights.js')
+      const enhanced = await analyzeAndEnhanceAllHighlights(article.slug, translations)
+      // Re-save with highlights included
+      await saveBlogTranslationsToFirestore(article.slug, enhanced, { firestoreDb })
+      log(8, `Highlights generated and saved [slug: ${article.slug}]`)
+    } catch (highlightErr) {
+      logError(7, `Highlight analysis failed — translations saved without highlights [slug: ${article.slug}]`, highlightErr)
+    }
   }
 
   const succeeded = completedLangs.filter(c => results[c]?.status === 'completed').length
