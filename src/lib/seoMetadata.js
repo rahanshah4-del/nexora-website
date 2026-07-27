@@ -47,8 +47,8 @@ export const seoMetadata = {
     image: `${HOST}/nexora-brand-logo.png`,
   }),
   '/business-services': buildPage({
-    path: '/services',
-    title: 'Business Management Software Pakistan | Nexora Services',
+    path: '/business-services',
+    title: 'Business Management Software Pakistan | Nexora Business Services',
     description: 'Request Nexora business services for software setup, support, bookkeeping, marketing and growth while keeping your operations running smoothly.',
     keyword: 'Business Management Software',
     image: `${HOST}/nexora-brand-logo.png`,
