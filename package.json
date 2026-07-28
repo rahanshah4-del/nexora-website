@@ -20,14 +20,15 @@
     "ai:highlight:force": "node scripts/aiHighlight.js --force",
     "audit:all-modules": "npm run audit:sales-hub && npm run audit:school-erp && npm run audit:retail-pos && npm run audit:restaurant-pos && npm run audit:property-erp && npm run audit:transport-rental && npm run audit:whatsapp-crm && npm run audit:module-integrations",
     "lint": "eslint .",
-    "preview": "vite preview",
+    "preview": "npm run build && wrangler dev",
     "worker:deploy": "wrangler deploy --config workers/nexora-email-api/wrangler.toml",
     "worker:secret": "wrangler secret put RESEND_API_KEY --config workers/nexora-email-api/wrangler.toml",
     "whatsapp:deploy": "wrangler deploy --config workers/nexora-whatsapp-api/wrangler.toml",
     "whatsapp:secret": "wrangler secret put META_APP_SECRET --config workers/nexora-whatsapp-api/wrangler.toml && wrangler secret put WHATSAPP_VERIFY_TOKEN --config workers/nexora-whatsapp-api/wrangler.toml",
     "passkeys:deploy": "wrangler deploy --config workers/nexora-passkeys-api/wrangler.toml",
     "passkeys:secret:email": "wrangler secret put FIREBASE_CLIENT_EMAIL --config workers/nexora-passkeys-api/wrangler.toml",
-    "passkeys:secret:key": "wrangler secret put FIREBASE_PRIVATE_KEY --config workers/nexora-passkeys-api/wrangler.toml"
+    "passkeys:secret:key": "wrangler secret put FIREBASE_PRIVATE_KEY --config workers/nexora-passkeys-api/wrangler.toml",
+    "deploy": "npm run build && wrangler deploy"
   },
   "dependencies": {
     "@paddle/paddle-js": "^1.6.4",
@@ -45,6 +46,7 @@
     "recharts": "^3.8.1"
   },
   "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.47.0",
     "@eslint/js": "^10.0.1",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
@@ -57,7 +59,7 @@
     "postcss": "^8.5.15",
     "tailwindcss": "^3.4.4",
     "vite": "8.0.13",
-    "wrangler": "4.97.0"
+    "wrangler": "^4.114.0"
   },
   "overrides": {
     "esbuild": "0.27.3"

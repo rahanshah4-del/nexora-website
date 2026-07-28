@@ -30,3 +30,9 @@ dist-ssr
 # Email preview artifacts (local only)
 welcome-email-preview.html
 upgrade-email-preview.html
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+!.env.example
