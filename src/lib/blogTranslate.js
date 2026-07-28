@@ -29,7 +29,7 @@ const STORAGE_KEY = 'nexora:blog:lang'
 const MAX_CHUNK = 2800
 const MAX_RETRIES = 2
 const FETCH_TIMEOUT_MS = 8000
-const AI_GATEWAY_TIMEOUT_MS = 15000
+const AI_GATEWAY_TIMEOUT_MS = 45000
 const DEEPSEEK_MAX_RETRIES = 3
 const AI_GATEWAY_URL = import.meta.env.VITE_AI_GATEWAY_URL || 'https://nexora-ai-gateway.rahanshah4.workers.dev'
 const TRANSLATION_HARD_TIMEOUT_MS = 90000  // 90s total cap — never let UI spin >90s
@@ -194,6 +194,7 @@ async function translateToRomanUrdu(text, { logContext = '' } = {}) {
             content: `Translate this English text to Roman Urdu (Urdu written with English alphabets). Natural, conversational tone like a Pakistani professional would write. Preserve all formatting, line breaks, headings, and markdown exactly. Keep the same paragraph structure. Do NOT use Urdu/Arabic script. Do NOT add greetings, emojis, sales pitches, questions, or any extra text — output ONLY the direct translation:\n\n${text}`,
           }],
           maxTokens: Math.max(500, Math.ceil(text.length * 1.5)),
+          purpose: 'translation',  // Skip Nexora AI persona — pure translation mode
         }),
       })
 
@@ -255,7 +256,9 @@ async function translateStrings(strings, langCode) {
 
   const flush = async () => {
     if (!batch.length) return
-    const joined = batch.join('\n')
+    // Use a unique separator that won't appear in natural text or translations
+    const SEP = '\n<<<NXR_SEP>>>\n'
+    const joined = batch.join(SEP)
 
     try {
       let result
@@ -265,11 +268,12 @@ async function translateStrings(strings, langCode) {
         result = await callTranslateAPI(joined, target)
       }
 
-      const lines = result.split('\n')
+      const lines = result.split(SEP)
       if (lines.length === batch.length) {
         batch.forEach((original, i) => out.push(lines[i].trim() || original))
       } else {
         // Line mismatch — fall back to individual translation
+        log(2, `Batch line mismatch: expected ${batch.length}, got ${lines.length} — falling back to individual translation`)
         for (const original of batch) {
           try {
             out.push(isRomanUrdu
@@ -353,12 +357,22 @@ export async function translateBlogArticle(article, langCode) {
   }
 
   // Safety net: if translated title is identical to English original,
-  // the translation silently failed — don't pretend it's translated.
+  // the translation may have silently failed — check the body too.
+  // For Roman Urdu, titles with proper nouns / brand names often stay
+  // identical to English, so we only reject if the BODY also looks untranslated.
   const originalTitle = String(article.title || '').trim()
   const translatedTitle = String(next.title || '').trim()
   if (originalTitle && translatedTitle === originalTitle) {
-    logError(3, `Translation produced identical title to English — treating as failed [${langCode}]`)
-    return null
+    // Check if the body was actually translated — compare first 200 chars of first paragraph
+    const origFirstPara = (article.sections?.[0]?.paragraphs?.[0] || '').slice(0, 200)
+    const transFirstPara = (next.sections?.[0]?.paragraphs?.[0] || '').slice(0, 200)
+    if (!transFirstPara || origFirstPara === transFirstPara) {
+      // Both title AND body are identical — translation truly failed
+      logError(3, `Translation produced identical title AND body to English — treating as failed [${langCode}]`)
+      return null
+    }
+    // Body differs even though title is the same — this is valid for Roman Urdu
+    log(3, `Title identical to English but body differs — accepting translation [${langCode}]`)
   }
 
   try { sessionStorage.setItem(cacheKey, JSON.stringify(next)) } catch { /* quota */ }

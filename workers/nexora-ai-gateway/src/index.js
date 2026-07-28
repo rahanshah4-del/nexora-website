@@ -405,30 +405,43 @@ async function logAnalytics(env, data) {
 }
 
 // ── Call AI Provider ──
-async function callProvider(providerKey, messages, maxTokens, env) {
+async function callProvider(providerKey, messages, maxTokens, env, opts = {}) {
   const provider = PROVIDERS[providerKey]
   if (!provider) throw new Error(`Unknown provider: ${providerKey}`)
 
   const apiKey = env[`${providerKey.toUpperCase()}_API_KEY`] || (providerKey === 'deepseek' ? env.DEEPSEEK_API_KEY : null)
   if (!apiKey) throw new Error(`${providerKey}: No API key configured`)
 
-  const knowledge = await loadKnowledge(env)
+  const { skipSystemPrompt = false } = opts
 
-  // Load latest blog knowledge for real-time awareness
-  let blogContext = ''
-  try {
-    const blogIndex = env.AI_KV ? await env.AI_KV.get('blog-index', 'json') : null
-    if (blogIndex?.blogs) {
-      const latest = Object.values(blogIndex.blogs)
-        .sort((a, b) => (b.publishDate || '').localeCompare(a.publishDate || ''))
-        .slice(0, 5)
-      if (latest.length > 0) {
-        blogContext = `\n=== LATEST BLOG KNOWLEDGE (auto-learned) ===\n${latest.map((b) => `• "${b.title}" — ${b.summary || ''} (Keywords: ${(b.keywords || []).slice(0, 5).join(', ')})`).join('\n')}\nWhen users ask about these topics, reference these articles. When users ask "what's new?", mention the most recent blog.`
+  // Build the messages array — for translation requests, skip the business consultant system prompt
+  let allMessages
+  if (skipSystemPrompt) {
+    // Translation mode: send only the user messages, no Nexora AI persona
+    // Add a minimal system prompt that ensures clean translation output
+    allMessages = [
+      { role: 'system', content: 'You are a professional translator. Translate exactly as instructed. Output ONLY the translation — no greetings, no explanations, no extra text.' },
+      ...messages,
+    ]
+  } else {
+    // Normal chat mode: full Nexora AI persona + knowledge base
+    const knowledge = await loadKnowledge(env)
+
+    // Load latest blog knowledge for real-time awareness
+    let blogContext = ''
+    try {
+      const blogIndex = env.AI_KV ? await env.AI_KV.get('blog-index', 'json') : null
+      if (blogIndex?.blogs) {
+        const latest = Object.values(blogIndex.blogs)
+          .sort((a, b) => (b.publishDate || '').localeCompare(a.publishDate || ''))
+          .slice(0, 5)
+        if (latest.length > 0) {
+          blogContext = `\n=== LATEST BLOG KNOWLEDGE (auto-learned) ===\n${latest.map((b) => `• "${b.title}" — ${b.summary || ''} (Keywords: ${(b.keywords || []).slice(0, 5).join(', ')})`).join('\n')}\nWhen users ask about these topics, reference these articles. When users ask "what's new?", mention the most recent blog.`
+        }
       }
-    }
-  } catch { /* blogs unavailable */ }
+    } catch { /* blogs unavailable */ }
 
-  const systemMsg = { role: 'system', content: `${BASE_PROMPT}
+    const systemMsg = { role: 'system', content: `${BASE_PROMPT}
 
 === KNOWLEDGE BASE ===
 
@@ -458,11 +471,14 @@ ${knowledge.contact || 'WhatsApp: +92 319 432 9754 | Email: hello@nexorasolution
 
 Website: ${knowledge.website || 'https://nexorasolution.online'}${blogContext}` }
 
+    allMessages = [systemMsg, ...messages]
+  }
+
   const url = provider.endpoint ? provider.endpoint(provider.baseUrl, apiKey) : `${provider.baseUrl}/v1/chat/completions`
   const res = await fetch(url, {
     method: 'POST',
     headers: provider.headers(apiKey),
-    body: provider.body(provider.model, [systemMsg, ...messages], maxTokens),
+    body: provider.body(provider.model, allMessages, maxTokens),
   })
   if (!res.ok) {
     const errorText = await res.text().catch(() => 'unknown')
@@ -666,7 +682,7 @@ export default {
 
       try {
         const body = await request.json()
-        const { messages = [], maxTokens = 500, sessionId, provider: reqProvider = 'deepseek' } = body
+        const { messages = [], maxTokens = 500, sessionId, provider: reqProvider = 'deepseek', purpose } = body
         if (!Array.isArray(messages) || messages.length === 0) {
           return new Response(JSON.stringify({ error: 'Messages required' }), { status: 400, headers: { 'Content-Type': 'application/json', ...headers } })
         }
@@ -678,6 +694,9 @@ export default {
         }
         const allMessages = [...history, ...messages]
 
+        // Translation requests: skip system prompt, allow larger output, no session save
+        const isTranslation = purpose === 'translation'
+
         // Try providers in order with automatic fallback — ensures AI never goes down
         const FALLBACK_ORDER = [reqProvider, 'deepseek', 'gemini', 'openai', 'claude'].filter((p, i, a) => a.indexOf(p) === i) // dedupe
         const errors = []
@@ -685,9 +704,15 @@ export default {
         let modelUsed = ''
         const startTime = Date.now()
 
+        // Translation: allow up to 16K output tokens (blog posts can be long)
+        // Normal chat: cap at 4K to prevent runaway costs
+        const effectiveMaxTokens = isTranslation
+          ? Math.min(maxTokens, 16384)
+          : Math.min(maxTokens, 4096)
+
         for (const providerKey of FALLBACK_ORDER) {
           try {
-            result = await callProvider(providerKey, allMessages, Math.min(maxTokens, 500), env)
+            result = await callProvider(providerKey, allMessages, effectiveMaxTokens, env, { skipSystemPrompt: isTranslation })
             modelUsed = result.model || providerKey
             break
           } catch (e) {
@@ -702,8 +727,8 @@ export default {
 
         const responseTime = Date.now() - startTime
 
-        // Save session in background — response never waits for KV
-        if (sessionId) {
+        // Save session in background — response never waits for KV (skip for translation)
+        if (sessionId && !isTranslation) {
           ctx.waitUntil(saveSession(sessionId, [...allMessages, { role: 'assistant', content: result.text }], env))
         }
 
