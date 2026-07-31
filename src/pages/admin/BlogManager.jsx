@@ -19,6 +19,7 @@ const emptyDraft = {
   excerpt: '',
   category: 'Business Tips',
   tagsText: '',
+  keywordsText: '',
   status: 'draft',
   featuredImage: '/nexora-brand-logo.png',
   featuredImageAlt: '',
@@ -71,6 +72,7 @@ function draftFromArticle(article) {
     excerpt: article.excerpt || '',
     category: article.category || 'Business Tips',
     tagsText: (article.tags || []).join(', '),
+    keywordsText: (article.keywords || []).join(', '),
     status: article.status || 'draft',
     featuredImage: article.featuredImage || '/nexora-brand-logo.png',
     featuredImageAlt: article.featuredImageAlt || '',
@@ -164,6 +166,7 @@ export default function BlogManager() {
       if (!draft.title.trim()) throw new Error('Title is required.')
       if (!draft.metaDescription.trim()) throw new Error('Meta description is required.')
       const tags = draft.tagsText.split(',').map((tag) => tag.trim()).filter(Boolean).slice(0, 20)
+      const keywords = draft.keywordsText.split(',').map((k) => k.trim()).filter(Boolean).slice(0, 20)
       const paragraphs = draft.content.split(/\n{2,}/).map((item) => item.trim()).filter(Boolean)
       if (!paragraphs.length) throw new Error('Article content is required.')
 
@@ -174,6 +177,7 @@ export default function BlogManager() {
         excerpt: draft.excerpt.trim() || draft.metaDescription.trim(),
         category: draft.category,
         tags,
+        keywords,
         status: draft.status,
         featuredImage: draft.featuredImage.trim() || '/nexora-brand-logo.png',
         featuredImageAlt: draft.featuredImageAlt.trim() || `${draft.title.trim()} featured image`,
@@ -375,6 +379,7 @@ export default function BlogManager() {
           <Field label="SEO Title" className="lg:col-span-2"><input className={inputClass} value={draft.seoTitle} onChange={(event) => updateDraft('seoTitle', event.target.value)} /></Field>
           <Field label="Category"><select className={inputClass} value={draft.category} onChange={(event) => updateDraft('category', event.target.value)}>{blogCategories.map((category) => <option key={category}>{category}</option>)}</select></Field>
           <Field label="Tags"><input className={inputClass} value={draft.tagsText} placeholder="POS, CRM, AI" onChange={(event) => updateDraft('tagsText', event.target.value)} /></Field>
+          <Field label="Keywords (SEO)"><input className={inputClass} value={draft.keywordsText} placeholder="restaurant software, POS Pakistan" onChange={(event) => updateDraft('keywordsText', event.target.value)} /></Field>
           <Field label="Meta Description" className="lg:col-span-2"><textarea className={`${inputClass} min-h-24`} value={draft.metaDescription} onChange={(event) => updateDraft('metaDescription', event.target.value)} /></Field>
           <Field label="Excerpt" className="lg:col-span-2"><textarea className={`${inputClass} min-h-24`} value={draft.excerpt} onChange={(event) => updateDraft('excerpt', event.target.value)} /></Field>
           <Field label="Featured Image URL" className="lg:col-span-2"><input className={inputClass} value={draft.featuredImage} onChange={(event) => updateDraft('featuredImage', event.target.value)} /></Field>

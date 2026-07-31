@@ -319,6 +319,11 @@ export default function BlogArticlePage() {
               <Link to={`/blog?category=${encodeURIComponent(article.category)}`} className="rounded-lg border border-blue-100/60 bg-white/80 px-3 py-1.5 text-[0.7rem] font-medium uppercase tracking-[0.12em] text-blue-700 shadow-sm backdrop-blur-sm transition hover:bg-blue-100 active:scale-[0.96]">
                 {article.category}
               </Link>
+              {article.keywords && article.keywords.length > 0 ? article.keywords.slice(0, 4).map((kw) => (
+                <span key={kw} className="rounded-full border border-[#0071e3]/20 bg-[#0071e3]/5 px-2.5 py-1 text-[10px] font-semibold text-[#0071e3]">
+                  {kw}
+                </span>
+              )) : null}
               <span className="text-slate-400">{readingTime}</span>
               <span className="text-slate-400">{wordCount.toLocaleString('en-PK')} words</span>
               <span className="ml-auto relative">

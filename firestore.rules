@@ -224,7 +224,7 @@ return request.resource.data.keys().hasAll(['eventType','page','sessionId','visi
 }
 function validBlogPost(data) {
 return data.keys().hasAll(['slug','title','seoTitle','metaDescription','excerpt','category','tags','status','featuredImage','featuredImageAlt','sections','faqs','author','createdAt','updatedAt'])
-&& data.keys().hasOnly(['slug','title','seoTitle','metaDescription','excerpt','category','tags','status','featuredImage','featuredImageAlt','sections','faqs','author','publishDate','createdAt','updatedAt','createdBy','createdByEmail'])
+&& data.keys().hasOnly(['slug','title','seoTitle','metaDescription','excerpt','category','tags','keywords','status','featuredImage','featuredImageAlt','sections','faqs','author','publishDate','createdAt','updatedAt','createdBy','createdByEmail'])
 && data.slug is string
 && data.slug.matches('^[a-z0-9-]{3,120}$')
 && data.title is string
@@ -1035,6 +1035,11 @@ match /blogLikes/{slug} {
   }
   match /blogTranslations/{slug} {
     allow read: if true;
+    allow create, update: if backendAdmin();
+    allow delete: if backendAdmin();
+  }
+  match /blogBackups/{backupId} {
+    allow read: if backendAdmin();
     allow create, update: if backendAdmin();
     allow delete: if backendAdmin();
   }

@@ -392,6 +392,21 @@ export default function BlogIndexPage() {
                             ))}
                           </div>
 
+                          {/* Keywords */}
+                          {article.keywords && article.keywords.length > 0 ? (
+                            <div className="mt-3 flex flex-wrap gap-1.5">
+                              {article.keywords.slice(0, 5).map((keyword) => (
+                                <span
+                                  key={keyword}
+                                  className="inline-flex items-center gap-1 rounded-md border border-[#0071e3]/20 bg-[#0071e3]/5 px-2 py-0.5 text-[10px] font-semibold text-[#0071e3]"
+                                >
+                                  <svg className="h-2.5 w-2.5" viewBox="0 0 16 16" fill="currentColor"><path d="M5.5 2a.5.5 0 01.5.5v1h4v-1a.5.5 0 011 0v1h1a2 2 0 012 2v7a2 2 0 01-2 2H4a2 2 0 01-2-2v-7a2 2 0 012-2h1v-1a.5.5 0 01.5-.5zM4 5a1 1 0 00-1 1v.5h10V6a1 1 0 00-1-1H4zm9 2.5H3v5a1 1 0 001 1h8a1 1 0 001-1v-5z"/></svg>
+                                  {keyword}
+                                </span>
+                              ))}
+                            </div>
+                          ) : null}
+
                           {/* Like/Dislike + Read more row */}
                           <div className="mt-4 flex items-center justify-between">
                             <div className="flex items-center gap-3">
@@ -400,8 +415,10 @@ export default function BlogIndexPage() {
                                 onClick={() => handleReaction(article.slug, 'liked')}
                                 className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-all duration-200 active:scale-95 ${
                                   reactions[article.slug] === 'liked'
-                                    ? 'bg-[#0071e3]/10 text-[#0071e3]'
-                                    : 'bg-slate-100 text-slate-500 hover:bg-[#0071e3]/10 hover:text-[#0071e3]'
+                                    ? 'bg-[#0071e3]/10 text-[#0071e3] shadow-[0_0_12px_rgba(0,113,227,0.35)]'
+                                    : (likeCounts[article.slug]?.likes > 0)
+                                      ? 'bg-[#0071e3]/8 text-[#0071e3] shadow-[0_0_8px_rgba(0,113,227,0.2)]'
+                                      : 'bg-slate-100 text-slate-500 hover:bg-[#0071e3]/10 hover:text-[#0071e3]'
                                 }`}
                                 aria-label={reactions[article.slug] === 'liked' ? 'Unlike' : 'Like'}
                               >

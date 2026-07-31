@@ -454,8 +454,9 @@ export async function saveBlogTranslationsToFirestore(slug, translationsByDispla
     await setDoc(doc(firestoreDb, BLOG_TRANSLATIONS_COLLECTION, slug), payload, { merge: true })
     log(4, `Firestore save successful [slug: ${slug}]`, Object.keys(firestoreTranslations))
   } catch (err) {
-    logError(4, `Firestore save failed [slug: ${slug}]`, err)
-    throw err
+    const detail = err?.code || err?.message || String(err)
+    logError(4, `Firestore save failed [slug: ${slug}] — ${detail}`, err)
+    throw new Error(`Firestore save failed: ${detail}`)
   }
 }
 
@@ -619,9 +620,10 @@ export async function translateAndPublishAllLanguages(article, { firestoreDb } =
     try {
       await saveBlogTranslationsToFirestore(article.slug, translations, { firestoreDb })
     } catch (saveErr) {
-      logError(4, 'Failed to persist translations to Firestore', saveErr)
+      const reason = saveErr?.message || 'Firestore save failed'
+      logError(4, `Failed to persist translations to Firestore — ${reason}`, saveErr)
       for (const code of completedLangs) {
-        results[code] = { status: 'failed', reason: 'Firestore save failed' }
+        results[code] = { status: 'failed', reason }
       }
     }
   } else {

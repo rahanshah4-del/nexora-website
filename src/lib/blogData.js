@@ -611,6 +611,7 @@ export function normalizeBlogArticleDoc(id, data = {}) {
     excerpt: String(data.excerpt || data.metaDescription || '').trim().slice(0, 220) || 'Read a Nexora Solution business software guide for modern operations.',
     category: data.category || 'Business Tips',
     tags: Array.isArray(data.tags) ? data.tags.map((tag) => String(tag).trim()).filter(Boolean) : [],
+    keywords: Array.isArray(data.keywords) ? data.keywords.map((k) => String(k).trim()).filter(Boolean) : [],
     publishDate,
     updatedDate,
     topic: data.topic || title,
