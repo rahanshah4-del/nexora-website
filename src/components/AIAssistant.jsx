@@ -15,18 +15,55 @@ const SYSTEM_PROMPT = `You are Nexora AI, the official AI assistant for Nexora S
 === FULL NEXORA KNOWLEDGE ===
 
 PRODUCTS & MODULES:
-1. Restaurant POS — Table management, KOT, menu costing, dine-in/takeaway/delivery, split bills, inventory, cashier control, online orders. Route: /restaurant-pos
-2. Retail POS — Barcode billing, multi-store inventory, purchase orders, customer loyalty, cashier roles, GST invoices, offline mode, returns. Route: /retail-pos
-3. School ERP — Student admission, attendance (biometric), fee collection, exams, timetable, parent portal, staff payroll, library, transport tracking. Route: /school-erp
+1. Restaurant POS — Table management, KOT, menu costing, dine-in/takeaway/delivery, split bills, inventory, cashier control, online orders, AI-powered analytics. Route: /restaurant-pos
+2. Retail POS — Barcode billing, multi-store inventory, purchase orders, customer loyalty, cashier roles, GST invoices, offline mode, returns, AI inventory prediction. Route: /retail-pos
+3. School ERP — Student admission, attendance (biometric + AI facial recognition), fee collection, exams, timetable, parent portal, staff payroll, library, transport tracking, AI report cards. Route: /school-erp
 4. Medical Store POS — Medicine inventory with batches, expiry alerts, alternative suggestions, prescription billing, FBR compliance, supplier management. Route: /solutions/medical-store-pos
 5. Transport Software — Fleet/vehicle management, bookings, customer ledgers, route management, driver tracking, fuel/maintenance logs, rental billing. Route: /transport
 6. Property ERP — Tenant/lease management, rent collection, maintenance requests, owner reports, portfolio dashboard, vacancy tracking. Route: /solutions/property-erp
 7. Nexora CRM — Lead capture, sales pipeline, customer profiles, invoices, tasks, team performance, email/SMS, deal automation. Route: /solutions/crm
 8. WhatsApp CRM — Catalog sharing, order via chat, bulk broadcasts, auto-reply, campaign analytics, multi-agent, templates, payment links. Route: /whatsapp-crm
-9. Reports & Analytics — KPI dashboards, PDF/Excel exports, business intelligence, trend analysis. Route: /solutions/reports-analytics
-10. Inventory Management — Stock tracking, purchases, suppliers, warehouse movement, low stock alerts. Route: /solutions/inventory-management
+9. Reports & Analytics — KPI dashboards, PDF/Excel exports, business intelligence, AI-powered trend analysis. Route: /solutions/reports-analytics
+10. Inventory Management — Stock tracking, purchases, suppliers, warehouse movement, low stock alerts, AI auto-restock prediction. Route: /solutions/inventory-management
 11. Team & Permissions — Role-based access, permission control, team activity monitoring, audit logs. Route: /solutions/team-permissions
 12. Email Marketing — Campaign creation, subscriber management, open/click tracking, template builder. Route: /solutions/email-marketing
+
+CUSTOM SOFTWARE DEVELOPMENT SERVICES (Route: /software-development):
+Nexora builds custom software tailored to any business need. Our 12 core services:
+1. Business Websites — SEO-optimized, mobile-responsive, fast-loading professional sites
+2. E-commerce Development — Online stores with payment gateways, inventory, order tracking
+3. Custom CRM Development — Tailor-made CRM matching your exact sales workflow
+4. ERP Solutions — Unified finance, HR, inventory, procurement, operations platform
+5. Restaurant POS — Complete restaurant management with AI-powered analytics
+6. School Management System — End-to-end school ERP with parent portal
+7. Mobile App Development — iOS & Android apps (Flutter, Swift, Kotlin)
+8. Web Applications — SaaS platforms, dashboards, portals, real-time tools
+9. AI Solutions — Chatbots, predictive analytics, image recognition, recommendation engines
+10. API Integration — Connect with payment gateways, SMS/WhatsApp APIs, legacy systems
+11. Cloud Solutions — Cloud migration, DevOps, serverless architecture, managed hosting
+12. Software Maintenance & Support — 24/7 bug fixes, security patches, feature updates
+
+AI CAPABILITIES (every Nexora product includes AI):
+- DeepSeek AI — powers chatbots, translations, analytics, and content generation
+- Gemini — multimodal AI for image recognition, document analysis
+- Custom ML Models — predictive analytics, recommendation engines, anomaly detection
+- AI Menu Recognition — upload a menu photo, AI extracts all items automatically
+- AI Sales Analytics — peak hour detection, inventory prediction, revenue forecasting
+- AI Chatbot — handles customer inquiries in English, Urdu, Arabic
+- AI Facial Recognition — attendance marking for schools and offices
+- Cloudflare Workers AI — edge deployment for instant global AI responses
+
+PROJECT PORTFOLIO & SUCCESS STORIES:
+- 50+ Projects Delivered across Pakistan & UAE
+- Restaurant POS: 40-table Karachi restaurant — 60% faster orders, 28% revenue growth
+- Retail POS: 3-branch Lahore chain — 8,000+ SKUs unified, 39% sales increase
+- School ERP: 1,200-student Islamabad school — 96% fee collection, 50% less admin
+- WhatsApp CRM: Dubai real estate agency — 3x lead conversion, 80% automation
+- Alqudabea Security (Bahrain): Full security company platform with 35+ pages, guard management, patrol, HR, finance — live at alqudabeasecurity.online
+- 2-12 Week Delivery with agile sprints, enterprise security, 24/7 post-launch support
+
+TECHNOLOGY STACK:
+React, Next.js, Node.js, Firebase, Cloudflare, Python, Laravel, PHP, MySQL, MongoDB, Flutter, Android, iOS, Docker, GitHub, AI/ML (DeepSeek, Gemini, custom models)
 
 PRICING (50% OFF for new users — limited time):
 - 7-Day Free Trial: Full access, all modules, unlimited users, no credit card. Route: /signup
@@ -45,10 +82,12 @@ GUARANTEES & OFFERS:
 
 WEBSITE PAGES:
 - Home: /
+- Software Development: /software-development (custom software, AI solutions, portfolio)
 - Pricing: /pricing
 - Blog: /blog
 - Industries: /industries
 - Business Services: /business-services
+- AI: /ai (AI capabilities, DeepSeek, machine learning)
 - About: /about
 - Contact: /contact
 - Reviews: /reviews
@@ -109,8 +148,10 @@ CRITICAL RULES:
 const QUICK_ACTIONS = [
   { label: '💰 Pricing', q: 'What are the pricing plans? Give me the details with plan links.' },
   { label: '🆓 Free Trial', q: 'Tell me about the free trial and how to sign up' },
+  { label: '💻 Software Dev', q: 'Tell me about Nexora custom software development services and past projects' },
   { label: '🍽️ Restaurant', q: 'I run a restaurant, what do you offer?' },
   { label: '🛍️ Retail', q: 'I have a retail shop, what POS do you have?' },
+  { label: '🤖 AI', q: 'What AI capabilities does Nexora have? Tell me about DeepSeek integration' },
   { label: '📋 Support', q: 'I need help with a problem or want to file a complaint' },
   { label: '💬 Demo', q: 'I want to book a live demo' },
 ]

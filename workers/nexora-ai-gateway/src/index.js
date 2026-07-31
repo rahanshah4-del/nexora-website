@@ -247,7 +247,12 @@ Daily Backup — Automatic daily cloud backups included in all plans.`,
 Nexora AI assists with automated reporting — sales reports, trend analysis, peak hour detection.
 Nexora AI recognizes menus from photos — extract items, prices, and categories in seconds.
 Nexora AI improves productivity by automating repetitive tasks like data entry and report generation.
-Nexora AI is embedded across all modules as a conversational assistant for instant help.`,
+Nexora AI is embedded across all modules as a conversational assistant for instant help.
+Nexora uses DeepSeek AI for chatbots, translations, content generation, and business analytics.
+Nexora integrates Gemini AI for multimodal image recognition and document analysis.
+Nexora builds custom ML models for predictive analytics, recommendation engines, and anomaly detection.
+Nexora offers custom AI development — chatbots, predictive analytics, image recognition, NLP, and intelligent automation.
+Visit /software-development for custom AI solution development.`,
   differentiators: `AI Menu Recognition — No other Pakistani POS offers camera-to-menu AI extraction.
 AI Reporting — Smart insights, not just raw numbers.
 Offline First — Works without internet, unlike most cloud POS systems.
@@ -272,6 +277,8 @@ Email Support — hello@nexorasolution.online`,
 /pricing — All pricing plans.
 /blog — Business insights and product guides.
 /industries — Industries we serve.
+/software-development — Custom software development, AI solutions, portfolio, success stories.
+/ai — AI capabilities, DeepSeek, machine learning, chatbots.
 /business-services — Custom development and consulting.
 /about — About Nexora Solution.
 /contact — Contact sales and support.

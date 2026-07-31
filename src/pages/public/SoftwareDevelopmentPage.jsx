@@ -686,13 +686,24 @@ export default function SoftwareDevelopmentPage() {
                       {/* CTA */}
                       <div className="mt-5 flex flex-wrap gap-3">
                         {service.link ? (
-                          <Link
-                            to={service.link}
-                            className="inline-flex min-h-[40px] items-center gap-2 rounded-full bg-slate-900 px-5 text-sm font-medium tracking-[-0.01em] text-white shadow-[0_4px_16px_-6px_rgba(15,23,42,0.3)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-800 active:scale-[0.97]"
-                          >
-                            View Full Product Page
-                            <HiOutlineArrowRight className="h-4 w-4" />
-                          </Link>
+                          <>
+                            <Link
+                              to={service.link}
+                              className="inline-flex min-h-[40px] items-center gap-2 rounded-full bg-slate-900 px-5 text-sm font-medium tracking-[-0.01em] text-white shadow-[0_4px_16px_-6px_rgba(15,23,42,0.3)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-800 active:scale-[0.97]"
+                            >
+                              View Full Product Page
+                              <HiOutlineArrowRight className="h-4 w-4" />
+                            </Link>
+                            <a
+                              href={WHATSAPP_URL}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex min-h-[40px] items-center gap-2 rounded-full border border-slate-200/60 bg-white/80 px-5 text-sm font-medium tracking-[-0.01em] text-slate-500 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.04)] backdrop-blur-xl transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.97]"
+                            >
+                              <FaWhatsapp className="text-base text-emerald-500" />
+                              WhatsApp Us
+                            </a>
+                          </>
                         ) : (
                           <a
                             href={WHATSAPP_URL}
@@ -700,19 +711,10 @@ export default function SoftwareDevelopmentPage() {
                             rel="noreferrer"
                             className="inline-flex min-h-[40px] items-center gap-2 rounded-full bg-slate-900 px-5 text-sm font-medium tracking-[-0.01em] text-white shadow-[0_4px_16px_-6px_rgba(15,23,42,0.3)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-800 active:scale-[0.97]"
                           >
-                            Discuss This Service
                             <FaWhatsapp className="text-base text-emerald-400" />
+                            Discuss on WhatsApp
                           </a>
                         )}
-                        <a
-                          href={WHATSAPP_URL}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex min-h-[40px] items-center gap-2 rounded-full border border-slate-200/60 bg-white/80 px-5 text-sm font-medium tracking-[-0.01em] text-slate-500 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.04)] backdrop-blur-xl transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.97]"
-                        >
-                          <FaWhatsapp className="text-base text-emerald-500" />
-                          WhatsApp
-                        </a>
                       </div>
                     </div>
 
