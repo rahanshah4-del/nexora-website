@@ -37,6 +37,7 @@ const CRMDevelopmentPage = lazy(() => import('./pages/public/CRMDevelopmentPage.
 const ERPDevelopmentPage = lazy(() => import('./pages/public/ERPDevelopmentPage.jsx'))
 const CloudSolutionsPage = lazy(() => import('./pages/public/CloudSolutionsPage.jsx'))
 const APIIntegrationPage = lazy(() => import('./pages/public/APIIntegrationPage.jsx'))
+const CountryPage = lazy(() => import('./pages/public/CountryPage.jsx'))
 const BlogIndexPage = lazy(() => import('./pages/public/BlogIndexPage.jsx'))
 const BlogArticlePage = lazy(() => import('./pages/public/BlogArticlePage.jsx'))
 const FaqPage = lazy(() => import('./pages/public/FaqPage.jsx'))
@@ -466,6 +467,19 @@ export default function AppRouter() {
         <Route path="/erp-development" element={<LazyPage><ERPDevelopmentPage /></LazyPage>} />
         <Route path="/cloud-solutions" element={<LazyPage><CloudSolutionsPage /></LazyPage>} />
         <Route path="/api-integration" element={<LazyPage><APIIntegrationPage /></LazyPage>} />
+        {/* Country landing pages */}
+        <Route path="/usa" element={<LazyPage><CountryPage slug="usa" /></LazyPage>} />
+        <Route path="/uk" element={<LazyPage><CountryPage slug="uk" /></LazyPage>} />
+        <Route path="/canada" element={<LazyPage><CountryPage slug="canada" /></LazyPage>} />
+        <Route path="/australia" element={<LazyPage><CountryPage slug="australia" /></LazyPage>} />
+        <Route path="/uae" element={<LazyPage><CountryPage slug="uae" /></LazyPage>} />
+        <Route path="/saudi-arabia" element={<LazyPage><CountryPage slug="saudi-arabia" /></LazyPage>} />
+        <Route path="/bahrain" element={<LazyPage><CountryPage slug="bahrain" /></LazyPage>} />
+        <Route path="/qatar" element={<LazyPage><CountryPage slug="qatar" /></LazyPage>} />
+        <Route path="/oman" element={<LazyPage><CountryPage slug="oman" /></LazyPage>} />
+        <Route path="/kuwait" element={<LazyPage><CountryPage slug="kuwait" /></LazyPage>} />
+        <Route path="/pakistan" element={<LazyPage><CountryPage slug="pakistan" /></LazyPage>} />
+        <Route path="/india" element={<LazyPage><CountryPage slug="india" /></LazyPage>} />
         <Route path="/contact" element={<LazyPage><ContactPage /></LazyPage>} />
         <Route path="/industries" element={<LazyPage><IndustriesPage /></LazyPage>} />
         <Route path="/reviews" element={<LazyPage><ReviewsPage /></LazyPage>} />

@@ -32,6 +32,9 @@ const publicSeoPaths = new Set([
   '/erp-development',
   '/cloud-solutions',
   '/api-integration',
+  '/usa', '/uk', '/canada', '/australia',
+  '/uae', '/saudi-arabia', '/bahrain', '/qatar', '/oman', '/kuwait',
+  '/pakistan', '/india',
 ])
 
 // Authentication / private areas must never be indexed.
