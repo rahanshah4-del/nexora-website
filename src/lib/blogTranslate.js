@@ -32,7 +32,7 @@ const FETCH_TIMEOUT_MS = 8000
 const AI_GATEWAY_TIMEOUT_MS = 45000
 const DEEPSEEK_MAX_RETRIES = 3
 const AI_GATEWAY_URL = import.meta.env.VITE_AI_GATEWAY_URL || 'https://nexora-ai-gateway.rahanshah4.workers.dev'
-const TRANSLATION_HARD_TIMEOUT_MS = 90000  // 90s total cap — never let UI spin >90s
+const TRANSLATION_HARD_TIMEOUT_MS = 180000  // 180s total cap for long articles with multiple batches
 
 /** Detect AbortError across all browsers (Chrome, Firefox, Safari) */
 function isAbortError(err) {
@@ -256,8 +256,9 @@ async function translateStrings(strings, langCode) {
 
   const flush = async () => {
     if (!batch.length) return
-    // Use a unique separator that won't appear in natural text or translations
-    const SEP = '\n<<<NXR_SEP>>>\n'
+    // Roman Urdu (AI): use unique separator — AI models can preserve it
+    // Google Translate (hi/ar/bn): use \\n — Google preserves line breaks reliably
+    const SEP = isRomanUrdu ? '\n<<<NXR_SEP>>>\n' : '\n'
     const joined = batch.join(SEP)
 
     try {
@@ -623,6 +624,8 @@ export async function translateAndPublishAllLanguages(article, { firestoreDb } =
       const reason = saveErr?.message || 'Firestore save failed'
       logError(4, `Failed to persist translations to Firestore — ${reason}`, saveErr)
       for (const code of completedLangs) {
+        // NEVER mark English as failed — it's a passthrough, no translation needed
+        if (code === 'en') continue
         results[code] = { status: 'failed', reason }
       }
     }

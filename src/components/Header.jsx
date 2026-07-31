@@ -27,7 +27,7 @@ const mainLinks = [
   { label: 'Home', to: '/' },
   { label: 'AI', to: '/ai' },
   { label: 'Pricing', to: '/pricing' },
-  { label: 'Business Services', to: '/business-services' },
+  { label: 'Software Development', to: '/software-development' },
   { label: 'Industries', to: '/industries' },
   { label: 'Blog', to: '/blog' },
 ]

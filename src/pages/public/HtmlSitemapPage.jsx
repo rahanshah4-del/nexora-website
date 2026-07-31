@@ -13,7 +13,7 @@ const sitemapGroups = [
       ['About', '/about'],
       ['Contact', '/contact'],
       ['Pricing', '/pricing'],
-      ['Business Services', '/services'],
+      ['Software Development', '/software-development'],
       ['Help Center', '/help-center'],
       ['Documentation', '/documentation'],
       ['Projects', '/projects'],

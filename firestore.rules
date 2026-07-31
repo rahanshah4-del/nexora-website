@@ -890,6 +890,100 @@ allow create: if canCreateModule(workspaceId,collectionName)&&safeCreate(workspa
 allow update: if canEditModule(workspaceId,collectionName)&&safeUpdate(workspaceId);
 allow delete: if canDeleteModule(workspaceId,collectionName);
 }
+	match /restaurantReservations/{docId} {
+	allow read: if canReadModule(workspaceId,'reservations')||canReadModule(workspaceId,'orders')||canReadModule(workspaceId,'tables');
+	allow create: if canCreateModule(workspaceId,'reservations')&&safeCreate(workspaceId);
+	allow update: if canEditModule(workspaceId,'reservations')&&safeUpdate(workspaceId);
+	allow delete: if canDeleteModule(workspaceId,'reservations');
+	}
+	match /restaurantWaitlist/{docId} {
+	allow read: if canReadModule(workspaceId,'reservations')||canReadModule(workspaceId,'orders');
+	allow create: if canCreateModule(workspaceId,'reservations')&&safeCreate(workspaceId);
+	allow update: if canEditModule(workspaceId,'reservations')&&safeUpdate(workspaceId);
+	allow delete: if canDeleteModule(workspaceId,'reservations');
+	}
+	match /restaurantReservationSettings/{docId} {
+	allow read: if canReadModule(workspaceId,'reservations')||canReadModule(workspaceId,'settings');
+	allow create,update,delete: if workspaceAdmin(workspaceId)||hasPermission(workspaceId,'settingsAccess');
+	}
+	match /restaurantReservationHistory/{docId} {
+	allow read: if canReadModule(workspaceId,'reservations');
+	allow create: if canCreateModule(workspaceId,'reservations')&&safeCreate(workspaceId);
+	allow update: if false;
+	allow delete: if false;
+	}
+	match /restaurantProductionBatches/{docId} {
+	allow read: if canReadModule(workspaceId,'kitchenProduction');
+	allow create: if canCreateModule(workspaceId,'kitchenProduction')&&safeCreate(workspaceId);
+	allow update: if canEditModule(workspaceId,'kitchenProduction')&&safeUpdate(workspaceId);
+	allow delete: if canDeleteModule(workspaceId,'kitchenProduction');
+	}
+	match /restaurantKitchenPrep/{docId} {
+	allow read: if canReadModule(workspaceId,'kitchenProduction');
+	allow create: if canCreateModule(workspaceId,'kitchenProduction')&&safeCreate(workspaceId);
+	allow update: if canEditModule(workspaceId,'kitchenProduction')&&safeUpdate(workspaceId);
+	allow delete: if canDeleteModule(workspaceId,'kitchenProduction');
+	}
+	match /restaurantProductionWaste/{docId} {
+	allow read: if canReadModule(workspaceId,'kitchenProduction');
+	allow create: if canCreateModule(workspaceId,'kitchenProduction')&&safeCreate(workspaceId);
+	allow update: if workspaceAdmin(workspaceId);
+	allow delete: if workspaceAdmin(workspaceId);
+	}
+	match /restaurantFinishedInventory/{docId} {
+	allow read: if canReadModule(workspaceId,'kitchenProduction')||canReadModule(workspaceId,'inventory')||canReadModule(workspaceId,'menuManagement');
+	allow create: if canCreateModule(workspaceId,'kitchenProduction')&&safeCreate(workspaceId);
+	allow update: if canEditModule(workspaceId,'kitchenProduction')&&safeUpdate(workspaceId);
+	allow delete: if canDeleteModule(workspaceId,'kitchenProduction');
+	}
+	match /restaurantIngredients/{docId} {
+	allow read: if canReadModule(workspaceId,'kitchenProduction')||canReadModule(workspaceId,'inventory');
+	allow create: if canCreateModule(workspaceId,'kitchenProduction')&&safeCreate(workspaceId);
+	allow update: if canEditModule(workspaceId,'kitchenProduction')&&safeUpdate(workspaceId);
+	allow delete: if canDeleteModule(workspaceId,'kitchenProduction');
+	}
+	match /restaurantRecipes/{docId} {
+	allow read: if canReadModule(workspaceId,'kitchenProduction')||canReadModule(workspaceId,'menuManagement');
+	allow create: if canCreateModule(workspaceId,'kitchenProduction')&&safeCreate(workspaceId);
+	allow update: if canEditModule(workspaceId,'kitchenProduction')&&safeUpdate(workspaceId);
+	allow delete: if canDeleteModule(workspaceId,'kitchenProduction');
+	}
+	match /restaurantDeductions/{docId} {
+	allow read: if canReadModule(workspaceId,'kitchenProduction')||canReadModule(workspaceId,'orders');
+	allow create: if canCreateModule(workspaceId,'kitchenProduction')&&safeCreate(workspaceId);
+	allow update: if false;
+	allow delete: if false;
+	}
+	match /restaurantWaste/{docId} {
+	allow read: if canReadModule(workspaceId,'kitchenProduction');
+	allow create: if canCreateModule(workspaceId,'kitchenProduction')&&safeCreate(workspaceId);
+	allow update: if workspaceAdmin(workspaceId);
+	allow delete: if workspaceAdmin(workspaceId);
+	}
+	match /restaurantCashSessions/{docId} {
+	allow read: if canReadModule(workspaceId,'orders')||canReadModule(workspaceId,'approvals');
+	allow create: if canCreateModule(workspaceId,'orders')&&safeCreate(workspaceId);
+	allow update: if canEditModule(workspaceId,'orders')&&safeUpdate(workspaceId);
+	allow delete: if false;
+	}
+	match /restaurantPayments/{docId} {
+	allow read: if canReadModule(workspaceId,'orders')||canReadModule(workspaceId,'invoices');
+	allow create: if canCreateModule(workspaceId,'orders')&&safeCreate(workspaceId);
+	allow update: if canEditModule(workspaceId,'orders')&&safeUpdate(workspaceId);
+	allow delete: if false;
+	}
+	match /restaurantRefunds/{docId} {
+	allow read: if canReadModule(workspaceId,'orders')||canReadModule(workspaceId,'invoices');
+	allow create: if canCreateModule(workspaceId,'orders')&&safeCreate(workspaceId);
+	allow update: if canEditModule(workspaceId,'orders')&&safeUpdate(workspaceId);
+	allow delete: if false;
+	}
+	match /restaurantCashMovements/{docId} {
+	allow read: if canReadModule(workspaceId,'orders');
+	allow create: if canCreateModule(workspaceId,'orders')&&safeCreate(workspaceId);
+	allow update: if false;
+	allow delete: if false;
+	}
 }
 match /upgradeRequests/{requestId} {
 allow create: if backendAdmin()||(activeSignedIn()&&request.resource.data.userId==request.auth.uid);
@@ -1096,100 +1190,6 @@ allow read,update,delete: if backendAdmin();
 match /userSessions/{docId} {
 allow create: if activeSignedIn()&&request.resource.data.userId==request.auth.uid;
 allow read,update,delete: if backendAdmin()||(activeSignedIn()&&resource.data.userId==request.auth.uid);
-}
-match /restaurantReservations/{docId} {
-allow read: if canReadModule(workspaceId,'reservations')||canReadModule(workspaceId,'orders')||canReadModule(workspaceId,'tables');
-allow create: if canCreateModule(workspaceId,'reservations')&&safeCreate(workspaceId);
-allow update: if canEditModule(workspaceId,'reservations')&&safeUpdate(workspaceId);
-allow delete: if canDeleteModule(workspaceId,'reservations');
-}
-match /restaurantWaitlist/{docId} {
-allow read: if canReadModule(workspaceId,'reservations')||canReadModule(workspaceId,'orders');
-allow create: if canCreateModule(workspaceId,'reservations')&&safeCreate(workspaceId);
-allow update: if canEditModule(workspaceId,'reservations')&&safeUpdate(workspaceId);
-allow delete: if canDeleteModule(workspaceId,'reservations');
-}
-match /restaurantReservationSettings/{docId} {
-allow read: if canReadModule(workspaceId,'reservations')||canReadModule(workspaceId,'settings');
-allow create,update,delete: if workspaceAdmin(workspaceId)||hasPermission(workspaceId,'settingsAccess');
-}
-match /restaurantReservationHistory/{docId} {
-allow read: if canReadModule(workspaceId,'reservations');
-allow create: if canCreateModule(workspaceId,'reservations')&&safeCreate(workspaceId);
-allow update: if false;
-allow delete: if false;
-}
-match /restaurantProductionBatches/{docId} {
-allow read: if canReadModule(workspaceId,'kitchenProduction');
-allow create: if canCreateModule(workspaceId,'kitchenProduction')&&safeCreate(workspaceId);
-allow update: if canEditModule(workspaceId,'kitchenProduction')&&safeUpdate(workspaceId);
-allow delete: if canDeleteModule(workspaceId,'kitchenProduction');
-}
-match /restaurantKitchenPrep/{docId} {
-allow read: if canReadModule(workspaceId,'kitchenProduction');
-allow create: if canCreateModule(workspaceId,'kitchenProduction')&&safeCreate(workspaceId);
-allow update: if canEditModule(workspaceId,'kitchenProduction')&&safeUpdate(workspaceId);
-allow delete: if canDeleteModule(workspaceId,'kitchenProduction');
-}
-match /restaurantProductionWaste/{docId} {
-allow read: if canReadModule(workspaceId,'kitchenProduction');
-allow create: if canCreateModule(workspaceId,'kitchenProduction')&&safeCreate(workspaceId);
-allow update: if workspaceAdmin(workspaceId);
-allow delete: if workspaceAdmin(workspaceId);
-}
-match /restaurantFinishedInventory/{docId} {
-allow read: if canReadModule(workspaceId,'kitchenProduction')||canReadModule(workspaceId,'inventory')||canReadModule(workspaceId,'menuManagement');
-allow create: if canCreateModule(workspaceId,'kitchenProduction')&&safeCreate(workspaceId);
-allow update: if canEditModule(workspaceId,'kitchenProduction')&&safeUpdate(workspaceId);
-allow delete: if canDeleteModule(workspaceId,'kitchenProduction');
-}
-match /restaurantIngredients/{docId} {
-allow read: if canReadModule(workspaceId,'kitchenProduction')||canReadModule(workspaceId,'inventory');
-allow create: if canCreateModule(workspaceId,'kitchenProduction')&&safeCreate(workspaceId);
-allow update: if canEditModule(workspaceId,'kitchenProduction')&&safeUpdate(workspaceId);
-allow delete: if canDeleteModule(workspaceId,'kitchenProduction');
-}
-match /restaurantRecipes/{docId} {
-allow read: if canReadModule(workspaceId,'kitchenProduction')||canReadModule(workspaceId,'menuManagement');
-allow create: if canCreateModule(workspaceId,'kitchenProduction')&&safeCreate(workspaceId);
-allow update: if canEditModule(workspaceId,'kitchenProduction')&&safeUpdate(workspaceId);
-allow delete: if canDeleteModule(workspaceId,'kitchenProduction');
-}
-match /restaurantDeductions/{docId} {
-allow read: if canReadModule(workspaceId,'kitchenProduction')||canReadModule(workspaceId,'orders');
-allow create: if canCreateModule(workspaceId,'kitchenProduction')&&safeCreate(workspaceId);
-allow update: if false;
-allow delete: if false;
-}
-match /restaurantWaste/{docId} {
-allow read: if canReadModule(workspaceId,'kitchenProduction');
-allow create: if canCreateModule(workspaceId,'kitchenProduction')&&safeCreate(workspaceId);
-allow update: if workspaceAdmin(workspaceId);
-allow delete: if workspaceAdmin(workspaceId);
-}
-match /restaurantCashSessions/{docId} {
-allow read: if canReadModule(workspaceId,'orders')||canReadModule(workspaceId,'approvals');
-allow create: if canCreateModule(workspaceId,'orders')&&safeCreate(workspaceId);
-allow update: if canEditModule(workspaceId,'orders')&&safeUpdate(workspaceId);
-allow delete: if false;
-}
-match /restaurantPayments/{docId} {
-allow read: if canReadModule(workspaceId,'orders')||canReadModule(workspaceId,'invoices');
-allow create: if canCreateModule(workspaceId,'orders')&&safeCreate(workspaceId);
-allow update: if canEditModule(workspaceId,'orders')&&safeUpdate(workspaceId);
-allow delete: if false;
-}
-match /restaurantRefunds/{docId} {
-allow read: if canReadModule(workspaceId,'orders')||canReadModule(workspaceId,'invoices');
-allow create: if canCreateModule(workspaceId,'orders')&&safeCreate(workspaceId);
-allow update: if canEditModule(workspaceId,'orders')&&safeUpdate(workspaceId);
-allow delete: if false;
-}
-match /restaurantCashMovements/{docId} {
-allow read: if canReadModule(workspaceId,'orders');
-allow create: if canCreateModule(workspaceId,'orders')&&safeCreate(workspaceId);
-allow update: if false;
-allow delete: if false;
 }
 match /{document=**} {
 allow read,write: if backendAdmin();

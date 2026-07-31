@@ -43,7 +43,7 @@ const companyLinks = [
   ['Home', '/'],
   ['About', '/about'],
   ['Pricing', '/pricing'],
-  ['Business Services', '/business-services'],
+  ['Software Development', '/software-development'],
   ['Industries', '/industries'],
   ['Blog', '/blog'],
   ['Contact', '/contact'],

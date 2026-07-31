@@ -29,6 +29,7 @@ const HelpCenterPage = lazy(() => import('./pages/public/HelpCenterPage.jsx'))
 const DocumentationPage = lazy(() => import('./pages/public/DocumentationPage.jsx'))
 const SolutionPage = lazy(() => import('./pages/public/SolutionPage.jsx'))
 const PublicBusinessServicesPage = lazy(() => import('./pages/public/BusinessServicesPage.jsx'))
+const SoftwareDevelopmentPage = lazy(() => import('./pages/public/SoftwareDevelopmentPage.jsx'))
 const BlogIndexPage = lazy(() => import('./pages/public/BlogIndexPage.jsx'))
 const BlogArticlePage = lazy(() => import('./pages/public/BlogArticlePage.jsx'))
 const FaqPage = lazy(() => import('./pages/public/FaqPage.jsx'))
@@ -450,6 +451,7 @@ export default function AppRouter() {
         <Route path="/pricing" element={<LazyPage><PricingPage /></LazyPage>} />
         <Route path="/pricing-paddle" element={<LazyPage><PaddlePricingPage /></LazyPage>} />
         <Route path="/business-services" element={<LazyPage><PublicBusinessServicesPage /></LazyPage>} />
+        <Route path="/software-development" element={<LazyPage><SoftwareDevelopmentPage /></LazyPage>} />
         <Route path="/contact" element={<LazyPage><ContactPage /></LazyPage>} />
         <Route path="/industries" element={<LazyPage><IndustriesPage /></LazyPage>} />
         <Route path="/reviews" element={<LazyPage><ReviewsPage /></LazyPage>} />

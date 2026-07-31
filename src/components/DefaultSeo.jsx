@@ -24,6 +24,7 @@ const publicSeoPaths = new Set([
   '/school-erp',
   '/transport',
   '/whatsapp-crm',
+  '/software-development',
 ])
 
 // Authentication / private areas must never be indexed.

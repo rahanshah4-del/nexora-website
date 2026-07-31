@@ -8,7 +8,7 @@ import {
   saveBlogPost,
   uploadBlogImage,
 } from '../../lib/blogCms.js'
-import { auth } from '../../lib/firebase.js'
+import { auth, firestoreDb } from '../../lib/firebase.js'
 import { getBlogViewCount } from '../../lib/blogViews.js'
 
 const emptyDraft = {
@@ -216,7 +216,7 @@ export default function BlogManager() {
             metaDescription: draft.metaDescription.trim().slice(0, 180),
             sections: [{ heading: draft.contentHeading?.trim() || 'Article guide', paragraphs }],
             faqs: parseFaqs(draft.faqsText),
-          })
+          }, { firestoreDb })
           const completed = Object.entries(results || {}).filter(([, r]) => r?.status === 'completed')
           const failed = Object.entries(results || {}).filter(([, r]) => r?.status !== 'completed')
           if (completed.length > 0) {
@@ -257,7 +257,7 @@ export default function BlogManager() {
         metaDescription: post.metaDescription || '',
         sections: post.sections || [],
         faqs,
-      })
+      }, { firestoreDb })
       const completed = Object.entries(results || {}).filter(([, r]) => r?.status === 'completed')
       const failed = Object.entries(results || {}).filter(([, r]) => r?.status !== 'completed')
       if (completed.length > 0 && failed.length === 0) {
@@ -285,6 +285,7 @@ export default function BlogManager() {
     try {
       const { republishSinglePost } = await import('../../lib/blogRepublish.js')
       const result = await republishSinglePost(post, {
+        firestoreDb,
         onProgress: ({ step, stepIndex }) => {
           setRepublishingState((prev) => prev ? { ...prev, step: `Step ${stepIndex + 1}/9: ${step}` } : null)
         },
@@ -312,6 +313,7 @@ export default function BlogManager() {
     try {
       const { republishAllPosts } = await import('../../lib/blogRepublish.js')
       const { tracker } = await republishAllPosts(published, {
+        firestoreDb,
         onProgress: ({ step, current, total }) => {
           setRepublishingState((prev) => prev ? { ...prev, current, total, step, completed: tracker?.completed || prev.completed } : null)
         },

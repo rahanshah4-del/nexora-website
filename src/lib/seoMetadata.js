@@ -53,6 +53,13 @@ export const seoMetadata = {
     keyword: 'Business Management Software',
     image: `${HOST}/nexora-brand-logo.png`,
   }),
+  '/software-development': buildPage({
+    path: '/software-development',
+    title: 'Custom Software Development Services | Nexora Solution',
+    description: 'Professional custom software development — business websites, e-commerce, CRM, ERP, POS, mobile apps, AI solutions, API integration, and cloud services. Build with Nexora.',
+    keyword: 'Custom Software Development Pakistan, Software Development Services, Web Development, Mobile App Development, CRM Development, ERP Solutions Pakistan',
+    image: `${HOST}/nexora-brand-logo.png`,
+  }),
   '/features': buildPage({
     path: '/features',
     title: 'Nexora Features | POS, CRM, ERP and WhatsApp Software Pakistan',
