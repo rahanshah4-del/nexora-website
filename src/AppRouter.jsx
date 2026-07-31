@@ -30,6 +30,13 @@ const DocumentationPage = lazy(() => import('./pages/public/DocumentationPage.js
 const SolutionPage = lazy(() => import('./pages/public/SolutionPage.jsx'))
 const PublicBusinessServicesPage = lazy(() => import('./pages/public/BusinessServicesPage.jsx'))
 const SoftwareDevelopmentPage = lazy(() => import('./pages/public/SoftwareDevelopmentPage.jsx'))
+const SEOServicesPage = lazy(() => import('./pages/public/SEOServicesPage.jsx'))
+const MobileAppDevelopmentPage = lazy(() => import('./pages/public/MobileAppDevelopmentPage.jsx'))
+const EcommerceDevelopmentPage = lazy(() => import('./pages/public/EcommerceDevelopmentPage.jsx'))
+const CRMDevelopmentPage = lazy(() => import('./pages/public/CRMDevelopmentPage.jsx'))
+const ERPDevelopmentPage = lazy(() => import('./pages/public/ERPDevelopmentPage.jsx'))
+const CloudSolutionsPage = lazy(() => import('./pages/public/CloudSolutionsPage.jsx'))
+const APIIntegrationPage = lazy(() => import('./pages/public/APIIntegrationPage.jsx'))
 const BlogIndexPage = lazy(() => import('./pages/public/BlogIndexPage.jsx'))
 const BlogArticlePage = lazy(() => import('./pages/public/BlogArticlePage.jsx'))
 const FaqPage = lazy(() => import('./pages/public/FaqPage.jsx'))
@@ -452,6 +459,13 @@ export default function AppRouter() {
         <Route path="/pricing-paddle" element={<LazyPage><PaddlePricingPage /></LazyPage>} />
         <Route path="/business-services" element={<LazyPage><PublicBusinessServicesPage /></LazyPage>} />
         <Route path="/software-development" element={<LazyPage><SoftwareDevelopmentPage /></LazyPage>} />
+        <Route path="/seo-services" element={<LazyPage><SEOServicesPage /></LazyPage>} />
+        <Route path="/mobile-app-development" element={<LazyPage><MobileAppDevelopmentPage /></LazyPage>} />
+        <Route path="/ecommerce-development" element={<LazyPage><EcommerceDevelopmentPage /></LazyPage>} />
+        <Route path="/crm-development" element={<LazyPage><CRMDevelopmentPage /></LazyPage>} />
+        <Route path="/erp-development" element={<LazyPage><ERPDevelopmentPage /></LazyPage>} />
+        <Route path="/cloud-solutions" element={<LazyPage><CloudSolutionsPage /></LazyPage>} />
+        <Route path="/api-integration" element={<LazyPage><APIIntegrationPage /></LazyPage>} />
         <Route path="/contact" element={<LazyPage><ContactPage /></LazyPage>} />
         <Route path="/industries" element={<LazyPage><IndustriesPage /></LazyPage>} />
         <Route path="/reviews" element={<LazyPage><ReviewsPage /></LazyPage>} />

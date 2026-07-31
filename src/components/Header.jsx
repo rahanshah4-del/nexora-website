@@ -11,14 +11,18 @@ import {
   HiOutlineChartBarSquare,
   HiOutlineChatBubbleLeftRight,
   HiOutlineChevronDown,
+  HiOutlineCloud,
   HiOutlineDevicePhoneMobile,
   HiOutlineDocumentChartBar,
+  HiOutlineGlobeAlt,
+  HiOutlineServerStack,
   HiOutlineShieldCheck,
   HiOutlineShoppingCart,
   HiOutlineSparkles,
   HiOutlineTruck,
   HiOutlineUserCircle,
   HiOutlineUserGroup,
+  HiOutlineWifi,
   HiOutlineXMark,
 } from 'react-icons/hi2'
 import NexoraLogo from './brand/NexoraLogo'
@@ -27,7 +31,6 @@ const mainLinks = [
   { label: 'Home', to: '/' },
   { label: 'AI', to: '/ai' },
   { label: 'Pricing', to: '/pricing' },
-  { label: 'Software Development', to: '/software-development' },
   { label: 'Industries', to: '/industries' },
   { label: 'Blog', to: '/blog' },
 ]
@@ -61,6 +64,39 @@ const solutionLinks = [
   { label: 'Inventory Management', to: '/solutions/inventory-management' },
   { label: 'Team & Permissions', to: '/solutions/team-permissions' },
 ]
+
+const softwareDevIconMap = {
+  'Mobile Apps': HiOutlineDevicePhoneMobile,
+  'SEO Services': HiOutlineMagnifyingGlass,
+  'AI Solutions': HiOutlineSparkles,
+  'E-commerce': HiOutlineShoppingCart,
+  'Custom CRM': HiOutlineUserGroup,
+  'ERP Solutions': HiOutlineServerStack,
+  'Cloud Solutions': HiOutlineCloud,
+  'API Integration': HiOutlineWifi,
+  'Business Websites': HiOutlineGlobeAlt,
+}
+
+const softwareDevLinks = [
+  { label: 'Mobile Apps', to: '/mobile-app-development', desc: 'iOS & Android apps with Flutter, AI features, offline support', accent: 'rose' },
+  { label: 'SEO Services', to: '/seo-services', desc: 'Google ranking, technical SEO, content strategy, local SEO', accent: 'emerald' },
+  { label: 'AI Solutions', to: '/ai', desc: 'DeepSeek, Gemini, custom ML, chatbots, predictive analytics', accent: 'violet' },
+  { label: 'E-commerce', to: '/ecommerce-development', desc: 'Online stores with payments, inventory, order management', accent: 'emerald' },
+  { label: 'Custom CRM', to: '/crm-development', desc: 'Tailored CRM with WhatsApp, pipeline, automation, mobile', accent: 'indigo' },
+  { label: 'ERP Solutions', to: '/erp-development', desc: 'Finance, HR, inventory, procurement — unified platform', accent: 'violet' },
+  { label: 'Cloud Solutions', to: '/cloud-solutions', desc: 'Cloud migration, serverless, CI/CD, managed hosting', accent: 'sky' },
+  { label: 'API Integration', to: '/api-integration', desc: 'Payment gateways, WhatsApp API, SMS, legacy systems', accent: 'indigo' },
+  { label: 'Business Websites', to: '/software-development#service-business-websites', desc: 'Professional sites with SEO, mobile-first, fast loading', accent: 'blue' },
+]
+
+const accentStyles = {
+  rose: { iconBg: 'bg-rose-100', iconText: 'text-rose-600', ring: 'ring-rose-200/60', hoverBg: 'hover:bg-rose-50/60', gradient: 'from-rose-500 to-pink-500' },
+  emerald: { iconBg: 'bg-emerald-100', iconText: 'text-emerald-600', ring: 'ring-emerald-200/60', hoverBg: 'hover:bg-emerald-50/60', gradient: 'from-emerald-500 to-teal-500' },
+  violet: { iconBg: 'bg-violet-100', iconText: 'text-violet-600', ring: 'ring-violet-200/60', hoverBg: 'hover:bg-violet-50/60', gradient: 'from-violet-500 to-purple-500' },
+  indigo: { iconBg: 'bg-indigo-100', iconText: 'text-indigo-600', ring: 'ring-indigo-200/60', hoverBg: 'hover:bg-indigo-50/60', gradient: 'from-indigo-500 to-blue-500' },
+  sky: { iconBg: 'bg-sky-100', iconText: 'text-sky-600', ring: 'ring-sky-200/60', hoverBg: 'hover:bg-sky-50/60', gradient: 'from-sky-500 to-cyan-500' },
+  blue: { iconBg: 'bg-blue-100', iconText: 'text-blue-600', ring: 'ring-blue-200/60', hoverBg: 'hover:bg-blue-50/60', gradient: 'from-blue-500 to-indigo-500' },
+}
 
 function Header() {
   const location = useLocation()
@@ -97,8 +133,18 @@ function Header() {
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [activeDropdown, setActiveDropdown] = useState(null)
+  const dropdownOpenTimer = useRef(null)
   const dropdownCloseTimer = useRef(null)
+  const mousePos = useRef({ x: 0, y: 0 })
+  const lastNavHover = useRef(null)
   const searchInputRef = useRef(null)
+
+  // Track mouse position globally for intent detection
+  useEffect(() => {
+    const track = (e) => { mousePos.current = { x: e.clientX, y: e.clientY } }
+    window.addEventListener('mousemove', track, { passive: true })
+    return () => window.removeEventListener('mousemove', track)
+  }, [])
 
   /* ── Autofocus search input ── */
   useEffect(() => {
@@ -115,11 +161,11 @@ function Header() {
       if (event.key === 'Escape') {
         setMobileMenuOpen(false)
         setSearchOpen(false)
+        clearAllTimers()
         setActiveDropdown(null)
       }
     }
 
-    // Lock scroll when search is open
     if (searchOpen) {
       const prev = document.body.style.overflow
       document.body.style.overflow = 'hidden'
@@ -127,14 +173,14 @@ function Header() {
     }
 
     const onClickOutside = (event) => {
-      if (!event.target.closest('[data-dropdown-wrapper]') && !event.target.closest('[data-solutions-button]')) {
+      if (!event.target.closest('[data-dropdown-wrapper]') && !event.target.closest('[data-nav-trigger]')) {
+        clearAllTimers()
         setActiveDropdown(null)
       }
     }
 
     window.addEventListener('keydown', onKeyDown)
     window.addEventListener('click', onClickOutside, true)
-
     return () => {
       window.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('click', onClickOutside, true)
@@ -143,31 +189,61 @@ function Header() {
 
   /* Close dropdown on route change */
   useEffect(() => {
+    clearAllTimers()
     setActiveDropdown(null)
   }, [location.pathname])
 
-  useEffect(() => () => {
-    if (dropdownCloseTimer.current) window.clearTimeout(dropdownCloseTimer.current)
-  }, [])
+  useEffect(() => () => clearAllTimers(), [])
+
+  const clearAllTimers = () => {
+    if (dropdownOpenTimer.current) { window.clearTimeout(dropdownOpenTimer.current); dropdownOpenTimer.current = null }
+    if (dropdownCloseTimer.current) { window.clearTimeout(dropdownCloseTimer.current); dropdownCloseTimer.current = null }
+  }
 
   const closeAll = () => {
-    if (dropdownCloseTimer.current) window.clearTimeout(dropdownCloseTimer.current)
+    clearAllTimers()
     setMobileMenuOpen(false)
     setSearchOpen(false)
     setActiveDropdown(null)
   }
 
+  /** Apple-style: open with 80ms delay to prevent flicker on quick passes */
   const openDropdown = (key) => {
-    if (dropdownCloseTimer.current) window.clearTimeout(dropdownCloseTimer.current)
-    setActiveDropdown(key)
+    if (dropdownCloseTimer.current) { window.clearTimeout(dropdownCloseTimer.current); dropdownCloseTimer.current = null }
+    if (activeDropdown === key) return // already open
+    // Small open delay — prevents flicker when cursor briefly passes over
+    dropdownOpenTimer.current = window.setTimeout(() => {
+      setActiveDropdown(key)
+    }, 80)
   }
 
-  const scheduleDropdownClose = () => {
+  /** Apple-style: close with 250ms delay to allow diagonal movement into dropdown */
+  const scheduleDropdownClose = (key) => {
+    if (dropdownOpenTimer.current) { window.clearTimeout(dropdownOpenTimer.current); dropdownOpenTimer.current = null }
     if (dropdownCloseTimer.current) window.clearTimeout(dropdownCloseTimer.current)
-    dropdownCloseTimer.current = window.setTimeout(() => setActiveDropdown(null), 160)
+    dropdownCloseTimer.current = window.setTimeout(() => {
+      setActiveDropdown(null)
+    }, 250)
+  }
+
+  /** Cancel close — called when cursor enters dropdown panel */
+  const cancelDropdownClose = () => {
+    if (dropdownCloseTimer.current) { window.clearTimeout(dropdownCloseTimer.current); dropdownCloseTimer.current = null }
+    if (dropdownOpenTimer.current) { window.clearTimeout(dropdownOpenTimer.current); dropdownOpenTimer.current = null }
+  }
+
+  /** Switch dropdown instantly when moving between adjacent nav items */
+  const switchDropdown = (key) => {
+    if (dropdownCloseTimer.current) { window.clearTimeout(dropdownCloseTimer.current); dropdownCloseTimer.current = null }
+    if (dropdownOpenTimer.current) { window.clearTimeout(dropdownOpenTimer.current); dropdownOpenTimer.current = null }
+    if (activeDropdown && activeDropdown !== key) {
+      // Instant switch between dropdowns — Apple does this
+      setActiveDropdown(key)
+    }
   }
 
   const toggleDropdown = (key) => {
+    clearAllTimers()
     setActiveDropdown((current) => (current === key ? null : key))
   }
 
@@ -223,17 +299,21 @@ function Header() {
         </Link>
 
         {/* ── Desktop Navigation ── */}
-        <nav className="hidden flex-1 items-center justify-center gap-1 lg:flex">
+        <nav className="hidden flex-1 items-center justify-center gap-1 lg:flex relative">
           {/* Home — first link */}
           <Link to="/" onClick={closeAll} className={navLinkClass(mainLinks[0])}>Home</Link>
 
-          {/* Solutions — right after Home */}
+          {/* Solutions trigger */}
           <div className="relative" data-dropdown-wrapper>
             <button
               type="button"
-              data-solutions-button
+              data-nav-trigger="solutions"
               onClick={() => toggleDropdown('solutions')}
-              onMouseEnter={() => openDropdown('solutions')}
+              onMouseEnter={() => {
+                if (activeDropdown && activeDropdown !== 'solutions') switchDropdown('solutions')
+                else openDropdown('solutions')
+              }}
+              onMouseLeave={() => scheduleDropdownClose('solutions')}
               className={`nav-link relative inline-flex h-9 items-center gap-1 rounded-full px-3 text-[13px] font-medium transition-colors duration-200 ${
                 isSolutionsActive
                   ? 'text-slate-900 bg-slate-100'
@@ -244,40 +324,112 @@ function Header() {
               Solutions
               <HiOutlineChevronDown className={`text-sm transition-transform duration-200 ${activeDropdown === 'solutions' ? 'rotate-180' : ''}`} />
             </button>
+          </div>
 
-            {/* Dropdown bridge + panel */}
-            <div className="absolute left-1/2 top-full h-3 w-[34rem] -translate-x-1/2" aria-hidden="true" />
-            <div
-              onMouseEnter={() => openDropdown('solutions')}
-              onMouseLeave={scheduleDropdownClose}
-              className={`absolute left-1/2 top-[calc(100%+0.5rem)] w-[34rem] -translate-x-1/2 rounded-2xl border border-slate-200/60 bg-white/95 p-2.5 shadow-[0_20px_60px_-20px_rgba(15,23,42,0.18)] backdrop-blur-2xl transition-all duration-200 ${
-                activeDropdown === 'solutions'
-                  ? 'pointer-events-auto translate-y-0 opacity-100'
-                  : 'pointer-events-none translate-y-1.5 opacity-0'
-              }`}
-            >
-              <div className="grid grid-cols-2 gap-0.5">
-                {solutionLinks.map((link) => {
-                  const Icon = solutionIconMap[link.label]
-                  return (
-                    <Link
-                      key={link.label}
-                      to={link.to}
-                      onClick={closeAll}
-                      className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
-                    >
-                      {Icon && (
-                        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-slate-100 text-slate-500">
-                          <Icon className="text-base" />
-                        </span>
-                      )}
-                      <span>{link.label}</span>
-                    </Link>
-                  )
-                })}
-              </div>
+          {/* Software Development trigger */}
+          <div className="relative" data-dropdown-wrapper>
+            <div className="flex items-center">
+              <Link
+                to="/software-development"
+                onClick={closeAll}
+                onMouseEnter={() => {
+                  if (activeDropdown && activeDropdown !== 'softwareDev') switchDropdown('softwareDev')
+                  else openDropdown('softwareDev')
+                }}
+                onMouseLeave={() => scheduleDropdownClose('softwareDev')}
+                className={`nav-link relative inline-flex h-9 items-center gap-1 rounded-full px-3 text-[13px] font-medium transition-colors duration-200 ${
+                  location.pathname.startsWith('/software-development') || location.pathname.startsWith('/seo-services') || location.pathname.startsWith('/mobile-app-development') || location.pathname.startsWith('/ecommerce-development') || location.pathname.startsWith('/crm-development') || location.pathname.startsWith('/erp-development') || location.pathname.startsWith('/cloud-solutions') || location.pathname.startsWith('/api-integration')
+                    ? 'text-slate-900 bg-slate-100'
+                    : 'text-slate-500 hover:text-slate-900'
+                }`}
+              >
+                Software Development
+              </Link>
+              <button
+                type="button"
+                data-nav-trigger="softwareDev"
+                onClick={() => toggleDropdown('softwareDev')}
+                onMouseEnter={() => {
+                  if (activeDropdown && activeDropdown !== 'softwareDev') switchDropdown('softwareDev')
+                  else openDropdown('softwareDev')
+                }}
+                onMouseLeave={() => scheduleDropdownClose('softwareDev')}
+                className={`nav-link relative inline-flex h-9 w-6 items-center justify-center rounded-full transition-colors duration-200 ${
+                  location.pathname.startsWith('/software-development') || location.pathname.startsWith('/seo-services') || location.pathname.startsWith('/mobile-app-development') || location.pathname.startsWith('/ecommerce-development') || location.pathname.startsWith('/crm-development') || location.pathname.startsWith('/erp-development') || location.pathname.startsWith('/cloud-solutions') || location.pathname.startsWith('/api-integration')
+                    ? 'text-slate-900'
+                    : 'text-slate-500 hover:text-slate-900'
+                }`}
+                aria-expanded={activeDropdown === 'softwareDev'}
+                aria-label="Software Development menu"
+              >
+                <HiOutlineChevronDown className={`text-sm transition-transform duration-200 ${activeDropdown === 'softwareDev' ? 'rotate-180' : ''}`} />
+              </button>
             </div>
           </div>
+
+          {/* ── SHARED MEGA MENU PANEL — always centered relative to nav ── */}
+          {(activeDropdown === 'solutions' || activeDropdown === 'softwareDev') ? (
+            <>
+              {/* Bridge gap */}
+              <div
+                className="absolute left-1/2 top-full h-5 w-[68rem] -translate-x-1/2"
+                aria-hidden="true"
+                onMouseEnter={() => cancelDropdownClose()}
+              />
+              <div
+                onMouseEnter={() => cancelDropdownClose()}
+                onMouseLeave={() => scheduleDropdownClose(activeDropdown)}
+                className={`absolute left-1/2 top-[calc(100%+1.25rem)] w-[68rem] max-w-[90vw] -translate-x-1/2 overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-[0_32px_80px_-28px_rgba(15,23,42,0.32)] transition-all duration-250 pointer-events-auto translate-y-0 opacity-100 scale-100`}
+              >
+                {activeDropdown === 'solutions' ? (
+                  <div className="flex">
+                    <div className="flex-1 px-6 py-5">
+                      <div className="grid grid-cols-3 gap-x-5 gap-y-1">
+                        {solutionLinks.map((link) => {
+                          const Icon = solutionIconMap[link.label]
+                          return (
+                            <Link key={link.label} to={link.to} onClick={closeAll} className="group flex items-center gap-2.5 rounded-lg px-2 py-2 -mx-2 transition-all duration-150 hover:bg-slate-50">
+                              {Icon && (<span className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-slate-100 text-slate-500 transition-transform duration-200 group-hover:scale-110 group-hover:bg-slate-200 group-hover:text-slate-700"><Icon className="text-[15px]" /></span>)}
+                              <span className="text-[12.5px] font-semibold tracking-[-0.01em] text-slate-700 group-hover:text-slate-900">{link.label}</span>
+                            </Link>
+                          )
+                        })}
+                      </div>
+                    </div>
+                    <div className="w-[220px] shrink-0 border-l border-slate-200 bg-[linear-gradient(180deg,#f9fafb_0%,#ffffff_100%)] px-5 py-5 flex flex-col gap-3">
+                      <Link to="/restaurant-pos" onClick={closeAll} className="group block rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 p-3.5 text-white shadow-[0_6px_20px_-8px_rgba(245,158,11,0.3)] transition-all duration-200 hover:shadow-[0_12px_28px_-10px_rgba(245,158,11,0.45)] hover:scale-[1.02]"><HiOutlineShoppingCart className="h-4 w-4" /><p className="mt-1.5 text-[12px] font-bold">Restaurant POS</p><p className="mt-0.5 text-[10px] leading-[1.35] text-amber-100">Most popular — 50+ restaurants use it daily.</p><span className="mt-2 inline-flex items-center gap-1 text-[10px] font-semibold text-white/90 group-hover:text-white">Learn More <HiOutlineArrowRight className="h-3 w-3" /></span></Link>
+                      <Link to="/school-erp" onClick={closeAll} className="group block rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 p-3.5 text-white shadow-[0_6px_20px_-8px_rgba(16,185,129,0.3)] transition-all duration-200 hover:shadow-[0_12px_28px_-10px_rgba(16,185,129,0.45)] hover:scale-[1.02]"><HiOutlineAcademicCap className="h-4 w-4" /><p className="mt-1.5 text-[12px] font-bold">School ERP</p><p className="mt-0.5 text-[10px] leading-[1.35] text-emerald-100">1,200+ student school uses it.</p><span className="mt-2 inline-flex items-center gap-1 text-[10px] font-semibold text-white/90 group-hover:text-white">Learn More <HiOutlineArrowRight className="h-3 w-3" /></span></Link>
+                      <div className="flex-1" />
+                      <Link to="/pricing" onClick={closeAll} className="block rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-center text-[12px] font-semibold text-slate-700 transition-all duration-150 hover:border-slate-300 hover:bg-slate-50">💰 View Pricing Plans</Link>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex">
+                    <div className="flex-1 px-6 py-5">
+                      <div className="grid grid-cols-3 gap-x-5 gap-y-1">
+                        {softwareDevLinks.map((link) => {
+                          const Icon = softwareDevIconMap[link.label]
+                          const accent = accentStyles[link.accent] || accentStyles.blue
+                          return (
+                            <Link key={link.label} to={link.to} onClick={closeAll} className={`group flex items-center gap-2.5 rounded-lg px-2 py-2 -mx-2 transition-all duration-150 ${accent.hoverBg}`}>
+                              <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-md ${accent.iconBg} ${accent.iconText} transition-transform duration-200 group-hover:scale-110`}><Icon className="text-[15px]" /></span>
+                              <div className="min-w-0 leading-tight"><span className="block text-[12.5px] font-semibold tracking-[-0.01em] text-slate-800">{link.label}</span><span className="block text-[10.5px] text-slate-400 leading-[1.35]">{link.desc}</span></div>
+                            </Link>
+                          )
+                        })}
+                      </div>
+                    </div>
+                    <div className="w-[220px] shrink-0 border-l border-slate-200 bg-[linear-gradient(180deg,#f9fafb_0%,#ffffff_100%)] px-5 py-5 flex flex-col gap-3">
+                      <Link to="/software-development" onClick={closeAll} className="group block rounded-xl bg-gradient-to-br from-[#1d1d1f] to-[#3a3a3c] p-4 text-white shadow-[0_6px_20px_-8px_rgba(15,23,42,0.3)] transition-all duration-200 hover:shadow-[0_12px_28px_-10px_rgba(15,23,42,0.45)] hover:scale-[1.02]"><p className="text-[13px] font-bold">50+ Projects</p><p className="mt-0.5 text-[10.5px] leading-[1.4] text-slate-300">See our portfolio of software built for businesses across Pakistan & UAE.</p><span className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-sky-300 group-hover:text-white transition-colors">View Portfolio <HiOutlineArrowRight className="h-3 w-3" /></span></Link>
+                      <div className="flex-1" />
+                      <Link to="/seo-services" onClick={closeAll} className="block rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-[12px] font-semibold text-slate-700 transition-all duration-150 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900">🔍 Need SEO? Rank on Google →</Link>
+                      <a href="https://wa.me/923194329754" target="_blank" rel="noreferrer" onClick={closeAll} className="flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-[12px] font-semibold text-slate-600 transition-all duration-150 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900">💬 Discuss Your Project</a>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
+          ) : null}
 
           {/* Pricing + rest — center position (skip Home) */}
           {mainLinks.slice(1).map((link) => {
@@ -440,6 +592,38 @@ function Header() {
                 >
                   {solutionLinks.map((link) => {
                     const Icon = solutionIconMap[link.label]
+                    return (
+                      <Link
+                        key={link.label}
+                        to={link.to}
+                        onClick={closeAll}
+                        className="flex items-center gap-3 rounded-lg px-2 py-3 text-[15px] font-medium text-[#1d1d1f]/75 transition-colors duration-200 hover:text-[#1d1d1f]"
+                      >
+                        {Icon && (
+                          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-white text-[#86868b] shadow-sm">
+                            <Icon className="text-sm" />
+                          </span>
+                        )}
+                        <span>{link.label}</span>
+                      </Link>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Software Development mobile */}
+              <div className="mt-8">
+                <Link
+                  to="/software-development"
+                  onClick={closeAll}
+                  className="flex items-center gap-1.5 py-2 text-[11px] font-medium uppercase tracking-[0.14em] text-[#86868b] transition-colors hover:text-[#1d1d1f]"
+                >
+                  Software Development
+                  <HiOutlineArrowRight className="h-3 w-3" />
+                </Link>
+                <div className="mt-2 grid gap-0.5">
+                  {softwareDevLinks.map((link) => {
+                    const Icon = softwareDevIconMap[link.label]
                     return (
                       <Link
                         key={link.label}

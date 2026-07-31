@@ -65,7 +65,7 @@ export default function PublicBusinessServicesPage() {
   const seo = getSeoForPath('/services')
 
   return (
-    <PublicPageShell>
+    <PublicPageShell backTo="/" backLabel="Back to Website" badge="Business Services" badgeIcon={HiOutlineBriefcase}>
       <PageSeo
         {...seo}
         softwareApplication={{
@@ -94,7 +94,6 @@ export default function PublicBusinessServicesPage() {
               className="group inline-flex min-h-[38px] items-center gap-1.5 rounded-full border border-slate-200/60 bg-white/75 px-4 py-2 text-[13px] font-medium tracking-[-0.01em] text-slate-500 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.04)] backdrop-blur-xl transition-all duration-200 hover:-translate-y-px hover:border-slate-300/70 hover:bg-white hover:text-slate-500 hover:shadow-[0_6px_20px_-8px_rgba(0,0,0,0.12)] active:scale-[0.97] sm:min-h-[42px] sm:px-5 sm:text-sm"
             >
               <HiOutlineArrowLeft className="h-[17px] w-[17px] transition-transform duration-200 group-hover:-translate-x-0.5" />
-              Back to Website
             </Link>
 
             <p className="mt-7 inline-flex items-center gap-1.5 rounded-full border border-slate-200/60 bg-white/70 px-4 py-2 text-xs font-medium uppercase tracking-[0.14em] text-slate-500 shadow-sm backdrop-blur-xl">

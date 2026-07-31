@@ -167,6 +167,17 @@ const services = [
     tech: 'Full-stack monitoring, Cloudflare Analytics, Firebase, Sentry',
     tone: 'slate',
   },
+  {
+    icon: HiOutlineMagnifyingGlass,
+    title: 'SEO Services',
+    slug: 'seo-services',
+    desc: 'Complete SEO solutions — technical SEO, on-page optimization, keyword research, content strategy, link building, and Google ranking improvement.',
+    detail: 'Get found on Google. Our SEO services cover everything from technical site audits and on-page optimization to keyword research, content strategy, and high-quality link building. We use data-driven strategies that deliver measurable results — higher rankings, more organic traffic, and better conversion rates. Every campaign includes monthly reports with transparent metrics.',
+    features: ['Technical SEO audit & fixes', 'On-page optimization (meta, schema, content)', 'Keyword research & competitor analysis', 'Content strategy & SEO copywriting', 'Link building & outreach', 'Google My Business optimization', 'Monthly ranking & traffic reports', 'Local SEO for Pakistani businesses'],
+    tech: 'Google Search Console, Ahrefs, Semrush, Schema.org, Next.js SEO',
+    link: '/seo-services',
+    tone: 'emerald',
+  },
 ]
 
 const whyChooseItems = [
@@ -494,7 +505,7 @@ export default function SoftwareDevelopmentPage() {
   }), [])
 
   return (
-    <PublicPageShell>
+    <PublicPageShell backTo="/" backLabel="Back to Website" badge="Software Development" badgeIcon={HiOutlineCodeBracket}>
       <PageSeo
         {...seo}
         softwareApplication={{
@@ -521,19 +532,6 @@ export default function SoftwareDevelopmentPage() {
 
         <div className="relative mx-auto grid max-w-7xl items-center gap-10 px-5 sm:px-6 lg:grid-cols-[1fr_0.85fr] lg:px-8">
           <div>
-            <Link
-              to="/"
-              className="group inline-flex min-h-[38px] items-center gap-1.5 rounded-full border border-slate-200/60 bg-white/75 px-4 py-2 text-[13px] font-medium tracking-[-0.01em] text-slate-500 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.04)] backdrop-blur-xl transition-all duration-200 hover:-translate-y-px hover:border-slate-300/70 hover:bg-white hover:text-slate-500 hover:shadow-[0_6px_20px_-8px_rgba(0,0,0,0.12)] active:scale-[0.97] sm:min-h-[42px] sm:px-5 sm:text-sm"
-            >
-              <HiOutlineArrowLeft className="h-[17px] w-[17px] transition-transform duration-200 group-hover:-translate-x-0.5" />
-              Back to Website
-            </Link>
-
-            <p className="mt-7 inline-flex items-center gap-1.5 rounded-full border border-blue-200/60 bg-blue-50/70 px-4 py-2 text-xs font-medium uppercase tracking-[0.14em] text-blue-700 shadow-sm backdrop-blur-xl">
-              <HiOutlineCodeBracket className="h-3.5 w-3.5" />
-              Software Development
-            </p>
-
             <h1 className="mt-5 max-w-4xl text-[2.5rem] font-semibold leading-[1.06] tracking-[-0.02em] text-slate-900 sm:text-[3.5rem] lg:text-[4.2rem]">
               Custom Software{' '}
               <span className="bg-gradient-to-r from-blue-600 via-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
@@ -1262,6 +1260,44 @@ export default function SoftwareDevelopmentPage() {
                 isOpen={openFaqIndex === i}
                 onToggle={() => setOpenFaqIndex(openFaqIndex === i ? -1 : i)}
               />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── More From Nexora ── */}
+      <section data-reveal className="bg-white py-16 sm:py-20 lg:py-24">
+        <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h2 className="text-3xl font-semibold tracking-[-0.02em] text-slate-900 sm:text-5xl">
+              More from{' '}
+              <span className="bg-gradient-to-r from-blue-600 via-violet-600 to-fuchsia-600 bg-clip-text text-transparent">Nexora</span>
+            </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-[15px] leading-7 text-slate-500">
+              Explore our specialized services and solutions.
+            </p>
+          </div>
+
+          <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              { title: '📱 Mobile App Development', desc: 'iOS & Android apps with Flutter, React Native, Swift, Kotlin. Beautiful UI, offline support, push notifications.', link: '/mobile-app-development', color: 'from-rose-50 to-pink-50', border: 'border-rose-200/60', text: 'text-rose-700', bg: 'bg-rose-100' },
+              { title: '🔍 SEO Services', desc: 'Technical SEO, on-page optimization, keyword research, link building. Get ranked on Google and grow organic traffic.', link: '/seo-services', color: 'from-emerald-50 to-teal-50', border: 'border-emerald-200/60', text: 'text-emerald-700', bg: 'bg-emerald-100' },
+              { title: '🤖 AI Solutions', desc: 'DeepSeek, Gemini, custom ML models. Chatbots, predictive analytics, image recognition, intelligent automation.', link: '/ai', color: 'from-violet-50 to-purple-50', border: 'border-violet-200/60', text: 'text-violet-700', bg: 'bg-violet-100' },
+              { title: '🏢 All Products', desc: 'Restaurant POS, Retail POS, School ERP, WhatsApp CRM, Inventory, and more business solutions.', link: '/', color: 'from-blue-50 to-indigo-50', border: 'border-blue-200/60', text: 'text-blue-700', bg: 'bg-blue-100' },
+            ].map(card => (
+              <Link
+                key={card.link}
+                to={card.link}
+                className={`group relative flex flex-col overflow-hidden rounded-[1.35rem] border ${card.border} bg-white p-5 shadow-[0_4px_16px_-8px_rgba(15,23,42,0.05)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_14px_36px_-16px_rgba(15,23,42,0.16)] active:scale-[0.98]`}
+              >
+                <div className={`absolute -right-6 -top-6 h-20 w-20 rounded-full bg-gradient-to-br ${card.color} opacity-50 transition-transform duration-300 group-hover:scale-150`} />
+                <h3 className="relative text-[14px] font-semibold tracking-[-0.01em] text-slate-900">{card.title}</h3>
+                <p className="relative mt-2 flex-1 text-[12px] leading-[1.6] text-slate-500">{card.desc}</p>
+                <span className={`relative mt-3 inline-flex items-center gap-1 text-[12px] font-medium tracking-[-0.01em] ${card.text} transition-all duration-200 group-hover:gap-1.5`}>
+                  Explore
+                  <HiOutlineArrowRight className="h-3.5 w-3.5" />
+                </span>
+              </Link>
             ))}
           </div>
         </div>
