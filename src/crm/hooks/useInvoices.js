@@ -481,6 +481,10 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
     setInvoices((currentRows) => currentRows.filter((invoice) => invoice.id !== id))
   }, [])
 
+  // Stable refs for payment listener — prevents re-subscription during cascade
+  const unsubPayRef = useRef(null)
+  const lastPayPathRef = useRef('')
+
   useEffect(() => {
     if (!enabled) {
       Promise.resolve().then(() => {
@@ -524,7 +528,17 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
     }
 
     loadInvoicePage({ reset: true })
-    const unsubPay = listenToWorkspaceCollection({
+
+    // Stable guard: only subscribe to payments if the effective path changed.
+    const payPathKey = `workspaces/${workspaceId}/payments/${businessType || 'default'}`
+    if (lastPayPathRef.current === payPathKey) return // keep existing subscription
+    lastPayPathRef.current = payPathKey
+
+    // Tear down old payment subscription before creating new one
+    unsubPayRef.current?.()
+    unsubPayRef.current = null
+
+    unsubPayRef.current = listenToWorkspaceCollection({
       workspaceId,
       collectionName: 'payments',
       businessType,
@@ -536,11 +550,14 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
         setPayments([])
       },
     })
-    return () => {
-      invoiceRequestRef.current += 1
-      unsubPay?.()
-    }
   }, [businessType, enabled, invoiceListLimit, loadInvoicePage, workspaceId])
+
+  // Unmount-only cleanup for payment listener
+  useEffect(() => () => {
+    unsubPayRef.current?.()
+    unsubPayRef.current = null
+    lastPayPathRef.current = ''
+  }, [])
 
   const stats = useMemo(() => {
     const byStatus = (status) => invoices.filter((i) => getInvoiceStatus(i) === status).length

@@ -9,7 +9,7 @@
  *   - Lite mode (POS Till): reads reservations from Firestore directly with its own listener
  * This avoids crashing the POS page if the full reservation hook has issues.
  */
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useUser } from './useUser.js'
 import { db } from '../lib/firebase.js'
 import { collection, onSnapshot, query, where } from 'firebase/firestore'
@@ -30,14 +30,26 @@ export function useReservationPosBridge({
   const [error, setError] = useState('')
 
   /* ── Firestore listener (self-contained, no dependency on useRestaurantReservations) ── */
+  const unsubRef = useRef(null)
+  const lastPathRef = useRef('')
+
+  // Subscription effect — only re-subscribes when path actually changes
   useEffect(() => {
-    if (!workspaceId || !db) { setLoading(false); return undefined }
+    if (!workspaceId || !db) { setLoading(false); return }
+
+    const pathKey = `workspaces/${workspaceId}/restaurantReservations`
+    if (lastPathRef.current === pathKey) return // path unchanged — keep existing subscription
+    lastPathRef.current = pathKey
+
+    // Tear down old subscription before creating new one
+    unsubRef.current?.()
+    unsubRef.current = null
 
     setLoading(true)
     const colRef = collection(db, 'workspaces', workspaceId, 'restaurantReservations')
     const q = query(colRef, where('status', 'in', ['pending', 'confirmed', 'seated', 'completed']))
 
-    const unsub = onSnapshot(q, { includeMetadataChanges: false },
+    unsubRef.current = onSnapshot(q, { includeMetadataChanges: false },
       (snap) => {
         const list = []
         snap.forEach((doc) => { if (doc.exists()) list.push({ id: doc.id, ...doc.data() }) })
@@ -51,8 +63,14 @@ export function useReservationPosBridge({
         setLoading(false)
       },
     )
-    return () => unsub()
   }, [workspaceId])
+
+  // Unmount-only cleanup
+  useEffect(() => () => {
+    unsubRef.current?.()
+    unsubRef.current = null
+    lastPathRef.current = ''
+  }, [])
 
   /* ── Today's reservations ── */
   const todayReservations = useMemo(() => {

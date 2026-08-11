@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { doc, onSnapshot } from 'firebase/firestore'
 import { db } from '../lib/firebase.js'
 import { useUser } from './useUser.js'
@@ -170,11 +170,30 @@ export function useWorkspaceAccess() {
     [enabledModulesKey],
   )
 
+  // Stable refs — onSnapshot callback reads latest data from refs,
+  // so the subscription effect only re-runs when the Firestore doc PATH changes.
+  const fallbackRef = useRef(fallbackUserDoc)
+  fallbackRef.current = fallbackUserDoc
+  const cpkRef = useRef(currentPermissionKeys)
+  cpkRef.current = currentPermissionKeys
+  const roleRef = useRef(role)
+  roleRef.current = role
+  const accessPlanRef = useRef(accessPlan)
+  accessPlanRef.current = accessPlan
+  const businessTypeRef = useRef(businessType)
+  businessTypeRef.current = businessType
+  const staffAccountRef = useRef(staffAccount)
+  staffAccountRef.current = staffAccount
+  const unsubRef = useRef(null)
+  const lastPathRef = useRef('')
+
+  // Subscription effect — only re-subscribes when path or admin status changes
   useEffect(() => {
     if (!db || !workspaceId || !userId) {
       Promise.resolve().then(() => {
-        setPermissions(emptyPermissions(currentPermissionKeys))
-        setExplicitPermissions(emptyPermissions(currentPermissionKeys))
+        const cpk = cpkRef.current
+        setPermissions(emptyPermissions(cpk))
+        setExplicitPermissions(emptyPermissions(cpk))
         setLoading(false)
       })
       return
@@ -182,19 +201,26 @@ export function useWorkspaceAccess() {
 
     if (isAdmin && !staffAccount) {
       Promise.resolve().then(() => {
-        const defaults = { ...emptyPermissions(currentPermissionKeys), ...workspacePermissionDefaults(isOwner ? 'owner' : role) }
-        currentPermissionKeys.forEach((item) => {
-          defaults[item.key] = true
-        })
+        const cpk = cpkRef.current
+        const defaults = { ...emptyPermissions(cpk), ...workspacePermissionDefaults(isOwner ? 'owner' : roleRef.current) }
+        cpk.forEach((item) => { defaults[item.key] = true })
         setPermissions(defaults)
-        setExplicitPermissions(emptyPermissions(currentPermissionKeys))
+        setExplicitPermissions(emptyPermissions(cpk))
         setLoading(false)
       })
       return
     }
 
-    Promise.resolve().then(() => setLoading(true))
     const permissionDocId = staffId || userId
+    const pathKey = `workspaces/${workspaceId}/permissions/${permissionDocId}`
+    if (lastPathRef.current === pathKey) return // path unchanged — keep existing subscription
+    lastPathRef.current = pathKey
+
+    // Tear down old subscription before creating new one
+    unsubRef.current?.()
+    unsubRef.current = null
+
+    Promise.resolve().then(() => setLoading(true))
     const ref = doc(db, 'workspaces', workspaceId, 'permissions', permissionDocId)
     traceAccess('permission-listener-subscribe', {
       permissionDocId,
@@ -202,45 +228,56 @@ export function useWorkspaceAccess() {
       staffId,
       workspaceId,
       businessType,
-      enabledModules: fallbackUserDoc.enabledModules,
+      enabledModules: fallbackRef.current.enabledModules,
     })
-    const unsub = onSnapshot(
+    unsubRef.current = onSnapshot(
       ref,
       (snap) => {
-        const defaults = roleDefaultPermissions(role, businessType, accessPlan)
-        const rawOverrides = snap.exists() ? permissionsForBusiness(snap.data(), businessType, accessPlan) : {}
-        const profileModuleFallback = enabledModuleViewPermissions(fallbackUserDoc, currentPermissionKeys)
-        const overrides = applyAccessFallbacks(rawOverrides, fallbackUserDoc, currentPermissionKeys)
-        const resolvedModules = currentPermissionKeys
+        const r = roleRef.current
+        const bt = businessTypeRef.current
+        const ap = accessPlanRef.current
+        const sa = staffAccountRef.current
+        const cpk = cpkRef.current
+        const fbd = fallbackRef.current
+        const defaults = roleDefaultPermissions(r, bt, ap)
+        const rawOverrides = snap.exists() ? permissionsForBusiness(snap.data(), bt, ap) : {}
+        const profileModuleFallback = enabledModuleViewPermissions(fbd, cpk)
+        const overrides = applyAccessFallbacks(rawOverrides, fbd, cpk)
+        const resolvedModules = cpk
           .filter((item) => item.action === 'view' && overrides[item.key])
           .map((item) => item.moduleKey)
         traceAccess('permission-listener-update', {
           exists: snap.exists(),
-          role,
+          role: r,
           staffId,
           workspaceId,
-          businessType,
-          enabledModules: fallbackUserDoc.enabledModules,
+          businessType: bt,
+          enabledModules: fbd.enabledModules,
           resolvedModules,
           permissionKeys: Object.keys(overrides).filter((key) => overrides[key] === true),
         })
-        setExplicitPermissions(snap.exists() ? overrides : emptyPermissions(currentPermissionKeys))
-        setPermissions(staffAccount
-          ? (snap.exists() ? overrides : { ...emptyPermissions(currentPermissionKeys), ...profileModuleFallback })
+        setExplicitPermissions(snap.exists() ? overrides : emptyPermissions(cpk))
+        setPermissions(sa
+          ? (snap.exists() ? overrides : { ...emptyPermissions(cpk), ...profileModuleFallback })
           : (snap.exists() ? overrides : mergePermissionGrants(defaults, overrides)))
         setLoading(false)
       },
       () => {
-        setPermissions({ ...emptyPermissions(currentPermissionKeys), ...enabledModuleViewPermissions(fallbackUserDoc, currentPermissionKeys) })
-        setExplicitPermissions(emptyPermissions(currentPermissionKeys))
+        const cpk = cpkRef.current
+        const fbd = fallbackRef.current
+        setPermissions({ ...emptyPermissions(cpk), ...enabledModuleViewPermissions(fbd, cpk) })
+        setExplicitPermissions(emptyPermissions(cpk))
         setLoading(false)
       },
     )
-    return () => {
-      traceAccess('permission-listener-unsubscribe', { permissionDocId, staffId, workspaceId, businessType })
-      unsub()
-    }
-  }, [accessPlan, businessType, currentPermissionKeys, fallbackUserDoc, isAdmin, isOwner, role, staffAccount, staffId, userId, workspaceId])
+  }, [isAdmin, isOwner, staffAccount, staffId, userId, workspaceId])
+
+  // Unmount-only cleanup — tears down the subscription when the component unmounts
+  useEffect(() => () => {
+    unsubRef.current?.()
+    unsubRef.current = null
+    lastPathRef.current = ''
+  }, [])
 
   return useMemo(
     () => ({

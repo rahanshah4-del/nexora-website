@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { doc, onSnapshot, serverTimestamp, setDoc } from 'firebase/firestore'
 import { db } from '../lib/firebase.js'
 import { useUser } from './useUser.js'
@@ -62,6 +62,16 @@ export function useBusinessSettings() {
   const normalizedBusinessType = normalizeBusinessType(businessType)
   const docId = useMemo(() => businessSettingsId(normalizedBusinessType), [normalizedBusinessType])
 
+  // Stable refs — onSnapshot callback reads latest data from refs,
+  // so the subscription effect only re-runs when the Firestore doc PATH changes.
+  const userDocRef = useRef(userDoc)
+  userDocRef.current = userDoc
+  const firebaseUserRef = useRef(firebaseUser)
+  firebaseUserRef.current = firebaseUser
+  const unsubRef = useRef(null)
+  const lastPathRef = useRef('')
+
+  // Subscription effect — only re-subscribes when path actually changes
   useEffect(() => {
     if (!db || !workspaceId || !docId) {
       Promise.resolve().then(() => {
@@ -69,22 +79,32 @@ export function useBusinessSettings() {
         setLoading(false)
         setError(db ? '' : 'Secure Cloud Sync is not available right now.')
       })
-      return undefined
+      return
     }
+
+    const pathKey = `workspaces/${workspaceId}/businessSettings/${docId}`
+    if (lastPathRef.current === pathKey) return // path unchanged — keep existing subscription
+    lastPathRef.current = pathKey
+
+    // Tear down old subscription before creating new one
+    unsubRef.current?.()
+    unsubRef.current = null
 
     setLoading(true)
     const ref = doc(db, 'workspaces', workspaceId, 'businessSettings', docId)
-    const unsub = onSnapshot(
+    unsubRef.current = onSnapshot(
       ref,
       (snap) => {
-        const fallbackName = userDoc?.company || userDoc?.workspaceName || ''
-        const fallbackEmail = userDoc?.email || firebaseUser?.email || ''
+        const ud = userDocRef.current || {}
+        const fb = firebaseUserRef.current || {}
+        const fallbackName = ud.company || ud.workspaceName || ''
+        const fallbackEmail = ud.email || fb.email || ''
         setSettings({
           ...defaultBusinessSettings,
           businessName: fallbackName,
           email: fallbackEmail,
-          phone: userDoc?.phone || '',
-          address: userDoc?.companyAddress || userDoc?.address || '',
+          phone: ud.phone || '',
+          address: ud.companyAddress || ud.address || '',
           ...(snap.exists() ? snap.data() : {}),
           businessType: normalizedBusinessType,
         })
@@ -97,9 +117,14 @@ export function useBusinessSettings() {
         setError(clientSafeMessage(err, 'Unable to load business settings.'))
       },
     )
+  }, [docId, normalizedBusinessType, workspaceId])
 
-    return () => unsub()
-  }, [docId, firebaseUser?.email, normalizedBusinessType, userDoc, workspaceId])
+  // Unmount-only cleanup — tears down the subscription when the component unmounts
+  useEffect(() => () => {
+    unsubRef.current?.()
+    unsubRef.current = null
+    lastPathRef.current = ''
+  }, [])
 
   const saveSettings = useCallback(
     async (patch = {}) => {
