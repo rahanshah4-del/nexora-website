@@ -44,12 +44,19 @@ export function loadRestaurantMenuItems() {
   }
 }
 
-export function saveRestaurantMenuItems(items) {
+export function saveRestaurantMenuItems(items, workspaceId, userId) {
   if (typeof window === 'undefined') return
   const k = _menuKey()
   _menuItemsCache = null
   window.localStorage.setItem(k, JSON.stringify(Array.isArray(items) ? items : []))
   notifyLocalDataChanged(k)
+
+  // Phase 1 dual-write: also sync to Firestore (debounced, diff-based)
+  if (workspaceId && userId) {
+    import('./restaurantFirestoreSync.js').then(({ syncMenuItemsToFirestore }) => {
+      syncMenuItemsToFirestore(workspaceId, userId, items)
+    }).catch(() => { /* dynamic import failed — silently skip */ })
+  }
 }
 
 let _menuCatCache = null

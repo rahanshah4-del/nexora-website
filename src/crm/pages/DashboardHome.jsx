@@ -1,7 +1,7 @@
 import { useUser } from '../hooks/useUser.js'
 import { calculateRetailPosRevenue } from '../lib/retailRevenueDedup.js'
 import { Link } from 'react-router-dom'
-import { memo, useEffect, useMemo } from 'react'
+import { memo, useEffect, useMemo, useState } from 'react'
 import { useFeatureDiscovery } from '../hooks/useFeatureDiscovery.js'
 import { featureKeyForRoute } from '../lib/featureRegistry.js'
 import FeatureBadge from '../components/ui/FeatureBadge.jsx'
@@ -84,6 +84,7 @@ import { calculateSchoolDashboardStats } from '../lib/schoolDashboardCalculation
 import { isWithinRestaurantBusinessDay, formatRestaurantBusinessWindow } from '../lib/restaurantBusinessDay.js'
 import { loadRestaurantOrders } from '../data/restaurantOrders.js'
 import { restaurantOrdersStorageKey } from '../data/restaurantOrders.js'
+import { loadFirestoreOrders } from '../data/restaurantFirestoreSync.js'
 import { normalizeInvoiceOrders } from '../data/restaurantInvoiceOrders.js'
 import { useLocalData } from '../hooks/useLocalData.js'
 
@@ -213,18 +214,18 @@ function hdToneForText(text = '') {
   return hdToneMap.cyan
 }
 
-function HdDashboardIcon({ icon: Icon, tone = hdToneMap.sky, className = 'h-10 w-10', iconClassName = 'h-5 w-5' }) {
+const HdDashboardIcon = memo(function HdDashboardIcon({ icon: Icon, tone = hdToneMap.sky, className = 'h-10 w-10', iconClassName = 'h-5 w-5' }) {
   return (
     <span className={cn('nexora-hd-icon bg-gradient-to-br shadow-md', className, tone)}>
       <Icon className={iconClassName} />
     </span>
   )
-}
+});
 
 const MetricCard = memo(function MetricCard({ icon: Icon, label, value, helper, tone = 'sky', loading = false }) {
   return (
     <div className="min-w-0">
-      <Card className="h-full rounded-[1.5rem] p-4">
+      <Card className="h-full rounded-[1.5rem] p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
         {loading ? (
           <SkeletonLoader lines={3} />
         ) : (
@@ -343,7 +344,6 @@ const DataRow = memo(function DataRow({ label, value, badge }) {
 const DASHBOARD_RECENT_LIMIT = 25
 
 const restaurantQuickActions = [
-  { title: 'New Order', detail: 'Start dine-in or takeaway', to: '/app/orders', icon: HiOutlineShoppingBag },
   { title: 'Open KOT', detail: 'Kitchen ticket queue', to: '/app/orders-kot', icon: HiOutlineClipboardDocumentCheck },
   { title: 'Floor View', detail: 'Tables and occupancy', to: '/app/tables', icon: HiOutlineTableCells },
   { title: 'Kitchen Display', detail: 'Live prep lanes', to: '/app/kitchen-display', icon: HiOutlineComputerDesktop },
@@ -354,31 +354,62 @@ function RestaurantDashboard({ workspaceName, workspaceId }) {
   const { invoices } = useInvoices({ limitCount: DASHBOARD_RECENT_LIMIT })
   const { settings } = useBusinessSettings()
   const { data: savedOrders } = useLocalData(loadRestaurantOrders, [restaurantOrdersStorageKey])
+  const [fsOrders, setFsOrders] = useState([])
+  useEffect(() => {
+    if (!workspaceId) return
+    loadFirestoreOrders(workspaceId).then((fs) => setFsOrders(Array.isArray(fs) ? fs : [])).catch(() => {})
+  }, [workspaceId])
+  const mergedOrders = useMemo(() => {
+    const localIds = new Set(savedOrders.map((o) => o.orderNumber).filter(Boolean))
+    const newFs = fsOrders.filter((o) => o.orderNumber && !localIds.has(o.orderNumber))
+    return [...savedOrders, ...newFs]
+  }, [savedOrders, fsOrders])
 
   // ── Reservation POS Bridge ──
   const reservationBridge = useReservationPosBridge({ workspaceId, tables: [] })
   const { todayReservations, reservedTableIds } = reservationBridge
-  const upcomingReservations = todayReservations.filter((r) => r.status === 'confirmed' || r.status === 'pending')
-  const seatedReservations = todayReservations.filter((r) => r.status === 'seated')
-  const completedReservations = todayReservations.filter((r) => r.status === 'completed')
+  const upcomingReservations = useMemo(() => todayReservations.filter((r) => r.status === 'confirmed' || r.status === 'pending'), [todayReservations])
+  const seatedReservations = useMemo(() => todayReservations.filter((r) => r.status === 'seated'), [todayReservations])
+  const completedReservations = useMemo(() => todayReservations.filter((r) => r.status === 'completed'), [todayReservations])
   const invoiceOrders = useMemo(() => normalizeInvoiceOrders(invoices), [invoices])
-  const todaySimpleOrders = savedOrders.filter((order) => isWithinRestaurantBusinessDay(order.createdAt || order.date, settings))
-  const todayInvoiceOrders = invoiceOrders.filter((order) => isWithinRestaurantBusinessDay(order.createdAt || order.date, settings))
-  const todayOrders = [...todaySimpleOrders, ...todayInvoiceOrders]
-  const businessDayLabel = formatRestaurantBusinessWindow(settings)
-  const tableRows = Array.from(new Set(todaySimpleOrders.map((order) => order.table).filter(Boolean))).map((table) => ({ status: 'occupied', table }))
-  const restaurantMetrics = restaurantDashboardMetrics({
+  const todaySimpleOrders = useMemo(
+    () => mergedOrders.filter((order) => isWithinRestaurantBusinessDay(order.createdAt || order.date, settings)),
+    [mergedOrders, settings],
+  )
+  const todayInvoiceOrders = useMemo(
+    () => invoiceOrders.filter((order) => isWithinRestaurantBusinessDay(order.createdAt || order.date, settings)),
+    [invoiceOrders, settings],
+  )
+  const todayOrders = useMemo(
+    () => [...todaySimpleOrders, ...todayInvoiceOrders],
+    [todaySimpleOrders, todayInvoiceOrders],
+  )
+  const businessDayLabel = useMemo(() => formatRestaurantBusinessWindow(settings), [settings])
+  const tableRows = useMemo(
+    () => Array.from(new Set(todaySimpleOrders.map((order) => order.table).filter(Boolean))).map((table) => ({ status: 'occupied', table })),
+    [todaySimpleOrders],
+  )
+  const restaurantMetrics = useMemo(() => restaurantDashboardMetrics({
     cartRows: todayOrders.flatMap((order) => order.cartRows || []),
     tables: tableRows,
     kotRows: todaySimpleOrders.map((order) => ({ status: String(order.orderStatus || '').toLowerCase() })),
     bills: todayOrders.map((order) => ({ status: String(order.paymentStatus || '').toLowerCase() })),
-  })
-  const restaurantSummary = calculateRestaurantOrderSummary(todayOrders)
+  }), [todayOrders, todaySimpleOrders, tableRows])
+  const restaurantSummary = useMemo(() => calculateRestaurantOrderSummary(todayOrders), [todayOrders])
   const todayRestaurantSales = restaurantSummary.totalSales
-  const pendingKot = todaySimpleOrders.filter((order) => String(order.orderStatus || '').toLowerCase() === 'pending').length
-  const preparingKot = todaySimpleOrders.filter((order) => String(order.orderStatus || '').toLowerCase() === 'preparing').length
-  const readyKot = todaySimpleOrders.filter((order) => String(order.orderStatus || '').toLowerCase() === 'ready').length
-  const restaurantStats = [
+  const pendingKot = useMemo(
+    () => todaySimpleOrders.filter((order) => String(order.orderStatus || '').toLowerCase() === 'pending').length,
+    [todaySimpleOrders],
+  )
+  const preparingKot = useMemo(
+    () => todaySimpleOrders.filter((order) => String(order.orderStatus || '').toLowerCase() === 'preparing').length,
+    [todaySimpleOrders],
+  )
+  const readyKot = useMemo(
+    () => todaySimpleOrders.filter((order) => String(order.orderStatus || '').toLowerCase() === 'ready').length,
+    [todaySimpleOrders],
+  )
+  const restaurantStats = useMemo(() => [
     { label: 'Today Orders', value: formatCompact(todaySimpleOrders.length), helper: `Business day: ${businessDayLabel}`, icon: HiOutlineShoppingBag, tone: 'sky' },
     { label: 'Invoice Orders', value: formatCompact(todayInvoiceOrders.length), helper: 'A4 invoice bills in business day', icon: HiOutlineDocumentText, tone: 'violet' },
     { label: 'Active KOT', value: formatCompact(restaurantMetrics.activeKot), helper: 'Kitchen tickets in progress', icon: HiOutlineClipboardDocumentCheck, tone: 'violet' },
@@ -387,7 +418,7 @@ function RestaurantDashboard({ workspaceName, workspaceId }) {
     { label: 'Paid Amount', value: formatRestaurantCurrency(restaurantSummary.paidAmount), helper: 'Received payments today', icon: HiOutlineBanknotes, tone: 'emerald' },
     { label: 'Pending Bills', value: formatCompact(restaurantMetrics.pendingBills), helper: `${formatRestaurantCurrency(restaurantSummary.dueAmount)} due`, icon: HiOutlineReceiptPercent, tone: 'violet' },
     { label: 'Kitchen Ready', value: formatCompact(restaurantMetrics.kitchenReady), helper: 'Orders ready to serve', icon: HiOutlineCheckCircle, tone: 'sky' },
-  ]
+  ], [todaySimpleOrders, todayInvoiceOrders, businessDayLabel, restaurantMetrics, todayRestaurantSales, restaurantSummary])
 
   return (
     <div className="min-w-0 space-y-5">

@@ -62,7 +62,6 @@ function Toast({ message, onClose }) {
 }
 
 const POS_STATUS_ROUTES = new Set([
-  '/app/orders',
   '/app/pos',
   '/app/pos-orders',
   '/app/pos-discounts',

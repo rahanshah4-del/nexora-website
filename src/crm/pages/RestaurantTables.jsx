@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
+import { useUser } from '../hooks/useUser.js'
 import {
   HiOutlineArrowsRightLeft,
   HiOutlineCheckCircle,
@@ -86,9 +87,16 @@ export function loadRestaurantFloors() {
   }
 }
 
-function saveRestaurantFloors(floors) {
+function saveRestaurantFloors(floors, workspaceId, userId) {
   if (typeof window === 'undefined') return
   window.localStorage.setItem(tablesKey(), JSON.stringify(normalizeFloors(floors)))
+
+  // Phase 1 dual-write: also sync tables to Firestore (debounced, diff-based)
+  if (workspaceId && userId) {
+    import('../data/restaurantFirestoreSync.js').then(({ syncFloorsToFirestore }) => {
+      syncFloorsToFirestore(workspaceId, userId, floors)
+    }).catch(() => { /* dynamic import failed — silently skip */ })
+  }
 }
 
 function syncFloorsWithActiveOrders(floors) {
@@ -128,6 +136,7 @@ const statusMeta = {
 
 export default function RestaurantTablesPage() {
   const navigate = useNavigate()
+  const { workspaceId, userId, firebaseUser } = useUser()
   const [floors, setFloors] = useState(() => loadRestaurantFloors())
   const [activeFloor, setActiveFloor] = useState(initialFloors[0].name)
   const [selectedTableId, setSelectedTableId] = useState('')
@@ -149,8 +158,8 @@ export default function RestaurantTablesPage() {
   }, [])
 
   useEffect(() => {
-    saveRestaurantFloors(floors)
-  }, [floors])
+    saveRestaurantFloors(floors, workspaceId, userId || firebaseUser?.uid)
+  }, [floors, workspaceId, userId, firebaseUser])
 
   const floor = floors.find((item) => item.name === activeFloor) || floors[0]
   const selectedTable = useMemo(

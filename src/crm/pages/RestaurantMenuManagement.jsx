@@ -77,7 +77,7 @@ function ToggleField({ label, checked, onChange }) {
 }
 
 export default function RestaurantMenuManagementPage() {
-  const { workspaceId, businessType } = useUser()
+  const { workspaceId, businessType, userId, firebaseUser } = useUser()
   const trackFirstActivity = useTrackFirstActivity()
   const { ingredients, addIngredient } = useRestaurantIngredients({ enabled: Boolean(workspaceId) })
   const { recipes, saveRecipe } = useRestaurantRecipes({ enabled: Boolean(workspaceId) })
@@ -137,6 +137,12 @@ export default function RestaurantMenuManagementPage() {
         const tablesKey = scopedKey('nexora.restaurant.tables.v1')
         window.localStorage.setItem(tablesKey, JSON.stringify(restaurantDemoFloors))
       } catch { /* Ignore storage failures */ }
+      // 3. Also write demo tables to Firestore (fire-and-forget)
+      try {
+        import('../data/restaurantFirestoreSync.js').then(({ syncDemoTablesToFirestore }) => {
+          syncDemoTablesToFirestore(workspaceId, userId || firebaseUser?.uid, restaurantDemoFloors)
+        }).catch(() => {})
+      } catch { /* dynamic import failed — silently skip */ }
       markDemoMenuLoaded()
       setDemoLoaded(true)
       setDemoLoading(false)
@@ -144,8 +150,8 @@ export default function RestaurantMenuManagementPage() {
   }
 
   useEffect(() => {
-    saveRestaurantMenuItems(items)
-  }, [items])
+    saveRestaurantMenuItems(items, workspaceId, userId || firebaseUser?.uid)
+  }, [items, workspaceId, userId, firebaseUser])
 
   useEffect(() => {
     saveRestaurantMenuCategories(categories)

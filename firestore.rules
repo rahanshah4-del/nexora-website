@@ -6,8 +6,8 @@ return request.auth!=null;
 }
 function backendAdmin() {
 return signedIn()
-&& request.auth.token.email_verified==true
-&& request.auth.token.email in ['admin@nexora.com','rahanshah2@gmail.com','farhanshah2@gmail.com'];
+&& ('email_verified' in request.auth.token) && request.auth.token.email_verified==true
+&& ('email' in request.auth.token) && request.auth.token.email in ['admin@nexora.com','rahanshah2@gmail.com','farhanshah2@gmail.com'];
 }
 function paymentWorker() {
 return signedIn()&&request.auth.uid=='s1CRduKudqM96Tp6g9E7XcTVzHF2';
@@ -344,11 +344,11 @@ function marketingAdmin() {
 return backendAdmin()
 || (
 signedIn()
-&& request.auth.token.email_verified!=false
+&& (!('email_verified' in request.auth.token) || request.auth.token.email_verified!=false)
 && (
-request.auth.token.admin==true
-|| request.auth.token.owner==true
-|| request.auth.token.role in ['admin','Admin','ADMIN','owner','Owner','OWNER']
+(('admin' in request.auth.token) && request.auth.token.admin==true)
+|| (('owner' in request.auth.token) && request.auth.token.owner==true)
+|| (('role' in request.auth.token) && request.auth.token.role in ['admin','Admin','ADMIN','owner','Owner','OWNER'])
 )
 );
 }
@@ -455,18 +455,43 @@ return hasModulePermission(workspaceId,moduleKey,action)
 }
 function canReadModule(workspaceId,moduleKey) {
 return workspaceAdmin(workspaceId)
-|| (workspaceMember(workspaceId)&&permissionDocExists(workspaceId)&&hasAnyModulePermission(workspaceId,moduleKey,'view'));
+|| (
+activeSignedIn()
+&& workspaceActive(workspaceId)
+&& profileWorkspaceMatches(workspaceId)
+&& permissionDocExists(workspaceId)
+&& hasAnyModulePermission(workspaceId,moduleKey,'view')
+);
 }
 function canCreateModule(workspaceId,moduleKey) {
 return workspaceAdmin(workspaceId)
-|| (workspaceMember(workspaceId)&&permissionDocExists(workspaceId)&&hasAnyModulePermission(workspaceId,moduleKey,'create'));
+|| (
+activeSignedIn()
+&& workspaceActive(workspaceId)
+&& profileWorkspaceMatches(workspaceId)
+&& permissionDocExists(workspaceId)
+&& hasAnyModulePermission(workspaceId,moduleKey,'create')
+);
 }
 function canEditModule(workspaceId,moduleKey) {
 return workspaceAdmin(workspaceId)
-|| (workspaceMember(workspaceId)&&permissionDocExists(workspaceId)&&hasAnyModulePermission(workspaceId,moduleKey,'edit'));
+|| (
+activeSignedIn()
+&& workspaceActive(workspaceId)
+&& profileWorkspaceMatches(workspaceId)
+&& permissionDocExists(workspaceId)
+&& hasAnyModulePermission(workspaceId,moduleKey,'edit')
+);
 }
 function canDeleteModule(workspaceId,moduleKey) {
-return workspaceAdmin(workspaceId)||(workspaceMember(workspaceId)&&permissionDocExists(workspaceId)&&hasAnyModulePermission(workspaceId,moduleKey,'delete'));
+return workspaceAdmin(workspaceId)
+|| (
+activeSignedIn()
+&& workspaceActive(workspaceId)
+&& profileWorkspaceMatches(workspaceId)
+&& permissionDocExists(workspaceId)
+&& hasAnyModulePermission(workspaceId,moduleKey,'delete')
+);
 }
 function canCreatePosSale(workspaceId) {
 return workspaceAdmin(workspaceId)
@@ -603,7 +628,7 @@ allow delete: if backendAdmin()
 }
 match /staffInviteEmails/{emailKey} {
 allow read: if backendAdmin()
-|| (signedIn()&&resource.data.email is string&&request.auth.token.email==resource.data.email)
+|| (signedIn()&&resource.data.email is string&&('email' in request.auth.token)&&request.auth.token.email==resource.data.email)
 || (signedIn()&&resource.data.workspaceId is string&&workspaceAdmin(resource.data.workspaceId));
 allow create,update: if signedIn()
 && request.resource.data.uid is string
@@ -725,12 +750,6 @@ allow create: if (canCreatePosSale(workspaceId)||canCreateModule(workspaceId,'in
 allow update: if false;
 allow delete: if canDeleteModule(workspaceId,'inventory');
 }
-match /menuItems/{docId} {
-allow read: if canReadModule(workspaceId,'menuManagement')||canReadModule(workspaceId,'orders')||canReadModule(workspaceId,'ordersKot');
-allow create: if canCreateModule(workspaceId,'menuManagement')&&safeCreate(workspaceId);
-allow update: if canEditModule(workspaceId,'menuManagement')&&safeUpdate(workspaceId);
-allow delete: if canDeleteModule(workspaceId,'menuManagement');
-}
 match /kot/{docId} {
 allow read: if canReadModule(workspaceId,'ordersKot')||canReadModule(workspaceId,'orders');
 allow create: if (canCreateModule(workspaceId,'ordersKot')||canCreateModule(workspaceId,'orders'))&&safeCreate(workspaceId);
@@ -774,9 +793,9 @@ allow update: if false;
 allow delete: if false;
 }
 match /loyaltyCoupons/{docId} {
-allow read: if canReadModule(workspaceId,'loyalty')||canCreatePosSale(workspaceId);
+allow read: if canCreatePosSale(workspaceId)||canReadModule(workspaceId,'loyalty');
 allow create: if canCreateModule(workspaceId,'loyalty')&&safeCreate(workspaceId);
-allow update: if canEditModule(workspaceId,'loyalty')&&safeUpdate(workspaceId);
+allow update: if (canEditModule(workspaceId,'loyalty')||canEditModule(workspaceId,'orders')||canEditModule(workspaceId,'posOrders'))&&safeUpdate(workspaceId);
 allow delete: if canDeleteModule(workspaceId,'loyalty');
 }
 match /loyaltyReferrals/{docId} {
@@ -885,10 +904,10 @@ allow update: if canEditModule(workspaceId,'business_services')&&safeUpdate(work
 allow delete: if canDeleteModule(workspaceId,'business_services');
 }
 match /{collectionName}/{docId} {
-allow read: if canReadModule(workspaceId,collectionName);
-allow create: if canCreateModule(workspaceId,collectionName)&&safeCreate(workspaceId);
-allow update: if canEditModule(workspaceId,collectionName)&&safeUpdate(workspaceId);
-allow delete: if canDeleteModule(workspaceId,collectionName);
+allow read: if !(collectionName in ['orders','restaurantReservations','restaurantWaitlist','restaurantReservationSettings','restaurantReservationHistory','restaurantProductionBatches','restaurantKitchenPrep','restaurantProductionWaste','restaurantFinishedInventory','restaurantIngredients','restaurantRecipes','restaurantDeductions','restaurantWaste','restaurantCashSessions','restaurantPayments','restaurantRefunds','restaurantCashMovements','menuItems','tables','supportTickets','businessServiceRequests','loyaltyAccounts','loyaltyBirthdayQueue','loyaltyCampaigns','loyaltyCoupons','loyaltyPointsLedger','loyaltyRedemptions','loyaltyReferrals','loyaltyRewards','loyaltySettings','loyaltyTiers','loyaltyWallet'])&&canReadModule(workspaceId,collectionName);
+allow create: if !(collectionName in ['orders','restaurantReservations','restaurantWaitlist','restaurantReservationSettings','restaurantReservationHistory','restaurantProductionBatches','restaurantKitchenPrep','restaurantProductionWaste','restaurantFinishedInventory','restaurantIngredients','restaurantRecipes','restaurantDeductions','restaurantWaste','restaurantCashSessions','restaurantPayments','restaurantRefunds','restaurantCashMovements','menuItems','tables','supportTickets','businessServiceRequests','loyaltyAccounts','loyaltyBirthdayQueue','loyaltyCampaigns','loyaltyCoupons','loyaltyPointsLedger','loyaltyRedemptions','loyaltyReferrals','loyaltyRewards','loyaltySettings','loyaltyTiers','loyaltyWallet'])&&canCreateModule(workspaceId,collectionName)&&safeCreate(workspaceId);
+allow update: if !(collectionName in ['orders','restaurantReservations','restaurantWaitlist','restaurantReservationSettings','restaurantReservationHistory','restaurantProductionBatches','restaurantKitchenPrep','restaurantProductionWaste','restaurantFinishedInventory','restaurantIngredients','restaurantRecipes','restaurantDeductions','restaurantWaste','restaurantCashSessions','restaurantPayments','restaurantRefunds','restaurantCashMovements','menuItems','tables','supportTickets','businessServiceRequests','loyaltyAccounts','loyaltyBirthdayQueue','loyaltyCampaigns','loyaltyCoupons','loyaltyPointsLedger','loyaltyRedemptions','loyaltyReferrals','loyaltyRewards','loyaltySettings','loyaltyTiers','loyaltyWallet'])&&canEditModule(workspaceId,collectionName)&&safeUpdate(workspaceId);
+allow delete: if !(collectionName in ['orders','restaurantReservations','restaurantWaitlist','restaurantReservationSettings','restaurantReservationHistory','restaurantProductionBatches','restaurantKitchenPrep','restaurantProductionWaste','restaurantFinishedInventory','restaurantIngredients','restaurantRecipes','restaurantDeductions','restaurantWaste','restaurantCashSessions','restaurantPayments','restaurantRefunds','restaurantCashMovements','menuItems','tables','supportTickets','businessServiceRequests','loyaltyAccounts','loyaltyBirthdayQueue','loyaltyCampaigns','loyaltyCoupons','loyaltyPointsLedger','loyaltyRedemptions','loyaltyReferrals','loyaltyRewards','loyaltySettings','loyaltyTiers','loyaltyWallet'])&&canDeleteModule(workspaceId,collectionName);
 }
 	match /restaurantReservations/{docId} {
 	allow read: if canReadModule(workspaceId,'reservations')||canReadModule(workspaceId,'orders')||canReadModule(workspaceId,'tables');
@@ -982,6 +1001,24 @@ allow delete: if canDeleteModule(workspaceId,collectionName);
 	allow read: if canReadModule(workspaceId,'orders');
 	allow create: if canCreateModule(workspaceId,'orders')&&safeCreate(workspaceId);
 	allow update: if false;
+	allow delete: if false;
+	}
+	match /menuItems/{docId} {
+	allow read: if canReadModule(workspaceId,'orders')||canReadModule(workspaceId,'ordersKot')||canReadModule(workspaceId,'menuManagement');
+	allow create: if canCreateModule(workspaceId,'menuManagement')&&safeCreate(workspaceId);
+	allow update: if canEditModule(workspaceId,'menuManagement')&&safeUpdate(workspaceId);
+	allow delete: if canDeleteModule(workspaceId,'menuManagement');
+	}
+	match /tables/{docId} {
+	allow read: if canReadModule(workspaceId,'tables')||canReadModule(workspaceId,'orders')||canReadModule(workspaceId,'ordersKot')||canReadModule(workspaceId,'reservations');
+	allow create: if canCreateModule(workspaceId,'tables')&&safeCreate(workspaceId);
+	allow update: if canEditModule(workspaceId,'tables')&&safeUpdate(workspaceId);
+	allow delete: if canDeleteModule(workspaceId,'tables');
+	}
+	match /orders/{orderId} {
+	allow read: if canReadModule(workspaceId,'orders')||canReadModule(workspaceId,'ordersKot')||canReadModule(workspaceId,'posOrders');
+	allow create: if canCreateModule(workspaceId,'orders')&&safeCreate(workspaceId);
+	allow update: if canEditModule(workspaceId,'orders')&&safeUpdate(workspaceId);
 	allow delete: if false;
 	}
 }

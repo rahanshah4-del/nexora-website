@@ -50,12 +50,19 @@ export function loadRestaurantOrders() {
   return _normalizedCache
 }
 
-export function saveRestaurantOrders(orders) {
+export function saveRestaurantOrders(orders, workspaceId, userId) {
   if (typeof window === 'undefined') return
   const k = _key()
   invalidateCache()
   window.localStorage.setItem(k, JSON.stringify(Array.isArray(orders) ? orders : []))
   notifyLocalDataChanged(k)
+
+  // Phase 1 dual-write: also sync orders to Firestore (debounced, diff-based)
+  if (workspaceId && userId) {
+    import('./restaurantFirestoreSync.js').then(({ syncOrdersToFirestore }) => {
+      syncOrdersToFirestore(workspaceId, userId, orders)
+    }).catch(() => { /* dynamic import failed — silently skip */ })
+  }
 }
 
 export function clearRestaurantOrders() {
@@ -74,7 +81,7 @@ export function getNextRestaurantOrderNumber(seed = 45265) {
   return `#${maxOrderNumber + 1}`
 }
 
-export function upsertRestaurantOrder(order) {
+export function upsertRestaurantOrder(order, workspaceId, userId) {
   if (!order?.orderNumber) return []
   const orders = readStoredOrders()
   const nextOrder = normalizeRestaurantOrder(order)
@@ -82,7 +89,7 @@ export function upsertRestaurantOrder(order) {
   const nextOrders = exists
     ? orders.map((row) => (row?.orderNumber === nextOrder.orderNumber ? { ...row, ...nextOrder } : row))
     : [nextOrder, ...orders]
-  saveRestaurantOrders(nextOrders)
+  saveRestaurantOrders(nextOrders, workspaceId, userId)
   return nextOrders
 }
 

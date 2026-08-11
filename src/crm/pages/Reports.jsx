@@ -1728,9 +1728,14 @@ function RestaurantReports() {
   const { data: customers = [] } = useLocalData(loadRestaurantCustomers, [restaurantCustomersStorageKey])
   const { data: savedRestaurantOrders = [] } = useLocalData(loadRestaurantOrders, [restaurantOrdersStorageKey])
   const invoiceOrders = useMemo(() => normalizeInvoiceOrders(invoicesApi.invoices), [invoicesApi.invoices])
+  const [firestoreOrders, setFirestoreOrders] = useState([])
+  useEffect(() => {
+    if (!reportsWorkspaceId) return
+    loadFirestoreOrders(reportsWorkspaceId).then((fs) => setFirestoreOrders(Array.isArray(fs) ? fs : [])).catch(() => {})
+  }, [reportsWorkspaceId])
   const reportOrders = useMemo(
-    () => dedupeRestaurantReportOrders(savedRestaurantOrders, invoiceOrders),
-    [invoiceOrders, savedRestaurantOrders],
+    () => dedupeRestaurantReportOrders([...savedRestaurantOrders, ...firestoreOrders], invoiceOrders),
+    [invoiceOrders, savedRestaurantOrders, firestoreOrders],
   )
   const openingCash = safeNumber(
     settings.openingCash ?? settings.cashDrawerOpening ?? settings.openingBalance ?? settings.cashInHand ?? 0,

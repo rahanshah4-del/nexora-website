@@ -1,6 +1,6 @@
 import '../index.css'
 import { AnimatePresence, motion } from 'framer-motion'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import {
   HiOutlineArrowLeft,
@@ -13,13 +13,9 @@ import {
 } from 'react-icons/hi2'
 import Sidebar from '../components/sidebar/Sidebar.jsx'
 import TopNav from '../components/navbar/TopNav.jsx'
-import ProductSelectionModal from '../components/product/ProductSelectionModal.jsx'
-import OnboardingWizard from '../components/onboarding/OnboardingWizard.jsx'
 import Badge from '../components/ui/Badge.jsx'
 import Button from '../components/ui/Button.jsx'
 import PageLoader from '../components/ui/PageLoader.jsx'
-import { MaintenanceBlock } from '../../components/MaintenanceMode.jsx'
-import PasskeySetupPrompt from '../../components/security/PasskeySetupPrompt.jsx'
 import usePlatformMaintenance from '../../hooks/usePlatformMaintenance.js'
 import { isUserCustomVerified } from '../../lib/authRouteState.js'
 import {
@@ -47,8 +43,14 @@ import { setStorageScope } from '../lib/localDataEvents.js'
 import { goToWorkspace } from '../../lib/workspaceNavigation.js'
 import { safeTrackMetaEventOnce } from '../../lib/metaPixel.js'
 import logoUrl from '../../assets/logo/nexora-logo.svg'
-import ReviewPromptModal from '../../components/review/ReviewPromptModal.jsx'
 import useReviewPrompt from '../hooks/useReviewPrompt.js'
+
+// Code-split heavy modals — only load when triggered
+const ProductSelectionModal = lazy(() => import('../components/product/ProductSelectionModal.jsx'))
+const OnboardingWizard = lazy(() => import('../components/onboarding/OnboardingWizard.jsx'))
+const MaintenanceBlockLazy = lazy(() => import('../../components/MaintenanceMode.jsx').then((m) => ({ default: m.MaintenanceBlock })))
+const PasskeySetupPromptLazy = lazy(() => import('../../components/security/PasskeySetupPrompt.jsx'))
+const ReviewPromptModalLazy = lazy(() => import('../../components/review/ReviewPromptModal.jsx'))
 
 const WORKSPACE_INACTIVITY_LIMIT_MS = 15 * 60 * 1000
 
@@ -466,7 +468,7 @@ export default function DashboardLayout() {
     [normalizedBusinessType],
   )
   const maintenance = usePlatformMaintenance(maintenanceContext)
-  const isCompactPosRoute = location.pathname === '/app/orders'
+  const isCompactPosRoute = false // Legacy POS Till route removed — kept as false for safe fallthrough
   const isStandalonePosBillingRoute = location.pathname === '/app/pos'
   const staffAccount = Boolean(userDoc?.isStaff === true || workspaceAccess.isStaff)
   const accessReady = Boolean(!workspaceAccess.loading && workspaceAccess.accessReady !== false)
@@ -879,7 +881,7 @@ export default function DashboardLayout() {
     const allowedSet = new Set(allowedModules)
     const roleValue = String(userDoc?.role || workspaceAccess.role || '').trim().toLowerCase()
     const cashierPriority = normalizedBusinessType === 'Restaurant POS'
-      ? ['orders', 'ordersKot', 'tables']
+      ? ['orders', 'ordersKot', 'tables', 'reservations']
       : ['pos', 'posOrders']
     const cashierModule = staffAccount && roleValue === 'cashier'
       ? cashierPriority.find((moduleKey) => allowedSet.has(moduleKey))
@@ -997,7 +999,7 @@ export default function DashboardLayout() {
     if (isStandalonePosBillingRoute) {
       return (
         <div className="min-h-dvh bg-slate-50 text-slate-950">
-          <MaintenanceBlock state={maintenance} compact />
+          <Suspense fallback={null}><MaintenanceBlockLazy state={maintenance} compact /></Suspense>
         </div>
       )
     }
@@ -1017,7 +1019,7 @@ export default function DashboardLayout() {
             <TopNav collapsed={effectiveSidebarCollapsed} onOpenSidebar={() => setMobileOpen(true)} onSwitchProduct={openProductSwitcher} />
           )}
           <main className="crm-main min-w-0 flex-1 overflow-x-clip px-3 pb-5 pt-4 sm:px-5 lg:px-6 lg:pb-6 lg:pt-5">
-            <MaintenanceBlock state={maintenance} compact />
+            <Suspense fallback={null}><MaintenanceBlockLazy state={maintenance} compact /></Suspense>
           </main>
         </div>
       </div>
@@ -1061,33 +1063,41 @@ export default function DashboardLayout() {
         </main>
       </div>
 
-      <ProductSelectionModal
-        open={productModalOpen && !onboardingOpen}
-        session={sessionInfo}
-        selectedWorkspace={selectedWorkspace}
-        developerOverride={developerOverride}
-        lockedWorkspaceId={lockedWorkspaceId}
-        onSelect={selectWorkspace}
-        onContinueLast={continueLastWorkspace}
-        onClose={continueLastWorkspace}
-      />
+      <Suspense fallback={null}>
+        {productModalOpen && !onboardingOpen ? (
+          <ProductSelectionModal
+            open={productModalOpen && !onboardingOpen}
+            session={sessionInfo}
+            selectedWorkspace={selectedWorkspace}
+            developerOverride={developerOverride}
+            lockedWorkspaceId={lockedWorkspaceId}
+            onSelect={selectWorkspace}
+            onContinueLast={continueLastWorkspace}
+            onClose={continueLastWorkspace}
+          />
+        ) : null}
+      </Suspense>
 
-      <OnboardingWizard open={onboardingOpen} onComplete={() => setProductModalOpen(true)} />
+      <Suspense fallback={null}>
+        {onboardingOpen ? <OnboardingWizard open={onboardingOpen} onComplete={() => setProductModalOpen(true)} /> : null}
+      </Suspense>
 
-      <PasskeySetupPrompt
-        emailVerified={passkeyEmailVerified}
-        enabled={Boolean(
-          ready &&
-            isAuthenticated &&
-            passkeyEmailVerified &&
-            moduleEnteredForPasskey &&
-            hasActiveAccess &&
-            !isBlocked &&
-            !onboardingOpen &&
-            !productModalOpen &&
-            !isCompactPosRoute,
-        )}
-      />
+      <Suspense fallback={null}>
+        <PasskeySetupPromptLazy
+          emailVerified={passkeyEmailVerified}
+          enabled={Boolean(
+            ready &&
+              isAuthenticated &&
+              passkeyEmailVerified &&
+              moduleEnteredForPasskey &&
+              hasActiveAccess &&
+              !isBlocked &&
+              !onboardingOpen &&
+              !productModalOpen &&
+              !isCompactPosRoute,
+          )}
+        />
+      </Suspense>
 
       <AnimatePresence>
         {mobileOpen ? (
@@ -1106,14 +1116,16 @@ export default function DashboardLayout() {
       </AnimatePresence>
 
       {/* ── Apple-style review prompt (appears after 3-4 days of usage) ── */}
-      <ReviewPromptModal
-        open={reviewPrompt.showPrompt}
-        onClose={reviewPrompt.handleClose}
-        onSubmit={reviewPrompt.handleSubmit}
-        submitting={reviewPrompt.submitting}
-        submitError={reviewPrompt.submitError}
-        workspaceName={workspaceDoc?.workspaceName || workspaceDoc?.companyName || workspaceDoc?.businessName || 'Nexora'}
-      />
+      <Suspense fallback={null}>
+        <ReviewPromptModalLazy
+          open={reviewPrompt.showPrompt}
+          onClose={reviewPrompt.handleClose}
+          onSubmit={reviewPrompt.handleSubmit}
+          submitting={reviewPrompt.submitting}
+          submitError={reviewPrompt.submitError}
+          workspaceName={workspaceDoc?.workspaceName || workspaceDoc?.companyName || workspaceDoc?.businessName || 'Nexora'}
+        />
+      </Suspense>
     </div>
   )
 }

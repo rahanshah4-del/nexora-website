@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
+import { useUser } from '../hooks/useUser.js'
 import {
   HiOutlineArrowPath,
   HiOutlineEye,
@@ -21,6 +22,8 @@ import {
   formatRestaurantCurrency,
 } from '../lib/restaurantPosCalculations.js'
 import { loadRestaurantOrders, upsertRestaurantOrder } from '../data/restaurantOrders.js'
+import { syncSingleOrderToFirestore } from '../data/restaurantFirestoreSync.js'
+import { useMergedRestaurantOrders } from '../hooks/useMergedRestaurantOrders.js'
 import { normalizeInvoiceOrders } from '../data/restaurantInvoiceOrders.js'
 import { useInvoices } from '../hooks/useInvoices.js'
 import { useExpenses } from '../hooks/useExpenses.js'
@@ -67,7 +70,7 @@ const statusTone = {
   cancelled: 'default',
 }
 
-function releaseRestaurantTable(tableId, expectedOrderNumber = '') {
+function releaseRestaurantTable(tableId, expectedOrderNumber = '', workspaceId, userId) {
   if (typeof window === 'undefined' || !tableId) return
   try {
     const stored = window.localStorage.getItem(tablesKey())
@@ -100,9 +103,16 @@ function releaseRestaurantTable(tableId, expectedOrderNumber = '') {
   } catch {
     // Local table state is best-effort; order cancellation still continues.
   }
+
+  // Phase 1 dual-write: Firestore table status sync (FIRE-AND-FORGET)
+  if (workspaceId && userId && tableId) {
+    import('../data/restaurantFirestoreSync.js').then(({ syncSingleTableToFirestore }) => {
+      syncSingleTableToFirestore(workspaceId, userId, tableId, { status: 'available' })
+    }).catch(() => { /* dynamic import failed — silently skip */ })
+  }
 }
 
-function occupyRestaurantTable(tableId, order) {
+function occupyRestaurantTable(tableId, order, workspaceId, userId) {
   if (typeof window === 'undefined' || !tableId) return
   try {
     const stored = window.localStorage.getItem(tablesKey())
@@ -130,6 +140,13 @@ function occupyRestaurantTable(tableId, order) {
     window.localStorage.setItem(tablesKey(), JSON.stringify(nextFloors))
   } catch {
     // Local table state is best-effort; order edit still continues.
+  }
+
+  // Phase 1 dual-write: Firestore table status sync (FIRE-AND-FORGET)
+  if (workspaceId && userId && tableId && order) {
+    import('../data/restaurantFirestoreSync.js').then(({ syncSingleTableToFirestore }) => {
+      syncSingleTableToFirestore(workspaceId, userId, tableId, { status: 'occupied' })
+    }).catch(() => { /* dynamic import failed — silently skip */ })
   }
 }
 
@@ -196,6 +213,8 @@ function buildTodayClosingReportData({ orders = [], expenses = [], reportDate = 
 
 export default function RestaurantOrdersKotPage() {
   const navigate = useNavigate()
+  const { workspaceId, userId, firebaseUser } = useUser()
+  const mergedOrders = useMergedRestaurantOrders()
   const { invoices } = useInvoices({ limitCount: 50 })
   const expensesApi = useExpenses({ limitCount: 100 })
   const { settings } = useBusinessSettings()
@@ -218,12 +237,12 @@ export default function RestaurantOrdersKotPage() {
   const [editError, setEditError] = useState('')
   const savedOrders = useMemo(() => {
     const merged = new Map()
-    ;[...loadRestaurantOrders(), ...normalizeInvoiceOrders(invoices)].forEach((order) => {
+    ;[...mergedOrders.orders, ...normalizeInvoiceOrders(invoices)].forEach((order) => {
       const key = order.orderNumber || order.id || ''
       if (key) merged.set(key, order)
     })
     return Array.from(merged.values())
-  }, [invoices, ordersVersion])
+  }, [invoices, ordersVersion, mergedOrders.orders])
   const todayKey = restaurantBusinessDateKey(new Date(), settings)
   const businessDayLabel = formatRestaurantBusinessWindow(settings)
   const todayOrders = useMemo(
@@ -384,12 +403,14 @@ export default function RestaurantOrdersKotPage() {
       cancelledAt: nextOrderStatus === 'cancelled' ? editTarget.cancelledAt || new Date().toISOString() : '',
       editedAt: new Date().toISOString(),
     }
-    upsertRestaurantOrder(nextOrder)
+    upsertRestaurantOrder(nextOrder, workspaceId, userId || firebaseUser?.uid)
+    // Part C: immediate Firestore sync for status/payment changes (fire-and-forget)
+    syncSingleOrderToFirestore(workspaceId, userId || firebaseUser?.uid, nextOrder)
     if (nextOrder.table) {
       if (editForm.freeTable || nextPaymentStatus === 'paid' || nextOrderStatus === 'cancelled') {
-        releaseRestaurantTable(nextOrder.table, nextOrder.orderNumber)
+        releaseRestaurantTable(nextOrder.table, nextOrder.orderNumber, workspaceId, userId || firebaseUser?.uid)
       } else {
-        occupyRestaurantTable(nextOrder.table, nextOrder)
+        occupyRestaurantTable(nextOrder.table, nextOrder, workspaceId, userId || firebaseUser?.uid)
       }
     }
     setEditTarget(null)
@@ -419,14 +440,17 @@ export default function RestaurantOrdersKotPage() {
       setCancelError('Cancel reason is required.')
       return
     }
-    upsertRestaurantOrder({
+    const cancelledOrder = {
       ...cancelTarget,
       orderStatus: 'cancelled',
       paymentStatus: 'cancelled',
       cancelReason: cancelReason.trim(),
       cancelledAt: new Date().toISOString(),
-    })
-    releaseRestaurantTable(cancelTarget.table, cancelTarget.orderNumber)
+    }
+    upsertRestaurantOrder(cancelledOrder, workspaceId, userId || firebaseUser?.uid)
+    // Part C: immediate Firestore sync for cancellation (fire-and-forget)
+    syncSingleOrderToFirestore(workspaceId, userId || firebaseUser?.uid, cancelledOrder)
+    releaseRestaurantTable(cancelTarget.table, cancelTarget.orderNumber, workspaceId, userId || firebaseUser?.uid)
     setCancelTarget(null)
     setOrdersVersion((current) => current + 1)
     setActiveFilter('Cancelled')

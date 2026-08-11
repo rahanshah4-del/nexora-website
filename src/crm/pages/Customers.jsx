@@ -424,6 +424,7 @@ const emptyRestaurantCustomer = {
 }
 
 function RestaurantCustomersManager() {
+  const { workspaceId, userId, firebaseUser } = useUser()
   const [customers, setCustomers] = useState(() => loadRestaurantCustomers())
   const [search, setSearch] = useState('')
   const [editing, setEditing] = useState(null)
@@ -451,7 +452,7 @@ function RestaurantCustomersManager() {
 
   function persist(next) {
     setCustomers(next)
-    saveRestaurantCustomers(next)
+    saveRestaurantCustomers(next, workspaceId, userId || firebaseUser?.uid)
   }
 
   function saveCustomer(payload) {

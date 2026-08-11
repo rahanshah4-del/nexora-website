@@ -233,7 +233,7 @@ function resolveTeamStaffAccess({ role, businessType, businessKey, selectedWorks
   const normalizedWorkspace = teamWorkspaceIdForBusiness(normalizedBusinessType)
   const cashierRole = normalizeStaffRole(role) === 'cashier'
   const allowedCashierModules = normalizedBusinessKey === 'restaurant-pos'
-    ? new Set(['dashboard', 'orders', 'ordersKot', 'tables'])
+    ? new Set(['dashboard', 'orders', 'ordersKot', 'tables', 'reservations'])
     : normalizedBusinessKey === 'retail-pos'
       ? new Set(['dashboard', 'pos', 'posOrders'])
       : new Set()

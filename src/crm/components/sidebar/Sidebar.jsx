@@ -757,6 +757,7 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
               : null
           })
           .filter(Boolean)
+          .filter((module) => !module.hidden)
       : null
     const modules = staffPermissionModules || selectedModulesForSidebar({
       enabledModules: userDoc?.enabledModules,

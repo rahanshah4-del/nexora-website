@@ -210,7 +210,7 @@ export const moduleCatalog = [
   { key: 'pos', label: 'POS Billing', route: '/app/pos', minPlan: 'Basic' },
   { key: 'posOrders', label: 'POS Orders', route: '/app/pos-orders', minPlan: 'Basic' },
   { key: 'posDiscounts', label: 'Tax & Promo', route: '/app/pos-discounts', minPlan: 'Basic' },
-  { key: 'orders', label: 'POS Till', route: '/app/orders', minPlan: 'Basic' },
+  { key: 'orders', label: 'POS Till', route: '/app/orders', minPlan: 'Basic', hidden: true },
   { key: 'menuManagement', label: 'Menu Management', route: '/app/menu-management', minPlan: 'Basic' },
   { key: 'cashRegister', label: 'Cash Register', route: '/app/coming-soon/cash-register', comingSoon: true },
   { key: 'purchases', label: 'Purchases', route: '/app/coming-soon/purchases', comingSoon: true },
@@ -567,7 +567,7 @@ export function businessWorkspaceForSelection(value) {
 }
 
 export function teamManagementEnabledForBusinessType(type) {
-  return false
+  return true
 }
 
 export function labelForBusinessType(type) {
@@ -703,6 +703,7 @@ export function routeAllowedByPlan(route, plan, options = {}) {
   if (!module || module.alwaysEnabled) return true
   if (normalizeBusinessType(options?.businessType) === 'General CRM' && salesHubSidebarCoreModules.has(module.key)) return true
   if (module.key === 'team' && options?.teamOverride) return true
+  if (module.key === 'team' && normalizeBusinessType(options?.businessType) === 'Restaurant POS') return true
   return hasPlanAccess(plan, module.minPlan)
 }
 
@@ -736,6 +737,7 @@ export function selectedModulesForSidebar({ enabledModules, onboardingCompleted,
     return moduleCatalog
       .filter((module) => normalizedType === 'General CRM' || module.key !== 'salesPipeline')
       .filter((module) => module.key !== 'team' || teamManagementEnabledForBusinessType(businessType))
+      .filter((module) => !module.hidden)
       .map((module) => ({
         ...module,
         comingSoon: false,
@@ -746,14 +748,16 @@ export function selectedModulesForSidebar({ enabledModules, onboardingCompleted,
   const businessKeys = businessModuleKeys(businessType)
   const isSalesHub = normalizeBusinessType(businessType) === 'General CRM'
   const isSchoolErp = normalizeBusinessType(businessType) === 'School ERP'
+  const isRestaurantPOS = normalizeBusinessType(businessType) === 'Restaurant POS'
   const selected = new Set(onboardingCompleted ? businessKeys : Array.isArray(enabledModules) && enabledModules.length ? enabledModules : businessKeys)
   if (isSchoolErp) selected.add('reports')
   return moduleCatalog.filter((module) => {
     if (module.key === 'subscriptions') return false
     if (module.key === 'payments') return false
+    if (module.hidden) return false
     if (module.alwaysEnabled) return selected.has(module.key) || businessKeys.includes(module.key)
     if (module.comingSoon) return businessKeys.includes(module.key)
-    if (!moduleAllowedByPlan(module.key, plan) && !(module.key === 'team' && teamOverride) && !(isSalesHub && salesHubSidebarCoreModules.has(module.key))) return false
+    if (!moduleAllowedByPlan(module.key, plan) && !(module.key === 'team' && teamOverride) && !(module.key === 'team' && isRestaurantPOS) && !(isSalesHub && salesHubSidebarCoreModules.has(module.key))) return false
     if (module.key === 'accountStatements') return businessKeys.includes('accounts')
     if (coreFinanceModules.includes(module.key) || module.key === 'approvals') return businessKeys.includes(module.key)
     return selected.has(module.key) && businessKeys.includes(module.key)

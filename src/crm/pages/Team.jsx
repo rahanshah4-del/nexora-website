@@ -109,7 +109,7 @@ const rolePresets = {
 
 const financeModules = new Set(['dashboard', 'invoices', 'payments', 'expenses', 'accounts', 'accountStatements', 'reports', 'approvals'])
 const salesModules = new Set(['dashboard', 'pos', 'posOrders', 'orders'])
-const cashierModules = new Set(['dashboard', 'pos', 'posOrders', 'orders', 'ordersKot', 'tables'])
+const cashierModules = new Set(['dashboard', 'pos', 'posOrders', 'orders', 'ordersKot', 'tables', 'reservations'])
 const supportModules = new Set(['dashboard', 'customers', 'support', 'whatsappInbox', 'whatsappLeads', 'whatsappFollowUps', 'notifications', 'reports'])
 const extraPermissionActions = ['create', 'edit', 'delete', 'export', 'approve']
 

@@ -2,7 +2,6 @@ import { useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import {
-  HiOutlineCalculator,
   HiOutlineClipboardDocumentList,
   HiOutlineComputerDesktop,
   HiOutlineSquaresPlus,
@@ -19,7 +18,6 @@ import Card from '../components/ui/Card.jsx'
 import Badge from '../components/ui/Badge.jsx'
 
 const modules = [
-  { label: 'POS Till', path: '/app/orders', icon: HiOutlineCalculator, desc: 'Fast restaurant checkout, billing & payment', badge: 'Active' },
   { label: 'Menu Management', path: '/app/menu-management', icon: HiOutlineSquaresPlus, desc: 'AI-powered menu import, items, categories & pricing', badge: 'Active', ai: true },
   { label: 'Tables / Floor View', path: '/app/tables', icon: GiRoundTable, desc: 'Visual floor plan with table status & occupancy', badge: 'Active' },
   { label: 'Orders/KOT', path: '/app/orders-kot', icon: HiOutlineClipboardDocumentList, desc: 'Kitchen order tickets & status tracking', badge: 'Active' },

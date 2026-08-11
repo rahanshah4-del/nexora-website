@@ -8,7 +8,6 @@ import FeatureGate from './components/auth/FeatureGate.jsx'
 const LoginPage = lazy(() => import('./pages/Login.jsx'))
 const DashboardHomePage = lazy(() => import('./pages/DashboardHome.jsx'))
 const RestaurantPOSPage = lazy(() => import('./pages/RestaurantPOS.jsx'))
-const RestaurantOrdersPage = lazy(() => import('./pages/RestaurantOrders.jsx'))
 const RestaurantMenuManagementPage = lazy(() => import('./pages/RestaurantMenuManagement.jsx'))
 const RestaurantTablesPage = lazy(() => import('./pages/RestaurantTables.jsx'))
 const RestaurantOrdersKotPage = lazy(() => import('./pages/RestaurantOrdersKot.jsx'))
@@ -72,8 +71,7 @@ export default function App() {
           >
             <Route path="/app" element={<Navigate to="/app/dashboard" replace />} />
             <Route path="/app/dashboard" element={<DashboardHomePage />} />
-            <Route path="/app/restaurant-pos" element={<RestaurantPOSPage />} />
-            <Route path="/app/orders" element={<RestaurantOrdersPage />} />
+            <Route path="/app/restaurant-pos" element={<Navigate to="/app/dashboard" replace />} />
             <Route path="/app/menu-management" element={<RestaurantMenuManagementPage />} />
             <Route path="/app/tables" element={<RestaurantTablesPage />} />
             <Route path="/app/orders-kot" element={<RestaurantOrdersKotPage />} />

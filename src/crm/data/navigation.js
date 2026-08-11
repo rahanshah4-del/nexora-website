@@ -1,6 +1,5 @@
 import {
   HiOutlineAdjustmentsHorizontal,
-  HiOutlineCalculator,
   HiOutlineChartBarSquare,
   HiOutlineCog6Tooth,
   HiOutlineDocumentChartBar,
@@ -47,7 +46,6 @@ export const navItems = [
   { label: 'POS Billing', to: '/app/pos', icon: HiOutlineShoppingCart, openInNewWindow: true },
   { label: 'POS Orders', to: '/app/pos-orders', icon: HiOutlineReceiptPercent },
   { label: 'Tax & Promo', to: '/app/pos-discounts', icon: HiOutlineTag },
-  { label: 'POS Till', to: '/app/orders', icon: HiOutlineCalculator, openInNewWindow: true },
   { label: 'Menu Management', to: '/app/menu-management', icon: HiOutlineSquaresPlus },
   { label: 'Leads', to: '/app/leads', icon: HiOutlineUserGroup },
   { label: 'Deals', to: '/app/deals', icon: HiOutlineCurrencyDollar },

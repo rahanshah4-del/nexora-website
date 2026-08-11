@@ -93,7 +93,7 @@ function accessScopeFromPermissions({ role = '', permissions = {}, permissionKey
   const businessKey = businessPermissionKey(normalizedBusinessType)
   const cashierRole = normalizeStaffRole(role) === 'cashier'
   const cashierAllowed = businessKey === 'restaurant-pos'
-    ? new Set(['dashboard', 'orders', 'ordersKot', 'tables'])
+    ? new Set(['dashboard', 'orders', 'ordersKot', 'tables', 'reservations'])
     : businessKey === 'retail-pos'
       ? new Set(['dashboard', 'pos', 'posOrders'])
       : null

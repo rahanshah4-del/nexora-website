@@ -41,12 +41,19 @@ export function loadRestaurantCustomers() {
   }
 }
 
-export function saveRestaurantCustomers(customers) {
+export function saveRestaurantCustomers(customers, workspaceId, userId) {
   if (typeof window === 'undefined') return
   const k = _key()
   _customerCache = null
   window.localStorage.setItem(k, JSON.stringify(customers))
   notifyLocalDataChanged(k)
+
+  // Phase 1 dual-write: sync restaurant customers to Firestore CRM customers
+  if (workspaceId && userId) {
+    import('./restaurantFirestoreSync.js').then(({ syncCustomersToFirestore }) => {
+      syncCustomersToFirestore(workspaceId, userId, customers)
+    }).catch(() => { /* dynamic import failed — silently skip */ })
+  }
 }
 
 export function applyRestaurantCustomerPayment(customers, customerId, payment) {

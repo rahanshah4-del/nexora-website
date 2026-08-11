@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import {
   HiOutlineArrowPath,
@@ -11,6 +11,8 @@ import Button from '../components/ui/Button.jsx'
 import Card from '../components/ui/Card.jsx'
 import PageHeader from '../components/ui/PageHeader.jsx'
 import { loadRestaurantOrders, upsertRestaurantOrder } from '../data/restaurantOrders.js'
+import { loadFirestoreOrders, syncSingleOrderToFirestore } from '../data/restaurantFirestoreSync.js'
+import { useUser } from '../hooks/useUser.js'
 
 const columns = [
   { key: 'pending', label: 'Pending', icon: HiOutlineClock, next: 'preparing', action: 'Start' },
@@ -45,7 +47,29 @@ function loadKitchenOrders() {
 }
 
 export default function RestaurantKitchenDisplayPage() {
+  const { workspaceId, userId, firebaseUser } = useUser()
   const [orders, setOrders] = useState(() => loadKitchenOrders())
+  const [fsVersion, setFsVersion] = useState(0)
+
+  // Load Firestore orders on mount and merge into KDS display
+  useEffect(() => {
+    if (!workspaceId || !firebaseUser) return
+    let cancelled = false
+    ;(async () => {
+      const fsOrders = await loadFirestoreOrders(workspaceId)
+      if (cancelled) return
+      const fsKdsOrders = fsOrders
+        .filter((o) => ['pending', 'preparing', 'ready'].includes(String(o.orderStatus || '').toLowerCase()))
+        .map(kitchenOrderFromSavedOrder)
+      if (fsKdsOrders.length === 0) return
+      setOrders((current) => {
+        const existingIds = new Set(current.map((o) => o.id))
+        const newOrders = fsKdsOrders.filter((o) => !existingIds.has(o.id))
+        return [...current, ...newOrders]
+      })
+    })()
+    return () => { cancelled = true }
+  }, [workspaceId, firebaseUser, fsVersion])
 
   const groupedOrders = useMemo(
     () => columns.map((column) => ({
@@ -67,7 +91,10 @@ export default function RestaurantKitchenDisplayPage() {
             console.warn(`KITchen: invalid transition ${order.status} → ${nextStatus} for ${orderId}`)
             return order
           }
-          upsertRestaurantOrder({ ...order.raw, orderStatus: nextStatus })
+          const updatedOrder = { ...order.raw, orderStatus: nextStatus }
+          upsertRestaurantOrder(updatedOrder, workspaceId, userId || firebaseUser?.uid)
+          // Part C: immediate Firestore status sync (fire-and-forget)
+          syncSingleOrderToFirestore(workspaceId, userId || firebaseUser?.uid, updatedOrder)
           return { ...order, status: nextStatus, raw: { ...order.raw, orderStatus: nextStatus } }
         })
         .filter((order) => order.status !== 'served'),
