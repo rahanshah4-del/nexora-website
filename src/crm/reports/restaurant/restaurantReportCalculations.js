@@ -103,7 +103,21 @@ export function buildRestaurantReportModel({
 
     if (order.contributesToRevenue) {
       salesByOrderType[order.orderType] = money(salesByOrderType[order.orderType]) + order.total
-      collectionsByPaymentMethod[order.paymentMethod] = money(collectionsByPaymentMethod[order.paymentMethod]) + order.paidAmount
+      // ── Wallet payment attribution ──
+      // Split (Wallet + Cash) orders: attribute wallet portion to "Wallet",
+      // remainder to the other method (defaulting to "Cash"). Full-wallet
+      // orders attribute 100% to "Wallet".
+      const pm = order.paymentMethod || 'Cash'
+      const walletUsed = money(order.walletAmountUsed)
+      if (pm === 'Wallet') {
+        collectionsByPaymentMethod['Wallet'] = money(collectionsByPaymentMethod['Wallet']) + order.paidAmount
+      } else if (pm.startsWith('Split') && walletUsed > 0) {
+        collectionsByPaymentMethod['Wallet'] = money(collectionsByPaymentMethod['Wallet']) + walletUsed
+        const remainder = Math.max(0, order.paidAmount - walletUsed)
+        collectionsByPaymentMethod['Cash'] = money(collectionsByPaymentMethod['Cash']) + remainder
+      } else {
+        collectionsByPaymentMethod[pm] = money(collectionsByPaymentMethod[pm]) + order.paidAmount
+      }
       if (order.discount > 0) discountRows.push(order)
       if (order.tax > 0) taxRows.push(order)
       if (order.serviceCharges > 0) serviceChargeRows.push(order)

@@ -49,14 +49,17 @@ export function useMergedRestaurantOrders() {
   // orderNumbers when comparing, so website orders appear once not twice.
   const orders = useMemo(() => {
     const localOrders = loadRestaurantOrders()
-    // Build set of dedup keys from local orders (strip any W- prefix just in case)
+    // Build set of dedup keys from local orders.
+    // Strip ALL known order-number prefixes (W- website, D- desktop, # local)
+    // so "#1080", "D-1080", and "W-1080" are all recognized as the same logical order.
     const localDedupKeys = new Set(
-      localOrders.map((o) => String(o.orderNumber || '').replace(/^W-/, '')).filter(Boolean),
+      localOrders.map((o) => String(o.orderNumber || '').replace(/^(W-|D-|#)/, '')).filter(Boolean),
     )
-    // Only include Firestore orders that don't already exist in localStorage
+    // Only include Firestore orders that don't already exist in localStorage.
+    // Apply the SAME prefix stripping on both sides of the comparison.
     const newFirestoreOrders = firestoreOrders.filter((o) => {
       if (!o.orderNumber) return false
-      const dedupKey = String(o.orderNumber).replace(/^W-/, '')
+      const dedupKey = String(o.orderNumber).replace(/^(W-|D-|#)/, '')
       return !localDedupKeys.has(dedupKey)
     })
     return [...localOrders, ...newFirestoreOrders]

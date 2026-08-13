@@ -265,13 +265,33 @@ export async function createDeliveryFromOrder({
     return { ok: false, error: 'Missing required fields.' }
   }
 
+  const sourceOrderId = order.orderNumber
+
   try {
     const path = workspaceCollectionPath(workspaceId, 'deliveryOrders')
+    const duplicateQuery = query(
+      collection(db, path),
+      where('sourceOrderId', '==', sourceOrderId),
+      where('workspaceId', '==', workspaceId),
+    )
+
+    // ── Fast path: skip the transaction if a bridge doc already exists ──
+    const preSnap = await getDocs(duplicateQuery)
+    if (!preSnap.empty) {
+      return { ok: true, deliveryOrderId: preSnap.docs[0].id, alreadyExists: true }
+    }
+
     const ref = doc(collection(db, path))
+    let created = false
 
     await runTransaction(db, async (txn) => {
+      // Belt-and-suspenders: re-check inside the atomic transaction
+      const txnSnap = await txn.get(duplicateQuery)
+      if (!txnSnap.empty) return // another caller won the race — abort write
+
       txn.set(ref, {
         orderNumber: order.orderNumber,
+        sourceOrderId,
         source: 'pos',
         orderType: 'delivery',
         status: 'pending',
@@ -301,9 +321,18 @@ export async function createDeliveryFromOrder({
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       })
+      created = true
     })
 
-    return { ok: true, deliveryOrderId: ref.id }
+    if (created) return { ok: true, deliveryOrderId: ref.id }
+
+    // Transaction was a no-op (another caller won the race) — get their doc ID
+    const postSnap = await getDocs(duplicateQuery)
+    if (!postSnap.empty) {
+      return { ok: true, deliveryOrderId: postSnap.docs[0].id, alreadyExists: true }
+    }
+
+    return { ok: false, error: 'Delivery order creation conflict — please retry.' }
   } catch (err) {
     return { ok: false, error: err?.message || 'Failed to create delivery order.' }
   }

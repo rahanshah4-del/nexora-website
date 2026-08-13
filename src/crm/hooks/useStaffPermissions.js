@@ -301,7 +301,7 @@ export function useStaffPermissions() {
           const staffId = created.staffId
           const workspaceCode = created.workspaceCode
           const staffLoginId = created.staffLoginId
-          await logActivity({
+          logActivity({
             workspaceId,
             userId,
             businessType,
@@ -312,7 +312,7 @@ export function useStaffPermissions() {
             targetId: staffId,
             targetName: name,
             metadata: { email, username, role, workspaceCode, staffLoginId, authCreated: false, emailSent: created.emailSent === true, emailError: created.emailError || '' },
-          })
+          }).catch(() => {})
           return {
             ok: true,
             message: created.emailSent
@@ -529,6 +529,19 @@ export function useStaffPermissions() {
           metadata: { status: nextStatus },
         })
         return { ok: true }
+      },
+      async setApprovalPin(staffId, role) {
+        if (!access.isAdmin) return { ok: false, error: 'Only an owner or admin can set an approval PIN.' }
+        if (!functions) return { ok: false, error: 'Team staff service is not available right now.' }
+        try {
+          const callable = httpsCallable(functions, 'setApprovalPin')
+          const response = await callable({ workspaceId, staffId, role })
+          const data = response?.data || {}
+          if (!data.success) return { ok: false, error: 'Approval PIN could not be set.' }
+          return { ok: true, pin: data.pin, staffName: data.staffName, role: data.role }
+        } catch (e) {
+          return { ok: false, error: clientSafeMessage(e, 'Unable to set approval PIN.') }
+        }
       },
     }),
     [access, businessType, currentPermissionKeys, error, firebaseUser, loading, permissions, plan, staff, userDoc, userId, workspaceDoc, workspaceId],

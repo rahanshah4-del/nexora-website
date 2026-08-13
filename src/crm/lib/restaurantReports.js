@@ -22,6 +22,7 @@ function collectionsByMethodWithDefaults(values = {}) {
     JazzCash: safeNumber(values.JazzCash),
     Easypaisa: safeNumber(values.Easypaisa),
     Bank: safeNumber(values.Bank),
+    Wallet: safeNumber(values.Wallet),
     Due: safeNumber(values.Due),
     Invoice: safeNumber(values.Invoice),
     ...values,

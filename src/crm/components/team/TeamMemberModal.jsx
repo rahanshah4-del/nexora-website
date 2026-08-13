@@ -9,9 +9,11 @@ import Badge from '../ui/Badge.jsx'
 
 const roles = ['Owner', 'Admin', 'Manager', 'Cashier', 'Sales Staff', 'Accountant', 'Support Staff', 'Data Entry', 'Viewer']
 const cashierOnlyRoles = ['Cashier']
+// Restaurant POS: only these 5 roles (hides CRM-oriented roles)
+const restaurantRolesList = ['Owner', 'Admin / Manager', 'Cashier', 'Waiter', 'Kitchen Staff']
 const statuses = ['Active', 'Invited', 'Disabled']
 
-function TeamMemberModal({ open, mode = 'add', member, ownerProtected = false, cashierOnly = false, onClose, onSave }) {
+function TeamMemberModal({ open, mode = 'add', member, ownerProtected = false, cashierOnly = false, restaurantMode = false, onClose, onSave }) {
   const [draft, setDraft] = useState(member || null)
 
   useEffect(() => {
@@ -79,7 +81,7 @@ function TeamMemberModal({ open, mode = 'add', member, ownerProtected = false, c
                         disabled={ownerProtected}
                         onChange={(e) => setDraft((d) => ({ ...d, role: e.target.value }))}
                       >
-                        {(cashierOnly && !ownerProtected ? cashierOnlyRoles : roles).map((r) => (
+                        {(restaurantMode && !ownerProtected ? restaurantRolesList : cashierOnly && !ownerProtected ? cashierOnlyRoles : roles).map((r) => (
                           <option key={r} value={r}>
                             {r}
                           </option>

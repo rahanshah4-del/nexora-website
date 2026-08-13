@@ -13,6 +13,7 @@ import {
   HiOutlineChevronRight,
   HiOutlineClipboardDocumentList,
   HiOutlineCog6Tooth,
+  HiOutlineComputerDesktop,
   HiOutlineGlobeAlt,
   HiOutlineHomeModern,
   HiOutlineInformationCircle,
@@ -663,6 +664,16 @@ function WorkspaceCard({ workspace, index, emailVerified, selected, saving, onSe
           Upgrade Plan
         </button>
       ) : null}
+      {isRestaurant ? (
+        <button
+          type="button"
+          onClick={() => navigate('/download/restaurant-pos')}
+          className="mt-2 flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white text-[13px] font-bold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
+        >
+          <HiOutlineComputerDesktop className="h-4 w-4" />
+          Download Desktop App
+        </button>
+      ) : null}
     </motion.article>
   )
 }
@@ -758,6 +769,16 @@ function WorkspaceListRow({ workspace, index, emailVerified, selected, saving, o
         {saving ? 'Saving...' : selected ? 'Enter Workspace' : 'Open Module'}
         <HiOutlineArrowRight className="h-4 w-4" />
       </button>
+      {selected && isRestaurant ? (
+        <button
+          type="button"
+          onClick={() => navigate('/download/restaurant-pos')}
+          className="flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-[13px] font-bold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
+        >
+          <HiOutlineComputerDesktop className="h-4 w-4" />
+          Download
+        </button>
+      ) : null}
     </motion.div>
   )
 }

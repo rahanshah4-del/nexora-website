@@ -19,6 +19,8 @@ import ActivityTimeline from '../components/activity/ActivityTimeline.jsx'
 import { clientSafeMessage } from '../utils/messages.js'
 import { showGlobalToast } from '../lib/globalToast.js'
 import { teamManagementEnabledForBusinessType } from '../data/moduleAccess.js'
+import RestaurantStaffForm from '../components/team/RestaurantStaffForm.jsx'
+import { RESTAURANT_ROLES, restaurantRoleLabel, RESTAURANT_ROLE_MAP } from '../data/restaurantRoles.js'
 
 function Field({ label, children }) {
   return (
@@ -733,11 +735,13 @@ function AccessControlTab({ staffApi, members, onToast, currentUserEmail, curren
 
 export default function TeamPage() {
   const { userId, workspaceId, workspaceDoc, firebaseUser, userDoc, businessType } = useUser()
+  const isRestaurantPOS = businessType === 'Restaurant POS'
   const { members, loading, source, error, addMember, updateMember, deleteMember } = useTeamMembers()
   const [toast, setToast] = useState(null)
   const [searchParams, setSearchParams] = useSearchParams()
-  const [tab, setTab] = useState('access')
+  const [tab, setTab] = useState(isRestaurantPOS ? 'staff' : 'access')
   const [memberSearch, setMemberSearch] = useState('')
+  const [approvalPinModal, setApprovalPinModal] = useState(null)
   const filteredMembers = useMemo(() => {
     const q = memberSearch.trim().toLowerCase()
     if (!q) return members
@@ -756,6 +760,21 @@ export default function TeamPage() {
     window.setTimeout(() => setToast(null), timeout)
   }
 
+  const ownerStaffId = String(workspaceDoc?.ownerId || workspaceId || userId || '')
+  const ownerHasApprovalPin = staffApi.staff.some(
+    (s) => String(s.id || s.staffId || '') === ownerStaffId && s.approvalPin === true,
+  )
+
+  const handleSetApprovalPin = async (staffId, role, name) => {
+    setApprovalPinModal({ staffId, role, name, pin: null, loading: true, error: '' })
+    const res = await staffApi.setApprovalPin(staffId, role)
+    if (res?.ok) {
+      setApprovalPinModal((prev) => ({ ...prev, pin: res.pin, loading: false }))
+    } else {
+      setApprovalPinModal((prev) => ({ ...prev, error: res?.error || 'Failed to set approval PIN.', loading: false }))
+    }
+  }
+
   const teamActivityItems = (activity.logs || []).filter((l) => {
     const module = String(l.module || '')
     const action = String(l.action || '')
@@ -766,11 +785,71 @@ export default function TeamPage() {
     return false
   })
 
-  const tabs = [
-    { key: 'access', label: 'Staff Access' },
-    { key: 'members', label: 'Team Members' },
-    { key: 'activity', label: 'Activity Logs' },
-  ].filter(Boolean)
+  // Combined staff list for Restaurant POS — merge team members + staff access records
+  const restaurantStaffList = useMemo(() => {
+    if (!isRestaurantPOS) return []
+    const seenIds = new Set()
+    const seenEmails = new Set()
+    const combined = []
+
+    const isOwnerRecord = (row) => {
+      const role = String(row.role || '').trim().toLowerCase()
+      return role === 'owner' || row.isOwner === true
+    }
+
+    const shouldSkip = (id, email) => {
+      if (!id && !email) return true
+      if (id && seenIds.has(id)) return true
+      if (email && seenEmails.has(email)) return true
+      return false
+    }
+
+    const markSeen = (id, email) => {
+      if (id) seenIds.add(id)
+      if (email) seenEmails.add(email)
+    }
+
+    // Staff access records first (they have credentials info)
+    for (const staff of staffApi.staff) {
+      const id = String(staff.id || staff.staffId || '')
+      const email = String(staff.email || '').trim().toLowerCase()
+      if (isOwnerRecord(staff)) continue
+      if (shouldSkip(id, email)) continue
+      markSeen(id, email)
+      combined.push({
+        ...staff,
+        _id: id,
+        _isStaffRecord: true,
+        _hasCredentials: Boolean(staff.staffLoginId && staff.workspaceCode && staff.pinLoginEnabled),
+      })
+    }
+    // Team member records (fill in any not already in staff)
+    for (const member of members) {
+      const id = String(member.id || member.uid || member.userId || '')
+      const email = String(member.email || '').trim().toLowerCase()
+      if (isOwnerRecord(member)) continue
+      if (shouldSkip(id, email)) continue
+      markSeen(id, email)
+      combined.push({
+        ...member,
+        _id: id,
+        _isStaffRecord: false,
+        _hasCredentials: false,
+      })
+    }
+    return combined
+  }, [isRestaurantPOS, staffApi.staff, members])
+
+  const tabs = isRestaurantPOS
+    ? [
+        { key: 'staff', label: 'Staff' },
+        { key: 'activity', label: 'Activity Logs' },
+      ]
+    : [
+        { key: 'access', label: 'Staff Access' },
+        { key: 'members', label: 'Team Members' },
+        { key: 'activity', label: 'Activity Logs' },
+      ]
 
   useEffect(() => {
     const requestedTab = searchParams.get('tab')
@@ -782,7 +861,7 @@ export default function TeamPage() {
   const selectTab = (nextTab) => {
     setTab(nextTab)
     const params = new URLSearchParams(searchParams)
-    if (nextTab === 'access') params.delete('tab')
+    if (nextTab === 'access' || nextTab === 'staff') params.delete('tab')
     else params.set('tab', nextTab)
     setSearchParams(params, { replace: true })
   }
@@ -813,11 +892,15 @@ export default function TeamPage() {
       {toast ? <Toast tone={toast.tone} message={toast.message} onClose={() => setToast(null)} /> : null}
       <PageHeader
         title="Team Management"
-        subtitle="Single place for team members, roles, permissions, access control, and audit logs."
+        subtitle={isRestaurantPOS ? 'Add and manage your restaurant staff — cashiers, waiters, kitchen staff, and admins.' : 'Single place for team members, roles, permissions, access control, and audit logs.'}
         right={
-          <Badge variant={source === 'firestore' ? 'success' : 'default'}>
-            {loading ? 'Loading…' : source === 'firestore' ? 'Live Sync' : 'No data yet'}
-          </Badge>
+          isRestaurantPOS ? (
+            <Badge variant="success">Restaurant POS</Badge>
+          ) : (
+            <Badge variant={source === 'firestore' ? 'success' : 'default'}>
+              {loading ? 'Loading…' : source === 'firestore' ? 'Live Sync' : 'No data yet'}
+            </Badge>
+          )
         }
       />
 
@@ -842,6 +925,202 @@ export default function TeamPage() {
       </div>
 
       <div className="mt-4">
+        {/* ── Restaurant POS: Unified Staff tab ── */}
+        {tab === 'staff' && isRestaurantPOS ? (
+          <div className="space-y-4">
+            <RestaurantStaffForm onToast={showToast} />
+
+            {/* Owner approval PIN */}
+            <Card className="p-5">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="truncate text-sm font-semibold text-slate-950">
+                      {workspaceDoc?.name || userDoc?.name || userDoc?.fullName || 'Workspace Owner'}
+                    </p>
+                    <Badge variant="purple">Owner</Badge>
+                    <Badge variant="default">Website Only</Badge>
+                  </div>
+                  <p className="mt-1 truncate text-xs text-slate-500">
+                    {workspaceDoc?.email || userDoc?.email || firebaseUser?.email || ownerStaffId}
+                  </p>
+                  <p className="mt-2 text-xs font-semibold text-slate-500">
+                    This PIN is used to approve sensitive actions like order cancellations — not for till login.
+                  </p>
+                </div>
+                <Button
+                  variant="subtle"
+                  className="rounded-xl px-3 py-2 text-xs"
+                  type="button"
+                  onClick={() =>
+                    handleSetApprovalPin(
+                      ownerStaffId,
+                      'owner',
+                      workspaceDoc?.name || userDoc?.name || userDoc?.fullName || 'Workspace Owner',
+                    )
+                  }
+                >
+                  {ownerHasApprovalPin ? 'Reset Approval PIN' : 'Set Approval PIN'}
+                </Button>
+              </div>
+            </Card>
+
+            {/* Simplified staff cards */}
+            <Card className="p-5">
+              <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm font-black text-slate-950">Restaurant Staff</p>
+                  <p className="mt-1 text-xs font-semibold text-slate-500">
+                    {restaurantStaffList.length} staff member{restaurantStaffList.length !== 1 ? 's' : ''} — role determines access, not individual checkboxes.
+                  </p>
+                </div>
+                <Badge variant="success">Role-Based Access</Badge>
+              </div>
+
+              {staffApi.loading || loading ? (
+                <div className="grid min-h-[12rem] place-items-center rounded-[1.25rem] border border-slate-200/80 bg-white/70 text-sm text-slate-500">
+                  Loading staff…
+                </div>
+              ) : restaurantStaffList.length === 0 ? (
+                <div className="grid min-h-[12rem] place-items-center rounded-[1.25rem] border border-dashed border-slate-200 bg-white/70 p-5 text-center">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-950">No staff members yet</p>
+                    <p className="mt-1 text-sm text-slate-500">Use the form above to add your first staff member.</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {restaurantStaffList.map((staff) => {
+                    const roleKey = String(staff.role || '').trim().toLowerCase()
+                    const roleLabel = RESTAURANT_ROLE_MAP[roleKey]?.label || staff.role || 'Cashier'
+                    const isActive = !['disabled', 'inactive', 'blocked'].includes(String(staff.status || '').toLowerCase())
+                    const isCashier = roleKey === 'cashier'
+                    const staffId = staff._id || staff.id || ''
+                    const isOwnerRecord =
+                      String(staffId) === String(workspaceDoc?.ownerId || workspaceId || userId || '') ||
+                      (String(staffId) === String(userId || '') && String(staff.email || '').trim().toLowerCase() === String(firebaseUser?.email || userDoc?.email || '').trim().toLowerCase())
+                    if (isOwnerRecord) return null
+
+                    return (
+                      <div
+                        key={staffId}
+                        className="rounded-[1.25rem] border border-slate-200/80 bg-white/85 p-4 shadow-sm"
+                      >
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <p className="truncate text-sm font-semibold text-slate-950">
+                                {staff.name || staff.fullName || 'Staff Member'}
+                              </p>
+                              <Badge variant={isActive ? 'success' : 'danger'}>
+                                {isActive ? 'Active' : 'Disabled'}
+                              </Badge>
+                              <Badge variant="purple">{roleLabel}</Badge>
+                              {isCashier ? (
+                                <Badge variant="info">Till Login</Badge>
+                              ) : (
+                                <Badge variant="default">Website Only</Badge>
+                              )}
+                            </div>
+                            <p className="mt-1 truncate text-xs text-slate-500">
+                              {staff.email || staffId}
+                            </p>
+                            {staff.phone ? (
+                              <p className="mt-0.5 truncate text-xs text-slate-400">{staff.phone}</p>
+                            ) : null}
+                            {/* Cashier credentials display */}
+                            {isCashier && staff.workspaceCode && staff.staffLoginId ? (
+                              <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                                <span className="inline-flex items-center gap-1 rounded-xl bg-emerald-50 px-2.5 py-1 font-semibold text-emerald-800">
+                                  Login Code: {staff.workspaceCode}
+                                </span>
+                                <span className="inline-flex items-center gap-1 rounded-xl bg-emerald-50 px-2.5 py-1 font-semibold text-emerald-800">
+                                  Cashier ID: {staff.staffLoginId}
+                                </span>
+                              </div>
+                            ) : null}
+                          </div>
+
+                          {/* Actions */}
+                          <div className="flex flex-wrap gap-2">
+                            <Button
+                              variant="subtle"
+                              className="rounded-xl px-3 py-2 text-xs"
+                              type="button"
+                              onClick={async () => {
+                                if (staff._isStaffRecord) {
+                                  // Toggle status via staff API
+                                  const newStatus = isActive ? 'blocked' : 'active'
+                                  const res = await staffApi.setStaffStatus(staffId, newStatus)
+                                  if (res?.ok) showToast('success', isActive ? 'Staff blocked' : 'Staff activated')
+                                  else if (res?.error) showToast('error', res.error)
+                                } else {
+                                  // Toggle status via team members API
+                                  const newStatus = isActive ? 'Disabled' : 'Active'
+                                  try {
+                                    const res = await updateMember(staffId, { status: newStatus })
+                                    if (res?.error) showToast('error', res.error)
+                                    else showToast('success', res?.message || 'Status updated')
+                                  } catch (e) {
+                                    showToast('error', clientSafeMessage(e, 'Unable to update status.'))
+                                  }
+                                }
+                              }}
+                            >
+                              {isActive ? 'Disable' : 'Enable'}
+                            </Button>
+                            {isCashier && staff._isStaffRecord ? (
+                              <Button
+                                variant="ghost"
+                                className="rounded-xl px-3 py-2 text-xs"
+                                type="button"
+                                onClick={async () => {
+                                  showToast('info', 'Resending cashier credentials...')
+                                  const res = await staffApi.resendStaffInvite(staffId)
+                                  if (res?.ok) showToast('success', res.message || 'New PIN sent')
+                                  else if (res?.error) showToast('error', res.error)
+                                }}
+                              >
+                                Resend PIN
+                              </Button>
+                            ) : null}
+                            {roleKey === 'admin' ? (
+                              <Button
+                                variant="ghost"
+                                className="rounded-xl px-3 py-2 text-xs"
+                                type="button"
+                                onClick={() => handleSetApprovalPin(staffId, 'admin', staff.name || staff.fullName || 'Admin / Manager')}
+                              >
+                                {staff.approvalPin === true ? 'Reset Approval PIN' : 'Set Approval PIN'}
+                              </Button>
+                            ) : null}
+                            <Button
+                              variant="ghost"
+                              className="rounded-xl px-3 py-2 text-xs text-rose-700 hover:bg-rose-50"
+                              type="button"
+                              onClick={async () => {
+                                if (staff._isStaffRecord) {
+                                  // Delete via both APIs
+                                  await staffApi.setStaffStatus(staffId, 'blocked').catch(() => {})
+                                }
+                                const res = await deleteMember(staffId)
+                                if (res?.ok) showToast('success', res.message || 'Staff deleted')
+                                else if (res?.error) showToast('error', res.error)
+                              }}
+                            >
+                              Remove
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </Card>
+          </div>
+        ) : null}
+
         {tab === 'members' ? (
           loading ? (
             <Card className="p-5">
@@ -968,6 +1247,55 @@ export default function TeamPage() {
           </Card>
         ) : null}
       </div>
+
+      {/* Approval PIN modal */}
+      {approvalPinModal ? (
+        <div
+          className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/45 px-4 py-6 backdrop-blur-sm"
+          onClick={() => setApprovalPinModal(null)}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-base font-black text-slate-900">Approval PIN</p>
+                <p className="mt-1 text-xs font-semibold text-slate-500">{approvalPinModal.name}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setApprovalPinModal(null)}
+                className="rounded-full px-2 py-1 text-slate-400 hover:bg-slate-100"
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+
+            {approvalPinModal.loading ? (
+              <div className="mt-6 grid place-items-center py-6 text-sm text-slate-500">Generating PIN…</div>
+            ) : approvalPinModal.error ? (
+              <div className="mt-6">
+                <p className="rounded-2xl bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{approvalPinModal.error}</p>
+                <Button className="mt-4 w-full rounded-2xl" type="button" onClick={() => setApprovalPinModal(null)}>
+                  Close
+                </Button>
+              </div>
+            ) : approvalPinModal.pin ? (
+              <div className="mt-6">
+                <p className="text-center text-xs font-semibold text-slate-500">Your approval PIN is</p>
+                <p className="mt-2 text-center text-4xl font-black tracking-[0.2em] text-slate-900">{approvalPinModal.pin}</p>
+                <p className="mt-4 rounded-2xl bg-sky-50 px-4 py-3 text-xs font-semibold leading-5 text-sky-800">
+                  Use this PIN to approve sensitive actions like order cancellations. It is not for till login. Save it now — it will not be shown again.
+                </p>
+                <Button className="mt-4 w-full rounded-2xl" type="button" onClick={() => setApprovalPinModal(null)}>
+                  Done
+                </Button>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
     </motion.div>
   )
 }

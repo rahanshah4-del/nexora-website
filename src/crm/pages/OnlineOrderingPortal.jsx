@@ -8,7 +8,15 @@ import Toast from '../components/ui/Toast.jsx'
 import { loadRestaurantMenuItems, loadRestaurantMenuCategories } from '../data/restaurantMenu.js'
 import { loadRestaurantOrders, getNextRestaurantOrderNumber, saveRestaurantOrders } from '../data/restaurantOrders.js'
 import { calculateRestaurantBill, formatRestaurantCurrency, safeMoney } from '../lib/restaurantPosCalculations.js'
-import { calculateDeliveryCharge, estimateDeliveryTime, ORDER_TYPES } from '../lib/deliveryCalculations.js'
+
+// Inline replacements — was imported from deleted deliveryCalculations.js
+const ORDER_TYPES = [
+  { id: 'delivery',  label: 'Delivery' },
+  { id: 'pickup',    label: 'Pickup' },
+  { id: 'dine_in',   label: 'Dine-In Preorder' },
+  { id: 'scheduled', label: 'Scheduled' },
+]
+const calculateDeliveryCharge = () => ({ charge: 0 })
 
 export default function OnlineOrderingPortal() {
   const { slug } = useParams()

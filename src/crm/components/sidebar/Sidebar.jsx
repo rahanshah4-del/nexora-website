@@ -154,7 +154,6 @@ const RESTAURANT_ACCORDION_GROUPS = [
   { id: 'operations',  label: 'Operations',  icon: HiOutlinePresentationChartBar, color: 'text-blue-600 bg-blue-50 dark:text-blue-300 dark:bg-blue-900/30',      moduleKeys: ['ordersKot', 'kitchenDisplay', 'tables'] },
   { id: 'menu',        label: 'Menu',        icon: HiOutlineSquaresPlus,            color: 'text-rose-600 bg-rose-50 dark:text-rose-300 dark:bg-rose-900/30',        moduleKeys: ['menuManagement', 'kitchenProduction'] },
   { id: 'customers',   label: 'Customers',   icon: HiOutlineUserGroup,              color: 'text-violet-600 bg-violet-50 dark:text-violet-300 dark:bg-violet-900/30', moduleKeys: ['customers', 'loyalty', 'reservations'] },
-  { id: 'delivery',    label: 'Delivery',    icon: HiOutlineTruck,                  color: 'text-orange-600 bg-orange-50 dark:text-orange-300 dark:bg-orange-900/30',  moduleKeys: ['delivery', 'deliveryDrivers', 'deliveryZones'] },
   { id: 'billing',     label: 'Billing',     icon: HiOutlineReceiptPercent,         color: 'text-amber-600 bg-amber-50 dark:text-amber-300 dark:bg-amber-900/30',     moduleKeys: ['invoices'] },
   { id: 'finance',     label: 'Finance',     icon: HiOutlineCurrencyDollar,         color: 'text-emerald-600 bg-emerald-50 dark:text-emerald-300 dark:bg-emerald-900/30', moduleKeys: ['expenses', 'accounts', 'accountStatements'] },
   { id: 'admin',       label: 'Administration', icon: HiOutlineShieldCheck,         color: 'text-teal-600 bg-teal-50 dark:text-teal-300 dark:bg-teal-900/30',         moduleKeys: ['notifications', 'approvals'] },
@@ -793,11 +792,6 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
       }
       return allowedRoutes.has(item.to) || item.comingSoon
     })
-    // Hide Driver Dashboard for Restaurant POS
-    if (normalizedType === 'Restaurant POS') {
-      const driverIdx = items.findIndex((item) => item.key === 'driverDashboard')
-      if (driverIdx !== -1) items.splice(driverIdx, 1)
-    }
     if (normalizedType === 'School ERP' && items.some((item) => item.key === 'team') && !items.some((item) => item.key === 'schoolPayroll')) {
       const teamIndex = items.findIndex((item) => item.key === 'team')
       items.splice(teamIndex + 1, 0, {

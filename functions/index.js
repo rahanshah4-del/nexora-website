@@ -1253,6 +1253,239 @@ export const recordLoginHistory = onCall(
   },
 )
 
+/**
+ * Verify a staff/admin PIN without issuing a login session.
+ * Used for elevated-action confirmations (cancel order, approve refund, etc.).
+ * Only succeeds if the PIN belongs to an owner, admin, or accountant.
+ *
+ * Input:  { workspaceId, pin }
+ * Output: { valid: true, role, staffName, staffLoginId }
+ */
+export const verifyStaffPin = onCall(
+  { region: FUNCTION_REGION, timeoutSeconds: 15, memory: '256MiB' },
+  async (request) => {
+    try {
+      if (!request.auth?.uid) throw new HttpsError('unauthenticated', 'Login required.')
+      const workspaceId = clean(request.data?.workspaceId)
+      const pin = clean(request.data?.pin)
+      if (!workspaceId || !pin) {
+        throw new HttpsError('invalid-argument', 'Workspace ID and PIN are required.')
+      }
+
+      // Read workspace to get workspaceCode
+      const wsSnap = await db.collection('workspaces').doc(workspaceId).get()
+      if (!wsSnap.exists) throw new HttpsError('not-found', 'Workspace not found.')
+      const ws = wsSnap.data() || {}
+      const workspaceCode = clean(ws.workspaceCode || ws.teamWorkspaceCode).toUpperCase()
+      if (!workspaceCode) throw new HttpsError('failed-precondition', 'Workspace code not configured.')
+
+      // Query all staffLoginSecrets for this workspace
+      const secretsSnap = await db.collection('staffLoginSecrets')
+        .where('workspaceId', '==', workspaceId)
+        .where('pinLoginEnabled', '==', true)
+        .get()
+
+      if (secretsSnap.empty) throw new HttpsError('permission-denied', 'No active staff PINs found for this workspace.')
+
+      let matchedSecret = null
+      let matchedStaffLoginId = ''
+
+      for (const secretDoc of secretsSnap.docs) {
+        const secret = secretDoc.data() || {}
+        const sid = clean(secret.staffLoginId || secret.loginKey?.split(':')[1] || '')
+        if (!sid) continue
+        const expected = clean(secret.pinHash)
+        const actual = teamPinHash({ workspaceCode, staffLoginId: sid, pin })
+        if (expected && expected === actual) {
+          matchedSecret = { ref: secretDoc.ref, data: secret, staffLoginId: sid }
+          break
+        }
+      }
+
+      if (!matchedSecret) {
+        // Track failed attempt against the workspace-audit (no specific staff since we don't know whose PIN it was)
+        await writeWorkspaceAudit({
+          workspaceId,
+          userId: request.auth.uid,
+          action: 'staff_pin_verify_failed',
+          target: workspaceId,
+          moduleKey: 'team',
+          metadata: { reason: 'invalid_pin', callerUid: request.auth.uid },
+        }).catch(() => {})
+        throw new HttpsError('permission-denied', 'Invalid PIN.')
+      }
+
+      const { ref: secretRef, data: secret, staffLoginId } = matchedSecret
+      const staffUid = clean(secret.staffId || secret.uid || secretRef.id)
+
+      // Look up staff member to check role
+      let staffSnap = await db.collection('workspaces').doc(workspaceId).collection('staff').doc(staffUid).get()
+      if (!staffSnap.exists) {
+        staffSnap = await db.collection('workspaces').doc(workspaceId).collection('teamMembers').doc(staffUid).get()
+      }
+      const staff = staffSnap.exists ? staffSnap.data() || {} : secret
+      const role = normalizeStaffRole(staff.role || secret.role)
+
+      // Only owner, admin, accountant can approve elevated actions
+      if (!['owner', 'admin', 'accountant'].includes(role)) {
+        await writeWorkspaceAudit({
+          workspaceId,
+          userId: staffUid,
+          staffId: staffUid,
+          action: 'staff_pin_verify_denied_role',
+          target: staffUid,
+          moduleKey: 'team',
+          metadata: { staffLoginId, role, callerUid: request.auth.uid },
+        }).catch(() => {})
+        throw new HttpsError('permission-denied', `Staff role "${role}" does not have admin approval rights. Owner, admin, or accountant required.`)
+      }
+
+      // Check disabled status
+      const status = lower(staff.status || 'active')
+      if (['blocked', 'disabled', 'inactive'].includes(status)) {
+        throw new HttpsError('permission-denied', 'This staff access is disabled.')
+      }
+
+      // Reset failed login count on successful verification
+      await secretRef.set({
+        failedLoginCount: 0,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      }, { merge: true }).catch(() => {})
+
+      await writeWorkspaceAudit({
+        workspaceId,
+        userId: staffUid,
+        staffId: staffUid,
+        action: 'staff_pin_verified',
+        target: staffUid,
+        moduleKey: 'team',
+        metadata: { staffLoginId, role, callerUid: request.auth.uid },
+      }).catch(() => {})
+
+      return {
+        valid: true,
+        role,
+        staffName: clean(staff.name || staff.staffName || staff.displayName || staffLoginId),
+        staffLoginId,
+      }
+    } catch (error) {
+      if (error instanceof HttpsError) throw error
+      logger.error('verifyStaffPin failed', { message: error?.message, stack: error?.stack })
+      throw new HttpsError('internal', 'PIN verification failed. Please try again.')
+    }
+  },
+)
+
+/**
+ * Set or reset an "Approval PIN" for an Owner or Admin/Manager.
+ *
+ * This uses the SAME underlying PIN system (generatePin + teamPinHash +
+ * staffLoginSecrets) as Cashier till-login, but it is marked `approvalPin: true`
+ * so it can ONLY be verified via verifyStaffPin (for sensitive-action approval
+ * like order cancellation) and is rejected by teamStaffLogin (no full session /
+ * desktop till login). The raw PIN is returned to the caller for one-time
+ * on-screen display — it is never stored (only the hash).
+ */
+export const setApprovalPin = onCall(
+  { region: FUNCTION_REGION, timeoutSeconds: 30, memory: '256MiB' },
+  async (request) => {
+    try {
+      const workspaceId = clean(request.data?.workspaceId)
+      const staffId = clean(request.data?.staffId)
+      if (!workspaceId) throw new HttpsError('invalid-argument', 'Workspace ID is required.')
+      if (!staffId) throw new HttpsError('invalid-argument', 'Staff ID is required.')
+      await assertWorkspaceAdmin(request.auth, workspaceId)
+
+      const staffRef = db.collection('workspaces').doc(workspaceId).collection('staff').doc(staffId)
+      const teamRef = db.collection('workspaces').doc(workspaceId).collection('teamMembers').doc(staffId)
+      const [staffSnap, teamSnap, workspaceSnap] = await Promise.all([
+        staffRef.get(),
+        teamRef.get(),
+        db.collection('workspaces').doc(workspaceId).get(),
+      ])
+      const staff = staffSnap.exists ? staffSnap.data() || {} : teamSnap.data() || {}
+      if (!staffSnap.exists && !teamSnap.exists) {
+        throw new HttpsError('not-found', 'Staff record was not found.')
+      }
+
+      const role = normalizeStaffRole(staff.role || request.data?.role)
+      // Only owner and admin (Admin/Manager) roles may hold an approval PIN.
+      // `accountant` is retained for legacy workspaces; verifyStaffPin allows it.
+      if (!['owner', 'admin', 'accountant'].includes(role)) {
+        throw new HttpsError('invalid-argument', `Approval PIN is only for owner/admin roles. Role "${role}" is not eligible.`)
+      }
+
+      const workspace = workspaceSnap.data() || {}
+      const seed = clean(workspace.companyName || workspace.name || workspaceId).replace(/[^a-zA-Z0-9]/g, '').slice(0, 3).toUpperCase() || 'NX'
+      const workspaceCode = clean(workspace.workspaceCode || workspace.teamWorkspaceCode).toUpperCase() || `${seed}${randomChars(4)}`
+      const staffLoginId = clean(staff.staffLoginId || staff.staffShortCode || generateStaffLoginId(role)).toUpperCase()
+      const pin = generatePin()
+      const loginKey = teamLoginKey(workspaceCode, staffLoginId)
+      const now = FieldValue.serverTimestamp()
+
+      const patch = {
+        name: clean(staff.name || staff.fullName || 'Staff User'),
+        fullName: clean(staff.fullName || staff.name || 'Staff User'),
+        displayName: clean(staff.displayName || staff.name || 'Staff User'),
+        email: lower(staff.email),
+        role,
+        status: staff.status || 'active',
+        isStaff: true,
+        workspaceCode,
+        teamWorkspaceCode: workspaceCode,
+        staffLoginId,
+        staffShortCode: staffLoginId,
+        loginKey,
+        pinLoginEnabled: true,
+        approvalPin: true,
+        failedLoginCount: 0,
+        pinUpdatedAt: now,
+        updatedAt: now,
+        updatedBy: request.auth.uid,
+      }
+
+      const batch = db.batch()
+      batch.set(staffRef, patch, { merge: true })
+      batch.set(teamRef, patch, { merge: true })
+      batch.set(db.collection('workspaces').doc(workspaceId), { workspaceCode, teamWorkspaceCode: workspaceCode, updatedAt: now }, { merge: true })
+      batch.set(db.collection('staffLoginSecrets').doc(staffId), {
+        staffId,
+        staffLoginId,
+        workspaceCode,
+        loginKey,
+        pinHash: teamPinHash({ workspaceCode, staffLoginId, pin }),
+        pinLoginEnabled: true,
+        approvalPin: true,
+        failedLoginCount: 0,
+        workspaceId,
+        ownerId: workspaceId,
+        email: lower(staff.email),
+        role,
+        updatedBy: request.auth.uid,
+        updatedAt: now,
+      }, { merge: true })
+      await batch.commit()
+
+      await writeWorkspaceAudit({
+        workspaceId,
+        userId: request.auth.uid,
+        staffId,
+        action: 'approval_pin_set',
+        target: staffId,
+        moduleKey: 'team',
+        createdBy: request.auth.uid,
+        metadata: { staffLoginId, role },
+      }).catch(() => {})
+
+      return { success: true, staffId, pin, role, staffName: clean(staff.name || staff.fullName || 'Staff User') }
+    } catch (error) {
+      if (error instanceof HttpsError) throw error
+      logger.error('setApprovalPin failed', { message: error?.message, stack: error?.stack })
+      throw new HttpsError('internal', error?.message || 'Unable to set approval PIN.')
+    }
+  },
+)
+
 export const teamStaffLogin = onCall(
   { region: FUNCTION_REGION, timeoutSeconds: 30, memory: '256MiB' },
   async (request) => {
@@ -1275,6 +1508,20 @@ export const teamStaffLogin = onCall(
         secretSnap = secretQuery.docs[0]
       }
       const secret = secretSnap.exists ? secretSnap.data() || {} : {}
+      // Approval-only PINs are for sensitive-action approval (verifyStaffPin),
+      // never for full desktop till login. Owner/Admin log in via email/password.
+      if (secret.approvalPin === true) {
+        await writeWorkspaceAudit({
+          workspaceId: clean(secret.workspaceId || secret.ownerId),
+          userId: clean(secret.staffId || secret.uid || secretRef.id),
+          staffId: clean(secret.staffId || secret.uid || secretRef.id),
+          action: 'staff_login_denied_approval_pin',
+          target: clean(secret.staffId || secret.uid || secretRef.id),
+          moduleKey: 'team',
+          metadata: { reason: 'approval_pin_not_for_till_login', staffLoginId },
+        }).catch(() => {})
+        throw new HttpsError('permission-denied', 'This PIN is for approval only and cannot be used for till login.')
+      }
       const workspaceId = clean(secret.workspaceId || secret.ownerId)
       const staffUid = clean(secret.staffId || secret.uid || secretRef.id || directStaffUid)
       if (!workspaceId || !staffUid) throw new HttpsError('permission-denied', 'Invalid team login details.')
@@ -1525,6 +1772,15 @@ export const createTeamStaff = onCall(
       const duplicateSnap = await db.collection('workspaces').doc(workspaceId).collection('staff').where('email', '==', email).limit(1).get()
       if (!duplicateSnap.empty) {
         throw new HttpsError('already-exists', 'This email is already added as staff.')
+      }
+
+      // Safety: For Restaurant POS, only the Cashier role receives desktop till login
+      // credentials (workspace code + staff ID + PIN). Other roles are website-only.
+      if (businessType === 'Restaurant POS' && role !== 'cashier') {
+        throw new HttpsError(
+          'invalid-argument',
+          'For Restaurant POS, only the Cashier role can receive desktop till login credentials. Use the website staff form for other roles.',
+        )
       }
 
       const seed = clean(workspace.companyName || workspace.name || workspaceId).replace(/[^a-zA-Z0-9]/g, '').slice(0, 3).toUpperCase() || 'NX'

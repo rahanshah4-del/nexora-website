@@ -220,7 +220,7 @@ export function useTeamMembers() {
             joinedAt: docPayload.joinedAt,
             createdBy: userId,
           }, { businessType })
-          await logActivity({
+          logActivity({
             workspaceId,
             userId,
             businessType,
@@ -231,7 +231,7 @@ export function useTeamMembers() {
             targetId: ref.id,
             targetName: name,
             metadata: { email, role: docPayload.role || 'Sales Staff' },
-          })
+          }).catch(() => {})
           return { ok: true }
         } catch (e) {
           logTeamPermissionIssue(e, {

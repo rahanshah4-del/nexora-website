@@ -37,6 +37,11 @@ import { directPrinterAvailable, printThermalText } from '../lib/printerService.
 
 import { migrateKey, scopedKey } from '../lib/localDataEvents.js'
 
+/** Strip all known order-number prefixes so different systems' formats match. */
+function normalizeOrderNumberForDedup(orderNumber) {
+  return String(orderNumber || '').replace(/^(W-|D-|#)/, '')
+}
+
 const _TABLES_BASE = 'nexora.restaurant.tables.v1'
 function tablesKey() {
   const k = scopedKey(_TABLES_BASE)
@@ -46,7 +51,7 @@ function tablesKey() {
   return k
 }
 
-const filters = ['Today', 'Pending', 'Preparing', 'Served', 'Paid', 'Due', 'Cancelled']
+const filters = ['Today', 'Pending', 'Preparing', 'Served', 'Paid', 'Due', 'Cancelled', 'Delivery']
 
 function moneyValue(value) {
   const number = Number(value)
@@ -263,9 +268,11 @@ export default function RestaurantOrdersKotPage() {
       const orderDate = restaurantBusinessDateKey(order.createdAt || order.date, settings)
       const matchesDate = !selectedDate || orderDate === selectedDate
       const matchesFilter =
-        (selectedDate ? true : activeFilter === 'Today' && isWithinRestaurantBusinessDay(order.createdAt || order.date, settings)) ||
-        orderStatus === normalizedFilter ||
-        paymentStatus === normalizedFilter
+        activeFilter === 'Delivery'
+          ? order.orderType === 'Delivery'
+          : (selectedDate ? true : activeFilter === 'Today' && isWithinRestaurantBusinessDay(order.createdAt || order.date, settings)) ||
+            orderStatus === normalizedFilter ||
+            paymentStatus === normalizedFilter
       const matchesQuery =
         !needle ||
         [
@@ -278,6 +285,8 @@ export default function RestaurantOrdersKotPage() {
           order.phone,
           order.paymentStatus,
           order.orderStatus,
+          order.deliveryAddress,
+          order.riderNotes,
         ].some((value) => String(value || '').toLowerCase().includes(needle))
       return matchesDate && matchesFilter && matchesQuery
     })
@@ -388,14 +397,30 @@ export default function RestaurantOrdersKotPage() {
       setEditError('Cancel reason is required when order status is cancelled.')
       return
     }
+
     const total = Number(editTarget.total || editTarget.totals?.total || 0)
     const paidAmount = nextPaymentStatus === 'paid'
       ? total
       : nextPaymentStatus === 'due'
         ? 0
         : Math.min(total, Math.max(0, Number(editForm.paidAmount || 0)))
+
+    // ── Resolve localStorage orderNumber for dedup safety ──
+    let resolvedOrderNumber = editTarget.orderNumber
+    const targetNorm = normalizeOrderNumberForDedup(editTarget.orderNumber)
+    if (targetNorm && targetNorm !== editTarget.orderNumber) {
+      const localOrders = loadRestaurantOrders()
+      const localMatch = localOrders.find(
+        (o) => normalizeOrderNumberForDedup(o.orderNumber) === targetNorm,
+      )
+      if (localMatch) {
+        resolvedOrderNumber = localMatch.orderNumber
+      }
+    }
+
     const nextOrder = {
       ...editTarget,
+      orderNumber: resolvedOrderNumber,
       orderStatus: nextOrderStatus,
       paymentStatus: nextPaymentStatus,
       paidAmount,
@@ -440,8 +465,28 @@ export default function RestaurantOrdersKotPage() {
       setCancelError('Cancel reason is required.')
       return
     }
+
+    // ── Resolve localStorage orderNumber for dedup safety ──
+    // If cancelTarget is a Firestore-sourced order (D- prefix), there may be
+    // a matching localStorage order under a different prefix (# or W-).
+    // upsertRestaurantOrder matches by raw orderNumber string, so we must
+    // pass the EXISTING localStorage orderNumber if one exists — otherwise
+    // it creates a new entry instead of updating, producing a duplicate.
+    let resolvedOrderNumber = cancelTarget.orderNumber
+    const targetNorm = normalizeOrderNumberForDedup(cancelTarget.orderNumber)
+    if (targetNorm && targetNorm !== cancelTarget.orderNumber) {
+      const localOrders = loadRestaurantOrders()
+      const localMatch = localOrders.find(
+        (o) => normalizeOrderNumberForDedup(o.orderNumber) === targetNorm,
+      )
+      if (localMatch) {
+        resolvedOrderNumber = localMatch.orderNumber
+      }
+    }
+
     const cancelledOrder = {
       ...cancelTarget,
+      orderNumber: resolvedOrderNumber,
       orderStatus: 'cancelled',
       paymentStatus: 'cancelled',
       cancelReason: cancelReason.trim(),
@@ -582,6 +627,16 @@ export default function RestaurantOrdersKotPage() {
                   <td className="px-4 py-3">
                     <p className="font-semibold text-slate-950">{order.table || order.orderType}</p>
                     <p className="mt-1 text-xs text-slate-500">{order.orderType}</p>
+                    {order.orderType === 'Delivery' && order.deliveryAddress ? (
+                      <p className="mt-1 max-w-[200px] truncate text-xs font-medium text-slate-700" title={order.deliveryAddress}>
+                        📍 {order.deliveryAddress}
+                      </p>
+                    ) : null}
+                    {order.orderType === 'Delivery' && order.riderNotes ? (
+                      <p className="mt-0.5 max-w-[200px] truncate text-xs italic text-slate-500" title={order.riderNotes}>
+                        {order.riderNotes}
+                      </p>
+                    ) : null}
                   </td>
                   <td className="px-4 py-3">
                     <p className="font-semibold text-slate-950">{order.customer}</p>
@@ -593,6 +648,7 @@ export default function RestaurantOrdersKotPage() {
                   <td className="px-4 py-3 font-black text-slate-950">{formatRestaurantCurrency(order.total || order.totals?.total)}</td>
                   <td className="px-4 py-3">
                     <Badge variant={statusTone[order.paymentStatus] || 'default'}>{order.paymentStatus}</Badge>
+                    {renderWalletBadge(order)}
                     {String(order.orderStatus || '').toLowerCase() !== 'cancelled' && (order.due || order.dueAmount) ? (
                       <p className="mt-1 text-xs font-bold text-rose-700">Due {formatRestaurantCurrency(order.due || order.dueAmount)}</p>
                     ) : null}
@@ -739,6 +795,8 @@ export default function RestaurantOrdersKotPage() {
                   />
                   Free table / close holder
                 </label>
+                {/* Payment method detail for wallet orders */}
+                {renderEditPaymentBreakdown(editTarget)}
               </div>
               {editForm.orderStatus === 'cancelled' ? (
                 <div className="sm:col-span-2">
@@ -813,12 +871,86 @@ export default function RestaurantOrdersKotPage() {
   )
 }
 
+/** Render a compact wallet badge when the order used wallet payment. */
+function renderWalletBadge(order) {
+  const pm = String(order.paymentMethod || '')
+  const isWallet = pm === 'Wallet'
+  const isSplit = pm.startsWith('Split')
+  if (!isWallet && !isSplit) return null
+
+  const walletUsed = Number(order.walletAmountUsed || 0)
+  const paid = Number(order.paidAmount || 0)
+  const cashPortion = isSplit && walletUsed > 0 ? Math.max(0, paid - walletUsed) : 0
+
+  return (
+    <span
+      className="mt-1 inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-bold text-indigo-700"
+      title={
+        isSplit && walletUsed > 0
+          ? `Wallet: ${formatRestaurantCurrency(walletUsed)} / Cash: ${formatRestaurantCurrency(cashPortion)}`
+          : 'Paid via Wallet'
+      }
+    >
+      {isSplit ? '💳 Split' : '💳 Wallet'}
+      {isSplit && walletUsed > 0 ? (
+        <span className="font-normal text-indigo-500">
+          {formatRestaurantCurrency(walletUsed)}
+        </span>
+      ) : null}
+    </span>
+  )
+}
+
 function ReportCard({ label, value, tone = 'text-slate-950' }) {
   return (
     <Card className="rounded-[1.15rem] p-4">
       <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">{label}</p>
       <p className={`mt-2 text-2xl font-black ${tone}`}>{value}</p>
     </Card>
+  )
+}
+
+/** Show payment breakdown in the edit modal for wallet/split orders. */
+function renderEditPaymentBreakdown(order) {
+  const pm = String(order.paymentMethod || '')
+  const isWallet = pm === 'Wallet'
+  const isSplit = pm.startsWith('Split')
+  if (!isWallet && !isSplit) return null
+
+  const total = Number(order.total || order.totals?.total || 0)
+  const paid = Number(order.paidAmount || 0)
+  const walletUsed = Number(order.walletAmountUsed || (isWallet ? paid : 0))
+  const cashPaid = isSplit ? Math.max(0, paid - walletUsed) : 0
+
+  return (
+    <div className="mt-2 rounded-lg border border-indigo-100 bg-white px-2.5 py-2 text-xs">
+      <p className="font-bold uppercase tracking-[0.1em] text-indigo-600">Payment Breakdown</p>
+      <div className="mt-1.5 space-y-0.5">
+        <div className="flex justify-between gap-3">
+          <span className="text-slate-500">Total</span>
+          <span className="font-bold text-slate-950">{formatRestaurantCurrency(total)}</span>
+        </div>
+        <div className="flex justify-between gap-3">
+          <span className="text-slate-500">Paid</span>
+          <span className="font-bold text-slate-950">{formatRestaurantCurrency(paid)}</span>
+        </div>
+        {walletUsed > 0 ? (
+          <div className="flex justify-between gap-3">
+            <span className="text-indigo-600">💳 Wallet</span>
+            <span className="font-bold text-indigo-700">{formatRestaurantCurrency(walletUsed)}</span>
+          </div>
+        ) : null}
+        {isSplit && cashPaid > 0 ? (
+          <div className="flex justify-between gap-3">
+            <span className="text-emerald-600">💵 Cash</span>
+            <span className="font-bold text-emerald-700">{formatRestaurantCurrency(cashPaid)}</span>
+          </div>
+        ) : null}
+        {isSplit && !walletUsed ? (
+          <p className="text-[10px] italic text-amber-600">Split payment — wallet amount not recorded</p>
+        ) : null}
+      </div>
+    </div>
   )
 }
 

@@ -89,11 +89,6 @@ export const navItems = [
   { label: 'Loyalty Rewards', to: '/app/loyalty/rewards', icon: HiOutlineGift },
   { label: 'Loyalty Coupons', to: '/app/loyalty/coupons', icon: HiOutlineTag },
   { label: 'Loyalty Campaigns', to: '/app/loyalty/campaigns', icon: HiOutlineSparkles },
-  { label: 'Delivery Dashboard', to: '/app/delivery', icon: HiOutlineTruck },
-  { label: 'Delivery Orders', to: '/app/delivery/orders', icon: HiOutlineClipboardDocumentList },
-  { label: 'Delivery Drivers', to: '/app/delivery/drivers', icon: HiOutlineUserGroup },
-  { label: 'Delivery Zones', to: '/app/delivery/zones', icon: HiOutlineMapPin },
-  { label: 'Driver Dashboard', to: '/app/driver', icon: HiOutlineTruck },
   { label: 'Reservations', to: '/app/reservations', icon: HiOutlineCalendarDays },
   { label: 'Reservation Calendar', to: '/app/reservations/calendar', icon: HiOutlineCalendarDays },
   { label: 'Waitlist', to: '/app/reservations/waitlist', icon: HiOutlineUserGroup },
@@ -103,7 +98,6 @@ export const navItems = [
   { label: 'Prod. Waste', to: '/app/kitchen-production/waste', icon: HiOutlineExclamationTriangle },
   { label: 'Kitchen Production Reports', to: '/app/kitchen-production/reports', icon: HiOutlineDocumentChartBar },
   { label: 'Reservation Settings', to: '/app/reservations/settings', icon: HiOutlineCog6Tooth },
-  { label: 'Delivery Settings', to: '/app/delivery/settings', icon: HiOutlineCog6Tooth },
 ]
 
 

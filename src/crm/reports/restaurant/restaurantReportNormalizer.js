@@ -146,6 +146,7 @@ export function normalizeRestaurantReportOrder(order = {}, options = {}) {
     staffId: textValue(order.staffId || order.cashierId || order.createdBy || ''),
     cashierName: textValue(order.cashierName || order.staffName || order.createdByName || ''),
     staffName: textValue(order.staffName || order.cashierName || order.createdByName || ''),
+    walletAmountUsed: numberValue(order.walletAmountUsed),
     isCancelled,
     isBilled,
     isPendingKot,

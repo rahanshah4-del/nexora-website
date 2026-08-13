@@ -200,6 +200,72 @@ async function _performMenuSync(workspaceId, userId, items) {
   }
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// MENU ITEMS — Firestore Read (desktop-created items)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Map a Firestore menu item document back to the website's localStorage item shape.
+ * Exact reverse of menuItemToFirestore(): cost → costPrice, status preserved, etc.
+ * Adds `_source: 'firestore'` so the UI can badge desktop-created items.
+ * Accepts the Firestore doc directly, using `doc.id` as the item id.
+ */
+export function firestoreMenuItemToLocalShape(doc) {
+  const rawStatus = String(doc.status || 'Active').toLowerCase()
+  return {
+    id: String(doc.id || ''),
+    name: String(doc.name || ''),
+    category: String(doc.category || ''),
+    price: safeMoney(doc.price),
+    costPrice: safeMoney(doc.cost != null ? doc.cost : doc.costPrice), // Firestore 'cost' → UI 'costPrice'
+    status: (rawStatus === 'inactive' || rawStatus === 'disabled' || rawStatus === 'hidden') ? 'Inactive' : 'Active',
+    description: String(doc.description || ''),
+    image: String(doc.image || ''),
+    itemType: String(doc.itemType || 'Food'),
+    sku: String(doc.sku || ''),
+    preparationTime: String(doc.preparationTime || ''),
+    availability: doc.availability != null ? String(doc.availability) : 'Available',
+    taxEnabled: Boolean(doc.taxEnabled),
+    serviceChargeEnabled: Boolean(doc.serviceChargeEnabled),
+    discountType: String(doc.discountType || 'none'),
+    discountValue: safeMoney(doc.discountValue),
+    offerTitle: String(doc.offerTitle || ''),
+    offerStartDate: String(doc.offerStartDate || ''),
+    offerEndDate: String(doc.offerEndDate || ''),
+    happyHour: Boolean(doc.happyHour),
+    buyOneGetOne: Boolean(doc.buyOneGetOne),
+    comboOffer: Boolean(doc.comboOffer),
+    tone: String(doc.tone || 'from-sky-600 to-indigo-500'),
+    _source: 'firestore',
+  }
+}
+
+/**
+ * Load all menu items from the Firestore menuItems collection for a workspace.
+ * Returns an array normalized to the website's localStorage item shape.
+ * One-time load (getDocs) — mirrors loadFirestoreOrders().
+ * Silently returns [] on any error (permission-denied, network, etc.).
+ */
+export async function loadFirestoreMenuItems(workspaceId) {
+  if (!db || !workspaceId) return []
+  try {
+    const { collection, getDocs } = await import('firebase/firestore')
+    const collectionPath = `workspaces/${workspaceId}/menuItems`
+    const snap = await getDocs(collection(db, collectionPath))
+    const items = []
+    snap.forEach((d) => {
+      const data = d.data()
+      if (data && data.name) {
+        items.push(firestoreMenuItemToLocalShape({ ...data, id: d.id }))
+      }
+    })
+    return items
+  } catch (err) {
+    console.warn('[restaurantFirestoreSync] loadFirestoreMenuItems failed:', err?.code || err?.message || err)
+    return []
+  }
+}
+
 // Track previous items for diffing (reset when items are reloaded)
 let _menuPrevItems = null
 
@@ -527,6 +593,7 @@ export function firestoreOrderToLocalShape(doc) {
     orderStatus: doc.orderStatus || 'pending',
     dueAmount,
     paidAmount,
+    walletAmountUsed: Number(doc.walletAmountUsed || 0),
     prepTime: 0,
     notes: doc.notes || '',
     deliveryAddress: doc.deliveryAddress || '',

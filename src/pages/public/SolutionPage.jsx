@@ -1,6 +1,7 @@
 import { Link, Navigate, useParams } from 'react-router-dom'
 import {
   HiOutlineAcademicCap,
+  HiOutlineArrowDownTray,
   HiOutlineArrowRight,
   HiOutlineBuildingOffice2,
   HiOutlineChartBarSquare,
@@ -775,6 +776,12 @@ export default function SolutionPage({ solutionSlug: solutionSlugProp } = {}) {
                 Book Demo
                 <HiOutlinePlayCircle className="text-xl text-slate-500" />
               </a>
+              {solutionSlug === 'pos' ? (
+                <Link to="/download/restaurant-pos" className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-6 text-sm font-medium tracking-[-0.01em] text-sky-700 shadow-[0_2px_8px_-2px_rgba(14,165,233,0.08)] transition-all duration-200 hover:-translate-y-0.5 hover:border-sky-300 hover:bg-sky-100 hover:text-sky-800 hover:shadow-[0_6px_20px_-8px_rgba(14,165,233,0.15)] active:scale-[0.97]">
+                  <HiOutlineArrowDownTray className="text-lg" />
+                  Download for Windows
+                </Link>
+              ) : null}
             </div>
           </div>
 

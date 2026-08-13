@@ -25,7 +25,6 @@ const modules = [
   { label: 'Reservations', path: '/app/reservations', icon: HiOutlineCalendarDays, desc: 'Reservation dashboard, calendar & waitlist', badge: 'Active' },
   { label: 'Kitchen Production', path: '/app/kitchen-production', icon: HiOutlineFire, desc: 'Batches, prep sheets, waste & inventory', badge: 'Active' },
   { label: 'Loyalty & Rewards', path: '/app/loyalty', icon: HiOutlineStar, desc: 'Points, coupons, wallet & campaigns', badge: 'Active' },
-  { label: 'Delivery', path: '/app/delivery', icon: HiOutlineTruck, desc: 'Online orders, drivers, zones & tracking', badge: 'Active' },
   { label: 'Inventory Intelligence', path: '/app/inventory', icon: HiOutlineCube, desc: 'AI recipe ingredients, stock levels & waste tracking', badge: 'Active', ai: true },
   { label: 'Reports & BI', path: '/app/reports', icon: HiOutlineChartBarSquare, desc: 'AI-powered sales, payments & business intelligence', badge: 'Active', ai: true },
   { label: 'Prod. Waste', path: '/app/kitchen-production/waste', icon: HiOutlineExclamationTriangle, desc: 'Track ingredient waste & spoilage', badge: 'Active' },

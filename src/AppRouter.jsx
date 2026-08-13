@@ -1,4 +1,5 @@
 import DefaultSeo from './components/DefaultSeo.jsx'
+import useNoIndex from './hooks/useNoIndex.js'
 import ScrollToTop from './components/ScrollToTop.jsx'
 import { Component, Suspense, lazy, useEffect } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
@@ -42,6 +43,7 @@ const BlogIndexPage = lazy(() => import('./pages/public/BlogIndexPage.jsx'))
 const BlogArticlePage = lazy(() => import('./pages/public/BlogArticlePage.jsx'))
 const FaqPage = lazy(() => import('./pages/public/FaqPage.jsx'))
 const SupportCenterPage = lazy(() => import('./pages/public/SupportCenterPage.jsx'))
+const DownloadRestaurantPOSPage = lazy(() => import('./pages/public/DownloadRestaurantPOS.jsx'))
 const DashboardLayout = lazy(() => import('./crm/layouts/DashboardLayout.jsx'))
 const AdminLayout = lazy(() => import('./layouts/AdminLayout.jsx'))
 const DashboardHomePage = lazy(() => import('./crm/pages/DashboardHome.jsx'))
@@ -120,14 +122,7 @@ const LoyaltyRewardsPage = lazy(() => import('./crm/pages/LoyaltyRewards.jsx'))
 const LoyaltyCouponsPage = lazy(() => import('./crm/pages/LoyaltyCoupons.jsx'))
 const LoyaltyCampaignsPage = lazy(() => import('./crm/pages/LoyaltyCampaigns.jsx'))
 const LoyaltySettingsPage = lazy(() => import('./crm/pages/LoyaltySettings.jsx'))
-const DeliveryDashboardPage = lazy(() => import('./crm/pages/DeliveryDashboard.jsx'))
-const DeliveryOrdersPage = lazy(() => import('./crm/pages/DeliveryOrders.jsx'))
-const DeliveryDriversPage = lazy(() => import('./crm/pages/DeliveryDrivers.jsx'))
-const DeliveryZonesPage = lazy(() => import('./crm/pages/DeliveryZones.jsx'))
-const DeliverySettingsPage = lazy(() => import('./crm/pages/DeliverySettings.jsx'))
-const DriverDashboardPage = lazy(() => import('./crm/pages/DriverDashboard.jsx'))
 const OnlineOrderingPortalPage = lazy(() => import('./crm/pages/OnlineOrderingPortal.jsx'))
-const CustomerOrderTrackingPage = lazy(() => import('./crm/pages/CustomerOrderTracking.jsx'))
 const RestaurantReservationDashboardPage = lazy(() => import('./crm/pages/RestaurantReservationDashboard.jsx'))
 const RestaurantReservationsPage = lazy(() => import('./crm/pages/RestaurantReservations.jsx'))
 const RestaurantReservationCalendarPage = lazy(() => import('./crm/pages/RestaurantReservationCalendar.jsx'))
@@ -181,6 +176,13 @@ class InvoiceRouteBoundary extends Component {
 
 function LazyPage({ children }) {
   return <Suspense fallback={<PageSkeleton />}>{children}</Suspense>
+}
+
+/** Wraps a route with noindex meta — for pages that exist but shouldn't be indexed
+ *  (e.g. duplicates, variants, anchor-scroll aliases of other pages). */
+function NoIndexRoute({ children }) {
+  useNoIndex(true)
+  return children
 }
 
 /* Apple-style shimmer skeleton — no icons, no logos, no spinners */
@@ -406,11 +408,11 @@ export default function AppRouter() {
       <ScrollToTop />
       <Routes>
         <Route path="/" element={<LazyPage><MarketingRoute /></LazyPage>} />
-        <Route path="/features" element={<LazyPage><MarketingRoute sectionId="services" /></LazyPage>} />
+        <Route path="/features" element={<LazyPage><NoIndexRoute><MarketingRoute sectionId="services" /></NoIndexRoute></LazyPage>} />
         <Route path="/ai" element={<LazyPage><AIPage /></LazyPage>} />
-        <Route path="/services" element={<LazyPage><PublicBusinessServicesPage /></LazyPage>} />
+        <Route path="/services" element={<Navigate to="/business-services" replace />} />
         <Route path="/pricing" element={<LazyPage><PricingPage /></LazyPage>} />
-        <Route path="/pricing-paddle" element={<LazyPage><PaddlePricingPage /></LazyPage>} />
+        <Route path="/pricing-paddle" element={<LazyPage><NoIndexRoute><PaddlePricingPage /></NoIndexRoute></LazyPage>} />
         <Route path="/business-services" element={<LazyPage><PublicBusinessServicesPage /></LazyPage>} />
         <Route path="/software-development" element={<LazyPage><SoftwareDevelopmentPage /></LazyPage>} />
         <Route path="/seo-services" element={<LazyPage><SEOServicesPage /></LazyPage>} />
@@ -444,6 +446,7 @@ export default function AppRouter() {
         <Route path="/sitemap" element={<LazyPage><HtmlSitemapPage /></LazyPage>} />
         <Route path="/help-center" element={<LazyPage><HelpCenterPage /></LazyPage>} />
         <Route path="/faq" element={<LazyPage><FaqPage /></LazyPage>} />
+        <Route path="/download/restaurant-pos" element={<LazyPage><DownloadRestaurantPOSPage /></LazyPage>} />
         <Route path="/support-center" element={<LazyPage><SupportCenterPage /></LazyPage>} />
         <Route path="/documentation" element={<LazyPage><DocumentationPage /></LazyPage>} />
         {/* Blog — English (default) */}
@@ -543,14 +546,7 @@ export default function AppRouter() {
         <Route path="loyalty/coupons" element={<LazyPage><LoyaltyCouponsPage /></LazyPage>} />
         <Route path="loyalty/campaigns" element={<LazyPage><LoyaltyCampaignsPage /></LazyPage>} />
         <Route path="loyalty/settings" element={<LazyPage><LoyaltySettingsPage /></LazyPage>} />
-        <Route path="delivery" element={<LazyPage><DeliveryDashboardPage /></LazyPage>} />
-        <Route path="delivery/orders" element={<LazyPage><DeliveryOrdersPage /></LazyPage>} />
-        <Route path="delivery/drivers" element={<LazyPage><DeliveryDriversPage /></LazyPage>} />
-        <Route path="delivery/zones" element={<LazyPage><DeliveryZonesPage /></LazyPage>} />
-        <Route path="delivery/settings" element={<LazyPage><DeliverySettingsPage /></LazyPage>} />
-        <Route path="driver" element={<LazyPage><DriverDashboardPage /></LazyPage>} />
         <Route path="menu/:slug" element={<LazyPage><OnlineOrderingPortalPage /></LazyPage>} />
-        <Route path="track/:orderNumber" element={<LazyPage><CustomerOrderTrackingPage /></LazyPage>} />
         <Route path="reservations" element={<LazyPage><RestaurantReservationDashboardPage /></LazyPage>} />
         <Route path="reservations/list" element={<LazyPage><RestaurantReservationsPage /></LazyPage>} />
         <Route path="reservations/calendar" element={<LazyPage><RestaurantReservationCalendarPage /></LazyPage>} />
