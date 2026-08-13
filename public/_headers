@@ -66,6 +66,8 @@
   Cache-Control: public, max-age=0, must-revalidate
 
 # HTML pages — validate before serving
+# nosniff applies to everything. Cache-Control is set per-asset-type above;
+# a catch-all Cache-Control here would combine with those rules and emit a
+# malformed duplicate header (e.g. "max-age=0 ... max-age=3600").
 /*
-  Cache-Control: public, max-age=0, must-revalidate
   X-Content-Type-Options: nosniff
