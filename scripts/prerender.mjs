@@ -15,6 +15,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { formatBlogContentHtml } from '../src/lib/blogContentFormatter.js'
 import { autoLinkTerms } from '../src/lib/blogInternalLinks.js'
+import { defaultPlatformPlans, freeTrialConfig } from '../src/lib/platformPlans.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
@@ -805,9 +806,9 @@ ${buildGtm()}
 //  PUBLIC PAGE HTML GENERATOR
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function buildPublicPageHtml(meta, path = '') {
+function buildPublicPageHtml(meta, path = '', articles = []) {
   // Generate static HTML content that crawlers can read before JS hydration
-  const appHtml = buildStaticShell(meta, path)
+  const appHtml = buildStaticShell(meta, path, articles)
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -843,7 +844,127 @@ function escapeHtml(str) {
   return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 }
 
-function buildStaticShell(meta, path) {
+function formatPkr(amount) {
+  return `PKR ${Number(amount || 0).toLocaleString('en-US')}`
+}
+
+const SHELL_HEADER = `
+  <header style="position:sticky;top:0;z-index:50;border-bottom:1px solid #e2e8f0;background:rgba(255,255,255,.9);backdrop-filter:blur(24px)">
+    <div style="display:flex;align-items:center;height:4rem;max-width:1280px;margin:0 auto;padding:0 1rem">
+      <a href="/" style="display:flex;align-items:center;gap:.5rem;font-size:1.25rem;font-weight:800;letter-spacing:.11em;color:#0f172a;text-decoration:none">
+        <span style="display:inline-flex;width:2rem;height:2rem;border-radius:.5rem;background:linear-gradient(135deg,#0ea5e9,#3b82f6);color:#fff;align-items:center;justify-content:center;font-size:.65rem;font-weight:900">N</span>
+        NEXORA
+      </a>
+      <nav style="margin-left:auto;display:flex;gap:1.5rem;font-size:.875rem;font-weight:600">
+        <a href="/" style="color:#0f172a;text-decoration:none">Home</a>
+        <a href="/pricing" style="color:#334155;text-decoration:none">Pricing</a>
+        <a href="/blog" style="color:#334155;text-decoration:none">Blog</a>
+        <a href="/contact" style="color:#334155;text-decoration:none">Contact</a>
+      </nav>
+    </div>
+  </header>`
+
+const SHELL_FOOTER = `
+  <footer style="background:linear-gradient(135deg,#071d35,#062b52);color:#fff;padding:2rem 1.25rem;text-align:center;font-size:.875rem">
+    <p>&copy; 2019–2026 Nexora Solution. All Rights Reserved.</p>
+  </footer>`
+
+// ── Per-route static content (baked into HTML so crawlers see it pre-JS) ──
+
+function buildPricingContent() {
+  const plans = [
+    freeTrialConfig,
+    ...defaultPlatformPlans.filter((plan) => plan.active !== false),
+  ]
+  const cards = plans
+    .map((plan) => {
+      const name = plan.name || plan.planName || ''
+      const isCustom = String(plan.monthlyPrice ?? plan.price ?? '').toLowerCase() === 'custom'
+      const price = isCustom ? 'Custom' : `${formatPkr(plan.monthlyPrice ?? plan.price ?? 0)}/month`
+      const features = (plan.features || [])
+        .slice(0, 7)
+        .map((feature) => `<li style="margin-top:.5rem;font-size:.875rem;line-height:1.5;color:#475569">${escapeHtml(feature)}</li>`)
+        .join('')
+      return `<div style="border-radius:1.25rem;border:1px solid #e2e8f0;background:#fff;padding:1.5rem;display:flex;flex-direction:column">
+        <h2 style="font-size:1.25rem;font-weight:900;color:#0f172a">${escapeHtml(name)}</h2>
+        <p style="margin-top:.75rem;font-size:1.75rem;font-weight:900;color:#0f172a">${escapeHtml(price)}</p>
+        <p style="margin-top:.5rem;font-size:.875rem;line-height:1.6;color:#64748b">${escapeHtml(plan.description || '')}</p>
+        <ul style="margin-top:1rem;padding-left:1rem;list-style:disc">${features}</ul>
+      </div>`
+    })
+    .join('')
+
+  return `<main style="max-width:1280px;margin:0 auto;padding:3rem 1.25rem 4rem">
+    <section style="text-align:center">
+      <h1 style="font-size:2.25rem;font-weight:900;color:#0f172a">Simple Plans for Every Business</h1>
+      <p style="margin-top:1rem;font-size:1rem;line-height:1.7;color:#475569">Start with a free trial, then choose Basic, Standard or Enterprise. No credit card required.</p>
+    </section>
+    <section style="margin-top:2.5rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1.25rem">
+      ${cards}
+    </section>
+  </main>`
+}
+
+function buildBlogContent(articles) {
+  const list = (articles || [])
+    .map((article) => {
+      const href = `/blog/${article.slug}`
+      const excerpt = article.metaDescription || article.description || ''
+      return `<article style="border-radius:1.25rem;border:1px solid #e2e8f0;background:#fff;padding:1.5rem">
+        <h2 style="font-size:1.125rem;font-weight:900;color:#0f172a"><a href="${href}" style="color:#0f172a;text-decoration:none">${escapeHtml(article.title)}</a></h2>
+        ${article.category ? `<p style="margin-top:.5rem;font-size:.75rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#1d4ed8">${escapeHtml(article.category)}</p>` : ''}
+        ${excerpt ? `<p style="margin-top:.5rem;font-size:.875rem;line-height:1.6;color:#64748b">${escapeHtml(excerpt)}</p>` : ''}
+      </article>`
+    })
+    .join('')
+
+  return `<main style="max-width:1280px;margin:0 auto;padding:3rem 1.25rem 4rem">
+    <h1 style="font-size:2.25rem;font-weight:900;color:#0f172a">Nexora Blog</h1>
+    <p style="margin-top:.75rem;font-size:1rem;line-height:1.7;color:#475569">POS, ERP &amp; CRM insights for Pakistani businesses.</p>
+    <div style="margin-top:2rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.25rem">
+      ${list}
+    </div>
+  </main>`
+}
+
+function buildContactContent() {
+  return `<main style="max-width:1280px;margin:0 auto;padding:3rem 1.25rem 4rem">
+    <h1 style="font-size:2.25rem;font-weight:900;color:#0f172a">Contact Nexora Solution</h1>
+    <p style="margin-top:.75rem;font-size:1rem;line-height:1.7;color:#475569">Get in touch for POS, ERP, CRM and business software in Pakistan.</p>
+    <section style="margin-top:2rem;display:grid;gap:1rem;max-width:36rem">
+      <div style="border-radius:1rem;border:1px solid #e2e8f0;background:#fff;padding:1.25rem">
+        <p style="font-size:.875rem;font-weight:800;color:#0f172a">WhatsApp / Phone</p>
+        <a href="https://wa.me/923194329754" style="margin-top:.25rem;font-size:1rem;color:#1d4ed8;text-decoration:none">03194329754</a>
+      </div>
+      <div style="border-radius:1rem;border:1px solid #e2e8f0;background:#fff;padding:1.25rem">
+        <p style="font-size:.875rem;font-weight:800;color:#0f172a">Email</p>
+        <a href="mailto:info@nexorasolution.online" style="margin-top:.25rem;font-size:1rem;color:#1d4ed8;text-decoration:none">info@nexorasolution.online</a>
+      </div>
+      <div style="border-radius:1rem;border:1px solid #e2e8f0;background:#fff;padding:1.25rem">
+        <p style="font-size:.875rem;font-weight:800;color:#0f172a">Website</p>
+        <a href="/" style="margin-top:.25rem;font-size:1rem;color:#1d4ed8;text-decoration:none">https://nexorasolution.online</a>
+      </div>
+    </section>
+  </main>`
+}
+
+function buildRouteContent(path, title, desc, articles) {
+  if (path === '/pricing') return buildPricingContent()
+  if (path === '/blog') return buildBlogContent(articles)
+  if (path === '/contact') return buildContactContent()
+
+  // Default: title + description + CTAs (used by routes without dedicated content)
+  return `<main style="padding:3rem 1.25rem;max-width:48rem;margin:0 auto">
+    <h1 style="font-size:2rem;font-weight:900;color:#0f172a">${title}</h1>
+    <p style="margin-top:1rem;font-size:1rem;line-height:1.7;color:#475569">${desc}</p>
+    <div style="margin-top:2rem;display:flex;gap:.75rem">
+      <a href="/signup" style="display:inline-flex;min-height:3rem;align-items:center;justify-content:center;border-radius:9999px;padding:.75rem 1.75rem;font-size:.875rem;font-weight:800;text-decoration:none;background:#0f172a;color:#fff">Start Free Trial</a>
+      <a href="/contact" style="display:inline-flex;min-height:3rem;align-items:center;justify-content:center;border-radius:9999px;padding:.75rem 1.75rem;font-size:.875rem;font-weight:800;text-decoration:none;border:1px solid #e2e8f0;color:#0f172a">Book a Demo</a>
+    </div>
+  </main>`
+}
+
+function buildStaticShell(meta, path = '', articles = []) {
   const title = escapeHtml(meta.title || 'Nexora Solution')
   const desc = escapeHtml(meta.description || '')
   const isHome = path === '/'
@@ -920,33 +1041,11 @@ function buildStaticShell(meta, path) {
   </footer>`
   }
 
-  // Generic shell for other public pages
-  return `
-  <header style="position:sticky;top:0;z-index:50;border-bottom:1px solid #e2e8f0;background:rgba(255,255,255,.9);backdrop-filter:blur(24px)">
-    <div style="display:flex;align-items:center;height:4rem;max-width:1280px;margin:0 auto;padding:0 1rem">
-      <a href="/" style="display:flex;align-items:center;gap:.5rem;font-size:1.25rem;font-weight:800;letter-spacing:.11em;color:#0f172a;text-decoration:none">
-        <span style="display:inline-flex;width:2rem;height:2rem;border-radius:.5rem;background:linear-gradient(135deg,#0ea5e9,#3b82f6);color:#fff;align-items:center;justify-content:center;font-size:.65rem;font-weight:900">N</span>
-        NEXORA
-      </a>
-      <nav style="margin-left:auto;display:flex;gap:1.5rem;font-size:.875rem;font-weight:600">
-        <a href="/" style="color:#0f172a;text-decoration:none">Home</a>
-        <a href="/pricing" style="color:#334155;text-decoration:none">Pricing</a>
-        <a href="/blog" style="color:#334155;text-decoration:none">Blog</a>
-        <a href="/contact" style="color:#334155;text-decoration:none">Contact</a>
-      </nav>
-    </div>
-  </header>
-  <main style="padding:3rem 1.25rem;max-width:48rem;margin:0 auto">
-    <h1 style="font-size:2rem;font-weight:900;color:#0f172a">${title}</h1>
-    <p style="margin-top:1rem;font-size:1rem;line-height:1.7;color:#475569">${desc}</p>
-    <div style="margin-top:2rem;display:flex;gap:.75rem">
-      <a href="/signup" style="display:inline-flex;min-height:3rem;align-items:center;justify-content:center;border-radius:9999px;padding:.75rem 1.75rem;font-size:.875rem;font-weight:800;text-decoration:none;background:#0f172a;color:#fff">Start Free Trial</a>
-      <a href="/contact" style="display:inline-flex;min-height:3rem;align-items:center;justify-content:center;border-radius:9999px;padding:.75rem 1.75rem;font-size:.875rem;font-weight:800;text-decoration:none;border:1px solid #e2e8f0;color:#0f172a">Book a Demo</a>
-    </div>
-  </main>
-  <footer style="background:linear-gradient(135deg,#071d35,#062b52);color:#fff;padding:2rem 1.25rem;text-align:center;font-size:.875rem">
-    <p>&copy; 2019–2026 Nexora Solution. All Rights Reserved.</p>
-  </footer>`
+  // Generic shell for other public pages — real content is injected per route
+  const routeMain = buildRouteContent(path, title, desc, articles)
+  return `${SHELL_HEADER}
+  ${routeMain}
+  ${SHELL_FOOTER}`
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -1020,9 +1119,12 @@ async function main() {
   let pageCount = 0
   let blogCount = 0
 
+  // Load blog articles up front so the /blog index can bake the post list.
+  const articles = await loadBlogArticles()
+
   // 1. Public routes
   for (const route of PUBLIC_ROUTES) {
-    const html = buildPublicPageHtml({ ...route, path: route.path }, route.path)
+    const html = buildPublicPageHtml({ ...route, path: route.path }, route.path, articles)
     const outPath = join(DIST, route.path === '/' ? 'index.html' : `${route.path.replace(/\/$/, '')}/index.html`)
     writePage(outPath, html)
     pageCount++
@@ -1030,7 +1132,6 @@ async function main() {
   console.log(`[prerender] ✓ ${pageCount} public routes`)
 
   // 2. Blog articles — full content
-  const articles = await loadBlogArticles()
   for (const article of articles) {
     const html = buildFullBlogHtml(article, articles)
     writePage(join(DIST, 'blog', article.slug, 'index.html'), html)

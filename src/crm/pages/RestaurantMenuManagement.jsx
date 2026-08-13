@@ -33,7 +33,6 @@ import MenuImportModal from '../components/restaurant/MenuImportModal.jsx'
 import MenuImportPreview from '../components/restaurant/MenuImportPreview.jsx'
 import MenuImportSummary from '../components/restaurant/MenuImportSummary.jsx'
 import { useMenuImport, IMPORT_STATE } from '../hooks/useMenuImport.js'
-import { loadFirestoreMenuItems } from '../data/restaurantFirestoreSync.js'
 
 const blankItem = {
   name: '',
@@ -93,7 +92,6 @@ export default function RestaurantMenuManagementPage() {
   const [form, setForm] = useState(blankItem)
   const [items, setItems] = useState(() => loadRestaurantMenuItems())
   const [categories, setCategories] = useState(() => loadRestaurantMenuCategories())
-  const [firestoreItems, setFirestoreItems] = useState([])
   const [newCategory, setNewCategory] = useState('')
   const [viewMode, setViewMode] = useState('list')
   const [categoryModalOpen, setCategoryModalOpen] = useState(false)
@@ -119,30 +117,6 @@ export default function RestaurantMenuManagementPage() {
       }
     },
   })
-
-  // ── Firestore menu items (desktop-created) — read-only merge for display ──
-  //     localStorage remains the source of truth for writes; Firestore items
-  //     are layered on top and deduped by id (local wins), matching the
-  //     RestaurantCustomersManager fix pattern.
-  useEffect(() => {
-    // loadFirestoreMenuItems returns [] when workspaceId is missing, so no
-    // early synchronous setState is needed here.
-    let cancelled = false
-    loadFirestoreMenuItems(workspaceId)
-      .then((fsItems) => {
-        if (!cancelled) setFirestoreItems(Array.isArray(fsItems) ? fsItems : [])
-      })
-      .catch(() => {
-        if (!cancelled) setFirestoreItems([])
-      })
-    return () => { cancelled = true }
-  }, [workspaceId])
-
-  const mergedItems = useMemo(() => {
-    const localIds = new Set(items.map((item) => String(item.id)))
-    const desktopOnly = (firestoreItems || []).filter((item) => item.id && !localIds.has(String(item.id)))
-    return [...items, ...desktopOnly]
-  }, [items, firestoreItems])
 
   // Show demo button only when: demo never loaded AND no user-created items exist
   const showDemoButton = !demoLoaded && !hasUserCreatedItems(items)
@@ -185,7 +159,7 @@ export default function RestaurantMenuManagementPage() {
 
   const filteredItems = useMemo(() => {
     const needle = query.trim().toLowerCase()
-    return mergedItems.filter((item) => {
+    return items.filter((item) => {
       const matchesQuery = !needle || [item.name, item.category, item.sku, item.description].some((value) => String(value || '').toLowerCase().includes(needle))
       const matchesCategory = category === 'All Menu' || item.category === category
       const matchesStatus = statusFilter === 'all' || String(item.status).toLowerCase() === statusFilter
@@ -193,15 +167,7 @@ export default function RestaurantMenuManagementPage() {
       const matchesOffer = offerFilter === 'all' || (offerFilter === 'offers' ? hasOffer : !hasOffer)
       return matchesQuery && matchesCategory && matchesStatus && matchesOffer
     })
-  }, [category, mergedItems, offerFilter, query, statusFilter])
-
-  // Category dropdown options: local categories + any categories present on
-  // Firestore-sourced items (so desktop item categories are filterable).
-  const categoryOptions = useMemo(() => {
-    const options = new Set(categories.filter((item) => item !== 'All Menu'))
-    mergedItems.forEach((item) => { if (item.category) options.add(String(item.category)) })
-    return ['All Menu', ...options]
-  }, [categories, mergedItems])
+  }, [category, items, offerFilter, query, statusFilter])
 
   function openModal(item = null) {
     setModalOpen(true)
@@ -222,10 +188,8 @@ export default function RestaurantMenuManagementPage() {
   }
 
   function normalizedForm() {
-    const clean = { ...form }
-    delete clean._source // strip the Firestore-only marker before persisting
     return {
-      ...clean,
+      ...form,
       id: form.id || `menu-${Date.now()}`,
       price: safeMoney(form.price),
       costPrice: safeMoney(form.costPrice),
@@ -241,23 +205,14 @@ export default function RestaurantMenuManagementPage() {
     setItems((current) => {
       // When saving the first real item after demo was loaded, remove all demo items
       const base = isRealItem && demoLoaded ? removeDemoItems(current) : current
-      if (editingItem) {
-        // Editing an item not in local storage (a desktop-only item) adopts it
-        // into local storage — same precedence used by RestaurantCustomersManager.
-        const exists = base.some((item) => item.id === editingItem.id)
-        return exists
-          ? base.map((item) => (item.id === editingItem.id ? next : item))
-          : [next, ...base]
-      }
+      if (editingItem) return base.map((item) => (item.id === editingItem.id ? next : item))
       return [next, ...base]
     })
     closeModal()
   }
 
   function duplicateItem(item) {
-    const source = { ...item }
-    delete source._source // strip the Firestore-only marker before persisting
-    setItems((current) => [{ ...source, id: `${item.id}-copy-${Date.now()}`, name: `${item.name} Copy`, sku: `${item.sku}-COPY` }, ...current])
+    setItems((current) => [{ ...item, id: `${item.id}-copy-${Date.now()}`, name: `${item.name} Copy`, sku: `${item.sku}-COPY` }, ...current])
   }
 
   function toggleItem(item) {
@@ -394,7 +349,7 @@ export default function RestaurantMenuManagementPage() {
               <Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search menu item, SKU, or category" className="pl-9" />
             </div>
             <Select value={category} onChange={(event) => setCategory(event.target.value)}>
-              {categoryOptions.map((item) => <option key={item}>{item}</option>)}
+              {categories.map((item) => <option key={item}>{item}</option>)}
             </Select>
             <Select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
               <option value="all">All status</option>
@@ -464,9 +419,6 @@ export default function RestaurantMenuManagementPage() {
                   <div className="min-w-0">
                     <p className="truncate text-xs font-semibold text-slate-950 dark:text-white">{item.name}</p>
                     <p className="mt-0.5 truncate text-[10.5px] text-slate-500">{item.category} • {item.sku}</p>
-                    {item._source === 'firestore' ? (
-                      <span className="mt-0.5 inline-flex items-center rounded-md bg-sky-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-sky-700">Desktop POS</span>
-                    ) : null}
                   </div>
                   <Badge variant={item.status === 'Active' ? 'success' : 'default'} className="px-1.5 py-0.5 text-[9.5px]">{item.status}</Badge>
                 </div>
@@ -523,9 +475,6 @@ export default function RestaurantMenuManagementPage() {
                       <td className="px-4 py-3">
                         <p className="font-semibold text-slate-950">{item.name}</p>
                         <p className="mt-0.5 text-xs text-slate-500">{item.sku}</p>
-                        {item._source === 'firestore' ? (
-                          <span className="mt-0.5 inline-flex items-center rounded-md bg-sky-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-sky-700">Desktop POS</span>
-                        ) : null}
                       </td>
                       <td className="px-4 py-3 text-slate-600">{item.category}</td>
                       <td className="px-4 py-3">

@@ -1,0 +1,18 @@
+# Cloudflare Pages redirects — client-side app & auth routes only.
+#
+# The public marketing pages are pre-rendered to static HTML (dist/<route>/index.html)
+# and are served directly by Cloudflare, so they must NOT be caught by a catch-all.
+# A top-level 404.html is present, which makes Cloudflare serve a real HTTP 404
+# for any unmatched path (no soft-404 to the homepage).
+
+# ── Client-rendered routes → SPA shell (hard navigation / refresh) ──
+/app               /index.html   200
+/app/*             /index.html   200
+/login             /index.html   200
+/signup            /index.html   200
+/verify-email      /index.html   200
+/workspace         /index.html   200
+/workspace/*       /index.html   200
+/upgrade-business  /index.html   200
+/admin             /index.html   200
+/admin/*           /index.html   200
