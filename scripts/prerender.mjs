@@ -848,6 +848,40 @@ function formatPkr(amount) {
   return `PKR ${Number(amount || 0).toLocaleString('en-US')}`
 }
 
+// ── Shared contact details (single source of truth for static HTML) ──
+const PHONE_DISPLAY = '03194329754'
+const PHONE_TEL = 'tel:03194329754'
+const WHATSAPP_URL = 'https://wa.me/923194329754'
+const EMAIL_ADDRESS = 'info@nexorasolution.online'
+const EMAIL_MAILTO = 'mailto:info@nexorasolution.online'
+
+const PHONE_LINK = `<a href="${PHONE_TEL}" style="display:inline-flex;align-items:center;gap:.4rem;color:#1d4ed8;text-decoration:none;font-weight:800;white-space:nowrap"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="flex-shrink:0"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>${PHONE_DISPLAY}</a>`
+
+const FOOTER_CONTACT_BLOCK = `
+    <div style="max-width:1280px;margin:0 auto;display:grid;gap:1.5rem;text-align:left;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));padding:1.5rem 0 .5rem">
+      <div>
+        <p style="font-weight:800;margin-bottom:.5rem">Contact</p>
+        <p style="margin-top:.25rem"><a href="${PHONE_TEL}" style="color:#60a5fa;text-decoration:none">Phone: ${PHONE_DISPLAY}</a></p>
+        <p style="margin-top:.25rem"><a href="${EMAIL_MAILTO}" style="color:#60a5fa;text-decoration:none">Email: ${EMAIL_ADDRESS}</a></p>
+        <p style="margin-top:.25rem"><a href="${WHATSAPP_URL}" style="color:#60a5fa;text-decoration:none">WhatsApp: ${PHONE_DISPLAY}</a></p>
+      </div>
+      <div>
+        <p style="font-weight:800;margin-bottom:.5rem">Location</p>
+        <p style="margin-top:.25rem;color:#94a3b8">[City / business address — not yet configured]</p>
+      </div>
+    </div>`
+
+const HOMEPAGE_CONTACT_SECTION = `
+    <section style="max-width:56rem;margin:0 auto;padding:3rem 1.25rem 4rem;text-align:center">
+      <h2 style="font-size:1.75rem;font-weight:900;color:#0f172a">Talk to us</h2>
+      <p style="margin-top:.75rem;font-size:1rem;line-height:1.7;color:#475569">Questions about pricing, setup or which module fits your business? Reach out and our team will help.</p>
+      <div style="margin-top:2rem;display:grid;gap:1rem;text-align:left">
+        <a href="${PHONE_TEL}" style="display:block;border-radius:1rem;border:1px solid #e2e8f0;background:#fff;padding:1.25rem;color:#0f172a;text-decoration:none;font-size:1.125rem;font-weight:800">Phone: ${PHONE_DISPLAY}</a>
+        <a href="${EMAIL_MAILTO}" style="display:block;border-radius:1rem;border:1px solid #e2e8f0;background:#fff;padding:1.25rem;color:#0f172a;text-decoration:none;font-size:1.125rem;font-weight:800">Email: ${EMAIL_ADDRESS}</a>
+        <a href="${WHATSAPP_URL}" style="display:block;border-radius:1rem;border:1px solid #e2e8f0;background:#fff;padding:1.25rem;color:#0f172a;text-decoration:none;font-size:1.125rem;font-weight:800">WhatsApp: ${PHONE_DISPLAY}</a>
+      </div>
+    </section>`
+
 const SHELL_HEADER = `
   <header style="position:sticky;top:0;z-index:50;border-bottom:1px solid #e2e8f0;background:rgba(255,255,255,.9);backdrop-filter:blur(24px)">
     <div style="display:flex;align-items:center;height:4rem;max-width:1280px;margin:0 auto;padding:0 1rem">
@@ -855,18 +889,20 @@ const SHELL_HEADER = `
         <span style="display:inline-flex;width:2rem;height:2rem;border-radius:.5rem;background:linear-gradient(135deg,#0ea5e9,#3b82f6);color:#fff;align-items:center;justify-content:center;font-size:.65rem;font-weight:900">N</span>
         NEXORA
       </a>
-      <nav style="margin-left:auto;display:flex;gap:1.5rem;font-size:.875rem;font-weight:600">
+      <nav style="margin-left:auto;display:flex;align-items:center;gap:1.25rem;font-size:.875rem;font-weight:600">
         <a href="/" style="color:#0f172a;text-decoration:none">Home</a>
         <a href="/pricing" style="color:#334155;text-decoration:none">Pricing</a>
         <a href="/blog" style="color:#334155;text-decoration:none">Blog</a>
         <a href="/contact" style="color:#334155;text-decoration:none">Contact</a>
+        ${PHONE_LINK}
       </nav>
     </div>
   </header>`
 
 const SHELL_FOOTER = `
   <footer style="background:linear-gradient(135deg,#071d35,#062b52);color:#fff;padding:2rem 1.25rem;text-align:center;font-size:.875rem">
-    <p>&copy; 2019–2026 Nexora Solution. All Rights Reserved.</p>
+    ${FOOTER_CONTACT_BLOCK}
+    <p style="margin-top:1.5rem;color:#64748b">&copy; 2019–2026 Nexora Solution. All Rights Reserved.</p>
   </footer>`
 
 // ── Per-route static content (baked into HTML so crawlers see it pre-JS) ──
@@ -931,20 +967,83 @@ function buildContactContent() {
   return `<main style="max-width:1280px;margin:0 auto;padding:3rem 1.25rem 4rem">
     <h1 style="font-size:2.25rem;font-weight:900;color:#0f172a">Contact Nexora Solution</h1>
     <p style="margin-top:.75rem;font-size:1rem;line-height:1.7;color:#475569">Get in touch for POS, ERP, CRM and business software in Pakistan.</p>
-    <section style="margin-top:2rem;display:grid;gap:1rem;max-width:36rem">
-      <div style="border-radius:1rem;border:1px solid #e2e8f0;background:#fff;padding:1.25rem">
-        <p style="font-size:.875rem;font-weight:800;color:#0f172a">WhatsApp / Phone</p>
-        <a href="https://wa.me/923194329754" style="margin-top:.25rem;font-size:1rem;color:#1d4ed8;text-decoration:none">03194329754</a>
-      </div>
-      <div style="border-radius:1rem;border:1px solid #e2e8f0;background:#fff;padding:1.25rem">
-        <p style="font-size:.875rem;font-weight:800;color:#0f172a">Email</p>
-        <a href="mailto:info@nexorasolution.online" style="margin-top:.25rem;font-size:1rem;color:#1d4ed8;text-decoration:none">info@nexorasolution.online</a>
-      </div>
-      <div style="border-radius:1rem;border:1px solid #e2e8f0;background:#fff;padding:1.25rem">
-        <p style="font-size:.875rem;font-weight:800;color:#0f172a">Website</p>
-        <a href="/" style="margin-top:.25rem;font-size:1rem;color:#1d4ed8;text-decoration:none">https://nexorasolution.online</a>
-      </div>
-    </section>
+    <div style="margin-top:2.5rem;display:grid;gap:2rem;grid-template-columns:1fr;max-width:56rem">
+      <section>
+        <h2 style="font-size:1.25rem;font-weight:900;color:#0f172a">Send us a message</h2>
+        <form id="contact-form" style="margin-top:1rem;display:grid;gap:1rem">
+          <label style="display:grid;gap:.35rem;font-size:.875rem;font-weight:700;color:#0f172a">Name
+            <input name="name" type="text" required placeholder="Your name" style="border:1px solid #e2e8f0;border-radius:.75rem;padding:.75rem;font-size:1rem" />
+          </label>
+          <label style="display:grid;gap:.35rem;font-size:.875rem;font-weight:700;color:#0f172a">Phone
+            <input name="phone" type="tel" required placeholder="03XX-XXXXXXX" style="border:1px solid #e2e8f0;border-radius:.75rem;padding:.75rem;font-size:1rem" />
+          </label>
+          <label style="display:grid;gap:.35rem;font-size:.875rem;font-weight:700;color:#0f172a">Business type
+            <select name="businessType" style="border:1px solid #e2e8f0;border-radius:.75rem;padding:.75rem;font-size:1rem;background:#fff">
+              <option>Restaurant</option>
+              <option>Retail</option>
+              <option>Pharmacy</option>
+              <option>School</option>
+              <option>Other</option>
+            </select>
+          </label>
+          <label style="display:grid;gap:.35rem;font-size:.875rem;font-weight:700;color:#0f172a">Message
+            <textarea name="message" required rows="4" placeholder="How can we help?" style="border:1px solid #e2e8f0;border-radius:.75rem;padding:.75rem;font-size:1rem"></textarea>
+          </label>
+          <button type="submit" style="justify-self:start;border:0;border-radius:9999px;background:#0f172a;color:#fff;padding:.75rem 1.75rem;font-size:.875rem;font-weight:800;cursor:pointer">Send message</button>
+          <p id="contact-status" style="display:none;margin-top:.5rem;font-size:.875rem;color:#1d4ed8"></p>
+        </form>
+      </section>
+      <section style="display:grid;gap:1rem;align-content:start">
+        <div style="border-radius:1rem;border:1px solid #e2e8f0;background:#fff;padding:1.25rem">
+          <p style="font-size:.875rem;font-weight:800;color:#0f172a">WhatsApp / Phone</p>
+          <a href="${WHATSAPP_URL}" style="margin-top:.25rem;font-size:1rem;color:#1d4ed8;text-decoration:none">${PHONE_DISPLAY}</a>
+        </div>
+        <div style="border-radius:1rem;border:1px solid #e2e8f0;background:#fff;padding:1.25rem">
+          <p style="font-size:.875rem;font-weight:800;color:#0f172a">Email</p>
+          <a href="${EMAIL_MAILTO}" style="margin-top:.25rem;font-size:1rem;color:#1d4ed8;text-decoration:none">${EMAIL_ADDRESS}</a>
+        </div>
+        <div style="border-radius:1rem;border:1px solid #e2e8f0;background:#fff;padding:1.25rem">
+          <p style="font-size:.875rem;font-weight:800;color:#0f172a">Website</p>
+          <a href="/" style="margin-top:.25rem;font-size:1rem;color:#1d4ed8;text-decoration:none">https://nexorasolution.online</a>
+        </div>
+      </section>
+    </div>
+    <script>
+(function () {
+  var form = document.getElementById('contact-form');
+  if (!form) return;
+  form.addEventListener('submit', function (event) {
+    event.preventDefault();
+    var status = document.getElementById('contact-status');
+    var name = (form.elements.name.value || '').trim();
+    var phone = (form.elements.phone.value || '').trim();
+    var businessType = form.elements.businessType.value || '';
+    var message = (form.elements.message.value || '').trim();
+    var html = '<p><strong>Name:</strong> ' + name + '</p>' +
+      '<p><strong>Phone:</strong> ' + phone + '</p>' +
+      '<p><strong>Business type:</strong> ' + businessType + '</p>' +
+      '<p><strong>Message:</strong> ' + message + '</p>';
+    fetch('https://nexora-email-api.rahanshah4.workers.dev/send-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ to: '${EMAIL_ADDRESS}', subject: 'New contact inquiry from ' + name, html: html })
+    }).then(function (response) {
+      return response.json().then(function (data) { return { ok: response.ok, data: data }; });
+    }).then(function (result) {
+      if (status) {
+        status.style.display = 'block';
+        status.textContent = result.ok ? 'Thanks! Your message has been sent. We will get back to you shortly.' : 'Sorry, something went wrong. Please email ${EMAIL_ADDRESS} instead.';
+      }
+      if (result.ok) form.reset();
+    }).catch(function () {
+      if (status) {
+        status.style.display = 'block';
+        status.textContent = 'Sorry, something went wrong. Please email ${EMAIL_ADDRESS} instead.';
+      }
+    });
+  });
+})();
+    </script>
   </main>`
 }
 
@@ -977,11 +1076,12 @@ function buildStaticShell(meta, path = '', articles = []) {
         <span style="display:inline-flex;width:2rem;height:2rem;border-radius:.5rem;background:linear-gradient(135deg,#0ea5e9,#3b82f6);color:#fff;align-items:center;justify-content:center;font-size:.65rem;font-weight:900">N</span>
         NEXORA
       </div>
-      <nav style="margin-left:auto;display:flex;gap:1.5rem;font-size:.875rem;font-weight:600;color:#334155">
+      <nav style="margin-left:auto;display:flex;align-items:center;gap:1.25rem;font-size:.875rem;font-weight:600;color:#334155">
         <a href="/" style="color:#0f172a;text-decoration:none">Home</a>
         <a href="/pricing" style="color:#334155;text-decoration:none">Pricing</a>
         <a href="/blog" style="color:#334155;text-decoration:none">Blog</a>
         <a href="/contact" style="color:#334155;text-decoration:none">Contact</a>
+        ${PHONE_LINK}
       </nav>
     </div>
   </header>
@@ -1032,10 +1132,12 @@ function buildStaticShell(meta, path = '', articles = []) {
       <h2 style="font-size:1.5rem;font-weight:900;color:#0f172a">All Modules. One Platform. Unlimited Possibilities.</h2>
       <p style="margin-top:1rem;font-size:1rem;color:#475569;line-height:1.7">Nexora offers POS, CRM, School ERP, Property ERP, Medical Store POS, Transport/Rental, WhatsApp CRM, Reports, and more — all from one unified dashboard.</p>
     </section>
+    ${HOMEPAGE_CONTACT_SECTION}
   </main>
   <footer style="background:linear-gradient(135deg,#071d35,#062b52);color:#fff;padding:2rem 1.25rem;text-align:center;font-size:.875rem">
     <p style="font-weight:800;margin-bottom:.5rem">Nexora Solution</p>
     <p style="color:#94a3b8">Pakistan's AI-powered POS, CRM & ERP platform for restaurants, retail, schools and growing businesses.</p>
+    ${FOOTER_CONTACT_BLOCK}
     <p style="margin-top:1rem;color:#64748b">&copy; 2019–2026 Nexora Solution. All Rights Reserved.</p>
     <p style="margin-top:.5rem"><a href="/" style="color:#60a5fa;text-decoration:none">nexorasolution.online</a></p>
   </footer>`
