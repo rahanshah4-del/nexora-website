@@ -1,0 +1,7 @@
+# Cloudflare Pages redirects — legacy path aliases
+# (firebase.json redirects are NOT used on this platform)
+
+/services /business-services/ 301
+/services/ /business-services/ 301
+/solutions/pos /restaurant-pos/ 301
+/solutions/pos/ /restaurant-pos/ 301
