@@ -2,14 +2,13 @@ import { motion } from 'framer-motion'
 import { HiOutlineArrowDownTray, HiOutlineChartBarSquare, HiOutlineCheck, HiOutlineCloud, HiOutlineComputerDesktop, HiOutlineCreditCard, HiOutlineDevicePhoneMobile, HiOutlineDocumentChartBar, HiOutlineLifebuoy, HiOutlinePrinter, HiOutlineServer, HiOutlineShieldCheck, HiOutlineShoppingCart, HiOutlineStar, HiOutlineTableCells, HiOutlineUserGroup, HiOutlineWifi } from 'react-icons/hi2'
 import { Link } from 'react-router-dom'
 
-// ═══════════════════════════════════════════════════════════════════════
-// PLACEHOLDER — Replace this with the real Cloudflare R2 URL when the
-// installer is uploaded.
-// ═══════════════════════════════════════════════════════════════════════
-const DOWNLOAD_URL = 'https://cdn.nexorasolution.com/downloads/restaurant-pos/latest/NexoraPOS-Setup.exe'
+// ───────────────────────────────────────────────────────────────────────
+// Windows installer — Cloudflare R2 direct download link.
+// ───────────────────────────────────────────────────────────────────────
+const DOWNLOAD_URL = 'https://pub-d510223cafd94f76bf1559c431263a16.r2.dev/Nexora%20Solution%20POS-1.0.0-Setup.exe'
 
 const APP_VERSION = 'v1.0.0'
-const FILE_SIZE = '~85 MB'
+const FILE_SIZE = '~104 MB'
 const LAST_UPDATED = 'August 2026'
 
 const SYSTEM_REQUIREMENTS = [
