@@ -18,11 +18,28 @@ function cleanPath(path = '/') {
   return `/${value.replace(/^\/+/, '').replace(/\/+$/, '')}`
 }
 
+export function canonicalPath(path = '/') {
+  const value = String(path || '/')
+  const hashIndex = value.indexOf('#')
+  const hash = hashIndex >= 0 ? value.slice(hashIndex) : ''
+  const withoutHash = hashIndex >= 0 ? value.slice(0, hashIndex) : value
+  const queryIndex = withoutHash.indexOf('?')
+  const search = queryIndex >= 0 ? withoutHash.slice(queryIndex) : ''
+  const rawPath = queryIndex >= 0 ? withoutHash.slice(0, queryIndex) : withoutHash
+  const clean = !rawPath || rawPath === '/' ? '/' : `/${rawPath.replace(/^\/+/, '').replace(/\/+$/, '')}/`
+  return `${clean}${search}${hash}`
+}
+
 export function absoluteUrl(path = '/') {
   const value = String(path || '')
-  if (/^https?:\/\//i.test(value)) return value
-  const clean = cleanPath(value)
-  return `${SITE_URL}${clean === '/' ? '/' : clean}`
+  if (/^https?:\/\//i.test(value)) {
+    const url = new URL(value)
+    const rawPath = url.pathname || '/'
+    const normalizedPath = rawPath === '/' ? '/' : `/${rawPath.replace(/^\/+/, '').replace(/\/+$/, '')}/`
+    url.pathname = normalizedPath
+    return url.toString()
+  }
+  return `${SITE_URL}${canonicalPath(value)}`
 }
 
 function idFor(path = '/', suffix = '') {

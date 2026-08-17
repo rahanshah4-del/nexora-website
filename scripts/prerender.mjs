@@ -107,15 +107,15 @@ const PUBLIC_ROUTES = [
   { path: '/restaurant-pos',title: 'Restaurant POS Software Pakistan — Nexora Solution',                                     description: 'Modern restaurant POS with table management, KOT, billing, inventory and cloud sync. Built for Pakistani restaurants.' },
   { path: '/retail-pos',    title: 'Retail POS Software Pakistan — Nexora Solution',                                        description: 'Complete retail POS system with barcode billing, inventory management, discount engine and multi-counter support.' },
   { path: '/school-erp',    title: 'School ERP Software Pakistan — Nexora Solution',                                        description: 'Cloud-based school management system with student records, fee collection, attendance, exams and parent portal.' },
-  { path: '/solutions/pos', title: 'POS Software Solutions — Nexora Solution',                                              description: 'Explore Nexora POS solutions for restaurants, retail stores, medical stores and transport businesses.' },
+  { path: '/restaurant-pos/', title: 'POS Software Solutions — Nexora Solution',                                         description: 'Explore Nexora POS solutions for restaurants, retail stores, medical stores and transport businesses.' },
   { path: '/solutions/crm', title: 'CRM Software Pakistan — Nexora Solution',                                               description: 'Customer relationship management with lead tracking, pipeline, follow-ups and WhatsApp integration.' },
   { path: '/solutions/medical-store-pos', title: 'Medical Store POS Pakistan — Nexora Solution',                             description: 'Pharmacy POS with medicine inventory, batch tracking, expiry alerts and sales reports.' },
   { path: '/solutions/school-erp', title: 'School ERP System Pakistan — Nexora Solution',                                   description: 'Complete school ERP with student management, fees, attendance, exams, payroll and reports.' },
   { path: '/solutions/property-erp', title: 'Property ERP Software Pakistan — Nexora Solution',                             description: 'Property management ERP for landlords, agents and developers. Track tenants, rent, maintenance and owners.' },
   { path: '/blog',          title: 'Nexora Blog — POS, ERP & CRM Insights for Pakistani Businesses',                         description: 'Read the Nexora blog for POS tips, ERP guides, CRM strategies and business growth insights for Pakistani entrepreneurs.' },
   { path: '/faq',           title: 'Frequently Asked Questions — Nexora Solution',                                           description: 'Find answers to common questions about Nexora POS, ERP, CRM pricing, features, setup, support and billing.' },
-  { path: '/services',      title: 'Business Management Software Pakistan | Nexora Services',                                description: 'Request Nexora business services for software setup, support, bookkeeping, marketing and growth while keeping your operations running smoothly.' },
-  { path: '/business-services', title: 'Business Services — Nexora Solution',                                               description: 'Explore Nexora business services including custom software development, integrations, consulting and digital transformation.' },
+  { path: '/business-services/', title: 'Business Management Software Pakistan | Nexora Services',                   description: 'Request Nexora business services for software setup, support, bookkeeping, marketing and growth while keeping your operations running smoothly.' },
+  { path: '/business-services/', title: 'Business Services — Nexora Solution',                                           description: 'Explore Nexora business services including custom software development, integrations, consulting and digital transformation.' },
   { path: '/documentation', title: 'Documentation — Nexora Solution',                                                       description: 'Nexora product documentation, setup guides, API references and tutorials for POS, ERP and CRM modules.' },
   { path: '/help-center',   title: 'Help Center — Nexora Solution',                                                         description: 'Get help with Nexora products. Find guides, troubleshooting tips and contact support.' },
   { path: '/support-center',title: 'Support Center — Nexora Solution',                                                      description: 'Nexora customer support center. Submit tickets, track issues and get technical assistance.' },
@@ -138,7 +138,7 @@ const PUBLIC_ROUTES = [
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function buildSeoHead(meta) {
-  const canonical = `${SITE}${meta.path}`
+  const canonical = `${SITE}${meta.path === '/' ? '/' : meta.path.replace(/\/?$/, '/')}`
   const img = meta.image || LOGO
   const type = meta.path.startsWith('/blog/') ? 'article' : 'website'
   const ogLocale = meta.ogLocale || 'en_PK'

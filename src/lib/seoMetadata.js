@@ -1,3 +1,5 @@
+import { absoluteUrl } from './seoStructuredData.js'
+
 const HOST = 'https://nexorasolution.online'
 const DEFAULT_OG_IMAGE = `${HOST}/nexora-brand-logo.png`
 
@@ -7,7 +9,7 @@ function buildPage({ path, title, description, keyword, image, section, ...extra
     title,
     description,
     keywords: keyword ? `${keyword}, Nexora Solution, Pakistan software` : 'Nexora Solution, software company, Pakistan',
-    canonical: `${HOST}${path}`,
+    canonical: absoluteUrl(path),
     ogTitle: title,
     ogDescription: description,
     ogImage: image || DEFAULT_OG_IMAGE,
@@ -40,14 +42,14 @@ export const seoMetadata = {
     ],
   }),
   '/services': buildPage({
-    path: '/services',
+    path: '/business-services/',
     title: 'Business Management Software Pakistan | Nexora Services',
     description: 'Request Nexora business services for software setup, support, bookkeeping, marketing and growth while keeping your operations running smoothly.',
     keyword: 'Business Management Software',
     image: `${HOST}/nexora-brand-logo.png`,
   }),
   '/business-services': buildPage({
-    path: '/business-services',
+    path: '/business-services/',
     title: 'Business Management Software Pakistan | Nexora Business Services',
     description: 'Request Nexora business services for software setup, support, bookkeeping, marketing and growth while keeping your operations running smoothly.',
     keyword: 'Business Management Software',

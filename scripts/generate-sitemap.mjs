@@ -9,10 +9,9 @@ const PUBLIC_DIR = path.join(ROOT, 'public')
 const HOST = 'https://nexorasolution.online'
 const PUBLIC_ROUTE_ALLOWLIST = new Set([
   '/',
-  '/features',
-  '/services',
-  '/business-services',
-  '/contact',
+  '/features/',
+  '/business-services/',
+  '/contact/',
   '/industries',
   '/reviews',
   '/projects',
@@ -78,17 +77,18 @@ async function readRoutes() {
     if (p.startsWith('/app') || p.startsWith('/admin')) continue
     if (p === '*' ) continue
     const final = cleanRoutePath(p.replace(/:\w+/g, ''))
-    if (PUBLIC_ROUTE_ALLOWLIST.has(final)) routes.add(final)
+    if (PUBLIC_ROUTE_ALLOWLIST.has(final) || PUBLIC_ROUTE_ALLOWLIST.has(final.replace(/\/$/, ''))) routes.add(final)
   }
   // Always include allowlist routes — even if not found as explicit paths
-  for (const route of PUBLIC_ROUTE_ALLOWLIST) routes.add(route)
+  for (const route of PUBLIC_ROUTE_ALLOWLIST) routes.add(cleanRoutePath(route))
   routes.add('/')
   return Array.from(routes).sort()
 }
 
 function cleanRoutePath(value) {
-  const route = String(value || '').trim().replace(/\/+/g, '/').replace(/\/+$/, '')
-  return route || '/'
+  const raw = String(value || '').trim().replace(/\/+/g, '/')
+  if (!raw || raw === '/') return '/'
+  return raw.endsWith('/') ? raw : `${raw}/`
 }
 
 async function readPublicHtmlFiles() {
@@ -103,6 +103,15 @@ async function readPublicHtmlFiles() {
 function makeUrl(loc) {
   const route = cleanRoutePath(loc)
   return `${HOST}${route === '/' ? '/' : route}`
+}
+
+function absoluteCanonicalUrl(value) {
+  const loc = String(value || '')
+  if (!loc) return `${HOST}/`
+  const base = loc.startsWith('http://') || loc.startsWith('https://') ? new URL(loc) : new URL(`${HOST}${cleanRoutePath(loc)}`)
+  const normalized = base.pathname === '/' ? '/' : `${base.pathname.replace(/\/+$/, '')}/`
+  base.pathname = normalized
+  return base.toString()
 }
 
 function xmlEscape(value) {
@@ -195,7 +204,7 @@ export async function buildSitemap() {
     urls.push({ loc: makeUrl(r), changefreq: 'daily', priority: r === '/' ? '1.0' : '0.6' })
   }
   for (const article of blogArticles) {
-    urls.push({ loc: article.canonical, lastmod: article.updatedDate, changefreq: 'weekly', priority: '0.5' })
+    urls.push({ loc: absoluteCanonicalUrl(article.canonical), lastmod: article.updatedDate, changefreq: 'weekly', priority: '0.5' })
   }
   for (const f of htmlFiles) {
     if (f.toLowerCase() === 'index.html' || f.toLowerCase() === '404.html') continue
@@ -203,15 +212,15 @@ export async function buildSitemap() {
   }
 
   const blogUrls = [
-    { loc: `${HOST}/blog`, changefreq: 'daily', priority: '0.7' },
-    ...blogArticles.map((article) => ({ loc: article.canonical, lastmod: article.updatedDate, changefreq: 'weekly', priority: '0.5' })),
+    { loc: `${HOST}/blog/`, changefreq: 'daily', priority: '0.7' },
+    ...blogArticles.map((article) => ({ loc: absoluteCanonicalUrl(article.canonical), lastmod: article.updatedDate, changefreq: 'weekly', priority: '0.5' })),
   ]
   // Multilingual blog URLs
   const mlPrefixes = ['ur', 'hi', 'ar', 'bn']
   for (const prefix of mlPrefixes) {
-    blogUrls.push({ loc: `${HOST}/${prefix}/blog`, changefreq: 'daily', priority: '0.5' })
+    blogUrls.push({ loc: `${HOST}/${prefix}/blog/`, changefreq: 'daily', priority: '0.5' })
     for (const article of blogArticles) {
-      blogUrls.push({ loc: `${HOST}/${prefix}/blog/${article.slug}`, lastmod: article.updatedDate, changefreq: 'weekly', priority: '0.4' })
+      blogUrls.push({ loc: `${HOST}/${prefix}/blog/${article.slug}/`, lastmod: article.updatedDate, changefreq: 'weekly', priority: '0.4' })
     }
   }
 

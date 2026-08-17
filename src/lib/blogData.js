@@ -88,7 +88,7 @@ const articleConfigs = [
     audience: 'owners who manage cashiers, branches and retail counters',
     primaryLink: { label: 'Retail POS', to: '/retail-pos' },
     secondaryLinks: [
-      { label: 'Business Services', to: '/services' },
+      { label: 'Business Services', to: '/business-services' },
       { label: 'Contact', to: '/contact' },
     ],
   },
@@ -143,7 +143,7 @@ const articleConfigs = [
     primaryLink: { label: 'Transport Software', to: '/transport' },
     secondaryLinks: [
       { label: 'CRM Software', to: '/solutions/crm' },
-      { label: 'Business Services', to: '/services' },
+      { label: 'Business Services', to: '/business-services' },
     ],
   },
   {
@@ -196,7 +196,7 @@ const articleConfigs = [
     audience: 'sales managers and customer-facing teams',
     primaryLink: { label: 'CRM Software', to: '/solutions/crm' },
     secondaryLinks: [
-      { label: 'Business Services', to: '/services' },
+      { label: 'Business Services', to: '/business-services' },
       { label: 'Contact', to: '/contact' },
     ],
   },
@@ -251,7 +251,7 @@ const articleConfigs = [
     primaryLink: { label: 'Pricing', to: '/pricing' },
     secondaryLinks: [
       { label: 'CRM Software', to: '/solutions/crm' },
-      { label: 'Business Services', to: '/services' },
+      { label: 'Business Services', to: '/business-services' },
     ],
   },
   {
@@ -266,7 +266,7 @@ const articleConfigs = [
     topic: 'business automation for growing teams',
     product: 'Nexora Business Suite',
     audience: 'growing business teams and operators',
-    primaryLink: { label: 'Business Services', to: '/services' },
+    primaryLink: { label: 'Business Services', to: '/business-services' },
     secondaryLinks: [
       { label: 'CRM Software', to: '/solutions/crm' },
       { label: 'Pricing', to: '/pricing' },
@@ -286,7 +286,7 @@ const articleConfigs = [
     audience: 'owners, managers and technology decision makers',
     primaryLink: { label: 'CRM Software', to: '/solutions/crm' },
     secondaryLinks: [
-      { label: 'Business Services', to: '/services' },
+      { label: 'Business Services', to: '/business-services' },
       { label: 'Contact', to: '/contact' },
     ],
   },
@@ -376,7 +376,7 @@ const articleConfigs = [
     audience: 'service companies, agencies and consultants',
     primaryLink: { label: 'CRM Software', to: '/solutions/crm' },
     secondaryLinks: [
-      { label: 'Business Services', to: '/services' },
+      { label: 'Business Services', to: '/business-services' },
       { label: 'Contact', to: '/contact' },
     ],
   },

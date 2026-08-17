@@ -493,7 +493,7 @@ export const blogArticles = [
     "secondaryLinks": [
       {
         "label": "Business Services",
-        "to": "/services"
+        "to": "/business-services"
       },
       {
         "label": "Contact",
@@ -962,7 +962,7 @@ export const blogArticles = [
       },
       {
         "label": "Business Services",
-        "to": "/services"
+        "to": "/business-services"
       }
     ],
     "excerpt": "Learn how transport and rental software manages vehicles, bookings, customers, payments, dues, returns and fleet reports.",
@@ -1423,7 +1423,7 @@ export const blogArticles = [
     "secondaryLinks": [
       {
         "label": "Business Services",
-        "to": "/services"
+        "to": "/business-services"
       },
       {
         "label": "Contact",
@@ -1892,7 +1892,7 @@ export const blogArticles = [
       },
       {
         "label": "Business Services",
-        "to": "/services"
+        "to": "/business-services"
       }
     ],
     "excerpt": "A practical software stack guide for Pakistani small businesses choosing CRM, POS, reporting, WhatsApp workflows and business services.",
@@ -2038,7 +2038,7 @@ export const blogArticles = [
     "audience": "growing business teams and operators",
     "primaryLink": {
       "label": "Business Services",
-      "to": "/services"
+      "to": "/business-services"
     },
     "secondaryLinks": [
       {
@@ -2198,7 +2198,7 @@ export const blogArticles = [
     "secondaryLinks": [
       {
         "label": "Business Services",
-        "to": "/services"
+        "to": "/business-services"
       },
       {
         "label": "Contact",
@@ -2973,7 +2973,7 @@ export const blogArticles = [
     "secondaryLinks": [
       {
         "label": "Business Services",
-        "to": "/services"
+        "to": "/business-services"
       },
       {
         "label": "Contact",

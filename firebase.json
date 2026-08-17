@@ -1,4 +1,40 @@
 {
+  "hosting": {
+    "public": "dist",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "redirects": [
+      {
+        "source": "/services",
+        "destination": "/business-services/",
+        "type": 301
+      },
+      {
+        "source": "/services/",
+        "destination": "/business-services/",
+        "type": 301
+      },
+      {
+        "source": "/solutions/pos",
+        "destination": "/restaurant-pos/",
+        "type": 301
+      },
+      {
+        "source": "/solutions/pos/",
+        "destination": "/restaurant-pos/",
+        "type": 301
+      }
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  },
   "functions": {
     "source": "functions",
     "runtime": "nodejs20"

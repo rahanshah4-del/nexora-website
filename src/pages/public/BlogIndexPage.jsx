@@ -197,8 +197,8 @@ export default function BlogIndexPage() {
       <PageSeo
         title="Nexora Blog | POS, ERP, CRM, AI and Business Software Guides"
         description="Read SEO-ready guides from Nexora Solution about Restaurant POS, Retail POS, School ERP, Transport Software, CRM, WhatsApp CRM, AI and business technology."
-        canonical={absoluteUrl('/blog')}
-        path="/blog"
+        canonical={absoluteUrl('/blog/')}
+        path="/blog/"
         ogTitle="Nexora Blog"
         ogDescription="Practical business software guides for Pakistani businesses."
         twitterCard="summary_large_image"

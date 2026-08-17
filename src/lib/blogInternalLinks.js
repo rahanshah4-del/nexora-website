@@ -30,7 +30,7 @@ export const KNOWN_ROUTES = {
 
   // Solutions
   'crm': '/solutions/crm',
-  'pos': '/solutions/pos',
+  'pos': '/restaurant-pos',
   'inventory': '/solutions/inventory-management',
   'inventory management': '/solutions/inventory-management',
   'barcode': '/solutions/inventory-management',
@@ -46,10 +46,10 @@ export const KNOWN_ROUTES = {
   'kot': '/restaurant-pos',
   'kitchen display': '/restaurant-pos',
   'table management': '/restaurant-pos',
-  'billing': '/solutions/pos',
-  'invoice': '/solutions/pos',
-  'ledger': '/solutions/pos',
-  'payment gateway': '/solutions/pos',
+  'billing': '/restaurant-pos',
+  'invoice': '/restaurant-pos',
+  'ledger': '/restaurant-pos',
+  'payment gateway': '/restaurant-pos',
 
   // Pages
   'pricing': '/pricing',
@@ -57,13 +57,13 @@ export const KNOWN_ROUTES = {
   'about': '/about',
 
   // Common business terms (link to relevant solution)
-  'cloud pos': '/solutions/pos',
-  'cloud-based': '/solutions/pos',
-  'multi branch': '/solutions/pos',
-  'multi-currency': '/solutions/pos',
-  'discount engine': '/solutions/pos',
-  'loyalty program': '/solutions/pos',
-  'promo code': '/solutions/pos',
+  'cloud pos': '/restaurant-pos',
+  'cloud-based': '/restaurant-pos',
+  'multi branch': '/restaurant-pos',
+  'multi-currency': '/restaurant-pos',
+  'discount engine': '/restaurant-pos',
+  'loyalty program': '/restaurant-pos',
+  'promo code': '/restaurant-pos',
   'payroll': '/school-erp',
   'attendance': '/school-erp',
   'fee management': '/school-erp',
@@ -74,8 +74,8 @@ export const KNOWN_ROUTES = {
   'tax compliance': '/solutions/reports-analytics',
   'data encryption': '/solutions/team-permissions',
   'backup': '/solutions/team-permissions',
-  'scalable': '/solutions/pos',
-  'integration': '/solutions/pos',
+  'scalable': '/restaurant-pos',
+  'integration': '/restaurant-pos',
   'subscription': '/pricing',
 }
 

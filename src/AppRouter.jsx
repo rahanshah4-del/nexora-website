@@ -410,10 +410,12 @@ export default function AppRouter() {
         <Route path="/" element={<LazyPage><MarketingRoute /></LazyPage>} />
         <Route path="/features" element={<LazyPage><NoIndexRoute><MarketingRoute sectionId="services" /></NoIndexRoute></LazyPage>} />
         <Route path="/ai" element={<LazyPage><AIPage /></LazyPage>} />
-        <Route path="/services" element={<Navigate to="/business-services" replace />} />
+        <Route path="/services" element={<Navigate to="/business-services/" replace />} />
+        <Route path="/services/" element={<Navigate to="/business-services/" replace />} />
         <Route path="/pricing" element={<LazyPage><PricingPage /></LazyPage>} />
         <Route path="/pricing-paddle" element={<LazyPage><NoIndexRoute><PaddlePricingPage /></NoIndexRoute></LazyPage>} />
         <Route path="/business-services" element={<LazyPage><PublicBusinessServicesPage /></LazyPage>} />
+        <Route path="/business-services/" element={<LazyPage><PublicBusinessServicesPage /></LazyPage>} />
         <Route path="/software-development" element={<LazyPage><SoftwareDevelopmentPage /></LazyPage>} />
         <Route path="/seo-services" element={<LazyPage><SEOServicesPage /></LazyPage>} />
         <Route path="/mobile-app-development" element={<LazyPage><MobileAppDevelopmentPage /></LazyPage>} />
@@ -462,6 +464,9 @@ export default function AppRouter() {
         <Route path="/bn/blog" element={<LazyPage><BlogIndexPage /></LazyPage>} />
         <Route path="/bn/blog/:slug" element={<LazyPage><BlogArticlePage /></LazyPage>} />
         <Route path="/restaurant-pos" element={<LazyPage><SolutionPage solutionSlug="pos" /></LazyPage>} />
+        <Route path="/restaurant-pos/" element={<LazyPage><SolutionPage solutionSlug="pos" /></LazyPage>} />
+        <Route path="/solutions/pos" element={<Navigate to="/restaurant-pos/" replace />} />
+        <Route path="/solutions/pos/" element={<Navigate to="/restaurant-pos/" replace />} />
         <Route path="/retail-pos" element={<LazyPage><SolutionPage solutionSlug="retail-pos" /></LazyPage>} />
         <Route path="/school-erp" element={<LazyPage><SolutionPage solutionSlug="school-erp" /></LazyPage>} />
         <Route path="/transport" element={<LazyPage><SolutionPage solutionSlug="transport-rental" /></LazyPage>} />

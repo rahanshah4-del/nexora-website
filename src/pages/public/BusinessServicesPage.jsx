@@ -62,7 +62,7 @@ const toneStyles = {
 }
 
 export default function PublicBusinessServicesPage() {
-  const seo = getSeoForPath('/services')
+  const seo = getSeoForPath('/business-services')
 
   return (
     <PublicPageShell backTo="/" backLabel="Back to Website" badge="Business Services" badgeIcon={HiOutlineBriefcase}>

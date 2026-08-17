@@ -8,6 +8,7 @@
 import { renderToString } from 'react-dom/server'
 import { StaticRouter } from 'react-router-dom/server'
 import App from './App.jsx'
+import { canonicalPath } from './lib/seoStructuredData.js'
 
 /**
  * Render a public marketing page to a complete HTML string.
@@ -31,7 +32,7 @@ export function render(url, options = {}) {
   const meta = {
     title: options.title || 'Nexora POS Software Pakistan | Nexora Solution',
     description: options.description || 'Nexora offers Pakistan\'s leading POS software for restaurant, retail, school ERP and WhatsApp CRM teams with unified business workflows.',
-    canonical: options.canonical || `https://nexorasolution.online${url}`,
+    canonical: options.canonical || `https://nexorasolution.online${canonicalPath(url)}`,
     ogImage: options.ogImage || 'https://nexorasolution.online/nexora-brand-logo.png',
     jsonLd: options.jsonLd || '',
     twitterCard: options.twitterCard || 'summary_large_image',

@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
-import { createLocalBusinessSchema, createOrganizationSchema, createWebSiteSchema } from '../lib/seoStructuredData.js'
+import { absoluteUrl, canonicalPath, createLocalBusinessSchema, createOrganizationSchema, createWebSiteSchema } from '../lib/seoStructuredData.js'
 
 const publicSeoPaths = new Set([
   '/',
@@ -95,8 +95,18 @@ export default function DefaultSeo() {
   const location = useLocation()
   const host = 'https://nexorasolution.online'
   const pathname = location?.pathname || '/'
-  const canonical = host + (pathname === '/' ? '/' : pathname.replace(/\/+$/,''))
-  const cleanPathname = pathname === '/' ? '/' : pathname.replace(/\/+$/,'')
+  const legacyCanonicalMap = {
+    '/services': `${host}/business-services/`,
+    '/services/': `${host}/business-services/`,
+    '/solutions/pos': `${host}/restaurant-pos/`,
+    '/solutions/pos/': `${host}/restaurant-pos/`,
+  }
+  const canonical = (() => {
+    if (legacyCanonicalMap[pathname]) return legacyCanonicalMap[pathname]
+    if (pathname === '/blog' && /(?:^|[?&])(?:tag|category)=/.test(location?.search || '')) return `${host}/blog/`
+    return host + canonicalPath(pathname)
+  })()
+  const cleanPathname = pathname === '/' ? '/' : pathname.replace(/\/+$/, '')
   const isLangBlog = ['/ur/blog', '/hi/blog', '/ar/blog', '/bn/blog'].some(p => cleanPathname === p || cleanPathname.startsWith(p + '/'))
   const publicRoute = publicSeoPaths.has(cleanPathname) || cleanPathname.startsWith('/solutions/') || cleanPathname.startsWith('/blog/') || isLangBlog
   const noindex = NOINDEX_PREFIXES.some((prefix) => cleanPathname === prefix || cleanPathname.startsWith(`${prefix}/`))
