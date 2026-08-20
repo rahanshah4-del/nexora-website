@@ -514,16 +514,26 @@ function WorkspaceCard({ workspace, index, emailVerified, selected, saving, onSe
   const businessTypeLabel = labelForBusinessType(workspace.type)
   const hasActivity = activity && activity.hasActivity
   const isRestaurant = workspace.type === 'Restaurant POS'
+  const railColorByType = {
+    'Restaurant POS': 'bg-amber-500',
+    'WhatsApp CRM': 'bg-emerald-600',
+    'Retail / POS': 'bg-blue-600',
+    'School ERP': 'bg-violet-600',
+    'Property ERP': 'bg-fuchsia-600',
+    'Transport / Rental': 'bg-cyan-600',
+  }
+  const railColor = railColorByType[workspace.type] || 'bg-slate-300'
 
   return (
     <motion.article
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.22, delay: index * 0.03, ease: 'easeOut' }}
-      className={`rounded-xl border border-slate-200/60 bg-white/90 p-3 shadow-sm backdrop-blur-sm transition-all duration-200 hover:shadow-md sm:p-4 ${
+      className={`relative overflow-hidden rounded-xl border border-slate-200/60 bg-white/90 p-3 shadow-sm backdrop-blur-sm transition-all duration-200 hover:shadow-md sm:p-4 ${
         selected ? isRestaurant ? 'border-violet-400 ring-1 ring-violet-100' : 'border-blue-500 ring-1 ring-blue-100' : 'border-slate-200'
       }`}
     >
+      <span aria-hidden="true" className={`absolute bottom-0 left-0 top-0 w-[3px] rounded-l-xl ${railColor}`} />
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-3">
           <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl sm:h-14 sm:w-14 text-xl sm:text-2xl bg-gradient-to-br ${workspace.emojiBg || 'from-sky-100 to-blue-200'} shadow-sm`}>
@@ -540,6 +550,7 @@ function WorkspaceCard({ workspace, index, emailVerified, selected, saving, onSe
               )}
               {selected && emailVerified ? <VerificationBadge verified compact /> : null}
             </div>
+            <p className="mt-0.5 font-mono text-[10px] uppercase tracking-wide text-slate-400">{workspace.type.toLowerCase()}</p>
             <p className="mt-1 text-xs text-slate-500">Business type: {businessTypeLabel}</p>
             {selected && isRestaurant && (
               <p className="mt-1 text-[11px] font-medium text-violet-600">
@@ -908,6 +919,113 @@ function SupportTicketsWorkspaceCard({ disabled, onOpen }) {
         <HiOutlineArrowRight className="h-4 w-4" />
       </button>
     </article>
+  )
+}
+
+function AutomationBanner() {
+  const prefersReducedMotion =
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+  return (
+    <div
+      className="relative mt-4 overflow-hidden rounded-[18px]"
+      style={{ background: 'linear-gradient(120deg, #0B1220 0%, #161F35 55%, #1E1240 100%)' }}
+    >
+      {/* Decorative radial texture overlay */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 opacity-40"
+        style={{
+          background:
+            'radial-gradient(600px 320px at 0% 0%, rgba(59,130,246,0.28), transparent 60%), radial-gradient(520px 320px at 100% 100%, rgba(139,92,246,0.26), transparent 60%)',
+        }}
+      />
+
+      <div className="relative z-10 flex flex-col items-center gap-8 p-7 sm:flex-row sm:p-8">
+        <div className="flex-1">
+          <span className="inline-flex items-center gap-2 rounded-md border border-white/15 bg-white/10 px-2.5 py-1 font-mono text-[10.5px] tracking-wide text-indigo-300">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 motion-safe:animate-pulse" />
+            3 WORKFLOWS RUNNING
+          </span>
+          <h2 className="mt-3 text-2xl font-extrabold tracking-tight text-white">
+            Automations that{' '}
+            <span className="bg-gradient-to-r from-blue-400 to-violet-300 bg-clip-text text-transparent">
+              run your business for you.
+            </span>
+          </h2>
+          <p className="mt-2 max-w-[460px] text-[13.5px] leading-relaxed text-slate-400">
+            Connect WhatsApp, AI, and your Nexora modules on one visual canvas. Works while your team is offline.
+          </p>
+          <button
+            type="button"
+            onClick={() => { window.location.href = 'https://app.nexorasolution.online/login?next=/workflows' }}
+            className="mt-4 inline-flex items-center gap-2 rounded-lg bg-white px-5 py-2.5 text-[13px] font-bold text-slate-900 transition hover:bg-indigo-50"
+          >
+            Enter automation studio
+            <HiOutlineArrowRight className="h-4 w-4" />
+          </button>
+          <div className="mt-5 flex gap-6 border-t border-white/10 pt-4">
+            {/* Placeholder — no workflow count available in this component's scope; pending a backend endpoint. */}
+            <div>
+              <div className="font-mono text-[17px] font-semibold text-white">—</div>
+              <div className="text-[10.5px] uppercase text-slate-500">Workflows</div>
+            </div>
+            {/* Placeholder — pending a backend endpoint. */}
+            <div>
+              <div className="font-mono text-[17px] font-semibold text-white">—</div>
+              <div className="text-[10.5px] uppercase text-slate-500">Runs today</div>
+            </div>
+            {/* Placeholder — pending a backend endpoint. */}
+            <div>
+              <div className="font-mono text-[17px] font-semibold text-white">—</div>
+              <div className="text-[10.5px] uppercase text-slate-500">Time saved</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Static illustrative workflow diagram — decorative only, not tied to real workflow data. */}
+        <svg className="hidden w-[220px] flex-shrink-0 sm:block" viewBox="0 0 220 180" fill="none" aria-hidden="true">
+          <defs>
+            <path id="auto-wire-1" d="M64 43 C 110 43, 110 31, 156 31" />
+            <path id="auto-wire-2" d="M64 43 C 110 43, 110 91, 156 91" />
+            <path id="auto-wire-3" d="M64 105 C 110 105, 110 151, 156 151" />
+          </defs>
+          <g stroke="rgba(148,163,184,0.35)" strokeWidth="1.5">
+            <path d="M64 43 C 110 43, 110 31, 156 31" />
+            <path d="M64 43 C 110 43, 110 91, 156 91" />
+            <path d="M64 105 C 110 105, 110 151, 156 151" />
+          </g>
+          <g fill="rgba(30,41,59,0.65)" stroke="rgba(148,163,184,0.28)">
+            <rect x="10" y="30" width="54" height="26" rx="7" />
+            <rect x="10" y="92" width="54" height="26" rx="7" />
+            <rect x="156" y="18" width="54" height="26" rx="7" />
+            <rect x="156" y="78" width="54" height="26" rx="7" />
+            <rect x="156" y="138" width="54" height="26" rx="7" />
+          </g>
+          {!prefersReducedMotion ? (
+            <g>
+              <circle r="3.5" fill="#60A5FA">
+                <animateMotion dur="2.4s" repeatCount="indefinite">
+                  <mpath href="#auto-wire-1" />
+                </animateMotion>
+              </circle>
+              <circle r="3.5" fill="#A78BFA">
+                <animateMotion dur="3s" begin="0.6s" repeatCount="indefinite">
+                  <mpath href="#auto-wire-2" />
+                </animateMotion>
+              </circle>
+              <circle r="3.5" fill="#F472B6">
+                <animateMotion dur="2.7s" begin="1.1s" repeatCount="indefinite">
+                  <mpath href="#auto-wire-3" />
+                </animateMotion>
+              </circle>
+            </g>
+          ) : null}
+        </svg>
+      </div>
+    </div>
   )
 }
 
@@ -4168,6 +4286,8 @@ export default function WorkspaceSelection() {
               className="mt-4"
               hideWhenResolved
             />
+
+            <AutomationBanner />
 
             <div className="mt-3 flex flex-col gap-2 sm:mt-6 sm:flex-row sm:items-center sm:justify-between">
               <h2 className="text-lg font-bold text-slate-950">
