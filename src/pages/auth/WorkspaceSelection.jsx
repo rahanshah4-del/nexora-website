@@ -922,15 +922,63 @@ function SupportTicketsWorkspaceCard({ disabled, onOpen }) {
   )
 }
 
-function AutomationBanner() {
+function AutomationBanner({ workspaceId, selecting, onSelect }) {
+  const [usage, setUsage] = useState({ status: 'loading', workflowCount: null, runsThisMonth: null, runLimit: null })
   const prefersReducedMotion =
     typeof window !== 'undefined' &&
     typeof window.matchMedia === 'function' &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
+  useEffect(() => {
+    // Do not gate the fetch behind an early `return` that would keep this effect
+    // from ever running once the id resolves. When workspaceId is empty we just
+    // mark the neutral state; the effect re-runs the moment workspaceId changes.
+    if (!workspaceId) {
+      console.warn('[AutomationBanner] skipping usage fetch — workspaceId not ready yet')
+      setUsage({ status: 'empty', workflowCount: 0, runsThisMonth: 0, runLimit: null })
+      return undefined
+    }
+    let cancelled = false
+    setUsage({ status: 'loading', workflowCount: null, runsThisMonth: null, runLimit: null })
+    fetch(`https://api.nexorasolution.online/workspaces/${encodeURIComponent(workspaceId)}/usage`, {
+      method: 'GET',
+      credentials: 'include',
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error(`Usage request failed (${response.status})`)
+        return response.json()
+      })
+      .then((payload) => {
+        if (cancelled) return
+        const workflowCount = typeof payload?.workflowCount === 'number' ? payload.workflowCount : 0
+        const runsThisMonth = typeof payload?.runsThisMonth === 'number' ? payload.runsThisMonth : 0
+        const runLimit = typeof payload?.runLimit === 'number' ? payload.runLimit : null
+        setUsage({ status: 'loaded', workflowCount, runsThisMonth, runLimit })
+      })
+      .catch((error) => {
+        if (cancelled) return
+        console.error('[AutomationBanner] usage fetch failed', {
+          workspaceId,
+          status: error?.status,
+          message: error?.message || String(error || ''),
+        })
+        setUsage({ status: 'empty', workflowCount: 0, runsThisMonth: 0, runLimit: null })
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [workspaceId])
+
+  const isEmpty = usage.status === 'empty'
+  const badgeLabel = usage.status === 'loading'
+    ? 'CHECKING AUTOMATIONS'
+    : isEmpty
+      ? 'NO WORKFLOWS YET'
+      : `${usage.workflowCount} WORKFLOW${usage.workflowCount === 1 ? '' : 'S'} RUNNING`
+
   return (
     <div
-      className="relative mt-4 overflow-hidden rounded-[18px]"
+      className={`relative mt-4 overflow-hidden rounded-[18px] transition-all duration-200 ${selecting ? 'ring-2 ring-blue-400/70' : ''}`}
       style={{ background: 'linear-gradient(120deg, #0B1220 0%, #161F35 55%, #1E1240 100%)' }}
     >
       {/* Decorative radial texture overlay */}
@@ -946,8 +994,8 @@ function AutomationBanner() {
       <div className="relative z-10 flex flex-col items-center gap-8 p-7 sm:flex-row sm:p-8">
         <div className="flex-1">
           <span className="inline-flex items-center gap-2 rounded-md border border-white/15 bg-white/10 px-2.5 py-1 font-mono text-[10.5px] tracking-wide text-indigo-300">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 motion-safe:animate-pulse" />
-            3 WORKFLOWS RUNNING
+            <span className={`h-1.5 w-1.5 rounded-full ${isEmpty ? 'bg-slate-500' : 'bg-emerald-400 motion-safe:animate-pulse'}`} />
+            {badgeLabel}
           </span>
           <h2 className="mt-3 text-2xl font-extrabold tracking-tight text-white">
             Automations that{' '}
@@ -960,27 +1008,33 @@ function AutomationBanner() {
           </p>
           <button
             type="button"
-            onClick={() => { window.location.href = 'https://app.nexorasolution.online/login?next=/workflows' }}
-            className="mt-4 inline-flex items-center gap-2 rounded-lg bg-white px-5 py-2.5 text-[13px] font-bold text-slate-900 transition hover:bg-indigo-50"
+            disabled={selecting}
+            onClick={onSelect}
+            className={`mt-4 inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-[13px] font-bold transition ${
+              selecting ? 'bg-white/60 text-slate-500' : 'bg-white text-slate-900 hover:bg-indigo-50'
+            }`}
           >
-            Enter automation studio
+            {selecting ? 'Opening automation studio…' : 'Enter automation studio'}
             <HiOutlineArrowRight className="h-4 w-4" />
           </button>
           <div className="mt-5 flex gap-6 border-t border-white/10 pt-4">
-            {/* Placeholder — no workflow count available in this component's scope; pending a backend endpoint. */}
             <div>
-              <div className="font-mono text-[17px] font-semibold text-white">—</div>
+              <div className="font-mono text-[17px] font-semibold text-white">
+                {usage.status === 'loading' ? '…' : isEmpty ? '—' : usage.workflowCount}
+              </div>
               <div className="text-[10.5px] uppercase text-slate-500">Workflows</div>
             </div>
-            {/* Placeholder — pending a backend endpoint. */}
             <div>
-              <div className="font-mono text-[17px] font-semibold text-white">—</div>
-              <div className="text-[10.5px] uppercase text-slate-500">Runs today</div>
-            </div>
-            {/* Placeholder — pending a backend endpoint. */}
-            <div>
-              <div className="font-mono text-[17px] font-semibold text-white">—</div>
-              <div className="text-[10.5px] uppercase text-slate-500">Time saved</div>
+              <div className="font-mono text-[17px] font-semibold text-white">
+                {usage.status === 'loading'
+                  ? '…'
+                  : isEmpty
+                    ? '—'
+                    : usage.runLimit != null
+                      ? `${usage.runsThisMonth}/${usage.runLimit}`
+                      : usage.runsThisMonth}
+              </div>
+              <div className="text-[10.5px] uppercase text-slate-500">Runs this month</div>
             </div>
           </div>
         </div>
@@ -2399,6 +2453,16 @@ export default function WorkspaceSelection() {
     setProfileOpen(false)
     navigate('/upgrade-business', { state: { fromUpgradeBusiness: true } })
   }, [navigate])
+
+  const handleOpenAutomation = useCallback(() => {
+    if (businessTypeSaving) return
+    setBusinessTypeSaving('automation')
+    // Reuse the selected-state transition timing used on WorkspaceCard
+    // (transition-all duration-200) before leaving to the automation studio.
+    window.setTimeout(() => {
+      window.location.href = 'https://app.nexorasolution.online/login?next=/workflows'
+    }, 200)
+  }, [businessTypeSaving])
 
   const handleOpenSupportTickets = useCallback(() => {
     const uid = user?.uid
@@ -4287,7 +4351,11 @@ export default function WorkspaceSelection() {
               hideWhenResolved
             />
 
-            <AutomationBanner />
+            <AutomationBanner
+              workspaceId={cleanString(workspaceData?.workspaceId) || cleanString(accountData?.workspaceId) || user?.uid || ''}
+              selecting={businessTypeSaving === 'automation'}
+              onSelect={handleOpenAutomation}
+            />
 
             <div className="mt-3 flex flex-col gap-2 sm:mt-6 sm:flex-row sm:items-center sm:justify-between">
               <h2 className="text-lg font-bold text-slate-950">
