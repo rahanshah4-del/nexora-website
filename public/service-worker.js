@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nexora-pwa-v8-install-icon'
+const CACHE_NAME = 'nexora-pwa-v10-install-icon'
 const CACHE_URLS = [
   '/',
   '/index.html',
