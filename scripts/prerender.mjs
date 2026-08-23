@@ -112,6 +112,7 @@ const PUBLIC_ROUTES = [
   { path: '/solutions/medical-store-pos', title: 'Medical Store POS Pakistan — Nexora Solution',                             description: 'Pharmacy POS with medicine inventory, batch tracking, expiry alerts and sales reports.' },
   { path: '/solutions/school-erp', title: 'School ERP System Pakistan — Nexora Solution',                                   description: 'Complete school ERP with student management, fees, attendance, exams, payroll and reports.' },
   { path: '/solutions/property-erp', title: 'Property ERP Software Pakistan — Nexora Solution',                             description: 'Property management ERP for landlords, agents and developers. Track tenants, rent, maintenance and owners.' },
+  { path: '/solutions/reports', title: 'Business Reports Software Pakistan — Nexora Analytics',                            description: 'Nexora Reports Pakistan provides KPI dashboards, PDF reports, Excel exports and business intelligence for growing teams.' },
   { path: '/blog',          title: 'Nexora Blog — POS, ERP & CRM Insights for Pakistani Businesses',                         description: 'Read the Nexora blog for POS tips, ERP guides, CRM strategies and business growth insights for Pakistani entrepreneurs.' },
   { path: '/faq',           title: 'Frequently Asked Questions — Nexora Solution',                                           description: 'Find answers to common questions about Nexora POS, ERP, CRM pricing, features, setup, support and billing.' },
   { path: '/business-services/', title: 'Business Management Software Pakistan | Nexora Services',                   description: 'Request Nexora business services for software setup, support, bookkeeping, marketing and growth while keeping your operations running smoothly.' },
@@ -538,7 +539,7 @@ ${buildGtm()}
           ${updDate !== pubDate ? `<span>Updated: ${updDate}</span>` : ''}
           <span>${readTime} min read</span>
           <span>${totalWords.toLocaleString()} words</span>
-          <span>Category: <a href="/blog?category=${encodeURIComponent(article.category || '')}">${esc(article.category || 'General')}</a></span>
+          <span>Category: <a href="/blog/?category=${encodeURIComponent(article.category || '')}">${esc(article.category || 'General')}</a></span>
         </div>
         ${article.featuredImage ? `<img src="${esc(article.featuredImage)}" alt="${esc(article.seoTitle || article.title)}" title="${esc(article.seoTitle || article.title)}" width="1200" height="675" loading="eager" fetchpriority="high" decoding="async" sizes="(max-width: 768px) 100vw, 720px" srcset="${esc(article.featuredImage)} 1200w" />` : ''}
         ${article.excerpt ? `<p class="excerpt"><strong>${esc(article.excerpt)}</strong></p>` : `<p class="excerpt"><strong>${esc(article.metaDescription || article.description || '')}</strong></p>`}
@@ -547,7 +548,7 @@ ${buildGtm()}
         ${faqHtml}
         ${relatedHtml}
         ${ctaHtml}
-        <p class="tags">Tags: ${(article.tags || []).map((t) => `<a href="/blog?tag=${encodeURIComponent(t)}">${esc(t)}</a>`).join(', ')}</p>
+        <p class="tags">Tags: ${(article.tags || []).map((t) => `<a href="/blog/?tag=${encodeURIComponent(t)}">${esc(t)}</a>`).join(', ')}</p>
       </article>
     </main>
     <footer>

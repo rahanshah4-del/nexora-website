@@ -38,14 +38,14 @@ const publicSolutionLinks = [
   { key: 'school-erp', label: 'School ERP', to: '/school-erp', text: 'Organize students, attendance, fees and school operations.' },
   { key: 'transport-rental', label: 'Transport Software', to: '/transport', text: 'Manage fleet bookings, customers, payments and rental records.' },
   { key: 'whatsapp-crm', label: 'WhatsApp CRM', to: '/whatsapp-crm', text: 'Turn conversations into leads, follow-ups and customer activity.' },
-  { key: 'crm', label: 'CRM Software', to: '/solutions/crm', text: 'Track leads, customers, invoices, tasks and sales teams.' },
-  { key: 'team-permissions', label: 'Team & Permissions', to: '/solutions/team-permissions', text: 'Control roles, access rights and team member visibility.' },
-  { key: 'medical-store-pos', label: 'Medical Store POS', to: '/solutions/medical-store-pos', text: 'Handle pharmacy billing, medicine stock and expiry control.' },
-  { key: 'property-erp', label: 'Property ERP', to: '/solutions/property-erp', text: 'Manage tenants, rent, leases and maintenance requests.' },
-  { key: 'reports', label: 'Business Reports', to: '/solutions/reports', text: 'Review KPIs, exports and performance insights across modules.' },
-  { key: 'email-marketing', label: 'Email Marketing', to: '/solutions/email-marketing', text: 'Send campaigns, track opens and grow customer engagement.' },
-  { key: 'inventory-management', label: 'Inventory Management', to: '/solutions/inventory-management', text: 'Track stock, purchases, suppliers and warehouse movement.' },
-  { key: 'reports-analytics', label: 'Reports & Analytics', to: '/solutions/reports-analytics', text: 'Dashboards, KPI tracking and business intelligence exports.' },
+  { key: 'crm', label: 'CRM Software', to: '/solutions/crm/', text: 'Track leads, customers, invoices, tasks and sales teams.' },
+  { key: 'team-permissions', label: 'Team & Permissions', to: '/solutions/team-permissions/', text: 'Control roles, access rights and team member visibility.' },
+  { key: 'medical-store-pos', label: 'Medical Store POS', to: '/solutions/medical-store-pos/', text: 'Handle pharmacy billing, medicine stock and expiry control.' },
+  { key: 'property-erp', label: 'Property ERP', to: '/solutions/property-erp/', text: 'Manage tenants, rent, leases and maintenance requests.' },
+  { key: 'reports', label: 'Business Reports', to: '/solutions/reports/', text: 'Review KPIs, exports and performance insights across modules.' },
+  { key: 'email-marketing', label: 'Email Marketing', to: '/solutions/email-marketing/', text: 'Send campaigns, track opens and grow customer engagement.' },
+  { key: 'inventory-management', label: 'Inventory Management', to: '/solutions/inventory-management/', text: 'Track stock, purchases, suppliers and warehouse movement.' },
+  { key: 'reports-analytics', label: 'Reports & Analytics', to: '/solutions/reports-analytics/', text: 'Dashboards, KPI tracking and business intelligence exports.' },
 ]
 
 const relatedSolutionKeys = {

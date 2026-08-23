@@ -316,7 +316,7 @@ export default function BlogArticlePage() {
               Back to Blog
             </Link>
             <div className="mt-8 flex flex-wrap items-center gap-2 text-xs font-medium text-blue-700">
-              <Link to={`/blog?category=${encodeURIComponent(article.category)}`} className="rounded-lg border border-blue-100/60 bg-white/80 px-3 py-1.5 text-[0.7rem] font-medium uppercase tracking-[0.12em] text-blue-700 shadow-sm backdrop-blur-sm transition hover:bg-blue-100 active:scale-[0.96]">
+              <Link to={`/blog/?category=${encodeURIComponent(article.category)}`} className="rounded-lg border border-blue-100/60 bg-white/80 px-3 py-1.5 text-[0.7rem] font-medium uppercase tracking-[0.12em] text-blue-700 shadow-sm backdrop-blur-sm transition hover:bg-blue-100 active:scale-[0.96]">
                 {article.category}
               </Link>
               {article.keywords && article.keywords.length > 0 ? article.keywords.slice(0, 4).map((kw) => (
@@ -511,7 +511,7 @@ export default function BlogArticlePage() {
 
               <div className="mt-10 flex flex-wrap gap-1.5">
                 {article.tags.map((item) => (
-                  <Link key={item} to={`/blog?tag=${encodeURIComponent(item)}`} className="inline-flex items-center gap-1.5 rounded-full border border-slate-100 bg-slate-50/70 px-3 py-1.5 text-[0.7rem] font-medium text-slate-500 shadow-sm transition-all duration-200 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 active:scale-[0.96]">
+                  <Link key={item} to={`/blog/?tag=${encodeURIComponent(item)}`} className="inline-flex items-center gap-1.5 rounded-full border border-slate-100 bg-slate-50/70 px-3 py-1.5 text-[0.7rem] font-medium text-slate-500 shadow-sm transition-all duration-200 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 active:scale-[0.96]">
                     <HiOutlineTag className="h-3 w-3" />
                     {item}
                   </Link>

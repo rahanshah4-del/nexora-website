@@ -49,7 +49,8 @@ export function buildLocalizedPath(slug, langCode = 'en') {
  */
 export function buildLocalizedCanonical(slug, langCode = 'en') {
   const base = 'https://nexorasolution.online'
-  return `${base}${buildLocalizedPath(slug, langCode)}`
+  // Trailing slash matches the sitemap + prerendered HTML exactly (…/blog/<slug>/).
+  return `${base}${buildLocalizedPath(slug, langCode)}/`
 }
 
 /**

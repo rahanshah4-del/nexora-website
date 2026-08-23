@@ -57,7 +57,7 @@ export default function CountryPage({ slug }) {
     title: country.seoTitle,
     description: country.seoDescription,
     keywords: country.seoKeywords,
-    canonical: `https://nexorasolution.online/${country.slug}`,
+    canonical: `https://nexorasolution.online/${country.slug}/`,
     ogTitle: country.seoTitle,
     ogDescription: country.seoDescription,
     twitterCard: 'summary_large_image',
@@ -181,7 +181,7 @@ export default function CountryPage({ slug }) {
         <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
           <div className="flex flex-wrap justify-center gap-3">
             {[
-              { label: 'CRM', to: '/solutions/crm' },
+              { label: 'CRM', to: '/solutions/crm/' },
               { label: 'POS Solutions', to: '/restaurant-pos' },
               { label: 'ERP', to: '/erp-development' },
               { label: 'AI Solutions', to: '/ai' },

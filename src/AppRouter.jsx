@@ -44,6 +44,7 @@ const BlogArticlePage = lazy(() => import('./pages/public/BlogArticlePage.jsx'))
 const FaqPage = lazy(() => import('./pages/public/FaqPage.jsx'))
 const SupportCenterPage = lazy(() => import('./pages/public/SupportCenterPage.jsx'))
 const DownloadRestaurantPOSPage = lazy(() => import('./pages/public/DownloadRestaurantPOS.jsx'))
+const NotFoundPage = lazy(() => import('./pages/public/NotFoundPage.jsx'))
 const DashboardLayout = lazy(() => import('./crm/layouts/DashboardLayout.jsx'))
 const AdminLayout = lazy(() => import('./layouts/AdminLayout.jsx'))
 const DashboardHomePage = lazy(() => import('./crm/pages/DashboardHome.jsx'))
@@ -574,7 +575,7 @@ export default function AppRouter() {
           <Route index element={<Navigate to="/admin/control-centre" replace />} />
       </Route>
 
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<LazyPage><NotFoundPage /></LazyPage>} />
       </Routes>
     </>
   )

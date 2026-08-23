@@ -207,7 +207,10 @@ export async function buildSitemap() {
     urls.push({ loc: absoluteCanonicalUrl(article.canonical), lastmod: article.updatedDate, changefreq: 'weekly', priority: '0.5' })
   }
   for (const f of htmlFiles) {
-    if (f.toLowerCase() === 'index.html' || f.toLowerCase() === '404.html') continue
+    const lower = f.toLowerCase()
+    if (lower === 'index.html' || lower === '404.html') continue
+    // Google Site Verification files (google<token>.html) are not indexable pages.
+    if (/^google[0-9a-z]+\.html$/i.test(f)) continue
     urls.push({ loc: `${HOST}/${f}`, changefreq: 'monthly', priority: '0.3' })
   }
 
