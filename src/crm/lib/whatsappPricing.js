@@ -20,7 +20,7 @@ export function defaultWhatsappPricing() {
   return {
     setupFee: 15000,
     monthlyFee: 5999,
-    trialDays: 7,
+    trialDays: 30,
     trialMessageLimit: 50,
     currency: 'PKR',
     metaBillingEnabled: true,

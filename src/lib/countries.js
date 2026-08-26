@@ -30,14 +30,14 @@ export const COUNTRIES = [
     faqs: [
       { q: 'Does Nexora serve businesses in the United States?', a: 'Yes — Nexora serves businesses across all 50 US states. Our cloud infrastructure runs on Cloudflare\'s global edge network with US data centers, ensuring fast performance. All pricing is available in USD, and we offer US business hours support.' },
       { q: 'Is Nexora compliant with US data privacy regulations?', a: 'Yes. Nexora follows SOC 2 security standards, uses AES-256 encryption, and supports CCPA compliance requirements. Our infrastructure is hosted on Google Cloud and Cloudflare — both SOC 2 and ISO 27001 certified.' },
-      { q: 'How much does Nexora cost in USD?', a: 'Plans start at approximately $12/month (Basic), $36/month (Standard), and custom Enterprise pricing. All plans include a 7-day free trial, cloud sync, free updates, and 30-day money-back guarantee. No hidden fees.' },
+      { q: 'How much does Nexora cost in USD?', a: 'Plans start at approximately $12/month (Basic), $36/month (Standard), and custom Enterprise pricing. All plans include a 1-month free trial, cloud sync, free updates, and 30-day money-back guarantee. No hidden fees.' },
       { q: 'What payment methods do you accept for US customers?', a: 'We accept all major credit/debit cards (Visa, Mastercard, Amex), PayPal, Stripe, and bank wire transfers. All payments are processed in USD through secure PCI-compliant gateways.' },
       { q: 'Do you offer support during US business hours?', a: 'Yes — we provide support coverage aligned with US Eastern, Central, Mountain, and Pacific time zones. Enterprise customers get a dedicated account manager. 24/7 WhatsApp and email support is also available.' },
       { q: 'Can Nexora integrate with US-specific tools?', a: 'Absolutely. We integrate with QuickBooks, Xero, Stripe, PayPal, Square, Shopify, Salesforce, HubSpot, and most US-based SaaS platforms. Our API-first architecture makes integration straightforward.' },
     ],
 
     ctaHeading: 'Ready to transform your US business?',
-    ctaSubtext: 'Start a free 7-day trial. No credit card. Cancel anytime. 30-day money-back guarantee.',
+    ctaSubtext: 'Start a free 1-month trial. No credit card. Cancel anytime. 30-day money-back guarantee.',
   },
   {
     slug: 'uk',
@@ -64,14 +64,14 @@ export const COUNTRIES = [
     faqs: [
       { q: 'Is Nexora GDPR compliant for UK businesses?', a: 'Yes — Nexora is fully GDPR compliant. We provide Data Processing Agreements (DPA), maintain data encryption at rest and in transit, and offer EU/UK data residency options. Our infrastructure partners (Google Cloud, Cloudflare) are GDPR and ISO 27001 certified.' },
       { q: 'Do you support UK VAT and Making Tax Digital?', a: 'Yes. Our invoicing and billing modules support UK VAT rates, VAT registration numbers, and are compatible with HMRC\'s Making Tax Digital (MTD) requirements. We generate MTD-compliant digital records.' },
-      { q: 'How much does Nexora cost in GBP?', a: 'Plans start at approximately £10/month (Basic), £30/month (Standard), and custom Enterprise pricing. 50% OFF for new users. All plans include a 7-day free trial, free data migration, and 30-day money-back guarantee.' },
+      { q: 'How much does Nexora cost in GBP?', a: 'Plans start at approximately £10/month (Basic), £30/month (Standard), and custom Enterprise pricing. 50% OFF for new users. All plans include a 1-month free trial, free data migration, and 30-day money-back guarantee.' },
       { q: 'Do you have UK-based support?', a: 'We provide support during UK business hours (GMT/BST). Enterprise customers get a dedicated account manager. 24/7 email and WhatsApp support is also available for all plans.' },
       { q: 'Can Nexora integrate with UK accounting software?', a: 'Yes — we integrate with Xero, QuickBooks, Sage, FreeAgent, and most UK accounting platforms. Our API allows seamless connection with your existing financial stack.' },
       { q: 'Is Nexora suitable for UK restaurant and retail businesses?', a: 'Absolutely. Our Restaurant POS supports split bills, service charge, VAT, and tipping workflows common in UK hospitality. Retail POS handles GBP pricing, VAT receipts, and barcode scanning used in British retail.' },
     ],
 
     ctaHeading: 'Ready to grow your UK business?',
-    ctaSubtext: 'Start a free 7-day trial. GDPR compliant. No credit card. 30-day money-back guarantee.',
+    ctaSubtext: 'Start a free 1-month trial. GDPR compliant. No credit card. 30-day money-back guarantee.',
   },
   {
     slug: 'canada',
@@ -104,7 +104,7 @@ export const COUNTRIES = [
     ],
 
     ctaHeading: 'Ready to scale your Canadian business?',
-    ctaSubtext: 'Start a free 7-day trial. PIPEDA compliant. No credit card. 30-day money-back.',
+    ctaSubtext: 'Start a free 1-month trial. PIPEDA compliant. No credit card. 30-day money-back.',
   },
   {
     slug: 'australia',
@@ -131,13 +131,13 @@ export const COUNTRIES = [
     faqs: [
       { q: 'Does Nexora handle Australian GST?', a: 'Yes — our POS, invoicing, and ERP modules include 10% GST calculation, GST-registered business number fields, and BAS-ready tax reports. All invoices are GST compliant.' },
       { q: 'Is Nexora suitable for Australian cafes and restaurants?', a: 'Absolutely. Our Restaurant POS supports split bills, weekend/public holiday surcharges, tipping, table management, and EFTPOS integration — all essential for Australian hospitality. 50+ restaurants use it daily.' },
-      { q: 'How much does Nexora cost in AUD?', a: 'Plans start at approximately AUD $18/month (Basic), AUD $55/month (Standard), and custom Enterprise pricing. 50% OFF for new users. Free 7-day trial included.' },
+      { q: 'How much does Nexora cost in AUD?', a: 'Plans start at approximately AUD $18/month (Basic), AUD $55/month (Standard), and custom Enterprise pricing. 50% OFF for new users. Free 1-month trial included.' },
       { q: 'Do you support during AEST business hours?', a: 'Yes — we provide support coverage aligned with Australian Eastern, Central, and Western time zones. 24/7 email and WhatsApp support also available.' },
       { q: 'Can Nexora handle multi-venue hospitality groups?', a: 'Yes — our cloud platform manages multiple venues from one dashboard. Consolidated reporting, centralized menu management, and cross-venue inventory tracking for hospitality groups.' },
     ],
 
     ctaHeading: 'Ready to grow your Australian business?',
-    ctaSubtext: 'Start a free 7-day trial. GST compliant. No credit card. 30-day money-back.',
+    ctaSubtext: 'Start a free 1-month trial. GST compliant. No credit card. 30-day money-back.',
   },
   {
     slug: 'uae',
@@ -171,7 +171,7 @@ export const COUNTRIES = [
     ],
 
     ctaHeading: 'Ready to transform your UAE business?',
-    ctaSubtext: 'Start a free 7-day trial. UAE VAT compliant. Arabic/English. No credit card.',
+    ctaSubtext: 'Start a free 1-month trial. UAE VAT compliant. Arabic/English. No credit card.',
   },
   {
     slug: 'saudi-arabia',
@@ -205,7 +205,7 @@ export const COUNTRIES = [
     ],
 
     ctaHeading: 'Ready to digitize your Saudi business?',
-    ctaSubtext: 'Start a free 7-day trial. ZATCA compliant. Arabic-first. No credit card.',
+    ctaSubtext: 'Start a free 1-month trial. ZATCA compliant. Arabic-first. No credit card.',
   },
   {
     slug: 'bahrain',
@@ -237,7 +237,7 @@ export const COUNTRIES = [
     ],
 
     ctaHeading: 'Ready to grow your Bahrain business?',
-    ctaSubtext: 'Start a free 7-day trial. Bahrain VAT compliant. Arabic/English. No credit card.',
+    ctaSubtext: 'Start a free 1-month trial. Bahrain VAT compliant. Arabic/English. No credit card.',
   },
   {
     slug: 'qatar',
@@ -269,7 +269,7 @@ export const COUNTRIES = [
     ],
 
     ctaHeading: 'Ready to elevate your Qatar business?',
-    ctaSubtext: 'Start a free 7-day trial. Arabic/English support. No credit card. 30-day money-back.',
+    ctaSubtext: 'Start a free 1-month trial. Arabic/English support. No credit card. 30-day money-back.',
   },
   {
     slug: 'oman',
@@ -300,7 +300,7 @@ export const COUNTRIES = [
     ],
 
     ctaHeading: 'Ready to modernize your Oman business?',
-    ctaSubtext: 'Start a free 7-day trial. Oman VAT compliant. Arabic/English. No credit card.',
+    ctaSubtext: 'Start a free 1-month trial. Oman VAT compliant. Arabic/English. No credit card.',
   },
   {
     slug: 'kuwait',
@@ -332,7 +332,7 @@ export const COUNTRIES = [
     ],
 
     ctaHeading: 'Ready to transform your Kuwait business?',
-    ctaSubtext: 'Start a free 7-day trial. Arabic/English. No credit card. 30-day money-back.',
+    ctaSubtext: 'Start a free 1-month trial. Arabic/English. No credit card. 30-day money-back.',
   },
   {
     slug: 'pakistan',
@@ -361,12 +361,12 @@ export const COUNTRIES = [
       { q: 'Does Nexora work without internet (offline)?', a: 'Yes — our POS modules are offline-first. You can keep billing even during load shedding or internet downtime. All data syncs automatically when you reconnect. This is a core feature built for Pakistani business realities.' },
       { q: 'What Pakistani payment methods does Nexora support?', a: 'We integrate with JazzCash, Easypaisa, HBL, UBL, Meezan Bank, and other Pakistani payment gateways. Our POS also supports cash, card, and manual bank transfer payment methods.' },
       { q: 'Does Nexora support Urdu language?', a: 'Ji bilkul! Our AI chatbot speaks Roman Urdu naturally ("aap", "ji", "shukriya"). Our interface is Urdu/English bilingual. We are building Urdu script (نستعلیق) support for future releases.' },
-      { q: 'How much does Nexora cost in Pakistan?', a: 'Plans start at PKR 1,000/month (Basic — 50% OFF, was PKR 2,000), PKR 3,000/month (Standard — was PKR 5,999), and Enterprise (custom). All plans include 7-day free trial, free setup, free data migration, and free staff training.' },
+      { q: 'How much does Nexora cost in Pakistan?', a: 'Plans start at PKR 1,000/month (Basic — 50% OFF, was PKR 2,000), PKR 3,000/month (Standard — was PKR 5,999), and Enterprise (custom). All plans include 1-month free trial, free setup, free data migration, and free staff training.' },
       { q: 'Which Pakistani businesses use Nexora?', a: '50+ businesses across Pakistan use Nexora — including a 40-table restaurant in Karachi, a 3-branch retail chain in Lahore, and a 1,200-student school in Islamabad. We serve restaurants, retail stores, schools, and service businesses nationwide.' },
     ],
 
     ctaHeading: 'Ready to grow your Pakistani business?',
-    ctaSubtext: 'Start a free 7-day trial. PKR pricing. Urdu support. No credit card. 50% OFF.',
+    ctaSubtext: 'Start a free 1-month trial. PKR pricing. Urdu support. No credit card. 50% OFF.',
   },
   {
     slug: 'india',
@@ -392,7 +392,7 @@ export const COUNTRIES = [
 
     faqs: [
       { q: 'Is Nexora GST compliant for Indian businesses?', a: 'Yes — our POS, invoicing, and ERP modules include full GST compliance: HSN/SAC codes, CGST/SGST/IGST auto-calculation, GSTIN validation, and GSTR-1/GSTR-3B compatible tax reports. E-invoicing support for applicable businesses.' },
-      { q: 'How much does Nexora cost in INR?', a: 'Plans start at approximately ₹830/month (Basic), ₹2,500/month (Standard), and custom Enterprise pricing. 50% OFF for new users. This is 5-10x more affordable than comparable Indian SaaS products. Free 7-day trial included.' },
+      { q: 'How much does Nexora cost in INR?', a: 'Plans start at approximately ₹830/month (Basic), ₹2,500/month (Standard), and custom Enterprise pricing. 50% OFF for new users. This is 5-10x more affordable than comparable Indian SaaS products. Free 1-month trial included.' },
       { q: 'Does Nexora support Indian languages?', a: 'Yes — our AI chatbot supports Hindi (रोमन और देवनागरी), English, and regional languages. We are expanding multi-language interface support. WhatsApp CRM supports Hindi and English templates.' },
       { q: 'Can Nexora handle India-scale operations?', a: 'Absolutely. Our cloud-native architecture scales horizontally to handle thousands of transactions per minute. Multi-branch, multi-GSTIN, multi-currency — built for Indian business complexity from Kirana stores to enterprise chains.' },
       { q: 'Does Nexora support Indian payment gateways?', a: 'Yes — we integrate with Razorpay, Paytm, PhonePe, Google Pay, UPI, and major Indian bank gateways. All payment flows are PCI-DSS compliant with secure tokenization.' },
@@ -400,7 +400,7 @@ export const COUNTRIES = [
     ],
 
     ctaHeading: 'Ready to scale your Indian business?',
-    ctaSubtext: 'Start a free 7-day trial. GST compliant. INR pricing. No credit card.',
+    ctaSubtext: 'Start a free 1-month trial. GST compliant. INR pricing. No credit card.',
   },
 ]
 

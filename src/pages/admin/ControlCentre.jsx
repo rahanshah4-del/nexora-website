@@ -166,7 +166,7 @@ const defaultPlatformSettings = {
   ...defaultSaasPlatformSettings,
   systemName: 'Nexora Solution',
   defaultCurrency: DEFAULT_SAAS_CURRENCY,
-  trialDays: 7,
+  trialDays: 30,
   supportEmail: 'support@nexorasolution.online',
   maintenanceMode: false,
   maintenanceConfig: defaultMaintenanceConfig,
@@ -1984,7 +1984,7 @@ export default function ControlCentre() {
       ...settingsDraft,
       maintenanceMode: maintenanceConfig.enabled,
       maintenanceConfig,
-      trialDays: Number(settingsDraft.trialDays || 7),
+      trialDays: Number(settingsDraft.trialDays || 30),
       updatedAt: serverTimestamp(),
       updatedBy: user?.uid || '',
       updatedByEmail: user?.email || '',
@@ -2569,7 +2569,7 @@ export default function ControlCentre() {
           </select>
           <ShellButton onClick={() => {
             const next = new Date()
-            next.setDate(next.getDate() + 7)
+            next.setDate(next.getDate() + 30)
             runAction(`extend-${row.id}`, () => updateWorkspace(row, { isTrialActive: true, trialEndsAt: next, subscriptionStatus: 'trial', planStatus: 'trial' }, 'trial_extended'))
           }}>Extend Trial</ShellButton>
           <ShellButton onClick={() => runAction(`trial-reminder-${row.id}`, () => sendTrialReminder(row), 'Trial reminder email sent.')}>Send Trial Reminder</ShellButton>
@@ -3750,7 +3750,7 @@ export default function ControlCentre() {
             </label>
             <label className="text-xs font-bold text-slate-600">
               Trial Days
-              <input type="number" className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" value={settingsDraft.trialDays || 7} onChange={(event) => setSettingsDraft((current) => ({ ...current, trialDays: event.target.value }))} />
+              <input type="number" className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" value={settingsDraft.trialDays || 30} onChange={(event) => setSettingsDraft((current) => ({ ...current, trialDays: event.target.value }))} />
             </label>
             <label className="text-xs font-bold text-slate-600">
               Support Email

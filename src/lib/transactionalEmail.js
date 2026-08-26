@@ -348,7 +348,7 @@ const WELCOME_TRIAL_CARD = {
   bg: '#e0f2fe',
   color: '#0369a1',
   icon: '&#127873;',
-  title: '7-Day Trial Activated',
+  title: '1-Month Trial Activated',
   desc: 'Explore Nexora Business Suite with secure cloud access.',
 }
 
@@ -521,7 +521,7 @@ export function welcomeEmail({ name = 'there', businessType = '' } = {}) {
                                 <td style="padding:6px 0;font-size:15px;line-height:22px;color:#0f172a;font-weight:700;"><span style="display:inline-block;width:24px;height:24px;border-radius:50%;background:#22c55e;color:#ffffff;text-align:center;line-height:24px;font-size:13px;margin-right:8px;">&#10003;</span> Workspace Activated</td>
                               </tr>
                               <tr>
-                                <td style="padding:6px 0;font-size:15px;line-height:22px;color:#0f172a;font-weight:700;"><span style="display:inline-block;width:24px;height:24px;border-radius:50%;background:#22c55e;color:#ffffff;text-align:center;line-height:24px;font-size:13px;margin-right:8px;">&#10003;</span> 7-Day Trial Started</td>
+                                <td style="padding:6px 0;font-size:15px;line-height:22px;color:#0f172a;font-weight:700;"><span style="display:inline-block;width:24px;height:24px;border-radius:50%;background:#22c55e;color:#ffffff;text-align:center;line-height:24px;font-size:13px;margin-right:8px;">&#10003;</span> 1-Month Trial Started</td>
                               </tr>
                               <tr>
                                 <td style="padding:6px 0;font-size:15px;line-height:22px;color:#0f172a;font-weight:700;"><span style="display:inline-block;width:24px;height:24px;border-radius:50%;background:#22c55e;color:#ffffff;text-align:center;line-height:24px;font-size:13px;margin-right:8px;">&#10003;</span> Secure Cloud Access Enabled</td>

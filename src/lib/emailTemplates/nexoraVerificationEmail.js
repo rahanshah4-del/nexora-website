@@ -27,7 +27,7 @@ export function buildNexoraVerificationEmail({ verificationUrl }) {
                     <td style="padding:20px 32px 8px">
                       <h1 style="margin:0;font-size:28px;line-height:1.2;color:#0f172a;text-align:center">Verify your email</h1>
                       <p style="margin:20px 0 0;font-size:16px;line-height:1.7;color:#334155">Welcome to Nexora Solution.</p>
-                      <p style="margin:12px 0 0;font-size:16px;line-height:1.7;color:#334155">Please verify your email address to activate your account and start your 7-day free trial.</p>
+                      <p style="margin:12px 0 0;font-size:16px;line-height:1.7;color:#334155">Please verify your email address to activate your account and start your 1-month free trial.</p>
                     </td>
                   </tr>
                   <tr>
@@ -60,7 +60,7 @@ export function buildNexoraVerificationEmail({ verificationUrl }) {
       '',
       'Welcome to Nexora Solution.',
       '',
-      'Please verify your email address to activate your account and start your 7-day free trial.',
+      'Please verify your email address to activate your account and start your 1-month free trial.',
       '',
       `Verify My Account: ${verificationUrl}`,
       '',

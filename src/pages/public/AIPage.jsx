@@ -224,7 +224,7 @@ export default function AIPage() {
         <div className="mx-auto grid max-w-7xl items-center gap-6 rounded-[2rem] border border-violet-100/60 bg-gradient-to-br from-violet-600 via-purple-600 to-fuchsia-600 p-6 shadow-[0_30px_90px_-40px_rgba(139,92,246,0.5)] sm:p-8 lg:grid-cols-[1fr_auto]">
           <div className="text-white">
             <p className="text-2xl font-black tracking-[-0.02em] sm:text-4xl">Ready to experience Nexora AI?</p>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-white/80">Start your 7-day free trial today. No credit card, no setup fees — full access to every AI-powered module.</p>
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-white/80">Start your 1-month free trial today. No credit card, no setup fees — full access to every AI-powered module.</p>
           </div>
           <div className="flex flex-col gap-3 min-[420px]:flex-row lg:flex-col xl:flex-row">
             <Link to="/signup" className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3.5 text-sm font-bold text-violet-700 shadow-[0_6px_24px_-4px_rgba(0,0,0,0.15)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_32px_-6px_rgba(0,0,0,0.2)] active:scale-[0.97]">

@@ -75,7 +75,7 @@ export default function NewUserOfferPopup() {
             <div className="flex items-start gap-2.5 rounded-[10px] bg-[#f5f5f7] p-2.5">
               <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#1d1d1f] text-[10px] font-semibold text-white">1</span>
               <p className="text-[13px] leading-[1.4] text-[#1d1d1f]">
-                <span className="font-semibold">Start 7-Day Free Trial</span>
+                <span className="font-semibold">Start 1-Month Free Trial</span>
                 <br />
                 <span className="text-[12px] text-[#86868b]">Full access to all modules. No card needed.</span>
               </p>

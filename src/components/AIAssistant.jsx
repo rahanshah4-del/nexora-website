@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getAuth, onAuthStateChanged } from 'firebase/auth'
 import { getFirestore, addDoc, collection, serverTimestamp, getDocs, query, where, orderBy, limit, setDoc, doc } from 'firebase/firestore'
-import { HiOutlineChatBubbleLeftRight, HiOutlinePaperAirplane, HiOutlinePlus, HiOutlineSparkles, HiOutlineTicket, HiOutlineXMark } from 'react-icons/hi2'
+import { HiOutlineChatBubbleLeftRight, HiOutlineChevronRight, HiOutlineCurrencyDollar, HiOutlineMicrophone, HiOutlinePaperAirplane, HiOutlinePlus, HiOutlineSparkles, HiOutlineTicket, HiOutlineXMark } from 'react-icons/hi2'
 
 // Nexora AI Gateway (Cloudflare Worker)
 const AI_GATEWAY_URL = import.meta.env.VITE_AI_GATEWAY_URL || 'https://nexora-ai-gateway.rahanshah4.workers.dev'
@@ -66,7 +66,7 @@ TECHNOLOGY STACK:
 React, Next.js, Node.js, Firebase, Cloudflare, Python, Laravel, PHP, MySQL, MongoDB, Flutter, Android, iOS, Docker, GitHub, AI/ML (DeepSeek, Gemini, custom models)
 
 PRICING (50% OFF for new users — limited time):
-- 7-Day Free Trial: Full access, all modules, unlimited users, no credit card. Route: /signup
+- 1-Month Free Trial: Full access, all modules, unlimited users, no credit card. Route: /signup
 - Basic Plan: PKR 1,000/month (was PKR 2,000). 1 module, 2 users, 5GB storage, email support. Route: /signup
 - Standard Plan: PKR 3,000/month (was PKR 5,999). 1 module, 5 users, 20GB, priority support. Route: /signup
 - Enterprise Plan: Custom pricing. Unlimited users, custom integrations, dedicated support, custom development. Route: /contact
@@ -140,20 +140,20 @@ CRITICAL RULES:
 - You have FULL knowledge of Nexora. Answer Nexora questions accurately and helpfully.
 - If asked something unrelated to Nexora (general knowledge, coding, recipes, news, weather, etc.), answer helpfully as Nexora AI — do NOT say "I only help with Nexora" or redirect. Just answer the question naturally.
 - Always be friendly and concise. Use emojis occasionally.
-- When discussing pricing, ALWAYS mention 50% OFF for new users and 7-day free trial.
+- When discussing pricing, ALWAYS mention 50% OFF for new users and 1-month free trial.
 - For business questions, recommend the matching Nexora module with its route.
 - When users ask about contacting Nexora or need email support, ALWAYS provide the specific email address that matches their need (e.g., billing questions → billing@nexorasolution.online, job inquiries → careers@nexorasolution.online, security issues → security@nexorasolution.online, general questions → info@nexorasolution.online or hello@nexorasolution.online).
 - Guide users to /signup for free trial or /contact for demo bookings.`
 
 const QUICK_ACTIONS = [
-  { label: '💰 Pricing', q: 'What are the pricing plans? Give me the details with plan links.' },
-  { label: '🆓 Free Trial', q: 'Tell me about the free trial and how to sign up' },
-  { label: '💻 Software Dev', q: 'Tell me about Nexora custom software development services and past projects' },
-  { label: '🍽️ Restaurant', q: 'I run a restaurant, what do you offer?' },
-  { label: '🛍️ Retail', q: 'I have a retail shop, what POS do you have?' },
-  { label: '🤖 AI', q: 'What AI capabilities does Nexora have? Tell me about DeepSeek integration' },
-  { label: '📋 Support', q: 'I need help with a problem or want to file a complaint' },
-  { label: '💬 Demo', q: 'I want to book a live demo' },
+  { label: 'Pricing', icon: '💰', tone: 'bg-violet-50 text-violet-700', q: 'What are the pricing plans? Give me the details with plan links.' },
+  { label: 'Free Trial', icon: '🆓', tone: 'bg-emerald-50 text-emerald-700', q: 'Tell me about the free trial and how to sign up' },
+  { label: 'Software Dev', icon: '💻', tone: 'bg-blue-50 text-blue-700', q: 'Tell me about Nexora custom software development services and past projects' },
+  { label: 'Restaurant POS', icon: '🍽️', tone: 'bg-rose-50 text-rose-700', q: 'I run a restaurant, what do you offer?' },
+  { label: 'Retail', icon: '🛍️', tone: 'bg-amber-50 text-amber-700', q: 'I have a retail shop, what POS do you have?' },
+  { label: 'AI', icon: '🤖', tone: 'bg-fuchsia-50 text-fuchsia-700', q: 'What AI capabilities does Nexora have? Tell me about DeepSeek integration' },
+  { label: 'Support', icon: '📋', tone: 'bg-sky-50 text-sky-700', q: 'I need help with a problem or want to file a complaint' },
+  { label: 'Demo', icon: '💬', tone: 'bg-pink-50 text-pink-700', q: 'I want to book a live demo' },
 ]
 
 // Apple-style link button renderer — converts /route paths to clickable buttons in messages
@@ -176,11 +176,16 @@ function renderMessageText(text) {
   })
 }
 
-function QuickLinkButton({ to, children }) {
+function formatTime() {
+  return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+}
+
+function QuickLinkButton({ to, icon, children }) {
   return (
-    <Link to={to} className="inline-flex items-center gap-1 rounded-full border border-violet-200/50 bg-violet-50/80 px-3 py-1.5 text-[11px] font-semibold text-violet-700 shadow-[0_1px_4px_rgba(139,92,246,0.08)] transition-all duration-200 hover:bg-violet-100 hover:border-violet-300 hover:-translate-y-0.5 active:scale-95">
-      {children}
-      <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    <Link to={to} className="inline-flex items-center gap-2 rounded-xl border border-slate-200/70 bg-white py-2 pl-2.5 pr-3 text-[11px] font-semibold text-slate-700 shadow-[0_2px_8px_rgba(0,0,0,0.06)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_6px_16px_rgba(0,0,0,0.1)] active:scale-95">
+      <span className="grid h-6 w-6 shrink-0 place-items-center rounded-lg bg-violet-50 text-violet-600">{icon}</span>
+      <span>{children}</span>
+      <HiOutlineChevronRight className="ml-1 h-3.5 w-3.5 shrink-0 text-slate-400" />
     </Link>
   )
 }
@@ -261,8 +266,8 @@ export default function AIAssistant() {
 
   // Init messages if empty
   const initMsg = isAuth && userContext
-    ? { from: 'ai', text: `Hi ${userContext.name}! 👋 I'm Nexora AI — your business assistant.\n\nI can see you're on the **${userContext.plan || 'Free'}** plan${userContext.businessType ? ` for **${userContext.businessType}**` : ''}.${userContext.openTickets > 0 ? `\n\n📋 You have **${userContext.openTickets}** open support ticket${userContext.openTickets > 1 ? 's' : ''}.` : ''}\n\nHow can I help you today? 😊` }
-    : { from: 'ai', text: 'Hi! I\'m Nexora AI — your business software assistant. What type of business do you run? 😊' }
+    ? { from: 'ai', text: `Hi ${userContext.name}! 👋 I'm Nexora AI — your business assistant.\n\nI can see you're on the **${userContext.plan || 'Free'}** plan${userContext.businessType ? ` for **${userContext.businessType}**` : ''}.${userContext.openTickets > 0 ? `\n\n📋 You have **${userContext.openTickets}** open support ticket${userContext.openTickets > 1 ? 's' : ''}.` : ''}\n\nHow can I help you today? 😊`, time: formatTime() }
+    : { from: 'ai', text: 'Hi! I\'m Nexora AI — your business software assistant. What type of business do you run? 😊', time: formatTime() }
 
   // Save chat to localStorage on every change
   useEffect(() => {
@@ -377,7 +382,7 @@ IMPORTANT: The user may refer to past conversations. If they ask what they asked
     }
   }
 
-  const addMsg = (from, text) => setMessages((m) => [...m, { from, text }])
+  const addMsg = (from, text) => setMessages((m) => [...m, { from, text, time: formatTime() }])
 
   const detectPhone = (t) => t.match(/03\d{9}|92\d{10}|\+92\d{10}|\d{4}[\s-]?\d{7}/)
   const detectEmail = (t) => t.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/)
@@ -455,7 +460,7 @@ IMPORTANT: The user may refer to past conversations. If they ask what they asked
       // Phone number detection
       const phoneMatch = detectPhone(text)
       if (phoneMatch) {
-        addMsg('ai', `📱 Got your number: **${phoneMatch[0]}**! Our team will WhatsApp you within 24 hours for a free demo.\n\nIn the meantime, start your **7-day free trial** with **50% OFF**: 👉 /signup`)
+        addMsg('ai', `📱 Got your number: **${phoneMatch[0]}**! Our team will WhatsApp you within 24 hours for a free demo.\n\nIn the meantime, start your **1-month free trial** with **50% OFF**: 👉 /signup`)
         setLoading(false)
         return
       }
@@ -473,9 +478,9 @@ IMPORTANT: The user may refer to past conversations. If they ask what they asked
       // Restaurant detection
       if (t.includes('restaurant') || t.includes('restaurent') || t.includes('rasturent') || t.includes('hotel') || t.includes('food') || t.includes('cafe') || t.includes('café') || t.includes('dine') || t.includes('dining') || t.includes('khana') || t.includes('khaana') || t.includes('kichen') || t.includes('kitchen')) {
         if (featureAsk || t.includes('option') || t.includes('kia') || t.includes('kya')) {
-          addMsg('ai', MODULE_FEATURES.restaurant + '\n\n💰 PKR 1,000/month (50% OFF) — 7-day free trial!')
+          addMsg('ai', MODULE_FEATURES.restaurant + '\n\n💰 PKR 1,000/month (50% OFF) — 1-month free trial!')
         } else {
-          addMsg('ai', '🍽️ **Restaurant POS** is perfect for you! Table management, KOT system, billing, inventory & delivery.\n\n💰 PKR 1,000/month (50% OFF) — 7-day free trial!\n\nType "restaurant features" for full details!')
+          addMsg('ai', '🍽️ **Restaurant POS** is perfect for you! Table management, KOT system, billing, inventory & delivery.\n\n💰 PKR 1,000/month (50% OFF) — 1-month free trial!\n\nType "restaurant features" for full details!')
         }
       }
       // Retail detection
@@ -536,11 +541,11 @@ IMPORTANT: The user may refer to past conversations. If they ask what they asked
       }
       // Pricing
       else if (t.includes('pric') || t.includes('cost') || t.includes('plan') || t.includes('package') || t.includes('kitna') || t.includes('rate') || t.includes('fee') || t.includes('charge')) {
-        addMsg('ai', '💰 **Nexora Pricing:**\n• Basic: PKR 1,000/mo (50% OFF)\n• Standard: PKR 3,000/mo\n• Enterprise: Custom\n\nAll include 7-day FREE trial + 30-day money back!')
+        addMsg('ai', '💰 **Nexora Pricing:**\n• Basic: PKR 1,000/mo (50% OFF)\n• Standard: PKR 3,000/mo\n• Enterprise: Custom\n\nAll include 1-month FREE trial + 30-day money back!')
       }
       // Trial
       else if (t.includes('trial') || t.includes('demo') || t.includes('try') || t.includes('test') || t.includes('start')) {
-        addMsg('ai', '✅ Start your **7-day free trial** now — full access, unlimited users, no credit card. Plus **50% OFF** when you subscribe!\n\n👉 Go to /signup to start!')
+        addMsg('ai', '✅ Start your **1-month free trial** now — full access, unlimited users, no credit card. Plus **50% OFF** when you subscribe!\n\n👉 Go to /signup to start!')
       }
       // Support
       else if (t.includes('support') || t.includes('help') || t.includes('setup') || t.includes('migrat') || t.includes('train') || t.includes('install') || t.includes('problem') || t.includes('issue')) {
@@ -584,43 +589,52 @@ IMPORTANT: The user may refer to past conversations. If they ask what they asked
           onKeyDown={resetIdleTimer}
         >
           {/* Header */}
-          <div className="flex shrink-0 items-center justify-between bg-gradient-to-r from-violet-500 via-purple-500 to-fuchsia-500 px-4 py-3 text-white">
-            <div className="flex items-center gap-2.5">
-              <img src="/nexora-ai-logo.png" alt="Nexora AI Assistant" className="h-8 w-8 rounded-lg object-cover ring-1 ring-white/30" />
+          <div className="relative flex shrink-0 items-center justify-between overflow-hidden bg-gradient-to-br from-[#4F46E5] via-[#9333EA] to-[#DB2777] px-4 py-3.5 text-white">
+            <div className="pointer-events-none absolute -right-12 -top-14 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
+            <div className="pointer-events-none absolute -bottom-16 -left-10 h-44 w-44 rounded-full bg-white/10 blur-2xl" />
+            <div className="relative flex items-center gap-2.5">
+              <div className="grid h-9 w-9 place-items-center rounded-full bg-white p-0.5 shadow-[0_2px_8px_rgba(0,0,0,0.18)] ring-1 ring-white/40">
+                <img src="/nexora-ai-logo.png" alt="Nexora AI Assistant" className="h-full w-full rounded-full object-cover" />
+              </div>
               <div>
                 <p className="text-[14px] font-semibold tracking-[-0.01em]">Nexora AI</p>
-                <p className="text-[10px] text-white/70">{loading ? 'Typing...' : 'Online'}</p>
+                <p className="flex items-center gap-1.5 text-[10px] text-white/80">
+                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                  {loading ? 'Typing…' : 'Online • Replies instantly'}
+                </p>
               </div>
             </div>
-            <div className="flex items-center gap-1">
-              <button onClick={startNewChat} className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/30 active:scale-90 transition-all duration-200" title="New Chat">
+            <div className="relative flex items-center gap-1.5">
+              <button onClick={startNewChat} className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-white/15 text-white backdrop-blur-sm transition-all duration-200 hover:bg-white/25 active:scale-90" title="New Chat">
                 <HiOutlinePlus className="h-4 w-4" strokeWidth={2} />
               </button>
-              <button onClick={() => setOpen(false)} className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/30 active:scale-90 transition-all duration-200">
+              <button onClick={() => setOpen(false)} className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-white/15 text-white backdrop-blur-sm transition-all duration-200 hover:bg-white/25 active:scale-90">
                 <HiOutlineXMark className="h-4 w-4" strokeWidth={2} />
               </button>
             </div>
           </div>
 
-          {/* Tab bar */}
-          <div className="flex shrink-0 border-b border-slate-100 bg-white">
-            {[
-              { key: 'chat', label: 'Chat', icon: HiOutlineChatBubbleLeftRight },
-              { key: 'support', label: 'Support', icon: HiOutlineTicket },
-            ].map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className={`flex flex-1 items-center justify-center gap-1.5 py-2.5 text-[12px] font-semibold tracking-[-0.01em] transition-all duration-200 ${
-                  activeTab === tab.key
-                    ? 'border-b-2 border-violet-500 text-violet-700'
-                    : 'text-slate-400 hover:text-slate-600'
-                }`}
-              >
-                <tab.icon className="h-4 w-4" />
-                {tab.label}
-              </button>
-            ))}
+          {/* Tab bar — segmented control */}
+          <div className="flex shrink-0 border-b border-slate-100 bg-white px-3 py-2.5">
+            <div className="relative flex flex-1 rounded-full bg-slate-100 p-1">
+              {[
+                { key: 'chat', label: 'Chat', icon: HiOutlineChatBubbleLeftRight },
+                { key: 'support', label: 'Support', icon: HiOutlineTicket },
+              ].map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`relative z-10 flex flex-1 items-center justify-center gap-1.5 rounded-full py-1.5 text-[12px] font-semibold tracking-[-0.01em] transition-all duration-200 ${
+                    activeTab === tab.key
+                      ? 'bg-white text-violet-700 shadow-[0_2px_8px_rgba(0,0,0,0.08)]'
+                      : 'text-slate-400 hover:text-slate-600'
+                  }`}
+                >
+                  <tab.icon className="h-4 w-4" />
+                  {tab.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Tab content */}
@@ -693,30 +707,37 @@ IMPORTANT: The user may refer to past conversations. If they ask what they asked
 
               return (
                 <div key={i}>
-                  <div className={`flex ${msg.from === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-[13px] leading-[1.5] ${
+                  <div className={`flex items-end gap-2 ${msg.from === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    {isAi && (
+                      <img src="/nexora-ai-logo.png" alt="Nexora AI" className="h-6 w-6 shrink-0 rounded-full bg-white object-cover ring-1 ring-slate-200 shadow-sm" />
+                    )}
+                    <div className={`max-w-[82%] rounded-2xl px-3.5 py-2.5 text-[13px] leading-[1.5] ${
                       msg.from === 'user'
-                        ? 'bg-[#0071e3] text-white rounded-br-md'
-                        : 'bg-white text-[#1d1d1f] shadow-sm rounded-bl-md'
+                        ? 'rounded-br-md bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white shadow-[0_2px_8px_rgba(168,85,247,0.25)]'
+                        : 'rounded-bl-md bg-slate-100 text-[#1d1d1f]'
                     }`}>
                       {isAi ? renderMessageText(text) : text}
                     </div>
                   </div>
-                  {/* Apple-style action buttons below AI message */}
+                  {msg.time ? (
+                    <p className={`mt-1 text-[10px] text-slate-400 ${msg.from === 'user' ? 'text-right' : 'pl-8'}`}>{msg.time}</p>
+                  ) : null}
+                  {/* Action suggestion cards below AI message */}
                   {isAi && (showPricing || showTrial || showDemo || showSupport) && (
-                    <div className="flex flex-wrap gap-1.5 mt-1.5 ml-0">
-                      {showPricing && <QuickLinkButton to="/pricing">View Pricing</QuickLinkButton>}
-                      {showTrial && <QuickLinkButton to="/signup">Start Free Trial</QuickLinkButton>}
-                      {showDemo && <QuickLinkButton to="/contact">Book Demo</QuickLinkButton>}
-                      {showSupport && <QuickLinkButton to="/support-center">Support Center</QuickLinkButton>}
+                    <div className="mt-1.5 flex flex-wrap gap-1.5 pl-8">
+                      {showPricing && <QuickLinkButton to="/pricing" icon={<HiOutlineCurrencyDollar className="h-3.5 w-3.5" />}>View Pricing</QuickLinkButton>}
+                      {showTrial && <QuickLinkButton to="/signup" icon={<HiOutlineSparkles className="h-3.5 w-3.5" />}>Start Free Trial</QuickLinkButton>}
+                      {showDemo && <QuickLinkButton to="/contact" icon={<HiOutlineChatBubbleLeftRight className="h-3.5 w-3.5" />}>Book Demo</QuickLinkButton>}
+                      {showSupport && <QuickLinkButton to="/support-center" icon={<HiOutlineTicket className="h-3.5 w-3.5" />}>Support Center</QuickLinkButton>}
                     </div>
                   )}
                 </div>
               )
             })}
             {loading && (
-              <div className="flex justify-start">
-                <div className="rounded-2xl rounded-bl-md bg-white px-4 py-3 shadow-sm">
+              <div className="flex items-end gap-2">
+                <img src="/nexora-ai-logo.png" alt="Nexora AI" className="h-6 w-6 shrink-0 rounded-full bg-white object-cover ring-1 ring-slate-200 shadow-sm" />
+                <div className="rounded-2xl rounded-bl-md bg-slate-100 px-4 py-3">
                   <span className="flex gap-1">
                     <span className="h-2 w-2 animate-bounce rounded-full bg-slate-300" style={{ animationDelay: '0ms' }} />
                     <span className="h-2 w-2 animate-bounce rounded-full bg-slate-300" style={{ animationDelay: '150ms' }} />
@@ -728,15 +749,22 @@ IMPORTANT: The user may refer to past conversations. If they ask what they asked
           </div>
           )}
 
-          {/* Quick actions — chat tab only */}
+          {/* Quick topics — chat tab only */}
           {activeTab === 'chat' && (
-            <div className="shrink-0 border-t border-slate-100 bg-white px-3 py-2">
-              <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-                {QUICK_ACTIONS.map(({ label, q }) => (
-                  <button key={label} type="button" onClick={() => { addMsg('user', q); handleSend(q); resetIdleTimer() }}
-                    className="shrink-0 rounded-full border border-slate-200/50 bg-white px-3 py-1.5 text-[11px] font-semibold text-slate-600 shadow-[0_1px_3px_rgba(0,0,0,0.03)] transition-all duration-200 hover:border-violet-300 hover:text-violet-700 hover:bg-violet-50/50 hover:shadow-[0_2px_8px_rgba(139,92,246,0.1)] hover:-translate-y-0.5 active:scale-95"
-                  >{label}</button>
-                ))}
+            <div className="shrink-0 border-t border-slate-100 bg-white px-3 pb-2 pt-2.5">
+              <p className="px-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">Quick Topics</p>
+              <div className="relative mt-2">
+                <div className="flex gap-2 overflow-x-auto pb-1 pr-6 scrollbar-none">
+                  {QUICK_ACTIONS.map(({ label, icon, q, tone }) => (
+                    <button key={label} type="button" onClick={() => { addMsg('user', q); handleSend(q); resetIdleTimer() }}
+                      className={`shrink-0 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold transition-all duration-200 hover:-translate-y-0.5 active:scale-95 ${tone}`}
+                    >
+                      <span className="text-[12px]">{icon}</span>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-white to-transparent" />
               </div>
             </div>
           )}
@@ -745,16 +773,21 @@ IMPORTANT: The user may refer to past conversations. If they ask what they asked
           {activeTab === 'chat' && (
             <div className="shrink-0 border-t border-slate-100 bg-white px-3 py-3">
               <div className="flex items-center gap-2">
-                <input
-                  ref={inputRef}
-                  value={input}
-                  onChange={(e) => { setInput(e.target.value); resetIdleTimer() }}
-                  onKeyDown={(e) => { if (e.key === 'Enter') { handleSend(); resetIdleTimer() } }}
-                  placeholder={messages.length > 1 ? 'Ask a follow-up...' : 'Ask me anything...'}
-                  className="flex-1 rounded-full border border-slate-200/50 bg-[#f5f5f7] px-4 py-2 text-[13px] font-medium text-[#1d1d1f] outline-none placeholder:text-slate-400 focus:border-violet-300 focus:bg-white transition-all duration-200"
-                  disabled={loading}
-                />
-                <button onClick={() => { handleSend(); resetIdleTimer() }} disabled={loading} className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-violet-500 to-purple-600 text-white shadow-[0_2px_8px_rgba(139,92,246,0.3)] transition-all duration-200 hover:shadow-[0_4px_14px_rgba(139,92,246,0.4)] hover:scale-105 active:scale-90 disabled:opacity-40 disabled:hover:scale-100">
+                <div className="flex flex-1 items-center gap-2 rounded-full border border-slate-200/60 bg-[#f5f5f7] px-4 transition-all duration-200 focus-within:border-violet-300 focus-within:bg-white">
+                  <input
+                    ref={inputRef}
+                    value={input}
+                    onChange={(e) => { setInput(e.target.value); resetIdleTimer() }}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { handleSend(); resetIdleTimer() } }}
+                    placeholder={messages.length > 1 ? 'Ask a follow-up…' : 'Ask me anything…'}
+                    className="flex-1 bg-transparent py-2 text-[13px] font-medium text-[#1d1d1f] outline-none placeholder:text-slate-400"
+                    disabled={loading}
+                  />
+                  <button type="button" onClick={resetIdleTimer} className="text-slate-400 transition-colors hover:text-slate-500" aria-label="Microphone">
+                    <HiOutlineMicrophone className="h-5 w-5" />
+                  </button>
+                </div>
+                <button onClick={() => { handleSend(); resetIdleTimer() }} disabled={loading} className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white shadow-[0_4px_14px_rgba(168,85,247,0.45)] transition-all duration-200 hover:shadow-[0_6px_18px_rgba(168,85,247,0.55)] hover:scale-105 active:scale-90 disabled:opacity-40 disabled:hover:scale-100">
                   <HiOutlinePaperAirplane className="h-4 w-4" />
                 </button>
               </div>
@@ -762,10 +795,13 @@ IMPORTANT: The user may refer to past conversations. If they ask what they asked
           )}
 
           {/* Footer */}
-          <div className="shrink-0 border-t border-slate-100 bg-white px-4 py-2 flex items-center justify-center gap-4">
+          <div className="shrink-0 border-t border-slate-100 bg-white px-4 py-2.5 flex items-center justify-center gap-2.5">
             <Link to="/signup" onClick={() => setOpen(false)} className="text-[11px] font-medium text-violet-600 hover:underline transition-colors">Free Trial</Link>
+            <span className="text-[10px] leading-none text-slate-300">•</span>
             <Link to="/contact" onClick={() => setOpen(false)} className="text-[11px] font-medium text-violet-600 hover:underline transition-colors">Book Demo</Link>
+            <span className="text-[10px] leading-none text-slate-300">•</span>
             <Link to="/pricing" onClick={() => setOpen(false)} className="text-[11px] font-medium text-violet-600 hover:underline transition-colors">Pricing</Link>
+            <span className="text-[10px] leading-none text-slate-300">•</span>
             <Link to="/reviews" onClick={() => setOpen(false)} className="text-[11px] font-medium text-violet-600 hover:underline transition-colors">Reviews</Link>
           </div>
         </div>

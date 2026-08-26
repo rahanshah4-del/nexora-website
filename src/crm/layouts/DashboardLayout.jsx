@@ -72,7 +72,7 @@ function TrialAccessBlock({ expired, subscriptionExpired, trialEndsAt, onBackToW
   const title = expired
     ? subscriptionExpired
       ? 'Your workspace subscription has expired ⏳'
-      : 'Your 7-day trial has ended ⏳'
+      : 'Your 1-month trial has ended ⏳'
     : 'Unlock your Nexora workspace ✨'
   const description = expired && subscriptionExpired
     ? 'Renew or upgrade your package to continue managing your complete business workspace.'

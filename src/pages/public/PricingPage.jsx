@@ -59,7 +59,7 @@ const comparisonRows = [
 
 function faqs(formatPrice) {
   return [
-    ['Is there a free trial?', 'Yes. Start a free 7-day trial with full access to all Nexora modules, unlimited users and unlimited storage. No credit card required.'],
+    ['Is there a free trial?', 'Yes. Start a free 1-month trial with full access to all Nexora modules, unlimited users and unlimited storage. No credit card required.'],
     ['Do I need a credit card to start?', 'No. Nexora lets you start a free trial without a credit card.'],
     ['What happens after the free trial?', `You can continue with Basic at ${formatPrice(1000)} with one business module and up to 2 users, or upgrade to Standard or Enterprise anytime.`],
     ['Can I choose any business module on Basic?', 'Yes. Basic lets you pick any ONE Nexora Business Module — Restaurant POS, Retail POS, School ERP, Transport, Medical Store POS, CRM, WhatsApp CRM, or any future module.'],
@@ -71,7 +71,7 @@ function faqs(formatPrice) {
 }
 
 const highlightCards = [
-  { title: 'Start safely', text: 'Try Nexora for 7 days free with full access. No credit card required.', icon: HiOutlineCloud, tone: 'sky' },
+  { title: 'Start safely', text: 'Try Nexora for 30 days free with full access. No credit card required.', icon: HiOutlineCloud, tone: 'sky' },
   { title: 'Scale clearly', text: 'Choose Basic with one module, or upgrade to Standard when your team grows.', icon: HiOutlineShieldCheck, tone: 'indigo' },
   { title: 'Sell with confidence', text: 'All plans include Dashboard & Reports, Invoice & Billing, Cloud Sync and Email Support.', icon: HiOutlineDocumentChartBar, tone: 'violet' },
 ]
@@ -162,7 +162,7 @@ export default function PricingPage() {
             </span>
           </h1>
           <p className="mx-auto mt-6 max-w-3xl text-base leading-8 text-slate-500 sm:text-lg">
-            Try Nexora free for 7 days with full access to all AI-powered modules. No credit card required — upgrade when you&apos;re ready.
+            Try Nexora free for 30 days with full access to all AI-powered modules. No credit card required — upgrade when you&apos;re ready.
           </p>
 
           {/* Trust badges */}
@@ -265,7 +265,7 @@ export default function PricingPage() {
                   <h2 className={`relative text-center text-xl font-medium tracking-[-0.02em] ${
                     isPopular ? 'text-violet-700' : isFree ? 'text-emerald-700' : 'text-slate-900'
                   }`}>
-                    {isFree ? '7-Day Free Trial' : plan.name}
+                    {isFree ? '1-Month Free Trial' : plan.name}
                   </h2>
 
                   <p className={`${plan.id === 'basic' ? 'mt-1.5' : 'mt-2'} relative text-center text-[13px] leading-[1.6] text-slate-500`}>
@@ -435,7 +435,7 @@ export default function PricingPage() {
               Start free today. Choose the plan that fits.
             </h2>
             <p className="mt-2 max-w-2xl text-[14px] leading-7 text-slate-500">
-              Start a 7-day free trial with full access, choose Basic to stay lean with one module, or upgrade to Standard for more capacity.
+              Start a 1-month free trial with full access, choose Basic to stay lean with one module, or upgrade to Standard for more capacity.
             </p>
           </div>
           <div className="flex flex-col gap-3 min-[420px]:flex-row">

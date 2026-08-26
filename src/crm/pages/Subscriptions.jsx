@@ -19,14 +19,14 @@ function TrialStatusCard({ trial }) {
         <div>
           <p className="text-sm font-semibold text-slate-900 dark:text-white">Trial Status</p>
           <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
-            Trial access is included for the first 7 days.
+            Trial access is included for the first 30 days.
           </p>
         </div>
         <Badge variant={active ? 'success' : 'warning'}>{active ? 'Trial Active' : 'Trial Expired'}</Badge>
       </div>
       {expired ? (
         <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-100">
-          Your 7-day trial has expired. Please contact your workspace administrator for continued access.
+          Your 1-month trial has expired. Please contact your workspace administrator for continued access.
         </div>
       ) : null}
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -50,7 +50,7 @@ export default function SubscriptionsPage() {
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
       <PageHeader
         title="Subscriptions"
-        subtitle="7-day trial status."
+        subtitle="1-month trial status."
       />
 
       <div className="mb-4 flex items-center justify-between gap-3">

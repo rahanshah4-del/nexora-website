@@ -6,7 +6,7 @@
 // a workspace may do with the WhatsApp API in each mode:
 //
 //   manual    — 100% frontend click-to-WhatsApp (wa.me). No Meta API calls.
-//   trial-api — limited Meta Cloud API during the 7-day trial (see TRIAL_*).
+//   trial-api — limited Meta Cloud API during the 1-month trial (see TRIAL_*).
 //   paid-api  — full Meta Cloud API access, governed by the paid plan.
 //
 // IMPORTANT: Meta access tokens / app secrets / webhook verify tokens MUST NEVER
@@ -35,7 +35,7 @@ export const WHATSAPP_VERIFICATION_STATUSES = [
   'failed',
 ]
 
-export const WHATSAPP_TRIAL_DAYS = 7
+export const WHATSAPP_TRIAL_DAYS = 30
 export const WHATSAPP_TRIAL_MESSAGE_LIMIT = 50
 export const WHATSAPP_TRIAL_MAX_NUMBERS = 1
 export const WHATSAPP_TRIAL_TEMPLATE_LIMIT = 5

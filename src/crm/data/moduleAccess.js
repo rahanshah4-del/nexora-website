@@ -1,4 +1,4 @@
-export const BUSINESS_TRIAL_DAYS = 7
+export const BUSINESS_TRIAL_DAYS = 30
 export const PLAN_ORDER = ['Free', 'Basic', 'Business', 'Enterprise']
 export const PRIMARY_UPGRADE_PLAN_NAME = 'Standard'
 export const PRIMARY_UPGRADE_PLAN_PRICE = 'PKR 5,999/month'

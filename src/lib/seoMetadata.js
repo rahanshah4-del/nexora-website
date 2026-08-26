@@ -36,9 +36,9 @@ export const seoMetadata = {
     faqItems: [
       { question: 'What is Nexora Solution?', answer: 'Nexora Solution is Pakistan\'s AI-powered business operating system offering POS, CRM, ERP and automation software for restaurants, retail stores, pharmacies, schools, transport fleets and growing enterprises — all from one unified platform.' },
       { question: 'Who is Nexora built for?', answer: 'Nexora is built for Pakistani businesses of every size — from a single-counter restaurant or retail shop to multi-branch schools, pharmacy chains and transport fleets. Our modules adapt to your workflow, not the other way around.' },
-      { question: 'What does Nexora cost?', answer: 'Plans start at PKR 1,000/month (50% off for new users). Every plan includes a 7-day free trial, cloud sync, free updates, free data migration, free staff training and a 30-day money-back guarantee. Yearly billing saves 20%. Enterprise plans are custom-priced.' },
+      { question: 'What does Nexora cost?', answer: 'Plans start at PKR 1,000/month (50% off for new users). Every plan includes a 1-month free trial, cloud sync, free updates, free data migration, free staff training and a 30-day money-back guarantee. Yearly billing saves 20%. Enterprise plans are custom-priced.' },
       { question: 'Does Nexora work offline?', answer: 'The POS modules support offline mode so you can keep billing even when the internet is down. Once you reconnect, all data syncs automatically to the cloud.' },
-      { question: 'How do I get started?', answer: 'Sign up for a free 7-day trial at nexorasolution.online/signup — no credit card required. Or book a live demo and our team will walk you through the modules that fit your business.' },
+      { question: 'How do I get started?', answer: 'Sign up for a free 1-month trial at nexorasolution.online/signup — no credit card required. Or book a live demo and our team will walk you through the modules that fit your business.' },
     ],
   }),
   '/services': buildPage({

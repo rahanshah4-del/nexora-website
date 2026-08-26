@@ -502,7 +502,7 @@ const PREVIEW_DATA = {
   welcome: {
     clientName: 'Ayesha Khan',
     workspaceName: 'Nexora Demo Workspace',
-    trialDays: '7',
+    trialDays: '30',
     email: 'client@example.com',
     loginUrl: DEFAULT_LOGIN_URL,
   },

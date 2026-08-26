@@ -104,7 +104,7 @@ const workspaces = businessWorkspaceCatalog.map((workspace) => ({
 const languageOptions = LANGUAGE_OPTIONS.map((option) => option.label)
 const regionOptions = ['Pakistan', 'India', 'Bangladesh', 'Middle East', 'Europe']
 const currencyOptions = ['PKR', 'INR', 'BDT', 'AED', 'SAR', 'USD', 'EUR']
-const CRM_TRIAL_DAYS = 7
+const CRM_TRIAL_DAYS = 30
 const CRM_DASHBOARD_ROUTE = '/app/dashboard'
 const WELCOME_PROMO_CODE = 'welcome-nexora'
 const workspaceEmojiMap = {
@@ -371,7 +371,7 @@ function resolveTrialEnd(workspaceData, accountData, user) {
 function trialCountdown(value, nowMs) {
   const end = timestampToDate(value)
   if (!end) {
-    return { expired: false, label: 'Trial: 7 days left', detail: '7 days left', daysLeft: CRM_TRIAL_DAYS }
+    return { expired: false, label: 'Trial: 30 days left', detail: '30 days left', daysLeft: CRM_TRIAL_DAYS }
   }
   const diffMs = end.getTime() - nowMs
   if (diffMs <= 0) return { expired: true, label: 'Trial: expired', detail: `Expired on ${formatDate(end)}`, daysLeft: 0 }
@@ -393,38 +393,38 @@ function VerificationBadge({ verified, compact = false }) {
   )
 }
 
-function SidebarItem({ icon: Icon, label, active = false, muted = false, onClick, collapsed = false }) {
-  const isSettings = label === 'Settings'
+function SidebarItem({ icon: Icon, label, active = false, onClick, collapsed = false, badge = 0, onHoverEnter, onHoverLeave }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      title={collapsed ? label : undefined}
-      className={`flex h-11 w-full items-center rounded-xl px-3 text-left text-[13px] font-semibold transition ${
-        collapsed ? 'justify-center' : 'justify-between'
+      onMouseEnter={onHoverEnter}
+      onMouseLeave={onHoverLeave}
+      className={`relative flex h-10 w-full items-center rounded-lg text-[13px] font-semibold transition-colors ${
+        collapsed ? 'justify-center' : 'gap-3 px-3'
       } ${
         active
-          ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 text-white shadow-[0_14px_34px_-18px_rgba(79,70,229,0.9)]'
-          : isSettings
-            ? 'border border-indigo-100 bg-gradient-to-r from-indigo-50 via-white to-sky-50 text-indigo-700 shadow-sm hover:border-indigo-200 hover:from-indigo-100 hover:to-sky-100'
-            : muted
-              ? 'border border-slate-100 bg-slate-50 text-slate-600 hover:border-slate-200 hover:bg-white hover:text-slate-900'
-              : 'text-slate-700 hover:bg-blue-50 hover:text-blue-700'
+          ? 'bg-indigo-50/90 text-indigo-600'
+          : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
       }`}
     >
-      <span className={`flex min-w-0 items-center gap-3 ${collapsed ? 'justify-center' : ''}`}>
-        <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-lg ${
-          active
-            ? 'bg-white/18 text-white'
-            : isSettings
-              ? 'bg-gradient-to-br from-indigo-500 to-sky-500 text-white shadow-sm shadow-indigo-500/20'
-              : 'bg-blue-50 text-blue-600'
-        }`}>
+      {active ? (
+        <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-full bg-indigo-600" />
+      ) : null}
+      <span className="relative">
+        <span className={`grid h-7 w-7 place-items-center rounded-lg ${active ? 'text-indigo-600' : 'text-slate-500'}`}>
           <Icon className="h-[18px] w-[18px] shrink-0" />
         </span>
-        {!collapsed && <span className="truncate">{label}</span>}
+        {collapsed && badge > 0 ? (
+          <span className="absolute -right-1.5 -top-1.5 flex h-[14px] min-w-[14px] items-center justify-center rounded-full bg-indigo-600 px-1 text-[9px] font-bold leading-none text-white ring-2 ring-white">
+            {badge}
+          </span>
+        ) : null}
       </span>
-      {!collapsed && <HiOutlineChevronRight className="h-4 w-4 shrink-0 opacity-80" />}
+      {!collapsed ? <span className="min-w-0 flex-1 truncate text-left">{label}</span> : null}
+      {!collapsed && badge > 0 ? (
+        <span className="ml-auto shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-500">{badge}</span>
+      ) : null}
     </button>
   )
 }
@@ -796,7 +796,7 @@ function WorkspaceListRow({ workspace, index, emailVerified, selected, saving, o
 
 function CreateWorkspaceListRow({ disabled, creating, message, onOpen }) {
   const label = creating ? 'Creating...' : disabled ? 'Create Workspace' : 'Create Workspace'
-  const subtext = message || (creating ? 'Setting up your workspace...' : disabled ? 'Select a module above first.' : 'Start a separate 7-day Nexora CRM trial workspace.')
+  const subtext = message || (creating ? 'Setting up your workspace...' : disabled ? 'Select a module above first.' : 'Start a separate 1-month Nexora CRM trial workspace.')
   return (
     <div
       className={`flex flex-wrap items-center gap-3 rounded-lg border px-4 py-3 shadow-[0_12px_32px_-26px_rgba(15,23,42,0.42)] sm:flex-nowrap sm:gap-4 ${
@@ -842,7 +842,7 @@ function CreateWorkspaceListRow({ disabled, creating, message, onOpen }) {
 
 function CreateWorkspaceCard({ disabled, creating, message, onOpen }) {
   const label = creating ? 'Creating...' : 'Create Workspace'
-  const subtext = message || (creating ? 'Setting up your workspace...' : disabled ? 'Select a module above first.' : 'Start a separate 7-day Nexora CRM trial workspace.')
+  const subtext = message || (creating ? 'Setting up your workspace...' : disabled ? 'Select a module above first.' : 'Start a separate 1-month Nexora CRM trial workspace.')
   return (
     <article
       className={`rounded-lg border p-3 shadow-[0_12px_32px_-26px_rgba(15,23,42,0.42)] sm:p-4 ${
@@ -922,65 +922,54 @@ function SupportTicketsWorkspaceCard({ disabled, onOpen }) {
   )
 }
 
-function AutomationBanner({ workspaceId, selecting, onSelect }) {
-  const [usage, setUsage] = useState({ status: 'loading', workflowCount: null, runsThisMonth: null, runLimit: null })
+function AutomationBanner() {
+  const [notifyToast, setNotifyToast] = useState(false)
   const prefersReducedMotion =
     typeof window !== 'undefined' &&
     typeof window.matchMedia === 'function' &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
-  useEffect(() => {
-    // Do not gate the fetch behind an early `return` that would keep this effect
-    // from ever running once the id resolves. When workspaceId is empty we just
-    // mark the neutral state; the effect re-runs the moment workspaceId changes.
-    if (!workspaceId) {
-      console.warn('[AutomationBanner] skipping usage fetch — workspaceId not ready yet')
-      setUsage({ status: 'empty', workflowCount: 0, runsThisMonth: 0, runLimit: null })
-      return undefined
-    }
-    let cancelled = false
-    setUsage({ status: 'loading', workflowCount: null, runsThisMonth: null, runLimit: null })
-    fetch(`https://api.nexorasolution.online/workspaces/${encodeURIComponent(workspaceId)}/usage`, {
-      method: 'GET',
-      credentials: 'include',
-    })
-      .then((response) => {
-        if (!response.ok) throw new Error(`Usage request failed (${response.status})`)
-        return response.json()
-      })
-      .then((payload) => {
-        if (cancelled) return
-        const workflowCount = typeof payload?.workflowCount === 'number' ? payload.workflowCount : 0
-        const runsThisMonth = typeof payload?.runsThisMonth === 'number' ? payload.runsThisMonth : 0
-        const runLimit = typeof payload?.runLimit === 'number' ? payload.runLimit : null
-        setUsage({ status: 'loaded', workflowCount, runsThisMonth, runLimit })
-      })
-      .catch((error) => {
-        if (cancelled) return
-        console.error('[AutomationBanner] usage fetch failed', {
-          workspaceId,
-          status: error?.status,
-          message: error?.message || String(error || ''),
-        })
-        setUsage({ status: 'empty', workflowCount: 0, runsThisMonth: 0, runLimit: null })
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [workspaceId])
+  const handleNotify = useCallback(() => {
+    setNotifyToast(true)
+  }, [])
 
-  const isEmpty = usage.status === 'empty'
-  const badgeLabel = usage.status === 'loading'
-    ? 'CHECKING AUTOMATIONS'
-    : isEmpty
-      ? 'NO WORKFLOWS YET'
-      : `${usage.workflowCount} WORKFLOW${usage.workflowCount === 1 ? '' : 'S'} RUNNING`
+  useEffect(() => {
+    if (!notifyToast) return undefined
+    const timeoutId = window.setTimeout(() => setNotifyToast(false), 2600)
+    return () => window.clearTimeout(timeoutId)
+  }, [notifyToast])
 
   return (
     <div
-      className={`relative mt-4 overflow-hidden rounded-[18px] transition-all duration-200 ${selecting ? 'ring-2 ring-blue-400/70' : ''}`}
+      className="automation-banner relative mt-4 overflow-hidden rounded-[18px]"
       style={{ background: 'linear-gradient(120deg, #0B1220 0%, #161F35 55%, #1E1240 100%)' }}
     >
+      <style>{`
+        @keyframes automation-border-glow {
+          0%, 100% {
+            box-shadow: 0 0 0 1px rgba(30, 41, 59, 0.55), 0 0 0 0 rgba(139, 92, 246, 0);
+          }
+          50% {
+            box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.45), 0 0 22px 2px rgba(139, 92, 246, 0.32), 0 0 48px 4px rgba(99, 102, 241, 0.18);
+          }
+        }
+        @keyframes automation-dot-pulse {
+          0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.55); }
+          50% { opacity: 0.7; transform: scale(0.8); box-shadow: 0 0 0 6px rgba(34, 211, 238, 0); }
+        }
+        .automation-banner { animation: automation-border-glow 3.8s ease-in-out infinite; }
+        .automation-dot { animation: automation-dot-pulse 2.2s ease-in-out infinite; }
+        @media (prefers-reduced-motion: reduce) {
+          .automation-banner, .automation-dot { animation: none; }
+        }
+      `}</style>
+
+      {notifyToast ? (
+        <div className="pointer-events-none absolute right-4 top-4 z-20 rounded-full border border-white/20 bg-slate-950/90 px-4 py-1.5 text-xs font-bold text-white shadow-lg backdrop-blur-sm">
+          You'll be notified!
+        </div>
+      ) : null}
+
       {/* Decorative radial texture overlay */}
       <div
         aria-hidden="true"
@@ -993,9 +982,9 @@ function AutomationBanner({ workspaceId, selecting, onSelect }) {
 
       <div className="relative z-10 flex flex-col items-center gap-8 p-7 sm:flex-row sm:p-8">
         <div className="flex-1">
-          <span className="inline-flex items-center gap-2 rounded-md border border-white/15 bg-white/10 px-2.5 py-1 font-mono text-[10.5px] tracking-wide text-indigo-300">
-            <span className={`h-1.5 w-1.5 rounded-full ${isEmpty ? 'bg-slate-500' : 'bg-emerald-400 motion-safe:animate-pulse'}`} />
-            {badgeLabel}
+          <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[10.5px] font-bold uppercase tracking-[0.14em] text-white backdrop-blur-sm">
+            <span className="automation-dot h-2 w-2 rounded-full bg-cyan-400" />
+            Coming Soon
           </span>
           <h2 className="mt-3 text-2xl font-extrabold tracking-tight text-white">
             Automations that{' '}
@@ -1004,39 +993,27 @@ function AutomationBanner({ workspaceId, selecting, onSelect }) {
             </span>
           </h2>
           <p className="mt-2 max-w-[460px] text-[13.5px] leading-relaxed text-slate-400">
-            Connect WhatsApp, AI, and your Nexora modules on one visual canvas. Works while your team is offline.
+            Connect WhatsApp, AI, and your Nexora modules on one visual canvas. We're building this for you — launching soon.
           </p>
           <button
             type="button"
-            disabled={selecting}
-            onClick={onSelect}
-            className={`mt-4 inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-[13px] font-bold transition ${
-              selecting ? 'bg-white/60 text-slate-500' : 'bg-white text-slate-900 hover:bg-indigo-50'
-            }`}
+            onClick={handleNotify}
+            className="mt-4 inline-flex items-center gap-2 rounded-lg border border-white/25 bg-white/5 px-5 py-2.5 text-[13px] font-bold text-white/90 backdrop-blur-sm transition hover:border-white/40 hover:bg-white/10 hover:text-white"
           >
-            {selecting ? 'Opening automation studio…' : 'Enter automation studio'}
-            <HiOutlineArrowRight className="h-4 w-4" />
+            <HiOutlineBell className="h-4 w-4" />
+            Notify Me When Live
           </button>
           <div className="mt-5 flex gap-6 border-t border-white/10 pt-4">
             <div>
-              <div className="font-mono text-[17px] font-semibold text-white">
-                {usage.status === 'loading' ? '…' : isEmpty ? '—' : usage.workflowCount}
-              </div>
+              <div className="font-mono text-[17px] font-semibold text-white">—</div>
               <div className="text-[10.5px] uppercase text-slate-500">Workflows</div>
             </div>
             <div>
-              <div className="font-mono text-[17px] font-semibold text-white">
-                {usage.status === 'loading'
-                  ? '…'
-                  : isEmpty
-                    ? '—'
-                    : usage.runLimit != null
-                      ? `${usage.runsThisMonth}/${usage.runLimit}`
-                      : usage.runsThisMonth}
-              </div>
+              <div className="font-mono text-[17px] font-semibold text-white">—</div>
               <div className="text-[10.5px] uppercase text-slate-500">Runs this month</div>
             </div>
           </div>
+          <p className="mt-2 text-[11px] italic text-slate-500">Stats will appear once launched</p>
         </div>
 
         {/* Static illustrative workflow diagram — decorative only, not tied to real workflow data. */}
@@ -1529,7 +1506,7 @@ function SetupWizard({ creating, message, form, onChange, onCreate, onClose, can
                   <HiOutlineCheckCircle className="h-5 w-5" />
                 </span>
                 <div className="min-w-0">
-                  <p className="text-sm font-bold text-blue-900">Your 7-day free trial starts after create</p>
+                  <p className="text-sm font-bold text-blue-900">Your 1-month free trial starts after create</p>
                   <p className="mt-0.5 text-xs leading-5 text-blue-700">
                     A Basic trial workspace is activated instantly. No demo data, no card required.
                   </p>
@@ -1716,7 +1693,14 @@ export default function WorkspaceSelection() {
   const [supportToast, setSupportToast] = useState('')
   const [businessServicesOpen, setBusinessServicesOpen] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    try {
+      return window.localStorage.getItem('nexora-sidebar-collapsed') === '1'
+    } catch {
+      return false
+    }
+  })
+  const [sidebarTooltip, setSidebarTooltip] = useState(null)
   const [deviceBlockerOpen, setDeviceBlockerOpen] = useState(false)
   const [canUseWorkspaceOnDevice, setCanUseWorkspaceOnDevice] = useState(() => (
     typeof window === 'undefined' ? true : window.matchMedia('(min-width: 1024px)').matches
@@ -1804,6 +1788,25 @@ export default function WorkspaceSelection() {
       // Ignore storage failures (private mode, quota, etc.)
     }
   }, [viewMode])
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem('nexora-sidebar-collapsed', sidebarCollapsed ? '1' : '0')
+    } catch {
+      // Ignore storage failures (private mode, quota, etc.)
+    }
+  }, [sidebarCollapsed])
+
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if ((event.metaKey || event.ctrlKey) && event.key && event.key.toLowerCase() === 'b') {
+        event.preventDefault()
+        setSidebarCollapsed((collapsed) => !collapsed)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   useEffect(() => {
     if (!location.state?.openSupportTicket) return
@@ -2493,6 +2496,20 @@ export default function WorkspaceSelection() {
       setSidebarOpen((open) => !open)
     }
   }, [isDesktopViewport])
+
+  const handleCollapseToggle = useCallback(() => {
+    setSidebarCollapsed((collapsed) => !collapsed)
+  }, [])
+
+  const handleSidebarHover = useCallback((event, label) => {
+    if (!sidebarCollapsed) return
+    const rect = event.currentTarget.getBoundingClientRect()
+    setSidebarTooltip({ label, top: rect.top + rect.height / 2, left: rect.right + 12 })
+  }, [sidebarCollapsed])
+
+  const clearSidebarHover = useCallback(() => {
+    setSidebarTooltip(null)
+  }, [])
 
   const handleCloseSidebar = useCallback(() => {
     if (isDesktopViewport()) {
@@ -3865,59 +3882,95 @@ export default function WorkspaceSelection() {
 
       <div className="relative flex min-h-dvh flex-col bg-slate-50 lg:flex-row">
         <aside
-          className={`fixed inset-y-0 left-0 z-50 w-[280px] border-r border-white/20 bg-white/85 text-slate-900 shadow-2xl shadow-slate-950/10 backdrop-blur-2xl transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+          className={`fixed inset-y-0 left-0 z-50 w-[280px] overflow-hidden border-r border-white/20 bg-white/85 text-slate-900 shadow-2xl shadow-slate-950/10 backdrop-blur-2xl ${
             sidebarOpen ? 'translate-x-0' : '-translate-x-full'
           } lg:translate-x-0 ${
-            sidebarCollapsed ? 'lg:w-[72px]' : 'lg:w-[260px]'
-          } lg:z-20 lg:shadow-none lg:border-white/60 lg:overflow-y-auto`}
-          style={{ WebkitBackdropFilter: 'saturate(180%) blur(20px)' }}
+            sidebarCollapsed ? 'lg:w-[68px]' : 'lg:w-[280px]'
+          } lg:z-20 lg:border-white/60 lg:shadow-none`}
+          style={{
+            WebkitBackdropFilter: 'saturate(180%) blur(20px)',
+            transition: 'width 250ms cubic-bezier(0.4, 0, 0.2, 1), transform 250ms cubic-bezier(0.4, 0, 0.2, 1)',
+          }}
           aria-label="Workspace sidebar"
         >
-          <div className="flex min-h-full flex-col px-4 py-5">
+          <div className="flex h-full flex-col px-3 py-4">
             <button
               type="button"
               onClick={() => setSidebarOpen(false)}
-              className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 lg:hidden"
+              className="absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 lg:hidden"
               aria-label="Close sidebar"
             >
               <HiOutlineXMark className="h-5 w-5" />
             </button>
 
-            <div className="flex items-center justify-center gap-2">
-              <img src={logoUrl} alt="Nexora" className="h-10 w-10 shrink-0 rounded-xl" />
-              {!sidebarCollapsed ? (
-                <div className="text-center">
-                  <p className="text-xl font-extrabold tracking-[0.08em] text-slate-950">NEXORA SOLUTION</p>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.26em] text-slate-400">Business Suite</p>
-                </div>
-              ) : null}
+            {/* Brand + collapse toggle */}
+            <div className={`flex w-full ${sidebarCollapsed ? 'flex-col items-center gap-3' : 'items-center justify-between'}`}>
+              <div className={`flex items-center ${sidebarCollapsed ? '' : 'gap-2.5'}`}>
+                <img src={logoUrl} alt="Nexora" className="h-9 w-9 shrink-0 rounded-xl" />
+                {!sidebarCollapsed ? (
+                  <div className="min-w-0">
+                    <p className="truncate text-[15px] font-extrabold leading-tight tracking-tight text-slate-950">NEXORA SOLUTION</p>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">Business Suite</p>
+                  </div>
+                ) : null}
+              </div>
+              <button
+                type="button"
+                onClick={handleCollapseToggle}
+                className={`hidden h-8 w-8 shrink-0 items-center justify-center text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 lg:flex ${
+                  sidebarCollapsed ? 'rounded-full bg-slate-100' : 'rounded-lg'
+                }`}
+                aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              >
+                <HiOutlineBars3 className="h-5 w-5" />
+              </button>
             </div>
 
-            <div className="relative mt-6">
+            {/* Search */}
+            <div className="mt-4 w-full">
+              {sidebarCollapsed ? (
+                <button
+                  type="button"
+                  onMouseEnter={(event) => handleSidebarHover(event, 'Search')}
+                  onMouseLeave={clearSidebarHover}
+                  className="mx-auto flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+                  aria-label="Search"
+                >
+                  <HiOutlineMagnifyingGlass className="h-4 w-4" />
+                </button>
+              ) : (
+                <div className="flex h-9 items-center gap-2 rounded-full border border-slate-200 bg-white px-3 text-[13px]">
+                  <HiOutlineMagnifyingGlass className="h-4 w-4 shrink-0 text-slate-400" />
+                  <span className="min-w-0 flex-1 truncate text-left font-medium text-slate-400">Search</span>
+                  <span className="shrink-0 rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] font-semibold text-slate-400">Ctrl K</span>
+                </div>
+              )}
+            </div>
+
+            {/* Workspace card */}
+            <div className="relative mt-3 w-full">
               <button
                 type="button"
                 onClick={() => setProfileOpen((open) => !open)}
+                onMouseEnter={(event) => handleSidebarHover(event, profile.workspaceName)}
+                onMouseLeave={clearSidebarHover}
                 className={`w-full rounded-xl border border-slate-200 bg-white text-left shadow-sm transition hover:border-slate-300 ${
-                  sidebarCollapsed ? 'flex justify-center p-2' : 'p-3'
+                  sidebarCollapsed ? 'flex justify-center p-2' : 'p-2.5'
                 }`}
                 aria-expanded={profileOpen}
-                title={sidebarCollapsed ? `${profile.name}\n${profile.roleLabel}\n${profile.email}` : undefined}
               >
-                <span className="flex items-center gap-3">
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-sky-500 via-blue-600 to-violet-600 text-xl shadow-sm shadow-blue-200">
+                <span className="flex items-center gap-2.5">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-sky-500 via-blue-600 to-violet-600 text-base shadow-sm shadow-blue-200">
                     {profile.avatarEmoji}
                   </span>
-                  {!sidebarCollapsed && (
+                  {!sidebarCollapsed ? (
                     <span className="min-w-0 flex-1">
-                      <span className="flex min-w-0 items-center gap-1.5">
-                        <span className="block truncate text-sm font-bold text-slate-900">{authLoading ? 'Loading...' : profile.name}</span>
-                        {profile.emailVerified ? <HiOutlineCheckCircle className="h-4 w-4 shrink-0 text-emerald-500" /> : null}
-                      </span>
-                      <span className="mt-0.5 block truncate text-xs text-slate-500">{profile.roleLabel}</span>
-                      <span className="mt-0.5 block truncate text-[11px] text-slate-400">{profile.email}</span>
+                      <span className="block truncate text-[13px] font-bold text-slate-900">{profile.workspaceName}</span>
+                      <span className="mt-0.5 block truncate text-[11px] text-slate-500">{profile.roleLabel}</span>
                     </span>
-                  )}
-                  {!sidebarCollapsed && <HiOutlineChevronDown className="h-4 w-4 shrink-0 text-slate-400" />}
+                  ) : null}
+                  {!sidebarCollapsed ? <HiOutlineChevronRight className="h-4 w-4 shrink-0 text-slate-400" /> : null}
                 </span>
               </button>
 
@@ -3970,109 +4023,93 @@ export default function WorkspaceSelection() {
               ) : null}
             </div>
 
-            {!sidebarCollapsed && (
-              <div className="mt-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
-                <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">Package</p>
-                <p className="mt-1 truncate text-xs font-bold text-slate-900">{profile.planLabel}</p>
-                {profile.trialShortLabel ? (
-                  <p className="mt-1 text-[11px] font-semibold text-slate-500">{profile.trialShortLabel}</p>
-                ) : null}
-                <button
-                  type="button"
-                  onClick={handleUpgradePlan}
-                  className="mt-3 flex h-9 w-full items-center justify-center rounded-lg bg-gradient-to-r from-blue-600 to-violet-600 text-xs font-bold text-white shadow-sm transition hover:from-blue-700 hover:to-violet-700"
-                >
-                  Upgrade Plan
-                </button>
+            {/* Nav — grouped sections */}
+            <nav className="mt-4 min-h-0 w-full flex-1 space-y-5 overflow-y-auto">
+              <div>
+                {!sidebarCollapsed ? <p className="px-2 pb-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">Operations</p> : null}
+                <div className="space-y-1">
+                  <SidebarItem icon={HiOutlineSquares2X2} label="Enter Workspace" active={workspaceView === 'enter'} onClick={() => setWorkspaceView('enter')} collapsed={sidebarCollapsed} onHoverEnter={(event) => handleSidebarHover(event, 'Enter Workspace')} onHoverLeave={clearSidebarHover} />
+                  <SidebarItem icon={HiOutlineGlobeAlt} label="All Workspaces" active={workspaceView === 'all'} onClick={() => setWorkspaceView('all')} collapsed={sidebarCollapsed} badge={visibleWorkspaces.length} onHoverEnter={(event) => handleSidebarHover(event, 'All Workspaces')} onHoverLeave={clearSidebarHover} />
+                  <button
+                    type="button"
+                    disabled={createDisabled}
+                    onClick={handleOpenCreate}
+                    onMouseEnter={(event) => handleSidebarHover(event, 'Create New Workspace')}
+                    onMouseLeave={clearSidebarHover}
+                    className={`flex h-10 w-full items-center rounded-lg text-left text-[13px] font-semibold transition ${
+                      sidebarCollapsed ? 'justify-center' : 'gap-3 px-3'
+                    } ${
+                      createDisabled
+                        ? 'cursor-not-allowed text-slate-400 opacity-80'
+                        : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                    }`}
+                  >
+                    <span className={`flex shrink-0 items-center justify-center rounded-lg bg-sky-100 text-sky-600 ${sidebarCollapsed ? 'h-7 w-7' : 'h-6 w-6'}`}>
+                      <HiOutlinePlus className={sidebarCollapsed ? 'h-5 w-5' : 'h-4 w-4'} />
+                    </span>
+                    {!sidebarCollapsed ? <span className="truncate">Create New Workspace</span> : null}
+                  </button>
+                </div>
               </div>
-            )}
 
-            <nav className="mt-4 space-y-2">
-              <SidebarItem
-                icon={HiOutlineSquares2X2}
-                label="Enter Workspace"
-                active={workspaceView === 'enter'}
-                onClick={() => setWorkspaceView('enter')}
-                collapsed={sidebarCollapsed}
-              />
-              <SidebarItem
-                icon={HiOutlineSquares2X2}
-                label="All Workspaces"
-                active={workspaceView === 'all'}
-                onClick={() => setWorkspaceView('all')}
-                collapsed={sidebarCollapsed}
-              />
-              <button
-                type="button"
-                disabled={createDisabled}
-                onClick={handleOpenCreate}
-                title={sidebarCollapsed ? 'Create New Workspace' : undefined}
-                className={`flex h-11 w-full items-center gap-3 rounded-lg px-3 text-left text-[13px] font-semibold transition ${
-                  sidebarCollapsed ? 'justify-center' : ''
-                } ${
-                  createDisabled
-                    ? 'cursor-not-allowed text-slate-400 opacity-80'
-                    : 'text-slate-700 hover:bg-slate-100'
-                }`}
-              >
-                <span className={`flex items-center justify-center rounded bg-sky-100 text-sky-600 ${sidebarCollapsed ? 'h-7 w-7' : 'h-5 w-5'}`}>
-                  <HiOutlinePlus className={`${sidebarCollapsed ? 'h-5 w-5' : 'h-4 w-4'}`} />
-                </span>
-                {!sidebarCollapsed && 'Create New Workspace'}
-              </button>
+              <div>
+                {!sidebarCollapsed ? <p className="px-2 pb-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">Your Module Access</p> : null}
+                <div className="space-y-1">
+                  {visibleModuleAccess.map((module) => {
+                    const canOpenModule = Boolean(module.active && module.route)
+
+                    return (
+                      <button
+                        type="button"
+                        key={module.name}
+                        disabled={!canOpenModule}
+                        onMouseEnter={(event) => handleSidebarHover(event, module.name)}
+                        onMouseLeave={clearSidebarHover}
+                        onClick={() => {
+                          const workspace = businessWorkspaceForType(module.type)
+                          if (canOpenModule) handleSelectBusinessWorkspace(workspace)
+                        }}
+                        className={`flex h-10 w-full items-center rounded-lg text-left text-[13px] font-semibold transition ${
+                          sidebarCollapsed ? 'justify-center' : 'gap-3 px-3'
+                        } ${
+                          module.active ? 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' : 'text-slate-400 opacity-75'
+                        }`}
+                        aria-disabled={module.disabled ? 'true' : undefined}
+                      >
+                        <span className={`flex shrink-0 items-center justify-center rounded-lg text-sm bg-gradient-to-br ${module.emojiBg || 'from-sky-100 to-blue-200'} ${sidebarCollapsed ? 'h-7 w-7' : 'h-6 w-6'}`}>
+                          {module.emoji || '📈'}
+                        </span>
+                        {!sidebarCollapsed ? <span className="truncate">{module.name}</span> : null}
+                        {!sidebarCollapsed && module.disabled ? (
+                          <span className="ml-auto shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-500">Soon</span>
+                        ) : null}
+                      </button>
+                    )
+                  })}
+                </div>
+                {!sidebarCollapsed && hasModuleLock ? (
+                  <p className="mt-3 px-2 text-xs font-semibold leading-5 text-slate-500">{moduleLockMessage}</p>
+                ) : null}
+              </div>
+
+              <div>
+                {!sidebarCollapsed ? <p className="px-2 pb-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">Team &amp; System</p> : null}
+                <div className="space-y-1">
+                  <SidebarItem icon={HiOutlineCog6Tooth} label="Settings" onClick={() => setSettingsOpen(true)} collapsed={sidebarCollapsed} onHoverEnter={(event) => handleSidebarHover(event, 'Settings')} onHoverLeave={clearSidebarHover} />
+                </div>
+              </div>
             </nav>
 
-            <div className="mt-4 border-t border-slate-200 pt-4">
-              {!sidebarCollapsed ? (
-                <p className="px-2 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">Your Module Access</p>
-              ) : null}
-              <div className={`${sidebarCollapsed ? 'space-y-2' : 'mt-3 space-y-2'}`}>
-                {visibleModuleAccess.map((module) => {
-                  const canOpenModule = Boolean(module.active && module.route)
-
-                  return (
-                    <button
-                      type="button"
-                      key={module.name}
-                      disabled={!canOpenModule}
-                      title={sidebarCollapsed ? module.name : undefined}
-                      onClick={() => {
-                        const workspace = businessWorkspaceForType(module.type)
-                        if (canOpenModule) handleSelectBusinessWorkspace(workspace)
-                      }}
-                      className={`flex h-9 w-full items-center gap-3 rounded-lg px-2 text-left text-[13px] font-semibold transition ${
-                        sidebarCollapsed ? 'justify-center' : ''
-                      } ${
-                        module.active ? 'text-slate-700 hover:bg-slate-100' : 'text-slate-400 opacity-75'
-                      }`}
-                      aria-disabled={module.disabled ? 'true' : undefined}
-                    >
-                      <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-sm bg-gradient-to-br ${module.emojiBg || 'from-sky-100 to-blue-200'}`}>
-                        {module.emoji || '📈'}
-                      </span>
-                      {!sidebarCollapsed && <span className="truncate">{module.name}</span>}
-                      {!sidebarCollapsed && module.disabled ? (
-                        <span className="ml-auto shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-500">Soon</span>
-                      ) : null}
-                    </button>
-                  )
-                })}
-              </div>
-              {!sidebarCollapsed && hasModuleLock ? (
-                <p className="mt-3 px-2 text-xs font-semibold leading-5 text-slate-500">{moduleLockMessage}</p>
-              ) : null}
-            </div>
-
-            <SidebarItem icon={HiOutlineCog6Tooth} label="Settings" muted onClick={() => setSettingsOpen(true)} collapsed={sidebarCollapsed} />
-
-            <div className="mt-auto pt-6">
+            {/* Support card */}
+            <div className="w-full pt-3">
               {sidebarCollapsed ? (
                 <button
                   type="button"
                   onClick={openSupportChat}
-                  title="Need Help? Chat with Nexora Support"
+                  onMouseEnter={(event) => handleSidebarHover(event, 'Support')}
+                  onMouseLeave={clearSidebarHover}
                   aria-label="Open live chat with Nexora Support"
-                  className="flex w-full items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 p-2.5 text-white shadow-sm transition hover:shadow-md hover:brightness-105"
+                  className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 text-white shadow-sm transition hover:shadow-md hover:brightness-105"
                 >
                   <HiOutlineLifebuoy className="h-5 w-5" />
                 </button>
@@ -4120,6 +4157,56 @@ export default function WorkspaceSelection() {
                 </div>
               )}
             </div>
+
+            {/* User profile — pinned bottom */}
+            <div className="w-full border-t border-slate-100 pt-3">
+              {sidebarCollapsed ? (
+                <button
+                  type="button"
+                  onClick={() => setProfileOpen((open) => !open)}
+                  onMouseEnter={(event) => handleSidebarHover(event, profile.name)}
+                  onMouseLeave={clearSidebarHover}
+                  className="mx-auto flex items-center justify-center"
+                  aria-label="Account"
+                >
+                  <span className="relative inline-flex">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-pink-500 text-xs font-bold text-white">
+                      {profile.initials}
+                    </span>
+                    <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white bg-emerald-500" />
+                  </span>
+                </button>
+              ) : (
+                <div className="flex w-full items-center gap-2.5 rounded-xl p-1.5 transition hover:bg-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setProfileOpen((open) => !open)}
+                    className="flex min-w-0 flex-1 items-center gap-2.5 text-left"
+                  >
+                    <span className="relative inline-flex shrink-0">
+                      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-pink-500 text-xs font-bold text-white">
+                        {profile.initials}
+                      </span>
+                      <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white bg-emerald-500" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[13px] font-bold text-slate-900">{authLoading ? 'Loading...' : profile.name}</span>
+                      <span className="block truncate text-[11px] text-slate-500">{profile.roleLabel}</span>
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    disabled={loggingOut}
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-200 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+                    aria-label="Log out"
+                    title="Log out"
+                  >
+                    <FiLogOut className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </aside>
 
@@ -4134,14 +4221,14 @@ export default function WorkspaceSelection() {
 
         <section
           className={`min-w-0 flex-1 overflow-x-clip pb-16 transition-all duration-300 ease-in-out lg:pb-0 ${
-            sidebarCollapsed ? 'lg:ml-[72px]' : 'lg:ml-[260px]'
+            sidebarCollapsed ? 'lg:ml-[68px]' : 'lg:ml-[280px]'
           }`}
         >
           <header className="sticky top-0 z-20 flex min-h-14 items-center justify-between border-b border-white/20 bg-white/80 px-3 py-2 backdrop-blur-2xl sm:h-[76px] sm:px-5 sm:py-0 lg:px-6" style={{ WebkitBackdropFilter: 'saturate(180%) blur(20px)' }}>
             <div className="flex min-w-0 items-center gap-3 sm:gap-5">
               <button
                 type="button"
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-700 transition hover:bg-slate-100 sm:h-10 sm:w-10"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-700 transition hover:bg-slate-100 sm:h-10 sm:w-10 lg:hidden"
                 onClick={handleToggleSidebar}
                 aria-label={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
               >
@@ -4278,7 +4365,7 @@ export default function WorkspaceSelection() {
                 </div>
                 <p className="mt-2 max-w-md text-sm leading-6 text-slate-600 sm:mt-3">
                   {needsWorkspaceOnboarding
-                    ? 'Choose a business module below to set up your workspace and start your 7-day trial.'
+                    ? 'Choose a business module below to set up your workspace and start your 1-month trial.'
                     : 'Select a workspace to access your business data and modules.'}
                 </p>
                 <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-500 sm:mt-4">
@@ -4329,7 +4416,7 @@ export default function WorkspaceSelection() {
                   <p className="text-sm font-extrabold">{profile.trialShortLabel}</p>
                   <p className="mt-1 text-xs font-semibold">
                     {profile.trialExpired
-                      ? 'Your 7-day workspace trial has expired. Upgrade your package to continue using paid workspace features.'
+                      ? 'Your 1-month workspace trial has expired. Upgrade your package to continue using paid workspace features.'
                       : 'Upgrade any time to keep your CRM workspace active after the trial.'}
                   </p>
                 </div>
@@ -4591,6 +4678,20 @@ export default function WorkspaceSelection() {
       {supportCenterOpen && supportToast ? (
         <div className="fixed bottom-5 left-1/2 z-[80] -translate-x-1/2 rounded-full bg-slate-950 px-4 py-2 text-sm font-bold text-white shadow-xl">
           {supportToast}
+        </div>
+      ) : null}
+      {sidebarTooltip ? (
+        <div
+          className="pointer-events-none fixed z-[100] whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-semibold text-white"
+          style={{
+            top: sidebarTooltip.top,
+            left: sidebarTooltip.left,
+            transform: 'translateY(-50%)',
+            background: '#1e2130',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
+          }}
+        >
+          {sidebarTooltip.label}
         </div>
       ) : null}
       {settingsOpen ? (

@@ -61,7 +61,7 @@ export const defaultPlatformSettings = {
    NOT included in defaultPlatformPlans so it never appears in UpgradeBusiness. */
 export const freeTrialConfig = {
   id: 'free-trial',
-  name: '7-Day Free Trial',
+  name: '1-Month Free Trial',
   monthlyPrice: 0,
   yearlyPrice: 0,
   price: 0,

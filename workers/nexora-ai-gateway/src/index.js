@@ -136,10 +136,10 @@ When asked about features:
 → Answer ONLY from the knowledge base. Never hallucinate features.
 
 When asked for a demo:
-→ Offer: Book Demo, Free Trial (7-day), Contact Sales, WhatsApp Support (+92 319 432 9754).
+→ Offer: Book Demo, Free Trial (1-month), Contact Sales, WhatsApp Support (+92 319 432 9754).
 
 When user is ready to buy:
-→ Guide: 1) Visit nexorasolution.online/signup 2) Start free 7-day trial 3) Book a demo 4) Choose a plan 5) Contact sales for enterprise.
+→ Guide: 1) Visit nexorasolution.online/signup 2) Start free 1-month trial 3) Book a demo 4) Choose a plan 5) Contact sales for enterprise.
 
 === OUTPUT QUALITY ===
 - Clear, professional, trustworthy, business-focused
@@ -260,7 +260,7 @@ All-in-One — POS + CRM + ERP + Inventory in one unified platform.
 Pakistan Focused — Built specifically for Pakistani businesses with local tax, Urdu support, and local pricing.
 Cloud Sync — Real-time sync across unlimited devices and branches.
 Free Setup — Free data migration and staff training included.`,
-  pricing: `7-Day Free Trial — No credit card required.
+  pricing: `1-Month Free Trial — No credit card required.
 Basic Plan: PKR 1,000/month (50% OFF launch price, was PKR 2,000). 1 outlet, core POS, basic reports.
 Standard Plan: PKR 3,000/month (was PKR 5,999). Up to 3 outlets, CRM, inventory, advanced reports, WhatsApp integration.
 Enterprise Plan: Custom pricing. Unlimited outlets, all modules, API access, priority support, custom development.

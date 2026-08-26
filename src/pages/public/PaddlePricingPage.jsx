@@ -41,7 +41,7 @@ const TIERS = [
       'Dashboard & reports',
       'Email support',
       'Free updates',
-      '7-day free trial',
+      '1-month free trial',
     ],
     priceId: {
       month: '', // ← Replace with Paddle monthly price ID (pri_...)
@@ -60,7 +60,7 @@ const TIERS = [
       'Priority support',
       'Dashboard & reports',
       'Free updates',
-      '7-day free trial',
+      '1-month free trial',
     ],
     priceId: {
       month: '', // ← Replace with Paddle monthly price ID (pri_...)
@@ -79,7 +79,7 @@ const TIERS = [
       'Dedicated support',
       'Custom integrations',
       'Custom development',
-      '7-day free trial',
+      '1-month free trial',
     ],
     priceId: {
       month: '', // ← Replace with Paddle monthly price ID (pri_...)
@@ -291,7 +291,7 @@ export default function PaddlePricingPage() {
             </span>
           </h1>
           <p className="mx-auto mt-5 max-w-3xl text-base leading-8 text-slate-500 sm:text-lg">
-            Every plan includes a 7-day free trial. No credit card charged until trial ends.
+            Every plan includes a 1-month free trial. No credit card charged until trial ends.
             Cancel anytime.
           </p>
 
@@ -396,7 +396,7 @@ export default function PaddlePricingPage() {
                       <p className="text-2xl font-medium text-slate-300">—</p>
                     )}
                     <p className="mt-1 text-[13px] text-slate-400">
-                      {billingCycle === 'month' ? 'per month' : 'per year'} &middot; 7-day free trial
+                      {billingCycle === 'month' ? 'per month' : 'per year'} &middot; 1-month free trial
                     </p>
                   </div>
 
@@ -452,7 +452,7 @@ export default function PaddlePricingPage() {
             <HiOutlineCloud className="h-7 w-7" strokeWidth={1.5} />
             </div>
             <h2 className="text-2xl font-medium tracking-[-0.02em] text-slate-900 sm:text-3xl">
-              Every plan starts with a 7-day free trial.
+              Every plan starts with a 1-month free trial.
             </h2>
             <p className="mt-2 max-w-2xl text-[14px] leading-7 text-slate-500">
               No credit card charged until the trial ends. Cancel anytime from your account settings.
