@@ -329,7 +329,7 @@ export default function DashboardLayout() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [collapsed, setCollapsed] = useState(() => {
     if (typeof window === 'undefined') return false
-    return window.localStorage.getItem('nexora-sidebar-collapsed') === 'true'
+    return window.localStorage.getItem('nexora-pos-sidebar-collapsed') === 'true'
   })
   const [productModalOpen, setProductModalOpen] = useState(false)
   const [selectedWorkspace, setSelectedWorkspace] = useState(null)
@@ -712,8 +712,20 @@ export default function DashboardLayout() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return
-    window.localStorage.setItem('nexora-sidebar-collapsed', collapsed ? 'true' : 'false')
+    window.localStorage.setItem('nexora-pos-sidebar-collapsed', collapsed ? 'true' : 'false')
   }, [collapsed])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const handleKeyDown = (event) => {
+      if ((event.metaKey || event.ctrlKey) && event.key && event.key.toLowerCase() === 'b') {
+        event.preventDefault()
+        setCollapsed((c) => !c)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   const effectiveSidebarCollapsed = screen.isMobile || screen.isTablet ? true : collapsed
 

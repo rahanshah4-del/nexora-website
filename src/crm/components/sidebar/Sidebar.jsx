@@ -44,6 +44,9 @@ import {
   HiOutlineSquaresPlus,
   HiOutlineTableCells,
   HiOutlineInboxStack,
+  HiOutlineArrowRightOnRectangle,
+  HiOutlineBars3,
+  HiOutlineChevronRight,
 } from 'react-icons/hi2'
 
 const priorityRoutes = [
@@ -273,41 +276,16 @@ const WHATSAPP_CRM_SIDEBAR_LABELS = {
   team: 'Team Management',
 }
 
-const iconToneClasses = [
-  'border-sky-100 bg-sky-50 text-sky-700',
-  'border-violet-100 bg-violet-50 text-violet-700',
-  'border-emerald-100 bg-emerald-50 text-emerald-700',
-  'border-amber-100 bg-amber-50 text-amber-700',
-  'border-cyan-100 bg-cyan-50 text-cyan-700',
-  'border-rose-100 bg-rose-50 text-rose-700',
-  'border-lime-100 bg-lime-50 text-lime-700',
-  'border-slate-200 bg-slate-50 text-slate-700',
-]
-
-function iconToneForItem(item = {}) {
-  const text = `${item.key || ''} ${item.label || ''} ${item.to || ''}`.toLowerCase()
-  if (text.includes('setting') || text.includes('maintenance')) return iconToneClasses[7]
-  if (text.includes('whatsapp') || text.includes('support') || text.includes('notification')) return iconToneClasses[2]
-  if (text.includes('invoice') || text.includes('fee') || text.includes('account') || text.includes('payment') || text.includes('expense')) return iconToneClasses[3]
-  if (text.includes('report') || text.includes('analytic') || text.includes('dashboard')) return iconToneClasses[0]
-  if (text.includes('school') || text.includes('attendance') || text.includes('team') || text.includes('customer') || text.includes('student')) return iconToneClasses[1]
-  if (text.includes('transport') || text.includes('fleet') || text.includes('vehicle') || text.includes('booking')) return iconToneClasses[4]
-  if (text.includes('order') || text.includes('menu') || text.includes('table') || text.includes('kitchen') || text.includes('pos')) return iconToneClasses[5]
-  return iconToneClasses[Math.abs(String(item.to || item.label || '').split('').reduce((sum, char) => sum + char.charCodeAt(0), 0)) % iconToneClasses.length]
-}
-
-function HdSidebarIcon({ icon: Icon, tone, active = false, disabled = false }) {
+function SidebarIcon({ icon: Icon, active = false, disabled = false, className }) {
   return (
-    <span
+    <Icon
       className={cn(
-        'grid h-8 w-8 shrink-0 place-items-center rounded-xl border transition duration-150',
-        tone,
-        active ? 'border-indigo-200 bg-indigo-50 text-indigo-700 shadow-sm' : 'group-hover:border-sky-200 group-hover:bg-white group-hover:text-sky-700',
+        'h-[18px] w-[18px] shrink-0 stroke-[1.8] transition-colors duration-150',
+        active ? 'text-[#4F46E5]' : 'text-slate-500',
         disabled ? 'opacity-45 grayscale' : '',
+        className,
       )}
-    >
-      <Icon className="h-[18px] w-[18px] stroke-[2.1]" />
-    </span>
+    />
   )
 }
 
@@ -323,7 +301,6 @@ const SidebarNavItem = memo(function SidebarNavItem({ item, collapsed, onNavigat
   const Icon = item.icon || HiOutlineSquares2X2
   const label = item.label || compactLabels[item.to]
   const disabled = Boolean(item.comingSoon)
-  const tone = iconToneForItem(item)
   const { isNew, markSeen } = useFeatureDiscovery()
   const featureKey = featureKeyForRoute(item.to)
   const showBadge = featureKey && isNew(featureKey)
@@ -333,40 +310,24 @@ const SidebarNavItem = memo(function SidebarNavItem({ item, collapsed, onNavigat
     onNavigate?.()
   }
 
-  const content = (
-    <>
-      {!disabled ? null : (
-        <span className="absolute right-2 top-1/2 hidden -translate-y-1/2 rounded-full bg-slate-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.08em] text-slate-500 group-hover:bg-slate-200 sm:inline">
-          Soon
-        </span>
-      )}
-      {showBadge && !collapsed ? (
-        <span className="absolute right-2 top-1/2 -translate-y-1/2 z-10">
-          <FeatureBadge />
-        </span>
-      ) : null}
-      <HdSidebarIcon icon={Icon} tone={tone} disabled={disabled} />
-      {!collapsed ? <span className={`truncate ${showBadge ? 'pr-14' : 'pr-9'}`}>{label}</span> : null}
-      {collapsed ? (
-        <span className="sidebar-tooltip pointer-events-none absolute left-full top-1/2 z-50 ml-3 hidden -translate-y-1/2 whitespace-nowrap rounded-xl border border-slate-200 bg-slate-950 px-3 py-1.5 text-xs font-bold text-white shadow-lg group-hover:block">
-          {label}
-        </span>
-      ) : null}
-    </>
-  )
-
   if (disabled) {
     return (
       <button
         type="button"
         onClick={onNavigate}
         className={cn(
-          'focus-ring group relative flex w-full cursor-not-allowed items-center rounded-xl border border-transparent text-[13px] font-semibold text-slate-400 transition-colors duration-150 ease-out hover:border-slate-200/80 hover:bg-white hover:text-slate-600',
-          collapsed ? 'justify-center px-0 py-1.5' : 'gap-2.5 px-2.5 py-0.5',
+          'focus-ring group relative flex w-full cursor-not-allowed items-center rounded-[10px] text-[13px] font-medium text-slate-400 transition-colors duration-150 ease-out hover:text-slate-600',
+          collapsed ? 'justify-center py-1.5' : 'gap-2.5 px-2.5 py-1.5',
         )}
         title={`${label} - Coming Soon / Not included in your selected business type`}
       >
-        {content}
+        {!disabled ? null : (
+          <span className="absolute right-2 top-1/2 hidden -translate-y-1/2 rounded-full bg-slate-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.08em] text-slate-500 group-hover:bg-slate-200 sm:inline">
+            Soon
+          </span>
+        )}
+        <SidebarIcon icon={Icon} disabled={disabled} />
+        {!collapsed ? <span className="truncate">{label}</span> : null}
       </button>
     )
   }
@@ -380,21 +341,88 @@ const SidebarNavItem = memo(function SidebarNavItem({ item, collapsed, onNavigat
       title={label}
       className={({ isActive }) =>
         cn(
-          'focus-ring group relative flex items-center rounded-xl text-[13px] font-semibold transition-colors duration-150 ease-out',
-          collapsed ? 'justify-center px-0 py-1.5' : 'gap-2.5 px-2.5 py-0.5',
+          'focus-ring group relative flex w-full items-center rounded-[10px] text-[13px] transition-colors duration-150 ease-out',
+          collapsed ? 'justify-center py-1.5' : 'gap-2.5 px-2.5 py-1.5',
           isActive
-            ? 'border border-sky-100 bg-gradient-to-r from-sky-50 via-white to-indigo-50 text-slate-950 shadow-sm'
-            : 'border border-transparent text-slate-600 hover:border-slate-200/80 hover:bg-white hover:text-slate-950',
+            ? 'bg-[#EEEEFF] font-semibold text-[#4F46E5]'
+            : 'font-medium text-slate-600 hover:text-[#4F46E5]',
         )
       }
     >
       {({ isActive }) => (
         <>
           {isActive && !collapsed ? (
-            <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-gradient-to-b from-sky-400 to-indigo-500" />
+            <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-[#4F46E5]" />
           ) : null}
-          <HdSidebarIcon icon={Icon} tone={tone} active={isActive} />
+          <SidebarIcon icon={Icon} active={isActive} />
           {!collapsed ? <span className="truncate">{label}</span> : null}
+          {collapsed ? (
+            <span className="sidebar-tooltip pointer-events-none absolute left-full top-1/2 z-50 ml-3 hidden -translate-y-1/2 whitespace-nowrap rounded-lg bg-[#1E2130] px-3 py-1.5 text-xs font-medium text-white shadow-[0_4px_12px_rgba(0,0,0,0.25)] group-hover:block">
+              {label}
+            </span>
+          ) : null}
+        </>
+      )}
+    </NavLink>
+  )
+})
+
+/* Accordion sub-item — 4px dot bullet + label, indented. No icon container. */
+const AccordionSubItem = memo(function AccordionSubItem({ item, collapsed, onNavigate }) {
+  const label = item.label || compactLabels[item.to]
+  const disabled = Boolean(item.comingSoon)
+  const { isNew, markSeen } = useFeatureDiscovery()
+  const featureKey = featureKeyForRoute(item.to)
+
+  function handleNav() {
+    if (featureKey) markSeen(featureKey)
+    onNavigate?.()
+  }
+
+  if (disabled) {
+    return (
+      <button
+        type="button"
+        onClick={onNavigate}
+        title={`${label} - Coming Soon`}
+        className={cn(
+          'focus-ring group relative flex w-full cursor-not-allowed items-center rounded-[10px] py-1 text-[13px] text-slate-400 transition-colors duration-150 hover:text-slate-600',
+          collapsed ? 'justify-center' : 'pl-3',
+        )}
+      >
+        <span className="h-1 w-1 shrink-0 rounded-full bg-slate-300" />
+        {!collapsed ? <span className="ml-2.5 truncate">{label}</span> : null}
+      </button>
+    )
+  }
+
+  return (
+    <NavLink
+      to={item.to}
+      onClick={handleNav}
+      title={label}
+      className={({ isActive }) =>
+        cn(
+          'focus-ring group relative flex w-full items-center rounded-[10px] py-1 text-[13px] transition-colors duration-150 ease-out',
+          collapsed ? 'justify-center' : 'pl-3',
+          isActive
+            ? 'bg-[#EEEEFF] font-semibold text-[#4F46E5]'
+            : 'font-medium text-[#4A5068] hover:text-[#4F46E5]',
+        )
+      }
+    >
+      {({ isActive }) => (
+        <>
+          {isActive && !collapsed ? (
+            <span className="absolute left-0 top-1/2 h-4 w-[3px] -translate-y-1/2 rounded-r-full bg-[#4F46E5]" />
+          ) : null}
+          <span className={cn('h-1 w-1 shrink-0 rounded-full', isActive ? 'bg-[#4F46E5]' : 'bg-[#CBD0E0] group-hover:bg-[#4F46E5]')} />
+          {!collapsed ? <span className="ml-2.5 truncate">{label}</span> : null}
+          {collapsed ? (
+            <span className="sidebar-tooltip pointer-events-none absolute left-full top-1/2 z-50 ml-3 hidden -translate-y-1/2 whitespace-nowrap rounded-lg bg-[#1E2130] px-3 py-1.5 text-xs font-medium text-white shadow-[0_4px_12px_rgba(0,0,0,0.25)] group-hover:block">
+              {label}
+            </span>
+          ) : null}
         </>
       )}
     </NavLink>
@@ -560,9 +588,7 @@ const RestaurantAccordionSidebar = memo(function RestaurantAccordionSidebar({ it
               'border border-amber-100/70 bg-gradient-to-r from-amber-50/60 via-white/80 to-orange-50/60 text-amber-800 hover:border-amber-300 hover:shadow-sm hover:shadow-amber-200/40',
             )}
           >
-            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl border border-amber-200/60 bg-amber-50 text-amber-600 shadow-sm group-hover:border-amber-300 group-hover:bg-amber-100 group-hover:text-amber-700">
-              <HiOutlineCalculator className="h-[18px] w-[18px] stroke-[2.1]" />
-            </span>
+            <HiOutlineCalculator className="h-[18px] w-[18px] shrink-0 stroke-[1.8] text-amber-600" />
             {!collapsed ? (
               <span className="flex flex-1 items-center justify-between truncate">
                 <span className="truncate">{posTillItem.label}</span>
@@ -611,20 +637,15 @@ const RestaurantAccordionSidebar = memo(function RestaurantAccordionSidebar({ it
               type="button"
               onClick={(e) => { e.stopPropagation(); toggleGroup(group.id) }}
               onKeyDown={(e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggleGroup(group.id) } }}
-              className="focus-ring flex w-full items-center gap-2 rounded-xl px-2.5 py-1 text-xs font-semibold text-slate-500 transition-colors duration-150 hover:bg-slate-50 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800/40 dark:hover:text-slate-200"
+              className={cn(
+                'focus-ring flex w-full items-center gap-2 rounded-[10px] px-2.5 py-1.5 text-[13px] font-medium transition-colors duration-150',
+                isOpen ? 'text-[#4F46E5]' : 'text-[#3E4460] hover:text-[#4F46E5]',
+              )}
               aria-expanded={isOpen}
             >
-              <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-lg ${group.color}`}>
-                <GroupIcon className="h-3.5 w-3.5" />
-              </span>
+              <GroupIcon className={cn('h-3.5 w-3.5 shrink-0 stroke-[1.8]', isOpen ? 'text-[#4F46E5]' : 'text-[#8890A4]')} />
               <span className="flex-1 truncate text-left">{group.label}</span>
-              <motion.span
-                animate={{ rotate: isOpen ? 0 : -180 }}
-                transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
-                className="shrink-0"
-              >
-                <HiOutlineChevronDown className="h-3 w-3" />
-              </motion.span>
+              <HiOutlineChevronDown className={cn('h-2.5 w-2.5 shrink-0 transition-transform duration-200', isOpen ? '' : '-rotate-90')} />
             </button>
 
             {/* Group items — smooth framer-motion height animation */}
@@ -634,14 +655,12 @@ const RestaurantAccordionSidebar = memo(function RestaurantAccordionSidebar({ it
               transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
               className="overflow-hidden"
             >
-              <div className="ml-2 space-y-0.5 border-l-2 border-slate-100 pl-2 dark:border-slate-700">
+              <div className="space-y-0.5">
                 {groupItems.map(item => (
-                  <SidebarNavItem key={item.key} item={item} collapsed={collapsed} onNavigate={onNavigate} />
+                  <AccordionSubItem key={item.key} item={item} collapsed={collapsed} onNavigate={onNavigate} />
                 ))}
                 {group.id === 'menu' && (
-                  <>
-                    <CompactNavLink to="/app/kitchen-production/reports" label="Production Reports" icon={HiOutlineDocumentChartBar} collapsed={collapsed} onNavigate={onNavigate} />
-                  </>
+                  <CompactNavLink to="/app/kitchen-production/reports" label="Production Reports" collapsed={collapsed} onNavigate={onNavigate} />
                 )}
               </div>
             </motion.div>
@@ -671,8 +690,8 @@ const RestaurantAccordionSidebar = memo(function RestaurantAccordionSidebar({ it
   )
 })
 
-/* Compact nav link for sub-items */
-function CompactNavLink({ to, label, icon: Icon, collapsed, onNavigate }) {
+/* Compact nav link for sub-items — dot bullet, no icon container. */
+function CompactNavLink({ to, label, collapsed, onNavigate }) {
   return (
     <NavLink
       to={to}
@@ -680,37 +699,52 @@ function CompactNavLink({ to, label, icon: Icon, collapsed, onNavigate }) {
       title={label}
       className={({ isActive }) =>
         cn(
-          'focus-ring group relative flex items-center rounded-lg text-xs font-medium transition-colors duration-150 ease-out',
-          collapsed ? 'justify-center px-0 py-1.5' : 'gap-2 px-3 py-0.5',
+          'focus-ring group relative flex items-center rounded-[10px] py-1 text-[13px] transition-colors duration-150 ease-out',
+          collapsed ? 'justify-center' : 'pl-3',
           isActive
-            ? 'bg-sky-50 text-sky-700'
-            : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700',
+            ? 'bg-[#EEEEFF] font-semibold text-[#4F46E5]'
+            : 'font-medium text-[#4A5068] hover:text-[#4F46E5]',
         )
       }
     >
-      {Icon ? (
-        <span className="grid h-5 w-5 shrink-0 place-items-center rounded-lg bg-slate-100 text-slate-500">
-          <Icon className="h-3 w-3" />
-        </span>
-      ) : (
-        <span className="inline-flex h-1.5 w-1.5 shrink-0 rounded-full bg-slate-300" />
-      )}
-      {!collapsed ? <span className="truncate">{label}</span> : null}
+      <span className={cn('h-1 w-1 shrink-0 rounded-full', 'bg-[#CBD0E0] group-hover:bg-[#4F46E5]')} />
+      {!collapsed ? <span className="ml-2.5 truncate">{label}</span> : null}
     </NavLink>
   )
 }
 
-function Brand({ collapsed, workspaceName, businessTitle }) {
+function Brand({ collapsed, workspaceName, businessTitle, onToggleCollapse }) {
+  if (collapsed) {
+    return (
+      <button
+        type="button"
+        onClick={onToggleCollapse}
+        className="focus-ring mx-auto grid h-8 w-8 shrink-0 place-items-center"
+        aria-label="Expand sidebar"
+        title="Expand sidebar"
+      >
+        <img src={logoUrl} alt="Nexora logo" className="h-7 w-7 rounded-lg object-contain" />
+      </button>
+    )
+  }
+
   return (
-    <div className={`flex items-center ${collapsed ? 'justify-center' : 'gap-2'} px-2 py-1`}>
-      <div className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-[1rem] border border-slate-200 bg-slate-950 p-1.5 shadow-sm">
-        <img src={logoUrl} alt="Nexora logo" className="h-full w-full object-contain" />
+    <div className="flex items-center gap-2.5 px-1 py-1">
+      <img src={logoUrl} alt="Nexora logo" className="h-7 w-7 shrink-0 rounded-lg object-contain" />
+      <div className="min-w-0 flex-1 leading-tight">
+        <p className="truncate text-[15px] font-bold tracking-tight text-slate-900">{businessTitle}</p>
+        <p className="truncate text-[10px] font-medium text-slate-400">{workspaceName}</p>
       </div>
-      {!collapsed ? (
-        <div className="min-w-0 leading-tight">
-          <p className="truncate text-sm font-semibold tracking-tight text-slate-950">NEXORA SOLUTION</p>
-          <p className="truncate text-[10px] font-medium text-slate-500">{businessTitle} / {workspaceName}</p>
-        </div>
+      {onToggleCollapse ? (
+        <button
+          type="button"
+          onClick={onToggleCollapse}
+          className="focus-ring grid h-8 w-8 shrink-0 place-items-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+          aria-label="Collapse sidebar"
+          title="Collapse sidebar"
+        >
+          <HiOutlineBars3 className="h-5 w-5 stroke-[1.8]" />
+        </button>
       ) : null}
     </div>
   )
@@ -832,14 +866,48 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
 
   const shouldCollapse = !mobile && collapsed
 
+  const userName = useMemo(
+    () => firebaseUser?.displayName || userDoc?.displayName || userDoc?.name || workspaceName || 'Nexora User',
+    [firebaseUser, userDoc, workspaceName],
+  )
+  const userInitials = useMemo(() => {
+    const parts = (userName || '').split(/\s+/).filter(Boolean).slice(0, 2)
+    return parts.map((part) => part[0]?.toUpperCase()).join('') || 'N'
+  }, [userName])
+  const userRole = userIsOwner ? 'Owner' : userIsAdmin ? 'Admin' : 'Member'
+
   const content = useMemo(() => (
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
-      <Brand collapsed={shouldCollapse} workspaceName={workspaceName} businessTitle={businessTitle} />
-      <div className={`mt-1 px-2 ${shouldCollapse ? 'hidden' : ''}`}>
-        <div className="rounded-[0.85rem] border border-slate-200/70 bg-slate-50/80 px-2.5 py-1">
-          <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-slate-400">Workspace</p>
-          <p className="mt-0.5 truncate text-[11px] font-semibold text-slate-700">{businessTitle}</p>
-        </div>
+      <Brand collapsed={shouldCollapse} workspaceName={workspaceName} businessTitle={businessTitle} onToggleCollapse={onToggleCollapse} />
+
+      {/* Workspace card */}
+      <div className="mt-2 px-2">
+        {shouldCollapse ? (
+          <button
+            type="button"
+            onClick={handleSwitchProduct}
+            className="focus-ring mx-auto grid h-[26px] w-[26px] place-items-center rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 text-[11px] font-bold text-white"
+            aria-label="Switch workspace"
+            title="Switch workspace"
+          >
+            {businessTitle ? businessTitle.charAt(0).toUpperCase() : 'N'}
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={handleSwitchProduct}
+            className="focus-ring flex w-full items-center gap-2.5 rounded-[10px] border border-[#EAECF0] bg-[#F8F9FC] px-2.5 py-2 text-left transition-colors duration-150 hover:border-slate-300"
+          >
+            <span className="grid h-[26px] w-[26px] shrink-0 place-items-center rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 text-[11px] font-bold text-white">
+              {businessTitle ? businessTitle.charAt(0).toUpperCase() : 'N'}
+            </span>
+            <span className="min-w-0 flex-1 leading-tight">
+              <span className="block truncate text-xs font-medium text-slate-800">{businessTitle}</span>
+              <span className="block truncate text-[10px] text-slate-400">Workspace</span>
+            </span>
+            <HiOutlineChevronRight className="h-4 w-4 shrink-0 text-slate-400" />
+          </button>
+        )}
       </div>
 
       <nav className={`mt-2 min-h-0 flex-1 overflow-y-auto px-2 pb-2 pr-1.5 ${shouldCollapse ? 'space-y-1.5' : 'space-y-0.5'}`}>
@@ -873,43 +941,58 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
         )}
       </nav>
 
-      {!shouldCollapse && (
-        <div className="shrink-0 space-y-2 pb-1">
-          <div className="px-2">
+      {/* User card — pinned bottom */}
+      <div className="shrink-0 border-t border-[#EAECF0] px-2 pb-1 pt-2">
+        {shouldCollapse ? (
+          <button
+            type="button"
+            onClick={handleSwitchProduct}
+            className="focus-ring mx-auto grid h-8 w-8 place-items-center rounded-full bg-gradient-to-br from-indigo-500 to-pink-500 text-xs font-bold text-white"
+            aria-label="Account"
+            title={`${userName} — ${userRole}`}
+          >
+            {userInitials}
+          </button>
+        ) : (
+          <div className="flex items-center gap-2.5 py-1">
             <button
               type="button"
-              className="focus-ring flex h-8 w-full items-center justify-center rounded-xl border border-slate-200/80 bg-white/80 px-3 text-[11px] font-semibold text-slate-700 shadow-sm transition-colors duration-150 hover:border-sky-200 hover:text-sky-700"
               onClick={handleSwitchProduct}
+              className="focus-ring flex min-w-0 flex-1 items-center gap-2.5 text-left"
             >
-              Switch Product
+              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-gradient-to-br from-indigo-500 to-pink-500 text-xs font-bold text-white">
+                {userInitials}
+              </span>
+              <span className="min-w-0 flex-1 leading-tight">
+                <span className="block truncate text-xs font-medium text-slate-800">{userName}</span>
+                <span className="block truncate text-[10px] text-slate-400">{userRole}</span>
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={handleSwitchProduct}
+              className="focus-ring grid h-8 w-8 shrink-0 place-items-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+              aria-label="Switch product"
+              title="Switch product"
+            >
+              <HiOutlineArrowRightOnRectangle className="h-[18px] w-[18px] stroke-[1.8]" />
             </button>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
-  ), [businessTitle, handleSwitchProduct, onNavigate, shouldCollapse, sidebarItems, workspaceName, businessType])
+  ), [businessTitle, businessType, handleSwitchProduct, onNavigate, onToggleCollapse, shouldCollapse, sidebarItems, userInitials, userName, userRole, workspaceName])
 
   if (!mobile) {
     return (
       <>
         <aside
-          className="sidebar-aside hidden print:hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-20 lg:block lg:border-r lg:border-slate-200/80 lg:bg-white/[0.95] lg:shadow-[12px_0_44px_-38px_rgba(15,23,42,0.45)] lg:backdrop-blur-sm" style={{ willChange: 'transform', transform: 'translateZ(0)' }}
+          className="sidebar-aside hidden print:hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-20 lg:block lg:border-r lg:border-[#E8EAF0] lg:bg-white" style={{ willChange: 'transform', transform: 'translateZ(0)' }}
           data-sidebar={shouldCollapse ? 'collapsed' : 'expanded'}
         >
           <div className={shouldCollapse ? 'sidebar-shell sidebar-shell-collapsed' : 'sidebar-shell sidebar-shell-expanded'}>
             {content}
           </div>
-          {onToggleCollapse ? (
-            <button
-              type="button"
-              className="group absolute -right-3 bottom-7 z-30 grid h-7 w-7 place-items-center rounded-full border border-slate-200 bg-white text-sm font-semibold text-slate-400 shadow-sm ring-1 ring-black/5 transition-all duration-150 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-600 hover:shadow-md hover:shadow-sky-200/50 hover:ring-sky-200 active:scale-95 cursor-pointer"
-              onClick={onToggleCollapse}
-              aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-              title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            >
-              <span className="transition-transform duration-150 group-hover:scale-110">{collapsed ? '›' : '‹'}</span>
-            </button>
-          ) : null}
         </aside>
       </>
     )

@@ -30,7 +30,7 @@
 @layer components {
   :root {
     --nexora-sidebar-width: 16rem;
-    --nexora-sidebar-collapsed-width: 4rem;
+    --nexora-sidebar-collapsed-width: 3.75rem;
     --nexora-content-gap: 1rem;
   }
 

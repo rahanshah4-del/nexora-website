@@ -30,8 +30,8 @@ export function render(url, options = {}) {
   const htmlLang = urlLang ? urlLang[1] : 'en'
 
   const meta = {
-    title: options.title || 'Nexora POS Software Pakistan | Nexora Solution',
-    description: options.description || 'Nexora offers Pakistan\'s leading POS software for restaurant, retail, school ERP and WhatsApp CRM teams with unified business workflows.',
+    title: options.title || 'Nexora Solution — POS, ERP & CRM Software Pakistan | Free 1-Month Trial',
+    description: options.description || 'Nexora is Pakistan\'s #1 AI-powered POS, ERP & CRM software for restaurants, retail stores, schools and businesses. Free 1-month trial. PKR pricing. Works offline. Local support. Try free today.',
     canonical: options.canonical || `https://nexorasolution.online${canonicalPath(url)}`,
     ogImage: options.ogImage || 'https://nexorasolution.online/nexora-brand-logo.png',
     jsonLd: options.jsonLd || '',

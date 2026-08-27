@@ -23,8 +23,8 @@ function buildPage({ path, title, description, keyword, image, section, ...extra
 export const seoMetadata = {
   '/': buildPage({
     path: '/',
-    title: 'Nexora POS Software Pakistan | Nexora Solution',
-    description: 'Nexora offers Pakistan\'s leading POS software for restaurant, retail, school ERP and WhatsApp CRM teams with unified business workflows.',
+    title: 'Nexora Solution — POS, ERP & CRM Software Pakistan | Free 1-Month Trial',
+    description: 'Nexora is Pakistan\'s #1 AI-powered POS, ERP & CRM software for restaurants, retail stores, schools and businesses. Free 1-month trial. PKR pricing. Works offline. Local support. Try free today.',
     keyword: 'POS Software Pakistan',
     image: `${HOST}/nexora-brand-logo.png`,
     softwareApplication: {

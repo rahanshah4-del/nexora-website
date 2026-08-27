@@ -115,7 +115,8 @@ export function createLocalBusinessSchema() {
     address: {
       '@type': 'PostalAddress',
       addressCountry: 'PK',
-      addressRegion: 'Pakistan',
+      addressRegion: 'Punjab',
+      addressLocality: 'Lahore',
     },
     priceRange: '$$',
     areaServed: 'Pakistan',

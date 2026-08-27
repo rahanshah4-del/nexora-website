@@ -254,6 +254,31 @@ export default function HomepageSections() {
       {/* ── Client Reviews / Testimonials ── */}
       <PublicTestimonials />
 
+      {/* ── SEO Content ── */}
+      <section data-reveal className="bg-white py-16 sm:py-20 lg:py-24">
+        <div className="mx-auto max-w-3xl px-5 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <span className="inline-flex rounded-full border border-blue-100 bg-blue-50/70 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.18em] text-blue-600 shadow-sm">Why Nexora</span>
+            <h2 className="website-section-heading mt-5 text-3xl font-black tracking-tight text-slate-950 sm:text-5xl">Pakistan&rsquo;s Most <span className="marker-highlight marker-highlight-blue">Complete Business Software</span> Platform</h2>
+          </div>
+          <div className="mt-10 space-y-8">
+            <p className="text-[15px] leading-8 text-slate-600">Nexora Solution is Pakistan&rsquo;s all-in-one AI-powered business operating system trusted by restaurants, retail stores, pharmacies, schools, transport fleets and growing enterprises across Pakistan, UAE, Bahrain and Saudi Arabia. From a single-counter shop in Lahore to a multi-branch chain in Karachi, Nexora gives every business the tools to manage operations, staff, customers and finances from one unified platform.</p>
+            <div>
+              <h3 className="text-lg font-extrabold text-slate-950">Built for Pakistani Businesses</h3>
+              <p className="mt-3 text-[15px] leading-8 text-slate-600">Unlike international software that requires expensive setup and foreign currency payments, Nexora is built specifically for the Pakistani market — with PKR billing, local customer support, offline-capable POS modules, and pricing that works for businesses of every size. Every plan includes free data migration, free staff training, and a dedicated onboarding team.</p>
+            </div>
+            <div>
+              <h3 className="text-lg font-extrabold text-slate-950">One Platform. Every Department.</h3>
+              <p className="mt-3 text-[15px] leading-8 text-slate-600">Nexora replaces the disconnected mix of spreadsheets, WhatsApp groups and paper registers that most Pakistani businesses still rely on. The Restaurant POS handles orders, kitchen display and billing. The School ERP manages students, attendance and fee collection. The Retail POS covers inventory, sales and supplier management. The WhatsApp CRM automates customer communication. All modules share the same customer database, reports and team access controls — so nothing gets lost between departments.</p>
+            </div>
+            <div>
+              <h3 className="text-lg font-extrabold text-slate-950">Start Free — No Credit Card Required</h3>
+              <p className="mt-3 text-[15px] leading-8 text-slate-600">Every Nexora plan starts with a free 1-month trial. No credit card required. No complicated setup. Sign up today and your business will be running on Nexora within the same day — with full support from our Pakistan-based team every step of the way.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── FAQ Section ── */}
       <section data-reveal className="bg-white py-16 sm:py-20 lg:py-24">
         <div className="mx-auto max-w-3xl px-5 sm:px-6 lg:px-8">
@@ -363,7 +388,7 @@ export default function HomepageSections() {
                 </a>
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3.5 py-1.5 text-[11px] font-bold text-white backdrop-blur-sm">
                   <HiOutlineMapPin className="text-sm text-rose-400" />
-                  Pakistan &amp; Dubai
+                  🇵🇰 Lahore, Punjab, Pakistan
                 </span>
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3.5 py-1.5 text-[11px] font-bold text-white backdrop-blur-sm transition hover:bg-white/20 hover:border-white/30">
                   <HiOutlineGlobeAlt className="text-sm" />
