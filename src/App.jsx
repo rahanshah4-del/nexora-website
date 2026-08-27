@@ -5,6 +5,7 @@ import Header from './components/Header'
 import trustBadges from './components/trustBadges'
 import './styles/mobile-ai-animations.css'
 import { initMobileAiAnimations } from './lib/mobileAiAnimations.js'
+import HomepageSections from './sections/HomepageSections.jsx'
 
 /* Isolated error boundary for each lazy section so a stale chunk never crashes the whole page.
    On error, logs the issue and shows a visible retry section instead of silent <div className="hidden" />. */
@@ -39,7 +40,6 @@ const NewUserOfferPopup = lazy(() => import('./components/NewUserOfferPopup.jsx'
 const StickyCTA = lazy(() => import('./components/StickyCTA.jsx'))
 const ExitIntentPopup = lazy(() => import('./components/ExitIntentPopup.jsx'))
 const AIAssistant = lazy(() => import('./components/AIAssistant.jsx'))
-const HomepageSections = lazy(() => import('./sections/HomepageSections.jsx'))
 
 function useIdleVisible(rootMargin = '900px') {
   const ref = useRef(null)
@@ -89,7 +89,6 @@ function useIdleVisible(rootMargin = '900px') {
 
 function App({ initialSectionId = '' }) {
   const [previewRef, previewReady] = useIdleVisible('700px')
-  const [sectionsRef, sectionsReady] = useIdleVisible('1000px')
   const [chatReady, setChatReady] = useState(false)
 
   useEffect(() => {
@@ -176,32 +175,14 @@ function App({ initialSectionId = '' }) {
       <div id="pricing" style={{ scrollMarginTop: '4rem' }} />
       <div id="contact" style={{ scrollMarginTop: '4rem' }} />
 
-      <div ref={sectionsRef} className="min-h-[200px]">
-        {sectionsReady ? (
-          <Suspense fallback={
-            <div className="space-y-6 px-5 py-12 sm:px-8">
-              <div className="mx-auto h-8 w-48 animate-pulse rounded-xl bg-slate-100" />
-              <div className="mx-auto grid max-w-5xl gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                {[1, 2, 3].map((i) => <div key={i} className="h-52 animate-pulse rounded-2xl bg-slate-100" />)}
-              </div>
-              <div className="h-32 animate-pulse rounded-2xl bg-slate-100" />
-            </div>
-          }>
-            <SectionErrorBoundary>
-              <HomepageSections />
-            </SectionErrorBoundary>
-          </Suspense>
-        ) : (
-          /* Initial skeleton while observer hasn't fired yet — prevents blank gap */
-          <div className="space-y-6 px-5 py-12 sm:px-8">
-            <div className="mx-auto h-8 w-48 animate-pulse rounded-xl bg-slate-100" />
-            <div className="mx-auto grid max-w-5xl gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {[1, 2, 3].map((i) => <div key={i} className="h-52 animate-pulse rounded-2xl bg-slate-100" />)}
-            </div>
-            <div className="h-32 animate-pulse rounded-2xl bg-slate-100" />
-          </div>
-        )}
-      </div>
+      {/* HomepageSections is rendered synchronously (no lazy / IntersectionObserver /
+          Suspense gating). A previous version lazy-loaded it behind an idle observer,
+          which could leave the whole below-hero region as one tall blank div when the
+          observer never fired or the chunk never resolved. Rendering it directly keeps
+          the content always present and visible. */}
+      <SectionErrorBoundary>
+        <HomepageSections />
+      </SectionErrorBoundary>
 
       {chatReady ? <Suspense fallback={null}><SectionErrorBoundary><TawkChat /></SectionErrorBoundary></Suspense> : null}
       <Suspense fallback={null}><NewUserOfferPopup /></Suspense>
