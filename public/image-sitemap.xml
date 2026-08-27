@@ -54,6 +54,16 @@
       <image:caption>Nexora Solution — icons</image:caption>
     </image:image>
     <image:image>
+      <image:loc>https://nexorasolution.online/logo-192.png</image:loc>
+      <image:title>logo 192</image:title>
+      <image:caption>Nexora Solution — logo 192</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://nexorasolution.online/logo-512.png</image:loc>
+      <image:title>logo 512</image:title>
+      <image:caption>Nexora Solution — logo 512</image:caption>
+    </image:image>
+    <image:image>
       <image:loc>https://nexorasolution.online/nexora-ai-logo.png</image:loc>
       <image:title>nexora ai logo</image:title>
       <image:caption>Nexora Solution — nexora ai logo</image:caption>
@@ -87,6 +97,11 @@
       <image:loc>https://nexorasolution.online/nexora-pwa-install-512.png</image:loc>
       <image:title>nexora pwa install 512</image:title>
       <image:caption>Nexora Solution — nexora pwa install 512</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://nexorasolution.online/nexora_icon_set/icon.ico</image:loc>
+      <image:title>icon</image:title>
+      <image:caption>Nexora Solution — icon</image:caption>
     </image:image>
   </url>
   <url>

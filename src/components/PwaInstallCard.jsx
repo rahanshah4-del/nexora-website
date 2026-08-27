@@ -67,15 +67,15 @@ export default function PwaInstallCard() {
   return (
     <section className="rounded-[1.75rem] border border-slate-200 bg-white/95 p-5 shadow-sm shadow-slate-400/5 backdrop-blur-md sm:max-w-xl">
       <div className="flex items-center gap-4">
-        <div className="grid h-14 w-14 place-items-center rounded-3xl bg-sky-50 text-sky-700 shadow-sm shadow-sky-400/10">
+        <div className="grid h-14 w-14 place-items-center">
           <img
             src="/nexora-brand-logo.png"
             alt="Nexora Solution app icon"
-            width="40"
-            height="40"
+            width="56"
+            height="56"
             loading="lazy"
             decoding="async"
-            className="h-10 w-10 rounded-2xl object-cover"
+            className="h-full w-full object-contain"
           />
         </div>
         <div className="flex-1">

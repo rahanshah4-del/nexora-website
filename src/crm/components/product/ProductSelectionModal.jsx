@@ -13,7 +13,7 @@ import {
   HiOutlineUserGroup,
 } from 'react-icons/hi2'
 import { useNavigate } from 'react-router-dom'
-import logoUrl from '../../../assets/logo/nexora-logo.svg'
+import logoUrl from '../../../assets/logo/nexora-logo.png'
 import { cn } from '../../utils/cn.js'
 import { formatSessionTime, isValidWorkspace, workspaceLabel } from '../../lib/workspaceSession.js'
 import { businessWorkspaceCatalog, labelForBusinessModule, labelForBusinessType, moduleCatalog, packageNameForPlan } from '../../data/moduleAccess.js'
@@ -185,7 +185,7 @@ function ProductSelectionModal({
 
             <div className="relative flex items-start justify-between gap-4">
               <div className="flex min-w-0 items-center gap-3">
-                <span className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 p-1.5 shadow-lg shadow-slate-950/15">
+                <span className="grid h-12 w-12 shrink-0 place-items-center">
                   <img src={logoUrl} alt="Nexora logo" className="h-full w-full object-contain" />
                 </span>
                 <div className="min-w-0">

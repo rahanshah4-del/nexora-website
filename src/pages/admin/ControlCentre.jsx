@@ -70,7 +70,7 @@ import {
   maintenanceTargets,
   normalizeMaintenanceConfig,
 } from '../../lib/maintenanceMode.js'
-import logoUrl from '../../assets/logo/nexora-logo.svg'
+import logoUrl from '../../assets/logo/nexora-logo.png'
 import { loadPublicReviews, updateReviewStatus } from '../../crm/data/reviewStorage.js'
 import ClientReviews from '../../crm/components/admin/ClientReviewsPanel.jsx'
 import {

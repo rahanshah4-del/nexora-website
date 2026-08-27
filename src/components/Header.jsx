@@ -295,7 +295,7 @@ function Header() {
       <div className="mx-auto flex h-14 max-w-7xl items-center gap-4 px-4 sm:px-6 lg:px-8">
         {/* ── Logo ── */}
         <Link to="/" className="shrink-0" onClick={closeAll}>
-          <NexoraLogo compact textClassName="[&>p:first-child]:text-sm [&>p:first-child]:tracking-[0.1em] [&>p:last-child]:text-[0.45rem]" />
+          <NexoraLogo size="xs" textClassName="[&>p:first-child]:text-sm [&>p:first-child]:tracking-[0.1em] [&>p:last-child]:text-[0.45rem]" />
         </Link>
 
         {/* ── Desktop Navigation ── */}

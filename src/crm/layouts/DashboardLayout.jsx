@@ -42,7 +42,7 @@ import {
 import { setStorageScope } from '../lib/localDataEvents.js'
 import { goToWorkspace } from '../../lib/workspaceNavigation.js'
 import { safeTrackMetaEventOnce } from '../../lib/metaPixel.js'
-import logoUrl from '../../assets/logo/nexora-logo.svg'
+import logoUrl from '../../assets/logo/nexora-logo.png'
 import useReviewPrompt from '../hooks/useReviewPrompt.js'
 
 // Code-split heavy modals — only load when triggered
@@ -97,7 +97,7 @@ function TrialAccessBlock({ expired, subscriptionExpired, trialEndsAt, onBackToW
         <div className="p-6 sm:p-8">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="flex min-w-0 items-center gap-3">
-              <img className="h-12 w-12 shrink-0 rounded-xl border border-slate-200 bg-slate-950 object-contain p-1.5 shadow-sm" src={logoUrl} alt="Nexora Solution" />
+              <img className="h-12 w-12 shrink-0 object-contain" src={logoUrl} alt="Nexora Solution" />
               <div className="min-w-0">
                 <p className="truncate text-sm font-black uppercase text-slate-950">Nexora Solution</p>
                 <p className="text-xs font-semibold text-slate-500">Business Operating System</p>

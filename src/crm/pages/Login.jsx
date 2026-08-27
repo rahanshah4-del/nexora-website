@@ -117,8 +117,8 @@ export default function LoginPage() {
       <div className="relative z-10 w-full max-w-md">
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="grid h-11 w-11 place-items-center overflow-hidden rounded-2xl bg-slate-950 shadow-glow">
-              <img src="/nexora-brand-logo.png" alt="Nexora Solution logo" className="h-full w-full object-cover" />
+            <div className="grid h-12 w-12 place-items-center">
+              <img src="/nexora-brand-logo.png" alt="Nexora Solution logo" className="h-full w-full object-contain" />
             </div>
             <div>
               <p className="text-sm font-semibold text-slate-900 dark:text-white">NEXORA SOLUTION</p>

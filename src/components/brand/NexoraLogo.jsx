@@ -1,8 +1,10 @@
 import { memo, useMemo, useState } from 'react'
-import logoUrl from '../../assets/logo/nexora-logo.svg'
+import logoUrl from '../../assets/logo/nexora-logo.png'
 
 const SIZE_MAP = {
-  sm: { icon: 'h-11 w-11', imageSize: 44, title: 'text-sm tracking-[0.18em]', sub: 'text-[0.65rem] tracking-[0.2em]' },
+  // xs fits the fixed 56px site header with breathing room top/bottom
+  xs: { icon: 'h-10 w-10', imageSize: 40, title: 'text-sm tracking-[0.18em]', sub: 'text-[0.65rem] tracking-[0.2em]' },
+  sm: { icon: 'h-12 w-12', imageSize: 48, title: 'text-sm tracking-[0.18em]', sub: 'text-[0.65rem] tracking-[0.2em]' },
   md: { icon: 'h-14 w-14', imageSize: 56, title: 'text-sm tracking-[0.18em]', sub: 'text-[0.65rem] tracking-[0.2em]' },
   lg: { icon: 'h-16 w-16', imageSize: 64, title: 'text-xl tracking-[0.22em]', sub: 'text-[0.7rem] tracking-[0.22em]' },
   xl: { icon: 'h-20 w-20', imageSize: 80, title: 'text-2xl tracking-[0.22em]', sub: 'text-xs tracking-[0.24em]' },
@@ -13,11 +15,11 @@ function NexoraLogo({ className = '', compact = false, size, hideText = false, i
   const resolved = useMemo(() => SIZE_MAP[size] || (compact ? SIZE_MAP.sm : SIZE_MAP.md), [size, compact])
   const titleColor = invert ? 'text-white' : 'text-slate-950'
   const subColor = invert ? 'text-slate-400' : 'text-slate-500'
-  const iconBorder = invert ? 'border-white/15' : 'border-slate-200'
 
   return (
     <div className={`inline-flex items-center gap-3 ${className}`}>
-      <div className={`flex shrink-0 items-center justify-center overflow-hidden rounded-3xl border ${iconBorder} bg-slate-950 p-2 text-white shadow-sm ${resolved.icon}`}>
+      {/* No frame/background — the logo art already carries its own rounded tile + transparent corners */}
+      <div className={`flex shrink-0 items-center justify-center ${resolved.icon}`}>
         {!loadError ? (
           <img
             src={logoUrl}
@@ -30,7 +32,7 @@ function NexoraLogo({ className = '', compact = false, size, hideText = false, i
             onError={() => setLoadError(true)}
           />
         ) : (
-          <span className="text-lg font-bold uppercase tracking-[0.18em]">N</span>
+          <span className="grid h-full w-full place-items-center rounded-2xl bg-slate-950 text-lg font-bold uppercase tracking-[0.18em] text-white">N</span>
         )}
       </div>
       {!hideText && (
