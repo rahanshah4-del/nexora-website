@@ -27,6 +27,7 @@ const PUBLIC_ROUTE_ALLOWLIST = new Set([
   '/support-center',
   '/ai',
   '/blog',
+  '/download/restaurant-pos',
   // Solution landing pages
   '/restaurant-pos',
   '/retail-pos',

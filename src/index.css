@@ -627,12 +627,9 @@ body.business-service-modal-open {
    ═══════════════════════════════════════════════════════════════════════════════ */
 
 /* Skip rendering for off-screen sections (huge LCP/INP win).
-   Browser auto-skips paint/layout for sections outside the viewport. */
-.marketing-page main > section,
-.marketing-page main > div > section {
-  content-visibility: auto;
-  contain-intrinsic-size: auto 500px;
-}
+   NOTE: disabled — content-visibility + scroll-reveal could leave sections
+   unpainted (blank white) on deep scroll. Keep paint unconditional. */
+
 
 /* Optimize font rendering for visible headings — no layout shift from kerning */
 .marketing-page h1,

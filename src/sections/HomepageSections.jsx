@@ -174,17 +174,22 @@ export default function HomepageSections() {
      here (a shell-level observer registered before mount would never see these nodes).
      Sections already on screen are revealed immediately; the rest reveal on scroll. */
   useEffect(() => {
+    const reveal = (el) => el.classList.add('is-revealed')
     const targets = Array.from(document.querySelectorAll('.marketing-page [data-reveal]:not(.is-revealed)'))
     if (!targets.length) return undefined
+
+    // No IntersectionObserver (or SSR) → reveal everything immediately so content
+    // is never stuck hidden.
     if (typeof IntersectionObserver === 'undefined') {
-      targets.forEach((el) => el.classList.add('is-revealed'))
+      targets.forEach(reveal)
       return undefined
     }
+
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            entry.target.classList.add('is-revealed')
+            reveal(entry.target)
             observer.unobserve(entry.target)
           }
         })
@@ -192,7 +197,37 @@ export default function HomepageSections() {
       { rootMargin: '60px', threshold: 0.05 },
     )
     targets.forEach((el) => observer.observe(el))
-    return () => observer.disconnect()
+
+    // Safety net — if any section's observer entry never fires (fast scroll,
+    // device quirk, content-visibility timing), force-reveal it so the page
+    // can't go blank partway down.
+    let fallbackId = null
+    const runFallback = () => {
+      fallbackId = null
+      const stillHidden = Array.from(document.querySelectorAll('.marketing-page [data-reveal]:not(.is-revealed)'))
+      const viewportBottom = window.innerHeight + window.scrollY
+      stillHidden.forEach((el) => {
+        const rect = el.getBoundingClientRect()
+        const top = rect.top + window.scrollY
+        if (top < viewportBottom + 400) reveal(el)
+      })
+    }
+    const scheduleFallback = (delay) => {
+      if (fallbackId) window.clearTimeout(fallbackId)
+      fallbackId = window.setTimeout(runFallback, delay)
+    }
+    const onScroll = () => scheduleFallback(120)
+
+    scheduleFallback(800)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('resize', onScroll, { passive: true })
+
+    return () => {
+      observer.disconnect()
+      if (fallbackId) window.clearTimeout(fallbackId)
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('resize', onScroll)
+    }
   }, [])
 
   return (

@@ -132,6 +132,7 @@ const PUBLIC_ROUTES = [
   { path: '/transport',    title: 'Transport Management Software Pakistan — Nexora Solution',                                description: 'Fleet and transport management system with vehicle tracking, bookings, payments and customer ledgers.' },
   { path: '/industries',   title: 'Industries Served — Nexora Solution',                                                    description: 'Discover how Nexora serves restaurants, retail, schools, pharmacies, transport and service businesses across Pakistan.' },
   { path: '/projects',     title: 'Projects — Nexora Solution',                                                             description: 'Nexora Solution client projects and case studies. See how businesses transformed with our POS and ERP software.' },
+  { path: '/download/restaurant-pos', title: 'Download Nexora Restaurant POS for Windows — Free Installer',                 description: 'Download the free Nexora Restaurant POS Windows installer (v1.0.0). Offline-capable POS with KOT printing, table layout, billing, customer wallet, expenses and cloud sync.' },
 ]
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -1048,10 +1049,26 @@ function buildContactContent() {
   </main>`
 }
 
+function buildDownloadRestaurantPosContent() {
+  const downloadUrl = 'https://pub-d510223cafd94f76bf1559c431263a16.r2.dev/Nexora%20Solution%20POS-1.0.0-Setup.exe'
+  return `<main style="padding:4rem 1.25rem;max-width:64rem;margin:0 auto;text-align:center">
+    <h1 style="font-size:clamp(2rem,5vw,3rem);font-weight:900;color:#0f172a;letter-spacing:-.02em">Nexora Restaurant POS</h1>
+    <p style="margin:1rem auto 0;max-width:40rem;font-size:1rem;line-height:1.7;color:#475569">The complete offline-capable POS for restaurants — order management, kitchen display, billing, customer wallet, expense tracking, and more.</p>
+    <div style="margin:1.25rem auto 0;display:flex;flex-wrap:wrap;justify-content:center;gap:.5rem">
+      <span style="border-radius:9999px;border:1px solid #fcd34d;background:#fffbeb;color:#b45309;padding:.4rem .9rem;font-size:.8rem;font-weight:800">v1.0.0</span>
+      <span style="border-radius:9999px;border:1px solid #e2e8f0;background:#f8fafc;color:#475569;padding:.4rem .9rem;font-size:.8rem;font-weight:800">~104 MB</span>
+      <span style="border-radius:9999px;border:1px solid #bae6fd;background:#f0f9ff;color:#0369a1;padding:.4rem .9rem;font-size:.8rem;font-weight:800">Windows 10+</span>
+    </div>
+    <a href="${downloadUrl}" style="display:inline-flex;align-items:center;gap:.75rem;margin-top:2rem;border-radius:1rem;background:#0f172a;padding:1.25rem 2.5rem;font-size:1.25rem;font-weight:800;color:#fff;text-decoration:none;box-shadow:0 8px 40px -10px rgba(15,23,42,.35)">Download for Windows</a>
+    <p style="margin-top:1rem;font-size:.875rem;font-weight:600;color:#94a3b8">Free download · No credit card required</p>
+  </main>`
+}
+
 function buildRouteContent(path, title, desc, articles) {
   if (path === '/pricing') return buildPricingContent()
   if (path === '/blog') return buildBlogContent(articles)
   if (path === '/contact') return buildContactContent()
+  if (path === '/download/restaurant-pos') return buildDownloadRestaurantPosContent()
 
   // Default: title + description + CTAs (used by routes without dedicated content)
   return `<main style="padding:3rem 1.25rem;max-width:48rem;margin:0 auto">

@@ -66,6 +66,11 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://nexorasolution.online/download/restaurant-pos/</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://nexorasolution.online/ecommerce-development/</loc>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
