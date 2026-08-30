@@ -1,4 +1,4 @@
-import { Link, Navigate, useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import {
   HiOutlineAcademicCap,
   HiOutlineArrowDownTray,
@@ -21,6 +21,7 @@ import {
 import PageSeo from '../../components/PageSeo.jsx'
 import { getSeoForSolutionSlug } from '../../lib/seoMetadata.js'
 import PublicPageShell from './PublicPageShell.jsx'
+import NotFoundPage from './NotFoundPage.jsx'
 
 const whatsappLeadLink = `https://wa.me/923194329754?text=${encodeURIComponent(
   'Assalam o Alaikum, I want to book a Nexora product demo.',
@@ -722,7 +723,7 @@ export default function SolutionPage({ solutionSlug: solutionSlugProp } = {}) {
   const page = solutionPages[solutionSlug]
   const seo = getSeoForSolutionSlug(solutionSlug)
 
-  if (!page) return <Navigate to="/" replace />
+  if (!page) return <NotFoundPage />
 
   const Icon = page.icon
   const faqs = [...page.faqs, ...commonFaqs]
