@@ -10,6 +10,7 @@ import {
   HiOutlineCloud,
   HiOutlineDevicePhoneMobile,
   HiOutlineDocumentChartBar,
+  HiOutlineEnvelope,
   HiOutlineGlobeAlt,
   HiOutlineMapPin,
   HiOutlinePlayCircle,
@@ -287,17 +288,22 @@ export default function HomepageSections() {
         </div>
       </section>
 
-      <footer className="bg-[linear-gradient(135deg,#071d35_0%,#062b52_100%)] text-white">
-        <div className="mx-auto max-w-7xl px-5 py-12 sm:px-6 lg:px-8">
-          <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-[1.25fr_1fr_0.9fr_1fr_1.1fr]">
+      <footer className="relative overflow-hidden bg-[#050d1a] text-white">
+        {/* Ambient gradient glows */}
+        <div aria-hidden="true" className="pointer-events-none absolute -top-24 left-1/2 h-64 w-[44rem] -translate-x-1/2 rounded-full bg-blue-600/20 blur-[120px]" />
+        <div aria-hidden="true" className="pointer-events-none absolute -bottom-32 -right-16 h-72 w-72 rounded-full bg-violet-600/15 blur-[120px]" />
+        <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-400/50 to-transparent" />
+
+        <div className="relative mx-auto max-w-7xl px-5 pb-8 pt-16 sm:px-6 lg:px-8 lg:pt-20">
+          <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-[1.3fr_0.85fr_0.85fr_0.9fr_1.3fr]">
 
             {/* Column 1 — Brand */}
             <div>
               <NexoraLogo compact textClassName="[&>p]:text-white" />
-              <p className="mt-5 text-sm leading-7 text-blue-100">
+              <p className="mt-5 max-w-xs text-sm leading-7 text-white/55">
                 Business software platform for Restaurants, Retail, Schools, Transport, Medical Stores and Enterprises.
               </p>
-              <div className="mt-5 flex flex-wrap gap-2.5">
+              <div className="mt-6 flex flex-wrap gap-2.5">
                 {socialLinks.map(({ icon: Icon, href, label }) => (
                   <a
                     key={label}
@@ -305,7 +311,7 @@ export default function HomepageSections() {
                     target="_blank"
                     rel="noreferrer"
                     aria-label={label}
-                    className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/10 text-base text-white backdrop-blur-sm transition-all duration-200 hover:scale-110 hover:bg-white/25 hover:border-white/30 hover:shadow-[0_0_20px_rgba(255,255,255,0.15)] active:scale-95"
+                    className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.06] text-base text-white/80 backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-white/20 hover:bg-gradient-to-br hover:from-blue-600 hover:to-violet-600 hover:text-white hover:shadow-[0_10px_28px_-10px_rgba(99,102,241,0.7)]"
                   >
                     <Icon />
                   </a>
@@ -315,72 +321,109 @@ export default function HomepageSections() {
 
             {/* Column 2 — Products */}
             <div>
-              <h3 className="text-sm font-extrabold">Products</h3>
-              <div className="mt-5 grid gap-3 text-sm text-blue-100">
+              <h3 className="text-sm font-semibold uppercase tracking-[0.14em] text-white/90">Products</h3>
+              <div className="mt-5 grid gap-2.5 text-sm">
                 {productLinks.map(([label, to]) => (
-                  <Link key={label} to={to} className="hover:text-white">{label}</Link>
+                  <Link key={label} to={to} className="group inline-flex w-max items-center gap-2 text-white/55 transition-all duration-200 hover:text-white">
+                    <span className="h-px w-0 bg-gradient-to-r from-blue-400 to-violet-400 transition-all duration-200 group-hover:w-3" />
+                    {label}
+                  </Link>
                 ))}
               </div>
             </div>
 
             {/* Column 3 — Company */}
             <div>
-              <h3 className="text-sm font-extrabold">Company</h3>
-              <div className="mt-5 grid gap-3 text-sm text-blue-100">
+              <h3 className="text-sm font-semibold uppercase tracking-[0.14em] text-white/90">Company</h3>
+              <div className="mt-5 grid gap-2.5 text-sm">
                 {companyLinks.map(([label, to]) => (
-                  <Link key={label} to={to} className="hover:text-white">{label}</Link>
+                  <Link key={label} to={to} className="group inline-flex w-max items-center gap-2 text-white/55 transition-all duration-200 hover:text-white">
+                    <span className="h-px w-0 bg-gradient-to-r from-blue-400 to-violet-400 transition-all duration-200 group-hover:w-3" />
+                    {label}
+                  </Link>
                 ))}
               </div>
             </div>
 
             {/* Column 4 — Resources */}
             <div>
-              <h3 className="text-sm font-extrabold">Resources</h3>
-              <div className="mt-5 grid gap-3 text-sm text-blue-100">
+              <h3 className="text-sm font-semibold uppercase tracking-[0.14em] text-white/90">Resources</h3>
+              <div className="mt-5 grid gap-2.5 text-sm">
                 {resourceLinks.map(([label, to]) => (
-                  <Link key={label} to={to} className="hover:text-white">{label}</Link>
+                  <Link key={label} to={to} className="group inline-flex w-max items-center gap-2 text-white/55 transition-all duration-200 hover:text-white">
+                    <span className="h-px w-0 bg-gradient-to-r from-blue-400 to-violet-400 transition-all duration-200 group-hover:w-3" />
+                    {label}
+                  </Link>
                 ))}
               </div>
             </div>
 
             {/* Column 5 — Contact */}
             <div>
-              <h3 className="text-sm font-extrabold">Contact</h3>
-              <div className="mt-5 grid gap-4 text-sm text-blue-100">
-                <a href={whatsappLink} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-1.5 text-[11px] font-bold text-white backdrop-blur-sm transition hover:bg-white/20 hover:border-white/30 hover:text-white">
-                  <FaWhatsapp className="text-sm text-emerald-400" />
-                  <span>{whatsappNumberDisplay}</span>
+              <h3 className="text-sm font-semibold uppercase tracking-[0.14em] text-white/90">Contact</h3>
+              <div className="mt-5 space-y-3">
+                <a
+                  href={whatsappLink}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="group flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.05] p-3 backdrop-blur-sm transition-all duration-200 hover:border-emerald-400/40 hover:bg-white/[0.08]"
+                >
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-emerald-500/15 text-emerald-400">
+                    <FaWhatsapp className="text-lg" />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-[10px] font-semibold uppercase tracking-[0.12em] text-white/40">WhatsApp / Phone</span>
+                    <span className="mt-0.5 block truncate text-sm font-medium text-white">{whatsappNumberDisplay}</span>
+                  </span>
                 </a>
-                <div className="flex items-center gap-3">
-                  <a href={`mailto:${contactEmail}`} className="flex gap-3 hover:text-white">
-                    <HiOutlineDocumentChartBar className="mt-0.5 shrink-0 text-lg" />
-                    <span>{contactEmail}</span>
+
+                <div className="group flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.05] p-3 backdrop-blur-sm transition-all duration-200 hover:border-blue-400/40 hover:bg-white/[0.08]">
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-blue-500/15 text-blue-400">
+                    <HiOutlineEnvelope className="text-lg" />
+                  </span>
+                  <a href={`mailto:${contactEmail}`} className="min-w-0 flex-1">
+                    <span className="block text-[10px] font-semibold uppercase tracking-[0.12em] text-white/40">Email</span>
+                    <span className="mt-0.5 block truncate text-sm font-medium text-white">{contactEmail}</span>
                   </a>
                   <CopyEmailButton email={contactEmail} />
                 </div>
-                <a href="https://nexorasolution.online" target="_blank" rel="noreferrer" className="flex gap-3 hover:text-white">
-                  <HiOutlineGlobeAlt className="mt-0.5 shrink-0 text-lg" />
-                  <span>nexorasolution.online</span>
+
+                <a
+                  href="https://nexorasolution.online"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="group flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.05] p-3 backdrop-blur-sm transition-all duration-200 hover:border-violet-400/40 hover:bg-white/[0.08]"
+                >
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-violet-500/15 text-violet-400">
+                    <HiOutlineGlobeAlt className="text-lg" />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-[10px] font-semibold uppercase tracking-[0.12em] text-white/40">Website</span>
+                    <span className="mt-0.5 block truncate text-sm font-medium text-white">nexorasolution.online</span>
+                  </span>
                 </a>
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3.5 py-1.5 text-[11px] font-bold text-white backdrop-blur-sm">
-                  <HiOutlineMapPin className="text-sm text-rose-400" />
-                  🇵🇰 Lahore, Punjab, Pakistan
-                </span>
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3.5 py-1.5 text-[11px] font-bold text-white backdrop-blur-sm transition hover:bg-white/20 hover:border-white/30">
-                  <HiOutlineGlobeAlt className="text-sm" />
-                  Available Worldwide
-                </span>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="flex items-center gap-2.5 rounded-2xl border border-white/10 bg-white/[0.05] p-3 backdrop-blur-sm">
+                    <HiOutlineMapPin className="h-5 w-5 shrink-0 text-rose-400" />
+                    <span className="text-sm font-medium text-white/90">🇵🇰 Lahore, Punjab, Pakistan</span>
+                  </div>
+                  <div className="flex items-center gap-2.5 rounded-2xl border border-white/10 bg-white/[0.05] p-3 backdrop-blur-sm">
+                    <HiOutlineGlobeAlt className="h-5 w-5 shrink-0 text-emerald-400" />
+                    <span className="text-sm font-medium text-white/90">Available Worldwide</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
           {/* Bottom Bar */}
-          <div className="mt-10 flex flex-col items-center justify-between gap-2 border-t border-white/10 pt-6 text-sm text-blue-100 sm:flex-row">
+          <div className="mt-14 flex flex-col items-center justify-between gap-3 border-t border-white/10 pt-6 text-sm text-white/45 sm:flex-row">
             <p>&copy; 2019–2026 Nexora Solution. All Rights Reserved.</p>
-            <div className="flex gap-4">
-              <Link to="/privacy-policy" className="hover:text-white">Privacy</Link>
-              <Link to="/terms" className="hover:text-white">Terms</Link>
-              <Link to="/privacy-policy" className="hover:text-white">Cookies</Link>
+            <div className="flex gap-6">
+              <Link to="/privacy-policy" className="transition-colors duration-200 hover:text-white">Privacy</Link>
+              <Link to="/terms" className="transition-colors duration-200 hover:text-white">Terms</Link>
+              <Link to="/privacy-policy" className="transition-colors duration-200 hover:text-white">Cookies</Link>
             </div>
           </div>
         </div>
