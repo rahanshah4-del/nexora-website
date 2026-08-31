@@ -102,10 +102,16 @@ export function UserProvider({ children }) {
   const provisionedUserRef = useRef('')
   const loggedLoginRef = useRef('')
   const profileRef = useRef(profile)
+  const lastHealthSignatureRef = useRef('')
+  const userDocRef = useRef(userDoc)
 
   useEffect(() => {
     profileRef.current = profile
   }, [profile])
+
+  useEffect(() => {
+    userDocRef.current = userDoc
+  }, [userDoc])
 
   useEffect(() => {
     if (!ready) return
@@ -244,6 +250,8 @@ export function UserProvider({ children }) {
     return () => unsub()
   }, [ready, user])
 
+  const staffProfile = isStaffWorkspaceProfile(userDoc, user?.uid)
+
   useEffect(() => {
     if (!ready || !db || !user || loading || !userDoc) {
       Promise.resolve().then(() => {
@@ -253,9 +261,8 @@ export function UserProvider({ children }) {
       return undefined
     }
 
-    const staffWorkspaceProfile = isStaffWorkspaceProfile(userDoc, user.uid)
     const rawWorkspaceId = String(userDoc.workspaceId || '').trim()
-    const nextWorkspaceId = staffWorkspaceProfile
+    const nextWorkspaceId = staffProfile
       ? [userDoc?.ownerId, userDoc?.companyId, userDoc?.createdBy, rawWorkspaceId]
           .map((value) => String(value || '').trim())
           .find((value) => value && value !== user.uid) || rawWorkspaceId || user.uid
@@ -286,9 +293,10 @@ export function UserProvider({ children }) {
           return
         }
         setStaffAccessStatus('')
-        if (String(userDoc.status || '').trim().toLowerCase() === 'active') {
+        const latestUserDoc = userDocRef.current
+        if (latestUserDoc && String(latestUserDoc.status || '').trim().toLowerCase() === 'active') {
           setDoc(ref, {
-            ...userDoc,
+            ...latestUserDoc,
             uid: nextStaffId,
             staffId: nextStaffId,
             userId: nextStaffId,
@@ -307,10 +315,20 @@ export function UserProvider({ children }) {
     )
 
     return () => unsub()
-  }, [loading, ready, user, userDoc])
+  }, [
+    loading,
+    ready,
+    user,
+    staffProfile,
+    userDoc?.workspaceId,
+    userDoc?.ownerId,
+    userDoc?.companyId,
+    userDoc?.createdBy,
+    userDoc?.staffId,
+    userDoc?.role,
+  ])
 
   const role = normalizeRole(userDoc?.role)
-  const staffProfile = isStaffWorkspaceProfile(userDoc, user?.uid)
   const userDocWorkspaceId = userDoc?.workspaceId || ''
   const staffOwnerWorkspaceId = staffProfile && user?.uid
     ? [userDoc?.ownerId, userDoc?.companyId, userDoc?.createdBy]
@@ -322,14 +340,17 @@ export function UserProvider({ children }) {
     : userDocWorkspaceId
   const workspaceId = repairedStaffWorkspaceId || user?.uid || null
   const developerOverride = isDeveloperOwnerAccount(userDoc, user)
-  const allowedBusinessTypes = Array.from(new Set((
-    staffProfile
-      ? (Array.isArray(userDoc?.allowedBusinessTypes) ? userDoc.allowedBusinessTypes : [])
-      : [
-          ...(Array.isArray(workspaceDoc?.allowedBusinessTypes) ? workspaceDoc.allowedBusinessTypes : []),
-          ...(Array.isArray(userDoc?.allowedBusinessTypes) ? userDoc.allowedBusinessTypes : []),
-        ]
-  ).filter(Boolean).map(normalizeBusinessType)))
+  const userAllowedTypesKey = Array.isArray(userDoc?.allowedBusinessTypes)
+    ? userDoc.allowedBusinessTypes.filter(Boolean).map(normalizeBusinessType).join('|')
+    : ''
+  const workspaceAllowedTypesKey = Array.isArray(workspaceDoc?.allowedBusinessTypes)
+    ? workspaceDoc.allowedBusinessTypes.filter(Boolean).map(normalizeBusinessType).join('|')
+    : ''
+  const allowedBusinessTypes = useMemo(() => {
+    const userTypes = userAllowedTypesKey ? userAllowedTypesKey.split('|') : []
+    const workspaceTypes = workspaceAllowedTypesKey ? workspaceAllowedTypesKey.split('|') : []
+    return Array.from(new Set(staffProfile ? userTypes : [...workspaceTypes, ...userTypes]))
+  }, [staffProfile, userAllowedTypesKey, workspaceAllowedTypesKey])
   const allModulesAccess = staffProfile ? false : workspaceDoc?.allModulesAccess === true || userDoc?.allModulesAccess === true
   const specialModuleAccess = staffProfile ? false : allModulesAccess || workspaceDoc?.specialModuleAccess === true || userDoc?.specialModuleAccess === true
   const staffAccessBusinessType = staffProfile ? inferBusinessTypeFromStaffAccess(userDoc) : ''
@@ -665,14 +686,18 @@ export function UserProvider({ children }) {
         detail: 'No primaryBusinessType or businessType found on Firestore user or workspace doc. Cannot determine locked primary module.',
         severity: 'CRITICAL',
       })
-      console.error('[System Health] Primary module missing — no fallback to default', {
-        uid: user.uid,
-        workspaceId,
-        timestamp: new Date().toISOString(),
-      })
-      window.dispatchEvent(new CustomEvent('nexora:healthCheckFailed', {
-        detail: { issues: healthIssues, uid: user.uid, workspaceId },
-      }))
+      const signature = JSON.stringify(healthIssues)
+      if (signature !== lastHealthSignatureRef.current) {
+        lastHealthSignatureRef.current = signature
+        console.warn('[System Health] Primary module missing — no fallback to default', {
+          uid: user.uid,
+          workspaceId,
+          timestamp: new Date().toISOString(),
+        })
+        window.dispatchEvent(new CustomEvent('nexora:healthCheckFailed', {
+          detail: { issues: healthIssues, uid: user.uid, workspaceId },
+        }))
+      }
       return
     }
 
@@ -709,20 +734,40 @@ export function UserProvider({ children }) {
       })
     }
 
-    if (healthIssues.length > 0) {
-      console.error('[System Health] Module isolation violation detected', {
-        issues: healthIssues,
+    // De-dupe: only emit when the result actually changes from the last run.
+    // This prevents re-logging identical results on every snapshot/render.
+    const signature = JSON.stringify(healthIssues)
+    if (signature === lastHealthSignatureRef.current) return
+    lastHealthSignatureRef.current = signature
+
+    const realMismatchIssues = healthIssues.filter(
+      (issue) =>
+        issue.type === 'LOCALSTORAGE_CONFLICT' ||
+        issue.type === 'MODULE_ISOLATION_MISMATCH',
+    )
+
+    if (realMismatchIssues.length > 0) {
+      // Real mismatch — surface as a warning once per state change.
+      console.warn('[System Health] Module isolation violation detected', {
+        issues: realMismatchIssues,
         uid: user.uid,
         workspaceId,
         firestorePrimary: firestoreNormalized,
         resolvedBusinessType: resolvedNormalized,
         localStorageSelectedModule: storedSelectedType || '(none)',
-        dangerousFields: dangerousFields.length > 0 ? dangerousFields : '(none)',
         timestamp: new Date().toISOString(),
       })
       window.dispatchEvent(new CustomEvent('nexora:healthCheckFailed', {
-        detail: { issues: healthIssues, uid: user.uid, workspaceId },
+        detail: { issues: realMismatchIssues, uid: user.uid, workspaceId },
       }))
+    } else if (dangerousFields.length > 0) {
+      // Precautionary structural warning (severity WARNING) — surface once at warn
+      // level; it does not indicate an actual module mismatch.
+      console.warn('[System Health] Precautionary: dangerous Firestore fields present', {
+        dangerousFields,
+        uid: user.uid,
+        workspaceId,
+      })
     } else {
       window.dispatchEvent(new CustomEvent('nexora:healthCheckPassed', {
         detail: { uid: user.uid, workspaceId },
@@ -735,6 +780,7 @@ export function UserProvider({ children }) {
   const accessPlan = accessState.accessPlan || accessPlanForUser(userDoc || {}, effectivePlan)
   const trialActive = accessState.isTrialActive
   const trialEndsAt = accessState.trialEndsAt || trialEndDate(userDoc || {})
+  const trialEndsAtMs = trialEndsAt ? trialEndsAt.getTime() : null
   const trialDaysRemaining = trialActive ? accessState.trialDaysRemaining || daysUntil(trialEndsAt) : 0
   const trialExpired = accessState.isTrialExpired || isTrialExpired(userDoc || {})
   const isSubscriptionExpired = accessState.isSubscriptionExpired
@@ -791,7 +837,7 @@ export function UserProvider({ children }) {
       isSubscriptionExpired,
       isWorkspaceExpired,
       hasActiveWorkspaceSubscription,
-      trialEndsAt,
+      trialEndsAt: trialEndsAtMs != null ? new Date(trialEndsAtMs) : null,
       trialDaysRemaining,
       role,
       isOwner,
@@ -826,7 +872,7 @@ export function UserProvider({ children }) {
       isSubscriptionExpired,
       isWorkspaceExpired,
       hasActiveWorkspaceSubscription,
-      trialEndsAt,
+      trialEndsAtMs,
       trialDaysRemaining,
       role,
       isPlatformAdmin,
