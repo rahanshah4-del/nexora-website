@@ -37,7 +37,7 @@ function NexoraLogo({ className = '', compact = false, size, hideText = false, i
       </div>
       {!hideText && (
         <div className={`min-w-0 ${textClassName}`}>
-          <p className={`truncate font-black uppercase ${resolved.title} ${titleColor}`}>NEXORA SOLUTION</p>
+          <p className={`truncate font-black uppercase font-['Poppins',sans-serif] ${resolved.title} ${titleColor}`}>NEXORA SOLUTION</p>
           <p className={`truncate uppercase ${resolved.sub} ${subColor}`}>
             Software & Systems Studio
           </p>
