@@ -16,6 +16,7 @@ import { fileURLToPath } from 'node:url'
 import { formatBlogContentHtml } from '../src/lib/blogContentFormatter.js'
 import { autoLinkTerms } from '../src/lib/blogInternalLinks.js'
 import { defaultPlatformPlans, freeTrialConfig } from '../src/lib/platformPlans.js'
+import { createOrganizationSchema, createWebSiteSchema } from '../src/lib/seoStructuredData.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
@@ -226,37 +227,16 @@ function buildGtm() {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function orgSchema() {
-  return `  <script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "Organization",
-  "name": "Nexora Solution",
-  "url": "${SITE}",
-  "logo": "${LOGO}",
-  "description": "Pakistan's leading POS, ERP and CRM software platform for restaurants, retail, schools and enterprises.",
-  "sameAs": [
-    "https://facebook.com/nexorasolution",
-    "https://instagram.com/nexorasolution",
-    "https://linkedin.com/company/nexorasolution",
-    "https://youtube.com/@nexorasolution"
-  ]
-}
+  const schema = createOrganizationSchema()
+  return `  <script type="application/ld+json" id="nexora-jsonld-organization">
+${JSON.stringify(schema, null, 2).replace(/</g, '\\u003c')}
 </script>`
 }
 
 function websiteSchema() {
-  return `  <script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "WebSite",
-  "name": "Nexora Solution",
-  "url": "${SITE}",
-  "potentialAction": {
-    "@type": "SearchAction",
-    "target": "${SITE}/search?q={search_term_string}",
-    "query-input": "required name=search_term_string"
-  }
-}
+  const schema = createWebSiteSchema()
+  return `  <script type="application/ld+json" id="nexora-jsonld-website">
+${JSON.stringify(schema, null, 2).replace(/</g, '\\u003c')}
 </script>`
 }
 
@@ -769,19 +749,7 @@ function buildSearchPage() {
 ${buildCommonHead()}
 ${buildSeoHead({ path: '/search', title: 'Search Nexora Solution — Find POS, ERP & CRM Information', description: 'Search the Nexora Solution website for POS software, ERP systems, CRM guides, pricing information and business resources.' })}
 ${orgSchema()}
-  <script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "WebSite",
-  "name": "Nexora Solution",
-  "url": "${SITE}",
-  "potentialAction": {
-    "@type": "SearchAction",
-    "target": "${SITE}/search?q={search_term_string}",
-    "query-input": "required name=search_term_string"
-  }
-}
-</script>
+${websiteSchema()}
 ${buildGtm()}
 </head>
 <body>
