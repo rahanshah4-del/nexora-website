@@ -1,5 +1,4 @@
 import Card from '../ui/Card.jsx'
-import Badge from '../ui/Badge.jsx'
 import { formatCurrency } from '../../utils/format.js'
 
 export default function InvoiceStats({ stats, currency = 'PKR', schoolMode = false }) {
@@ -22,7 +21,6 @@ export default function InvoiceStats({ stats, currency = 'PKR', schoolMode = fal
               <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">{c.label}</p>
               <p className="mt-2 text-2xl font-black tracking-tight text-slate-950 dark:text-white">{c.value}</p>
             </div>
-            <Badge variant={c.tone}>{c.label}</Badge>
           </div>
           <p className="mt-3 text-xs font-medium text-slate-500 dark:text-slate-400">{c.helper}</p>
         </Card>
