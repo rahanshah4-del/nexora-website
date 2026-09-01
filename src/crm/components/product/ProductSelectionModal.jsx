@@ -4,6 +4,7 @@ import {
   HiOutlineArrowPath,
   HiOutlineArrowRight,
   HiOutlineBuildingStorefront,
+  HiOutlineCheckCircle,
   HiOutlineClock,
   HiOutlineEnvelope,
   HiOutlineQueueList,
@@ -16,7 +17,10 @@ import { useNavigate } from 'react-router-dom'
 import logoUrl from '../../../assets/logo/nexora-logo.png'
 import { cn } from '../../utils/cn.js'
 import { formatSessionTime, isValidWorkspace, workspaceLabel } from '../../lib/workspaceSession.js'
-import { businessWorkspaceCatalog, labelForBusinessModule, labelForBusinessType, moduleCatalog, packageNameForPlan } from '../../data/moduleAccess.js'
+import { isUserCustomVerified } from '../../../lib/authRouteState.js'
+import { resolveWorkspaceName } from '../../../lib/workspaceName.js'
+import { useUser } from '../../hooks/useUser.js'
+import { businessWorkspaceCatalog, labelForBusinessModule, labelForBusinessType, moduleCatalog, normalizeBusinessType, packageNameForPlan, selectedModulesForSidebar } from '../../data/moduleAccess.js'
 
 const accentMap = {
   'general-crm': 'from-sky-500 via-blue-600 to-indigo-700',
@@ -57,14 +61,21 @@ const products = businessWorkspaceCatalog.map((workspace) => ({
     .slice(0, 8),
 }))
 
-function SessionPill({ icon: Icon, label, value }) {
+const valueToneMap = {
+  success: 'text-emerald-700 dark:text-emerald-300',
+  warning: 'text-amber-700 dark:text-amber-300',
+}
+
+function SessionPill({ icon: Icon, label, value, title, tone }) {
   return (
     <div className="min-w-0 rounded-2xl border border-slate-200/75 bg-white/70 px-3 py-2 dark:border-white/10 dark:bg-white/5">
       <div className="flex min-w-0 items-center gap-2">
         <Icon className="h-4 w-4 shrink-0 text-sky-600 dark:text-sky-300" />
-        <span className="truncate text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">{label}</span>
+        <span className="whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">{label}</span>
       </div>
-      <p className="mt-1 truncate text-sm font-semibold text-slate-950 dark:text-white">{value || 'No data yet'}</p>
+      <p className={cn('mt-1 truncate text-sm font-semibold', tone ? valueToneMap[tone] : 'text-slate-950 dark:text-white')} title={title ?? value}>
+        {value || 'No data yet'}
+      </p>
     </div>
   )
 }
@@ -153,12 +164,31 @@ function ProductSelectionModal({
   onClose,
 }) {
   const navigate = useNavigate()
+  const { userDoc, workspaceDoc, firebaseUser, businessType, accessPlan, trialDaysRemaining, isTrialActive, isTrialExpired } = useUser()
   const hasLastWorkspace = isValidWorkspace(selectedWorkspace)
-  const selectedStatus = hasLastWorkspace ? workspaceLabel(selectedWorkspace) : 'Not selected'
   const upgradeTrialLabel = formatUpgradeTrialLabel(session)
   const visibleProducts = developerOverride || !isValidWorkspace(lockedWorkspaceId)
     ? products
     : products.filter((product) => product.id === lockedWorkspaceId)
+
+  const businessName = resolveWorkspaceName({ workspaceData: workspaceDoc, accountData: userDoc, userId: firebaseUser?.uid })
+  const emailVerified = isUserCustomVerified({
+    ...firebaseUser,
+    emailVerifiedCustom: userDoc?.emailVerifiedCustom === true || workspaceDoc?.emailVerifiedCustom === true,
+  })
+  const activeModules = selectedModulesForSidebar({
+    businessType: normalizeBusinessType(businessType),
+    plan: accessPlan,
+    enabledModules: userDoc?.enabledModules,
+    onboardingCompleted: userDoc?.onboardingCompleted === true || workspaceDoc?.onboardingCompleted === true,
+    developerOverride,
+    teamOverride: true,
+  }).filter((module) => !module.comingSoon)
+  const activeModulesTitle = activeModules.length
+    ? `${activeModules.length} enabled: ${activeModules.map((module) => module.label).join(', ')}`
+    : 'No modules enabled'
+  const trialDays = Math.max(Number(trialDaysRemaining) || 0, 0)
+  const trialValue = isTrialExpired ? 'Expired' : isTrialActive ? `${trialDays || 1} day${trialDays === 1 ? '' : 's'} left` : 'Not on trial'
 
   return (
     <AnimatePresence>
@@ -210,13 +240,16 @@ function ProductSelectionModal({
               </button>
             </div>
 
-            <div className="relative mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
-              <SessionPill icon={HiOutlineUserCircle} label="Client" value={session?.clientName || session?.email} />
-              <SessionPill icon={HiOutlineEnvelope} label="Email" value={session?.email} />
-              <SessionPill icon={HiOutlineClock} label="Login time" value={formatSessionTime(session?.loginTime)} />
-              <SessionPill icon={HiOutlineClock} label="Current session" value={formatSessionTime(session?.sessionStartTime)} />
-              <SessionPill icon={HiOutlineArrowPath} label="Workspace status" value={selectedStatus} />
-              <SessionPill icon={HiOutlineSparkles} label="Package / Trial" value={`${packageNameForPlan(session?.planType)} / ${session?.trialStatus || 'trial'}`} />
+            <div className="relative mt-5 grid gap-3 sm:grid-cols-2 md:grid-cols-3">
+              <SessionPill icon={HiOutlineUserCircle} label="Client" value={session?.clientName || session?.email} title={session?.clientName || session?.email} />
+              <SessionPill icon={HiOutlineEnvelope} label="Email" value={session?.email} title={session?.email} />
+              <SessionPill icon={HiOutlineCheckCircle} label="Verified" value={emailVerified ? 'Verified' : 'Not verified'} tone={emailVerified ? 'success' : 'warning'} />
+              <SessionPill icon={HiOutlineBuildingStorefront} label="Workspace" value={businessName} title={businessName} />
+              <SessionPill icon={HiOutlineClock} label="Login" value={formatSessionTime(session?.loginTime)} title={formatSessionTime(session?.loginTime)} />
+              <SessionPill icon={HiOutlineClock} label="Session" value={formatSessionTime(session?.sessionStartTime)} title={formatSessionTime(session?.sessionStartTime)} />
+              <SessionPill icon={HiOutlineSparkles} label="Plan" value={packageNameForPlan(session?.planType)} />
+              <SessionPill icon={HiOutlineArrowPath} label="Trial" value={trialValue} />
+              <SessionPill icon={HiOutlineSquares2X2} label="Modules" value={`${activeModules.length} enabled`} title={activeModulesTitle} />
             </div>
 
             <div className="relative mt-3 flex flex-col gap-3 rounded-[1.15rem] border border-indigo-100 bg-gradient-to-r from-indigo-50 via-white to-sky-50 p-3 dark:border-white/10 dark:from-indigo-500/10 dark:via-white/5 dark:to-sky-500/10 sm:flex-row sm:items-center sm:justify-between">
