@@ -176,8 +176,8 @@ function PlanCard({ plan, selected, active, onSelect, displayCurrency, displayRa
         disabled ? 'cursor-not-allowed opacity-55' : '',
       ].join(' ')}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
           <p className="text-lg font-black text-slate-950">{plan.name}</p>
           <p className="mt-1 text-xs font-bold text-slate-500">{plan.currency || DEFAULT_SAAS_CURRENCY} billing</p>
         </div>
@@ -187,7 +187,7 @@ function PlanCard({ plan, selected, active, onSelect, displayCurrency, displayRa
         </div>
       </div>
       <div className="mt-5">
-        <p className="text-3xl font-black tracking-tight text-slate-950">{displayCurrency && displayCurrency !== 'PKR' && displayRates ? formatPriceLabel(plan.monthlyPrice ?? plan.price, displayCurrency, displayRates) : planPriceLabel(plan, 'monthly')}</p>
+        <p className="text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">{displayCurrency && displayCurrency !== 'PKR' && displayRates ? formatPriceLabel(plan.monthlyPrice ?? plan.price, displayCurrency, displayRates) : planPriceLabel(plan, 'monthly')}</p>
         <p className="mt-1 text-sm font-semibold text-slate-500">per month</p>
       </div>
       <div className="mt-4 rounded-2xl bg-slate-50 p-3">
@@ -852,8 +852,8 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
         <Section className="relative py-10 sm:py-14">
           <div className="grid gap-6 lg:grid-cols-[1.35fr_0.65fr] lg:items-end">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.32em] text-violet-200">Nexora SaaS Upgrade Portal</p>
-              <h1 className="mt-4 text-3xl font-black tracking-tight sm:text-5xl">Upgrade your Nexora plan.</h1>
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-200 sm:tracking-[0.32em]">Nexora SaaS Upgrade Portal</p>
+              <h1 className="mt-4 text-3xl font-black leading-tight tracking-tight text-balance sm:text-5xl">Upgrade your Nexora plan.</h1>
               <p className="mt-4 max-w-2xl text-base font-medium leading-7 text-slate-200">
                 Choose a plan and payment method. Crypto payments are verified and activated automatically.
               </p>
@@ -875,7 +875,7 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
         <div className="grid gap-6 xl:grid-cols-[1fr_22rem]">
           <div className="space-y-6">
             <Panel>
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <p className="text-xs font-black uppercase tracking-[0.24em] text-violet-600">Plans</p>
                   <h2 className="mt-2 text-2xl font-black">Choose your SaaS plan</h2>
