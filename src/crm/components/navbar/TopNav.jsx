@@ -15,6 +15,9 @@ import { useUser } from '../../hooks/useUser.js'
 import { useLocation, useNavigate } from 'react-router-dom'
 import NotificationBell from '../notifications/NotificationBell.jsx'
 import CloudSyncButton from '../system/CloudSyncButton.jsx'
+import GlobalSearch from '../system/GlobalSearch.jsx'
+import MobileBottomNav from './MobileBottomNav.jsx'
+import logoUrl from '../../../assets/logo/nexora-logo.png'
 import { labelForBusinessType, packageNameForPlan } from '../../data/moduleAccess.js'
 import { resolveWorkspaceName } from '../../../lib/workspaceName.js'
 import { goToWorkspace } from '../../../lib/workspaceNavigation.js'
@@ -219,6 +222,14 @@ function TopNav({ onOpenSidebar, onSwitchProduct }) {
             </span>
           </button>
 
+          <div className="flex min-w-0 flex-1 items-center gap-2 md:hidden">
+            <img src={logoUrl} alt="Nexora" className="h-8 w-8 shrink-0 rounded-xl object-contain" />
+            <div className="min-w-0 leading-tight">
+              <p className="truncate text-[15px] font-bold tracking-tight text-slate-900 dark:text-white">Nexora</p>
+              <p className="truncate text-[10px] font-medium text-slate-400 dark:text-slate-500">{businessTypeLabel || 'Workspace'}</p>
+            </div>
+          </div>
+
           <div className="hidden min-w-0 flex-1 items-center gap-2 lg:flex">
             <CloudSyncButton />
             {isTrialActive ? (
@@ -363,7 +374,11 @@ function TopNav({ onOpenSidebar, onSwitchProduct }) {
             </Dropdown>
           </div>
         </div>
+        <div className="workspace-fluid-container mx-auto mt-2 min-w-0 md:hidden">
+          <GlobalSearch />
+        </div>
       </header>
+      <MobileBottomNav />
     </>
   )
 }

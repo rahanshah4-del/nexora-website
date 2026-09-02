@@ -1030,7 +1030,7 @@ export default function DashboardLayout() {
           {isCompactPosRoute ? null : (
             <TopNav collapsed={effectiveSidebarCollapsed} onOpenSidebar={() => setMobileOpen(true)} onSwitchProduct={openProductSwitcher} />
           )}
-          <main className="crm-main min-w-0 flex-1 overflow-x-clip px-3 pb-5 pt-4 sm:px-5 lg:px-6 lg:pb-6 lg:pt-5">
+          <main className="crm-main min-w-0 flex-1 overflow-x-clip px-3 pb-28 pt-4 sm:px-5 md:pb-5 lg:px-6 lg:pb-6 lg:pt-5">
             <Suspense fallback={null}><MaintenanceBlockLazy state={maintenance} compact /></Suspense>
           </main>
         </div>
@@ -1064,7 +1064,7 @@ export default function DashboardLayout() {
         )}
 
         <main className={`crm-main min-w-0 flex-1 overflow-x-clip print:p-0 ${
-          isCompactPosRoute ? 'px-3 pb-3 pt-2 sm:px-4 lg:px-4 lg:pb-3 lg:pt-2' : 'px-3 pb-5 pt-4 sm:px-5 lg:px-6 lg:pb-6 lg:pt-5'
+          isCompactPosRoute ? 'px-3 pb-3 pt-2 sm:px-4 lg:px-4 lg:pb-3 lg:pt-2' : 'px-3 pb-28 pt-4 sm:px-5 md:pb-5 lg:px-6 lg:pb-6 lg:pt-5'
         }`}>
           <div className="workspace-fluid-container mx-auto min-w-0 print:max-w-none">
             <Outlet />
