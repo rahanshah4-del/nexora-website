@@ -1703,7 +1703,7 @@ export default function WorkspaceSelection() {
   const [sidebarTooltip, setSidebarTooltip] = useState(null)
   const [deviceBlockerOpen, setDeviceBlockerOpen] = useState(false)
   const [canUseWorkspaceOnDevice, setCanUseWorkspaceOnDevice] = useState(() => (
-    typeof window === 'undefined' ? true : window.matchMedia('(min-width: 1024px)').matches
+    typeof window === 'undefined' ? true : window.matchMedia('(min-width: 0px)').matches
   ))
   const [viewMode, setViewMode] = useState(() => {
     try {
@@ -2482,7 +2482,7 @@ export default function WorkspaceSelection() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined
-    const media = window.matchMedia('(min-width: 1024px)')
+    const media = window.matchMedia('(min-width: 0px)')
     const syncDeviceAccess = () => setCanUseWorkspaceOnDevice(media.matches)
     syncDeviceAccess()
     media.addEventListener?.('change', syncDeviceAccess)
