@@ -208,10 +208,11 @@ function TopNav({ onOpenSidebar, onSwitchProduct }) {
     <>
       {toast ? <Toast message={toast} onClose={() => setToast(null)} /> : null}
       <header className="sticky top-0 z-40 w-full px-3 pt-3 print:hidden sm:px-5 lg:px-6">
-        <div className="workspace-fluid-container mx-auto flex min-h-[64px] min-w-0 items-center gap-2 rounded-[1.35rem] border border-white/70 bg-white/[0.94] px-3 py-2.5 shadow-[0_16px_48px_-40px_rgba(15,23,42,0.45)] backdrop-blur-sm transition-colors duration-200 dark:border-slate-800 dark:bg-slate-950/90 sm:gap-3 sm:px-4">
+        <div className="workspace-fluid-container mx-auto min-w-0 rounded-[1.35rem] border border-white/70 bg-white/[0.94] shadow-[0_16px_48px_-40px_rgba(15,23,42,0.45)] backdrop-blur-sm transition-colors duration-200 dark:border-slate-800 dark:bg-slate-950/90">
+          <div className="flex min-h-[64px] min-w-0 items-center gap-2 px-3 py-2.5 sm:gap-3 sm:px-4">
           <button
             type="button"
-            className="focus-ring inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-white/10 lg:hidden"
+            className="focus-ring inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-white/10 lg:hidden"
             onClick={onOpenSidebar}
             aria-label="Open sidebar"
           >
@@ -373,9 +374,10 @@ function TopNav({ onOpenSidebar, onSwitchProduct }) {
               )}
             </Dropdown>
           </div>
-        </div>
-        <div className="workspace-fluid-container mx-auto mt-2 min-w-0 md:hidden">
-          <GlobalSearch />
+          </div>
+          <div className="px-3 pb-2.5 md:hidden">
+            <GlobalSearch />
+          </div>
         </div>
       </header>
       <MobileBottomNav />

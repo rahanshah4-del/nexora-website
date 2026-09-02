@@ -33,7 +33,7 @@ export default function Dropdown({ align = 'right', trigger, children, onOpenCha
             exit={{ opacity: 0, y: 4 }}
             transition={{ duration: 0.12 }}
             className={cn(
-              'glass absolute z-50 mt-2 w-56 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl p-1',
+              'glass absolute top-full z-50 mt-2 w-56 max-w-[calc(100vw-2rem)] max-h-[calc(100dvh-5rem)] overflow-x-hidden overflow-y-auto rounded-2xl p-1',
               align === 'right' ? 'right-0' : 'left-0',
               panelClassName,
             )}
