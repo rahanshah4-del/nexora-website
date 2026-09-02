@@ -739,11 +739,11 @@ export default function SchoolReportsCenter() {
                 <tbody>
                   {reportValidations.map((item) => (
                     <tr key={item.key} className={`border-b border-slate-100 last:border-0 ${item.key === reportKey ? 'bg-indigo-50/60' : ''}`}>
-                      <td className="px-3 py-2 font-black text-slate-800">{item.report.title}</td>
-                      <td className="px-3 py-2 font-semibold text-slate-600">{item.report.sourceCount}</td>
-                      <td className="px-3 py-2 font-semibold text-slate-600">{item.report.amountKey ? formatCurrency(item.report.calculatedTotal, currency) : item.report.calculatedTotal}</td>
-                      <td className="px-3 py-2 font-semibold text-slate-600">{item.report.amountKey ? formatCurrency(item.pdfTotal, currency) : item.pdfTotal}</td>
-                      <td className="px-3 py-2">
+                      <td className="px-3 py-2 font-black text-slate-800" data-label="Report">{item.report.title}</td>
+                      <td className="px-3 py-2 font-semibold text-slate-600" data-label="Source records">{item.report.sourceCount}</td>
+                      <td className="px-3 py-2 font-semibold text-slate-600" data-label="Calculated total">{item.report.amountKey ? formatCurrency(item.report.calculatedTotal, currency) : item.report.calculatedTotal}</td>
+                      <td className="px-3 py-2 font-semibold text-slate-600" data-label="PDF total">{item.report.amountKey ? formatCurrency(item.pdfTotal, currency) : item.pdfTotal}</td>
+                      <td className="px-3 py-2" data-label="Validation">
                         <span className={`inline-flex rounded-full px-2 py-1 text-[11px] font-black ${item.pass ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
                           {item.pass ? 'PASS' : 'FAIL'}
                         </span>

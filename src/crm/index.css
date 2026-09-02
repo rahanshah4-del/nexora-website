@@ -542,6 +542,20 @@
     border-bottom: 0;
   }
 
+  /* Mobile card stack: restore column labels that the hidden <thead> no longer
+     provides. Only <td> cells carrying a `data-label` attribute render a label;
+     action/decorative cells simply omit the attribute and stay unlabeled. */
+  .crm-main .overflow-x-auto > table:not(.print-document table) td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 0.25rem;
+    font-size: 0.625rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: rgb(148 163 184);
+  }
+
   .crm-table-scroll {
     display: none;
   }

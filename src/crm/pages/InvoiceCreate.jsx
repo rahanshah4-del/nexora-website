@@ -669,43 +669,43 @@ export default function InvoiceCreatePage() {
                     return (
                       <tr key={index}>
                         <td className="px-2 py-2 font-bold">{index + 1}</td>
-                        <td className="px-2 py-2">
+                        <td className="px-2 py-2" data-label="Item / Product">
                           <Select className="h-10 min-w-[145px] rounded-xl" value={item.productId} onChange={(event) => selectProduct(index, event.target.value)}>
                             <option value="">Manual item</option>
                             {products.map((product) => <option key={product.id} value={product.id}>{product.name}</option>)}
                           </Select>
                           <Input className="mt-1 h-10 min-w-[145px] rounded-xl" value={item.name} placeholder="Item name" onChange={(event) => updateItem(index, { name: event.target.value })} />
                         </td>
-                        <td className="px-2 py-2">
+                        <td className="px-2 py-2" data-label="SKU / Code">
                           <Input className="h-10 min-w-[110px] rounded-xl" value={item.sku || item.code} onChange={(event) => updateItem(index, { sku: event.target.value, code: event.target.value })} />
                         </td>
-                        <td className="px-2 py-2">
+                        <td className="px-2 py-2" data-label="Description">
                           <Input className="h-10 min-w-[150px] rounded-xl" value={item.description} onChange={(event) => updateItem(index, { description: event.target.value })} />
                         </td>
-                        <td className="px-2 py-2">
+                        <td className="px-2 py-2" data-label="Qty">
                           <Input className="h-10 w-20 rounded-xl" inputMode="decimal" value={item.quantity} onChange={(event) => {
                             const quantity = money(event.target.value)
                             updateItem(index, { quantity, qty: quantity })
                           }} />
                         </td>
-                        <td className="px-2 py-2">
+                        <td className="px-2 py-2" data-label="Unit">
                           <Select className="h-10 w-28 rounded-xl" value={item.unit || 'PCS'} onChange={(event) => updateItem(index, { unit: event.target.value })}>
                             {UNIT_OPTIONS.map((unit) => <option key={unit}>{unit}</option>)}
                           </Select>
                         </td>
-                        <td className="px-2 py-2">
+                        <td className="px-2 py-2" data-label={`Rate (${invoice.currency})`}>
                           <Input className="h-10 w-28 rounded-xl" inputMode="decimal" value={item.price ?? item.rate} onChange={(event) => {
                             const price = money(event.target.value)
                             updateItem(index, { price, rate: price })
                           }} />
                         </td>
-                        <td className="px-2 py-2">
+                        <td className="px-2 py-2" data-label="Discount %">
                           <Input className="h-10 w-24 rounded-xl" inputMode="decimal" value={item.discountPercent} onChange={(event) => updateItem(index, { discountPercent: money(event.target.value) })} />
                         </td>
-                        <td className="px-2 py-2">
+                        <td className="px-2 py-2" data-label="Tax %">
                           <Input className="h-10 w-20 rounded-xl" inputMode="decimal" value={item.taxRate} onChange={(event) => updateItem(index, { taxRate: money(event.target.value) })} />
                         </td>
-                        <td className="px-2 py-2 font-black text-slate-950">{formatCurrency(line.taxableAmount, invoice.currency)}</td>
+                        <td className="px-2 py-2 font-black text-slate-950" data-label={`Total (${invoice.currency})`}>{formatCurrency(line.taxableAmount, invoice.currency)}</td>
                         <td className="px-2 py-2">
                           <button
                             type="button"

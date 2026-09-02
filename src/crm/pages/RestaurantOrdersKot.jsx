@@ -619,12 +619,12 @@ export default function RestaurantOrdersKotPage() {
             <tbody className="divide-y divide-slate-100 bg-white">
               {filteredRows.map((order) => (
                 <tr key={order.id} className="align-top">
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3" data-label="Order">
                     <p className="font-black text-slate-950">{order.id || order.orderNumber}</p>
                     <p className="mt-1 text-xs text-slate-500">{order.billNumber}</p>
                     <p className="text-xs text-slate-500">{order.kotNumber}</p>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3" data-label="Table / Type">
                     <p className="font-semibold text-slate-950">{order.table || order.orderType}</p>
                     <p className="mt-1 text-xs text-slate-500">{order.orderType}</p>
                     {order.orderType === 'Delivery' && order.deliveryAddress ? (
@@ -638,25 +638,25 @@ export default function RestaurantOrdersKotPage() {
                       </p>
                     ) : null}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3" data-label="Customer">
                     <p className="font-semibold text-slate-950">{order.customer}</p>
                     <p className="mt-1 text-xs text-slate-500">{order.phone || 'No phone'}</p>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3" data-label="Items">
                     <Badge variant="default">{order.itemsCount || 0} items</Badge>
                   </td>
-                  <td className="px-4 py-3 font-black text-slate-950">{formatRestaurantCurrency(order.total || order.totals?.total)}</td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 font-black text-slate-950" data-label="Total">{formatRestaurantCurrency(order.total || order.totals?.total)}</td>
+                  <td className="px-4 py-3" data-label="Payment">
                     <Badge variant={statusTone[order.paymentStatus] || 'default'}>{order.paymentStatus}</Badge>
                     {renderWalletBadge(order)}
                     {String(order.orderStatus || '').toLowerCase() !== 'cancelled' && (order.due || order.dueAmount) ? (
                       <p className="mt-1 text-xs font-bold text-rose-700">Due {formatRestaurantCurrency(order.due || order.dueAmount)}</p>
                     ) : null}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3" data-label="Status">
                     <Badge variant={statusTone[order.orderStatus] || 'default'}>{order.orderStatus}</Badge>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3" data-label="Date">
                     <p className="font-semibold text-slate-950">{order.time}</p>
                     <p className="mt-1 text-xs text-slate-500">{order.date}</p>
                   </td>

@@ -472,19 +472,19 @@ export default function RestaurantMenuManagementPage() {
                 <tbody className="divide-y divide-slate-100">
                   {filteredItems.map((item) => (
                     <tr key={item.id} className="bg-white">
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3" data-label="Item name">
                         <p className="font-semibold text-slate-950">{item.name}</p>
                         <p className="mt-0.5 text-xs text-slate-500">{item.sku}</p>
                       </td>
-                      <td className="px-4 py-3 text-slate-600">{item.category}</td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 text-slate-600" data-label="Category">{item.category}</td>
+                      <td className="px-4 py-3" data-label="Price">
                         <p className="font-bold text-slate-950">{formatRestaurantCurrency(finalItemPrice(item))}</p>
                         <p className="text-xs text-slate-500">Base {formatRestaurantCurrency(item.price)}</p>
                       </td>
-                      <td className="px-4 py-3 text-slate-600">
+                      <td className="px-4 py-3 text-slate-600" data-label="Discount">
                         {safeMoney(item.discountValue) > 0 ? `${item.discountValue}${normalizeDiscountType(item.discountType) === 'percentage' ? '%' : ' PKR'}` : 'None'}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3" data-label="Status">
                         <Badge variant={item.status === 'Active' ? 'success' : 'default'}>{item.status}</Badge>
                       </td>
                       <td className="px-4 py-3">

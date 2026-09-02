@@ -135,12 +135,12 @@ export default function LoyaltyPage() {
                     <tbody className="divide-y divide-slate-100">
                       {MEMBERSHIP_TIERS.map((tier) => (
                         <tr key={tier.id}>
-                          <td className="px-3 py-2.5"><TierBadge tierId={tier.id} /></td>
-                          <td className="px-3 py-2.5 font-semibold">Rs {tier.minSpend.toLocaleString()}</td>
-                          <td className="px-3 py-2.5">{tier.minVisits}</td>
-                          <td className="px-3 py-2.5">{tier.minPoints.toLocaleString()}</td>
-                          <td className="px-3 py-2.5 font-bold">{tier.discountPct}%</td>
-                          <td className="px-3 py-2.5 text-xs text-slate-600">{tier.benefits.slice(0, 2).join(', ')}</td>
+                          <td className="px-3 py-2.5" data-label="Tier"><TierBadge tierId={tier.id} /></td>
+                          <td className="px-3 py-2.5 font-semibold" data-label="Min Spend">Rs {tier.minSpend.toLocaleString()}</td>
+                          <td className="px-3 py-2.5" data-label="Min Visits">{tier.minVisits}</td>
+                          <td className="px-3 py-2.5" data-label="Min Points">{tier.minPoints.toLocaleString()}</td>
+                          <td className="px-3 py-2.5 font-bold" data-label="Discount">{tier.discountPct}%</td>
+                          <td className="px-3 py-2.5 text-xs text-slate-600" data-label="Benefits">{tier.benefits.slice(0, 2).join(', ')}</td>
                         </tr>
                       ))}
                     </tbody>

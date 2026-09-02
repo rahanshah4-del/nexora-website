@@ -525,11 +525,11 @@ function RestaurantDashboard({ workspaceName, workspaceId }) {
                     }
                     return (
                       <tr key={r.id} className="hover:bg-slate-50/50 transition">
-                        <td className="px-3 py-2.5 font-semibold text-slate-900">{r.customerName || r.name || 'Guest'}</td>
-                        <td className="px-3 py-2.5 text-slate-600 font-mono text-xs">{r.tableId || r.tableNumber || 'Auto'}</td>
-                        <td className="px-3 py-2.5 text-slate-600">{r.time || r.reservationTime || '—'}</td>
-                        <td className="px-3 py-2.5 text-center text-slate-600">{r.partySize || r.guestCount || r.guests || 1}</td>
-                        <td className="px-3 py-2.5 text-right">
+                        <td className="px-3 py-2.5 font-semibold text-slate-900" data-label="Customer">{r.customerName || r.name || 'Guest'}</td>
+                        <td className="px-3 py-2.5 text-slate-600 font-mono text-xs" data-label="Table">{r.tableId || r.tableNumber || 'Auto'}</td>
+                        <td className="px-3 py-2.5 text-slate-600" data-label="Time">{r.time || r.reservationTime || '—'}</td>
+                        <td className="px-3 py-2.5 text-center text-slate-600" data-label="Guests">{r.partySize || r.guestCount || r.guests || 1}</td>
+                        <td className="px-3 py-2.5 text-right" data-label="Status">
                           <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-black ${statusColors[r.status] || 'bg-slate-50 text-slate-600'}`}>
                             {statusLabels[r.status] || r.status}
                           </span>

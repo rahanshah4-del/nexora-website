@@ -1135,7 +1135,7 @@ function RestaurantCustomersManager() {
                   const avatarColor = avatarColors[idx % avatarColors.length]
                   return (
                     <tr key={customer.id} className="group transition hover:bg-sky-50/50">
-                      <td className="px-5 py-3.5">
+                      <td className="px-5 py-3.5" data-label="Customer">
                         <div className="flex items-center gap-3">
                           <div className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl text-xs font-black ${avatarColor}`}>
                             {initial}
@@ -1152,15 +1152,15 @@ function RestaurantCustomersManager() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-5 py-3.5 text-sm text-slate-600">{customer.phone || <span className="text-slate-300">—</span>}</td>
-                      <td className="px-5 py-3.5 text-sm text-slate-600 max-w-[180px] truncate">{customer.address || <span className="text-slate-300">—</span>}</td>
-                      <td className="px-5 py-3.5 text-sm font-bold text-slate-800 tabular-nums">Rs {Number(customer.paidAmount || 0).toLocaleString()}</td>
-                      <td className="px-5 py-3.5">
+                      <td className="px-5 py-3.5 text-sm text-slate-600" data-label="Phone">{customer.phone || <span className="text-slate-300">—</span>}</td>
+                      <td className="px-5 py-3.5 text-sm text-slate-600 max-w-[180px] truncate" data-label="Address">{customer.address || <span className="text-slate-300">—</span>}</td>
+                      <td className="px-5 py-3.5 text-sm font-bold text-slate-800 tabular-nums" data-label="Paid">Rs {Number(customer.paidAmount || 0).toLocaleString()}</td>
+                      <td className="px-5 py-3.5" data-label="Remaining">
                         <span className={`inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-xs font-bold tabular-nums ${due > 0 ? 'bg-rose-50 text-rose-700' : 'bg-emerald-50 text-emerald-700'}`}>
                           {due > 0 ? 'Rs ' + due.toLocaleString() : 'Clear'}
                         </span>
                       </td>
-                      <td className="px-5 py-3.5 text-sm text-slate-500">{customer.lastVisit || <span className="text-slate-300">—</span>}</td>
+                      <td className="px-5 py-3.5 text-sm text-slate-500" data-label="Last Visit">{customer.lastVisit || <span className="text-slate-300">—</span>}</td>
                       <td className="px-5 py-3.5 text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           <button

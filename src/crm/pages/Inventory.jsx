@@ -149,7 +149,7 @@ function SimpleTable({ columns, rows, empty }) {
             {rows.map((row, idx) => (
               <tr key={row.id ?? idx} className="transition hover:bg-slate-50 dark:hover:bg-white/5">
                 {columns.map((c) => (
-                  <td key={c.key} className="whitespace-nowrap px-4 py-3 text-slate-800 dark:text-slate-100">
+                  <td key={c.key} data-label={c.header || undefined} className="whitespace-nowrap px-4 py-3 text-slate-800 dark:text-slate-100">
                     {c.cell ? c.cell(row) : row[c.key]}
                   </td>
                 ))}

@@ -504,15 +504,15 @@ export default function SchoolPayrollPage() {
                       const locked = ['approved', 'paid'].includes(String(row.approvalStatus || row.status || '').toLowerCase())
                       return (
                         <tr key={row.id} className="hover:bg-slate-50/80">
-                          <td className="px-4 py-3">
+                          <td className="px-4 py-3" data-label="Staff">
                             <p className="font-black text-slate-950">{row.staffName || 'Staff'}</p>
                             <p className="text-xs font-semibold text-slate-500">{row.role || row.paymentMethod || '-'}</p>
                           </td>
-                          <td className="px-4 py-3 font-semibold text-slate-700">{row.salaryMonth || '-'}</td>
-                          <td className="px-4 py-3 font-semibold">{formatCurrency(row.grossPay ?? row.baseSalary, currency)}</td>
-                          <td className="px-4 py-3 font-semibold text-rose-700">{formatCurrency(row.deduction, currency)}</td>
-                          <td className="px-4 py-3 font-black text-emerald-700">{formatCurrency(row.netPay ?? row.amount, currency)}</td>
-                          <td className="px-4 py-3"><Badge variant={badge.variant}>{badge.label}</Badge></td>
+                          <td className="px-4 py-3 font-semibold text-slate-700" data-label="Month">{row.salaryMonth || '-'}</td>
+                          <td className="px-4 py-3 font-semibold" data-label="Gross">{formatCurrency(row.grossPay ?? row.baseSalary, currency)}</td>
+                          <td className="px-4 py-3 font-semibold text-rose-700" data-label="Deduction">{formatCurrency(row.deduction, currency)}</td>
+                          <td className="px-4 py-3 font-black text-emerald-700" data-label="Net">{formatCurrency(row.netPay ?? row.amount, currency)}</td>
+                          <td className="px-4 py-3" data-label="Status"><Badge variant={badge.variant}>{badge.label}</Badge></td>
                           <td className="px-4 py-3">
                             <div className="flex flex-wrap justify-end gap-2">
                               <Button type="button" variant="subtle" className="h-8 rounded-xl px-3 text-xs" onClick={() => printSalarySlip(row, currency, workspaceName) || showToast('error', 'Allow pop-ups to print salary slip')}>

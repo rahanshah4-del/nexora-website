@@ -94,12 +94,12 @@ export default function KitchenProductionReportsPage() {
                 <tbody className="divide-y divide-slate-100">
                   {metrics.recipeCosts.map((r) => (
                     <tr key={r.menuItemId}>
-                      <td className="px-3 py-2 font-semibold text-slate-950">{r.name || 'Unknown'}</td>
-                      <td className="px-3 py-2">{formatCurrency(r.recipeCost)}</td>
-                      <td className="px-3 py-2">{formatCurrency(r.sellingPrice)}</td>
-                      <td className="px-3 py-2 font-bold text-emerald-600">{formatCurrency(r.profitPerUnit)}</td>
-                      <td className="px-3 py-2"><span className={`font-bold ${r.foodCostPct > 60 ? 'text-rose-600' : 'text-emerald-600'}`}>{r.foodCostPct}%</span></td>
-                      <td className="px-3 py-2 font-bold text-slate-950">{r.marginPct}%</td>
+                      <td className="px-3 py-2 font-semibold text-slate-950" data-label="Recipe">{r.name || 'Unknown'}</td>
+                      <td className="px-3 py-2" data-label="Cost">{formatCurrency(r.recipeCost)}</td>
+                      <td className="px-3 py-2" data-label="Price">{formatCurrency(r.sellingPrice)}</td>
+                      <td className="px-3 py-2 font-bold text-emerald-600" data-label="Profit">{formatCurrency(r.profitPerUnit)}</td>
+                      <td className="px-3 py-2" data-label="Food Cost %"><span className={`font-bold ${r.foodCostPct > 60 ? 'text-rose-600' : 'text-emerald-600'}`}>{r.foodCostPct}%</span></td>
+                      <td className="px-3 py-2 font-bold text-slate-950" data-label="Margin">{r.marginPct}%</td>
                     </tr>
                   ))}
                 </tbody>
