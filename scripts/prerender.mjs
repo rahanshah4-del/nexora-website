@@ -102,6 +102,10 @@ function slugToTitle(slug) {
 
 const PUBLIC_ROUTES = [
   { path: '/',              title: 'Nexora POS Software Pakistan | Nexora Solution',                                        description: 'Nexora offers Pakistan\'s leading POS software for restaurant, retail, school ERP and WhatsApp CRM teams with unified business workflows.' },
+  { path: '/uae/',          title: 'Business Software Solutions UAE | POS, ERP & CRM Dubai Abu Dhabi',                       description: 'AI-powered POS, School ERP, Retail POS and WhatsApp CRM for businesses in UAE.' },
+  { path: '/hi/',           title: 'बिज़नेस सॉफ्टवेयर पाकिस्तान | POS, ERP और CRM — Nexora Solution',                         description: 'रेस्तरां POS, स्कूल ERP और रिटेल POS सॉफ्टवेयर।' },
+  { path: '/ar/',           title: 'برنامج إدارة الأعمال | Nexora Solution',                                                  description: 'نظام POS وERP وCRM للمطاعم والمدارس والمتاجر.' },
+  { path: '/ur/',           title: 'بزنس مینجمنٹ سافٹ ویئر | Nexora Solution',                                                description: 'ریستوران POS، اسکول ERP اور ریٹیل POS سافٹ ویئر پاکستان۔' },
   { path: '/about',         title: 'About Nexora Solution — Pakistan\'s Business Software Platform',                        description: 'Learn about Nexora Solution, the team behind Pakistan\'s leading POS, ERP and CRM platform for restaurants, retail, schools and enterprises.' },
   { path: '/pricing',       title: 'Nexora Pricing — Simple Plans for Every Business',                                      description: 'Compare Nexora pricing plans. Start with a free trial, then choose Basic, Standard or Enterprise. No credit card required.' },
   { path: '/contact',       title: 'Contact Nexora Solution — Get in Touch',                                                description: 'Contact Nexora Solution for POS software, ERP systems, CRM solutions. Book a free demo or reach our support team.' },
@@ -141,11 +145,18 @@ const PUBLIC_ROUTES = [
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function buildSeoHead(meta) {
-  const canonical = `${SITE}${meta.path === '/' ? '/' : meta.path.replace(/\/?$/, '/')}`
+  const normalizedPath = meta.path === '/' ? '/' : `/${meta.path.replace(/^\/+|\/+$/g, '')}/`
+  const languageMatch = normalizedPath.match(/^\/(ur|hi|ar)(\/.*)?$/)
+  const isUae = normalizedPath === '/uae/'
+  const canonical = `${SITE}${normalizedPath}`
   const img = meta.image || LOGO
   const type = meta.path.startsWith('/blog/') ? 'article' : 'website'
   const ogLocale = meta.ogLocale || 'en_PK'
-  const hreflangBlock = meta.hreflangBlock || ''
+  const hreflangBlock = meta.hreflangBlock || (languageMatch
+    ? `  <link rel="alternate" hreflang="${languageMatch[1]}" href="${esc(canonical)}" />\n  <link rel="alternate" hreflang="x-default" href="${esc(`${SITE}${languageMatch[2] || '/'}`)}" />\n`
+    : isUae
+      ? `  <link rel="alternate" hreflang="en-AE" href="${esc(canonical)}" />\n  <link rel="alternate" hreflang="x-default" href="${esc(canonical)}" />\n`
+      : '')
 
   return `  <title>${esc(meta.title)}</title>
   <meta name="description" content="${esc(meta.description)}" />
@@ -174,8 +185,8 @@ function buildSeoHead(meta) {
 function buildHreflangBlock(slug, langs) {
   const mlLangs = langs || [
     { prefix: '', hreflang: 'en', xDefault: true },
-    { prefix: 'ur', hreflang: 'ur-PK' },
-    { prefix: 'hi', hreflang: 'hi-IN' },
+    { prefix: 'ur', hreflang: 'ur' },
+    { prefix: 'hi', hreflang: 'hi' },
     { prefix: 'ar', hreflang: 'ar' },
     { prefix: 'bn', hreflang: 'bn' },
   ]

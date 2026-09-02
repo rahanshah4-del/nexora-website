@@ -20,7 +20,7 @@
     "ai:highlight:force": "node scripts/aiHighlight.js --force",
     "audit:all-modules": "npm run audit:sales-hub && npm run audit:school-erp && npm run audit:retail-pos && npm run audit:restaurant-pos && npm run audit:property-erp && npm run audit:transport-rental && npm run audit:whatsapp-crm && npm run audit:module-integrations",
     "lint": "eslint .",
-    "preview": "vite preview",
+    "preview": "vite preview --host 0.0.0.0 --port 4173",
     "worker:deploy": "wrangler deploy --config workers/nexora-email-api/wrangler.toml",
     "worker:secret": "wrangler secret put RESEND_API_KEY --config workers/nexora-email-api/wrangler.toml",
     "whatsapp:deploy": "wrangler deploy --config workers/nexora-whatsapp-api/wrangler.toml",
