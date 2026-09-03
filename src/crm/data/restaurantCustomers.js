@@ -28,8 +28,24 @@ function _key() {
   return k
 }
 
+// See restaurantOrders.js for why this exists: switching workspaces without
+// a page reload (the in-app "Switch Product" modal) changes what
+// scopedKey() resolves to, but nothing invalidated _customerCache on that
+// change — so a second Restaurant POS workspace kept showing the first
+// workspace's cached customers. Must run unconditionally before the cache
+// short-circuits in loadRestaurantCustomers, since _key() is only reached
+// on a cache miss.
+let _lastKey = null
+
+function _checkScopeChange() {
+  const k = _key()
+  if (_lastKey !== null && _lastKey !== k) _customerCache = null
+  _lastKey = k
+}
+
 export function loadRestaurantCustomers() {
   if (typeof window === 'undefined') return restaurantCustomersSeed
+  _checkScopeChange()
   if (_customerCache) return _customerCache
   try {
     const stored = window.localStorage.getItem(_key())

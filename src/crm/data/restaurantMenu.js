@@ -25,6 +25,28 @@ function _catKey() {
   return k
 }
 
+// See restaurantOrders.js for why this exists: switching workspaces without
+// a page reload (the in-app "Switch Product" modal) changes what
+// scopedKey() resolves to, but nothing invalidated the in-memory caches
+// below on that change — so a second Restaurant POS workspace kept
+// showing the first workspace's cached menu. Must run unconditionally
+// before the cache short-circuits in loadRestaurantMenuItems/Categories,
+// since _menuKey()/_catKey() are only reached on a cache miss.
+let _lastMenuKey = null
+let _lastCatKey = null
+
+function _checkMenuScopeChange() {
+  const k = _menuKey()
+  if (_lastMenuKey !== null && _lastMenuKey !== k) _menuItemsCache = null
+  _lastMenuKey = k
+}
+
+function _checkCatScopeChange() {
+  const k = _catKey()
+  if (_lastCatKey !== null && _lastCatKey !== k) _menuCatCache = null
+  _lastCatKey = k
+}
+
 export function hasRestaurantOffer(item) {
   return Boolean(item?.offerTitle || Number(item?.discountValue || 0) > 0 || item?.happyHour || item?.buyOneGetOne || item?.comboOffer)
 }
@@ -33,6 +55,7 @@ let _menuItemsCache = null
 
 export function loadRestaurantMenuItems() {
   if (typeof window === 'undefined') return restaurantMenuItems
+  _checkMenuScopeChange()
   if (_menuItemsCache) return _menuItemsCache
   try {
     const stored = window.localStorage.getItem(_menuKey())
@@ -63,6 +86,7 @@ let _menuCatCache = null
 
 export function loadRestaurantMenuCategories() {
   if (typeof window === 'undefined') return restaurantMenuCategories
+  _checkCatScopeChange()
   if (_menuCatCache) return _menuCatCache
   try {
     const stored = window.localStorage.getItem(_catKey())

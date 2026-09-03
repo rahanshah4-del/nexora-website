@@ -13,6 +13,23 @@ function _key() {
   return k
 }
 
+// Tracks which scoped key the in-memory cache below was last populated
+// from. Switching workspaces (e.g. via the in-app "Switch Product" modal,
+// which does not reload the page) changes what scopedKey(_BASE) resolves
+// to, but nothing invalidated this module's cache on that change — so a
+// second Restaurant POS workspace kept showing the first workspace's
+// cached orders. Must run unconditionally before the cache short-circuits
+// below (loadRestaurantOrders/readStoredOrders both return early on a
+// cache hit, so checking for a scope change *inside* _key() never fired —
+// _key() is only reached on a cache miss).
+let _lastKey = null
+
+function _checkScopeChange() {
+  const k = _key()
+  if (_lastKey !== null && _lastKey !== k) invalidateCache()
+  _lastKey = k
+}
+
 /** In-memory cache: avoids re-parsing localStorage JSON on every call.
  * Invalidated whenever orders are written. */
 let _cache = null
@@ -45,6 +62,7 @@ if (typeof window !== 'undefined') {
 }
 
 export function loadRestaurantOrders() {
+  _checkScopeChange()
   if (_normalizedCache) return _normalizedCache
   _normalizedCache = readStoredOrders().map((order) => normalizeRestaurantOrder(order)).filter((order) => order.orderNumber)
   return _normalizedCache
