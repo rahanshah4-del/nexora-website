@@ -706,42 +706,49 @@ function WorkspaceListRow({ workspace, index, emailVerified, selected, saving, o
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2, delay: index * 0.025, ease: 'easeOut' }}
-      className={`flex flex-wrap items-center gap-3 rounded-lg border bg-white px-4 py-3 shadow-[0_12px_32px_-26px_rgba(15,23,42,0.42)] transition sm:flex-nowrap sm:gap-4 ${
+      className={`flex flex-col items-stretch gap-3 rounded-lg border bg-white px-4 py-3 shadow-[0_12px_32px_-26px_rgba(15,23,42,0.42)] transition sm:flex-row sm:flex-nowrap sm:items-center sm:gap-4 ${
         selected ? isRestaurant ? 'border-violet-400 ring-1 ring-violet-100' : 'border-blue-500 ring-1 ring-blue-100' : 'border-slate-200'
       }`}
     >
-      <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-lg bg-gradient-to-br ${workspace.emojiBg || 'from-sky-100 to-blue-200'} shadow-sm`}>
-        {workspace.emoji || '📈'}
-      </span>
+      {/* Icon+name grouped so they stay on one row on mobile — the shared
+          parent flex-wrap used to let these squeeze onto the same line as
+          the badges/button below, crushing this text column to a sliver
+          that wrapped word-by-word. sm:contents un-groups them back into
+          plain flex-row siblings at sm+, leaving desktop untouched. */}
+      <div className="flex min-w-0 items-center gap-3 sm:contents">
+        <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-lg bg-gradient-to-br ${workspace.emojiBg || 'from-sky-100 to-blue-200'} shadow-sm`}>
+          {workspace.emoji || '📈'}
+        </span>
 
-      <div className="min-w-0 flex-1">
-        <div className="flex min-w-0 flex-wrap items-center gap-2">
-          <h3 className="truncate text-sm font-bold leading-5 text-slate-950">{workspace.name}</h3>
-          {selected && isRestaurant && (
-            <span className="inline-flex items-center gap-1 rounded-full border border-violet-200/60 bg-violet-50 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.1em] text-violet-600 shadow-[0_0_8px_-2px_rgba(139,92,246,0.12)]">
-              <img src="/nexora-ai-logo.png" alt="AI" className="h-3 w-3 rounded object-cover" />
-              AI-Powered
-            </span>
-          )}
-          {selected && emailVerified ? <VerificationBadge verified compact /> : null}
-        </div>
-        <p className="mt-0.5 truncate text-xs text-slate-500">Business type: {businessTypeLabel}</p>
-        {selected && isRestaurant && (
-          <p className="mt-0.5 text-[11px] font-medium text-violet-600">
-            ✨ AI Menu Import, smart billing &amp; AI-powered inventory included
-          </p>
-        )}
-        {/* Activity indicator — Apple-style inline */}
-        {hasActivity ? (
-          <div className="mt-0.5 flex items-center gap-2 text-xs">
-            <span className="inline-flex items-center gap-1 font-semibold text-[#1d1d1f]">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#007aff]" />
-              {activity.todayCount || 0} today
-            </span>
-            <span className="text-[#c6c6c8]">·</span>
-            <span className="font-medium text-[#86868b]">{activity.lastActiveLabel}</span>
+        <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <h3 className="truncate text-sm font-bold leading-5 text-slate-950">{workspace.name}</h3>
+            {selected && isRestaurant && (
+              <span className="inline-flex items-center gap-1 rounded-full border border-violet-200/60 bg-violet-50 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.1em] text-violet-600 shadow-[0_0_8px_-2px_rgba(139,92,246,0.12)]">
+                <img src="/nexora-ai-logo.png" alt="AI" className="h-3 w-3 rounded object-cover" />
+                AI-Powered
+              </span>
+            )}
+            {selected && emailVerified ? <VerificationBadge verified compact /> : null}
           </div>
-        ) : null}
+          <p className="mt-0.5 truncate text-xs text-slate-500">Business type: {businessTypeLabel}</p>
+          {selected && isRestaurant && (
+            <p className="mt-0.5 text-[11px] font-medium text-violet-600">
+              ✨ AI Menu Import, smart billing &amp; AI-powered inventory included
+            </p>
+          )}
+          {/* Activity indicator — Apple-style inline */}
+          {hasActivity ? (
+            <div className="mt-0.5 flex items-center gap-2 text-xs">
+              <span className="inline-flex items-center gap-1 font-semibold text-[#1d1d1f]">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#007aff]" />
+                {activity.todayCount || 0} today
+              </span>
+              <span className="text-[#c6c6c8]">·</span>
+              <span className="font-medium text-[#86868b]">{activity.lastActiveLabel}</span>
+            </div>
+          ) : null}
+        </div>
       </div>
 
       {/* Activity mini-stat — Apple-style pill */}
@@ -805,18 +812,20 @@ function CreateWorkspaceListRow({ disabled, creating, message, onOpen }) {
   const subtext = message || (creating ? 'Setting up your workspace...' : disabled ? 'Select a module above first.' : 'Start a separate 1-month Nexora CRM trial workspace.')
   return (
     <div
-      className={`flex flex-wrap items-center gap-3 rounded-lg border px-4 py-3 shadow-[0_12px_32px_-26px_rgba(15,23,42,0.42)] sm:flex-nowrap sm:gap-4 ${
+      className={`flex flex-col items-stretch gap-3 rounded-lg border px-4 py-3 shadow-[0_12px_32px_-26px_rgba(15,23,42,0.42)] sm:flex-row sm:flex-nowrap sm:items-center sm:gap-4 ${
         disabled ? 'border-slate-200 bg-white' : 'border-blue-100 bg-blue-50/35'
       }`}
     >
-      <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${creating ? 'bg-blue-100 text-blue-600' : disabled ? 'bg-slate-100 text-slate-400' : 'bg-blue-100 text-blue-600'}`}>
-        <HiOutlinePlus className="h-6 w-6" />
-      </span>
-      <div className="min-w-0 flex-1">
-        <h3 className="text-sm font-bold leading-5 text-slate-950">Create New Workspace</h3>
-        <p className="mt-0.5 truncate text-xs text-slate-600">
-          {subtext}
-        </p>
+      <div className="flex min-w-0 items-center gap-3 sm:contents">
+        <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${creating ? 'bg-blue-100 text-blue-600' : disabled ? 'bg-slate-100 text-slate-400' : 'bg-blue-100 text-blue-600'}`}>
+          <HiOutlinePlus className="h-6 w-6" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <h3 className="text-sm font-bold leading-5 text-slate-950">Create New Workspace</h3>
+          <p className="mt-0.5 truncate text-xs text-slate-600">
+            {subtext}
+          </p>
+        </div>
       </div>
       <button
         type="button"
@@ -1068,13 +1077,15 @@ function AutomationBanner() {
 
 function SupportTicketsListRow({ disabled, onOpen }) {
   return (
-    <div className="flex flex-wrap items-center gap-3 rounded-lg border border-emerald-100 bg-gradient-to-r from-emerald-50 via-white to-cyan-50 px-4 py-3 shadow-[0_12px_32px_-26px_rgba(15,23,42,0.42)] sm:flex-nowrap sm:gap-4">
-      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-cyan-600 text-white">
-        <HiOutlineLifebuoy className="h-6 w-6" />
-      </span>
-      <div className="min-w-0 flex-1">
-        <h3 className="text-sm font-bold leading-5 text-slate-950">Support Tickets</h3>
-        <p className="mt-0.5 truncate text-xs text-slate-600">Ticket center for screenshots, replies, and completion tracking.</p>
+    <div className="flex flex-col items-stretch gap-3 rounded-lg border border-emerald-100 bg-gradient-to-r from-emerald-50 via-white to-cyan-50 px-4 py-3 shadow-[0_12px_32px_-26px_rgba(15,23,42,0.42)] sm:flex-row sm:flex-nowrap sm:items-center sm:gap-4">
+      <div className="flex min-w-0 items-center gap-3 sm:contents">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-cyan-600 text-white">
+          <HiOutlineLifebuoy className="h-6 w-6" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <h3 className="text-sm font-bold leading-5 text-slate-950">Support Tickets</h3>
+          <p className="mt-0.5 truncate text-xs text-slate-600">Ticket center for screenshots, replies, and completion tracking.</p>
+        </div>
       </div>
       <button
         type="button"
