@@ -17,6 +17,7 @@ import { normalizeBusinessType } from '../data/moduleAccess.js'
 import { loadRestaurantCustomers, saveRestaurantCustomers } from '../data/restaurantCustomers.js'
 import { formatCurrency } from '../utils/format.js'
 import { useWalletTransactions } from '../hooks/useWalletTransactions.js'
+import { withTimeout } from '../utils/withTimeout.js'
 import { collection, onSnapshot, orderBy, query, limit, where } from 'firebase/firestore'
 import { db } from '../lib/firebase.js'
 
@@ -328,7 +329,7 @@ export default function CustomersPage() {
         schoolMode={isSchool}
         onClose={() => setCreateOpen(false)}
         onCreate={async (payload) => {
-          const res = await customersApi.createCustomer(payload)
+          const res = await withTimeout(customersApi.createCustomer(payload))
           if (res?.ok) {
             setToast({ tone: 'success', message: isSchool ? 'Student created successfully' : 'Customer created successfully' })
             window.setTimeout(() => setToast(null), 1600)
@@ -345,7 +346,7 @@ export default function CustomersPage() {
         initialRecord={editingCustomer}
         onClose={() => setEditingCustomer(null)}
         onCreate={async (payload) => {
-          const res = await customersApi.updateCustomer(editingCustomer?.id, payload)
+          const res = await withTimeout(customersApi.updateCustomer(editingCustomer?.id, payload))
           if (res?.ok) {
             setToast({ tone: 'success', message: isSchool ? 'Student updated successfully' : 'Customer updated successfully' })
             window.setTimeout(() => setToast(null), 1600)
