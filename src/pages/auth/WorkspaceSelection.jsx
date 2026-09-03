@@ -429,9 +429,15 @@ function SidebarItem({ icon: Icon, label, active = false, onClick, collapsed = f
   )
 }
 
-function NotificationDropdown({ notifications, loading, onMarkRead, onClear, onClearAll, onClose }) {
+function NotificationDropdown({ notifications, loading, onMarkRead, onClear, onClearAll, onClose, mobile = false }) {
   return (
-    <div className="absolute right-0 top-full z-40 mt-2 w-[min(22rem,calc(100vw-2rem))] rounded-lg border border-slate-200 bg-white p-3 text-slate-900 shadow-xl shadow-slate-950/10">
+    <div
+      className={
+        mobile
+          ? 'fixed inset-x-3 bottom-20 z-50 max-h-[70vh] overflow-y-auto rounded-lg border border-slate-200 bg-white p-3 text-slate-900 shadow-xl shadow-slate-950/10 sm:hidden'
+          : 'absolute right-0 top-full z-40 mt-2 w-[min(22rem,calc(100vw-2rem))] rounded-lg border border-slate-200 bg-white p-3 text-slate-900 shadow-xl shadow-slate-950/10'
+      }
+    >
       <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-2">
         <div>
           <p className="text-sm font-bold text-slate-950">Notifications</p>
@@ -4593,8 +4599,28 @@ export default function WorkspaceSelection() {
               </div>
             </nav>
 
-            {/* Spacer for mobile bottom nav */}
-            <div className="h-16 lg:hidden" />
+            {/* The desktop bell (above, in the header) is `hidden sm:block`, so its
+                dropdown never renders on mobile even though the "Alerts" bottom-nav
+                button above still toggles the same `notificationsOpen` state — the
+                button appeared to do nothing. This renders the same panel as a
+                bottom-sheet-style overlay whenever the bottom nav itself is visible. */}
+            {notificationsOpen ? (
+              <NotificationDropdown
+                mobile
+                notifications={workspaceNotifications}
+                loading={workspaceNotificationsLoading}
+                onMarkRead={(id) => markWorkspaceNotificationRead(id).catch((error) => reportTechnicalError(error, 'Workspace notification read failed'))}
+                onClear={(id) => clearWorkspaceNotification(id).catch((error) => reportTechnicalError(error, 'Workspace notification clear failed'))}
+                onClearAll={() => clearAllWorkspaceNotifications().catch((error) => reportTechnicalError(error, 'Workspace notifications clear failed'))}
+                onClose={() => setNotificationsOpen(false)}
+              />
+            ) : null}
+
+            {/* Spacer for mobile bottom nav — matches its real height (h-14 content
+                row + safe-area-inset-bottom padding for gesture-nav phones); the
+                previous fixed h-16 fell short on devices with a taller safe area,
+                so the last bit of content sat behind the bar. */}
+            <div className="h-[calc(3.5rem+env(safe-area-inset-bottom))] lg:hidden" />
 
             <footer className="py-4 text-center text-xs font-medium text-slate-500">
               NEXORA SOLUTION — All rights reserved 2019-2026.
