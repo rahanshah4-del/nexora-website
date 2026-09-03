@@ -414,33 +414,43 @@ export default function InvoiceCreatePage() {
     const finalAmountPaid = canCreatePaidInvoices
       ? requestedStatus === 'paid' ? totals.grandTotal : totals.amountPaid
       : 0
-    const res = await createInvoice({
-      ...invoice,
-      items: cleanItems,
-      status: requestedStatus,
-      paymentStatus: requestedStatus === 'draft' ? 'draft' : finalAmountPaid >= totals.grandTotal ? 'paid' : finalAmountPaid > 0 ? 'partial' : 'pending',
-      approvalStatus: requestedStatus === 'paid' ? 'approved' : requestedStatus === 'draft' ? 'draft' : 'pending',
-      requiresApproval: requestedStatus !== 'draft' && requestedStatus !== 'paid',
-      subtotal: totals.subtotal,
-      discount: totals.discountTotal,
-      discountTotal: totals.discountTotal,
-      taxableAmount: totals.taxableAmount,
-      taxRate: totals.averageTaxRate,
-      taxAmount: totals.taxTotal,
-      taxTotal: totals.taxTotal,
-      roundOff: totals.roundOff,
-      total: totals.grandTotal,
-      amountPaid: finalAmountPaid,
-      partialPaidAmount: finalAmountPaid,
-      paymentHistory: [],
-      paidAt: null,
-      approvedAt: null,
-      balanceDue: Math.max(totals.grandTotal - finalAmountPaid, 0),
-      amountInWords: totals.amountInWords,
-      subtotalUsd: totals.subtotal,
-      taxAmountUsd: totals.taxTotal,
-      totalUsd: totals.grandTotal,
-    })
+    // createInvoice() already catches its own errors, but a genuinely stuck
+    // network/Firestore call (no response, no rejection) would otherwise
+    // leave the Save button on "Saving..." forever with no feedback — race
+    // it against a timeout so the button always recovers.
+    const res = await Promise.race([
+      createInvoice({
+        ...invoice,
+        items: cleanItems,
+        status: requestedStatus,
+        paymentStatus: requestedStatus === 'draft' ? 'draft' : finalAmountPaid >= totals.grandTotal ? 'paid' : finalAmountPaid > 0 ? 'partial' : 'pending',
+        approvalStatus: requestedStatus === 'paid' ? 'approved' : requestedStatus === 'draft' ? 'draft' : 'pending',
+        requiresApproval: requestedStatus !== 'draft' && requestedStatus !== 'paid',
+        subtotal: totals.subtotal,
+        discount: totals.discountTotal,
+        discountTotal: totals.discountTotal,
+        taxableAmount: totals.taxableAmount,
+        taxRate: totals.averageTaxRate,
+        taxAmount: totals.taxTotal,
+        taxTotal: totals.taxTotal,
+        roundOff: totals.roundOff,
+        total: totals.grandTotal,
+        amountPaid: finalAmountPaid,
+        partialPaidAmount: finalAmountPaid,
+        paymentHistory: [],
+        paidAt: null,
+        approvedAt: null,
+        balanceDue: Math.max(totals.grandTotal - finalAmountPaid, 0),
+        amountInWords: totals.amountInWords,
+        subtotalUsd: totals.subtotal,
+        taxAmountUsd: totals.taxTotal,
+        totalUsd: totals.grandTotal,
+      }),
+      new Promise((resolve) => window.setTimeout(
+        () => resolve({ ok: false, error: 'This is taking longer than expected. Please check your connection and try again.' }),
+        25000,
+      )),
+    ])
     setSubmitting(false)
 
     if (res?.ok) {
