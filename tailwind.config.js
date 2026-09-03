@@ -57,11 +57,16 @@ export default {
       },
       animation: {
         'feature-pulse': 'featurePulse 3s ease-in-out infinite',
+        'ai-pop': 'aiPop 180ms cubic-bezier(0.16, 1, 0.3, 1)',
       },
       keyframes: {
         featurePulse: {
           '0%, 100%': { opacity: '1', transform: 'scale(1)' },
           '50%': { opacity: '0.8', transform: 'scale(1.06)' },
+        },
+        aiPop: {
+          '0%': { opacity: '0', transform: 'scale(0.94) translateY(6px)' },
+          '100%': { opacity: '1', transform: 'scale(1) translateY(0)' },
         },
       },
     },

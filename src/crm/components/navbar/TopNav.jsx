@@ -14,6 +14,7 @@ import { useAuth } from '../../hooks/useAuth.js'
 import { useUser } from '../../hooks/useUser.js'
 import { useLocation, useNavigate } from 'react-router-dom'
 import NotificationBell from '../notifications/NotificationBell.jsx'
+import NexoraAiLauncher from './NexoraAiLauncher.jsx'
 import CloudSyncButton from '../system/CloudSyncButton.jsx'
 import GlobalSearch from '../system/GlobalSearch.jsx'
 import MobileBottomNav from './MobileBottomNav.jsx'
@@ -232,11 +233,11 @@ function TopNav({ onOpenSidebar, onSwitchProduct }) {
         ref={headerRef}
         className="fixed inset-x-0 top-0 z-40 w-full px-3 pt-3 print:hidden sm:px-5 lg:sticky lg:inset-x-auto lg:px-6"
       >
-        <div className="workspace-fluid-container mx-auto min-w-0 rounded-[1.35rem] border border-white/70 bg-white/[0.94] shadow-[0_16px_48px_-40px_rgba(15,23,42,0.45)] backdrop-blur-sm transition-colors duration-200 dark:border-slate-800 dark:bg-slate-950/90">
+        <div className="workspace-fluid-container mx-auto min-w-0 rounded-[1.35rem] border border-white/70 bg-white/[0.94] shadow-[0_16px_48px_-40px_rgba(15,23,42,0.45)] backdrop-blur-sm transition-colors duration-200 dark:rounded-none dark:border-x-0 dark:border-t-0 dark:border-b-slate-800/80 dark:bg-slate-950/95 dark:shadow-none">
           <div className="flex min-h-[64px] min-w-0 items-center gap-2 px-3 py-2.5 sm:gap-3 sm:px-4">
           <button
             type="button"
-            className="focus-ring inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-white/10 lg:hidden"
+            className="focus-ring inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-700 transition hover:bg-slate-100 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10 lg:hidden"
             onClick={onOpenSidebar}
             aria-label="Open sidebar"
           >
@@ -296,6 +297,7 @@ function TopNav({ onOpenSidebar, onSwitchProduct }) {
               Switch Product
             </Button>
             {showPosLiveIndicator ? <PosLiveIndicator issue={posHasIssue} /> : null}
+            <NexoraAiLauncher />
             <NotificationBell enabled={notifications.enabled} />
 
             <Dropdown

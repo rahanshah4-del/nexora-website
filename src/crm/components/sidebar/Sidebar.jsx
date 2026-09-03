@@ -1013,7 +1013,7 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
     return (
       <>
         <aside
-          className="sidebar-aside hidden print:hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-20 lg:block lg:border-r lg:border-[#E8EAF0] lg:bg-white" style={{ willChange: 'transform', transform: 'translateZ(0)' }}
+          className="sidebar-aside hidden print:hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-20 lg:block lg:border-r lg:border-[#E8EAF0] lg:bg-white dark:lg:border-white/10 dark:lg:bg-slate-950/95" style={{ willChange: 'transform', transform: 'translateZ(0)' }}
           data-sidebar={shouldCollapse ? 'collapsed' : 'expanded'}
         >
           <div className={shouldCollapse ? 'sidebar-shell sidebar-shell-collapsed' : 'sidebar-shell sidebar-shell-expanded'}>
@@ -1031,7 +1031,7 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
         animate={{ x: 0, opacity: 1 }}
         exit={{ x: -40, opacity: 0 }}
         transition={{ duration: 0.18, ease: 'easeOut' }}
-        className="sidebar-mobile h-full rounded-[1.5rem] border border-slate-200 bg-white/95 p-2 shadow-[0_18px_60px_-40px_rgba(15,23,42,0.45)] print:hidden"
+        className="sidebar-mobile h-full rounded-[1.5rem] border border-slate-200 bg-white/95 p-2 shadow-[0_18px_60px_-40px_rgba(15,23,42,0.45)] dark:border-white/10 dark:bg-slate-950/95 print:hidden"
       >
         {content}
       </motion.aside>

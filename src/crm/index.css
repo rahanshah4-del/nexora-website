@@ -230,6 +230,89 @@
     padding: 0.625rem;
   }
 
+  /* ── Dark-mode sidebar reskin (Cloudflare-style near-black chrome) ──
+     Sidebar.jsx nav items use ~40 one-off custom hex utilities
+     (text-[#4F46E5], bg-[#EEEEFF], etc.) with no dark: variant. Rather
+     than touching every scattered className, override them here: a
+     `.sidebar-aside .text-slate-800` selector is more specific than the
+     single-class Tailwind utility it targets, so it wins the cascade
+     without needing !important or source-order assumptions. */
+  @media (prefers-color-scheme: dark) {
+    .sidebar-aside .text-slate-900,
+    .sidebar-aside .text-slate-800,
+    .sidebar-mobile .text-slate-900,
+    .sidebar-mobile .text-slate-800 {
+      color: rgb(241 245 249);
+    }
+
+    .sidebar-aside .text-slate-700,
+    .sidebar-aside .text-slate-600,
+    .sidebar-aside .text-\[\#4A5068\],
+    .sidebar-aside .text-\[\#3E4460\],
+    .sidebar-mobile .text-slate-700,
+    .sidebar-mobile .text-slate-600 {
+      color: rgb(203 213 225);
+    }
+
+    .sidebar-aside .hover\:text-slate-600:hover,
+    .sidebar-aside .hover\:text-slate-700:hover,
+    .sidebar-mobile .hover\:text-slate-600:hover,
+    .sidebar-mobile .hover\:text-slate-700:hover {
+      color: rgb(241 245 249);
+    }
+
+    .sidebar-aside .text-slate-500,
+    .sidebar-aside .text-slate-400,
+    .sidebar-aside .text-\[\#8890A4\],
+    .sidebar-mobile .text-slate-500,
+    .sidebar-mobile .text-slate-400 {
+      color: rgb(148 163 184);
+    }
+
+    .sidebar-aside .bg-white,
+    .sidebar-aside .bg-slate-50,
+    .sidebar-aside .bg-\[\#F8F9FC\],
+    .sidebar-mobile .bg-white,
+    .sidebar-mobile .bg-slate-50 {
+      background-color: rgb(255 255 255 / 0.04);
+    }
+
+    .sidebar-aside .bg-slate-100,
+    .sidebar-aside .hover\:bg-slate-100:hover,
+    .sidebar-aside .hover\:bg-slate-50:hover,
+    .sidebar-aside .hover\:bg-slate-200:hover,
+    .sidebar-mobile .bg-slate-100,
+    .sidebar-mobile .hover\:bg-slate-100:hover {
+      background-color: rgb(255 255 255 / 0.08);
+    }
+
+    .sidebar-aside .border-slate-100,
+    .sidebar-aside .border-slate-200,
+    .sidebar-aside .hover\:border-slate-300:hover,
+    .sidebar-aside .border-\[\#EAECF0\],
+    .sidebar-aside .border-\[\#E8EAF0\],
+    .sidebar-mobile .border-slate-100,
+    .sidebar-mobile .border-slate-200 {
+      border-color: rgb(255 255 255 / 0.08);
+    }
+
+    .sidebar-aside .bg-\[\#EEEEFF\],
+    .sidebar-mobile .bg-\[\#EEEEFF\] {
+      background-color: rgb(99 102 241 / 0.18);
+    }
+
+    .sidebar-aside .text-\[\#4F46E5\],
+    .sidebar-aside .hover\:text-\[\#4F46E5\]:hover,
+    .sidebar-mobile .text-\[\#4F46E5\] {
+      color: rgb(165 180 252);
+    }
+
+    .sidebar-aside .bg-\[\#CBD0E0\],
+    .sidebar-mobile .bg-\[\#CBD0E0\] {
+      background-color: rgb(100 116 139);
+    }
+  }
+
   .crm-table-scroll {
     max-width: 100%;
     overflow-x: auto;
