@@ -200,9 +200,14 @@ export async function buildSitemap() {
     .readFile(path.join(PUBLIC_DIR, 'sitemap.xml'), 'utf8')
     .catch(() => '')
 
+  // Used as lastmod for routes with no per-page tracked update date (i.e.
+  // everything except blog articles, which carry their own updatedDate).
+  // A build-time date is the standard fallback for static/marketing pages.
+  const buildDate = new Date().toISOString().slice(0, 10)
+
   const urls = []
   for (const r of routes) {
-    urls.push({ loc: makeUrl(r), changefreq: 'daily', priority: r === '/' ? '1.0' : '0.6' })
+    urls.push({ loc: makeUrl(r), lastmod: buildDate, changefreq: 'daily', priority: r === '/' ? '1.0' : '0.6' })
   }
   for (const article of blogArticles) {
     urls.push({ loc: absoluteCanonicalUrl(article.canonical), lastmod: article.updatedDate, changefreq: 'weekly', priority: '0.5' })
@@ -212,7 +217,13 @@ export async function buildSitemap() {
     if (lower === 'index.html' || lower === '404.html') continue
     // Google Site Verification files (google<token>.html) are not indexable pages.
     if (/^google[0-9a-z]+\.html$/i.test(f)) continue
-    urls.push({ loc: `${HOST}/${f}`, changefreq: 'monthly', priority: '0.3' })
+    urls.push({ loc: `${HOST}/${f}`, lastmod: buildDate, changefreq: 'monthly', priority: '0.3' })
+  }
+  // Prerendered homepage translations (see scripts/prerender.mjs PUBLIC_ROUTES)
+  // were previously undiscoverable via sitemap — only reachable through the
+  // hreflang tags on the English homepage.
+  for (const prefix of ['ur', 'hi', 'ar']) {
+    urls.push({ loc: `${HOST}/${prefix}/`, lastmod: buildDate, changefreq: 'weekly', priority: '0.5' })
   }
 
   const blogUrls = [

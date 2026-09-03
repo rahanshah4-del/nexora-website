@@ -17,6 +17,8 @@ import { formatBlogContentHtml } from '../src/lib/blogContentFormatter.js'
 import { autoLinkTerms } from '../src/lib/blogInternalLinks.js'
 import { defaultPlatformPlans, freeTrialConfig } from '../src/lib/platformPlans.js'
 import { createOrganizationSchema, createWebSiteSchema } from '../src/lib/seoStructuredData.js'
+import { seoMetadata } from '../src/lib/seoMetadata.js'
+import { COUNTRIES } from '../src/lib/countries.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
@@ -109,10 +111,12 @@ const PUBLIC_ROUTES = [
   { path: '/about',         title: 'About Nexora Solution — Pakistan\'s Business Software Platform',                        description: 'Learn about Nexora Solution, the team behind Pakistan\'s leading POS, ERP and CRM platform for restaurants, retail, schools and enterprises.' },
   { path: '/pricing',       title: 'Nexora Pricing — Simple Plans for Every Business',                                      description: 'Compare Nexora pricing plans. Start with a free trial, then choose Basic, Standard or Enterprise. No credit card required.' },
   { path: '/contact',       title: 'Contact Nexora Solution — Get in Touch',                                                description: 'Contact Nexora Solution for POS software, ERP systems, CRM solutions. Book a free demo or reach our support team.' },
-  { path: '/restaurant-pos',title: 'Restaurant POS Software Pakistan — Nexora Solution',                                     description: 'Modern restaurant POS with table management, KOT, billing, inventory and cloud sync. Built for Pakistani restaurants.' },
+  // NOTE: title/description sourced from src/lib/seoMetadata.js so the static
+  // shell matches what PageSeo renders client-side after hydration (previously
+  // this page had two conflicting entries here — see git history).
+  { path: '/restaurant-pos',title: seoMetadata['/restaurant-pos'].title,                                                    description: seoMetadata['/restaurant-pos'].description },
   { path: '/retail-pos',    title: 'Retail POS Software Pakistan — Nexora Solution',                                        description: 'Complete retail POS system with barcode billing, inventory management, discount engine and multi-counter support.' },
   { path: '/school-erp',    title: 'School ERP Software Pakistan — Nexora Solution',                                        description: 'Cloud-based school management system with student records, fee collection, attendance, exams and parent portal.' },
-  { path: '/restaurant-pos/', title: 'POS Software Solutions — Nexora Solution',                                         description: 'Explore Nexora POS solutions for restaurants, retail stores, medical stores and transport businesses.' },
   { path: '/solutions/crm', title: 'CRM Software Pakistan — Nexora Solution',                                               description: 'Customer relationship management with lead tracking, pipeline, follow-ups and WhatsApp integration.' },
   { path: '/solutions/medical-store-pos', title: 'Medical Store POS Pakistan — Nexora Solution',                             description: 'Pharmacy POS with medicine inventory, batch tracking, expiry alerts and sales reports.' },
   { path: '/solutions/school-erp', title: 'School ERP System Pakistan — Nexora Solution',                                   description: 'Complete school ERP with student management, fees, attendance, exams, payroll and reports.' },
@@ -120,8 +124,11 @@ const PUBLIC_ROUTES = [
   { path: '/solutions/reports', title: 'Business Reports Software Pakistan — Nexora Analytics',                            description: 'Nexora Reports Pakistan provides KPI dashboards, PDF reports, Excel exports and business intelligence for growing teams.' },
   { path: '/blog',          title: 'Nexora Blog — POS, ERP & CRM Insights for Pakistani Businesses',                         description: 'Read the Nexora blog for POS tips, ERP guides, CRM strategies and business growth insights for Pakistani entrepreneurs.' },
   { path: '/faq',           title: 'Frequently Asked Questions — Nexora Solution',                                           description: 'Find answers to common questions about Nexora POS, ERP, CRM pricing, features, setup, support and billing.' },
-  { path: '/business-services/', title: 'Business Management Software Pakistan | Nexora Services',                   description: 'Request Nexora business services for software setup, support, bookkeeping, marketing and growth while keeping your operations running smoothly.' },
-  { path: '/business-services/', title: 'Business Services — Nexora Solution',                                           description: 'Explore Nexora business services including custom software development, integrations, consulting and digital transformation.' },
+  // NOTE: sourced from seoMetadata['/business-services'] — this is the key
+  // BusinessServicesPage.jsx actually calls via getSeoForPath(), so the
+  // prerendered shell now matches the hydrated page (previously two
+  // conflicting entries existed here).
+  { path: '/business-services/', title: seoMetadata['/business-services'].title,                                          description: seoMetadata['/business-services'].description },
   { path: '/documentation', title: 'Documentation — Nexora Solution',                                                       description: 'Nexora product documentation, setup guides, API references and tutorials for POS, ERP and CRM modules.' },
   { path: '/help-center',   title: 'Help Center — Nexora Solution',                                                         description: 'Get help with Nexora products. Find guides, troubleshooting tips and contact support.' },
   { path: '/support-center',title: 'Support Center — Nexora Solution',                                                      description: 'Nexora customer support center. Submit tickets, track issues and get technical assistance.' },
@@ -136,8 +143,29 @@ const PUBLIC_ROUTES = [
   { path: '/whatsapp-crm', title: 'WhatsApp CRM Pakistan — Nexora Solution',                                                description: 'WhatsApp CRM for businesses. Capture leads, auto-reply, team inbox and close deals faster with WhatsApp integration.' },
   { path: '/transport',    title: 'Transport Management Software Pakistan — Nexora Solution',                                description: 'Fleet and transport management system with vehicle tracking, bookings, payments and customer ledgers.' },
   { path: '/industries',   title: 'Industries Served — Nexora Solution',                                                    description: 'Discover how Nexora serves restaurants, retail, schools, pharmacies, transport and service businesses across Pakistan.' },
+  { path: '/reviews',      title: 'Customer Reviews | Nexora Solution Pakistan',                                            description: 'Read verified customer reviews and testimonials for Nexora POS, ERP, CRM and business software in Pakistan.' },
   { path: '/projects',     title: 'Projects — Nexora Solution',                                                             description: 'Nexora Solution client projects and case studies. See how businesses transformed with our POS and ERP software.' },
   { path: '/download/restaurant-pos', title: 'Download Nexora Restaurant POS for Windows — Free Installer',                 description: 'Download the free Nexora Restaurant POS Windows installer (v1.0.0). Offline-capable POS with KOT printing, table layout, billing, customer wallet, expenses and cloud sync.' },
+  // Software/dev service pages — previously not prerendered at all, so
+  // crawlers and link-preview bots only saw the generic homepage meta tags.
+  // Title/description sourced from seoMetadata.js to match hydrated content.
+  { path: '/software-development',     title: seoMetadata['/software-development'].title,     description: seoMetadata['/software-development'].description },
+  { path: '/seo-services',             title: seoMetadata['/seo-services'].title,              description: seoMetadata['/seo-services'].description },
+  { path: '/mobile-app-development',   title: seoMetadata['/mobile-app-development'].title,    description: seoMetadata['/mobile-app-development'].description },
+  { path: '/ecommerce-development',    title: seoMetadata['/ecommerce-development'].title,      description: seoMetadata['/ecommerce-development'].description },
+  { path: '/crm-development',          title: seoMetadata['/crm-development'].title,           description: seoMetadata['/crm-development'].description },
+  { path: '/erp-development',          title: seoMetadata['/erp-development'].title,           description: seoMetadata['/erp-development'].description },
+  { path: '/cloud-solutions',          title: seoMetadata['/cloud-solutions'].title,           description: seoMetadata['/cloud-solutions'].description },
+  { path: '/api-integration',          title: seoMetadata['/api-integration'].title,           description: seoMetadata['/api-integration'].description },
+  // Country landing pages — only /uae/ was prerendered before; the other 11
+  // country pages (all listed in sitemap.xml + robots.txt as indexable) had
+  // no static HTML at all. Sourced directly from src/lib/countries.js so
+  // this list can never drift from the data CountryPage.jsx renders.
+  ...COUNTRIES.filter((c) => c.slug !== 'uae').map((c) => ({
+    path: `/${c.slug}/`,
+    title: c.seoTitle,
+    description: c.seoDescription,
+  })),
 ]
 
 // ═══════════════════════════════════════════════════════════════════════════════
