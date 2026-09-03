@@ -154,22 +154,33 @@ export function AuthProvider({ children }) {
     try {
       if (user?.uid && db) {
         try {
-          const snap = await getDoc(doc(db, 'users', user.uid))
-          const userDoc = snap.exists() ? snap.data() : null
-          const workspaceId = userDoc?.workspaceId || user.uid
-          const { userName, userEmail } = userActivityInfo(userDoc, user)
-          await logActivity({
-            workspaceId,
-            userId: user.uid,
-            userName,
-            userEmail,
-            action: 'Logout',
-            module: 'Auth',
-            description: `${userEmail || userName} logged out.`,
-            targetId: user.uid,
-            targetName: userName,
-            metadata: { role: userDoc?.role || 'user' },
-          })
+          // A rejected getDoc/logActivity call is already caught below, but a
+          // *hung* one (e.g. Firestore offline persistence stuck retrying)
+          // isn't — it just leaves the await pending forever, which is what
+          // left the button stuck on "Logging out…" indefinitely. Race it
+          // against a timeout so a slow/broken audit log can never block
+          // sign-out, matching the comment's actual intent.
+          await Promise.race([
+            (async () => {
+              const snap = await getDoc(doc(db, 'users', user.uid))
+              const userDoc = snap.exists() ? snap.data() : null
+              const workspaceId = userDoc?.workspaceId || user.uid
+              const { userName, userEmail } = userActivityInfo(userDoc, user)
+              await logActivity({
+                workspaceId,
+                userId: user.uid,
+                userName,
+                userEmail,
+                action: 'Logout',
+                module: 'Auth',
+                description: `${userEmail || userName} logged out.`,
+                targetId: user.uid,
+                targetName: userName,
+                metadata: { role: userDoc?.role || 'user' },
+              })
+            })(),
+            new Promise((resolve) => setTimeout(resolve, 4000)),
+          ])
         } catch {
           // Logout should never be blocked by audit logging.
         }
