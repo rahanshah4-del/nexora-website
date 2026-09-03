@@ -59,6 +59,7 @@ import { generateSalesHubReportPdf, SALES_PDF_TEMPLATES } from '../lib/salesHubR
 import { loadRestaurantCustomers } from '../data/restaurantCustomers.js'
 import { restaurantCustomersStorageKey } from '../data/restaurantCustomers.js'
 import { loadRestaurantOrders, restaurantOrdersStorageKey } from '../data/restaurantOrders.js'
+import { loadFirestoreOrders } from '../data/restaurantFirestoreSync.js'
 import { normalizeInvoiceOrders } from '../data/restaurantInvoiceOrders.js'
 import RestaurantReportsPage from '../reports/restaurant/RestaurantReportsPage.jsx'
 import { useInvoices } from '../hooks/useInvoices.js'
