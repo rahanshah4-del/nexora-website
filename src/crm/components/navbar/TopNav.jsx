@@ -247,7 +247,7 @@ function TopNav({ onOpenSidebar, onSwitchProduct }) {
           </button>
 
           <div className="flex min-w-0 flex-1 items-center gap-2.5 md:hidden">
-            <img src={logoUrl} alt="Nexora" className="h-10 w-10 shrink-0 rounded-2xl object-contain drop-shadow-sm" />
+            <img src={logoUrl} alt="Nexora" className="h-10 w-10 shrink-0 object-contain" />
             <div className="min-w-0 leading-tight">
               <p className="truncate text-[15px] font-black tracking-tight text-slate-900 dark:text-white">Nexora</p>
               <p className="truncate text-[10px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">{businessTypeLabel || 'Workspace'}</p>
