@@ -8,7 +8,7 @@ import Avatar from '../ui/Avatar.jsx'
 import Badge from '../ui/Badge.jsx'
 import Dropdown from '../ui/Dropdown.jsx'
 import Button from '../ui/Button.jsx'
-import { memo, useCallback, useEffect, useMemo, useState } from 'react'
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { usePreferences } from '../../hooks/usePreferences.js'
 import { useAuth } from '../../hooks/useAuth.js'
 import { useUser } from '../../hooks/useUser.js'
@@ -17,7 +17,6 @@ import NotificationBell from '../notifications/NotificationBell.jsx'
 import CloudSyncButton from '../system/CloudSyncButton.jsx'
 import GlobalSearch from '../system/GlobalSearch.jsx'
 import MobileBottomNav from './MobileBottomNav.jsx'
-import logoUrl from '../../../assets/logo/nexora-logo.png'
 import { labelForBusinessType, packageNameForPlan } from '../../data/moduleAccess.js'
 import { resolveWorkspaceName } from '../../../lib/workspaceName.js'
 import { goToWorkspace } from '../../../lib/workspaceNavigation.js'
@@ -109,6 +108,27 @@ function TopNav({ onOpenSidebar, onSwitchProduct }) {
   const [toast, setToast] = useState(null)
   const [online, setOnline] = useState(() => (typeof navigator === 'undefined' ? true : navigator.onLine))
   const businessTypeLabel = labelForBusinessType(businessType)
+
+  // The header is `fixed` on mobile (see render below) so it stays put while
+  // scrolling instead of moving with the page. Fixed removes it from normal
+  // flow, so this measures its real (variable) height to reserve matching
+  // space below it — the spacer only renders on mobile (`lg:hidden`), since
+  // desktop keeps the header in normal flow via `lg:sticky`.
+  const headerRef = useRef(null)
+  const [mobileHeaderHeight, setMobileHeaderHeight] = useState(0)
+  useEffect(() => {
+    const el = headerRef.current
+    if (!el) return undefined
+    const updateHeight = () => setMobileHeaderHeight(el.offsetHeight)
+    updateHeight()
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', updateHeight)
+      return () => window.removeEventListener('resize', updateHeight)
+    }
+    const observer = new ResizeObserver(updateHeight)
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
   const showPosLiveIndicator = useMemo(() => {
     const normalizedBusiness = String(businessTypeLabel || '').toLowerCase()
     const isPosBusiness = normalizedBusiness.includes('restaurant') || normalizedBusiness.includes('retail') || normalizedBusiness.includes('pos')
@@ -207,7 +227,10 @@ function TopNav({ onOpenSidebar, onSwitchProduct }) {
   return (
     <>
       {toast ? <Toast message={toast} onClose={() => setToast(null)} /> : null}
-      <header className="sticky top-0 z-40 w-full px-3 pt-3 print:hidden sm:px-5 lg:px-6">
+      <header
+        ref={headerRef}
+        className="fixed inset-x-0 top-0 z-40 w-full px-3 pt-3 print:hidden sm:px-5 lg:sticky lg:inset-x-auto lg:px-6"
+      >
         <div className="workspace-fluid-container mx-auto min-w-0 rounded-[1.35rem] border border-white/70 bg-white/[0.94] shadow-[0_16px_48px_-40px_rgba(15,23,42,0.45)] backdrop-blur-sm transition-colors duration-200 dark:border-slate-800 dark:bg-slate-950/90">
           <div className="flex min-h-[64px] min-w-0 items-center gap-2 px-3 py-2.5 sm:gap-3 sm:px-4">
           <button
@@ -216,18 +239,19 @@ function TopNav({ onOpenSidebar, onSwitchProduct }) {
             onClick={onOpenSidebar}
             aria-label="Open sidebar"
           >
-            <span className="block h-4 w-5">
-              <span className="block h-0.5 w-5 rounded bg-current" />
-              <span className="mt-1.5 block h-0.5 w-5 rounded bg-current opacity-80" />
-              <span className="mt-1.5 block h-0.5 w-5 rounded bg-current opacity-70" />
+            <span className="flex h-4 w-5 flex-col items-center justify-center gap-1.5">
+              <span className="block h-0.5 w-5 rounded-full bg-current" />
+              <span className="block h-0.5 w-5 rounded-full bg-current" />
             </span>
           </button>
 
-          <div className="flex min-w-0 flex-1 items-center gap-2 md:hidden">
-            <img src={logoUrl} alt="Nexora" className="h-8 w-8 shrink-0 rounded-xl object-contain" />
+          <div className="flex min-w-0 flex-1 items-center gap-2.5 md:hidden">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 to-violet-600 text-sm font-black text-white shadow-sm shadow-sky-500/30">
+              N
+            </span>
             <div className="min-w-0 leading-tight">
-              <p className="truncate text-[15px] font-bold tracking-tight text-slate-900 dark:text-white">Nexora</p>
-              <p className="truncate text-[10px] font-medium text-slate-400 dark:text-slate-500">{businessTypeLabel || 'Workspace'}</p>
+              <p className="truncate text-[15px] font-black tracking-tight text-slate-900 dark:text-white">Nexora</p>
+              <p className="truncate text-[10px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">{businessTypeLabel || 'Workspace'}</p>
             </div>
           </div>
 
@@ -380,6 +404,8 @@ function TopNav({ onOpenSidebar, onSwitchProduct }) {
           </div>
         </div>
       </header>
+      {/* Reserves the space the fixed mobile header would otherwise cover — see headerRef effect above. Desktop keeps its normal sticky flow via lg:sticky, so no spacer needed there. */}
+      <div className="lg:hidden" style={{ height: mobileHeaderHeight }} aria-hidden="true" />
       <MobileBottomNav />
     </>
   )
