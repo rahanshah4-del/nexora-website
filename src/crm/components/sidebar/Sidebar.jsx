@@ -1,4 +1,4 @@
-import { NavLink, useLocation } from 'react-router-dom'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { navItems } from '../../data/navigation.js'
 import { cn } from '../../utils/cn.js'
@@ -11,6 +11,7 @@ import { featureKeyForRoute } from '../../lib/featureRegistry.js'
 import logoUrl from '../../../assets/logo/nexora-logo.png'
 import { isDeveloperOwnerAccount, labelForBusinessModule, labelForBusinessType, moduleCatalog, normalizeBusinessType, selectedModulesForSidebar, teamManagementEnabledForBusinessType } from '../../data/moduleAccess.js'
 import { resolveWorkspaceName } from '../../../lib/workspaceName.js'
+import { goToWorkspace } from '../../../lib/workspaceNavigation.js'
 import { categoriesForModule, reportsForModule } from '../../lib/reportCatalog.js'
 import {
   HiOutlineBanknotes,
@@ -751,6 +752,8 @@ function Brand({ collapsed, workspaceName, businessTitle, onToggleCollapse }) {
 }
 
 function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollapse, onSwitchProduct }) {
+  const navigate = useNavigate()
+  const location = useLocation()
   const { accessPlan, businessType, userDoc, userId, firebaseUser, isAdmin: userIsAdmin, isOwner: userIsOwner, workspaceId, role } = useUser()
   const access = useWorkspaceAccess()
   const businessTitle = labelForBusinessType(businessType)
@@ -864,6 +867,14 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
     onSwitchProduct?.()
   }, [onNavigate, onSwitchProduct])
 
+  // Desktop has a "Back to Workspace" button in TopNav (hidden on mobile,
+  // `lg:inline-flex` only) — this gives mobile users the same way back to
+  // the workspace picker from inside the drawer.
+  const handleBackToWorkspace = useCallback(() => {
+    onNavigate?.()
+    goToWorkspace(navigate, location)
+  }, [onNavigate, navigate, location])
+
   const shouldCollapse = !mobile && collapsed
 
   const userName = useMemo(
@@ -909,6 +920,21 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
           </button>
         )}
       </div>
+
+      {mobile ? (
+        // Desktop gets this in TopNav's header (lg:inline-flex, hidden on
+        // mobile) — the drawer needs its own way back to the workspace picker.
+        <div className="mt-2 px-2">
+          <button
+            type="button"
+            onClick={handleBackToWorkspace}
+            className="focus-ring flex w-full items-center gap-2.5 rounded-[10px] border border-[#EAECF0] bg-white px-2.5 py-2 text-left transition-colors duration-150 hover:border-slate-300 hover:bg-slate-50"
+          >
+            <HiOutlineArrowUturnLeft className="h-4 w-4 shrink-0 text-slate-500" />
+            <span className="truncate text-xs font-semibold text-slate-700">Back to Workspace</span>
+          </button>
+        </div>
+      ) : null}
 
       <nav className={`mt-2 min-h-0 flex-1 overflow-y-auto px-2 pb-2 pr-1.5 ${shouldCollapse ? 'space-y-1.5' : 'space-y-0.5'}`}>
         {!dataReady ? (
@@ -981,7 +1007,7 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
         )}
       </div>
     </div>
-  ), [businessTitle, businessType, handleSwitchProduct, onNavigate, onToggleCollapse, shouldCollapse, sidebarItems, userInitials, userName, userRole, workspaceName])
+  ), [businessTitle, businessType, handleBackToWorkspace, handleSwitchProduct, mobile, onNavigate, onToggleCollapse, shouldCollapse, sidebarItems, userInitials, userName, userRole, workspaceName])
 
   if (!mobile) {
     return (
