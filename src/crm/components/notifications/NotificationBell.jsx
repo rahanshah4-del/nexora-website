@@ -61,7 +61,8 @@ export default function NotificationBell({ enabled }) {
           </button>
         )}
         align="right"
-        panelClassName="w-[22rem] sm:w-[24rem]"
+        fixedOnMobile
+        panelClassName="sm:w-[24rem]"
         onOpenChange={(nextOpen) => {
           if (nextOpen) {
             setOpenTick((n) => n + 1)
