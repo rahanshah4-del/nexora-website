@@ -1072,11 +1072,214 @@ function buildDownloadRestaurantPosContent() {
   </main>`
 }
 
+function buildCountryContent(country) {
+  const featureItems = [
+    { label: `${country.currency} Pricing`, desc: `All plans in ${country.currency}. Localized pricing for ${country.name} businesses.` },
+    { label: `${country.timezone} Support`, desc: `Support coverage aligned with ${country.name} business hours.` },
+    { label: 'Global Cloud', desc: `Cloudflare edge network ensures sub-50ms latency for ${country.name} users.` },
+    { label: 'AI-Powered', desc: 'DeepSeek & Gemini AI built into every product — smarter automation.' },
+    { label: 'Enterprise Security', desc: 'AES-256 encryption, SOC 2 infrastructure, role-based access control.' },
+    { label: '30-Day Guarantee', desc: 'Full refund if not satisfied. No questions asked. Cancel anytime.' },
+  ]
+  const featuresHtml = featureItems.map((f) => `
+        <div style="border-radius:1rem;border:1px solid #e2e8f0;background:#fff;padding:1rem">
+          <p style="font-size:.8rem;font-weight:800;color:#0f172a">${esc(f.label)}</p>
+          <p style="margin-top:.25rem;font-size:.75rem;color:#64748b">${esc(f.desc)}</p>
+        </div>`).join('')
+
+  const faqHtml = (country.faqs || []).map((f) => `
+        <div style="border-radius:1rem;border:1px solid #e2e8f0;background:#fff;padding:1.25rem">
+          <dt style="font-weight:800;color:#0f172a">${esc(f.q)}</dt>
+          <dd style="margin-top:.5rem;font-size:.875rem;line-height:1.6;color:#475569">${esc(f.a)}</dd>
+        </div>`).join('')
+
+  return `<main style="padding:3rem 1.25rem;max-width:56rem;margin:0 auto">
+    <p style="font-size:.75rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#1d4ed8">${esc(country.flag)} ${esc(country.region)} · ${esc(country.currency)} · ${esc(country.population)}</p>
+    <h1 style="margin-top:1rem;font-size:2.2rem;font-weight:900;color:#0f172a;line-height:1.1">${esc(country.heroHeading)} ${esc(country.heroHighlight)}</h1>
+    <p style="margin-top:1rem;font-size:1rem;line-height:1.7;color:#475569">${esc(country.heroSubtitle)}</p>
+    <div style="margin-top:2rem;display:flex;gap:.75rem;flex-wrap:wrap">
+      <a href="/signup" style="display:inline-flex;min-height:3rem;align-items:center;justify-content:center;border-radius:9999px;padding:.75rem 1.75rem;font-size:.875rem;font-weight:800;text-decoration:none;background:#0f172a;color:#fff">Start Free Trial</a>
+      <a href="/pricing" style="display:inline-flex;min-height:3rem;align-items:center;justify-content:center;border-radius:9999px;padding:.75rem 1.75rem;font-size:.875rem;font-weight:800;text-decoration:none;border:1px solid #e2e8f0;color:#0f172a">View Pricing</a>
+    </div>
+
+    <h2 style="margin-top:3rem;font-size:1.5rem;font-weight:900;color:#0f172a">Why ${esc(country.name)} chooses Nexora</h2>
+    <p style="margin-top:.75rem;font-size:.9375rem;line-height:1.75;color:#475569">${esc(country.whyNexora)}</p>
+    <div style="margin-top:1.5rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.75rem">${featuresHtml}
+    </div>
+
+    <h2 style="margin-top:3rem;font-size:1.5rem;font-weight:900;color:#0f172a">Built for ${esc(country.name)}</h2>
+    <p style="margin-top:.75rem;font-size:.9375rem;line-height:1.75;color:#475569">${esc(country.localEdge)}</p>
+
+    <h2 style="margin-top:3rem;font-size:1.5rem;font-weight:900;color:#0f172a">${esc(country.name)} FAQs</h2>
+    <dl style="margin-top:1.5rem;display:flex;flex-direction:column;gap:1rem">${faqHtml}
+    </dl>
+  </main>`
+}
+
+// Software/dev service pages (e.g. /seo-services, /crm-development) also fell
+// through to the generic 1-paragraph fallback below — same boilerplate shape
+// as the country pages, just with title/description swapped. Each of these
+// routes actually has a dedicated page component with real hero copy and a
+// unique FAQ list (see src/pages/public/*Page.jsx); mirror that content here
+// so crawlers see it before JS hydration instead of a near-duplicate shell.
+const SERVICE_PAGE_CONTENT = {
+  '/software-development': {
+    heading: 'Custom Software Development Services',
+    subtitle: 'We design and build high-performance websites, mobile apps, CRM systems, ERP solutions, POS software, AI-powered applications, and enterprise business solutions — every project infused with artificial intelligence (DeepSeek, Gemini, custom ML models) for smarter automation, predictive insights, and intelligent user experiences.',
+    services: [
+      { title: 'Business Websites', desc: 'Professional, fast-loading business websites built with modern frameworks. SEO-optimized, mobile-responsive, and designed to convert visitors into customers.' },
+      { title: 'E-commerce Development', desc: 'Full-featured online stores with secure payment gateways, inventory management, order tracking, and an admin dashboard to manage your entire business.' },
+      { title: 'Custom CRM Development', desc: 'Tailor-made CRM systems that match your exact sales workflow. Lead tracking, pipeline management, customer communication, and automated follow-ups.' },
+      { title: 'ERP Solutions', desc: 'Enterprise resource planning systems that unify finance, HR, inventory, procurement, and operations into one centralized, real-time platform.' },
+      { title: 'Restaurant POS', desc: 'Complete restaurant management — KOT, table management, billing, kitchen display, inventory, and cloud sync. AI-powered insights and offline-first reliability.' },
+      { title: 'School Management System', desc: 'End-to-end school ERP with student records, fee management, attendance, exams, timetable, parent portal, payroll, and transport tracking.' },
+      { title: 'Mobile App Development', desc: 'Native and cross-platform mobile apps for iOS and Android. Beautiful UI, smooth performance, offline support, and seamless backend integration.' },
+      { title: 'Web Applications', desc: 'Complex web applications — dashboards, SaaS platforms, portals, and real-time tools. Built with React, Node.js, Firebase, and cloud-native architecture.' },
+      { title: 'AI Solutions', desc: 'Custom AI and machine learning integrations — chatbots, predictive analytics, image recognition, recommendation engines, and intelligent automation.' },
+      { title: 'API Integration', desc: 'Connect your software with third-party services — payment gateways, SMS/WhatsApp APIs, shipping carriers, accounting tools, and legacy systems.' },
+      { title: 'Cloud Solutions', desc: 'Cloud migration, DevOps setup, serverless architecture, auto-scaling infrastructure, and managed hosting on AWS, Google Cloud, and Cloudflare.' },
+      { title: 'Software Maintenance & Support', desc: 'Ongoing maintenance, bug fixes, feature enhancements, security patches, performance optimization, and 24/7 technical support for your software.' },
+      { title: 'SEO Services', desc: 'Complete SEO solutions — technical SEO, on-page optimization, keyword research, content strategy, link building, and Google ranking improvement.' },
+    ],
+  },
+  '/seo-services': {
+    heading: 'SEO Services',
+    subtitle: 'Data-driven SEO that puts your business on Google\'s first page. Technical optimization, keyword strategy, content marketing, and link building — everything you need to grow organic traffic and generate qualified leads.',
+    faqs: [
+      ['How long does SEO take to show results?', 'SEO is a long-term strategy. Initial technical improvements can show results in 4-6 weeks. Competitive keywords typically take 3-6 months to rank. Local SEO can deliver results faster — often within 30-60 days. We provide monthly reports so you can track progress from day one.'],
+      ['What industries do you provide SEO for?', 'We work with businesses across all industries — restaurants, retail stores, schools, e-commerce, real estate, healthcare, professional services, and SaaS companies. Our strategies are tailored to your specific industry and target audience.'],
+      ['Do you guarantee #1 rankings on Google?', 'No ethical SEO agency can guarantee #1 rankings — Google\'s algorithm has 200+ ranking factors. What we guarantee is: data-driven strategy, transparent reporting, and measurable improvement in rankings, traffic, and conversions month over month. Our clients typically see 40-120% organic traffic growth within 6 months.'],
+      ['What is included in your monthly SEO reports?', 'Monthly reports include: keyword ranking changes, organic traffic trends (Google Analytics), click-through rates (Google Search Console), backlinks acquired, technical health score, content performance, competitor comparison, and actionable recommendations for the next month.'],
+      ['Do you do SEO for existing websites or only new ones?', 'Both! We optimize existing websites (often there are quick wins) and build SEO-ready new websites. For existing sites, we start with a comprehensive audit. For new sites, we build SEO into the architecture from day one — which is far more effective than retrofitting later.'],
+      ['What is the difference between SEO and Google Ads?', 'SEO brings free, organic traffic through search rankings — it is a long-term investment that builds lasting authority. Google Ads bring paid traffic instantly but stop the moment you stop paying. The best strategy combines both: SEO for sustainable growth, PPC for immediate visibility.'],
+      ['How much does SEO cost in Pakistan?', 'Our SEO packages start at PKR 15,000/month for basic local SEO, PKR 35,000/month for standard SEO (includes content + link building), and custom pricing for enterprise/competitive industries. Every package includes a free initial audit. Contact us for a tailored quote.'],
+      ['Can you help recover from a Google penalty?', 'Yes. We specialize in Google penalty recovery — whether it is a manual action or an algorithmic penalty (Panda, Penguin, Core Updates). We conduct a thorough audit, identify the root cause, fix the issues, and submit a reconsideration request. Recovery typically takes 2-8 weeks depending on severity.'],
+    ],
+  },
+  '/mobile-app-development': {
+    heading: 'Mobile App Development',
+    subtitle: 'Beautiful, high-performance mobile apps for iOS and Android. Native and cross-platform development with Flutter, Swift, and Kotlin. AI-powered features, offline support, and seamless backend integration.',
+    faqs: [
+      ['Flutter or native — which is better for my app?', 'Flutter is ideal for 90% of business apps — it delivers beautiful 60fps UI on both iOS and Android from a single codebase, saving 40% on development costs. Native (Swift/Kotlin) is better for apps that need deep hardware integration (AR, advanced camera, Bluetooth LE) or maximum possible performance. We help you choose the right approach based on your specific requirements.'],
+      ['How much does a mobile app cost to develop?', 'A business app typically ranges from PKR 200,000 for a simple app (5-8 screens) to PKR 1,500,000+ for a complex app with AI, real-time features, payment integration, and custom backend. Every project is unique — we provide a detailed estimate after understanding your requirements. Contact us for a free consultation and quote.'],
+      ['How long does it take to build a mobile app?', 'Simple apps (landing, catalog, booking): 4-6 weeks. Medium apps (e-commerce, CRM, delivery): 8-16 weeks. Complex apps (AI, real-time, multi-vendor): 16-24 weeks. We deliver working builds every 2 weeks through agile sprints, so you can test and provide feedback throughout development.'],
+      ['Do you publish the app to App Store and Play Store?', 'Yes — we handle the entire submission process including App Store Connect setup, Play Store Console configuration, ASO (App Store Optimization), screenshot creation, privacy policy, and compliance. We also manage updates and version releases post-launch.'],
+      ['Can you integrate payment gateways in the app?', 'Absolutely. We integrate Stripe, PayPal, JazzCash, Easypaisa, and bank payment gateways. All payment flows are PCI-compliant with secure tokenization. We also support in-app purchases and subscription billing.'],
+      ['Will my app work offline?', 'Yes — we build all apps with offline-first architecture. User data is stored locally and syncs automatically when the internet reconnects. This is critical for field workers, delivery apps, and areas with patchy connectivity.'],
+      ['Do you provide source code and ownership?', 'You own 100% of the source code, designs, and intellectual property. Upon project completion, we transfer everything to your GitHub/GitLab repository with complete documentation. No vendor lock-in — you can take the code to any developer.'],
+      ['What about app maintenance and updates?', 'We offer ongoing maintenance plans covering OS updates (iOS/Android version compatibility), bug fixes, security patches, performance optimization, feature enhancements, and App Store/Play Store compliance. Most clients choose our monthly maintenance plan for continuous support.'],
+    ],
+  },
+  '/ecommerce-development': {
+    heading: 'E-commerce Development',
+    subtitle: 'Full-featured online stores with secure payments, inventory management, order tracking, and a powerful admin dashboard. Built to sell 24/7.',
+    faqs: [
+      ['How much does an e-commerce website cost?', 'A custom e-commerce website ranges from PKR 80,000 for a basic store (up to 50 products) to PKR 500,000+ for a large marketplace. Includes: design, development, payment integration, admin dashboard, and 30 days post-launch support. Contact us for a detailed quote based on your requirements.'],
+      ['Which payment gateways do you integrate?', 'Stripe (international), PayPal, JazzCash, Easypaisa, bank transfer (HBL, UBL, Meezan), and manual payment methods (cash on delivery). We can integrate any payment gateway that provides an API.'],
+      ['Can you migrate my existing store from Shopify/WooCommerce?', 'Yes! We handle full data migration — products, customers, orders, reviews, and SEO metadata. We ensure zero data loss and zero downtime during migration. Your new store will be live while we redirect old URLs to preserve SEO rankings.'],
+      ['Do you provide admin panel for managing the store?', 'Every e-commerce project includes a custom admin dashboard for: adding/editing products, managing inventory, processing orders, viewing customer data, running promotions, and accessing analytics. Designed for non-technical users.'],
+      ['How long does it take to build an e-commerce site?', 'Basic store (up to 50 products): 3-5 weeks. Medium store (50-500 products): 6-10 weeks. Large marketplace: 10-16 weeks. We deliver usable builds every 2 weeks through agile sprints.'],
+      ['Is SEO included for my e-commerce site?', 'Yes — every e-commerce site we build includes: SEO-friendly URLs, schema markup (Product, Organization), meta tags, sitemap.xml, alt text optimization, fast loading (95+ Lighthouse), and mobile-first responsive design. We also offer dedicated SEO services.'],
+    ],
+  },
+  '/crm-development': {
+    heading: 'Custom CRM Development',
+    subtitle: 'A CRM built around YOUR sales process. Lead tracking, visual pipeline, WhatsApp integration, automation — everything your sales team needs to close more deals.',
+    faqs: [
+      ['Why build a custom CRM instead of using Zoho/HubSpot?', 'Off-the-shelf CRMs force you to adapt to their workflow. A custom CRM adapts to YOUR workflow. Result: higher team adoption, less training, and features that match your exact sales process. Plus — no monthly per-user fees that scale with your team.'],
+      ['How much does a custom CRM cost?', 'A custom CRM starts at PKR 150,000 for a basic setup and can go to PKR 800,000+ for complex, multi-department systems. You own the software outright — no recurring license fees. We offer flexible payment plans.'],
+      ['Can you integrate with WhatsApp?', 'Yes — WhatsApp integration is our specialty. Auto-capture leads from WhatsApp, send templates, track conversations, and automate follow-ups. All WhatsApp chats appear inside the CRM next to the contact profile.'],
+      ['How long does CRM development take?', 'Basic CRM: 4-6 weeks. Full-featured CRM with automation: 8-14 weeks. Enterprise CRM with custom integrations: 12-20 weeks. We deliver working software every 2 weeks.'],
+      ['Can you migrate data from our existing CRM?', 'Yes. We migrate contacts, deals, notes, attachments, and history from any CRM that supports data export (Zoho, HubSpot, Salesforce, Excel). Zero data loss guaranteed.'],
+      ['Is my sales data secure?', 'Enterprise-grade security — encrypted at rest and in transit, role-based access, audit logs, daily backups, and optional on-premise deployment for maximum data control.'],
+    ],
+  },
+  '/erp-development': {
+    heading: 'ERP Solutions',
+    subtitle: 'Unify finance, HR, inventory, procurement, and operations into one platform. Real-time dashboards, complete visibility, better decisions.',
+    faqs: [
+      ['What is ERP and why does my business need it?', 'ERP (Enterprise Resource Planning) integrates all your core business processes — finance, HR, inventory, procurement — into one unified system. Instead of running separate software for each department, ERP gives you a single source of truth. Benefits: 30-50% less manual work, real-time visibility, better decisions, faster growth.'],
+      ['How much does a custom ERP cost?', 'Custom ERP starts at PKR 300,000 for a focused solution (2-3 modules) up to PKR 2,500,000+ for a full enterprise suite. We offer flexible payment terms and phased delivery — start with finance and add modules as you grow.'],
+      ['How long does ERP implementation take?', 'Focused ERP (2-3 modules): 8-12 weeks. Full enterprise ERP: 16-32 weeks. We use a phased approach — go live with core modules first, add more features over time. This reduces risk and lets your team adapt gradually.'],
+      ['Can you integrate with my existing accounting software?', 'Yes. We can build APIs to sync with QuickBooks, Xero, Tally, or any accounting system that provides an API. If no API exists, we build data import/export tools for seamless migration.'],
+      ['Is my data secure in a cloud ERP?', 'Enterprise-grade security: AES-256 encryption at rest, TLS 1.3 in transit, SOC 2 compliant infrastructure, daily automated backups, role-based access control, and full audit logging. Optional on-premise deployment for maximum data control.'],
+      ['Can multiple branches use the same ERP?', 'Yes — multi-branch is built into the core architecture. Each branch has its own data, inventory, and financials. Management gets a consolidated view with drill-down to individual branches.'],
+    ],
+  },
+  '/cloud-solutions': {
+    heading: 'Cloud Solutions',
+    subtitle: 'Cloud migration, DevOps, serverless architecture, and managed hosting. Deploy globally on Cloudflare, AWS, and Google Cloud with enterprise security.',
+    faqs: [
+      ['Should I use Cloudflare or AWS?', 'For most businesses, Cloudflare Workers + Firebase is the ideal stack — simpler, faster at edge, and dramatically cheaper at scale. AWS is better for complex enterprise needs (Kubernetes, GPU instances, VPC). We help you choose and can work with either.'],
+      ['How much does cloud hosting cost?', 'Cloudflare Workers: free tier (100K requests/day), paid from $5/month. Firebase: free tier (Spark plan), paid from $25/month (Blaze plan). A typical business app costs $25-$100/month total. We optimize for cost — most clients pay less than their previous hosting.'],
+      ['How long does cloud migration take?', 'Simple migration (static site, basic API): 1-2 weeks. Complex migration (database, microservices, CI/CD): 4-8 weeks. We provide a detailed migration plan with timeline and risk assessment before starting.'],
+      ['Will my site go down during migration?', 'No. We use blue-green deployment and DNS gradual cutover. Your old site stays live until the new setup is fully tested. Typical downtime: 0 seconds.'],
+      ['Do you provide ongoing management?', 'Yes — our managed infrastructure plans include 24/7 monitoring, automatic backups, security patches, SSL renewal, performance optimization, and emergency response. Plans start at PKR 15,000/month.'],
+    ],
+  },
+  '/api-integration': {
+    heading: 'API Integration',
+    subtitle: 'Connect your software with payment gateways, WhatsApp, SMS, shipping carriers, and legacy systems. Reliable, secure, real-time data flow.',
+    faqs: [
+      ['What is API integration and why do I need it?', 'API integration connects your software with external services — payment gateways, WhatsApp, SMS providers, shipping carriers, and legacy systems. Instead of manually moving data between systems, APIs automate everything in real-time. Benefits: 80% less manual data entry, zero errors, instant updates across all systems.'],
+      ['How long does API integration take?', 'Simple integration (one payment gateway): 1-2 weeks. Medium integration (multiple services): 3-6 weeks. Complex integration (legacy systems, custom APIs): 6-12 weeks.'],
+      ['What payment gateways do you work with?', 'Stripe (international), PayPal, JazzCash, Easypaisa, HBL, UBL, Meezan Bank, and any gateway with an API. We handle the entire flow — tokenization, 3D Secure, webhooks, reconciliation.'],
+      ['Can you integrate WhatsApp Business API?', 'Yes — this is one of our most requested integrations. We connect WhatsApp Business API with your CRM, sending automated messages, templates, and handling incoming webhooks. All conversations sync to your dashboard.'],
+      ['How do you handle errors and failures?', 'Every integration includes: automatic retry with exponential backoff, dead letter queues for failed messages, real-time alerts on failures, comprehensive logging, and a health dashboard showing the status of every integration.'],
+      ['Do you provide API documentation?', 'Yes — every custom API we build includes OpenAPI/Swagger documentation, usage examples, authentication guides, and rate limiting information. If we integrate a third-party API, we document the integration architecture for your team.'],
+    ],
+  },
+}
+
+function buildServicePageContent(entry) {
+  const faqHtml = (entry.faqs || []).map(([q, a]) => `
+        <div style="border-radius:1rem;border:1px solid #e2e8f0;background:#fff;padding:1.25rem">
+          <dt style="font-weight:800;color:#0f172a">${esc(q)}</dt>
+          <dd style="margin-top:.5rem;font-size:.875rem;line-height:1.6;color:#475569">${esc(a)}</dd>
+        </div>`).join('')
+
+  const servicesHtml = (entry.services || []).map((s) => `
+        <div style="border-radius:1rem;border:1px solid #e2e8f0;background:#fff;padding:1.25rem">
+          <p style="font-size:.9rem;font-weight:800;color:#0f172a">${esc(s.title)}</p>
+          <p style="margin-top:.4rem;font-size:.8125rem;line-height:1.6;color:#64748b">${esc(s.desc)}</p>
+        </div>`).join('')
+
+  return `<main style="padding:3rem 1.25rem;max-width:56rem;margin:0 auto">
+    <h1 style="font-size:2.2rem;font-weight:900;color:#0f172a;line-height:1.1">${esc(entry.heading)}</h1>
+    <p style="margin-top:1rem;font-size:1rem;line-height:1.7;color:#475569">${esc(entry.subtitle)}</p>
+    <div style="margin-top:2rem;display:flex;gap:.75rem;flex-wrap:wrap">
+      <a href="/signup" style="display:inline-flex;min-height:3rem;align-items:center;justify-content:center;border-radius:9999px;padding:.75rem 1.75rem;font-size:.875rem;font-weight:800;text-decoration:none;background:#0f172a;color:#fff">Start Free Trial</a>
+      <a href="/contact" style="display:inline-flex;min-height:3rem;align-items:center;justify-content:center;border-radius:9999px;padding:.75rem 1.75rem;font-size:.875rem;font-weight:800;text-decoration:none;border:1px solid #e2e8f0;color:#0f172a">Book a Demo</a>
+    </div>${servicesHtml ? `
+    <h2 style="margin-top:3rem;font-size:1.5rem;font-weight:900;color:#0f172a">What We Build</h2>
+    <div style="margin-top:1.5rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:.75rem">${servicesHtml}
+    </div>` : ''}${faqHtml ? `
+    <h2 style="margin-top:3rem;font-size:1.5rem;font-weight:900;color:#0f172a">Frequently Asked Questions</h2>
+    <dl style="margin-top:1.5rem;display:flex;flex-direction:column;gap:1rem">${faqHtml}
+    </dl>` : ''}
+  </main>`
+}
+
 function buildRouteContent(path, title, desc, articles) {
   if (path === '/pricing') return buildPricingContent()
   if (path === '/blog') return buildBlogContent(articles)
   if (path === '/contact') return buildContactContent()
   if (path === '/download/restaurant-pos') return buildDownloadRestaurantPosContent()
+
+  const servicePageEntry = SERVICE_PAGE_CONTENT[path]
+  if (servicePageEntry) return buildServicePageContent(servicePageEntry)
+
+  // Country landing pages (e.g. /uae/, /usa/) previously fell through to the
+  // generic 2-line fallback below — the same boilerplate H1+paragraph shape
+  // repeated across all 11 country routes with only title/description
+  // swapped. That's exactly the kind of near-duplicate initial HTML Google's
+  // first crawl wave flags before it ever reaches the real per-country
+  // content that CountryPage.jsx renders client-side. Reuse the same
+  // COUNTRIES data CountryPage.jsx uses so crawlers see unique, keyword-rich
+  // content immediately.
+  const countrySlug = path.replace(/^\/+|\/+$/g, '')
+  const country = COUNTRIES.find((c) => c.slug === countrySlug)
+  if (country) return buildCountryContent(country)
 
   // Default: title + description + CTAs (used by routes without dedicated content)
   return `<main style="padding:3rem 1.25rem;max-width:48rem;margin:0 auto">
