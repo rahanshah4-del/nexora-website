@@ -449,7 +449,7 @@ export default function InvoiceCreatePage() {
         userId,
         businessType,
         createdByEmail: firebaseUser?.email || userDoc?.email || '',
-        type: 'restaurant.invoice.generate',
+        type: 'invoice.generate',
         label: isSchool ? 'Fee bill generation' : 'Invoice generation',
         route: '/app/invoices',
         payload: {

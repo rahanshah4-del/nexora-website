@@ -27,7 +27,11 @@
     "whatsapp:secret": "wrangler secret put META_APP_SECRET --config workers/nexora-whatsapp-api/wrangler.toml && wrangler secret put WHATSAPP_VERIFY_TOKEN --config workers/nexora-whatsapp-api/wrangler.toml",
     "passkeys:deploy": "wrangler deploy --config workers/nexora-passkeys-api/wrangler.toml",
     "passkeys:secret:email": "wrangler secret put FIREBASE_CLIENT_EMAIL --config workers/nexora-passkeys-api/wrangler.toml",
-    "passkeys:secret:key": "wrangler secret put FIREBASE_PRIVATE_KEY --config workers/nexora-passkeys-api/wrangler.toml"
+    "passkeys:secret:key": "wrangler secret put FIREBASE_PRIVATE_KEY --config workers/nexora-passkeys-api/wrangler.toml",
+    "background-jobs:deploy": "wrangler deploy --config workers/nexora-background-jobs/wrangler.toml",
+    "background-jobs:secret:email": "wrangler secret put FIREBASE_CLIENT_EMAIL --config workers/nexora-background-jobs/wrangler.toml",
+    "background-jobs:secret:key": "wrangler secret put FIREBASE_PRIVATE_KEY --config workers/nexora-background-jobs/wrangler.toml",
+    "background-jobs:secret:resend": "wrangler secret put RESEND_API_KEY --config workers/nexora-background-jobs/wrangler.toml"
   },
   "dependencies": {
     "@paddle/paddle-js": "^1.6.4",
