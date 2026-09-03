@@ -30,11 +30,11 @@ const PAYMENTS_WORKER_URL = String(
 const META_PURCHASE_TRACKED_PREFIX = 'nexora_meta_purchase_tracked:'
 
 function Section({ children, className = '' }) {
-  return <section className={`mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 ${className}`}>{children}</section>
+  return <section className={`mx-auto w-full max-w-7xl px-5 sm:px-6 lg:px-8 ${className}`}>{children}</section>
 }
 
 function Panel({ children, className = '' }) {
-  return <div className={`rounded-[1.6rem] border border-slate-200 bg-white p-4 shadow-[0_24px_70px_-44px_rgba(15,23,42,0.45)] sm:p-5 ${className}`}>{children}</div>
+  return <div className={`rounded-[1.6rem] border border-slate-200 bg-white p-5 shadow-[0_24px_70px_-44px_rgba(15,23,42,0.45)] sm:p-5 ${className}`}>{children}</div>
 }
 
 function Badge({ children, tone = 'slate' }) {
@@ -850,19 +850,19 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
       <div className="relative overflow-hidden bg-slate-950 text-white">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(124,58,237,0.42),transparent_32%),radial-gradient(circle_at_80%_20%,rgba(14,165,233,0.28),transparent_30%)]" />
         <Section className="relative py-8 sm:py-14">
-          <div className="grid gap-6 lg:grid-cols-[1.35fr_0.65fr] lg:items-end">
-            <div>
+          <div className="grid min-w-0 gap-6 lg:grid-cols-[1.35fr_0.65fr] lg:items-end">
+            <div className="min-w-0">
               <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-200 sm:tracking-[0.32em]">Nexora SaaS Upgrade Portal</p>
               <h1 className="mt-4 text-2xl font-black leading-tight tracking-tight text-balance sm:text-5xl">Upgrade your Nexora plan.</h1>
               <p className="mt-4 max-w-2xl text-base font-medium leading-7 text-slate-200">
                 Choose a plan and payment method. Crypto payments are verified and activated automatically.
               </p>
             </div>
-            <Panel className="border-white/10 bg-white/10 text-white backdrop-blur-xl">
+            <Panel className="min-w-0 border-white/10 bg-white/10 text-white backdrop-blur-xl">
               <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-300">Current Plan</p>
-              <p className="mt-3 text-2xl font-black">{currentPlan}</p>
+              <p className="mt-3 truncate text-2xl font-black">{currentPlan}</p>
               <p className="mt-2 break-words text-sm font-semibold text-slate-200">{workspaceName}</p>
-              <div className="mt-4 flex flex-wrap gap-2">
+              <div className="mt-4 flex min-w-0 flex-wrap gap-2">
                 <Badge tone="violet">{businessTypeLabel || 'Workspace'}</Badge>
                 <Badge tone="green">{workspaceDoc?.subscriptionStatus || 'trial'}</Badge>
               </div>
@@ -874,20 +874,22 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
       <Section className="py-8">
         <div className="grid gap-6 xl:grid-cols-[1fr_22rem]">
           <div className="space-y-6">
-            <Panel>
-              <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-end sm:justify-between">
-                <div>
+            <Panel className="min-w-0">
+              <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
+                <div className="min-w-0">
                   <p className="text-xs font-black uppercase tracking-[0.24em] text-violet-600">Plans</p>
                   <h2 className="mt-2 text-2xl font-black">Choose your SaaS plan</h2>
                 </div>
-                <div className="flex w-full rounded-2xl bg-slate-100 p-1 sm:inline-flex sm:w-auto">
-                  {['monthly', 'yearly'].map((cycle) => (
-                    <button key={cycle} type="button" onClick={() => selectBillingCycle(cycle)} className={`flex-1 rounded-xl px-4 py-2 text-xs font-black capitalize sm:flex-none ${billingCycle === cycle ? 'bg-white text-violet-700 shadow-sm' : 'text-slate-500'}`}>
-                      {cycle}
-                    </button>
-                  ))}
+                <div className="flex min-w-0 flex-wrap items-center gap-2">
+                  <div className="inline-flex min-w-0 shrink-0 rounded-2xl bg-slate-100 p-1">
+                    {['monthly', 'yearly'].map((cycle) => (
+                      <button key={cycle} type="button" onClick={() => selectBillingCycle(cycle)} className={`rounded-xl px-4 py-2 text-xs font-black capitalize ${billingCycle === cycle ? 'bg-white text-violet-700 shadow-sm' : 'text-slate-500'}`}>
+                        {cycle}
+                      </button>
+                    ))}
+                  </div>
+                  <PricingCurrencySelector />
                 </div>
-                <PricingCurrencySelector />
               </div>
               <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {platformPlans.map((plan) => (
