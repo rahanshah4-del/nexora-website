@@ -872,8 +872,8 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
       </div>
 
       <Section className="py-8">
-        <div className="grid gap-6 xl:grid-cols-[1fr_22rem]">
-          <div className="space-y-6">
+        <div className="grid min-w-0 gap-6 xl:grid-cols-[1fr_22rem]">
+          <div className="min-w-0 space-y-6">
             <Panel className="min-w-0">
               <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
                 <div className="min-w-0">
@@ -1052,7 +1052,7 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
             </Panel> : null}
           </div>
 
-          <aside className="space-y-6 xl:sticky xl:top-6">
+          <aside className="min-w-0 space-y-6 xl:sticky xl:top-6">
             <Panel>
               <p className="text-xs font-black uppercase tracking-[0.24em] text-violet-600">Request Summary</p>
               <h2 className="mt-2 text-2xl font-black">{selectedPlan?.name}</h2>
