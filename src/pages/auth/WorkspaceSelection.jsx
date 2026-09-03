@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import {
   HiOutlineArrowRight,
@@ -1736,6 +1736,10 @@ export default function WorkspaceSelection() {
     monthlyFeeSetup: '',
   }))
   const [workspaceView, setWorkspaceView] = useState('enter')
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const searchBoxRef = useRef(null)
+  const searchInputRef = useRef(null)
   const [accountData, setAccountData] = useState(null)
   const [workspaceData, setWorkspaceData] = useState(null)
   const [accountLoading, setAccountLoading] = useState(true)
@@ -3163,6 +3167,52 @@ export default function WorkspaceSelection() {
     workspaceData?.workspaceId,
   ])
 
+  const searchResults = useMemo(() => {
+    const normalizedQuery = searchQuery.trim().toLowerCase()
+    if (!normalizedQuery) return []
+    const workspaceResults = visibleWorkspaces
+      .filter((workspace) => (workspace.name || '').toLowerCase().includes(normalizedQuery))
+      .map((workspace) => ({ kind: 'workspace', id: `workspace:${workspace.id}`, label: workspace.name, sublabel: labelForBusinessType(workspace.type), emoji: workspace.emoji, disabled: !workspace.active, data: workspace }))
+    const moduleResults = visibleModuleAccess
+      .filter((module) => (module.name || '').toLowerCase().includes(normalizedQuery))
+      .map((module) => ({ kind: 'module', id: `module:${module.name}`, label: module.name, sublabel: 'Module', emoji: module.emoji, disabled: !(module.active && module.route), data: module }))
+    return [...workspaceResults, ...moduleResults].slice(0, 8)
+  }, [searchQuery, visibleWorkspaces, visibleModuleAccess])
+
+  const handleSearchResultSelect = useCallback((result) => {
+    if (result.disabled) return
+    if (result.kind === 'module') {
+      handleSelectBusinessWorkspace(businessWorkspaceForType(result.data.type))
+    } else {
+      handleSelectBusinessWorkspace(result.data)
+    }
+    setSearchOpen(false)
+    setSearchQuery('')
+  }, [handleSelectBusinessWorkspace])
+
+  useEffect(() => {
+    function onPointerDown(event) {
+      if (!searchBoxRef.current || searchBoxRef.current.contains(event.target)) return
+      setSearchOpen(false)
+    }
+    function onKeyDown(event) {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault()
+        setSidebarCollapsed(false)
+        setSearchOpen(true)
+        searchInputRef.current?.focus()
+      } else if (event.key === 'Escape') {
+        setSearchOpen(false)
+      }
+    }
+    document.addEventListener('pointerdown', onPointerDown, true)
+    window.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown, true)
+      window.removeEventListener('keydown', onKeyDown)
+    }
+  }, [])
+
   const handleOpenCreate = useCallback(() => {
     if (!canUseWorkspaceOnDevice) {
       setDeviceBlockerOpen(true)
@@ -3933,11 +3983,16 @@ export default function WorkspaceSelection() {
               </button>
             </div>
 
-            {/* Search */}
-            <div className="mt-4 w-full">
+            {/* Search — filters workspaces and modules below by name */}
+            <div ref={searchBoxRef} className="relative mt-4 w-full">
               {sidebarCollapsed ? (
                 <button
                   type="button"
+                  onClick={() => {
+                    setSidebarCollapsed(false)
+                    setSearchOpen(true)
+                    window.setTimeout(() => searchInputRef.current?.focus(), 0)
+                  }}
                   onMouseEnter={(event) => handleSidebarHover(event, 'Search')}
                   onMouseLeave={clearSidebarHover}
                   className="mx-auto flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
@@ -3946,12 +4001,66 @@ export default function WorkspaceSelection() {
                   <HiOutlineMagnifyingGlass className="h-4 w-4" />
                 </button>
               ) : (
-                <div className="flex h-9 items-center gap-2 rounded-full border border-slate-200 bg-white px-3 text-[13px]">
+                <div className="flex h-9 items-center gap-2 rounded-full border border-slate-200 bg-white px-3 text-[13px] focus-within:border-slate-300">
                   <HiOutlineMagnifyingGlass className="h-4 w-4 shrink-0 text-slate-400" />
-                  <span className="min-w-0 flex-1 truncate text-left font-medium text-slate-400">Search</span>
-                  <span className="shrink-0 rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] font-semibold text-slate-400">Ctrl K</span>
+                  <input
+                    ref={searchInputRef}
+                    type="text"
+                    value={searchQuery}
+                    onFocus={() => setSearchOpen(true)}
+                    onChange={(event) => {
+                      setSearchQuery(event.target.value)
+                      setSearchOpen(true)
+                    }}
+                    placeholder="Search workspaces, modules..."
+                    aria-label="Search workspaces and modules"
+                    className="min-w-0 flex-1 border-0 bg-transparent p-0 font-medium text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-0"
+                  />
+                  {searchQuery ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSearchQuery('')
+                        searchInputRef.current?.focus()
+                      }}
+                      className="shrink-0 rounded-md p-0.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                      aria-label="Clear search"
+                    >
+                      <HiOutlineXMark className="h-3.5 w-3.5" />
+                    </button>
+                  ) : (
+                    <span className="shrink-0 rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] font-semibold text-slate-400">Ctrl K</span>
+                  )}
                 </div>
               )}
+
+              {searchOpen && searchQuery.trim() && !sidebarCollapsed ? (
+                <div className="absolute left-0 right-0 top-full z-30 mt-1.5 max-h-72 overflow-y-auto rounded-xl border border-slate-200 bg-white p-1.5 shadow-[0_16px_48px_-16px_rgba(15,23,42,0.25)]">
+                  {searchResults.length ? (
+                    searchResults.map((result) => (
+                      <button
+                        key={result.id}
+                        type="button"
+                        disabled={result.disabled}
+                        onClick={() => handleSearchResultSelect(result)}
+                        className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[13px] transition ${
+                          result.disabled ? 'cursor-not-allowed opacity-50' : 'hover:bg-slate-100'
+                        }`}
+                      >
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-sm">
+                          {result.emoji || '📈'}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate font-semibold text-slate-800">{result.label}</span>
+                          <span className="block truncate text-[11px] text-slate-400">{result.sublabel}</span>
+                        </span>
+                      </button>
+                    ))
+                  ) : (
+                    <p className="px-2.5 py-4 text-center text-[13px] text-slate-400">No matches found.</p>
+                  )}
+                </div>
+              ) : null}
             </div>
 
             {/* Workspace card */}
