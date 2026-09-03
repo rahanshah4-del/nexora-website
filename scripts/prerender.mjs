@@ -1272,9 +1272,13 @@ async function main() {
   try {
     const { initializeApp } = await import('firebase/app')
     const { getFirestore, doc, getDoc } = await import('firebase/firestore')
+    // Must match the real public config in src/lib/firebase.js — this was a
+    // placeholder key ("AIzaSyDummyKeyForPrerender") that made every getDoc()
+    // below fail silently (caught per-article), so mlCount was always 0 and
+    // none of the ur/hi/ar/bn translated blog pages ever got prerendered.
     const firebaseConfig = {
-      apiKey: "AIzaSyDummyKeyForPrerender", projectId: "nexora-business-suite",
-      authDomain: "nexora-business-suite.firebaseapp.com", storageBucket: "nexora-business-suite.appspot.com"
+      apiKey: "AIzaSyDOdQnY-Vjkwdl-0F7FnuVjVB-tAO-cnWc", projectId: "nexora-business-suite",
+      authDomain: "nexora-business-suite.firebaseapp.com", storageBucket: "nexora-business-suite.firebasestorage.app"
     }
     const app = initializeApp(firebaseConfig, 'prerender-ml')
     const db = getFirestore(app)
@@ -1302,7 +1306,12 @@ async function main() {
           writePage(join(DIST, lang.prefix, 'blog', article.slug, 'index.html'), html)
           mlCount++
         }
-      } catch { /* skip article */ }
+      } catch (e) {
+        // Previously silent — a bad API key made every single article fail
+        // here with mlCount staying 0 and nothing printed, so the whole
+        // multilingual prerender step going dark was invisible in build logs.
+        console.log(`[prerender] ⚠ Multilingual translation skipped for "${article.slug}":`, e.message?.slice(0, 120))
+      }
     }
   } catch (e) {
     console.log('[prerender] ⚠ Multilingual prerender skipped (Firestore not available at build time):', e.message?.slice(0, 80))

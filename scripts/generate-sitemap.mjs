@@ -2,6 +2,8 @@ import fs from 'fs/promises'
 import path from 'path'
 import { blogArticles } from '../src/lib/blogData.js'
 import { submitIndexNow } from './indexnow.mjs'
+import { initializeApp } from 'firebase/app'
+import { getFirestore, doc, getDoc } from 'firebase/firestore'
 
 const ROOT = process.cwd()
 const APP_ROUTER = path.join(ROOT, 'src', 'AppRouter.jsx')
@@ -192,6 +194,55 @@ function diffChangedUrls(previous, current) {
   return Array.from(changed)
 }
 
+// Only articles with a real, non-pending/non-failed translation in Firestore
+// should have their ur/hi/ar/bn URLs advertised in the sitemap — otherwise
+// Google crawls a URL that has no unique content (the app has nothing to
+// render there but the English article), correctly treats it as a duplicate,
+// and canonicalizes it away. That was happening for every current article's
+// language variants: Firestore's `blogTranslations` collection only had
+// translations for articles that predate the current blog content, so zero
+// current slugs actually matched. Mirrors the same lookup prerender.mjs uses
+// (translations[code], falling back to the 'ur' entry) so the sitemap only
+// ever lists a URL that prerender.mjs will actually generate a page for.
+async function getTranslatedLanguagesBySlug(articles) {
+  const mlLangs = [
+    { code: 'ur-roman', prefix: 'ur' },
+    { code: 'hi', prefix: 'hi' },
+    { code: 'ar', prefix: 'ar' },
+    { code: 'bn', prefix: 'bn' },
+  ]
+  const bySlug = new Map()
+  try {
+    const firebaseConfig = {
+      apiKey: 'AIzaSyDOdQnY-Vjkwdl-0F7FnuVjVB-tAO-cnWc',
+      projectId: 'nexora-business-suite',
+      authDomain: 'nexora-business-suite.firebaseapp.com',
+      storageBucket: 'nexora-business-suite.firebasestorage.app',
+    }
+    const app = initializeApp(firebaseConfig, 'sitemap-ml')
+    const db = getFirestore(app)
+    for (const article of articles) {
+      try {
+        const snap = await getDoc(doc(db, 'blogTranslations', article.slug))
+        if (!snap.exists()) continue
+        const translations = snap.data().translations || {}
+        const prefixes = mlLangs
+          .filter(({ code }) => {
+            const t = translations[code] || translations['ur']
+            return t && t.translationStatus !== 'failed' && t.translationStatus !== 'pending'
+          })
+          .map(({ prefix }) => prefix)
+        if (prefixes.length) bySlug.set(article.slug, prefixes)
+      } catch {
+        // Skip this article's translation check; it just won't get ml URLs.
+      }
+    }
+  } catch (e) {
+    console.log('[sitemap] Multilingual blog URL check skipped (Firestore unavailable):', e.message?.slice(0, 80))
+  }
+  return bySlug
+}
+
 export async function buildSitemap() {
   const routes = await readRoutes()
   const htmlFiles = await readPublicHtmlFiles()
@@ -230,11 +281,19 @@ export async function buildSitemap() {
     { loc: `${HOST}/blog/`, changefreq: 'daily', priority: '0.7' },
     ...blogArticles.map((article) => ({ loc: absoluteCanonicalUrl(article.canonical), lastmod: article.updatedDate, changefreq: 'weekly', priority: '0.5' })),
   ]
-  // Multilingual blog URLs
-  const mlPrefixes = ['ur', 'hi', 'ar', 'bn']
-  for (const prefix of mlPrefixes) {
+  // Multilingual blog URLs — only for articles that actually have translated
+  // content (see getTranslatedLanguagesBySlug above).
+  const translatedBySlug = await getTranslatedLanguagesBySlug(blogArticles)
+  const translatedPrefixes = new Set()
+  for (const langs of translatedBySlug.values()) {
+    for (const prefix of langs) translatedPrefixes.add(prefix)
+  }
+  for (const prefix of translatedPrefixes) {
     blogUrls.push({ loc: `${HOST}/${prefix}/blog/`, changefreq: 'daily', priority: '0.5' })
-    for (const article of blogArticles) {
+  }
+  for (const article of blogArticles) {
+    const langs = translatedBySlug.get(article.slug) || []
+    for (const prefix of langs) {
       blogUrls.push({ loc: `${HOST}/${prefix}/blog/${article.slug}/`, lastmod: article.updatedDate, changefreq: 'weekly', priority: '0.4' })
     }
   }
