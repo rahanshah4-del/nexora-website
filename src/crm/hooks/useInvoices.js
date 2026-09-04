@@ -706,34 +706,42 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           })
-          await logActivity({
-            workspaceId,
-            userId,
-            businessType,
-            ...userActivityInfo(userDoc, firebaseUser),
-            action: 'Invoice created',
-            module: 'Invoices',
-            description: `${safeInvNo} was created for ${name}.`,
-            targetId: ref.id,
-            targetName: safeInvNo,
-            metadata: { customerName: name, total: invoice.total, currency: invoice.currency },
-          })
-          await createWorkspaceNotification({
-            workspaceId,
-            userId,
-            businessType,
-            type: 'Invoices',
-            priority: requiresApproval ? 'high' : 'medium',
-            title: requiresApproval ? 'Invoice approval needed' : 'Invoice created',
-            message: requiresApproval
-              ? `${safeInvNo} for ${name} is waiting for approval.`
-              : `${safeInvNo} was created for ${name}.`,
-            relatedId: ref.id,
-            route: requiresApproval ? '/app/approvals' : '/app/invoices',
-            createdBy: userId,
-            createdByEmail: firebaseUser?.email || userDoc?.email || '',
-            metadata: { invoiceNumber: safeInvNo, total: invoice.total, currency: invoice.currency },
-          })
+          // Activity log + notification are supplementary side-effects, not
+          // part of the invoice itself (which is already committed above) —
+          // run them concurrently instead of one-after-another (halves the
+          // extra latency users were seeing on Save), and don't let either
+          // one failing turn an already-successful invoice creation into a
+          // reported failure.
+          await Promise.all([
+            logActivity({
+              workspaceId,
+              userId,
+              businessType,
+              ...userActivityInfo(userDoc, firebaseUser),
+              action: 'Invoice created',
+              module: 'Invoices',
+              description: `${safeInvNo} was created for ${name}.`,
+              targetId: ref.id,
+              targetName: safeInvNo,
+              metadata: { customerName: name, total: invoice.total, currency: invoice.currency },
+            }).catch((err) => console.warn('[Invoices] logActivity failed', err?.message || err)),
+            createWorkspaceNotification({
+              workspaceId,
+              userId,
+              businessType,
+              type: 'Invoices',
+              priority: requiresApproval ? 'high' : 'medium',
+              title: requiresApproval ? 'Invoice approval needed' : 'Invoice created',
+              message: requiresApproval
+                ? `${safeInvNo} for ${name} is waiting for approval.`
+                : `${safeInvNo} was created for ${name}.`,
+              relatedId: ref.id,
+              route: requiresApproval ? '/app/approvals' : '/app/invoices',
+              createdBy: userId,
+              createdByEmail: firebaseUser?.email || userDoc?.email || '',
+              metadata: { invoiceNumber: safeInvNo, total: invoice.total, currency: invoice.currency },
+            }).catch((err) => console.warn('[Invoices] createWorkspaceNotification failed', err?.message || err)),
+          ])
           return { ok: true, id: ref.id, invoice: { id: ref.id, ...docPayload, invoiceNumber: safeInvNo } }
         } catch (e) {
           return { ok: false, error: clientSafeMessage(e, 'Unable to create invoice.') }

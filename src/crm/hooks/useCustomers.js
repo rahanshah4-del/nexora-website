@@ -297,32 +297,39 @@ export function useCustomers({ limitCount = DEFAULT_CUSTOMER_LIST_LIMIT, paginat
               createdAt: new Date().toISOString(),
             })
           }
-          await logActivity({
-            workspaceId,
-            userId,
-            businessType,
-            ...userActivityInfo(userDoc, firebaseUser),
-            action: 'Customer created',
-            module: 'Customers',
-            description: `${name} was added as a customer.`,
-            targetId: ref.id,
-            targetName: name,
-            metadata: { email, company, customerType },
-          })
-          await createWorkspaceNotification({
-            workspaceId,
-            userId,
-            businessType,
-            type: 'Customers',
-            priority: 'low',
-            title: 'Customer created',
-            message: `${name} was added as a customer.`,
-            relatedId: ref.id,
-            route: '/app/customers',
-            createdBy: userId,
-            createdByEmail: firebaseUser?.email || userDoc?.email || '',
-            metadata: { email, company, customerType },
-          })
+          // Activity log + notification are supplementary side-effects, not
+          // part of the customer record itself (already committed above) —
+          // run them concurrently instead of one-after-another, and don't
+          // let either one failing turn an already-successful create into a
+          // reported failure.
+          await Promise.all([
+            logActivity({
+              workspaceId,
+              userId,
+              businessType,
+              ...userActivityInfo(userDoc, firebaseUser),
+              action: 'Customer created',
+              module: 'Customers',
+              description: `${name} was added as a customer.`,
+              targetId: ref.id,
+              targetName: name,
+              metadata: { email, company, customerType },
+            }).catch((err) => console.warn('[Customers] logActivity failed', err?.message || err)),
+            createWorkspaceNotification({
+              workspaceId,
+              userId,
+              businessType,
+              type: 'Customers',
+              priority: 'low',
+              title: 'Customer created',
+              message: `${name} was added as a customer.`,
+              relatedId: ref.id,
+              route: '/app/customers',
+              createdBy: userId,
+              createdByEmail: firebaseUser?.email || userDoc?.email || '',
+              metadata: { email, company, customerType },
+            }).catch((err) => console.warn('[Customers] createWorkspaceNotification failed', err?.message || err)),
+          ])
           return {
             ok: true,
             id: ref.id,
