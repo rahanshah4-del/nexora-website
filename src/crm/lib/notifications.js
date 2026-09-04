@@ -50,7 +50,16 @@ export async function createWorkspaceNotification({
   createdBy = '',
   createdByEmail = '',
   dedupeKey = '',
-  queue = true,
+  // Every call site across the app (~50 of them — invoices, customers,
+  // expenses, purchases, support tickets, payroll, approvals, ...) relies on
+  // this default and none opt into queue:true explicitly. Routing every
+  // notification through the Cloudflare background-jobs worker first meant
+  // that whenever that worker's queue wasn't being consumed, every one of
+  // these notifications silently never got created — createWorkspaceNotification
+  // still returned {ok:true} because the *enqueue request* succeeded, not the
+  // actual write. Direct Firestore writes below are simple, fast and don't
+  // depend on an external worker at all, so that's the default now.
+  queue = false,
 } = {}) {
   if (!db || !workspaceId || !title) return { ok: false, skipped: true }
 
