@@ -62,7 +62,14 @@ export default function NotificationBell({ enabled }) {
         )}
         align="right"
         fixedOnMobile
-        panelClassName="sm:w-[24rem]"
+        // The shared `.glass` panel background is ~92% opaque with a light
+        // blur, which on some browsers/GPUs lets page content behind it
+        // (e.g. a table on Account Management) show through enough to look
+        // like it's overlapping the notification list. Push this dropdown
+        // above any page-level z-index; NotificationDropdown itself paints a
+        // fully solid background on top so nothing behind it can bleed
+        // through regardless of Tailwind class specificity/ordering.
+        panelClassName="z-[70] sm:w-[24rem]"
         onOpenChange={(nextOpen) => {
           if (nextOpen) {
             setOpenTick((n) => n + 1)

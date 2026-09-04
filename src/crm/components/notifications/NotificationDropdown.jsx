@@ -38,7 +38,10 @@ export default function NotificationDropdown({ notificationsEnabled, api, onClos
   return (
     <>
       {toast ? <Toast tone={toast.tone} message={toast.message} onClose={() => setToast(null)} /> : null}
-      <div className="p-1">
+      {/* Solid background painted on top of the parent's translucent `.glass`
+          panel so page content behind the dropdown (tables, cards) can never
+          show through it. */}
+      <div className="rounded-[1.35rem] bg-white p-1 dark:bg-slate-950">
         <div className="flex items-center justify-between px-2 py-2">
           <p className="text-sm font-semibold text-slate-900 dark:text-white">Notifications</p>
           {headerBadge}
