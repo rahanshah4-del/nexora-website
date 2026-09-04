@@ -132,6 +132,7 @@ export function useAccountTransactions({ enabled = true, limitCount = null } = {
       if (!permissions.canManageAccounts) return { ok: false, error: 'You do not have permission to manage account transactions.' }
       if (!userId || !workspaceId) return { ok: false, error: 'Please login first' }
       if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now' }
+      if (!businessType) return { ok: false, error: 'Workspace is still loading. Please wait a moment and try again.' }
       const amount = Math.max(toNumber(payload.amount, 0), 0)
       if (amount <= 0) return { ok: false, error: 'Amount is required' }
       const type = statusValue(payload.type, 'adjustment')
@@ -145,9 +146,14 @@ export function useAccountTransactions({ enabled = true, limitCount = null } = {
         if (!isPendingTransaction(transaction)) return false
         if (transaction.type !== type) return false
         if (transactionAmount(transaction) !== amount) return false
-        const existingTarget = transaction.relatedId || transaction.accountNumber || transaction.receiverName || transaction.paidTo || transaction.title
-        const nextTarget = payload.relatedId || payload.expenseId || payload.accountNumber || payload.receiverName || payload.paidTo || title
-        return String(existingTarget || '').trim().toLowerCase() === String(nextTarget || '').trim().toLowerCase()
+        // Only compare an actual identifying field (relatedId/accountNumber/receiverName/paidTo) —
+        // falling back to the generic title here caused two different, legitimate transactions
+        // (e.g. two blank-receiver cash withdrawals of the same amount) to look identical and get
+        // rejected as duplicates. With no identifying field on either side, don't guess.
+        const existingTarget = transaction.relatedId || transaction.accountNumber || transaction.receiverName || transaction.paidTo || ''
+        const nextTarget = payload.relatedId || payload.expenseId || payload.accountNumber || payload.receiverName || payload.paidTo || ''
+        if (!existingTarget && !nextTarget) return false
+        return String(existingTarget).trim().toLowerCase() === String(nextTarget).trim().toLowerCase()
       })
       if (duplicate) return { ok: false, error: 'A similar transaction is already pending approval.' }
       const transactionId = `${workspaceId}-${type}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`

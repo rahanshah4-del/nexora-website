@@ -25,9 +25,31 @@ function attendanceStatus(record = {}) {
   return statusText(record.attendance || record.status || 'present') || 'present'
 }
 
+// Attendance records used to be created without an upsert check, so the
+// same person + date could exist more than once (double-click, retry after
+// a slow save). Keep only the latest record per person + date so those
+// pre-existing duplicates don't double-count Present/Absent/Late totals.
+function dedupeAttendanceRows(rows, personKey) {
+  const latestByKey = new Map()
+  for (const row of rows) {
+    const person = row?.[personKey]
+    const date = row?.date
+    if (!person || !date) {
+      latestByKey.set(row?.id || Math.random(), row)
+      continue
+    }
+    const key = `${person}__${date}`
+    const existing = latestByKey.get(key)
+    const rowTime = new Date(row?.updatedAt || row?.createdAt || 0).getTime() || 0
+    const existingTime = existing ? new Date(existing?.updatedAt || existing?.createdAt || 0).getTime() || 0 : -1
+    if (!existing || rowTime >= existingTime) latestByKey.set(key, row)
+  }
+  return Array.from(latestByKey.values())
+}
+
 export function calculateSchoolAttendanceSummary(studentAttendance = [], staffAttendance = []) {
-  const studentRows = safeRows(studentAttendance)
-  const staffRows = safeRows(staffAttendance)
+  const studentRows = dedupeAttendanceRows(safeRows(studentAttendance), 'studentId')
+  const staffRows = dedupeAttendanceRows(safeRows(staffAttendance), 'staffId')
   const allRows = [...studentRows, ...staffRows]
   const byStatus = allRows.reduce(
     (acc, row) => {

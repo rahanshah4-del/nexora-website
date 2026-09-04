@@ -113,6 +113,7 @@ export function useExpenses({ limitCount = null, enabled = true } = {}) {
       async createExpense(payload) {
         if (!userId || !workspaceId) return { ok: false, error: 'Please login first' }
         if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now' }
+        if (!businessType) return { ok: false, error: 'Workspace is still loading. Please wait a moment and try again.' }
         const title = String(payload.title || payload.name || payload.category || '').trim()
         const amount = expenseValue(payload)
         if (!title) return { ok: false, error: 'Expense title is required' }

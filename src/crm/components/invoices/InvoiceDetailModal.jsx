@@ -100,8 +100,8 @@ function InvoiceDetailModal({
     }
     setSaving(true)
     try {
-      await onUpdate?.(invoice.id, patch)
-      setEditing(false)
+      const res = await onUpdate?.(invoice.id, patch)
+      if (!res || res.ok !== false) setEditing(false)
     } finally {
       setSaving(false)
     }

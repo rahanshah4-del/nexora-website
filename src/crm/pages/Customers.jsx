@@ -329,7 +329,15 @@ export default function CustomersPage() {
         schoolMode={isSchool}
         onClose={() => setCreateOpen(false)}
         onCreate={async (payload) => {
-          const res = await withTimeout(customersApi.createCustomer(payload))
+          const res = await withTimeout(customersApi.createCustomer(payload), {
+            onLateResolve: (lateRes) => {
+              if (lateRes?.ok) {
+                setToast({ tone: 'success', message: isSchool ? 'Student was saved after all — no need to retry.' : 'Customer was saved after all — no need to retry.' })
+                window.setTimeout(() => setToast(null), 2400)
+                setCreateOpen(false)
+              }
+            },
+          })
           if (res?.ok) {
             setToast({ tone: 'success', message: isSchool ? 'Student created successfully' : 'Customer created successfully' })
             window.setTimeout(() => setToast(null), 1600)
@@ -346,7 +354,15 @@ export default function CustomersPage() {
         initialRecord={editingCustomer}
         onClose={() => setEditingCustomer(null)}
         onCreate={async (payload) => {
-          const res = await withTimeout(customersApi.updateCustomer(editingCustomer?.id, payload))
+          const res = await withTimeout(customersApi.updateCustomer(editingCustomer?.id, payload), {
+            onLateResolve: (lateRes) => {
+              if (lateRes?.ok) {
+                setToast({ tone: 'success', message: isSchool ? 'Student was updated after all — no need to retry.' : 'Customer was updated after all — no need to retry.' })
+                window.setTimeout(() => setToast(null), 2400)
+                setEditingCustomer(null)
+              }
+            },
+          })
           if (res?.ok) {
             setToast({ tone: 'success', message: isSchool ? 'Student updated successfully' : 'Customer updated successfully' })
             window.setTimeout(() => setToast(null), 1600)

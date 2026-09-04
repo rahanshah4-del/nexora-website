@@ -18,9 +18,10 @@ import Select from '../components/ui/Select.jsx'
 import Toast from '../components/ui/Toast.jsx'
 import { useCustomers } from '../hooks/useCustomers.js'
 import { useTeamMembers } from '../hooks/useTeamMembers.js'
+import { useSchoolPayroll } from '../hooks/useSchoolPayroll.js'
 import { useUser } from '../hooks/useUser.js'
 import { registerAttendanceDevice } from '../lib/attendanceDevices.js'
-import { createUserDoc, listenToWorkspaceCollection } from '../lib/firestore.js'
+import { createUserDoc, listenToWorkspaceCollection, patchUserDoc, removeUserDoc } from '../lib/firestore.js'
 
 const STATUS_OPTIONS = ['present', 'absent', 'late', 'leave']
 
@@ -62,13 +63,33 @@ function sortNewest(rows = []) {
   return [...rows].sort((a, b) => toSortableTime(b.createdAt || b.syncedAt || b.punchTime || b.date) - toSortableTime(a.createdAt || a.syncedAt || a.punchTime || a.date))
 }
 
+// Teachers/staff can be added either in Team Management (teamMembers) or
+// directly in Salary/Payroll (payrollMembers) — those are two separate
+// Firestore collections, so a person added in one used to be invisible to
+// the other. Merge both lists here (deduped by email, falling back to
+// name) so anyone added in either place is selectable for attendance.
+function mergeStaffLists(teamMembers = [], payrollMembers = []) {
+  const merged = []
+  const seenKeys = new Set()
+  for (const member of [...teamMembers, ...payrollMembers]) {
+    const email = String(member.email || '').trim().toLowerCase()
+    const name = String(member.fullName || member.name || '').trim().toLowerCase()
+    const key = email || name
+    if (key && seenKeys.has(key)) continue
+    if (key) seenKeys.add(key)
+    merged.push(member)
+  }
+  return merged
+}
+
 export default function AttendancePage() {
   const { user } = useAuth()
   const { workspaceId, businessType } = useUser()
   const customersApi = useCustomers({ limitCount: 500 })
   const teamApi = useTeamMembers()
+  const payrollApi = useSchoolPayroll()
   const students = customersApi.customers || []
-  const staff = teamApi.members || []
+  const staff = useMemo(() => mergeStaffLists(teamApi.members, payrollApi.members), [teamApi.members, payrollApi.members])
   const [mode, setMode] = useState('student')
   const [date, setDate] = useState(todayKey())
   const [personId, setPersonId] = useState('')
@@ -92,6 +113,8 @@ export default function AttendancePage() {
   const [guideOpen, setGuideOpen] = useState(false)
   const [guideLanguage, setGuideLanguage] = useState('en')
   const [toast, setToast] = useState(null)
+  const [editingAttendanceId, setEditingAttendanceId] = useState('')
+  const [deletingAttendanceId, setDeletingAttendanceId] = useState('')
 
   const selectedStudent = useMemo(() => students.find((student) => student.id === personId), [personId, students])
   const selectedStaff = useMemo(() => staff.find((member) => member.id === personId), [personId, staff])
@@ -215,15 +238,58 @@ export default function AttendancePage() {
       createdBy: user?.uid || workspaceId,
     }
 
+    // Upsert: an explicit edit reuses that record's id; otherwise look for an
+    // existing record for the same person + date so re-saving (double-click,
+    // retry after a slow save, or correcting today's entry) updates it in
+    // place instead of creating a duplicate/ghost attendance row.
+    const rowsForMode = isStudent ? studentAttendanceRows : staffAttendanceRows
+    const existing = editingAttendanceId
+      ? rowsForMode.find((row) => row.id === editingAttendanceId)
+      : rowsForMode.find((row) => row.date === date && (isStudent ? row.studentId === person.id : row.staffId === person.id))
+
     setSaving(true)
     try {
-      await createUserDoc(workspaceId, collectionName, payload, { businessType })
-      setToast({ tone: 'success', message: 'Attendance saved. Reports Center is now updated.' })
+      if (existing) {
+        await patchUserDoc(workspaceId, collectionName, existing.id, payload, { businessType })
+        setToast({ tone: 'success', message: 'Attendance updated. Reports Center is now updated.' })
+      } else {
+        await createUserDoc(workspaceId, collectionName, payload, { businessType })
+        setToast({ tone: 'success', message: 'Attendance saved. Reports Center is now updated.' })
+      }
       setNote('')
+      setEditingAttendanceId('')
     } catch (error) {
       setToast({ tone: 'error', message: error?.message || 'Unable to save attendance.' })
     } finally {
       setSaving(false)
+    }
+  }
+
+  function handleEditAttendanceRow(row) {
+    const isStudent = mode === 'student'
+    setEditingAttendanceId(row.id)
+    setDate(row.date || todayKey())
+    setStatus(row.attendance || row.status || 'present')
+    setNote(row.note || '')
+    setPersonId((isStudent ? row.studentId : row.staffId) || '')
+  }
+
+  async function handleDeleteAttendanceRow(row) {
+    if (!workspaceId || !row?.id) return
+    const isStudent = mode === 'student'
+    const collectionName = isStudent ? 'studentAttendance' : 'staffAttendance'
+    setDeletingAttendanceId(row.id)
+    try {
+      await removeUserDoc(workspaceId, collectionName, row.id)
+      if (editingAttendanceId === row.id) {
+        setEditingAttendanceId('')
+        setNote('')
+      }
+      setToast({ tone: 'success', message: 'Attendance record deleted.' })
+    } catch (error) {
+      setToast({ tone: 'error', message: error?.message || 'Unable to delete attendance record.' })
+    } finally {
+      setDeletingAttendanceId('')
     }
   }
 
@@ -547,10 +613,25 @@ Header: x-nexora-device-secret: DEVICE_SECRET
               <Input value={note} onChange={(event) => setNote(event.target.value)} placeholder="Optional note" className="mt-1.5" />
             </label>
 
+            {editingAttendanceId ? (
+              <p className="rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-bold text-indigo-800">
+                Editing a saved record. Saving will update it instead of creating a new one.
+              </p>
+            ) : null}
+
             <div className="flex flex-wrap gap-2">
               <Button type="submit" disabled={saving} className="rounded-2xl">
-                {saving ? 'Saving...' : 'Save Attendance'}
+                {saving ? 'Saving...' : editingAttendanceId ? 'Update Attendance' : 'Save Attendance'}
               </Button>
+              {editingAttendanceId ? (
+                <button
+                  type="button"
+                  onClick={() => { setEditingAttendanceId(''); setNote('') }}
+                  className="focus-ring inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:border-slate-300"
+                >
+                  Cancel Edit
+                </button>
+              ) : null}
               <Link to={reportUrl} className="focus-ring inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:border-slate-300">
                 Open Report
               </Link>
@@ -592,7 +673,7 @@ Header: x-nexora-device-secret: DEVICE_SECRET
             </div>
             <div className="mt-3 space-y-2">
               {activeAttendanceRows.slice(0, 8).length ? activeAttendanceRows.slice(0, 8).map((row) => (
-                <div key={row.id} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                <div key={row.id} className={`rounded-xl border px-3 py-2 ${editingAttendanceId === row.id ? 'border-indigo-300 bg-indigo-50' : 'border-slate-200 bg-slate-50'}`}>
                   <div className="flex items-center justify-between gap-3">
                     <p className="min-w-0 truncate text-sm font-black text-slate-900">
                       {mode === 'student' ? row.studentName || row.name || 'Student' : row.staffName || row.name || 'Staff member'}
@@ -604,6 +685,23 @@ Header: x-nexora-device-secret: DEVICE_SECRET
                   <p className="mt-1 truncate text-xs font-semibold text-slate-500">
                     {[row.className || row.class || row.department, row.date || 'No date', row.source || 'attendance'].filter(Boolean).join(' · ')}
                   </p>
+                  <div className="mt-2 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleEditAttendanceRow(row)}
+                      className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-bold text-slate-600 hover:border-indigo-300 hover:text-indigo-700"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      disabled={deletingAttendanceId === row.id}
+                      onClick={() => handleDeleteAttendanceRow(row)}
+                      className="rounded-lg border border-rose-200 bg-white px-2.5 py-1 text-xs font-bold text-rose-600 hover:bg-rose-50 disabled:opacity-50"
+                    >
+                      {deletingAttendanceId === row.id ? 'Deleting...' : 'Delete'}
+                    </button>
+                  </div>
                 </div>
               )) : (
                 <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-3 py-4 text-sm font-semibold text-slate-500">

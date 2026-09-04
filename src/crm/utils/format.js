@@ -1,5 +1,5 @@
 export function toFiniteNumber(value, fallback = 0) {
-  const numeric = Number(value)
+  const numeric = typeof value === 'string' ? Number(value.replace(/[,\s]/g, '')) : Number(value)
   return Number.isFinite(numeric) ? numeric : fallback
 }
 

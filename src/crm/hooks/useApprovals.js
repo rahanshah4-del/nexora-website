@@ -731,32 +731,40 @@ export function useApprovals() {
         }
 
         if (approval.sourceCollection === 'teamMembers') {
-          const tmBatch = writeBatch(db)
+          const tmRef = doc(db, workspaceCollectionPath(workspaceId, 'teamMembers'), approval.sourceId)
           const tmNow = serverTimestamp()
-          const patch = {
-            status: 'active',
-            approvalStatus: 'approved',
-            businessType,
-            approvedBy: userId,
-            approvedAt: tmNow,
-            updatedAt: tmNow,
-          }
-          tmBatch.set(doc(db, workspaceCollectionPath(workspaceId, 'teamMembers'), approval.sourceId), patch, { merge: true })
-          await tmBatch.commit()
+          await runTransaction(db, async (transaction) => {
+            const snap = await transaction.get(tmRef)
+            if (!snap.exists()) throw new Error('Staff record not found.')
+            // Idempotency: skip if already approved/rejected by someone else since this was loaded
+            if (!isPendingRecord(snap.data())) throw new Error('This staff request has already been reviewed.')
+            transaction.set(tmRef, {
+              status: 'active',
+              approvalStatus: 'approved',
+              businessType,
+              approvedBy: userId,
+              approvedAt: tmNow,
+              updatedAt: tmNow,
+            }, { merge: true })
+          })
         }
 
         if (approval.sourceCollection === 'clients') {
-          const clBatch = writeBatch(db)
+          const clRef = doc(db, workspaceCollectionPath(workspaceId, 'clients'), approval.sourceId)
           const clNow = serverTimestamp()
-          clBatch.update(doc(db, workspaceCollectionPath(workspaceId, 'clients'), approval.sourceId), {
-            status: 'Active',
-            approvalStatus: 'approved',
-            businessType,
-            approvedBy: userId,
-            approvedAt: clNow,
-            updatedAt: clNow,
+          await runTransaction(db, async (transaction) => {
+            const snap = await transaction.get(clRef)
+            if (!snap.exists()) throw new Error('Client record not found.')
+            if (!isPendingRecord(snap.data())) throw new Error('This client request has already been reviewed.')
+            transaction.update(clRef, {
+              status: 'Active',
+              approvalStatus: 'approved',
+              businessType,
+              approvedBy: userId,
+              approvedAt: clNow,
+              updatedAt: clNow,
+            })
           })
-          await clBatch.commit()
         }
 
         if (approval.sourceCollection === 'expenses') {
@@ -785,49 +793,57 @@ export function useApprovals() {
 
         if (approval.sourceCollection === 'staffSalaryPayments') {
           const salaryAmount = amountValue(row)
-          const batch = writeBatch(db)
-          batch.update(doc(db, workspaceCollectionPath(workspaceId, 'staffSalaryPayments'), approval.sourceId), {
-            approvalStatus: 'approved',
-            status: 'paid',
-            paymentStatus: 'paid',
-            businessType,
-            requiresApproval: false,
-            approvedBy: userId,
-            approvedAt: serverTimestamp(),
-            paidAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
+          const salaryRef = doc(db, workspaceCollectionPath(workspaceId, 'staffSalaryPayments'), approval.sourceId)
+          const salaryExpenseRef = doc(db, workspaceCollectionPath(workspaceId, 'expenses'), `salary-${approval.sourceId}`)
+          await runTransaction(db, async (transaction) => {
+            const snap = await transaction.get(salaryRef)
+            if (!snap.exists()) throw new Error('Salary payment not found.')
+            // Idempotency: skip if already reviewed
+            if (isClosedStatus(statusValue(snap.data().approvalStatus || snap.data().status, ''))) {
+              throw new Error('This salary payment has already been reviewed.')
+            }
+            transaction.update(salaryRef, {
+              approvalStatus: 'approved',
+              status: 'paid',
+              paymentStatus: 'paid',
+              businessType,
+              requiresApproval: false,
+              approvedBy: userId,
+              approvedAt: serverTimestamp(),
+              paidAt: serverTimestamp(),
+              updatedAt: serverTimestamp(),
+            })
+            transaction.set(salaryExpenseRef, {
+              title: `Salary - ${row.staffName || approval.customer}`,
+              category: 'Salary',
+              amount: salaryAmount,
+              currency: row.currency || approval.currency || 'PKR',
+              paymentMethod: row.paymentMethod || 'Payroll',
+              paidBy: row.staffName || approval.customer,
+              status: 'paid',
+              approvalStatus: 'approved',
+              paymentStatus: 'paid',
+              requiresApproval: false,
+              notes: row.remarks || `Payroll salary for ${row.salaryMonth || ''}`.trim(),
+              receiptReference: row.transactionRef || approval.sourceId,
+              source: 'school_payroll',
+              sourceModule: 'payroll',
+              payrollPaymentId: approval.sourceId,
+              staffId: row.staffId || '',
+              staffName: row.staffName || approval.customer,
+              salaryMonth: row.salaryMonth || '',
+              approvedBy: userId,
+              approvedAt: serverTimestamp(),
+              paidAt: serverTimestamp(),
+              ownerId: workspaceId,
+              userId: workspaceId,
+              workspaceId,
+              businessType,
+              createdBy: row.createdBy || userId,
+              createdAt: row.createdAt || serverTimestamp(),
+              updatedAt: serverTimestamp(),
+            }, { merge: true })
           })
-          batch.set(doc(db, workspaceCollectionPath(workspaceId, 'expenses'), `salary-${approval.sourceId}`), {
-            title: `Salary - ${row.staffName || approval.customer}`,
-            category: 'Salary',
-            amount: salaryAmount,
-            currency: row.currency || approval.currency || 'PKR',
-            paymentMethod: row.paymentMethod || 'Payroll',
-            paidBy: row.staffName || approval.customer,
-            status: 'paid',
-            approvalStatus: 'approved',
-            paymentStatus: 'paid',
-            requiresApproval: false,
-            notes: row.remarks || `Payroll salary for ${row.salaryMonth || ''}`.trim(),
-            receiptReference: row.transactionRef || approval.sourceId,
-            source: 'school_payroll',
-            sourceModule: 'payroll',
-            payrollPaymentId: approval.sourceId,
-            staffId: row.staffId || '',
-            staffName: row.staffName || approval.customer,
-            salaryMonth: row.salaryMonth || '',
-            approvedBy: userId,
-            approvedAt: serverTimestamp(),
-            paidAt: serverTimestamp(),
-            ownerId: workspaceId,
-            userId: workspaceId,
-            workspaceId,
-            businessType,
-            createdBy: row.createdBy || userId,
-            createdAt: row.createdAt || serverTimestamp(),
-            updatedAt: serverTimestamp(),
-          }, { merge: true })
-          await batch.commit()
         }
 
         if (approval.sourceCollection === 'accountTransactions') {
@@ -1124,48 +1140,57 @@ export function useApprovals() {
       }
 
       try {
-        const batch = writeBatch(db)
         const now = serverTimestamp()
-        if (approval.approvalRecordId) {
-          batch.set(doc(db, workspaceCollectionPath(workspaceId, 'approvals'), approval.approvalRecordId), {
-            status: 'rejected',
-            approvalStatus: 'rejected',
-            businessType,
-            rejectedBy: userId,
-            rejectedAt: now,
-            updatedAt: now,
-          }, { merge: true })
-        }
 
+        // Each branch re-reads its source record inside a transaction and
+        // checks it is still pending before writing — this closes the gap
+        // where two reviewers (or a stale UI + a retry) could both act on
+        // the same request and silently overwrite each other's decision.
         if (approval.sourceCollection === 'invoices') {
-          batch.update(doc(db, workspaceCollectionPath(workspaceId, 'invoices'), approval.sourceId), {
-            approvalStatus: 'rejected',
-            status: 'rejected',
-            paymentStatus: 'rejected',
-            businessType,
-            requiresApproval: false,
-            rejectedBy: userId,
-            rejectedAt: now,
-            updatedAt: now,
+          const invRef = doc(db, workspaceCollectionPath(workspaceId, 'invoices'), approval.sourceId)
+          await runTransaction(db, async (transaction) => {
+            const snap = await transaction.get(invRef)
+            if (!snap.exists()) throw new Error('Invoice not found.')
+            const invData = snap.data()
+            if (invData.approvalStatus === 'approved' || invData.status === 'approved' || isClosedStatus(statusValue(invData.approvalStatus || invData.status, ''))) {
+              throw new Error('This invoice has already been reviewed.')
+            }
+            transaction.update(invRef, {
+              approvalStatus: 'rejected',
+              status: 'rejected',
+              paymentStatus: 'rejected',
+              businessType,
+              requiresApproval: false,
+              rejectedBy: userId,
+              rejectedAt: now,
+              updatedAt: now,
+            })
           })
         }
 
         if (approval.sourceCollection === 'payments') {
-          batch.update(doc(db, workspaceCollectionPath(workspaceId, 'payments'), approval.sourceId), {
-            status: 'rejected',
-            paymentStatus: 'rejected',
-            approvalStatus: 'rejected',
-            businessType,
-            requiresApproval: false,
-            rejectedBy: userId,
-            rejectedAt: now,
-            updatedAt: now,
-          })
-          if (approval.invoiceId) {
-            const invoiceRef = doc(db, workspaceCollectionPath(workspaceId, 'invoices'), approval.invoiceId)
-            const invoiceSnap = await getDoc(invoiceRef)
-            if (invoiceSnap.exists()) {
-              batch.update(invoiceRef, {
+          const paymentRef = doc(db, workspaceCollectionPath(workspaceId, 'payments'), approval.sourceId)
+          const invoiceRef = approval.invoiceId ? doc(db, workspaceCollectionPath(workspaceId, 'invoices'), approval.invoiceId) : null
+          await runTransaction(db, async (transaction) => {
+            const paySnap = await transaction.get(paymentRef)
+            if (!paySnap.exists()) throw new Error('Payment record not found.')
+            const payData = paySnap.data()
+            if (isClosedStatus(statusValue(payData.paymentStatus || payData.status, ''))) {
+              throw new Error('This payment has already been reviewed.')
+            }
+            const invoiceSnap = invoiceRef ? await transaction.get(invoiceRef) : null
+            transaction.update(paymentRef, {
+              status: 'rejected',
+              paymentStatus: 'rejected',
+              approvalStatus: 'rejected',
+              businessType,
+              requiresApproval: false,
+              rejectedBy: userId,
+              rejectedAt: now,
+              updatedAt: now,
+            })
+            if (invoiceRef && invoiceSnap?.exists()) {
+              transaction.update(invoiceRef, {
                 status: 'rejected',
                 paymentStatus: 'rejected',
                 approvalStatus: 'rejected',
@@ -1176,78 +1201,130 @@ export function useApprovals() {
                 updatedAt: now,
               })
             }
-          }
+          })
         }
 
         if (approval.sourceCollection === 'upgradeRequests') {
-          batch.update(doc(db, 'upgradeRequests', approval.sourceId), {
+          const upBatch = writeBatch(db)
+          upBatch.update(doc(db, 'upgradeRequests', approval.sourceId), {
             approvalStatus: 'rejected',
             paymentStatus: 'rejected',
             rejectedBy: userId,
             rejectedAt: now,
           })
+          await upBatch.commit()
         }
 
         if (approval.sourceCollection === 'teamMembers') {
-          const patch = {
-            status: 'rejected',
-            approvalStatus: 'rejected',
-            businessType,
-            rejectedBy: userId,
-            rejectedAt: now,
-            updatedAt: now,
-          }
-          batch.set(doc(db, workspaceCollectionPath(workspaceId, 'teamMembers'), approval.sourceId), patch, { merge: true })
+          const tmRef = doc(db, workspaceCollectionPath(workspaceId, 'teamMembers'), approval.sourceId)
+          await runTransaction(db, async (transaction) => {
+            const snap = await transaction.get(tmRef)
+            if (!snap.exists()) throw new Error('Staff record not found.')
+            if (!isPendingRecord(snap.data())) throw new Error('This staff request has already been reviewed.')
+            transaction.set(tmRef, {
+              status: 'rejected',
+              approvalStatus: 'rejected',
+              businessType,
+              rejectedBy: userId,
+              rejectedAt: now,
+              updatedAt: now,
+            }, { merge: true })
+          })
         }
 
         if (approval.sourceCollection === 'clients') {
-          batch.update(doc(db, workspaceCollectionPath(workspaceId, 'clients'), approval.sourceId), {
-            status: 'rejected',
-            approvalStatus: 'rejected',
-            businessType,
-            rejectedBy: userId,
-            rejectedAt: now,
-            updatedAt: now,
+          const clRef = doc(db, workspaceCollectionPath(workspaceId, 'clients'), approval.sourceId)
+          await runTransaction(db, async (transaction) => {
+            const snap = await transaction.get(clRef)
+            if (!snap.exists()) throw new Error('Client record not found.')
+            if (!isPendingRecord(snap.data())) throw new Error('This client request has already been reviewed.')
+            transaction.update(clRef, {
+              status: 'rejected',
+              approvalStatus: 'rejected',
+              businessType,
+              rejectedBy: userId,
+              rejectedAt: now,
+              updatedAt: now,
+            })
           })
         }
 
         if (approval.sourceCollection === 'expenses') {
-          batch.update(doc(db, workspaceCollectionPath(workspaceId, 'expenses'), approval.sourceId), {
-            approvalStatus: 'rejected',
-            status: 'rejected',
-            businessType,
-            rejectedBy: userId,
-            rejectedAt: now,
-            updatedAt: now,
+          const expenseRef = doc(db, workspaceCollectionPath(workspaceId, 'expenses'), approval.sourceId)
+          await runTransaction(db, async (transaction) => {
+            const snap = await transaction.get(expenseRef)
+            if (!snap.exists()) throw new Error('Expense not found.')
+            if (isClosedStatus(statusValue(snap.data().approvalStatus || snap.data().status, ''))) {
+              throw new Error('This expense has already been reviewed.')
+            }
+            transaction.update(expenseRef, {
+              approvalStatus: 'rejected',
+              status: 'rejected',
+              businessType,
+              rejectedBy: userId,
+              rejectedAt: now,
+              updatedAt: now,
+            })
           })
         }
 
         if (approval.sourceCollection === 'staffSalaryPayments') {
-          batch.update(doc(db, workspaceCollectionPath(workspaceId, 'staffSalaryPayments'), approval.sourceId), {
-            approvalStatus: 'rejected',
-            status: 'rejected',
-            paymentStatus: 'rejected',
-            businessType,
-            requiresApproval: false,
-            rejectedBy: userId,
-            rejectedAt: now,
-            updatedAt: now,
+          const salaryRef = doc(db, workspaceCollectionPath(workspaceId, 'staffSalaryPayments'), approval.sourceId)
+          await runTransaction(db, async (transaction) => {
+            const snap = await transaction.get(salaryRef)
+            if (!snap.exists()) throw new Error('Salary payment not found.')
+            if (isClosedStatus(statusValue(snap.data().approvalStatus || snap.data().status, ''))) {
+              throw new Error('This salary payment has already been reviewed.')
+            }
+            transaction.update(salaryRef, {
+              approvalStatus: 'rejected',
+              status: 'rejected',
+              paymentStatus: 'rejected',
+              businessType,
+              requiresApproval: false,
+              rejectedBy: userId,
+              rejectedAt: now,
+              updatedAt: now,
+            })
           })
         }
 
         if (approval.sourceCollection === 'accountTransactions') {
-          batch.update(doc(db, workspaceCollectionPath(workspaceId, 'accountTransactions'), approval.sourceId), {
-            approvalStatus: 'rejected',
-            status: 'rejected',
-            businessType,
-            requiresApproval: false,
-            rejectedBy: userId,
-            rejectedAt: now,
-            updatedAt: now,
+          const txnRef = doc(db, workspaceCollectionPath(workspaceId, 'accountTransactions'), approval.sourceId)
+          await runTransaction(db, async (transaction) => {
+            const snap = await transaction.get(txnRef)
+            if (!snap.exists()) throw new Error('Transaction not found.')
+            if (isClosedStatus(statusValue(snap.data().approvalStatus || snap.data().status, ''))) {
+              throw new Error('This transaction has already been reviewed.')
+            }
+            transaction.update(txnRef, {
+              approvalStatus: 'rejected',
+              status: 'rejected',
+              businessType,
+              requiresApproval: false,
+              rejectedBy: userId,
+              rejectedAt: now,
+              updatedAt: now,
+            })
           })
         }
 
-        await batch.commit()
+        // Supplementary approval-queue record — mirrors the source record's
+        // new status for the Approval Center list; not the source of truth,
+        // so a failure here shouldn't undo the rejection above.
+        if (approval.approvalRecordId) {
+          const arBatch = writeBatch(db)
+          arBatch.set(doc(db, workspaceCollectionPath(workspaceId, 'approvals'), approval.approvalRecordId), {
+            status: 'rejected',
+            approvalStatus: 'rejected',
+            businessType,
+            rejectedBy: userId,
+            rejectedAt: now,
+            updatedAt: now,
+          }, { merge: true })
+          await arBatch.commit().catch((err) => console.warn('[Approvals] approval record update failed', err?.message || err))
+        }
+
         await logActivity({
           workspaceId,
           userId,

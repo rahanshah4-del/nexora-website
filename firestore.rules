@@ -871,6 +871,36 @@ allow create: if canCreateModule(workspaceId,'attendance')&&safeCreate(workspace
 allow update: if canEditModule(workspaceId,'attendance')&&safeUpdate(workspaceId);
 allow delete: if canDeleteModule(workspaceId,'attendance');
 }
+match /attendanceDeviceLogs/{docId} {
+allow read: if canReadModule(workspaceId,'attendance');
+allow create: if canCreateModule(workspaceId,'attendance')&&safeCreate(workspaceId);
+allow update: if canEditModule(workspaceId,'attendance')&&safeUpdate(workspaceId);
+allow delete: if canDeleteModule(workspaceId,'attendance');
+}
+match /studentAttendance/{docId} {
+allow read: if canReadModule(workspaceId,'attendance');
+allow create: if canCreateModule(workspaceId,'attendance')&&safeCreate(workspaceId);
+allow update: if canEditModule(workspaceId,'attendance')&&safeUpdate(workspaceId);
+allow delete: if canDeleteModule(workspaceId,'attendance');
+}
+match /staffAttendance/{docId} {
+allow read: if canReadModule(workspaceId,'attendance');
+allow create: if canCreateModule(workspaceId,'attendance')&&safeCreate(workspaceId);
+allow update: if canEditModule(workspaceId,'attendance')&&safeUpdate(workspaceId);
+allow delete: if canDeleteModule(workspaceId,'attendance');
+}
+match /payrollMembers/{docId} {
+allow read: if canReadModule(workspaceId,'schoolPayroll');
+allow create: if canCreateModule(workspaceId,'schoolPayroll')&&safeCreate(workspaceId);
+allow update: if canEditModule(workspaceId,'schoolPayroll')&&safeUpdate(workspaceId);
+allow delete: if canDeleteModule(workspaceId,'schoolPayroll');
+}
+match /staffSalaryPayments/{docId} {
+allow read: if canReadModule(workspaceId,'schoolPayroll');
+allow create: if canCreateModule(workspaceId,'schoolPayroll')&&safeCreate(workspaceId);
+allow update: if canEditModule(workspaceId,'schoolPayroll')&&safeUpdate(workspaceId);
+allow delete: if canDeleteModule(workspaceId,'schoolPayroll');
+}
 match /whatsappContacts/{docId} {
 allow read: if canReadModule(workspaceId,'whatsappInbox')||canReadModule(workspaceId,'whatsappLeads');
 allow create: if (canCreateModule(workspaceId,'whatsappInbox')||canCreateModule(workspaceId,'whatsappLeads'))&&safeCreate(workspaceId);
@@ -890,10 +920,10 @@ allow delete: if canDeleteModule(workspaceId,'business_services');
 	allow delete: if canDeleteModule(workspaceId,'expenses');
 	}
 match /{collectionName}/{docId} {
-allow read: if !(collectionName in ['expenses','deliveryZones','deliveryDrivers','deliveryOrders','deliveryTracking','deliveryProofs','deliverySettlements','onlineOrders','orders','restaurantReservations','restaurantWaitlist','restaurantReservationSettings','restaurantReservationHistory','restaurantProductionBatches','restaurantKitchenPrep','restaurantProductionWaste','restaurantFinishedInventory','restaurantIngredients','restaurantRecipes','restaurantDeductions','restaurantWaste','restaurantCashSessions','restaurantPayments','restaurantRefunds','restaurantCashMovements','menuItems','tables','supportTickets','businessServiceRequests','loyaltyAccounts','loyaltyBirthdayQueue','loyaltyCampaigns','loyaltyCoupons','loyaltyPointsLedger','loyaltyRedemptions','loyaltyReferrals','loyaltyRewards','loyaltySettings','loyaltyTiers','loyaltyWallet'])&&canReadModule(workspaceId,collectionName);
-allow create: if !(collectionName in ['expenses','deliveryZones','deliveryDrivers','deliveryOrders','deliveryTracking','deliveryProofs','deliverySettlements','onlineOrders','orders','restaurantReservations','restaurantWaitlist','restaurantReservationSettings','restaurantReservationHistory','restaurantProductionBatches','restaurantKitchenPrep','restaurantProductionWaste','restaurantFinishedInventory','restaurantIngredients','restaurantRecipes','restaurantDeductions','restaurantWaste','restaurantCashSessions','restaurantPayments','restaurantRefunds','restaurantCashMovements','menuItems','tables','supportTickets','businessServiceRequests','loyaltyAccounts','loyaltyBirthdayQueue','loyaltyCampaigns','loyaltyCoupons','loyaltyPointsLedger','loyaltyRedemptions','loyaltyReferrals','loyaltyRewards','loyaltySettings','loyaltyTiers','loyaltyWallet'])&&canCreateModule(workspaceId,collectionName)&&safeCreate(workspaceId);
-allow update: if !(collectionName in ['expenses','deliveryZones','deliveryDrivers','deliveryOrders','deliveryTracking','deliveryProofs','deliverySettlements','onlineOrders','orders','restaurantReservations','restaurantWaitlist','restaurantReservationSettings','restaurantReservationHistory','restaurantProductionBatches','restaurantKitchenPrep','restaurantProductionWaste','restaurantFinishedInventory','restaurantIngredients','restaurantRecipes','restaurantDeductions','restaurantWaste','restaurantCashSessions','restaurantPayments','restaurantRefunds','restaurantCashMovements','menuItems','tables','supportTickets','businessServiceRequests','loyaltyAccounts','loyaltyBirthdayQueue','loyaltyCampaigns','loyaltyCoupons','loyaltyPointsLedger','loyaltyRedemptions','loyaltyReferrals','loyaltyRewards','loyaltySettings','loyaltyTiers','loyaltyWallet'])&&canEditModule(workspaceId,collectionName)&&safeUpdate(workspaceId);
-allow delete: if !(collectionName in ['expenses','deliveryZones','deliveryDrivers','deliveryOrders','deliveryTracking','deliveryProofs','deliverySettlements','onlineOrders','orders','restaurantReservations','restaurantWaitlist','restaurantReservationSettings','restaurantReservationHistory','restaurantProductionBatches','restaurantKitchenPrep','restaurantProductionWaste','restaurantFinishedInventory','restaurantIngredients','restaurantRecipes','restaurantDeductions','restaurantWaste','restaurantCashSessions','restaurantPayments','restaurantRefunds','restaurantCashMovements','menuItems','tables','supportTickets','businessServiceRequests','loyaltyAccounts','loyaltyBirthdayQueue','loyaltyCampaigns','loyaltyCoupons','loyaltyPointsLedger','loyaltyRedemptions','loyaltyReferrals','loyaltyRewards','loyaltySettings','loyaltyTiers','loyaltyWallet'])&&canDeleteModule(workspaceId,collectionName);
+allow read: if !(collectionName in ['expenses','attendanceDeviceLogs','studentAttendance','staffAttendance','payrollMembers','staffSalaryPayments','deliveryZones','deliveryDrivers','deliveryOrders','deliveryTracking','deliveryProofs','deliverySettlements','onlineOrders','orders','restaurantReservations','restaurantWaitlist','restaurantReservationSettings','restaurantReservationHistory','restaurantProductionBatches','restaurantKitchenPrep','restaurantProductionWaste','restaurantFinishedInventory','restaurantIngredients','restaurantRecipes','restaurantDeductions','restaurantWaste','restaurantCashSessions','restaurantPayments','restaurantRefunds','restaurantCashMovements','menuItems','tables','supportTickets','businessServiceRequests','loyaltyAccounts','loyaltyBirthdayQueue','loyaltyCampaigns','loyaltyCoupons','loyaltyPointsLedger','loyaltyRedemptions','loyaltyReferrals','loyaltyRewards','loyaltySettings','loyaltyTiers','loyaltyWallet'])&&canReadModule(workspaceId,collectionName);
+allow create: if !(collectionName in ['expenses','attendanceDeviceLogs','studentAttendance','staffAttendance','payrollMembers','staffSalaryPayments','deliveryZones','deliveryDrivers','deliveryOrders','deliveryTracking','deliveryProofs','deliverySettlements','onlineOrders','orders','restaurantReservations','restaurantWaitlist','restaurantReservationSettings','restaurantReservationHistory','restaurantProductionBatches','restaurantKitchenPrep','restaurantProductionWaste','restaurantFinishedInventory','restaurantIngredients','restaurantRecipes','restaurantDeductions','restaurantWaste','restaurantCashSessions','restaurantPayments','restaurantRefunds','restaurantCashMovements','menuItems','tables','supportTickets','businessServiceRequests','loyaltyAccounts','loyaltyBirthdayQueue','loyaltyCampaigns','loyaltyCoupons','loyaltyPointsLedger','loyaltyRedemptions','loyaltyReferrals','loyaltyRewards','loyaltySettings','loyaltyTiers','loyaltyWallet'])&&canCreateModule(workspaceId,collectionName)&&safeCreate(workspaceId);
+allow update: if !(collectionName in ['expenses','attendanceDeviceLogs','studentAttendance','staffAttendance','payrollMembers','staffSalaryPayments','deliveryZones','deliveryDrivers','deliveryOrders','deliveryTracking','deliveryProofs','deliverySettlements','onlineOrders','orders','restaurantReservations','restaurantWaitlist','restaurantReservationSettings','restaurantReservationHistory','restaurantProductionBatches','restaurantKitchenPrep','restaurantProductionWaste','restaurantFinishedInventory','restaurantIngredients','restaurantRecipes','restaurantDeductions','restaurantWaste','restaurantCashSessions','restaurantPayments','restaurantRefunds','restaurantCashMovements','menuItems','tables','supportTickets','businessServiceRequests','loyaltyAccounts','loyaltyBirthdayQueue','loyaltyCampaigns','loyaltyCoupons','loyaltyPointsLedger','loyaltyRedemptions','loyaltyReferrals','loyaltyRewards','loyaltySettings','loyaltyTiers','loyaltyWallet'])&&canEditModule(workspaceId,collectionName)&&safeUpdate(workspaceId);
+allow delete: if !(collectionName in ['expenses','attendanceDeviceLogs','studentAttendance','staffAttendance','payrollMembers','staffSalaryPayments','deliveryZones','deliveryDrivers','deliveryOrders','deliveryTracking','deliveryProofs','deliverySettlements','onlineOrders','orders','restaurantReservations','restaurantWaitlist','restaurantReservationSettings','restaurantReservationHistory','restaurantProductionBatches','restaurantKitchenPrep','restaurantProductionWaste','restaurantFinishedInventory','restaurantIngredients','restaurantRecipes','restaurantDeductions','restaurantWaste','restaurantCashSessions','restaurantPayments','restaurantRefunds','restaurantCashMovements','menuItems','tables','supportTickets','businessServiceRequests','loyaltyAccounts','loyaltyBirthdayQueue','loyaltyCampaigns','loyaltyCoupons','loyaltyPointsLedger','loyaltyRedemptions','loyaltyReferrals','loyaltyRewards','loyaltySettings','loyaltyTiers','loyaltyWallet'])&&canDeleteModule(workspaceId,collectionName);
 }
 	match /restaurantReservations/{docId} {
 	allow read: if canReadModule(workspaceId,'reservations')||canReadModule(workspaceId,'orders')||canReadModule(workspaceId,'tables');

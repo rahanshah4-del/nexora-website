@@ -298,6 +298,16 @@ export default function InvoicesPage() {
     }
   }
 
+  async function handleInvoiceUpdate(id, patch) {
+    const res = await updateInvoice(id, patch)
+    if (res?.ok) {
+      showToast({ tone: 'success', message: isSchool ? 'Fee bill updated' : 'Invoice updated' })
+    } else if (res?.error) {
+      showToast({ tone: 'error', message: res.error }, 2800)
+    }
+    return res
+  }
+
   async function runInvoiceAction(action, invoice) {
     if (!invoice?.id) return
     const access = invoiceActionAccess(permissions, invoice)
@@ -610,7 +620,7 @@ export default function InvoicesPage() {
         onDownloadPdf={downloadInvoicePdf}
         onEmail={(invoice) => runInvoiceAction('email', invoice)}
         onClose={() => setOpenInvoice(null)}
-        onUpdate={updateInvoice}
+        onUpdate={handleInvoiceUpdate}
         onMarkPaid={(invoice) => requestPaymentAction('paid', invoice)}
         onRejectPayment={(invoice) => requestPaymentAction('reject', invoice)}
         onPartialPayment={(invoice) => requestPaymentAction('partial', invoice)}

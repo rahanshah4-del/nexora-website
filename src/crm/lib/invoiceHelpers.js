@@ -24,7 +24,7 @@ export const INVOICE_STATUS_OPTIONS = ['Draft', 'Pending Approval', 'Approved', 
 export const INVOICE_TEMPLATES = ['Professional', 'Executive White', 'Compact Finance']
 
 export function money(value, fallback = 0) {
-  const numeric = Number(value)
+  const numeric = typeof value === 'string' ? Number(value.replace(/[,\s]/g, '')) : Number(value)
   return Number.isFinite(numeric) ? numeric : fallback
 }
 

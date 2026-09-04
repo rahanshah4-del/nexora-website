@@ -13,7 +13,7 @@ export function statusValue(value, fallback = 'pending') {
 }
 
 export function toNumber(value, fallback = 0) {
-  const next = Number(value)
+  const next = typeof value === 'string' ? Number(value.replace(/[,\s]/g, '')) : Number(value)
   return Number.isFinite(next) ? next : fallback
 }
 

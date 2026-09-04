@@ -651,6 +651,18 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
             customerTaxId: invoice.customerTaxId || invoice.customerNtn || invoice.ntnCnic || '',
             customerAddress: invoice.customerAddress || invoice.billingAddress || '',
             customerNotes: invoice.customerNotes || '',
+            customerId: invoice.customerId || '',
+            className: invoice.className || '',
+            section: invoice.section || '',
+            admissionNo: invoice.admissionNo || '',
+            rollNo: invoice.rollNo || '',
+            feeMonth: invoice.feeMonth || '',
+            tuitionFee: toNumber(invoice.tuitionFee, 0),
+            admissionFee: toNumber(invoice.admissionFee, 0),
+            examFee: toNumber(invoice.examFee, 0),
+            transportFee: toNumber(invoice.transportFee, 0),
+            otherCharges: toNumber(invoice.otherCharges, 0),
+            fineLateFee: toNumber(invoice.fineLateFee, 0),
             issueDate: invoice.issueDate || invoice.invoiceDate || '',
             invoiceDate: invoice.issueDate || invoice.invoiceDate || '',
             paymentTerms: invoice.paymentTerms || 'Net 14 Days',
@@ -1528,22 +1540,26 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
           patchLoadedInvoice(id, safePatch)
           return { ok: true }
         }
-        await patchUserDoc(workspaceId, 'invoices', id, safePatch, { businessType })
-        patchLoadedInvoice(id, safePatch)
-        await createWorkspaceNotification({
-          workspaceId,
-          userId,
-          businessType,
-          type: 'Invoices',
-          priority: 'low',
-          title: 'Invoice updated',
-          message: `${invoice.invoiceNumber || id} was updated.`,
-          relatedId: id,
-          route: '/app/invoices',
-          createdBy: userId,
-          createdByEmail: firebaseUser?.email || userDoc?.email || '',
-        })
-        return { ok: true }
+        try {
+          await patchUserDoc(workspaceId, 'invoices', id, safePatch, { businessType })
+          patchLoadedInvoice(id, safePatch)
+          await createWorkspaceNotification({
+            workspaceId,
+            userId,
+            businessType,
+            type: 'Invoices',
+            priority: 'low',
+            title: 'Invoice updated',
+            message: `${invoice.invoiceNumber || id} was updated.`,
+            relatedId: id,
+            route: '/app/invoices',
+            createdBy: userId,
+            createdByEmail: firebaseUser?.email || userDoc?.email || '',
+          })
+          return { ok: true }
+        } catch (e) {
+          return { ok: false, error: clientSafeMessage(e, 'Unable to update invoice.') }
+        }
       },
       async sendForApproval(id) {
         if (!permissions.canApprove) return { ok: false, error: 'Only owner or admin can send invoices for approval.' }
@@ -1659,63 +1675,71 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
         if (!permissions.canApprove) return { ok: false, error: 'Only owner or admin can approve invoices.' }
         const invoice = invoices.find((item) => item.id === id)
         if (!invoice) return { ok: false, error: 'Invoice not found' }
-        await patchUserDoc(workspaceId, 'invoices', id, {
-          status: 'approved',
-          approvalStatus: 'approved',
-          requiresApproval: false,
-          approvedBy: userId,
-          approvedAt: serverTimestamp(),
-        }, { businessType })
-        patchLoadedInvoice(id, {
-          status: 'approved',
-          approvalStatus: 'approved',
-          requiresApproval: false,
-          approvedBy: userId,
-          approvedAt: new Date().toISOString(),
-        })
-        await createWorkspaceNotification({
-          workspaceId,
-          userId,
-          businessType,
-          type: 'Approvals',
-          priority: 'medium',
-          title: 'Invoice approved',
-          message: `${invoice.invoiceNumber || id} was approved.`,
-          relatedId: id,
-          route: '/app/invoices',
-          createdBy: userId,
-          createdByEmail: firebaseUser?.email || userDoc?.email || '',
-        })
-        return { ok: true }
+        try {
+          await patchUserDoc(workspaceId, 'invoices', id, {
+            status: 'approved',
+            approvalStatus: 'approved',
+            requiresApproval: false,
+            approvedBy: userId,
+            approvedAt: serverTimestamp(),
+          }, { businessType })
+          patchLoadedInvoice(id, {
+            status: 'approved',
+            approvalStatus: 'approved',
+            requiresApproval: false,
+            approvedBy: userId,
+            approvedAt: new Date().toISOString(),
+          })
+          await createWorkspaceNotification({
+            workspaceId,
+            userId,
+            businessType,
+            type: 'Approvals',
+            priority: 'medium',
+            title: 'Invoice approved',
+            message: `${invoice.invoiceNumber || id} was approved.`,
+            relatedId: id,
+            route: '/app/invoices',
+            createdBy: userId,
+            createdByEmail: firebaseUser?.email || userDoc?.email || '',
+          })
+          return { ok: true }
+        } catch (e) {
+          return { ok: false, error: clientSafeMessage(e, 'Unable to approve invoice.') }
+        }
       },
       async markInvoiceSent(id) {
         if (!permissions.canEmailInvoice) return { ok: false, error: 'You do not have permission to email invoices.' }
         if (!permissions.canEditAllInvoiceFields) return { ok: true }
-        await patchUserDoc(workspaceId, 'invoices', id, {
-          status: 'sent',
-          sentAt: serverTimestamp(),
-          sentBy: userId,
-        }, { businessType })
-        patchLoadedInvoice(id, {
-          status: 'sent',
-          sentAt: new Date().toISOString(),
-          sentBy: userId,
-        })
-        const invoice = invoices.find((item) => item.id === id)
-        await createWorkspaceNotification({
-          workspaceId,
-          userId,
-          businessType,
-          type: 'Invoices',
-          priority: 'low',
-          title: 'Invoice sent',
-          message: `${invoice?.invoiceNumber || id} was marked as sent.`,
-          relatedId: id,
-          route: '/app/invoices',
-          createdBy: userId,
-          createdByEmail: firebaseUser?.email || userDoc?.email || '',
-        })
-        return { ok: true }
+        try {
+          await patchUserDoc(workspaceId, 'invoices', id, {
+            status: 'sent',
+            sentAt: serverTimestamp(),
+            sentBy: userId,
+          }, { businessType })
+          patchLoadedInvoice(id, {
+            status: 'sent',
+            sentAt: new Date().toISOString(),
+            sentBy: userId,
+          })
+          const invoice = invoices.find((item) => item.id === id)
+          await createWorkspaceNotification({
+            workspaceId,
+            userId,
+            businessType,
+            type: 'Invoices',
+            priority: 'low',
+            title: 'Invoice sent',
+            message: `${invoice?.invoiceNumber || id} was marked as sent.`,
+            relatedId: id,
+            route: '/app/invoices',
+            createdBy: userId,
+            createdByEmail: firebaseUser?.email || userDoc?.email || '',
+          })
+          return { ok: true }
+        } catch (e) {
+          return { ok: false, error: clientSafeMessage(e, 'Unable to mark invoice as sent.') }
+        }
       },
       async markInvoiceUnpaid(id) {
         if (!permissions.canRecordPayment) return { ok: false, error: 'Only owner, admin, or accountant can record invoice payments.' }
@@ -2053,22 +2077,26 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
           }
         }
 
-        await removeUserDoc(workspaceId, 'invoices', id)
-        removeLoadedInvoice(id)
-        await createWorkspaceNotification({
-          workspaceId,
-          userId,
-          businessType,
-          type: 'Invoices',
-          priority: 'low',
-          title: 'Invoice deleted',
-          message: `${invoice?.invoiceNumber || id} was deleted.`,
-          relatedId: id,
-          route: '/app/invoices',
-          createdBy: userId,
-          createdByEmail: firebaseUser?.email || userDoc?.email || '',
-        })
-        return { ok: true }
+        try {
+          await removeUserDoc(workspaceId, 'invoices', id)
+          removeLoadedInvoice(id)
+          await createWorkspaceNotification({
+            workspaceId,
+            userId,
+            businessType,
+            type: 'Invoices',
+            priority: 'low',
+            title: 'Invoice deleted',
+            message: `${invoice?.invoiceNumber || id} was deleted.`,
+            relatedId: id,
+            route: '/app/invoices',
+            createdBy: userId,
+            createdByEmail: firebaseUser?.email || userDoc?.email || '',
+          })
+          return { ok: true }
+        } catch (e) {
+          return { ok: false, error: clientSafeMessage(e, 'Unable to delete invoice.') }
+        }
       },
     }),
     [invoices, payments, loading, paginationLoading, hasMoreInvoices, invoicePage, invoiceListLimit, loadMoreInvoices, source, error, stats, canApprovePayments, permissions, businessType, firebaseUser, userDoc, userId, workspaceId, patchLoadedInvoice, prependLoadedInvoice, removeLoadedInvoice],

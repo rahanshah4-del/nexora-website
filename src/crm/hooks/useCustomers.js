@@ -261,6 +261,7 @@ export function useCustomers({ limitCount = DEFAULT_CUSTOMER_LIST_LIMIT, paginat
       async createCustomer(payload) {
         if (!userId || !workspaceId) return { ok: false, error: 'Please login first' }
         if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now' }
+        if (!businessType) return { ok: false, error: 'Workspace is still loading. Please wait a moment and try again.' }
         const name = String(payload.name || '').trim()
         const email = String(payload.email || '').trim()
         const phone = String(payload.phone || '').trim()
@@ -363,7 +364,6 @@ export function useCustomers({ limitCount = DEFAULT_CUSTOMER_LIST_LIMIT, paginat
         const status = String(payload.status || 'Active').trim()
         const notes = String(payload.notes || '').trim()
         if (!name) return { ok: false, error: 'Name is required' }
-        if (!email) return { ok: false, error: 'Email is required' }
         try {
           const patch = {
             ...payload,
