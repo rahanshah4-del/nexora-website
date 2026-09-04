@@ -57,6 +57,15 @@ export const authPersistenceReady = auth
 export const db = app
   ? initializeFirestore(app, {
       localCache: memoryLocalCache(),
+      // Some ISPs / VPNs / corporate proxies / antivirus tools interfere with
+      // the WebSocket-based channel Firestore prefers by default. Force
+      // long-polling instead of only auto-detecting it — auto-detection still
+      // attempts the WebSocket channel first and can take 30s+ to give up on
+      // a hostile network before falling back, and every read/write feels
+      // "stuck" for that long. Forcing it skips that detection delay
+      // entirely, at the cost of marginally higher latency on networks that
+      // didn't need it.
+      experimentalForceLongPolling: true,
     })
   : null
 export const firestoreDb = db
