@@ -62,6 +62,13 @@ export default function NotificationBell({ enabled }) {
         )}
         align="right"
         fixedOnMobile
+        // The bell isn't the last item in the header (the profile menu
+        // follows it), so anchoring the panel with `right-0` positions it
+        // against the bell's own narrow wrapper instead of the true screen
+        // edge — on desktop the panel could render partly off-screen even
+        // though it looks "attached" to the bell. Measure the bell's real
+        // on-screen position and anchor to that instead.
+        anchorViewport
         // The shared `.glass` panel background is ~92% opaque with a light
         // blur, which on some browsers/GPUs lets page content behind it
         // (e.g. a table on Account Management) show through enough to look
