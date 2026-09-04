@@ -1,6 +1,21 @@
 import defaultTheme from 'tailwindcss/defaultTheme'
 
 export default {
+  // Was defaulting to Tailwind's 'media' strategy (no darkMode key set), so
+  // every `dark:` utility across the app fired off the device's OS-level
+  // prefers-color-scheme — regardless of ThemeContext, which forces the app
+  // to light mode (removes the `.dark` class, hardcodes theme: 'light')
+  // because dark-mode coverage isn't complete/consistent across every page
+  // yet. The result on a phone with system dark mode on: components with a
+  // `dark:` class went dark, plain pages without one (e.g. the Upgrade
+  // Business page) stayed light, and a couple of pages get force-darkened
+  // and inverted by the browser's own auto-dark-theme heuristic on top of
+  // that — different "night mode" colors on different screens ("sab modules
+  // mein night mode colour grading sahi nahi"). Switching to 'class' makes
+  // `dark:` utilities respond only to that `.dark` class, so with
+  // ThemeContext keeping it off, the whole app now renders consistently in
+  // light mode until a real theme toggle ships.
+  darkMode: 'class',
   content: ['./index.html', './src/**/*.{js,jsx,ts,tsx}'],
   theme: {
     container: {
