@@ -1,6 +1,6 @@
 import { getApps, initializeApp } from 'firebase/app'
 import { getAuth } from 'firebase/auth'
-import { getFirestore } from 'firebase/firestore'
+import { getFirestore, initializeFirestore } from 'firebase/firestore'
 import { getStorage } from 'firebase/storage'
 
 const publicFirebaseConfig = {
@@ -51,9 +51,27 @@ if (missingFirebaseAuthEnvVars.length) {
   })
 }
 
+function createFirestoreClient(firebaseApp) {
+  // Some ISPs / VPNs / corporate proxies / antivirus tools interfere with the
+  // WebSocket-based channel the Firestore SDK prefers, and the SDK's own
+  // auto-detection of that failure can take 30-60s+ before it falls back —
+  // every read/write feels "stuck" for that long. Forcing auto-detection up
+  // front (instead of the plain getFirestore() default) makes that fallback
+  // near-instant on networks where it's needed, with no downside on networks
+  // where it isn't.
+  try {
+    return initializeFirestore(firebaseApp, { experimentalAutoDetectLongPolling: true })
+  } catch (error) {
+    // initializeFirestore throws if Firestore was already initialized for
+    // this app (e.g. hot-reload during dev) — fall back to the existing instance.
+    console.warn('[Nexora CRM Firebase] initializeFirestore failed, falling back to getFirestore.', error?.message || error)
+    return getFirestore(firebaseApp)
+  }
+}
+
 export const app = firebaseAuthEnabled ? (getApps()[0] ?? initializeApp(firebaseConfig)) : null
 export const auth = app ? getAuth(app) : null
-export const db = app ? getFirestore(app) : null
+export const db = app ? createFirestoreClient(app) : null
 export const storage = app && firebaseConfig.storageBucket ? getStorage(app) : null
 
 export function getFirebaseEnvHint() {
