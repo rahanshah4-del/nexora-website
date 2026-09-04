@@ -105,8 +105,13 @@ export function calculateInvoiceLine(item = {}) {
 export function calculateInvoiceDraft(invoice = {}) {
   const lines = Array.isArray(invoice.items) ? invoice.items.map(calculateInvoiceLine) : []
   const subtotal = lines.reduce((sum, line) => sum + line.subtotal, 0)
-  const discountTotal = lines.reduce((sum, line) => sum + line.discountAmount, 0)
-  const taxableAmount = lines.reduce((sum, line) => sum + line.taxableAmount, 0)
+  const lineDiscountTotal = lines.reduce((sum, line) => sum + line.discountAmount, 0)
+  // A flat, invoice-level discount (e.g. the School Fee Bill "Discount" field,
+  // which has no per-line-item breakdown) only applies when no line item
+  // already carries its own discount.
+  const flatDiscount = lineDiscountTotal > 0 ? 0 : Math.max(money(invoice.discountTotal ?? invoice.discount, 0), 0)
+  const discountTotal = lineDiscountTotal + flatDiscount
+  const taxableAmount = Math.max(lines.reduce((sum, line) => sum + line.taxableAmount, 0) - flatDiscount, 0)
   const taxTotal = lines.reduce((sum, line) => sum + line.taxAmount, 0)
   const roundOff = money(invoice.roundOff, 0)
   const grandTotal = Math.max(taxableAmount + taxTotal + roundOff, 0)

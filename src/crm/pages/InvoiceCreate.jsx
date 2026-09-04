@@ -256,7 +256,7 @@ export default function InvoiceCreatePage() {
   function updateSchoolFee(key, value) {
     setInvoice((current) => {
       const next = { ...current, [key]: value }
-      if (key === 'discount') next.roundOff = -money(value)
+      if (key === 'discount') next.discountTotal = money(value)
       if (key === 'paidAmount') next.amountPaid = money(value)
       if (['tuitionFee', 'admissionFee', 'examFee', 'transportFee', 'otherCharges', 'fineLateFee', 'feeMonth'].includes(key)) {
         next.items = buildSchoolFeeItems(next)

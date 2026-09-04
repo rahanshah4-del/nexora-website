@@ -300,10 +300,11 @@ export function useCustomers({ limitCount = DEFAULT_CUSTOMER_LIST_LIMIT, paginat
           }
           // Activity log + notification are supplementary side-effects, not
           // part of the customer record itself (already committed above) —
-          // run them concurrently instead of one-after-another, and don't
-          // let either one failing turn an already-successful create into a
-          // reported failure.
-          await Promise.all([
+          // fire them without awaiting so Add Student returns as soon as the
+          // actual student record is saved, instead of also waiting on two
+          // more Firestore round-trips first. Don't let either one failing
+          // turn an already-successful create into a reported failure.
+          Promise.all([
             logActivity({
               workspaceId,
               userId,
@@ -377,31 +378,37 @@ export function useCustomers({ limitCount = DEFAULT_CUSTOMER_LIST_LIMIT, paginat
           }
           await patchUserDoc(workspaceId, 'customers', id, patch, { businessType, diagnostics: { currentUserUid: userId, role } })
           setRows((currentRows) => currentRows.map((customer) => (customer.id === id ? normalizeCustomer({ ...customer, ...patch }) : customer)))
-          await logActivity({
-            workspaceId,
-            userId,
-            businessType,
-            ...userActivityInfo(userDoc, firebaseUser),
-            action: 'Customer updated',
-            module: 'Customers',
-            description: `${name} was updated.`,
-            targetId: id,
-            targetName: name,
-            metadata: { email, company, customerType },
-          })
-          await createWorkspaceNotification({
-            workspaceId,
-            userId,
-            businessType,
-            type: 'Customers',
-            priority: 'low',
-            title: 'Customer updated',
-            message: `${name} was updated.`,
-            relatedId: id,
-            route: '/app/customers',
-            createdBy: userId,
-            createdByEmail: firebaseUser?.email || userDoc?.email || '',
-          })
+          // Fire-and-forget: supplementary side-effects, not part of the
+          // update itself (already committed above) — don't make the caller
+          // wait on two more Firestore round-trips, and don't let either one
+          // failing turn an already-successful update into a reported failure.
+          Promise.all([
+            logActivity({
+              workspaceId,
+              userId,
+              businessType,
+              ...userActivityInfo(userDoc, firebaseUser),
+              action: 'Customer updated',
+              module: 'Customers',
+              description: `${name} was updated.`,
+              targetId: id,
+              targetName: name,
+              metadata: { email, company, customerType },
+            }).catch((err) => console.warn('[Customers] logActivity failed', err?.message || err)),
+            createWorkspaceNotification({
+              workspaceId,
+              userId,
+              businessType,
+              type: 'Customers',
+              priority: 'low',
+              title: 'Customer updated',
+              message: `${name} was updated.`,
+              relatedId: id,
+              route: '/app/customers',
+              createdBy: userId,
+              createdByEmail: firebaseUser?.email || userDoc?.email || '',
+            }).catch((err) => console.warn('[Customers] createWorkspaceNotification failed', err?.message || err)),
+          ])
           return { ok: true }
         } catch (e) {
           return { ok: false, error: clientSafeMessage(e, 'Unable to update customer.') }
@@ -472,30 +479,34 @@ export function useCustomers({ limitCount = DEFAULT_CUSTOMER_LIST_LIMIT, paginat
         try {
           await removeUserDoc(workspaceId, 'customers', customer.id, { diagnostics: { currentUserUid: userId, role } })
           setRows((currentRows) => currentRows.filter((row) => row.id !== customer.id))
-          await logActivity({
-            workspaceId,
-            userId,
-            businessType,
-            ...userActivityInfo(userDoc, firebaseUser),
-            action: 'Customer deleted',
-            module: 'Customers',
-            description: `${customer.name || customer.studentName || 'Customer'} was removed.`,
-            targetId: customer.id,
-            targetName: customer.name || customer.studentName || customer.id,
-          })
-          await createWorkspaceNotification({
-            workspaceId,
-            userId,
-            businessType,
-            type: 'Customers',
-            priority: 'low',
-            title: 'Customer deleted',
-            message: `${customer.name || customer.studentName || 'Customer'} was removed.`,
-            relatedId: customer.id,
-            route: '/app/customers',
-            createdBy: userId,
-            createdByEmail: firebaseUser?.email || userDoc?.email || '',
-          })
+          // Fire-and-forget: supplementary side-effects, not part of the
+          // delete itself (already committed above).
+          Promise.all([
+            logActivity({
+              workspaceId,
+              userId,
+              businessType,
+              ...userActivityInfo(userDoc, firebaseUser),
+              action: 'Customer deleted',
+              module: 'Customers',
+              description: `${customer.name || customer.studentName || 'Customer'} was removed.`,
+              targetId: customer.id,
+              targetName: customer.name || customer.studentName || customer.id,
+            }).catch((err) => console.warn('[Customers] logActivity failed', err?.message || err)),
+            createWorkspaceNotification({
+              workspaceId,
+              userId,
+              businessType,
+              type: 'Customers',
+              priority: 'low',
+              title: 'Customer deleted',
+              message: `${customer.name || customer.studentName || 'Customer'} was removed.`,
+              relatedId: customer.id,
+              route: '/app/customers',
+              createdBy: userId,
+              createdByEmail: firebaseUser?.email || userDoc?.email || '',
+            }).catch((err) => console.warn('[Customers] createWorkspaceNotification failed', err?.message || err)),
+          ])
           return { ok: true }
         } catch (e) {
           return { ok: false, error: clientSafeMessage(e, 'Unable to delete customer.') }

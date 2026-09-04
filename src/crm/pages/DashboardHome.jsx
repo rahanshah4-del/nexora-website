@@ -38,6 +38,7 @@ import Badge from '../components/ui/Badge.jsx'
 import SkeletonLoader from '../components/system/SkeletonLoader.jsx'
 import { useInvoices } from '../hooks/useInvoices.js'
 import { useCustomers } from '../hooks/useCustomers.js'
+import { useCollectionCount } from '../hooks/useCollectionCount.js'
 import { useLeadScoring } from '../hooks/useLeadScoring.js'
 import { useActivityLogs } from '../hooks/useActivityLogs.js'
 import { useSupportTickets } from '../hooks/useSupportTickets.js'
@@ -551,6 +552,8 @@ function SchoolDashboard({
   workspaceName,
   loading,
   students,
+  totalStudentsCount,
+  totalStudentsCountLoading,
   invoices,
   pendingInvoices,
   revenueSeries,
@@ -584,10 +587,10 @@ function SchoolDashboard({
     {
       icon: HiOutlineUserGroup,
       label: 'Total Students',
-      value: formatCompact(students.length),
+      value: formatCompact(totalStudentsCount ?? students.length),
       helper: `${formatCompact(schoolStatsSummary.activeStudents)} active profiles`,
       tone: 'cyan',
-      loading: customersLoading,
+      loading: customersLoading || totalStudentsCountLoading,
     },
     {
       icon: HiOutlineBanknotes,
@@ -802,7 +805,7 @@ function SchoolDashboard({
 
 export default function DashboardHomePage() {
   const currency = 'PKR'
-  const { businessType, workspaceDoc, userDoc } = useUser()
+  const { businessType, workspaceDoc, userDoc, workspaceId } = useUser()
   const normalizedBusinessType = normalizeBusinessType(businessType)
   const isSchool = normalizedBusinessType === 'School ERP'
   const isProperty = normalizedBusinessType === 'Property ERP'
@@ -814,6 +817,10 @@ export default function DashboardHomePage() {
   const useCommonDashboardData = !isWhatsapp && !isRestaurant && !isTransport && !isRetail
   const invoicesApi = useInvoices({ limitCount: DASHBOARD_RECENT_LIMIT, enabled: useCommonDashboardData })
   const customersApi = useCustomers({ limitCount: DASHBOARD_RECENT_LIMIT, enabled: useCommonDashboardData })
+  // customersApi.customers is capped at DASHBOARD_RECENT_LIMIT — fine for the
+  // "recent students" list, but "Total Students" needs the real total, via a
+  // server-side count aggregation instead of counting a capped sample.
+  const totalStudentsCountApi = useCollectionCount('customers', { workspaceId, businessType, enabled: isSchool })
   const leadsApi = useLeadScoring({ limitCount: DASHBOARD_RECENT_LIMIT, enabled: isSalesHub })
   const activityApi = useActivityLogs({ limitCount: DASHBOARD_RECENT_LIMIT, enabled: useCommonDashboardData })
   const ticketsApi = useSupportTickets({ limitCount: DASHBOARD_RECENT_LIMIT, enabled: isSalesHub })
@@ -1225,6 +1232,8 @@ export default function DashboardHomePage() {
         workspaceName={workspaceDoc?.name || userDoc?.workspaceName || userDoc?.company || ''}
         loading={loading}
         students={customersApi.customers}
+        totalStudentsCount={totalStudentsCountApi.count}
+        totalStudentsCountLoading={totalStudentsCountApi.loading}
         invoices={invoicesApi.invoices}
         pendingInvoices={pendingInvoices}
         revenueSeries={revenueSeries}

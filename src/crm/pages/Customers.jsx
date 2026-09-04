@@ -329,23 +329,35 @@ export default function CustomersPage() {
         schoolMode={isSchool}
         onClose={() => setCreateOpen(false)}
         onCreate={async (payload) => {
+          // Keep CustomerModal's Save button disabled (via its `saving` state,
+          // which only clears once this returned promise settles) for the
+          // whole real operation — not just 25s — so a slow save can't be
+          // mistaken for a failure and re-submitted into a duplicate student
+          // record. Show an interim notice instead of a false failure, and
+          // only give up (re-enabling Save) after a much longer safety cap.
+          const slowNoticeTimer = window.setTimeout(() => {
+            setToast({ tone: 'info', message: isSchool ? 'Still saving the student — please keep waiting.' : 'Still saving — please keep waiting.' })
+          }, 8000)
           const res = await withTimeout(customersApi.createCustomer(payload), {
+            ms: 60000,
             onLateResolve: (lateRes) => {
               if (lateRes?.ok) {
-                setToast({ tone: 'success', message: isSchool ? 'Student was saved after all — no need to retry.' : 'Customer was saved after all — no need to retry.' })
+                setToast({ tone: 'success', message: isSchool ? 'Student was saved after all.' : 'Customer was saved after all.' })
                 window.setTimeout(() => setToast(null), 2400)
                 setCreateOpen(false)
               }
             },
           })
+          window.clearTimeout(slowNoticeTimer)
           if (res?.ok) {
             setToast({ tone: 'success', message: isSchool ? 'Student created successfully' : 'Customer created successfully' })
             window.setTimeout(() => setToast(null), 1600)
             setCreateOpen(false)
           } else {
             setToast({ tone: 'error', message: res?.error || 'Failed to create customer' })
-            window.setTimeout(() => setToast(null), 2400)
+            window.setTimeout(() => setToast(null), 2800)
           }
+          return res
         }}
       />
       <CustomerModal
@@ -354,23 +366,29 @@ export default function CustomersPage() {
         initialRecord={editingCustomer}
         onClose={() => setEditingCustomer(null)}
         onCreate={async (payload) => {
+          const slowNoticeTimer = window.setTimeout(() => {
+            setToast({ tone: 'info', message: isSchool ? 'Still saving the student — please keep waiting.' : 'Still saving — please keep waiting.' })
+          }, 8000)
           const res = await withTimeout(customersApi.updateCustomer(editingCustomer?.id, payload), {
+            ms: 60000,
             onLateResolve: (lateRes) => {
               if (lateRes?.ok) {
-                setToast({ tone: 'success', message: isSchool ? 'Student was updated after all — no need to retry.' : 'Customer was updated after all — no need to retry.' })
+                setToast({ tone: 'success', message: isSchool ? 'Student was updated after all.' : 'Customer was updated after all.' })
                 window.setTimeout(() => setToast(null), 2400)
                 setEditingCustomer(null)
               }
             },
           })
+          window.clearTimeout(slowNoticeTimer)
           if (res?.ok) {
             setToast({ tone: 'success', message: isSchool ? 'Student updated successfully' : 'Customer updated successfully' })
             window.setTimeout(() => setToast(null), 1600)
             setEditingCustomer(null)
           } else {
             setToast({ tone: 'error', message: res?.error || (isSchool ? 'Failed to update student' : 'Failed to update customer') })
-            window.setTimeout(() => setToast(null), 2400)
+            window.setTimeout(() => setToast(null), 2800)
           }
+          return res
         }}
       />
       {settleCustomer ? (

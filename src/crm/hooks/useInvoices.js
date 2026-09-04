@@ -630,7 +630,12 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
               ? 'draft'
               : 'pending'
           const amountPaid = schoolApprovalOnly
-            ? 0
+            // School fee bills always start pending approval, but a front-desk
+            // payment collected at the time the bill is raised (the "Paid
+            // Amount" field) should still be recorded, not discarded — it's
+            // shown to the user as an editable field, so silently zeroing it
+            // makes the fee bill's Paid/Pending split wrong.
+            ? Math.min(Math.max(toNumber(invoice.amountPaid ?? invoice.partialPaidAmount, 0), 0), invoice.total)
             : permissions.canCreatePaidInvoices && requestedStatus === 'paid'
             ? invoice.total
             : permissions.canCreatePaidInvoices
@@ -720,11 +725,12 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
           })
           // Activity log + notification are supplementary side-effects, not
           // part of the invoice itself (which is already committed above) —
-          // run them concurrently instead of one-after-another (halves the
-          // extra latency users were seeing on Save), and don't let either
-          // one failing turn an already-successful invoice creation into a
-          // reported failure.
-          await Promise.all([
+          // fire them without awaiting so Save returns as soon as the fee
+          // bill itself is saved, instead of also waiting on two more
+          // Firestore round-trips first, and don't let either one failing
+          // turn an already-successful invoice creation into a reported
+          // failure.
+          Promise.all([
             logActivity({
               workspaceId,
               userId,
@@ -1113,11 +1119,18 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
         const invoice = invoices.find((item) => item.id === id)
         if (!invoice) return { ok: false, error: 'Invoice not found' }
         try {
+          // A cancelled/rejected invoice is void — clear any amount it was
+          // previously marked paid for, otherwise a bill that was paid (or
+          // partially paid) before being cancelled keeps showing that paid
+          // amount, making a cancelled bill look fully or partially paid.
           await patchUserDoc(workspaceId, 'invoices', id, {
             paymentStatus: 'rejected',
             status: 'rejected',
             approvalStatus: 'rejected',
             requiresApproval: false,
+            amountPaid: 0,
+            partialPaidAmount: 0,
+            balanceDue: 0,
             rejectedAt: serverTimestamp(),
             rejectedBy: userId,
           }, { businessType })
@@ -1126,6 +1139,9 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
             status: 'rejected',
             approvalStatus: 'rejected',
             requiresApproval: false,
+            amountPaid: 0,
+            partialPaidAmount: 0,
+            balanceDue: 0,
             rejectedAt: new Date().toISOString(),
             rejectedBy: userId,
           })
@@ -1543,7 +1559,9 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
         try {
           await patchUserDoc(workspaceId, 'invoices', id, safePatch, { businessType })
           patchLoadedInvoice(id, safePatch)
-          await createWorkspaceNotification({
+          // Fire-and-forget: the notification is supplementary, not part of
+          // the update itself (already committed above).
+          createWorkspaceNotification({
             workspaceId,
             userId,
             businessType,
@@ -1555,7 +1573,7 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
             route: '/app/invoices',
             createdBy: userId,
             createdByEmail: firebaseUser?.email || userDoc?.email || '',
-          })
+          }).catch((err) => console.warn('[Invoices] createWorkspaceNotification failed', err?.message || err))
           return { ok: true }
         } catch (e) {
           return { ok: false, error: clientSafeMessage(e, 'Unable to update invoice.') }
@@ -2080,7 +2098,9 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
         try {
           await removeUserDoc(workspaceId, 'invoices', id)
           removeLoadedInvoice(id)
-          await createWorkspaceNotification({
+          // Fire-and-forget: the notification is supplementary, not part of
+          // the delete itself (already committed above).
+          createWorkspaceNotification({
             workspaceId,
             userId,
             businessType,
@@ -2092,7 +2112,7 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
             route: '/app/invoices',
             createdBy: userId,
             createdByEmail: firebaseUser?.email || userDoc?.email || '',
-          })
+          }).catch((err) => console.warn('[Invoices] createWorkspaceNotification failed', err?.message || err))
           return { ok: true }
         } catch (e) {
           return { ok: false, error: clientSafeMessage(e, 'Unable to delete invoice.') }
