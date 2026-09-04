@@ -8,9 +8,11 @@ import Select from '../ui/Select.jsx'
 
 function CustomerModal({ open, onClose, onCreate, initialRecord = null, schoolMode = false }) {
   const [draft, setDraft] = useState(null)
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     if (!open) return
+    Promise.resolve().then(() => setSaving(false))
     if (initialRecord) {
       Promise.resolve().then(() =>
         setDraft(
@@ -246,34 +248,51 @@ function CustomerModal({ open, onClose, onCreate, initialRecord = null, schoolMo
                 <Button
                   className="rounded-2xl"
                   type="button"
-                  onClick={() =>
-                    draft &&
-                    onCreate?.(
-                      schoolMode
-                        ? {
-                            ...draft,
-                            name: draft.studentName,
-                            email: draft.parentEmail,
-                            phone: draft.parentPhone,
-                            company: [draft.className, draft.section].filter(Boolean).join(' - '),
-                            customerType: 'Student',
-                            studentName: draft.studentName,
-                            parentName: draft.parentName,
-                            className: draft.className,
-                            section: draft.section,
-                            admissionNo: draft.admissionNo,
-                            rollNo: draft.rollNo,
-                            monthlyFee: Number(draft.monthlyFee || 0),
-                            admissionFee: Number(draft.admissionFee || 0),
-                            discount: Number(draft.discount || 0),
-                          }
-                        : draft,
-                    )
-                  }
+                  disabled={saving || !draft}
+                  onClick={async () => {
+                    // Without a saving guard, tapping this before onCreate()
+                    // resolved fired a second create — nothing disabled the
+                    // button or showed progress, so a slow save looked like
+                    // it hadn't registered and got tapped again.
+                    if (!draft || saving) return
+                    setSaving(true)
+                    try {
+                      await onCreate?.(
+                        schoolMode
+                          ? {
+                              ...draft,
+                              name: draft.studentName,
+                              email: draft.parentEmail,
+                              phone: draft.parentPhone,
+                              company: [draft.className, draft.section].filter(Boolean).join(' - '),
+                              customerType: 'Student',
+                              studentName: draft.studentName,
+                              parentName: draft.parentName,
+                              className: draft.className,
+                              section: draft.section,
+                              admissionNo: draft.admissionNo,
+                              rollNo: draft.rollNo,
+                              monthlyFee: Number(draft.monthlyFee || 0),
+                              admissionFee: Number(draft.admissionFee || 0),
+                              discount: Number(draft.discount || 0),
+                            }
+                          : draft,
+                      )
+                    } finally {
+                      setSaving(false)
+                    }
+                  }}
                 >
-                  {initialRecord ? (schoolMode ? 'Save Student' : 'Save Customer') : schoolMode ? 'Create Student' : 'Create'}
+                  {saving ? (
+                    <span className="inline-flex items-center gap-2">
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                      Saving...
+                    </span>
+                  ) : (
+                    initialRecord ? (schoolMode ? 'Save Student' : 'Save Customer') : schoolMode ? 'Create Student' : 'Create'
+                  )}
                 </Button>
-                <Button variant="subtle" className="rounded-2xl" type="button" onClick={onClose}>
+                <Button variant="subtle" className="rounded-2xl" type="button" disabled={saving} onClick={onClose}>
                   Cancel
                 </Button>
               </div>
