@@ -1,0 +1,18 @@
+{
+  // Cloudflare Workers config for the main static site (nexorasolution.online).
+  // This project builds a prerendered Vite/React SPA into ./dist (see
+  // package.json "build"/"postbuild" scripts) and is served as Workers
+  // static assets — there is no server-side Worker script here.
+  //
+  // This does NOT cover the ./functions directory (Firebase Cloud Functions,
+  // deployed separately via `firebase deploy --only functions`) or the
+  // backend APIs under ./workers/* (each has its own wrangler.toml and is
+  // deployed independently via the worker:deploy / whatsapp:deploy /
+  // passkeys:deploy / background-jobs:deploy npm scripts).
+  "name": "nexora",
+  "compatibility_date": "2026-09-05",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  }
+}
