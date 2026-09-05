@@ -77,14 +77,26 @@ export function formatBlogContent(text, { html = false, autoHighlight = true } =
   })
 
   // Step 5: Auto-highlight business terms (only if autoHighlight is true)
+  // Note: uses \b word-boundary matching (not lookbehind) — lookbehind
+  // assertions ((?<!...)) throw "invalid group specifier name" on Safari
+  // versions before 16.4, crashing the entire blog page. Splitting on HTML
+  // tags first keeps term-matching out of tag markup without needing
+  // lookaround at all.
   if (autoHighlight) {
-    for (const term of SORTED_TERMS) {
-      const regex = new RegExp(`(?<!<[^>]*)(?<!\\w)(${escapeRegex(term)})(?!\\w)(?![^<]*>)`, 'gi')
-      processed = processed.replace(regex, (match) => {
-        if (html) return `<span class="blog-term">${match}</span>`
-        return protect(`<span class="blog-term">${match}</span>`)
-      })
+    const segments = processed.split(/(<[^>]+>)/g)
+    for (let i = 0; i < segments.length; i += 2) {
+      let segment = segments[i]
+      if (!segment) continue
+      for (const term of SORTED_TERMS) {
+        const regex = new RegExp(`\\b(${escapeRegex(term)})\\b`, 'gi')
+        segment = segment.replace(regex, (match) => {
+          if (html) return `<span class="blog-term">${match}</span>`
+          return protect(`<span class="blog-term">${match}</span>`)
+        })
+      }
+      segments[i] = segment
     }
+    processed = segments.join('')
   }
 
   // Step 6: Handle tip/note/warning prefixes
