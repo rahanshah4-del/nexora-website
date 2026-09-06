@@ -1,458 +1,552 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   <url>
     <loc>https://nexorasolution.online/</loc>
-    <lastmod>2026-09-03</lastmod>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
+    <image:image>
+      <image:loc>https://nexorasolution.online/android-chrome-192x192.png</image:loc>
+      <image:title>android chrome 192x192</image:title>
+      <image:caption>Nexora Solution — android chrome 192x192</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://nexorasolution.online/android-chrome-512x512.png</image:loc>
+      <image:title>android chrome 512x512</image:title>
+      <image:caption>Nexora Solution — android chrome 512x512</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://nexorasolution.online/apple-touch-icon.png</image:loc>
+      <image:title>apple touch icon</image:title>
+      <image:caption>Nexora Solution — apple touch icon</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://nexorasolution.online/favicon-16x16.png</image:loc>
+      <image:title>favicon 16x16</image:title>
+      <image:caption>Nexora Solution — favicon 16x16</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://nexorasolution.online/favicon-32x32.png</image:loc>
+      <image:title>favicon 32x32</image:title>
+      <image:caption>Nexora Solution — favicon 32x32</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://nexorasolution.online/favicon-48x48.png</image:loc>
+      <image:title>favicon 48x48</image:title>
+      <image:caption>Nexora Solution — favicon 48x48</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://nexorasolution.online/favicon-64x64.png</image:loc>
+      <image:title>favicon 64x64</image:title>
+      <image:caption>Nexora Solution — favicon 64x64</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://nexorasolution.online/favicon.ico</image:loc>
+      <image:title>favicon</image:title>
+      <image:caption>Nexora Solution — favicon</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://nexorasolution.online/favicon.svg</image:loc>
+      <image:title>favicon</image:title>
+      <image:caption>Nexora Solution — favicon</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://nexorasolution.online/icons.svg</image:loc>
+      <image:title>icons</image:title>
+      <image:caption>Nexora Solution — icons</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://nexorasolution.online/logo-192.png</image:loc>
+      <image:title>logo 192</image:title>
+      <image:caption>Nexora Solution — logo 192</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://nexorasolution.online/logo-512.png</image:loc>
+      <image:title>logo 512</image:title>
+      <image:caption>Nexora Solution — logo 512</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://nexorasolution.online/nexora-ai-logo.png</image:loc>
+      <image:title>nexora ai logo</image:title>
+      <image:caption>Nexora Solution — nexora ai logo</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://nexorasolution.online/nexora-brand-logo.png</image:loc>
+      <image:title>nexora brand logo</image:title>
+      <image:caption>Nexora Solution — nexora brand logo</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://nexorasolution.online/nexora-logo.jpg</image:loc>
+      <image:title>nexora logo</image:title>
+      <image:caption>Nexora Solution — nexora logo</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://nexorasolution.online/nexora-logo.png</image:loc>
+      <image:title>nexora logo</image:title>
+      <image:caption>Nexora Solution — nexora logo</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://nexorasolution.online/nexora-pwa-install-180.png</image:loc>
+      <image:title>nexora pwa install 180</image:title>
+      <image:caption>Nexora Solution — nexora pwa install 180</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://nexorasolution.online/nexora-pwa-install-192.png</image:loc>
+      <image:title>nexora pwa install 192</image:title>
+      <image:caption>Nexora Solution — nexora pwa install 192</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://nexorasolution.online/nexora-pwa-install-512.png</image:loc>
+      <image:title>nexora pwa install 512</image:title>
+      <image:caption>Nexora Solution — nexora pwa install 512</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://nexorasolution.online/nexora_icon_set/icon.ico</image:loc>
+      <image:title>icon</image:title>
+      <image:caption>Nexora Solution — icon</image:caption>
+    </image:image>
   </url>
   <url>
-    <loc>https://nexorasolution.online/about/</loc>
-    <lastmod>2026-09-03</lastmod>
+    <loc>https://nexorasolution.online/about</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/ai/</loc>
-    <lastmod>2026-09-03</lastmod>
+    <loc>https://nexorasolution.online/ai</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/api-integration/</loc>
-    <lastmod>2026-09-03</lastmod>
+    <loc>https://nexorasolution.online/api-integration</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/australia/</loc>
-    <lastmod>2026-09-03</lastmod>
+    <loc>https://nexorasolution.online/australia</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/bahrain/</loc>
-    <lastmod>2026-09-03</lastmod>
+    <loc>https://nexorasolution.online/bahrain</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/blog/</loc>
-    <lastmod>2026-09-03</lastmod>
+    <loc>https://nexorasolution.online/blog</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/business-services/</loc>
-    <lastmod>2026-09-03</lastmod>
+    <loc>https://nexorasolution.online/business-services</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/canada/</loc>
-    <lastmod>2026-09-03</lastmod>
+    <loc>https://nexorasolution.online/canada</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/cloud-solutions/</loc>
-    <lastmod>2026-09-03</lastmod>
+    <loc>https://nexorasolution.online/cloud-solutions</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/contact/</loc>
-    <lastmod>2026-09-03</lastmod>
+    <loc>https://nexorasolution.online/contact</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/crm-development/</loc>
-    <lastmod>2026-09-03</lastmod>
+    <loc>https://nexorasolution.online/crm-development</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/documentation/</loc>
-    <lastmod>2026-09-03</lastmod>
+    <loc>https://nexorasolution.online/documentation</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/download/restaurant-pos/</loc>
-    <lastmod>2026-09-03</lastmod>
+    <loc>https://nexorasolution.online/download/restaurant-pos</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/ecommerce-development/</loc>
-    <lastmod>2026-09-03</lastmod>
+    <loc>https://nexorasolution.online/ecommerce-development</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/erp-development/</loc>
-    <lastmod>2026-09-03</lastmod>
+    <loc>https://nexorasolution.online/erp-development</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/faq/</loc>
-    <lastmod>2026-09-03</lastmod>
+    <loc>https://nexorasolution.online/faq</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/features/</loc>
-    <lastmod>2026-09-03</lastmod>
+    <loc>https://nexorasolution.online/help-center</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/help-center/</loc>
-    <lastmod>2026-09-03</lastmod>
+    <loc>https://nexorasolution.online/india</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/india/</loc>
-    <lastmod>2026-09-03</lastmod>
+    <loc>https://nexorasolution.online/industries</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/industries/</loc>
-    <lastmod>2026-09-03</lastmod>
+    <loc>https://nexorasolution.online/kuwait</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/kuwait/</loc>
-    <lastmod>2026-09-03</lastmod>
+    <loc>https://nexorasolution.online/mobile-app-development</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/mobile-app-development/</loc>
-    <lastmod>2026-09-03</lastmod>
+    <loc>https://nexorasolution.online/oman</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/oman/</loc>
-    <lastmod>2026-09-03</lastmod>
+    <loc>https://nexorasolution.online/pakistan</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/pakistan/</loc>
-    <lastmod>2026-09-03</lastmod>
+    <loc>https://nexorasolution.online/pricing</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/pricing/</loc>
-    <lastmod>2026-09-03</lastmod>
+    <loc>https://nexorasolution.online/privacy-policy</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/privacy-policy/</loc>
-    <lastmod>2026-09-03</lastmod>
+    <loc>https://nexorasolution.online/projects</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/projects/</loc>
-    <lastmod>2026-09-03</lastmod>
+    <loc>https://nexorasolution.online/qatar</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/qatar/</loc>
-    <lastmod>2026-09-03</lastmod>
+    <loc>https://nexorasolution.online/refund-policy</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/refund-policy/</loc>
-    <lastmod>2026-09-03</lastmod>
+    <loc>https://nexorasolution.online/restaurant-pos</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/restaurant-pos/</loc>
-    <lastmod>2026-09-03</lastmod>
+    <loc>https://nexorasolution.online/retail-pos</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/retail-pos/</loc>
-    <lastmod>2026-09-03</lastmod>
+    <loc>https://nexorasolution.online/reviews</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/reviews/</loc>
-    <lastmod>2026-09-03</lastmod>
+    <loc>https://nexorasolution.online/saudi-arabia</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/saudi-arabia/</loc>
-    <lastmod>2026-09-03</lastmod>
+    <loc>https://nexorasolution.online/school-erp</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/school-erp/</loc>
-    <lastmod>2026-09-03</lastmod>
+    <loc>https://nexorasolution.online/seo-services</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/seo-services/</loc>
-    <lastmod>2026-09-03</lastmod>
+    <loc>https://nexorasolution.online/sitemap</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/sitemap/</loc>
-    <lastmod>2026-09-03</lastmod>
+    <loc>https://nexorasolution.online/software-development</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/software-development/</loc>
-    <lastmod>2026-09-03</lastmod>
+    <loc>https://nexorasolution.online/solutions/crm</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/solutions/crm/</loc>
-    <lastmod>2026-09-03</lastmod>
+    <loc>https://nexorasolution.online/solutions/email-marketing</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/solutions/email-marketing/</loc>
-    <lastmod>2026-09-03</lastmod>
+    <loc>https://nexorasolution.online/solutions/inventory-management</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/solutions/inventory-management/</loc>
-    <lastmod>2026-09-03</lastmod>
+    <loc>https://nexorasolution.online/solutions/medical-store-pos</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/solutions/medical-store-pos/</loc>
-    <lastmod>2026-09-03</lastmod>
+    <loc>https://nexorasolution.online/solutions/property-erp</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/solutions/property-erp/</loc>
-    <lastmod>2026-09-03</lastmod>
+    <loc>https://nexorasolution.online/solutions/reports</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/solutions/reports-analytics/</loc>
-    <lastmod>2026-09-03</lastmod>
+    <loc>https://nexorasolution.online/solutions/reports-analytics</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/solutions/reports/</loc>
-    <lastmod>2026-09-03</lastmod>
+    <loc>https://nexorasolution.online/solutions/team-permissions</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/solutions/team-permissions/</loc>
-    <lastmod>2026-09-03</lastmod>
+    <loc>https://nexorasolution.online/support-center</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/support-center/</loc>
-    <lastmod>2026-09-03</lastmod>
+    <loc>https://nexorasolution.online/terms</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/terms/</loc>
-    <lastmod>2026-09-03</lastmod>
+    <loc>https://nexorasolution.online/transport</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/transport/</loc>
-    <lastmod>2026-09-03</lastmod>
+    <loc>https://nexorasolution.online/uae</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/uae/</loc>
-    <lastmod>2026-09-03</lastmod>
+    <loc>https://nexorasolution.online/uk</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/uk/</loc>
-    <lastmod>2026-09-03</lastmod>
+    <loc>https://nexorasolution.online/usa</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/usa/</loc>
-    <lastmod>2026-09-03</lastmod>
+    <loc>https://nexorasolution.online/whatsapp-crm</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/whatsapp-crm/</loc>
-    <lastmod>2026-09-03</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://nexorasolution.online/blog/restaurant-pos-software-pakistan-guide/</loc>
+    <loc>https://nexorasolution.online/blog/restaurant-pos-software-pakistan-guide</loc>
     <lastmod>2026-07-07</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/blog/restaurant-kot-table-management-best-practices/</loc>
+    <loc>https://nexorasolution.online/blog/restaurant-kot-table-management-best-practices</loc>
     <lastmod>2026-07-07</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/blog/retail-pos-inventory-control-guide/</loc>
+    <loc>https://nexorasolution.online/blog/retail-pos-inventory-control-guide</loc>
     <lastmod>2026-07-07</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/blog/retail-cashier-permissions-pos-security/</loc>
+    <loc>https://nexorasolution.online/blog/retail-cashier-permissions-pos-security</loc>
     <lastmod>2026-07-07</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/blog/school-erp-software-pakistan-guide/</loc>
+    <loc>https://nexorasolution.online/blog/school-erp-software-pakistan-guide</loc>
     <lastmod>2026-07-07</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/blog/school-fee-attendance-management-system/</loc>
+    <loc>https://nexorasolution.online/blog/school-fee-attendance-management-system</loc>
     <lastmod>2026-07-07</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/blog/transport-rental-software-fleet-guide/</loc>
+    <loc>https://nexorasolution.online/blog/transport-rental-software-fleet-guide</loc>
     <lastmod>2026-07-07</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/blog/vehicle-rental-booking-payment-workflow/</loc>
+    <loc>https://nexorasolution.online/blog/vehicle-rental-booking-payment-workflow</loc>
     <lastmod>2026-07-07</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/blog/crm-software-lead-management-guide/</loc>
+    <loc>https://nexorasolution.online/blog/crm-software-lead-management-guide</loc>
     <lastmod>2026-07-07</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/blog/crm-pipeline-follow-up-system/</loc>
+    <loc>https://nexorasolution.online/blog/crm-pipeline-follow-up-system</loc>
     <lastmod>2026-07-07</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/blog/whatsapp-crm-for-sales-teams/</loc>
+    <loc>https://nexorasolution.online/blog/whatsapp-crm-for-sales-teams</loc>
     <lastmod>2026-07-07</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/blog/whatsapp-broadcast-follow-up-strategy/</loc>
+    <loc>https://nexorasolution.online/blog/whatsapp-broadcast-follow-up-strategy</loc>
     <lastmod>2026-07-07</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/blog/small-business-software-stack-pakistan/</loc>
+    <loc>https://nexorasolution.online/blog/small-business-software-stack-pakistan</loc>
     <lastmod>2026-07-07</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/blog/business-automation-checklist-for-growing-teams/</loc>
+    <loc>https://nexorasolution.online/blog/business-automation-checklist-for-growing-teams</loc>
     <lastmod>2026-07-07</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/blog/ai-in-business-management-software/</loc>
+    <loc>https://nexorasolution.online/blog/ai-in-business-management-software</loc>
     <lastmod>2026-07-07</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/blog/ai-crm-lead-scoring-explained/</loc>
+    <loc>https://nexorasolution.online/blog/ai-crm-lead-scoring-explained</loc>
     <lastmod>2026-07-07</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/blog/cloud-business-software-security-basics/</loc>
+    <loc>https://nexorasolution.online/blog/cloud-business-software-security-basics</loc>
     <lastmod>2026-07-07</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/blog/saas-vs-desktop-pos-software/</loc>
+    <loc>https://nexorasolution.online/blog/saas-vs-desktop-pos-software</loc>
     <lastmod>2026-07-07</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/blog/pos-reporting-kpis-business-owners/</loc>
+    <loc>https://nexorasolution.online/blog/pos-reporting-kpis-business-owners</loc>
     <lastmod>2026-07-07</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/blog/customer-data-management-for-service-businesses/</loc>
+    <loc>https://nexorasolution.online/blog/customer-data-management-for-service-businesses</loc>
     <lastmod>2026-07-07</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/ur/</loc>
-    <lastmod>2026-09-03</lastmod>
+    <loc>https://nexorasolution.online/ur</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/hi/</loc>
-    <lastmod>2026-09-03</lastmod>
+    <loc>https://nexorasolution.online/hi</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://nexorasolution.online/ar/</loc>
-    <lastmod>2026-09-03</lastmod>
+    <loc>https://nexorasolution.online/ar</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
