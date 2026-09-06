@@ -172,6 +172,27 @@ const PUBLIC_ROUTES = [
 //  DYNAMIC SEO HELPERS
 // ═══════════════════════════════════════════════════════════════════════════════
 
+// The English homepage ('/') and its translated siblings ('/ur', '/hi',
+// '/ar') form one reciprocal hreflang group: every page in the group must
+// declare the exact same set of alternates (itself included), so this list
+// is shared by all of them via buildHreflangBlock() below.
+const HOMEPAGE_HREFLANG_LANGS = [
+  { prefix: '', hreflang: 'en', xDefault: true },
+  { prefix: 'ur', hreflang: 'ur' },
+  { prefix: 'hi', hreflang: 'hi' },
+  { prefix: 'ar', hreflang: 'ar' },
+]
+
+// Derives the <html lang="..."> value from a route path using the same
+// ur/hi/ar prefix detection buildSeoHead() uses for hreflang, so the
+// self-referencing hreflang tag and the html lang attribute can never
+// disagree on which language a page is in.
+function htmlLangForPath(path) {
+  const normalized = path === '/' ? '/' : `/${String(path || '').replace(/^\/+|\/+$/g, '')}`
+  const match = normalized.match(/^\/(ur|hi|ar)(\/.*)?$/)
+  return match ? match[1] : 'en'
+}
+
 // Single source of truth for every <link rel="canonical"> / og:url emitted by
 // this script. Pages are written to disk as `<route>/index.html` (see
 // writePage() call sites below), which the host serves at a URL WITH a
@@ -187,8 +208,10 @@ function buildSeoHead(meta) {
   const img = meta.image || LOGO
   const type = meta.path.startsWith('/blog/') ? 'article' : 'website'
   const ogLocale = meta.ogLocale || 'en_PK'
-  const hreflangBlock = meta.hreflangBlock || (languageMatch
-    ? `  <link rel="alternate" hreflang="${languageMatch[1]}" href="${esc(canonical)}" />\n  <link rel="alternate" hreflang="x-default" href="${esc(absoluteUrl(languageMatch[2] || '/'))}" />\n`
+  const isHomepageGroup = normalizedPath === '/' || Boolean(languageMatch)
+  const homepageSuffix = languageMatch ? (languageMatch[2] || '') : ''
+  const hreflangBlock = meta.hreflangBlock || (isHomepageGroup
+    ? buildHreflangBlock(homepageSuffix, HOMEPAGE_HREFLANG_LANGS)
     : isUae
       ? `  <link rel="alternate" hreflang="en-AE" href="${esc(canonical)}" />\n  <link rel="alternate" hreflang="x-default" href="${esc(canonical)}" />\n`
       : '')
@@ -217,18 +240,21 @@ function buildSeoHead(meta) {
 }
 
 
-function buildHreflangBlock(slug, langs) {
-  const mlLangs = langs || [
-    { prefix: '', hreflang: 'en', xDefault: true },
-    { prefix: 'ur', hreflang: 'ur' },
-    { prefix: 'hi', hreflang: 'hi' },
-    { prefix: 'ar', hreflang: 'ar' },
-    { prefix: 'bn', hreflang: 'bn' },
-  ]
+// Builds one reciprocal hreflang group for `pathSuffix` (e.g. "/blog/some-slug",
+// or "" for the homepage group). `langs` must be the exact same list for
+// every page in the group — each entry becomes both a language's own page
+// (self-reference, when its prefix matches the page being rendered) and the
+// return-tag every other page in the group links back with — so passing a
+// language here that has no real prerendered page produces a dangling
+// hreflang (a "hreflang to redirect or broken page" report). Every href is
+// built through absoluteUrl(), the same helper the canonical tag uses, so
+// hreflang targets are always https + trailing-slash, matching the real URL.
+function buildHreflangBlock(pathSuffix, langs) {
+  const mlLangs = langs && langs.length ? langs : [{ prefix: '', hreflang: 'en', xDefault: true }]
   let block = ''
   for (const lang of mlLangs) {
     const prefix = lang.prefix ? `/${lang.prefix}` : ''
-    const href = `${SITE}${prefix}/blog/${slug}`
+    const href = absoluteUrl(`${prefix}${pathSuffix}`)
     if (lang.xDefault) block += `  <link rel="alternate" hreflang="x-default" href="${esc(href)}" />\n`
     block += `  <link rel="alternate" hreflang="${lang.hreflang}" href="${esc(href)}" />\n`
   }
@@ -465,7 +491,16 @@ ${items}
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function buildFullBlogHtml(article, allArticles = [], options = {}) {
-  const { langCode = 'en', htmlLang = 'en', ogLocale = 'en_PK', translation = null, hreflangBlock = '' } = options
+  const {
+    langCode = 'en', htmlLang = 'en', ogLocale = 'en_PK', translation = null,
+    // The set of languages that actually have a real prerendered page for
+    // this article (English plus whichever translations passed the
+    // availability check in fetchArticleTranslations()) — see hreflangLangsFor().
+    // Every call site for one article (its English page and each of its
+    // translated pages) must pass the SAME list, so the group is reciprocal
+    // by construction and never links to a page that doesn't exist.
+    hreflangLangs = [{ prefix: '', hreflang: 'en', xDefault: true }],
+  } = options
   const display = translation || article
   const sections = (display.sections || article.sections || [])
   const faqs = article.faqs || []
@@ -551,7 +586,7 @@ function buildFullBlogHtml(article, allArticles = [], options = {}) {
   const blogPath = langCode !== 'en' ? `/${htmlLang === 'ur' ? 'ur' : htmlLang === 'hi' ? 'hi' : htmlLang === 'ar' ? 'ar' : htmlLang === 'bn' ? 'bn' : 'en'}/blog/${article.slug}` : `/blog/${article.slug}`
   const seoTitle = translation?.seoTitle || translation?.title || article.seoTitle || article.title
   const seoDesc = translation?.metaDescription || translation?.excerpt || article.metaDescription || article.description || `Read ${display.title || article.title} on Nexora Blog.`
-  const hreflangs = buildHreflangBlock(article.slug)
+  const hreflangs = buildHreflangBlock(`/blog/${article.slug}`, hreflangLangs)
   return `<!DOCTYPE html>
 <html lang="${htmlLang}">
 <head>
@@ -857,7 +892,7 @@ function buildPublicPageHtml(meta, path = '', articles = []) {
   const appHtml = buildStaticShell(meta, path, articles)
 
   return `<!DOCTYPE html>
-<html lang="en">
+<html lang="${htmlLangForPath(meta.path)}">
 <head>
 ${buildCommonHead()}
 ${buildSeoHead(meta)}
@@ -1469,6 +1504,75 @@ function parseBlogSlugsFromSource() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+//  BLOG TRANSLATION AVAILABILITY (drives reciprocal hreflang)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const ML_LANGS = [
+  { code: 'ur-roman', prefix: 'ur', htmlLang: 'ur', ogLocale: 'ur_PK' },
+  { code: 'hi', prefix: 'hi', htmlLang: 'hi', ogLocale: 'hi_IN' },
+  { code: 'ar', prefix: 'ar', htmlLang: 'ar', ogLocale: 'ar_AE' },
+  { code: 'bn', prefix: 'bn', htmlLang: 'bn', ogLocale: 'bn_BD' },
+]
+
+// Looks up, once per article, which translated languages actually have real
+// content to prerender (not missing, pending or failed). Run BEFORE both the
+// English blog loop and the multilingual blog loop below so both can build
+// the exact same hreflang alternate set for a given article — that's what
+// makes the group reciprocal and keeps every hreflang target pointing at a
+// page that actually gets written to disk (instead of one that 404s/redirects).
+async function fetchArticleTranslations(articles) {
+  const bySlug = new Map()
+  try {
+    const { initializeApp } = await import('firebase/app')
+    const { getFirestore, doc, getDoc } = await import('firebase/firestore')
+    // Must match the real public config in src/lib/firebase.js — this was a
+    // placeholder key ("AIzaSyDummyKeyForPrerender") that made every getDoc()
+    // below fail silently (caught per-article), so mlCount was always 0 and
+    // none of the ur/hi/ar/bn translated blog pages ever got prerendered.
+    const firebaseConfig = {
+      apiKey: "AIzaSyDOdQnY-Vjkwdl-0F7FnuVjVB-tAO-cnWc", projectId: "nexora-business-suite",
+      authDomain: "nexora-business-suite.firebaseapp.com", storageBucket: "nexora-business-suite.firebasestorage.app"
+    }
+    const app = initializeApp(firebaseConfig, 'prerender-ml')
+    const db = getFirestore(app)
+    for (const article of articles) {
+      try {
+        const snap = await getDoc(doc(db, 'blogTranslations', article.slug))
+        if (!snap.exists()) continue
+        const translations = snap.data().translations || {}
+        const available = []
+        for (const lang of ML_LANGS) {
+          // Try exact key first, then backward compat variants
+          const translated = translations[lang.code] || translations['ur'] || null
+          if (!translated) continue
+          // Skip translations that explicitly failed or are pending
+          if (translated.translationStatus === 'failed' || translated.translationStatus === 'pending') continue
+          available.push({ ...lang, translated })
+        }
+        if (available.length) bySlug.set(article.slug, available)
+      } catch (e) {
+        // Previously silent — a bad API key made every single article fail
+        // here with mlCount staying 0 and nothing printed, so the whole
+        // multilingual prerender step going dark was invisible in build logs.
+        console.log(`[prerender] ⚠ Multilingual translation skipped for "${article.slug}":`, e.message?.slice(0, 120))
+      }
+    }
+  } catch (e) {
+    console.log('[prerender] ⚠ Multilingual prerender skipped (Firestore not available at build time):', e.message?.slice(0, 80))
+  }
+  return bySlug
+}
+
+// English always exists, plus whichever translations actually have a page.
+function hreflangLangsFor(availableTranslations) {
+  const langs = [{ prefix: '', hreflang: 'en', xDefault: true }]
+  for (const t of availableTranslations || []) {
+    langs.push({ prefix: t.prefix, hreflang: t.htmlLang })
+  }
+  return langs
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 //  MAIN
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -1498,9 +1602,16 @@ async function main() {
   }
   console.log(`[prerender] ✓ ${pageCount} public routes`)
 
+  // Which languages actually have real translated content, per article —
+  // computed once and shared by the English loop and the multilingual loop
+  // below so every page in an article's translation group declares the
+  // identical (reciprocal) hreflang set.
+  const translationsBySlug = await fetchArticleTranslations(articles)
+
   // 2. Blog articles — full content
   for (const article of articles) {
-    const html = buildFullBlogHtml(article, articles)
+    const hreflangLangs = hreflangLangsFor(translationsBySlug.get(article.slug))
+    const html = buildFullBlogHtml(article, articles, { hreflangLangs })
     writePage(join(DIST, 'blog', article.slug, 'index.html'), html)
     blogCount++
   }
@@ -1508,52 +1619,19 @@ async function main() {
 
   // 2b. Multilingual blog pages (ur, hi, ar, bn)
   let mlCount = 0
-  try {
-    const { initializeApp } = await import('firebase/app')
-    const { getFirestore, doc, getDoc } = await import('firebase/firestore')
-    // Must match the real public config in src/lib/firebase.js — this was a
-    // placeholder key ("AIzaSyDummyKeyForPrerender") that made every getDoc()
-    // below fail silently (caught per-article), so mlCount was always 0 and
-    // none of the ur/hi/ar/bn translated blog pages ever got prerendered.
-    const firebaseConfig = {
-      apiKey: "AIzaSyDOdQnY-Vjkwdl-0F7FnuVjVB-tAO-cnWc", projectId: "nexora-business-suite",
-      authDomain: "nexora-business-suite.firebaseapp.com", storageBucket: "nexora-business-suite.firebasestorage.app"
+  for (const article of articles) {
+    const available = translationsBySlug.get(article.slug)
+    if (!available) continue
+    const hreflangLangs = hreflangLangsFor(available)
+    for (const lang of available) {
+      const html = buildFullBlogHtml(article, articles, {
+        langCode: lang.code, htmlLang: lang.htmlLang,
+        ogLocale: lang.ogLocale, translation: lang.translated,
+        hreflangLangs,
+      })
+      writePage(join(DIST, lang.prefix, 'blog', article.slug, 'index.html'), html)
+      mlCount++
     }
-    const app = initializeApp(firebaseConfig, 'prerender-ml')
-    const db = getFirestore(app)
-    const mlLangs = [
-      { code: 'ur-roman', prefix: 'ur', htmlLang: 'ur', ogLocale: 'ur_PK' },
-      { code: 'hi', prefix: 'hi', htmlLang: 'hi', ogLocale: 'hi_IN' },
-      { code: 'ar', prefix: 'ar', htmlLang: 'ar', ogLocale: 'ar_AE' },
-      { code: 'bn', prefix: 'bn', htmlLang: 'bn', ogLocale: 'bn_BD' },
-    ]
-    for (const article of articles) {
-      try {
-        const snap = await getDoc(doc(db, 'blogTranslations', article.slug))
-        if (!snap.exists()) continue
-        const translations = snap.data().translations || {}
-        for (const lang of mlLangs) {
-          // Try exact key first, then backward compat variants
-          let translated = translations[lang.code] || translations['ur'] || null
-          if (!translated) continue
-          // Skip translations that explicitly failed or are pending
-          if (translated.translationStatus === 'failed' || translated.translationStatus === 'pending') continue
-          const html = buildFullBlogHtml(article, articles, {
-            langCode: lang.code, htmlLang: lang.htmlLang,
-            ogLocale: lang.ogLocale, translation: translated,
-          })
-          writePage(join(DIST, lang.prefix, 'blog', article.slug, 'index.html'), html)
-          mlCount++
-        }
-      } catch (e) {
-        // Previously silent — a bad API key made every single article fail
-        // here with mlCount staying 0 and nothing printed, so the whole
-        // multilingual prerender step going dark was invisible in build logs.
-        console.log(`[prerender] ⚠ Multilingual translation skipped for "${article.slug}":`, e.message?.slice(0, 120))
-      }
-    }
-  } catch (e) {
-    console.log('[prerender] ⚠ Multilingual prerender skipped (Firestore not available at build time):', e.message?.slice(0, 80))
   }
   if (mlCount > 0) console.log(`[prerender] ✓ ${mlCount} multilingual blog pages`)
 
