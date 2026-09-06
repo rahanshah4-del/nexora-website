@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import Link from '../../components/AppLink.jsx'
 import {
   HiOutlineChatBubbleLeftRight,
   HiOutlineDocumentChartBar,
@@ -15,6 +15,7 @@ import {
 import { SiUpwork, SiFiverr } from 'react-icons/si'
 import NexoraLogo from '../../components/brand/NexoraLogo.jsx'
 import CopyEmailButton from '../../components/CopyEmailButton.jsx'
+import { COUNTRIES } from '../../lib/countries.js'
 
 const whatsappNumberDisplay = '+92 319 432 9754'
 const whatsappLink = 'https://wa.me/923194329754'
@@ -40,6 +41,10 @@ const productLinks = [
   ['Transport Management', '/transport'],
   ['WhatsApp CRM', '/whatsapp-crm'],
   ['Property ERP', '/solutions/property-erp'],
+  ['Email Marketing', '/solutions/email-marketing'],
+  ['Inventory Management', '/solutions/inventory-management'],
+  ['Reports & Analytics', '/solutions/reports-analytics'],
+  ['Team & Permissions', '/solutions/team-permissions'],
 ]
 
 const companyLinks = [
@@ -47,7 +52,10 @@ const companyLinks = [
   ['About', '/about'],
   ['Pricing', '/pricing'],
   ['Software Development', '/software-development'],
+  ['SEO Services', '/seo-services'],
   ['Industries', '/industries'],
+  ['Projects', '/projects'],
+  ['Reviews', '/reviews'],
   ['Blog', '/blog'],
   ['Contact', '/contact'],
 ]
@@ -154,6 +162,23 @@ export default function PublicFooter() {
                 Available Worldwide
               </span>
             </div>
+          </div>
+        </div>
+
+        {/* Countries We Serve — every country landing page needs at least one
+            crawlable internal link; this is the only place that lists all of them. */}
+        <div className="mt-12 border-t border-white/10 pt-8">
+          <h3 className="text-sm font-medium tracking-[0.08em] text-white/80">Countries We Serve</h3>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {COUNTRIES.map((country) => (
+              <Link
+                key={country.slug}
+                to={`/${country.slug}`}
+                className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[12px] font-light text-white/55 transition-colors duration-200 hover:border-white/25 hover:bg-white/10 hover:text-white"
+              >
+                {country.flag} {country.name}
+              </Link>
+            ))}
           </div>
         </div>
 

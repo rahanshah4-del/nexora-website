@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import Link from './AppLink.jsx'
 import { HiOutlineArrowRight, HiOutlineGift, HiOutlineXMark } from 'react-icons/hi2'
 
 const STORAGE_KEY = 'nexora-offer-popup-shown'

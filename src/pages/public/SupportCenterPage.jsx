@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import Link from '../../components/AppLink.jsx'
 import PageSeo from '../../components/PageSeo.jsx'
 import { getSeoForPath } from '../../lib/seoMetadata.js'
 import { HiOutlineSparkles } from 'react-icons/hi2'

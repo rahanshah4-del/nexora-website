@@ -10,6 +10,8 @@
  * All routes are absolute paths relative to the Nexora site root.
  */
 
+import { canonicalPath } from './seoStructuredData.js'
+
 /**
  * Term → route path mapping.
  * Keys are normalized (lowercase, trimmed). Values are URL paths.
@@ -126,7 +128,7 @@ export function autoLinkTerms(text) {
       if (count >= 1) return match
       count++
       const placeholder = `\x00AUTOLINK${placeholders.length}\x00`
-      placeholders.push({ placeholder, replacement: `<a href="${path}" class="auto-internal-link">${match}</a>` })
+      placeholders.push({ placeholder, replacement: `<a href="${canonicalPath(path)}" class="auto-internal-link">${match}</a>` })
       return placeholder
     })
     if (count > 0) alreadyLinked.add(term)

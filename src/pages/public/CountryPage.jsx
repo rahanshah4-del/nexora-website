@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import Link from '../../components/AppLink.jsx'
 import { useState, useMemo } from 'react'
 import { HiOutlineArrowRight, HiOutlineCheckCircle, HiOutlineGlobeAlt, HiOutlineChevronDown, HiOutlineSparkles } from 'react-icons/hi2'
 import { FaWhatsapp } from 'react-icons/fa6'

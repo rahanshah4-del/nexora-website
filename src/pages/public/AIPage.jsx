@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import Link from '../../components/AppLink.jsx'
 import PageSeo from '../../components/PageSeo.jsx'
 import PublicPageShell from './PublicPageShell.jsx'
 import {
@@ -20,6 +20,8 @@ import {
 const seo = {
   title: 'Nexora AI — AI-Powered Business Software | AI POS, AI CRM, AI Restaurant',
   description: 'Nexora AI is an intelligent AI platform deeply integrated into every business module — Restaurant POS, Retail POS, CRM, Inventory, Reports and more. AI menu import, AI sales insights, AI customer support.',
+  canonical: 'https://nexorasolution.online/ai/',
+  path: '/ai',
 }
 
 const modules = [

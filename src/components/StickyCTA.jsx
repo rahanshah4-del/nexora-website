@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import Link from './AppLink.jsx'
 import { HiOutlineArrowRight, HiOutlinePlayCircle, HiOutlineStar } from 'react-icons/hi2'
 import { FaWhatsapp } from 'react-icons/fa6'
 

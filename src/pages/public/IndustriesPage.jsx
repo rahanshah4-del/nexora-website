@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import Link from '../../components/AppLink.jsx'
 import {
   HiOutlineAcademicCap,
   HiOutlineArrowRight,

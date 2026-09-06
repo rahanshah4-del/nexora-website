@@ -15,8 +15,8 @@ export const COUNTRIES = [
     population: '334M',
     businessStyle: 'Enterprise & SMB',
 
-    seoTitle: 'Business Software for US Companies | POS, CRM, ERP | Nexora Solution',
-    seoDescription: 'Nexora provides AI-powered POS, CRM, ERP, and custom software development for US businesses. Restaurant POS, retail management, school ERP, and enterprise solutions. Free trial available globally.',
+    seoTitle: 'Business Software for US Companies | POS, CRM, ERP',
+    seoDescription: 'AI-powered POS, CRM, ERP and custom software for US businesses. Restaurant POS, retail management, school ERP and enterprise solutions.',
     seoKeywords: 'business software USA, POS software United States, CRM software America, ERP solutions US, restaurant POS USA, retail POS America',
 
     heroHeading: 'Business Software for',
@@ -49,8 +49,8 @@ export const COUNTRIES = [
     population: '67M',
     businessStyle: 'SME & Enterprise',
 
-    seoTitle: 'Business Software for UK Companies | POS, CRM, ERP | Nexora Solution',
-    seoDescription: 'AI-powered POS, CRM, ERP and custom software development for UK businesses. Restaurant POS, retail management, school MIS, and enterprise solutions. GDPR compliant. Free trial.',
+    seoTitle: 'Business Software for UK Companies | POS, CRM, ERP',
+    seoDescription: 'AI-powered POS, CRM, ERP and custom software for UK businesses. Restaurant POS, retail management, school MIS. GDPR compliant.',
     seoKeywords: 'business software UK, POS software United Kingdom, CRM software Britain, ERP solutions UK, restaurant POS London, retail POS UK, GDPR compliant software',
 
     heroHeading: 'Business Software for',
@@ -83,8 +83,8 @@ export const COUNTRIES = [
     population: '39M',
     businessStyle: 'SMB & Enterprise',
 
-    seoTitle: 'Business Software for Canadian Companies | POS, CRM, ERP | Nexora',
-    seoDescription: 'AI-powered POS, CRM, ERP and custom software for Canadian businesses. Bilingual support, PIPEDA compliant, GST/HST ready. Restaurant POS, retail management, school ERP. Free trial.',
+    seoTitle: 'Business Software for Canadian Companies | Nexora',
+    seoDescription: 'AI-powered POS, CRM, ERP and custom software for Canadian businesses. Bilingual support, PIPEDA compliant, GST/HST ready.',
     seoKeywords: 'business software Canada, POS software Canadian, CRM software Canada, ERP solutions Toronto, restaurant POS Canada, retail POS Vancouver',
 
     heroHeading: 'Business Software for',
@@ -116,8 +116,8 @@ export const COUNTRIES = [
     population: '26M',
     businessStyle: 'SMB & Hospitality',
 
-    seoTitle: 'Business Software for Australian Companies | POS, CRM, ERP | Nexora',
-    seoDescription: 'AI-powered POS, CRM, ERP and custom software for Australian businesses. GST compliant, hospitality-focused. Restaurant POS, retail management, school ERP. Free trial available.',
+    seoTitle: 'Business Software for Australian Companies | Nexora',
+    seoDescription: 'AI-powered POS, CRM, ERP and custom software for Australian businesses. GST compliant, hospitality-focused, free trial available.',
     seoKeywords: 'business software Australia, POS software Australian, CRM software Sydney, ERP solutions Melbourne, restaurant POS Australia, retail POS Brisbane',
 
     heroHeading: 'Business Software for',
@@ -149,8 +149,8 @@ export const COUNTRIES = [
     population: '9.4M',
     businessStyle: 'Enterprise & SMB',
 
-    seoTitle: 'Business Software UAE | POS, CRM, ERP Dubai Abu Dhabi | Nexora',
-    seoDescription: 'Leading AI-powered POS, CRM, ERP and custom software for UAE businesses in Dubai, Abu Dhabi, Sharjah. VAT compliant, Arabic/English, cloud-native. Restaurant POS & retail solutions.',
+    seoTitle: 'Business Software UAE | POS, CRM, ERP | Nexora',
+    seoDescription: 'Leading AI-powered POS, CRM, ERP and custom software for UAE businesses in Dubai, Abu Dhabi and Sharjah. VAT compliant, Arabic/English.',
     seoKeywords: 'business software UAE, POS software Dubai, CRM software Abu Dhabi, ERP solutions UAE, restaurant POS Dubai, retail POS Sharjah, VAT compliant software UAE',
 
     heroHeading: 'Business Software for',
@@ -183,8 +183,8 @@ export const COUNTRIES = [
     population: '36M',
     businessStyle: 'Enterprise & Government',
 
-    seoTitle: 'Business Software Saudi Arabia | POS, CRM, ERP Riyadh Jeddah | Nexora',
-    seoDescription: 'AI-powered POS, CRM, ERP and custom software for Saudi businesses in Riyadh, Jeddah, Dammam. ZATCA compliant, Arabic-first, Vision 2030 ready. Restaurant POS & enterprise solutions.',
+    seoTitle: 'Business Software Saudi Arabia | POS, CRM, ERP',
+    seoDescription: 'AI-powered POS, CRM, ERP and custom software for Saudi businesses in Riyadh, Jeddah and Dammam. ZATCA compliant, Arabic-first.',
     seoKeywords: 'business software Saudi Arabia, POS software Riyadh, CRM software Jeddah, ERP solutions KSA, restaurant POS Saudi, ZATCA compliant software, Vision 2030',
 
     heroHeading: 'Business Software for',
@@ -217,8 +217,8 @@ export const COUNTRIES = [
     population: '1.5M',
     businessStyle: 'SMB & Financial',
 
-    seoTitle: 'Business Software Bahrain | POS, CRM, ERP Manama | Nexora Solution',
-    seoDescription: 'AI-powered POS, CRM, ERP and custom software for Bahrain businesses. VAT compliant, Arabic/English, cloud-native. Restaurant POS, retail, and enterprise solutions in Manama & across Bahrain.',
+    seoTitle: 'Business Software Bahrain | POS, CRM, ERP | Nexora',
+    seoDescription: 'AI-powered POS, CRM, ERP and custom software for Bahrain businesses. VAT compliant, Arabic/English, cloud-native platform.',
     seoKeywords: 'business software Bahrain, POS software Manama, CRM software Bahrain, ERP solutions Bahrain, restaurant POS Bahrain, VAT compliant software Bahrain',
 
     heroHeading: 'Business Software for',
@@ -249,8 +249,8 @@ export const COUNTRIES = [
     population: '2.9M',
     businessStyle: 'Enterprise & SMB',
 
-    seoTitle: 'Business Software Qatar | POS, CRM, ERP Doha | Nexora Solution',
-    seoDescription: 'AI-powered POS, CRM, ERP and custom software for Qatar businesses. Tax compliant, Arabic/English, cloud-native. Restaurant POS, retail, and enterprise solutions in Doha & across Qatar.',
+    seoTitle: 'Business Software Qatar | POS, CRM, ERP | Nexora',
+    seoDescription: 'AI-powered POS, CRM, ERP and custom software for Qatar businesses in Doha. Tax compliant, Arabic/English, cloud-native platform.',
     seoKeywords: 'business software Qatar, POS software Doha, CRM software Qatar, ERP solutions Qatar, restaurant POS Doha, retail POS Qatar',
 
     heroHeading: 'Business Software for',
@@ -281,8 +281,8 @@ export const COUNTRIES = [
     population: '4.5M',
     businessStyle: 'SMB & Enterprise',
 
-    seoTitle: 'Business Software Oman | POS, CRM, ERP Muscat | Nexora Solution',
-    seoDescription: 'AI-powered POS, CRM, ERP and custom software for Oman businesses. VAT compliant, Arabic/English, cloud-native. Restaurant POS, retail, and enterprise solutions in Muscat & across Oman.',
+    seoTitle: 'Business Software Oman | POS, CRM, ERP | Nexora',
+    seoDescription: 'AI-powered POS, CRM, ERP and custom software for Oman businesses in Muscat. VAT compliant, Arabic/English, cloud-native platform.',
     seoKeywords: 'business software Oman, POS software Muscat, CRM software Oman, ERP solutions Oman, restaurant POS Muscat, VAT compliant software Oman',
 
     heroHeading: 'Business Software for',
@@ -312,8 +312,8 @@ export const COUNTRIES = [
     population: '4.3M',
     businessStyle: 'Enterprise & SMB',
 
-    seoTitle: 'Business Software Kuwait | POS, CRM, ERP Kuwait City | Nexora',
-    seoDescription: 'AI-powered POS, CRM, ERP and custom software for Kuwait businesses. Arabic/English, cloud-native. Restaurant POS, retail, and enterprise solutions in Kuwait City & across Kuwait.',
+    seoTitle: 'Business Software Kuwait | POS, CRM, ERP | Nexora',
+    seoDescription: 'AI-powered POS, CRM, ERP and custom software for Kuwait businesses in Kuwait City. Arabic/English, cloud-native platform.',
     seoKeywords: 'business software Kuwait, POS software Kuwait City, CRM software Kuwait, ERP solutions Kuwait, restaurant POS Kuwait, retail POS Kuwait',
 
     heroHeading: 'Business Software for',
@@ -344,8 +344,8 @@ export const COUNTRIES = [
     population: '241M',
     businessStyle: 'SMB & Enterprise',
 
-    seoTitle: 'Best Business Software in Pakistan | POS, CRM, ERP | Nexora Solution',
-    seoDescription: 'Pakistan\'s leading AI-powered POS, CRM, ERP & business software. Restaurant POS, retail management, school ERP, WhatsApp CRM. 50+ businesses trust Nexora. Free trial, Urdu support.',
+    seoTitle: 'Best Business Software in Pakistan | Nexora',
+    seoDescription: 'Pakistan\'s leading AI-powered POS, CRM, ERP and business software. Restaurant POS, retail, school ERP, WhatsApp CRM. Free trial.',
     seoKeywords: 'business software Pakistan, POS software Pakistan, CRM software Lahore, ERP solutions Karachi, restaurant POS Islamabad, retail POS Pakistan, school ERP Pakistan',
 
     heroHeading: 'Pakistan\'s Leading',
@@ -378,8 +378,8 @@ export const COUNTRIES = [
     population: '1.4B',
     businessStyle: 'SMB & Enterprise',
 
-    seoTitle: 'Business Software India | POS, CRM, ERP Mumbai Delhi Bangalore | Nexora',
-    seoDescription: 'AI-powered POS, CRM, ERP and custom software for Indian businesses. GST compliant, multi-language, cloud-native. Restaurant POS, retail, school ERP. Serving Mumbai, Delhi, Bangalore & across India.',
+    seoTitle: 'Business Software India | POS, CRM, ERP | Nexora',
+    seoDescription: 'AI-powered POS, CRM, ERP and custom software for Indian businesses. GST compliant, multi-language. Serving Mumbai, Delhi & Bangalore.',
     seoKeywords: 'business software India, POS software Mumbai, CRM software Delhi, ERP solutions Bangalore, restaurant POS India, retail POS India, GST compliant software India, school ERP India',
 
     heroHeading: 'Business Software for',

@@ -16,7 +16,7 @@ import { fileURLToPath } from 'node:url'
 import { formatBlogContentHtml } from '../src/lib/blogContentFormatter.js'
 import { autoLinkTerms } from '../src/lib/blogInternalLinks.js'
 import { defaultPlatformPlans, freeTrialConfig } from '../src/lib/platformPlans.js'
-import { absoluteUrl, createOrganizationSchema, createWebSiteSchema } from '../src/lib/seoStructuredData.js'
+import { absoluteUrl, canonicalPath, createOrganizationSchema, createWebSiteSchema } from '../src/lib/seoStructuredData.js'
 import { seoMetadata } from '../src/lib/seoMetadata.js'
 import { COUNTRIES } from '../src/lib/countries.js'
 
@@ -108,6 +108,11 @@ const PUBLIC_ROUTES = [
   { path: '/hi',            title: 'बिज़नेस सॉफ्टवेयर पाकिस्तान | POS, ERP और CRM — Nexora Solution',                         description: 'रेस्तरां POS, स्कूल ERP और रिटेल POS सॉफ्टवेयर।' },
   { path: '/ar',            title: 'برنامج إدارة الأعمال | Nexora Solution',                                                  description: 'نظام POS وERP وCRM للمطاعم والمدارس والمتاجر.' },
   { path: '/ur',            title: 'بزنس مینجمنٹ سافٹ ویئر | Nexora Solution',                                                description: 'ریستوران POS، اسکول ERP اور ریٹیل POS سافٹ ویئر پاکستان۔' },
+  // Was listed in the sitemap allowlist (scripts/generate-sitemap.mjs) but
+  // never prerendered here, so the SPA fallback served the homepage's own
+  // index.html (canonical "/") for this URL — a "non-canonical page in
+  // sitemap" report, since /ai/'s sitemap entry didn't self-canonicalize.
+  { path: '/ai',            title: 'Nexora AI — AI-Powered Business Software | AI POS, AI CRM, AI Restaurant', description: 'Nexora AI is an intelligent AI platform deeply integrated into every business module — Restaurant POS, Retail POS, CRM, Inventory, Reports and more. AI menu import, AI sales insights, AI customer support.' },
   { path: '/about',         title: 'About Nexora Solution — Pakistan\'s Business Software Platform',                        description: 'Learn about Nexora Solution, the team behind Pakistan\'s leading POS, ERP and CRM platform for restaurants, retail, schools and enterprises.' },
   { path: '/pricing',       title: 'Nexora Pricing — Simple Plans for Every Business',                                      description: 'Compare Nexora pricing plans. Start with a free trial, then choose Basic, Standard or Enterprise. No credit card required.' },
   { path: '/contact',       title: 'Contact Nexora Solution — Get in Touch',                                                description: 'Contact Nexora Solution for POS software, ERP systems, CRM solutions. Book a free demo or reach our support team.' },
@@ -542,7 +547,7 @@ function buildFullBlogHtml(article, allArticles = [], options = {}) {
   if (relatedArticles.length > 0) {
     relatedHtml = `\n    <h2>Related Articles</h2>\n    <ul>\n`
     for (const ra of relatedArticles) {
-      relatedHtml += `      <li><a href="/blog/${esc(ra.slug)}">${esc(ra.title)}</a> — ${readingTime(wordCount(ra.title + (ra.metaDescription || '')))} min read</li>\n`
+      relatedHtml += `      <li><a href="/blog/${esc(ra.slug)}/">${esc(ra.title)}</a> — ${readingTime(wordCount(ra.title + (ra.metaDescription || '')))} min read</li>\n`
     }
     relatedHtml += '    </ul>\n'
   }
@@ -560,24 +565,24 @@ function buildFullBlogHtml(article, allArticles = [], options = {}) {
   if (adjacent.previous || adjacent.next) {
     prevNextHtml = `\n    <nav aria-label="Article navigation" style="display:flex;justify-content:space-between;margin:2rem 0;padding:1rem 0;border-top:1px solid #e5e7eb">\n`
     if (adjacent.previous) {
-      prevNextHtml += `      <a href="/blog/${esc(adjacent.previous.slug)}" style="color:#6366f1;text-decoration:none;font-weight:500">\n        ← ${esc(adjacent.previous.title)}\n      </a>\n`
+      prevNextHtml += `      <a href="/blog/${esc(adjacent.previous.slug)}/" style="color:#6366f1;text-decoration:none;font-weight:500">\n        ← ${esc(adjacent.previous.title)}\n      </a>\n`
     }
     if (adjacent.next) {
-      prevNextHtml += `      <a href="/blog/${esc(adjacent.next.slug)}" style="color:#6366f1;text-decoration:none;font-weight:500;margin-left:auto">\n        ${esc(adjacent.next.title)} →\n      </a>\n`
+      prevNextHtml += `      <a href="/blog/${esc(adjacent.next.slug)}/" style="color:#6366f1;text-decoration:none;font-weight:500;margin-left:auto">\n        ${esc(adjacent.next.title)} →\n      </a>\n`
     }
     prevNextHtml += '    </nav>\n'
   }
 
   // ── CTA ──
   const ctaHtml = article.primaryLink
-    ? `\n    <div class="cta"><a href="${esc(article.primaryLink.to)}">${esc(article.primaryLink.label)}</a></div>\n`
-    : `\n    <div class="cta"><a href="/pricing">View Nexora Pricing</a> | <a href="/signup">Start Free Trial</a></div>\n`
+    ? `\n    <div class="cta"><a href="${esc(canonicalPath(article.primaryLink.to))}">${esc(article.primaryLink.label)}</a></div>\n`
+    : `\n    <div class="cta"><a href="/pricing/">View Nexora Pricing</a> | <a href="/signup">Start Free Trial</a></div>\n`
 
   // ── Breadcrumb ──
   const breadcrumbHtml = `\n    <nav aria-label="Breadcrumb">
       <ol>
         <li><a href="/">Home</a></li>
-        <li><a href="/blog">Blog</a></li>
+        <li><a href="/blog/">Blog</a></li>
         <li><span aria-current="page">${esc(article.title)}</span></li>
       </ol>
     </nav>\n`
@@ -615,7 +620,7 @@ ${buildGtm()}
   <div id="root">
     <header>
       <a href="/">Nexora Solution</a>
-      <nav><a href="/">Home</a> <a href="/pricing">Pricing</a> <a href="/blog">Blog</a></nav>
+      <nav><a href="/">Home</a> <a href="/pricing/">Pricing</a> <a href="/blog/">Blog</a></nav>
     </header>
     <main>
       <article>
@@ -653,42 +658,14 @@ ${buildGtm()}
 </html>`
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-//  PHASE 3: SOFTWARE APPLICATION SCHEMA
-// ═══════════════════════════════════════════════════════════════════════════════
-
-const SOLUTION_PAGES = {
-  '/restaurant-pos': { name: 'Nexora Restaurant POS', cat: 'Restaurant POS', os: 'Web, Windows, Android, iOS', desc: 'Modern restaurant POS with table management, KOT, billing, inventory and cloud sync.' },
-  '/retail-pos': { name: 'Nexora Retail POS', cat: 'Retail POS', os: 'Web, Windows, Android, iOS', desc: 'Complete retail POS system with barcode billing, inventory management, discount engine.' },
-  '/school-erp': { name: 'Nexora School ERP', cat: 'School ERP', os: 'Web, Windows, Android, iOS', desc: 'Cloud-based school management with student records, fee collection, attendance, exams.' },
-  '/solutions/crm': { name: 'Nexora CRM', cat: 'CRM Software', os: 'Web, Windows, Android, iOS', desc: 'Customer relationship management with lead tracking, pipeline, follow-ups.' },
-  '/solutions/pos': { name: 'Nexora POS', cat: 'POS Software', os: 'Web, Windows, Android, iOS', desc: 'Complete POS solution for restaurants, retail, medical stores.' },
-  '/solutions/medical-store-pos': { name: 'Nexora Medical Store POS', cat: 'Pharmacy POS', os: 'Web, Windows, Android, iOS', desc: 'Pharmacy POS with medicine inventory, batch tracking, expiry alerts.' },
-  '/solutions/inventory-management': { name: 'Nexora Inventory Management', cat: 'Inventory Software', os: 'Web, Windows, Android, iOS', desc: 'Cloud inventory management with stock tracking, purchase orders.' },
-}
-
-function softwareAppSchema(path) {
-  const info = SOLUTION_PAGES[path]
-  if (!info) return ''
-  return `  <script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "SoftwareApplication",
-  "name": "${info.name}",
-  "applicationCategory": "BusinessApplication",
-  "operatingSystem": "${info.os}",
-  "description": "${escJson(info.desc)}",
-  "url": "${SITE}${path}",
-  "brand": { "@type": "Brand", "name": "Nexora Solution" },
-  "offers": {
-    "@type": "Offer",
-    "price": "0",
-    "priceCurrency": "PKR",
-    "description": "Free trial available"
-  }
-}
-</script>`
-}
+// Note: this used to emit a per-solution-page SoftwareApplication JSON-LD
+// block (SOLUTION_PAGES / softwareAppSchema()) with a "brand" property
+// (not a valid SoftwareApplication field per schema.org) and no
+// aggregateRating/review (required for Google's SoftwareApplication rich
+// result). There is no real per-product rating data to add — reviews in
+// src/lib/reviews.js are general/company-wide, not attributed to a specific
+// solution — and fabricating one would violate Google's structured data
+// guidelines, so it was removed rather than shipping invalid or fake markup.
 
 // ═══════════════════════════════════════════════════════════════════════════════
 //  PHASE 3: TABLE OF CONTENTS BUILDER
@@ -735,7 +712,7 @@ ${buildGtm()}
 </head>
 <body>
   <div id="root">
-    <header><a href="/">Nexora Solution</a><nav><a href="/">Home</a> <a href="/blog">Blog</a></nav></header>
+    <header><a href="/">Nexora Solution</a><nav><a href="/">Home</a> <a href="/blog/">Blog</a></nav></header>
     <main>
       <nav aria-label="Breadcrumb"><ol><li><a href="/">Home</a></li><li><span aria-current="page">Authors</span></li></ol></nav>
       <h1>Nexora Solution Editorial Team</h1>
@@ -743,7 +720,7 @@ ${buildGtm()}
       <h2>Expertise</h2>
       <ul><li>Restaurant POS &amp; KOT Systems</li><li>Retail &amp; Inventory Management</li><li>School ERP &amp; Fee Management</li><li>CRM &amp; WhatsApp CRM</li><li>Transport &amp; Fleet Software</li><li>Pharmacy &amp; Medical Store POS</li><li>AI &amp; Business Automation</li><li>Cloud Security &amp; Data Protection</li></ul>
       <h2>Published Articles</h2>
-      <p>Visit the <a href="/blog">Nexora Blog</a> for our complete article library.</p>
+      <p>Visit the <a href="/blog/">Nexora Blog</a> for our complete article library.</p>
       <h2>Connect</h2>
       <ul>
         <li><a href="https://facebook.com/nexorasolution">Facebook</a></li>
@@ -752,7 +729,10 @@ ${buildGtm()}
         <li><a href="https://youtube.com/@nexorasolution">YouTube</a></li>
       </ul>
     </main>
-    <footer><p>&copy; 2019–2026 Nexora Solution. All rights reserved.</p></footer>
+    <footer style="background:linear-gradient(135deg,#071d35,#062b52);color:#fff;padding:2rem 0 1.5rem;font-size:.875rem">
+      <div style="margin-top:0">${buildFooterLinksHtml()}</div>
+      <p style="margin-top:1.5rem;color:#64748b;text-align:center">&copy; 2019–2026 Nexora Solution. All rights reserved.</p>
+    </footer>
   </div>
   ${PRODUCTION_ASSETS || '<script type="module" src="/src/main.jsx"></script>'}
   <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PZJV65RW" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
@@ -770,7 +750,7 @@ function buildCategoryPage(category, articles) {
   const desc = `Read Nexora blog articles about ${category.toLowerCase()}. Expert guides, tips and best practices for Pakistani businesses.`
   let listHtml = ''
   for (const a of catArticles) {
-    listHtml += `      <li><a href="/blog/${esc(a.slug)}">${esc(a.title)}</a> — ${readingTime(wordCount(a.title + (a.metaDescription || '')))} min read</li>\n`
+    listHtml += `      <li><a href="/blog/${esc(a.slug)}/">${esc(a.title)}</a> — ${readingTime(wordCount(a.title + (a.metaDescription || '')))} min read</li>\n`
   }
 
   return `<!DOCTYPE html>
@@ -785,15 +765,18 @@ ${buildGtm()}
 </head>
 <body>
   <div id="root">
-    <header><a href="/">Nexora Solution</a><nav><a href="/">Home</a> <a href="/blog">Blog</a></nav></header>
+    <header><a href="/">Nexora Solution</a><nav><a href="/">Home</a> <a href="/blog/">Blog</a></nav></header>
     <main>
-      <nav aria-label="Breadcrumb"><ol><li><a href="/">Home</a></li><li><a href="/blog">Blog</a></li><li><span aria-current="page">${esc(category)}</span></li></ol></nav>
+      <nav aria-label="Breadcrumb"><ol><li><a href="/">Home</a></li><li><a href="/blog/">Blog</a></li><li><span aria-current="page">${esc(category)}</span></li></ol></nav>
       <h1>${esc(category)} Articles</h1>
       <p>${esc(desc)}</p>
       <ul>${listHtml}</ul>
-      <p><a href="/blog">← Back to all articles</a></p>
+      <p><a href="/blog/">← Back to all articles</a></p>
     </main>
-    <footer><p>&copy; 2019–2026 Nexora Solution. All rights reserved.</p></footer>
+    <footer style="background:linear-gradient(135deg,#071d35,#062b52);color:#fff;padding:2rem 0 1.5rem;font-size:.875rem">
+      <div style="margin-top:0">${buildFooterLinksHtml()}</div>
+      <p style="margin-top:1.5rem;color:#64748b;text-align:center">&copy; 2019–2026 Nexora Solution. All rights reserved.</p>
+    </footer>
   </div>
   ${PRODUCTION_ASSETS || '<script type="module" src="/src/main.jsx"></script>'}
   <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PZJV65RW" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
@@ -810,7 +793,7 @@ function buildPaginationPage(pageNum, totalPages, articles, perPage = 6) {
   const pageArticles = articles.slice(start, start + perPage)
   let listHtml = ''
   for (const a of pageArticles) {
-    listHtml += `      <li><a href="/blog/${esc(a.slug)}">${esc(a.title)}</a> — ${readingTime(wordCount(a.title + (a.metaDescription || '')))} min read</li>\n`
+    listHtml += `      <li><a href="/blog/${esc(a.slug)}/">${esc(a.title)}</a> — ${readingTime(wordCount(a.title + (a.metaDescription || '')))} min read</li>\n`
   }
   const prevLink = pageNum > 1 ? `<link rel="prev" href="${esc(absoluteUrl(`/blog/page/${pageNum - 1}`))}" />` : ''
   const nextLink = pageNum < totalPages ? `<link rel="next" href="${esc(absoluteUrl(`/blog/page/${pageNum + 1}`))}" />` : ''
@@ -831,17 +814,20 @@ ${buildGtm()}
 </head>
 <body>
   <div id="root">
-    <header><a href="/">Nexora Solution</a><nav><a href="/">Home</a> <a href="/blog">Blog</a></nav></header>
+    <header><a href="/">Nexora Solution</a><nav><a href="/">Home</a> <a href="/blog/">Blog</a></nav></header>
     <main>
       <h1>Nexora Blog — Page ${pageNum}</h1>
       <ul>${listHtml}</ul>
       <nav class="pagination">
-        ${pageNum > 1 ? `<a href="/blog/page/${pageNum - 1}">← Previous</a>` : ''}
+        ${pageNum > 1 ? `<a href="/blog/page/${pageNum - 1}/">← Previous</a>` : ''}
         <span>Page ${pageNum} of ${totalPages}</span>
-        ${pageNum < totalPages ? `<a href="/blog/page/${pageNum + 1}">Next →</a>` : ''}
+        ${pageNum < totalPages ? `<a href="/blog/page/${pageNum + 1}/">Next →</a>` : ''}
       </nav>
     </main>
-    <footer><p>&copy; 2019–2026 Nexora Solution. All rights reserved.</p></footer>
+    <footer style="background:linear-gradient(135deg,#071d35,#062b52);color:#fff;padding:2rem 0 1.5rem;font-size:.875rem">
+      <div style="margin-top:0">${buildFooterLinksHtml()}</div>
+      <p style="margin-top:1.5rem;color:#64748b;text-align:center">&copy; 2019–2026 Nexora Solution. All rights reserved.</p>
+    </footer>
   </div>
   ${PRODUCTION_ASSETS || '<script type="module" src="/src/main.jsx"></script>'}
   <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PZJV65RW" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
@@ -865,7 +851,7 @@ ${buildGtm()}
 </head>
 <body>
   <div id="root">
-    <header><a href="/">Nexora Solution</a><nav><a href="/">Home</a> <a href="/blog">Blog</a></nav></header>
+    <header><a href="/">Nexora Solution</a><nav><a href="/">Home</a> <a href="/blog/">Blog</a></nav></header>
     <main>
       <h1>Search Nexora Solution</h1>
       <p>Search across all Nexora content — POS software, ERP systems, CRM guides, pricing plans and business resources.</p>
@@ -873,9 +859,12 @@ ${buildGtm()}
         <input type="search" name="q" placeholder="Search..." aria-label="Search" />
         <button type="submit">Search</button>
       </form>
-      <p class="hint">Try searching for: <a href="/search?q=restaurant+pos">restaurant pos</a>, <a href="/search?q=inventory">inventory</a>, <a href="/search?q=pricing">pricing</a></p>
+      <p class="hint">Try searching for: <a href="/search/?q=restaurant+pos">restaurant pos</a>, <a href="/search/?q=inventory">inventory</a>, <a href="/search/?q=pricing">pricing</a></p>
     </main>
-    <footer><p>&copy; 2019–2026 Nexora Solution. All rights reserved.</p></footer>
+    <footer style="background:linear-gradient(135deg,#071d35,#062b52);color:#fff;padding:2rem 0 1.5rem;font-size:.875rem">
+      <div style="margin-top:0">${buildFooterLinksHtml()}</div>
+      <p style="margin-top:1.5rem;color:#64748b;text-align:center">&copy; 2019–2026 Nexora Solution. All rights reserved.</p>
+    </footer>
   </div>
   ${PRODUCTION_ASSETS || '<script type="module" src="/src/main.jsx"></script>'}
   <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PZJV65RW" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
@@ -898,7 +887,6 @@ ${buildCommonHead()}
 ${buildSeoHead(meta)}
 ${orgSchema()}
 ${websiteSchema()}
-${softwareAppSchema(path)}
 ${meta.path === '/blog'
     ? `  <script type="application/ld+json">
 { "@context": "https://schema.org", "@type": "Blog", "name": "Nexora Solution Blog", "url": "${SITE}/blog" }
@@ -963,6 +951,80 @@ const HOMEPAGE_CONTACT_SECTION = `
       </div>
     </section>`
 
+// Mirrors src/pages/public/PublicFooter.jsx's link lists. Kept in sync by
+// hand (this generator produces the pre-hydration static HTML, the React
+// component the live one) — this is what makes solution/country/hub pages
+// reachable by a real <a> tag in the HTML a crawler sees, instead of relying
+// on client-side hydration or sitemap.xml alone (previously SHELL_FOOTER had
+// no internal links at all beyond the contact block, so every non-home
+// public page — every country page, /retail-pos/, /projects/, /reviews/,
+// /seo-services/, etc. — was an orphan in the crawlable HTML).
+const FOOTER_LINK_GROUPS = [
+  {
+    heading: 'Products',
+    links: [
+      ['Nexora CRM', '/solutions/crm'],
+      ['Restaurant POS', '/restaurant-pos'],
+      ['Retail POS', '/retail-pos'],
+      ['Medical Store POS', '/solutions/medical-store-pos'],
+      ['School ERP', '/school-erp'],
+      ['Transport Management', '/transport'],
+      ['WhatsApp CRM', '/whatsapp-crm'],
+      ['Property ERP', '/solutions/property-erp'],
+      ['Email Marketing', '/solutions/email-marketing'],
+      ['Inventory Management', '/solutions/inventory-management'],
+      ['Reports & Analytics', '/solutions/reports-analytics'],
+      ['Team & Permissions', '/solutions/team-permissions'],
+    ],
+  },
+  {
+    heading: 'Company',
+    links: [
+      ['About', '/about'],
+      ['Pricing', '/pricing'],
+      ['Software Development', '/software-development'],
+      ['SEO Services', '/seo-services'],
+      ['Industries', '/industries'],
+      ['Projects', '/projects'],
+      ['Reviews', '/reviews'],
+      ['Blog', '/blog'],
+      ['Contact', '/contact'],
+    ],
+  },
+  {
+    heading: 'Resources',
+    links: [
+      ['Documentation', '/documentation'],
+      ['Help Center', '/help-center'],
+      ['FAQ', '/faq'],
+      ['Privacy Policy', '/privacy-policy'],
+      ['Terms & Conditions', '/terms'],
+      ['Refund Policy', '/refund-policy'],
+      ['Support Center', '/support-center'],
+    ],
+  },
+]
+
+function buildFooterLinksHtml() {
+  const groupsHtml = FOOTER_LINK_GROUPS.map((group) => `
+      <div style="min-width:9.5rem">
+        <p style="font-size:.7rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8;margin:0">${esc(group.heading)}</p>
+        <div style="margin-top:.75rem;display:flex;flex-direction:column;gap:.55rem">
+          ${group.links.map(([label, to]) => `<a href="${esc(canonicalPath(to))}" style="color:rgba(255,255,255,.62);text-decoration:none;font-size:.8rem">${esc(label)}</a>`).join('\n          ')}
+        </div>
+      </div>`).join('')
+  const countriesHtml = COUNTRIES.map((c) => `<a href="${esc(canonicalPath(`/${c.slug}`))}" style="color:rgba(255,255,255,.62);text-decoration:none;font-size:.75rem;border:1px solid rgba(255,255,255,.15);border-radius:9999px;padding:.3rem .75rem">${esc(c.flag)} ${esc(c.name)}</a>`).join('\n        ')
+  return `
+    <div style="max-width:1280px;margin:0 auto;padding:0 1.25rem;display:flex;flex-wrap:wrap;gap:2.25rem;text-align:left">${groupsHtml}
+    </div>
+    <div style="max-width:1280px;margin:2rem auto 0;padding:1.5rem 1.25rem 0;border-top:1px solid rgba(255,255,255,.1);text-align:left">
+      <p style="font-size:.7rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8;margin:0">Countries We Serve</p>
+      <div style="margin-top:.75rem;display:flex;flex-wrap:wrap;gap:.5rem">
+        ${countriesHtml}
+      </div>
+    </div>`
+}
+
 const SHELL_HEADER = `
   <header style="position:sticky;top:0;z-index:50;border-bottom:1px solid #e2e8f0;background:rgba(255,255,255,.9);backdrop-filter:blur(24px)">
     <div style="display:flex;align-items:center;height:4rem;max-width:1280px;margin:0 auto;padding:0 1rem">
@@ -972,18 +1034,19 @@ const SHELL_HEADER = `
       </a>
       <nav style="margin-left:auto;display:flex;align-items:center;gap:1.25rem;font-size:.875rem;font-weight:600">
         <a href="/" style="color:#0f172a;text-decoration:none">Home</a>
-        <a href="/pricing" style="color:#334155;text-decoration:none">Pricing</a>
-        <a href="/blog" style="color:#334155;text-decoration:none">Blog</a>
-        <a href="/contact" style="color:#334155;text-decoration:none">Contact</a>
+        <a href="/pricing/" style="color:#334155;text-decoration:none">Pricing</a>
+        <a href="/blog/" style="color:#334155;text-decoration:none">Blog</a>
+        <a href="/contact/" style="color:#334155;text-decoration:none">Contact</a>
         ${PHONE_LINK}
       </nav>
     </div>
   </header>`
 
 const SHELL_FOOTER = `
-  <footer style="background:linear-gradient(135deg,#071d35,#062b52);color:#fff;padding:2rem 1.25rem;text-align:center;font-size:.875rem">
-    ${FOOTER_CONTACT_BLOCK}
-    <p style="margin-top:1.5rem;color:#64748b">&copy; 2019–2026 Nexora Solution. All Rights Reserved.</p>
+  <footer style="background:linear-gradient(135deg,#071d35,#062b52);color:#fff;padding:2rem 0 1.5rem;font-size:.875rem">
+    <div style="text-align:center">${FOOTER_CONTACT_BLOCK}</div>
+    <div style="margin-top:2rem">${buildFooterLinksHtml()}</div>
+    <p style="margin-top:1.5rem;color:#64748b;text-align:center">&copy; 2019–2026 Nexora Solution. All Rights Reserved.</p>
   </footer>`
 
 // ── Per-route static content (baked into HTML so crawlers see it pre-JS) ──
@@ -1025,7 +1088,7 @@ function buildPricingContent() {
 function buildBlogContent(articles) {
   const list = (articles || [])
     .map((article) => {
-      const href = `/blog/${article.slug}`
+      const href = `/blog/${article.slug}/`
       const excerpt = article.metaDescription || article.description || ''
       return `<article style="border-radius:1.25rem;border:1px solid #e2e8f0;background:#fff;padding:1.5rem">
         <h2 style="font-size:1.125rem;font-weight:900;color:#0f172a"><a href="${href}" style="color:#0f172a;text-decoration:none">${escapeHtml(article.title)}</a></h2>
@@ -1170,7 +1233,7 @@ function buildCountryContent(country) {
     <p style="margin-top:1rem;font-size:1rem;line-height:1.7;color:#475569">${esc(country.heroSubtitle)}</p>
     <div style="margin-top:2rem;display:flex;gap:.75rem;flex-wrap:wrap">
       <a href="/signup" style="display:inline-flex;min-height:3rem;align-items:center;justify-content:center;border-radius:9999px;padding:.75rem 1.75rem;font-size:.875rem;font-weight:800;text-decoration:none;background:#0f172a;color:#fff">Start Free Trial</a>
-      <a href="/pricing" style="display:inline-flex;min-height:3rem;align-items:center;justify-content:center;border-radius:9999px;padding:.75rem 1.75rem;font-size:.875rem;font-weight:800;text-decoration:none;border:1px solid #e2e8f0;color:#0f172a">View Pricing</a>
+      <a href="/pricing/" style="display:inline-flex;min-height:3rem;align-items:center;justify-content:center;border-radius:9999px;padding:.75rem 1.75rem;font-size:.875rem;font-weight:800;text-decoration:none;border:1px solid #e2e8f0;color:#0f172a">View Pricing</a>
     </div>
 
     <h2 style="margin-top:3rem;font-size:1.5rem;font-weight:900;color:#0f172a">Why ${esc(country.name)} chooses Nexora</h2>
@@ -1320,7 +1383,7 @@ function buildServicePageContent(entry) {
     <p style="margin-top:1rem;font-size:1rem;line-height:1.7;color:#475569">${esc(entry.subtitle)}</p>
     <div style="margin-top:2rem;display:flex;gap:.75rem;flex-wrap:wrap">
       <a href="/signup" style="display:inline-flex;min-height:3rem;align-items:center;justify-content:center;border-radius:9999px;padding:.75rem 1.75rem;font-size:.875rem;font-weight:800;text-decoration:none;background:#0f172a;color:#fff">Start Free Trial</a>
-      <a href="/contact" style="display:inline-flex;min-height:3rem;align-items:center;justify-content:center;border-radius:9999px;padding:.75rem 1.75rem;font-size:.875rem;font-weight:800;text-decoration:none;border:1px solid #e2e8f0;color:#0f172a">Book a Demo</a>
+      <a href="/contact/" style="display:inline-flex;min-height:3rem;align-items:center;justify-content:center;border-radius:9999px;padding:.75rem 1.75rem;font-size:.875rem;font-weight:800;text-decoration:none;border:1px solid #e2e8f0;color:#0f172a">Book a Demo</a>
     </div>${servicesHtml ? `
     <h2 style="margin-top:3rem;font-size:1.5rem;font-weight:900;color:#0f172a">What We Build</h2>
     <div style="margin-top:1.5rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:.75rem">${servicesHtml}
@@ -1358,7 +1421,7 @@ function buildRouteContent(path, title, desc, articles) {
     <p style="margin-top:1rem;font-size:1rem;line-height:1.7;color:#475569">${desc}</p>
     <div style="margin-top:2rem;display:flex;gap:.75rem">
       <a href="/signup" style="display:inline-flex;min-height:3rem;align-items:center;justify-content:center;border-radius:9999px;padding:.75rem 1.75rem;font-size:.875rem;font-weight:800;text-decoration:none;background:#0f172a;color:#fff">Start Free Trial</a>
-      <a href="/contact" style="display:inline-flex;min-height:3rem;align-items:center;justify-content:center;border-radius:9999px;padding:.75rem 1.75rem;font-size:.875rem;font-weight:800;text-decoration:none;border:1px solid #e2e8f0;color:#0f172a">Book a Demo</a>
+      <a href="/contact/" style="display:inline-flex;min-height:3rem;align-items:center;justify-content:center;border-radius:9999px;padding:.75rem 1.75rem;font-size:.875rem;font-weight:800;text-decoration:none;border:1px solid #e2e8f0;color:#0f172a">Book a Demo</a>
     </div>
   </main>`
 }
@@ -1378,9 +1441,9 @@ function buildStaticShell(meta, path = '', articles = []) {
       </div>
       <nav style="margin-left:auto;display:flex;align-items:center;gap:1.25rem;font-size:.875rem;font-weight:600;color:#334155">
         <a href="/" style="color:#0f172a;text-decoration:none">Home</a>
-        <a href="/pricing" style="color:#334155;text-decoration:none">Pricing</a>
-        <a href="/blog" style="color:#334155;text-decoration:none">Blog</a>
-        <a href="/contact" style="color:#334155;text-decoration:none">Contact</a>
+        <a href="/pricing/" style="color:#334155;text-decoration:none">Pricing</a>
+        <a href="/blog/" style="color:#334155;text-decoration:none">Blog</a>
+        <a href="/contact/" style="color:#334155;text-decoration:none">Contact</a>
         ${PHONE_LINK}
       </nav>
     </div>
@@ -1394,7 +1457,7 @@ function buildStaticShell(meta, path = '', articles = []) {
       <p style="margin:1.25rem auto 0;max-width:48rem;font-size:1rem;line-height:2;color:#64748b">${escapeHtml('Nexora Business Suite helps you manage customers, students, tenants, sales, invoices, reports and team access from one secure dashboard.')}</p>
       <div style="margin-top:1.75rem;display:flex;flex-direction:column;justify-content:center;gap:.75rem">
         <a href="/signup" style="display:inline-flex;min-height:3rem;align-items:center;justify-content:center;gap:.5rem;border-radius:9999px;padding:.75rem 1.75rem;font-size:.875rem;font-weight:800;text-decoration:none;background:#0f172a;color:#fff">Start Free Trial →</a>
-        <a href="/contact" style="display:inline-flex;min-height:3rem;align-items:center;justify-content:center;gap:.5rem;border-radius:9999px;padding:.75rem 1.75rem;font-size:.875rem;font-weight:800;text-decoration:none;border:1px solid #e2e8f0;background:rgba(255,255,255,.9);color:#0f172a">Book a Demo ▸</a>
+        <a href="/contact/" style="display:inline-flex;min-height:3rem;align-items:center;justify-content:center;gap:.5rem;border-radius:9999px;padding:.75rem 1.75rem;font-size:.875rem;font-weight:800;text-decoration:none;border:1px solid #e2e8f0;background:rgba(255,255,255,.9);color:#0f172a">Book a Demo ▸</a>
       </div>
       <div style="margin:2.25rem auto 0;max-width:56rem;display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem;text-align:left;padding-bottom:1rem">
         <div style="border-radius:1rem;border:1px solid rgba(226,232,240,.8);background:rgba(255,255,255,.8);padding:1rem"><p style="font-size:.75rem;font-weight:800;color:#0f172a">Cloud Based</p><p style="font-size:.68rem;color:#64748b">Secure & reliable</p></div>
@@ -1434,12 +1497,14 @@ function buildStaticShell(meta, path = '', articles = []) {
     </section>
     ${HOMEPAGE_CONTACT_SECTION}
   </main>
-  <footer style="background:linear-gradient(135deg,#071d35,#062b52);color:#fff;padding:2rem 1.25rem;text-align:center;font-size:.875rem">
-    <p style="font-weight:800;margin-bottom:.5rem">Nexora Solution</p>
-    <p style="color:#94a3b8">Pakistan's AI-powered POS, CRM & ERP platform for restaurants, retail, schools and growing businesses.</p>
-    ${FOOTER_CONTACT_BLOCK}
-    <p style="margin-top:1rem;color:#64748b">&copy; 2019–2026 Nexora Solution. All Rights Reserved.</p>
-    <p style="margin-top:.5rem"><a href="/" style="color:#60a5fa;text-decoration:none">nexorasolution.online</a></p>
+  <footer style="background:linear-gradient(135deg,#071d35,#062b52);color:#fff;padding:2rem 0 1.5rem;font-size:.875rem">
+    <div style="text-align:center;padding:0 1.25rem">
+      <p style="font-weight:800;margin-bottom:.5rem">Nexora Solution</p>
+      <p style="color:#94a3b8">Pakistan's AI-powered POS, CRM & ERP platform for restaurants, retail, schools and growing businesses.</p>
+      ${FOOTER_CONTACT_BLOCK}
+    </div>
+    <div style="margin-top:2rem">${buildFooterLinksHtml()}</div>
+    <p style="margin-top:1.5rem;color:#64748b;text-align:center">&copy; 2019–2026 Nexora Solution. All Rights Reserved.</p>
   </footer>`
   }
 

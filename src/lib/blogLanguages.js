@@ -77,11 +77,18 @@ export function isBlogPath(pathname) {
 }
 
 /**
- * Get Hreflang map for a slug — all language URLs.
+ * Get Hreflang map for a slug. Pass `availableCodes` (from
+ * getAvailableTranslationLangs() in blogTranslate.js) to only advertise
+ * languages that actually have a real, distinct translated page — an
+ * hreflang entry pointing at a language with no real content just becomes
+ * a "hreflang to redirect/broken page" report with no reciprocal page to
+ * link back. Omit it to get every configured language (used server-side by
+ * prerender.mjs, which computes its own real availability separately).
  */
-export function getHreflangMap(slug) {
+export function getHreflangMap(slug, availableCodes = null) {
   const map = {}
   for (const lang of BLOG_SEO_LANGUAGES) {
+    if (availableCodes && !availableCodes.includes(lang.code)) continue
     const key = lang.xDefault ? 'x-default' : lang.hreflang
     map[key] = buildLocalizedCanonical(slug, lang.code)
   }

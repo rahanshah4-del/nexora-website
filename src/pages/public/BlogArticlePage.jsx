@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Link, Navigate, useParams } from 'react-router-dom'
+import { Navigate, useParams } from 'react-router-dom'
+import Link from '../../components/AppLink.jsx'
 import {
   HiOutlineArrowLeft,
   HiOutlineArrowRight,
@@ -23,6 +24,7 @@ import {
   detectPreferredBlogLanguage,
   rememberBlogLanguage,
   loadBlogTranslationFromFirestore,
+  getAvailableTranslationLangs,
 } from '../../lib/blogTranslate.js'
 import { BLOG_SEO_LANGUAGES, buildLocalizedPath, buildLocalizedCanonical, extractLangFromPath, getHreflangMap } from '../../lib/blogLanguages.js'
 import { absoluteUrl, createArticleSchema } from '../../lib/seoStructuredData.js'
@@ -113,6 +115,20 @@ export default function BlogArticlePage() {
   // translation: undefined=loading, null=not-found(show English), {...}=found
   const [translation, setTranslation] = useState(undefined)
   const [langOpen, setLangOpen] = useState(false)
+  // Which languages have a REAL translation for this slug — drives hreflang
+  // so it never advertises a locale URL with no distinct content. Starts
+  // English-only (always true) and fills in once the Firestore check below
+  // resolves; worst case (check fails) it just stays English-only.
+  const [availableLangs, setAvailableLangs] = useState(['en'])
+
+  useEffect(() => {
+    if (!articleSlug) return undefined
+    let cancelled = false
+    getAvailableTranslationLangs(articleSlug).then((codes) => {
+      if (!cancelled) setAvailableLangs(codes)
+    })
+    return () => { cancelled = true }
+  }, [articleSlug])
 
   useEffect(() => {
     if (!articleSlug || lang === 'en') { setTranslation(lang === 'en' ? null : undefined); return undefined }
@@ -279,22 +295,44 @@ export default function BlogArticlePage() {
     wordCount: article.wordCount,
   })
 
+  /* SEO identity (canonical, hreflang, OG/schema path, robots) must always
+     describe the URL actually being served — never `lang`, which also
+     reflects a returning visitor's detected/remembered display-language
+     preference and can differ from `urlLang` while staying on the plain
+     English URL. Using `lang` here previously made the English URL
+     self-canonicalize to /ur/... whenever a visitor's browser or
+     localStorage preferred Urdu, even though most slugs (like this one)
+     have no real Urdu translation in Firestore.
+     For a locale-prefixed URL (urlLang !== 'en') with a confirmed-missing
+     translation, the page is serving duplicate English content under a
+     locale prefix: canonicalize it back to the English original, drop it
+     from hreflang (there's no distinct page to alternate to), and mark it
+     noindex so it doesn't compete with the real English URL in search. */
+  const hasRealTranslation = Boolean(activeTranslation)
+  const translationConfirmedMissing = urlLang !== 'en' && !hasRealTranslation && translation !== undefined
+  const seoLang = urlLang === 'en' || hasRealTranslation ? urlLang : 'en'
+  const seoCanonical = buildLocalizedCanonical(article.slug, seoLang)
+  const seoPath = buildLocalizedPath(article.slug, seoLang)
+  const seoHreflangs = translationConfirmedMissing ? null : getHreflangMap(article.slug, availableLangs)
+  const seoRobots = translationConfirmedMissing ? 'noindex,follow' : 'index,follow'
+
   return (
     <PublicPageShell>
       <PageSeo
         title={translation?.title || article.seoTitle}
         description={translation?.excerpt || translation?.metaDescription || article.metaDescription}
-        canonical={buildLocalizedCanonical(article.slug, lang)}
-        path={buildLocalizedPath(article.slug, lang)}
+        canonical={seoCanonical}
+        path={seoPath}
+        robots={seoRobots}
         ogTitle={translation?.title || article.title}
         ogDescription={translation?.excerpt || translation?.metaDescription || article.metaDescription}
         ogImage={absoluteUrl(article.featuredImage)}
         twitterCard="summary_large_image"
         faqItems={translation?.faqs || article.faqs}
         structuredData={[articleSchema]}
-        hreflangs={getHreflangMap(article.slug)}
-        currentLang={lang}
-        ogLocale={BLOG_SEO_LANGUAGES.find(l => l.code === lang)?.ogLocale || 'en_PK'}
+        hreflangs={seoHreflangs}
+        currentLang={seoLang}
+        ogLocale={BLOG_SEO_LANGUAGES.find(l => l.code === seoLang)?.ogLocale || 'en_PK'}
       />
       <nav aria-label="Breadcrumb" className="sr-only">
         <Link to="/">Home</Link>

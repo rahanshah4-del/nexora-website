@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import Link from './AppLink.jsx'
 import { getAuth, onAuthStateChanged } from 'firebase/auth'
 import { getFirestore, addDoc, collection, serverTimestamp, getDocs, query, where, orderBy, limit, setDoc, doc } from 'firebase/firestore'
 import { HiOutlineChatBubbleLeftRight, HiOutlineChevronRight, HiOutlineCurrencyDollar, HiOutlineMicrophone, HiOutlinePaperAirplane, HiOutlinePlus, HiOutlineSparkles, HiOutlineTicket, HiOutlineXMark } from 'react-icons/hi2'

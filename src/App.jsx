@@ -1,5 +1,5 @@
 import { Component, lazy, Suspense, useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import Link from './components/AppLink.jsx'
 import { HiOutlineArrowRight, HiOutlinePlayCircle } from 'react-icons/hi2'
 import Header from './components/Header'
 import trustBadges from './components/trustBadges'

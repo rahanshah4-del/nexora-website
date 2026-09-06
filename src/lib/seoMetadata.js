@@ -23,8 +23,8 @@ function buildPage({ path, title, description, keyword, image, section, ...extra
 export const seoMetadata = {
   '/': buildPage({
     path: '/',
-    title: 'Nexora Solution — POS, ERP & CRM Software Pakistan | Free 1-Month Trial',
-    description: 'Nexora is Pakistan\'s #1 AI-powered POS, ERP & CRM software for restaurants, retail stores, schools and businesses. Free 1-month trial. PKR pricing. Works offline. Local support. Try free today.',
+    title: 'Nexora — POS, ERP & CRM Software Pakistan | Free Trial',
+    description: 'Pakistan\'s #1 AI-powered POS, ERP & CRM software for restaurants, retail and schools. Free 1-month trial, PKR pricing, works offline, local support.',
     keyword: 'POS Software Pakistan',
     image: `${HOST}/nexora-brand-logo.png`,
     softwareApplication: {
@@ -50,7 +50,7 @@ export const seoMetadata = {
   }),
   '/business-services': buildPage({
     path: '/business-services/',
-    title: 'Business Management Software Pakistan | Nexora Business Services',
+    title: 'Business Management Software Pakistan | Nexora',
     description: 'Request Nexora business services for software setup, support, bookkeeping, marketing and growth while keeping your operations running smoothly.',
     keyword: 'Business Management Software',
     image: `${HOST}/nexora-brand-logo.png`,
@@ -58,21 +58,21 @@ export const seoMetadata = {
   '/software-development': buildPage({
     path: '/software-development',
     title: 'Custom Software Development Services | Nexora Solution',
-    description: 'Professional custom software development — business websites, e-commerce, CRM, ERP, POS, mobile apps, AI solutions, API integration, and cloud services. Build with Nexora.',
+    description: 'Custom software development — websites, e-commerce, CRM, ERP, POS, mobile apps, AI and cloud services. Build with Nexora.',
     keyword: 'Custom Software Development Pakistan, Software Development Services, Web Development, Mobile App Development, CRM Development, ERP Solutions Pakistan',
     image: `${HOST}/nexora-brand-logo.png`,
   }),
   '/seo-services': buildPage({
     path: '/seo-services',
-    title: 'SEO Services Pakistan | Google Ranking & Organic Traffic | Nexora',
-    description: 'Professional SEO services — technical SEO, on-page optimization, keyword research, content strategy, link building, and local SEO. Get ranked on Google and grow organic traffic.',
+    title: 'SEO Services Pakistan | Google Ranking | Nexora',
+    description: 'Professional SEO services — technical SEO, on-page optimization, keyword research, content strategy and local SEO to grow organic traffic.',
     keyword: 'SEO Services Pakistan, Google Ranking, Search Engine Optimization, Local SEO, Technical SEO, Content Marketing',
     image: `${HOST}/nexora-brand-logo.png`,
   }),
   '/mobile-app-development': buildPage({
     path: '/mobile-app-development',
-    title: 'Mobile App Development | iOS & Android Apps | Nexora Solution',
-    description: 'Custom mobile app development for iOS and Android. Flutter, Swift, Kotlin — beautiful UI, offline-first, AI-powered features, push notifications, and seamless backend integration.',
+    title: 'Mobile App Development | iOS & Android | Nexora',
+    description: 'Custom mobile app development for iOS and Android with Flutter, offline-first design, AI features and push notifications.',
     keyword: 'Mobile App Development Pakistan, iOS App Development, Android App Development, Flutter Development, Cross-Platform Apps',
     image: `${HOST}/nexora-brand-logo.png`,
   }),
@@ -125,7 +125,7 @@ export const seoMetadata = {
   }),
   '/features': buildPage({
     path: '/features',
-    title: 'Nexora Features | POS, CRM, ERP and WhatsApp Software Pakistan',
+    title: 'Nexora Features | POS, CRM, ERP Software Pakistan',
     description: 'Explore the features behind Nexora POS, CRM, school ERP, WhatsApp automation, transport and retail operations for Pakistani businesses.',
     keyword: 'Business Management Software',
   }),
@@ -143,7 +143,7 @@ export const seoMetadata = {
   }),
   '/contact': buildPage({
     path: '/contact',
-    title: 'Contact WhatsApp CRM and POS Software Pakistan | Nexora Solution',
+    title: 'Contact Nexora — WhatsApp CRM & POS Software Pakistan',
     description: 'Get in touch with Nexora for a demo, support, pricing or onboarding of POS, ERP, CRM and transport software in Pakistan.',
     keyword: 'WhatsApp CRM',
     image: `${HOST}/nexora-brand-logo.png`,
@@ -234,7 +234,7 @@ export const seoMetadata = {
   }),
   '/transport': buildPage({
     path: '/transport',
-    title: 'Transport Management Software Pakistan | Nexora Fleet and Rental',
+    title: 'Transport Management Software Pakistan | Nexora',
     description: 'Nexora Transport Management Software helps Pakistan fleet and rental teams manage bookings, customers, dues, invoices and reports.',
     keyword: 'Transport Management Software',
   }),
@@ -276,7 +276,7 @@ export const seoMetadata = {
   }),
   '/solutions/inventory-management': buildPage({
     path: '/solutions/inventory-management',
-    title: 'Inventory Management Software Pakistan | Nexora Stock Control',
+    title: 'Inventory Management Software Pakistan | Nexora',
     description: 'Nexora Inventory Management helps Pakistan businesses track stock, purchases, suppliers and warehouse movement.',
     keyword: 'Inventory Management Software Pakistan',
   }),

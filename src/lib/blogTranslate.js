@@ -537,6 +537,36 @@ export async function loadBlogTranslationFromFirestore(slug, langCode) {
 }
 
 /**
+ * Which display language codes have a real, validated, completed
+ * translation for this slug — English is always included (it's the source).
+ * Used to build an accurate hreflang set instead of assuming all 5 languages
+ * exist for every article (which produced hreflang tags pointing at pages
+ * that were never actually prerendered/translated).
+ */
+export async function getAvailableTranslationLangs(slug) {
+  const available = ['en']
+  if (!slug) return available
+  try {
+    const { firestoreDb } = await import('./firebase.js')
+    if (!firestoreDb) return available
+    const { doc, getDoc } = await import('firebase/firestore')
+    const snap = await getDoc(doc(firestoreDb, BLOG_TRANSLATIONS_COLLECTION, slug))
+    if (!snap.exists()) return available
+    const translations = snap.data()?.translations || {}
+    for (const { code } of BLOG_LANGUAGES) {
+      if (code === 'en') continue
+      const fsKey = toFirestoreLangKey(code)
+      const translation = translations[fsKey] || translations[fromFirestoreLangKey(fsKey)] || null
+      const status = translation?.translationStatus || ''
+      if (translation && status !== 'failed' && status !== 'pending' && validateTranslation(translation, code)) {
+        available.push(code)
+      }
+    }
+  } catch { /* best-effort — falls back to English-only hreflang */ }
+  return available
+}
+
+/**
  * Translate a blog article to ONE language with full status tracking.
  * Returns { translation, status: 'completed'|'failed' }
  * Never returns empty/invalid translation.

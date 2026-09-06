@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import Link from '../../components/AppLink.jsx'
 import { HiOutlineArrowLeft, HiOutlineChevronRight } from 'react-icons/hi2'
 import Header from '../../components/Header.jsx'
 import { MaintenanceBlock } from '../../components/MaintenanceMode.jsx'

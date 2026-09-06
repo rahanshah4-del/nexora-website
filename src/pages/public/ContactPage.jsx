@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import Link from '../../components/AppLink.jsx'
 import { HiOutlineSparkles, HiOutlineChatBubbleLeftRight, HiOutlineEnvelope, HiOutlineMapPin, HiOutlinePhone, HiOutlineShieldCheck } from 'react-icons/hi2'
 import PageSeo from '../../components/PageSeo.jsx'
 import CopyEmailButton from '../../components/CopyEmailButton.jsx'

@@ -1,7 +1,7 @@
 import DefaultSeo from './components/DefaultSeo.jsx'
 import useNoIndex from './hooks/useNoIndex.js'
 import ScrollToTop from './components/ScrollToTop.jsx'
-import { Component, Suspense, lazy, useEffect } from 'react'
+import { Component, Suspense, lazy, useEffect, useMemo } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 
 const MarketingRoute = lazy(() => import('./pages/public/MarketingRoute.jsx'))
@@ -398,6 +398,19 @@ export default function AppRouter() {
     }
   }, [location.pathname])
 
+  // Route <Route path> declarations below are registered without a trailing
+  // slash. Internal links now render WITH one (see AppLink.jsx, which keeps
+  // them identical to the canonical/served URL), so matching is done against
+  // a copy of the location with any trailing slash stripped — the address
+  // bar still shows whatever the user navigated to, only route matching is
+  // slash-agnostic.
+  const matchLocation = useMemo(() => {
+    if (location.pathname !== '/' && location.pathname.endsWith('/')) {
+      return { ...location, pathname: location.pathname.replace(/\/+$/, '') }
+    }
+    return location
+  }, [location])
+
   return (
     <>
       <Suspense fallback={null}><DefaultSeo /></Suspense>
@@ -407,7 +420,7 @@ export default function AppRouter() {
         </Suspense>
       ) : null}
       <ScrollToTop />
-      <Routes>
+      <Routes location={matchLocation}>
         <Route path="/" element={<LazyPage><MarketingRoute /></LazyPage>} />
         <Route path="/features" element={<LazyPage><NoIndexRoute><MarketingRoute sectionId="services" /></NoIndexRoute></LazyPage>} />
         <Route path="/ai" element={<LazyPage><AIPage /></LazyPage>} />

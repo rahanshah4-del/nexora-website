@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import Link from '../../components/AppLink.jsx'
 import PageSeo from '../../components/PageSeo.jsx'
 import { blogArticles } from '../../lib/blogData.js'
 import { getSeoForPath } from '../../lib/seoMetadata.js'

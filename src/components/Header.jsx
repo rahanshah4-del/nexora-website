@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Link, useLocation } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
+import Link from './AppLink.jsx'
 import { blogArticles } from '../lib/blogData.js'
 import {
   HiOutlineAcademicCap,
