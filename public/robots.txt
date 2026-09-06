@@ -21,5 +21,3 @@ Allow: /
 
 Host: https://nexorasolution.online
 Sitemap: https://nexorasolution.online/sitemap.xml
-Sitemap: https://nexorasolution.online/blog-sitemap.xml
-Sitemap: https://nexorasolution.online/image-sitemap.xml

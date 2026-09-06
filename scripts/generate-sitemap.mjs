@@ -4,16 +4,17 @@ import { blogArticles } from '../src/lib/blogData.js'
 import { submitIndexNow } from './indexnow.mjs'
 import { initializeApp } from 'firebase/app'
 import { getFirestore, doc, getDoc } from 'firebase/firestore'
+import { findImages } from './generate-image-sitemap.mjs'
 
 const ROOT = process.cwd()
 const APP_ROUTER = path.join(ROOT, 'src', 'AppRouter.jsx')
 const PUBLIC_DIR = path.join(ROOT, 'public')
+const DIST_DIR = path.join(ROOT, 'dist')
 const HOST = 'https://nexorasolution.online'
 const PUBLIC_ROUTE_ALLOWLIST = new Set([
   '/',
-  '/features/',
-  '/business-services/',
-  '/contact/',
+  '/business-services',
+  '/contact',
   '/industries',
   '/reviews',
   '/projects',
@@ -80,7 +81,7 @@ async function readRoutes() {
     if (p.startsWith('/app') || p.startsWith('/admin')) continue
     if (p === '*' ) continue
     const final = cleanRoutePath(p.replace(/:\w+/g, ''))
-    if (PUBLIC_ROUTE_ALLOWLIST.has(final) || PUBLIC_ROUTE_ALLOWLIST.has(final.replace(/\/$/, ''))) routes.add(final)
+    if (PUBLIC_ROUTE_ALLOWLIST.has(final)) routes.add(final)
   }
   // Always include allowlist routes — even if not found as explicit paths
   for (const route of PUBLIC_ROUTE_ALLOWLIST) routes.add(cleanRoutePath(route))
@@ -88,10 +89,13 @@ async function readRoutes() {
   return Array.from(routes).sort()
 }
 
+// Normalizes to NO trailing slash (homepage stays '/') so sitemap <loc>
+// values match the no-trailing-slash canonical convention used across the
+// site (see buildSeoHead() in scripts/prerender.mjs).
 function cleanRoutePath(value) {
   const raw = String(value || '').trim().replace(/\/+/g, '/')
   if (!raw || raw === '/') return '/'
-  return raw.endsWith('/') ? raw : `${raw}/`
+  return raw.replace(/\/+$/, '')
 }
 
 async function readPublicHtmlFiles() {
@@ -112,7 +116,7 @@ function absoluteCanonicalUrl(value) {
   const loc = String(value || '')
   if (!loc) return `${HOST}/`
   const base = loc.startsWith('http://') || loc.startsWith('https://') ? new URL(loc) : new URL(`${HOST}${cleanRoutePath(loc)}`)
-  const normalized = base.pathname === '/' ? '/' : `${base.pathname.replace(/\/+$/, '')}/`
+  const normalized = base.pathname === '/' ? '/' : base.pathname.replace(/\/+$/, '')
   base.pathname = normalized
   return base.toString()
 }
@@ -126,14 +130,32 @@ function xmlEscape(value) {
     .replace(/'/g, '&apos;')
 }
 
+// Image sitemap extension (see https://developers.google.com/search/docs/crawling-indexing/sitemaps/image-sitemaps)
+// is designed to be embedded directly in a page's own <url> block, so image
+// data lives here instead of a separate image-sitemap.xml file.
+function imageTagsXml(images) {
+  return (images || []).map((img) => `    <image:image>
+      <image:loc>${xmlEscape(img.loc)}</image:loc>
+      <image:title>${xmlEscape(img.title)}</image:title>
+      <image:caption>${xmlEscape(img.caption)}</image:caption>
+    </image:image>`).join('\n')
+}
+
 function sitemapXml(urls) {
-  const xml = [`<?xml version="1.0" encoding="UTF-8"?>`, `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">`]
+  const hasImages = urls.some((u) => u.images && u.images.length)
+  const xml = [
+    `<?xml version="1.0" encoding="UTF-8"?>`,
+    hasImages
+      ? `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">`
+      : `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">`,
+  ]
   for (const u of urls) {
     xml.push('  <url>')
     xml.push(`    <loc>${xmlEscape(u.loc)}</loc>`)
     if (u.lastmod) xml.push(`    <lastmod>${xmlEscape(u.lastmod)}</lastmod>`)
     xml.push(`    <changefreq>${u.changefreq}</changefreq>`)
     xml.push(`    <priority>${u.priority}</priority>`)
+    if (u.images && u.images.length) xml.push(imageTagsXml(u.images))
     xml.push('  </url>')
   }
   xml.push('</urlset>')
@@ -256,9 +278,31 @@ export async function buildSitemap() {
   // A build-time date is the standard fallback for static/marketing pages.
   const buildDate = new Date().toISOString().slice(0, 10)
 
+  // Image data for the <image:image> tags embedded below — same discovery
+  // logic generate-image-sitemap.mjs used for its now-disabled standalone
+  // image-sitemap.xml (see findImages() there).
+  const allImages = [...findImages(PUBLIC_DIR), ...findImages(DIST_DIR, DIST_DIR)]
+  const seenImagePaths = new Set()
+  const uniqueImages = allImages.filter((img) => {
+    if (seenImagePaths.has(img.path)) return false
+    seenImagePaths.add(img.path)
+    return true
+  })
+  const homepageImages = uniqueImages
+    .filter((img) => !img.path.includes('/blog/'))
+    .slice(0, 20)
+    .map((img) => ({ loc: `${HOST}${img.path}`, title: img.title, caption: `Nexora Solution — ${img.title}` }))
+  const blogImages = uniqueImages
+    .filter((img) => img.path.includes('/blog/'))
+    .slice(0, 40)
+    .map((img) => ({ loc: `${HOST}${img.path}`, title: img.title, caption: `Nexora Solution Blog — ${img.title}` }))
+
   const urls = []
   for (const r of routes) {
-    urls.push({ loc: makeUrl(r), lastmod: buildDate, changefreq: 'daily', priority: r === '/' ? '1.0' : '0.6' })
+    const entry = { loc: makeUrl(r), lastmod: buildDate, changefreq: 'daily', priority: r === '/' ? '1.0' : '0.6' }
+    if (r === '/') entry.images = homepageImages
+    if (r === '/blog') entry.images = blogImages
+    urls.push(entry)
   }
   for (const article of blogArticles) {
     urls.push({ loc: absoluteCanonicalUrl(article.canonical), lastmod: article.updatedDate, changefreq: 'weekly', priority: '0.5' })
@@ -274,36 +318,32 @@ export async function buildSitemap() {
   // were previously undiscoverable via sitemap — only reachable through the
   // hreflang tags on the English homepage.
   for (const prefix of ['ur', 'hi', 'ar']) {
-    urls.push({ loc: `${HOST}/${prefix}/`, lastmod: buildDate, changefreq: 'weekly', priority: '0.5' })
+    urls.push({ loc: `${HOST}/${prefix}`, lastmod: buildDate, changefreq: 'weekly', priority: '0.5' })
   }
 
-  const blogUrls = [
-    { loc: `${HOST}/blog/`, changefreq: 'daily', priority: '0.7' },
-    ...blogArticles.map((article) => ({ loc: absoluteCanonicalUrl(article.canonical), lastmod: article.updatedDate, changefreq: 'weekly', priority: '0.5' })),
-  ]
   // Multilingual blog URLs — only for articles that actually have translated
-  // content (see getTranslatedLanguagesBySlug above).
+  // content (see getTranslatedLanguagesBySlug above). These used to live only
+  // in the now-removed blog-sitemap.xml; they're folded into the single
+  // sitemap.xml here so no data is lost.
   const translatedBySlug = await getTranslatedLanguagesBySlug(blogArticles)
   const translatedPrefixes = new Set()
   for (const langs of translatedBySlug.values()) {
     for (const prefix of langs) translatedPrefixes.add(prefix)
   }
   for (const prefix of translatedPrefixes) {
-    blogUrls.push({ loc: `${HOST}/${prefix}/blog/`, changefreq: 'daily', priority: '0.5' })
+    urls.push({ loc: `${HOST}/${prefix}/blog`, lastmod: buildDate, changefreq: 'daily', priority: '0.5' })
   }
   for (const article of blogArticles) {
     const langs = translatedBySlug.get(article.slug) || []
     for (const prefix of langs) {
-      blogUrls.push({ loc: `${HOST}/${prefix}/blog/${article.slug}/`, lastmod: article.updatedDate, changefreq: 'weekly', priority: '0.4' })
+      urls.push({ loc: `${HOST}/${prefix}/blog/${article.slug}`, lastmod: article.updatedDate, changefreq: 'weekly', priority: '0.4' })
     }
   }
 
   await fs.mkdir(PUBLIC_DIR, { recursive: true })
   await fs.writeFile(path.join(PUBLIC_DIR, 'sitemap.xml'), sitemapXml(urls), 'utf8')
-  await fs.writeFile(path.join(PUBLIC_DIR, 'blog-sitemap.xml'), sitemapXml(blogUrls), 'utf8')
   await fs.writeFile(path.join(PUBLIC_DIR, 'rss.xml'), rssXml(blogArticles), 'utf8')
   console.log('Wrote public/sitemap.xml with', urls.length, 'entries')
-  console.log('Wrote public/blog-sitemap.xml with', blogUrls.length, 'entries')
   console.log('Wrote public/rss.xml with', blogArticles.length, 'entries')
 
   // Notify IndexNow about URLs that changed vs. the previous sitemap. On the very

@@ -2,7 +2,7 @@
  * Generate image-sitemap.xml for all public website images.
  * Run after prerender completes.
  */
-import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
+import { existsSync, readdirSync, statSync } from 'node:fs'
 import { extname, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -13,7 +13,10 @@ const SITE = 'https://nexorasolution.online'
 
 const IMAGE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp', '.avif', '.ico'])
 
-function findImages(dir, base = dir) {
+// Exported so generate-sitemap.mjs can reuse the exact same image discovery
+// logic when it embeds <image:image> tags directly into sitemap.xml instead
+// of this script's now-disabled standalone image-sitemap.xml output.
+export function findImages(dir, base = dir) {
   const results = []
   if (!existsSync(dir)) return results
   try {
@@ -68,8 +71,14 @@ ${unique.filter((img) => img.path.includes('/blog/')).slice(0, 40).map((img) => 
   </url>
 </urlset>`
 
-  writeFileSync(join(PUBLIC, 'image-sitemap.xml'), xml)
-  console.log(`[image-sitemap] ✓ Generated with ${unique.length} images`)
+  // Standalone image-sitemap.xml is no longer written — its <loc> entries
+  // (/ and /blog/) duplicated pages already listed in sitemap.xml, which
+  // Ahrefs flagged as pages appearing in multiple sitemaps. The same image
+  // data is now embedded directly into sitemap.xml's <url> blocks by
+  // generate-sitemap.mjs (via the findImages() export above).
+  console.log(`[image-sitemap] ✓ Computed ${unique.length} images (standalone image-sitemap.xml disabled; merged into sitemap.xml)`)
 }
 
-generateImageSitemap()
+if (import.meta.url === `file://${process.argv[1]}` || (process.argv[1] && process.argv[1].endsWith('generate-image-sitemap.mjs'))) {
+  generateImageSitemap()
+}
