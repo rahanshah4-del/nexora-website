@@ -104,10 +104,10 @@ function slugToTitle(slug) {
 
 const PUBLIC_ROUTES = [
   { path: '/',              title: 'Nexora POS Software Pakistan | Nexora Solution',                                        description: 'Nexora offers Pakistan\'s leading POS software for restaurant, retail, school ERP and WhatsApp CRM teams with unified business workflows.' },
-  { path: '/uae/',          title: 'Business Software Solutions UAE | POS, ERP & CRM Dubai Abu Dhabi',                       description: 'AI-powered POS, School ERP, Retail POS and WhatsApp CRM for businesses in UAE.' },
-  { path: '/hi/',           title: 'बिज़नेस सॉफ्टवेयर पाकिस्तान | POS, ERP और CRM — Nexora Solution',                         description: 'रेस्तरां POS, स्कूल ERP और रिटेल POS सॉफ्टवेयर।' },
-  { path: '/ar/',           title: 'برنامج إدارة الأعمال | Nexora Solution',                                                  description: 'نظام POS وERP وCRM للمطاعم والمدارس والمتاجر.' },
-  { path: '/ur/',           title: 'بزنس مینجمنٹ سافٹ ویئر | Nexora Solution',                                                description: 'ریستوران POS، اسکول ERP اور ریٹیل POS سافٹ ویئر پاکستان۔' },
+  { path: '/uae',           title: 'Business Software Solutions UAE | POS, ERP & CRM Dubai Abu Dhabi',                       description: 'AI-powered POS, School ERP, Retail POS and WhatsApp CRM for businesses in UAE.' },
+  { path: '/hi',            title: 'बिज़नेस सॉफ्टवेयर पाकिस्तान | POS, ERP और CRM — Nexora Solution',                         description: 'रेस्तरां POS, स्कूल ERP और रिटेल POS सॉफ्टवेयर।' },
+  { path: '/ar',            title: 'برنامج إدارة الأعمال | Nexora Solution',                                                  description: 'نظام POS وERP وCRM للمطاعم والمدارس والمتاجر.' },
+  { path: '/ur',            title: 'بزنس مینجمنٹ سافٹ ویئر | Nexora Solution',                                                description: 'ریستوران POS، اسکول ERP اور ریٹیل POS سافٹ ویئر پاکستان۔' },
   { path: '/about',         title: 'About Nexora Solution — Pakistan\'s Business Software Platform',                        description: 'Learn about Nexora Solution, the team behind Pakistan\'s leading POS, ERP and CRM platform for restaurants, retail, schools and enterprises.' },
   { path: '/pricing',       title: 'Nexora Pricing — Simple Plans for Every Business',                                      description: 'Compare Nexora pricing plans. Start with a free trial, then choose Basic, Standard or Enterprise. No credit card required.' },
   { path: '/contact',       title: 'Contact Nexora Solution — Get in Touch',                                                description: 'Contact Nexora Solution for POS software, ERP systems, CRM solutions. Book a free demo or reach our support team.' },
@@ -128,7 +128,7 @@ const PUBLIC_ROUTES = [
   // BusinessServicesPage.jsx actually calls via getSeoForPath(), so the
   // prerendered shell now matches the hydrated page (previously two
   // conflicting entries existed here).
-  { path: '/business-services/', title: seoMetadata['/business-services'].title,                                          description: seoMetadata['/business-services'].description },
+  { path: '/business-services', title: seoMetadata['/business-services'].title,                                          description: seoMetadata['/business-services'].description },
   { path: '/documentation', title: 'Documentation — Nexora Solution',                                                       description: 'Nexora product documentation, setup guides, API references and tutorials for POS, ERP and CRM modules.' },
   { path: '/help-center',   title: 'Help Center — Nexora Solution',                                                         description: 'Get help with Nexora products. Find guides, troubleshooting tips and contact support.' },
   { path: '/support-center',title: 'Support Center — Nexora Solution',                                                      description: 'Nexora customer support center. Submit tickets, track issues and get technical assistance.' },
@@ -162,7 +162,7 @@ const PUBLIC_ROUTES = [
   // no static HTML at all. Sourced directly from src/lib/countries.js so
   // this list can never drift from the data CountryPage.jsx renders.
   ...COUNTRIES.filter((c) => c.slug !== 'uae').map((c) => ({
-    path: `/${c.slug}/`,
+    path: `/${c.slug}`,
     title: c.seoTitle,
     description: c.seoDescription,
   })),
@@ -173,9 +173,9 @@ const PUBLIC_ROUTES = [
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function buildSeoHead(meta) {
-  const normalizedPath = meta.path === '/' ? '/' : `/${meta.path.replace(/^\/+|\/+$/g, '')}/`
+  const normalizedPath = meta.path === '/' ? '/' : `/${meta.path.replace(/^\/+|\/+$/g, '')}`
   const languageMatch = normalizedPath.match(/^\/(ur|hi|ar)(\/.*)?$/)
-  const isUae = normalizedPath === '/uae/'
+  const isUae = normalizedPath === '/uae'
   const canonical = `${SITE}${normalizedPath}`
   const img = meta.image || LOGO
   const type = meta.path.startsWith('/blog/') ? 'article' : 'website'
