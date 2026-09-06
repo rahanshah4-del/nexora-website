@@ -89,9 +89,13 @@ async function readRoutes() {
   return Array.from(routes).sort()
 }
 
-// Normalizes to NO trailing slash (homepage stays '/') so sitemap <loc>
-// values match the no-trailing-slash canonical convention used across the
-// site (see buildSeoHead() in scripts/prerender.mjs).
+// Normalizes to a NO-trailing-slash "route key" (homepage stays '/'). This is
+// only used internally for de-duping and allowlist matching — the public
+// <loc> URLs are built from this via makeUrl()/absoluteCanonicalUrl() below,
+// which both add the trailing slash back. Pages are prerendered to disk as
+// `<route>/index.html` (see scripts/prerender.mjs), which the host serves at
+// a URL WITH a trailing slash; the no-slash form 307-redirects to it, so the
+// sitemap must never list the no-slash form as a <loc>.
 function cleanRoutePath(value) {
   const raw = String(value || '').trim().replace(/\/+/g, '/')
   if (!raw || raw === '/') return '/'
@@ -109,16 +113,21 @@ async function readPublicHtmlFiles() {
 
 function makeUrl(loc) {
   const route = cleanRoutePath(loc)
-  return `${HOST}${route === '/' ? '/' : route}`
+  return route === '/' ? `${HOST}/` : `${HOST}${route}/`
 }
 
+// Builds the final, byte-for-byte served URL for a <loc> entry: always
+// https, always trailing-slash (matching the real prerendered/served page),
+// never carrying a query string or hash.
 function absoluteCanonicalUrl(value) {
   const loc = String(value || '')
   if (!loc) return `${HOST}/`
-  const base = loc.startsWith('http://') || loc.startsWith('https://') ? new URL(loc) : new URL(`${HOST}${cleanRoutePath(loc)}`)
-  const normalized = base.pathname === '/' ? '/' : base.pathname.replace(/\/+$/, '')
-  base.pathname = normalized
-  return base.toString()
+  const url = loc.startsWith('http://') || loc.startsWith('https://') ? new URL(loc) : new URL(`${HOST}${cleanRoutePath(loc)}`)
+  url.protocol = 'https:'
+  url.pathname = url.pathname === '/' ? '/' : `${url.pathname.replace(/\/+$/, '')}/`
+  url.search = ''
+  url.hash = ''
+  return url.toString()
 }
 
 function xmlEscape(value) {
@@ -318,7 +327,7 @@ export async function buildSitemap() {
   // were previously undiscoverable via sitemap — only reachable through the
   // hreflang tags on the English homepage.
   for (const prefix of ['ur', 'hi', 'ar']) {
-    urls.push({ loc: `${HOST}/${prefix}`, lastmod: buildDate, changefreq: 'weekly', priority: '0.5' })
+    urls.push({ loc: makeUrl(`/${prefix}`), lastmod: buildDate, changefreq: 'weekly', priority: '0.5' })
   }
 
   // Multilingual blog URLs — only for articles that actually have translated
@@ -331,12 +340,12 @@ export async function buildSitemap() {
     for (const prefix of langs) translatedPrefixes.add(prefix)
   }
   for (const prefix of translatedPrefixes) {
-    urls.push({ loc: `${HOST}/${prefix}/blog`, lastmod: buildDate, changefreq: 'daily', priority: '0.5' })
+    urls.push({ loc: makeUrl(`/${prefix}/blog`), lastmod: buildDate, changefreq: 'daily', priority: '0.5' })
   }
   for (const article of blogArticles) {
     const langs = translatedBySlug.get(article.slug) || []
     for (const prefix of langs) {
-      urls.push({ loc: `${HOST}/${prefix}/blog/${article.slug}`, lastmod: article.updatedDate, changefreq: 'weekly', priority: '0.4' })
+      urls.push({ loc: makeUrl(`/${prefix}/blog/${article.slug}`), lastmod: article.updatedDate, changefreq: 'weekly', priority: '0.4' })
     }
   }
 

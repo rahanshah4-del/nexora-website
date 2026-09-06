@@ -69,5 +69,11 @@
 # nosniff applies to everything. Cache-Control is set per-asset-type above;
 # a catch-all Cache-Control here would combine with those rules and emit a
 # malformed duplicate header (e.g. "max-age=0 ... max-age=3600").
+# Strict-Transport-Security tells browsers that have loaded the site once
+# over https to never attempt a plain-http request again (covers repeat
+# visits/backlinks). The initial http -> https upgrade for a page nobody's
+# browser has cached HSTS for yet still depends on "Always Use HTTPS" being
+# enabled on the Cloudflare zone (dashboard setting, not in this repo).
 /*
   X-Content-Type-Options: nosniff
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload

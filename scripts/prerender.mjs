@@ -16,7 +16,7 @@ import { fileURLToPath } from 'node:url'
 import { formatBlogContentHtml } from '../src/lib/blogContentFormatter.js'
 import { autoLinkTerms } from '../src/lib/blogInternalLinks.js'
 import { defaultPlatformPlans, freeTrialConfig } from '../src/lib/platformPlans.js'
-import { createOrganizationSchema, createWebSiteSchema } from '../src/lib/seoStructuredData.js'
+import { absoluteUrl, createOrganizationSchema, createWebSiteSchema } from '../src/lib/seoStructuredData.js'
 import { seoMetadata } from '../src/lib/seoMetadata.js'
 import { COUNTRIES } from '../src/lib/countries.js'
 
@@ -172,16 +172,23 @@ const PUBLIC_ROUTES = [
 //  DYNAMIC SEO HELPERS
 // ═══════════════════════════════════════════════════════════════════════════════
 
+// Single source of truth for every <link rel="canonical"> / og:url emitted by
+// this script. Pages are written to disk as `<route>/index.html` (see
+// writePage() call sites below), which the host serves at a URL WITH a
+// trailing slash — requesting the no-slash form 307-redirects to it. So the
+// canonical here must always match that trailing-slash form (absoluteUrl(),
+// shared with the client-side canonical in src/lib/seoStructuredData.js,
+// already does this) rather than stripping the slash off.
 function buildSeoHead(meta) {
   const normalizedPath = meta.path === '/' ? '/' : `/${meta.path.replace(/^\/+|\/+$/g, '')}`
   const languageMatch = normalizedPath.match(/^\/(ur|hi|ar)(\/.*)?$/)
   const isUae = normalizedPath === '/uae'
-  const canonical = `${SITE}${normalizedPath}`
+  const canonical = absoluteUrl(normalizedPath)
   const img = meta.image || LOGO
   const type = meta.path.startsWith('/blog/') ? 'article' : 'website'
   const ogLocale = meta.ogLocale || 'en_PK'
   const hreflangBlock = meta.hreflangBlock || (languageMatch
-    ? `  <link rel="alternate" hreflang="${languageMatch[1]}" href="${esc(canonical)}" />\n  <link rel="alternate" hreflang="x-default" href="${esc(`${SITE}${languageMatch[2] || '/'}`)}" />\n`
+    ? `  <link rel="alternate" hreflang="${languageMatch[1]}" href="${esc(canonical)}" />\n  <link rel="alternate" hreflang="x-default" href="${esc(absoluteUrl(languageMatch[2] || '/'))}" />\n`
     : isUae
       ? `  <link rel="alternate" hreflang="en-AE" href="${esc(canonical)}" />\n  <link rel="alternate" hreflang="x-default" href="${esc(canonical)}" />\n`
       : '')
@@ -770,16 +777,18 @@ function buildPaginationPage(pageNum, totalPages, articles, perPage = 6) {
   for (const a of pageArticles) {
     listHtml += `      <li><a href="/blog/${esc(a.slug)}">${esc(a.title)}</a> — ${readingTime(wordCount(a.title + (a.metaDescription || '')))} min read</li>\n`
   }
-  const prevLink = pageNum > 1 ? `<link rel="prev" href="${SITE}/blog/page/${pageNum - 1}" />` : ''
-  const nextLink = pageNum < totalPages ? `<link rel="next" href="${SITE}/blog/page/${pageNum + 1}" />` : ''
+  const prevLink = pageNum > 1 ? `<link rel="prev" href="${esc(absoluteUrl(`/blog/page/${pageNum - 1}`))}" />` : ''
+  const nextLink = pageNum < totalPages ? `<link rel="next" href="${esc(absoluteUrl(`/blog/page/${pageNum + 1}`))}" />` : ''
 
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
 ${buildCommonHead()}
-  <title>Nexora Blog — Page ${pageNum} of ${totalPages}</title>
-  <meta name="description" content="Nexora Solution blog articles — page ${pageNum} of ${totalPages}. POS, ERP and CRM insights for Pakistani businesses." />
-  <link rel="canonical" href="${SITE}/blog/page/${pageNum}" />
+${buildSeoHead({
+    path: `/blog/page/${pageNum}`,
+    title: `Nexora Blog — Page ${pageNum} of ${totalPages}`,
+    description: `Nexora Solution blog articles — page ${pageNum} of ${totalPages}. POS, ERP and CRM insights for Pakistani businesses.`,
+  })}
   ${prevLink}${nextLink}
 ${orgSchema()}
 ${websiteSchema()}
