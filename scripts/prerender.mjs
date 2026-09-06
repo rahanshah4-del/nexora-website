@@ -386,9 +386,14 @@ function computeRelatedArticles(current, allArticles, maxCount = 4) {
     return { article: a, score }
   })
 
+  // No score > 0 filter here — matches the client (BlogArticlePage.jsx),
+  // which always shows top 3 regardless of score. Without this, an article
+  // with zero category/tag overlap got zero related links in the static
+  // HTML crawlers see. The publishDate tie-break (same comparison the
+  // client uses) means articles with no overlap still surface the most
+  // recent posts instead of an arbitrary slice.
   return scored
-    .filter((s) => s.score > 0)
-    .sort((a, b) => b.score - a.score)
+    .sort((a, b) => b.score - a.score || String(b.article.publishDate || '').localeCompare(String(a.article.publishDate || '')))
     .slice(0, maxCount)
     .map((s) => s.article)
 }
@@ -500,6 +505,27 @@ function buildFullBlogHtml(article, allArticles = [], options = {}) {
     relatedHtml += '    </ul>\n'
   }
 
+  // ── Previous/Next article navigation ──
+  // Same index-based adjacency the client uses (BlogArticlePage.jsx's
+  // `adjacent`), computed over the same allArticles order every call site
+  // passes in, so crawlers see the same prev/next links the client renders.
+  const articleIndex = allArticles.findIndex((a) => a.slug === article.slug)
+  const adjacent = {
+    previous: articleIndex > 0 ? allArticles[articleIndex - 1] : null,
+    next: articleIndex >= 0 && articleIndex < allArticles.length - 1 ? allArticles[articleIndex + 1] : null,
+  }
+  let prevNextHtml = ''
+  if (adjacent.previous || adjacent.next) {
+    prevNextHtml = `\n    <nav aria-label="Article navigation" style="display:flex;justify-content:space-between;margin:2rem 0;padding:1rem 0;border-top:1px solid #e5e7eb">\n`
+    if (adjacent.previous) {
+      prevNextHtml += `      <a href="/blog/${esc(adjacent.previous.slug)}" style="color:#6366f1;text-decoration:none;font-weight:500">\n        ← ${esc(adjacent.previous.title)}\n      </a>\n`
+    }
+    if (adjacent.next) {
+      prevNextHtml += `      <a href="/blog/${esc(adjacent.next.slug)}" style="color:#6366f1;text-decoration:none;font-weight:500;margin-left:auto">\n        ${esc(adjacent.next.title)} →\n      </a>\n`
+    }
+    prevNextHtml += '    </nav>\n'
+  }
+
   // ── CTA ──
   const ctaHtml = article.primaryLink
     ? `\n    <div class="cta"><a href="${esc(article.primaryLink.to)}">${esc(article.primaryLink.label)}</a></div>\n`
@@ -568,6 +594,7 @@ ${buildGtm()}
         ${contentHtml}
         ${faqHtml}
         ${relatedHtml}
+        ${prevNextHtml}
         ${ctaHtml}
         <p class="tags">Tags: ${(article.tags || []).map((t) => `<a href="/blog/?tag=${encodeURIComponent(t)}">${esc(t)}</a>`).join(', ')}</p>
       </article>
