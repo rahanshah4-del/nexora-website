@@ -338,7 +338,7 @@ export const blogArticles = [
     "secondaryLinks": [
       {
         "label": "CRM Software",
-        "to": "/solutions/crm"
+        "to": "/crm"
       },
       {
         "label": "Pricing",
@@ -648,7 +648,7 @@ export const blogArticles = [
     "secondaryLinks": [
       {
         "label": "CRM Software",
-        "to": "/solutions/crm"
+        "to": "/crm"
       },
       {
         "label": "Pricing",
@@ -953,12 +953,12 @@ export const blogArticles = [
     "audience": "fleet owners, rental counters and transport operators",
     "primaryLink": {
       "label": "Transport Software",
-      "to": "/transport"
+      "to": "/transport-fleet"
     },
     "secondaryLinks": [
       {
         "label": "CRM Software",
-        "to": "/solutions/crm"
+        "to": "/crm"
       },
       {
         "label": "Business Services",
@@ -1108,7 +1108,7 @@ export const blogArticles = [
     "audience": "rental business owners and counter teams",
     "primaryLink": {
       "label": "Transport Software",
-      "to": "/transport"
+      "to": "/transport-fleet"
     },
     "secondaryLinks": [
       {
@@ -1263,7 +1263,7 @@ export const blogArticles = [
     "audience": "sales teams, service businesses and growth-focused owners",
     "primaryLink": {
       "label": "CRM Software",
-      "to": "/solutions/crm"
+      "to": "/crm"
     },
     "secondaryLinks": [
       {
@@ -1418,7 +1418,7 @@ export const blogArticles = [
     "audience": "sales managers and customer-facing teams",
     "primaryLink": {
       "label": "CRM Software",
-      "to": "/solutions/crm"
+      "to": "/crm"
     },
     "secondaryLinks": [
       {
@@ -1578,7 +1578,7 @@ export const blogArticles = [
     "secondaryLinks": [
       {
         "label": "CRM Software",
-        "to": "/solutions/crm"
+        "to": "/crm"
       },
       {
         "label": "Pricing",
@@ -1888,7 +1888,7 @@ export const blogArticles = [
     "secondaryLinks": [
       {
         "label": "CRM Software",
-        "to": "/solutions/crm"
+        "to": "/crm"
       },
       {
         "label": "Business Services",
@@ -2043,7 +2043,7 @@ export const blogArticles = [
     "secondaryLinks": [
       {
         "label": "CRM Software",
-        "to": "/solutions/crm"
+        "to": "/crm"
       },
       {
         "label": "Pricing",
@@ -2193,7 +2193,7 @@ export const blogArticles = [
     "audience": "owners, managers and technology decision makers",
     "primaryLink": {
       "label": "CRM Software",
-      "to": "/solutions/crm"
+      "to": "/crm"
     },
     "secondaryLinks": [
       {
@@ -2348,7 +2348,7 @@ export const blogArticles = [
     "audience": "sales teams and managers improving lead conversion",
     "primaryLink": {
       "label": "CRM Software",
-      "to": "/solutions/crm"
+      "to": "/crm"
     },
     "secondaryLinks": [
       {
@@ -2508,7 +2508,7 @@ export const blogArticles = [
     "secondaryLinks": [
       {
         "label": "CRM Software",
-        "to": "/solutions/crm"
+        "to": "/crm"
       },
       {
         "label": "Contact",
@@ -2968,7 +2968,7 @@ export const blogArticles = [
     "audience": "service companies, agencies and consultants",
     "primaryLink": {
       "label": "CRM Software",
-      "to": "/solutions/crm"
+      "to": "/crm"
     },
     "secondaryLinks": [
       {

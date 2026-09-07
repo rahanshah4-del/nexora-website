@@ -26,8 +26,8 @@ export const KNOWN_ROUTES = {
   'pharmacy pos': '/pharmacy-pos',
   'property erp': '/solutions/property-erp',
   'transport': '/transport-fleet',
-  'transport management': '/transport-fleet',
-  'fleet management': '/transport-fleet',
+  'transport management': '/transport-fleet/fleet-management',
+  'fleet management': '/transport-fleet/fleet-management',
   'whatsapp crm': '/whatsapp-crm',
 
   // Solutions
@@ -45,12 +45,12 @@ export const KNOWN_ROUTES = {
 
   // ERP terms
   'erp': '/school-erp',
-  'kot': '/restaurant-pos',
-  'kitchen display': '/restaurant-pos',
-  'table management': '/restaurant-pos',
+  'kot': '/restaurant-pos/kot-and-kitchen-display',
+  'kitchen display': '/restaurant-pos/kot-and-kitchen-display',
+  'table management': '/restaurant-pos/table-management',
   'billing': '/restaurant-pos',
-  'invoice': '/restaurant-pos',
-  'ledger': '/restaurant-pos',
+  'invoice': '/crm/invoices',
+  'ledger': '/transport-fleet/customer-ledger',
   'payment gateway': '/restaurant-pos',
 
   // Pages
@@ -66,10 +66,10 @@ export const KNOWN_ROUTES = {
   'discount engine': '/restaurant-pos',
   'loyalty program': '/restaurant-pos',
   'promo code': '/restaurant-pos',
-  'payroll': '/school-erp',
-  'attendance': '/school-erp',
-  'fee management': '/school-erp',
-  'student records': '/school-erp',
+  'payroll': '/school-erp/payroll',
+  'attendance': '/school-erp/attendance',
+  'fee management': '/school-erp/fee-management',
+  'student records': '/school-erp/admissions-and-students',
   'waitlist': '/restaurant-pos',
   'reservation': '/restaurant-pos',
   'delivery zone': '/restaurant-pos',

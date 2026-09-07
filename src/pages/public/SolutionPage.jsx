@@ -23,7 +23,7 @@ import PageSeo from '../../components/PageSeo.jsx'
 import { getSeoForSolutionSlug } from '../../lib/seoMetadata.js'
 import PublicPageShell from './PublicPageShell.jsx'
 import NotFoundPage from './NotFoundPage.jsx'
-import { featurePages } from './FeaturePage.jsx'
+import { featurePages, PILLAR_COMPARE_LINKS } from '../../lib/featurePagesData.js'
 
 // Maps a solutionPages key to the pillar key used in FeaturePage.jsx's
 // featurePages data, so each pillar page can list links to its own
@@ -35,26 +35,6 @@ const SOLUTION_SLUG_TO_PILLAR = {
   'school-erp': 'school-erp',
   crm: 'crm',
   'transport-rental': 'transport-fleet',
-}
-
-// Comparison / buying-guide pages (Phase 8) relevant to each pillar, linked
-// from that pillar's own product page — kept minimal and directly relevant
-// rather than linking every compare page from every pillar.
-const PILLAR_COMPARE_LINKS = {
-  'restaurant-pos': [
-    { to: '/compare/pos-software-buying-checklist', text: 'POS Software Buying Checklist' },
-    { to: '/compare/cloud-vs-offline-pos', text: 'Cloud vs Offline POS' },
-  ],
-  'retail-pos': [
-    { to: '/compare/pos-software-buying-checklist', text: 'POS Software Buying Checklist' },
-    { to: '/compare/cloud-vs-offline-pos', text: 'Cloud vs Offline POS' },
-  ],
-  'pharmacy-pos': [
-    { to: '/compare/pos-software-buying-checklist', text: 'POS Software Buying Checklist' },
-    { to: '/compare/cloud-vs-offline-pos', text: 'Cloud vs Offline POS' },
-  ],
-  'school-erp': [{ to: '/compare/school-erp-buying-checklist', text: 'School ERP Buying Checklist' }],
-  crm: [{ to: '/compare/crm-vs-spreadsheets', text: 'CRM vs Spreadsheets' }],
 }
 
 const whatsappLeadLink = `https://wa.me/923194329754?text=${encodeURIComponent(
