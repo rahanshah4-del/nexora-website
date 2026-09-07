@@ -141,6 +141,37 @@ export default function CountryPage({ slug }) {
         </div>
       </section>
 
+      {/* Product spotlight (opt-in per country via country.spotlight) */}
+      {country.spotlight ? (
+        <section data-reveal className="bg-white pb-16 sm:pb-20 lg:pb-24">
+          <div className="mx-auto max-w-5xl px-5 sm:px-6 lg:px-8">
+            <div className="rounded-[1.8rem] border border-slate-200/60 bg-gradient-to-br from-blue-50 to-indigo-50 p-6 sm:p-8">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-200/60 bg-white/70 px-4 py-2 text-xs font-medium uppercase tracking-[0.14em] text-blue-700 shadow-sm">
+                {country.spotlight.eyebrow}
+              </span>
+              <h2 className="mt-4 text-2xl font-semibold tracking-[-0.01em] text-slate-900 sm:text-3xl">{country.spotlight.heading}</h2>
+              <p className="mt-4 text-[15px] leading-[1.75] text-slate-600">{country.spotlight.body}</p>
+              <div className="mt-6 flex flex-wrap gap-3">
+                {country.spotlight.links.map((link, i) => (
+                  <Link
+                    key={link.to}
+                    to={link.to}
+                    className={
+                      i === 0
+                        ? 'inline-flex min-h-[44px] items-center gap-2 rounded-full bg-slate-900 px-6 text-sm font-medium text-white shadow-[0_4px_16px_-6px_rgba(15,23,42,0.3)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-800 active:scale-[0.97]'
+                        : 'inline-flex min-h-[44px] items-center gap-2 rounded-full border border-slate-200/60 bg-white/80 px-6 text-sm font-medium text-slate-500 shadow-sm backdrop-blur-xl transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.97]'
+                    }
+                  >
+                    {link.label}
+                    {i === 0 ? <HiOutlineArrowRight className="text-lg" /> : null}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
       {/* Global Services */}
       <section data-reveal className="bg-white py-16 sm:py-20 lg:py-24">
         <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">

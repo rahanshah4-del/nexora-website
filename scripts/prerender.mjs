@@ -103,7 +103,11 @@ function slugToTitle(slug) {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const PUBLIC_ROUTES = [
-  { path: '/',              title: 'Nexora POS Software Pakistan | Nexora Solution',                                        description: 'Nexora offers Pakistan\'s leading POS software for restaurant, retail, school ERP and WhatsApp CRM teams with unified business workflows.' },
+  // NOTE: title/description sourced from src/lib/seoMetadata.js so the static
+  // shell matches what PageSeo renders client-side after hydration (Phase 9B
+  // fix — this previously had its own hardcoded title/description here that
+  // had drifted out of sync with seoMetadata['/']).
+  { path: '/',              title: seoMetadata['/'].title,                                                                   description: seoMetadata['/'].description },
   { path: '/uae',           title: 'Business Software Solutions UAE | POS, ERP & CRM Dubai Abu Dhabi',                       description: 'AI-powered POS, School ERP, Retail POS and WhatsApp CRM for businesses in UAE.' },
   { path: '/hi',            title: 'बिज़नेस सॉफ्टवेयर पाकिस्तान | POS, ERP और CRM — Nexora Solution',                         description: 'रेस्तरां POS, स्कूल ERP और रिटेल POS सॉफ्टवेयर।' },
   { path: '/ar',            title: 'برنامج إدارة الأعمال | Nexora Solution',                                                  description: 'نظام POS وERP وCRM للمطاعم والمدارس والمتاجر.' },
@@ -120,7 +124,10 @@ const PUBLIC_ROUTES = [
   // shell matches what PageSeo renders client-side after hydration (previously
   // this page had two conflicting entries here — see git history).
   { path: '/restaurant-pos',title: seoMetadata['/restaurant-pos'].title,                                                    description: seoMetadata['/restaurant-pos'].description },
-  { path: '/retail-pos',    title: 'Retail POS Software Pakistan — Nexora Solution',                                        description: 'Complete retail POS system with barcode billing, inventory management, discount engine and multi-counter support.' },
+  // NOTE: title/description sourced from src/lib/seoMetadata.js (Phase 9B fix
+  // — this previously had its own hardcoded title/description here that had
+  // drifted out of sync with seoMetadata['/retail-pos']).
+  { path: '/retail-pos',    title: seoMetadata['/retail-pos'].title,                                                        description: seoMetadata['/retail-pos'].description },
   { path: '/school-erp',    title: 'School ERP Software Pakistan — Nexora Solution',                                        description: 'Cloud-based school management system with student records, fee collection, attendance, exams and parent portal.' },
   { path: '/crm', title: 'CRM Software Pakistan — Nexora Solution',                                                          description: 'Customer relationship management with lead tracking, pipeline, follow-ups and WhatsApp integration.' },
   { path: '/pharmacy-pos', title: 'Pharmacy POS Pakistan — Nexora Solution',                                                 description: 'Pharmacy POS with medicine inventory, batch tracking, expiry alerts and sales reports.' },
@@ -144,7 +151,10 @@ const PUBLIC_ROUTES = [
   { path: '/terms',         title: 'Terms & Conditions — Nexora Solution',                                                  description: 'Nexora Solution terms and conditions of service. Read before using our platform.' },
   { path: '/refund-policy', title: 'Refund Policy — Nexora Solution',                                                       description: 'Nexora Solution refund and cancellation policy for subscriptions and services.' },
   { path: '/sitemap',       title: 'HTML Sitemap — Nexora Solution',                                                        description: 'Browse all pages on the Nexora Solution website. Find POS, ERP, CRM and business software information.' },
-  { path: '/solutions/email-marketing', title: 'Email Marketing — Nexora Solution',                                          description: 'Nexora email marketing tools for businesses. Create, send and track campaigns.' },
+  // NOTE: title/description sourced from src/lib/seoMetadata.js (Phase 9B fix
+  // — this previously had its own hardcoded title/description here that had
+  // drifted out of sync with seoMetadata['/solutions/email-marketing']).
+  { path: '/solutions/email-marketing', title: seoMetadata['/solutions/email-marketing'].title,                              description: seoMetadata['/solutions/email-marketing'].description },
   { path: '/solutions/reports-analytics', title: 'Reports & Analytics — Nexora Solution',                                    description: 'Advanced business reports and analytics dashboard for Nexora POS, ERP and CRM modules.' },
   { path: '/solutions/inventory-management', title: 'Inventory Management — Nexora Solution',                                description: 'Cloud inventory management with stock tracking, purchase orders, supplier management and real-time reports.' },
   { path: '/solutions/team-permissions', title: 'Team & Permissions — Nexora Solution',                                      description: 'Role-based access control and team management for Nexora business software platform.' },
