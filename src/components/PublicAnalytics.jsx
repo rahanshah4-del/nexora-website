@@ -14,8 +14,10 @@ function serviceNameFromPath(pathname) {
     '/restaurant-pos': 'restaurant_pos',
     '/retail-pos': 'retail_pos',
     '/school-erp': 'school_erp',
-    '/transport': 'transport_software',
+    '/transport-fleet': 'fleet_management',
     '/whatsapp-crm': 'whatsapp_crm',
+    '/crm': 'crm_software',
+    '/pharmacy-pos': 'pharmacy_pos',
   }
   if (servicePages[pathname]) return servicePages[pathname]
   if (pathname.startsWith('/solutions/')) return pathname.split('/').filter(Boolean).join('_')

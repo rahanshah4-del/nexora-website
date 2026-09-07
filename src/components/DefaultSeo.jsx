@@ -27,8 +27,10 @@ const publicSeoPaths = new Set([
   '/restaurant-pos',
   '/retail-pos',
   '/school-erp',
-  '/transport',
+  '/transport-fleet',
   '/whatsapp-crm',
+  '/crm',
+  '/pharmacy-pos',
   '/software-development',
   '/seo-services',
   '/mobile-app-development',
@@ -41,6 +43,14 @@ const publicSeoPaths = new Set([
   '/uae', '/saudi-arabia', '/bahrain', '/qatar', '/oman', '/kuwait',
   '/pakistan', '/india',
 ])
+
+// Pillar product pages that own a family of supporting feature pages
+// (e.g. /restaurant-pos/kot-and-kitchen-display) — any page under one of
+// these prefixes is public/indexable the same way /solutions/* already is.
+const PILLAR_PAGE_PREFIXES = [
+  '/restaurant-pos/', '/retail-pos/', '/pharmacy-pos/',
+  '/school-erp/', '/crm/', '/transport-fleet/',
+]
 
 // Authentication / private areas must never be indexed.
 const NOINDEX_PREFIXES = ['/app', '/admin', '/login', '/signup', '/verify-email', '/workspace']
@@ -146,6 +156,12 @@ export default function DefaultSeo() {
     '/services/': `${host}/business-services/`,
     '/solutions/pos': `${host}/restaurant-pos/`,
     '/solutions/pos/': `${host}/restaurant-pos/`,
+    '/solutions/crm': `${host}/crm/`,
+    '/solutions/crm/': `${host}/crm/`,
+    '/solutions/medical-store-pos': `${host}/pharmacy-pos/`,
+    '/solutions/medical-store-pos/': `${host}/pharmacy-pos/`,
+    '/transport': `${host}/transport-fleet/`,
+    '/transport/': `${host}/transport-fleet/`,
   }
   const cleanPathname = pathname === '/' ? '/' : pathname.replace(/\/+$/, '')
   const currentPageUrl = host + canonicalPath(pathname)
@@ -159,7 +175,7 @@ export default function DefaultSeo() {
     return host + canonicalPath(pathname)
   })()
   const isLangBlog = ['/ur/blog', '/hi/blog', '/ar/blog', '/bn/blog'].some(p => cleanPathname === p || cleanPathname.startsWith(p + '/'))
-  const publicRoute = publicSeoPaths.has(cleanPathname) || cleanPathname.startsWith('/solutions/') || cleanPathname.startsWith('/blog/') || isLangBlog
+  const publicRoute = publicSeoPaths.has(cleanPathname) || cleanPathname.startsWith('/solutions/') || cleanPathname.startsWith('/blog/') || isLangBlog || PILLAR_PAGE_PREFIXES.some((prefix) => cleanPathname.startsWith(prefix))
   const noindex = NOINDEX_PREFIXES.some((prefix) => cleanPathname === prefix || cleanPathname.startsWith(`${prefix}/`))
 
   useEffect(() => {

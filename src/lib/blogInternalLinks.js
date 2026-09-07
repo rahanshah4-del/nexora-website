@@ -22,16 +22,16 @@ export const KNOWN_ROUTES = {
   'restaurant pos': '/restaurant-pos',
   'retail pos': '/retail-pos',
   'school erp': '/school-erp',
-  'medical store pos': '/solutions/medical-store-pos',
-  'pharmacy pos': '/solutions/medical-store-pos',
+  'medical store pos': '/pharmacy-pos',
+  'pharmacy pos': '/pharmacy-pos',
   'property erp': '/solutions/property-erp',
-  'transport': '/transport',
-  'transport management': '/transport',
-  'fleet management': '/transport',
+  'transport': '/transport-fleet',
+  'transport management': '/transport-fleet',
+  'fleet management': '/transport-fleet',
   'whatsapp crm': '/whatsapp-crm',
 
   // Solutions
-  'crm': '/solutions/crm',
+  'crm': '/crm',
   'pos': '/restaurant-pos',
   'inventory': '/solutions/inventory-management',
   'inventory management': '/solutions/inventory-management',
@@ -89,7 +89,7 @@ function normalizeTerm(term) {
 /**
  * Resolve a term to its internal link path.
  * @param {string} term — the term to look up (e.g., "CRM", "Restaurant POS")
- * @returns {string|null} — the route path (e.g., "/solutions/crm") or null
+ * @returns {string|null} — the route path (e.g., "/crm") or null
  */
 export function resolveInternalLink(term) {
   const key = normalizeTerm(term)

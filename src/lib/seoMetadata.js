@@ -255,11 +255,11 @@ export const seoMetadata = {
     description: 'Nexora School ERP Pakistan organizes students, attendance, fees, exams and communication for modern schools and academies.',
     keyword: 'School ERP Pakistan',
   }),
-  '/transport': buildPage({
-    path: '/transport',
-    title: 'Transport Management Software Pakistan | Nexora',
-    description: 'Nexora Transport Management Software helps Pakistan fleet and rental teams manage bookings, customers, dues, invoices and reports.',
-    keyword: 'Transport Management Software',
+  '/transport-fleet': buildPage({
+    path: '/transport-fleet',
+    title: 'Fleet Management Software Pakistan | Nexora Fleet & Rental',
+    description: 'Nexora Fleet Management Software helps Pakistan fleet and rental teams manage vehicles, bookings, customers, dues, invoices and reports.',
+    keyword: 'Fleet Management Software',
   }),
   '/whatsapp-crm': buildPage({
     path: '/whatsapp-crm',
@@ -267,8 +267,8 @@ export const seoMetadata = {
     description: 'Nexora WhatsApp CRM Pakistan turns conversations into leads, broadcasts, follow-ups and sales workflows for business teams.',
     keyword: 'WhatsApp CRM',
   }),
-  '/solutions/crm': buildPage({
-    path: '/solutions/crm',
+  '/crm': buildPage({
+    path: '/crm',
     title: 'CRM Software Pakistan | Nexora CRM System',
     description: 'Nexora CRM helps Pakistani businesses track leads, customers, invoices, tasks and sales teams from one cloud dashboard.',
     keyword: 'CRM Software Pakistan',
@@ -279,11 +279,11 @@ export const seoMetadata = {
     description: 'Nexora Property ERP Pakistan helps agencies manage tenants, rent collection, leases, maintenance and owner reporting.',
     keyword: 'Property ERP Software',
   }),
-  '/solutions/medical-store-pos': buildPage({
-    path: '/solutions/medical-store-pos',
-    title: 'Medical Store POS Pakistan | Nexora Pharmacy Software',
-    description: 'Nexora Medical Store POS Pakistan handles pharmacy billing, medicine inventory, batch expiry control and daily sales reports.',
-    keyword: 'Medical Store POS Pakistan',
+  '/pharmacy-pos': buildPage({
+    path: '/pharmacy-pos',
+    title: 'Pharmacy POS Software Pakistan | Nexora Pharmacy POS',
+    description: 'Nexora Pharmacy POS Pakistan handles pharmacy billing, medicine inventory, batch expiry control and daily sales reports.',
+    keyword: 'Pharmacy POS Software',
   }),
   '/solutions/reports': buildPage({
     path: '/solutions/reports',
@@ -321,11 +321,11 @@ export const solutionPathMap = {
   pos: seoMetadata['/restaurant-pos'],
   'retail-pos': seoMetadata['/retail-pos'],
   'school-erp': seoMetadata['/school-erp'],
-  'transport-rental': seoMetadata['/transport'],
+  'transport-rental': seoMetadata['/transport-fleet'],
   'whatsapp-crm': seoMetadata['/whatsapp-crm'],
-  crm: seoMetadata['/solutions/crm'],
+  crm: seoMetadata['/crm'],
   'property-erp': seoMetadata['/solutions/property-erp'],
-  'medical-store-pos': seoMetadata['/solutions/medical-store-pos'],
+  'medical-store-pos': seoMetadata['/pharmacy-pos'],
   reports: seoMetadata['/solutions/reports'],
   'email-marketing': seoMetadata['/solutions/email-marketing'],
   'inventory-management': seoMetadata['/solutions/inventory-management'],

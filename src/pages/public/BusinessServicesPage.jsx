@@ -22,7 +22,7 @@ const serviceStats = [
 const relatedServiceLinks = [
   {
     label: 'CRM Software',
-    to: '/solutions/crm',
+    to: '/crm',
     text: 'Keep leads, customers, tasks and service requests connected in one workspace.',
     tone: 'indigo',
   },

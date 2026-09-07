@@ -47,12 +47,12 @@ const industries = [
   },
   {
     title: 'Healthcare',
-    subtitle: 'Medical Store POS',
+    subtitle: 'Pharmacy POS',
     description:
       'Pharmacy billing with batch‑aware inventory, expiry alerts, alternative medicine suggestions and compliance reporting.',
     icon: HiOutlineShieldCheck,
     tone: 'rose',
-    route: '/solutions/medical-store-pos',
+    route: '/pharmacy-pos',
     features: ['Batch & expiry tracking', 'Alternative suggestions', 'Pharmacy compliance', 'Sales performance'],
   },
   {
@@ -62,7 +62,7 @@ const industries = [
       'Ticketing, route billing, vehicle tracking and customer ledgers — a complete operations suite for transport businesses.',
     icon: HiOutlineTruck,
     tone: 'cyan',
-    route: '/transport',
+    route: '/transport-fleet',
     features: ['Fleet management', 'Route & trip billing', 'Customer ledger', 'Maintenance tracking'],
   },
   {
@@ -82,7 +82,7 @@ const industries = [
       'Track leads, automate follow‑ups, manage pipelines and close more deals — the central nervous system for your sales team.',
     icon: HiOutlineChatBubbleLeftRight,
     tone: 'indigo',
-    route: '/solutions/crm',
+    route: '/crm',
     features: ['Lead & pipeline tracking', 'Automated follow-ups', 'Team collaboration', 'Sales analytics'],
   },
   {

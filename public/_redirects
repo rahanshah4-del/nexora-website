@@ -9,7 +9,15 @@
 /solutions/school-erp/ /school-erp/ 301
 /solutions/retail-pos /retail-pos/ 301
 /solutions/retail-pos/ /retail-pos/ 301
-/solutions/transport-rental /transport/ 301
-/solutions/transport-rental/ /transport/ 301
+/solutions/transport-rental /transport-fleet/ 301
+/solutions/transport-rental/ /transport-fleet/ 301
 /solutions/whatsapp-crm /whatsapp-crm/ 301
 /solutions/whatsapp-crm/ /whatsapp-crm/ 301
+
+# Pillar renames (approved URL architecture — Phase 3B)
+/solutions/crm /crm/ 301
+/solutions/crm/ /crm/ 301
+/solutions/medical-store-pos /pharmacy-pos/ 301
+/solutions/medical-store-pos/ /pharmacy-pos/ 301
+/transport /transport-fleet/ 301
+/transport/ /transport-fleet/ 301

@@ -33,12 +33,12 @@ const socialLinks = [
 ]
 
 const productLinks = [
-  ['Nexora CRM', '/solutions/crm'],
+  ['Nexora CRM', '/crm'],
   ['Restaurant POS', '/restaurant-pos'],
   ['Retail POS', '/retail-pos'],
-  ['Medical Store POS', '/solutions/medical-store-pos'],
+  ['Pharmacy POS', '/pharmacy-pos'],
   ['School ERP', '/school-erp'],
-  ['Transport Management', '/transport'],
+  ['Fleet Management', '/transport-fleet'],
   ['WhatsApp CRM', '/whatsapp-crm'],
   ['Property ERP', '/solutions/property-erp'],
   ['Email Marketing', '/solutions/email-marketing'],

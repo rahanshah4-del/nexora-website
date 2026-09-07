@@ -52,13 +52,13 @@ const solutionIconMap = {
 }
 
 const solutionLinks = [
-  { label: 'CRM', to: '/solutions/crm' },
+  { label: 'CRM', to: '/crm' },
   { label: 'Restaurant POS', to: '/restaurant-pos' },
   { label: 'Retail POS', to: '/retail-pos' },
   { label: 'School ERP', to: '/school-erp' },
   { label: 'Property ERP', to: '/solutions/property-erp' },
-  { label: 'Medical Store POS', to: '/solutions/medical-store-pos' },
-  { label: 'Transport / Rental', to: '/transport' },
+  { label: 'Pharmacy POS', to: '/pharmacy-pos' },
+  { label: 'Fleet', to: '/transport-fleet' },
   { label: 'WhatsApp CRM', to: '/whatsapp-crm' },
   { label: 'Email Marketing', to: '/solutions/email-marketing' },
   { label: 'Reports & Analytics', to: '/solutions/reports-analytics' },
@@ -279,7 +279,7 @@ function Header() {
   }
 
   const isSolutionsActive = location.pathname.startsWith('/solutions')
-    || ['/restaurant-pos', '/retail-pos', '/school-erp', '/transport', '/whatsapp-crm'].includes(location.pathname)
+    || ['/restaurant-pos', '/retail-pos', '/school-erp', '/transport-fleet', '/whatsapp-crm', '/crm', '/pharmacy-pos'].includes(location.pathname)
 
   const navLinkClass = (link) =>
     `nav-link relative inline-flex h-9 items-center gap-1 rounded-full px-3 text-[13px] font-medium transition-colors duration-200 ${

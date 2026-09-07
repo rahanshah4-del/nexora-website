@@ -37,12 +37,12 @@ const whatsappLeadLink = `${whatsappLink}?text=${encodeURIComponent(
 const contactEmail = 'hello@nexorasolution.online'
 
 const moduleCards = [
-  { title: 'CRM', text: 'Manage leads, customers, deals, follow-ups and invoices in one place.', icon: HiOutlineUserGroup, tone: 'blue', route: '/solutions/crm' },
+  { title: 'CRM', text: 'Manage leads, customers, deals, follow-ups and invoices in one place.', icon: HiOutlineUserGroup, tone: 'blue', route: '/crm' },
   { title: 'School ERP', text: 'Manage students, fees, attendance, exams, parents and staff.', icon: HiOutlineAcademicCap, tone: 'green', route: '/solutions/school-erp' },
   { title: 'Property ERP', text: 'Manage properties, tenants, rent collection, maintenance and owners.', icon: HiOutlineBuildingOffice2, tone: 'purple', route: '/solutions/property-erp' },
   { title: 'POS', text: 'Point of sale, stock management, billing and sales reports.', icon: HiOutlineShoppingCart, tone: 'orange', route: '/restaurant-pos' },
-  { title: 'Medical Store POS', text: 'Pharmacy billing, medicine inventory, expiry checks, batches and counter reports.', icon: HiOutlineShieldCheck, tone: 'rose', route: '/solutions/medical-store-pos' },
-  { title: 'Transport / Rental', text: 'Fleet, rental bookings, customer ledgers, dues and transport reports.', icon: HiOutlineTruck, tone: 'cyan', route: '/solutions/transport-rental' },
+  { title: 'Pharmacy POS', text: 'Pharmacy billing, medicine inventory, expiry checks, batches and counter reports.', icon: HiOutlineShieldCheck, tone: 'rose', route: '/pharmacy-pos' },
+  { title: 'Fleet & Rental', text: 'Fleet, rental bookings, customer ledgers, dues and transport reports.', icon: HiOutlineTruck, tone: 'cyan', route: '/transport-fleet' },
   { title: 'WhatsApp CRM', text: 'Capture leads, auto reply, team inbox and close more deals faster.', icon: HiOutlineChatBubbleLeftRight, tone: 'emerald', route: '/solutions/whatsapp-crm' },
   { title: 'Reports', text: 'Advanced reports and analytics to grow your business with data.', icon: HiOutlineChartBarSquare, tone: 'sky', route: '/solutions/reports' },
 ]
@@ -82,12 +82,12 @@ const socialLinks = [
 ]
 
 const productLinks = [
-  ['Nexora CRM', '/solutions/crm'],
+  ['Nexora CRM', '/crm'],
   ['Restaurant POS', '/restaurant-pos'],
   ['Retail POS', '/retail-pos'],
-  ['Medical Store POS', '/solutions/medical-store-pos'],
+  ['Pharmacy POS', '/pharmacy-pos'],
   ['School ERP', '/school-erp'],
-  ['Transport Management', '/transport'],
+  ['Fleet Management', '/transport-fleet'],
   ['WhatsApp CRM', '/whatsapp-crm'],
   ['Property ERP', '/solutions/property-erp'],
 ]

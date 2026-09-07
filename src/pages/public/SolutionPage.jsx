@@ -23,6 +23,19 @@ import PageSeo from '../../components/PageSeo.jsx'
 import { getSeoForSolutionSlug } from '../../lib/seoMetadata.js'
 import PublicPageShell from './PublicPageShell.jsx'
 import NotFoundPage from './NotFoundPage.jsx'
+import { featurePages } from './FeaturePage.jsx'
+
+// Maps a solutionPages key to the pillar key used in FeaturePage.jsx's
+// featurePages data, so each pillar page can list links to its own
+// supporting feature pages (only the ones that exist so far).
+const SOLUTION_SLUG_TO_PILLAR = {
+  pos: 'restaurant-pos',
+  'retail-pos': 'retail-pos',
+  'medical-store-pos': 'pharmacy-pos',
+  'school-erp': 'school-erp',
+  crm: 'crm',
+  'transport-rental': 'transport-fleet',
+}
 
 const whatsappLeadLink = `https://wa.me/923194329754?text=${encodeURIComponent(
   'Assalam o Alaikum, I want to book a Nexora product demo.',
@@ -38,11 +51,11 @@ const publicSolutionLinks = [
   { key: 'pos', label: 'Restaurant POS', to: '/restaurant-pos', text: 'Run tables, orders, billing and restaurant workflows from one counter.' },
   { key: 'retail-pos', label: 'Retail POS', to: '/retail-pos', text: 'Manage retail checkout, inventory, receipts and customer sales.' },
   { key: 'school-erp', label: 'School ERP', to: '/school-erp', text: 'Organize students, attendance, fees and school operations.' },
-  { key: 'transport-rental', label: 'Transport Software', to: '/transport', text: 'Manage fleet bookings, customers, payments and rental records.' },
+  { key: 'transport-rental', label: 'Fleet Management', to: '/transport-fleet', text: 'Manage fleet bookings, customers, payments and rental records.' },
   { key: 'whatsapp-crm', label: 'WhatsApp CRM', to: '/whatsapp-crm', text: 'Turn conversations into leads, follow-ups and customer activity.' },
-  { key: 'crm', label: 'CRM Software', to: '/solutions/crm/', text: 'Track leads, customers, invoices, tasks and sales teams.' },
+  { key: 'crm', label: 'CRM Software', to: '/crm/', text: 'Track leads, customers, invoices, tasks and sales teams.' },
   { key: 'team-permissions', label: 'Team & Permissions', to: '/solutions/team-permissions/', text: 'Control roles, access rights and team member visibility.' },
-  { key: 'medical-store-pos', label: 'Medical Store POS', to: '/solutions/medical-store-pos/', text: 'Handle pharmacy billing, medicine stock and expiry control.' },
+  { key: 'medical-store-pos', label: 'Pharmacy POS', to: '/pharmacy-pos/', text: 'Handle pharmacy billing, medicine stock and expiry control.' },
   { key: 'property-erp', label: 'Property ERP', to: '/solutions/property-erp/', text: 'Manage tenants, rent, leases and maintenance requests.' },
   { key: 'reports', label: 'Business Reports', to: '/solutions/reports/', text: 'Review KPIs, exports and performance insights across modules.' },
   { key: 'email-marketing', label: 'Email Marketing', to: '/solutions/email-marketing/', text: 'Send campaigns, track opens and grow customer engagement.' },
@@ -268,14 +281,14 @@ const solutionPages = {
     ],
   },
   'transport-rental': {
-    eyebrow: 'Transport / Rental Solution',
-    productName: 'Nexora Transport / Rental',
+    eyebrow: 'Fleet & Rental Solution',
+    productName: 'Nexora Fleet & Rental',
     headlineBefore: 'Manage fleet, rentals, bookings and payments from ',
-    headlineHighlight: 'one transport desk.',
+    headlineHighlight: 'one fleet desk.',
     description: 'A transport and rental workspace for vehicles, customers, bookings, dues, refunds, rental ledgers and payment tracking.',
     icon: HiOutlineTruck,
     previewTitle: 'Fleet Rental Control',
-    previewLabel: 'Transport workspace',
+    previewLabel: 'Fleet workspace',
     sidebar: ['Dashboard', 'Vehicles', 'Bookings', 'Customers', 'Payments', 'Reports'],
     stats: [
       ['Fleet Units', '42', 'Available'],
@@ -299,14 +312,14 @@ const solutionPages = {
     ],
   },
   'medical-store-pos': {
-    eyebrow: 'Medical Store POS Solution',
-    productName: 'Nexora Medical Store POS',
+    eyebrow: 'Pharmacy POS Solution',
+    productName: 'Nexora Pharmacy POS',
     headlineBefore: 'Run pharmacy billing, medicine stock and expiry control from ',
-    headlineHighlight: 'one medical counter.',
+    headlineHighlight: 'one pharmacy counter.',
     description: 'A pharmacy-focused POS for medicine sales, fast item search, batches, expiry alerts, inventory, receipts, supplier purchases and daily reports.',
     icon: HiOutlineShieldCheck,
     previewTitle: 'Pharmacy Counter Desk',
-    previewLabel: 'Medical POS workspace',
+    previewLabel: 'Pharmacy POS workspace',
     sidebar: ['Counter', 'Medicines', 'Batches', 'Expiry', 'Purchases', 'Reports'],
     stats: [
       ['Today Sales', 'PKR 126K', '+14%'],
@@ -729,6 +742,10 @@ export default function SolutionPage({ solutionSlug: solutionSlugProp } = {}) {
   const Icon = page.icon
   const faqs = [...page.faqs, ...commonFaqs]
   const relatedSolutions = getRelatedSolutions(solutionSlug)
+  const pillarKey = SOLUTION_SLUG_TO_PILLAR[solutionSlug]
+  const supportingPages = pillarKey
+    ? Object.entries(featurePages).filter(([, fp]) => fp.pillar === pillarKey).map(([key, fp]) => ({ key, ...fp }))
+    : []
 
   return (
     <PublicPageShell>
@@ -819,6 +836,40 @@ export default function SolutionPage({ solutionSlug: solutionSlugProp } = {}) {
           </div>
         </div>
       </section>
+
+      {supportingPages.length > 0 ? (
+        <section data-reveal className="bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] py-16 sm:py-20 lg:py-24">
+          <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-3xl text-center">
+              <h2 className="text-3xl font-medium tracking-tight text-slate-900 sm:text-5xl">Explore {page.productName} in depth</h2>
+              <p className="mx-auto mt-5 max-w-2xl text-base leading-8 text-slate-500">
+                A closer look at how each part of {page.productName} actually works.
+              </p>
+            </div>
+            <div className="mt-12 grid gap-5 sm:grid-cols-2">
+              {supportingPages.map((sp) => {
+                const SpIcon = sp.icon
+                return (
+                  <Link
+                    key={sp.key}
+                    to={`/${sp.key}`}
+                    className="group flex items-center gap-4 rounded-[1.2rem] border border-slate-200/60 bg-white p-6 shadow-[0_4px_20px_-8px_rgba(15,23,42,0.05)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_44px_-16px_rgba(15,23,42,0.14)]"
+                  >
+                    <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-slate-100 text-slate-500 group-hover:bg-slate-950 group-hover:text-white">
+                      <SpIcon className="text-2xl" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-lg font-medium text-slate-900">{sp.badge}</h3>
+                      <p className="mt-1 truncate text-sm leading-6 text-slate-500">{sp.title}</p>
+                    </div>
+                    <HiOutlineArrowRight className="shrink-0 text-lg text-slate-300 transition-transform duration-200 group-hover:translate-x-1 group-hover:text-slate-900" />
+                  </Link>
+                )
+              })}
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       <section data-reveal className="bg-[linear-gradient(180deg,#f8fbff_0%,#ffffff_100%)] py-16 sm:py-20 lg:py-24">
         <div className="mx-auto grid max-w-7xl gap-10 px-5 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:px-8">

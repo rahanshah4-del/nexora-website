@@ -70,7 +70,7 @@ const articleConfigs = [
     audience: 'retail store owners, branch managers and cashiers',
     primaryLink: { label: 'Retail POS', to: '/retail-pos' },
     secondaryLinks: [
-      { label: 'CRM Software', to: '/solutions/crm' },
+      { label: 'CRM Software', to: '/crm' },
       { label: 'Pricing', to: '/pricing' },
     ],
   },
@@ -106,7 +106,7 @@ const articleConfigs = [
     audience: 'school owners, principals, administrators and finance teams',
     primaryLink: { label: 'School ERP', to: '/school-erp' },
     secondaryLinks: [
-      { label: 'CRM Software', to: '/solutions/crm' },
+      { label: 'CRM Software', to: '/crm' },
       { label: 'Pricing', to: '/pricing' },
     ],
   },
@@ -140,9 +140,9 @@ const articleConfigs = [
     topic: 'transport and rental software',
     product: 'Nexora Transport Software',
     audience: 'fleet owners, rental counters and transport operators',
-    primaryLink: { label: 'Transport Software', to: '/transport' },
+    primaryLink: { label: 'Transport Software', to: '/transport-fleet' },
     secondaryLinks: [
-      { label: 'CRM Software', to: '/solutions/crm' },
+      { label: 'CRM Software', to: '/crm' },
       { label: 'Business Services', to: '/business-services' },
     ],
   },
@@ -158,7 +158,7 @@ const articleConfigs = [
     topic: 'vehicle rental booking and payment workflows',
     product: 'Nexora Transport Software',
     audience: 'rental business owners and counter teams',
-    primaryLink: { label: 'Transport Software', to: '/transport' },
+    primaryLink: { label: 'Transport Software', to: '/transport-fleet' },
     secondaryLinks: [
       { label: 'Pricing', to: '/pricing' },
       { label: 'Contact', to: '/contact' },
@@ -176,7 +176,7 @@ const articleConfigs = [
     topic: 'CRM software for lead management',
     product: 'Nexora CRM',
     audience: 'sales teams, service businesses and growth-focused owners',
-    primaryLink: { label: 'CRM Software', to: '/solutions/crm' },
+    primaryLink: { label: 'CRM Software', to: '/crm' },
     secondaryLinks: [
       { label: 'WhatsApp CRM', to: '/whatsapp-crm' },
       { label: 'Pricing', to: '/pricing' },
@@ -194,7 +194,7 @@ const articleConfigs = [
     topic: 'CRM pipeline and follow-up systems',
     product: 'Nexora CRM',
     audience: 'sales managers and customer-facing teams',
-    primaryLink: { label: 'CRM Software', to: '/solutions/crm' },
+    primaryLink: { label: 'CRM Software', to: '/crm' },
     secondaryLinks: [
       { label: 'Business Services', to: '/business-services' },
       { label: 'Contact', to: '/contact' },
@@ -214,7 +214,7 @@ const articleConfigs = [
     audience: 'sales teams, admission teams and service teams',
     primaryLink: { label: 'WhatsApp CRM', to: '/whatsapp-crm' },
     secondaryLinks: [
-      { label: 'CRM Software', to: '/solutions/crm' },
+      { label: 'CRM Software', to: '/crm' },
       { label: 'Pricing', to: '/pricing' },
     ],
   },
@@ -250,7 +250,7 @@ const articleConfigs = [
     audience: 'founders, shop owners and service business operators',
     primaryLink: { label: 'Pricing', to: '/pricing' },
     secondaryLinks: [
-      { label: 'CRM Software', to: '/solutions/crm' },
+      { label: 'CRM Software', to: '/crm' },
       { label: 'Business Services', to: '/business-services' },
     ],
   },
@@ -268,7 +268,7 @@ const articleConfigs = [
     audience: 'growing business teams and operators',
     primaryLink: { label: 'Business Services', to: '/business-services' },
     secondaryLinks: [
-      { label: 'CRM Software', to: '/solutions/crm' },
+      { label: 'CRM Software', to: '/crm' },
       { label: 'Pricing', to: '/pricing' },
     ],
   },
@@ -284,7 +284,7 @@ const articleConfigs = [
     topic: 'AI in business management software',
     product: 'Nexora Business Suite',
     audience: 'owners, managers and technology decision makers',
-    primaryLink: { label: 'CRM Software', to: '/solutions/crm' },
+    primaryLink: { label: 'CRM Software', to: '/crm' },
     secondaryLinks: [
       { label: 'Business Services', to: '/business-services' },
       { label: 'Contact', to: '/contact' },
@@ -302,7 +302,7 @@ const articleConfigs = [
     topic: 'AI CRM lead scoring',
     product: 'Nexora CRM',
     audience: 'sales teams and managers improving lead conversion',
-    primaryLink: { label: 'CRM Software', to: '/solutions/crm' },
+    primaryLink: { label: 'CRM Software', to: '/crm' },
     secondaryLinks: [
       { label: 'WhatsApp CRM', to: '/whatsapp-crm' },
       { label: 'Pricing', to: '/pricing' },
@@ -322,7 +322,7 @@ const articleConfigs = [
     audience: 'business owners and administrators responsible for data safety',
     primaryLink: { label: 'Pricing', to: '/pricing' },
     secondaryLinks: [
-      { label: 'CRM Software', to: '/solutions/crm' },
+      { label: 'CRM Software', to: '/crm' },
       { label: 'Contact', to: '/contact' },
     ],
   },
@@ -374,7 +374,7 @@ const articleConfigs = [
     topic: 'customer data management for service businesses',
     product: 'Nexora CRM',
     audience: 'service companies, agencies and consultants',
-    primaryLink: { label: 'CRM Software', to: '/solutions/crm' },
+    primaryLink: { label: 'CRM Software', to: '/crm' },
     secondaryLinks: [
       { label: 'Business Services', to: '/business-services' },
       { label: 'Contact', to: '/contact' },

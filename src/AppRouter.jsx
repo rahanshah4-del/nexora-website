@@ -35,6 +35,7 @@ const HtmlSitemapPage = lazy(() => import('./pages/public/HtmlSitemapPage.jsx'))
 const HelpCenterPage = lazy(() => import('./pages/public/HelpCenterPage.jsx'))
 const DocumentationPage = lazy(() => import('./pages/public/DocumentationPage.jsx'))
 const SolutionPage = lazy(() => import('./pages/public/SolutionPage.jsx'))
+const FeaturePage = lazy(() => import('./pages/public/FeaturePage.jsx'))
 const PublicBusinessServicesPage = lazy(() => import('./pages/public/BusinessServicesPage.jsx'))
 const SoftwareDevelopmentPage = lazy(() => import('./pages/public/SoftwareDevelopmentPage.jsx'))
 const SEOServicesPage = lazy(() => import('./pages/public/SEOServicesPage.jsx'))
@@ -496,9 +497,31 @@ export default function AppRouter() {
         <Route path="/solutions/pos/" element={<Navigate to="/restaurant-pos/" replace />} />
         <Route path="/retail-pos" element={<LazyPage><SolutionPage solutionSlug="retail-pos" /></LazyPage>} />
         <Route path="/school-erp" element={<LazyPage><SolutionPage solutionSlug="school-erp" /></LazyPage>} />
-        <Route path="/transport" element={<LazyPage><SolutionPage solutionSlug="transport-rental" /></LazyPage>} />
+        <Route path="/transport-fleet" element={<LazyPage><SolutionPage solutionSlug="transport-rental" /></LazyPage>} />
+        <Route path="/transport" element={<Navigate to="/transport-fleet/" replace />} />
+        <Route path="/transport/" element={<Navigate to="/transport-fleet/" replace />} />
         <Route path="/whatsapp-crm" element={<LazyPage><SolutionPage solutionSlug="whatsapp-crm" /></LazyPage>} />
+        <Route path="/crm" element={<LazyPage><SolutionPage solutionSlug="crm" /></LazyPage>} />
+        <Route path="/solutions/crm" element={<Navigate to="/crm/" replace />} />
+        <Route path="/solutions/crm/" element={<Navigate to="/crm/" replace />} />
+        <Route path="/pharmacy-pos" element={<LazyPage><SolutionPage solutionSlug="medical-store-pos" /></LazyPage>} />
+        <Route path="/solutions/medical-store-pos" element={<Navigate to="/pharmacy-pos/" replace />} />
+        <Route path="/solutions/medical-store-pos/" element={<Navigate to="/pharmacy-pos/" replace />} />
         <Route path="/solutions/:solutionSlug" element={<LazyPage><SolutionPage /></LazyPage>} />
+
+        {/* Supporting feature pages — Batch 1 (Phase 3B) */}
+        <Route path="/restaurant-pos/kot-and-kitchen-display" element={<LazyPage><FeaturePage slug="restaurant-pos/kot-and-kitchen-display" /></LazyPage>} />
+        <Route path="/restaurant-pos/table-management" element={<LazyPage><FeaturePage slug="restaurant-pos/table-management" /></LazyPage>} />
+        <Route path="/retail-pos/billing-and-checkout" element={<LazyPage><FeaturePage slug="retail-pos/billing-and-checkout" /></LazyPage>} />
+        <Route path="/retail-pos/inventory-control" element={<LazyPage><FeaturePage slug="retail-pos/inventory-control" /></LazyPage>} />
+        <Route path="/pharmacy-pos/billing" element={<LazyPage><FeaturePage slug="pharmacy-pos/billing" /></LazyPage>} />
+        <Route path="/pharmacy-pos/medicine-inventory" element={<LazyPage><FeaturePage slug="pharmacy-pos/medicine-inventory" /></LazyPage>} />
+        <Route path="/school-erp/admissions-and-students" element={<LazyPage><FeaturePage slug="school-erp/admissions-and-students" /></LazyPage>} />
+        <Route path="/school-erp/attendance" element={<LazyPage><FeaturePage slug="school-erp/attendance" /></LazyPage>} />
+        <Route path="/crm/leads-and-pipeline" element={<LazyPage><FeaturePage slug="crm/leads-and-pipeline" /></LazyPage>} />
+        <Route path="/crm/customers" element={<LazyPage><FeaturePage slug="crm/customers" /></LazyPage>} />
+        <Route path="/transport-fleet/fleet-management" element={<LazyPage><FeaturePage slug="transport-fleet/fleet-management" /></LazyPage>} />
+        <Route path="/transport-fleet/rental-bookings" element={<LazyPage><FeaturePage slug="transport-fleet/rental-bookings" /></LazyPage>} />
 
       <Route path="/login" element={<LazyPage><Login /></LazyPage>} />
       <Route path="/signup" element={<LazyPage><Signup /></LazyPage>} />

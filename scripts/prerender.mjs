@@ -122,8 +122,8 @@ const PUBLIC_ROUTES = [
   { path: '/restaurant-pos',title: seoMetadata['/restaurant-pos'].title,                                                    description: seoMetadata['/restaurant-pos'].description },
   { path: '/retail-pos',    title: 'Retail POS Software Pakistan — Nexora Solution',                                        description: 'Complete retail POS system with barcode billing, inventory management, discount engine and multi-counter support.' },
   { path: '/school-erp',    title: 'School ERP Software Pakistan — Nexora Solution',                                        description: 'Cloud-based school management system with student records, fee collection, attendance, exams and parent portal.' },
-  { path: '/solutions/crm', title: 'CRM Software Pakistan — Nexora Solution',                                               description: 'Customer relationship management with lead tracking, pipeline, follow-ups and WhatsApp integration.' },
-  { path: '/solutions/medical-store-pos', title: 'Medical Store POS Pakistan — Nexora Solution',                             description: 'Pharmacy POS with medicine inventory, batch tracking, expiry alerts and sales reports.' },
+  { path: '/crm', title: 'CRM Software Pakistan — Nexora Solution',                                                          description: 'Customer relationship management with lead tracking, pipeline, follow-ups and WhatsApp integration.' },
+  { path: '/pharmacy-pos', title: 'Pharmacy POS Pakistan — Nexora Solution',                                                 description: 'Pharmacy POS with medicine inventory, batch tracking, expiry alerts and sales reports.' },
   // /solutions/school-erp removed — it rendered byte-identical content to
   // /school-erp with a conflicting self-canonical (see SEO audit finding C1).
   // public/_redirects now 301s it to /school-erp/ at the edge, so this
@@ -149,7 +149,7 @@ const PUBLIC_ROUTES = [
   { path: '/solutions/inventory-management', title: 'Inventory Management — Nexora Solution',                                description: 'Cloud inventory management with stock tracking, purchase orders, supplier management and real-time reports.' },
   { path: '/solutions/team-permissions', title: 'Team & Permissions — Nexora Solution',                                      description: 'Role-based access control and team management for Nexora business software platform.' },
   { path: '/whatsapp-crm', title: 'WhatsApp CRM Pakistan — Nexora Solution',                                                description: 'WhatsApp CRM for businesses. Capture leads, auto-reply, team inbox and close deals faster with WhatsApp integration.' },
-  { path: '/transport',    title: 'Transport Management Software Pakistan — Nexora Solution',                                description: 'Fleet and transport management system with vehicle tracking, bookings, payments and customer ledgers.' },
+  { path: '/transport-fleet', title: 'Fleet Management Software Pakistan — Nexora Solution',                                description: 'Fleet and transport management system with vehicle tracking, bookings, payments and customer ledgers.' },
   { path: '/industries',   title: 'Industries Served — Nexora Solution',                                                    description: 'Discover how Nexora serves restaurants, retail, schools, pharmacies, transport and service businesses across Pakistan.' },
   { path: '/reviews',      title: 'Customer Reviews | Nexora Solution Pakistan',                                            description: 'Read verified customer reviews and testimonials for Nexora POS, ERP, CRM and business software in Pakistan.' },
   { path: '/projects',     title: 'Projects — Nexora Solution',                                                             description: 'Nexora Solution client projects and case studies. See how businesses transformed with our POS and ERP software.' },
@@ -174,6 +174,21 @@ const PUBLIC_ROUTES = [
     title: c.seoTitle,
     description: c.seoDescription,
   })),
+  // Supporting feature pages — Batch 1 (Phase 3B). Title/description mirror
+  // the seoTitle/seoDescription in src/pages/public/FeaturePage.jsx exactly
+  // so the static shell matches what PageSeo renders after hydration.
+  { path: '/restaurant-pos/kot-and-kitchen-display', title: 'KOT & Kitchen Display System for Restaurants | Nexora', description: 'See how Nexora’s Kitchen Order Ticket and kitchen display workflow moves orders from Pending to Preparing to Ready to Served, with live sync to every counter.' },
+  { path: '/restaurant-pos/table-management', title: 'Restaurant Table Management Software | Nexora POS', description: 'Manage floor areas, table status, merges and splits with Nexora’s restaurant table management — open orders directly from the table view.' },
+  { path: '/retail-pos/billing-and-checkout', title: 'Retail Billing & Checkout Software | Nexora Retail POS', description: 'Nexora’s retail checkout handles barcode search, till sessions, promo codes and multiple payment methods, with an itemized receipt on every sale.' },
+  { path: '/retail-pos/inventory-control', title: 'Retail Inventory Management Software | Nexora Retail POS', description: 'Track stock levels, purchase orders, suppliers and inventory transactions in Nexora’s retail inventory control — with low-stock flags before you run out.' },
+  { path: '/pharmacy-pos/billing', title: 'Pharmacy Billing Software | Nexora Pharmacy POS', description: 'Fast medicine search, till sessions and itemized receipts — Nexora Pharmacy POS keeps the pharmacy counter moving without slowing down accuracy.' },
+  { path: '/pharmacy-pos/medicine-inventory', title: 'Medicine Inventory Management | Nexora Pharmacy POS', description: 'Track medicine names, categories, prices and stock levels with reorder alerts — Nexora Pharmacy POS keeps pharmacy inventory current at the counter.' },
+  { path: '/school-erp/admissions-and-students', title: 'Student Admissions & Records Software | Nexora School ERP', description: 'Manage student and parent records — admission numbers, class, section and roll number — in one Students & Parents workspace with Nexora School ERP.' },
+  { path: '/school-erp/attendance', title: 'School Attendance Management Software | Nexora School ERP', description: 'Mark attendance manually or connect a biometric device — Nexora School ERP tracks student and staff attendance from one dashboard.' },
+  { path: '/crm/leads-and-pipeline', title: 'Lead & Pipeline Management Software | Nexora CRM', description: 'Track leads through a five-stage pipeline with AI-assisted scoring — Nexora CRM turns raw leads into a prioritized, working sales pipeline.' },
+  { path: '/crm/customers', title: 'CRM Customer Records & Wallet Management | Nexora CRM', description: 'Keep customer contact details, type and wallet balance in one CRM record — Nexora CRM connects customer profiles directly to sales and invoices.' },
+  { path: '/transport-fleet/fleet-management', title: 'Fleet Management Software | Nexora Fleet & Rental', description: 'Track vehicle registration, transmission, fuel type and driver assignment — Nexora Fleet Management keeps every vehicle record ready for booking.' },
+  { path: '/transport-fleet/rental-bookings', title: 'Vehicle Rental Booking Software | Nexora Fleet & Rental', description: 'Book vehicles with pickup and return dates, security deposits and refund tracking — Nexora Fleet & Rental keeps every booking and payment in one record.' },
 ]
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -966,12 +981,12 @@ const FOOTER_LINK_GROUPS = [
   {
     heading: 'Products',
     links: [
-      ['Nexora CRM', '/solutions/crm'],
+      ['Nexora CRM', '/crm'],
       ['Restaurant POS', '/restaurant-pos'],
       ['Retail POS', '/retail-pos'],
-      ['Medical Store POS', '/solutions/medical-store-pos'],
+      ['Pharmacy POS', '/pharmacy-pos'],
       ['School ERP', '/school-erp'],
-      ['Transport Management', '/transport'],
+      ['Fleet Management', '/transport-fleet'],
       ['WhatsApp CRM', '/whatsapp-crm'],
       ['Property ERP', '/solutions/property-erp'],
       ['Email Marketing', '/solutions/email-marketing'],
