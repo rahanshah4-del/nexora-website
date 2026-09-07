@@ -19,6 +19,8 @@ import { defaultPlatformPlans, freeTrialConfig } from '../src/lib/platformPlans.
 import { absoluteUrl, canonicalPath, createOrganizationSchema, createWebSiteSchema } from '../src/lib/seoStructuredData.js'
 import { seoMetadata } from '../src/lib/seoMetadata.js'
 import { COUNTRIES } from '../src/lib/countries.js'
+import { PILLARS, PILLAR_COMPARE_LINKS, featurePages } from '../src/lib/featurePagesData.js'
+import { comparePages } from '../src/lib/comparePagesData.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
@@ -1015,11 +1017,14 @@ const FOOTER_LINK_GROUPS = [
       ['School ERP', '/school-erp'],
       ['Fleet Management', '/transport-fleet'],
       ['WhatsApp CRM', '/whatsapp-crm'],
+      ['Nexora AI', '/ai'],
       ['Property ERP', '/solutions/property-erp'],
       ['Email Marketing', '/solutions/email-marketing'],
       ['Inventory Management', '/solutions/inventory-management'],
       ['Reports & Analytics', '/solutions/reports-analytics'],
+      ['Business Reports', '/solutions/reports'],
       ['Team & Permissions', '/solutions/team-permissions'],
+      ['Download Restaurant POS', '/download/restaurant-pos'],
     ],
   },
   {
@@ -1029,6 +1034,12 @@ const FOOTER_LINK_GROUPS = [
       ['Pricing', '/pricing'],
       ['Software Development', '/software-development'],
       ['SEO Services', '/seo-services'],
+      ['Custom CRM Development', '/crm-development'],
+      ['ERP Solutions', '/erp-development'],
+      ['Cloud Solutions', '/cloud-solutions'],
+      ['API Integration', '/api-integration'],
+      ['Mobile App Development', '/mobile-app-development'],
+      ['E-commerce Development', '/ecommerce-development'],
       ['Industries', '/industries'],
       ['Projects', '/projects'],
       ['Reviews', '/reviews'],
@@ -1042,6 +1053,7 @@ const FOOTER_LINK_GROUPS = [
       ['Documentation', '/documentation'],
       ['Help Center', '/help-center'],
       ['FAQ', '/faq'],
+      ['Sitemap', '/sitemap'],
       ['Privacy Policy', '/privacy-policy'],
       ['Terms & Conditions', '/terms'],
       ['Refund Policy', '/refund-policy'],
@@ -1307,18 +1319,18 @@ const SERVICE_PAGE_CONTENT = {
     subtitle: 'We design and build high-performance websites, mobile apps, CRM systems, ERP solutions, POS software, AI-powered applications, and enterprise business solutions — every project infused with artificial intelligence (DeepSeek, Gemini, custom ML models) for smarter automation, predictive insights, and intelligent user experiences.',
     services: [
       { title: 'Business Websites', desc: 'Professional, fast-loading business websites built with modern frameworks. SEO-optimized, mobile-responsive, and designed to convert visitors into customers.' },
-      { title: 'E-commerce Development', desc: 'Full-featured online stores with secure payment gateways, inventory management, order tracking, and an admin dashboard to manage your entire business.' },
-      { title: 'Custom CRM Development', desc: 'Tailor-made CRM systems that match your exact sales workflow. Lead tracking, pipeline management, customer communication, and automated follow-ups.' },
-      { title: 'ERP Solutions', desc: 'Enterprise resource planning systems that unify finance, HR, inventory, procurement, and operations into one centralized, real-time platform.' },
-      { title: 'Restaurant POS', desc: 'Complete restaurant management — KOT, table management, billing, kitchen display, inventory, and cloud sync. AI-powered insights and offline-first reliability.' },
-      { title: 'School Management System', desc: 'End-to-end school ERP with student records, fee management, attendance, exams, timetable, parent portal, payroll, and transport tracking.' },
-      { title: 'Mobile App Development', desc: 'Native and cross-platform mobile apps for iOS and Android. Beautiful UI, smooth performance, offline support, and seamless backend integration.' },
+      { title: 'E-commerce Development', desc: 'Full-featured online stores with secure payment gateways, inventory management, order tracking, and an admin dashboard to manage your entire business.', to: '/ecommerce-development' },
+      { title: 'Custom CRM Development', desc: 'Tailor-made CRM systems that match your exact sales workflow. Lead tracking, pipeline management, customer communication, and automated follow-ups.', to: '/crm-development' },
+      { title: 'ERP Solutions', desc: 'Enterprise resource planning systems that unify finance, HR, inventory, procurement, and operations into one centralized, real-time platform.', to: '/erp-development' },
+      { title: 'Restaurant POS', desc: 'Complete restaurant management — KOT, table management, billing, kitchen display, inventory, and cloud sync. AI-powered insights and offline-first reliability.', to: '/restaurant-pos' },
+      { title: 'School Management System', desc: 'End-to-end school ERP with student records, fee management, attendance, exams, timetable, parent portal, payroll, and transport tracking.', to: '/school-erp' },
+      { title: 'Mobile App Development', desc: 'Native and cross-platform mobile apps for iOS and Android. Beautiful UI, smooth performance, offline support, and seamless backend integration.', to: '/mobile-app-development' },
       { title: 'Web Applications', desc: 'Complex web applications — dashboards, SaaS platforms, portals, and real-time tools. Built with React, Node.js, Firebase, and cloud-native architecture.' },
-      { title: 'AI Solutions', desc: 'Custom AI and machine learning integrations — chatbots, predictive analytics, image recognition, recommendation engines, and intelligent automation.' },
-      { title: 'API Integration', desc: 'Connect your software with third-party services — payment gateways, SMS/WhatsApp APIs, shipping carriers, accounting tools, and legacy systems.' },
-      { title: 'Cloud Solutions', desc: 'Cloud migration, DevOps setup, serverless architecture, auto-scaling infrastructure, and managed hosting on AWS, Google Cloud, and Cloudflare.' },
+      { title: 'AI Solutions', desc: 'Custom AI and machine learning integrations — chatbots, predictive analytics, image recognition, recommendation engines, and intelligent automation.', to: '/ai' },
+      { title: 'API Integration', desc: 'Connect your software with third-party services — payment gateways, SMS/WhatsApp APIs, shipping carriers, accounting tools, and legacy systems.', to: '/api-integration' },
+      { title: 'Cloud Solutions', desc: 'Cloud migration, DevOps setup, serverless architecture, auto-scaling infrastructure, and managed hosting on AWS, Google Cloud, and Cloudflare.', to: '/cloud-solutions' },
       { title: 'Software Maintenance & Support', desc: 'Ongoing maintenance, bug fixes, feature enhancements, security patches, performance optimization, and 24/7 technical support for your software.' },
-      { title: 'SEO Services', desc: 'Complete SEO solutions — technical SEO, on-page optimization, keyword research, content strategy, link building, and Google ranking improvement.' },
+      { title: 'SEO Services', desc: 'Complete SEO solutions — technical SEO, on-page optimization, keyword research, content strategy, link building, and Google ranking improvement.', to: '/seo-services' },
     ],
   },
   '/seo-services': {
@@ -1417,11 +1429,15 @@ function buildServicePageContent(entry) {
           <dd style="margin-top:.5rem;font-size:.875rem;line-height:1.6;color:#475569">${esc(a)}</dd>
         </div>`).join('')
 
-  const servicesHtml = (entry.services || []).map((s) => `
+  const servicesHtml = (entry.services || []).map((s) => (s.to ? `
+        <a href="${esc(canonicalPath(s.to))}" style="display:block;border-radius:1rem;border:1px solid #e2e8f0;background:#fff;padding:1.25rem;text-decoration:none">
+          <p style="font-size:.9rem;font-weight:800;color:#0f172a">${esc(s.title)}</p>
+          <p style="margin-top:.4rem;font-size:.8125rem;line-height:1.6;color:#64748b">${esc(s.desc)}</p>
+        </a>` : `
         <div style="border-radius:1rem;border:1px solid #e2e8f0;background:#fff;padding:1.25rem">
           <p style="font-size:.9rem;font-weight:800;color:#0f172a">${esc(s.title)}</p>
           <p style="margin-top:.4rem;font-size:.8125rem;line-height:1.6;color:#64748b">${esc(s.desc)}</p>
-        </div>`).join('')
+        </div>`)).join('')
 
   return `<main style="padding:3rem 1.25rem;max-width:56rem;margin:0 auto">
     <h1 style="font-size:2.2rem;font-weight:900;color:#0f172a;line-height:1.1">${esc(entry.heading)}</h1>
@@ -1439,11 +1455,111 @@ function buildServicePageContent(entry) {
   </main>`
 }
 
+// Pillar route path (e.g. '/restaurant-pos') → pillar key (e.g. 'restaurant-pos').
+const PILLAR_KEY_BY_PATH = Object.fromEntries(
+  Object.entries(PILLARS).map(([key, pillar]) => [pillar.to, key]),
+)
+
+// ── Pillar hub pages: a real "Explore in depth" section linking to every
+// one of that pillar's supporting feature pages, plus its relevant compare
+// pages — mirrors SolutionPage.jsx's client-rendered sections, but baked
+// into the static HTML so crawlers see the links before JS hydration. This
+// is also what makes the feature/compare pages below reachable by anything
+// other than sitemap.xml. ──
+function buildPillarFeaturesContent(pillarKey, title, desc) {
+  const pillar = PILLARS[pillarKey]
+  const subpages = Object.entries(featurePages).filter(([, fp]) => fp.pillar === pillarKey)
+  const compareLinks = PILLAR_COMPARE_LINKS[pillarKey] || []
+
+  const cardsHtml = subpages.map(([key, fp]) => `
+        <a href="${esc(canonicalPath(`/${key}`))}" style="display:block;border-radius:1rem;border:1px solid #e2e8f0;background:#fff;padding:1.25rem;text-decoration:none">
+          <p style="font-size:.9rem;font-weight:800;color:#0f172a">${esc(fp.badge)}</p>
+          <p style="margin-top:.4rem;font-size:.8125rem;line-height:1.6;color:#64748b">${esc(fp.title)}</p>
+        </a>`).join('')
+
+  const compareHtml = compareLinks.length ? `
+    <p style="margin-top:1.5rem;font-size:.875rem;color:#475569">Comparing your options? ${compareLinks
+      .map((l) => `<a href="${esc(canonicalPath(l.to))}" style="color:#1d4ed8;text-decoration:none;font-weight:600">${esc(l.text)}</a>`)
+      .join(' &middot; ')}</p>` : ''
+
+  return `<main style="padding:3rem 1.25rem;max-width:64rem;margin:0 auto">
+    <h1 style="font-size:2.2rem;font-weight:900;color:#0f172a;line-height:1.1">${title}</h1>
+    <p style="margin-top:1rem;font-size:1rem;line-height:1.7;color:#475569">${desc}</p>
+    <div style="margin-top:2rem;display:flex;gap:.75rem;flex-wrap:wrap">
+      <a href="/signup" style="display:inline-flex;min-height:3rem;align-items:center;justify-content:center;border-radius:9999px;padding:.75rem 1.75rem;font-size:.875rem;font-weight:800;text-decoration:none;background:#0f172a;color:#fff">Start Free Trial</a>
+      <a href="/contact/" style="display:inline-flex;min-height:3rem;align-items:center;justify-content:center;border-radius:9999px;padding:.75rem 1.75rem;font-size:.875rem;font-weight:800;text-decoration:none;border:1px solid #e2e8f0;color:#0f172a">Book a Demo</a>
+    </div>${subpages.length ? `
+    <h2 style="margin-top:3rem;font-size:1.5rem;font-weight:900;color:#0f172a">Explore ${esc(pillar.productName)} in depth</h2>
+    <div style="margin-top:1.5rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:.75rem">${cardsHtml}
+    </div>` : ''}${compareHtml}
+  </main>`
+}
+
+// ── Supporting feature pages (e.g. /restaurant-pos/kot-and-kitchen-display):
+// back-link to the parent pillar + a link to the sibling page, mirroring
+// FeaturePage.jsx's own back-link/CTA — the minimum needed so these pages
+// are reachable from, and link back to, real site navigation. ──
+function buildFeatureSubpageContent(slug, title, desc) {
+  const page = featurePages[slug]
+  if (!page) return null
+  const pillar = PILLARS[page.pillar]
+  const sibling = page.sibling ? featurePages[page.sibling] : null
+
+  return `<main style="padding:3rem 1.25rem;max-width:48rem;margin:0 auto">
+    <nav aria-label="Breadcrumb" style="font-size:.8rem;color:#94a3b8">
+      <a href="/" style="color:#94a3b8;text-decoration:none">Home</a> /
+      <a href="${esc(canonicalPath(pillar.to))}" style="color:#94a3b8;text-decoration:none">${esc(pillar.label)}</a> /
+      <span style="color:#64748b">${esc(page.badge)}</span>
+    </nav>
+    <h1 style="margin-top:1rem;font-size:2rem;font-weight:900;color:#0f172a">${title}</h1>
+    <p style="margin-top:1rem;font-size:1rem;line-height:1.7;color:#475569">${desc}</p>
+    <div style="margin-top:2rem;display:flex;gap:.75rem;flex-wrap:wrap">
+      <a href="${esc(canonicalPath(pillar.to))}" style="display:inline-flex;min-height:3rem;align-items:center;justify-content:center;border-radius:9999px;padding:.75rem 1.75rem;font-size:.875rem;font-weight:800;text-decoration:none;border:1px solid #e2e8f0;color:#0f172a">Back to ${esc(pillar.label)}</a>
+      <a href="/signup" style="display:inline-flex;min-height:3rem;align-items:center;justify-content:center;border-radius:9999px;padding:.75rem 1.75rem;font-size:.875rem;font-weight:800;text-decoration:none;background:#0f172a;color:#fff">Start Free Trial</a>
+    </div>${sibling ? `
+    <p style="margin-top:1.5rem;font-size:.875rem;color:#475569">See also: <a href="${esc(canonicalPath(`/${page.sibling}`))}" style="color:#1d4ed8;text-decoration:none;font-weight:600">${esc(sibling.badge)}</a></p>` : ''}
+  </main>`
+}
+
+// ── Comparison / buyer-guide pages (e.g. /compare/cloud-vs-offline-pos):
+// links out to the real Nexora product pages the comparison references,
+// mirroring ComparePage.jsx's own CTA section. ──
+function buildComparePageContent(slug, title, desc) {
+  const page = comparePages[slug]
+  if (!page) return null
+  const linksHtml = (page.relatedLinks || [])
+    .map((l) => `<a href="${esc(canonicalPath(l.to))}" style="color:#1d4ed8;text-decoration:none;font-weight:600">${esc(l.text)}</a>`)
+    .join(' &middot; ')
+
+  return `<main style="padding:3rem 1.25rem;max-width:48rem;margin:0 auto">
+    <nav aria-label="Breadcrumb" style="font-size:.8rem;color:#94a3b8">
+      <a href="/" style="color:#94a3b8;text-decoration:none">Home</a> / <span>Compare</span> / <span style="color:#64748b">${esc(page.title)}</span>
+    </nav>
+    <h1 style="margin-top:1rem;font-size:2rem;font-weight:900;color:#0f172a">${title}</h1>
+    <p style="margin-top:1rem;font-size:1rem;line-height:1.7;color:#475569">${desc}</p>
+    <div style="margin-top:2rem;display:flex;gap:.75rem;flex-wrap:wrap">
+      <a href="/signup" style="display:inline-flex;min-height:3rem;align-items:center;justify-content:center;border-radius:9999px;padding:.75rem 1.75rem;font-size:.875rem;font-weight:800;text-decoration:none;background:#0f172a;color:#fff">Start Free Trial</a>
+    </div>${linksHtml ? `
+    <p style="margin-top:1.5rem;font-size:.875rem;color:#475569">See the products behind this comparison: ${linksHtml}</p>` : ''}
+  </main>`
+}
+
 function buildRouteContent(path, title, desc, articles) {
   if (path === '/pricing') return buildPricingContent()
   if (path === '/blog') return buildBlogContent(articles)
   if (path === '/contact') return buildContactContent()
   if (path === '/download/restaurant-pos') return buildDownloadRestaurantPosContent()
+
+  const pillarKey = PILLAR_KEY_BY_PATH[path]
+  if (pillarKey) return buildPillarFeaturesContent(pillarKey, title, desc)
+
+  const featureSlug = path.replace(/^\/+/, '')
+  if (featurePages[featureSlug]) return buildFeatureSubpageContent(featureSlug, title, desc)
+
+  if (path.startsWith('/compare/')) {
+    const compareSlug = path.replace('/compare/', '')
+    if (comparePages[compareSlug]) return buildComparePageContent(compareSlug, title, desc)
+  }
 
   const servicePageEntry = SERVICE_PAGE_CONTENT[path]
   if (servicePageEntry) return buildServicePageContent(servicePageEntry)

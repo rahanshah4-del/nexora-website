@@ -62,6 +62,7 @@ const services = [
     detail: 'Launch a powerful online store that sells 24/7. We build custom e-commerce platforms with secure payment processing, real-time inventory tracking, order management, and an intuitive admin dashboard. Whether you need a simple shop or a multi-vendor marketplace, we deliver a seamless shopping experience that converts browsers into buyers.',
     features: ['Secure payment gateways (Stripe, PayPal, local banks)', 'Real-time inventory & stock management', 'Order tracking & automated notifications', 'Admin dashboard with sales analytics', 'Product catalog with categories & filters', 'Shopping cart & wishlist', 'Multi-currency & tax support', 'Mobile-optimized checkout experience'],
     tech: 'React, Node.js, Firebase, Stripe, Cloudflare',
+    link: '/ecommerce-development',
     tone: 'emerald',
   },
   {
@@ -72,6 +73,7 @@ const services = [
     detail: 'Off-the-shelf CRM not fitting your workflow? We build custom CRM software tailored to your exact sales process. From lead capture to deal closure, every stage is designed around how your team actually works. Get pipeline visibility, automated follow-ups, customer communication history, and powerful reporting — all in one clean interface.',
     features: ['Lead capture & scoring automation', 'Visual sales pipeline (Kanban view)', 'Customer communication history', 'Automated follow-up reminders', 'Task & activity management', 'Email & WhatsApp integration', 'Custom reports & sales forecasting', 'Role-based access for teams'],
     tech: 'React, Firebase, Node.js, Cloudflare Workers',
+    link: '/crm-development',
     tone: 'indigo',
   },
   {
@@ -82,6 +84,7 @@ const services = [
     detail: 'Run your entire business from one unified platform. Our custom ERP solutions integrate finance, HR, inventory, procurement, and operations into a single source of truth. Real-time dashboards give you complete visibility across departments. Eliminate data silos, reduce manual work, and make faster decisions with accurate, up-to-date information.',
     features: ['Financial management & accounting', 'HR & payroll module', 'Inventory & warehouse management', 'Procurement & purchase orders', 'Real-time KPI dashboards', 'Multi-branch & multi-currency support', 'Role-based access control', 'API integration with existing tools'],
     tech: 'React, Node.js, MySQL/PostgreSQL, Firebase, Cloudflare',
+    link: '/erp-development',
     tone: 'violet',
   },
   {
@@ -114,6 +117,7 @@ const services = [
     detail: 'Put your business in your customers\' pockets. We build beautiful, high-performance mobile apps for iOS and Android using Flutter for cross-platform efficiency or native Swift/Kotlin for maximum performance. Every app includes offline support, push notifications, secure authentication, and seamless integration with your backend systems.',
     features: ['iOS & Android (Flutter cross-platform)', 'Beautiful Material & Cupertino UI', 'Offline mode with data sync', 'Push notifications (FCM/APNs)', 'Secure auth (biometric, OTP, SSO)', 'Payment gateway integration', 'Camera, GPS, & sensor APIs', 'App Store & Play Store submission'],
     tech: 'Flutter, Dart, Firebase, Node.js, Swift, Kotlin',
+    link: '/mobile-app-development',
     tone: 'rose',
   },
   {
@@ -145,6 +149,7 @@ const services = [
     detail: 'Make your software talk to everything else. We design and build robust API integrations that connect your applications with payment gateways, SMS providers, WhatsApp Business API, shipping carriers, accounting software, and legacy systems. Clean RESTful APIs, webhooks, real-time sync, and comprehensive error handling ensure reliable data flow.',
     features: ['RESTful API design & development', 'Third-party API integration', 'Payment gateway integration (Stripe, JazzCash, etc.)', 'WhatsApp Business API integration', 'SMS & email notification services', 'Legacy system integration', 'Webhook & real-time event handling', 'API documentation & developer portal'],
     tech: 'Node.js, Cloudflare Workers, REST, GraphQL, Webhooks',
+    link: '/api-integration',
     tone: 'indigo',
   },
   {
@@ -155,6 +160,7 @@ const services = [
     detail: 'Move your business to the cloud with confidence. We handle cloud migration, infrastructure setup, CI/CD pipelines, auto-scaling configuration, and ongoing management. Our serverless-first approach on Cloudflare Workers and Firebase keeps costs low while delivering global performance. We also work with AWS and Google Cloud for enterprise needs.',
     features: ['Cloud migration strategy & execution', 'Serverless architecture (Cloudflare Workers)', 'CI/CD pipeline setup (GitHub Actions)', 'Auto-scaling & load balancing', 'Database migration & optimization', 'DNS, CDN & SSL configuration', 'Backup & disaster recovery', 'Cost optimization & monitoring'],
     tech: 'Cloudflare, AWS, Google Cloud, Docker, Kubernetes, Terraform',
+    link: '/cloud-solutions',
     tone: 'sky',
   },
   {
