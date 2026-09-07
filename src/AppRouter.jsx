@@ -36,6 +36,7 @@ const HelpCenterPage = lazy(() => import('./pages/public/HelpCenterPage.jsx'))
 const DocumentationPage = lazy(() => import('./pages/public/DocumentationPage.jsx'))
 const SolutionPage = lazy(() => import('./pages/public/SolutionPage.jsx'))
 const FeaturePage = lazy(() => import('./pages/public/FeaturePage.jsx'))
+const ComparePage = lazy(() => import('./pages/public/ComparePage.jsx'))
 const PublicBusinessServicesPage = lazy(() => import('./pages/public/BusinessServicesPage.jsx'))
 const SoftwareDevelopmentPage = lazy(() => import('./pages/public/SoftwareDevelopmentPage.jsx'))
 const SEOServicesPage = lazy(() => import('./pages/public/SEOServicesPage.jsx'))
@@ -540,6 +541,12 @@ export default function AppRouter() {
         <Route path="/retail-pos/store-reports" element={<LazyPage><FeaturePage slug="retail-pos/store-reports" /></LazyPage>} />
         <Route path="/pharmacy-pos/batch-and-expiry-tracking" element={<LazyPage><FeaturePage slug="pharmacy-pos/batch-and-expiry-tracking" /></LazyPage>} />
         <Route path="/transport-fleet/payments-and-dues" element={<LazyPage><FeaturePage slug="transport-fleet/payments-and-dues" /></LazyPage>} />
+
+        {/* Comparison / buyer-intent pages (Phase 8, approved from the Phase 7 SEO audit) */}
+        <Route path="/compare/cloud-vs-offline-pos" element={<LazyPage><ComparePage slug="cloud-vs-offline-pos" /></LazyPage>} />
+        <Route path="/compare/pos-software-buying-checklist" element={<LazyPage><ComparePage slug="pos-software-buying-checklist" /></LazyPage>} />
+        <Route path="/compare/school-erp-buying-checklist" element={<LazyPage><ComparePage slug="school-erp-buying-checklist" /></LazyPage>} />
+        <Route path="/compare/crm-vs-spreadsheets" element={<LazyPage><ComparePage slug="crm-vs-spreadsheets" /></LazyPage>} />
 
       <Route path="/login" element={<LazyPage><Login /></LazyPage>} />
       <Route path="/signup" element={<LazyPage><Signup /></LazyPage>} />

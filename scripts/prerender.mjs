@@ -208,6 +208,14 @@ const PUBLIC_ROUTES = [
   { path: '/retail-pos/store-reports', title: 'Retail POS Sales Reports | Nexora Retail POS', description: 'A daily closing report built from real till transactions — cash reconciliation, sales by payment method and items sold — Nexora Retail POS store reports.' },
   { path: '/pharmacy-pos/batch-and-expiry-tracking', title: 'Pharmacy Expiry Tracking Software | Nexora Pharmacy POS', description: 'Monitor batches, expiry dates and near-expiry medicines as part of Nexora Pharmacy POS — keeping expired stock from becoming a loss.' },
   { path: '/transport-fleet/payments-and-dues', title: 'Fleet Payment Collection Software | Nexora Fleet & Rental', description: 'Reconcile daily collections, see Net Collected vs Net Today, and track outstanding dues fleet-wide — Nexora Fleet & Rental payments and dues.' },
+  // Comparison / buyer-intent pages (Phase 8, approved from the Phase 7 SEO
+  // audit). Title/description mirror the seoTitle/seoDescription in
+  // src/pages/public/ComparePage.jsx exactly so the static shell matches
+  // what PageSeo renders after hydration.
+  { path: '/compare/cloud-vs-offline-pos', title: 'Cloud vs Offline POS Software: Which Is Right for You? | Nexora', description: 'A neutral comparison of cloud-based and offline-capable POS software — connectivity, data sync, trade-offs and how to decide which approach fits your business.' },
+  { path: '/compare/pos-software-buying-checklist', title: 'POS Software Buying Checklist: What to Check Before You Choose | Nexora', description: 'A practical, feature-by-feature checklist for choosing POS software — billing, inventory, receipts, reporting, offline capability and more.' },
+  { path: '/compare/school-erp-buying-checklist', title: 'School ERP Software Buying Checklist | Nexora', description: 'What to check before choosing school management software — student records, attendance, fees, payroll, reporting, communication and more.' },
+  { path: '/compare/crm-vs-spreadsheets', title: 'CRM vs Spreadsheets: What Actually Changes | Nexora CRM', description: 'A practical comparison of CRM software and spreadsheets — lead management, pipeline visibility, follow-ups, invoicing and what changes as a sales team grows.' },
 ]
 
 // ═══════════════════════════════════════════════════════════════════════════════

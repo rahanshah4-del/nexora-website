@@ -68,6 +68,11 @@ const PUBLIC_ROUTE_ALLOWLIST = new Set([
   '/retail-pos/store-reports',
   '/pharmacy-pos/batch-and-expiry-tracking',
   '/transport-fleet/payments-and-dues',
+  // Comparison / buyer-intent pages (Phase 8)
+  '/compare/cloud-vs-offline-pos',
+  '/compare/pos-software-buying-checklist',
+  '/compare/school-erp-buying-checklist',
+  '/compare/crm-vs-spreadsheets',
   // Software development & services pages
   '/software-development',
   '/seo-services',

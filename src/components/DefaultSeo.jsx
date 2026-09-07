@@ -50,6 +50,7 @@ const publicSeoPaths = new Set([
 const PILLAR_PAGE_PREFIXES = [
   '/restaurant-pos/', '/retail-pos/', '/pharmacy-pos/',
   '/school-erp/', '/crm/', '/transport-fleet/',
+  '/compare/',
 ]
 
 // Authentication / private areas must never be indexed.

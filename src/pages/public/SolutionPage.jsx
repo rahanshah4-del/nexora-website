@@ -37,6 +37,26 @@ const SOLUTION_SLUG_TO_PILLAR = {
   'transport-rental': 'transport-fleet',
 }
 
+// Comparison / buying-guide pages (Phase 8) relevant to each pillar, linked
+// from that pillar's own product page — kept minimal and directly relevant
+// rather than linking every compare page from every pillar.
+const PILLAR_COMPARE_LINKS = {
+  'restaurant-pos': [
+    { to: '/compare/pos-software-buying-checklist', text: 'POS Software Buying Checklist' },
+    { to: '/compare/cloud-vs-offline-pos', text: 'Cloud vs Offline POS' },
+  ],
+  'retail-pos': [
+    { to: '/compare/pos-software-buying-checklist', text: 'POS Software Buying Checklist' },
+    { to: '/compare/cloud-vs-offline-pos', text: 'Cloud vs Offline POS' },
+  ],
+  'pharmacy-pos': [
+    { to: '/compare/pos-software-buying-checklist', text: 'POS Software Buying Checklist' },
+    { to: '/compare/cloud-vs-offline-pos', text: 'Cloud vs Offline POS' },
+  ],
+  'school-erp': [{ to: '/compare/school-erp-buying-checklist', text: 'School ERP Buying Checklist' }],
+  crm: [{ to: '/compare/crm-vs-spreadsheets', text: 'CRM vs Spreadsheets' }],
+}
+
 const whatsappLeadLink = `https://wa.me/923194329754?text=${encodeURIComponent(
   'Assalam o Alaikum, I want to book a Nexora product demo.',
 )}`
@@ -746,6 +766,7 @@ export default function SolutionPage({ solutionSlug: solutionSlugProp } = {}) {
   const supportingPages = pillarKey
     ? Object.entries(featurePages).filter(([, fp]) => fp.pillar === pillarKey).map(([key, fp]) => ({ key, ...fp }))
     : []
+  const compareLinks = pillarKey ? (PILLAR_COMPARE_LINKS[pillarKey] || []) : []
 
   return (
     <PublicPageShell>
@@ -867,6 +888,22 @@ export default function SolutionPage({ solutionSlug: solutionSlugProp } = {}) {
                 )
               })}
             </div>
+          </div>
+        </section>
+      ) : null}
+
+      {compareLinks.length > 0 ? (
+        <section className="bg-white px-5 pb-10 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-7xl border-t border-slate-200/60 pt-8">
+            <p className="text-sm leading-7 text-slate-500">
+              <span className="font-medium text-slate-900">Comparing your options? </span>
+              {compareLinks.map((l, i) => (
+                <span key={l.to}>
+                  {i > 0 ? ' · ' : null}
+                  <Link to={l.to} className="font-medium text-slate-900 underline decoration-slate-300 underline-offset-4 hover:decoration-slate-900">{l.text}</Link>
+                </span>
+              ))}
+            </p>
           </div>
         </section>
       ) : null}
