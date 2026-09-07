@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "prebuild": "node scripts/generate-sitemap.mjs",
+    "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
+    "prebuild": "npm run clean && node scripts/generate-sitemap.mjs",
     "build": "vite build",
     "postbuild": "node scripts/prerender.mjs",
     "audit:sales-hub": "node scripts/audit-sales-hub-calculations.mjs",

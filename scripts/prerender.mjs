@@ -1640,6 +1640,14 @@ function hreflangLangsFor(availableTranslations) {
 // ═══════════════════════════════════════════════════════════════════════════════
 //  MAIN
 // ═══════════════════════════════════════════════════════════════════════════════
+//
+// This is a full, unconditional rebuild every run — every route in
+// PUBLIC_ROUTES, every blog article, every category/pagination/author/search
+// page gets written from scratch below, with no diffing against previous
+// output and no "skip if unchanged" logic. `npm run prebuild` (see
+// package.json) also deletes dist/ before vite build runs, so a stale page
+// surviving a deploy is a deploy/cache problem (e.g. the build didn't run,
+// or an edge cache is serving an old response), not a prerender bug.
 
 async function main() {
   console.log('[prerender] Phase 2 — Starting prerendering...')
