@@ -201,6 +201,13 @@ const PUBLIC_ROUTES = [
   { path: '/crm/invoices', title: 'CRM Invoicing Software | Nexora CRM', description: 'Create business invoices with Draft, Approved, Overdue and Cancelled statuses, multiple payment methods and tax-exclusive amounts — Nexora CRM invoices.' },
   { path: '/crm/tasks-and-follow-ups', title: 'CRM Follow-Up Management Software | Nexora CRM', description: 'Run a follow-up board with agent workload visibility and email or WhatsApp reminders — Nexora CRM keeps every follow-up from slipping through.' },
   { path: '/transport-fleet/customer-ledger', title: 'Fleet Customer Ledger Software | Nexora Fleet & Rental', description: 'See booking history and outstanding dues per customer, and every customer who owes money — Nexora Fleet & Rental customer ledger.' },
+  // Supporting feature pages — Phase 6 (revised needs-revision pages). Title/
+  // description mirror the seoTitle/seoDescription in FeaturePage.jsx exactly.
+  { path: '/restaurant-pos/billing-and-receipts', title: 'Restaurant Billing Software & Receipts | Nexora POS', description: 'Bill dine-in, takeaway, delivery and quick-bill orders with discounts, service charges and tax — Nexora Restaurant POS billing and itemized receipts.' },
+  { path: '/retail-pos/customer-records', title: 'Retail POS Customer Management | Nexora Retail POS', description: 'Walk-in by default, saved when it matters — Nexora Retail POS ties customer records directly to the till, including the rule behind due sales.' },
+  { path: '/retail-pos/store-reports', title: 'Retail POS Sales Reports | Nexora Retail POS', description: 'A daily closing report built from real till transactions — cash reconciliation, sales by payment method and items sold — Nexora Retail POS store reports.' },
+  { path: '/pharmacy-pos/batch-and-expiry-tracking', title: 'Pharmacy Expiry Tracking Software | Nexora Pharmacy POS', description: 'Monitor batches, expiry dates and near-expiry medicines as part of Nexora Pharmacy POS — keeping expired stock from becoming a loss.' },
+  { path: '/transport-fleet/payments-and-dues', title: 'Fleet Payment Collection Software | Nexora Fleet & Rental', description: 'Reconcile daily collections, see Net Collected vs Net Today, and track outstanding dues fleet-wide — Nexora Fleet & Rental payments and dues.' },
 ]
 
 // ═══════════════════════════════════════════════════════════════════════════════

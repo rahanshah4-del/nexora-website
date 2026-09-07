@@ -62,6 +62,12 @@ const PUBLIC_ROUTE_ALLOWLIST = new Set([
   '/crm/invoices',
   '/crm/tasks-and-follow-ups',
   '/transport-fleet/customer-ledger',
+  // Supporting feature pages — Phase 6 (revised needs-revision pages)
+  '/restaurant-pos/billing-and-receipts',
+  '/retail-pos/customer-records',
+  '/retail-pos/store-reports',
+  '/pharmacy-pos/batch-and-expiry-tracking',
+  '/transport-fleet/payments-and-dues',
   // Software development & services pages
   '/software-development',
   '/seo-services',

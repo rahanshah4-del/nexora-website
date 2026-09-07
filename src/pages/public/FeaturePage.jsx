@@ -16,6 +16,7 @@ import {
   HiOutlineFire,
   HiOutlineMagnifyingGlass,
   HiOutlineShieldCheck,
+  HiOutlineShoppingCart,
   HiOutlineSparkles,
   HiOutlineSquares2X2,
   HiOutlineTableCells,
@@ -206,6 +207,53 @@ export const featurePages = {
     sibling: 'restaurant-pos/menu-management',
     siblingLabel: 'Menu Management',
   },
+  'restaurant-pos/billing-and-receipts': {
+    pillar: 'restaurant-pos',
+    icon: HiOutlineBanknotes,
+    badge: 'Billing & Receipts',
+    eyebrow: 'Restaurant POS · Checkout & Receipts',
+    title: 'Restaurant Billing & Receipts',
+    keyword: 'restaurant billing software',
+    seoTitle: 'Restaurant Billing Software & Receipts | Nexora POS',
+    seoDescription: 'Bill dine-in, takeaway, delivery and quick-bill orders with discounts, service charges and tax — Nexora Restaurant POS billing and itemized receipts.',
+    intro: 'Every order type at the counter — dine-in, takeaway, delivery or a fast quick-bill — is billed the same reliable way, with a full breakdown on the receipt.',
+    sections: [
+      {
+        heading: 'One bill, four ways to order',
+        paragraphs: [
+          'Orders are billed as dine-in (tied to a table), takeaway, delivery (with a delivery address and rider notes), or quick-bill for a fast counter sale — the same cart and checkout, adapted to how the order actually leaves the kitchen.',
+        ],
+      },
+      {
+        heading: 'Discounts, service charges and tax on every bill',
+        paragraphs: [
+          'A bill can carry a discount and a service charge alongside tax, itemized separately rather than folded into one number — so what a customer paid, and why, is always traceable on the receipt itself.',
+        ],
+        bullets: [
+          'The printed receipt breaks a bill down into subtotal, discount, tax, total, amount paid and amount due',
+          'Cart items can be edited before the bill is finalized',
+        ],
+      },
+      {
+        heading: 'Not the kitchen ticket',
+        paragraphs: [
+          'This page covers the checkout and the bill. Once an order is billed, it still moves through the kitchen as its own ticket, and the ingredients behind what was sold tie back to food cost reporting on the inventory side.',
+        ],
+        links: [
+          { to: '/restaurant-pos/kot-and-kitchen-display', text: 'Kitchen tickets & display' },
+          { to: '/restaurant-pos/inventory', text: 'Inventory & food cost' },
+        ],
+      },
+    ],
+    capabilities: [
+      ['Dine-in, takeaway, delivery, quick-bill', 'One checkout flow adapts to how each order actually leaves the kitchen.', HiOutlineShoppingCart],
+      ['Discounts & service charges', 'Apply discounts and service charges as their own line items on the bill.', HiOutlineTag],
+      ['Tax support', 'Tax is calculated and itemized separately on every bill.', HiOutlineDocumentChartBar],
+      ['Itemized receipts', 'Receipts show subtotal, discount, tax, total, paid and due.', HiOutlineBanknotes],
+    ],
+    sibling: 'restaurant-pos/kot-and-kitchen-display',
+    siblingLabel: 'KOT & Kitchen Display',
+  },
 
   // ── Retail POS ───────────────────────────────────────────────────────
   'retail-pos/billing-and-checkout': {
@@ -311,6 +359,89 @@ export const featurePages = {
     sibling: 'retail-pos/billing-and-checkout',
     siblingLabel: 'Billing & Checkout',
   },
+  'retail-pos/customer-records': {
+    pillar: 'retail-pos',
+    icon: HiOutlineUserGroup,
+    badge: 'Customer Records',
+    eyebrow: 'Retail POS · At the Till',
+    title: 'Retail Customer Records',
+    keyword: 'retail POS customer management',
+    seoTitle: 'Retail POS Customer Management | Nexora Retail POS',
+    seoDescription: 'Walk-in by default, saved when it matters — Nexora Retail POS ties customer records directly to the till, including the rule behind due sales.',
+    intro: 'Retail customer records in Nexora live at the till, not in a separate contact list — every sale starts as a walk-in and only becomes a saved customer when it’s worth keeping.',
+    sections: [
+      {
+        heading: 'Walk-in by default',
+        paragraphs: [
+          'Every sale defaults to "Walk-in Customer" — no record required to check out. A cashier can search for a saved customer by name or phone mid-sale, or add a new one with just a name and phone number, without leaving the till.',
+        ],
+      },
+      {
+        heading: 'The rule behind due sales',
+        paragraphs: [
+          'A due (credit) sale can only be recorded against a saved customer — a walk-in sale can’t carry a balance due. That one rule is what ties customer records directly to how the till actually works, rather than being a general contact list attached to the POS.',
+        ],
+      },
+      {
+        heading: 'What the till shows about a customer',
+        paragraphs: [
+          'Once selected, a customer’s record carries their type, status and wallet balance, and the receipt records exactly who the sale was billed to — walk-in or saved — for that transaction.',
+        ],
+      },
+    ],
+    capabilities: [
+      ['Walk-in by default', 'Every sale starts without a customer record required.', HiOutlineUserGroup],
+      ['Quick capture at checkout', 'Search a saved customer or add one by name and phone mid-sale.', HiOutlineMagnifyingGlass],
+      ['Due-sale rule', 'Only a saved customer can carry a balance due — walk-ins can’t.', HiOutlineShieldCheck],
+      ['Wallet balance at the till', 'Customer wallet balance is visible and updates from the sale.', HiOutlineCreditCard],
+    ],
+    sibling: 'retail-pos/billing-and-checkout',
+    siblingLabel: 'Billing & Checkout',
+  },
+  'retail-pos/store-reports': {
+    pillar: 'retail-pos',
+    icon: HiOutlineChartBarSquare,
+    badge: 'Store Reports',
+    eyebrow: 'Retail POS · Daily Closing',
+    title: 'Retail Store Reports',
+    keyword: 'retail POS sales reports',
+    seoTitle: 'Retail POS Sales Reports | Nexora Retail POS',
+    seoDescription: 'A daily closing report built from real till transactions — cash reconciliation, sales by payment method and items sold — Nexora Retail POS store reports.',
+    intro: 'Store reports in Nexora Retail POS are built from the till itself — a daily closing report that reconciles cash and sales for the counter, not a general business dashboard.',
+    sections: [
+      {
+        heading: 'A daily closing report, built from real transactions',
+        paragraphs: [
+          'At the end of a shift or day, the till produces a closing report — opening cash against closing cash, gross sales, discounts, tax, dues collected and items sold — computed directly from that period’s actual orders, not a manual tally.',
+        ],
+        bullets: [
+          'Refunded or cancelled orders are excluded from the report’s active sales figures',
+          'The report can be filtered to today or a custom date range',
+        ],
+      },
+      {
+        heading: 'Broken down by payment method and item',
+        paragraphs: [
+          'Sales are grouped by payment method, so a cashier or owner can see how much came in as cash versus card or mobile wallet, alongside a count of items sold — a store-level view, not a company-wide one.',
+        ],
+      },
+      {
+        heading: 'Printed at the counter or exported',
+        paragraphs: [
+          'The closing report prints as a thermal receipt for the counter or exports as a CSV — built for reconciling a till at the end of a shift, not for boardroom analytics.',
+        ],
+        links: [{ to: '/solutions/reports', text: 'For cross-module business reports, see Nexora Reports' }],
+      },
+    ],
+    capabilities: [
+      ['Daily closing report', 'Opening cash, closing cash, gross sales, discounts and dues in one report.', HiOutlineChartBarSquare],
+      ['Payment-method breakdown', 'See sales split across cash, card and mobile wallet.', HiOutlineCreditCard],
+      ['Items sold count', 'Track how many items were sold in the period.', HiOutlineDocumentChartBar],
+      ['Print or export', 'Print the closing report as a thermal receipt or export it as CSV.', HiOutlineClipboardDocumentList],
+    ],
+    sibling: 'retail-pos/billing-and-checkout',
+    siblingLabel: 'Billing & Checkout',
+  },
 
   // ── Pharmacy POS ─────────────────────────────────────────────────────
   'pharmacy-pos/billing': {
@@ -408,6 +539,43 @@ export const featurePages = {
       ['Supplier records', 'Keep pharmacy supplier contact and pricing details in one place.', HiOutlineBuildingStorefront],
       ['Supplier returns', 'Return medicine stock to a supplier when needed.', HiOutlineTruck],
       ['Supplier payments', 'Record payments by cash, bank transfer, cheque or mobile wallet.', HiOutlineCreditCard],
+    ],
+    sibling: 'pharmacy-pos/medicine-inventory',
+    siblingLabel: 'Medicine Inventory',
+  },
+  'pharmacy-pos/batch-and-expiry-tracking': {
+    pillar: 'pharmacy-pos',
+    icon: HiOutlineShieldCheck,
+    badge: 'Batch & Expiry Tracking',
+    eyebrow: 'Pharmacy POS · Stock Safety',
+    title: 'Batch & Expiry Tracking for Pharmacies',
+    keyword: 'pharmacy expiry tracking software',
+    seoTitle: 'Pharmacy Expiry Tracking Software | Nexora Pharmacy POS',
+    seoDescription: 'Monitor batches, expiry dates and near-expiry medicines as part of Nexora Pharmacy POS — keeping expired stock from becoming a loss.',
+    intro: 'Medicine stock in a pharmacy carries a shelf life that regular retail stock doesn’t — Nexora Pharmacy POS is built with that in mind, as part of its medicine inventory.',
+    sections: [
+      {
+        heading: 'Watching batches and expiry as part of medicine inventory',
+        paragraphs: [
+          'As part of Nexora Pharmacy POS’s medicine inventory, batches, expiry dates and near-expiry medicines are monitored — so stock approaching its shelf life doesn’t sit unnoticed until it becomes unsellable, and a loss.',
+        ],
+      },
+      {
+        heading: 'Part of the same inventory workspace',
+        paragraphs: [
+          'Batch and expiry visibility isn’t a separate tool — it’s built into the same medicine inventory workspace used for stock levels, categories and supplier purchases, so a pharmacy counter isn’t switching between systems to keep expired stock off the shelf.',
+        ],
+        links: [
+          { to: '/pharmacy-pos/medicine-inventory', text: 'Medicine Inventory' },
+          { to: '/pharmacy-pos/supplier-purchases', text: 'Supplier Purchases' },
+        ],
+      },
+    ],
+    capabilities: [
+      ['Batch monitoring', 'Batches are monitored as part of medicine inventory.', HiOutlineShieldCheck],
+      ['Expiry date visibility', 'Expiry dates are tracked so stock doesn’t go unnoticed until it expires.', HiOutlineCalendarDays],
+      ['Near-expiry visibility', 'Medicines approaching expiry are surfaced before they become unsellable.', HiOutlineChartBarSquare],
+      ['Built into medicine inventory', 'Part of the same workspace as stock levels and supplier purchases — not a separate tool.', HiOutlineCube],
     ],
     sibling: 'pharmacy-pos/medicine-inventory',
     siblingLabel: 'Medicine Inventory',
@@ -775,6 +943,46 @@ export const featurePages = {
       ['Booking history', 'See a customer’s full booking history in one place.', HiOutlineClipboardDocumentList],
       ['Outstanding dues', 'Track what each customer owes across all their bookings.', HiOutlineBanknotes],
       ['Customers with dues view', 'A dedicated view surfaces every customer who currently owes money.', HiOutlineChartBarSquare],
+    ],
+    sibling: 'transport-fleet/rental-bookings',
+    siblingLabel: 'Rental Bookings',
+  },
+  'transport-fleet/payments-and-dues': {
+    pillar: 'transport-fleet',
+    icon: HiOutlineCreditCard,
+    badge: 'Payments & Dues',
+    eyebrow: 'Fleet · Daily Collection',
+    title: 'Fleet Payments & Dues',
+    keyword: 'fleet payment collection software',
+    seoTitle: 'Fleet Payment Collection Software | Nexora Fleet & Rental',
+    seoDescription: 'Reconcile daily collections, see Net Collected vs Net Today, and track outstanding dues fleet-wide — Nexora Fleet & Rental payments and dues.',
+    intro: 'Payments and dues in Nexora Fleet & Rental take a fleet-wide view — what’s been collected today, what’s outstanding, and where refunds and cancellations stand.',
+    sections: [
+      {
+        heading: 'Net Collected vs Net Today',
+        paragraphs: [
+          'Collections are reconciled as Net Collected against Net Today, giving a fleet-wide read on how much has actually come in for the day versus what was billed — the daily collection picture, not a single booking’s payment history.',
+        ],
+      },
+      {
+        heading: 'Outstanding dues across every customer',
+        paragraphs: [
+          'Dues owed across the fleet are tracked in one place, tied to booking status control, so an operator can see which bookings still have money outstanding without checking each rental individually.',
+        ],
+      },
+      {
+        heading: 'Cancellations and refunds, accounted for',
+        paragraphs: [
+          'Cancelled bookings and refund entries are recorded as part of the same collection view — for the per-booking refund amount, method and date on a specific rental, that detail lives on the booking itself.',
+        ],
+        links: [{ to: '/transport-fleet/rental-bookings', text: 'See per-booking payment detail on Rental Bookings' }],
+      },
+    ],
+    capabilities: [
+      ['Net Collected vs Net Today', 'A fleet-wide reconciliation of what’s been collected against what was billed today.', HiOutlineChartBarSquare],
+      ['Outstanding dues', 'Track dues owed across every customer, not just one booking.', HiOutlineBanknotes],
+      ['Booking status payment control', 'Payment status is tied to booking status across the fleet.', HiOutlineClipboardDocumentList],
+      ['Cancelled & refund entries', 'Cancellations and refunds are accounted for in the collection view.', HiOutlineCreditCard],
     ],
     sibling: 'transport-fleet/rental-bookings',
     siblingLabel: 'Rental Bookings',

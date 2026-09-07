@@ -281,6 +281,12 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://nexorasolution.online/pharmacy-pos/batch-and-expiry-tracking/</loc>
+    <lastmod>2026-09-07</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://nexorasolution.online/pharmacy-pos/billing/</loc>
     <lastmod>2026-09-07</lastmod>
     <changefreq>daily</changefreq>
@@ -335,6 +341,12 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://nexorasolution.online/restaurant-pos/billing-and-receipts/</loc>
+    <lastmod>2026-09-07</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://nexorasolution.online/restaurant-pos/inventory/</loc>
     <lastmod>2026-09-07</lastmod>
     <changefreq>daily</changefreq>
@@ -371,6 +383,12 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://nexorasolution.online/retail-pos/customer-records/</loc>
+    <lastmod>2026-09-07</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://nexorasolution.online/retail-pos/discounts-and-offers/</loc>
     <lastmod>2026-09-07</lastmod>
     <changefreq>daily</changefreq>
@@ -378,6 +396,12 @@
   </url>
   <url>
     <loc>https://nexorasolution.online/retail-pos/inventory-control/</loc>
+    <lastmod>2026-09-07</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://nexorasolution.online/retail-pos/store-reports/</loc>
     <lastmod>2026-09-07</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
@@ -504,6 +528,12 @@
   </url>
   <url>
     <loc>https://nexorasolution.online/transport-fleet/fleet-management/</loc>
+    <lastmod>2026-09-07</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://nexorasolution.online/transport-fleet/payments-and-dues/</loc>
     <lastmod>2026-09-07</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
