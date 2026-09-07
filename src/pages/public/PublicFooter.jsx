@@ -1,6 +1,5 @@
 import Link from '../../components/AppLink.jsx'
 import {
-  HiOutlineChatBubbleLeftRight,
   HiOutlineDocumentChartBar,
   HiOutlineMapPin,
   HiOutlineGlobeAlt,
@@ -80,19 +79,39 @@ const resourceLinks = [
   ['Support Center', '/support-center'],
 ]
 
+function FooterHeading({ children }) {
+  return (
+    <h3 className="relative inline-flex flex-col text-[12px] font-semibold uppercase tracking-[0.16em] text-white/90">
+      {children}
+      <span className="mt-2 h-[2px] w-6 rounded-full bg-gradient-to-r from-blue-400 via-violet-400 to-fuchsia-400" />
+    </h3>
+  )
+}
+
+function FooterLink({ to, children }) {
+  return (
+    <Link
+      to={to}
+      className="group inline-flex items-center text-[13.5px] font-normal leading-[1.85] text-white/55 transition-all duration-200 hover:text-white"
+    >
+      <span className="transition-transform duration-200 group-hover:translate-x-[3px]">{children}</span>
+    </Link>
+  )
+}
+
 export default function PublicFooter() {
   return (
     <footer className="footer-glass text-white">
-      <div className="mx-auto max-w-7xl px-5 py-12 sm:px-6 lg:px-8">
-        <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-[1.25fr_1fr_0.9fr_1fr_1.1fr]">
+      <div className="mx-auto max-w-7xl px-5 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-24">
+        <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-[1.2fr_1fr_0.9fr_1fr_1.1fr] lg:gap-8">
 
-          {/* Column 1 — Company */}
+          {/* Column 1 — Brand */}
           <div>
-            <NexoraLogo compact textClassName="[&>p]:text-white" />
-            <p className="mt-5 text-sm leading-7 text-white/60">
+            <NexoraLogo compact invert />
+            <p className="mt-6 max-w-xs text-[14px] leading-[1.8] text-white/50">
               Business software platform for Restaurants, Retail, Schools, Transport, Medical Stores and Enterprises.
             </p>
-            <div className="mt-5 flex flex-wrap gap-2.5">
+            <div className="mt-7 flex flex-wrap gap-2.5">
               {socialLinks.map(({ icon: Icon, href, label }) => (
                 <a
                   key={label}
@@ -100,7 +119,7 @@ export default function PublicFooter() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={label}
-                  className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/10 text-base text-white backdrop-blur-sm transition-all duration-200 hover:scale-110 hover:bg-white/25 hover:border-white/30 hover:shadow-[0_0_20px_rgba(255,255,255,0.15)] active:scale-95"
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] text-[13px] text-white/70 backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-white/25 hover:bg-white/[0.14] hover:text-white hover:shadow-[0_8px_24px_-8px_rgba(255,255,255,0.18)] active:scale-95"
                 >
                   <Icon />
                 </a>
@@ -110,81 +129,88 @@ export default function PublicFooter() {
 
           {/* Column 2 — Products */}
           <div>
-            <h3 className="text-sm font-medium tracking-[0.08em] text-white/80">Products</h3>
-            <div className="mt-5 grid gap-3 text-sm">
+            <FooterHeading>Products</FooterHeading>
+            <div className="mt-6 grid gap-3">
               {productLinks.map(([label, to]) => (
-                <Link key={label} to={to} className="font-light text-white/55 transition-colors duration-200 hover:text-white">
-                  {label}
-                </Link>
+                <FooterLink key={label} to={to}>{label}</FooterLink>
               ))}
             </div>
           </div>
 
           {/* Column 3 — Company */}
           <div>
-            <h3 className="text-sm font-medium tracking-[0.08em] text-white/80">Company</h3>
-            <div className="mt-5 grid gap-3 text-sm">
+            <FooterHeading>Company</FooterHeading>
+            <div className="mt-6 grid gap-3">
               {companyLinks.map(([label, to]) => (
-                <Link key={label} to={to} className="font-light text-white/55 transition-colors duration-200 hover:text-white">
-                  {label}
-                </Link>
+                <FooterLink key={label} to={to}>{label}</FooterLink>
               ))}
             </div>
           </div>
 
           {/* Column 4 — Resources */}
           <div>
-            <h3 className="text-sm font-medium tracking-[0.08em] text-white/80">Resources</h3>
-            <div className="mt-5 grid gap-3 text-sm">
+            <FooterHeading>Resources</FooterHeading>
+            <div className="mt-6 grid gap-3">
               {resourceLinks.map(([label, to]) => (
-                <Link key={label} to={to} className="font-light text-white/55 transition-colors duration-200 hover:text-white">
-                  {label}
-                </Link>
+                <FooterLink key={label} to={to}>{label}</FooterLink>
               ))}
             </div>
           </div>
 
           {/* Column 5 — Contact */}
           <div>
-            <h3 className="text-sm font-medium tracking-[0.08em] text-white/80">Contact</h3>
-            <div className="mt-5 grid gap-4 text-sm">
-              <a href={whatsappLink} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-[rgba(15,40,66,0.5)] px-3.5 py-1.5 text-[11px] font-medium text-white backdrop-blur-md transition hover:bg-white/20 hover:border-white/30 hover:text-white">
-                <FaWhatsapp className="text-sm text-emerald-400" />
+            <FooterHeading>Contact</FooterHeading>
+            <div className="mt-6 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-sm">
+              <a
+                href={whatsappLink}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-3 border-b border-white/[0.08] px-4 py-3.5 text-[13.5px] font-medium text-white/80 transition-colors duration-200 hover:bg-white/[0.05] hover:text-white"
+              >
+                <FaWhatsapp className="shrink-0 text-base text-emerald-400" />
                 <span>{whatsappNumberDisplay}</span>
               </a>
-              <div className="flex items-center gap-3">
-                <a href={`mailto:${contactEmail}`} className="flex gap-3 font-light text-white/55 transition-colors duration-200 hover:text-white">
-                  <HiOutlineDocumentChartBar className="mt-0.5 shrink-0 text-lg" />
-                  <span>{contactEmail}</span>
+              <div className="flex items-center gap-3 border-b border-white/[0.08] px-4 py-3.5">
+                <a
+                  href={`mailto:${contactEmail}`}
+                  className="flex min-w-0 flex-1 items-center gap-3 text-[13px] font-normal text-white/55 transition-colors duration-200 hover:text-white"
+                >
+                  <HiOutlineDocumentChartBar className="shrink-0 text-base" />
+                  <span className="truncate">{contactEmail}</span>
                 </a>
                 <CopyEmailButton email={contactEmail} />
               </div>
-              <a href={websiteUrl} target="_blank" rel="noreferrer" className="flex gap-3 font-light text-white/55 transition-colors duration-200 hover:text-white">
-                <HiOutlineGlobeAlt className="mt-0.5 shrink-0 text-lg" />
+              <a
+                href={websiteUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-3 border-b border-white/[0.08] px-4 py-3.5 text-[13px] font-normal text-white/55 transition-colors duration-200 hover:bg-white/[0.05] hover:text-white"
+              >
+                <HiOutlineGlobeAlt className="shrink-0 text-base" />
                 <span>nexorasolution.online</span>
               </a>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-[rgba(15,40,66,0.5)] px-3.5 py-1.5 text-[11px] font-medium text-white backdrop-blur-md">
-                <HiOutlineMapPin className="text-sm text-rose-400" />
-                Pakistan &amp; Dubai
-              </span>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-[rgba(15,40,66,0.5)] px-3.5 py-1.5 text-[11px] font-medium text-white backdrop-blur-md transition hover:bg-white/20 hover:border-white/30">
-                <HiOutlineGlobeAlt className="text-sm" />
-                Available Worldwide
-              </span>
+              <div className="flex items-center gap-3 border-b border-white/[0.08] px-4 py-3.5 text-[13px] font-normal text-white/55">
+                <HiOutlineMapPin className="shrink-0 text-base text-rose-400" />
+                <span>Pakistan &amp; Dubai</span>
+              </div>
+              <div className="flex items-center gap-3 px-4 py-3.5 text-[13px] font-normal text-white/55">
+                <HiOutlineGlobeAlt className="shrink-0 text-base text-sky-400" />
+                <span>Available Worldwide</span>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Countries We Serve — every country landing page needs at least one
             crawlable internal link; this is the only place that lists all of them. */}
-        <div className="mt-12 border-t border-white/10 pt-8">
-          <h3 className="text-sm font-medium tracking-[0.08em] text-white/80">Countries We Serve</h3>
-          <div className="mt-4 flex flex-wrap gap-2">
+        <div className="mt-14 border-t border-white/[0.08] pt-10">
+          <FooterHeading>Countries We Serve</FooterHeading>
+          <div className="mt-5 flex flex-wrap gap-2">
             {COUNTRIES.map((country) => (
               <Link
                 key={country.slug}
                 to={`/${country.slug}`}
-                className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[12px] font-light text-white/55 transition-colors duration-200 hover:border-white/25 hover:bg-white/10 hover:text-white"
+                className="rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-[12px] font-normal text-white/55 transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.09] hover:text-white"
               >
                 {country.flag} {country.name}
               </Link>
@@ -193,12 +219,12 @@ export default function PublicFooter() {
         </div>
 
         {/* Bottom Bar */}
-        <div className="mt-16 flex flex-col items-center justify-between gap-2 border-t border-white/10 pt-8 text-sm text-white/60 sm:flex-row">
+        <div className="mt-14 flex flex-col items-center justify-between gap-4 border-t border-white/[0.08] pt-8 text-[13px] text-white/45 sm:flex-row">
           <p>&copy; 2019–2026 Nexora Solution. All Rights Reserved.</p>
-          <div className="flex gap-4">
-            <Link to="/privacy-policy" className="font-light transition-colors duration-200 hover:text-white">Privacy</Link>
-            <Link to="/terms" className="font-light transition-colors duration-200 hover:text-white">Terms</Link>
-            <Link to="/privacy-policy" className="font-light transition-colors duration-200 hover:text-white">Cookies</Link>
+          <div className="flex gap-6">
+            <Link to="/privacy-policy" className="transition-colors duration-200 hover:text-white">Privacy</Link>
+            <Link to="/terms" className="transition-colors duration-200 hover:text-white">Terms</Link>
+            <Link to="/privacy-policy" className="transition-colors duration-200 hover:text-white">Cookies</Link>
           </div>
         </div>
       </div>
