@@ -195,6 +195,16 @@ export const COUNTRIES = [
 
     localEdge: 'ZATCA e-invoicing (Fatoorah) Phase 2 compliant. Arabic-first interface with full RTL support. Cloud infrastructure with Middle East edge nodes. WhatsApp Business API — essential for Saudi customer engagement.',
 
+    spotlight: {
+      eyebrow: 'AI-Powered CRM',
+      heading: 'AI-Powered CRM for Saudi Arabia',
+      body: 'Nexora CRM gives Saudi sales and service teams one dashboard for leads, customer records, pipeline stages, invoices and follow-up tasks — with the same Arabic-first interface and cloud access available across Nexora\'s platform in Saudi Arabia.',
+      links: [
+        { to: '/crm/', label: 'Explore Nexora CRM' },
+        { to: '/pricing', label: 'View Pricing' },
+      ],
+    },
+
     faqs: [
       { q: 'Is Nexora ZATCA e-invoicing compliant?', a: 'Yes — our invoicing system is ZATCA Fatoorah Phase 2 compliant. We generate QR-coded electronic invoices, maintain invoice hash sequences, and support integration with ZATCA\'s e-invoicing platform for real-time reporting.' },
       { q: 'Does Nexora support full Arabic interface?', a: 'Yes — our platform provides a complete Arabic-first interface with proper RTL (right-to-left) text rendering. Menus, invoices, reports, and dashboards all work natively in Arabic. Our AI speaks fluent Arabic.' },
@@ -260,6 +270,17 @@ export const COUNTRIES = [
     whyNexora: 'Qatar businesses choose Nexora for our enterprise-grade cloud infrastructure, bilingual Arabic/English interface, and AI-powered automation that drives efficiency. Our WhatsApp CRM is essential for Qatar\'s relationship-driven business culture.',
 
     localEdge: 'Qatar tax-compliant invoicing. Bilingual Arabic/English interface. Cloud infrastructure with Middle East edge nodes. WhatsApp Business API integration for Qatar\'s WhatsApp-first business communication culture.',
+
+    spotlight: {
+      eyebrow: 'POS for Qatar',
+      heading: 'POS Software Built for Qatar Businesses',
+      body: 'Nexora Restaurant POS handles tables, billing, receipts and daily sales, and Nexora Retail POS covers barcode billing, inventory control and store reporting — both available with the same bilingual Arabic/English interface and cloud access already built into Nexora\'s platform for Qatar.',
+      links: [
+        { to: '/restaurant-pos', label: 'Explore Restaurant POS' },
+        { to: '/retail-pos', label: 'Explore Retail POS' },
+        { to: '/pricing', label: 'View Pricing' },
+      ],
+    },
 
     faqs: [
       { q: 'Is Nexora suitable for Qatar businesses?', a: 'Yes — Nexora serves businesses across Doha, Al Rayyan, Al Wakrah, and all Qatar municipalities. Our platform handles Qatar\'s tax requirements, supports Arabic/English, and integrates with local business workflows.' },

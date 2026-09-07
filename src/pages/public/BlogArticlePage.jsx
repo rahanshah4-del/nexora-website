@@ -547,6 +547,20 @@ export default function BlogArticlePage() {
                 ))}
               </div>
 
+              {article.primaryLink || article.secondaryLinks?.length ? (
+                <div className="mt-8 rounded-[1.35rem] border border-slate-200 bg-white p-5 shadow-sm">
+                  <p className="text-sm leading-7 text-slate-500">
+                    <span className="font-medium text-slate-900">Continue exploring: </span>
+                    {[article.primaryLink, ...(article.secondaryLinks || [])].filter(Boolean).map((link, i) => (
+                      <span key={link.to}>
+                        {i > 0 ? ' · ' : null}
+                        <Link to={link.to} className="font-medium text-slate-900 underline decoration-slate-300 underline-offset-4 hover:decoration-slate-900">{link.label}</Link>
+                      </span>
+                    ))}
+                  </p>
+                </div>
+              ) : null}
+
               <div className="mt-10 flex flex-wrap gap-1.5">
                 {article.tags.map((item) => (
                   <Link key={item} to={`/blog/?tag=${encodeURIComponent(item)}`} className="inline-flex items-center gap-1.5 rounded-full border border-slate-100 bg-slate-50/70 px-3 py-1.5 text-[0.7rem] font-medium text-slate-500 shadow-sm transition-all duration-200 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 active:scale-[0.96]">
