@@ -5,16 +5,21 @@ import PublicPageShell from './PublicPageShell.jsx'
 import {
   HiOutlineArrowRight,
   HiOutlineBanknotes,
+  HiOutlineBuildingStorefront,
   HiOutlineCalendarDays,
   HiOutlineChartBarSquare,
   HiOutlineCheckCircle,
   HiOutlineClipboardDocumentList,
   HiOutlineCreditCard,
+  HiOutlineCube,
   HiOutlineDocumentChartBar,
   HiOutlineFire,
   HiOutlineMagnifyingGlass,
   HiOutlineShieldCheck,
+  HiOutlineSparkles,
+  HiOutlineSquares2X2,
   HiOutlineTableCells,
+  HiOutlineTag,
   HiOutlineTruck,
   HiOutlineUserGroup,
 } from 'react-icons/hi2'
@@ -118,6 +123,89 @@ export const featurePages = {
     sibling: 'restaurant-pos/kot-and-kitchen-display',
     siblingLabel: 'KOT & Kitchen Display',
   },
+  'restaurant-pos/menu-management': {
+    pillar: 'restaurant-pos',
+    icon: HiOutlineSquares2X2,
+    badge: 'Menu Management',
+    eyebrow: 'Restaurant POS · Menu Operations',
+    title: 'Restaurant Menu Management',
+    keyword: 'restaurant menu management software',
+    seoTitle: 'Restaurant Menu Management Software | Nexora POS',
+    seoDescription: 'Organize menu categories, item status and pricing, import a menu with AI, and connect menu items to recipes — Nexora Restaurant POS menu management.',
+    intro: 'Every item on the menu — its category, price and availability — lives in one place in Nexora, connected directly to the recipe behind it.',
+    sections: [
+      {
+        heading: 'Organize the menu the way it’s actually served',
+        paragraphs: [
+          'Menu items are grouped into categories — Food, Drink, Combo and Add-on — with each item carrying its own status (Available or Inactive) and price, so staff and the ordering screen always show what’s actually sellable that day.',
+        ],
+      },
+      {
+        heading: 'Import a menu with AI instead of typing it in',
+        paragraphs: [
+          'Rather than re-entering an existing menu by hand, Nexora can import it directly — the AI reads a menu, including from a photo, and extracts the items automatically, which is faster than manual data entry for a restaurant bringing a large menu online for the first time.',
+        ],
+        links: [{ to: '/ai', text: 'See Nexora AI in action' }],
+      },
+      {
+        heading: 'Menu items connected to recipes',
+        paragraphs: [
+          'Menu items aren’t just a name and a price — each one can be linked to a recipe with its own ingredients. That link is what powers ingredient-level stock tracking and food cost reporting on the inventory side, so the menu and the kitchen’s ingredient stock stay in sync.',
+        ],
+      },
+    ],
+    capabilities: [
+      ['Menu categories', 'Group items as Food, Drink, Combo or Add-on for a clear, organized menu.', HiOutlineSquares2X2],
+      ['Item status & pricing', 'Mark items Available or Inactive and set pricing per item.', HiOutlineDocumentChartBar],
+      ['AI menu import', 'Import an existing menu — including from a photo — instead of entering it by hand.', HiOutlineSparkles],
+      ['Recipe-linked items', 'Connect menu items to their recipes for ingredient-level tracking.', HiOutlineCube],
+    ],
+    sibling: 'restaurant-pos/inventory',
+    siblingLabel: 'Inventory & Food Cost',
+  },
+  'restaurant-pos/inventory': {
+    pillar: 'restaurant-pos',
+    icon: HiOutlineCube,
+    badge: 'Inventory & Food Cost',
+    eyebrow: 'Restaurant POS · Ingredient & Cost Control',
+    title: 'Restaurant Inventory & Food Cost Management',
+    keyword: 'restaurant inventory management software',
+    seoTitle: 'Restaurant Inventory & Food Cost Management | Nexora POS',
+    seoDescription: 'Track ingredient stock tied to recipes and see food cost percentage per menu item — Nexora’s restaurant inventory goes beyond generic stock counts.',
+    intro: 'Restaurant inventory in Nexora isn’t a generic product list — it’s ingredient stock tied directly to the recipes on the menu, with food cost calculated from real ingredient and sales data.',
+    sections: [
+      {
+        heading: 'Ingredient stock, not just product stock',
+        paragraphs: [
+          'Because menu items are linked to recipes, ingredient stock is tracked through the same recipe data that powers menu management — ingredient-level stock, not a separate, disconnected product list.',
+        ],
+      },
+      {
+        heading: 'Food cost, calculated per menu item',
+        paragraphs: [
+          'Nexora computes food cost analysis directly from recipes, ingredient stock and order data — working out the cost behind each recipe so a menu item that’s quietly eating into margin doesn’t stay invisible.',
+        ],
+        bullets: [
+          'Food cost is measured as a percentage of a recipe’s cost against its price, benchmarked against a healthy 28–35% range',
+          'Menu items and categories can be compared on cost, not just on sales volume',
+        ],
+      },
+      {
+        heading: 'Low-stock and reorder visibility',
+        paragraphs: [
+          'Ingredients approaching low stock are flagged automatically, with a suggested reorder quantity calculated from current stock and minimum levels — so restocking decisions are based on the kitchen’s actual usage, not guesswork.',
+        ],
+      },
+    ],
+    capabilities: [
+      ['Recipe-linked ingredient stock', 'Ingredient stock is tied to the recipes menu items are built from.', HiOutlineCube],
+      ['Food cost analysis', 'Food cost is calculated per recipe from real ingredient and order data.', HiOutlineChartBarSquare],
+      ['Healthy cost benchmarking', 'Food cost percentage is compared against a healthy range, not just tracked in isolation.', HiOutlineDocumentChartBar],
+      ['Low-stock alerts & reorder quantities', 'Ingredients nearing low stock are flagged with a suggested reorder amount.', HiOutlineClipboardDocumentList],
+    ],
+    sibling: 'restaurant-pos/menu-management',
+    siblingLabel: 'Menu Management',
+  },
 
   // ── Retail POS ───────────────────────────────────────────────────────
   'retail-pos/billing-and-checkout': {
@@ -190,6 +278,39 @@ export const featurePages = {
     sibling: 'retail-pos/billing-and-checkout',
     siblingLabel: 'Billing & Checkout',
   },
+  'retail-pos/discounts-and-offers': {
+    pillar: 'retail-pos',
+    icon: HiOutlineTag,
+    badge: 'Discounts & Offers',
+    eyebrow: 'Retail POS · Promotions',
+    title: 'Retail Discounts & Offers',
+    keyword: 'retail POS discount software',
+    seoTitle: 'Retail POS Discount Software | Nexora Retail POS',
+    seoDescription: 'Run promo codes and till-safe discount rules with percentage or fixed-PKR discounts and tax defaults — Nexora Retail POS discounts and offers.',
+    intro: 'Discounts in Nexora Retail POS run as till-safe rules the counter can apply consistently — not manual price overrides a cashier has to remember.',
+    sections: [
+      {
+        heading: 'Promo codes and discount rules at the till',
+        paragraphs: [
+          'Active promo codes can be applied directly at checkout, and discount rules are built to be till-safe — consistent, predictable behavior at the counter rather than one-off manual adjustments that are easy to apply inconsistently.',
+        ],
+      },
+      {
+        heading: 'Percentage or fixed-PKR, with tax handled correctly',
+        paragraphs: [
+          'A discount can be set as a percentage or a fixed PKR amount, and tax defaults are configured alongside discount rules — so the till applies tax the same way, on the same items, every time a promo is used.',
+        ],
+      },
+    ],
+    capabilities: [
+      ['Active promo codes', 'Apply promo codes directly at checkout.', HiOutlineTag],
+      ['Till-safe discount rules', 'Discount rules are built to behave consistently at the counter.', HiOutlineShieldCheck],
+      ['Percentage or fixed PKR', 'Set discounts as a percentage or a fixed PKR amount.', HiOutlineBanknotes],
+      ['Tax defaults', 'Configure tax defaults alongside discount rules for consistent totals.', HiOutlineDocumentChartBar],
+    ],
+    sibling: 'retail-pos/billing-and-checkout',
+    siblingLabel: 'Billing & Checkout',
+  },
 
   // ── Pharmacy POS ─────────────────────────────────────────────────────
   'pharmacy-pos/billing': {
@@ -257,6 +378,39 @@ export const featurePages = {
     ],
     sibling: 'pharmacy-pos/billing',
     siblingLabel: 'Pharmacy Billing',
+  },
+  'pharmacy-pos/supplier-purchases': {
+    pillar: 'pharmacy-pos',
+    icon: HiOutlineBuildingStorefront,
+    badge: 'Supplier Purchases',
+    eyebrow: 'Pharmacy POS · Supplier & Purchasing',
+    title: 'Pharmacy Supplier Purchases',
+    keyword: 'pharmacy supplier purchase management',
+    seoTitle: 'Pharmacy Supplier Purchase Management | Nexora Pharmacy POS',
+    seoDescription: 'Raise purchase orders, manage pharmacy supplier records, returns and payments — Nexora Pharmacy POS keeps medicine purchasing in one workspace.',
+    intro: 'Restocking a pharmacy counter runs through the same purchasing workspace as the medicine stock it feeds — purchase orders, supplier records and payments, all in one place.',
+    sections: [
+      {
+        heading: 'Purchase orders tied to supplier records',
+        paragraphs: [
+          'Purchase orders are raised against supplier records that hold contact and pricing details, so reordering medicine stock from a known supplier doesn’t mean re-entering their information each time.',
+        ],
+      },
+      {
+        heading: 'Returns and payments, tracked against the same supplier',
+        paragraphs: [
+          'Stock can be returned to a supplier when needed, and supplier payments are recorded against cash, bank transfer, cheque or a mobile wallet like JazzCash or EasyPaisa — keeping what’s owed to each pharmacy supplier accurate without a separate ledger.',
+        ],
+      },
+    ],
+    capabilities: [
+      ['Purchase orders', 'Raise purchase orders for medicine stock against supplier records.', HiOutlineClipboardDocumentList],
+      ['Supplier records', 'Keep pharmacy supplier contact and pricing details in one place.', HiOutlineBuildingStorefront],
+      ['Supplier returns', 'Return medicine stock to a supplier when needed.', HiOutlineTruck],
+      ['Supplier payments', 'Record payments by cash, bank transfer, cheque or mobile wallet.', HiOutlineCreditCard],
+    ],
+    sibling: 'pharmacy-pos/medicine-inventory',
+    siblingLabel: 'Medicine Inventory',
   },
 
   // ── School ERP ───────────────────────────────────────────────────────
@@ -326,6 +480,70 @@ export const featurePages = {
     sibling: 'school-erp/admissions-and-students',
     siblingLabel: 'Admissions & Students',
   },
+  'school-erp/fee-management': {
+    pillar: 'school-erp',
+    icon: HiOutlineBanknotes,
+    badge: 'Fee Management',
+    eyebrow: 'School ERP · Finance',
+    title: 'School Fee Management',
+    keyword: 'school fee management software',
+    seoTitle: 'School Fee Management Software | Nexora School ERP',
+    seoDescription: 'Run fee approvals, monthly billing and fee collection reporting from one workspace — Nexora School ERP fee management.',
+    intro: 'School fees in Nexora move through the same approval-based billing workflow as any other invoice, tailored specifically for monthly fee cycles.',
+    sections: [
+      {
+        heading: 'Fee bills start pending approval, not paid',
+        paragraphs: [
+          'A school fee bill is created and starts pending approval rather than being marked paid immediately — routed through Nexora’s Approval Center as a fee approval — so a front-desk collection doesn’t get recorded as settled before it’s actually confirmed.',
+        ],
+      },
+      {
+        heading: 'Billed by the month, tracked over time',
+        paragraphs: [
+          'Fee records carry their own fee month, so recurring monthly billing stays organized cycle to cycle, and fee collection trends are visible on the School Reports dashboard rather than requiring a manual month-by-month tally.',
+        ],
+      },
+    ],
+    capabilities: [
+      ['Fee approval workflow', 'Fee bills are routed through an approval step before being marked paid.', HiOutlineCheckCircle],
+      ['Monthly fee billing', 'Fee records are tied to a specific fee month for recurring billing.', HiOutlineCalendarDays],
+      ['Approval Center routing', 'Fee approvals are handled through the same Approval Center as other billing.', HiOutlineClipboardDocumentList],
+      ['Fee collection reporting', 'Fee collection trends are visible on the School Reports dashboard.', HiOutlineChartBarSquare],
+    ],
+    sibling: 'school-erp/admissions-and-students',
+    siblingLabel: 'Admissions & Students',
+  },
+  'school-erp/payroll': {
+    pillar: 'school-erp',
+    icon: HiOutlineUserGroup,
+    badge: 'Staff Payroll',
+    eyebrow: 'School ERP · Staff Operations',
+    title: 'School Staff Payroll',
+    keyword: 'school payroll management software',
+    seoTitle: 'School Payroll Management Software | Nexora School ERP',
+    seoDescription: 'Manage staff roles, pay frequency, gross pay and deductions — Nexora School ERP payroll keeps every staff payment on record.',
+    intro: 'School staff — teachers, admin staff, accountants, drivers and more — are paid through one payroll workspace, with each payment recorded against its own frequency and deductions.',
+    sections: [
+      {
+        heading: 'Every staff role, its own pay setup',
+        paragraphs: [
+          'Staff members are added to payroll by role — Accountant, Admin Staff, Driver and others — with a pay frequency set per person: Daily, Hourly, Monthly, or Custom, matching how each role actually gets paid.',
+        ],
+      },
+      {
+        heading: 'Gross pay, deductions and a full transaction record',
+        paragraphs: [
+          'Each payroll entry tracks gross pay and any deductions, paid out through cash, bank transfer, cheque or a mobile wallet like JazzCash or EasyPaisa, with every payment kept in a payroll transactions log for the school’s records.',
+        ],
+      },
+    ],
+    capabilities: [
+      ['Staff roles', 'Add staff by role — Accountant, Admin Staff, Driver and more.', HiOutlineUserGroup],
+      ['Flexible pay frequency', 'Set pay as Daily, Hourly, Monthly or Custom per staff member.', HiOutlineCalendarDays],
+      ['Gross pay & deductions', 'Track gross pay and deductions for every payroll entry.', HiOutlineBanknotes],
+      ['Payroll transaction log', 'Every payment is recorded in a payroll transactions history.', HiOutlineDocumentChartBar],
+    ],
+  },
 
   // ── CRM ──────────────────────────────────────────────────────────────
   'crm/leads-and-pipeline': {
@@ -390,6 +608,72 @@ export const featurePages = {
       ['Wallet balance', 'Credit and due balances update automatically as sales happen.', HiOutlineCreditCard],
       ['Status & history', 'Every record carries a status and creation date for account tracking.', HiOutlineCheckCircle],
       ['Connected to sales', 'Customer records link directly to invoices and sales activity.', HiOutlineDocumentChartBar],
+    ],
+    sibling: 'crm/leads-and-pipeline',
+    siblingLabel: 'Leads & Pipeline',
+  },
+  'crm/invoices': {
+    pillar: 'crm',
+    icon: HiOutlineDocumentChartBar,
+    badge: 'Invoices',
+    eyebrow: 'CRM · Billing',
+    title: 'CRM Invoices',
+    keyword: 'CRM invoicing software',
+    seoTitle: 'CRM Invoicing Software | Nexora CRM',
+    seoDescription: 'Create business invoices with Draft, Approved, Overdue and Cancelled statuses, multiple payment methods and tax-exclusive amounts — Nexora CRM invoices.',
+    intro: 'Invoices in Nexora CRM connect directly to the customers and deals they belong to, with a status that reflects exactly where each one stands.',
+    sections: [
+      {
+        heading: 'A status for every stage of an invoice',
+        paragraphs: [
+          'Every invoice carries a clear status — Draft, Approved, Overdue or Cancelled — so a sales or accounts team can see at a glance which invoices are still being prepared, which are confirmed, and which need to be chased.',
+        ],
+      },
+      {
+        heading: 'Built for real business invoicing',
+        paragraphs: [
+          'Invoices support tax-exclusive amounts, a grand total spelled out in words, and both manual and recommended line items — with payment recorded against cash, card, bank transfer, cheque or a mobile wallet once it comes in.',
+        ],
+      },
+    ],
+    capabilities: [
+      ['Draft to Overdue status', 'Track every invoice from Draft through Approved, Overdue or Cancelled.', HiOutlineDocumentChartBar],
+      ['Tax-exclusive amounts', 'Invoice amounts can be set tax-exclusive, with the grand total spelled out in words.', HiOutlineBanknotes],
+      ['Manual & recommended line items', 'Add line items manually or use recommended items when creating an invoice.', HiOutlineClipboardDocumentList],
+      ['Multiple payment methods', 'Record payment by cash, card, bank transfer, cheque or mobile wallet.', HiOutlineCreditCard],
+    ],
+    sibling: 'crm/customers',
+    siblingLabel: 'Customers',
+  },
+  'crm/tasks-and-follow-ups': {
+    pillar: 'crm',
+    icon: HiOutlineCheckCircle,
+    badge: 'Tasks & Follow-Ups',
+    eyebrow: 'CRM · Execution',
+    title: 'CRM Tasks & Follow-Ups',
+    keyword: 'CRM follow-up management software',
+    seoTitle: 'CRM Follow-Up Management Software | Nexora CRM',
+    seoDescription: 'Run a follow-up board with agent workload visibility and email or WhatsApp reminders — Nexora CRM keeps every follow-up from slipping through.',
+    intro: 'Once a lead or customer needs a follow-up, Nexora CRM turns it into a task on a shared board — with reminders that go out on their own, so nothing depends on someone remembering.',
+    sections: [
+      {
+        heading: 'A follow-up board the whole team can see',
+        paragraphs: [
+          'Follow-ups sit on a dedicated board, with an agent workload view showing how tasks are distributed across the team — useful for spotting when one person is overloaded while another has room to take on more.',
+        ],
+      },
+      {
+        heading: 'Reminders that go out automatically',
+        paragraphs: [
+          'Reminder notifications are sent by email and WhatsApp, so a follow-up doesn’t rely on someone checking the CRM at the right moment — the reminder reaches the person who owns the task on its own.',
+        ],
+      },
+    ],
+    capabilities: [
+      ['Follow-up board', 'See every open follow-up on one shared board.', HiOutlineClipboardDocumentList],
+      ['Agent workload view', 'See how follow-up tasks are distributed across the team.', HiOutlineUserGroup],
+      ['Email reminders', 'Automatic email reminders for upcoming and overdue follow-ups.', HiOutlineDocumentChartBar],
+      ['WhatsApp reminders', 'Reminder notifications also go out over WhatsApp.', HiOutlineCalendarDays],
     ],
     sibling: 'crm/leads-and-pipeline',
     siblingLabel: 'Leads & Pipeline',
@@ -462,6 +746,39 @@ export const featurePages = {
     sibling: 'transport-fleet/fleet-management',
     siblingLabel: 'Fleet Management',
   },
+  'transport-fleet/customer-ledger': {
+    pillar: 'transport-fleet',
+    icon: HiOutlineUserGroup,
+    badge: 'Customer Ledger',
+    eyebrow: 'Fleet · Customer Accounts',
+    title: 'Fleet Customer Ledger',
+    keyword: 'fleet customer ledger software',
+    seoTitle: 'Fleet Customer Ledger Software | Nexora Fleet & Rental',
+    seoDescription: 'See booking history and outstanding dues per customer, and every customer who owes money — Nexora Fleet & Rental customer ledger.',
+    intro: 'Every rental customer in Nexora Fleet & Rental has a ledger of their own — booking history and outstanding dues in one view, not scattered across individual bookings.',
+    sections: [
+      {
+        heading: 'Booking history per customer',
+        paragraphs: [
+          'Instead of looking up bookings one at a time, each customer’s record shows their full booking history — useful for spotting a repeat renter or checking how a particular customer has used the fleet over time.',
+        ],
+      },
+      {
+        heading: 'Dues that don’t get lost between bookings',
+        paragraphs: [
+          'Outstanding dues are tracked per customer, with a dedicated view for customers with dues and a running total customer count — so a fleet operator can see who owes money across all their bookings, not just the most recent one.',
+        ],
+      },
+    ],
+    capabilities: [
+      ['Customer records', 'Every rental customer has their own record in the ledger.', HiOutlineUserGroup],
+      ['Booking history', 'See a customer’s full booking history in one place.', HiOutlineClipboardDocumentList],
+      ['Outstanding dues', 'Track what each customer owes across all their bookings.', HiOutlineBanknotes],
+      ['Customers with dues view', 'A dedicated view surfaces every customer who currently owes money.', HiOutlineChartBarSquare],
+    ],
+    sibling: 'transport-fleet/rental-bookings',
+    siblingLabel: 'Rental Bookings',
+  },
 }
 
 export default function FeaturePage({ slug }) {
@@ -524,6 +841,16 @@ export default function FeaturePage({ slug }) {
                       </li>
                     ))}
                   </ul>
+                ) : null}
+                {sec.links ? (
+                  <p className="mt-3 text-sm leading-7 text-slate-500">
+                    {sec.links.map((l, i) => (
+                      <span key={l.to}>
+                        {i > 0 ? ' · ' : null}
+                        <Link to={l.to} className="font-medium text-slate-900 underline decoration-slate-300 underline-offset-4 hover:decoration-slate-900">{l.text}</Link>
+                      </span>
+                    ))}
+                  </p>
                 ) : null}
               </div>
             ))}

@@ -52,6 +52,16 @@ const PUBLIC_ROUTE_ALLOWLIST = new Set([
   '/crm/customers',
   '/transport-fleet/fleet-management',
   '/transport-fleet/rental-bookings',
+  // Supporting feature pages — Batch 2 (Phase 5, approved subset)
+  '/restaurant-pos/menu-management',
+  '/restaurant-pos/inventory',
+  '/retail-pos/discounts-and-offers',
+  '/pharmacy-pos/supplier-purchases',
+  '/school-erp/fee-management',
+  '/school-erp/payroll',
+  '/crm/invoices',
+  '/crm/tasks-and-follow-ups',
+  '/transport-fleet/customer-ledger',
   // Software development & services pages
   '/software-development',
   '/seo-services',

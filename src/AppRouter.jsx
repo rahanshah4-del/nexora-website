@@ -523,6 +523,17 @@ export default function AppRouter() {
         <Route path="/transport-fleet/fleet-management" element={<LazyPage><FeaturePage slug="transport-fleet/fleet-management" /></LazyPage>} />
         <Route path="/transport-fleet/rental-bookings" element={<LazyPage><FeaturePage slug="transport-fleet/rental-bookings" /></LazyPage>} />
 
+        {/* Supporting feature pages — Batch 2 (Phase 5, approved subset) */}
+        <Route path="/restaurant-pos/menu-management" element={<LazyPage><FeaturePage slug="restaurant-pos/menu-management" /></LazyPage>} />
+        <Route path="/restaurant-pos/inventory" element={<LazyPage><FeaturePage slug="restaurant-pos/inventory" /></LazyPage>} />
+        <Route path="/retail-pos/discounts-and-offers" element={<LazyPage><FeaturePage slug="retail-pos/discounts-and-offers" /></LazyPage>} />
+        <Route path="/pharmacy-pos/supplier-purchases" element={<LazyPage><FeaturePage slug="pharmacy-pos/supplier-purchases" /></LazyPage>} />
+        <Route path="/school-erp/fee-management" element={<LazyPage><FeaturePage slug="school-erp/fee-management" /></LazyPage>} />
+        <Route path="/school-erp/payroll" element={<LazyPage><FeaturePage slug="school-erp/payroll" /></LazyPage>} />
+        <Route path="/crm/invoices" element={<LazyPage><FeaturePage slug="crm/invoices" /></LazyPage>} />
+        <Route path="/crm/tasks-and-follow-ups" element={<LazyPage><FeaturePage slug="crm/tasks-and-follow-ups" /></LazyPage>} />
+        <Route path="/transport-fleet/customer-ledger" element={<LazyPage><FeaturePage slug="transport-fleet/customer-ledger" /></LazyPage>} />
+
       <Route path="/login" element={<LazyPage><Login /></LazyPage>} />
       <Route path="/signup" element={<LazyPage><Signup /></LazyPage>} />
       <Route element={<LazyPage><RootRequireAuth /></LazyPage>}>

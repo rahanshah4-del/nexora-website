@@ -189,6 +189,18 @@ const PUBLIC_ROUTES = [
   { path: '/crm/customers', title: 'CRM Customer Records & Wallet Management | Nexora CRM', description: 'Keep customer contact details, type and wallet balance in one CRM record — Nexora CRM connects customer profiles directly to sales and invoices.' },
   { path: '/transport-fleet/fleet-management', title: 'Fleet Management Software | Nexora Fleet & Rental', description: 'Track vehicle registration, transmission, fuel type and driver assignment — Nexora Fleet Management keeps every vehicle record ready for booking.' },
   { path: '/transport-fleet/rental-bookings', title: 'Vehicle Rental Booking Software | Nexora Fleet & Rental', description: 'Book vehicles with pickup and return dates, security deposits and refund tracking — Nexora Fleet & Rental keeps every booking and payment in one record.' },
+  // Supporting feature pages — Batch 2 (Phase 5, approved subset). Title/
+  // description mirror the seoTitle/seoDescription in FeaturePage.jsx exactly
+  // so the static shell matches what PageSeo renders after hydration.
+  { path: '/restaurant-pos/menu-management', title: 'Restaurant Menu Management Software | Nexora POS', description: 'Organize menu categories, item status and pricing, import a menu with AI, and connect menu items to recipes — Nexora Restaurant POS menu management.' },
+  { path: '/restaurant-pos/inventory', title: 'Restaurant Inventory & Food Cost Management | Nexora POS', description: 'Track ingredient stock tied to recipes and see food cost percentage per menu item — Nexora’s restaurant inventory goes beyond generic stock counts.' },
+  { path: '/retail-pos/discounts-and-offers', title: 'Retail POS Discount Software | Nexora Retail POS', description: 'Run promo codes and till-safe discount rules with percentage or fixed-PKR discounts and tax defaults — Nexora Retail POS discounts and offers.' },
+  { path: '/pharmacy-pos/supplier-purchases', title: 'Pharmacy Supplier Purchase Management | Nexora Pharmacy POS', description: 'Raise purchase orders, manage pharmacy supplier records, returns and payments — Nexora Pharmacy POS keeps medicine purchasing in one workspace.' },
+  { path: '/school-erp/fee-management', title: 'School Fee Management Software | Nexora School ERP', description: 'Run fee approvals, monthly billing and fee collection reporting from one workspace — Nexora School ERP fee management.' },
+  { path: '/school-erp/payroll', title: 'School Payroll Management Software | Nexora School ERP', description: 'Manage staff roles, pay frequency, gross pay and deductions — Nexora School ERP payroll keeps every staff payment on record.' },
+  { path: '/crm/invoices', title: 'CRM Invoicing Software | Nexora CRM', description: 'Create business invoices with Draft, Approved, Overdue and Cancelled statuses, multiple payment methods and tax-exclusive amounts — Nexora CRM invoices.' },
+  { path: '/crm/tasks-and-follow-ups', title: 'CRM Follow-Up Management Software | Nexora CRM', description: 'Run a follow-up board with agent workload visibility and email or WhatsApp reminders — Nexora CRM keeps every follow-up from slipping through.' },
+  { path: '/transport-fleet/customer-ledger', title: 'Fleet Customer Ledger Software | Nexora Fleet & Rental', description: 'See booking history and outstanding dues per customer, and every customer who owes money — Nexora Fleet & Rental customer ledger.' },
 ]
 
 // ═══════════════════════════════════════════════════════════════════════════════

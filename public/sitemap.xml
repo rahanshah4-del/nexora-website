@@ -185,7 +185,19 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://nexorasolution.online/crm/invoices/</loc>
+    <lastmod>2026-09-07</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://nexorasolution.online/crm/leads-and-pipeline/</loc>
+    <lastmod>2026-09-07</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://nexorasolution.online/crm/tasks-and-follow-ups/</loc>
     <lastmod>2026-09-07</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
@@ -281,6 +293,12 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://nexorasolution.online/pharmacy-pos/supplier-purchases/</loc>
+    <lastmod>2026-09-07</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://nexorasolution.online/pricing/</loc>
     <lastmod>2026-09-07</lastmod>
     <changefreq>daily</changefreq>
@@ -317,7 +335,19 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://nexorasolution.online/restaurant-pos/inventory/</loc>
+    <lastmod>2026-09-07</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://nexorasolution.online/restaurant-pos/kot-and-kitchen-display/</loc>
+    <lastmod>2026-09-07</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://nexorasolution.online/restaurant-pos/menu-management/</loc>
     <lastmod>2026-09-07</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
@@ -336,6 +366,12 @@
   </url>
   <url>
     <loc>https://nexorasolution.online/retail-pos/billing-and-checkout/</loc>
+    <lastmod>2026-09-07</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://nexorasolution.online/retail-pos/discounts-and-offers/</loc>
     <lastmod>2026-09-07</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
@@ -372,6 +408,18 @@
   </url>
   <url>
     <loc>https://nexorasolution.online/school-erp/attendance/</loc>
+    <lastmod>2026-09-07</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://nexorasolution.online/school-erp/fee-management/</loc>
+    <lastmod>2026-09-07</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://nexorasolution.online/school-erp/payroll/</loc>
     <lastmod>2026-09-07</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
@@ -444,6 +492,12 @@
   </url>
   <url>
     <loc>https://nexorasolution.online/transport-fleet/</loc>
+    <lastmod>2026-09-07</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://nexorasolution.online/transport-fleet/customer-ledger/</loc>
     <lastmod>2026-09-07</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
