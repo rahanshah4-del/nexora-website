@@ -186,7 +186,7 @@ export default function BlogArticlePage() {
             .skeleton-box-pulse { border-radius: .75rem; background: #e2e8f0; animation: applePulse 2s ease-in-out infinite; }
           `}</style>
 
-          <div className="relative overflow-hidden pb-12 pt-12 sm:pb-16 sm:pt-14 lg:pb-20 lg:pt-16">
+          <div className="relative overflow-hidden pb-12 pt-16 sm:pb-16 sm:pt-20 lg:pb-20 lg:pt-16">
             <div className="soft-arc-bg pointer-events-none" />
             <div className="relative mx-auto max-w-5xl px-5 sm:px-6 lg:px-8">
               {/* Back button skeleton */}
