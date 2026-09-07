@@ -21,7 +21,7 @@ export default function FaqPage() {
 
   return (
     <PublicPageShell>
-      <PageSeo {...seo} />
+      <PageSeo {...seo} faqItems={faqItems.map(({ q, a, email, b }) => ({ question: q, answer: `${a}${email || ''}${b || ''}` }))} />
       <section className="relative overflow-hidden bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_60%,#f1f5f9_100%)] py-16 sm:py-20 lg:py-24">
         <div className="soft-arc-bg pointer-events-none" />
         <div className="relative mx-auto max-w-3xl px-5 sm:px-6 lg:px-8">

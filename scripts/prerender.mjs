@@ -124,7 +124,10 @@ const PUBLIC_ROUTES = [
   { path: '/school-erp',    title: 'School ERP Software Pakistan — Nexora Solution',                                        description: 'Cloud-based school management system with student records, fee collection, attendance, exams and parent portal.' },
   { path: '/solutions/crm', title: 'CRM Software Pakistan — Nexora Solution',                                               description: 'Customer relationship management with lead tracking, pipeline, follow-ups and WhatsApp integration.' },
   { path: '/solutions/medical-store-pos', title: 'Medical Store POS Pakistan — Nexora Solution',                             description: 'Pharmacy POS with medicine inventory, batch tracking, expiry alerts and sales reports.' },
-  { path: '/solutions/school-erp', title: 'School ERP System Pakistan — Nexora Solution',                                   description: 'Complete school ERP with student management, fees, attendance, exams, payroll and reports.' },
+  // /solutions/school-erp removed — it rendered byte-identical content to
+  // /school-erp with a conflicting self-canonical (see SEO audit finding C1).
+  // public/_redirects now 301s it to /school-erp/ at the edge, so this
+  // route no longer needs (or should have) its own prerendered file.
   { path: '/solutions/property-erp', title: 'Property ERP Software Pakistan — Nexora Solution',                             description: 'Property management ERP for landlords, agents and developers. Track tenants, rent, maintenance and owners.' },
   { path: '/solutions/reports', title: 'Business Reports Software Pakistan — Nexora Analytics',                            description: 'Nexora Reports Pakistan provides KPI dashboards, PDF reports, Excel exports and business intelligence for growing teams.' },
   { path: '/blog',          title: 'Nexora Blog — POS, ERP & CRM Insights for Pakistani Businesses',                         description: 'Read the Nexora blog for POS tips, ERP guides, CRM strategies and business growth insights for Pakistani entrepreneurs.' },

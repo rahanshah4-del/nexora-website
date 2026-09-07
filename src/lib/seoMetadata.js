@@ -135,6 +135,21 @@ export const seoMetadata = {
     description: 'See how Nexora serves restaurants, retail, schools, transport and service teams with tailored software workflows and cloud management.',
     keyword: 'ERP Software Pakistan',
   }),
+  // Registry entries below mirror copy already live inline on their pages
+  // (src/pages/public/AIPage.jsx, ReviewsPage.jsx) — added so the central
+  // registry is complete; those pages are not switched to consume it here.
+  '/ai': buildPage({
+    path: '/ai',
+    title: 'Nexora AI — AI-Powered Business Software | AI POS, AI CRM, AI Restaurant',
+    description: 'Nexora AI is an intelligent AI platform deeply integrated into every business module — Restaurant POS, Retail POS, CRM, Inventory, Reports and more. AI menu import, AI sales insights, AI customer support.',
+  }),
+  '/reviews': buildPage({
+    path: '/reviews',
+    title: 'Customer Reviews | Nexora Solution Pakistan',
+    description: 'Read verified customer reviews and testimonials for Nexora POS, ERP, CRM and business software in Pakistan.',
+    ogTitle: 'Nexora Customer Reviews',
+    ogDescription: 'See what Pakistani businesses say about Nexora software.',
+  }),
   '/upgrade-business': buildPage({
     path: '/upgrade-business',
     title: 'Upgrade Business Software Pakistan | Nexora',
@@ -219,6 +234,14 @@ export const seoMetadata = {
     title: 'Restaurant POS Pakistan | Nexora POS Software',
     description: 'Nexora Restaurant POS Pakistan helps restaurants run billing, menus, kitchen display, staff roles and cash reporting with speed.',
     keyword: 'Restaurant POS Pakistan',
+  }),
+  // Copy matches the static shell already served for this route in
+  // scripts/prerender.mjs (PUBLIC_ROUTES) — now also consumed client-side
+  // by src/pages/public/DownloadRestaurantPOS.jsx via PageSeo.
+  '/download/restaurant-pos': buildPage({
+    path: '/download/restaurant-pos',
+    title: 'Download Nexora Restaurant POS for Windows — Free Installer',
+    description: 'Download the free Nexora Restaurant POS Windows installer (v1.0.0). Offline-capable POS with KOT printing, table layout, billing, customer wallet, expenses and cloud sync.',
   }),
   '/retail-pos': buildPage({
     path: '/retail-pos',

@@ -2,6 +2,7 @@ import Link from '../../components/AppLink.jsx'
 import PageSeo from '../../components/PageSeo.jsx'
 import { blogArticles } from '../../lib/blogData.js'
 import { getSeoForPath } from '../../lib/seoMetadata.js'
+import { COUNTRIES } from '../../lib/countries.js'
 import { HiOutlineSparkles } from 'react-icons/hi2'
 import PublicPageShell from './PublicPageShell.jsx'
 
@@ -18,6 +19,12 @@ const sitemapGroups = [
       ['Documentation', '/documentation'],
       ['Projects', '/projects'],
       ['Blog', '/blog'],
+      ['AI', '/ai'],
+      ['Reviews', '/reviews'],
+      ['FAQ', '/faq'],
+      ['Industries', '/industries'],
+      ['Support Center', '/support-center'],
+      ['Download Restaurant POS', '/download/restaurant-pos'],
     ],
   },
   {
@@ -29,7 +36,30 @@ const sitemapGroups = [
       ['Transport Software', '/transport'],
       ['WhatsApp CRM', '/whatsapp-crm'],
       ['CRM Software', '/solutions/crm'],
+      ['Property ERP', '/solutions/property-erp'],
+      ['Medical Store POS', '/solutions/medical-store-pos'],
+      ['Business Reports', '/solutions/reports'],
+      ['Email Marketing', '/solutions/email-marketing'],
+      ['Inventory Management', '/solutions/inventory-management'],
+      ['Team & Permissions', '/solutions/team-permissions'],
+      ['Reports & Analytics', '/solutions/reports-analytics'],
     ],
+  },
+  {
+    title: 'Business Services',
+    links: [
+      ['SEO Services', '/seo-services'],
+      ['Mobile App Development', '/mobile-app-development'],
+      ['Ecommerce Development', '/ecommerce-development'],
+      ['CRM Development', '/crm-development'],
+      ['ERP Development', '/erp-development'],
+      ['Cloud Solutions', '/cloud-solutions'],
+      ['API Integration', '/api-integration'],
+    ],
+  },
+  {
+    title: 'Countries We Serve',
+    links: COUNTRIES.map((country) => [`${country.flag} ${country.name}`, `/${country.slug}`]),
   },
   {
     title: 'Trust & Legal',
@@ -38,7 +68,6 @@ const sitemapGroups = [
       ['Terms of Service', '/terms'],
       ['Refund Policy', '/refund-policy'],
       ['XML Sitemap', '/sitemap.xml'],
-      ['Blog Sitemap', '/blog-sitemap.xml'],
       ['RSS Feed', '/rss.xml'],
     ],
   },

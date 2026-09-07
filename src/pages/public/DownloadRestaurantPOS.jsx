@@ -1,6 +1,8 @@
 import { motion } from 'framer-motion'
 import { HiOutlineArrowDownTray, HiOutlineChartBarSquare, HiOutlineCheck, HiOutlineCloud, HiOutlineComputerDesktop, HiOutlineCreditCard, HiOutlineDevicePhoneMobile, HiOutlineDocumentChartBar, HiOutlineLifebuoy, HiOutlinePrinter, HiOutlineServer, HiOutlineShieldCheck, HiOutlineShoppingCart, HiOutlineStar, HiOutlineTableCells, HiOutlineUserGroup, HiOutlineWifi } from 'react-icons/hi2'
 import Link from '../../components/AppLink.jsx'
+import PageSeo from '../../components/PageSeo.jsx'
+import { getSeoForPath } from '../../lib/seoMetadata.js'
 
 // ───────────────────────────────────────────────────────────────────────
 // Windows installer — Cloudflare R2 direct download link.
@@ -67,8 +69,11 @@ function SectionHeading({ eyebrow, title, subtitle }) {
 }
 
 export default function DownloadRestaurantPOS() {
+  const seo = getSeoForPath('/download/restaurant-pos')
   return (
-    <div className="min-h-screen bg-white">
+    <>
+      <PageSeo {...seo} />
+      <div className="min-h-screen bg-white">
       {/* ── Hero ── */}
       <header className="relative isolate overflow-hidden">
         {/* Mesh gradient background */}
@@ -334,6 +339,7 @@ export default function DownloadRestaurantPOS() {
           </p>
         </div>
       </footer>
-    </div>
+      </div>
+    </>
   )
 }
