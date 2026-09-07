@@ -2,21 +2,72 @@ import { useEffect, useState } from 'react'
 import Link from './AppLink.jsx'
 import { HiOutlineArrowRight, HiOutlineGift, HiOutlineXMark } from 'react-icons/hi2'
 
-const STORAGE_KEY = 'nexora-offer-popup-shown'
+// localStorage (not sessionStorage) so the offer stays dismissed across
+// browser sessions, not just the current tab. Value is the dismissal
+// timestamp (ms) — re-eligible once it's more than 30 days old.
+const STORAGE_KEY = 'nexora_offer_dismissed_at'
+const DISMISS_TTL_MS = 30 * 24 * 60 * 60 * 1000 // 30 days
+const DELAY_MS = 9000 // 8-10s window
+const SCROLL_TRIGGER_RATIO = 0.45 // 40-50% of the page
+
+function wasRecentlyDismissed() {
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY)
+    if (!raw) return false
+    const dismissedAt = Number(raw)
+    if (!Number.isFinite(dismissedAt)) return false
+    return Date.now() - dismissedAt < DISMISS_TTL_MS
+  } catch {
+    return false // storage unavailable (private mode, quota) — fail open
+  }
+}
+
+function markDismissed() {
+  try {
+    window.localStorage.setItem(STORAGE_KEY, String(Date.now()))
+  } catch {
+    /* storage unavailable — nothing to persist, popup may reappear */
+  }
+}
 
 export default function NewUserOfferPopup() {
   const [visible, setVisible] = useState(false)
   const [exiting, setExiting] = useState(false)
 
+  // Mounted once at the app root (see AppRouter.jsx) so this effect runs
+  // once per browser load — not once per page navigation. Fires on
+  // whichever comes first: an 8-10s delay, or the visitor scrolling past
+  // 40-50% of the page (real engagement), and only when there's no recent
+  // dismissal on record.
   useEffect(() => {
-    // Show once per session
-    if (sessionStorage.getItem(STORAGE_KEY)) return
-    const timer = setTimeout(() => setVisible(true), 800)
-    return () => clearTimeout(timer)
+    if (typeof window === 'undefined' || wasRecentlyDismissed()) return undefined
+
+    let triggered = false
+    const trigger = () => {
+      if (triggered) return
+      triggered = true
+      setVisible(true)
+      cleanup()
+    }
+
+    const onScroll = () => {
+      const scrollable = document.documentElement.scrollHeight - window.innerHeight
+      if (scrollable <= 0) return
+      if (window.scrollY / scrollable >= SCROLL_TRIGGER_RATIO) trigger()
+    }
+
+    const timer = setTimeout(trigger, DELAY_MS)
+    window.addEventListener('scroll', onScroll, { passive: true })
+
+    function cleanup() {
+      clearTimeout(timer)
+      window.removeEventListener('scroll', onScroll)
+    }
+    return cleanup
   }, [])
 
   const dismiss = () => {
-    sessionStorage.setItem(STORAGE_KEY, 'true')
+    markDismissed()
     setExiting(true)
     setTimeout(() => {
       setVisible(false)
@@ -27,23 +78,36 @@ export default function NewUserOfferPopup() {
   if (!visible) return null
 
   return (
-    <div className="fixed inset-0 z-[9998] flex items-center justify-center p-4">
-      {/* Backdrop */}
+    // Non-blocking corner card — no backdrop, no overlay, page stays fully
+    // interactive underneath. bottom-center on mobile, bottom-right on
+    // desktop (sm+); positioned above StickyCTA's bottom-6 row.
+    <div
+      className={`fixed bottom-24 left-1/2 z-[9990] w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 sm:left-auto sm:right-6 sm:translate-x-0 ${exiting ? 'pointer-events-none' : ''}`}
+      style={{
+        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+        animation: !exiting ? 'offerSlideIn 0.4s cubic-bezier(0.32, 0.72, 0, 1) forwards' : undefined,
+        transition: exiting ? 'opacity 0.25s ease, transform 0.25s ease' : undefined,
+        opacity: exiting ? 0 : undefined,
+        transform: exiting ? 'translate(-50%, 12px)' : undefined,
+      }}
+      role="dialog"
+      aria-label="New user offer"
+    >
+      <style>{`
+        @keyframes offerSlideIn {
+          from { opacity: 0; transform: translate(-50%, 24px); }
+          to { opacity: 1; transform: translate(-50%, 0); }
+        }
+        @media (min-width: 640px) {
+          @keyframes offerSlideIn {
+            from { opacity: 0; transform: translate(0, 24px); }
+            to { opacity: 1; transform: translate(0, 0); }
+          }
+        }
+      `}</style>
       <div
-        className={`absolute inset-0 bg-black/50 transition-opacity duration-300 ${exiting ? 'opacity-0' : 'opacity-100'}`}
-        style={{ backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)' }}
-        onClick={dismiss}
-      />
-
-      {/* Card */}
-      <div
-        className={`relative w-full max-w-sm overflow-hidden rounded-[1.35rem] bg-white/95 shadow-2xl shadow-black/20 transition-all duration-300 ${exiting ? 'opacity-0 scale-95 translate-y-2' : 'opacity-100 scale-100 translate-y-0'}`}
-        style={{
-          backdropFilter: 'blur(24px)',
-          WebkitBackdropFilter: 'blur(24px)',
-          paddingBottom: 'env(safe-area-inset-bottom, 16px)',
-          animation: !exiting ? 'applePopIn 0.45s cubic-bezier(0.32, 0.72, 0, 1) forwards' : undefined,
-        }}
+        className="relative overflow-hidden rounded-[1.35rem] border border-black/5 bg-white/95 shadow-2xl shadow-black/20"
+        style={{ backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)' }}
       >
         {/* Close button */}
         <button
@@ -98,7 +162,7 @@ export default function NewUserOfferPopup() {
             </div>
           </div>
 
-          {/* CTA */}
+          {/* CTA — converting is as good as dismissing, so this also marks it seen */}
           <Link
             to="/pricing"
             onClick={dismiss}
