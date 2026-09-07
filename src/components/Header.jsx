@@ -6,6 +6,7 @@ import { blogArticles } from '../lib/blogData.js'
 import {
   HiOutlineAcademicCap,
   HiOutlineArrowRight,
+  HiOutlineBanknotes,
   HiOutlineBars3,
   HiOutlineMagnifyingGlass,
   HiOutlineBuildingOffice2,
@@ -401,7 +402,7 @@ function Header() {
                       <Link to="/restaurant-pos" onClick={closeAll} className="group block rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 p-3.5 text-white shadow-[0_6px_20px_-8px_rgba(245,158,11,0.3)] transition-all duration-200 hover:shadow-[0_12px_28px_-10px_rgba(245,158,11,0.45)] hover:scale-[1.02]"><HiOutlineShoppingCart className="h-4 w-4" /><p className="mt-1.5 text-[12px] font-bold">Restaurant POS</p><p className="mt-0.5 text-[10px] leading-[1.35] text-amber-100">Most popular — 50+ restaurants use it daily.</p><span className="mt-2 inline-flex items-center gap-1 text-[10px] font-semibold text-white/90 group-hover:text-white">Learn More <HiOutlineArrowRight className="h-3 w-3" /></span></Link>
                       <Link to="/school-erp" onClick={closeAll} className="group block rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 p-3.5 text-white shadow-[0_6px_20px_-8px_rgba(16,185,129,0.3)] transition-all duration-200 hover:shadow-[0_12px_28px_-10px_rgba(16,185,129,0.45)] hover:scale-[1.02]"><HiOutlineAcademicCap className="h-4 w-4" /><p className="mt-1.5 text-[12px] font-bold">School ERP</p><p className="mt-0.5 text-[10px] leading-[1.35] text-emerald-100">1,200+ student school uses it.</p><span className="mt-2 inline-flex items-center gap-1 text-[10px] font-semibold text-white/90 group-hover:text-white">Learn More <HiOutlineArrowRight className="h-3 w-3" /></span></Link>
                       <div className="flex-1" />
-                      <Link to="/pricing" onClick={closeAll} className="block rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-center text-[12px] font-semibold text-slate-700 transition-all duration-150 hover:border-slate-300 hover:bg-slate-50">💰 View Pricing Plans</Link>
+                      <Link to="/pricing" onClick={closeAll} className="flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-[12px] font-semibold text-slate-700 transition-all duration-150 hover:border-slate-300 hover:bg-slate-50"><HiOutlineBanknotes className="h-3.5 w-3.5 shrink-0 text-slate-400" />View Pricing Plans</Link>
                     </div>
                   </div>
                 ) : (
@@ -423,8 +424,8 @@ function Header() {
                     <div className="w-[220px] shrink-0 border-l border-slate-200 bg-[linear-gradient(180deg,#f9fafb_0%,#ffffff_100%)] px-5 py-5 flex flex-col gap-3">
                       <Link to="/software-development" onClick={closeAll} className="group block rounded-xl bg-gradient-to-br from-[#1d1d1f] to-[#3a3a3c] p-4 text-white shadow-[0_6px_20px_-8px_rgba(15,23,42,0.3)] transition-all duration-200 hover:shadow-[0_12px_28px_-10px_rgba(15,23,42,0.45)] hover:scale-[1.02]"><p className="text-[13px] font-bold">50+ Projects</p><p className="mt-0.5 text-[10.5px] leading-[1.4] text-slate-300">See our portfolio of software built for businesses across Pakistan & UAE.</p><span className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-sky-300 group-hover:text-white transition-colors">View Portfolio <HiOutlineArrowRight className="h-3 w-3" /></span></Link>
                       <div className="flex-1" />
-                      <Link to="/seo-services" onClick={closeAll} className="block rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-[12px] font-semibold text-slate-700 transition-all duration-150 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900">🔍 Need SEO? Rank on Google →</Link>
-                      <a href="https://wa.me/923194329754" target="_blank" rel="noreferrer" onClick={closeAll} className="flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-[12px] font-semibold text-slate-600 transition-all duration-150 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900">💬 Discuss Your Project</a>
+                      <Link to="/seo-services" onClick={closeAll} className="flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-[12px] font-semibold text-slate-700 transition-all duration-150 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"><HiOutlineMagnifyingGlass className="h-3.5 w-3.5 shrink-0 text-slate-400" />Need SEO? Rank on Google <HiOutlineArrowRight className="h-3 w-3 shrink-0" /></Link>
+                      <a href="https://wa.me/923194329754" target="_blank" rel="noreferrer" onClick={closeAll} className="flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-[12px] font-semibold text-slate-600 transition-all duration-150 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"><HiOutlineChatBubbleLeftRight className="h-3.5 w-3.5 shrink-0 text-slate-400" />Discuss Your Project</a>
                     </div>
                   </div>
                 )}
