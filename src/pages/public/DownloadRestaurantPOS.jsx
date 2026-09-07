@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { HiOutlineArrowDownTray, HiOutlineChartBarSquare, HiOutlineCheck, HiOutlineCloud, HiOutlineComputerDesktop, HiOutlineCreditCard, HiOutlineDevicePhoneMobile, HiOutlineDocumentChartBar, HiOutlineLifebuoy, HiOutlinePrinter, HiOutlineServer, HiOutlineShieldCheck, HiOutlineShoppingCart, HiOutlineStar, HiOutlineTableCells, HiOutlineUserGroup, HiOutlineWifi } from 'react-icons/hi2'
+import { HiOutlineArrowDownTray, HiOutlineChartBarSquare, HiOutlineCheck, HiOutlineCloud, HiOutlineComputerDesktop, HiOutlineCreditCard, HiOutlineDevicePhoneMobile, HiOutlineDocumentChartBar, HiOutlineInformationCircle, HiOutlineLifebuoy, HiOutlinePrinter, HiOutlineServer, HiOutlineShieldCheck, HiOutlineShoppingCart, HiOutlineStar, HiOutlineTableCells, HiOutlineUserGroup, HiOutlineWifi } from 'react-icons/hi2'
 import Link from '../../components/AppLink.jsx'
 import PageSeo from '../../components/PageSeo.jsx'
 import { getSeoForPath } from '../../lib/seoMetadata.js'
@@ -139,10 +139,20 @@ export default function DownloadRestaurantPOS() {
               <svg className="h-7 w-7" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M3 12V6.5l8-1.1v6.6H3zm0 .73h8v6.87l-8-1.15v-5.72zM11.73 5.27l9.27-1.3v7.3h-9.27V5.27zm0 13.46v-7.03h9.27v8.57l-9.27-1.54z"/>
               </svg>
-              Download for Windows
+              <span className="flex flex-col items-start leading-tight">
+                Download for Windows
+                <span className="text-xs font-semibold text-white/60">{APP_VERSION} · {FILE_SIZE}</span>
+              </span>
             </a>
             <p className="mt-4 text-sm font-medium text-slate-400">
               Free download · No credit card required
+            </p>
+            <p className="mx-auto mt-3 flex max-w-md items-start gap-1.5 text-left text-xs leading-5 text-slate-400 sm:justify-center">
+              <HiOutlineInformationCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" />
+              <span>
+                You’ll need a Nexora business account to log in after installing. Don’t have one yet?{' '}
+                <Link to="/signup" className="font-semibold text-sky-600 underline decoration-sky-200 underline-offset-2 hover:text-sky-800 hover:decoration-sky-400">Create a free account</Link> first.
+              </span>
             </p>
           </motion.div>
         </div>

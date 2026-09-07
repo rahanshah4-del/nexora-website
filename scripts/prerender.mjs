@@ -1258,8 +1258,17 @@ function buildDownloadRestaurantPosContent() {
       <span style="border-radius:9999px;border:1px solid #e2e8f0;background:#f8fafc;color:#475569;padding:.4rem .9rem;font-size:.8rem;font-weight:800">~104 MB</span>
       <span style="border-radius:9999px;border:1px solid #bae6fd;background:#f0f9ff;color:#0369a1;padding:.4rem .9rem;font-size:.8rem;font-weight:800">Windows 10+</span>
     </div>
-    <a href="${downloadUrl}" style="display:inline-flex;align-items:center;gap:.75rem;margin-top:2rem;border-radius:1rem;background:#0f172a;padding:1.25rem 2.5rem;font-size:1.25rem;font-weight:800;color:#fff;text-decoration:none;box-shadow:0 8px 40px -10px rgba(15,23,42,.35)">Download for Windows</a>
+    <a href="${downloadUrl}" style="display:inline-flex;align-items:center;gap:.75rem;margin-top:2rem;border-radius:1rem;background:#0f172a;padding:1.25rem 2.5rem;font-size:1.25rem;font-weight:800;color:#fff;text-decoration:none;box-shadow:0 8px 40px -10px rgba(15,23,42,.35)">
+      <span style="display:flex;flex-direction:column;align-items:flex-start;line-height:1.2">
+        Download for Windows
+        <span style="font-size:.75rem;font-weight:700;color:rgba(255,255,255,.6)">v1.0.0 · ~104 MB</span>
+      </span>
+    </a>
     <p style="margin-top:1rem;font-size:.875rem;font-weight:600;color:#94a3b8">Free download · No credit card required</p>
+    <p style="margin:.75rem auto 0;display:flex;justify-content:center;gap:.375rem;max-width:28rem;font-size:.8rem;line-height:1.5;color:#94a3b8">
+      <span>&#8505;</span>
+      <span>You’ll need a Nexora business account to log in after installing. Don’t have one yet? <a href="/signup" style="color:#0369a1;text-decoration:underline">Create a free account</a> first.</span>
+    </p>
   </main>`
 }
 
@@ -1482,13 +1491,24 @@ function buildPillarFeaturesContent(pillarKey, title, desc) {
       .map((l) => `<a href="${esc(canonicalPath(l.to))}" style="color:#1d4ed8;text-decoration:none;font-weight:600">${esc(l.text)}</a>`)
       .join(' &middot; ')}</p>` : ''
 
+  // Restaurant POS also ships a Windows desktop app — mirrors the download
+  // CTA + account-required note rendered by SolutionPage.jsx's hero.
+  const downloadHtml = pillarKey === 'restaurant-pos' ? `
+    <div style="margin-top:1rem;display:flex;flex-direction:column;align-items:flex-start;gap:.5rem">
+      <a href="/download/restaurant-pos/" style="display:inline-flex;min-height:3rem;align-items:center;gap:.5rem;border-radius:9999px;background:#0284c7;padding:.75rem 1.5rem;font-size:.875rem;font-weight:800;color:#fff;text-decoration:none;box-shadow:0 4px 16px -6px rgba(14,165,233,.4)">Download for Windows</a>
+      <p style="display:flex;gap:.375rem;max-width:22rem;font-size:.75rem;line-height:1.4;color:#94a3b8">
+        <span>&#8505;</span>
+        <span>You’ll need a Nexora business account to log in after installing. Don’t have one yet? <a href="/signup" style="color:#64748b;text-decoration:underline">Create a free account</a> first.</span>
+      </p>
+    </div>` : ''
+
   return `<main style="padding:3rem 1.25rem;max-width:64rem;margin:0 auto">
     <h1 style="font-size:2.2rem;font-weight:900;color:#0f172a;line-height:1.1">${title}</h1>
     <p style="margin-top:1rem;font-size:1rem;line-height:1.7;color:#475569">${desc}</p>
     <div style="margin-top:2rem;display:flex;gap:.75rem;flex-wrap:wrap">
       <a href="/signup" style="display:inline-flex;min-height:3rem;align-items:center;justify-content:center;border-radius:9999px;padding:.75rem 1.75rem;font-size:.875rem;font-weight:800;text-decoration:none;background:#0f172a;color:#fff">Start Free Trial</a>
       <a href="/contact/" style="display:inline-flex;min-height:3rem;align-items:center;justify-content:center;border-radius:9999px;padding:.75rem 1.75rem;font-size:.875rem;font-weight:800;text-decoration:none;border:1px solid #e2e8f0;color:#0f172a">Book a Demo</a>
-    </div>${subpages.length ? `
+    </div>${downloadHtml}${subpages.length ? `
     <h2 style="margin-top:3rem;font-size:1.5rem;font-weight:900;color:#0f172a">Explore ${esc(pillar.productName)} in depth</h2>
     <div style="margin-top:1.5rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:.75rem">${cardsHtml}
     </div>` : ''}${compareHtml}

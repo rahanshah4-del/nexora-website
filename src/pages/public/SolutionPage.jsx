@@ -12,6 +12,7 @@ import {
   HiOutlineDevicePhoneMobile,
   HiOutlineSparkles,
   HiOutlineDocumentChartBar,
+  HiOutlineInformationCircle,
   HiOutlineMapPin,
   HiOutlinePlayCircle,
   HiOutlineShieldCheck,
@@ -797,10 +798,19 @@ export default function SolutionPage({ solutionSlug: solutionSlugProp } = {}) {
                 <HiOutlinePlayCircle className="text-xl text-slate-500" />
               </a>
               {solutionSlug === 'pos' ? (
-                <Link to="/download/restaurant-pos" className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-6 text-sm font-medium tracking-[-0.01em] text-sky-700 shadow-[0_2px_8px_-2px_rgba(14,165,233,0.08)] transition-all duration-200 hover:-translate-y-0.5 hover:border-sky-300 hover:bg-sky-100 hover:text-sky-800 hover:shadow-[0_6px_20px_-8px_rgba(14,165,233,0.15)] active:scale-[0.97]">
-                  <HiOutlineArrowDownTray className="text-lg" />
-                  Download for Windows
-                </Link>
+                <div className="flex w-full flex-col items-center gap-2.5 min-[390px]:w-auto lg:items-start">
+                  <Link to="/download/restaurant-pos" className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-sky-600 px-6 text-sm font-medium tracking-[-0.01em] text-white shadow-[0_4px_16px_-6px_rgba(14,165,233,0.4)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-sky-700 hover:shadow-[0_8px_24px_-8px_rgba(14,165,233,0.5)] active:scale-[0.97]">
+                    <HiOutlineArrowDownTray className="text-lg" />
+                    Download for Windows
+                  </Link>
+                  <p className="flex max-w-xs items-start gap-1.5 text-left text-xs leading-5 text-slate-400">
+                    <HiOutlineInformationCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" />
+                    <span>
+                      You’ll need a Nexora business account to log in after installing. Don’t have one yet?{' '}
+                      <Link to="/signup" className="font-medium text-slate-500 underline decoration-slate-300 underline-offset-2 hover:text-slate-700">Create a free account</Link> first.
+                    </span>
+                  </p>
+                </div>
               ) : null}
             </div>
           </div>
