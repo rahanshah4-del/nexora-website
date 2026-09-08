@@ -208,7 +208,7 @@ body.business-service-modal-open {
   }
 
   .premium-button-primary {
-    @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-slate-950 px-7 text-sm font-bold text-white;
+    @apply inline-flex min-h-12 items-center justify-center gap-2 whitespace-nowrap rounded-full bg-slate-950 px-7 text-sm font-bold text-white;
     box-shadow: 0 4px 14px -6px rgba(15, 23, 42, 0.4), 0 0 0 1px rgba(15, 23, 42, 0.05);
     transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1);
   }
@@ -223,7 +223,7 @@ body.business-service-modal-open {
   }
 
   .premium-button-secondary {
-    @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-slate-200/80 bg-white/80 px-7 text-sm font-bold text-slate-900;
+    @apply inline-flex min-h-12 items-center justify-center gap-2 whitespace-nowrap rounded-full border border-slate-200/80 bg-white/80 px-7 text-sm font-bold text-slate-900;
     box-shadow: 0 2px 8px -4px rgba(15, 23, 42, 0.08);
     backdrop-filter: blur(12px);
     transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1);
@@ -240,6 +240,19 @@ body.business-service-modal-open {
 }
 
 @layer utilities {
+  /* Safari-specific flexbox bug: an `inline-flex` + `rounded-full` pill
+     button/link (the site's standard CTA shape, duplicated ad-hoc across
+     many public pages rather than always going through
+     .premium-button-primary/.premium-button-secondary above) can have its
+     label wrap to two lines in Safari, which then collapses the pill toward
+     a circle. Chromium/Firefox are unaffected. Forcing no-wrap here fixes
+     every such button site-wide without needing to touch each occurrence;
+     it is a no-op on icon-only circular elements (avatars, dots) since
+     nowrap only affects text layout. */
+  .inline-flex.rounded-full {
+    white-space: nowrap;
+  }
+
   .marketing-page {
     animation: public-page-in 400ms cubic-bezier(0.22, 1, 0.36, 1) both;
   }
