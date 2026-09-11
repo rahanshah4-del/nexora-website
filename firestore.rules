@@ -499,6 +499,11 @@ return workspaceAdmin(workspaceId)
 || canCreateModule(workspaceId,'posOrders')
 || canCreateModule(workspaceId,'orders');
 }
+function canCreateMedicalPosSale(workspaceId) {
+return workspaceAdmin(workspaceId)
+|| canCreateModule(workspaceId,'medicalPos')
+|| canCreateModule(workspaceId,'medicalPosOrders');
+}
 function canManageWorkspace(workspaceId) {
 return workspaceAdmin(workspaceId);
 }
@@ -751,6 +756,12 @@ allow create: if (canCreateModule(workspaceId,'products')||canCreateModule(works
 allow update: if (canEditModule(workspaceId,'products')||canEditModule(workspaceId,'inventory')||canCreatePosSale(workspaceId)||canEditModule(workspaceId,'menuManagement'))&&safeUpdate(workspaceId);
 allow delete: if canDeleteModule(workspaceId,'products')||canDeleteModule(workspaceId,'inventory');
 }
+match /medicineInventory/{docId} {
+allow read: if canReadModule(workspaceId,'medicineInventory')||canReadModule(workspaceId,'medicalPos')||canReadModule(workspaceId,'medicalPosOrders');
+allow create: if canCreateModule(workspaceId,'medicineInventory')&&safeCreate(workspaceId);
+allow update: if (canEditModule(workspaceId,'medicineInventory')||canCreateMedicalPosSale(workspaceId))&&safeUpdate(workspaceId);
+allow delete: if canDeleteModule(workspaceId,'medicineInventory');
+}
 match /posOrders/{docId} {
 allow read: if canReadModule(workspaceId,'posOrders')||canReadModule(workspaceId,'pos');
 allow create: if canCreatePosSale(workspaceId)&&safeCreate(workspaceId);
@@ -766,6 +777,17 @@ allow delete: if canDeleteModule(workspaceId,'posOrders')||canDeleteModule(works
 match /posQueueJobs/{docId} {
 allow read: if workspaceAdmin(workspaceId)||canReadModule(workspaceId,'posOrders')||canReadModule(workspaceId,'pos');
 allow create: if canCreatePosSale(workspaceId)&&safeCreate(workspaceId);
+allow update,delete: if workspaceAdmin(workspaceId);
+}
+match /medicalPosOrders/{docId} {
+allow read: if canReadModule(workspaceId,'medicalPosOrders')||canReadModule(workspaceId,'medicalPos');
+allow create: if canCreateMedicalPosSale(workspaceId)&&safeCreate(workspaceId);
+allow update: if (workspaceAdmin(workspaceId)||canEditModule(workspaceId,'medicalPosOrders')||canEditModule(workspaceId,'medicalPos'))&&safeUpdate(workspaceId);
+allow delete: if canDeleteModule(workspaceId,'medicalPosOrders')||canDeleteModule(workspaceId,'medicalPos');
+}
+match /medicalPosQueueJobs/{docId} {
+allow read: if workspaceAdmin(workspaceId)||canReadModule(workspaceId,'medicalPosOrders')||canReadModule(workspaceId,'medicalPos');
+allow create: if canCreateMedicalPosSale(workspaceId)&&safeCreate(workspaceId);
 allow update,delete: if workspaceAdmin(workspaceId);
 }
 match /inventoryTransactions/{docId} {
@@ -920,10 +942,10 @@ allow delete: if canDeleteModule(workspaceId,'business_services');
 	allow delete: if canDeleteModule(workspaceId,'expenses');
 	}
 match /{collectionName}/{docId} {
-allow read: if !(collectionName in ['expenses','attendanceDeviceLogs','studentAttendance','staffAttendance','payrollMembers','staffSalaryPayments','deliveryZones','deliveryDrivers','deliveryOrders','deliveryTracking','deliveryProofs','deliverySettlements','onlineOrders','orders','restaurantReservations','restaurantWaitlist','restaurantReservationSettings','restaurantReservationHistory','restaurantProductionBatches','restaurantKitchenPrep','restaurantProductionWaste','restaurantFinishedInventory','restaurantIngredients','restaurantRecipes','restaurantDeductions','restaurantWaste','restaurantCashSessions','restaurantPayments','restaurantRefunds','restaurantCashMovements','menuItems','tables','supportTickets','businessServiceRequests','loyaltyAccounts','loyaltyBirthdayQueue','loyaltyCampaigns','loyaltyCoupons','loyaltyPointsLedger','loyaltyRedemptions','loyaltyReferrals','loyaltyRewards','loyaltySettings','loyaltyTiers','loyaltyWallet'])&&canReadModule(workspaceId,collectionName);
-allow create: if !(collectionName in ['expenses','attendanceDeviceLogs','studentAttendance','staffAttendance','payrollMembers','staffSalaryPayments','deliveryZones','deliveryDrivers','deliveryOrders','deliveryTracking','deliveryProofs','deliverySettlements','onlineOrders','orders','restaurantReservations','restaurantWaitlist','restaurantReservationSettings','restaurantReservationHistory','restaurantProductionBatches','restaurantKitchenPrep','restaurantProductionWaste','restaurantFinishedInventory','restaurantIngredients','restaurantRecipes','restaurantDeductions','restaurantWaste','restaurantCashSessions','restaurantPayments','restaurantRefunds','restaurantCashMovements','menuItems','tables','supportTickets','businessServiceRequests','loyaltyAccounts','loyaltyBirthdayQueue','loyaltyCampaigns','loyaltyCoupons','loyaltyPointsLedger','loyaltyRedemptions','loyaltyReferrals','loyaltyRewards','loyaltySettings','loyaltyTiers','loyaltyWallet'])&&canCreateModule(workspaceId,collectionName)&&safeCreate(workspaceId);
-allow update: if !(collectionName in ['expenses','attendanceDeviceLogs','studentAttendance','staffAttendance','payrollMembers','staffSalaryPayments','deliveryZones','deliveryDrivers','deliveryOrders','deliveryTracking','deliveryProofs','deliverySettlements','onlineOrders','orders','restaurantReservations','restaurantWaitlist','restaurantReservationSettings','restaurantReservationHistory','restaurantProductionBatches','restaurantKitchenPrep','restaurantProductionWaste','restaurantFinishedInventory','restaurantIngredients','restaurantRecipes','restaurantDeductions','restaurantWaste','restaurantCashSessions','restaurantPayments','restaurantRefunds','restaurantCashMovements','menuItems','tables','supportTickets','businessServiceRequests','loyaltyAccounts','loyaltyBirthdayQueue','loyaltyCampaigns','loyaltyCoupons','loyaltyPointsLedger','loyaltyRedemptions','loyaltyReferrals','loyaltyRewards','loyaltySettings','loyaltyTiers','loyaltyWallet'])&&canEditModule(workspaceId,collectionName)&&safeUpdate(workspaceId);
-allow delete: if !(collectionName in ['expenses','attendanceDeviceLogs','studentAttendance','staffAttendance','payrollMembers','staffSalaryPayments','deliveryZones','deliveryDrivers','deliveryOrders','deliveryTracking','deliveryProofs','deliverySettlements','onlineOrders','orders','restaurantReservations','restaurantWaitlist','restaurantReservationSettings','restaurantReservationHistory','restaurantProductionBatches','restaurantKitchenPrep','restaurantProductionWaste','restaurantFinishedInventory','restaurantIngredients','restaurantRecipes','restaurantDeductions','restaurantWaste','restaurantCashSessions','restaurantPayments','restaurantRefunds','restaurantCashMovements','menuItems','tables','supportTickets','businessServiceRequests','loyaltyAccounts','loyaltyBirthdayQueue','loyaltyCampaigns','loyaltyCoupons','loyaltyPointsLedger','loyaltyRedemptions','loyaltyReferrals','loyaltyRewards','loyaltySettings','loyaltyTiers','loyaltyWallet'])&&canDeleteModule(workspaceId,collectionName);
+allow read: if !(collectionName in ['expenses','attendanceDeviceLogs','studentAttendance','staffAttendance','payrollMembers','staffSalaryPayments','deliveryZones','deliveryDrivers','deliveryOrders','deliveryTracking','deliveryProofs','deliverySettlements','onlineOrders','orders','restaurantReservations','restaurantWaitlist','restaurantReservationSettings','restaurantReservationHistory','restaurantProductionBatches','restaurantKitchenPrep','restaurantProductionWaste','restaurantFinishedInventory','restaurantIngredients','restaurantRecipes','restaurantDeductions','restaurantWaste','restaurantCashSessions','restaurantPayments','restaurantRefunds','restaurantCashMovements','menuItems','tables','supportTickets','businessServiceRequests','loyaltyAccounts','loyaltyBirthdayQueue','loyaltyCampaigns','loyaltyCoupons','loyaltyPointsLedger','loyaltyRedemptions','loyaltyReferrals','loyaltyRewards','loyaltySettings','loyaltyTiers','loyaltyWallet','medicineInventory','medicalPosOrders','medicalPosQueueJobs'])&&canReadModule(workspaceId,collectionName);
+allow create: if !(collectionName in ['expenses','attendanceDeviceLogs','studentAttendance','staffAttendance','payrollMembers','staffSalaryPayments','deliveryZones','deliveryDrivers','deliveryOrders','deliveryTracking','deliveryProofs','deliverySettlements','onlineOrders','orders','restaurantReservations','restaurantWaitlist','restaurantReservationSettings','restaurantReservationHistory','restaurantProductionBatches','restaurantKitchenPrep','restaurantProductionWaste','restaurantFinishedInventory','restaurantIngredients','restaurantRecipes','restaurantDeductions','restaurantWaste','restaurantCashSessions','restaurantPayments','restaurantRefunds','restaurantCashMovements','menuItems','tables','supportTickets','businessServiceRequests','loyaltyAccounts','loyaltyBirthdayQueue','loyaltyCampaigns','loyaltyCoupons','loyaltyPointsLedger','loyaltyRedemptions','loyaltyReferrals','loyaltyRewards','loyaltySettings','loyaltyTiers','loyaltyWallet','medicineInventory','medicalPosOrders','medicalPosQueueJobs'])&&canCreateModule(workspaceId,collectionName)&&safeCreate(workspaceId);
+allow update: if !(collectionName in ['expenses','attendanceDeviceLogs','studentAttendance','staffAttendance','payrollMembers','staffSalaryPayments','deliveryZones','deliveryDrivers','deliveryOrders','deliveryTracking','deliveryProofs','deliverySettlements','onlineOrders','orders','restaurantReservations','restaurantWaitlist','restaurantReservationSettings','restaurantReservationHistory','restaurantProductionBatches','restaurantKitchenPrep','restaurantProductionWaste','restaurantFinishedInventory','restaurantIngredients','restaurantRecipes','restaurantDeductions','restaurantWaste','restaurantCashSessions','restaurantPayments','restaurantRefunds','restaurantCashMovements','menuItems','tables','supportTickets','businessServiceRequests','loyaltyAccounts','loyaltyBirthdayQueue','loyaltyCampaigns','loyaltyCoupons','loyaltyPointsLedger','loyaltyRedemptions','loyaltyReferrals','loyaltyRewards','loyaltySettings','loyaltyTiers','loyaltyWallet','medicineInventory','medicalPosOrders','medicalPosQueueJobs'])&&canEditModule(workspaceId,collectionName)&&safeUpdate(workspaceId);
+allow delete: if !(collectionName in ['expenses','attendanceDeviceLogs','studentAttendance','staffAttendance','payrollMembers','staffSalaryPayments','deliveryZones','deliveryDrivers','deliveryOrders','deliveryTracking','deliveryProofs','deliverySettlements','onlineOrders','orders','restaurantReservations','restaurantWaitlist','restaurantReservationSettings','restaurantReservationHistory','restaurantProductionBatches','restaurantKitchenPrep','restaurantProductionWaste','restaurantFinishedInventory','restaurantIngredients','restaurantRecipes','restaurantDeductions','restaurantWaste','restaurantCashSessions','restaurantPayments','restaurantRefunds','restaurantCashMovements','menuItems','tables','supportTickets','businessServiceRequests','loyaltyAccounts','loyaltyBirthdayQueue','loyaltyCampaigns','loyaltyCoupons','loyaltyPointsLedger','loyaltyRedemptions','loyaltyReferrals','loyaltyRewards','loyaltySettings','loyaltyTiers','loyaltyWallet','medicineInventory','medicalPosOrders','medicalPosQueueJobs'])&&canDeleteModule(workspaceId,collectionName);
 }
 	match /restaurantReservations/{docId} {
 	allow read: if canReadModule(workspaceId,'reservations')||canReadModule(workspaceId,'orders')||canReadModule(workspaceId,'tables');
