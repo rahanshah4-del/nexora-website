@@ -90,6 +90,9 @@ const InventoryPage = lazy(() => import('./crm/pages/Inventory.jsx'))
 const RetailPOSPage = lazy(() => import('./crm/pages/RetailPOS.jsx'))
 const RetailPOSOrdersPage = lazy(() => import('./crm/pages/RetailPOSOrders.jsx'))
 const RetailPOSDiscountsPage = lazy(() => import('./crm/pages/RetailPOSDiscounts.jsx'))
+const MedicalInventoryPage = lazy(() => import('./crm/pages/MedicalInventory.jsx'))
+const MedicalPosPage = lazy(() => import('./crm/pages/MedicalPos.jsx'))
+const MedicalPosOrdersPage = lazy(() => import('./crm/pages/MedicalPosOrders.jsx'))
 const LeadsPage = lazy(() => import('./crm/pages/Leads.jsx'))
 const LeadScoringPage = lazy(() => import('./crm/pages/LeadScoring.jsx'))
 const AIAssistantPage = lazy(() => import('./crm/pages/AIAssistant.jsx'))
@@ -299,6 +302,59 @@ function InventoryRoute() {
   )
 }
 
+class MedicalInventoryRouteBoundary extends Component {
+  state = { hasError: false }
+
+  static getDerivedStateFromError() {
+    return { hasError: true }
+  }
+
+  componentDidCatch(error) {
+    console.error('[Medical Inventory Route] render error', error)
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <section className="rounded-[1.35rem] border border-rose-200 bg-white p-5 shadow-sm">
+          <p className="text-lg font-black tracking-tight text-slate-950">Medicine Inventory could not load</p>
+          <p className="mt-2 text-sm leading-6 text-slate-600">
+            The medicine inventory module hit a display error. Reload the page or return to the CRM dashboard.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button
+              type="button"
+              className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-bold text-white"
+              onClick={() => window.location.reload()}
+            >
+              Reload Medicine Inventory
+            </button>
+            <a className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700" href="/app/dashboard">
+              Back to Dashboard
+            </a>
+          </div>
+        </section>
+      )
+    }
+
+    return this.props.children
+  }
+}
+
+function MedicalInventoryRoute() {
+  if (import.meta.env.DEV) {
+    console.log('[Medical Inventory Route] module access', { path: '/app/medical-inventory' })
+    console.log('[Medical Inventory Route] gated result', 'allowed (DashboardLayout guards passed)')
+  }
+  return (
+    <MedicalInventoryRouteBoundary>
+      <LazyPage>
+        <MedicalInventoryPage />
+      </LazyPage>
+    </MedicalInventoryRouteBoundary>
+  )
+}
+
 function RetailPosRoute() {
   if (import.meta.env.DEV) {
     console.log('[Retail POS Route] module access', { path: '/app/pos', module: 'pos' })
@@ -308,6 +364,20 @@ function RetailPosRoute() {
     <InvoiceRouteBoundary>
       <LazyPage>
         <RetailPOSPage />
+      </LazyPage>
+    </InvoiceRouteBoundary>
+  )
+}
+
+function MedicalPosRoute() {
+  if (import.meta.env.DEV) {
+    console.log('[Medical POS Route] module access', { path: '/app/medical-pos', module: 'medicalPos' })
+    console.log('[Medical POS Route] gated result', 'allowed (DashboardLayout guards passed)')
+  }
+  return (
+    <InvoiceRouteBoundary>
+      <LazyPage>
+        <MedicalPosPage />
       </LazyPage>
     </InvoiceRouteBoundary>
   )
@@ -585,6 +655,9 @@ export default function AppRouter() {
         <Route path="pos" element={<RetailPosRoute />} />
         <Route path="pos-orders" element={<LazyPage><RetailPOSOrdersPage /></LazyPage>} />
         <Route path="pos-discounts" element={<LazyPage><RetailPOSDiscountsPage /></LazyPage>} />
+        <Route path="medical-inventory" element={<MedicalInventoryRoute />} />
+        <Route path="medical-pos" element={<MedicalPosRoute />} />
+        <Route path="medical-pos-orders" element={<LazyPage><MedicalPosOrdersPage /></LazyPage>} />
         <Route path="leads" element={<LazyPage><LeadsPage /></LazyPage>} />
         <Route path="leads/scoring" element={<LazyPage><LeadScoringPage /></LazyPage>} />
         <Route path="ai-assistant" element={<LazyPage><AIAssistantPage /></LazyPage>} />

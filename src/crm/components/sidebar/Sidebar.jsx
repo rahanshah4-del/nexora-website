@@ -15,6 +15,7 @@ import { goToWorkspace } from '../../../lib/workspaceNavigation.js'
 import { categoriesForModule, reportsForModule } from '../../lib/reportCatalog.js'
 import {
   HiOutlineBanknotes,
+  HiOutlineBeaker,
   HiOutlineChartBar,
   HiOutlineChevronDown,
   HiOutlineClipboardDocumentList,
@@ -151,6 +152,42 @@ function orderRetailPosSidebar(items) {
     return index === -1 ? RETAIL_POS_SIDEBAR_ORDER.length + items.indexOf(item) : index
   }
   return [...items].sort((a, b) => rankFor(a) - rankFor(b))
+}
+
+// Medical Store POS workspace only: explicit leading sidebar order by module key,
+// mirroring RETAIL_POS_SIDEBAR_ORDER above. Items not listed here keep their
+// current relative order; Settings always stays last.
+const MEDICAL_STORE_POS_SIDEBAR_ORDER = [
+  'dashboard',
+  'medicalPos',
+  'medicalPosOrders',
+  'customers',
+  'medicineInventory',
+  'invoices',
+  'expenses',
+  'accounts',
+  'accountStatements',
+  'team',
+]
+
+function orderMedicalStorePosSidebar(items) {
+  const rankFor = (item) => {
+    if (item.key === 'settings') return Number.MAX_SAFE_INTEGER
+    const index = MEDICAL_STORE_POS_SIDEBAR_ORDER.indexOf(item.key)
+    // Unlisted items sort after the explicit block but before Settings,
+    // preserving their existing relative order via the original index.
+    return index === -1 ? MEDICAL_STORE_POS_SIDEBAR_ORDER.length + items.indexOf(item) : index
+  }
+  return [...items].sort((a, b) => rankFor(a) - rankFor(b))
+}
+
+// Medical Store POS routes have no entry in ../../data/navigation.js, so the
+// sidebar item-building step below (which normally borrows its icon from a
+// matching navItems row) falls back to this local map instead.
+const MEDICAL_STORE_NAV_ICONS = {
+  '/app/medical-inventory': HiOutlineBeaker,
+  '/app/medical-pos': HiOutlineCalculator,
+  '/app/medical-pos-orders': HiOutlineReceiptPercent,
 }
 
 /* ── Restaurant POS accordion group definitions ── */
@@ -807,8 +844,9 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
     const normalizedType = normalizeBusinessType(businessType)
     const items = modules.map((module) => {
       const navItem = orderedSidebarItems.find((item) => item.to === module.route)
+      const fallbackIcon = MEDICAL_STORE_NAV_ICONS[module.route]
       return {
-        ...(navItem || module),
+        ...(navItem || (fallbackIcon ? { ...module, icon: fallbackIcon } : module)),
         key: module.key,
         to: module.route,
         label: module.label,
@@ -858,7 +896,8 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
             : normalizedType === 'Restaurant POS' ? orderRestaurantPosSidebar(disabledItems)
               : normalizedType === 'Transport / Rental' ? orderTransportRentalSidebar(disabledItems)
                 : normalizedType === 'WhatsApp CRM' ? orderWhatsappCrmSidebar(disabledItems)
-                  : disabledItems
+                  : normalizedType === 'Medical Store POS' ? orderMedicalStorePosSidebar(disabledItems)
+                    : disabledItems
     return orderedItems
   }, [access, accessPlan, businessType, developerOverride, ownerAdminBypass, role, staffAccount, userDoc?.enabledModules, userDoc?.isStaff, userDoc?.onboardingCompleted, workspaceId])
 
