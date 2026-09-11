@@ -898,7 +898,16 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
                 : normalizedType === 'WhatsApp CRM' ? orderWhatsappCrmSidebar(disabledItems)
                   : normalizedType === 'Medical Store POS' ? orderMedicalStorePosSidebar(disabledItems)
                     : disabledItems
-    return orderedItems
+    // medicalPos opens as a standalone, chrome-free billing till in a new tab
+    // (src/AppRouter.jsx "/pos-till/medical") instead of in-app navigation —
+    // mirrors Retail POS's own openInNewWindow POS Billing entry in navigation.js.
+    // Applied last, after filtering/ordering (which key off the canonical
+    // "/app/medical-pos" route), so overriding `to` here can't affect
+    // allowedRoutes.has(item.to) above. medicineInventory and medicalPosOrders
+    // are untouched and keep normal client-side routing.
+    return orderedItems.map((item) =>
+      item.key === 'medicalPos' ? { ...item, to: '/pos-till/medical', openInNewWindow: true } : item,
+    )
   }, [access, accessPlan, businessType, developerOverride, ownerAdminBypass, role, staffAccount, userDoc?.enabledModules, userDoc?.isStaff, userDoc?.onboardingCompleted, workspaceId])
 
   const handleSwitchProduct = useCallback(() => {
