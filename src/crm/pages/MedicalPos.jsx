@@ -104,6 +104,28 @@ function medicineImage(medicine) {
   return medicine.imageUrl || fallbackMedicineImage
 }
 
+// Batches of the same drug are separate medicineInventory documents that
+// share a `name` but each carry their own unique sku/barcode (uniqueness is
+// enforced per document in useMedicineInventory.js's checkMedicineUniqueness)
+// — name is therefore the only field reliably shared across a drug's
+// batches, and is what the picker groups by.
+function medicineGroupKey(medicine) {
+  return String(medicine.name || '').trim().toLowerCase()
+}
+
+function batchExpirySortValue(value) {
+  if (!value) return Infinity
+  const time = new Date(value).getTime()
+  return Number.isNaN(time) ? Infinity : time
+}
+
+function formatBatchExpiry(value) {
+  if (!value) return 'No expiry'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return String(value)
+  return new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', year: 'numeric' }).format(date)
+}
+
 function escapeHtml(value = '') {
   return String(value ?? '')
     .replace(/&/g, '&amp;')
@@ -168,6 +190,7 @@ export default function MedicalPosPage() {
   const promoRef = useRef(null)
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState('All')
+  const [expandedMedicineGroups, setExpandedMedicineGroups] = useState(() => new Set())
   const [cart, setCart] = useState([])
   const [customerName, setCustomerName] = useState('Walk-in Customer')
   const [customerPhone, setCustomerPhone] = useState('')
@@ -230,8 +253,49 @@ export default function MedicalPosPage() {
         || medicine.name.toLowerCase().includes(needle)
         || medicine.sku.toLowerCase().includes(needle)
         || medicine.barcode.toLowerCase().includes(needle))
-      .slice(0, 48)
   }, [category, medicines, query])
+  // Group the already-filtered batch documents by medicine name, FEFO-order
+  // each group's batches by expiryDate ascending, and pick the soonest-
+  // expiring batch that still has stock as the group's default/suggested
+  // batch (an exhausted early batch is skipped in favor of the next one).
+  // The 48-tile cap now applies to distinct medicines (groups) rather than
+  // raw batch documents, so it still limits render cost the same way the
+  // original .slice(0, 48) did, just against the new tile unit.
+  const medicineGroups = useMemo(() => {
+    const groupsByKey = new Map()
+    filteredMedicines.forEach((medicine) => {
+      const key = medicineGroupKey(medicine)
+      if (!groupsByKey.has(key)) groupsByKey.set(key, [])
+      groupsByKey.get(key).push(medicine)
+    })
+    return Array.from(groupsByKey.values())
+      .map((rawBatches) => {
+        const batches = rawBatches
+          .slice()
+          .sort((a, b) => batchExpirySortValue(a.expiryDate) - batchExpirySortValue(b.expiryDate))
+        const totalStock = batches.reduce((sum, batch) => sum + numberValue(batch.stockQuantity), 0)
+        const defaultBatch = batches.find((batch) => numberValue(batch.stockQuantity) > 0) || batches[0]
+        return {
+          key: medicineGroupKey(batches[0]),
+          name: batches[0].name,
+          requiresPrescription: batches.some((batch) => batch.requiresPrescription === true),
+          minStockAlert: batches[0].minStockAlert,
+          totalStock,
+          batches,
+          defaultBatch,
+        }
+      })
+      .slice(0, 48)
+  }, [filteredMedicines])
+
+  function toggleMedicineGroupExpanded(key) {
+    setExpandedMedicineGroups((current) => {
+      const next = new Set(current)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+  }
   const customerMatches = useMemo(() => {
     const needle = customerSearch.trim().toLowerCase()
     if (!needle) return []
@@ -955,29 +1019,66 @@ export default function MedicalPosPage() {
           </Card>
 
           <div className={`${viewMode === 'grid' ? 'grid content-start gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4' : 'space-y-2'} min-h-0 flex-1 overflow-y-auto pr-1`}>
-            {filteredMedicines.map((medicine) => (
-              <button
-                key={medicine.id}
-                type="button"
-                onClick={() => addMedicine(medicine)}
-                className={`group min-w-0 rounded-[1.2rem] border border-slate-200 bg-white p-3 text-left shadow-sm transition hover:border-blue-200 hover:shadow-md ${viewMode === 'list' ? 'flex items-center gap-3' : ''}`}
-              >
-                <img src={medicineImage(medicine)} alt="" className={`${viewMode === 'list' ? 'h-14 w-16' : 'h-28 w-full'} rounded-xl object-cover bg-slate-50`} />
-                <div className="mt-3 min-w-0 flex-1">
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="line-clamp-2 text-sm font-black text-slate-950">{medicine.name}</p>
-                    <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-blue-50 text-blue-700"><HiOutlinePlus className="h-4 w-4" /></span>
-                  </div>
-                  <p className="mt-1 text-sm font-black text-blue-700">{formatCurrency(medicine.price)}</p>
-                  <p className={`mt-1 text-xs font-semibold ${medicine.stockQuantity <= medicine.minStockAlert ? 'text-rose-600' : 'text-slate-500'}`}>
-                    Stock: {medicine.stockQuantity} {medicine.barcode ? `• ${medicine.barcode}` : ''}
-                  </p>
-                  {medicine.requiresPrescription ? (
-                    <p className="mt-1 text-[11px] font-black uppercase tracking-[0.08em] text-rose-600">Rx required</p>
+            {medicineGroups.map((group) => {
+              const isExpanded = expandedMedicineGroups.has(group.key)
+              const hasMultipleBatches = group.batches.length > 1
+              return (
+                <div
+                  key={group.key}
+                  className={`group min-w-0 rounded-[1.2rem] border border-slate-200 bg-white p-3 shadow-sm transition hover:border-blue-200 hover:shadow-md ${viewMode === 'list' ? 'flex items-center gap-3' : ''}`}
+                >
+                  <button
+                    type="button"
+                    onClick={() => addMedicine(group.defaultBatch)}
+                    className={`block min-w-0 flex-1 text-left ${viewMode === 'list' ? 'flex items-center gap-3' : ''}`}
+                  >
+                    <img src={medicineImage(group.defaultBatch)} alt="" className={`${viewMode === 'list' ? 'h-14 w-16' : 'h-28 w-full'} rounded-xl object-cover bg-slate-50`} />
+                    <div className="mt-3 min-w-0 flex-1">
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="line-clamp-2 text-sm font-black text-slate-950">{group.name}</p>
+                        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-blue-50 text-blue-700"><HiOutlinePlus className="h-4 w-4" /></span>
+                      </div>
+                      <p className="mt-1 text-sm font-black text-blue-700">{formatCurrency(group.defaultBatch.price)}</p>
+                      <p className={`mt-1 text-xs font-semibold ${group.totalStock <= group.minStockAlert ? 'text-rose-600' : 'text-slate-500'}`}>
+                        Stock: {group.totalStock} {group.defaultBatch.barcode ? `• ${group.defaultBatch.barcode}` : ''}
+                      </p>
+                      <p className="mt-1 text-[11px] font-semibold text-slate-400">
+                        {group.defaultBatch.batchNumber ? `Batch ${group.defaultBatch.batchNumber}` : 'No batch #'} · Exp {formatBatchExpiry(group.defaultBatch.expiryDate)}
+                      </p>
+                      {group.requiresPrescription ? (
+                        <p className="mt-1 text-[11px] font-black uppercase tracking-[0.08em] text-rose-600">Rx required</p>
+                      ) : null}
+                    </div>
+                  </button>
+                  {hasMultipleBatches ? (
+                    <div className="mt-2 border-t border-slate-100 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => toggleMedicineGroupExpanded(group.key)}
+                        className="text-[11px] font-black uppercase tracking-[0.06em] text-blue-700"
+                      >
+                        {group.batches.length} batches {isExpanded ? '−' : '+'}
+                      </button>
+                      {isExpanded ? (
+                        <div className="mt-2 space-y-1.5">
+                          {group.batches.map((batch) => (
+                            <button
+                              key={batch.id}
+                              type="button"
+                              onClick={() => addMedicine(batch)}
+                              className="flex w-full items-center justify-between gap-2 rounded-lg bg-slate-50 px-2 py-1.5 text-left text-[11px] font-semibold text-slate-600 transition hover:bg-blue-50"
+                            >
+                              <span className="min-w-0 truncate">{batch.batchNumber || 'No batch #'} · Exp {formatBatchExpiry(batch.expiryDate)}</span>
+                              <span className={`shrink-0 ${numberValue(batch.stockQuantity) <= 0 ? 'text-rose-600' : 'text-slate-500'}`}>Stock {batch.stockQuantity}</span>
+                            </button>
+                          ))}
+                        </div>
+                      ) : null}
+                    </div>
                   ) : null}
                 </div>
-              </button>
-            ))}
+              )
+            })}
           </div>
         </div>
 
