@@ -57,9 +57,12 @@ import { useInventoryTransactions } from '../hooks/useInventoryTransactions.js'
 import { useInventoryStats } from '../hooks/useInventory.js'
 import { usePosOrders } from '../hooks/usePosOrders.js'
 import { usePosWalletPayments } from '../hooks/usePosWalletPayments.js'
+import { useMedicineInventory } from '../hooks/useMedicineInventory.js'
+import { useMedicalPosOrders } from '../hooks/useMedicalPosOrders.js'
 import { useLoyaltyAnalytics } from '../hooks/useLoyaltyAnalytics.js'
 import { useSchoolAttendanceSummary } from '../hooks/useSchoolAttendanceSummary.js'
 import WhatsappDashboard from '../components/dashboard/WhatsappDashboard.jsx'
+import MedicalDashboard from './dashboards/MedicalDashboard.jsx'
 import {
   calculateConversionRate,
   invoiceBalanceDue,
@@ -814,7 +817,8 @@ export default function DashboardHomePage() {
   const isRetail = normalizedBusinessType === 'Retail / POS'
   const isSalesHub = normalizedBusinessType === 'General CRM'
   const isTransport = normalizedBusinessType === 'Transport / Rental'
-  const useCommonDashboardData = !isWhatsapp && !isRestaurant && !isTransport && !isRetail
+  const isMedical = normalizedBusinessType === 'Medical Store POS'
+  const useCommonDashboardData = !isWhatsapp && !isRestaurant && !isTransport && !isRetail && !isMedical
   const invoicesApi = useInvoices({ limitCount: DASHBOARD_RECENT_LIMIT, enabled: useCommonDashboardData })
   const customersApi = useCustomers({ limitCount: DASHBOARD_RECENT_LIMIT, enabled: useCommonDashboardData })
   // customersApi.customers is capped at DASHBOARD_RECENT_LIMIT — fine for the
@@ -850,6 +854,11 @@ export default function DashboardHomePage() {
     [retailPosOrdersApi.orders, retailWalletPaymentsApi.payments],
   )
   const retailLoading = isRetail && (retailProductsApi.loading || retailTransactionsApi.loading || retailPosOrdersApi.loading || retailWalletPaymentsApi.loading)
+  const medicalMedicinesApi = useMedicineInventory({ enabled: isMedical, limitCount: DASHBOARD_RECENT_LIMIT })
+  const medicalTransactionsApi = useInventoryTransactions({ enabled: isMedical, limitCount: DASHBOARD_RECENT_LIMIT })
+  const medicalPosOrdersApi = useMedicalPosOrders({ enabled: isMedical, limitCount: DASHBOARD_RECENT_LIMIT })
+  const medicalInventoryStats = useInventoryStats(medicalMedicinesApi.medicines, medicalTransactionsApi.transactions)
+  const medicalLoading = isMedical && (medicalMedicinesApi.loading || medicalTransactionsApi.loading || medicalPosOrdersApi.loading)
   const salesDealsApi = useSalesHubCollection('salesDeals', { enabled: isSalesHub })
   const salesTasksApi = useSalesHubCollection('salesTasks', { enabled: isSalesHub })
   const salesQuotesApi = useSalesHubCollection('salesQuotes', { enabled: isSalesHub })
@@ -1246,6 +1255,24 @@ export default function DashboardHomePage() {
         schoolStatsSummary={schoolStatsSummary}
         attendanceSummary={schoolAttendanceApi.summary}
         attendanceLoading={schoolAttendanceApi.loading}
+        currency={currency}
+      />
+    )
+  }
+
+  // Medical Store POS gets a dedicated, teal-themed dashboard instead of the
+  // shared CRM layout — same pattern as isWhatsapp/isRestaurant/isSchool
+  // above. All hooks above still run; only the rendered output differs.
+  if (isMedical) {
+    return (
+      <MedicalDashboard
+        medicines={medicalMedicinesApi.medicines}
+        orders={medicalPosOrdersApi.orders}
+        transactions={medicalTransactionsApi.transactions}
+        stats={medicalInventoryStats}
+        loading={medicalLoading}
+        businessTitle={hero.title}
+        workspaceName={workspaceDoc?.name || userDoc?.workspaceName || userDoc?.company || ''}
         currency={currency}
       />
     )
