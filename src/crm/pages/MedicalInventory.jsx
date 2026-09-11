@@ -1,16 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   HiOutlineArrowPath,
-  HiOutlineArrowTrendingUp,
   HiOutlineArrowDownTray,
-  HiOutlineBanknotes,
-  HiOutlineBuildingStorefront,
   HiOutlineCalendarDays,
   HiOutlineCircleStack,
   HiOutlineClipboardDocumentList,
-  HiOutlineCube,
   HiOutlineCurrencyDollar,
-  HiOutlineExclamationTriangle,
   HiOutlineMagnifyingGlass,
   HiOutlinePencilSquare,
   HiOutlinePlus,
@@ -18,10 +13,6 @@ import {
   HiOutlineTrash,
   HiOutlineTruck,
 } from 'react-icons/hi2'
-import PageHeader from '../components/ui/PageHeader.jsx'
-import Card from '../components/ui/Card.jsx'
-import Button from '../components/ui/Button.jsx'
-import Badge from '../components/ui/Badge.jsx'
 import Input from '../components/ui/Input.jsx'
 import Select from '../components/ui/Select.jsx'
 import Toast from '../components/ui/Toast.jsx'
@@ -37,11 +28,7 @@ import { useCategories } from '../hooks/useCategories.js'
 import { useSuppliers } from '../hooks/useSuppliers.js'
 import { usePurchases } from '../hooks/usePurchases.js'
 import { useAccountTransactions } from '../hooks/useAccountTransactions.js'
-import {
-  calculatePurchasePaymentStatus,
-  calculateSuppliersPayableSummary,
-  calculateTotalPayables,
-} from '../lib/financeCalculations.js'
+import { calculateSuppliersPayableSummary } from '../lib/financeCalculations.js'
 import {
   MOVEMENT_TYPES,
   movementLabel,
@@ -52,15 +39,52 @@ import { isStockTracked, stockState, useInventoryStats } from '../hooks/useInven
 import { formatCurrency } from '../utils/format.js'
 import { cn } from '../utils/cn.js'
 
+// ── Medical Store POS visual identity ──────────────────────────────────────
+// Local design tokens only — the global Tailwind config is untouched so
+// other business types (Retail POS, Restaurant, School ERP, ...) keep
+// their existing look. Colors are consumed two ways: as literal Tailwind
+// arbitrary-value classes (bg-[#0D6E5C] etc.) for anything static, and as
+// this constants object for the handful of spots where the color has to be
+// picked at runtime (the row accent strip, badge tones) — Tailwind's JIT
+// scanner can't see a color built from a template string, so those cases
+// fall back to an inline style instead.
+const MED = {
+  ink: '#142420',
+  canvas: '#F3F5F1',
+  primary: '#0D6E5C',
+  primaryDeep: '#095146',
+  amber: '#C1791F',
+  clay: '#A8412F',
+  line: '#D8DED7',
+  surface: '#FFFFFF',
+}
+
+const serif = "font-['Fraunces']"
+const sans = "font-['Inter']"
+
+function toneColor(tone) {
+  if (tone === 'danger') return MED.clay
+  if (tone === 'warning') return MED.amber
+  if (tone === 'success' || tone === 'info') return MED.primary
+  return MED.line
+}
+
+function toneTint(tone) {
+  if (tone === 'danger') return { color: MED.clay, backgroundColor: `${MED.clay}14` }
+  if (tone === 'warning') return { color: MED.amber, backgroundColor: `${MED.amber}14` }
+  if (tone === 'success' || tone === 'info') return { color: MED.primary, backgroundColor: `${MED.primary}14` }
+  return { color: `${MED.ink}99`, backgroundColor: `${MED.ink}0d` }
+}
+
 const TABS = [
-  { key: 'dashboard', label: 'Dashboard', icon: HiOutlineArrowTrendingUp },
-  { key: 'medicines', label: 'Medicines', icon: HiOutlineCube },
-  { key: 'stock', label: 'Stock', icon: HiOutlineCircleStack },
-  { key: 'categories', label: 'Categories', icon: HiOutlineTag },
-  { key: 'suppliers', label: 'Suppliers', icon: HiOutlineTruck },
-  { key: 'purchases', label: 'Purchases', icon: HiOutlineClipboardDocumentList },
-  { key: 'transactions', label: 'Transactions', icon: HiOutlineArrowPath },
-  { key: 'reports', label: 'Reports', icon: HiOutlineArrowDownTray },
+  { key: 'dashboard', label: 'Dashboard' },
+  { key: 'medicines', label: 'Medicines' },
+  { key: 'stock', label: 'Stock' },
+  { key: 'categories', label: 'Categories' },
+  { key: 'suppliers', label: 'Suppliers' },
+  { key: 'purchases', label: 'Purchases' },
+  { key: 'transactions', label: 'Transactions' },
+  { key: 'reports', label: 'Reports' },
 ]
 
 function toNumber(value, fallback = 0) {
@@ -92,6 +116,14 @@ function expiryState(value) {
   return { tone: 'success', label: 'Valid' }
 }
 
+function medicineAccent(medicine) {
+  const stock = stockState(medicine)
+  const expiry = expiryState(medicine.expiryDate)
+  if (stock.tone === 'danger' || expiry.tone === 'danger') return MED.clay
+  if (stock.tone === 'warning' || expiry.tone === 'warning') return MED.amber
+  return MED.primary
+}
+
 function downloadCsv(filename, rows) {
   if (!rows.length) return
   const headers = Object.keys(rows[0])
@@ -111,71 +143,151 @@ function downloadCsv(filename, rows) {
   URL.revokeObjectURL(url)
 }
 
-function MetricCard({ icon: Icon, label, value, tone = 'sky', hint }) {
-  const tones = {
-    sky: 'bg-sky-50 text-sky-700 dark:bg-sky-500/10 dark:text-sky-300',
-    emerald: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300',
-    amber: 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300',
-    rose: 'bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-300',
-    indigo: 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-300',
-  }
-  return (
-    <Card className="p-4">
-      <div className="flex items-center gap-3">
-        <span className={cn('grid h-10 w-10 shrink-0 place-items-center rounded-xl', tones[tone])}>
-          <Icon className="h-5 w-5" />
-        </span>
-        <div className="min-w-0">
-          <p className="truncate text-xs font-semibold uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">{label}</p>
-          <p className="mt-0.5 truncate text-xl font-semibold text-slate-950 dark:text-white">{value}</p>
-          {hint ? <p className="truncate text-xs text-slate-400">{hint}</p> : null}
-        </div>
-      </div>
-    </Card>
-  )
+// ── Page-local presentational primitives (Medical Store POS only) ─────────
+// Deliberately not shared/exported — Retail POS, Restaurant POS, School ERP
+// etc. keep using the generic ui/Card, ui/Badge, ui/Button components.
+
+function MedPanel({ className, children }) {
+  return <div className={cn('border border-[#D8DED7] bg-white', className)}>{children}</div>
 }
 
-function SectionCard({ title, action, children }) {
+function MedButton({ variant = 'primary', className, children, ...props }) {
+  const base = `inline-flex shrink-0 items-center gap-1.5 px-3.5 py-2 text-sm font-medium ${sans} transition disabled:cursor-not-allowed disabled:opacity-50`
+  const variants = {
+    primary: 'bg-[#0D6E5C] text-white hover:bg-[#095146]',
+    secondary: 'border border-[#142420]/25 text-[#142420] hover:border-[#142420]/45 hover:bg-[#142420]/[0.03]',
+    danger: 'border border-[#A8412F]/35 text-[#A8412F] hover:bg-[#A8412F]/[0.06]',
+  }
   return (
-    <Card className="p-4 sm:p-5">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm font-semibold text-slate-950 dark:text-white">{title}</p>
-        {action}
-      </div>
+    <button type="button" className={cn(base, variants[variant], className)} {...props}>
       {children}
-    </Card>
+    </button>
   )
 }
 
-function SimpleTable({ columns, rows, empty }) {
+function MedIconButton({ label, danger, onClick, children }) {
+  return (
+    <button
+      type="button"
+      title={label}
+      aria-label={label}
+      onClick={onClick}
+      className={cn(
+        `grid h-8 w-8 shrink-0 place-items-center border border-[#D8DED7] bg-white text-[#142420]/60 transition hover:border-[#142420]/30 hover:text-[#142420]`,
+        danger && 'hover:border-[#A8412F]/40 hover:text-[#A8412F]',
+      )}
+    >
+      {children}
+    </button>
+  )
+}
+
+function MedTag({ tone = 'default', children }) {
+  return (
+    <span
+      className={`inline-flex items-center px-1.5 py-0.5 text-[11px] font-medium ${sans}`}
+      style={toneTint(tone)}
+    >
+      {children}
+    </span>
+  )
+}
+
+function MedTabs({ tab, onChange }) {
+  return (
+    <div className={`mb-5 flex gap-5 overflow-x-auto border-b border-[#D8DED7] ${sans}`}>
+      {TABS.map((item) => {
+        const active = tab === item.key
+        return (
+          <button
+            key={item.key}
+            type="button"
+            onClick={() => onChange(item.key)}
+            className={cn(
+              'relative shrink-0 whitespace-nowrap pb-2.5 pt-1 text-sm font-medium transition',
+              active ? 'text-[#0D6E5C]' : 'text-[#142420]/50 hover:text-[#142420]/80',
+            )}
+          >
+            {item.label}
+            {active ? <span className="absolute inset-x-0 -bottom-px h-[2px] bg-[#0D6E5C]" /> : null}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+function MedKpi({ value, label, hint }) {
+  return (
+    <div className="min-w-0">
+      <p className={`${serif} text-[2.15rem] leading-none text-[#142420]`}>{value}</p>
+      <div className="mt-2.5 h-[3px] w-8 bg-[#0D6E5C]" />
+      <p className={`mt-2 text-[13px] text-[#142420]/70 ${sans}`}>{label}</p>
+      {hint ? <p className={`text-[11px] text-[#142420]/40 ${sans}`}>{hint}</p> : null}
+    </div>
+  )
+}
+
+function MedSectionHeading({ children, action }) {
+  return (
+    <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+      <p className={`text-sm font-medium text-[#142420] ${sans}`}>{children}</p>
+      {action}
+    </div>
+  )
+}
+
+function MedTable({ columns, rows, empty, getAccent }) {
   if (!rows.length) {
-    return <p className="rounded-2xl border border-dashed border-slate-200 px-4 py-8 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">{empty}</p>
+    return (
+      <p className={`border border-dashed border-[#D8DED7] bg-white px-4 py-8 text-center text-sm text-[#142420]/50 ${sans}`}>
+        {empty}
+      </p>
+    )
   }
   return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200/80 dark:border-white/10">
-      <div className="overflow-x-auto">
-        <table className="min-w-full text-left text-sm">
-          <thead className="bg-slate-50 text-slate-500 dark:bg-slate-900/50 dark:text-slate-200">
-            <tr>
-              {columns.map((c) => (
-                <th key={c.key} className="whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-[0.12em]">{c.header}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100 bg-white dark:divide-white/10 dark:bg-slate-900/25">
-            {rows.map((row, idx) => (
-              <tr key={row.id ?? idx} className="transition hover:bg-slate-50 dark:hover:bg-white/5">
+    <div className="overflow-x-auto">
+      <table className={`w-full min-w-full border-collapse text-left text-sm ${sans}`}>
+        <thead>
+          <tr className="border-b border-[#D8DED7]">
+            {getAccent ? <th className="w-1 p-0" /> : null}
+            {columns.map((c) => (
+              <th key={c.key} className="whitespace-nowrap px-3 py-2 text-[11px] font-medium text-[#142420]/45">
+                {c.header}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, idx) => {
+            const accent = getAccent?.(row)
+            return (
+              <tr key={row.id ?? idx} className="border-b border-[#D8DED7]/60 transition hover:bg-[#0D6E5C]/[0.035]">
+                {getAccent ? <td className="w-1 p-0" style={{ backgroundColor: accent || 'transparent' }} /> : null}
                 {columns.map((c) => (
-                  <td key={c.key} data-label={c.header || undefined} className="whitespace-nowrap px-4 py-3 text-slate-800 dark:text-slate-100">
+                  <td key={c.key} data-label={c.header || undefined} className="whitespace-nowrap px-3 py-2.5 align-middle text-[#142420]">
                     {c.cell ? c.cell(row) : row[c.key]}
                   </td>
                 ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            )
+          })}
+        </tbody>
+      </table>
     </div>
+  )
+}
+
+function MedFonts() {
+  return (
+    <>
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap"
+      />
+    </>
   )
 }
 
@@ -225,20 +337,20 @@ function ReturnForm({ open, purchase, onClose, onReturn, currency }) {
   }
 
   return (
-    <div className="fixed inset-0 z-[70] grid place-items-center bg-slate-950/45 p-3 backdrop-blur-sm" onClick={onClose}>
-      <div className="w-full max-w-lg rounded-2xl bg-white p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
-        <p className="text-base font-semibold text-slate-950">Return to Supplier</p>
-        <p className="mt-1 text-sm text-slate-500">{purchase.reference || purchase.id}</p>
+    <div className="fixed inset-0 z-[70] grid place-items-center bg-[#142420]/45 p-3 backdrop-blur-sm" onClick={onClose}>
+      <div className={`w-full max-w-lg border border-[#D8DED7] bg-white p-5 ${sans}`} onClick={(e) => e.stopPropagation()}>
+        <p className={`text-base font-medium text-[#142420] ${serif}`}>Return to Supplier</p>
+        <p className="mt-1 text-sm text-[#142420]/55">{purchase.reference || purchase.id}</p>
 
         <form onSubmit={handleSubmit} className="mt-4 space-y-3">
           {items.map((item) => (
-            <div key={item.productId} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+            <div key={item.productId} className="flex items-center gap-3 border border-[#D8DED7] bg-[#F3F5F1] px-3 py-2">
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-slate-900">{item.productName || item.productId}</p>
-                <p className="text-xs text-slate-500">Received: {toNumber(item.quantity)} · Unit cost: {formatCurrency(toNumber(item.unitCost), currency)}</p>
+                <p className="truncate text-sm font-medium text-[#142420]">{item.productName || item.productId}</p>
+                <p className="text-xs text-[#142420]/55">Received: {toNumber(item.quantity)} · Unit cost: {formatCurrency(toNumber(item.unitCost), currency)}</p>
               </div>
               <Input
-                className="h-9 w-20 rounded-xl text-center"
+                className="h-9 w-20 text-center"
                 inputMode="numeric"
                 value={quantities[item.productId] ?? 0}
                 onChange={(e) => {
@@ -250,41 +362,24 @@ function ReturnForm({ open, purchase, onClose, onReturn, currency }) {
           ))}
 
           {totalReturnValue > 0 ? (
-            <p className="text-right text-sm font-semibold text-slate-700">
+            <p className="text-right text-sm font-medium text-[#142420]">
               Return value: {formatCurrency(totalReturnValue, currency)}
             </p>
           ) : null}
 
-          {error ? <p className="text-xs font-semibold text-rose-600">{error}</p> : null}
+          {error ? <p className="text-xs font-medium text-[#A8412F]">{error}</p> : null}
 
           <div className="flex gap-2">
-            <Button className="rounded-xl" type="submit" disabled={saving}>
+            <MedButton variant="primary" type="submit" disabled={saving}>
               {saving ? 'Returning...' : 'Return Items'}
-            </Button>
-            <Button variant="subtle" className="rounded-xl" type="button" onClick={onClose}>
+            </MedButton>
+            <MedButton variant="secondary" type="button" onClick={onClose}>
               Cancel
-            </Button>
+            </MedButton>
           </div>
         </form>
       </div>
     </div>
-  )
-}
-
-function IconAction({ label, danger, onClick, children }) {
-  return (
-    <button
-      type="button"
-      title={label}
-      aria-label={label}
-      onClick={onClick}
-      className={cn(
-        'grid h-8 w-8 place-items-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300',
-        danger && 'text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10',
-      )}
-    >
-      {children}
-    </button>
   )
 }
 
@@ -323,19 +418,19 @@ function PaymentForm({ open, purchase, onClose, onPay, currency }) {
   }
 
   return (
-    <div className="fixed inset-0 z-[70] grid place-items-center bg-slate-950/45 p-3 backdrop-blur-sm" onClick={onClose}>
-      <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
-        <p className="text-base font-semibold text-slate-950">Record Payment</p>
-        <p className="mt-1 text-sm text-slate-500">{purchase.reference || purchase.id} — Due: {formatCurrency(due, currency)}</p>
+    <div className="fixed inset-0 z-[70] grid place-items-center bg-[#142420]/45 p-3 backdrop-blur-sm" onClick={onClose}>
+      <div className={`w-full max-w-md border border-[#D8DED7] bg-white p-5 ${sans}`} onClick={(e) => e.stopPropagation()}>
+        <p className={`text-base font-medium text-[#142420] ${serif}`}>Record Payment</p>
+        <p className="mt-1 text-sm text-[#142420]/55">{purchase.reference || purchase.id} — Due: {formatCurrency(due, currency)}</p>
 
         <form onSubmit={handleSubmit} className="mt-4 space-y-3">
           <div>
-            <p className="text-xs font-semibold text-slate-600">Amount *</p>
-            <Input className="mt-1 h-9 rounded-xl" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
+            <p className="text-xs font-medium text-[#142420]/70">Amount *</p>
+            <Input className="mt-1 h-9" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
           </div>
           <div>
-            <p className="text-xs font-semibold text-slate-600">Payment Method</p>
-            <Select className="mt-1 h-9 rounded-xl" value={method} onChange={(e) => setMethod(e.target.value)}>
+            <p className="text-xs font-medium text-[#142420]/70">Payment Method</p>
+            <Select className="mt-1 h-9" value={method} onChange={(e) => setMethod(e.target.value)}>
               <option>Cash</option>
               <option>Bank Transfer</option>
               <option>Cheque</option>
@@ -344,15 +439,15 @@ function PaymentForm({ open, purchase, onClose, onPay, currency }) {
             </Select>
           </div>
 
-          {error ? <p className="text-xs font-semibold text-rose-600">{error}</p> : null}
+          {error ? <p className="text-xs font-medium text-[#A8412F]">{error}</p> : null}
 
           <div className="flex gap-2">
-            <Button className="rounded-xl" type="submit" disabled={saving}>
+            <MedButton variant="primary" type="submit" disabled={saving}>
               {saving ? 'Recording...' : 'Record Payment'}
-            </Button>
-            <Button variant="subtle" className="rounded-xl" type="button" onClick={onClose}>
+            </MedButton>
+            <MedButton variant="secondary" type="button" onClick={onClose}>
               Cancel
-            </Button>
+            </MedButton>
           </div>
         </form>
       </div>
@@ -395,38 +490,38 @@ function MedicineDetailsModal({ open, medicine, onClose, onSave }) {
   }
 
   return (
-    <div className="fixed inset-0 z-[70] grid place-items-center bg-slate-950/45 p-3 backdrop-blur-sm" onClick={onClose}>
-      <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
-        <p className="text-base font-semibold text-slate-950">Batch & Expiry</p>
-        <p className="mt-1 text-sm text-slate-500">{medicine.name}</p>
+    <div className="fixed inset-0 z-[70] grid place-items-center bg-[#142420]/45 p-3 backdrop-blur-sm" onClick={onClose}>
+      <div className={`w-full max-w-md border border-[#D8DED7] bg-white p-5 ${sans}`} onClick={(e) => e.stopPropagation()}>
+        <p className={`text-base font-medium text-[#142420] ${serif}`}>Batch & Expiry</p>
+        <p className="mt-1 text-sm text-[#142420]/55">{medicine.name}</p>
 
         <form onSubmit={handleSubmit} className="mt-4 space-y-3">
           <div>
-            <p className="text-xs font-semibold text-slate-600">Batch Number</p>
-            <Input className="mt-1 h-9 rounded-xl" value={batchNumber} onChange={(e) => setBatchNumber(e.target.value)} placeholder="e.g. BN-2026-014" />
+            <p className="text-xs font-medium text-[#142420]/70">Batch Number</p>
+            <Input className="mt-1 h-9" value={batchNumber} onChange={(e) => setBatchNumber(e.target.value)} placeholder="e.g. BN-2026-014" />
           </div>
           <div>
-            <p className="text-xs font-semibold text-slate-600">Expiry Date</p>
-            <Input className="mt-1 h-9 rounded-xl" type="date" value={expiryDate} onChange={(e) => setExpiryDate(e.target.value)} />
+            <p className="text-xs font-medium text-[#142420]/70">Expiry Date</p>
+            <Input className="mt-1 h-9" type="date" value={expiryDate} onChange={(e) => setExpiryDate(e.target.value)} />
           </div>
           <div>
-            <p className="text-xs font-semibold text-slate-600">Manufacturer</p>
-            <Input className="mt-1 h-9 rounded-xl" value={manufacturer} onChange={(e) => setManufacturer(e.target.value)} placeholder="e.g. GlaxoSmithKline" />
+            <p className="text-xs font-medium text-[#142420]/70">Manufacturer</p>
+            <Input className="mt-1 h-9" value={manufacturer} onChange={(e) => setManufacturer(e.target.value)} placeholder="e.g. GlaxoSmithKline" />
           </div>
-          <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
-            <input type="checkbox" checked={requiresPrescription} onChange={(e) => setRequiresPrescription(e.target.checked)} className="h-4 w-4 rounded border-slate-300" />
+          <label className="flex items-center gap-2 text-sm font-medium text-[#142420]">
+            <input type="checkbox" checked={requiresPrescription} onChange={(e) => setRequiresPrescription(e.target.checked)} className="h-4 w-4 border-[#D8DED7] accent-[#0D6E5C]" />
             Requires prescription (Rx)
           </label>
 
-          {error ? <p className="text-xs font-semibold text-rose-600">{error}</p> : null}
+          {error ? <p className="text-xs font-medium text-[#A8412F]">{error}</p> : null}
 
           <div className="flex gap-2">
-            <Button className="rounded-xl" type="submit" disabled={saving}>
+            <MedButton variant="primary" type="submit" disabled={saving}>
               {saving ? 'Saving...' : 'Save Details'}
-            </Button>
-            <Button variant="subtle" className="rounded-xl" type="button" onClick={onClose}>
+            </MedButton>
+            <MedButton variant="secondary" type="button" onClick={onClose}>
               Cancel
-            </Button>
+            </MedButton>
           </div>
         </form>
       </div>
@@ -517,63 +612,41 @@ export default function MedicalInventory() {
   }
 
   return (
-    <div className="min-w-0">
+    <div className={`min-w-0 bg-[#F3F5F1] p-4 sm:p-6 ${sans}`} style={{ color: MED.ink }}>
+      <MedFonts />
       {toast ? <Toast message={toast} onClose={() => setToast('')} /> : null}
 
-      <PageHeader
-        title="Medicine Inventory"
-        subtitle="Manage medicines, batches, expiry dates, suppliers, purchases, and live stock value for your Medical Store POS workspace."
-        right={
-          <>
-            <Button variant="subtle" className="rounded-2xl" type="button" onClick={() => setStockModal({ open: true, presetProductId: '', presetType: 'stock_in' })}>
-              <HiOutlineCircleStack className="h-4 w-4" /> Stock movement
-            </Button>
-            <Button className="rounded-2xl" type="button" onClick={() => setMedicineModal({ open: true, medicine: null })}>
-              <HiOutlinePlus className="h-4 w-4" /> Add medicine
-            </Button>
-          </>
-        }
-      />
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className={`text-[11px] font-medium text-[#142420]/45 ${sans}`}>Medical Store POS</p>
+          <h1 className={`mt-1 text-[1.9rem] leading-tight text-[#142420] ${serif}`}>Medicine Inventory</h1>
+          <p className="mt-1 max-w-xl text-sm text-[#142420]/60">
+            Medicines, batches, expiry dates, suppliers, purchases and live stock value.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <MedButton variant="secondary" onClick={() => setStockModal({ open: true, presetProductId: '', presetType: 'stock_in' })}>
+            <HiOutlineCircleStack className="h-4 w-4" /> Stock movement
+          </MedButton>
+          <MedButton variant="primary" onClick={() => setMedicineModal({ open: true, medicine: null })}>
+            <HiOutlinePlus className="h-4 w-4" /> Add medicine
+          </MedButton>
+        </div>
+      </div>
 
       {expiringSoonCount > 0 ? (
-        <Card className="mb-5 border-amber-200 bg-amber-50/70 p-4 dark:border-amber-500/20 dark:bg-amber-500/5">
-          <div className="flex items-start gap-3">
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">
-              <HiOutlineCalendarDays className="h-5 w-5" />
-            </span>
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-amber-800 dark:text-amber-200">Batches nearing expiry</p>
-              <p className="mt-0.5 text-sm text-amber-700/90 dark:text-amber-200/80">
-                {expiringSoonCount} medicine(s) are expired or expiring within 30 days. Review batches before selling.
-              </p>
-            </div>
+        <div className="mb-5 flex items-start gap-3 border-l-4 border-[#C1791F] bg-white px-4 py-3">
+          <HiOutlineCalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-[#C1791F]" />
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-[#142420]">Batches nearing expiry</p>
+            <p className="mt-0.5 text-sm text-[#142420]/60">
+              {expiringSoonCount} medicine(s) are expired or expiring within 30 days. Review batches before selling.
+            </p>
           </div>
-        </Card>
+        </div>
       ) : null}
 
-      {/* Tabs */}
-      <div className="mb-5 flex gap-1.5 overflow-x-auto rounded-2xl border border-slate-200/80 bg-white/70 p-1.5 dark:border-white/10 dark:bg-slate-900/40">
-        {TABS.map((item) => {
-          const Icon = item.icon
-          const active = tab === item.key
-          return (
-            <button
-              key={item.key}
-              type="button"
-              onClick={() => setTab(item.key)}
-              className={cn(
-                'focus-ring inline-flex shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold transition',
-                active
-                  ? 'bg-slate-950 text-white shadow-sm dark:bg-white dark:text-slate-950'
-                  : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/10',
-              )}
-            >
-              <Icon className="h-4 w-4" />
-              {item.label}
-            </button>
-          )
-        })}
-      </div>
+      <MedTabs tab={tab} onChange={setTab} />
 
       {tab === 'dashboard' ? (
         <DashboardTab stats={stats} currency={currency} expiringSoonCount={expiringSoonCount} onView={() => setTab('medicines')} />
@@ -668,7 +741,7 @@ export default function MedicalInventory() {
         <ReportsTab medicines={medicines} purchases={purchasesApi.purchases} transactions={transactionsApi.transactions} stats={stats} currency={currency} />
       ) : null}
 
-      {/* Modals */}
+      {/* Modals — shared components, styled as they are everywhere else */}
       <ProductModal
         open={medicineModal.open}
         product={medicineModal.medicine}
@@ -772,10 +845,10 @@ export default function MedicalInventory() {
 
 function MedicineThumb({ medicine }) {
   if (medicine.imageUrl) {
-    return <img src={medicine.imageUrl} alt={medicine.name} className="h-9 w-9 rounded-lg border border-slate-200 object-cover" />
+    return <img src={medicine.imageUrl} alt={medicine.name} className="h-8 w-8 border border-[#D8DED7] object-cover" />
   }
   return (
-    <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-indigo-100 bg-gradient-to-br from-indigo-50 to-sky-50 text-[11px] font-bold text-indigo-700">
+    <div className={`grid h-8 w-8 shrink-0 place-items-center border border-[#D8DED7] bg-[#0D6E5C]/[0.08] text-[11px] font-medium text-[#0D6E5C] ${sans}`}>
       {String(medicine.name || 'M').slice(0, 2).toUpperCase()}
     </div>
   )
@@ -783,60 +856,58 @@ function MedicineThumb({ medicine }) {
 
 function DashboardTab({ stats, currency, expiringSoonCount, onView }) {
   return (
-    <div className="space-y-5">
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-        <MetricCard icon={HiOutlineCube} label="Total Medicines" value={stats.totalProducts} tone="indigo" hint={`${stats.trackedProducts} stock-tracked`} />
-        <MetricCard icon={HiOutlineCircleStack} label="Total Stock" value={stats.totalStock} tone="sky" hint="units on hand" />
-        <MetricCard icon={HiOutlineExclamationTriangle} label="Low Stock" value={stats.lowStockCount} tone="amber" hint="need reorder" />
-        <MetricCard icon={HiOutlineCalendarDays} label="Expiring / Expired" value={expiringSoonCount} tone="rose" hint="within 30 days" />
-        <MetricCard icon={HiOutlineBanknotes} label="Inventory Value" value={formatCurrency(stats.inventoryValue, currency)} tone="emerald" hint="at cost price" />
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 gap-6 border-y border-[#D8DED7] py-5 sm:grid-cols-3 xl:grid-cols-5">
+        <MedKpi value={stats.totalProducts} label="Total medicines" hint={`${stats.trackedProducts} stock-tracked`} />
+        <MedKpi value={stats.totalStock} label="Total stock" hint="units on hand" />
+        <MedKpi value={stats.lowStockCount} label="Low stock" hint="need reorder" />
+        <MedKpi value={expiringSoonCount} label="Expiring / expired" hint="within 30 days" />
+        <MedKpi value={formatCurrency(stats.inventoryValue, currency)} label="Inventory value" hint="at cost price" />
       </div>
 
       {stats.lowStockCount + stats.outOfStockCount > 0 ? (
-        <Card className="border-amber-200 bg-amber-50/70 p-4 dark:border-amber-500/20 dark:bg-amber-500/5">
-          <div className="flex items-start gap-3">
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">
-              <HiOutlineExclamationTriangle className="h-5 w-5" />
-            </span>
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-amber-800 dark:text-amber-200">Stock attention needed</p>
-              <p className="mt-0.5 text-sm text-amber-700/90 dark:text-amber-200/80">
-                {stats.outOfStockCount} out of stock and {stats.lowStockCount} low-stock medicines. Reorder soon to avoid lost sales.
-              </p>
-              <Button variant="subtle" className="mt-3 rounded-xl" type="button" onClick={onView}>
-                Review medicines
-              </Button>
-            </div>
+        <div className="flex items-start gap-3 border-l-4 border-[#A8412F] bg-white px-4 py-3">
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-[#142420]">Stock attention needed</p>
+            <p className="mt-0.5 text-sm text-[#142420]/60">
+              {stats.outOfStockCount} out of stock and {stats.lowStockCount} low-stock medicines. Reorder soon to avoid lost sales.
+            </p>
+            <MedButton variant="secondary" className="mt-3" onClick={onView}>
+              Review medicines
+            </MedButton>
           </div>
-        </Card>
+        </div>
       ) : null}
 
-      <div className="grid gap-5 lg:grid-cols-2">
-        <SectionCard title="Low stock medicines">
-          <SimpleTable
+      <div className="grid gap-6 lg:grid-cols-2">
+        <div>
+          <MedSectionHeading>Low stock medicines</MedSectionHeading>
+          <MedTable
+            getAccent={(row) => toneColor(stockState(row).tone)}
             columns={[
-              { key: 'name', header: 'Medicine', cell: (row) => <span className="font-semibold text-slate-900 dark:text-white">{row.name}</span> },
+              { key: 'name', header: 'Medicine', cell: (row) => <span className="font-medium text-[#142420]">{row.name}</span> },
               { key: 'stockQuantity', header: 'Stock', cell: (row) => toNumber(row.stockQuantity) },
               { key: 'minStockAlert', header: 'Min', cell: (row) => toNumber(row.minStockAlert) },
-              { key: 'status', header: 'Status', cell: (row) => { const s = stockState(row); return <Badge variant={s.tone}>{s.label}</Badge> } },
+              { key: 'status', header: 'Status', cell: (row) => <MedTag tone={stockState(row).tone}>{stockState(row).label}</MedTag> },
             ]}
             rows={[...stats.outOfStockItems, ...stats.lowStockItems].slice(0, 8)}
             empty="All stock levels are healthy."
           />
-        </SectionCard>
+        </div>
 
-        <SectionCard title="Recent stock movements">
-          <SimpleTable
+        <div>
+          <MedSectionHeading>Recent stock movements</MedSectionHeading>
+          <MedTable
             columns={[
-              { key: 'type', header: 'Type', cell: (row) => <Badge variant={movementTone(row.type)}>{movementLabel(row.type)}</Badge> },
+              { key: 'type', header: 'Type', cell: (row) => <MedTag tone={movementTone(row.type)}>{movementLabel(row.type)}</MedTag> },
               { key: 'productName', header: 'Medicine' },
-              { key: 'delta', header: 'Change', cell: (row) => <span className={row.delta >= 0 ? 'font-semibold text-emerald-600' : 'font-semibold text-rose-600'}>{row.delta >= 0 ? '+' : ''}{row.delta}</span> },
+              { key: 'delta', header: 'Change', cell: (row) => <span style={{ color: row.delta >= 0 ? MED.primary : MED.clay }} className="font-medium">{row.delta >= 0 ? '+' : ''}{row.delta}</span> },
               { key: 'createdAt', header: 'When', cell: (row) => formatDate(row.createdAt) },
             ]}
             rows={stats.recentMovements}
             empty="No stock movements recorded yet."
           />
-        </SectionCard>
+        </div>
       </div>
     </div>
   )
@@ -844,10 +915,10 @@ function DashboardTab({ stats, currency, expiringSoonCount, onView }) {
 
 function MedicinesTab({ medicines, search, onSearch, currency, onAdd, onEdit, onDetails, onStock, onDelete }) {
   return (
-    <Card className="p-4 sm:p-5">
+    <MedPanel className="p-4 sm:p-5">
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative w-full sm:max-w-sm">
-          <HiOutlineMagnifyingGlass className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <HiOutlineMagnifyingGlass className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#142420]/35" />
           <Input
             className="pl-9"
             placeholder="Search by name, SKU, barcode, batch, manufacturer…"
@@ -855,15 +926,14 @@ function MedicinesTab({ medicines, search, onSearch, currency, onAdd, onEdit, on
             onChange={(e) => onSearch(e.target.value)}
           />
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Button className="rounded-2xl" type="button" onClick={onAdd}>
-            <HiOutlinePlus className="h-4 w-4" /> Add medicine
-          </Button>
-        </div>
+        <MedButton variant="primary" onClick={onAdd}>
+          <HiOutlinePlus className="h-4 w-4" /> Add medicine
+        </MedButton>
       </div>
 
       {medicines.length ? (
-        <SimpleTable
+        <MedTable
+          getAccent={medicineAccent}
           columns={[
             {
               key: 'name',
@@ -872,8 +942,8 @@ function MedicinesTab({ medicines, search, onSearch, currency, onAdd, onEdit, on
                 <div className="flex items-center gap-3">
                   <MedicineThumb medicine={row} />
                   <div className="min-w-0">
-                    <p className="truncate font-semibold text-slate-900 dark:text-white">{row.name}</p>
-                    <p className="truncate text-xs text-slate-500">{row.sku || row.barcode || 'No SKU'}{row.manufacturer ? ` · ${row.manufacturer}` : ''}</p>
+                    <p className="truncate font-medium text-[#142420]">{row.name}</p>
+                    <p className="truncate text-xs text-[#142420]/50">{row.sku || row.barcode || 'No SKU'}{row.manufacturer ? ` · ${row.manufacturer}` : ''}</p>
                   </div>
                 </div>
               ),
@@ -888,24 +958,23 @@ function MedicinesTab({ medicines, search, onSearch, currency, onAdd, onEdit, on
                 return (
                   <div className="space-y-1">
                     <p>{formatExpiry(row.expiryDate)}</p>
-                    <Badge variant={s.tone}>{s.label}</Badge>
+                    {s.tone !== 'success' ? <MedTag tone={s.tone}>{s.label}</MedTag> : null}
                   </div>
                 )
               },
             },
-            { key: 'requiresPrescription', header: 'Rx', cell: (row) => row.requiresPrescription ? <Badge variant="danger">Rx required</Badge> : <Badge variant="default">OTC</Badge> },
+            { key: 'requiresPrescription', header: 'Rx', cell: (row) => row.requiresPrescription ? <MedTag tone="warning">Rx</MedTag> : <span className="text-[#142420]/40">OTC</span> },
             { key: 'stockQuantity', header: 'Stock', cell: (row) => (isStockTracked(row) ? toNumber(row.stockQuantity) : '—') },
             { key: 'price', header: 'Price', cell: (row) => formatCurrency(row.price, row.currency || currency) },
-            { key: 'status', header: 'Status', cell: (row) => { const s = stockState(row); return isStockTracked(row) ? <Badge variant={s.tone}>{s.label}</Badge> : <Badge variant="info">Service</Badge> } },
             {
               key: 'actions',
               header: '',
               cell: (row) => (
                 <div className="flex items-center justify-end gap-1.5">
-                  <IconAction label="Batch & expiry" onClick={() => onDetails(row)}><HiOutlineCalendarDays className="h-4 w-4" /></IconAction>
-                  <IconAction label="Stock movement" onClick={() => onStock(row)}><HiOutlineCircleStack className="h-4 w-4" /></IconAction>
-                  <IconAction label="Edit" onClick={() => onEdit(row)}><HiOutlinePencilSquare className="h-4 w-4" /></IconAction>
-                  <IconAction label="Delete" danger onClick={() => onDelete(row)}><HiOutlineTrash className="h-4 w-4" /></IconAction>
+                  <MedIconButton label="Batch & expiry" onClick={() => onDetails(row)}><HiOutlineCalendarDays className="h-4 w-4" /></MedIconButton>
+                  <MedIconButton label="Stock movement" onClick={() => onStock(row)}><HiOutlineCircleStack className="h-4 w-4" /></MedIconButton>
+                  <MedIconButton label="Edit" onClick={() => onEdit(row)}><HiOutlinePencilSquare className="h-4 w-4" /></MedIconButton>
+                  <MedIconButton label="Delete" danger onClick={() => onDelete(row)}><HiOutlineTrash className="h-4 w-4" /></MedIconButton>
                 </div>
               ),
             },
@@ -916,62 +985,54 @@ function MedicinesTab({ medicines, search, onSearch, currency, onAdd, onEdit, on
       ) : (
         <EmptyState title="No medicines yet" description="Add your first medicine to start tracking inventory." actionLabel="Add medicine" onAction={onAdd} />
       )}
-    </Card>
+    </MedPanel>
   )
 }
 
 function StockTab({ medicines, onMove, onProductMove, currency }) {
   const actions = [
-    { type: 'stock_in', label: 'Stock In', icon: HiOutlinePlus, tone: 'emerald' },
-    { type: 'stock_out', label: 'Stock Out', icon: HiOutlineArrowPath, tone: 'amber' },
-    { type: 'adjustment', label: 'Adjustment', icon: HiOutlinePencilSquare, tone: 'indigo' },
-    { type: 'opening', label: 'Opening', icon: HiOutlineCircleStack, tone: 'sky' },
-    { type: 'damaged', label: 'Damaged', icon: HiOutlineExclamationTriangle, tone: 'rose' },
-    { type: 'returned', label: 'Returned', icon: HiOutlineArrowPath, tone: 'sky' },
-    { type: 'transfer', label: 'Transfer', icon: HiOutlineTruck, tone: 'indigo' },
+    { type: 'stock_in', label: 'Stock In' },
+    { type: 'stock_out', label: 'Stock Out' },
+    { type: 'adjustment', label: 'Adjustment' },
+    { type: 'opening', label: 'Opening' },
+    { type: 'damaged', label: 'Damaged' },
+    { type: 'returned', label: 'Returned' },
+    { type: 'transfer', label: 'Transfer' },
   ]
   return (
-    <div className="space-y-5">
-      <Card className="p-4 sm:p-5">
-        <p className="mb-3 text-sm font-semibold text-slate-950 dark:text-white">Quick stock actions</p>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
-          {actions.map((action) => {
-            const Icon = action.icon
-            return (
-              <button
-                key={action.type}
-                type="button"
-                onClick={() => onMove(action.type)}
-                className="focus-ring flex flex-col items-center gap-2 rounded-2xl border border-slate-200/80 bg-white p-3 text-center text-xs font-semibold text-slate-700 transition hover:border-sky-200 hover:bg-sky-50/50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
-              >
-                <Icon className="h-5 w-5 text-sky-600" />
-                {action.label}
-              </button>
-            )
-          })}
+    <div className="space-y-6">
+      <div>
+        <MedSectionHeading>Quick stock actions</MedSectionHeading>
+        <div className="flex flex-wrap gap-2">
+          {actions.map((action) => (
+            <MedButton key={action.type} variant="secondary" onClick={() => onMove(action.type)}>
+              {action.label}
+            </MedButton>
+          ))}
         </div>
-      </Card>
+      </div>
 
-      <Card className="p-4 sm:p-5">
-        <p className="mb-3 text-sm font-semibold text-slate-950 dark:text-white">Current stock levels</p>
-        <SimpleTable
+      <div>
+        <MedSectionHeading>Current stock levels</MedSectionHeading>
+        <MedTable
+          getAccent={(row) => toneColor(stockState(row).tone)}
           columns={[
-            { key: 'name', header: 'Medicine', cell: (row) => <span className="font-semibold text-slate-900 dark:text-white">{row.name}</span> },
+            { key: 'name', header: 'Medicine', cell: (row) => <span className="font-medium text-[#142420]">{row.name}</span> },
             { key: 'sku', header: 'SKU', cell: (row) => row.sku || '—' },
             { key: 'batchNumber', header: 'Batch', cell: (row) => row.batchNumber || '—' },
             { key: 'stockQuantity', header: 'On hand', cell: (row) => toNumber(row.stockQuantity) },
             { key: 'value', header: 'Stock value', cell: (row) => formatCurrency(toNumber(row.stockQuantity) * toNumber(row.costPrice), row.currency || currency) },
-            { key: 'status', header: 'Status', cell: (row) => { const s = stockState(row); return <Badge variant={s.tone}>{s.label}</Badge> } },
+            { key: 'status', header: 'Status', cell: (row) => <MedTag tone={stockState(row).tone}>{stockState(row).label}</MedTag> },
             { key: 'actions', header: '', cell: (row) => (
               <div className="flex justify-end">
-                <IconAction label="Record movement" onClick={() => onProductMove(row, 'stock_in')}><HiOutlineCircleStack className="h-4 w-4" /></IconAction>
+                <MedIconButton label="Record movement" onClick={() => onProductMove(row, 'stock_in')}><HiOutlineCircleStack className="h-4 w-4" /></MedIconButton>
               </div>
             ) },
           ]}
           rows={medicines.filter(isStockTracked)}
           empty="No stock-tracked medicines yet."
         />
-      </Card>
+      </div>
     </div>
   )
 }
@@ -987,24 +1048,21 @@ function CategoriesTab({ categories, medicines, onAdd, onEdit, onDelete }) {
   }, [medicines])
 
   return (
-    <Card className="p-4 sm:p-5">
-      <div className="mb-4 flex items-center justify-between">
-        <p className="text-sm font-semibold text-slate-950 dark:text-white">Categories</p>
-        <Button className="rounded-2xl" type="button" onClick={onAdd}>
-          <HiOutlinePlus className="h-4 w-4" /> Add category
-        </Button>
-      </div>
+    <MedPanel className="p-4 sm:p-5">
+      <MedSectionHeading action={<MedButton variant="primary" onClick={onAdd}><HiOutlinePlus className="h-4 w-4" /> Add category</MedButton>}>
+        Categories
+      </MedSectionHeading>
       {categories.length ? (
-        <SimpleTable
+        <MedTable
           columns={[
-            { key: 'name', header: 'Name', cell: (row) => <span className="font-semibold text-slate-900 dark:text-white">{row.name}</span> },
+            { key: 'name', header: 'Name', cell: (row) => <span className="font-medium text-[#142420]">{row.name}</span> },
             { key: 'description', header: 'Description', cell: (row) => row.description || '—' },
             { key: 'medicines', header: 'Medicines', cell: (row) => counts[String(row.name).toLowerCase()] || 0 },
-            { key: 'status', header: 'Status', cell: (row) => <Badge variant={row.status === 'active' ? 'success' : 'default'}>{row.status}</Badge> },
+            { key: 'status', header: 'Status', cell: (row) => <MedTag tone={row.status === 'active' ? 'success' : 'default'}>{row.status}</MedTag> },
             { key: 'actions', header: '', cell: (row) => (
               <div className="flex items-center justify-end gap-1.5">
-                <IconAction label="Edit" onClick={() => onEdit(row)}><HiOutlinePencilSquare className="h-4 w-4" /></IconAction>
-                <IconAction label="Delete" danger onClick={() => onDelete(row)}><HiOutlineTrash className="h-4 w-4" /></IconAction>
+                <MedIconButton label="Edit" onClick={() => onEdit(row)}><HiOutlinePencilSquare className="h-4 w-4" /></MedIconButton>
+                <MedIconButton label="Delete" danger onClick={() => onDelete(row)}><HiOutlineTrash className="h-4 w-4" /></MedIconButton>
               </div>
             ) },
           ]}
@@ -1014,14 +1072,8 @@ function CategoriesTab({ categories, medicines, onAdd, onEdit, onDelete }) {
       ) : (
         <EmptyState title="No categories yet" description="Create categories to organize your medicines." actionLabel="Add category" onAction={onAdd} />
       )}
-    </Card>
+    </MedPanel>
   )
-}
-
-function paymentStatusTone(status) {
-  if (status === 'paid') return 'success'
-  if (status === 'partial') return 'warning'
-  return 'default'
 }
 
 function SuppliersTab({ suppliers, purchases, currency, onAdd, onEdit, onDelete }) {
@@ -1031,35 +1083,33 @@ function SuppliersTab({ suppliers, purchases, currency, onAdd, onEdit, onDelete 
   )
 
   return (
-    <Card className="p-4 sm:p-5">
-      <div className="mb-4 flex items-center justify-between">
-        <p className="text-sm font-semibold text-slate-950 dark:text-white">Suppliers</p>
-        <Button className="rounded-2xl" type="button" onClick={onAdd}>
-          <HiOutlinePlus className="h-4 w-4" /> Add supplier
-        </Button>
-      </div>
+    <MedPanel className="p-4 sm:p-5">
+      <MedSectionHeading action={<MedButton variant="primary" onClick={onAdd}><HiOutlinePlus className="h-4 w-4" /> Add supplier</MedButton>}>
+        Suppliers
+      </MedSectionHeading>
       {suppliers.length ? (
-        <SimpleTable
+        <MedTable
+          getAccent={(row) => (row.totalDue > 0 ? MED.amber : MED.primary)}
           columns={[
             { key: 'name', header: 'Supplier', cell: (row) => (
               <div className="min-w-0">
-                <p className="truncate font-semibold text-slate-900 dark:text-white">{row.supplier.name}</p>
-                <p className="truncate text-xs text-slate-500">{row.supplier.company || row.supplier.email || '—'}</p>
+                <p className="truncate font-medium text-[#142420]">{row.supplier.name}</p>
+                <p className="truncate text-xs text-[#142420]/50">{row.supplier.company || row.supplier.email || '—'}</p>
               </div>
             ) },
             { key: 'phone', header: 'Phone', cell: (row) => row.supplier.phone || '—' },
             { key: 'purchases', header: 'Purchases', cell: (row) => formatCurrency(row.totalPurchases, currency) },
             { key: 'paid', header: 'Paid', cell: (row) => formatCurrency(row.totalPaid, currency) },
-            { key: 'due', header: 'Balance Due', cell: (row) => (
-              <span className={row.totalDue > 0 ? 'font-semibold text-rose-600' : 'text-slate-600'}>
+            { key: 'due', header: 'Balance due', cell: (row) => (
+              <span style={{ color: row.totalDue > 0 ? MED.clay : undefined }} className="font-medium">
                 {formatCurrency(row.balanceDue, currency)}
               </span>
             ) },
-            { key: 'status', header: 'Status', cell: (row) => <Badge variant={row.supplier.status === 'active' ? 'success' : 'default'}>{row.supplier.status}</Badge> },
+            { key: 'status', header: 'Status', cell: (row) => <MedTag tone={row.supplier.status === 'active' ? 'success' : 'default'}>{row.supplier.status}</MedTag> },
             { key: 'actions', header: '', cell: (row) => (
               <div className="flex items-center justify-end gap-1.5">
-                <IconAction label="Edit" onClick={() => onEdit(row.supplier)}><HiOutlinePencilSquare className="h-4 w-4" /></IconAction>
-                <IconAction label="Delete" danger onClick={() => onDelete(row.supplier)}><HiOutlineTrash className="h-4 w-4" /></IconAction>
+                <MedIconButton label="Edit" onClick={() => onEdit(row.supplier)}><HiOutlinePencilSquare className="h-4 w-4" /></MedIconButton>
+                <MedIconButton label="Delete" danger onClick={() => onDelete(row.supplier)}><HiOutlineTrash className="h-4 w-4" /></MedIconButton>
               </div>
             ) },
           ]}
@@ -1069,60 +1119,58 @@ function SuppliersTab({ suppliers, purchases, currency, onAdd, onEdit, onDelete 
       ) : (
         <EmptyState title="No suppliers yet" description="Add suppliers to manage purchases and ledgers." actionLabel="Add supplier" onAction={onAdd} />
       )}
-    </Card>
+    </MedPanel>
   )
 }
 
-function purchaseStatusTone(status) {
-  if (status === 'received') return 'success'
-  if (status === 'cancelled') return 'danger'
-  return 'warning'
+function purchaseAccent(row) {
+  if (row.status !== 'received') return MED.line
+  if (row.paymentStatus && row.paymentStatus !== 'paid') return MED.amber
+  return MED.primary
 }
 
 function PurchasesTab({ purchases, currency, onAdd, onEdit, onReceive, onPay, onReturn, onDelete }) {
   return (
-    <Card className="p-4 sm:p-5">
-      <div className="mb-4 flex items-center justify-between">
-        <p className="text-sm font-semibold text-slate-950 dark:text-white">Purchase orders</p>
-        <Button className="rounded-2xl" type="button" onClick={onAdd}>
-          <HiOutlinePlus className="h-4 w-4" /> New purchase
-        </Button>
-      </div>
+    <MedPanel className="p-4 sm:p-5">
+      <MedSectionHeading action={<MedButton variant="primary" onClick={onAdd}><HiOutlinePlus className="h-4 w-4" /> New purchase</MedButton>}>
+        Purchase orders
+      </MedSectionHeading>
       {purchases.length ? (
-        <SimpleTable
+        <MedTable
+          getAccent={purchaseAccent}
           columns={[
-            { key: 'reference', header: 'Reference', cell: (row) => <span className="font-semibold text-slate-900 dark:text-white">{row.reference || row.id.slice(0, 6)}</span> },
+            { key: 'reference', header: 'Reference', cell: (row) => <span className="font-medium text-[#142420]">{row.reference || row.id.slice(0, 6)}</span> },
             { key: 'supplierName', header: 'Supplier', cell: (row) => row.supplierName || '—' },
             { key: 'items', header: 'Items', cell: (row) => row.items?.length || 0 },
             { key: 'total', header: 'Total', cell: (row) => formatCurrency(row.total, row.currency || currency) },
             { key: 'paid', header: 'Paid', cell: (row) => formatCurrency(row.paidAmount || 0, row.currency || currency) },
             { key: 'due', header: 'Due', cell: (row) => {
               const due = row.balanceDue || row.total
-              return <span className={due > 0 ? 'font-semibold text-rose-600' : 'text-emerald-600'}>{formatCurrency(due, row.currency || currency)}</span>
+              return <span style={{ color: due > 0 ? MED.clay : MED.primary }} className="font-medium">{formatCurrency(due, row.currency || currency)}</span>
             } },
-            { key: 'paymentStatus', header: 'Payment', cell: (row) => <Badge variant={paymentStatusTone(row.paymentStatus || 'unpaid')}>{row.paymentStatus || 'unpaid'}</Badge> },
-            { key: 'status', header: 'Status', cell: (row) => <Badge variant={purchaseStatusTone(row.status)} className="capitalize">{row.status}</Badge> },
+            { key: 'paymentStatus', header: 'Payment', cell: (row) => <MedTag tone={row.paymentStatus === 'paid' ? 'success' : row.paymentStatus === 'partial' ? 'warning' : 'default'}>{row.paymentStatus || 'unpaid'}</MedTag> },
+            { key: 'status', header: 'Status', cell: (row) => <MedTag tone={row.status === 'received' ? 'success' : row.status === 'cancelled' ? 'danger' : 'warning'}>{row.status}</MedTag> },
             { key: 'createdAt', header: 'Created', cell: (row) => formatDate(row.createdAt) },
             { key: 'actions', header: '', cell: (row) => (
               <div className="flex items-center justify-end gap-1.5">
                 {row.status !== 'received' ? (
-                  <Button variant="subtle" className="h-8 rounded-lg px-2 text-xs" type="button" onClick={() => onReceive(row)}>
-                    <HiOutlineArrowDownTray className="h-4 w-4" /> Receive
-                  </Button>
+                  <MedButton variant="secondary" className="px-2 py-1.5 text-xs" onClick={() => onReceive(row)}>
+                    <HiOutlineArrowDownTray className="h-3.5 w-3.5" /> Receive
+                  </MedButton>
                 ) : (
                   <>
                     {row.paymentStatus !== 'paid' ? (
-                      <Button variant="subtle" className="h-8 rounded-lg bg-emerald-50 px-2 text-xs text-emerald-700 hover:bg-emerald-100" type="button" onClick={() => onPay(row)}>
-                        <HiOutlineCurrencyDollar className="h-4 w-4" /> Pay
-                      </Button>
+                      <MedButton variant="secondary" className="px-2 py-1.5 text-xs" onClick={() => onPay(row)}>
+                        <HiOutlineCurrencyDollar className="h-3.5 w-3.5" /> Pay
+                      </MedButton>
                     ) : null}
-                    <Button variant="subtle" className="h-8 rounded-lg bg-amber-50 px-2 text-xs text-amber-700 hover:bg-amber-100" type="button" onClick={() => onReturn(row)}>
-                      <HiOutlineArrowPath className="h-4 w-4" /> Return
-                    </Button>
+                    <MedButton variant="secondary" className="px-2 py-1.5 text-xs" onClick={() => onReturn(row)}>
+                      <HiOutlineArrowPath className="h-3.5 w-3.5" /> Return
+                    </MedButton>
                   </>
                 )}
-                <IconAction label="Edit" onClick={() => onEdit(row)}><HiOutlinePencilSquare className="h-4 w-4" /></IconAction>
-                <IconAction label="Delete" danger onClick={() => onDelete(row)}><HiOutlineTrash className="h-4 w-4" /></IconAction>
+                <MedIconButton label="Edit" onClick={() => onEdit(row)}><HiOutlinePencilSquare className="h-4 w-4" /></MedIconButton>
+                <MedIconButton label="Delete" danger onClick={() => onDelete(row)}><HiOutlineTrash className="h-4 w-4" /></MedIconButton>
               </div>
             ) },
           ]}
@@ -1132,28 +1180,29 @@ function PurchasesTab({ purchases, currency, onAdd, onEdit, onReceive, onPay, on
       ) : (
         <EmptyState title="No purchase orders yet" description="Create a purchase order, then receive stock to add it to inventory." actionLabel="New purchase" onAction={onAdd} />
       )}
-    </Card>
+    </MedPanel>
   )
 }
 
 function TransactionsTab({ transactions, typeFilter, onTypeFilter }) {
   return (
-    <Card className="p-4 sm:p-5">
+    <MedPanel className="p-4 sm:p-5">
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm font-semibold text-slate-950 dark:text-white">Inventory transactions</p>
-        <Select className="h-9 w-full rounded-xl sm:max-w-[200px]" value={typeFilter} onChange={(e) => onTypeFilter(e.target.value)}>
+        <p className={`text-sm font-medium text-[#142420] ${sans}`}>Inventory transactions</p>
+        <Select className="h-9 w-full sm:max-w-[200px]" value={typeFilter} onChange={(e) => onTypeFilter(e.target.value)}>
           <option value="all">All types</option>
           {Object.keys(MOVEMENT_TYPES).map((type) => (
             <option key={type} value={type}>{MOVEMENT_TYPES[type].label}</option>
           ))}
         </Select>
       </div>
-      <SimpleTable
+      <MedTable
+        getAccent={(row) => toneColor(movementTone(row.type))}
         columns={[
-          { key: 'type', header: 'Type', cell: (row) => <Badge variant={movementTone(row.type)}>{movementLabel(row.type)}</Badge> },
-          { key: 'productName', header: 'Medicine', cell: (row) => <span className="font-semibold text-slate-900 dark:text-white">{row.productName}</span> },
+          { key: 'type', header: 'Type', cell: (row) => <MedTag tone={movementTone(row.type)}>{movementLabel(row.type)}</MedTag> },
+          { key: 'productName', header: 'Medicine', cell: (row) => <span className="font-medium text-[#142420]">{row.productName}</span> },
           { key: 'quantity', header: 'Qty', cell: (row) => row.quantity },
-          { key: 'delta', header: 'Change', cell: (row) => <span className={row.delta >= 0 ? 'font-semibold text-emerald-600' : 'font-semibold text-rose-600'}>{row.delta >= 0 ? '+' : ''}{row.delta}</span> },
+          { key: 'delta', header: 'Change', cell: (row) => <span style={{ color: row.delta >= 0 ? MED.primary : MED.clay }} className="font-medium">{row.delta >= 0 ? '+' : ''}{row.delta}</span> },
           { key: 'newQuantity', header: 'Balance', cell: (row) => row.newQuantity },
           { key: 'note', header: 'Note', cell: (row) => row.note || row.reference || '—' },
           { key: 'createdAt', header: 'When', cell: (row) => formatDate(row.createdAt) },
@@ -1161,7 +1210,7 @@ function TransactionsTab({ transactions, typeFilter, onTypeFilter }) {
         rows={transactions}
         empty="No transactions recorded yet."
       />
-    </Card>
+    </MedPanel>
   )
 }
 
@@ -1171,9 +1220,9 @@ function ReportsTab({ medicines, purchases, transactions, stats, currency }) {
   const reports = [
     {
       key: 'stock',
-      title: 'Stock Report',
+      title: 'Stock report',
       description: 'All medicines with current quantities and stock value.',
-      icon: HiOutlineCube,
+      icon: HiOutlineClipboardDocumentList,
       rows: () => tracked.map((p) => ({
         Medicine: p.name, SKU: p.sku, Category: p.category, Batch: p.batchNumber, Expiry: p.expiryDate, Stock: toNumber(p.stockQuantity),
         CostPrice: toNumber(p.costPrice), StockValue: toNumber(p.stockQuantity) * toNumber(p.costPrice),
@@ -1181,16 +1230,16 @@ function ReportsTab({ medicines, purchases, transactions, stats, currency }) {
     },
     {
       key: 'low-stock',
-      title: 'Low Stock Report',
+      title: 'Low stock report',
       description: 'Items at or below their minimum stock alert.',
-      icon: HiOutlineExclamationTriangle,
+      icon: HiOutlineTag,
       rows: () => [...stats.outOfStockItems, ...stats.lowStockItems].map((p) => ({
         Medicine: p.name, SKU: p.sku, Stock: toNumber(p.stockQuantity), MinAlert: toNumber(p.minStockAlert), Status: stockState(p).label,
       })),
     },
     {
       key: 'expiry',
-      title: 'Expiry Report',
+      title: 'Expiry report',
       description: 'Medicines that are expired or expiring within 30 days.',
       icon: HiOutlineCalendarDays,
       rows: () => tracked
@@ -1201,9 +1250,9 @@ function ReportsTab({ medicines, purchases, transactions, stats, currency }) {
     },
     {
       key: 'valuation',
-      title: 'Inventory Valuation Report',
+      title: 'Inventory valuation report',
       description: 'Total inventory value at cost and retail price.',
-      icon: HiOutlineBanknotes,
+      icon: HiOutlineCurrencyDollar,
       rows: () => tracked.map((p) => ({
         Medicine: p.name, Stock: toNumber(p.stockQuantity), CostValue: toNumber(p.stockQuantity) * toNumber(p.costPrice),
         RetailValue: toNumber(p.stockQuantity) * toNumber(p.price),
@@ -1211,16 +1260,16 @@ function ReportsTab({ medicines, purchases, transactions, stats, currency }) {
     },
     {
       key: 'purchases',
-      title: 'Purchase Report',
+      title: 'Purchase report',
       description: 'All purchase orders and their totals.',
-      icon: HiOutlineClipboardDocumentList,
+      icon: HiOutlineTruck,
       rows: () => purchases.map((p) => ({
         Reference: p.reference, Supplier: p.supplierName, Items: p.items?.length || 0, Total: toNumber(p.total), Status: p.status,
       })),
     },
     {
       key: 'movements',
-      title: 'Medicine Movement Report',
+      title: 'Medicine movement report',
       description: 'Full stock movement history across all medicines.',
       icon: HiOutlineArrowPath,
       rows: () => transactions.map((t) => ({
@@ -1230,39 +1279,34 @@ function ReportsTab({ medicines, purchases, transactions, stats, currency }) {
   ]
 
   return (
-    <div className="space-y-5">
-      <div className="grid gap-3 sm:grid-cols-3">
-        <MetricCard icon={HiOutlineBanknotes} label="Value at cost" value={formatCurrency(stats.inventoryValue, currency)} tone="emerald" />
-        <MetricCard icon={HiOutlineBuildingStorefront} label="Value at retail" value={formatCurrency(stats.retailValue, currency)} tone="sky" />
-        <MetricCard icon={HiOutlineArrowTrendingUp} label="Potential margin" value={formatCurrency(stats.potentialMargin, currency)} tone="indigo" />
+    <div className="space-y-6">
+      <div className="grid grid-cols-3 gap-6 border-y border-[#D8DED7] py-5">
+        <MedKpi value={formatCurrency(stats.inventoryValue, currency)} label="Value at cost" />
+        <MedKpi value={formatCurrency(stats.retailValue, currency)} label="Value at retail" />
+        <MedKpi value={formatCurrency(stats.potentialMargin, currency)} label="Potential margin" />
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {reports.map((report) => {
           const Icon = report.icon
           const rows = report.rows()
           return (
-            <Card key={report.key} className="flex flex-col p-4">
-              <div className="flex items-center gap-3">
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-slate-200">
-                  <Icon className="h-5 w-5" />
-                </span>
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-slate-950 dark:text-white">{report.title}</p>
-                  <p className="text-xs text-slate-500">{rows.length} rows</p>
-                </div>
+            <MedPanel key={report.key} className="flex flex-col p-4">
+              <div className="flex items-center gap-2.5">
+                <Icon className="h-4 w-4 text-[#0D6E5C]" />
+                <p className="truncate text-sm font-medium text-[#142420]">{report.title}</p>
               </div>
-              <p className="mt-3 flex-1 text-sm text-slate-600 dark:text-slate-300">{report.description}</p>
-              <Button
-                variant="subtle"
-                className="mt-4 rounded-xl"
-                type="button"
+              <p className="mt-0.5 text-xs text-[#142420]/40">{rows.length} rows</p>
+              <p className="mt-3 flex-1 text-sm text-[#142420]/65">{report.description}</p>
+              <MedButton
+                variant="secondary"
+                className="mt-4"
                 disabled={!rows.length}
                 onClick={() => downloadCsv(`${report.key}-report.csv`, rows)}
               >
                 <HiOutlineArrowDownTray className="h-4 w-4" /> Export CSV
-              </Button>
-            </Card>
+              </MedButton>
+            </MedPanel>
           )
         })}
       </div>
