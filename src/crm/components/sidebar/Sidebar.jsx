@@ -314,12 +314,14 @@ const WHATSAPP_CRM_SIDEBAR_LABELS = {
   team: 'Team Management',
 }
 
-function SidebarIcon({ icon: Icon, active = false, disabled = false, className }) {
+function SidebarIcon({ icon: Icon, active = false, disabled = false, medical = false, className }) {
   return (
     <Icon
       className={cn(
         'h-[18px] w-[18px] shrink-0 stroke-[1.8] transition-colors duration-150',
-        active ? 'text-[#4F46E5]' : 'text-slate-500',
+        medical
+          ? (active ? 'text-white' : 'text-[#1F2230]')
+          : (active ? 'text-[#4F46E5]' : 'text-slate-500'),
         disabled ? 'opacity-45 grayscale' : '',
         className,
       )}
@@ -335,7 +337,7 @@ function orderWhatsappCrmSidebar(items) {
     .sort((a, b) => WHATSAPP_CRM_SIDEBAR_ORDER.indexOf(a.key) - WHATSAPP_CRM_SIDEBAR_ORDER.indexOf(b.key))
 }
 
-const SidebarNavItem = memo(function SidebarNavItem({ item, collapsed, onNavigate }) {
+const SidebarNavItem = memo(function SidebarNavItem({ item, collapsed, onNavigate, medical = false }) {
   const Icon = item.icon || HiOutlineSquares2X2
   const label = item.label || compactLabels[item.to]
   const disabled = Boolean(item.comingSoon)
@@ -379,20 +381,23 @@ const SidebarNavItem = memo(function SidebarNavItem({ item, collapsed, onNavigat
       title={label}
       className={({ isActive }) =>
         cn(
-          'focus-ring group relative flex w-full items-center rounded-[10px] text-[13px] transition-colors duration-150 ease-out',
+          'focus-ring group relative flex w-full items-center text-[13px] transition-colors duration-150 ease-out',
+          medical ? 'rounded-xl' : 'rounded-[10px]',
           collapsed ? 'justify-center py-1.5' : 'gap-2.5 px-2.5 py-1.5',
-          isActive
-            ? 'bg-[#EEEEFF] font-semibold text-[#4F46E5]'
-            : 'font-medium text-slate-600 hover:text-[#4F46E5]',
+          medical
+            ? (isActive ? 'bg-[#1C1B29] font-semibold text-white' : 'font-medium text-[#1F2230] hover:bg-[#EDEBF7]')
+            : (isActive
+              ? 'bg-[#EEEEFF] font-semibold text-[#4F46E5]'
+              : 'font-medium text-slate-600 hover:text-[#4F46E5]'),
         )
       }
     >
       {({ isActive }) => (
         <>
-          {isActive && !collapsed ? (
+          {isActive && !collapsed && !medical ? (
             <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-[#4F46E5]" />
           ) : null}
-          <SidebarIcon icon={Icon} active={isActive} />
+          <SidebarIcon icon={Icon} active={isActive} medical={medical} />
           {!collapsed ? <span className="truncate">{label}</span> : null}
           {collapsed ? (
             <span className="sidebar-tooltip pointer-events-none absolute left-full top-1/2 z-50 ml-3 hidden -translate-y-1/2 whitespace-nowrap rounded-lg bg-[#1E2130] px-3 py-1.5 text-xs font-medium text-white shadow-[0_4px_12px_rgba(0,0,0,0.25)] group-hover:block">
@@ -794,6 +799,9 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
   const { accessPlan, businessType, userDoc, userId, firebaseUser, isAdmin: userIsAdmin, isOwner: userIsOwner, workspaceId, role } = useUser()
   const access = useWorkspaceAccess()
   const businessTitle = labelForBusinessType(businessType)
+  // Medical Store POS gets a dedicated pastel/dark-pill sidebar style — every
+  // other business type keeps the existing indigo-pill look untouched.
+  const isMedicalTheme = normalizeBusinessType(businessType) === 'Medical Store POS'
   const developerOverride = isDeveloperOwnerAccount(userDoc, firebaseUser)
   const staffAccount = Boolean(userDoc?.isStaff === true || (access.isStaff && !userIsOwner && !userIsAdmin))
   const ownerAdminBypass = !staffAccount && Boolean(developerOverride || userIsOwner || userIsAdmin || access.isAdmin)
@@ -1001,7 +1009,7 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
             const isReports = item.key === 'reports' && item.to === '/app/reports'
             return (
               <React.Fragment key={item.to}>
-                <SidebarNavItem item={item} collapsed={shouldCollapse} onNavigate={onNavigate} />
+                <SidebarNavItem item={item} collapsed={shouldCollapse} onNavigate={onNavigate} medical={isMedicalTheme} />
                 {isReports && (
                   <ReportsNavGroup
                     collapsed={shouldCollapse}
@@ -1055,13 +1063,17 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
         )}
       </div>
     </div>
-  ), [businessTitle, businessType, handleBackToWorkspace, handleSwitchProduct, mobile, onNavigate, onToggleCollapse, shouldCollapse, sidebarItems, userInitials, userName, userRole, workspaceName])
+  ), [businessTitle, businessType, handleBackToWorkspace, handleSwitchProduct, isMedicalTheme, mobile, onNavigate, onToggleCollapse, shouldCollapse, sidebarItems, userInitials, userName, userRole, workspaceName])
 
   if (!mobile) {
     return (
       <>
         <aside
-          className="sidebar-aside hidden print:hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-20 lg:block lg:border-r lg:border-[#E8EAF0] lg:bg-white dark:lg:border-white/10 dark:lg:bg-slate-950/95" style={{ willChange: 'transform', transform: 'translateZ(0)' }}
+          className={
+            isMedicalTheme
+              ? 'sidebar-aside hidden print:hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-20 lg:block lg:border-r lg:border-[#E4E2F0] lg:bg-[#F6F5FB] dark:lg:border-white/10 dark:lg:bg-slate-950/95'
+              : 'sidebar-aside hidden print:hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-20 lg:block lg:border-r lg:border-[#E8EAF0] lg:bg-white dark:lg:border-white/10 dark:lg:bg-slate-950/95'
+          } style={{ willChange: 'transform', transform: 'translateZ(0)' }}
           data-sidebar={shouldCollapse ? 'collapsed' : 'expanded'}
         >
           <div className={shouldCollapse ? 'sidebar-shell sidebar-shell-collapsed' : 'sidebar-shell sidebar-shell-expanded'}>
@@ -1079,7 +1091,11 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
         animate={{ x: 0, opacity: 1 }}
         exit={{ x: -40, opacity: 0 }}
         transition={{ duration: 0.18, ease: 'easeOut' }}
-        className="sidebar-mobile h-full rounded-[1.5rem] border border-slate-200 bg-white/95 p-2 shadow-[0_18px_60px_-40px_rgba(15,23,42,0.45)] dark:border-white/10 dark:bg-slate-950/95 print:hidden"
+        className={
+          isMedicalTheme
+            ? 'sidebar-mobile h-full rounded-[1.5rem] border border-[#E4E2F0] bg-[#F6F5FB]/95 p-2 shadow-[0_18px_60px_-40px_rgba(15,23,42,0.45)] dark:border-white/10 dark:bg-slate-950/95 print:hidden'
+            : 'sidebar-mobile h-full rounded-[1.5rem] border border-slate-200 bg-white/95 p-2 shadow-[0_18px_60px_-40px_rgba(15,23,42,0.45)] dark:border-white/10 dark:bg-slate-950/95 print:hidden'
+        }
       >
         {content}
       </motion.aside>
