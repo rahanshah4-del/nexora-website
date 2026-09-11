@@ -92,6 +92,14 @@ function calculateTotals(cart, taxRateInput, promoDiscountInput = 0) {
   return { subtotal, lineDiscount: 0, orderDiscount: 0, promoDiscount, discount, tax, total, cost, profit: total - cost }
 }
 
+function cartRxSignature(cart) {
+  return cart
+    .filter((item) => item.requiresPrescription === true)
+    .map((item) => `${item.productId}:${item.quantity}`)
+    .sort()
+    .join('|')
+}
+
 function medicineImage(medicine) {
   return medicine.imageUrl || fallbackMedicineImage
 }
@@ -184,6 +192,9 @@ export default function MedicalPosPage() {
   const [pendingPrint, setPendingPrint] = useState(false)
   const scannerBufferRef = useRef({ value: '', startedAt: 0, lastAt: 0 })
   const savingRef = useRef(false)
+  const [rxConfirmPending, setRxConfirmPending] = useState(false)
+  const rxAcknowledgedSignatureRef = useRef(null)
+  const pendingSubmitArgsRef = useRef({ shouldPrint: false, shiftOverride: null })
   const activePromoCodes = businessSettings?.medicalPosPromos || {}
   const medicalPosSettings = businessSettings?.medicalPos || {}
 
@@ -274,6 +285,16 @@ export default function MedicalPosPage() {
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [cart, paidAmount, paymentMethod, taxRate, totals.total])
+
+  // A pending/acknowledged Rx confirmation is tied to the exact cart it was
+  // shown for — if the cart's contents change (item added/removed/qty
+  // changed) after the warning was shown, or after a successful order clears
+  // the cart, that confirmation must not silently carry over to different
+  // cart contents.
+  useEffect(() => {
+    rxAcknowledgedSignatureRef.current = null
+    setRxConfirmPending(false)
+  }, [cart])
 
   const addMedicine = useCallback((medicine) => {
     const stock = numberValue(medicine.stockQuantity)
@@ -384,6 +405,19 @@ export default function MedicalPosPage() {
     setMessage('')
   }
 
+  function confirmRxAndSubmit() {
+    rxAcknowledgedSignatureRef.current = cartRxSignature(cart)
+    setRxConfirmPending(false)
+    setMessage('')
+    const { shouldPrint, shiftOverride } = pendingSubmitArgsRef.current
+    submitOrder(shouldPrint, shiftOverride)
+  }
+
+  function cancelRxConfirm() {
+    setRxConfirmPending(false)
+    setMessage('')
+  }
+
   function selectCustomer(customer) {
     if (!customer) return
     setSelectedCustomerId(customer.id)
@@ -459,6 +493,15 @@ export default function MedicalPosPage() {
       setCustomerPanelOpen(true)
       setMessage('Due sale ke liye saved customer select ya add karein. Walk-in customer par due save nahi hota.')
       return
+    }
+    if (cart.some((item) => item.requiresPrescription === true)) {
+      const signature = cartRxSignature(cart)
+      if (rxAcknowledgedSignatureRef.current !== signature) {
+        pendingSubmitArgsRef.current = { shouldPrint, shiftOverride }
+        setRxConfirmPending(true)
+        setMessage('This order includes prescription medicine(s). Confirm prescription has been verified?')
+        return
+      }
     }
     savingRef.current = true
     setSaving(true)
@@ -1078,6 +1121,19 @@ export default function MedicalPosPage() {
                 <Row label="Change" value={formatCurrency(changeAmount)} tone="text-blue-700" />
               </div>
               {message ? <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-800">{message}</p> : null}
+              {rxConfirmPending ? (
+                <div className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2.5">
+                  <p className="text-xs font-bold text-rose-800">This order includes prescription medicine(s). Confirm prescription has been verified?</p>
+                  <div className="mt-2 grid grid-cols-2 gap-2">
+                    <Button type="button" className="h-9 rounded-xl bg-rose-600 text-xs hover:bg-rose-700" onClick={confirmRxAndSubmit}>
+                      Confirm &amp; Complete Sale
+                    </Button>
+                    <Button type="button" variant="subtle" className="h-9 rounded-xl border-rose-200 text-xs text-rose-700" onClick={cancelRxConfirm}>
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              ) : null}
             </div>
             <div className="grid shrink-0 grid-cols-2 gap-2 border-t border-slate-200 bg-white/95 p-3 shadow-[0_-18px_42px_-30px_rgba(15,23,42,0.75)] backdrop-blur">
               <Button disabled={saving} onClick={() => submitOrder(true)} className="h-12 bg-gradient-to-r from-blue-700 to-violet-700">
