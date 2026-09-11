@@ -96,7 +96,9 @@ function accessScopeFromPermissions({ role = '', permissions = {}, permissionKey
     ? new Set(['dashboard', 'orders', 'ordersKot', 'tables', 'reservations'])
     : businessKey === 'retail-pos'
       ? new Set(['dashboard', 'pos', 'posOrders'])
-      : null
+      : businessKey === 'medical-store-pos'
+        ? new Set(['dashboard', 'medicineInventory', 'medicalPos', 'medicalPosOrders'])
+        : null
   const scopedPermissions = cashierRole && cashierAllowed
     ? Object.fromEntries(Object.entries(permissions).filter(([key]) => {
         const moduleKey = String(key).match(/^module\.([^.]+)\./)?.[1] || ''

@@ -210,6 +210,9 @@ export const moduleCatalog = [
   { key: 'pos', label: 'POS Billing', route: '/app/pos', minPlan: 'Basic' },
   { key: 'posOrders', label: 'POS Orders', route: '/app/pos-orders', minPlan: 'Basic' },
   { key: 'posDiscounts', label: 'Tax & Promo', route: '/app/pos-discounts', minPlan: 'Basic' },
+  { key: 'medicineInventory', label: 'Medicine Inventory', route: '/app/medical-inventory', minPlan: 'Basic' },
+  { key: 'medicalPos', label: 'Medical POS Billing', route: '/app/medical-pos', minPlan: 'Basic' },
+  { key: 'medicalPosOrders', label: 'Medical POS Orders', route: '/app/medical-pos-orders', minPlan: 'Basic' },
   { key: 'orders', label: 'POS Till', route: '/app/orders', minPlan: 'Basic', hidden: true },
   { key: 'menuManagement', label: 'Menu Management', route: '/app/menu-management', minPlan: 'Basic' },
   { key: 'cashRegister', label: 'Cash Register', route: '/app/coming-soon/cash-register', comingSoon: true },
@@ -246,6 +249,7 @@ export const businessTypes = [
   'Restaurant POS',
   'Transport / Rental',
   'WhatsApp CRM',
+  'Medical Store POS',
 ]
 
 export const coreFinanceModules = ['invoices', 'payments', 'expenses', 'accounts', 'reports']
@@ -321,6 +325,28 @@ export const businessWorkspaceCatalog = [
       'pos',
       'posOrders',
       'posDiscounts',
+      'invoices',
+      'expenses',
+      'accounts',
+      'reports',
+      'approvals',
+      'team',
+      'notifications',
+      'settings',
+    ],
+  },
+  {
+    id: 'medical-store-pos',
+    type: 'Medical Store POS',
+    title: 'Medical Store POS',
+    route: '/app/dashboard',
+    description: 'Medicine inventory, batch tracking, billing, and sales history for pharmacies and medical stores.',
+    modules: [
+      'dashboard',
+      'customers',
+      'medicineInventory',
+      'medicalPos',
+      'medicalPosOrders',
       'invoices',
       'expenses',
       'accounts',
@@ -526,6 +552,7 @@ export function normalizeBusinessType(type) {
   if (value.includes('whatsapp')) return 'WhatsApp CRM'
   if (value.includes('restaurant') || value.includes('canteen') || value.includes('kot') || value.includes('kitchen')) return 'Restaurant POS'
   if (value.includes('transport') || value.includes('rental') || value.includes('fleet')) return 'Transport / Rental'
+  if (value.includes('medical') || value.includes('pharmacy') || value.includes('medicine')) return 'Medical Store POS'
   if (value.includes('retail') || value.includes('inventory') || value.includes('pharma') || value === 'pos' || value.includes('pos')) return 'Retail / POS'
   return 'General CRM'
 }
