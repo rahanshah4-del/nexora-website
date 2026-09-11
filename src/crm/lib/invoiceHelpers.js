@@ -56,6 +56,9 @@ export function blankInvoiceItem() {
     rate: 0,
     discountPercent: 0,
     taxRate: 0,
+    medicineId: null,
+    batchNumber: '',
+    expiryDate: null,
   }
 }
 

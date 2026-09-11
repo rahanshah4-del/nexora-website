@@ -150,6 +150,7 @@ export default function InvoicesPage() {
   const { settings: businessSettings } = useBusinessSettings()
   const { userDoc, userId, businessType } = useUser()
   const isSchool = normalizeBusinessType(businessType) === 'School ERP'
+  const isMedical = normalizeBusinessType(businessType) === 'Medical Store POS'
   const {
     invoices,
     payments,
@@ -413,7 +414,7 @@ export default function InvoicesPage() {
       <div className={printInvoice ? 'no-print space-y-5' : 'space-y-5'}>
       {toast ? <Toast tone={toast.tone} message={toast.message} onClose={() => setToast(null)} /> : null}
 
-      <section className="rounded-[1.6rem] border border-slate-200 bg-white p-4 shadow-[0_24px_80px_-58px_rgba(79,70,229,0.65)] sm:p-5">
+      <section className={isMedical ? 'rounded-[1.6rem] border-none bg-[#F6F5FB] p-4 shadow-sm sm:p-5' : 'rounded-[1.6rem] border border-slate-200 bg-white p-4 shadow-[0_24px_80px_-58px_rgba(79,70,229,0.65)] sm:p-5'}>
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div>
             <p className="text-sm font-semibold text-slate-500">
@@ -443,7 +444,7 @@ export default function InvoicesPage() {
               CSV
             </Button>
             <Button
-              className="h-11 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-5 shadow-lg shadow-indigo-600/20"
+              className={isMedical ? 'h-11 rounded-xl bg-[#1C1B29] px-5 hover:bg-[#141420]' : 'h-11 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-5 shadow-lg shadow-indigo-600/20'}
               disabled={!canCreateInvoices}
               onClick={() => {
                 if (!canCreateInvoices) return
@@ -512,7 +513,7 @@ export default function InvoicesPage() {
 
       <InvoiceStats stats={stats} currency={currency} schoolMode={isSchool} />
 
-      <Card className="border-slate-200/90 bg-white p-5 shadow-[0_22px_80px_-58px_rgba(79,70,229,0.55)]">
+      <Card className={isMedical ? 'border-none bg-[#F6F5FB] p-5 shadow-sm' : 'border-slate-200/90 bg-white p-5 shadow-[0_22px_80px_-58px_rgba(79,70,229,0.55)]'}>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-lg font-black tracking-tight text-slate-950">{isSchool ? 'Fee Records' : 'Invoice List'}</p>
@@ -583,8 +584,8 @@ export default function InvoicesPage() {
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
         <PaymentHistory payments={payments} currency={currency} />
-        <Card className="border-slate-200/90 bg-white p-5">
-          <p className="text-sm font-black text-slate-950">{isSchool ? 'Fee Snapshot' : 'Payment Snapshot'}</p>
+        <Card className={isMedical ? 'border-none bg-[#F6F5FB] p-5 shadow-sm' : 'border-slate-200/90 bg-white p-5'}>
+          <p className={isMedical ? 'text-sm font-black text-[#1F2230]' : 'text-sm font-black text-slate-950'}>{isSchool ? 'Fee Snapshot' : 'Payment Snapshot'}</p>
           <div className="mt-4 space-y-3 text-sm">
             {[
               [isSchool ? 'Paid fee bills' : 'Paid invoices', stats.paid],
@@ -594,9 +595,9 @@ export default function InvoicesPage() {
               [isSchool ? 'Overdue fees' : 'Overdue invoices', stats.overdue],
               [isSchool ? 'Cancelled fee bills' : 'Cancelled invoices', stats.cancelled],
             ].map(([label, value]) => (
-              <div key={label} className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
-                <span className="font-semibold text-slate-600">{label}</span>
-                <span className="font-black text-slate-950">{value}</span>
+              <div key={label} className={isMedical ? 'flex items-center justify-between rounded-2xl bg-white px-4 py-3' : 'flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3'}>
+                <span className={isMedical ? 'font-semibold text-[#8B8A99]' : 'font-semibold text-slate-600'}>{label}</span>
+                <span className={isMedical ? 'font-black text-[#1F2230]' : 'font-black text-slate-950'}>{value}</span>
               </div>
             ))}
           </div>

@@ -23,6 +23,7 @@ import PrintableInvoice from '../components/print/PrintableInvoice.jsx'
 import { useInvoices } from '../hooks/useInvoices.js'
 import { useBusinessSettings } from '../hooks/useBusinessSettings.js'
 import { useProducts } from '../hooks/useProducts.js'
+import { useMedicineInventory } from '../hooks/useMedicineInventory.js'
 import { useCustomers } from '../hooks/useCustomers.js'
 import { useUser } from '../hooks/useUser.js'
 import { formatCurrency } from '../utils/format.js'
@@ -42,6 +43,26 @@ import {
   money,
 } from '../lib/invoiceHelpers.js'
 import { printInvoiceToConfiguredPrinter } from '../lib/printerService.js'
+
+// Replicated locally from MedicalInventory.jsx's expiryState() — kept in
+// sync intentionally rather than imported, since that page owns its own
+// medicine-inventory presentation logic.
+function formatLineExpiry(value) {
+  if (!value) return '—'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return String(value)
+  return new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', year: 'numeric' }).format(date)
+}
+
+function lineExpiryState(value) {
+  if (!value) return { tone: 'default', label: 'No expiry set' }
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return { tone: 'default', label: 'No expiry set' }
+  const daysLeft = Math.ceil((date.getTime() - Date.now()) / 86400000)
+  if (daysLeft < 0) return { tone: 'danger', label: 'Expired' }
+  if (daysLeft <= 30) return { tone: 'warning', label: `Expires in ${daysLeft}d` }
+  return { tone: 'success', label: 'Valid' }
+}
 
 function StepBadge({ number }) {
   return (
@@ -109,9 +130,36 @@ export default function InvoiceCreatePage() {
   const navigate = useNavigate()
   const { createInvoice, permissions } = useInvoices()
   const { settings: businessSettings } = useBusinessSettings()
-  const { products } = useProducts()
-  const { customers } = useCustomers()
   const { userDoc, userId, businessType } = useUser()
+  const isMedical = normalizeBusinessType(businessType) === 'Medical Store POS'
+  // Both hooks are called unconditionally (each internally no-ops via
+  // `enabled`) so the hook call order never changes across renders —
+  // isMedical can only be known once businessType has loaded.
+  const { products: retailProducts } = useProducts({ enabled: !isMedical })
+  const { medicines } = useMedicineInventory({ enabled: isMedical })
+  // Adapter: map medicineInventory's shape into the same shape the existing
+  // product picker UI already expects, so the picker JSX itself needs no
+  // changes — only this local mapping and selectProduct() below know about
+  // medicineId/batchNumber/expiryDate.
+  const products = useMemo(
+    () => (isMedical
+      ? medicines.map((medicine) => ({
+          id: medicine.id,
+          name: medicine.name,
+          sku: medicine.sku,
+          description: medicine.category || '',
+          price: medicine.price,
+          taxRate: medicine.taxRate,
+          unit: 'PCS',
+          currency: medicine.currency,
+          medicineId: medicine.id,
+          batchNumber: medicine.batchNumber,
+          expiryDate: medicine.expiryDate,
+        }))
+      : retailProducts),
+    [isMedical, medicines, retailProducts],
+  )
+  const { customers } = useCustomers()
   const [invoice, setInvoice] = useState(() => createBlankInvoice())
   const [toast, setToast] = useState(null)
   const [submitting, setSubmitting] = useState(false)
@@ -301,7 +349,16 @@ export default function InvoiceCreatePage() {
   function selectProduct(index, productId) {
     const product = products.find((item) => item.id === productId)
     if (!product) {
-      updateItem(index, { productId: '', name: '', sku: '', code: '', description: '', price: 0, rate: 0 })
+      updateItem(index, {
+        productId: '',
+        name: '',
+        sku: '',
+        code: '',
+        description: '',
+        price: 0,
+        rate: 0,
+        ...(isMedical ? { medicineId: null, batchNumber: '', expiryDate: null } : {}),
+      })
       return
     }
     updateItem(index, {
@@ -314,6 +371,7 @@ export default function InvoiceCreatePage() {
       rate: money(product.price),
       taxRate: money(product.taxRate),
       unit: product.unit || 'PCS',
+      ...(isMedical ? { medicineId: product.medicineId || product.id, batchNumber: product.batchNumber || '', expiryDate: product.expiryDate || null } : {}),
     })
     if (product.currency) update('currency', product.currency)
   }
@@ -511,7 +569,12 @@ export default function InvoiceCreatePage() {
               <HiOutlineEye className="h-4 w-4" />
               {isSchool ? 'Preview Fee Bill' : 'Preview'}
             </Button>
-            <Button className="h-10 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-5 shadow-lg shadow-indigo-600/20" type="button" disabled={submitting} onClick={() => submitInvoice()}>
+            <Button
+              className={isMedical ? 'h-10 rounded-xl bg-[#1C1B29] px-5 hover:bg-[#141420]' : 'h-10 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-5 shadow-lg shadow-indigo-600/20'}
+              type="button"
+              disabled={submitting}
+              onClick={() => submitInvoice()}
+            >
               {previewSeen ? (isSchool ? 'Save Final Fee Bill' : 'Save Final Invoice') : 'Next -> Preview'}
             </Button>
           </div>
@@ -617,6 +680,7 @@ export default function InvoiceCreatePage() {
           <SectionCard
             number="3"
             title={isSchool ? 'Fee Components' : 'Items'}
+            className={isMedical ? 'border-none bg-[#F6F5FB]' : ''}
             action={
               isSchool ? null :
               <div className="flex items-center gap-2">
@@ -655,7 +719,11 @@ export default function InvoiceCreatePage() {
               <table className="min-w-[1060px] w-full text-left text-xs">
                 <thead className="text-slate-500">
                   <tr>
-                    {['#', 'Item / Product', 'SKU / Code', 'Description', 'Qty', 'Unit', `Rate (${invoice.currency})`, 'Discount %', 'Tax %', `Total (${invoice.currency})`, 'Action'].map((heading) => (
+                    {[
+                      '#', 'Item / Product', 'SKU / Code', 'Description',
+                      ...(isMedical ? ['Batch', 'Expiry'] : []),
+                      'Qty', 'Unit', `Rate (${invoice.currency})`, 'Discount %', 'Tax %', `Total (${invoice.currency})`, 'Action',
+                    ].map((heading) => (
                       <th key={heading} className="px-2 py-2 font-black">{heading}</th>
                     ))}
                   </tr>
@@ -679,6 +747,34 @@ export default function InvoiceCreatePage() {
                         <td className="px-2 py-2" data-label="Description">
                           <Input className="h-10 min-w-[150px] rounded-xl" value={item.description} onChange={(event) => updateItem(index, { description: event.target.value })} />
                         </td>
+                        {isMedical ? (
+                          <>
+                            <td className="px-2 py-2" data-label="Batch">
+                              <span className="text-xs font-semibold text-[#1F2230]">{item.batchNumber || '—'}</span>
+                            </td>
+                            <td className="px-2 py-2" data-label="Expiry">
+                              {(() => {
+                                const expiry = lineExpiryState(item.expiryDate)
+                                return (
+                                  <div className="flex flex-col items-start gap-1">
+                                    <span className="text-xs font-semibold text-[#1F2230]">{formatLineExpiry(item.expiryDate)}</span>
+                                    {expiry.tone === 'warning' || expiry.tone === 'danger' ? (
+                                      <span
+                                        className={
+                                          expiry.tone === 'danger'
+                                            ? 'inline-flex items-center rounded-full bg-[#FBDEDE] px-2 py-0.5 text-[10px] font-bold text-[#8A2A2A]'
+                                            : 'inline-flex items-center rounded-full bg-[#FDECC8] px-2 py-0.5 text-[10px] font-bold text-[#8A5A00]'
+                                        }
+                                      >
+                                        {expiry.label}
+                                      </span>
+                                    ) : null}
+                                  </div>
+                                )
+                              })()}
+                            </td>
+                          </>
+                        ) : null}
                         <td className="px-2 py-2" data-label="Qty">
                           <Input className="h-10 w-20 rounded-xl" inputMode="decimal" value={item.quantity} onChange={(event) => {
                             const quantity = money(event.target.value)
@@ -801,7 +897,7 @@ export default function InvoiceCreatePage() {
                 <Field label="Round Off">
                   <Input value={invoice.roundOff} inputMode="decimal" onChange={(event) => update('roundOff', money(event.target.value))} />
                 </Field>
-                <div className="rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 p-4 text-white">
+                <div className={isMedical ? 'rounded-2xl bg-[#1C1B29] p-4 text-white' : 'rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 p-4 text-white'}>
                   <p className="text-xs font-bold text-white/75">Grand Total</p>
                   <p className="mt-1 text-2xl font-black">{formatCurrency(totals.grandTotal, invoice.currency)}</p>
                 </div>
@@ -821,7 +917,12 @@ export default function InvoiceCreatePage() {
               <HiOutlineEye className="h-4 w-4" />
               {isSchool ? 'Preview Fee Bill' : 'Preview'}
             </Button>
-            <Button className="h-10 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600" type="button" disabled={submitting} onClick={() => submitInvoice()}>
+            <Button
+              className={isMedical ? 'h-10 rounded-xl bg-[#1C1B29] hover:bg-[#141420]' : 'h-10 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600'}
+              type="button"
+              disabled={submitting}
+              onClick={() => submitInvoice()}
+            >
               {submitting ? 'Saving...' : previewSeen ? (isSchool ? 'Save Final Fee Bill' : 'Save Final Invoice') : 'Next -> Preview'}
             </Button>
           </div>
