@@ -43,16 +43,43 @@ if (missingFirebaseAuthEnvVars.length) {
   })
 }
 
+// Firebase persists the signed-in user under a `firebase:authUser:...` key
+// once any tab has ever called setPersistence()/signed in. Detecting that key
+// lets a newly-opened tab skip re-invoking setPersistence() when a session is
+// already active browser-wide — calling it again on every tab/page load was
+// causing Firebase's persistence manager to briefly re-migrate that shared
+// key, which other open tabs' onAuthStateChanged listeners could momentarily
+// read as a sign-out (surfacing as a flicker through /login to /workspace).
+function hasPersistedFirebaseAuthSession() {
+  if (typeof window === 'undefined' || !window.localStorage) return false
+  try {
+    for (let i = 0; i < window.localStorage.length; i += 1) {
+      const key = window.localStorage.key(i)
+      if (key && key.startsWith('firebase:authUser:')) return true
+    }
+  } catch {
+    return false
+  }
+  return false
+}
+
 export const app = hasAuthConfig ? (getApps()[0] ?? initializeApp(firebaseConfig)) : null
 export const auth = app ? getAuth(app) : null
 export const authPersistenceReady = auth
-  ? setPersistence(auth, browserLocalPersistence).catch((error) => {
-      console.warn('[Firebase Auth] persistence setup failed', {
-        mode: 'browserLocalPersistence',
-        code: error?.code || '',
-        message: error?.message || '',
-      })
-    })
+  ? (hasPersistedFirebaseAuthSession()
+      // A session is already persisted browser-wide (from this tab's own
+      // earlier load or another open tab) — browserLocalPersistence is
+      // already in effect, so re-calling setPersistence() here would only
+      // repeat the redundant migrate/rewrite that causes the cross-tab
+      // flicker. Skip it; auth still initializes from the existing session.
+      ? Promise.resolve()
+      : setPersistence(auth, browserLocalPersistence).catch((error) => {
+          console.warn('[Firebase Auth] persistence setup failed', {
+            mode: 'browserLocalPersistence',
+            code: error?.code || '',
+            message: error?.message || '',
+          })
+        }))
   : Promise.resolve()
 export const db = app
   ? initializeFirestore(app, {
