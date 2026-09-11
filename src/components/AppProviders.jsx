@@ -13,7 +13,7 @@ const WorkspaceProviderShell = lazy(() => import('./WorkspaceProviderShell.jsx')
 function RouteScopedProviders({ children }) {
   const location = useLocation()
   const pathname = location.pathname || '/'
-  const needsCrmProviders = pathname === '/app' || pathname.startsWith('/app/')
+  const needsCrmProviders = pathname === '/app' || pathname.startsWith('/app/') || pathname.startsWith('/pos-till/')
   const needsWorkspaceProvider = WORKSPACE_PROVIDER_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))
   const needsRootAuthProvider = ROOT_AUTH_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))
 
