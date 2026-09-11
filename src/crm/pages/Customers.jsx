@@ -40,6 +40,7 @@ export default function CustomersPage() {
   const [search, setSearch] = useState('')
   const isSchool = normalizeBusinessType(businessType) === 'School ERP'
   const isRestaurant = normalizeBusinessType(businessType) === 'Restaurant POS'
+  const isMedical = normalizeBusinessType(businessType) === 'Medical Store POS'
 
   const filteredCustomers = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -184,6 +185,24 @@ export default function CustomersPage() {
           },
         },
         { key: 'createdAt', header: 'Created', cell: (r) => formatDate(r.createdAt) },
+        ...(isMedical
+          ? [
+              {
+                key: 'rxHistory',
+                header: 'Rx History',
+                cell: (r) => {
+                  const count = Array.isArray(r.rxHistory) ? r.rxHistory.length : 0
+                  return count > 0 ? (
+                    <span className="inline-flex items-center rounded-full bg-[#D9F2E3] px-2.5 py-1 text-[11px] font-bold text-[#1F2230]">
+                      {count} prescription{count !== 1 ? 's' : ''}
+                    </span>
+                  ) : (
+                    <span className="text-xs font-semibold text-[#8B8A99]">—</span>
+                  )
+                },
+              },
+            ]
+          : []),
         {
           key: 'actions',
           header: 'Actions',
@@ -234,9 +253,19 @@ export default function CustomersPage() {
             <Button variant="subtle" className="rounded-2xl">
               <HiOutlineArrowDownTray className="text-lg" /> Export
             </Button>
-            <Button className="rounded-2xl" type="button" onClick={() => setCreateOpen(true)}>
-              <HiOutlinePlus className="text-lg" /> {isSchool ? 'Add Student' : 'Add Customer'}
-            </Button>
+            {isMedical ? (
+              <button
+                type="button"
+                onClick={() => setCreateOpen(true)}
+                className="inline-flex items-center gap-2 rounded-2xl bg-[#1C1B29] px-4 py-2 text-[13px] font-bold text-white transition hover:bg-[#141420] active:scale-[0.97]"
+              >
+                <HiOutlinePlus className="text-lg" /> Add Patient
+              </button>
+            ) : (
+              <Button className="rounded-2xl" type="button" onClick={() => setCreateOpen(true)}>
+                <HiOutlinePlus className="text-lg" /> {isSchool ? 'Add Student' : 'Add Customer'}
+              </Button>
+            )}
           </>
         }
       />
@@ -248,14 +277,14 @@ export default function CustomersPage() {
           [isSchool ? 'Parent Accounts' : 'Business accounts', stats.business],
           [isSchool ? 'Wallet due' : 'Customer wallet due', formatCurrency(stats.walletDue)],
         ].map(([label, value]) => (
-          <Card key={label} className="p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">{label}</p>
-            <p className="mt-2 text-2xl font-semibold text-slate-950 dark:text-white">{value}</p>
+          <Card key={label} className={isMedical ? 'rounded-2xl border-none bg-[#F6F5FB] p-4 shadow-sm' : 'p-4'}>
+            <p className={isMedical ? 'text-xs font-semibold uppercase tracking-[0.12em] text-[#8B8A99]' : 'text-xs font-semibold uppercase tracking-[0.12em] text-slate-500'}>{label}</p>
+            <p className={isMedical ? 'mt-2 text-2xl font-semibold text-[#1F2230]' : 'mt-2 text-2xl font-semibold text-slate-950 dark:text-white'}>{value}</p>
           </Card>
         ))}
       </div>
 
-      <Card className="p-5">
+      <Card className={isMedical ? 'rounded-2xl border-none bg-[#F6F5FB] p-5 shadow-sm' : 'p-5'}>
         <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
           <Input placeholder={isSchool ? 'Search students or parents' : 'Search customers...'} value={search} onChange={(e) => setSearch(e.target.value)} />
           <div className="flex flex-wrap items-center gap-2">
@@ -327,6 +356,7 @@ export default function CustomersPage() {
       <CustomerModal
         open={createOpen}
         schoolMode={isSchool}
+        medicalMode={isMedical}
         onClose={() => setCreateOpen(false)}
         onCreate={async (payload) => {
           // Keep CustomerModal's Save button disabled (via its `saving` state,
@@ -363,6 +393,7 @@ export default function CustomersPage() {
       <CustomerModal
         open={Boolean(editingCustomer)}
         schoolMode={isSchool}
+        medicalMode={isMedical}
         initialRecord={editingCustomer}
         onClose={() => setEditingCustomer(null)}
         onCreate={async (payload) => {

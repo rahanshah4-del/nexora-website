@@ -6,7 +6,7 @@ import Card from '../ui/Card.jsx'
 import Input from '../ui/Input.jsx'
 import Select from '../ui/Select.jsx'
 
-function CustomerModal({ open, onClose, onCreate, initialRecord = null, schoolMode = false }) {
+function CustomerModal({ open, onClose, onCreate, initialRecord = null, schoolMode = false, medicalMode = false }) {
   const [draft, setDraft] = useState(null)
   const [saving, setSaving] = useState(false)
 
@@ -50,6 +50,7 @@ function CustomerModal({ open, onClose, onCreate, initialRecord = null, schoolMo
                 customerType: initialRecord.customerType || 'Retail',
                 status: initialRecord.status || 'Active',
                 notes: initialRecord.notes || '',
+                ...(medicalMode ? { rxHistory: Array.isArray(initialRecord.rxHistory) ? initialRecord.rxHistory : [] } : {}),
               },
         ),
       )
@@ -91,10 +92,11 @@ function CustomerModal({ open, onClose, onCreate, initialRecord = null, schoolMo
               customerType: 'Retail',
               status: 'Active',
               notes: '',
+              ...(medicalMode ? { rxHistory: [] } : {}),
             },
       ),
     )
-  }, [initialRecord, open, schoolMode])
+  }, [initialRecord, open, schoolMode, medicalMode])
 
   return (
     <AnimatePresence>
@@ -197,51 +199,135 @@ function CustomerModal({ open, onClose, onCreate, initialRecord = null, schoolMo
                   </div>
                 </div>
               ) : draft ? (
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  <div>
-                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Name *</label>
-                    <Input className="mt-1" value={draft.name} onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))} />
+                <>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    <div>
+                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Name *</label>
+                      <Input className="mt-1" value={draft.name} onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))} />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Email *</label>
+                      <Input className="mt-1" type="email" value={draft.email} onChange={(e) => setDraft((d) => ({ ...d, email: e.target.value }))} />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Phone</label>
+                      <Input className="mt-1" value={draft.phone} onChange={(e) => setDraft((d) => ({ ...d, phone: e.target.value }))} />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Company</label>
+                      <Input className="mt-1" value={draft.company} onChange={(e) => setDraft((d) => ({ ...d, company: e.target.value }))} />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Customer Type</label>
+                      <Select className="mt-1" value={draft.customerType} onChange={(e) => setDraft((d) => ({ ...d, customerType: e.target.value }))}>
+                        <option>Retail</option>
+                        <option>Business</option>
+                        <option>Enterprise</option>
+                        <option>Partner</option>
+                        <option>General</option>
+                      </Select>
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Status</label>
+                      <Select className="mt-1" value={draft.status} onChange={(e) => setDraft((d) => ({ ...d, status: e.target.value }))}>
+                        <option>Active</option>
+                        <option>At Risk</option>
+                        <option>Trial</option>
+                        <option>Churned</option>
+                      </Select>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Notes</label>
+                      <textarea
+                        className="focus-ring mt-1 min-h-24 w-full resize-none rounded-xl border border-slate-200 bg-white/90 px-3 py-2 text-sm text-slate-900 shadow-sm outline-none transition duration-200 placeholder:text-slate-400 hover:border-slate-300 focus:border-sky-300 focus:bg-white dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-100"
+                        value={draft.notes}
+                        onChange={(e) => setDraft((d) => ({ ...d, notes: e.target.value }))}
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Email *</label>
-                    <Input className="mt-1" type="email" value={draft.email} onChange={(e) => setDraft((d) => ({ ...d, email: e.target.value }))} />
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Phone</label>
-                    <Input className="mt-1" value={draft.phone} onChange={(e) => setDraft((d) => ({ ...d, phone: e.target.value }))} />
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Company</label>
-                    <Input className="mt-1" value={draft.company} onChange={(e) => setDraft((d) => ({ ...d, company: e.target.value }))} />
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Customer Type</label>
-                    <Select className="mt-1" value={draft.customerType} onChange={(e) => setDraft((d) => ({ ...d, customerType: e.target.value }))}>
-                      <option>Retail</option>
-                      <option>Business</option>
-                      <option>Enterprise</option>
-                      <option>Partner</option>
-                      <option>General</option>
-                    </Select>
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Status</label>
-                    <Select className="mt-1" value={draft.status} onChange={(e) => setDraft((d) => ({ ...d, status: e.target.value }))}>
-                      <option>Active</option>
-                      <option>At Risk</option>
-                      <option>Trial</option>
-                      <option>Churned</option>
-                    </Select>
-                  </div>
-                  <div className="sm:col-span-2">
-                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Notes</label>
-                    <textarea
-                      className="focus-ring mt-1 min-h-24 w-full resize-none rounded-xl border border-slate-200 bg-white/90 px-3 py-2 text-sm text-slate-900 shadow-sm outline-none transition duration-200 placeholder:text-slate-400 hover:border-slate-300 focus:border-sky-300 focus:bg-white dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-100"
-                      value={draft.notes}
-                      onChange={(e) => setDraft((d) => ({ ...d, notes: e.target.value }))}
-                    />
-                  </div>
-                </div>
+
+                  {medicalMode ? (
+                    <div className="mt-4 rounded-2xl bg-[#F6F5FB] p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#8B8A99]">Rx History</p>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setDraft((d) => ({
+                              ...d,
+                              rxHistory: [...(Array.isArray(d.rxHistory) ? d.rxHistory : []), { medicineName: '', prescribedDate: '', notes: '' }],
+                            }))
+                          }
+                          className="inline-flex items-center gap-1 rounded-xl bg-[#1C1B29] px-3 py-1.5 text-xs font-bold text-white transition hover:bg-[#141420]"
+                        >
+                          + Add prescription entry
+                        </button>
+                      </div>
+
+                      {Array.isArray(draft.rxHistory) && draft.rxHistory.length > 0 ? (
+                        <div className="mt-3 space-y-3">
+                          {draft.rxHistory.map((entry, index) => (
+                            <div key={index} className="rounded-xl bg-white p-3 shadow-sm">
+                              <div className="grid gap-3 sm:grid-cols-3">
+                                <div>
+                                  <label className="text-xs font-semibold text-[#1F2230]">Medicine Name</label>
+                                  <Input
+                                    className="mt-1 rounded-xl"
+                                    value={entry.medicineName}
+                                    onChange={(e) =>
+                                      setDraft((d) => ({
+                                        ...d,
+                                        rxHistory: d.rxHistory.map((row, i) => (i === index ? { ...row, medicineName: e.target.value } : row)),
+                                      }))
+                                    }
+                                  />
+                                </div>
+                                <div>
+                                  <label className="text-xs font-semibold text-[#1F2230]">Prescribed Date</label>
+                                  <Input
+                                    className="mt-1 rounded-xl"
+                                    type="date"
+                                    value={entry.prescribedDate}
+                                    onChange={(e) =>
+                                      setDraft((d) => ({
+                                        ...d,
+                                        rxHistory: d.rxHistory.map((row, i) => (i === index ? { ...row, prescribedDate: e.target.value } : row)),
+                                      }))
+                                    }
+                                  />
+                                </div>
+                                <div>
+                                  <label className="text-xs font-semibold text-[#1F2230]">Notes</label>
+                                  <Input
+                                    className="mt-1 rounded-xl"
+                                    value={entry.notes}
+                                    onChange={(e) =>
+                                      setDraft((d) => ({
+                                        ...d,
+                                        rxHistory: d.rxHistory.map((row, i) => (i === index ? { ...row, notes: e.target.value } : row)),
+                                      }))
+                                    }
+                                  />
+                                </div>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setDraft((d) => ({ ...d, rxHistory: d.rxHistory.filter((_, i) => i !== index) }))
+                                }
+                                className="mt-2 text-xs font-bold text-rose-600 hover:text-rose-700"
+                              >
+                                Remove entry
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="mt-3 text-xs font-semibold text-[#8B8A99]">No prescription entries yet.</p>
+                      )}
+                    </div>
+                  ) : null}
+                </>
               ) : null}
 
               <div className="mt-5 flex flex-wrap gap-2">
