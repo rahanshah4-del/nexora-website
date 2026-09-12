@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { HiSparkles, HiOutlineXMark } from 'react-icons/hi2'
 import { useOnClickOutside } from '../../hooks/useOnClickOutside.js'
 import { cn } from '../../utils/cn.js'
@@ -9,6 +10,16 @@ import logoUrl from '../../../assets/logo/nexora-logo.png'
 // floating logo button on desktop and as a header icon on mobile (matching
 // the Cloudflare-style header this mirrors); either trigger opens the same
 // "Coming Soon" panel.
+//
+// Portaled to document.body (see the createPortal call below): TopNav's own
+// header pill uses backdrop-blur-sm for its glass effect, and backdrop-filter
+// makes an element the CSS containing block for any `position: fixed`
+// descendant — same as transform/filter/perspective/will-change/contain. Left
+// inline, this component's `fixed bottom-6 right-6` button would compute its
+// position against that small header pill instead of the viewport, landing
+// pinned near the top of the page instead of floating bottom-right. Portaling
+// past that ancestor restores normal viewport-relative fixed positioning
+// without touching TopNav's blur effect at all.
 export default function NexoraAiLauncher() {
   const [open, setOpen] = useState(false)
   const rootRef = useRef(null)
@@ -23,7 +34,14 @@ export default function NexoraAiLauncher() {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [open])
 
-  return (
+  // Matches the existing createPortal guard pattern used elsewhere in this
+  // codebase (see TeamMemberModal.jsx) — this component is only ever reached
+  // from authenticated /app/* routes, never from the build-time marketing-page
+  // prerenderer (entry-server.jsx), but the guard costs nothing and keeps the
+  // same defensive shape.
+  if (typeof document === 'undefined') return null
+
+  return createPortal(
     <div ref={rootRef} className="contents">
       <button
         type="button"
@@ -81,6 +99,7 @@ export default function NexoraAiLauncher() {
           </p>
         </div>
       ) : null}
-    </div>
+    </div>,
+    document.body,
   )
 }
