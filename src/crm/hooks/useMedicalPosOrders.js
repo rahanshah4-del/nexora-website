@@ -13,6 +13,47 @@ const MAX_RETRY_COUNT = 5
 // Exponential backoff: 1s → 2s → 4s → 8s → 16s
 const RETRY_BACKOFF_MS = [1000, 2000, 4000, 8000, 16000]
 
+// Cross-instance guard for the retry-sync pass only (see retryFailedOrders
+// below) — this hook can mount more than once on the same page (e.g.
+// DashboardHome.jsx's own instance alongside MedicalDashboard.jsx's wider
+// wideOrdersApi instance), and each independently runs retryFailedOrders on
+// mount/online. Without a guard, two instances could both pick up the same
+// locally-queued 'failed'/'pending' order and each call syncOneOrder for it,
+// creating two Firestore docs for one offline sale. This is a low-frequency,
+// best-effort lock (read-then-write, not atomic) — acceptable here since a
+// missed lock only risks a rare double-sync, not data corruption, and this
+// never gates order creation (createOrder below) or the onSnapshot read
+// subscription, only this retry pass.
+const SYNC_LOCK_KEY = 'nexora:medicalOrders:syncLock'
+const SYNC_LOCK_MAX_AGE_MS = 5000
+
+function tryAcquireSyncLock() {
+  if (typeof window === 'undefined') return true
+  try {
+    const raw = window.localStorage.getItem(SYNC_LOCK_KEY)
+    const ts = raw ? Number(raw) : 0
+    // A held, non-stale lock means another instance is already running (or
+    // just ran) a retry pass right now — skip this one entirely.
+    if (ts && Date.now() - ts < SYNC_LOCK_MAX_AGE_MS) return false
+    window.localStorage.setItem(SYNC_LOCK_KEY, String(Date.now()))
+    return true
+  } catch {
+    // localStorage unavailable — don't block retries over it, just accept
+    // the (rare) chance of a double-sync in that edge case.
+    return true
+  }
+}
+
+function releaseSyncLock() {
+  if (typeof window === 'undefined') return
+  try {
+    window.localStorage.removeItem(SYNC_LOCK_KEY)
+  } catch {
+    /* best effort — if this fails, the timestamp check above still lets a
+       future pass through once SYNC_LOCK_MAX_AGE_MS has elapsed. */
+  }
+}
+
 function localOrdersKey(workspaceId) {
   return `nexora.medicalPosOrders.${workspaceId || 'local'}`
 }
@@ -153,65 +194,76 @@ async function syncOneOrder(workspaceId, userId, order) {
  */
 async function retryFailedOrders(workspaceId, userId, ordersRef, limitCount) {
   if (!workspaceId || !userId) return
-  const online = window?.navigator?.onLine
-  const localOrders = readLocalOrders(workspaceId)
-  let changed = false
+  // Cross-instance guard: if another mounted instance of this hook is
+  // already running (or just finished) its own retry pass, skip this one
+  // entirely rather than risk both picking up and syncing the same locally-
+  // queued order. Does not affect createOrder or the onSnapshot read
+  // subscription below — only this retry pass.
+  if (!tryAcquireSyncLock()) return
 
-  for (const order of localOrders) {
-    if (order.syncStatus !== 'failed' && order.syncStatus !== 'pending') continue
-    const retryCount = Number(order.retryCount ?? 0)
-    if (retryCount >= MAX_RETRY_COUNT) continue
+  try {
+    const online = window?.navigator?.onLine
+    const localOrders = readLocalOrders(workspaceId)
+    let changed = false
 
-    // Exponential backoff: wait before each retry attempt
-    const delay = RETRY_BACKOFF_MS[retryCount] || RETRY_BACKOFF_MS[RETRY_BACKOFF_MS.length - 1]
-    await new Promise((resolve) => setTimeout(resolve, delay))
+    for (const order of localOrders) {
+      if (order.syncStatus !== 'failed' && order.syncStatus !== 'pending') continue
+      const retryCount = Number(order.retryCount ?? 0)
+      if (retryCount >= MAX_RETRY_COUNT) continue
 
-    // Re-check online status after waiting
-    if (!window?.navigator?.onLine) continue
+      // Exponential backoff: wait before each retry attempt
+      const delay = RETRY_BACKOFF_MS[retryCount] || RETRY_BACKOFF_MS[RETRY_BACKOFF_MS.length - 1]
+      await new Promise((resolve) => setTimeout(resolve, delay))
 
-    changed = true
+      // Re-check online status after waiting
+      if (!window?.navigator?.onLine) continue
 
-    const syncingOrder = {
-      ...order,
-      syncStatus: 'syncing',
-      updatedAt: new Date().toISOString(),
-    }
-    rememberLocalOrder(workspaceId, syncingOrder)
-    ordersRef.current?.((current) => mergeOrders(current, [syncingOrder], limitCount))
+      changed = true
 
-    const result = await syncOneOrder(workspaceId, userId, order)
-    if (result.ok) {
-      const syncedOrder = {
+      const syncingOrder = {
         ...order,
-        id: result.id,
-        syncStatus: 'synced',
-        syncError: '',
-        retryCount: retryCount + 1,
+        syncStatus: 'syncing',
         updatedAt: new Date().toISOString(),
       }
-      forgetLocalOrder(workspaceId, order.id)
-      rememberLocalOrder(workspaceId, syncedOrder)
-      ordersRef.current?.((current) =>
-        mergeOrders(current.filter((o) => o.id !== order.id), [syncedOrder], limitCount),
-      )
-    } else {
-      const nextRetry = retryCount + 1
-      const failedOrder = {
-        ...order,
-        syncStatus: 'failed',
-        syncError: nextRetry >= MAX_RETRY_COUNT
-          ? `Sync failed after ${MAX_RETRY_COUNT} attempts. ${result.error || ''}`
-          : `Retry ${nextRetry}/${MAX_RETRY_COUNT}: ${result.error || 'Sync failed.'}`,
-        retryCount: nextRetry,
-        updatedAt: new Date().toISOString(),
-      }
-      rememberLocalOrder(workspaceId, failedOrder)
-      ordersRef.current?.((current) => mergeOrders(current, [failedOrder], limitCount))
-    }
-  }
+      rememberLocalOrder(workspaceId, syncingOrder)
+      ordersRef.current?.((current) => mergeOrders(current, [syncingOrder], limitCount))
 
-  if (changed) {
-    window.dispatchEvent(new CustomEvent('nexora:medical-pos-orders-updated', { detail: { workspaceId } }))
+      const result = await syncOneOrder(workspaceId, userId, order)
+      if (result.ok) {
+        const syncedOrder = {
+          ...order,
+          id: result.id,
+          syncStatus: 'synced',
+          syncError: '',
+          retryCount: retryCount + 1,
+          updatedAt: new Date().toISOString(),
+        }
+        forgetLocalOrder(workspaceId, order.id)
+        rememberLocalOrder(workspaceId, syncedOrder)
+        ordersRef.current?.((current) =>
+          mergeOrders(current.filter((o) => o.id !== order.id), [syncedOrder], limitCount),
+        )
+      } else {
+        const nextRetry = retryCount + 1
+        const failedOrder = {
+          ...order,
+          syncStatus: 'failed',
+          syncError: nextRetry >= MAX_RETRY_COUNT
+            ? `Sync failed after ${MAX_RETRY_COUNT} attempts. ${result.error || ''}`
+            : `Retry ${nextRetry}/${MAX_RETRY_COUNT}: ${result.error || 'Sync failed.'}`,
+          retryCount: nextRetry,
+          updatedAt: new Date().toISOString(),
+        }
+        rememberLocalOrder(workspaceId, failedOrder)
+        ordersRef.current?.((current) => mergeOrders(current, [failedOrder], limitCount))
+      }
+    }
+
+    if (changed) {
+      window.dispatchEvent(new CustomEvent('nexora:medical-pos-orders-updated', { detail: { workspaceId } }))
+    }
+  } finally {
+    releaseSyncLock()
   }
 }
 
