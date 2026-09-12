@@ -4,6 +4,9 @@ import { ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, 
 import { formatCurrency } from '../../utils/format.js'
 import { stockState } from '../../hooks/useInventory.js'
 import { useMedicalPosOrders } from '../../hooks/useMedicalPosOrders.js'
+import { useCustomers } from '../../hooks/useCustomers.js'
+import { useSuppliers } from '../../hooks/useSuppliers.js'
+import { usePurchases } from '../../hooks/usePurchases.js'
 
 // ── Medical Store POS pastel dashboard palette ─────────────────────────────
 // Local to this component only — sans-serif ambient app font (no Fraunces,
@@ -224,6 +227,60 @@ export default function MedicalDashboard({
       return created && created.getTime() > cutoff
     })
   }, [wideNonRefundedOrders, rangeMode])
+
+  // ── Recent customer activity & Supplier/purchase summary ────────────────
+  // Self-contained hook calls per investigation's recommendation — these are
+  // NOT threaded through DashboardHome.jsx's existing prop list (its isMedical
+  // branch deliberately skips the generic customers/invoices/expenses hooks
+  // to avoid wasted reads for Medical workspaces; useSuppliers()/usePurchases()
+  // were never wired to the dashboard at all before, only MedicalInventory.jsx
+  // used them, page-locally). useSuppliers()/usePurchases() accept no
+  // enabled/limitCount options, so they always subscribe once this component
+  // mounts — same as MedicalInventory.jsx's own instances, just a second,
+  // independent onSnapshot listener on a different page. Checked both hooks
+  // for anything resembling useMedicalPosOrders.js's localStorage-queued
+  // offline-retry logic (which made a second concurrent instance risky in
+  // the prior task) — neither has any such thing, so there's no equivalent
+  // duplicate-write risk here, just one extra read-only listener per mount.
+  const customersApi = useCustomers({ limitCount: 25 })
+  const suppliersApi = useSuppliers()
+  const purchasesApi = usePurchases()
+
+  const newPatientsThisWeek = useMemo(
+    () =>
+      customersApi.customers.filter((c) => {
+        const created = dateValue(c.createdAt)
+        return created && created.getTime() > Date.now() - 7 * DAY_MS
+      }).length,
+    [customersApi.customers],
+  )
+  const recentCustomers = useMemo(
+    () =>
+      [...customersApi.customers]
+        .sort((a, b) => (dateValue(b.createdAt)?.getTime() || 0) - (dateValue(a.createdAt)?.getTime() || 0))
+        .slice(0, 5),
+    [customersApi.customers],
+  )
+
+  const purchasesPendingTotal = useMemo(
+    () =>
+      purchasesApi.purchases.reduce(
+        (sum, p) => sum + (p.paymentStatus !== 'paid' ? Number(p.balanceDue || 0) : 0),
+        0,
+      ),
+    [purchasesApi.purchases],
+  )
+  const pendingPurchasesCount = useMemo(
+    () => purchasesApi.purchases.filter((p) => p.paymentStatus !== 'paid').length,
+    [purchasesApi.purchases],
+  )
+  const recentPurchases = useMemo(
+    () =>
+      [...purchasesApi.purchases]
+        .sort((a, b) => (dateValue(b.createdAt)?.getTime() || 0) - (dateValue(a.createdAt)?.getTime() || 0))
+        .slice(0, 5),
+    [purchasesApi.purchases],
+  )
 
   const expiringSoonCount = useMemo(
     () => medicines.filter((medicine) => ['expiring', 'expired'].includes(expiryState(medicine.expiryDate).tone)).length,
@@ -645,6 +702,104 @@ export default function MedicalDashboard({
               </div>
             ) : (
               <EmptyHint>All stock levels are healthy and no batches are expiring soon.</EmptyHint>
+            )}
+          </PastelPanel>
+        </div>
+      </div>
+
+      <div className="mt-6 grid gap-4 lg:grid-cols-2">
+        <div>
+          <PanelHeading action={<Link to="/app/customers" className="text-xs font-medium text-[#1F2230] hover:underline">View all</Link>}>
+            Recent customer activity
+          </PanelHeading>
+          <PastelPanel className="p-2">
+            {customersApi.loading ? (
+              <EmptyHint>Loading…</EmptyHint>
+            ) : (
+              <>
+                <p className="px-2 pb-2 text-xs text-[#8B8A99]">
+                  {newPatientsThisWeek} new patient{newPatientsThisWeek !== 1 ? 's' : ''} this week
+                </p>
+                {recentCustomers.length ? (
+                  <div className="divide-y divide-[#1F2230]/[0.06]">
+                    {recentCustomers.map((customer) => {
+                      const rxCount = Array.isArray(customer.rxHistory) ? customer.rxHistory.length : 0
+                      return (
+                        <div key={customer.id} className="flex items-center justify-between gap-3 px-2 py-2.5">
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-medium text-[#1F2230]">{customer.name}</p>
+                            <p className="truncate text-xs text-[#8B8A99]">{customer.phone || 'No phone on file'}</p>
+                          </div>
+                          {rxCount > 0 ? (
+                            <span
+                              className="shrink-0 inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold text-[#1F2230]"
+                              style={{ backgroundColor: PASTEL.mint }}
+                            >
+                              {rxCount} prescription{rxCount !== 1 ? 's' : ''}
+                            </span>
+                          ) : null}
+                        </div>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <EmptyHint>No patients yet.</EmptyHint>
+                )}
+              </>
+            )}
+          </PastelPanel>
+        </div>
+
+        <div>
+          <PanelHeading action={<Link to="/app/medical-inventory" className="text-xs font-medium text-[#1F2230] hover:underline">View purchases</Link>}>
+            Supplier &amp; purchase summary
+          </PanelHeading>
+          <PastelPanel className="p-2">
+            {purchasesApi.loading || suppliersApi.loading ? (
+              <EmptyHint>Loading…</EmptyHint>
+            ) : (
+              <>
+                <div className="flex items-center justify-between gap-3 px-2 pb-2">
+                  <p className="text-xs text-[#8B8A99]">
+                    {suppliersApi.suppliers.length} active supplier{suppliersApi.suppliers.length !== 1 ? 's' : ''}
+                  </p>
+                  <p className="text-sm font-semibold text-[#1F2230]">
+                    {formatCurrency(purchasesPendingTotal, currency)}{' '}
+                    <span className="text-xs font-normal text-[#8B8A99]">pending ({pendingPurchasesCount})</span>
+                  </p>
+                </div>
+                {recentPurchases.length ? (
+                  <div className="divide-y divide-[#1F2230]/[0.06]">
+                    {recentPurchases.map((purchase) => (
+                      <div key={purchase.id} className="flex items-center justify-between gap-3 px-2 py-2.5">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium text-[#1F2230]">{purchase.supplierName || 'Unknown supplier'}</p>
+                          <p className="truncate text-xs text-[#8B8A99]">{formatDateTime(purchase.createdAt)}</p>
+                        </div>
+                        <div className="shrink-0 text-right">
+                          <p className="text-sm font-medium text-[#1F2230]">{formatCurrency(purchase.total, currency)}</p>
+                          <span
+                            className="mt-0.5 inline-block rounded-full px-2 py-0.5 text-[11px] font-medium"
+                            style={{
+                              backgroundColor:
+                                purchase.paymentStatus === 'paid'
+                                  ? PASTEL.mint
+                                  : purchase.paymentStatus === 'partial'
+                                    ? `${PASTEL.amber}55`
+                                    : PASTEL.blush,
+                              color: PASTEL.ink,
+                            }}
+                          >
+                            {purchase.paymentStatus === 'paid' ? 'Paid' : purchase.paymentStatus === 'partial' ? 'Partial' : 'Unpaid'}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <EmptyHint>No purchase orders yet.</EmptyHint>
+                )}
+              </>
             )}
           </PastelPanel>
         </div>
