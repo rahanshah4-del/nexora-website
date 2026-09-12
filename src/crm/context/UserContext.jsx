@@ -1,5 +1,5 @@
 import { createContext, useEffect, useMemo, useRef, useState } from 'react'
-import { doc, getDoc, serverTimestamp, setDoc, onSnapshot } from 'firebase/firestore'
+import { collection, doc, getDoc, orderBy, query, serverTimestamp, setDoc, onSnapshot } from 'firebase/firestore'
 import { db } from '../lib/firebase.js'
 import { useAuth } from '../hooks/useAuth.js'
 import { usePreferences } from '../hooks/usePreferences.js'
@@ -39,6 +39,21 @@ function staffInviteEmailKey(email) {
 function normalizeRole(role) {
   const value = normalizeFinanceRole(role)
   return value === 'staff' && !role ? 'owner' : value
+}
+
+// Persists which branch a user is currently viewing. Deliberately a field on
+// users/{uid} — NOT workspaces/{workspaceId} and NOT named like
+// selectedWorkspace/selectedBusinessType/currentBusinessType, the three
+// fields the health-check effect below treats as dangerous because they
+// feed business-type/module identity resolution (see workspaceSession.js's
+// "CRITICAL: do not write X to the workspace/user doc" comments for why
+// that class of field is kept out of Firestore identity documents).
+// activeBranchId is unrelated to that resolution chain, so it's safe as a
+// plain field here; existing firestore.rules (selfUserUpdateSafe) already
+// permit a user updating arbitrary new fields on their own user doc.
+export async function setActiveBranch(userId, branchId) {
+  if (!db || !userId || !branchId) return
+  await setDoc(doc(db, 'users', userId), { activeBranchId: branchId, updatedAt: serverTimestamp() }, { merge: true })
 }
 
 function permissionModuleKey(permissionKey) {
@@ -99,11 +114,14 @@ export function UserProvider({ children }) {
   const [workspaceStatusReady, setWorkspaceStatusReady] = useState(false)
   const [selectedBusinessWorkspace, setSelectedBusinessWorkspace] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [branches, setBranches] = useState([])
+  const [branchesLoading, setBranchesLoading] = useState(true)
   const provisionedUserRef = useRef('')
   const loggedLoginRef = useRef('')
   const profileRef = useRef(profile)
   const lastHealthSignatureRef = useRef('')
   const userDocRef = useRef(userDoc)
+  const mainBranchAttemptRef = useRef('')
 
   useEffect(() => {
     profileRef.current = profile
@@ -443,6 +461,20 @@ export function UserProvider({ children }) {
   const isAdmin = isOwner || role === 'admin'
   const isStaff = staffProfile || !isAdmin
 
+  // Never expose an empty branches list — while the live subscription/
+  // auto-create above is still settling, fall back to a synthesized single
+  // "Main" entry (same shape the auto-created doc will have) so consumers
+  // never render a "no branches" state for an ordinary single-branch workspace.
+  const branchesForDisplay = branches.length
+    ? branches
+    : [{ id: 'main', name: 'Main', region: '', status: 'active', isMain: true }]
+  // Guard against a stale/invalid selection (e.g. left over from a
+  // different workspace this same user also has access to) — fall back to
+  // this workspace's own main branch rather than an id that doesn't exist here.
+  const activeBranchId = branchesForDisplay.some((b) => b.id === userDoc?.activeBranchId)
+    ? userDoc.activeBranchId
+    : (branchesForDisplay.find((b) => b.isMain)?.id || 'main')
+
   // Activate scoped localStorage once both user.uid and workspaceId are confirmed.
   useEffect(() => {
     if (user?.uid && workspaceId) {
@@ -609,6 +641,64 @@ export function UserProvider({ children }) {
 
     return () => unsub()
   }, [loading, ready, user?.uid, workspaceId])
+
+  // ── Branches (multi-branch foundation, Phase 1) ─────────────────────────
+  // Live subscription to workspaces/{workspaceId}/branches. Any workspace
+  // that has zero branch documents gets exactly one implicit "Main" branch
+  // auto-created transparently, before the user ever sees an empty list.
+  // Deterministic doc ID ('main') makes this race-safe: two tabs loading
+  // the same empty workspace simultaneously both target the same document,
+  // so there is no way to end up with two "Main" branches — at worst one
+  // tab's identical write is a harmless no-op over the other's.
+  useEffect(() => {
+    if (!ready || !db || !user?.uid || loading || !workspaceId) {
+      Promise.resolve().then(() => {
+        setBranches([])
+        setBranchesLoading(false)
+      })
+      return undefined
+    }
+
+    setBranchesLoading(true)
+    const branchesQuery = query(collection(db, 'workspaces', workspaceId, 'branches'), orderBy('createdAt', 'asc'))
+    const unsub = onSnapshot(
+      branchesQuery,
+      (snap) => {
+        const rows = snap.docs.map((branchDoc) => ({ id: branchDoc.id, ...branchDoc.data() }))
+        setBranches(rows)
+        setBranchesLoading(false)
+        if (rows.length === 0 && mainBranchAttemptRef.current !== workspaceId) {
+          mainBranchAttemptRef.current = workspaceId
+          setDoc(
+            doc(db, 'workspaces', workspaceId, 'branches', 'main'),
+            {
+              name: 'Main',
+              region: '',
+              status: 'active',
+              isMain: true,
+              workspaceId,
+              ownerId: workspaceOwnerId || workspaceId,
+              createdAt: serverTimestamp(),
+              createdBy: user.uid,
+            },
+            { merge: true },
+          ).catch((error) => {
+            console.warn('[UserContext] auto-create Main branch failed', error?.code || error?.message || error)
+            // Allow a retry on the next empty snapshot (e.g. after a
+            // transient permission/network error clears up).
+            mainBranchAttemptRef.current = ''
+          })
+        }
+      },
+      (error) => {
+        setBranches([])
+        setBranchesLoading(false)
+        console.warn('[UserContext] branches subscription failed', error?.code || error?.message || error)
+      },
+    )
+
+    return () => unsub()
+  }, [loading, ready, user?.uid, workspaceId, workspaceOwnerId])
 
   useEffect(() => {
     if (!user?.uid) {
@@ -851,6 +941,9 @@ export function UserProvider({ children }) {
       isManager: role === 'manager',
       isSales: role === 'sales',
       primaryBusinessTypeMissing,
+      branches: branchesForDisplay,
+      branchesLoading,
+      activeBranchId,
     }),
     [
       user,
@@ -885,6 +978,9 @@ export function UserProvider({ children }) {
       isAdmin,
       isStaff,
       primaryBusinessTypeMissing,
+      branches,
+      branchesLoading,
+      activeBranchId,
     ],
   )
 

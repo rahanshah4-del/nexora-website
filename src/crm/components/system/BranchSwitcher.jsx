@@ -1,41 +1,32 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useState } from 'react'
 import Dropdown from '../ui/Dropdown.jsx'
 import Button from '../ui/Button.jsx'
 import Badge from '../ui/Badge.jsx'
-import { db } from '../../lib/firebase.js'
-import { subscribeUserCollection } from '../../lib/firestore.js'
 import { useUser } from '../../hooks/useUser.js'
+import { setActiveBranch } from '../../context/UserContext.jsx'
 
-const STORAGE_KEY = 'nexora_active_branch_v1'
-
-const branchSeed = [
-  { id: 'main', name: 'Main Workspace', region: '', status: 'active' },
-]
-
+// Not wired into any layout/page yet — see the multi-branch Phase 1
+// investigation. Branch data itself (live list + the auto-created "Main"
+// branch + the active-branch selection) lives in UserContext, exactly like
+// every other workspace-scoped field this app already exposes via useUser();
+// this component is a thin, isolated consumer of that context.
 export default function BranchSwitcher() {
-  const { workspaceId } = useUser()
-  const [branches, setBranches] = useState(branchSeed)
-  const [activeId, setActiveId] = useState(() => localStorage.getItem(STORAGE_KEY) || 'main')
+  const { userId, branches, activeBranchId } = useUser()
+  const [switching, setSwitching] = useState('')
 
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, activeId)
-  }, [activeId])
+  const active = branches.find((b) => b.id === activeBranchId) || branches[0]
 
-  useEffect(() => {
-    if (!db || !workspaceId) {
-      Promise.resolve().then(() => setBranches(branchSeed))
-      return
+  async function selectBranch(branchId) {
+    if (!userId || branchId === activeBranchId || switching) return
+    setSwitching(branchId)
+    try {
+      await setActiveBranch(userId, branchId)
+    } catch (error) {
+      console.warn('[BranchSwitcher] failed to switch branch', error?.message || error)
+    } finally {
+      setSwitching('')
     }
-    const unsub = subscribeUserCollection(
-      workspaceId,
-      'branches',
-      (rows) => setBranches(rows.length ? rows : branchSeed),
-      () => setBranches(branchSeed),
-    )
-    return () => unsub?.()
-  }, [workspaceId])
-
-  const active = useMemo(() => branches.find((b) => b.id === activeId) || branches[0], [branches, activeId])
+  }
 
   return (
     <Dropdown
@@ -58,15 +49,19 @@ export default function BranchSwitcher() {
               <button
                 key={b.id}
                 type="button"
-                className="focus-ring w-full rounded-2xl px-3 py-2 text-left hover:bg-white/40 dark:hover:bg-white/10"
-                onClick={() => {
-                  setActiveId(b.id)
+                disabled={Boolean(switching)}
+                className="focus-ring w-full rounded-2xl px-3 py-2 text-left hover:bg-white/40 disabled:cursor-wait disabled:opacity-60 dark:hover:bg-white/10"
+                onClick={async () => {
+                  await selectBranch(b.id)
                   close()
                 }}
               >
                 <div className="flex items-center justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">{b.name}</p>
+                    <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">
+                      {b.name}
+                      {b.id === activeBranchId ? <span className="ml-1.5 text-xs font-normal text-slate-500">(current)</span> : null}
+                    </p>
                     <p className="truncate text-xs text-slate-600 dark:text-slate-300">{b.region}</p>
                   </div>
                   <Badge variant={b.status === 'active' ? 'success' : 'default'}>{b.status}</Badge>

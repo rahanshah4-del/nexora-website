@@ -206,6 +206,13 @@ export const moduleCatalog = [
   { key: 'maintenance', label: 'Maintenance', route: '/app/maintenance', minPlan: 'Business' },
   { key: 'contracts', label: 'Contracts', route: '/app/contracts', minPlan: 'Business' },
   { key: 'settings', label: 'Settings', route: '/app/settings', alwaysEnabled: true },
+  // Multi-branch foundation (Phase 1) — catalog entry only, so
+  // module.branches.<action> is a real, enumerable permission key (e.g. for
+  // useWorkspaceAccess.js's permissionKeyCatalog / future Team Management
+  // UI) instead of owner/admin-only access relying on firestore.rules'
+  // generic catch-all. Not yet added to any business type's sidebar module
+  // list — BranchSwitcher.jsx isn't wired into any page yet either.
+  { key: 'branches', label: 'Branches', route: '/app/coming-soon/branches', comingSoon: true },
   { key: 'inventory', label: 'Inventory', route: '/app/inventory', minPlan: 'Basic' },
   { key: 'pos', label: 'POS Billing', route: '/app/pos', minPlan: 'Basic' },
   { key: 'posOrders', label: 'POS Orders', route: '/app/pos-orders', minPlan: 'Basic' },

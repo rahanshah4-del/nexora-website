@@ -690,6 +690,19 @@ match /whatsappSettings/{settingId} {
 allow read: if canReadModule(workspaceId,'whatsappTemplates')||canReadModule(workspaceId,'settings');
 allow create,update,delete: if workspaceAdmin(workspaceId)||hasPermission(workspaceId,'settingsAccess');
 }
+// Multi-branch foundation (Phase 1) — explicit block so owner/admin access no
+// longer relies on the generic catch-all's workspaceAdmin-only accident (see
+// match /{collectionName}/{docId} below). Mirrors the plain single-module
+// CRUD shape already used for loyaltyTiers etc. Staff-level branch
+// permissions aren't wired into Team Management UI yet, so only
+// owner/admin can create/edit/delete branches for now (via workspaceAdmin
+// inside canCreateModule/canEditModule/canDeleteModule) until that lands.
+match /branches/{docId} {
+allow read: if canReadModule(workspaceId,'branches');
+allow create: if canCreateModule(workspaceId,'branches')&&safeCreate(workspaceId);
+allow update: if canEditModule(workspaceId,'branches')&&safeUpdate(workspaceId);
+allow delete: if canDeleteModule(workspaceId,'branches');
+}
 match /customers/{docId} {
 allow read: if canReadModule(workspaceId,'customers')||canReadModule(workspaceId,'pos')||canReadModule(workspaceId,'orders')||canReadModule(workspaceId,'transportCustomers');
 allow create: if (canCreateModule(workspaceId,'customers')||canCreatePosSale(workspaceId)||canCreateModule(workspaceId,'transportCustomers'))&&safeCreate(workspaceId);
