@@ -610,7 +610,22 @@ export default function MedicalInventory() {
 
   async function saveMedicineDetails(id, draft) {
     const existing = medicines.find((item) => item.id === id)
+    console.log('[DIAG] saveMedicineDetails: about to call updateMedicine', {
+      id,
+      existingFound: Boolean(existing),
+      existing: existing ? JSON.parse(JSON.stringify(existing)) : existing,
+      draft: JSON.parse(JSON.stringify(draft)),
+      mergedPayload: JSON.parse(JSON.stringify({ ...existing, ...draft })),
+      medicinesArrayLength: medicines.length,
+      medicinesArrayIds: medicines.map((m) => m.id),
+      timestamp: new Date().toISOString(),
+    })
     const result = await medicineApi.updateMedicine(id, { ...existing, ...draft })
+    console.log('[DIAG] saveMedicineDetails: updateMedicine returned', {
+      id,
+      result,
+      timestamp: new Date().toISOString(),
+    })
     if (result?.ok) notify('Batch & expiry details updated')
     return result
   }
