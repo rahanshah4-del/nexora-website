@@ -1,16 +1,17 @@
 import { useState } from 'react'
+import { HiOutlineMapPin } from 'react-icons/hi2'
 import Dropdown from '../ui/Dropdown.jsx'
 import Button from '../ui/Button.jsx'
 import Badge from '../ui/Badge.jsx'
 import { useUser } from '../../hooks/useUser.js'
 import { setActiveBranch } from '../../context/UserContext.jsx'
 
-// Not wired into any layout/page yet — see the multi-branch Phase 1
-// investigation. Branch data itself (live list + the auto-created "Main"
-// branch + the active-branch selection) lives in UserContext, exactly like
-// every other workspace-scoped field this app already exposes via useUser();
-// this component is a thin, isolated consumer of that context.
-export default function BranchSwitcher() {
+// Branch data itself (live list + the auto-created "Main" branch + the
+// active-branch selection) lives in UserContext, exactly like every other
+// workspace-scoped field this app already exposes via useUser(); this
+// component is a thin consumer of that context. Wired into TopNav.jsx,
+// mirroring the "Switch Product" button's visual pattern.
+export default function BranchSwitcher({ className = '' }) {
   const { userId, branches, activeBranchId } = useUser()
   const [switching, setSwitching] = useState('')
 
@@ -32,9 +33,13 @@ export default function BranchSwitcher() {
     <Dropdown
       align="right"
       panelClassName="w-64"
+      className={className}
       trigger={() => (
-        <Button variant="subtle" className="h-10 max-w-[12rem] min-w-0 rounded-2xl px-3 shadow-none">
-          <span className="truncate text-xs font-semibold">{active?.name || 'Branch'}</span>
+        <Button variant="subtle" className="h-11 max-w-[12rem] min-w-0 shrink-0 rounded-2xl px-3 text-sm font-extrabold">
+          <span className="nexora-hd-icon h-8 w-8 rounded-xl border-emerald-200 bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-600 shadow-emerald-500/25">
+            <HiOutlineMapPin className="h-4 w-4" />
+          </span>
+          <span className="truncate">{active?.name || 'Branch'}</span>
         </Button>
       )}
     >

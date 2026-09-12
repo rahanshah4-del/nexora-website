@@ -50,6 +50,7 @@ import {
   packageNameForPlan,
 } from '../../crm/data/moduleAccess.js'
 import { saveSelectedWorkspace } from '../../crm/lib/workspaceSession.js'
+import { createBranch } from '../../crm/context/UserContext.jsx'
 import { clientSafeMessage, reportTechnicalError } from '../../lib/errorHandler.js'
 import { sendCustomVerificationEmail } from '../../lib/emailVerificationService.js'
 import { queueWelcomeEmailForModule } from '../../lib/welcomeEmailDelivery.js'
@@ -1338,6 +1339,7 @@ function SetupWizard({ creating, message, form, onChange, onCreate, onClose, can
   const rawBusinessType = cleanString(form.businessType)
   const businessType = rawBusinessType ? normalizeBusinessType(rawBusinessType) : ''
   const isSchoolErp = businessType === 'School ERP'
+  const isMedical = businessType === 'PharmaFlow'
   const nameLabel = isSchoolErp ? 'School Name' : 'Workspace / Business Name'
   const namePlaceholder = isSchoolErp ? 'Your school name' : 'Your business name'
 
@@ -1503,6 +1505,19 @@ function SetupWizard({ creating, message, form, onChange, onCreate, onClose, can
                     <input value={form.classesRange} onChange={(event) => onChange('classesRange', event.target.value)} className={formInputClass()} placeholder="Nursery to Grade 10" />
                   </FieldLabel>
                 </>
+              ) : null}
+              {isMedical ? (
+                <FieldLabel label="How many branches do you have?">
+                  <input
+                    type="number"
+                    min="1"
+                    inputMode="numeric"
+                    value={form.branchCount}
+                    onChange={(event) => onChange('branchCount', event.target.value)}
+                    className={formInputClass()}
+                    placeholder="1"
+                  />
+                </FieldLabel>
               ) : null}
             </div>
           ) : null}
@@ -1745,6 +1760,7 @@ export default function WorkspaceSelection() {
     academicYear: '',
     classesRange: '',
     monthlyFeeSetup: '',
+    branchCount: '',
   }))
   const [workspaceView, setWorkspaceView] = useState('enter')
   const [searchOpen, setSearchOpen] = useState(false)
@@ -3379,6 +3395,11 @@ export default function WorkspaceSelection() {
       const classesRange = cleanString(onboardingForm.classesRange)
       const monthlyFeeSetup = cleanString(onboardingForm.monthlyFeeSetup)
       const preferredLanguage = cleanString(onboardingForm.language) || 'English'
+      // Onboarding-only input, not a durable workspace fact — used below to
+      // decide how many branch documents to seed at creation time, then
+      // discarded. Not written to either the user or workspace payload
+      // (unlike academicYear/classesRange, which ARE meant to persist).
+      const branchCount = Math.max(1, Math.floor(Number(onboardingForm.branchCount)) || 1)
       const now = serverTimestamp()
       const trialEndsAt = addDays(new Date(), CRM_TRIAL_DAYS)
       const userRef = doc(db, 'users', uid)
@@ -3739,6 +3760,41 @@ export default function WorkspaceSelection() {
           selectedWorkspace: selectedModuleWorkspace,
           businessType: selectedModuleBusinessType,
         })
+      }
+      // New Medical/PharmaFlow workspaces only, and only when the owner asked
+      // for more than one branch — seed that many branches now instead of
+      // leaving just the single implicit "Main" branch UserContext would
+      // otherwise auto-create on first load. Existing workspaces and every
+      // other business type (and a blank/1 branchCount) are untouched — same
+      // as today. The first branch is always the deterministic 'main' doc
+      // (matching UserContext.jsx's own auto-create shape exactly), so that
+      // auto-create effect correctly no-ops later (branches already exist)
+      // instead of skipping the one branch that's supposed to be Main.
+      if (!workspaceExists && normalizeBusinessType(selectedModuleBusinessType) === 'PharmaFlow' && branchCount > 1) {
+        console.log('[Workspace Create] seeding branches', { workspaceId, branchCount })
+        try {
+          await setDoc(doc(db, 'workspaces', workspaceId, 'branches', 'main'), {
+            name: 'Main',
+            region: '',
+            status: 'active',
+            isMain: true,
+            workspaceId,
+            createdBy: uid,
+            createdAt: now,
+            updatedAt: now,
+          })
+          for (let branchIndex = 2; branchIndex <= branchCount; branchIndex += 1) {
+            await createBranch(workspaceId, uid, { name: `Branch ${branchIndex}` })
+          }
+        } catch (branchSeedError) {
+          // Best-effort — the workspace itself is already created successfully
+          // at this point; a branch-seeding failure shouldn't block onboarding.
+          // The owner can still add branches later from Settings.
+          console.warn('[Workspace Create] branch seeding failed (non-fatal)', {
+            workspaceId,
+            message: branchSeedError?.message || branchSeedError,
+          })
+        }
       }
       const staffPath = `workspaces/${workspaceId}/staff/${uid}`
       const teamMemberPath = `workspaces/${workspaceId}/teamMembers/${uid}`

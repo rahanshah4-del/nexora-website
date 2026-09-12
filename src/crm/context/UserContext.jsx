@@ -56,6 +56,44 @@ export async function setActiveBranch(userId, branchId) {
   await setDoc(doc(db, 'users', userId), { activeBranchId: branchId, updatedAt: serverTimestamp() }, { merge: true })
 }
 
+// Creates a new branch doc under workspaces/{workspaceId}/branches. Uses an
+// auto-generated ID (never 'main' — that ID is reserved for the deterministic
+// auto-created implicit branch above) and includes workspaceId/createdBy so
+// the write satisfies firestore.rules' safeCreate() requirements.
+export async function createBranch(workspaceId, userId, { name, region = '', status = 'active' } = {}) {
+  if (!db || !workspaceId || !userId) return { ok: false, error: 'Workspace not ready.' }
+  const trimmedName = String(name || '').trim()
+  if (!trimmedName) return { ok: false, error: 'Branch name is required.' }
+  try {
+    const ref = doc(collection(db, 'workspaces', workspaceId, 'branches'))
+    await setDoc(ref, {
+      name: trimmedName,
+      region: String(region || '').trim(),
+      status,
+      isMain: false,
+      workspaceId,
+      createdBy: userId,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    })
+    return { ok: true, id: ref.id }
+  } catch (error) {
+    return { ok: false, error: error?.message || 'Unable to create branch.' }
+  }
+}
+
+// Toggles a branch's active/inactive status. Does not touch name/region/
+// isMain/workspaceId — a plain merge update, satisfying safeUpdate() as-is.
+export async function setBranchStatus(workspaceId, branchId, status) {
+  if (!db || !workspaceId || !branchId) return { ok: false, error: 'Missing workspace or branch.' }
+  try {
+    await setDoc(doc(db, 'workspaces', workspaceId, 'branches', branchId), { status, updatedAt: serverTimestamp() }, { merge: true })
+    return { ok: true }
+  } catch (error) {
+    return { ok: false, error: error?.message || 'Unable to update branch.' }
+  }
+}
+
 function permissionModuleKey(permissionKey) {
   const match = String(permissionKey || '').match(/^module\.([^.]+)\./)
   return match?.[1] || ''

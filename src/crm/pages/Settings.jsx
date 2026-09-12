@@ -7,6 +7,7 @@ import {
   HiOutlineCheckCircle,
   HiOutlineChatBubbleLeftRight,
   HiOutlineDocumentText,
+  HiOutlineMapPin,
   HiOutlinePaintBrush,
   HiOutlinePrinter,
   HiOutlineQrCode,
@@ -28,6 +29,7 @@ import { useBusinessSettings } from '../hooks/useBusinessSettings.js'
 import { useWorkspaceAccess } from '../hooks/useWorkspaceAccess.js'
 import { useWhatsappSettings } from '../hooks/useWhatsappSettings.js'
 import { useUser } from '../hooks/useUser.js'
+import { createBranch, setBranchStatus } from '../context/UserContext.jsx'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 import { labelForBusinessType, normalizeBusinessType } from '../data/moduleAccess.js'
 import { whatsappCapabilities, whatsappTrialStatus } from '../lib/whatsappApiTrial.js'
@@ -1606,6 +1608,112 @@ function TransportReportSettingsCard({ draft, setDraft, canManageSettings }) {
   )
 }
 
+// Branch entity management (multi-branch Phase 2). Deliberately not
+// business-type-gated — the branches infrastructure itself (UserContext's
+// live subscription, the auto-created "Main" branch, firestore.rules'
+// module.branches.<action> keys) was already built generically in Phase 1.
+// Reuses that context data/helpers rather than duplicating any of it here.
+function BranchesSettingsCard({ canManageSettings }) {
+  const { workspaceId, userId, branches, activeBranchId } = useUser()
+  const [name, setName] = useState('')
+  const [region, setRegion] = useState('')
+  const [creating, setCreating] = useState(false)
+  const [togglingId, setTogglingId] = useState('')
+  const [message, setMessage] = useState('')
+  const [error, setError] = useState('')
+
+  async function handleCreate(event) {
+    event.preventDefault()
+    if (!canManageSettings || creating || !name.trim()) return
+    setCreating(true)
+    setError('')
+    const result = await createBranch(workspaceId, userId, { name, region })
+    setCreating(false)
+    if (result.ok) {
+      setName('')
+      setRegion('')
+      setMessage('Branch added.')
+      window.setTimeout(() => setMessage(''), 1800)
+    } else {
+      setError(result.error || 'Unable to add branch.')
+    }
+  }
+
+  async function handleToggleStatus(branch) {
+    if (!canManageSettings || branch.isMain || togglingId) return
+    setTogglingId(branch.id)
+    setError('')
+    const nextStatus = branch.status === 'active' ? 'inactive' : 'active'
+    const result = await setBranchStatus(workspaceId, branch.id, nextStatus)
+    setTogglingId('')
+    if (!result.ok) setError(result.error || 'Unable to update branch.')
+  }
+
+  return (
+    <Card id="branches-settings" className="scroll-mt-28 overflow-hidden p-0">
+      <div className="border-b border-slate-200 bg-gradient-to-br from-slate-950 via-emerald-950 to-teal-950 p-5 text-white">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-200">Locations</p>
+            <h2 className="mt-2 text-xl font-black tracking-tight">Branches</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-300">
+              Manage the branches/outlets this workspace operates from. Every workspace starts with one "Main" branch.
+            </p>
+          </div>
+          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white/10 text-emerald-200 ring-1 ring-white/15">
+            <HiOutlineMapPin className="h-6 w-6" />
+          </span>
+        </div>
+      </div>
+
+      <div className="space-y-4 p-5">
+        {error ? <p className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700">{error}</p> : null}
+        {message ? <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">{message}</p> : null}
+
+        <div className="space-y-2">
+          {branches.map((branch) => (
+            <div key={branch.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 px-4 py-3">
+              <div className="min-w-0">
+                <p className="flex flex-wrap items-center gap-2 truncate text-sm font-bold text-slate-900 dark:text-white">
+                  {branch.name}
+                  {branch.id === activeBranchId ? <span className="text-xs font-normal text-slate-500">(current)</span> : null}
+                  {branch.isMain ? <Badge variant="info">Main</Badge> : null}
+                </p>
+                {branch.region ? <p className="truncate text-xs text-slate-500 dark:text-slate-400">{branch.region}</p> : null}
+              </div>
+              <div className="flex shrink-0 items-center gap-2">
+                <Badge variant={branch.status === 'active' ? 'success' : 'default'}>{branch.status}</Badge>
+                <Button
+                  type="button"
+                  variant="subtle"
+                  className="h-8 rounded-xl px-3 text-xs"
+                  disabled={!canManageSettings || branch.isMain || togglingId === branch.id}
+                  onClick={() => handleToggleStatus(branch)}
+                  title={branch.isMain ? 'The Main branch cannot be deactivated' : undefined}
+                >
+                  {togglingId === branch.id ? 'Saving...' : branch.status === 'active' ? 'Deactivate' : 'Activate'}
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <form onSubmit={handleCreate} className="grid gap-3 rounded-2xl border border-dashed border-slate-300 p-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end">
+          <Field label="New branch name">
+            <Input value={name} onChange={(event) => setName(event.target.value)} placeholder="e.g. DHA Branch" readOnly={!canManageSettings} />
+          </Field>
+          <Field label="Region (optional)">
+            <Input value={region} onChange={(event) => setRegion(event.target.value)} placeholder="e.g. Lahore" readOnly={!canManageSettings} />
+          </Field>
+          <Button type="submit" className="h-11 rounded-2xl" disabled={!canManageSettings || creating || !name.trim()}>
+            {creating ? 'Adding...' : 'Add branch'}
+          </Button>
+        </form>
+      </div>
+    </Card>
+  )
+}
+
 export default function SettingsPage() {
   const { userId, workspaceId, userDoc, firebaseUser } = useUser()
   const navigate = useNavigate()
@@ -1855,6 +1963,7 @@ export default function SettingsPage() {
             canManageSettings={canManageSettings}
             onSaveSettings={onSaveProfile}
           />
+          <BranchesSettingsCard canManageSettings={canManageSettings} />
           {normalizeBusinessType(businessType) === 'Retail / POS' ? (
             <BarcodeScannerSettingsCard
               draft={draft}

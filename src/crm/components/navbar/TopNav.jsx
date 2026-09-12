@@ -17,6 +17,7 @@ import NotificationBell from '../notifications/NotificationBell.jsx'
 import NexoraAiLauncher from './NexoraAiLauncher.jsx'
 import CloudSyncButton from '../system/CloudSyncButton.jsx'
 import GlobalSearch from '../system/GlobalSearch.jsx'
+import BranchSwitcher from '../system/BranchSwitcher.jsx'
 import MobileBottomNav from './MobileBottomNav.jsx'
 import logoUrl from '../../../assets/logo/nexora-logo.png'
 import { labelForBusinessType, packageNameForPlan } from '../../data/moduleAccess.js'
@@ -296,6 +297,7 @@ function TopNav({ onOpenSidebar, onSwitchProduct }) {
               </span>
               Switch Product
             </Button>
+            <BranchSwitcher className="hidden xl:block" />
             {showPosLiveIndicator ? <PosLiveIndicator issue={posHasIssue} /> : null}
             <NexoraAiLauncher />
             <NotificationBell enabled={notifications.enabled} />
