@@ -597,9 +597,22 @@ export default function MedicalInventory() {
 
   // ---- Save handlers ----
   async function saveMedicine(draft) {
+    const isCreate = !medicineModal.medicine
+    console.log('[DIAG] saveMedicine (Add Product / Create Product): about to call', {
+      mode: isCreate ? 'createMedicine' : 'updateMedicine',
+      editingId: medicineModal.medicine?.id || null,
+      draft: JSON.parse(JSON.stringify(draft)),
+      medicinesArrayLengthBeforeSave: medicines.length,
+      timestamp: new Date().toISOString(),
+    })
     const result = medicineModal.medicine
       ? await medicineApi.updateMedicine(medicineModal.medicine.id, draft)
       : await medicineApi.createMedicine(draft)
+    console.log('[DIAG] saveMedicine (Add Product / Create Product): call returned', {
+      mode: isCreate ? 'createMedicine' : 'updateMedicine',
+      result,
+      timestamp: new Date().toISOString(),
+    })
     if (result?.ok) {
       notify(medicineModal.medicine ? 'Medicine updated' : 'Medicine created')
       setMedicineModal({ open: false, medicine: null })

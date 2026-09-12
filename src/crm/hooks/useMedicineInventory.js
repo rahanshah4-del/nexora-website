@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { arrayUnion, collection, doc, getDocs, limit, query, runTransaction, serverTimestamp, where } from 'firebase/firestore'
+import { arrayUnion, collection, doc, getDoc, getDocs, limit, query, runTransaction, serverTimestamp, where } from 'firebase/firestore'
 import { db } from '../lib/firebase.js'
 import { createUserDoc, patchUserDoc, removeUserDoc, subscribeUserCollection, workspaceCollectionPath } from '../lib/firestore.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
@@ -168,7 +168,9 @@ export function useMedicineInventory(options = {}) {
           workspaceId,
           businessType,
           rowCount: Array.isArray(rows) ? rows.length : -1,
-          rowIds: Array.isArray(rows) ? rows.map((r) => r.id) : [],
+          rowsSummary: Array.isArray(rows)
+            ? rows.map((r) => ({ id: r.id, businessType: r.businessType, workspaceId: r.workspaceId, selectedBusinessType: r.selectedBusinessType, sku: r.sku, name: r.name }))
+            : rows,
           rows: Array.isArray(rows) ? JSON.parse(JSON.stringify(rows)) : rows,
           timestamp: new Date().toISOString(),
         })
@@ -218,6 +220,14 @@ export function useMedicineInventory(options = {}) {
         if (!userId || !workspaceId) return { ok: false, error: 'Please login first' }
         if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now' }
         const medicine = sanitizeMedicine(payload)
+        console.log('[DIAG] createMedicine: called', {
+          userId,
+          workspaceId,
+          businessType,
+          rawPayload: JSON.parse(JSON.stringify(payload)),
+          sanitizedMedicine: JSON.parse(JSON.stringify(medicine)),
+          timestamp: new Date().toISOString(),
+        })
         if (!medicine.name) return { ok: false, error: 'Medicine name is required' }
         if (!medicine.sku) return { ok: false, error: 'SKU is required' }
 
@@ -235,9 +245,13 @@ export function useMedicineInventory(options = {}) {
             sku: medicine.sku,
             barcode: medicine.barcode,
           })
-          if (uniquenessError) return { ok: false, error: uniquenessError }
+          if (uniquenessError) {
+            console.error('[DIAG] createMedicine: blocked by uniqueness check', { workspaceId, businessType, sku: medicine.sku, barcode: medicine.barcode, uniquenessError })
+            return { ok: false, error: uniquenessError }
+          }
 
-          const ref = await createUserDoc(workspaceId, 'medicineInventory', {
+          const collectionPath = workspaceCollectionPath(workspaceId, 'medicineInventory')
+          const createPayload = {
             ...medicine,
             stockHistory: [
               {
@@ -249,7 +263,46 @@ export function useMedicineInventory(options = {}) {
               },
             ],
             createdBy: userId,
-          }, { businessType })
+          }
+          console.log('[DIAG] createMedicine: about to write (createUserDoc -> addDoc)', {
+            collectionPath,
+            workspaceId,
+            businessTypeOptionPassed: businessType,
+            createPayload,
+            timestamp: new Date().toISOString(),
+          })
+
+          const ref = await createUserDoc(workspaceId, 'medicineInventory', createPayload, { businessType })
+
+          console.log('[DIAG] createMedicine: write returned a ref', {
+            newDocId: ref?.id,
+            newDocPath: ref?.path,
+            collectionPath,
+            timestamp: new Date().toISOString(),
+          })
+
+          // Read the doc straight back (bypassing any local cache/listener) to
+          // confirm what Firestore actually persisted, and from where.
+          try {
+            const confirmSnap = await getDoc(ref)
+            console.log('[DIAG] createMedicine: read-back immediately after write', {
+              newDocId: ref?.id,
+              exists: confirmSnap.exists(),
+              data: confirmSnap.exists() ? confirmSnap.data() : null,
+              fromCache: confirmSnap.metadata?.fromCache,
+              hasPendingWrites: confirmSnap.metadata?.hasPendingWrites,
+              timestamp: new Date().toISOString(),
+            })
+          } catch (readBackErr) {
+            console.error('[DIAG] createMedicine: read-back immediately after write FAILED', {
+              newDocId: ref?.id,
+              errorCode: readBackErr?.code,
+              errorMessage: readBackErr?.message,
+              errorFull: readBackErr,
+              timestamp: new Date().toISOString(),
+            })
+          }
+
           await logActivity({
             workspaceId,
             userId,
@@ -275,8 +328,19 @@ export function useMedicineInventory(options = {}) {
             createdBy: userId,
             createdByEmail: firebaseUser?.email || userDoc?.email || '',
           })
+          console.log('[DIAG] createMedicine: completed successfully', { timestamp: new Date().toISOString() })
           return { ok: true }
         } catch (e) {
+          console.error('[DIAG] createMedicine: CAUGHT ERROR (full object, not just message)', {
+            workspaceId,
+            businessType,
+            errorCode: e?.code,
+            errorMessage: e?.message,
+            errorName: e?.name,
+            errorStack: e?.stack,
+            errorFull: e,
+            timestamp: new Date().toISOString(),
+          })
           return { ok: false, error: clientSafeMessage(e, 'Unable to create medicine.') }
         } finally {
           submittingRef.current = false
