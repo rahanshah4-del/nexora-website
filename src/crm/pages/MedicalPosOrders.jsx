@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { HiOutlineDocumentChartBar, HiOutlineMagnifyingGlass, HiOutlinePrinter, HiOutlineReceiptPercent, HiOutlineShoppingBag, HiOutlineTrash, HiOutlineBolt, HiOutlineCalendarDays, HiOutlineXCircle } from 'react-icons/hi2'
+import { HiOutlineArrowUturnLeft, HiOutlineDocumentChartBar, HiOutlineMagnifyingGlass, HiOutlinePrinter, HiOutlineReceiptPercent, HiOutlineShoppingBag, HiOutlineTrash, HiOutlineBolt, HiOutlineCalendarDays, HiOutlineXCircle } from 'react-icons/hi2'
 import Card from '../components/ui/Card.jsx'
 import Badge from '../components/ui/Badge.jsx'
 import Button from '../components/ui/Button.jsx'
@@ -42,7 +42,7 @@ function escapeHtml(value) {
 }
 
 export default function MedicalPosOrdersPage() {
-  const { orders, loading, error, deleteOrder } = useMedicalPosOrders({ limitCount: 100, readBusinessType: false })
+  const { orders, loading, error, deleteOrder, refundOrder } = useMedicalPosOrders({ limitCount: 100, readBusinessType: false })
   const walletPaymentsApi = usePosWalletPayments({ limitCount: 100 })
   const access = useWorkspaceAccess()
   const [actionMessage, setActionMessage] = useState('')
@@ -162,6 +162,20 @@ export default function MedicalPosOrdersPage() {
     setActionMessage(result?.ok ? `${order.orderNumber} deleted from Medical POS orders.` : result?.error || 'Unable to delete medical POS order.')
   }
 
+  async function handleRefundOrder(order) {
+    const refundAmount = Number(order.paidAmount || order.total || 0)
+    const ok = await confirmAction({
+      tone: 'danger',
+      badge: 'Medical POS Order',
+      title: 'Refund this order?',
+      message: `Refund order ${order.orderNumber} for ${formatCurrency(refundAmount)}? This will restore stock and cannot be undone.`,
+      confirmLabel: 'Refund Order',
+    })
+    if (!ok) return
+    const result = await refundOrder(order.id)
+    setActionMessage(result?.ok ? `${order.orderNumber} refunded (${formatCurrency(result.refundAmount || refundAmount)}).` : result?.error || 'Unable to refund medical POS order.')
+  }
+
   function printTodayReport() {
     const date = new Date().toLocaleString()
     const company = escapeHtml(orders[0]?.companyName || 'NEXORA SOLUTION')
@@ -256,6 +270,11 @@ export default function MedicalPosOrdersPage() {
           <button type="button" onClick={() => printOrder(row)} className="grid h-9 w-9 place-items-center rounded-xl border border-blue-100 bg-blue-50 text-blue-700 transition hover:bg-blue-100" title="Print order">
             <HiOutlinePrinter className="h-4 w-4" />
           </button>
+          {row.refundStatus !== 'refunded' && !row.refundedAt ? (
+            <button type="button" onClick={() => handleRefundOrder(row)} className="grid h-9 w-9 place-items-center rounded-xl border border-amber-100 bg-amber-50 text-amber-700 transition hover:bg-amber-100" title="Refund order">
+              <HiOutlineArrowUturnLeft className="h-4 w-4" />
+            </button>
+          ) : null}
           {canDeleteOrders ? (
             <button type="button" onClick={() => handleDeleteOrder(row)} className="grid h-9 w-9 place-items-center rounded-xl border border-rose-100 bg-rose-50 text-rose-600 transition hover:bg-rose-100" title="Delete order">
               <HiOutlineTrash className="h-4 w-4" />

@@ -483,6 +483,7 @@ export function useMedicalPosOrders(options = {}) {
           })),
           referenceId: id,
           reference: order.orderNumber || id,
+          collectionName: 'medicineInventory',
         })
         if (!restoreRs.ok) {
           return { ok: false, error: 'Unable to restore inventory before deletion. The order was not deleted.' }
@@ -569,11 +570,18 @@ export function useMedicalPosOrders(options = {}) {
           const cSnap = await txn.get(customerRef)
           if (cSnap.exists()) {
             const customer = cSnap.data()
-            txn.update(customerRef, {
+            const dueAmount = Number(order.dueAmount || 0)
+            const customerPatch = {
               lifetimeSpend: Math.max(0, Number(customer.lifetimeSpend || 0) - refundAmount),
               posOrdersCount: Math.max(0, Number(customer.posOrdersCount || 0) - 1),
               updatedAt: serverTimestamp(),
-            })
+            }
+            // Only a partially-paid order carries a walletDue balance to reverse —
+            // a fully-paid order's refund shouldn't touch walletDue at all.
+            if (dueAmount > 0) {
+              customerPatch.walletDue = Math.max(0, Number(customer.walletDue || 0) - dueAmount)
+            }
+            txn.update(customerRef, customerPatch)
           }
         }
 
@@ -619,6 +627,7 @@ export function useMedicalPosOrders(options = {}) {
           items: refundItems,
           referenceId: id,
           reference: order.orderNumber || id,
+          collectionName: 'medicineInventory',
         })
         if (!restoreRs.ok) {
           // Inventory restore failed but refund is recorded — log but don't fail

@@ -22,6 +22,9 @@ import { normalizeBusinessType } from '../data/moduleAccess.js'
  * @param {Array}  opts.items          – [{ productId, quantity/qty, productName?, sku? }]
  * @param {string} opts.referenceId    – order/invoice Firestore id
  * @param {string} [opts.reference]    – human-readable order/invoice number
+ * @param {string} [opts.collectionName] – workspace collection holding the product docs
+ *                                          (defaults to 'products'; Medical POS callers must
+ *                                          pass 'medicineInventory', where its stock actually lives)
  * @returns {{ ok: boolean, restored: number, errors: string[], skipped: number }}
  */
 export async function restoreInventoryItems({
@@ -32,6 +35,7 @@ export async function restoreInventoryItems({
   items,
   referenceId,
   reference,
+  collectionName = 'products',
 }) {
   if (!db || !workspaceId || !userId) {
     return { ok: false, restored: 0, errors: ['Missing db/workspaceId/userId'], skipped: 0 }
@@ -49,7 +53,7 @@ export async function restoreInventoryItems({
 
   for (const item of productItems) {
     const qty = Number(item.quantity ?? item.qty ?? 0)
-    const productRef = doc(db, workspaceCollectionPath(workspaceId, 'products'), item.productId)
+    const productRef = doc(db, workspaceCollectionPath(workspaceId, collectionName), item.productId)
     const now = new Date().toISOString()
 
     // Deterministic ledger doc ID — enables atomic duplicate check inside runTransaction.
