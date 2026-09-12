@@ -1,8 +1,9 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts'
 import { formatCurrency } from '../../utils/format.js'
 import { stockState } from '../../hooks/useInventory.js'
+import { useMedicalPosOrders } from '../../hooks/useMedicalPosOrders.js'
 
 // ── Medical Store POS pastel dashboard palette ─────────────────────────────
 // Local to this component only — sans-serif ambient app font (no Fraunces,
@@ -57,6 +58,33 @@ function formatDateTime(value) {
   const date = dateValue(value)
   if (!date) return '—'
   return new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(date)
+}
+
+const DAY_MS = 86400000
+
+// Sums paidAmount/total for orders whose createdAt falls within the rolling
+// window from msAgoStart-ago to msAgoEnd-ago (exclusive of the older edge,
+// inclusive of the more recent edge). Rolling windows, not calendar week/
+// month boundaries — simplest, and consistent with the "last 7 days" rolling
+// window the existing Sales Overview chart above already uses.
+function revenueBetween(orders, msAgoStart, msAgoEnd) {
+  const now = Date.now()
+  const from = now - msAgoStart
+  const to = now - msAgoEnd
+  return orders.reduce((sum, order) => {
+    const created = dateValue(order.createdAt)
+    if (!created) return sum
+    const t = created.getTime()
+    if (t > from && t <= to) return sum + Number(order.paidAmount || order.total || 0)
+    return sum
+  }, 0)
+}
+
+// null = no prior-period revenue to compare against (shown as "No prior data"
+// rather than a misleading +Infinity%).
+function computeGrowth(current, previous) {
+  if (previous <= 0) return current > 0 ? null : 0
+  return ((current - previous) / previous) * 100
 }
 
 // Small decorative bar-chart glyph for the top-right corner of a KPI card —
@@ -209,6 +237,72 @@ export default function MedicalDashboard({
     })
   }, [nonRefundedOrders])
 
+  // ── Top-selling medicines & Revenue comparison ──────────────────────────
+  // Both need accurate week/month totals, and the `orders` prop above is
+  // capped at DASHBOARD_RECENT_LIMIT (25, set by DashboardHome.jsx) — too few
+  // once a pharmacy does more than ~25 sales in a period. Rather than thread
+  // a wider limit back through DashboardHome.jsx's existing prop list, these
+  // two sections use their own, self-contained, wider order query (up to
+  // 500 most recent orders — ordering is already createdAt/desc inside
+  // useMedicalPosOrders.js itself, so no orderByField/orderDirection option
+  // exists to pass here). This is an additional Firestore read scoped only
+  // to this component.
+  const wideOrdersApi = useMedicalPosOrders({ limitCount: 500 })
+  const wideNonRefundedOrders = useMemo(
+    () => wideOrdersApi.orders.filter((o) => o.refundStatus !== 'refunded' && !o.refundedAt),
+    [wideOrdersApi.orders],
+  )
+
+  // Shared by both sections below: 'week' = rolling 7 days, 'month' = rolling
+  // 30 days (same rolling-window approach as Sales Overview's last7Days).
+  const [rangeMode, setRangeMode] = useState('week')
+
+  const topSellingOrders = useMemo(() => {
+    const windowMs = (rangeMode === 'month' ? 30 : 7) * DAY_MS
+    const cutoff = Date.now() - windowMs
+    return wideNonRefundedOrders.filter((order) => {
+      const created = dateValue(order.createdAt)
+      return created && created.getTime() > cutoff
+    })
+  }, [wideNonRefundedOrders, rangeMode])
+
+  const topSellingMedicines = useMemo(() => {
+    const totals = new Map()
+    topSellingOrders.forEach((order) => {
+      const items = Array.isArray(order.items) ? order.items : []
+      items.forEach((item) => {
+        // Group by productId; fall back to name if productId is ever missing
+        // (e.g. an older/manually-adjusted order) so the row isn't dropped.
+        const key = item.productId || item.name || 'unknown'
+        const existing = totals.get(key) || { key, name: item.name || 'Unnamed medicine', units: 0, revenue: 0 }
+        existing.units += Number(item.quantity || 0)
+        existing.revenue += Number(item.lineTotal ?? Number(item.price || 0) * Number(item.quantity || 0)) || 0
+        totals.set(key, existing)
+      })
+    })
+    return Array.from(totals.values())
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 5)
+  }, [topSellingOrders])
+
+  const revenueComparison = useMemo(() => {
+    if (rangeMode === 'month') {
+      return {
+        currentLabel: 'This month',
+        previousLabel: 'Last month',
+        current: revenueBetween(wideNonRefundedOrders, 30 * DAY_MS, 0),
+        previous: revenueBetween(wideNonRefundedOrders, 60 * DAY_MS, 30 * DAY_MS),
+      }
+    }
+    return {
+      currentLabel: 'This week',
+      previousLabel: 'Last week',
+      current: revenueBetween(wideNonRefundedOrders, 7 * DAY_MS, 0),
+      previous: revenueBetween(wideNonRefundedOrders, 14 * DAY_MS, 7 * DAY_MS),
+    }
+  }, [wideNonRefundedOrders, rangeMode])
+  const revenueGrowth = computeGrowth(revenueComparison.current, revenueComparison.previous)
+
   return (
     <div className="min-w-0 p-4 sm:p-6" style={{ backgroundColor: PASTEL.bg, color: PASTEL.ink }}>
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
@@ -308,6 +402,98 @@ export default function MedicalDashboard({
                   <Bar dataKey="total" fill={PASTEL.primaryBar} radius={[8, 8, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
+            </div>
+          )}
+        </PastelPanel>
+      </div>
+
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-2">
+        <p className="text-xs font-medium text-[#8B8A99]">Top-selling medicines &amp; revenue growth</p>
+        <div className="inline-flex items-center gap-1 rounded-xl bg-white p-1 shadow-sm">
+          {[
+            { key: 'week', label: 'This week' },
+            { key: 'month', label: 'This month' },
+          ].map((opt) => (
+            <button
+              key={opt.key}
+              type="button"
+              onClick={() => setRangeMode(opt.key)}
+              className="rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors"
+              style={
+                rangeMode === opt.key
+                  ? { backgroundColor: PASTEL.dark, color: '#fff' }
+                  : { backgroundColor: 'transparent', color: PASTEL.muted }
+              }
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-3 grid gap-4 lg:grid-cols-2">
+        <PastelPanel>
+          <PanelHeading>Top-selling medicines</PanelHeading>
+          {wideOrdersApi.loading ? (
+            <EmptyHint>Loading…</EmptyHint>
+          ) : topSellingMedicines.length ? (
+            <div className="space-y-1.5">
+              {topSellingMedicines.map((row, idx) => (
+                <div
+                  key={row.key}
+                  className="flex items-center justify-between gap-3 rounded-xl px-3 py-2"
+                  style={{ backgroundColor: idx === 0 ? PASTEL.mint : PASTEL.bg }}
+                >
+                  <div className="flex min-w-0 items-center gap-2.5">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white text-xs font-bold text-[#1F2230]">
+                      {idx + 1}
+                    </span>
+                    <p className="truncate text-sm font-medium text-[#1F2230]">{row.name}</p>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <p className="text-sm font-medium text-[#1F2230]">{formatCurrency(row.revenue, currency)}</p>
+                    <p className="text-xs text-[#8B8A99]">{row.units} sold</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <EmptyHint>No medical POS sales in this period yet.</EmptyHint>
+          )}
+        </PastelPanel>
+
+        <PastelPanel>
+          <PanelHeading>Revenue comparison</PanelHeading>
+          {wideOrdersApi.loading ? (
+            <EmptyHint>Loading…</EmptyHint>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-end justify-between gap-3">
+                <div>
+                  <p className="text-xs text-[#8B8A99]">{revenueComparison.currentLabel}</p>
+                  <p className="mt-1 text-2xl font-bold text-[#1F2230]">{formatCurrency(revenueComparison.current, currency)}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs text-[#8B8A99]">{revenueComparison.previousLabel}</p>
+                  <p className="mt-1 text-sm font-medium text-[#1F2230]/70">{formatCurrency(revenueComparison.previous, currency)}</p>
+                </div>
+              </div>
+              <div
+                className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold"
+                style={{
+                  backgroundColor: revenueGrowth === null ? `${PASTEL.muted}22` : revenueGrowth >= 0 ? `${PASTEL.green}55` : `${PASTEL.coral}55`,
+                  color: revenueGrowth === null ? PASTEL.muted : revenueGrowth >= 0 ? '#1F7A45' : '#B4453F',
+                }}
+              >
+                {revenueGrowth === null ? (
+                  <span>No prior data</span>
+                ) : (
+                  <>
+                    <span>{revenueGrowth >= 0 ? '▲' : '▼'}</span>
+                    <span>{`${revenueGrowth >= 0 ? '+' : ''}${revenueGrowth.toFixed(1)}%`}</span>
+                  </>
+                )}
+              </div>
             </div>
           )}
         </PastelPanel>
