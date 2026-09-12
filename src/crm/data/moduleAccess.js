@@ -130,7 +130,7 @@ export const planCatalog = [
     monthlyUsd: null,
     priceLabel: 'PKR 2,000/month',
     features: [
-      'Choose ANY ONE Nexora Business Module (Restaurant POS, Retail POS, School ERP, Transport, Medical Store POS, CRM, WhatsApp CRM, or any future module)',
+      'Choose ANY ONE Nexora Business Module (Restaurant POS, Retail POS, School ERP, Transport, PharmaFlow, CRM, WhatsApp CRM, or any future module)',
       'Up to 2 Team Members',
       'Team Management (maximum 2 users)',
       'Role & Permission Management',
@@ -249,7 +249,7 @@ export const businessTypes = [
   'Restaurant POS',
   'Transport / Rental',
   'WhatsApp CRM',
-  'Medical Store POS',
+  'PharmaFlow',
 ]
 
 export const coreFinanceModules = ['invoices', 'payments', 'expenses', 'accounts', 'reports']
@@ -337,8 +337,8 @@ export const businessWorkspaceCatalog = [
   },
   {
     id: 'medical-store-pos',
-    type: 'Medical Store POS',
-    title: 'Medical Store POS',
+    type: 'PharmaFlow',
+    title: 'PharmaFlow',
     route: '/app/dashboard',
     description: 'Medicine inventory, batch tracking, billing, and sales history for pharmacies and medical stores.',
     modules: [
@@ -515,6 +515,12 @@ const businessTypeAliases = {
   'Transport / Logistics': 'Transport / Rental',
   'Software Agency': 'General CRM',
   'Custom Enterprise': 'General CRM',
+  // Legacy canonical value, renamed to 'PharmaFlow' — kept as an explicit
+  // alias (rather than relying on the 'medical'/'pharmacy'/'medicine' fuzzy
+  // fallback below) so existing workspaces with businessType stored as the
+  // literal old string (e.g. workspace ekvbpDEZYRdIHgEE7JNYDh26JX92) keep
+  // normalizing correctly without a Firestore data migration.
+  'Medical Store POS': 'PharmaFlow',
 }
 
 export const alwaysEnabledModules = ['dashboard', 'settings']
@@ -552,7 +558,7 @@ export function normalizeBusinessType(type) {
   if (value.includes('whatsapp')) return 'WhatsApp CRM'
   if (value.includes('restaurant') || value.includes('canteen') || value.includes('kot') || value.includes('kitchen')) return 'Restaurant POS'
   if (value.includes('transport') || value.includes('rental') || value.includes('fleet')) return 'Transport / Rental'
-  if (value.includes('medical') || value.includes('pharmacy') || value.includes('medicine')) return 'Medical Store POS'
+  if (value.includes('medical') || value.includes('pharmacy') || value.includes('medicine')) return 'PharmaFlow'
   if (value.includes('retail') || value.includes('inventory') || value.includes('pharma') || value === 'pos' || value.includes('pos')) return 'Retail / POS'
   return 'General CRM'
 }

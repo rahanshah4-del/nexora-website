@@ -779,7 +779,7 @@ ${buildGtm()}
       <h1>Nexora Solution Editorial Team</h1>
       <p>Nexora Solution is Pakistan's leading POS, ERP and CRM software platform. Our editorial team covers practical guides, best practices and industry insights for restaurants, retail stores, schools, pharmacies, transport companies and service businesses.</p>
       <h2>Expertise</h2>
-      <ul><li>Restaurant POS &amp; KOT Systems</li><li>Retail &amp; Inventory Management</li><li>School ERP &amp; Fee Management</li><li>CRM &amp; WhatsApp CRM</li><li>Transport &amp; Fleet Software</li><li>Pharmacy &amp; Medical Store POS</li><li>AI &amp; Business Automation</li><li>Cloud Security &amp; Data Protection</li></ul>
+      <ul><li>Restaurant POS &amp; KOT Systems</li><li>Retail &amp; Inventory Management</li><li>School ERP &amp; Fee Management</li><li>CRM &amp; WhatsApp CRM</li><li>Transport &amp; Fleet Software</li><li>Pharmacy &amp; PharmaFlow</li><li>AI &amp; Business Automation</li><li>Cloud Security &amp; Data Protection</li></ul>
       <h2>Published Articles</h2>
       <p>Visit the <a href="/blog/">Nexora Blog</a> for our complete article library.</p>
       <h2>Connect</h2>
@@ -1688,7 +1688,7 @@ function buildStaticShell(meta, path = '', articles = []) {
     </section>
     <section style="max-width:48rem;margin:0 auto;padding:2rem 1.25rem 3rem;text-align:center">
       <h2 style="font-size:1.5rem;font-weight:900;color:#0f172a">All Modules. One Platform. Unlimited Possibilities.</h2>
-      <p style="margin-top:1rem;font-size:1rem;color:#475569;line-height:1.7">Nexora offers POS, CRM, School ERP, Property ERP, Medical Store POS, Transport/Rental, WhatsApp CRM, Reports, and more — all from one unified dashboard.</p>
+      <p style="margin-top:1rem;font-size:1rem;color:#475569;line-height:1.7">Nexora offers POS, CRM, School ERP, Property ERP, PharmaFlow, Transport/Rental, WhatsApp CRM, Reports, and more — all from one unified dashboard.</p>
     </section>
     ${HOMEPAGE_CONTACT_SECTION}
   </main>

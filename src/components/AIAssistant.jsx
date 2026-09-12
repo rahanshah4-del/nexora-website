@@ -391,7 +391,7 @@ IMPORTANT: The user may refer to past conversations. If they ask what they asked
     restaurant: '🍽️ **Restaurant POS Features:**\n• Table Management & Floor Plan\n• KOT (Kitchen Order Ticket) System\n• Menu & Recipe Costing\n• Dine-in, Takeaway & Delivery\n• Split Bills & Discounts\n• Inventory & Wastage Tracking\n• Daily Sales Reports\n• Cashier Role Control\n• Online Order Integration\n• Customer Loyalty Program',
     retail: '🛍️ **Retail POS Features:**\n• Barcode Billing & Scanning\n• Multi-Store Inventory\n• Stock Movement & Transfers\n• Purchase & Supplier Management\n• Customer Loyalty Points\n• Cashier & Role Permissions\n• Sales & Profit Reports\n• Return & Exchange Management\n• GST/Tax Invoice Printing\n• Offline Mode Support',
     school: '📚 **School ERP Features:**\n• Student Admission & Records\n• Attendance Tracking (Biometric)\n• Fee Collection & Receipts\n• Exam & Grade Management\n• Timetable Scheduler\n• Parent Communication Portal\n• Staff Payroll Management\n• Library Management\n• Transport Route Tracking\n• Academic Reports & Analytics',
-    medical: '💊 **Medical Store POS Features:**\n• Medicine Inventory with Batches\n• Expiry Date Alerts\n• Alternative Medicine Suggestions\n• Prescription Billing\n• Supplier & Purchase Orders\n• FBR Tax Compliance\n• Sales & Profit Analytics\n• Multi-Store Support\n• Customer Purchase History\n• Low Stock Notifications',
+    medical: '💊 **PharmaFlow Features:**\n• Medicine Inventory with Batches\n• Expiry Date Alerts\n• Alternative Medicine Suggestions\n• Prescription Billing\n• Supplier & Purchase Orders\n• FBR Tax Compliance\n• Sales & Profit Analytics\n• Multi-Store Support\n• Customer Purchase History\n• Low Stock Notifications',
     transport: '🚛 **Transport Software Features:**\n• Fleet & Vehicle Management\n• Booking & Reservation System\n• Customer Ledger & Payments\n• Route & Trip Management\n• Driver Assignment & Tracking\n• Fuel & Maintenance Logs\n• Rental Billing (Daily/Weekly/Monthly)\n• Expense Tracking\n• Revenue & Profit Reports\n• SMS/WhatsApp Notifications',
     property: '🏢 **Property ERP Features:**\n• Tenant & Lease Management\n• Automated Rent Collection\n• Maintenance Request Tracking\n• Owner Payout Reports\n• Property Portfolio Dashboard\n• Document Management\n• Utility Bill Tracking\n• Vacancy Management\n• Income & Expense Reports\n• Tenant Communication Portal',
     crm: '📊 **CRM Features:**\n• Lead Capture & Tracking\n• Sales Pipeline Management\n• Customer Profiles & History\n• Invoice & Payment Tracking\n• Task & Follow-up Reminders\n• Team Performance Reports\n• Email & SMS Integration\n• Deal Stage Automation\n• Customer Segmentation\n• Analytics & Forecasting',
@@ -504,7 +504,7 @@ IMPORTANT: The user may refer to past conversations. If they ask what they asked
         if (featureAsk || t.includes('option') || t.includes('kia') || t.includes('kya')) {
           addMsg('ai', MODULE_FEATURES.medical + '\n\n💰 PKR 1,000/month (50% OFF) — free trial!')
         } else {
-          addMsg('ai', '💊 **Medical Store POS** is your solution! Batch tracking, expiry alerts & more.\n\n💰 PKR 1,000/month (50% OFF) — free trial!')
+          addMsg('ai', '💊 **PharmaFlow** is your solution! Batch tracking, expiry alerts & more.\n\n💰 PKR 1,000/month (50% OFF) — free trial!')
         }
       }
       // Transport detection

@@ -817,7 +817,7 @@ export default function DashboardHomePage() {
   const isRetail = normalizedBusinessType === 'Retail / POS'
   const isSalesHub = normalizedBusinessType === 'General CRM'
   const isTransport = normalizedBusinessType === 'Transport / Rental'
-  const isMedical = normalizedBusinessType === 'Medical Store POS'
+  const isMedical = normalizedBusinessType === 'PharmaFlow'
   const useCommonDashboardData = !isWhatsapp && !isRestaurant && !isTransport && !isRetail && !isMedical
   const invoicesApi = useInvoices({ limitCount: DASHBOARD_RECENT_LIMIT, enabled: useCommonDashboardData })
   const customersApi = useCustomers({ limitCount: DASHBOARD_RECENT_LIMIT, enabled: useCommonDashboardData })

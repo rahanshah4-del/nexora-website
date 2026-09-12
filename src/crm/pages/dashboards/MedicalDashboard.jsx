@@ -178,7 +178,7 @@ export default function MedicalDashboard({
   transactions = [],
   stats,
   loading = false,
-  businessTitle = 'Medical Store POS',
+  businessTitle = 'PharmaFlow',
   workspaceName = '',
   currency = 'PKR',
 }) {
@@ -407,7 +407,7 @@ export default function MedicalDashboard({
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-xs font-medium text-[#8B8A99]">{workspaceName || businessTitle}</p>
-          <h1 className="mt-1 text-2xl font-bold text-[#1F2230] sm:text-[1.75rem]">Medical Store POS</h1>
+          <h1 className="mt-1 text-2xl font-bold text-[#1F2230] sm:text-[1.75rem]">PharmaFlow</h1>
           <p className="mt-1 max-w-xl text-sm text-[#8B8A99]">
             Today's sales, batch expiry, and stock health for your pharmacy — all in one view.
           </p>

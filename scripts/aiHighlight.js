@@ -55,7 +55,7 @@ const BUSINESS_TERMS = [
   'fee management', 'table management', 'kitchen display', 'waitlist',
   'delivery zone', 'fleet management', 'loyalty program', 'discount engine',
   'Restaurant POS', 'Retail POS', 'School ERP', 'Property ERP',
-  'WhatsApp CRM', 'Medical Store POS', 'Transport Management',
+  'WhatsApp CRM', 'PharmaFlow', 'Transport Management',
   'Nexora', 'Nexora Solution', 'Pakistan',
 ]
 

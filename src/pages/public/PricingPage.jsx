@@ -62,7 +62,7 @@ function faqs(formatPrice) {
     ['Is there a free trial?', 'Yes. Start a free 1-month trial with full access to all Nexora modules, unlimited users and unlimited storage. No credit card required.'],
     ['Do I need a credit card to start?', 'No. Nexora lets you start a free trial without a credit card.'],
     ['What happens after the free trial?', `You can continue with Basic at ${formatPrice(1000)} with one business module and up to 2 users, or upgrade to Standard or Enterprise anytime.`],
-    ['Can I choose any business module on Basic?', 'Yes. Basic lets you pick any ONE Nexora Business Module — Restaurant POS, Retail POS, School ERP, Transport, Medical Store POS, CRM, WhatsApp CRM, or any future module.'],
+    ['Can I choose any business module on Basic?', 'Yes. Basic lets you pick any ONE Nexora Business Module — Restaurant POS, Retail POS, School ERP, Transport, PharmaFlow, CRM, WhatsApp CRM, or any future module.'],
     ['What are the Basic plan limits?', 'Basic allows one active module, up to 2 team members, and 5 GB of cloud storage.'],
     ['When should I upgrade to Standard?', 'Upgrade when your team needs more than 2 users, more than 5 GB storage, or priority support.'],
     ['Do yearly plans save money?', 'Yes. Yearly billing applies a 20% saving compared with monthly billing.'],

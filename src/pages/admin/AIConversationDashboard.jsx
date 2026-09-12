@@ -44,7 +44,7 @@ const PROVIDER_COST_PER_1M = { deepseek: 0.21, openai: 0.375, gemini: 0.25, clau
 
 const MODULES = [
   'Restaurant POS', 'Retail POS', 'School ERP', 'CRM', 'WhatsApp CRM',
-  'Inventory', 'Invoice', 'Transport', 'Property ERP', 'Medical Store POS',
+  'Inventory', 'Invoice', 'Transport', 'Property ERP', 'PharmaFlow',
   'Reports & Analytics', 'Team & Permissions', 'Email Marketing', 'General / Other',
 ]
 

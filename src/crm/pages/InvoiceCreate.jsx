@@ -131,7 +131,7 @@ export default function InvoiceCreatePage() {
   const { createInvoice, permissions } = useInvoices()
   const { settings: businessSettings } = useBusinessSettings()
   const { userDoc, userId, businessType } = useUser()
-  const isMedical = normalizeBusinessType(businessType) === 'Medical Store POS'
+  const isMedical = normalizeBusinessType(businessType) === 'PharmaFlow'
   // Both hooks are called unconditionally (each internally no-ops via
   // `enabled`) so the hook call order never changes across renders —
   // isMedical can only be known once businessType has loaded.

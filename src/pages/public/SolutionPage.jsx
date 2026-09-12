@@ -204,7 +204,7 @@ const solutionPages = {
     features: [
       ['Restaurant POS', 'Handle tables, quick bills, receipts, taxes and daily sales.', HiOutlineBuildingOffice2],
       ['Retail POS', 'Run barcode-ready sales, returns and stock movement.', HiOutlineShoppingCart],
-      ['Medical Store POS', 'Support fast item search, receipts and inventory checks.', HiOutlineShieldCheck],
+      ['PharmaFlow', 'Support fast item search, receipts and inventory checks.', HiOutlineShieldCheck],
       ['Mall POS', 'Operate multi-counter sales and branch-level summaries.', HiOutlineCloud],
       ['Inventory Management', 'Track products, stock alerts, pricing and movement.', HiOutlineChartBarSquare],
       ['Receipt Printing', 'Print, email or sync receipts into reports instantly.', HiOutlineDocumentChartBar],
@@ -342,7 +342,7 @@ const solutionPages = {
     benefits: ['Speed up pharmacy billing', 'Reduce expired stock loss', 'Keep medicine inventory accurate', 'Review sales and purchases faster'],
     useCases: ['Medical stores', 'Pharmacies', 'Clinic dispensaries', 'Wholesale medicine counters'],
     faqs: [
-      ['Can I track medicine expiry?', 'Yes. Medical Store POS workflows include batch and expiry visibility for pharmacy inventory.'],
+      ['Can I track medicine expiry?', 'Yes. PharmaFlow workflows include batch and expiry visibility for pharmacy inventory.'],
       ['Can I manage purchases and stock together?', 'Yes. Purchases, suppliers, medicine stock and counter sales stay connected in one workspace.'],
     ],
   },

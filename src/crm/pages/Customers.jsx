@@ -40,7 +40,7 @@ export default function CustomersPage() {
   const [search, setSearch] = useState('')
   const isSchool = normalizeBusinessType(businessType) === 'School ERP'
   const isRestaurant = normalizeBusinessType(businessType) === 'Restaurant POS'
-  const isMedical = normalizeBusinessType(businessType) === 'Medical Store POS'
+  const isMedical = normalizeBusinessType(businessType) === 'PharmaFlow'
 
   const filteredCustomers = useMemo(() => {
     const q = search.trim().toLowerCase()

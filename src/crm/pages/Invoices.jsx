@@ -150,7 +150,7 @@ export default function InvoicesPage() {
   const { settings: businessSettings } = useBusinessSettings()
   const { userDoc, userId, businessType } = useUser()
   const isSchool = normalizeBusinessType(businessType) === 'School ERP'
-  const isMedical = normalizeBusinessType(businessType) === 'Medical Store POS'
+  const isMedical = normalizeBusinessType(businessType) === 'PharmaFlow'
   const {
     invoices,
     payments,

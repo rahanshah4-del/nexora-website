@@ -889,7 +889,7 @@ export default function MedicalPosPage() {
               <h1>${escapeHtml(companyName)}</h1>
               ${address ? `<p class="muted">${escapeHtml(address)}</p>` : ''}
               ${phone ? `<p class="muted">${escapeHtml(phone)}</p>` : ''}
-              <span class="pill">Medical Store POS Receipt</span>
+              <span class="pill">PharmaFlow Receipt</span>
             </section>
             <section class="meta">
               <div class="row"><span>Order</span><strong>${escapeHtml(order.orderNumber)}</strong></div>
@@ -990,7 +990,7 @@ export default function MedicalPosPage() {
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <div className="flex items-center gap-2">
-                  <Badge variant="info">Medical Store POS</Badge>
+                  <Badge variant="info">PharmaFlow</Badge>
                   <Badge variant="success"><HiOutlineQueueList className="h-3.5 w-3.5" /> Queue linked</Badge>
                   <Badge variant={businessSettings?.barcodeScannerSettings?.enabled === false ? 'warning' : 'success'}>Scanner {businessSettings?.barcodeScannerSettings?.enabled === false ? 'off' : 'ready'}</Badge>
                 </div>

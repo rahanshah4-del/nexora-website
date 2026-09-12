@@ -441,9 +441,9 @@ function MedicalPosTillGate() {
     return (
       <div className="grid min-h-dvh place-items-center bg-slate-50 px-4">
         <div className="max-w-sm rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm">
-          <p className="text-sm font-semibold text-slate-950">Medical Store POS isn't available</p>
+          <p className="text-sm font-semibold text-slate-950">PharmaFlow isn't available</p>
           <p className="mt-2 text-sm text-slate-500">
-            This billing till is only available for workspaces on the Medical Store POS module and plan. Ask your workspace owner to enable it or upgrade your plan.
+            This billing till is only available for workspaces on the PharmaFlow module and plan. Ask your workspace owner to enable it or upgrade your plan.
           </p>
           <a href="/app/dashboard" className="mt-4 inline-block rounded-xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white">
             Back to Dashboard

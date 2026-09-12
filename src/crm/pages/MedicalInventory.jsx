@@ -621,7 +621,7 @@ export default function MedicalInventory() {
 
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-xs font-medium text-[#8B8A99]">Medical Store POS</p>
+          <p className="text-xs font-medium text-[#8B8A99]">PharmaFlow</p>
           <h1 className="mt-1 text-2xl font-bold text-[#1F2230] sm:text-[1.75rem]">Medicine Inventory</h1>
           <p className="mt-1 max-w-xl text-sm text-[#8B8A99]">
             Medicines, batches, expiry dates, suppliers, purchases and live stock value.

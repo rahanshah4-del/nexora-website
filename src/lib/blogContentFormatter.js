@@ -14,7 +14,7 @@ const BUSINESS_TERMS = [
   'inventory management', 'point of sale', 'customer relationship management',
   'enterprise resource planning', 'kitchen order ticket', 'barcode',
   'WhatsApp CRM', 'Restaurant POS', 'Retail POS', 'School ERP',
-  'Property ERP', 'Medical Store POS', 'Transport Management',
+  'Property ERP', 'PharmaFlow', 'Transport Management',
   'cloud-based', 'real-time', 'automation', 'dashboard',
   'analytics', 'reporting', 'payment gateway', 'ledger',
   'multi-currency', 'role-based access', 'two-factor authentication',

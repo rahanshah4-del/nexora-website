@@ -154,7 +154,7 @@ function orderRetailPosSidebar(items) {
   return [...items].sort((a, b) => rankFor(a) - rankFor(b))
 }
 
-// Medical Store POS workspace only: explicit leading sidebar order by module key,
+// PharmaFlow workspace only: explicit leading sidebar order by module key,
 // mirroring RETAIL_POS_SIDEBAR_ORDER above. Items not listed here keep their
 // current relative order; Settings always stays last.
 const MEDICAL_STORE_POS_SIDEBAR_ORDER = [
@@ -181,7 +181,7 @@ function orderMedicalStorePosSidebar(items) {
   return [...items].sort((a, b) => rankFor(a) - rankFor(b))
 }
 
-// Medical Store POS routes have no entry in ../../data/navigation.js, so the
+// PharmaFlow routes have no entry in ../../data/navigation.js, so the
 // sidebar item-building step below (which normally borrows its icon from a
 // matching navItems row) falls back to this local map instead.
 const MEDICAL_STORE_NAV_ICONS = {
@@ -817,9 +817,9 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
   const { accessPlan, businessType, userDoc, userId, firebaseUser, isAdmin: userIsAdmin, isOwner: userIsOwner, workspaceId, role } = useUser()
   const access = useWorkspaceAccess()
   const businessTitle = labelForBusinessType(businessType)
-  // Medical Store POS gets a dedicated pastel/dark-pill sidebar style — every
+  // PharmaFlow gets a dedicated pastel/dark-pill sidebar style — every
   // other business type keeps the existing indigo-pill look untouched.
-  const isMedicalTheme = normalizeBusinessType(businessType) === 'Medical Store POS'
+  const isMedicalTheme = normalizeBusinessType(businessType) === 'PharmaFlow'
   const developerOverride = isDeveloperOwnerAccount(userDoc, firebaseUser)
   const staffAccount = Boolean(userDoc?.isStaff === true || (access.isStaff && !userIsOwner && !userIsAdmin))
   const ownerAdminBypass = !staffAccount && Boolean(developerOverride || userIsOwner || userIsAdmin || access.isAdmin)
@@ -922,7 +922,7 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
             : normalizedType === 'Restaurant POS' ? orderRestaurantPosSidebar(disabledItems)
               : normalizedType === 'Transport / Rental' ? orderTransportRentalSidebar(disabledItems)
                 : normalizedType === 'WhatsApp CRM' ? orderWhatsappCrmSidebar(disabledItems)
-                  : normalizedType === 'Medical Store POS' ? orderMedicalStorePosSidebar(disabledItems)
+                  : normalizedType === 'PharmaFlow' ? orderMedicalStorePosSidebar(disabledItems)
                     : disabledItems
     // medicalPos opens as a standalone, chrome-free billing till in a new tab
     // (src/AppRouter.jsx "/pos-till/medical") instead of in-app navigation —

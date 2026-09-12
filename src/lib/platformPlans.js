@@ -103,7 +103,7 @@ export const defaultPlatformPlans = [
     recommended: false,
     badge: null,
     features: [
-      'Choose ANY ONE Nexora Business Module (Restaurant POS, Retail POS, School ERP, Transport, Medical Store POS, CRM, WhatsApp CRM, or any future module)',
+      'Choose ANY ONE Nexora Business Module (Restaurant POS, Retail POS, School ERP, Transport, PharmaFlow, CRM, WhatsApp CRM, or any future module)',
       'Up to 2 Team Members',
       'Team Management (maximum 2 users)',
       'Role & Permission Management',
