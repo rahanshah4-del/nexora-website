@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { HiOutlineArrowDownTray, HiOutlineBanknotes, HiOutlineBars3, HiOutlineCreditCard, HiOutlineCurrencyDollar, HiOutlineMagnifyingGlass, HiOutlinePencilSquare, HiOutlinePlus, HiOutlineSquares2X2, HiOutlineTrash, HiOutlineUserGroup, HiOutlineXCircle, HiOutlineXMark } from 'react-icons/hi2'
+import { HiOutlineArrowDownTray, HiOutlineBanknotes, HiOutlineBars3, HiOutlineCreditCard, HiOutlineCurrencyDollar, HiOutlineDocumentText, HiOutlineMagnifyingGlass, HiOutlinePencilSquare, HiOutlinePlus, HiOutlineSquares2X2, HiOutlineTrash, HiOutlineUserGroup, HiOutlineXCircle, HiOutlineXMark } from 'react-icons/hi2'
 import Button from '../components/ui/Button.jsx'
 import Card from '../components/ui/Card.jsx'
 import Input from '../components/ui/Input.jsx'
@@ -12,6 +12,7 @@ import Toast from '../components/ui/Toast.jsx'
 import { confirmAction } from '../components/ui/dialogActions.js'
 import EmptyState from '../components/system/EmptyState.jsx'
 import CustomerModal from '../components/customers/CustomerModal.jsx'
+import MedicalDueStatementDrawer from '../components/customers/MedicalDueStatementDrawer.jsx'
 import { useUser } from '../hooks/useUser.js'
 import { normalizeBusinessType } from '../data/moduleAccess.js'
 import { loadRestaurantCustomers, saveRestaurantCustomers } from '../data/restaurantCustomers.js'
@@ -29,10 +30,11 @@ function formatDate(value) {
 
 export default function CustomersPage() {
   const customersApi = useCustomers({ paginated: true, limitCount: 50 })
-  const { businessType } = useUser()
+  const { businessType, workspaceId } = useUser()
   const [createOpen, setCreateOpen] = useState(false)
   const [editingCustomer, setEditingCustomer] = useState(null)
   const [settleCustomer, setSettleCustomer] = useState(null)
+  const [statementCustomer, setStatementCustomer] = useState(null)
   const [settleDraft, setSettleDraft] = useState({ amount: '', paymentMethod: 'Cash', note: '' })
   const [settlingDue, setSettlingDue] = useState(false)
   const [deletingCustomerId, setDeletingCustomerId] = useState('')
@@ -224,6 +226,16 @@ export default function CustomersPage() {
                   onClick={() => openSettleDue(r)}
                 >
                   <HiOutlineBanknotes className="h-4 w-4" /> Settle Due
+                </Button>
+              ) : null}
+              {isMedical ? (
+                <Button
+                  type="button"
+                  variant="subtle"
+                  className="h-8 rounded-xl border-slate-200 bg-slate-50 px-3 text-xs text-slate-700 hover:bg-slate-100"
+                  onClick={() => setStatementCustomer(r)}
+                >
+                  <HiOutlineDocumentText className="h-4 w-4" /> Statement
                 </Button>
               ) : null}
               <Button
@@ -475,6 +487,13 @@ export default function CustomersPage() {
             </div>
           </form>
         </div>
+      ) : null}
+      {statementCustomer ? (
+        <MedicalDueStatementDrawer
+          customer={statementCustomer}
+          workspaceId={workspaceId}
+          onClose={() => setStatementCustomer(null)}
+        />
       ) : null}
     </motion.div>
   )

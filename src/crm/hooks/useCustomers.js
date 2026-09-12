@@ -1,11 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { collection, doc, serverTimestamp, writeBatch } from 'firebase/firestore'
+import { collection, doc, getDocs, limit as queryLimit, orderBy, query, serverTimestamp, where, writeBatch } from 'firebase/firestore'
 import { db } from '../lib/firebase.js'
 import { createUserDoc, fetchWorkspaceCollectionPage, listenToWorkspaceCollection, patchUserDoc, removeUserDoc, workspaceCollectionPath } from '../lib/firestore.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 import { useUser } from './useUser.js'
+import { useWorkspaceAccess } from './useWorkspaceAccess.js'
 import { clientSafeMessage } from '../utils/messages.js'
 import { createWorkspaceNotification } from '../lib/notifications.js'
+import { normalizeBusinessType } from '../data/moduleAccess.js'
+
+// FIFO allocation cap — a customer with more than this many still-open
+// dueAmount > 0 medicalPosOrders in a single settle is an extreme edge
+// case; capping keeps the pre-batch lookup query bounded and cheap.
+const MEDICAL_DUE_ORDER_LOOKUP_LIMIT = 200
 
 function normalizeCustomer(c) {
   return {
@@ -53,6 +60,7 @@ function mergeCustomerPages(currentRows, nextRows) {
 
 export function useCustomers({ limitCount = DEFAULT_CUSTOMER_LIST_LIMIT, paginated = false, enabled = true } = {}) {
   const { userId, workspaceId, businessType, userDoc, firebaseUser, role } = useUser()
+  const access = useWorkspaceAccess()
   const customerListLimit = safeCustomerListLimit(limitCount)
   const customerPageLimit = safeCustomerPageLimit(limitCount)
   const [rows, setRows] = useState([])
@@ -426,6 +434,62 @@ export function useCustomers({ limitCount = DEFAULT_CUSTOMER_LIST_LIMIT, paginat
         if (amount > currentDue) return { ok: false, error: 'Payment amount cannot be more than customer due.' }
         try {
           const nextDue = Math.max(0, currentDue - amount)
+
+          // ── Medical POS only: allocate this settlement across the
+          // customer's still-open medicalPosOrders (oldest first / FIFO),
+          // so each order's own dueAmount — and therefore MedicalPosOrders'
+          // "Due" KPI — stays accurate after a settlement instead of going
+          // stale. Every other business type (Restaurant/School/Retail)
+          // takes none of this path, so their settleCustomerDue writes stay
+          // byte-for-byte identical to before.
+          const isMedicalWorkspace = normalizeBusinessType(businessType) === 'PharmaFlow'
+          const allocations = []
+          const orderUpdates = []
+          if (isMedicalWorkspace) {
+            // Only attempt the order-linked writes when this user can
+            // actually edit medicalPosOrders — otherwise the whole batch
+            // (including the walletDue decrement) would be rejected by
+            // Firestore rules, which would regress a working settlement
+            // into a failing one. Skipping order-linking here still
+            // records the settlement exactly as before; it just can't
+            // reduce the individual orders' dueAmount for this caller.
+            const canEditMedicalOrders = access.isOwner || access.isAdmin
+              || access.hasModulePermission('medicalPosOrders', 'edit')
+              || access.hasModulePermission('medicalPos', 'edit')
+            if (canEditMedicalOrders) {
+              try {
+                const dueOrdersSnap = await getDocs(query(
+                  collection(db, workspaceCollectionPath(workspaceId, 'medicalPosOrders')),
+                  where('customerId', '==', customer.id),
+                  orderBy('createdAt', 'asc'),
+                  queryLimit(MEDICAL_DUE_ORDER_LOOKUP_LIMIT),
+                ))
+                let remaining = amount
+                for (const orderSnap of dueOrdersSnap.docs) {
+                  if (remaining <= 0) break
+                  const order = orderSnap.data()
+                  const isRefunded = order.refundStatus === 'refunded' || Boolean(order.refundedAt)
+                  const orderDue = Number(order.dueAmount || 0)
+                  if (isRefunded || orderDue <= 0) continue
+                  const applied = Math.min(orderDue, remaining)
+                  const orderDueAfter = orderDue - applied
+                  allocations.push({ orderId: orderSnap.id, orderNumber: order.orderNumber || '', amountApplied: applied })
+                  orderUpdates.push({
+                    ref: doc(db, workspaceCollectionPath(workspaceId, 'medicalPosOrders'), orderSnap.id),
+                    dueAmount: orderDueAfter,
+                    paymentStatus: orderDueAfter > 0 ? 'partial' : 'paid',
+                  })
+                  remaining -= applied
+                }
+              } catch (lookupError) {
+                // Best-effort — settlement still proceeds without order-linking.
+                console.warn('[Customers] medicalPosOrders due lookup failed; settling without order-linking', lookupError?.message || lookupError)
+                allocations.length = 0
+                orderUpdates.length = 0
+              }
+            }
+          }
+
           const batch = writeBatch(db)
           const customerRef = doc(db, workspaceCollectionPath(workspaceId, 'customers'), customer.id)
           const paymentRef = doc(collection(db, workspaceCollectionPath(workspaceId, 'posWalletPayments')))
@@ -434,6 +498,13 @@ export function useCustomers({ limitCount = DEFAULT_CUSTOMER_LIST_LIMIT, paginat
             lastWalletPaymentAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
             updatedBy: userId,
+          })
+          orderUpdates.forEach(({ ref, dueAmount, paymentStatus }) => {
+            batch.update(ref, {
+              dueAmount,
+              paymentStatus,
+              updatedAt: serverTimestamp(),
+            })
           })
           batch.set(paymentRef, {
             customerId: customer.id,
@@ -452,6 +523,7 @@ export function useCustomers({ limitCount = DEFAULT_CUSTOMER_LIST_LIMIT, paginat
             createdBy: userId,
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
+            ...(isMedicalWorkspace ? { allocations } : {}),
           })
           await batch.commit()
           setRows((currentRows) => currentRows.map((row) => (row.id === customer.id ? normalizeCustomer({ ...row, walletDue: nextDue, lastWalletPaymentAt: new Date().toISOString() }) : row)))
@@ -513,7 +585,7 @@ export function useCustomers({ limitCount = DEFAULT_CUSTOMER_LIST_LIMIT, paginat
         }
       },
     }),
-    [rows, loading, paginationLoading, hasMoreCustomers, customerPage, customerPageLimit, customerListLimit, loadMoreCustomers, source, error, businessType, firebaseUser, role, userDoc, userId, workspaceId, paginated, prependLoadedCustomer],
+    [rows, loading, paginationLoading, hasMoreCustomers, customerPage, customerPageLimit, customerListLimit, loadMoreCustomers, source, error, businessType, firebaseUser, role, userDoc, userId, workspaceId, paginated, prependLoadedCustomer, access],
   )
 
   return api
