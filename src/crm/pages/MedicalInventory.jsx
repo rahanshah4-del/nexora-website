@@ -3,6 +3,7 @@ import {
   HiOutlineArrowPath,
   HiOutlineArrowDownTray,
   HiOutlineCalendarDays,
+  HiOutlineChartBar,
   HiOutlineCircleStack,
   HiOutlineClipboardDocumentList,
   HiOutlineCurrencyDollar,
@@ -28,6 +29,7 @@ import { useCategories } from '../hooks/useCategories.js'
 import { useSuppliers } from '../hooks/useSuppliers.js'
 import { usePurchases } from '../hooks/usePurchases.js'
 import { useAccountTransactions } from '../hooks/useAccountTransactions.js'
+import { useMedicalPosOrders } from '../hooks/useMedicalPosOrders.js'
 import { calculateSuppliersPayableSummary } from '../lib/financeCalculations.js'
 import {
   MOVEMENT_TYPES,
@@ -544,6 +546,11 @@ export default function MedicalInventory() {
   const purchasesApi = usePurchases()
   const transactionsApi = useInventoryTransactions()
   const accountApi = useAccountTransactions({ enabled: true, limitCount: 50 })
+  // Reports tab only — a wider sample than the Medical POS Orders page's own
+  // 100-order list, for a more representative profit report. Same 500 cap
+  // already used elsewhere in this codebase for "give me a lot, but still
+  // bounded" reporting queries (see useRestaurantRefunds.js's MAXIMUM_LIMIT).
+  const medicalOrdersApi = useMedicalPosOrders({ limitCount: 500 })
 
   const { medicines } = medicineApi
   const stats = useInventoryStats(medicines, transactionsApi.transactions)
@@ -741,7 +748,7 @@ export default function MedicalInventory() {
       ) : null}
 
       {tab === 'reports' ? (
-        <ReportsTab medicines={medicines} purchases={purchasesApi.purchases} transactions={transactionsApi.transactions} stats={stats} currency={currency} />
+        <ReportsTab medicines={medicines} purchases={purchasesApi.purchases} transactions={transactionsApi.transactions} orders={medicalOrdersApi.orders} stats={stats} currency={currency} />
       ) : null}
 
       {/* Modals — shared components, styled as they are everywhere else */}
@@ -1217,8 +1224,49 @@ function TransactionsTab({ transactions, typeFilter, onTypeFilter }) {
   )
 }
 
-function ReportsTab({ medicines, purchases, transactions, stats, currency }) {
+function ReportsTab({ medicines, purchases, transactions, orders, stats, currency }) {
   const tracked = medicines.filter(isStockTracked)
+
+  // Refunded sales carry no real profit — exclude them from every profit
+  // calculation below, same filter used by MedicalPosOrders.jsx/MedicalDashboard.jsx.
+  const nonRefundedOrders = (orders || []).filter((o) => o.refundStatus !== 'refunded' && !o.refundedAt)
+
+  const profitByMedicine = (() => {
+    const totals = new Map()
+    nonRefundedOrders.forEach((order) => {
+      const items = Array.isArray(order.items) ? order.items : []
+      items.forEach((item) => {
+        // Group by productId; fall back to name if productId is ever missing
+        // (e.g. an older/manually-adjusted order) so the row isn't dropped —
+        // same null-safety pattern as MedicalDashboard's Top-selling medicines.
+        const key = item.productId || item.name || 'unknown'
+        const existing = totals.get(key) || { key, name: item.name || 'Unnamed medicine', quantity: 0, revenue: 0, cost: 0 }
+        const quantity = Number(item.quantity || 0)
+        existing.quantity += quantity
+        existing.revenue += Number(item.lineTotal ?? Number(item.price || 0) * quantity) || 0
+        existing.cost += Number(item.costPrice || 0) * quantity
+        totals.set(key, existing)
+      })
+    })
+    return Array.from(totals.values())
+      .map((row) => {
+        const profit = row.revenue - row.cost
+        return { ...row, profit, margin: row.revenue > 0 ? (profit / row.revenue) * 100 : 0 }
+      })
+      .sort((a, b) => b.profit - a.profit)
+  })()
+
+  // Same "profit" definition MedicalPosOrders.jsx's own KPI already uses
+  // (order.total − order.cost, so tax/discount flow through it exactly as
+  // they do there) — kept consistent rather than re-deriving a different
+  // number from item-level totals, which exclude tax/discount by design.
+  const profitSummary = nonRefundedOrders.reduce((summary, order) => {
+    summary.revenue += Number(order.total || 0)
+    summary.cost += Number(order.cost || 0)
+    summary.profit += Number(order.profit || 0)
+    return summary
+  }, { revenue: 0, cost: 0, profit: 0 })
+  profitSummary.margin = profitSummary.revenue > 0 ? (profitSummary.profit / profitSummary.revenue) * 100 : 0
 
   const reports = [
     {
@@ -1279,6 +1327,15 @@ function ReportsTab({ medicines, purchases, transactions, stats, currency }) {
         Type: movementLabel(t.type), Medicine: t.productName, Quantity: t.quantity, Change: t.delta, Balance: t.newQuantity, Note: t.note,
       })),
     },
+    {
+      key: 'profit-by-medicine',
+      title: 'Profit by medicine',
+      description: 'Revenue, cost, and margin per medicine from completed Medical POS sales — most profitable first.',
+      icon: HiOutlineChartBar,
+      rows: () => profitByMedicine.map((row) => ({
+        Medicine: row.name, QuantitySold: row.quantity, Revenue: row.revenue, Cost: row.cost, Profit: row.profit, MarginPercent: row.margin,
+      })),
+    },
   ]
 
   return (
@@ -1287,6 +1344,18 @@ function ReportsTab({ medicines, purchases, transactions, stats, currency }) {
         <KpiCard tint={KPI_TINTS[0]} value={formatCurrency(stats.inventoryValue, currency)} label="Value at cost" />
         <KpiCard tint={KPI_TINTS[1]} value={formatCurrency(stats.retailValue, currency)} label="Value at retail" />
         <KpiCard tint={KPI_TINTS[2]} value={formatCurrency(stats.potentialMargin, currency)} label="Potential margin" />
+      </div>
+
+      <div>
+        <p className="mb-3 text-xs font-medium uppercase tracking-[0.08em] text-[#8B8A99]">
+          Sales profit — {nonRefundedOrders.length} completed Medical POS orders loaded
+        </p>
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <KpiCard tint={KPI_TINTS[3]} value={formatCurrency(profitSummary.revenue, currency)} label="Total revenue" />
+          <KpiCard tint={KPI_TINTS[0]} value={formatCurrency(profitSummary.cost, currency)} label="Total cost" />
+          <KpiCard tint={KPI_TINTS[1]} value={formatCurrency(profitSummary.profit, currency)} label="Total profit" />
+          <KpiCard tint={KPI_TINTS[2]} value={`${profitSummary.margin.toFixed(1)}%`} label="Overall margin" />
+        </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
