@@ -218,6 +218,20 @@ export default function MedicalPosPage() {
   const [rxConfirmPending, setRxConfirmPending] = useState(false)
   const rxAcknowledgedSignatureRef = useRef(null)
   const pendingSubmitArgsRef = useRef({ shouldPrint: false, shiftOverride: null })
+
+  /* Heartbeat — lets the sidebar (in the dashboard tab) know this Medical POS
+     Billing tab is open, so it can warn before opening a second one. Uses its
+     own 'medicalPosTill' key (distinct from Restaurant's 'posTill' key) so the
+     two business types' tab-detection never collide or get confused.
+     localStorage, not sessionStorage: this till opens in a separate tab and
+     sessionStorage is per-tab, so it would never see this heartbeat. */
+  useEffect(() => {
+    const beat = () => { try { localStorage.setItem('nexora:medicalPosTill:open', String(Date.now())) } catch { /* quota — ignore */ } }
+    beat()
+    const pulse = setInterval(beat, 3000)
+    return () => { clearInterval(pulse); try { localStorage.removeItem('nexora:medicalPosTill:open') } catch { /* ignore */ } }
+  }, [])
+
   const activePromoCodes = businessSettings?.medicalPosPromos || {}
   const medicalPosSettings = businessSettings?.medicalPos || {}
 

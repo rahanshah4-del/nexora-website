@@ -345,7 +345,25 @@ const SidebarNavItem = memo(function SidebarNavItem({ item, collapsed, onNavigat
   const featureKey = featureKeyForRoute(item.to)
   const showBadge = featureKey && isNew(featureKey)
 
-  function handleNav() {
+  function handleNav(e) {
+    /* Medical POS Billing only: warn if the till already appears open in
+       another tab, via the 'nexora:medicalPosTill:open' heartbeat written by
+       MedicalPos.jsx every 3s. Scoped strictly to item.key === 'medicalPos'
+       so no other item (including Retail POS's own openInNewWindow entry)
+       is affected. Mirrors Restaurant's 8s staleness window so a crashed/
+       force-closed till tab doesn't permanently block reopening. */
+    if (item.key === 'medicalPos') {
+      let ts = null
+      try { ts = localStorage.getItem('nexora:medicalPosTill:open') } catch { /* ignore */ }
+      const age = ts ? Date.now() - Number(ts) : Infinity
+      if (age <= 8000) {
+        const proceed = window.confirm('Medical POS Billing is already open in another tab. Open another window anyway?')
+        if (!proceed) {
+          e.preventDefault()
+          return
+        }
+      }
+    }
     if (featureKey) markSeen(featureKey)
     onNavigate?.()
   }
