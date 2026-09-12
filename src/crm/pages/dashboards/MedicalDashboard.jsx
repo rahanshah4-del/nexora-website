@@ -37,6 +37,23 @@ function expiryState(value) {
   return { tone: 'valid', label: 'Valid' }
 }
 
+// 3-tier bucketing for the "Expiring soon breakdown" panel. Deliberately a
+// separate helper rather than a change to expiryState() above — that
+// single-cutoff helper is still used as-is by expiringSoonCount/
+// expiringMedicines and the Low stock & expiring soon panel's row tinting
+// further down in the component, so its existing behavior is untouched.
+function expiryTierState(value) {
+  if (!value) return { tier: 'none', daysLeft: null }
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return { tier: 'none', daysLeft: null }
+  const daysLeft = Math.ceil((date.getTime() - Date.now()) / 86400000)
+  if (daysLeft < 0) return { tier: 'expired', daysLeft }
+  if (daysLeft <= 30) return { tier: 'tier30', daysLeft }
+  if (daysLeft <= 60) return { tier: 'tier60', daysLeft }
+  if (daysLeft <= 90) return { tier: 'tier90', daysLeft }
+  return { tier: 'valid', daysLeft }
+}
+
 function dateValue(value) {
   if (!value) return null
   const date = typeof value?.toDate === 'function' ? value.toDate() : new Date(value)
@@ -178,6 +195,36 @@ export default function MedicalDashboard({
   const todaySales = useMemo(() => todayOrders.reduce((sum, o) => sum + Number(o.paidAmount || 0), 0), [todayOrders])
   const recentOrders = useMemo(() => nonRefundedOrders.slice(0, 6), [nonRefundedOrders])
 
+  // ── Wider order query, shared by every time-range-aware section below ──
+  // (Sales breakdown donut, Top-selling medicines, Revenue comparison). The
+  // `orders` prop above is capped at DASHBOARD_RECENT_LIMIT (25, set by
+  // DashboardHome.jsx) — too few for accurate week/month aggregation once a
+  // pharmacy does more than ~25 sales in a period. Rather than thread a
+  // wider limit back through DashboardHome.jsx's existing prop list, this
+  // is a self-contained, wider order query (up to 500 most recent orders —
+  // ordering is already createdAt/desc inside useMedicalPosOrders.js
+  // itself, so no orderByField/orderDirection option exists to pass here).
+  // Additional Firestore read cost, scoped only to this component.
+  const wideOrdersApi = useMedicalPosOrders({ limitCount: 500 })
+  const wideNonRefundedOrders = useMemo(
+    () => wideOrdersApi.orders.filter((o) => o.refundStatus !== 'refunded' && !o.refundedAt),
+    [wideOrdersApi.orders],
+  )
+
+  // Shared by Sales breakdown, Top-selling medicines & Revenue comparison:
+  // 'week' = rolling 7 days, 'month' = rolling 30 days (same rolling-window
+  // approach as Sales Overview's last7Days below).
+  const [rangeMode, setRangeMode] = useState('week')
+
+  const rangeWindowOrders = useMemo(() => {
+    const windowMs = (rangeMode === 'month' ? 30 : 7) * DAY_MS
+    const cutoff = Date.now() - windowMs
+    return wideNonRefundedOrders.filter((order) => {
+      const created = dateValue(order.createdAt)
+      return created && created.getTime() > cutoff
+    })
+  }, [wideNonRefundedOrders, rangeMode])
+
   const expiringSoonCount = useMemo(
     () => medicines.filter((medicine) => ['expiring', 'expired'].includes(expiryState(medicine.expiryDate).tone)).length,
     [medicines],
@@ -191,11 +238,32 @@ export default function MedicalDashboard({
     [safeStats.outOfStockItems, safeStats.lowStockItems],
   )
 
+  const expiryBreakdown = useMemo(() => {
+    const buckets = {
+      expired: { count: 0, value: 0 },
+      tier30: { count: 0, value: 0 },
+      tier60: { count: 0, value: 0 },
+      tier90: { count: 0, value: 0 },
+    }
+    medicines.forEach((medicine) => {
+      const { tier } = expiryTierState(medicine.expiryDate)
+      if (!buckets[tier]) return
+      buckets[tier].count += 1
+      buckets[tier].value += Number(medicine.costPrice || 0) * Number(medicine.stockQuantity || 0)
+    })
+    return buckets
+  }, [medicines])
+
   // "Sales Breakdown" donut — grouped by paymentMethod (the field that
-  // actually exists on medicalPosOrders; see useMedicalPosOrders.js), using
-  // today's orders when there are any, otherwise falling back to the most
-  // recent loaded orders so the chart isn't empty for a quiet day.
-  const chartOrders = todayOrders.length ? todayOrders : nonRefundedOrders
+  // actually exists on medicalPosOrders; see useMedicalPosOrders.js).
+  // Shares the rangeMode toggle above with Top-selling medicines/Revenue
+  // comparison, sourced from the wider rangeWindowOrders query so all three
+  // time-range-aware sections agree on what "this week"/"this month" means.
+  // While the wider query is still loading, fall back to today's (already-
+  // loaded) orders so the donut doesn't flash empty.
+  const chartOrders = wideOrdersApi.loading
+    ? (todayOrders.length ? todayOrders : nonRefundedOrders)
+    : rangeWindowOrders
   const paymentBreakdown = useMemo(() => {
     const totals = new Map()
     chartOrders.forEach((order) => {
@@ -238,37 +306,11 @@ export default function MedicalDashboard({
   }, [nonRefundedOrders])
 
   // ── Top-selling medicines & Revenue comparison ──────────────────────────
-  // Both need accurate week/month totals, and the `orders` prop above is
-  // capped at DASHBOARD_RECENT_LIMIT (25, set by DashboardHome.jsx) — too few
-  // once a pharmacy does more than ~25 sales in a period. Rather than thread
-  // a wider limit back through DashboardHome.jsx's existing prop list, these
-  // two sections use their own, self-contained, wider order query (up to
-  // 500 most recent orders — ordering is already createdAt/desc inside
-  // useMedicalPosOrders.js itself, so no orderByField/orderDirection option
-  // exists to pass here). This is an additional Firestore read scoped only
-  // to this component.
-  const wideOrdersApi = useMedicalPosOrders({ limitCount: 500 })
-  const wideNonRefundedOrders = useMemo(
-    () => wideOrdersApi.orders.filter((o) => o.refundStatus !== 'refunded' && !o.refundedAt),
-    [wideOrdersApi.orders],
-  )
-
-  // Shared by both sections below: 'week' = rolling 7 days, 'month' = rolling
-  // 30 days (same rolling-window approach as Sales Overview's last7Days).
-  const [rangeMode, setRangeMode] = useState('week')
-
-  const topSellingOrders = useMemo(() => {
-    const windowMs = (rangeMode === 'month' ? 30 : 7) * DAY_MS
-    const cutoff = Date.now() - windowMs
-    return wideNonRefundedOrders.filter((order) => {
-      const created = dateValue(order.createdAt)
-      return created && created.getTime() > cutoff
-    })
-  }, [wideNonRefundedOrders, rangeMode])
-
+  // Both reuse wideOrdersApi/wideNonRefundedOrders/rangeMode/rangeWindowOrders
+  // declared above (shared with the Sales breakdown donut).
   const topSellingMedicines = useMemo(() => {
     const totals = new Map()
-    topSellingOrders.forEach((order) => {
+    rangeWindowOrders.forEach((order) => {
       const items = Array.isArray(order.items) ? order.items : []
       items.forEach((item) => {
         // Group by productId; fall back to name if productId is ever missing
@@ -283,7 +325,7 @@ export default function MedicalDashboard({
     return Array.from(totals.values())
       .sort((a, b) => b.revenue - a.revenue)
       .slice(0, 5)
-  }, [topSellingOrders])
+  }, [rangeWindowOrders])
 
   const revenueComparison = useMemo(() => {
     if (rangeMode === 'month') {
@@ -350,7 +392,31 @@ export default function MedicalDashboard({
         />
       </div>
 
-      <div className="mt-6 grid gap-4 lg:grid-cols-2">
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-2">
+        <p className="text-xs font-medium text-[#8B8A99]">Time range for sales breakdown, top-selling medicines &amp; revenue growth</p>
+        <div className="inline-flex items-center gap-1 rounded-xl bg-white p-1 shadow-sm">
+          {[
+            { key: 'week', label: 'This week' },
+            { key: 'month', label: 'This month' },
+          ].map((opt) => (
+            <button
+              key={opt.key}
+              type="button"
+              onClick={() => setRangeMode(opt.key)}
+              className="rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors"
+              style={
+                rangeMode === opt.key
+                  ? { backgroundColor: PASTEL.dark, color: '#fff' }
+                  : { backgroundColor: 'transparent', color: PASTEL.muted }
+              }
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-3 grid gap-4 lg:grid-cols-2">
         <PastelPanel>
           <PanelHeading>Sales breakdown</PanelHeading>
           {loading ? (
@@ -407,31 +473,7 @@ export default function MedicalDashboard({
         </PastelPanel>
       </div>
 
-      <div className="mt-6 flex flex-wrap items-center justify-between gap-2">
-        <p className="text-xs font-medium text-[#8B8A99]">Top-selling medicines &amp; revenue growth</p>
-        <div className="inline-flex items-center gap-1 rounded-xl bg-white p-1 shadow-sm">
-          {[
-            { key: 'week', label: 'This week' },
-            { key: 'month', label: 'This month' },
-          ].map((opt) => (
-            <button
-              key={opt.key}
-              type="button"
-              onClick={() => setRangeMode(opt.key)}
-              className="rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors"
-              style={
-                rangeMode === opt.key
-                  ? { backgroundColor: PASTEL.dark, color: '#fff' }
-                  : { backgroundColor: 'transparent', color: PASTEL.muted }
-              }
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="mt-3 grid gap-4 lg:grid-cols-2">
+      <div className="mt-6 grid gap-4 lg:grid-cols-2">
         <PastelPanel>
           <PanelHeading>Top-selling medicines</PanelHeading>
           {wideOrdersApi.loading ? (
@@ -497,6 +539,36 @@ export default function MedicalDashboard({
             </div>
           )}
         </PastelPanel>
+      </div>
+
+      <div className="mt-6">
+        <PanelHeading>Expiring soon (30/60/90 days)</PanelHeading>
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <PastelKpiCard
+            tint={PASTEL.coral}
+            label="Expired"
+            value={loading ? '—' : expiryBreakdown.expired.count}
+            hint={loading ? '' : `${formatCurrency(expiryBreakdown.expired.value, currency)} at cost`}
+          />
+          <PastelKpiCard
+            tint={`${PASTEL.amber}80`}
+            label="Expiring ≤30 days"
+            value={loading ? '—' : expiryBreakdown.tier30.count}
+            hint={loading ? '' : `${formatCurrency(expiryBreakdown.tier30.value, currency)} at cost`}
+          />
+          <PastelKpiCard
+            tint={`${PASTEL.amber}55`}
+            label="Expiring 31-60 days"
+            value={loading ? '—' : expiryBreakdown.tier60.count}
+            hint={loading ? '' : `${formatCurrency(expiryBreakdown.tier60.value, currency)} at cost`}
+          />
+          <PastelKpiCard
+            tint={`${PASTEL.amber}33`}
+            label="Expiring 61-90 days"
+            value={loading ? '—' : expiryBreakdown.tier90.count}
+            hint={loading ? '' : `${formatCurrency(expiryBreakdown.tier90.value, currency)} at cost`}
+          />
+        </div>
       </div>
 
       <div className="mt-6 grid gap-4 lg:grid-cols-2">
