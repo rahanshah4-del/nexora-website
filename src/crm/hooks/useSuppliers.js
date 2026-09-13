@@ -42,7 +42,7 @@ function sanitizeSupplier(payload) {
 }
 
 export function useSuppliers() {
-  const { userId, workspaceId, businessType, userDoc, firebaseUser } = useUser()
+  const { userId, workspaceId, businessType, userDoc, firebaseUser, activeBranchId } = useUser()
   const [suppliers, setSuppliers] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -91,7 +91,7 @@ export function useSuppliers() {
         const supplier = sanitizeSupplier(payload)
         if (!supplier.name) return { ok: false, error: 'Supplier name is required' }
         try {
-          const ref = await createUserDoc(workspaceId, 'suppliers', { ...supplier, createdBy: userId }, { businessType })
+          const ref = await createUserDoc(workspaceId, 'suppliers', { ...supplier, branchId: activeBranchId || null, createdBy: userId }, { businessType })
           await logActivity({
             workspaceId,
             userId,
@@ -156,6 +156,6 @@ export function useSuppliers() {
         }
       },
     }),
-    [suppliers, loading, error, businessType, firebaseUser, userDoc, userId, workspaceId],
+    [suppliers, loading, error, businessType, firebaseUser, userDoc, userId, workspaceId, activeBranchId],
   )
 }

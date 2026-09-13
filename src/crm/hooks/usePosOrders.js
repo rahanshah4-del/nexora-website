@@ -216,7 +216,7 @@ async function retryFailedOrders(workspaceId, userId, ordersRef, limitCount) {
 }
 
 export function usePosOrders(options = {}) {
-  const { workspaceId, userId, staffId, role, userDoc, firebaseUser, isOwner, isAdmin, isStaff } = useUser()
+  const { workspaceId, userId, staffId, role, userDoc, firebaseUser, isOwner, isAdmin, isStaff, activeBranchId } = useUser()
   const access = useWorkspaceAccess()
   const enabled = options.enabled !== false
   const effectiveBusinessType = options.businessType || POS_BUSINESS_TYPE
@@ -357,7 +357,7 @@ export function usePosOrders(options = {}) {
         createdByRole,
         createdByStaff: staffSale,
         registerId: payload.registerId || payload.shiftId || '',
-        branchId: payload.branchId || '',
+        branchId: activeBranchId || null,
       }
       const firestorePayload = {
         ...payload,
@@ -401,7 +401,7 @@ export function usePosOrders(options = {}) {
     } finally {
       submittingRef.current = false
     }
-  }, [access, effectiveBusinessType, firebaseUser, isAdmin, isOwner, isStaff, role, staffId, userDoc, userId, workspaceId])
+  }, [access, activeBranchId, effectiveBusinessType, firebaseUser, isAdmin, isOwner, isStaff, role, staffId, userDoc, userId, workspaceId])
 
   const deleteOrder = useCallback(async (id) => {
     if (!id) return { ok: false, error: 'Order ID is required.' }

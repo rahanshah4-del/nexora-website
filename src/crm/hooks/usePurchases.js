@@ -91,7 +91,7 @@ function sanitizePurchase(payload) {
 }
 
 export function usePurchases() {
-  const { userId, workspaceId, businessType, userDoc, firebaseUser } = useUser()
+  const { userId, workspaceId, businessType, userDoc, firebaseUser, activeBranchId } = useUser()
   const [purchases, setPurchases] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -141,7 +141,7 @@ export function usePurchases() {
         if (!purchase.supplierName && !purchase.supplierId) return { ok: false, error: 'Select a supplier' }
         if (!purchase.items.length) return { ok: false, error: 'Add at least one product line' }
         try {
-          const ref = await createUserDoc(workspaceId, 'purchases', { ...purchase, createdBy: userId }, { businessType })
+          const ref = await createUserDoc(workspaceId, 'purchases', { ...purchase, branchId: activeBranchId || null, createdBy: userId }, { businessType })
           await logActivity({
             workspaceId,
             userId,
@@ -491,6 +491,6 @@ export function usePurchases() {
         }
       },
     }),
-    [purchases, loading, error, businessType, firebaseUser, userDoc, userId, workspaceId],
+    [purchases, loading, error, businessType, firebaseUser, userDoc, userId, workspaceId, activeBranchId],
   )
 }

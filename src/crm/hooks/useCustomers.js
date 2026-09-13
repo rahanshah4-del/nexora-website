@@ -59,7 +59,7 @@ function mergeCustomerPages(currentRows, nextRows) {
 }
 
 export function useCustomers({ limitCount = DEFAULT_CUSTOMER_LIST_LIMIT, paginated = false, enabled = true } = {}) {
-  const { userId, workspaceId, businessType, userDoc, firebaseUser, role } = useUser()
+  const { userId, workspaceId, businessType, userDoc, firebaseUser, role, activeBranchId } = useUser()
   const access = useWorkspaceAccess()
   const customerListLimit = safeCustomerListLimit(limitCount)
   const customerPageLimit = safeCustomerPageLimit(limitCount)
@@ -289,6 +289,7 @@ export function useCustomers({ limitCount = DEFAULT_CUSTOMER_LIST_LIMIT, paginat
             customerType: customerType || 'General',
             status: status || 'Active',
             notes,
+            branchId: activeBranchId || null,
             createdBy: userId,
           }, { businessType, diagnostics: { currentUserUid: userId, role } })
           if (paginated) {
@@ -585,7 +586,7 @@ export function useCustomers({ limitCount = DEFAULT_CUSTOMER_LIST_LIMIT, paginat
         }
       },
     }),
-    [rows, loading, paginationLoading, hasMoreCustomers, customerPage, customerPageLimit, customerListLimit, loadMoreCustomers, source, error, businessType, firebaseUser, role, userDoc, userId, workspaceId, paginated, prependLoadedCustomer, access],
+    [rows, loading, paginationLoading, hasMoreCustomers, customerPage, customerPageLimit, customerListLimit, loadMoreCustomers, source, error, businessType, firebaseUser, role, userDoc, userId, workspaceId, paginated, prependLoadedCustomer, access, activeBranchId],
   )
 
   return api

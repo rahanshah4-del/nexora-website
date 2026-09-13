@@ -268,7 +268,7 @@ async function retryFailedOrders(workspaceId, userId, ordersRef, limitCount) {
 }
 
 export function useMedicalPosOrders(options = {}) {
-  const { workspaceId, userId, staffId, role, userDoc, firebaseUser, isOwner, isAdmin, isStaff } = useUser()
+  const { workspaceId, userId, staffId, role, userDoc, firebaseUser, isOwner, isAdmin, isStaff, activeBranchId } = useUser()
   const access = useWorkspaceAccess()
   const enabled = options.enabled !== false
   const effectiveBusinessType = options.businessType || MEDICAL_POS_BUSINESS_TYPE
@@ -409,7 +409,7 @@ export function useMedicalPosOrders(options = {}) {
         createdByRole,
         createdByStaff: staffSale,
         registerId: payload.registerId || payload.shiftId || '',
-        branchId: payload.branchId || '',
+        branchId: activeBranchId || null,
       }
       const firestorePayload = {
         ...payload,
@@ -453,7 +453,7 @@ export function useMedicalPosOrders(options = {}) {
     } finally {
       submittingRef.current = false
     }
-  }, [access, effectiveBusinessType, firebaseUser, isAdmin, isOwner, isStaff, role, staffId, userDoc, userId, workspaceId])
+  }, [access, activeBranchId, effectiveBusinessType, firebaseUser, isAdmin, isOwner, isStaff, role, staffId, userDoc, userId, workspaceId])
 
   const deleteOrder = useCallback(async (id) => {
     if (!id) return { ok: false, error: 'Order ID is required.' }
