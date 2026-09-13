@@ -1621,21 +1621,34 @@ function BranchesSettingsCard({ canManageSettings }) {
   const [togglingId, setTogglingId] = useState('')
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
+  const [addBranchError, setAddBranchError] = useState(null)
 
   async function handleCreate(event) {
     event.preventDefault()
     if (!canManageSettings || creating || !name.trim()) return
     setCreating(true)
-    setError('')
-    const result = await createBranch(workspaceId, userId, { name, region })
-    setCreating(false)
-    if (result.ok) {
-      setName('')
-      setRegion('')
-      setMessage('Branch added.')
-      window.setTimeout(() => setMessage(''), 1800)
-    } else {
-      setError(result.error || 'Unable to add branch.')
+    setAddBranchError(null)
+    try {
+      const result = await createBranch(workspaceId, userId, { name, region })
+      if (result.ok) {
+        setName('')
+        setRegion('')
+        setMessage('Branch added.')
+        window.setTimeout(() => setMessage(''), 1800)
+      } else {
+        const detail = result.error || 'Unable to add branch.'
+        setAddBranchError(result.code ? `Failed to add branch: ${result.code} — ${detail}` : `Failed to add branch: ${detail}`)
+      }
+    } catch (err) {
+      // createBranch is expected to catch its own errors and return
+      // { ok: false, error }, so reaching this block means something
+      // unexpected threw — still surface it instead of leaving the
+      // button permanently stuck.
+      console.error('[Settings] createBranch threw unexpectedly', { code: err?.code || '', message: err?.message || String(err), error: err })
+      const detail = err?.message || 'Unable to add branch.'
+      setAddBranchError(err?.code ? `Failed to add branch: ${err.code} — ${detail}` : `Failed to add branch: ${detail}`)
+    } finally {
+      setCreating(false)
     }
   }
 
@@ -1700,7 +1713,15 @@ function BranchesSettingsCard({ canManageSettings }) {
 
         <form onSubmit={handleCreate} className="grid gap-3 rounded-2xl border border-dashed border-slate-300 p-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end">
           <Field label="New branch name">
-            <Input value={name} onChange={(event) => setName(event.target.value)} placeholder="e.g. DHA Branch" readOnly={!canManageSettings} />
+            <Input
+              value={name}
+              onChange={(event) => {
+                setName(event.target.value)
+                if (addBranchError) setAddBranchError(null)
+              }}
+              placeholder="e.g. DHA Branch"
+              readOnly={!canManageSettings}
+            />
           </Field>
           <Field label="Region (optional)">
             <Input value={region} onChange={(event) => setRegion(event.target.value)} placeholder="e.g. Lahore" readOnly={!canManageSettings} />
@@ -1709,6 +1730,9 @@ function BranchesSettingsCard({ canManageSettings }) {
             {creating ? 'Adding...' : 'Add branch'}
           </Button>
         </form>
+        {addBranchError ? (
+          <p className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700">{addBranchError}</p>
+        ) : null}
       </div>
     </Card>
   )
