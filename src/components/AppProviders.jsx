@@ -7,6 +7,7 @@ import { MultiCurrencyProvider } from '../context/MultiCurrencyProvider.jsx'
 
 const ROOT_AUTH_PREFIXES = ['/login', '/signup', '/verify-email', '/workspace', '/upgrade-business', '/admin']
 const WORKSPACE_PROVIDER_PREFIXES = ['/workspace']
+const MULTI_CURRENCY_PREFIXES = ['/pricing', '/upgrade-business']
 const RootAuthProviderShell = lazy(() => import('./RootAuthProviderShell.jsx'))
 const WorkspaceProviderShell = lazy(() => import('./WorkspaceProviderShell.jsx'))
 
@@ -43,11 +44,15 @@ function RouteScopedProviders({ children }) {
 }
 
 export default function AppProviders() {
-  return (
-    <MultiCurrencyProvider>
-      <RouteScopedProviders>
-        <AppRouter />
-      </RouteScopedProviders>
-    </MultiCurrencyProvider>
+  const location = useLocation()
+  const pathname = location.pathname || '/'
+  const needsMultiCurrency = MULTI_CURRENCY_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))
+
+  const app = (
+    <RouteScopedProviders>
+      <AppRouter />
+    </RouteScopedProviders>
   )
+
+  return needsMultiCurrency ? <MultiCurrencyProvider>{app}</MultiCurrencyProvider> : app
 }

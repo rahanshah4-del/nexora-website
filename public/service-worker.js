@@ -59,7 +59,9 @@ self.addEventListener('fetch', (event) => {
   }
 
   if (url.origin !== self.location.origin) {
-    event.respondWith(fetch(event.request))
+    event.respondWith(
+      fetch(event.request).catch(() => new Response('', { status: 504, statusText: 'Gateway Timeout' })),
+    )
     return
   }
 
