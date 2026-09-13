@@ -41,6 +41,26 @@ function normalizeRole(role) {
   return value === 'staff' && !role ? 'owner' : value
 }
 
+// Firestore is configured with experimentalForceLongPolling (see
+// src/lib/firebase.js) to survive hostile networks, but that transport can
+// leave a write's promise permanently pending — neither resolved nor
+// rejected — if a proxy/extension silently swallows the long-poll response
+// instead of erroring it. Bounding every branch write below with this
+// timeout guarantees callers always see a settled promise, surfacing a
+// distinct 'client/timeout' code so it can never be mistaken for a real
+// Firestore error code (e.g. 'permission-denied') in the logs.
+const FIRESTORE_WRITE_TIMEOUT_MS = 12000
+
+function withTimeout(promise, ms, timeoutMessage) {
+  let timer
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => {
+      reject(Object.assign(new Error(timeoutMessage), { code: 'client/timeout' }))
+    }, ms)
+  })
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer))
+}
+
 // Persists which branch a user is currently viewing. Deliberately a field on
 // users/{uid} — NOT workspaces/{workspaceId} and NOT named like
 // selectedWorkspace/selectedBusinessType/currentBusinessType, the three
@@ -53,7 +73,11 @@ function normalizeRole(role) {
 // permit a user updating arbitrary new fields on their own user doc.
 export async function setActiveBranch(userId, branchId) {
   if (!db || !userId || !branchId) return
-  await setDoc(doc(db, 'users', userId), { activeBranchId: branchId, updatedAt: serverTimestamp() }, { merge: true })
+  await withTimeout(
+    setDoc(doc(db, 'users', userId), { activeBranchId: branchId, updatedAt: serverTimestamp() }, { merge: true }),
+    FIRESTORE_WRITE_TIMEOUT_MS,
+    'Request timed out — check your network connection and try again.',
+  )
 }
 
 // Creates a new branch doc under workspaces/{workspaceId}/branches. Uses an
@@ -66,16 +90,20 @@ export async function createBranch(workspaceId, userId, { name, region = '', sta
   if (!trimmedName) return { ok: false, error: 'Branch name is required.' }
   try {
     const ref = doc(collection(db, 'workspaces', workspaceId, 'branches'))
-    await setDoc(ref, {
-      name: trimmedName,
-      region: String(region || '').trim(),
-      status,
-      isMain: false,
-      workspaceId,
-      createdBy: userId,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    })
+    await withTimeout(
+      setDoc(ref, {
+        name: trimmedName,
+        region: String(region || '').trim(),
+        status,
+        isMain: false,
+        workspaceId,
+        createdBy: userId,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      }),
+      FIRESTORE_WRITE_TIMEOUT_MS,
+      'Request timed out — check your network connection and try again.',
+    )
     return { ok: true, id: ref.id }
   } catch (error) {
     // Full error object (not just message) so a permission-denied rejection
@@ -93,7 +121,11 @@ export async function createBranch(workspaceId, userId, { name, region = '', sta
 export async function setBranchStatus(workspaceId, branchId, status) {
   if (!db || !workspaceId || !branchId) return { ok: false, error: 'Missing workspace or branch.' }
   try {
-    await setDoc(doc(db, 'workspaces', workspaceId, 'branches', branchId), { status, updatedAt: serverTimestamp() }, { merge: true })
+    await withTimeout(
+      setDoc(doc(db, 'workspaces', workspaceId, 'branches', branchId), { status, updatedAt: serverTimestamp() }, { merge: true }),
+      FIRESTORE_WRITE_TIMEOUT_MS,
+      'Request timed out — check your network connection and try again.',
+    )
     return { ok: true }
   } catch (error) {
     console.error('[UserContext] setBranchStatus failed', { code: error?.code || '', message: error?.message || String(error), error })
@@ -714,19 +746,23 @@ export function UserProvider({ children }) {
         setBranchesLoading(false)
         if (rows.length === 0 && mainBranchAttemptRef.current !== workspaceId) {
           mainBranchAttemptRef.current = workspaceId
-          setDoc(
-            doc(db, 'workspaces', workspaceId, 'branches', 'main'),
-            {
-              name: 'Main',
-              region: '',
-              status: 'active',
-              isMain: true,
-              workspaceId,
-              ownerId: workspaceOwnerId || workspaceId,
-              createdAt: serverTimestamp(),
-              createdBy: user.uid,
-            },
-            { merge: true },
+          withTimeout(
+            setDoc(
+              doc(db, 'workspaces', workspaceId, 'branches', 'main'),
+              {
+                name: 'Main',
+                region: '',
+                status: 'active',
+                isMain: true,
+                workspaceId,
+                ownerId: workspaceOwnerId || workspaceId,
+                createdAt: serverTimestamp(),
+                createdBy: user.uid,
+              },
+              { merge: true },
+            ),
+            FIRESTORE_WRITE_TIMEOUT_MS,
+            'Request timed out — check your network connection and try again.',
           ).catch((error) => {
             console.warn('[UserContext] auto-create Main branch failed', error?.code || error?.message || error)
             // Allow a retry on the next empty snapshot (e.g. after a
