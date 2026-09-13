@@ -103,7 +103,7 @@ async function checkMedicineUniqueness({ workspaceId, businessType, sku, barcode
 }
 
 export function useMedicineInventory(options = {}) {
-  const { userId, workspaceId, businessType, userDoc, firebaseUser } = useUser()
+  const { userId, workspaceId, businessType, userDoc, firebaseUser, activeBranchId } = useUser()
   const enabled = options.enabled !== false
   const limitCount = Number.isFinite(Number(options.limitCount)) && Number(options.limitCount) > 0 ? Math.floor(Number(options.limitCount)) : null
   const [medicines, setMedicines] = useState([])
@@ -202,6 +202,7 @@ export function useMedicineInventory(options = {}) {
 
           const ref = await createUserDoc(workspaceId, 'medicineInventory', {
             ...medicine,
+            branchId: activeBranchId || null,
             stockHistory: [
               {
                 type: 'created',
@@ -332,6 +333,7 @@ export function useMedicineInventory(options = {}) {
                 supplierName: '',
                 fromBranch: '',
                 toBranch: '',
+                branchId: activeBranchId || null,
                 createdBy: userId,
                 ownerId: workspaceId,
                 userId: workspaceId,
@@ -449,6 +451,7 @@ export function useMedicineInventory(options = {}) {
 
           const ref = await createUserDoc(workspaceId, 'medicineInventory', {
             ...medicine,
+            branchId: activeBranchId || null,
             stockHistory: [
               {
                 type: 'duplicated',
@@ -531,6 +534,6 @@ export function useMedicineInventory(options = {}) {
         }
       },
     }),
-    [medicines, loading, source, error, businessType, firebaseUser, userDoc, userId, workspaceId],
+    [medicines, loading, source, error, businessType, firebaseUser, userDoc, userId, workspaceId, activeBranchId],
   )
 }

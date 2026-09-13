@@ -179,6 +179,17 @@ async function syncOneOrder(workspaceId, userId, order) {
   delete payload.retryCount
   delete payload.localOnly
 
+  // This replays whatever shape was in localStorage, so an order queued
+  // before branch stamping shipped arrives with no usable branchId and would
+  // land in Firestore unstamped — re-creating the gap a backfill just closed.
+  // 'main' is the deterministic Main-branch document ID in every workspace
+  // (UserContext.jsx auto-creates it at that exact ID), and a legacy queued
+  // order predates branch switching, so Main is its correct attribution.
+  // A real branch value is never overwritten.
+  if (!payload.branchId) {
+    payload.branchId = 'main'
+  }
+
   try {
     const ref = await createUserDoc(workspaceId, 'medicalPosOrders', payload, {
       businessType: order.businessType || MEDICAL_POS_BUSINESS_TYPE,
@@ -268,7 +279,7 @@ async function retryFailedOrders(workspaceId, userId, ordersRef, limitCount) {
 }
 
 export function useMedicalPosOrders(options = {}) {
-  const { workspaceId, userId, staffId, role, userDoc, firebaseUser, isOwner, isAdmin, isStaff } = useUser()
+  const { workspaceId, userId, staffId, role, userDoc, firebaseUser, isOwner, isAdmin, isStaff, activeBranchId } = useUser()
   const access = useWorkspaceAccess()
   const enabled = options.enabled !== false
   const effectiveBusinessType = options.businessType || MEDICAL_POS_BUSINESS_TYPE
@@ -409,7 +420,7 @@ export function useMedicalPosOrders(options = {}) {
         createdByRole,
         createdByStaff: staffSale,
         registerId: payload.registerId || payload.shiftId || '',
-        branchId: payload.branchId || '',
+        branchId: activeBranchId || null,
       }
       const firestorePayload = {
         ...payload,
@@ -453,7 +464,7 @@ export function useMedicalPosOrders(options = {}) {
     } finally {
       submittingRef.current = false
     }
-  }, [access, effectiveBusinessType, firebaseUser, isAdmin, isOwner, isStaff, role, staffId, userDoc, userId, workspaceId])
+  }, [access, activeBranchId, effectiveBusinessType, firebaseUser, isAdmin, isOwner, isStaff, role, staffId, userDoc, userId, workspaceId])
 
   const deleteOrder = useCallback(async (id) => {
     if (!id) return { ok: false, error: 'Order ID is required.' }
@@ -484,6 +495,7 @@ export function useMedicalPosOrders(options = {}) {
           referenceId: id,
           reference: order.orderNumber || id,
           collectionName: 'medicineInventory',
+          branchId: activeBranchId || null,
         })
         if (!restoreRs.ok) {
           return { ok: false, error: 'Unable to restore inventory before deletion. The order was not deleted.' }
@@ -497,7 +509,7 @@ export function useMedicalPosOrders(options = {}) {
     } catch (error) {
       return { ok: false, error: clientSafeMessage(error, 'Unable to delete medical POS order.') }
     }
-  }, [access, userId, workspaceId, orders, effectiveBusinessType])
+  }, [access, activeBranchId, userId, workspaceId, orders, effectiveBusinessType])
 
   const refundOrder = useCallback(async (id) => {
     if (!id) return { ok: false, error: 'Order ID is required.' }
@@ -598,6 +610,7 @@ export function useMedicalPosOrders(options = {}) {
           title: `Medical POS refund — ${order.orderNumber || id}`,
           description: `Refund for ${order.customerName || 'Walk-in Customer'} — ${order.orderNumber || id}`,
           relatedId: id,
+          branchId: activeBranchId || null,
           orderId: id,
           orderNumber: order.orderNumber || '',
           customerName: order.customerName || '',
@@ -628,6 +641,7 @@ export function useMedicalPosOrders(options = {}) {
           referenceId: id,
           reference: order.orderNumber || id,
           collectionName: 'medicineInventory',
+          branchId: activeBranchId || null,
         })
         if (!restoreRs.ok) {
           // Inventory restore failed but refund is recorded — log but don't fail
@@ -671,7 +685,7 @@ export function useMedicalPosOrders(options = {}) {
     } catch (e) {
       return { ok: false, error: clientSafeMessage(e, 'Unable to refund order.') }
     }
-  }, [access, db, effectiveBusinessType, firebaseUser, orders, userDoc, userId, workspaceId])
+  }, [access, activeBranchId, db, effectiveBusinessType, firebaseUser, orders, userDoc, userId, workspaceId])
 
   return useMemo(() => ({
     orders,

@@ -25,6 +25,10 @@ import { normalizeBusinessType } from '../data/moduleAccess.js'
  * @param {string} [opts.collectionName] – workspace collection holding the product docs
  *                                          (defaults to 'products'; Medical POS callers must
  *                                          pass 'medicineInventory', where its stock actually lives)
+ * @param {string|null} [opts.branchId] – branch the restore is attributed to. This module has no
+ *                                          hook context, so callers must pass their current
+ *                                          activeBranchId; without it the ledger rows written here
+ *                                          would be the only unstamped rows in inventoryTransactions.
  * @returns {{ ok: boolean, restored: number, errors: string[], skipped: number }}
  */
 export async function restoreInventoryItems({
@@ -36,6 +40,7 @@ export async function restoreInventoryItems({
   referenceId,
   reference,
   collectionName = 'products',
+  branchId = null,
 }) {
   if (!db || !workspaceId || !userId) {
     return { ok: false, restored: 0, errors: ['Missing db/workspaceId/userId'], skipped: 0 }
@@ -117,6 +122,7 @@ export async function restoreInventoryItems({
           supplierName: '',
           fromBranch: '',
           toBranch: '',
+          branchId: branchId || null,
           createdBy: userId,
           ownerId: workspaceId,
           userId: workspaceId,

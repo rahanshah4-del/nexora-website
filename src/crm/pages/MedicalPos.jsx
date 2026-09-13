@@ -181,7 +181,7 @@ function buildMedicalPosThermalText(order = {}) {
 }
 
 export default function MedicalPosPage() {
-  const { workspaceId, businessType, userDoc, firebaseUser, userId, isOwner, isAdmin, isStaff } = useUser()
+  const { workspaceId, businessType, userDoc, firebaseUser, userId, isOwner, isAdmin, isStaff, activeBranchId, branches } = useUser()
   const { settings: businessSettings } = useBusinessSettings()
   const medicineApi = useMedicineInventory({ limitCount: 200 })
   const ordersApi = useMedicalPosOrders({ limitCount: 8 })
@@ -234,6 +234,10 @@ export default function MedicalPosPage() {
 
   const activePromoCodes = businessSettings?.medicalPosPromos || {}
   const medicalPosSettings = businessSettings?.medicalPos || {}
+  const activeBranchName = useMemo(
+    () => branches.find((branchItem) => branchItem.id === activeBranchId)?.name || 'Main Branch',
+    [branches, activeBranchId],
+  )
 
   useEffect(() => {
     setShift(loadMedicalPosShift(workspaceId))
@@ -639,8 +643,8 @@ export default function MedicalPosPage() {
         customerName: customerSnapshot.name,
         customerPhone: customerSnapshot.phone,
         customerId: customerSnapshot.id,
-        branch: 'Main Branch',
-        branchId: medicalPosSettings.branchId || '',
+        branch: activeBranchName,
+        branchId: activeBranchId || null,
         registerId: activeShift.id,
         cashier: cashierName,
         cashierId,
@@ -733,6 +737,7 @@ export default function MedicalPosPage() {
           totalCost: item.costPrice * item.quantity,
           reference: orderNumber,
           note: 'Medical POS billing sale',
+          branchId: activeBranchId || null,
           ownerId: workspaceId,
           userId: workspaceId,
           workspaceId,
@@ -751,7 +756,7 @@ export default function MedicalPosPage() {
         moduleKey: 'medical_pos',
         orderSource: 'medical_pos_front_till',
         registerId: activeShift.id,
-        branchId: medicalPosSettings.branchId || '',
+        branchId: activeBranchId || null,
         task: shouldPrint ? 'receipt_print_and_stock_sync' : 'stock_sync',
         status: 'queued',
         priority: 'normal',

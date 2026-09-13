@@ -95,7 +95,7 @@ async function checkProductUniqueness({ workspaceId, businessType, sku, barcode,
 }
 
 export function useProducts(options = {}) {
-  const { userId, workspaceId, businessType, userDoc, firebaseUser } = useUser()
+  const { userId, workspaceId, businessType, userDoc, firebaseUser, activeBranchId } = useUser()
   const enabled = options.enabled !== false
   const limitCount = Number.isFinite(Number(options.limitCount)) && Number(options.limitCount) > 0 ? Math.floor(Number(options.limitCount)) : null
   const [products, setProducts] = useState([])
@@ -194,6 +194,7 @@ export function useProducts(options = {}) {
 
           const ref = await createUserDoc(workspaceId, 'products', {
             ...product,
+            branchId: activeBranchId || null,
             stockHistory: [
               {
                 type: 'created',
@@ -260,6 +261,7 @@ export function useProducts(options = {}) {
             const ref = doc(productCollection)
             batch.set(ref, {
               ...product,
+              branchId: activeBranchId || null,
               ownerId: workspaceId,
               userId: workspaceId,
               workspaceId,
@@ -433,6 +435,7 @@ export function useProducts(options = {}) {
                 supplierName: '',
                 fromBranch: '',
                 toBranch: '',
+                branchId: activeBranchId || null,
                 createdBy: userId,
                 ownerId: workspaceId,
                 userId: workspaceId,
@@ -549,6 +552,7 @@ export function useProducts(options = {}) {
 
           const ref = await createUserDoc(workspaceId, 'products', {
             ...product,
+            branchId: activeBranchId || null,
             stockHistory: [
               {
                 type: 'duplicated',
@@ -631,6 +635,6 @@ export function useProducts(options = {}) {
         }
       },
     }),
-    [products, loading, source, error, businessType, firebaseUser, userDoc, userId, workspaceId],
+    [products, loading, source, error, businessType, firebaseUser, userDoc, userId, workspaceId, activeBranchId],
   )
 }

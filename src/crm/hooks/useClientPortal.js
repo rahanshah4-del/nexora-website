@@ -213,7 +213,7 @@ async function addInventoryAdjustments(batch, workspaceId, invoice, now, busines
 }
 
 export function useClientPortal() {
-  const { userDoc, userId, workspaceId, businessType, firebaseUser } = useUser()
+  const { userDoc, userId, workspaceId, businessType, firebaseUser, activeBranchId } = useUser()
   const canApprovePayments = canRoleApprovePayments(userDoc)
   const [clients, setClients] = useState([])
   const [invoices, setInvoices] = useState([])
@@ -662,6 +662,7 @@ export function useClientPortal() {
           await createUserDoc(workspaceId, 'payments', {
             invoiceId,
             clientId,
+            branchId: activeBranchId || null,
             customerName: invoice.customerName || '',
             amount: appliedAmount,
             amountUsd: appliedAmount,
@@ -695,7 +696,7 @@ export function useClientPortal() {
         }
       },
     }),
-    [loading, source, error, clients, invoices, payments, subscription, activity, canApprovePayments, businessType, firebaseUser, userDoc, userId, workspaceId],
+    [loading, source, error, clients, invoices, payments, subscription, activity, canApprovePayments, businessType, firebaseUser, userDoc, userId, workspaceId, activeBranchId],
   )
 
   return api

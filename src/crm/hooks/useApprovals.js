@@ -293,7 +293,7 @@ async function addInventoryAdjustments(batch, workspaceId, invoice, now, busines
 }
 
 export function useApprovals() {
-  const { userId, workspaceId, businessType, role, userDoc, firebaseUser, isAdmin, isOwner } = useUser()
+  const { userId, workspaceId, businessType, role, userDoc, firebaseUser, isAdmin, isOwner, activeBranchId } = useUser()
   const workspaceAccess = useWorkspaceAccess()
   const canApprove = Boolean(
     isOwner ||
@@ -635,6 +635,10 @@ export function useApprovals() {
               invoiceId: approval.invoiceId || row.invoiceId || '',
               paymentId: approval.sourceId,
               customerName: approval.customer,
+              // Attributed to the branch the payment came from, not the
+              // approver's — an owner approving from Main must not book a
+              // Branch-B payment's income against Main.
+              branchId: row.branchId || activeBranchId || null,
               createdBy: userId,
               approvedBy: userId,
               approvedAt: serverTimestamp(),
@@ -961,7 +965,7 @@ export function useApprovals() {
         return { ok: false, error: clientSafeMessage(err, 'Unable to approve request.') }
       }
     },
-    [businessType, canApprove, canApproveSubscription, firebaseUser, userDoc, userId, workspaceId],
+    [activeBranchId, businessType, canApprove, canApproveSubscription, firebaseUser, userDoc, userId, workspaceId],
   )
 
   const markPaid = useCallback(
@@ -1028,6 +1032,8 @@ export function useApprovals() {
           approvedBy: userId,
           approvedAt: now,
           paidAt: now,
+          // Inherits the invoice's branch rather than the approver's.
+          branchId: row.branchId || activeBranchId || null,
           ownerId: workspaceId,
           userId: workspaceId,
           workspaceId,
@@ -1056,6 +1062,8 @@ export function useApprovals() {
           invoiceId: approval.sourceId,
           paymentId: paymentRef.id,
           customerName: row.customerName || approval.customer,
+          // Inherits the invoice's branch rather than the approver's.
+          branchId: row.branchId || activeBranchId || null,
           createdBy: userId,
           approvedBy: userId,
           approvedAt: now,
@@ -1127,7 +1135,7 @@ export function useApprovals() {
         return { ok: false, error: clientSafeMessage(err, 'Unable to mark invoice as paid.') }
       }
     },
-    [businessType, canApprove, firebaseUser, userDoc, userId, workspaceId],
+    [activeBranchId, businessType, canApprove, firebaseUser, userDoc, userId, workspaceId],
   )
 
   const reject = useCallback(

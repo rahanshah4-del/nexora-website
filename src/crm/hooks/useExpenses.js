@@ -36,7 +36,7 @@ function safeRecentLimit(limitCount) {
 }
 
 export function useExpenses({ limitCount = null, enabled = true } = {}) {
-  const { userId, workspaceId, businessType, userDoc, firebaseUser } = useUser()
+  const { userId, workspaceId, businessType, userDoc, firebaseUser, activeBranchId } = useUser()
   const recentLimit = safeRecentLimit(limitCount)
   const [expenses, setExpenses] = useState([])
   const [loading, setLoading] = useState(true)
@@ -123,6 +123,7 @@ export function useExpenses({ limitCount = null, enabled = true } = {}) {
           const ref = await createUserDoc(workspaceId, 'expenses', {
             title,
             category: String(payload.category || 'General').trim() || 'General',
+            branchId: activeBranchId || null,
             amount,
             currency: normalizeCurrency(payload.currency),
             paymentMethod: String(payload.paymentMethod || 'Cash').trim() || 'Cash',
@@ -251,6 +252,6 @@ export function useExpenses({ limitCount = null, enabled = true } = {}) {
         }
       },
     }),
-    [expenses, loading, source, error, businessType, firebaseUser, userDoc, userId, workspaceId],
+    [expenses, loading, source, error, businessType, firebaseUser, userDoc, userId, workspaceId, activeBranchId],
   )
 }

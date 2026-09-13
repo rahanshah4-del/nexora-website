@@ -362,7 +362,7 @@ async function cancelInvoiceFinanceDocs({ batch, workspaceId, invoice, now, user
 }
 
 export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled = true } = {}) {
-  const { userId, workspaceId, businessType, role, userDoc, firebaseUser } = useUser()
+  const { userId, workspaceId, businessType, role, userDoc, firebaseUser, activeBranchId } = useUser()
   const workspaceAccess = useWorkspaceAccess()
   const invoiceListLimit = safeInvoiceListLimit(limitCount)
   const [invoices, setInvoices] = useState([])
@@ -710,6 +710,7 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
             dueDate: invoice.dueDate || '—',
             recurring: Boolean(invoice.recurring),
             recurringCycle: invoice.recurringCycle || '',
+            branchId: activeBranchId || null,
             createdBy: userId,
             createdAt: serverTimestamp(),
             subtotalUsd: invoice.subtotal,
@@ -832,6 +833,7 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
               userId: workspaceId,
               workspaceId,
               businessType,
+              branchId: activeBranchId || null,
               createdBy: userId,
               submittedForApprovalBy: userId,
               paymentSubmittedAt: now,
@@ -999,6 +1001,7 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
               userId: workspaceId,
               workspaceId,
               businessType,
+              branchId: activeBranchId || null,
               createdBy: userId,
               createdAt: serverTimestamp(),
               updatedAt: serverTimestamp(),
@@ -1026,6 +1029,7 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
               userId: workspaceId,
               workspaceId,
               businessType,
+              branchId: activeBranchId || null,
               createdAt: serverTimestamp(),
               updatedAt: serverTimestamp(),
               metadata: {
@@ -1243,6 +1247,7 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
               userId: workspaceId,
               workspaceId,
               businessType,
+              branchId: activeBranchId || null,
               createdBy: userId,
               submittedForApprovalBy: userId,
               paymentSubmittedAt: now,
@@ -1790,6 +1795,7 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
               items: invoice.items,
               referenceId: id,
               reference: invoice.invoiceNumber || id,
+              branchId: activeBranchId || null,
             })
             restoreOk = restoreRs.ok
           }
@@ -1912,6 +1918,7 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
                 items: invoice.items,
                 referenceId: id,
                 reference: invoice.invoiceNumber || id,
+                branchId: activeBranchId || null,
               })
               restoreOk = restoreRs.ok
             }
@@ -1970,6 +1977,7 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
               userId: workspaceId,
               workspaceId,
               businessType,
+              branchId: activeBranchId || null,
               createdAt: serverTimestamp(),
               updatedAt: serverTimestamp(),
               metadata: {
@@ -2044,6 +2052,7 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
             lastPaymentAt: null,
             lastPaymentDate: null,
             paymentHistory: [],
+            branchId: activeBranchId || null,
             createdBy: userId,
             duplicatedFrom: id,
           }
@@ -2089,6 +2098,7 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
             items: invoice.items,
             referenceId: id,
             reference: invoice.invoiceNumber || id,
+            branchId: activeBranchId || null,
           })
           if (!restoreRs.ok) {
             return { ok: false, error: 'Unable to restore inventory before deletion. The invoice was not deleted.' }
@@ -2119,7 +2129,7 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
         }
       },
     }),
-    [invoices, payments, loading, paginationLoading, hasMoreInvoices, invoicePage, invoiceListLimit, loadMoreInvoices, source, error, stats, canApprovePayments, permissions, businessType, firebaseUser, userDoc, userId, workspaceId, patchLoadedInvoice, prependLoadedInvoice, removeLoadedInvoice],
+    [invoices, payments, loading, paginationLoading, hasMoreInvoices, invoicePage, invoiceListLimit, loadMoreInvoices, source, error, stats, canApprovePayments, permissions, businessType, firebaseUser, userDoc, userId, workspaceId, activeBranchId, patchLoadedInvoice, prependLoadedInvoice, removeLoadedInvoice],
   )
 
   return api

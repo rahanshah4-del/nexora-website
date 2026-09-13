@@ -61,7 +61,7 @@ function actionLabel(type, approved = false) {
 }
 
 export function useAccountTransactions({ enabled = true, limitCount = null } = {}) {
-  const { userId, workspaceId, businessType, role, userDoc, firebaseUser } = useUser()
+  const { userId, workspaceId, businessType, role, userDoc, firebaseUser, activeBranchId } = useUser()
   const permissions = useMemo(() => financePermissions(userDoc?.role || role), [role, userDoc?.role])
   const canApprove = permissions.canApproveStandard
   const [transactions, setTransactions] = useState([])
@@ -162,6 +162,7 @@ export function useAccountTransactions({ enabled = true, limitCount = null } = {
         const ref = await createUserDoc(workspaceId, 'accountTransactions', {
           transactionId,
           type,
+          branchId: activeBranchId || null,
           amount,
           currency: normalizeCurrency(payload.currency || 'PKR'),
           method: payload.method || payload.paymentMethod || 'Manual',
@@ -232,7 +233,7 @@ export function useAccountTransactions({ enabled = true, limitCount = null } = {
         return { ok: false, error: clientSafeMessage(err, 'Unable to save transaction.') }
       }
     },
-    [businessType, firebaseUser, permissions, transactions, userDoc, userId, workspaceId],
+    [businessType, firebaseUser, permissions, transactions, userDoc, userId, workspaceId, activeBranchId],
   )
 
   const approveTransaction = useCallback(

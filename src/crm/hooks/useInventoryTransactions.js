@@ -66,7 +66,7 @@ function normalizeTransaction(txn) {
 }
 
 export function useInventoryTransactions(options = {}) {
-  const { userId, workspaceId, businessType, userDoc, firebaseUser } = useUser()
+  const { userId, workspaceId, businessType, userDoc, firebaseUser, activeBranchId } = useUser()
   const enabled = options.enabled !== false
   const limitCount = Number.isFinite(Number(options.limitCount)) && Number(options.limitCount) > 0 ? Math.floor(Number(options.limitCount)) : null
   const [transactions, setTransactions] = useState([])
@@ -225,6 +225,7 @@ export function useInventoryTransactions(options = {}) {
                 supplierName: String(input?.supplierName || ''),
                 fromBranch: String(input?.fromBranch || ''),
                 toBranch: String(input?.toBranch || ''),
+                branchId: activeBranchId || null,
                 createdBy: userId,
                 ownerId: workspaceId,
                 userId: workspaceId,
@@ -268,6 +269,6 @@ export function useInventoryTransactions(options = {}) {
         }
       },
     }),
-    [transactions, loading, error, businessType, firebaseUser, userDoc, userId, workspaceId],
+    [transactions, loading, error, businessType, firebaseUser, userDoc, userId, workspaceId, activeBranchId],
   )
 }
