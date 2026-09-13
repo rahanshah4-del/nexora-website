@@ -442,6 +442,7 @@ export function usePosOrders(options = {}) {
           })),
           referenceId: id,
           reference: order.orderNumber || id,
+          branchId: activeBranchId || null,
         })
         if (!restoreRs.ok) {
           return { ok: false, error: 'Unable to restore inventory before deletion. The order was not deleted.' }
@@ -455,7 +456,7 @@ export function usePosOrders(options = {}) {
     } catch (error) {
       return { ok: false, error: clientSafeMessage(error, 'Unable to delete POS order.') }
     }
-  }, [access, userId, workspaceId, orders, effectiveBusinessType])
+  }, [access, activeBranchId, userId, workspaceId, orders, effectiveBusinessType])
 
   const refundOrder = useCallback(async (id) => {
     if (!id) return { ok: false, error: 'Order ID is required.' }
@@ -549,6 +550,7 @@ export function usePosOrders(options = {}) {
           title: `POS refund — ${order.orderNumber || id}`,
           description: `Refund for ${order.customerName || 'Walk-in Customer'} — ${order.orderNumber || id}`,
           relatedId: id,
+          branchId: activeBranchId || null,
           orderId: id,
           orderNumber: order.orderNumber || '',
           customerName: order.customerName || '',
@@ -578,6 +580,7 @@ export function usePosOrders(options = {}) {
           items: refundItems,
           referenceId: id,
           reference: order.orderNumber || id,
+          branchId: activeBranchId || null,
         })
         if (!restoreRs.ok) {
           // Inventory restore failed but refund is recorded — log but don't fail
@@ -621,7 +624,7 @@ export function usePosOrders(options = {}) {
     } catch (e) {
       return { ok: false, error: clientSafeMessage(e, 'Unable to refund order.') }
     }
-  }, [access, db, effectiveBusinessType, firebaseUser, orders, userDoc, userId, workspaceId])
+  }, [access, activeBranchId, db, effectiveBusinessType, firebaseUser, orders, userDoc, userId, workspaceId])
 
   return useMemo(() => ({
     orders,

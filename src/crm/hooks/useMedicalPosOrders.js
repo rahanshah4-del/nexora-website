@@ -495,6 +495,7 @@ export function useMedicalPosOrders(options = {}) {
           referenceId: id,
           reference: order.orderNumber || id,
           collectionName: 'medicineInventory',
+          branchId: activeBranchId || null,
         })
         if (!restoreRs.ok) {
           return { ok: false, error: 'Unable to restore inventory before deletion. The order was not deleted.' }
@@ -508,7 +509,7 @@ export function useMedicalPosOrders(options = {}) {
     } catch (error) {
       return { ok: false, error: clientSafeMessage(error, 'Unable to delete medical POS order.') }
     }
-  }, [access, userId, workspaceId, orders, effectiveBusinessType])
+  }, [access, activeBranchId, userId, workspaceId, orders, effectiveBusinessType])
 
   const refundOrder = useCallback(async (id) => {
     if (!id) return { ok: false, error: 'Order ID is required.' }
@@ -609,6 +610,7 @@ export function useMedicalPosOrders(options = {}) {
           title: `Medical POS refund — ${order.orderNumber || id}`,
           description: `Refund for ${order.customerName || 'Walk-in Customer'} — ${order.orderNumber || id}`,
           relatedId: id,
+          branchId: activeBranchId || null,
           orderId: id,
           orderNumber: order.orderNumber || '',
           customerName: order.customerName || '',
@@ -639,6 +641,7 @@ export function useMedicalPosOrders(options = {}) {
           referenceId: id,
           reference: order.orderNumber || id,
           collectionName: 'medicineInventory',
+          branchId: activeBranchId || null,
         })
         if (!restoreRs.ok) {
           // Inventory restore failed but refund is recorded — log but don't fail
@@ -682,7 +685,7 @@ export function useMedicalPosOrders(options = {}) {
     } catch (e) {
       return { ok: false, error: clientSafeMessage(e, 'Unable to refund order.') }
     }
-  }, [access, db, effectiveBusinessType, firebaseUser, orders, userDoc, userId, workspaceId])
+  }, [access, activeBranchId, db, effectiveBusinessType, firebaseUser, orders, userDoc, userId, workspaceId])
 
   return useMemo(() => ({
     orders,
