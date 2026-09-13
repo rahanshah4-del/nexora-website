@@ -138,6 +138,17 @@ async function syncOneOrder(workspaceId, userId, order) {
   delete payload.retryCount
   delete payload.localOnly
 
+  // This replays whatever shape was in localStorage, so an order queued
+  // before branch stamping shipped arrives with no usable branchId and would
+  // land in Firestore unstamped — re-creating the gap a backfill just closed.
+  // 'main' is the deterministic Main-branch document ID in every workspace
+  // (UserContext.jsx auto-creates it at that exact ID), and a legacy queued
+  // order predates branch switching, so Main is its correct attribution.
+  // A real branch value is never overwritten.
+  if (!payload.branchId) {
+    payload.branchId = 'main'
+  }
+
   try {
     const ref = await createUserDoc(workspaceId, 'posOrders', payload, {
       businessType: order.businessType || POS_BUSINESS_TYPE,
