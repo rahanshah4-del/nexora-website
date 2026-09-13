@@ -675,7 +675,7 @@ export function moduleViewPermissionKey(moduleKey) {
 }
 
 export function permissionModuleDefinitions({ businessType, plan = 'Business', developerOverride = false, teamOverride = true, enabledModules, onboardingCompleted = true } = {}) {
-  return selectedModulesForSidebar({
+  const sidebarModules = selectedModulesForSidebar({
     enabledModules,
     onboardingCompleted,
     plan,
@@ -688,6 +688,20 @@ export function permissionModuleDefinitions({ businessType, plan = 'Business', d
     route: module.route,
     comingSoon: Boolean(module.comingSoon),
   }))
+  // 'branches' is intentionally not in any business type's sidebar module
+  // list yet (selectedModulesForSidebar, used directly by Sidebar.jsx for
+  // nav rendering, is untouched by this) — but the permission KEY still
+  // needs to exist so an owner can grant staff module.branches.<action> via
+  // Team Management, closing the gap where no non-owner/non-admin staff
+  // member could ever be granted branch access. Appended here, after the
+  // sidebar filter runs, so this only affects the permission-editing list.
+  if (sidebarModules.some((module) => module.key === 'branches')) return sidebarModules
+  const branchesModule = moduleCatalog.find((module) => module.key === 'branches')
+  if (!branchesModule) return sidebarModules
+  return [
+    ...sidebarModules,
+    { key: 'branches', label: labelForBusinessModule('branches', businessType), route: branchesModule.route, comingSoon: false },
+  ]
 }
 
 export function permissionKeysForBusiness(options = {}) {

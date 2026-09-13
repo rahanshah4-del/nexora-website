@@ -78,6 +78,12 @@ export async function createBranch(workspaceId, userId, { name, region = '', sta
     })
     return { ok: true, id: ref.id }
   } catch (error) {
+    // Full error object (not just message) so a permission-denied rejection
+    // is distinguishable from a network/offline failure in the console —
+    // previously this was swallowed entirely, with optimistic local state
+    // from the already-active branches onSnapshot listener making the UI
+    // look like it succeeded regardless of what happened here.
+    console.error('[UserContext] createBranch failed', { code: error?.code || '', message: error?.message || String(error), error })
     return { ok: false, error: error?.message || 'Unable to create branch.' }
   }
 }
@@ -90,6 +96,7 @@ export async function setBranchStatus(workspaceId, branchId, status) {
     await setDoc(doc(db, 'workspaces', workspaceId, 'branches', branchId), { status, updatedAt: serverTimestamp() }, { merge: true })
     return { ok: true }
   } catch (error) {
+    console.error('[UserContext] setBranchStatus failed', { code: error?.code || '', message: error?.message || String(error), error })
     return { ok: false, error: error?.message || 'Unable to update branch.' }
   }
 }
