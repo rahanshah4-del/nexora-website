@@ -451,6 +451,7 @@ export function useMedicineInventory(options = {}) {
 
           const ref = await createUserDoc(workspaceId, 'medicineInventory', {
             ...medicine,
+            branchId: activeBranchId || null,
             stockHistory: [
               {
                 type: 'duplicated',

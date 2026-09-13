@@ -737,6 +737,7 @@ export default function MedicalPosPage() {
           totalCost: item.costPrice * item.quantity,
           reference: orderNumber,
           note: 'Medical POS billing sale',
+          branchId: activeBranchId || null,
           ownerId: workspaceId,
           userId: workspaceId,
           workspaceId,

@@ -622,6 +622,7 @@ export default function RetailPOSPage() {
           totalCost: item.costPrice * item.quantity,
           reference: orderNumber,
           note: 'POS billing sale',
+          branchId: activeBranchId || null,
           ownerId: workspaceId,
           userId: workspaceId,
           workspaceId,

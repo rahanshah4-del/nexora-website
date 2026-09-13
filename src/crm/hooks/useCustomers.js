@@ -518,6 +518,7 @@ export function useCustomers({ limitCount = DEFAULT_CUSTOMER_LIST_LIMIT, paginat
             type: 'wallet_settlement',
             source: 'customer_wallet',
             status: 'paid',
+            branchId: activeBranchId || null,
             workspaceId,
             ownerId: workspaceId,
             businessType,

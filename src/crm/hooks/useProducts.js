@@ -261,6 +261,7 @@ export function useProducts(options = {}) {
             const ref = doc(productCollection)
             batch.set(ref, {
               ...product,
+              branchId: activeBranchId || null,
               ownerId: workspaceId,
               userId: workspaceId,
               workspaceId,
@@ -551,6 +552,7 @@ export function useProducts(options = {}) {
 
           const ref = await createUserDoc(workspaceId, 'products', {
             ...product,
+            branchId: activeBranchId || null,
             stockHistory: [
               {
                 type: 'duplicated',
