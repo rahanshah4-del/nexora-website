@@ -10,6 +10,27 @@ function safeError(error, fallback) {
   return next
 }
 
+// Firestore is configured with experimentalForceLongPolling (see
+// src/lib/firebase.js) to survive hostile networks, but that transport can
+// leave a write's promise permanently pending — neither resolved nor
+// rejected — if a proxy/extension silently swallows the long-poll response
+// instead of erroring it. Bounding the create below with this timeout
+// guarantees callers always see a settled promise, surfacing a distinct
+// 'client/timeout' code so it can never be mistaken for a real Firestore
+// error code (e.g. 'permission-denied') in the logs. Kept at the same 12s
+// as the branch writes in src/crm/context/UserContext.jsx.
+const FIRESTORE_WRITE_TIMEOUT_MS = 12000
+
+function withTimeout(promise, ms, timeoutMessage) {
+  let timer
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => {
+      reject(Object.assign(new Error(timeoutMessage), { code: 'client/timeout' }))
+    }, ms)
+  })
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer))
+}
+
 function logFirestoreAccessError(error, details = {}) {
   console.warn('[Firestore Access Error]', {
     currentUserUid: details.currentUserUid || details.userId || '',
@@ -110,10 +131,14 @@ export function subscribeUserCollection(userId, path, onData, onError, options =
 
   return onSnapshot(
     source,
+    // includeMetadataChanges makes the listener re-fire when a locally-applied
+    // write is acknowledged by the server, so _pendingWrite below flips from
+    // true to false instead of the row staying silently optimistic.
+    { includeMetadataChanges: true },
     (snap) =>
       onData(
         snap.docs
-          .map((d) => ({ id: d.id, ...d.data() }))
+          .map((d) => ({ id: d.id, ...d.data(), _pendingWrite: d.metadata.hasPendingWrites }))
           .filter((row) => belongsToWorkspace(row, userId))
           .filter((row) => {
             if (!hasBusinessFilter) return true
@@ -202,10 +227,13 @@ export function listenToWorkspaceCollection({
 
   return onSnapshot(
     query(ref, ...constraints),
+    // See subscribeUserCollection: metadata changes are what let _pendingWrite
+    // settle to false once the server acknowledges the write.
+    { includeMetadataChanges: true },
     (snap) =>
       onData?.(
         snap.docs
-          .map((d) => ({ id: d.id, ...d.data() }))
+          .map((d) => ({ id: d.id, ...d.data(), _pendingWrite: d.metadata.hasPendingWrites }))
           .filter((row) => belongsToWorkspace(row, workspaceId))
           .map((row) => withWorkspaceFallback(row.id, row, workspaceId)),
       ),
@@ -316,16 +344,23 @@ export async function createUserDoc(userId, path, payload, options = {}) {
     ? (payload.userId || payload.uid || payload.staffId || payload.email || '')
     : userId
   try {
-    return await addDoc(ref, {
-      ...payload,
-      ownerId: payload.ownerId || userId,
-      userId: recordUserId || userId,
-      workspaceId: userId,
-      businessType,
-      createdBy: payload.createdBy || payload.submittedBy || userId,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    })
+    // Awaiting addDoc waits for the server's write acknowledgement, not just
+    // the local-cache write, so callers can report a real success/failure
+    // instead of optimistically closing over a write that never landed.
+    return await withTimeout(
+      addDoc(ref, {
+        ...payload,
+        ownerId: payload.ownerId || userId,
+        userId: recordUserId || userId,
+        workspaceId: userId,
+        businessType,
+        createdBy: payload.createdBy || payload.submittedBy || userId,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      }),
+      FIRESTORE_WRITE_TIMEOUT_MS,
+      'Request timed out — check your network connection and try again.',
+    )
   } catch (error) {
     logFirestoreAccessError(error, { ...options.diagnostics, userId, workspaceId: userId, collectionName: path, collectionPath, operation: 'create' })
     throw safeError(error, 'Unable to save account data.')

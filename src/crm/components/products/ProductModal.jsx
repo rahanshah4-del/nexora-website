@@ -39,6 +39,7 @@ function Field({ label, children, className = '' }) {
 
 function ProductModal({ open, product, onClose, onSave }) {
   const [draft, setDraft] = useState(blankProduct)
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     if (!open) return
@@ -48,14 +49,29 @@ function ProductModal({ open, product, onClose, onSave }) {
   useEffect(() => {
     if (!open) return undefined
     function handleEscape(event) {
-      if (event.key === 'Escape') onClose?.()
+      if (event.key === 'Escape' && !saving) onClose?.()
     }
     window.addEventListener('keydown', handleEscape)
     return () => window.removeEventListener('keydown', handleEscape)
-  }, [open, onClose])
+  }, [open, onClose, saving])
 
   function update(key, value) {
     setDraft((current) => ({ ...current, [key]: value }))
+  }
+
+  // onSave is async in every caller (Products/Inventory/MedicalInventory) and
+  // now resolves only once Firestore has acknowledged the write, so awaiting it
+  // is what keeps the button disabled for the real duration of the save.
+  async function handleSave() {
+    if (saving) return
+    setSaving(true)
+    try {
+      await onSave?.(draft)
+    } finally {
+      // finally (not the success path) is what guarantees a rejected or
+      // timed-out write can never leave the modal stuck in 'Saving…'.
+      setSaving(false)
+    }
   }
 
   function handleImage(event) {
@@ -74,7 +90,7 @@ function ProductModal({ open, product, onClose, onSave }) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          onClick={onClose}
+          onClick={() => { if (!saving) onClose?.() }}
           role="dialog"
           aria-modal="true"
         >
@@ -100,7 +116,8 @@ function ProductModal({ open, product, onClose, onSave }) {
                   title="Close"
                   aria-label="Close"
                   onClick={onClose}
-                  className="grid h-9 w-9 place-items-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 hover:text-slate-900"
+                  disabled={saving}
+                  className="grid h-9 w-9 place-items-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <HiOutlineXMark className="text-lg" />
                 </button>
@@ -210,11 +227,11 @@ function ProductModal({ open, product, onClose, onSave }) {
             <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-200/80 bg-white px-4 py-3 sm:px-5">
               <p className="text-xs text-slate-500">Invoices deduct stock automatically after payment approval.</p>
               <div className="flex flex-wrap gap-2">
-                <Button variant="subtle" className="h-10 rounded-xl" type="button" onClick={onClose}>
+                <Button variant="subtle" className="h-10 rounded-xl" type="button" onClick={onClose} disabled={saving}>
                   Cancel
                 </Button>
-                <Button className="h-10 rounded-xl" type="button" onClick={() => onSave?.(draft)}>
-                  {product ? 'Save Product' : 'Create Product'}
+                <Button className="h-10 rounded-xl" type="button" onClick={handleSave} disabled={saving}>
+                  {saving ? 'Saving…' : product ? 'Save Product' : 'Create Product'}
                 </Button>
               </div>
             </div>
