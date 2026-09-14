@@ -538,7 +538,7 @@ function MedicineDetailsModal({ open, medicine, onClose, onSave }) {
 export default function MedicalInventory() {
   console.log('[Medical Inventory Route] render start')
   const [tab, setTab] = useState('dashboard')
-  const [toast, setToast] = useState('')
+  const [toast, setToast] = useState(null)
 
   const medicineApi = useMedicineInventory()
   const categoriesApi = useCategories()
@@ -568,15 +568,15 @@ export default function MedicalInventory() {
   const [medicineSearch, setMedicineSearch] = useState('')
   const [txnTypeFilter, setTxnTypeFilter] = useState('all')
 
-  function notify(message) {
-    setToast(message)
-    window.setTimeout(() => setToast(''), 2200)
+  function notify(message, tone = 'success') {
+    setToast({ message, tone })
+    window.setTimeout(() => setToast(null), 2200)
   }
 
   async function handleResult(promise, successMessage) {
     const result = await promise
     if (result?.ok) notify(successMessage)
-    else notify(result?.error || 'Something went wrong')
+    else notify(result?.error || 'Something went wrong', 'error')
     return result
   }
 
@@ -611,7 +611,7 @@ export default function MedicalInventory() {
       notify(medicineModal.medicine ? 'Medicine updated' : 'Medicine created')
       setMedicineModal({ open: false, medicine: null })
     } else {
-      notify(result?.error || 'Unable to save medicine')
+      notify(result?.error || 'Unable to save medicine', 'error')
     }
   }
 
@@ -624,7 +624,7 @@ export default function MedicalInventory() {
 
   return (
     <div className="min-w-0 p-4 sm:p-6" style={{ backgroundColor: PASTEL.bg, color: PASTEL.ink }}>
-      {toast ? <Toast message={toast} onClose={() => setToast('')} /> : null}
+      {toast ? <Toast tone={toast.tone} message={toast.message} onClose={() => setToast(null)} /> : null}
 
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>

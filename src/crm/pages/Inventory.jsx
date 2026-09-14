@@ -346,7 +346,7 @@ function PaymentForm({ open, purchase, onClose, onPay, currency }) {
 export default function Inventory() {
   console.log('[Inventory Route] render start')
   const [tab, setTab] = useState('dashboard')
-  const [toast, setToast] = useState('')
+  const [toast, setToast] = useState(null)
 
   const productsApi = useProducts()
   const categoriesApi = useCategories()
@@ -374,15 +374,15 @@ export default function Inventory() {
   const [productSearch, setProductSearch] = useState('')
   const [txnTypeFilter, setTxnTypeFilter] = useState('all')
 
-  function notify(message) {
-    setToast(message)
-    window.setTimeout(() => setToast(''), 2200)
+  function notify(message, tone = 'success') {
+    setToast({ message, tone })
+    window.setTimeout(() => setToast(null), 2200)
   }
 
   async function handleResult(promise, successMessage) {
     const result = await promise
     if (result?.ok) notify(successMessage)
-    else notify(result?.error || 'Something went wrong')
+    else notify(result?.error || 'Something went wrong', 'error')
     return result
   }
 
@@ -412,7 +412,7 @@ export default function Inventory() {
       notify(productModal.product ? 'Product updated' : 'Product created')
       setProductModal({ open: false, product: null })
     } else {
-      notify(result?.error || 'Unable to save product')
+      notify(result?.error || 'Unable to save product', 'error')
     }
   }
 
@@ -423,7 +423,7 @@ export default function Inventory() {
       else notify('Starter products already loaded')
       setTab('products')
     } else {
-      notify(result?.error || 'Unable to load starter products')
+      notify(result?.error || 'Unable to load starter products', 'error')
     }
   }
 
@@ -441,13 +441,13 @@ export default function Inventory() {
     })) {
       const result = await productsApi.unloadSeedProducts(PAKISTAN_SHOP_SEED_SOURCE)
       if (result?.ok) notify(`${result.removed || 0} starter products removed`)
-      else notify(result?.error || 'Unable to unload starter products')
+      else notify(result?.error || 'Unable to unload starter products', 'error')
     }
   }
 
   return (
     <div className="min-w-0">
-      {toast ? <Toast message={toast} onClose={() => setToast('')} /> : null}
+      {toast ? <Toast tone={toast.tone} message={toast.message} onClose={() => setToast(null)} /> : null}
 
       <PageHeader
         title="Inventory"
