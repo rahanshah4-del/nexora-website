@@ -541,16 +541,28 @@ export default function MedicalInventory() {
   const [toast, setToast] = useState(null)
 
   const medicineApi = useMedicineInventory()
-  const categoriesApi = useCategories()
-  const suppliersApi = useSuppliers()
-  const purchasesApi = usePurchases()
-  const transactionsApi = useInventoryTransactions()
+  // Categories/suppliers/purchases are each only rendered inside their own
+  // tab (Categories/Suppliers/Purchases — plus purchases is also read by the
+  // Reports tab), so their live listeners are deferred until that tab is
+  // actually open instead of running continuously from first load. This
+  // changes WHEN each listener starts, never what data it eventually shows —
+  // no row cap here, since suppliers'/purchases' payable-balance totals sum
+  // the FULL purchase history per supplier and would be silently wrong if
+  // truncated.
+  const categoriesApi = useCategories({ enabled: tab === 'categories' })
+  const suppliersApi = useSuppliers({ enabled: tab === 'suppliers' })
+  const purchasesApi = usePurchases({ enabled: tab === 'suppliers' || tab === 'purchases' || tab === 'reports' })
+  // Dashboard's stats only ever take the most recent 8 movements
+  // (calculateInventoryStats' recentMovements), so a cap here is invisible
+  // there; it only bounds how far back the Transactions tab itself can
+  // scroll — 250 lets that tab still browse meaningful history.
+  const transactionsApi = useInventoryTransactions({ limitCount: 250 })
   const accountApi = useAccountTransactions({ enabled: true, limitCount: 50 })
   // Reports tab only — a wider sample than the Medical POS Orders page's own
   // 100-order list, for a more representative profit report. Same 500 cap
   // already used elsewhere in this codebase for "give me a lot, but still
   // bounded" reporting queries (see useRestaurantRefunds.js's MAXIMUM_LIMIT).
-  const medicalOrdersApi = useMedicalPosOrders({ limitCount: 500 })
+  const medicalOrdersApi = useMedicalPosOrders({ enabled: tab === 'reports', limitCount: 500 })
 
   const { medicines } = medicineApi
   const stats = useInventoryStats(medicines, transactionsApi.transactions)

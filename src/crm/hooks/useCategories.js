@@ -29,13 +29,22 @@ function sanitizeCategory(payload) {
   }
 }
 
-export function useCategories() {
+export function useCategories(options = {}) {
   const { userId, workspaceId, businessType, userDoc, firebaseUser } = useUser()
+  const enabled = options.enabled !== false
   const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   useEffect(() => {
+    if (!enabled) {
+      Promise.resolve().then(() => {
+        setCategories([])
+        setLoading(false)
+        setError('')
+      })
+      return undefined
+    }
     if (!db || !workspaceId) {
       Promise.resolve().then(() => {
         setCategories([])
@@ -66,7 +75,7 @@ export function useCategories() {
     )
 
     return () => unsub?.()
-  }, [businessType, workspaceId])
+  }, [businessType, enabled, workspaceId])
 
   return useMemo(
     () => ({

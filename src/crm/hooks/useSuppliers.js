@@ -41,13 +41,22 @@ function sanitizeSupplier(payload) {
   }
 }
 
-export function useSuppliers() {
+export function useSuppliers(options = {}) {
   const { userId, workspaceId, businessType, userDoc, firebaseUser, activeBranchId } = useUser()
+  const enabled = options.enabled !== false
   const [suppliers, setSuppliers] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   useEffect(() => {
+    if (!enabled) {
+      Promise.resolve().then(() => {
+        setSuppliers([])
+        setLoading(false)
+        setError('')
+      })
+      return undefined
+    }
     if (!db || !workspaceId) {
       Promise.resolve().then(() => {
         setSuppliers([])
@@ -78,7 +87,7 @@ export function useSuppliers() {
     )
 
     return () => unsub?.()
-  }, [businessType, workspaceId])
+  }, [businessType, enabled, workspaceId])
 
   return useMemo(
     () => ({

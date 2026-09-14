@@ -90,13 +90,22 @@ function sanitizePurchase(payload) {
   }
 }
 
-export function usePurchases() {
+export function usePurchases(options = {}) {
   const { userId, workspaceId, businessType, userDoc, firebaseUser, activeBranchId } = useUser()
+  const enabled = options.enabled !== false
   const [purchases, setPurchases] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   useEffect(() => {
+    if (!enabled) {
+      Promise.resolve().then(() => {
+        setPurchases([])
+        setLoading(false)
+        setError('')
+      })
+      return undefined
+    }
     if (!db || !workspaceId) {
       Promise.resolve().then(() => {
         setPurchases([])
@@ -127,7 +136,7 @@ export function usePurchases() {
     )
 
     return () => unsub?.()
-  }, [businessType, workspaceId])
+  }, [businessType, enabled, workspaceId])
 
   return useMemo(
     () => ({
