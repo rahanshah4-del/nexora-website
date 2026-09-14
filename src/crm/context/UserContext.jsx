@@ -235,10 +235,21 @@ export function UserProvider({ children }) {
       return
     }
 
-    const ref = doc(db, 'users', user.uid)
-    const unsub = onSnapshot(
+    // Subscribe with retry — see the matching comment on the workspace doc
+    // listener below: a transient transport error must not be treated the
+    // same as a real permission-denied, or a network hiccup permanently
+    // wipes userDoc and silently corrupts every downstream computation that
+    // merges it (including workspaceAccessState's trial/subscription check).
+    let cancelled = false
+    let retryTimer = null
+    let unsub = () => {}
+
+    function subscribe() {
+      const ref = doc(db, 'users', user.uid)
+      unsub = onSnapshot(
       ref,
       (snap) => {
+        if (cancelled) return
         setProfileStatusReady(true)
         if (!snap.exists()) {
           console.warn('[User Profile] missing profile; waiting for signup or staff invite provisioning', {
@@ -335,14 +346,28 @@ export function UserProvider({ children }) {
         }
         setLoading(false)
       },
-      () => {
-        setUserDoc(null)
-        setProfileStatusReady(true)
-        setLoading(false)
+      (error) => {
+        if (cancelled) return
+        if (error?.code === 'permission-denied') {
+          setUserDoc(null)
+          setProfileStatusReady(true)
+          setLoading(false)
+          return
+        }
+        console.warn('[UserContext] user profile listener error — retrying', { code: error?.code || '', message: error?.message || '' })
+        retryTimer = window.setTimeout(() => {
+          if (!cancelled) subscribe()
+        }, 3000)
       },
-    )
+      )
+    }
+    subscribe()
 
-    return () => unsub()
+    return () => {
+      cancelled = true
+      if (retryTimer) window.clearTimeout(retryTimer)
+      unsub()
+    }
   }, [ready, user])
 
   const staffProfile = isStaffWorkspaceProfile(userDoc, user?.uid)
@@ -685,38 +710,69 @@ export function UserProvider({ children }) {
     setWorkspaceOwnerId('')
     setWorkspaceAccessDenied(false)
     setWorkspaceStatusReady(false)
-    const ref = doc(db, 'workspaces', workspaceId)
-    const unsub = onSnapshot(
-      ref,
-      (snap) => {
-        setWorkspaceStatusReady(true)
-        const data = snap.exists() ? snap.data() : null
-        traceUserContext('workspaceDoc-update', {
-          workspaceId,
-          ownerId: data?.ownerId || '',
-          businessType: data?.businessType || data?.selectedBusinessType || '',
-          status: data?.status || '',
-        })
-        setWorkspaceDoc(data)
-        setWorkspaceOwnerId(data ? String(data?.ownerId || '') : '')
-        setWorkspaceAccessDenied(false)
-        console.log('[Auth Isolation] workspace validated', {
-          uid: user?.uid || '',
-          workspaceId,
-          workspaceOwnerId: data?.ownerId || '',
-          ownerMatchesUser: !data || data.ownerId === user?.uid || data.ownerId === workspaceId,
-        })
-        if (data) ensureWorkspaceAccessFields(workspaceId, data.ownerId || user.uid).catch(() => {})
-      },
-      (error) => {
-        setWorkspaceDoc(null)
-        setWorkspaceOwnerId('')
-        setWorkspaceAccessDenied(error?.code === 'permission-denied')
-        setWorkspaceStatusReady(true)
-      },
-    )
 
-    return () => unsub()
+    // Subscribe with retry: onSnapshot's error callback isn't only invoked for
+    // a genuine permission-denied — a transient failure during transport
+    // negotiation (e.g. the initial WebChannel probe before falling back to
+    // long-polling under experimentalAutoDetectLongPolling) can also surface
+    // here. Treating every error as final previously wiped workspaceDoc to
+    // null and marked the workspace "ready" with no data, which
+    // workspaceAccessState then read as no trial/no subscription — silently
+    // showing the expired-workspace block screen for a workspace with a
+    // perfectly valid trial, on nothing more than a network hiccup. Only a
+    // real permission-denied is treated as final now; anything else retries.
+    let cancelled = false
+    let retryTimer = null
+    let unsub = () => {}
+
+    function subscribe() {
+      const ref = doc(db, 'workspaces', workspaceId)
+      unsub = onSnapshot(
+        ref,
+        (snap) => {
+          if (cancelled) return
+          setWorkspaceStatusReady(true)
+          const data = snap.exists() ? snap.data() : null
+          traceUserContext('workspaceDoc-update', {
+            workspaceId,
+            ownerId: data?.ownerId || '',
+            businessType: data?.businessType || data?.selectedBusinessType || '',
+            status: data?.status || '',
+          })
+          setWorkspaceDoc(data)
+          setWorkspaceOwnerId(data ? String(data?.ownerId || '') : '')
+          setWorkspaceAccessDenied(false)
+          console.log('[Auth Isolation] workspace validated', {
+            uid: user?.uid || '',
+            workspaceId,
+            workspaceOwnerId: data?.ownerId || '',
+            ownerMatchesUser: !data || data.ownerId === user?.uid || data.ownerId === workspaceId,
+          })
+          if (data) ensureWorkspaceAccessFields(workspaceId, data.ownerId || user.uid).catch(() => {})
+        },
+        (error) => {
+          if (cancelled) return
+          if (error?.code === 'permission-denied') {
+            setWorkspaceDoc(null)
+            setWorkspaceOwnerId('')
+            setWorkspaceAccessDenied(true)
+            setWorkspaceStatusReady(true)
+            return
+          }
+          console.warn('[UserContext] workspace listener error — retrying', { code: error?.code || '', message: error?.message || '' })
+          retryTimer = window.setTimeout(() => {
+            if (!cancelled) subscribe()
+          }, 3000)
+        },
+      )
+    }
+    subscribe()
+
+    return () => {
+      cancelled = true
+      if (retryTimer) window.clearTimeout(retryTimer)
+      unsub()
+    }
   }, [loading, ready, user?.uid, workspaceId])
 
   // ── Branches (multi-branch foundation, Phase 1) ─────────────────────────
