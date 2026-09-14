@@ -1,4 +1,4 @@
-import { addDoc, collection, deleteDoc, doc, getDocs, limit as queryLimit, onSnapshot, orderBy, query, serverTimestamp, startAfter, updateDoc, where } from 'firebase/firestore'
+import { addDoc, collection, deleteDoc, doc, getDocs, limit as queryLimit, onSnapshot, orderBy, query, serverTimestamp, setDoc, startAfter, updateDoc, where } from 'firebase/firestore'
 import { db } from './firebase.js'
 import { clientSafeMessage } from '../utils/messages.js'
 import { normalizeBusinessType } from '../data/moduleAccess.js'
@@ -10,16 +10,51 @@ function safeError(error, fallback) {
   return next
 }
 
-// Firestore is configured with experimentalForceLongPolling (see
-// src/lib/firebase.js) to survive hostile networks, but that transport can
-// leave a write's promise permanently pending — neither resolved nor
-// rejected — if a proxy/extension silently swallows the long-poll response
-// instead of erroring it. Bounding the create below with this timeout
-// guarantees callers always see a settled promise, surfacing a distinct
+// Firestore is configured with experimentalAutoDetectLongPolling (see
+// src/lib/firebase.js) to survive hostile networks, but transport
+// negotiation and transient backend conditions (confirmed via network
+// capture: repeated 503s on the Write channel specifically, Listen
+// unaffected) can still leave a write's promise pending far longer than a
+// plain single-document write should ever take, or leave it permanently
+// pending — neither resolved nor rejected — if a proxy/extension silently
+// swallows the response instead of erroring it. This timeout bounds each
+// individual attempt below (see CREATE_MAX_ATTEMPTS), surfacing a distinct
 // 'client/timeout' code so it can never be mistaken for a real Firestore
-// error code (e.g. 'permission-denied') in the logs. Kept at the same 12s
-// as the branch writes in src/crm/context/UserContext.jsx.
-const FIRESTORE_WRITE_TIMEOUT_MS = 12000
+// error code (e.g. 'permission-denied') in the logs.
+const CREATE_ATTEMPT_TIMEOUT_MS = 8000
+
+// createUserDoc retries a failed create automatically before ever reporting
+// failure to the caller — see CREATE_RETRYABLE_CODES below for which
+// failures qualify. Worst case before a genuine failure is reported:
+// 3 attempts x 8s + 1s + 2s backoff between them = 27s.
+const CREATE_MAX_ATTEMPTS = 3
+const CREATE_RETRY_BACKOFF_MS = [1000, 2000]
+
+// Error codes worth retrying: transient/transport-shaped failures where an
+// identical retry is likely to succeed. 'unavailable' is explicitly
+// documented by the SDK itself as "most likely a transient condition... may
+// be corrected by retrying with a backoff". 'client/timeout' is our own
+// code from withTimeout. This is deliberately an allow-list rather than
+// "retry anything that isn't a permission/validation error" — codes like
+// 'unimplemented'/'data-loss'/'out-of-range' can never succeed on retry, and
+// a deny-list would still burn attempts and backoff time on them.
+// 'cancelled'/'unknown'/'internal' are ambiguous enough that retrying isn't
+// clearly safe, so they're treated as final rather than assumed transient.
+const CREATE_RETRYABLE_CODES = new Set([
+  'unavailable',
+  'deadline-exceeded',
+  'resource-exhausted',
+  'aborted',
+  'client/timeout',
+])
+
+function isRetryableCreateError(error) {
+  return CREATE_RETRYABLE_CODES.has(error?.code || '')
+}
+
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
 
 function withTimeout(promise, ms, timeoutMessage) {
   let timer
@@ -343,28 +378,70 @@ export async function createUserDoc(userId, path, payload, options = {}) {
   const recordUserId = path === 'teamMembers'
     ? (payload.userId || payload.uid || payload.staffId || payload.email || '')
     : userId
-  try {
-    // Awaiting addDoc waits for the server's write acknowledgement, not just
-    // the local-cache write, so callers can report a real success/failure
-    // instead of optimistically closing over a write that never landed.
-    return await withTimeout(
-      addDoc(ref, {
-        ...payload,
-        ownerId: payload.ownerId || userId,
-        userId: recordUserId || userId,
-        workspaceId: userId,
-        businessType,
-        createdBy: payload.createdBy || payload.submittedBy || userId,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      }),
-      FIRESTORE_WRITE_TIMEOUT_MS,
-      'Request timed out — check your network connection and try again.',
-    )
-  } catch (error) {
-    logFirestoreAccessError(error, { ...options.diagnostics, userId, workspaceId: userId, collectionName: path, collectionPath, operation: 'create' })
-    throw safeError(error, 'Unable to save account data.')
+  const data = {
+    ...payload,
+    ownerId: payload.ownerId || userId,
+    userId: recordUserId || userId,
+    workspaceId: userId,
+    businessType,
+    createdBy: payload.createdBy || payload.submittedBy || userId,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
   }
+  // One document ID, generated once and reused across every attempt below —
+  // NOT addDoc(), which mints a fresh random ID per call. A retry can follow
+  // a 'deadline-exceeded', which the SDK's own docs say "may be returned
+  // even if the operation has completed successfully" — addDoc() would risk
+  // creating a second, duplicate document if the timed-out attempt actually
+  // landed server-side. setDoc() against this same pre-generated ID makes
+  // every retry an idempotent overwrite of the same document instead.
+  const docRef = doc(ref)
+  // Explicit opt-out for the POS offline-queue path (usePosOrders.js,
+  // useMedicalPosOrders.js): that path already has its own fail-fast-then-
+  // retry-on-reconnect design and must keep failing at one attempt's
+  // timeout, not absorb this function's retry loop on top of its own.
+  const retryEnabled = options?.retryOnTransientError !== false
+
+  let lastError = null
+  for (let attempt = 1; attempt <= CREATE_MAX_ATTEMPTS; attempt += 1) {
+    try {
+      // Awaiting setDoc waits for the server's write acknowledgement, not
+      // just the local-cache write, so callers can report a real
+      // success/failure instead of optimistically closing over a write that
+      // never landed.
+      await withTimeout(
+        setDoc(docRef, data),
+        CREATE_ATTEMPT_TIMEOUT_MS,
+        'Request timed out — check your network connection and try again.',
+      )
+      return docRef
+    } catch (error) {
+      lastError = error
+      const isLastAttempt = attempt === CREATE_MAX_ATTEMPTS
+      if (!retryEnabled || isLastAttempt || !isRetryableCreateError(error)) break
+      const backoffMs = CREATE_RETRY_BACKOFF_MS[attempt - 1]
+      console.warn('[Firestore Create Retry]', {
+        collectionPath,
+        attempt,
+        maxAttempts: CREATE_MAX_ATTEMPTS,
+        errorCode: error?.code || '',
+        errorMessage: error?.message || '',
+        retryInMs: backoffMs,
+      })
+      // Lets ProductModal (and anything else watching) swap its "Saving…"
+      // label to "Retrying…" without every caller having to thread a
+      // progress callback down through its own create function.
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('nexora:firestore-create-retry', {
+          detail: { collectionPath, attempt, maxAttempts: CREATE_MAX_ATTEMPTS },
+        }))
+      }
+      await delay(backoffMs)
+    }
+  }
+
+  logFirestoreAccessError(lastError, { ...options.diagnostics, userId, workspaceId: userId, collectionName: path, collectionPath, operation: 'create' })
+  throw safeError(lastError, 'Unable to save account data.')
 }
 
 export async function patchDoc(path, id, patch) {

@@ -40,6 +40,7 @@ function Field({ label, children, className = '' }) {
 function ProductModal({ open, product, onClose, onSave }) {
   const [draft, setDraft] = useState(blankProduct)
   const [saving, setSaving] = useState(false)
+  const [retrying, setRetrying] = useState(false)
 
   useEffect(() => {
     if (!open) return
@@ -59,11 +60,27 @@ function ProductModal({ open, product, onClose, onSave }) {
     setDraft((current) => ({ ...current, [key]: value }))
   }
 
+  // createUserDoc (src/crm/lib/firestore.js) retries a failed create
+  // automatically on transient errors before ever rejecting, dispatching
+  // this event before each retry's backoff wait. Listening for it here
+  // (rather than threading a progress callback down through every hook's
+  // own create function) means the "Retrying…" label works for every module
+  // that goes through createUserDoc with zero per-hook wiring.
+  useEffect(() => {
+    if (!saving) return undefined
+    function handleRetry() {
+      setRetrying(true)
+    }
+    window.addEventListener('nexora:firestore-create-retry', handleRetry)
+    return () => window.removeEventListener('nexora:firestore-create-retry', handleRetry)
+  }, [saving])
+
   // onSave is async in every caller (Products/Inventory/MedicalInventory) and
   // now resolves only once Firestore has acknowledged the write, so awaiting it
   // is what keeps the button disabled for the real duration of the save.
   async function handleSave() {
     if (saving) return
+    setRetrying(false)
     setSaving(true)
     try {
       await onSave?.(draft)
@@ -71,6 +88,7 @@ function ProductModal({ open, product, onClose, onSave }) {
       // finally (not the success path) is what guarantees a rejected or
       // timed-out write can never leave the modal stuck in 'Saving…'.
       setSaving(false)
+      setRetrying(false)
     }
   }
 
@@ -231,7 +249,7 @@ function ProductModal({ open, product, onClose, onSave }) {
                   Cancel
                 </Button>
                 <Button className="h-10 rounded-xl" type="button" onClick={handleSave} disabled={saving}>
-                  {saving ? 'Saving…' : product ? 'Save Product' : 'Create Product'}
+                  {saving ? (retrying ? 'Retrying…' : 'Saving…') : product ? 'Save Product' : 'Create Product'}
                 </Button>
               </div>
             </div>

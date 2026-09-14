@@ -152,6 +152,11 @@ async function syncOneOrder(workspaceId, userId, order) {
   try {
     const ref = await createUserDoc(workspaceId, 'posOrders', payload, {
       businessType: order.businessType || POS_BUSINESS_TYPE,
+      // This offline-queue path has its own fail-fast-then-retry-on-reconnect
+      // design (see retryFailedOrders/the 'online' listener below) — it must
+      // keep failing at one attempt's timeout, not also absorb
+      // createUserDoc's own internal retry loop on top of that.
+      retryOnTransientError: false,
     })
     return { ok: true, id: ref.id }
   } catch (err) {
@@ -394,6 +399,9 @@ export function usePosOrders(options = {}) {
       window.dispatchEvent(new CustomEvent('nexora:sync:start'))
       createUserDoc(workspaceId, 'posOrders', firestorePayload, {
         businessType: effectiveBusinessType,
+        // See the comment on the other createUserDoc call in this file —
+        // this fire-and-forget sync already retries on reconnect itself.
+        retryOnTransientError: false,
       }).then((ref) => {
         const syncedOrder = { ...localOrder, id: ref.id, syncStatus: 'synced', retryCount: 0, syncError: '', updatedAt: new Date().toISOString() }
         forgetLocalOrder(workspaceId, localId)
