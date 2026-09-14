@@ -84,15 +84,21 @@ export const authPersistenceReady = auth
 export const db = app
   ? initializeFirestore(app, {
       localCache: memoryLocalCache(),
-      // Some ISPs / VPNs / corporate proxies / antivirus tools interfere with
-      // the WebSocket-based channel Firestore prefers by default. Force
-      // long-polling instead of only auto-detecting it — auto-detection still
-      // attempts the WebSocket channel first and can take 30s+ to give up on
-      // a hostile network before falling back, and every read/write feels
-      // "stuck" for that long. Forcing it skips that detection delay
-      // entirely, at the cost of marginally higher latency on networks that
-      // didn't need it.
-      experimentalForceLongPolling: true,
+      // Was experimentalForceLongPolling: true — forcing long-polling for
+      // every client, on every network, turned out to be the cause of
+      // intermittent 12s+ write timeouts (investigated and confirmed): a
+      // forced long-poll cycle re-establishes its transport periodically
+      // (full handshake cost), producing exactly the observed bimodal
+      // pattern of mostly-fast, occasionally 12s+ operations, even on
+      // ordinary networks that never needed long-polling at all.
+      // Auto-detect instead: it still attempts the WebSocket-based channel
+      // Firestore prefers by default, and only falls back to long-polling on
+      // networks where that channel genuinely fails (ISPs / VPNs / corporate
+      // proxies / antivirus tools that interfere with it). The known
+      // tradeoff is a one-time ~30-60s detection delay on a client's first
+      // connection on a network hostile enough to need the fallback, versus
+      // eliminating the periodic connection-cycling delay for everyone else.
+      experimentalAutoDetectLongPolling: true,
     })
   : null
 export const firestoreDb = db
