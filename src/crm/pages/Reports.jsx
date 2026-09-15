@@ -39,6 +39,8 @@ import { REPORT_SECTION_OPTIONS, useReports } from '../hooks/useReports.js'
 import { useUser } from '../hooks/useUser.js'
 import { usePosOrders } from '../hooks/usePosOrders.js'
 import { usePosWalletPayments } from '../hooks/usePosWalletPayments.js'
+import { useMedicalPosOrders } from '../hooks/useMedicalPosOrders.js'
+import { useAccountTransactions } from '../hooks/useAccountTransactions.js'
 import {
   calculateApprovedExpenses,
   calculateProfit,
@@ -72,6 +74,7 @@ import {
   calculateWalletBalance,
   calculateCashBalance,
   calculateBankBalance,
+  aggregateIncome,
 } from '../lib/financeCalculations.js'
 import { calculateSupplierBalance } from '../lib/financeCalculations.js'
 import { contractDisplayStatus, contractOutstandingBalance, contractStats, maintenanceBalanceDue, maintenanceStats } from '../lib/propertyCalculations.js'
@@ -727,6 +730,231 @@ function RetailPOSReports() {
         </div>
       </Card>
     </motion.div>
+  )
+}
+
+// ── PharmaFlow (Medical Store POS) reports ──────────────────────────────────
+// Step 3 of a dedicated PharmaFlowReports build: Revenue, Wallet Balance and
+// Cash Balance only. Batch/expiry, low-stock, supplier dues, profit-margin
+// and payment-method cash-reconciliation cards are deliberately deferred to
+// later steps — see the comment on posOrderAsIncomeTransaction below for why
+// this step doesn't split POS revenue by payment method.
+
+// Same tokens as MedicalDashboard.jsx/MedicalInventory.jsx — kept in sync
+// deliberately so PharmaFlow's pages read as one system. Local to this
+// component only, per the established per-file convention (no shared
+// palette module exists; each PharmaFlow page owns its own copy).
+const PHARMA_PASTEL = {
+  bg: '#F6F5FB',
+  ink: '#1F2230',
+  muted: '#8B8A99',
+  mint: '#D9F2E3',
+  blush: '#FBDEDE',
+  sky: '#DCEBFB',
+  lavender: '#E8E1FB',
+  green: '#8FD9A8',
+  coral: '#F2A6A6',
+  dark: '#1C1B29',
+}
+
+// A record's branchId of null, undefined, empty string, or the lowercase
+// string 'main' all mean the Main branch — confirmed last session: Stage 1's
+// live-create paths write activeBranchId || null (so "no active branch" is
+// stored as null, never a string), and the POS offline-queue replay path
+// separately defaults a missing/empty branchId to the literal lowercase
+// 'main' (the deterministic branches/main document ID). Nothing anywhere
+// stores a capitalized "Main" — that's only ever the branch doc's own
+// display `name` field, looked up separately below.
+function normalizePharmaBranchId(branchId) {
+  const value = String(branchId || '').trim().toLowerCase()
+  return value || 'main'
+}
+
+function PharmaKpiCard({ tint, label, value, hint }) {
+  return (
+    <div className="rounded-2xl p-4 shadow-sm" style={{ backgroundColor: tint }}>
+      <p className="text-xs font-medium" style={{ color: `${PHARMA_PASTEL.ink}B3` }}>{label}</p>
+      <p className="mt-3 truncate text-2xl font-bold" style={{ color: PHARMA_PASTEL.ink }}>{value}</p>
+      <p className="mt-1 truncate text-xs" style={{ color: `${PHARMA_PASTEL.ink}99` }}>{hint}</p>
+    </div>
+  )
+}
+
+// Represents one medicalPosOrders sale as an income-typed transaction so its
+// revenue can be summed through the exact same calculateWalletBalance /
+// calculateCashBalance / aggregateIncome logic that already classifies
+// accountTransactions by `type` (financeCalculations.js's incomeTypes /
+// OUTFLOW_TYPES sets) — reusing that one classification rather than
+// re-deriving a second one for POS orders specifically.
+//
+// Deliberately NOT split by payment method (Cash vs Card/JazzCash/Easypaisa/
+// UPI/Wallet) in this step. Reasoning: calculateWalletBalance/
+// calculateCashBalance's existing split is entirely on the OUTFLOW side
+// (bank_transfer and supplier_payment are excluded from reducing cash;
+// expenses/withdrawals/refunds do reduce it) — REVENUE itself is never split
+// by payment channel anywhere in the existing formula. An invoice paid by
+// bank transfer and one paid by cash both count toward revenue/wallet/cash
+// identically today. Splitting POS revenue by payment method here would be
+// inventing a distinction the current formula doesn't make anywhere else,
+// not applying an existing one — and a payment-method-aware physical-cash
+// view is exactly what "cash-reconciliation" (explicitly a later step) is
+// for. So every POS sale counts as approved income here, regardless of
+// paymentMethod, matching how every other revenue source is already treated.
+//
+// amount uses `||`, not `??`, deliberately: it must match refundOrder's own
+// refundAmount computation (useMedicalPosOrders.js) exactly — `Number(order.
+// paidAmount || order.total || 0)` — so a fully-on-credit order (paidAmount:
+// 0) that's later refunded contributes the same amount here as income that
+// its refund transaction subtracts as an outflow, netting to zero instead of
+// leaving Wallet/Cash Balance short by the refunded amount.
+function posOrderAsIncomeTransaction(order) {
+  return {
+    type: 'income',
+    status: 'approved',
+    approvalStatus: 'approved',
+    amount: safeNumber(order.paidAmount || order.total),
+    method: order.paymentMethod || 'Cash',
+    createdAt: order.createdAt,
+    reference: order.orderNumber || order.id,
+    _source: 'medicalPosOrders',
+  }
+}
+
+function PharmaFlowReports() {
+  const { currency: preferredCurrency } = usePreferences()
+  const { branches } = useUser()
+  const [filters, setFilters] = useState({ range: 'month', startDate: '', endDate: '', currency: preferredCurrency || 'PKR' })
+  const [selectedBranchId, setSelectedBranchId] = useState('all')
+  const activeWindow = useMemo(() => dateWindow(filters), [filters])
+  const detailLimit = 250
+  const medicalOrdersApi = useMedicalPosOrders({ enabled: true, limitCount: detailLimit })
+  const accountTransactionsApi = useAccountTransactions({ enabled: true, limitCount: detailLimit })
+
+  // Same source BranchSwitcher.jsx uses (const { branches } = useUser()) — no
+  // new branches query. Each branch's real display name comes from this
+  // list, keyed by its own (already-lowercase) doc id; the synthetic 'all'
+  // option is prepended for the "combined" view.
+  const branchOptions = useMemo(
+    () => [
+      { id: 'all', name: 'All branches' },
+      ...branches.map((b) => ({ id: normalizePharmaBranchId(b.id), name: b.name || 'Branch' })),
+    ],
+    [branches],
+  )
+
+  const reportData = useMemo(() => {
+    const inRange = (rows) => (Array.isArray(rows) ? rows.filter((row) => withinDateWindow(row, activeWindow)) : [])
+    const allOrders = inRange(medicalOrdersApi.orders)
+    const allTransactions = inRange(accountTransactionsApi.transactions)
+
+    const matchesBranch = (row) => selectedBranchId === 'all' || normalizePharmaBranchId(row.branchId) === selectedBranchId
+    const posOrders = allOrders.filter(matchesBranch)
+    const transactions = allTransactions.filter(matchesBranch)
+
+    // Revenue = accountTransactions income + medicalPosOrders totals.
+    // Confirmed last session: zero overlap between the two today (a POS sale
+    // never writes an accountTransactions entry on create, only on refund),
+    // so this is a plain sum, not a merge needing de-duplication. invoices/
+    // payments are passed empty deliberately — an invoice's own revenue
+    // already reaches `transactions` once it's paid (income-invoice-{id},
+    // type: 'income'); summing raw invoices here too would double-count it.
+    const income = aggregateIncome([], [], transactions, posOrders)
+    const totalRevenueUsd = income.total
+
+    // Wallet/Cash Balance: calculateWalletBalance/calculateCashBalance run
+    // completely unchanged — see posOrderAsIncomeTransaction above for why
+    // POS revenue is folded in as income-typed transactions instead of new,
+    // separate math.
+    const combinedTransactions = [...transactions, ...posOrders.map(posOrderAsIncomeTransaction)]
+    const walletBalance = calculateWalletBalance({ transactions: combinedTransactions })
+    const cashBalance = calculateCashBalance({ transactions: combinedTransactions })
+
+    return {
+      posOrders,
+      transactions,
+      totalRevenueUsd,
+      walletBalance,
+      cashBalance,
+      hasData: posOrders.length > 0 || transactions.length > 0,
+    }
+  }, [medicalOrdersApi.orders, accountTransactionsApi.transactions, activeWindow, selectedBranchId])
+
+  const loading = medicalOrdersApi.loading || accountTransactionsApi.loading
+  const error = medicalOrdersApi.error || accountTransactionsApi.error
+
+  return (
+    <div className="min-w-0 space-y-5 p-4 sm:p-6" style={{ backgroundColor: PHARMA_PASTEL.bg, color: PHARMA_PASTEL.ink }}>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="text-xs font-medium" style={{ color: PHARMA_PASTEL.muted }}>PharmaFlow</p>
+          <h1 className="mt-1 text-2xl font-bold sm:text-[1.75rem]" style={{ color: PHARMA_PASTEL.ink }}>Reports</h1>
+          <p className="mt-1 max-w-xl text-sm" style={{ color: PHARMA_PASTEL.muted }}>
+            Revenue, wallet, and cash balance combined from till sales and your account ledger.
+          </p>
+        </div>
+      </div>
+
+      <div className="rounded-2xl bg-white p-4 shadow-sm">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <label className="text-xs font-semibold" style={{ color: PHARMA_PASTEL.ink }}>
+            Branch
+            <Select className="mt-1.5" value={selectedBranchId} onChange={(event) => setSelectedBranchId(event.target.value)}>
+              {branchOptions.map((option) => (
+                <option key={option.id} value={option.id}>{option.name}</option>
+              ))}
+            </Select>
+          </label>
+          <label className="text-xs font-semibold" style={{ color: PHARMA_PASTEL.ink }}>
+            Date range
+            <Select className="mt-1.5" value={filters.range} onChange={(event) => setFilters((current) => ({ ...current, range: event.target.value }))}>
+              {rangeOptions.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </Select>
+          </label>
+          <label className="text-xs font-semibold" style={{ color: PHARMA_PASTEL.ink }}>
+            Start
+            <Input className="mt-1.5" type="date" disabled={filters.range !== 'custom'} value={filters.startDate} onChange={(event) => setFilters((current) => ({ ...current, startDate: event.target.value }))} />
+          </label>
+          <label className="text-xs font-semibold" style={{ color: PHARMA_PASTEL.ink }}>
+            End
+            <Input className="mt-1.5" type="date" disabled={filters.range !== 'custom'} value={filters.endDate} onChange={(event) => setFilters((current) => ({ ...current, endDate: event.target.value }))} />
+          </label>
+        </div>
+      </div>
+
+      {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-rose-700">{error}</div> : null}
+
+      {!loading && !reportData.hasData ? (
+        <div className="rounded-2xl bg-white p-8 text-center shadow-sm">
+          <p className="text-lg font-semibold" style={{ color: PHARMA_PASTEL.ink }}>No report data yet</p>
+          <p className="mx-auto mt-2 max-w-md text-sm leading-6" style={{ color: PHARMA_PASTEL.muted }}>
+            Start recording till sales or account transactions and this report will populate automatically.
+          </p>
+        </div>
+      ) : null}
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <PharmaKpiCard
+          tint={PHARMA_PASTEL.mint}
+          label="Revenue"
+          value={loading ? '—' : formatMoney(reportData.totalRevenueUsd, filters.currency)}
+          hint={`${reportData.posOrders.length} till sales · ${reportData.transactions.length} ledger entries`}
+        />
+        <PharmaKpiCard
+          tint={PHARMA_PASTEL.sky}
+          label="Wallet Balance"
+          value={loading ? '—' : formatMoney(reportData.walletBalance, filters.currency)}
+          hint="All revenue minus all outflows (expenses, bank transfers, cash withdrawals, supplier payments, refunds)"
+        />
+        <PharmaKpiCard
+          tint={PHARMA_PASTEL.lavender}
+          label="Cash Balance"
+          value={loading ? '—' : formatMoney(reportData.cashBalance, filters.currency)}
+          hint="What's physically in the cash drawer"
+        />
+      </div>
+    </div>
   )
 }
 
@@ -2774,6 +3002,12 @@ export default function ReportsPage() {
   }
   if (normalized === 'Transport / Rental') {
     return <TransportReports />
+  }
+  // 'Medical Store POS' is the legacy raw businessType string; normalizeBusinessType
+  // always maps it forward to 'PharmaFlow' (see moduleAccess.js's businessTypeAliases),
+  // so 'PharmaFlow' is the only value that can ever appear here for this business type.
+  if (normalized === 'PharmaFlow') {
+    return <PharmaFlowReports />
   }
   return <GenericReports />
 }

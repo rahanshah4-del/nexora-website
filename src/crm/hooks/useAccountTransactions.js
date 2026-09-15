@@ -14,6 +14,7 @@ function normalizeTransaction(transaction = {}) {
   return {
     id: transaction.id,
     transactionId: transaction.transactionId || transaction.id,
+    branchId: transaction.branchId ?? null,
     type: statusValue(transaction.type, 'adjustment'),
     amount: transactionAmount(transaction),
     currency: normalizeCurrency(transaction.currency),

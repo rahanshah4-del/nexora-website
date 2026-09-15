@@ -126,6 +126,7 @@ export function normalizeMedicalPosOrder(order = {}) {
     customerName: order.customerName || 'Walk-in Customer',
     customerPhone: order.customerPhone || '',
     branch: order.branch || 'Main Branch',
+    branchId: order.branchId ?? null,
     cashier: order.cashier || '',
     paymentMethod: order.paymentMethod || 'Cash',
     paymentStatus: order.paymentStatus || 'paid',
