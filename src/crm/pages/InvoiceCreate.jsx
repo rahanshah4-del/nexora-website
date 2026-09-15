@@ -456,7 +456,17 @@ export default function InvoiceCreatePage() {
       showToast({ tone: 'error', message: 'You do not have permission to create invoices.' }, 2600)
       return
     }
-    if (isSubmittingRef.current) return
+    // Shared by the re-entry guard just below and by withTimeout's own
+    // notice further down, so both ever say exactly the same thing.
+    const stillProcessingMessage = isSchool
+      ? 'Still processing the fee bill — please wait, do not save again.'
+      : 'Still processing the invoice — please wait, do not save again.'
+    if (isSubmittingRef.current) {
+      // A click landing while a previous save is still genuinely in flight
+      // (whether or not the 45s notice has shown yet) must not be silent.
+      showToast({ tone: 'info', message: stillProcessingMessage })
+      return
+    }
     const rawStatus = String(status || invoice.status || 'pending').toLowerCase()
     const requestedStatus = canCreatePaidInvoices || !['paid', 'approved', 'partial paid', 'partial_paid'].includes(rawStatus)
       ? rawStatus
@@ -501,7 +511,13 @@ export default function InvoiceCreatePage() {
       if (!isMountedRef.current) return
       isSubmittingRef.current = false
       setSubmitting(false)
-      if (result?.ok) {
+      // Strict === true, not mere truthiness of result or result.ok: every
+      // actual caller (createInvoice, withTimeout's own timeout branch) only
+      // ever produces a literal boolean here, but this is the one place a
+      // failure gets to navigate the user away, so it decides on the result
+      // shape explicitly rather than on however permissive a future caller's
+      // "ok" field might be.
+      if (result && result.ok === true) {
         // Used to also enqueue a 'invoice.generate' background job here, but
         // the worker has no real handler for that type — it just
         // acknowledges and does nothing — so this was a pure dependency on
@@ -564,9 +580,7 @@ export default function InvoiceCreatePage() {
       }),
       {
         ms: 45000,
-        message: isSchool
-          ? 'Still processing the fee bill — please wait, do not save again.'
-          : 'Still processing the invoice — please wait, do not save again.',
+        message: stillProcessingMessage,
         // withTimeout calls this as (result, null) on a late success/failure
         // result, or (null, error) on a late rejection. createInvoice() never
         // actually rejects (it catches its own errors and always resolves
