@@ -59,6 +59,7 @@ import {
 import { formatCurrency } from '../utils/format.js'
 import { cn } from '../utils/cn.js'
 import { buildReportId, exportReportCsv, exportReportExcel, exportReportPdf } from '../lib/reportGenerator.js'
+import { openBrowserPrintHtml } from '../lib/printerService.js'
 import WhatsappReports from '../components/reports/WhatsappReports.jsx'
 import { useSalesHubCollection } from '../hooks/useSalesHubCollection.js'
 import { buildSalesHubReport, calculateSalesHubReportMetrics, SALES_REPORT_TYPES } from '../lib/salesHubReports.js'
@@ -913,11 +914,36 @@ function posOrderAsIncomeTransaction(order) {
   }
 }
 
+// Same implementation MedicalPosOrders.jsx's own receipt printing uses —
+// needed for the end-of-day summary receipt's generated HTML string below.
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+}
+
+// Built on this file's own toDateValue rather than duplicating a second date
+// parser — the end-of-day summary receipt needs a literal-today check
+// independent of activeWindow/withinDateWindow (Reports.jsx's date-range
+// filter), same distinction MedicalPosOrders.jsx's own printTodayReport()
+// makes from its date-range-filtered table.
+function isToday(value) {
+  const date = toDateValue(value)
+  if (!date) return false
+  const now = new Date()
+  return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth() && date.getDate() === now.getDate()
+}
+
 function PharmaFlowReports() {
-  const { currency: preferredCurrency } = usePreferences()
-  const { branches } = useUser()
+  const { profile, currency: preferredCurrency } = usePreferences()
+  const { branches, userDoc, firebaseUser, workspaceId } = useUser()
+  const businessSettingsApi = useBusinessSettings()
   const [filters, setFilters] = useState({ range: 'month', startDate: '', endDate: '', currency: preferredCurrency || 'PKR' })
   const [selectedBranchId, setSelectedBranchId] = useState('all')
+  const [downloadNotice, setDownloadNotice] = useState('')
   const activeWindow = useMemo(() => dateWindow(filters), [filters])
   const detailLimit = 250
   const medicalOrdersApi = useMedicalPosOrders({ enabled: true, limitCount: detailLimit })
@@ -942,6 +968,26 @@ function PharmaFlowReports() {
     ],
     [branches],
   )
+
+  // Same fields/sources GenericReports' own branding useMemo uses
+  // (Reports.jsx's GenericReports, ~line 1532) — trimmed to just what
+  // exportReportPdf/exportReportCsv/exportReportExcel actually read
+  // (companyName, ownerName, logo/logoUrl, receiptFooter).
+  const branding = useMemo(
+    () => ({
+      companyName: safeText(businessSettingsApi.settings.businessName || profile.companyName || userDoc?.company || userDoc?.workspaceName, 'Nexora Workspace'),
+      ownerName: safeText(profile.ownerName || userDoc?.fullName || userDoc?.name || firebaseUser?.displayName, 'Workspace Owner'),
+      receiptFooter: businessSettingsApi.settings.receiptFooter || '',
+      logo: businessSettingsApi.settings.logoUrl || profile.avatarDataUrl || NEXORA_LOGO,
+      logoUrl: businessSettingsApi.settings.logoUrl || profile.avatarDataUrl || '',
+    }),
+    [businessSettingsApi.settings, firebaseUser?.displayName, profile, userDoc],
+  )
+
+  const dateRangeLabel = filters.range === 'custom'
+    ? `${filters.startDate || 'Start'} to ${filters.endDate || 'End'}`
+    : rangeOptions.find((option) => option.value === filters.range)?.label || 'This month'
+  const selectedBranchLabel = branchOptions.find((option) => option.id === selectedBranchId)?.name || 'All branches'
 
   const reportData = useMemo(() => {
     const inRange = (rows) => (Array.isArray(rows) ? rows.filter((row) => withinDateWindow(row, activeWindow)) : [])
@@ -1147,6 +1193,185 @@ function PharmaFlowReports() {
     return { methodRows, cashSales, everythingElse, expectedCashInDrawer }
   }, [reportData.posOrders, reportData.transactions])
 
+  // Download (PDF/CSV/Excel) — same {reportId, title, ..., summary, tables,
+  // qrPayload} shape GenericReports' own reportExport useMemo builds
+  // (~line 1610), fed entirely from PharmaFlowReports' own already-computed
+  // state (same branch + date range currently selected on screen) — no new
+  // queries, no re-derived numbers.
+  const reportExport = useMemo(() => {
+    const generatedAt = new Date().toLocaleString()
+    const reportId = buildReportId(businessSettingsApi.settings.reportPrefix || 'RPT')
+
+    const lowStockRows = [...inventoryStats.outOfStockItems, ...inventoryStats.lowStockItems]
+    const expiryRows = [
+      ...expiryBuckets.expired.map((medicine) => ({ ...medicine, bucket: 'Expired' })),
+      ...expiryBuckets.soon.map((medicine) => ({ ...medicine, bucket: `Expiring ≤ ${EXPIRY_SOON_DAYS}d` })),
+      ...expiryBuckets.upcoming.map((medicine) => ({ ...medicine, bucket: `Expiring ≤ ${EXPIRY_UPCOMING_DAYS}d` })),
+    ]
+
+    return {
+      reportId,
+      title: 'PharmaFlow Reports',
+      workspaceId,
+      workspaceName: branding.companyName,
+      businessType: 'PharmaFlow',
+      dateRange: `${dateRangeLabel} · ${selectedBranchLabel}`,
+      generatedBy: branding.ownerName,
+      generatedAt,
+      branding,
+      summary: [
+        { label: 'Revenue', value: formatMoney(reportData.totalRevenueUsd, filters.currency) },
+        { label: 'Wallet Balance', value: formatMoney(reportData.walletBalance, filters.currency) },
+        { label: 'Cash Balance', value: formatMoney(reportData.cashBalance, filters.currency) },
+        { label: 'Low stock', value: String(inventoryStats.lowStockCount) },
+        { label: 'Out of stock', value: String(inventoryStats.outOfStockCount) },
+        { label: 'Supplier dues', value: formatMoney(totalSuppliersDue, filters.currency) },
+      ],
+      tables: [
+        {
+          title: 'Low stock',
+          columns: [
+            { label: 'Medicine', value: (row) => row.name },
+            { label: 'On hand', value: (row) => String(row.stockQuantity) },
+            { label: 'Min threshold', value: (row) => String(row.minStockAlert) },
+          ],
+          rows: lowStockRows,
+        },
+        {
+          title: 'Batch & expiry',
+          columns: [
+            { label: 'Bucket', value: (row) => row.bucket },
+            { label: 'Medicine', value: (row) => row.name },
+            { label: 'Expiry date', value: (row) => formatDate(row.expiryDate) },
+            { label: 'Batch #', value: (row) => row.batchNumber || '' },
+          ],
+          rows: expiryRows,
+        },
+        {
+          title: 'Supplier dues',
+          columns: [
+            { label: 'Supplier', value: (row) => row.supplier.name },
+            { label: 'Balance due', value: (row) => formatMoney(row.balanceDue, filters.currency) },
+          ],
+          rows: supplierDues,
+        },
+        {
+          title: 'Purchase ledger',
+          columns: [
+            { label: 'Supplier', value: (row) => row.supplierName || 'Unknown supplier' },
+            { label: 'Date', value: (row) => formatDate(row.createdAt) },
+            { label: 'Total', value: (row) => formatMoney(row.total, filters.currency) },
+            { label: 'Paid', value: (row) => formatMoney(row.paidAmount, filters.currency) },
+            { label: 'Due', value: (row) => formatMoney(row.balanceDue, filters.currency) },
+          ],
+          rows: purchaseLedger,
+        },
+        {
+          title: 'Top medicines by profit',
+          columns: [
+            { label: 'Medicine', value: (row) => row.name },
+            { label: 'Units sold', value: (row) => String(row.quantity) },
+            { label: 'Profit', value: (row) => formatMoney(row.profit, filters.currency) },
+            { label: 'Margin %', value: (row) => `${row.margin.toFixed(1)}%` },
+          ],
+          rows: medicineProfit,
+        },
+        {
+          title: 'Payment method breakdown',
+          columns: [
+            { label: 'Method', value: (row) => row.method },
+            { label: 'Amount', value: (row) => formatMoney(row.amount, filters.currency) },
+          ],
+          rows: cashReconciliation.methodRows,
+        },
+      ],
+      qrPayload: {
+        reportId,
+        workspaceId,
+        businessType: 'PharmaFlow',
+        dateRange: dateRangeLabel,
+        branch: selectedBranchLabel,
+        generatedAt,
+        totalRevenue: reportData.totalRevenueUsd,
+        walletBalance: reportData.walletBalance,
+        cashBalance: reportData.cashBalance,
+      },
+    }
+  }, [
+    branding,
+    businessSettingsApi.settings.reportPrefix,
+    cashReconciliation.methodRows,
+    dateRangeLabel,
+    expiryBuckets,
+    filters.currency,
+    inventoryStats,
+    medicineProfit,
+    purchaseLedger,
+    reportData,
+    selectedBranchLabel,
+    supplierDues,
+    totalSuppliersDue,
+    workspaceId,
+  ])
+
+  // Print end-of-day summary (58mm) — mirrors MedicalPosOrders.jsx's own
+  // printTodayReport() structure and printerService.js's openBrowserPrintHtml
+  // helper exactly (same popup + window.print() mechanism, same @page{size:
+  // 58mm auto} approach). Deliberately independent of reportData/activeWindow:
+  // always literal today, branch-filtered by selectedBranchId but NOT by the
+  // page's own date-range selector — an "end of day" receipt printed while
+  // "This month" happens to be selected should still mean today.
+  function printEndOfDaySummary() {
+    const matchesBranch = (row) => selectedBranchId === 'all' || normalizePharmaBranchId(row.branchId) === selectedBranchId
+    const todayOrders = medicalOrdersApi.orders.filter((order) => isToday(order.createdAt) && matchesBranch(order))
+    const todayTransactions = accountTransactionsApi.transactions.filter((t) => isToday(t.createdAt) && matchesBranch(t))
+
+    const totalRevenueUsd = aggregateIncome([], [], todayTransactions, todayOrders).total
+    const combinedTransactions = [...todayTransactions, ...todayOrders.map(posOrderAsIncomeTransaction)]
+    const walletBalance = calculateWalletBalance({ transactions: combinedTransactions })
+    const cashBalance = calculateCashBalance({ transactions: combinedTransactions })
+
+    const byMethod = new Map()
+    todayOrders.forEach((order) => {
+      const method = order.paymentMethod || 'Cash'
+      const amount = safeNumber(order.paidAmount || order.total)
+      byMethod.set(method, (byMethod.get(method) || 0) + amount)
+    })
+    const methodRows = PHARMA_PAYMENT_METHODS
+      .map((method) => ({ method, amount: byMethod.get(method) || 0 }))
+      .filter((row) => row.amount !== 0)
+
+    const todayLabel = new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
+    const rows = methodRows
+      .map((row) => `<div class="row"><span>${escapeHtml(row.method)}</span><span>${escapeHtml(formatMoney(row.amount, filters.currency))}</span></div>`)
+      .join('')
+
+    const html = `<!doctype html><html><head><title>End of day summary</title><style>
+      @page{size:58mm auto;margin:3mm}*{box-sizing:border-box;margin:0;padding:0}body{background:#fff;color:#111827;font-family:'Segoe UI',system-ui,sans-serif;font-size:10px}.receipt{width:52mm;margin:0 auto;padding:3mm 0}.center{text-align:center}.brand{font-size:15px;font-weight:900;letter-spacing:.06em;text-transform:uppercase}.sub{font-size:7px;font-weight:700;color:#6b7280;letter-spacing:.1em;text-transform:uppercase}.muted{color:#6b7280;font-size:9px}.divider{border-top:1px dashed #9ca3af;margin:5px 0}.divider-solid{border-top:1.5px solid #111827;margin:5px 0}.row{display:flex;justify-content:space-between;gap:8px;padding:2px 0;font-size:9px}.row.total{font-size:12px;font-weight:900;border-top:1.5px solid #111827;padding-top:3px;margin-top:2px}.footer{text-align:center;font-size:7px;color:#9ca3af;margin-top:5px;border-top:1px solid #e5e7eb;padding-top:4px}
+    </style></head><body><main class="receipt">
+      <div class="center">
+        <div class="brand">${escapeHtml(branding.companyName)}</div>
+        <div class="sub">END OF DAY SUMMARY</div>
+        <div class="muted">${escapeHtml(todayLabel)} &middot; ${escapeHtml(selectedBranchLabel)}</div>
+      </div>
+      <div class="divider-solid"></div>
+      <div class="row total"><span>Revenue</span><span>${escapeHtml(formatMoney(totalRevenueUsd, filters.currency))}</span></div>
+      <div class="row"><span>Wallet Balance</span><span>${escapeHtml(formatMoney(walletBalance, filters.currency))}</span></div>
+      <div class="row"><span>Cash Balance</span><span>${escapeHtml(formatMoney(cashBalance, filters.currency))}</span></div>
+      <div class="divider"></div>
+      <div class="sub">Payment method breakdown</div>
+      ${methodRows.length ? rows : '<div class="muted">No till sales today.</div>'}
+      <div class="footer">
+        <div>${escapeHtml(branding.companyName)}</div>
+        <div>Nexora Solution &copy; 2019-2026 — All rights reserved</div>
+      </div>
+    </main></body></html>`
+
+    if (!openBrowserPrintHtml(html, { width: 300, height: 760 })) {
+      setDownloadNotice('Print window blocked. Please allow popups and try again.')
+    }
+  }
+
   const loading = medicalOrdersApi.loading || accountTransactionsApi.loading
   const inventoryLoading = medicineApi.loading || inventoryTransactionsApi.loading
   const suppliersLoading = suppliersApi.loading || purchasesApi.loading
@@ -1154,6 +1379,13 @@ function PharmaFlowReports() {
 
   return (
     <div className="min-w-0 space-y-5 p-4 sm:p-6" style={{ backgroundColor: PHARMA_PASTEL.bg, color: PHARMA_PASTEL.ink }}>
+      {downloadNotice ? (
+        <div className="fixed left-1/2 top-1/2 z-[110] max-w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-1/2 rounded-2xl border bg-white px-4 py-3 text-sm font-semibold shadow-xl" style={{ borderColor: PHARMA_PASTEL.sky, color: PHARMA_PASTEL.ink }}>
+          {downloadNotice}
+          <button type="button" className="ml-3 text-xs font-bold underline" onClick={() => setDownloadNotice('')}>Dismiss</button>
+        </div>
+      ) : null}
+
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-xs font-medium" style={{ color: PHARMA_PASTEL.muted }}>PharmaFlow</p>
@@ -1161,6 +1393,49 @@ function PharmaFlowReports() {
           <p className="mt-1 max-w-xl text-sm" style={{ color: PHARMA_PASTEL.muted }}>
             Revenue, wallet, and cash balance combined from till sales and your account ledger.
           </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            variant="subtle"
+            className="h-10 rounded-2xl border-0"
+            style={{ backgroundColor: PHARMA_PASTEL.mint, color: PHARMA_PASTEL.ink }}
+            onClick={async () => {
+              try {
+                await exportReportPdf(reportExport)
+              } catch (err) {
+                setDownloadNotice(err.message || 'Unable to export PDF.')
+              }
+            }}
+          >
+            PDF
+          </Button>
+          <Button
+            type="button"
+            variant="subtle"
+            className="h-10 rounded-2xl border-0"
+            style={{ backgroundColor: PHARMA_PASTEL.sky, color: PHARMA_PASTEL.ink }}
+            onClick={() => exportReportCsv(reportExport)}
+          >
+            CSV
+          </Button>
+          <Button
+            type="button"
+            variant="subtle"
+            className="h-10 rounded-2xl border-0"
+            style={{ backgroundColor: PHARMA_PASTEL.lavender, color: PHARMA_PASTEL.ink }}
+            onClick={() => exportReportExcel(reportExport)}
+          >
+            Excel
+          </Button>
+          <Button
+            type="button"
+            className="h-10 rounded-2xl"
+            style={{ backgroundColor: PHARMA_PASTEL.dark, color: '#fff' }}
+            onClick={printEndOfDaySummary}
+          >
+            Print end-of-day summary
+          </Button>
         </div>
       </div>
 
