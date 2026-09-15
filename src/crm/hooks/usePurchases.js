@@ -45,6 +45,7 @@ function normalizePurchase(purchase) {
   const total = toNumber(purchase.total, 0)
   return {
     id: purchase.id,
+    branchId: purchase.branchId ?? null,
     reference: purchase.reference || purchase.id,
     supplierId: purchase.supplierId || '',
     supplierName: purchase.supplierName || '',

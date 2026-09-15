@@ -44,6 +44,8 @@ import { useAccountTransactions } from '../hooks/useAccountTransactions.js'
 import { useMedicineInventory } from '../hooks/useMedicineInventory.js'
 import { useInventoryTransactions } from '../hooks/useInventoryTransactions.js'
 import { isStockTracked, useInventoryStats } from '../hooks/useInventory.js'
+import { useSuppliers } from '../hooks/useSuppliers.js'
+import { usePurchases } from '../hooks/usePurchases.js'
 import {
   calculateApprovedExpenses,
   calculateProfit,
@@ -914,6 +916,9 @@ function PharmaFlowReports() {
   // with the Dashboard's own "Low stock" card.
   const medicineApi = useMedicineInventory()
   const inventoryTransactionsApi = useInventoryTransactions({ limitCount: 250 })
+  // Same hooks MedicalInventory.jsx's Suppliers/Purchases tabs already call.
+  const suppliersApi = useSuppliers()
+  const purchasesApi = usePurchases()
 
   // Same source BranchSwitcher.jsx uses (const { branches } = useUser()) — no
   // new branches query. Each branch's real display name comes from this
@@ -998,9 +1003,54 @@ function PharmaFlowReports() {
     return { expired, soon, upcoming }
   }, [branchMedicines])
 
+  // Purchases carry a real branchId (restored in usePurchases.js this step)
+  // and a natural per-record date (createdAt — same field MedicalInventory.
+  // jsx's own Purchases tab labels "Created"), so both filters make sense
+  // here: which purchases show up in the ledger genuinely depends on when
+  // they were made and at which branch.
+  const branchPurchases = useMemo(
+    () => purchasesApi.purchases.filter(
+      (purchase) => selectedBranchId === 'all' || normalizePharmaBranchId(purchase.branchId) === selectedBranchId,
+    ),
+    [purchasesApi.purchases, selectedBranchId],
+  )
+
+  // Supplier dues is a live running balance ("what do we owe right now"),
+  // the same kind of point-in-time fact as Low-stock/Batch-Expiry above —
+  // NOT date-filtered, only branch-filtered (via the purchases that feed
+  // it). Suppliers themselves aren't treated as branch-scoped: a supplier
+  // is shared workspace-wide, and its openingBalance has no branch concept
+  // to split by, so the full supplier list is passed through unfiltered —
+  // only which purchases count toward each supplier's balance changes with
+  // the branch selector.
+  const supplierDues = useMemo(() => {
+    const duePurchases = selectedBranchId === 'all'
+      ? purchasesApi.purchases
+      : purchasesApi.purchases.filter((purchase) => normalizePharmaBranchId(purchase.branchId) === selectedBranchId)
+    return calculateSuppliersPayableSummary(suppliersApi.suppliers, duePurchases)
+      .filter((row) => row.balanceDue !== 0)
+      .sort((a, b) => b.balanceDue - a.balanceDue)
+  }, [suppliersApi.suppliers, purchasesApi.purchases, selectedBranchId])
+
+  const totalSuppliersDue = useMemo(
+    () => supplierDues.reduce((sum, row) => sum + row.balanceDue, 0),
+    [supplierDues],
+  )
+
+  // Purchase ledger: date-range AND branch filtered (see comment above),
+  // restricted to purchases still carrying a balance, biggest dues first —
+  // that's what an owner chasing payments actually wants to see first.
+  const purchaseLedger = useMemo(() => {
+    const inRangePurchases = branchPurchases.filter((purchase) => withinDateWindow(purchase, activeWindow))
+    return inRangePurchases
+      .filter((purchase) => purchase.balanceDue !== 0)
+      .sort((a, b) => b.balanceDue - a.balanceDue)
+  }, [branchPurchases, activeWindow])
+
   const loading = medicalOrdersApi.loading || accountTransactionsApi.loading
   const inventoryLoading = medicineApi.loading || inventoryTransactionsApi.loading
-  const error = medicalOrdersApi.error || accountTransactionsApi.error || medicineApi.error || inventoryTransactionsApi.error
+  const suppliersLoading = suppliersApi.loading || purchasesApi.loading
+  const error = medicalOrdersApi.error || accountTransactionsApi.error || medicineApi.error || inventoryTransactionsApi.error || suppliersApi.error || purchasesApi.error
 
   return (
     <div className="min-w-0 space-y-5 p-4 sm:p-6" style={{ backgroundColor: PHARMA_PASTEL.bg, color: PHARMA_PASTEL.ink }}>
@@ -1111,6 +1161,58 @@ function PharmaFlowReports() {
                 <ExpiryBucketList label={`Expiring within ${EXPIRY_SOON_DAYS} days`} items={expiryBuckets.soon} />
                 <ExpiryBucketList label={`Expiring within ${EXPIRY_UPCOMING_DAYS} days`} items={expiryBuckets.upcoming} />
               </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="text-lg font-bold" style={{ color: PHARMA_PASTEL.ink }}>Supplier dues & purchases</h2>
+          <p className="text-xs" style={{ color: PHARMA_PASTEL.muted }}>
+            Supplier dues are a live balance and ignore the date range above; the purchase ledger below is filtered by it.
+          </p>
+        </div>
+
+        <div className="mt-3 grid gap-4 lg:grid-cols-2">
+          <PharmaListCard
+            tint={PHARMA_PASTEL.sky}
+            title="Supplier dues"
+            hint={suppliersLoading ? 'Loading…' : `${formatMoney(totalSuppliersDue, filters.currency)} payable across ${supplierDues.length} supplier${supplierDues.length === 1 ? '' : 's'}`}
+            items={supplierDues}
+            emptyLabel={suppliersLoading ? 'Loading…' : 'No outstanding supplier balances.'}
+            renderItem={(row) => (
+              <>
+                <span className="truncate font-medium">{row.supplier.name}</span>
+                <span className="shrink-0" style={{ color: `${PHARMA_PASTEL.ink}99` }}>
+                  {formatMoney(row.balanceDue, filters.currency)}
+                </span>
+              </>
+            )}
+          />
+
+          <div className="rounded-2xl p-4 shadow-sm" style={{ backgroundColor: PHARMA_PASTEL.lavender }}>
+            <p className="text-sm font-semibold" style={{ color: PHARMA_PASTEL.ink }}>Purchase ledger</p>
+            <p className="mt-1 text-xs" style={{ color: `${PHARMA_PASTEL.ink}99` }}>
+              {suppliersLoading ? 'Loading…' : `${purchaseLedger.length} purchase${purchaseLedger.length === 1 ? '' : 's'} with a balance due`}
+            </p>
+            {suppliersLoading ? null : purchaseLedger.length ? (
+              <ul className="mt-3 space-y-1.5">
+                {purchaseLedger.map((purchase) => (
+                  <li key={purchase.id} className="rounded-lg bg-white/60 px-2.5 py-1.5 text-xs" style={{ color: PHARMA_PASTEL.ink }}>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate font-medium">{purchase.supplierName || 'Unknown supplier'}</span>
+                      <span className="shrink-0" style={{ color: `${PHARMA_PASTEL.ink}99` }}>{formatDate(purchase.createdAt)}</span>
+                    </div>
+                    <div className="mt-0.5 flex items-center justify-between gap-2" style={{ color: `${PHARMA_PASTEL.ink}99` }}>
+                      <span>Total {formatMoney(purchase.total, filters.currency)} · Paid {formatMoney(purchase.paidAmount, filters.currency)}</span>
+                      <span className="shrink-0 font-medium" style={{ color: PHARMA_PASTEL.ink }}>Due {formatMoney(purchase.balanceDue, filters.currency)}</span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-3 text-xs" style={{ color: `${PHARMA_PASTEL.ink}80` }}>No purchases with a balance due in this range.</p>
             )}
           </div>
         </div>

@@ -13,6 +13,7 @@ import { clientSafeMessage } from '../utils/messages.js'
 function normalizeSupplier(supplier) {
   return {
     id: supplier.id,
+    branchId: supplier.branchId ?? null,
     name: supplier.name || 'Unnamed supplier',
     company: supplier.company || '',
     email: supplier.email || '',
