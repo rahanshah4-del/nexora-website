@@ -23,6 +23,7 @@ import { useMedicineInventory } from '../hooks/useMedicineInventory.js'
 import { useMedicalPosOrders } from '../hooks/useMedicalPosOrders.js'
 import { useCustomers } from '../hooks/useCustomers.js'
 import { useBusinessSettings } from '../hooks/useBusinessSettings.js'
+import { useLoyaltyCoupons } from '../hooks/useLoyaltyCoupons.js'
 import { useUser } from '../hooks/useUser.js'
 import { workspaceCollectionPath } from '../lib/firestore.js'
 import { db } from '../lib/firebase.js'
@@ -129,10 +130,14 @@ function calculateTotals(cart, taxRateInput, promoDiscountInput = 0, orderDiscou
     ? (afterLineDiscount * Math.min(100, orderDiscountRawValue)) / 100
     : orderDiscountRawValue
   const orderDiscount = Math.min(afterLineDiscount, Math.max(0, orderDiscountRaw))
+  const afterOrderDiscount = Math.max(0, afterLineDiscount - orderDiscount)
 
-  // Promo logic untouched — same cap against the gross subtotal as before
-  // (Step 2 territory; not touching how its own value is computed here).
-  const promoDiscount = Math.min(Math.max(0, subtotal), Math.max(0, numberValue(promoDiscountInput)))
+  // Correct sequencing: per-item discount -> cart-wide discount -> promo.
+  // promoDiscountInput's own value (computed in applyPromoCode below) is
+  // already derived against afterOrderDiscount — this cap just guards
+  // against a stale/oversized value once cart-wide discount changes after
+  // a promo was already applied.
+  const promoDiscount = Math.min(Math.max(0, afterOrderDiscount), Math.max(0, numberValue(promoDiscountInput)))
   const discount = lineDiscount + orderDiscount + promoDiscount
   const taxable = Math.max(0, subtotal - discount)
   const tax = (taxable * Math.max(0, numberValue(taxRateInput))) / 100
@@ -249,6 +254,10 @@ export default function MedicalPosPage() {
   const [promoCode, setPromoCode] = useState('')
   const [promoDiscount, setPromoDiscount] = useState(0)
   const [promoLabel, setPromoLabel] = useState('')
+  // The specific loyaltyCoupons doc currently applied — kept so submitOrder
+  // can call couponsApi.markUsed(appliedCoupon.id) only once the sale has
+  // actually completed, not just because a code was typed/validated.
+  const [appliedCoupon, setAppliedCoupon] = useState(null)
   const [orderDiscountType, setOrderDiscountType] = useState('fixed')
   const [orderDiscountValue, setOrderDiscountValue] = useState('')
   const [taxRate, setTaxRate] = useState('0')
@@ -285,7 +294,14 @@ export default function MedicalPosPage() {
     return () => { clearInterval(pulse); try { localStorage.removeItem('nexora:medicalPosTill:open') } catch { /* ignore */ } }
   }, [])
 
-  const activePromoCodes = businessSettings?.medicalPosPromos || {}
+  // Replaces the old businessSettings.medicalPosPromos path (confirmed last
+  // session: always {} today, nothing ever writes to it — every promo code
+  // lookup silently failed). Real coupons, managed at /app/loyalty/coupons.
+  // A permission-denied read (expected for non-owner staff until Rahan
+  // updates firestore.rules) surfaces as couponsApi.error via the hook's own
+  // existing onError handling — checked before every promo action below so
+  // it degrades to "unavailable" instead of throwing or blocking a sale.
+  const couponsApi = useLoyaltyCoupons({ limitCount: 200 })
   const medicalPosSettings = businessSettings?.medicalPos || {}
   const activeBranchName = useMemo(
     () => branches.find((branchItem) => branchItem.id === activeBranchId)?.name || 'Main Branch',
@@ -582,6 +598,7 @@ export default function MedicalPosPage() {
     setPromoCode('')
     setPromoDiscount(0)
     setPromoLabel('')
+    setAppliedCoupon(null)
     setOrderDiscountType('fixed')
     setOrderDiscountValue('')
     setPaidAmount('')
@@ -636,20 +653,48 @@ export default function MedicalPosPage() {
   }
 
   function applyPromoCode() {
+    if (couponsApi.error) {
+      setMessage('Promo codes unavailable right now.')
+      return
+    }
     const code = promoCode.trim().toUpperCase()
-    const promo = activePromoCodes[code]
-    if (!promo) {
+    // validateCoupon('') on a not-found code returns { coupon: undefined,
+    // valid: true } — isCouponValid(undefined) defaults to {} internally and
+    // an empty object trivially passes every check. The `!coupon` check
+    // below MUST run before trusting `valid`, or a bad code would silently
+    // apply a phantom coupon.
+    const result = couponsApi.validateCoupon(code)
+    if (!result.coupon) {
       setPromoDiscount(0)
       setPromoLabel('')
+      setAppliedCoupon(null)
       setMessage('Promo code valid nahi hai.')
       return
     }
-    const base = Math.max(0, cart.reduce((sum, item) => sum + item.quantity * item.price, 0))
-    const amount = promo.type === 'percent' ? (base * promo.value) / 100 : promo.value
-    setPromoDiscount(Math.min(base, Math.round(amount)))
-    setPromoLabel(promo.label)
+    if (!result.valid) {
+      setPromoDiscount(0)
+      setPromoLabel('')
+      setAppliedCoupon(null)
+      setMessage('This promo code is expired, inactive, or has reached its usage limit.')
+      return
+    }
+    // Correct sequencing: per-item discount -> cart-wide discount -> promo.
+    // Promo is computed against the base AFTER cart-wide discount, not the
+    // raw cart subtotal.
+    const baseAfterOrderDiscount = Math.max(0, totals.subtotal - totals.lineDiscount - totals.orderDiscount)
+    const applied = couponsApi.applyCoupon(baseAfterOrderDiscount, result.coupon)
+    if (!applied.valid) {
+      setPromoDiscount(0)
+      setPromoLabel('')
+      setAppliedCoupon(null)
+      setMessage(applied.reason || 'This promo code cannot be applied to this order.')
+      return
+    }
+    setPromoDiscount(applied.discount)
+    setPromoLabel(`${result.coupon.name} (${result.coupon.code})`)
+    setAppliedCoupon(result.coupon)
     setPromoCode(code)
-    setMessage(`${promo.label} applied.`)
+    setMessage(`${result.coupon.name} applied.`)
   }
 
   async function submitOrder(shouldPrint = false, shiftOverride = null) {
@@ -711,6 +756,10 @@ export default function MedicalPosPage() {
       code: promoLabel ? promoCode.trim().toUpperCase() : '',
       label: promoLabel,
     }
+    // Captured before clearCart() resets appliedCoupon to null — markUsed()
+    // is only called once the sale actually succeeds below, never just
+    // because a code was typed/validated at checkout.
+    const couponSnapshot = appliedCoupon
     const orderItems = cartSnapshot.map((item) => ({
       productId: item.productId,
       name: item.name,
@@ -789,6 +838,14 @@ export default function MedicalPosPage() {
       if (unlockTimer) window.clearTimeout(unlockTimer)
       savingRef.current = false
       setSaving(false)
+
+      // Usage-limit bookkeeping only, after the sale is already confirmed
+      // saved above — a failure here (including permission-denied for a
+      // staff account) must never undo or block a completed sale, so it's
+      // deliberately not awaited into the main try/catch's failure path.
+      if (couponSnapshot?.id) {
+        couponsApi.markUsed(couponSnapshot.id).catch(() => {})
+      }
 
       const batch = writeBatch(db)
       const transactionCollection = collection(db, workspaceCollectionPath(workspaceId, 'inventoryTransactions'))
@@ -1400,6 +1457,7 @@ export default function MedicalPosPage() {
                   </Button>
                 </div>
                 {promoLabel ? <p className="mt-2 text-xs font-bold text-blue-700">{promoLabel} · {formatCurrency(totals.promoDiscount)} off</p> : null}
+                {couponsApi.error ? <p className="mt-2 text-xs font-bold text-rose-600">Promo codes unavailable right now.</p> : null}
               </div>
               ) : null}
 
@@ -1420,7 +1478,7 @@ export default function MedicalPosPage() {
                 <Row label="Subtotal" value={formatCurrency(totals.subtotal)} />
                 {totals.lineDiscount > 0 ? <Row label="Item discounts" value={`- ${formatCurrency(totals.lineDiscount)}`} tone="text-emerald-600" /> : null}
                 {totals.orderDiscount > 0 ? <Row label="Cart discount" value={`- ${formatCurrency(totals.orderDiscount)}`} tone="text-emerald-600" /> : null}
-                {totals.promoDiscount > 0 ? <Row label="Promo discount" value={`- ${formatCurrency(totals.promoDiscount)}`} tone="text-emerald-600" /> : null}
+                {totals.promoDiscount > 0 ? <Row label={promoLabel || 'Promo discount'} value={`- ${formatCurrency(totals.promoDiscount)}`} tone="text-emerald-600" /> : null}
                 <Row label="Tax" value={formatCurrency(totals.tax)} />
                 <div className="border-t border-slate-200 pt-1.5" />
                 <Row label="Total" value={formatCurrency(totals.total)} strong />
