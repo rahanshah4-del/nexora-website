@@ -31,12 +31,18 @@ import { formatCurrency } from '../utils/format.js'
 import ApplePaySuccess from '../components/ui/ApplePaySuccess.jsx'
 
 const paymentMethods = ['Cash', 'Card', 'JazzCash', 'Easypaisa', 'UPI', 'Wallet']
+// Third element is the one-line description shown in the shortcuts help
+// popup (F1) — the compact header row below only destructures [key, label]
+// and ignores it, so this one array feeds both without duplicating the list.
 const shortcuts = [
-  ['F2', 'Search medicine'],
-  ['F4', 'Promo'],
-  ['F6', 'Pay bill'],
-  ['F9', 'Print'],
-  ['Esc', 'Clear cart'],
+  ['F2', 'Search medicine', 'Jump to the medicine search box.'],
+  ['F3', 'Customer', 'Open the customer panel and search saved customers.'],
+  ['F4', 'Promo', 'Open the promo panel and apply a promo code.'],
+  ['F6', 'Pay bill', 'Submit the sale without printing.'],
+  ['F7', 'Void last item', 'Remove the most recently added cart item.'],
+  ['F8', 'Cash', 'Set the payment method to Cash.'],
+  ['F9', 'Print', 'Submit the sale and print the receipt.'],
+  ['Esc', 'Clear cart', 'Empty the cart — or close this popup, if it is open.'],
 ]
 
 const fallbackMedicineImage = 'https://images.unsplash.com/photo-1587854692152-cbe660dbde88?auto=format&fit=crop&w=360&q=70'
@@ -188,6 +194,7 @@ export default function MedicalPosPage() {
   const customersApi = useCustomers({ limitCount: 50 })
   const searchRef = useRef(null)
   const promoRef = useRef(null)
+  const customerSearchRef = useRef(null)
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState('All')
   const [expandedMedicineGroups, setExpandedMedicineGroups] = useState(() => new Set())
@@ -209,6 +216,7 @@ export default function MedicalPosPage() {
   const viewMode = 'grid'
   const [customerPanelOpen, setCustomerPanelOpen] = useState(false)
   const [promoPanelOpen, setPromoPanelOpen] = useState(false)
+  const [shortcutsHelpOpen, setShortcutsHelpOpen] = useState(false)
   const [shift, setShift] = useState(() => loadMedicalPosShift(workspaceId))
   const [shiftModalOpen, setShiftModalOpen] = useState(false)
   const [shiftDraft, setShiftDraft] = useState({ openingCash: '', note: '' })
@@ -342,9 +350,27 @@ export default function MedicalPosPage() {
 
   useEffect(() => {
     function onKeyDown(event) {
+      // F1/help and the popup-aware Escape are checked first, ahead of every
+      // other shortcut, so the popup can intercept Escape before it falls
+      // through to Clear cart below.
+      if (event.key === 'F1') {
+        event.preventDefault()
+        setShortcutsHelpOpen((open) => !open)
+        return
+      }
+      if (event.key === 'Escape' && shortcutsHelpOpen) {
+        event.preventDefault()
+        setShortcutsHelpOpen(false)
+        return
+      }
       if (event.key === 'F2') {
         event.preventDefault()
         searchRef.current?.focus()
+      }
+      if (event.key === 'F3') {
+        event.preventDefault()
+        setCustomerPanelOpen(true)
+        window.setTimeout(() => customerSearchRef.current?.focus(), 0)
       }
       if (event.key === 'F4') {
         event.preventDefault()
@@ -354,6 +380,17 @@ export default function MedicalPosPage() {
       if (event.key === 'F6') {
         event.preventDefault()
         submitOrder(false)
+      }
+      // Same cart.length guard convention as Escape/Clear cart below — a
+      // no-op on an empty cart, no error message.
+      if (event.key === 'F7' && cart.length) {
+        event.preventDefault()
+        const lastItem = cart[cart.length - 1]
+        updateQty(lastItem.productId, -lastItem.quantity)
+      }
+      if (event.key === 'F8') {
+        event.preventDefault()
+        setPaymentMethod('Cash')
       }
       if (event.key === 'F9') {
         event.preventDefault()
@@ -366,7 +403,7 @@ export default function MedicalPosPage() {
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [cart, paidAmount, paymentMethod, taxRate, totals.total])
+  }, [cart, paidAmount, paymentMethod, taxRate, totals.total, shortcutsHelpOpen])
 
   // A pending/acknowledged Rx confirmation is tied to the exact cart it was
   // shown for — if the cart's contents change (item added/removed/qty
@@ -989,6 +1026,38 @@ export default function MedicalPosPage() {
           </form>
         </div>
       ) : null}
+      {shortcutsHelpOpen ? (
+        <div className="fixed inset-0 z-[80] grid place-items-center bg-slate-950/35 px-4 py-6">
+          <div className="w-full max-w-md rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-2xl">
+            <div className="flex items-start gap-3">
+              <div className="grid h-12 w-12 place-items-center rounded-2xl bg-blue-50 text-blue-700">
+                <HiOutlineQueueList className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.16em] text-blue-600">Keyboard shortcuts</p>
+                <h2 className="mt-1 text-2xl font-black text-slate-950">Till shortcuts</h2>
+                <p className="mt-1 text-sm font-semibold leading-6 text-slate-500">
+                  Press F1 or Esc to close this.
+                </p>
+              </div>
+            </div>
+            <div className="mt-5 grid gap-1.5">
+              {shortcuts.map(([key, label, description]) => (
+                <div key={key} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                  <span className="grid h-8 min-w-[2.75rem] shrink-0 place-items-center rounded-lg bg-white px-2 text-xs font-black text-slate-950 shadow-sm ring-1 ring-slate-200">{key}</span>
+                  <div className="min-w-0">
+                    <p className="text-xs font-black text-slate-950">{label}</p>
+                    <p className="truncate text-xs font-semibold text-slate-500">{description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-5 flex justify-end">
+              <Button type="button" variant="subtle" className="rounded-2xl" onClick={() => setShortcutsHelpOpen(false)}>Close</Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
       <section className="grid gap-3 xl:h-full xl:grid-cols-[minmax(0,1fr)_460px] 2xl:grid-cols-[minmax(0,1fr)_500px]">
         <div className="flex min-h-0 flex-col gap-3">
           <Card className="rounded-[1.4rem] border-slate-200/80 bg-white p-4">
@@ -1002,13 +1071,21 @@ export default function MedicalPosPage() {
                 <h1 className="mt-2 text-2xl font-black tracking-tight text-slate-950">Medical Store Front Till Billing</h1>
                 <p className="mt-1 text-sm font-semibold text-slate-500">Fast billing, batch-aware stock sync, and Medical POS orders separate from invoices.</p>
               </div>
-              <div className="grid grid-cols-2 gap-2 sm:flex">
+              <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
                 {shortcuts.map(([key, label]) => (
                   <div key={key} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs">
                     <span className="font-black text-slate-950">{key}</span>
                     <span className="ml-1 text-slate-500">{label}</span>
                   </div>
                 ))}
+                <button
+                  type="button"
+                  onClick={() => setShortcutsHelpOpen(true)}
+                  title="Keyboard shortcuts (F1)"
+                  className="grid h-9 w-9 place-items-center rounded-xl border border-slate-200 bg-slate-50 text-sm font-black text-slate-700 transition hover:bg-slate-100"
+                >
+                  ?
+                </button>
               </div>
             </div>
           </Card>
@@ -1192,7 +1269,7 @@ export default function MedicalPosPage() {
                   <Input value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder="Customer name" />
                   <Input value={customerPhone} onChange={(event) => setCustomerPhone(event.target.value)} placeholder="Phone optional" />
                   <div className="relative sm:col-span-2">
-                    <Input value={customerSearch} onChange={(event) => setCustomerSearch(event.target.value)} placeholder="Search saved customer..." />
+                    <Input ref={customerSearchRef} value={customerSearch} onChange={(event) => setCustomerSearch(event.target.value)} placeholder="Search saved customer..." />
                     {customerMatches.length ? (
                       <div className="absolute inset-x-0 top-full z-20 mt-1 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg">
                         {customerMatches.map((customer) => (
