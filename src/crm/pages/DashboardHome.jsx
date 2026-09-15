@@ -857,8 +857,14 @@ export default function DashboardHomePage() {
   const medicalMedicinesApi = useMedicineInventory({ enabled: isMedical, limitCount: DASHBOARD_RECENT_LIMIT })
   const medicalTransactionsApi = useInventoryTransactions({ enabled: isMedical, limitCount: DASHBOARD_RECENT_LIMIT })
   const medicalPosOrdersApi = useMedicalPosOrders({ enabled: isMedical, limitCount: DASHBOARD_RECENT_LIMIT })
+  // Deliberately separate from accountsApi above (gated by useCommonDashboardData,
+  // which excludes isMedical) — invoicesApi must stay disabled for Medical: an
+  // invoice payment already posts a type:'income' accountTransactions entry, so
+  // fetching raw invoices too would double-count, same reasoning as
+  // PharmaFlowReports' Revenue card.
+  const medicalAccountTransactionsApi = useAccountTransactions({ enabled: isMedical, limitCount: DASHBOARD_RECENT_LIMIT })
   const medicalInventoryStats = useInventoryStats(medicalMedicinesApi.medicines, medicalTransactionsApi.transactions)
-  const medicalLoading = isMedical && (medicalMedicinesApi.loading || medicalTransactionsApi.loading || medicalPosOrdersApi.loading)
+  const medicalLoading = isMedical && (medicalMedicinesApi.loading || medicalTransactionsApi.loading || medicalPosOrdersApi.loading || medicalAccountTransactionsApi.loading)
   const salesDealsApi = useSalesHubCollection('salesDeals', { enabled: isSalesHub })
   const salesTasksApi = useSalesHubCollection('salesTasks', { enabled: isSalesHub })
   const salesQuotesApi = useSalesHubCollection('salesQuotes', { enabled: isSalesHub })
@@ -1269,6 +1275,7 @@ export default function DashboardHomePage() {
         medicines={medicalMedicinesApi.medicines}
         orders={medicalPosOrdersApi.orders}
         transactions={medicalTransactionsApi.transactions}
+        accountTransactions={medicalAccountTransactionsApi.transactions}
         stats={medicalInventoryStats}
         loading={medicalLoading}
         businessTitle={hero.title}

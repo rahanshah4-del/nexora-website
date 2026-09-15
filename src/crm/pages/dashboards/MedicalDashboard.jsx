@@ -1,12 +1,14 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts'
 import { formatCurrency } from '../../utils/format.js'
-import { stockState } from '../../hooks/useInventory.js'
+import { stockState, useInventoryStats } from '../../hooks/useInventory.js'
 import { useMedicalPosOrders } from '../../hooks/useMedicalPosOrders.js'
 import { useCustomers } from '../../hooks/useCustomers.js'
 import { useSuppliers } from '../../hooks/useSuppliers.js'
 import { usePurchases } from '../../hooks/usePurchases.js'
+import { useUser } from '../../hooks/useUser.js'
+import { isApprovedTransaction, transactionAmount, transactionTypeValue } from '../../lib/calculations.js'
 
 // ── Medical Store POS pastel dashboard palette ─────────────────────────────
 // Local to this component only — sans-serif ambient app font (no Fraunces,
@@ -81,6 +83,24 @@ function formatDateTime(value) {
 }
 
 const DAY_MS = 86400000
+
+// Same convention confirmed and used by PharmaFlowReports (Reports.jsx's
+// normalizePharmaBranchId): null/undefined/empty-string/lowercase 'main' all
+// mean the Main branch. Duplicated locally rather than imported — this file
+// already keeps its own local copies of shared conventions (PASTEL tokens),
+// and Reports.jsx is explicitly out of scope to touch for this task.
+function normalizeBranchId(branchId) {
+  const value = String(branchId || '').trim().toLowerCase()
+  return value || 'main'
+}
+
+// Same 'income' type classification calculateWalletBalance/aggregateIncome
+// use internally (financeCalculations.js's incomeTypes set isn't exported on
+// its own) — reusing the two exported primitives it's built from rather than
+// re-deriving a different rule.
+function isIncomeTransaction(transaction) {
+  return isApprovedTransaction(transaction) && transactionTypeValue(transaction) === 'income'
+}
 
 // Sums paidAmount/total for orders whose createdAt falls within the rolling
 // window from msAgoStart-ago to msAgoEnd-ago (exclusive of the older edge,
@@ -176,26 +196,59 @@ export default function MedicalDashboard({
   medicines = [],
   orders = [],
   transactions = [],
-  stats,
+  accountTransactions = [],
   loading = false,
   businessTitle = 'PharmaFlow',
   workspaceName = '',
   currency = 'PKR',
 }) {
-  const safeStats = stats || {
-    totalProducts: 0,
-    trackedProducts: 0,
-    totalStock: 0,
-    lowStockCount: 0,
-    outOfStockCount: 0,
-    inventoryValue: 0,
-    lowStockItems: [],
-    outOfStockItems: [],
-  }
+  // Reads the same context the top-bar BranchSwitcher already writes to — no
+  // second, redundant selector on this page. useUser()'s activeBranchId
+  // always resolves to a concrete branch id (defaults to Main when unset),
+  // never actually empty, but matchesActiveBranch below falls back to
+  // showing every branch combined rather than filtering to nothing if it
+  // somehow ever is.
+  const { activeBranchId } = useUser()
+  const matchesActiveBranch = useCallback(
+    (row) => !activeBranchId || normalizeBranchId(row.branchId) === normalizeBranchId(activeBranchId),
+    [activeBranchId],
+  )
 
-  const nonRefundedOrders = useMemo(() => orders.filter((o) => o.refundStatus !== 'refunded' && !o.refundedAt), [orders])
+  // Every branch-scoped source is filtered once, here, so every card below
+  // — including ones not explicitly restyled for this task, like Top-selling
+  // medicines and Recent medical POS sales, which already shared these same
+  // derived arrays by design — consistently reflects only the active branch,
+  // rather than some cards agreeing with the branch switcher and others not.
+  const branchMedicines = useMemo(() => medicines.filter(matchesActiveBranch), [medicines, matchesActiveBranch])
+  const branchOrders = useMemo(() => orders.filter(matchesActiveBranch), [orders, matchesActiveBranch])
+  const branchAccountTransactions = useMemo(() => accountTransactions.filter(matchesActiveBranch), [accountTransactions, matchesActiveBranch])
+
+  // Recomputed locally from branch-filtered medicines instead of trusting the
+  // stats prop DashboardHome.jsx used to pass — that prop was computed from
+  // the full, unfiltered medicines list, so it can't reflect the branch
+  // filter added here. Same helper MedicalInventory.jsx/PharmaFlowReports
+  // already call — do not reimplement the minStockAlert threshold logic.
+  const branchStats = useInventoryStats(branchMedicines, transactions)
+
+  const nonRefundedOrders = useMemo(() => branchOrders.filter((o) => o.refundStatus !== 'refunded' && !o.refundedAt), [branchOrders])
   const todayOrders = useMemo(() => nonRefundedOrders.filter((o) => isToday(o.createdAt)), [nonRefundedOrders])
-  const todaySales = useMemo(() => todayOrders.reduce((sum, o) => sum + Number(o.paidAmount || 0), 0), [todayOrders])
+  // Today's income-type accountTransactions — same isToday/dateValue
+  // day-boundary check already used for orders above, not a second "today"
+  // definition. Only 'income'-typed, approved transactions count (see
+  // isIncomeTransaction) so expenses/refunds/etc. already in the ledger
+  // don't inflate this card.
+  const todayIncomeTransactions = useMemo(
+    () => branchAccountTransactions.filter((t) => isToday(t.createdAt) && isIncomeTransaction(t)),
+    [branchAccountTransactions],
+  )
+  // POS-orders side is untouched — still paidAmount only, exactly as before
+  // accountTransactions existed here — with ledger income added on top.
+  const todaySales = useMemo(
+    () =>
+      todayOrders.reduce((sum, o) => sum + Number(o.paidAmount || 0), 0) +
+      todayIncomeTransactions.reduce((sum, t) => sum + transactionAmount(t), 0),
+    [todayOrders, todayIncomeTransactions],
+  )
   const recentOrders = useMemo(() => nonRefundedOrders.slice(0, 6), [nonRefundedOrders])
 
   // ── Wider order query, shared by every time-range-aware section below ──
@@ -209,9 +262,10 @@ export default function MedicalDashboard({
   // itself, so no orderByField/orderDirection option exists to pass here).
   // Additional Firestore read cost, scoped only to this component.
   const wideOrdersApi = useMedicalPosOrders({ limitCount: 500 })
+  const wideBranchOrders = useMemo(() => wideOrdersApi.orders.filter(matchesActiveBranch), [wideOrdersApi.orders, matchesActiveBranch])
   const wideNonRefundedOrders = useMemo(
-    () => wideOrdersApi.orders.filter((o) => o.refundStatus !== 'refunded' && !o.refundedAt),
-    [wideOrdersApi.orders],
+    () => wideBranchOrders.filter((o) => o.refundStatus !== 'refunded' && !o.refundedAt),
+    [wideBranchOrders],
   )
 
   // Shared by Sales breakdown, Top-selling medicines & Revenue comparison:
@@ -227,6 +281,20 @@ export default function MedicalDashboard({
       return created && created.getTime() > cutoff
     })
   }, [wideNonRefundedOrders, rangeMode])
+
+  // Same rolling-window cutoff as rangeWindowOrders above (same rangeMode),
+  // so the two sources combined in the Sales breakdown donut below agree on
+  // what "this week"/"this month" means. Sales overview and Revenue
+  // comparison deliberately do NOT use this — they stay medicalPosOrders-only.
+  const rangeWindowIncomeTransactions = useMemo(() => {
+    const windowMs = (rangeMode === 'month' ? 30 : 7) * DAY_MS
+    const cutoff = Date.now() - windowMs
+    return branchAccountTransactions.filter((t) => {
+      if (!isIncomeTransaction(t)) return false
+      const created = dateValue(t.createdAt)
+      return created && created.getTime() > cutoff
+    })
+  }, [branchAccountTransactions, rangeMode])
 
   // ── Recent customer activity & Supplier/purchase summary ────────────────
   // Self-contained hook calls per investigation's recommendation — these are
@@ -283,16 +351,16 @@ export default function MedicalDashboard({
   )
 
   const expiringSoonCount = useMemo(
-    () => medicines.filter((medicine) => ['expiring', 'expired'].includes(expiryState(medicine.expiryDate).tone)).length,
-    [medicines],
+    () => branchMedicines.filter((medicine) => ['expiring', 'expired'].includes(expiryState(medicine.expiryDate).tone)).length,
+    [branchMedicines],
   )
   const expiringMedicines = useMemo(
-    () => medicines.filter((medicine) => ['expiring', 'expired'].includes(expiryState(medicine.expiryDate).tone)).slice(0, 6),
-    [medicines],
+    () => branchMedicines.filter((medicine) => ['expiring', 'expired'].includes(expiryState(medicine.expiryDate).tone)).slice(0, 6),
+    [branchMedicines],
   )
   const lowStockMedicines = useMemo(
-    () => [...safeStats.outOfStockItems, ...safeStats.lowStockItems].slice(0, 6),
-    [safeStats.outOfStockItems, safeStats.lowStockItems],
+    () => [...branchStats.outOfStockItems, ...branchStats.lowStockItems].slice(0, 6),
+    [branchStats.outOfStockItems, branchStats.lowStockItems],
   )
 
   const expiryBreakdown = useMemo(() => {
@@ -302,30 +370,36 @@ export default function MedicalDashboard({
       tier60: { count: 0, value: 0 },
       tier90: { count: 0, value: 0 },
     }
-    medicines.forEach((medicine) => {
+    branchMedicines.forEach((medicine) => {
       const { tier } = expiryTierState(medicine.expiryDate)
       if (!buckets[tier]) return
       buckets[tier].count += 1
       buckets[tier].value += Number(medicine.costPrice || 0) * Number(medicine.stockQuantity || 0)
     })
     return buckets
-  }, [medicines])
+  }, [branchMedicines])
 
-  // "Sales Breakdown" donut — grouped by paymentMethod (the field that
-  // actually exists on medicalPosOrders; see useMedicalPosOrders.js).
-  // Shares the rangeMode toggle above with Top-selling medicines/Revenue
-  // comparison, sourced from the wider rangeWindowOrders query so all three
-  // time-range-aware sections agree on what "this week"/"this month" means.
-  // While the wider query is still loading, fall back to today's (already-
-  // loaded) orders so the donut doesn't flash empty.
+  // "Sales Breakdown" donut — grouped by payment method, combining both
+  // medicalPosOrders (paymentMethod field) and income-type accountTransactions
+  // (method field), same combined-by-method grouping shape PharmaFlowReports'
+  // payment-method breakdown card uses (a Map keyed by method, summed, then
+  // top-3 + "Other"). Shares the rangeMode toggle with Top-selling medicines/
+  // Revenue comparison — those two stay medicalPosOrders-only, per scope.
+  // While the wider query is still loading, fall back to today's
+  // (already-loaded) orders/transactions so the donut doesn't flash empty.
   const chartOrders = wideOrdersApi.loading
     ? (todayOrders.length ? todayOrders : nonRefundedOrders)
     : rangeWindowOrders
+  const chartIncomeTransactions = wideOrdersApi.loading ? todayIncomeTransactions : rangeWindowIncomeTransactions
   const paymentBreakdown = useMemo(() => {
     const totals = new Map()
     chartOrders.forEach((order) => {
       const key = order.paymentMethod || 'Other'
       totals.set(key, (totals.get(key) || 0) + Number(order.paidAmount || order.total || 0))
+    })
+    chartIncomeTransactions.forEach((txn) => {
+      const key = txn.method || 'Other'
+      totals.set(key, (totals.get(key) || 0) + transactionAmount(txn))
     })
     const sorted = Array.from(totals.entries())
       .filter(([, value]) => value > 0)
@@ -334,7 +408,7 @@ export default function MedicalDashboard({
     const restTotal = sorted.slice(3).reduce((sum, [, value]) => sum + value, 0)
     if (restTotal > 0) top.push({ name: 'Other', value: restTotal })
     return top
-  }, [chartOrders])
+  }, [chartOrders, chartIncomeTransactions])
   const paymentBreakdownTotal = useMemo(
     () => paymentBreakdown.reduce((sum, row) => sum + row.value, 0),
     [paymentBreakdown],
@@ -432,19 +506,19 @@ export default function MedicalDashboard({
         <PastelKpiCard
           tint={PASTEL.blush}
           label="Total medicines"
-          value={loading ? '—' : safeStats.totalProducts}
-          hint={`${safeStats.trackedProducts} stock-tracked`}
+          value={loading ? '—' : branchStats.totalProducts}
+          hint={`${branchStats.trackedProducts} stock-tracked`}
         />
         <PastelKpiCard
           tint={PASTEL.sky}
           label="Low stock"
-          value={loading ? '—' : safeStats.lowStockCount}
+          value={loading ? '—' : branchStats.lowStockCount}
           hint="need reorder"
         />
         <PastelKpiCard
           tint={PASTEL.lavender}
           label="Inventory value"
-          value={loading ? '—' : formatCurrency(safeStats.inventoryValue, currency)}
+          value={loading ? '—' : formatCurrency(branchStats.inventoryValue, currency)}
           hint="at cost price"
         />
       </div>
@@ -507,7 +581,7 @@ export default function MedicalDashboard({
               </div>
             </>
           ) : (
-            <EmptyHint>No medical POS sales to break down yet.</EmptyHint>
+            <EmptyHint>No sales to break down yet.</EmptyHint>
           )}
         </PastelPanel>
 
@@ -670,7 +744,7 @@ export default function MedicalDashboard({
           <PastelPanel className="p-2">
             {!loading ? (
               <p className="px-2 pb-2 text-xs text-[#8B8A99]">
-                {safeStats.lowStockCount} low stock · {expiringSoonCount} expiring soon
+                {branchStats.lowStockCount} low stock · {expiringSoonCount} expiring soon
               </p>
             ) : null}
             {loading ? (
