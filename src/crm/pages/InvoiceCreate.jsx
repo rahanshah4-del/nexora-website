@@ -28,6 +28,7 @@ import { useCustomers } from '../hooks/useCustomers.js'
 import { useUser } from '../hooks/useUser.js'
 import { formatCurrency } from '../utils/format.js'
 import { cn } from '../utils/cn.js'
+import { withTimeout } from '../utils/withTimeout.js'
 import { resolveWorkspaceName } from '../../lib/workspaceName.js'
 import { normalizeBusinessType } from '../data/moduleAccess.js'
 import {
@@ -163,6 +164,23 @@ export default function InvoiceCreatePage() {
   const [invoice, setInvoice] = useState(() => createBlankInvoice())
   const [toast, setToast] = useState(null)
   const [submitting, setSubmitting] = useState(false)
+  // Synchronous re-entry guard for submitInvoice(): setSubmitting() is state,
+  // so it can't stop a second click landing before React re-renders the
+  // disabled button. This is the actual protection against a duplicate
+  // invoice while a timed-out-but-still-running save is in flight —
+  // createUserDoc's own retry is idempotent WITHIN one call, but a second
+  // submitInvoice() call mints a brand-new invoice with a fresh ID
+  // regardless. Cleared only once the real result is known (see
+  // finishSubmit inside submitInvoice), not when withTimeout's deadline
+  // merely elapses.
+  const isSubmittingRef = useRef(false)
+  const isMountedRef = useRef(true)
+  useEffect(() => {
+    isMountedRef.current = true
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
   const [previewSeen, setPreviewSeen] = useState(false)
   const [previewOpen, setPreviewOpen] = useState(false)
 
@@ -438,6 +456,7 @@ export default function InvoiceCreatePage() {
       showToast({ tone: 'error', message: 'You do not have permission to create invoices.' }, 2600)
       return
     }
+    if (isSubmittingRef.current) return
     const rawStatus = String(status || invoice.status || 'pending').toLowerCase()
     const requestedStatus = canCreatePaidInvoices || !['paid', 'approved', 'partial paid', 'partial_paid'].includes(rawStatus)
       ? rawStatus
@@ -467,15 +486,55 @@ export default function InvoiceCreatePage() {
         }
       })
 
+    isSubmittingRef.current = true
     setSubmitting(true)
     const finalAmountPaid = canCreatePaidInvoices
       ? requestedStatus === 'paid' ? totals.grandTotal : totals.amountPaid
       : 0
-    // createInvoice() already catches its own errors, but a genuinely stuck
-    // network/Firestore call (no response, no rejection) would otherwise
-    // leave the Save button on "Saving..." forever with no feedback — race
-    // it against a timeout so the button always recovers.
-    const res = await Promise.race([
+
+    // Shared by the on-time path below and by onLateResolve, so a save that
+    // finishes late can never drift from what an on-time one does (same
+    // toast wording, same redirect). Only touches state/navigation while
+    // still mounted — the whole reason this can run "late" is that the user
+    // may already have navigated away by the time it does.
+    function finishSubmit(result) {
+      if (!isMountedRef.current) return
+      isSubmittingRef.current = false
+      setSubmitting(false)
+      if (result?.ok) {
+        // Used to also enqueue a 'invoice.generate' background job here, but
+        // the worker has no real handler for that type — it just
+        // acknowledges and does nothing — so this was a pure dependency on
+        // the (currently unreliable) Cloudflare queue for zero benefit.
+        // createInvoice() above already writes the "Invoice created"
+        // notification directly.
+        showToast({ tone: 'success', message: requestedStatus === 'draft' ? (isSchool ? 'Draft fee bill saved' : 'Draft invoice saved') : (isSchool ? 'Fee bill created successfully' : 'Invoice created successfully') })
+        window.setTimeout(() => {
+          if (isMountedRef.current) navigate('/app/invoices')
+        }, 650)
+      } else {
+        showToast({ tone: 'error', message: result?.error || (isSchool ? 'Unable to create fee bill' : 'Unable to create invoice') }, 2800)
+      }
+    }
+
+    // createInvoice() already catches its own errors and always resolves
+    // (never rejects) with { ok, error }, but a genuinely stuck network/
+    // Firestore call (no response, no rejection) would otherwise leave the
+    // Save button on "Saving..." forever with no feedback. withTimeout races
+    // it against a deadline so the button always recovers — but unlike a
+    // plain Promise.race, it never abandons the loser: the underlying call
+    // keeps running, and onLateResolve below corrects a premature "still
+    // going" notice into the real outcome once it actually lands, instead of
+    // silently discarding it. Discarding it was the actual failure mode
+    // being fixed here — a user told "failed" when the invoice had in fact
+    // been created would click Save again and create a genuine duplicate.
+    //
+    // 45s, not 25s: createUserDoc's own worst case is now 3 attempts x 8s +
+    // 1s + 2s backoff = 27s (see firestore.js), and this deadline also has
+    // to cover the invoice-number uniqueness check's reads that run before
+    // it — 45s leaves real headroom above that 27s floor instead of racing
+    // a retry loop that may still be legitimately in flight.
+    const res = await withTimeout(
       createInvoice({
         ...invoice,
         items: cleanItems,
@@ -503,24 +562,36 @@ export default function InvoiceCreatePage() {
         taxAmountUsd: totals.taxTotal,
         totalUsd: totals.grandTotal,
       }),
-      new Promise((resolve) => window.setTimeout(
-        () => resolve({ ok: false, error: 'This is taking longer than expected. Please check your connection and try again.' }),
-        25000,
-      )),
-    ])
-    setSubmitting(false)
+      {
+        ms: 45000,
+        message: isSchool
+          ? 'Still processing the fee bill — please wait, do not save again.'
+          : 'Still processing the invoice — please wait, do not save again.',
+        // withTimeout calls this as (result, null) on a late success/failure
+        // result, or (null, error) on a late rejection. createInvoice() never
+        // actually rejects (it catches its own errors and always resolves
+        // with { ok, error }), so the second branch is defensive rather than
+        // expected — but handled for real rather than assumed away, since
+        // that's the actual two-argument shape withTimeout calls this with.
+        onLateResolve: (lateResult, lateError) => {
+          finishSubmit(lateError
+            ? { ok: false, error: lateError?.message || (isSchool ? 'Unable to create fee bill' : 'Unable to create invoice') }
+            : lateResult)
+        },
+      },
+    )
 
-    if (res?.ok) {
-      // Used to also enqueue a 'invoice.generate' background job here, but
-      // the worker has no real handler for that type — it just acknowledges
-      // and does nothing — so this was a pure dependency on the (currently
-      // unreliable) Cloudflare queue for zero benefit. createInvoice() above
-      // already writes the "Invoice created" notification directly.
-      showToast({ tone: 'success', message: requestedStatus === 'draft' ? (isSchool ? 'Draft fee bill saved' : 'Draft invoice saved') : (isSchool ? 'Fee bill created successfully' : 'Invoice created successfully') })
-      window.setTimeout(() => navigate('/app/invoices'), 650)
-    } else {
-      showToast({ tone: 'error', message: res?.error || (isSchool ? 'Unable to create fee bill' : 'Unable to create invoice') }, 2800)
+    if (res?.timedOut) {
+      // The real result isn't known yet — leave isSubmittingRef/submitting
+      // exactly as they are (both Save buttons stay disabled) so a second
+      // click can't create a genuine duplicate invoice while the first save
+      // may still be completing. finishSubmit() above, via onLateResolve,
+      // is what clears them once the real outcome is known.
+      showToast({ tone: 'info', message: res.error })
+      return
     }
+
+    finishSubmit(res)
   }
 
   return (
