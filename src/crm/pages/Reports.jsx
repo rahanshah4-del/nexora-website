@@ -41,6 +41,9 @@ import { usePosOrders } from '../hooks/usePosOrders.js'
 import { usePosWalletPayments } from '../hooks/usePosWalletPayments.js'
 import { useMedicalPosOrders } from '../hooks/useMedicalPosOrders.js'
 import { useAccountTransactions } from '../hooks/useAccountTransactions.js'
+import { useMedicineInventory } from '../hooks/useMedicineInventory.js'
+import { useInventoryTransactions } from '../hooks/useInventoryTransactions.js'
+import { isStockTracked, useInventoryStats } from '../hooks/useInventory.js'
 import {
   calculateApprovedExpenses,
   calculateProfit,
@@ -757,6 +760,19 @@ const PHARMA_PASTEL = {
   dark: '#1C1B29',
 }
 
+// Step 4 batch/expiry buckets — named thresholds instead of magic numbers so
+// they're easy to find and retune without hunting through JSX.
+const EXPIRY_SOON_DAYS = 30
+const EXPIRY_UPCOMING_DAYS = 90
+
+// useMedicineInventory.js's normalizeMedicine stores exactly one
+// expiryDate/batchNumber per medicine document — restocking overwrites the
+// previous batch's expiry rather than tracking multiple concurrent batches.
+// Shown directly on the Batch & Expiry card body (not a tooltip) so it can't
+// be missed while a pharmacy owner is deciding what to reorder.
+const BATCH_EXPIRY_DISCLAIMER =
+  "Shows the latest recorded batch only. If this medicine was restocked before the old stock sold out, older batches aren't tracked separately."
+
 // A record's branchId of null, undefined, empty string, or the lowercase
 // string 'main' all mean the Main branch — confirmed last session: Stage 1's
 // live-create paths write activeBranchId || null (so "no active branch" is
@@ -776,6 +792,70 @@ function PharmaKpiCard({ tint, label, value, hint }) {
       <p className="text-xs font-medium" style={{ color: `${PHARMA_PASTEL.ink}B3` }}>{label}</p>
       <p className="mt-3 truncate text-2xl font-bold" style={{ color: PHARMA_PASTEL.ink }}>{value}</p>
       <p className="mt-1 truncate text-xs" style={{ color: `${PHARMA_PASTEL.ink}99` }}>{hint}</p>
+    </div>
+  )
+}
+
+// null when a medicine has no parseable expiryDate — expiry-less medicines
+// simply don't appear in any bucket, same as MedicalInventory.jsx's own
+// expiryState() treating a missing date as "not applicable" rather than
+// "already expired" or "never expires".
+function bucketMedicineExpiry(medicine) {
+  const expiry = toDateValue(medicine.expiryDate)
+  if (!expiry) return null
+  const daysLeft = Math.ceil((expiry.getTime() - Date.now()) / 86400000)
+  if (daysLeft < 0) return 'expired'
+  if (daysLeft <= EXPIRY_SOON_DAYS) return 'soon'
+  if (daysLeft <= EXPIRY_UPCOMING_DAYS) return 'upcoming'
+  return null
+}
+
+function PharmaListCard({ tint, title, hint, items, emptyLabel, renderItem }) {
+  return (
+    <div className="rounded-2xl p-4 shadow-sm" style={{ backgroundColor: tint }}>
+      <p className="text-sm font-semibold" style={{ color: PHARMA_PASTEL.ink }}>{title}</p>
+      {hint ? <p className="mt-1 text-xs" style={{ color: `${PHARMA_PASTEL.ink}99` }}>{hint}</p> : null}
+      {items.length ? (
+        <ul className="mt-3 space-y-1.5">
+          {items.map((item, index) => (
+            <li
+              key={item.id || index}
+              className="flex items-center justify-between gap-2 rounded-lg bg-white/60 px-2.5 py-1.5 text-xs"
+              style={{ color: PHARMA_PASTEL.ink }}
+            >
+              {renderItem(item)}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-3 text-xs" style={{ color: `${PHARMA_PASTEL.ink}80` }}>{emptyLabel}</p>
+      )}
+    </div>
+  )
+}
+
+function ExpiryBucketList({ label, items }) {
+  return (
+    <div>
+      <p className="text-xs font-semibold" style={{ color: PHARMA_PASTEL.ink }}>{label} ({items.length})</p>
+      {items.length ? (
+        <ul className="mt-1.5 space-y-1">
+          {items.map((medicine) => (
+            <li
+              key={medicine.id}
+              className="flex items-center justify-between gap-2 rounded-lg bg-white/60 px-2.5 py-1.5 text-xs"
+              style={{ color: PHARMA_PASTEL.ink }}
+            >
+              <span className="truncate font-medium">{medicine.name}</span>
+              <span className="shrink-0" style={{ color: `${PHARMA_PASTEL.ink}99` }}>
+                {formatDate(medicine.expiryDate)}{medicine.batchNumber ? ` · Batch ${medicine.batchNumber}` : ''}
+              </span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-1.5 text-xs" style={{ color: `${PHARMA_PASTEL.ink}80` }}>None</p>
+      )}
     </div>
   )
 }
@@ -829,6 +909,11 @@ function PharmaFlowReports() {
   const detailLimit = 250
   const medicalOrdersApi = useMedicalPosOrders({ enabled: true, limitCount: detailLimit })
   const accountTransactionsApi = useAccountTransactions({ enabled: true, limitCount: detailLimit })
+  // Same hook + same (unlimited) collection scope MedicalInventory.jsx and
+  // MedicalDashboard.jsx already call — so Low-stock here can never disagree
+  // with the Dashboard's own "Low stock" card.
+  const medicineApi = useMedicineInventory()
+  const inventoryTransactionsApi = useInventoryTransactions({ limitCount: 250 })
 
   // Same source BranchSwitcher.jsx uses (const { branches } = useUser()) — no
   // new branches query. Each branch's real display name comes from this
@@ -879,8 +964,43 @@ function PharmaFlowReports() {
     }
   }, [medicalOrdersApi.orders, accountTransactionsApi.transactions, activeWindow, selectedBranchId])
 
+  // Low-stock and Batch/Expiry are point-in-time facts about current
+  // inventory, not period activity like Revenue/Wallet/Cash above — they
+  // deliberately do NOT run through activeWindow/withinDateWindow. Only the
+  // branch filter applies, via the same normalizePharmaBranchId used above.
+  const branchMedicines = useMemo(
+    () => medicineApi.medicines.filter(
+      (medicine) => selectedBranchId === 'all' || normalizePharmaBranchId(medicine.branchId) === selectedBranchId,
+    ),
+    [medicineApi.medicines, selectedBranchId],
+  )
+
+  // Same helper MedicalInventory.jsx/MedicalDashboard.jsx call — do not
+  // reimplement the minStockAlert threshold logic here.
+  const inventoryStats = useInventoryStats(branchMedicines, inventoryTransactionsApi.transactions)
+
+  const expiryBuckets = useMemo(() => {
+    // Matches calculateInventoryStats' own "tracked" set (active + stock-
+    // tracked) so Low-stock and Batch/Expiry agree on which medicines count,
+    // instead of each silently applying a different filter.
+    const tracked = branchMedicines.filter(
+      (medicine) => String(medicine.status || 'active').toLowerCase() !== 'archived' && isStockTracked(medicine),
+    )
+    const expired = []
+    const soon = []
+    const upcoming = []
+    tracked.forEach((medicine) => {
+      const bucket = bucketMedicineExpiry(medicine)
+      if (bucket === 'expired') expired.push(medicine)
+      else if (bucket === 'soon') soon.push(medicine)
+      else if (bucket === 'upcoming') upcoming.push(medicine)
+    })
+    return { expired, soon, upcoming }
+  }, [branchMedicines])
+
   const loading = medicalOrdersApi.loading || accountTransactionsApi.loading
-  const error = medicalOrdersApi.error || accountTransactionsApi.error
+  const inventoryLoading = medicineApi.loading || inventoryTransactionsApi.loading
+  const error = medicalOrdersApi.error || accountTransactionsApi.error || medicineApi.error || inventoryTransactionsApi.error
 
   return (
     <div className="min-w-0 space-y-5 p-4 sm:p-6" style={{ backgroundColor: PHARMA_PASTEL.bg, color: PHARMA_PASTEL.ink }}>
@@ -953,6 +1073,47 @@ function PharmaFlowReports() {
           value={loading ? '—' : formatMoney(reportData.cashBalance, filters.currency)}
           hint="What's physically in the cash drawer"
         />
+      </div>
+
+      <div>
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="text-lg font-bold" style={{ color: PHARMA_PASTEL.ink }}>Stock & batch alerts</h2>
+          <p className="text-xs" style={{ color: PHARMA_PASTEL.muted }}>
+            Always current stock — the date range above only affects Revenue, Wallet Balance, and Cash Balance.
+          </p>
+        </div>
+
+        <div className="mt-3 grid gap-4 lg:grid-cols-2">
+          <PharmaListCard
+            tint={PHARMA_PASTEL.coral}
+            title="Low stock"
+            hint={inventoryLoading ? 'Loading…' : `${inventoryStats.outOfStockCount} out of stock · ${inventoryStats.lowStockCount} low stock`}
+            items={[...inventoryStats.outOfStockItems, ...inventoryStats.lowStockItems]}
+            emptyLabel={inventoryLoading ? 'Loading…' : 'No medicines are low or out of stock right now.'}
+            renderItem={(medicine) => (
+              <>
+                <span className="truncate font-medium">{medicine.name}</span>
+                <span className="shrink-0" style={{ color: `${PHARMA_PASTEL.ink}99` }}>
+                  {medicine.stockQuantity} on hand · min {medicine.minStockAlert}
+                </span>
+              </>
+            )}
+          />
+
+          <div className="rounded-2xl p-4 shadow-sm" style={{ backgroundColor: PHARMA_PASTEL.blush }}>
+            <p className="text-sm font-semibold" style={{ color: PHARMA_PASTEL.ink }}>Batch & expiry</p>
+            <p className="mt-1 text-xs font-semibold" style={{ color: PHARMA_PASTEL.dark }}>{BATCH_EXPIRY_DISCLAIMER}</p>
+            {inventoryLoading ? (
+              <p className="mt-3 text-xs" style={{ color: `${PHARMA_PASTEL.ink}99` }}>Loading…</p>
+            ) : (
+              <div className="mt-3 space-y-3">
+                <ExpiryBucketList label="Already expired" items={expiryBuckets.expired} />
+                <ExpiryBucketList label={`Expiring within ${EXPIRY_SOON_DAYS} days`} items={expiryBuckets.soon} />
+                <ExpiryBucketList label={`Expiring within ${EXPIRY_UPCOMING_DAYS} days`} items={expiryBuckets.upcoming} />
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   )

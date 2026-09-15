@@ -11,6 +11,7 @@ import { normalizeBusinessType } from '../data/moduleAccess.js'
 function normalizeMedicine(medicine) {
   return {
     id: medicine.id,
+    branchId: medicine.branchId ?? null,
     imageUrl: medicine.imageUrl || '',
     name: medicine.name || 'Unnamed medicine',
     sku: medicine.sku || '',
