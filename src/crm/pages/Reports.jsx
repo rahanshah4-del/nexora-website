@@ -1047,6 +1047,55 @@ function PharmaFlowReports() {
       .sort((a, b) => b.balanceDue - a.balanceDue)
   }, [branchPurchases, activeWindow])
 
+  // Top medicines by profit — a period metric like Revenue/Wallet/Cash, so it
+  // deliberately reuses reportData.posOrders (Step 3's useMemo, already both
+  // date-range- and branch-filtered) instead of re-deriving either filter or
+  // re-querying medicalPosOrders.
+  //
+  // costPrice is captured on each line item AT THE TIME OF SALE (see
+  // MedicalPos.jsx's cart snapshot: costPrice comes from the medicine's
+  // costPrice the moment it was added to cart, written once into the order
+  // and never touched again) — not looked up from medicineInventory's
+  // current costPrice. So this is historically accurate per sale even if a
+  // medicine's cost has since changed, and a since-deleted medicine's rows
+  // are unaffected since nothing here joins against the live collection.
+  //
+  // Mirrors MedicalInventory.jsx's own ReportsTab profitByMedicine exactly
+  // (same grouping key, same revenue/cost formulas, same refund exclusion)
+  // rather than re-deriving different math. That refund exclusion
+  // (order.refundStatus/refundedAt) is the same pair of fields Step 3 found
+  // to be silently stripped by normalizeMedicalPosOrder — out of scope to
+  // fix here — so it doesn't yet actually exclude anything, same as on the
+  // trusted page it's copied from; kept for consistency and so both benefit
+  // automatically once that separate, already-tracked bug is fixed.
+  const medicineProfit = useMemo(() => {
+    const nonRefundedOrders = reportData.posOrders.filter((order) => order.refundStatus !== 'refunded' && !order.refundedAt)
+    const totals = new Map()
+    nonRefundedOrders.forEach((order) => {
+      const items = Array.isArray(order.items) ? order.items : []
+      items.forEach((item) => {
+        const key = item.productId || item.name || 'unknown'
+        const existing = totals.get(key) || { key, name: item.name || 'Unnamed medicine', quantity: 0, revenue: 0, cost: 0, hasUnknownCost: false }
+        const quantity = Number(item.quantity || 0)
+        const price = Number(item.price || 0)
+        existing.quantity += quantity
+        existing.revenue += Number(item.lineTotal ?? price * quantity) || 0
+        existing.cost += Number(item.costPrice || 0) * quantity
+        // A line with a real sale price but no recorded costPrice would
+        // otherwise look like 100% margin — flag it instead of trusting it.
+        if (price > 0 && !item.costPrice) existing.hasUnknownCost = true
+        totals.set(key, existing)
+      })
+    })
+    return Array.from(totals.values())
+      .map((row) => {
+        const profit = row.revenue - row.cost
+        return { ...row, profit, margin: row.revenue > 0 ? (profit / row.revenue) * 100 : 0 }
+      })
+      .sort((a, b) => b.profit - a.profit)
+      .slice(0, 8)
+  }, [reportData.posOrders])
+
   const loading = medicalOrdersApi.loading || accountTransactionsApi.loading
   const inventoryLoading = medicineApi.loading || inventoryTransactionsApi.loading
   const suppliersLoading = suppliersApi.loading || purchasesApi.loading
@@ -1215,6 +1264,40 @@ function PharmaFlowReports() {
               <p className="mt-3 text-xs" style={{ color: `${PHARMA_PASTEL.ink}80` }}>No purchases with a balance due in this range.</p>
             )}
           </div>
+        </div>
+      </div>
+
+      <div>
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="text-lg font-bold" style={{ color: PHARMA_PASTEL.ink }}>Top medicines by profit</h2>
+          <p className="text-xs" style={{ color: PHARMA_PASTEL.muted }}>
+            Same branch and date range as Revenue above.
+          </p>
+        </div>
+
+        <div className="mt-3 rounded-2xl p-4 shadow-sm" style={{ backgroundColor: PHARMA_PASTEL.green }}>
+          {loading ? (
+            <p className="text-xs" style={{ color: `${PHARMA_PASTEL.ink}99` }}>Loading…</p>
+          ) : medicineProfit.length ? (
+            <ul className="space-y-1.5">
+              {medicineProfit.map((row) => (
+                <li key={row.key} className="rounded-lg bg-white/60 px-2.5 py-1.5 text-xs" style={{ color: PHARMA_PASTEL.ink }}>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate font-medium">{row.name}</span>
+                    <span className="shrink-0 font-medium">{formatMoney(row.profit, filters.currency)} profit</span>
+                  </div>
+                  <div className="mt-0.5 flex items-center justify-between gap-2" style={{ color: `${PHARMA_PASTEL.ink}99` }}>
+                    <span>{row.quantity} sold · {row.margin.toFixed(1)}% margin</span>
+                    {row.hasUnknownCost ? (
+                      <span className="shrink-0 font-medium" style={{ color: PHARMA_PASTEL.coral }}>Cost data unavailable</span>
+                    ) : null}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-xs" style={{ color: `${PHARMA_PASTEL.ink}99` }}>No till sales in this range yet.</p>
+          )}
         </div>
       </div>
     </div>
