@@ -87,15 +87,58 @@ function nextOrderNumber() {
   return `MED-${stamp}-${tail}`
 }
 
-function calculateTotals(cart, taxRateInput, promoDiscountInput = 0) {
-  const subtotal = cart.reduce((sum, item) => sum + item.quantity * item.price, 0)
+// Applies a per-item discount (or a quantity change) to one cart line and
+// returns a fresh line object. originalPrice is fixed once at add-to-cart
+// time and never itself discounted — only price/lineDiscountAmount (derived
+// from it) change. price is always redefined as lineTotal/quantity, so
+// quantity*price reconstructs lineTotal exactly (no rounding drift), and
+// PharmaFlowReports' Top-medicines-by-profit card — which reads
+// order.items[].price/.costPrice exactly as stored at sale time — keeps
+// computing correct margin automatically, with zero changes needed there.
+// Guard rails: percent capped at 100%, fixed capped at the line's own
+// (undiscounted) total, discount can never push the line below zero.
+function applyLineDiscount(item, overrides = {}) {
+  const quantity = overrides.quantity ?? item.quantity
+  const discountType = overrides.discountType !== undefined ? overrides.discountType : (item.discountType || '')
+  const discountValue = overrides.discountValue !== undefined ? overrides.discountValue : (item.discountValue || 0)
+  const originalPrice = numberValue(item.originalPrice ?? item.price)
+  const lineBase = Math.max(0, originalPrice * quantity)
+  const value = Math.max(0, numberValue(discountValue))
+  let rawDiscount = 0
+  if (discountType === 'percent') rawDiscount = (lineBase * Math.min(100, value)) / 100
+  else if (discountType === 'fixed') rawDiscount = value
+  const lineDiscountAmount = Math.min(lineBase, Math.max(0, rawDiscount))
+  const lineTotal = Math.round(lineBase - lineDiscountAmount)
+  const price = quantity > 0 ? lineTotal / quantity : originalPrice
+  return { ...item, quantity, discountType, discountValue, originalPrice, price, lineDiscountAmount }
+}
+
+function calculateTotals(cart, taxRateInput, promoDiscountInput = 0, orderDiscountInput = null) {
+  // subtotal is the gross, pre-any-discount total — item.originalPrice falls
+  // back to item.price for any caller that hasn't adopted the discount
+  // fields yet (defensive only; every cart item sets both today).
+  const subtotal = cart.reduce((sum, item) => sum + item.quantity * numberValue(item.originalPrice ?? item.price), 0)
+  const lineDiscount = cart.reduce((sum, item) => sum + Math.max(0, numberValue(item.lineDiscountAmount)), 0)
+  const afterLineDiscount = Math.max(0, subtotal - lineDiscount)
+
+  // Cart-wide discount, applied after per-item discounts, before promo —
+  // same percent/fixed shape and same guard rails as the per-item discount.
+  const orderDiscountType = orderDiscountInput?.type === 'percent' ? 'percent' : 'fixed'
+  const orderDiscountRawValue = Math.max(0, numberValue(orderDiscountInput?.value))
+  const orderDiscountRaw = orderDiscountType === 'percent'
+    ? (afterLineDiscount * Math.min(100, orderDiscountRawValue)) / 100
+    : orderDiscountRawValue
+  const orderDiscount = Math.min(afterLineDiscount, Math.max(0, orderDiscountRaw))
+
+  // Promo logic untouched — same cap against the gross subtotal as before
+  // (Step 2 territory; not touching how its own value is computed here).
   const promoDiscount = Math.min(Math.max(0, subtotal), Math.max(0, numberValue(promoDiscountInput)))
-  const discount = promoDiscount
+  const discount = lineDiscount + orderDiscount + promoDiscount
   const taxable = Math.max(0, subtotal - discount)
   const tax = (taxable * Math.max(0, numberValue(taxRateInput))) / 100
   const total = Math.max(0, taxable + tax)
   const cost = cart.reduce((sum, item) => sum + item.quantity * item.costPrice, 0)
-  return { subtotal, lineDiscount: 0, orderDiscount: 0, promoDiscount, discount, tax, total, cost, profit: total - cost }
+  return { subtotal, lineDiscount, orderDiscount, promoDiscount, discount, tax, total, cost, profit: total - cost }
 }
 
 function cartRxSignature(cart) {
@@ -206,6 +249,8 @@ export default function MedicalPosPage() {
   const [promoCode, setPromoCode] = useState('')
   const [promoDiscount, setPromoDiscount] = useState(0)
   const [promoLabel, setPromoLabel] = useState('')
+  const [orderDiscountType, setOrderDiscountType] = useState('fixed')
+  const [orderDiscountValue, setOrderDiscountValue] = useState('')
   const [taxRate, setTaxRate] = useState('0')
   const [paymentMethod, setPaymentMethod] = useState('Cash')
   const [paidAmount, setPaidAmount] = useState('')
@@ -329,7 +374,10 @@ export default function MedicalPosPage() {
       .filter((customer) => [customer.name, customer.phone, customer.email].filter(Boolean).some((field) => String(field).toLowerCase().includes(needle)))
       .slice(0, 4)
   }, [customerSearch, customersApi.customers])
-  const totals = useMemo(() => calculateTotals(cart, taxRate, promoDiscount), [cart, promoDiscount, taxRate])
+  const totals = useMemo(
+    () => calculateTotals(cart, taxRate, promoDiscount, { type: orderDiscountType, value: orderDiscountValue }),
+    [cart, promoDiscount, taxRate, orderDiscountType, orderDiscountValue],
+  )
   const changeAmount = Math.max(0, numberValue(paidAmount || totals.total) - totals.total)
 
   useEffect(() => {
@@ -425,7 +473,11 @@ export default function MedicalPosPage() {
     }
     setCart((current) => {
       if (existing) {
-        return current.map((item) => item.productId === medicine.id ? { ...item, quantity: nextQty } : item)
+        // Re-applies the line's own existing discount rule (if any) to the
+        // new quantity — same helper used everywhere else a line's quantity
+        // or discount changes, so price/lineDiscountAmount never drift out
+        // of sync with quantity*originalPrice.
+        return current.map((item) => item.productId === medicine.id ? applyLineDiscount(item, { quantity: nextQty }) : item)
       }
       return [
         ...current,
@@ -440,6 +492,12 @@ export default function MedicalPosPage() {
           expiryDate: medicine.expiryDate,
           requiresPrescription: medicine.requiresPrescription,
           price: numberValue(medicine.price),
+          // originalPrice is the immutable catalog price this line's
+          // discount is always calculated against — see applyLineDiscount.
+          originalPrice: numberValue(medicine.price),
+          discountType: '',
+          discountValue: 0,
+          lineDiscountAmount: 0,
           costPrice: numberValue(medicine.costPrice),
           discount: numberValue(medicine.discount),
           taxRate: numberValue(medicine.taxRate),
@@ -511,8 +569,12 @@ export default function MedicalPosPage() {
     setCart((current) => current.flatMap((item) => {
       if (item.productId !== productId) return [item]
       const quantity = Math.min(item.stockQuantity, Math.max(0, item.quantity + delta))
-      return quantity > 0 ? [{ ...item, quantity }] : []
+      return quantity > 0 ? [applyLineDiscount(item, { quantity })] : []
     }))
+  }
+
+  function updateLineDiscount(productId, patch) {
+    setCart((current) => current.map((item) => (item.productId === productId ? applyLineDiscount(item, patch) : item)))
   }
 
   function clearCart() {
@@ -520,6 +582,8 @@ export default function MedicalPosPage() {
     setPromoCode('')
     setPromoDiscount(0)
     setPromoLabel('')
+    setOrderDiscountType('fixed')
+    setOrderDiscountValue('')
     setPaidAmount('')
     setMessage('')
   }
@@ -656,9 +720,13 @@ export default function MedicalPosPage() {
       expiryDate: item.expiryDate || '',
       requiresPrescription: item.requiresPrescription === true,
       quantity: item.quantity,
+      // price/lineTotal are the actually-charged, already-discounted amount
+      // (see applyLineDiscount) — costPrice is the unchanged cost basis, so
+      // profit-margin math downstream (PharmaFlowReports' Top medicines by
+      // profit) stays correct automatically with no changes needed there.
       price: item.price,
       costPrice: item.costPrice,
-      discount: 0,
+      discount: item.lineDiscountAmount || 0,
       lineTotal: item.quantity * item.price,
     }))
     clearCart()
@@ -946,7 +1014,9 @@ export default function MedicalPosPage() {
             </table>
             <section class="totals">
               <div class="row"><span>Subtotal</span><strong>${formatCurrency(order.totals.subtotal)}</strong></div>
-              <div class="row"><span>Promo discount</span><strong>- ${formatCurrency(order.totals.discount)}</strong></div>
+              ${order.totals.lineDiscount > 0 ? `<div class="row"><span>Item discounts</span><strong>- ${formatCurrency(order.totals.lineDiscount)}</strong></div>` : ''}
+              ${order.totals.orderDiscount > 0 ? `<div class="row"><span>Cart discount</span><strong>- ${formatCurrency(order.totals.orderDiscount)}</strong></div>` : ''}
+              ${order.totals.promoDiscount > 0 ? `<div class="row"><span>Promo discount</span><strong>- ${formatCurrency(order.totals.promoDiscount)}</strong></div>` : ''}
               ${order.promo?.code ? `<div class="row"><span>Promo</span><strong>${escapeHtml(order.promo.code)}</strong></div>` : ''}
               <div class="row"><span>Tax</span><strong>${formatCurrency(order.totals.tax)}</strong></div>
               <div class="row total"><span>Total</span><strong>${formatCurrency(order.totals.total)}</strong></div>
@@ -1196,7 +1266,17 @@ export default function MedicalPosPage() {
                     <img src={item.imageUrl || fallbackMedicineImage} alt="" className="h-12 w-12 rounded-xl object-cover bg-white" />
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-black text-slate-950">{item.name}</p>
-                      <p className="text-xs font-semibold text-slate-500">{formatCurrency(item.price)} each{item.batchNumber ? ` · Batch ${item.batchNumber}` : ''}</p>
+                      <p className="text-xs font-semibold text-slate-500">
+                        {item.lineDiscountAmount > 0 ? (
+                          <>
+                            <span className="mr-1 text-slate-400 line-through">{formatCurrency(item.originalPrice)}</span>
+                            {formatCurrency(item.price)} each
+                          </>
+                        ) : (
+                          `${formatCurrency(item.price)} each`
+                        )}
+                        {item.batchNumber ? ` · Batch ${item.batchNumber}` : ''}
+                      </p>
                     </div>
                     <button type="button" onClick={() => updateQty(item.productId, -item.quantity)} className="text-slate-400 hover:text-rose-600"><HiOutlineBackspace className="h-5 w-5" /></button>
                   </div>
@@ -1207,6 +1287,27 @@ export default function MedicalPosPage() {
                       <button type="button" onClick={() => updateQty(item.productId, 1)} className="p-2"><HiOutlinePlus className="h-4 w-4" /></button>
                     </div>
                     <p className="text-sm font-black text-blue-700">{formatCurrency(item.quantity * item.price)}</p>
+                  </div>
+                  <div className="mt-2 grid grid-cols-[80px_1fr] gap-1.5">
+                    <Select
+                      className="h-8 text-xs"
+                      value={item.discountType || ''}
+                      onChange={(event) => updateLineDiscount(item.productId, { discountType: event.target.value })}
+                    >
+                      <option value="">No discount</option>
+                      <option value="percent">%</option>
+                      <option value="fixed">PKR</option>
+                    </Select>
+                    {item.discountType ? (
+                      <Input
+                        className="h-8 text-xs"
+                        type="number"
+                        min="0"
+                        value={item.discountValue || ''}
+                        onChange={(event) => updateLineDiscount(item.productId, { discountValue: event.target.value })}
+                        placeholder="0"
+                      />
+                    ) : <span />}
                   </div>
                 </div>
               ))}
@@ -1308,9 +1409,18 @@ export default function MedicalPosPage() {
                 </Select>
                 <Input type="number" min="0" value={paidAmount} onChange={(event) => setPaidAmount(event.target.value)} placeholder={`Paid ${Math.round(totals.total)}`} />
               </div>
+              <div className="mt-2 grid grid-cols-[90px_1fr] gap-2">
+                <Select value={orderDiscountType} onChange={(event) => setOrderDiscountType(event.target.value)}>
+                  <option value="fixed">PKR</option>
+                  <option value="percent">%</option>
+                </Select>
+                <Input type="number" min="0" value={orderDiscountValue} onChange={(event) => setOrderDiscountValue(event.target.value)} placeholder="Cart discount" />
+              </div>
               <div className="mt-3 space-y-1.5 text-sm">
                 <Row label="Subtotal" value={formatCurrency(totals.subtotal)} />
-                <Row label="Promo discount" value={`- ${formatCurrency(totals.discount)}`} tone="text-emerald-600" />
+                {totals.lineDiscount > 0 ? <Row label="Item discounts" value={`- ${formatCurrency(totals.lineDiscount)}`} tone="text-emerald-600" /> : null}
+                {totals.orderDiscount > 0 ? <Row label="Cart discount" value={`- ${formatCurrency(totals.orderDiscount)}`} tone="text-emerald-600" /> : null}
+                {totals.promoDiscount > 0 ? <Row label="Promo discount" value={`- ${formatCurrency(totals.promoDiscount)}`} tone="text-emerald-600" /> : null}
                 <Row label="Tax" value={formatCurrency(totals.tax)} />
                 <div className="border-t border-slate-200 pt-1.5" />
                 <Row label="Total" value={formatCurrency(totals.total)} strong />
