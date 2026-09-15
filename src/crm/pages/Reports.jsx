@@ -79,6 +79,9 @@ import {
   calculateWalletBalance,
   calculateCashBalance,
   calculateBankBalance,
+  calculateSupplierPayments,
+  calculateTotalExpenses,
+  calculateCashOut,
   aggregateIncome,
 } from '../lib/financeCalculations.js'
 import { calculateSupplierBalance } from '../lib/financeCalculations.js'
@@ -775,6 +778,14 @@ const EXPIRY_UPCOMING_DAYS = 90
 const BATCH_EXPIRY_DISCLAIMER =
   "Shows the latest recorded batch only. If this medicine was restocked before the old stock sold out, older batches aren't tracked separately."
 
+// Confirmed medicalPosOrders paymentMethod values — listed first (in this
+// order) so Cash always leads the breakdown; any other value found on an
+// order still shows up, just after these.
+const PHARMA_PAYMENT_METHODS = ['Cash', 'Card', 'JazzCash', 'Easypaisa', 'UPI', 'Wallet']
+
+const CASH_RECONCILIATION_DISCLAIMER =
+  "Estimate only — check it against a physical count. A till can be over or short for reasons the system can't see, like a starting float or manual entry errors."
+
 // A record's branchId of null, undefined, empty string, or the lowercase
 // string 'main' all mean the Main branch — confirmed last session: Stage 1's
 // live-create paths write activeBranchId || null (so "no active branch" is
@@ -1096,6 +1107,46 @@ function PharmaFlowReports() {
       .slice(0, 8)
   }, [reportData.posOrders])
 
+  // Cash Reconciliation — a period metric like Revenue/Wallet/Cash, so it
+  // reuses reportData.posOrders/reportData.transactions (Step 3's useMemo,
+  // already both date-range- and branch-filtered) instead of re-querying or
+  // re-deriving either filter.
+  const cashReconciliation = useMemo(() => {
+    const byMethod = new Map()
+    reportData.posOrders.forEach((order) => {
+      const method = order.paymentMethod || 'Cash'
+      const amount = safeNumber(order.paidAmount || order.total)
+      byMethod.set(method, (byMethod.get(method) || 0) + amount)
+    })
+    const knownRows = PHARMA_PAYMENT_METHODS.map((method) => ({ method, amount: byMethod.get(method) || 0 }))
+    const otherRows = Array.from(byMethod.entries())
+      .filter(([method]) => !PHARMA_PAYMENT_METHODS.includes(method))
+      .map(([method, amount]) => ({ method, amount }))
+    const methodRows = [...knownRows, ...otherRows].filter((row) => row.amount !== 0)
+
+    const cashSales = byMethod.get('Cash') || 0
+    const electronicSales = methodRows.filter((row) => row.method !== 'Cash').reduce((sum, row) => sum + row.amount, 0)
+
+    // "Everything else" is informational context (electronic POS payments +
+    // ledger-based bank activity for the same period/branch) — NOT the same
+    // set used in the reconciliation estimate below.
+    const ledgerBankActivity =
+      calculateBankBalance(reportData.transactions) +
+      calculateSupplierPayments(reportData.transactions) +
+      calculateTotalExpenses({ transactions: reportData.transactions })
+    const everythingElse = electronicSales + ledgerBankActivity
+
+    // Expected physical cash in drawer = Cash-method POS sales minus cash
+    // expenses/withdrawals only (calculateTotalExpenses/calculateCashOut,
+    // reused unchanged from financeCalculations.js — not bank_transfer or
+    // supplier_payment, since that money never touched the till drawer).
+    const cashExpensesAndWithdrawals =
+      calculateTotalExpenses({ transactions: reportData.transactions }) + calculateCashOut(reportData.transactions)
+    const expectedCashInDrawer = cashSales - cashExpensesAndWithdrawals
+
+    return { methodRows, cashSales, everythingElse, expectedCashInDrawer }
+  }, [reportData.posOrders, reportData.transactions])
+
   const loading = medicalOrdersApi.loading || accountTransactionsApi.loading
   const inventoryLoading = medicineApi.loading || inventoryTransactionsApi.loading
   const suppliersLoading = suppliersApi.loading || purchasesApi.loading
@@ -1298,6 +1349,53 @@ function PharmaFlowReports() {
           ) : (
             <p className="text-xs" style={{ color: `${PHARMA_PASTEL.ink}99` }}>No till sales in this range yet.</p>
           )}
+        </div>
+      </div>
+
+      <div>
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="text-lg font-bold" style={{ color: PHARMA_PASTEL.ink }}>Cash reconciliation</h2>
+          <p className="text-xs" style={{ color: PHARMA_PASTEL.muted }}>
+            Same branch and date range as Revenue above.
+          </p>
+        </div>
+
+        <div className="mt-3 grid gap-4 lg:grid-cols-2">
+          <PharmaListCard
+            tint={PHARMA_PASTEL.sky}
+            title="Payment method breakdown"
+            hint={loading ? 'Loading…' : `${formatMoney(cashReconciliation.cashSales, filters.currency)} collected as Cash`}
+            items={cashReconciliation.methodRows}
+            emptyLabel={loading ? 'Loading…' : 'No till sales in this range yet.'}
+            renderItem={(row) => (
+              <>
+                <span className="truncate font-medium">{row.method}</span>
+                <span className="shrink-0" style={{ color: `${PHARMA_PASTEL.ink}99` }}>{formatMoney(row.amount, filters.currency)}</span>
+              </>
+            )}
+          />
+
+          <div className="rounded-2xl p-4 shadow-sm" style={{ backgroundColor: PHARMA_PASTEL.lavender }}>
+            <p className="text-sm font-semibold" style={{ color: PHARMA_PASTEL.ink }}>Till vs. ledger</p>
+            <div className="mt-3 space-y-1.5">
+              <div className="flex items-center justify-between gap-2 rounded-lg bg-white/60 px-2.5 py-1.5 text-xs" style={{ color: PHARMA_PASTEL.ink }}>
+                <span>Cash physically collected at till</span>
+                <span className="shrink-0 font-medium">{loading ? '—' : formatMoney(cashReconciliation.cashSales, filters.currency)}</span>
+              </div>
+              <div className="flex items-center justify-between gap-2 rounded-lg bg-white/60 px-2.5 py-1.5 text-xs" style={{ color: PHARMA_PASTEL.ink }}>
+                <span>Everything else (electronic sales + ledger activity)</span>
+                <span className="shrink-0 font-medium">{loading ? '—' : formatMoney(cashReconciliation.everythingElse, filters.currency)}</span>
+              </div>
+            </div>
+
+            <div className="mt-3 rounded-xl px-3 py-2.5" style={{ backgroundColor: PHARMA_PASTEL.mint }}>
+              <div className="flex items-center justify-between gap-2 text-xs font-semibold" style={{ color: PHARMA_PASTEL.ink }}>
+                <span>Estimated cash in drawer</span>
+                <span>{loading ? '—' : formatMoney(cashReconciliation.expectedCashInDrawer, filters.currency)}</span>
+              </div>
+              <p className="mt-1 text-xs font-semibold" style={{ color: PHARMA_PASTEL.dark }}>{CASH_RECONCILIATION_DISCLAIMER}</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
