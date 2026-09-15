@@ -361,6 +361,31 @@ async function cancelInvoiceFinanceDocs({ batch, workspaceId, invoice, now, user
   }
 }
 
+// Bounds a single getDocs() call so a stalled read during createInvoice's
+// invoice-number uniqueness check (see the loop inside createInvoice below)
+// can't hang the whole function forever — before this, that loop had no
+// timeout at all, unlike createUserDoc's own write path. Firestore reads
+// can't be cancelled mid-flight, so the underlying getDocs() promise is left
+// running in the background; this only stops the loop from waiting on it.
+//
+// Resolves with a { timedOut: true } marker rather than throwing/rejecting:
+// createInvoice's loop already uses plain early-return guard clauses (see
+// the checks above its try block), so a marker the loop can check with one
+// more `if` fits that existing flat style with no new try/catch nesting —
+// and keeps this distinct from createInvoice's own outer catch, which uses
+// one generic "Unable to create invoice." message for every thrown error
+// and would otherwise swallow the more specific timeout message below.
+const UNIQUENESS_CHECK_TIMEOUT_MS = 4000
+
+function getDocsWithTimeout(queryRef, ms) {
+  return Promise.race([
+    getDocs(queryRef),
+    new Promise((resolve) => {
+      setTimeout(() => resolve({ timedOut: true }), ms)
+    }),
+  ])
+}
+
 export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled = true } = {}) {
   const { userId, workspaceId, businessType, role, userDoc, firebaseUser, activeBranchId } = useUser()
   const workspaceAccess = useWorkspaceAccess()
@@ -609,13 +634,33 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
         if (!db) return { ok: false, error: 'Secure Cloud Sync is not available right now' }
         try {
           // ── Duplicate invoice number guard: verify uniqueness in Firestore ──
+          // Each attempt gets its own fresh 4s window (not one shared budget
+          // across all 3) — a genuine timeout returns immediately below, so
+          // in practice that's a ~4s ceiling before the caller hears back; if
+          // every attempt instead resolves normally but keeps finding a
+          // genuine collision, the full loop's ceiling is 3 x 4s = 12s. Both
+          // stay well inside createUserDoc's own 27s worst case and
+          // InvoiceCreate.jsx's 45s outer deadline (12s + 27s = 39s < 45s).
           let safeInvNo = invNo
           for (let attempt = 0; attempt < 3; attempt++) {
             const invQuery = query(
               collection(db, workspaceCollectionPath(workspaceId, 'invoices')),
               where('invoiceNumber', '==', safeInvNo),
             )
-            const invSnap = await getDocs(invQuery)
+            const invSnap = await getDocsWithTimeout(invQuery, UNIQUENESS_CHECK_TIMEOUT_MS)
+            if (invSnap.timedOut) {
+              // Deliberately distinct from a genuine duplicate-number result
+              // below: this means "we don't know yet, try again", not
+              // "change the number". createInvoice never throws (confirmed:
+              // every path here returns { ok, error }), so this keeps that
+              // contract rather than throwing into the catch block's one
+              // generic message.
+              return {
+                ok: false,
+                error: "We couldn't verify the invoice number in time. Please try saving again.",
+                code: 'uniqueness-check-timeout',
+              }
+            }
             if (invSnap.empty) break
             safeInvNo = generateInvoiceNumber()
           }
