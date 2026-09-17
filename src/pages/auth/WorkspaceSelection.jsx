@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import {
   HiOutlineArrowRight,
+  HiOutlineBeaker,
   HiOutlineBell,
   HiOutlineBriefcase,
   HiOutlineBuildingLibrary,
@@ -74,6 +75,7 @@ import { clearAllUserCache } from '../../lib/authIsolation.js'
 const workspaceIconMap = {
   'General CRM': { icon: HiOutlineUserGroup, emoji: '📈', iconTone: 'bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-600 text-white shadow-sm shadow-blue-500/20', iconBg: 'bg-gradient-to-br from-sky-50 to-blue-100', emojiBg: 'from-sky-100 to-blue-200' },
   'Retail / POS': { icon: HiOutlineBriefcase, emoji: '🛒', iconTone: 'bg-gradient-to-br from-amber-400 via-orange-500 to-red-500 text-white shadow-sm shadow-orange-500/20', iconBg: 'bg-gradient-to-br from-orange-50 to-amber-100', emojiBg: 'from-orange-100 to-amber-200' },
+  'PharmaFlow': { icon: HiOutlineBeaker, emoji: '💊', iconTone: 'bg-gradient-to-br from-teal-400 via-emerald-500 to-cyan-600 text-white shadow-sm shadow-teal-500/20', iconBg: 'bg-gradient-to-br from-teal-50 to-emerald-100', emojiBg: 'from-teal-100 to-emerald-200' },
   'School ERP': { icon: HiOutlineBuildingLibrary, emoji: '🎓', iconTone: 'bg-gradient-to-br from-emerald-400 via-green-500 to-teal-600 text-white shadow-sm shadow-emerald-500/20', iconBg: 'bg-gradient-to-br from-emerald-50 to-green-100', emojiBg: 'from-emerald-100 to-green-200' },
   'Property ERP': { icon: HiOutlineHomeModern, emoji: '🏢', iconTone: 'bg-gradient-to-br from-violet-400 via-purple-500 to-fuchsia-600 text-white shadow-sm shadow-violet-500/20', iconBg: 'bg-gradient-to-br from-violet-50 to-purple-100', emojiBg: 'from-violet-100 to-purple-200' },
   'Restaurant POS': { icon: HiOutlineBuildingOffice2, emoji: '🍽️', iconTone: 'bg-gradient-to-br from-rose-400 via-pink-500 to-red-600 text-white shadow-sm shadow-rose-500/20', iconBg: 'bg-gradient-to-br from-rose-50 to-pink-100', emojiBg: 'from-rose-100 to-pink-200' },
