@@ -49,6 +49,9 @@ import {
   labelForBusinessModule,
   normalizeBusinessType,
   packageNameForPlan,
+  setupFieldKeys,
+  setupFieldsForBusinessType,
+  setupSpecForBusinessType,
 } from '../../crm/data/moduleAccess.js'
 import { saveSelectedWorkspace } from '../../crm/lib/workspaceSession.js'
 import { createBranch } from '../../crm/context/UserContext.jsx'
@@ -1340,10 +1343,13 @@ function SetupWizard({ creating, message, form, onChange, onCreate, onClose, can
   const [step, setStep] = useState(() => (cleanString(form.businessType) ? 1 : 0))
   const rawBusinessType = cleanString(form.businessType)
   const businessType = rawBusinessType ? normalizeBusinessType(rawBusinessType) : ''
-  const isSchoolErp = businessType === 'School ERP'
-  const isMedical = businessType === 'PharmaFlow'
-  const nameLabel = isSchoolErp ? 'School Name' : 'Workspace / Business Name'
-  const namePlaceholder = isSchoolErp ? 'Your school name' : 'Your business name'
+  // Name label and the extra inputs below both come from the selected module's
+  // own spec in moduleAccess.js — adding a module means editing that catalog,
+  // not this component.
+  const setupSpec = setupSpecForBusinessType(businessType)
+  const nameLabel = setupSpec.nameLabel
+  const namePlaceholder = setupSpec.namePlaceholder
+  const setupFields = businessType ? setupFieldsForBusinessType(businessType) : []
 
   const businessOptions = businessTypes.map((type) => ({
     type,
@@ -1498,29 +1504,31 @@ function SetupWizard({ creating, message, form, onChange, onCreate, onClose, can
                   placeholder="Office or business address"
                 />
               </FieldLabel>
-              {isSchoolErp ? (
-                <>
-                  <FieldLabel label="Academic Year">
-                    <input value={form.academicYear} onChange={(event) => onChange('academicYear', event.target.value)} className={formInputClass()} placeholder="2026-2027" />
-                  </FieldLabel>
-                  <FieldLabel label="Classes Range">
-                    <input value={form.classesRange} onChange={(event) => onChange('classesRange', event.target.value)} className={formInputClass()} placeholder="Nursery to Grade 10" />
-                  </FieldLabel>
-                </>
-              ) : null}
-              {isMedical ? (
-                <FieldLabel label="How many branches do you have?">
-                  <input
-                    type="number"
-                    min="1"
-                    inputMode="numeric"
-                    value={form.branchCount}
-                    onChange={(event) => onChange('branchCount', event.target.value)}
-                    className={formInputClass()}
-                    placeholder="1"
-                  />
+              {setupFields.map((field) => (
+                <FieldLabel key={field.key} label={field.label}>
+                  {field.type === 'select' ? (
+                    <select
+                      value={form[field.key] || ''}
+                      onChange={(event) => onChange(field.key, event.target.value)}
+                      className={formInputClass()}
+                    >
+                      <option value="">Select</option>
+                      {field.options.map((option) => (
+                        <option key={option} value={option}>{option}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type={field.type === 'number' ? 'number' : 'text'}
+                      {...(field.type === 'number' ? { min: '1', inputMode: 'numeric' } : {})}
+                      value={form[field.key] || ''}
+                      onChange={(event) => onChange(field.key, event.target.value)}
+                      className={formInputClass()}
+                      placeholder={field.placeholder || ''}
+                    />
+                  )}
                 </FieldLabel>
-              ) : null}
+              ))}
             </div>
           ) : null}
 
@@ -1534,6 +1542,11 @@ function SetupWizard({ creating, message, form, onChange, onCreate, onClose, can
                 <DetailRow label="Currency" value={cleanString(form.currency) || '—'} />
                 <DetailRow label="Language" value={cleanString(form.language) || '—'} />
                 {cleanString(form.phone) ? <DetailRow label="Phone" value={form.phone} /> : null}
+                {setupFields
+                  .filter((field) => cleanString(form[field.key]))
+                  .map((field) => (
+                    <DetailRow key={field.key} label={field.label} value={form[field.key]} />
+                  ))}
               </div>
               <div className="flex items-start gap-3 rounded-xl border border-blue-100 bg-blue-50 p-4">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white">
@@ -1759,10 +1772,10 @@ export default function WorkspaceSelection() {
     email: '',
     address: '',
     language: 'English',
-    academicYear: '',
-    classesRange: '',
     monthlyFeeSetup: '',
-    branchCount: '',
+    // One blank entry per setup-field key across all business types, so
+    // switching module mid-wizard never flips an input to uncontrolled.
+    ...Object.fromEntries(setupFieldKeys.map((key) => [key, ''])),
   }))
   const [workspaceView, setWorkspaceView] = useState('enter')
   const [searchOpen, setSearchOpen] = useState(false)
@@ -3396,6 +3409,14 @@ export default function WorkspaceSelection() {
       const academicYear = cleanString(onboardingForm.academicYear)
       const classesRange = cleanString(onboardingForm.classesRange)
       const monthlyFeeSetup = cleanString(onboardingForm.monthlyFeeSetup)
+      // Module-specific step-2 answers (fleet size, outlet count, licence
+      // number, ...), keyed exactly as the module's spec declares them. Blank
+      // answers are dropped so a merge never overwrites a saved value with ''.
+      const setupDetails = Object.fromEntries(
+        setupFieldsForBusinessType(selectedModuleBusinessType)
+          .map((field) => [field.key, cleanString(onboardingForm[field.key])])
+          .filter(([, value]) => value !== ''),
+      )
       const preferredLanguage = cleanString(onboardingForm.language) || 'English'
       // Onboarding-only input, not a durable workspace fact — used below to
       // decide how many branch documents to seed at creation time, then
@@ -3493,6 +3514,7 @@ export default function WorkspaceSelection() {
         academicYear,
         classesRange,
         monthlyFeeSetup,
+        setupDetails,
         updatedAt: now,
         lastLoginAt: now,
         lastAccessedAt: now,
@@ -3535,6 +3557,7 @@ export default function WorkspaceSelection() {
         academicYear,
         classesRange,
         monthlyFeeSetup,
+        setupDetails,
         updatedAt: now,
         lastLoginAt: now,
         lastAccessedAt: now,
@@ -3561,6 +3584,7 @@ export default function WorkspaceSelection() {
         allowedBusinessTypes,
         enabledModules: selectedModuleList,
         onboardingCompleted: true,
+        setupDetails,
         updatedAt: now,
         lastAccessedAt: now,
       }
@@ -3589,6 +3613,7 @@ export default function WorkspaceSelection() {
         trialStartedAt: now,
         trialEndsAt,
         isTrialActive: true,
+        setupDetails,
         createdAt: now,
         updatedAt: now,
         lastAccessedAt: now,

@@ -286,6 +286,17 @@ const salesHubSidebarCoreModules = new Set([
 export const businessWorkspaceCatalog = [
   {
     id: 'general-crm',
+    // Wizard step 2 ("Business Details") field spec. `fields` render after the
+    // shared name/country/currency/language/phone/address inputs; every value is
+    // persisted under `setupDetails` on the user and workspace documents.
+    setup: {
+      nameLabel: 'Workspace / Business Name',
+      namePlaceholder: 'Your business name',
+      fields: [
+        { key: 'industry', label: 'Industry', placeholder: 'Services, trading, manufacturing...' },
+        { key: 'teamSize', label: 'Team Size', type: 'number', placeholder: '5' },
+      ],
+    },
     type: 'General CRM',
     title: 'Nexora Sales Hub',
     route: '/app/dashboard',
@@ -320,6 +331,15 @@ export const businessWorkspaceCatalog = [
   },
   {
     id: 'retail-pos',
+    setup: {
+      nameLabel: 'Store / Shop Name',
+      namePlaceholder: 'Your store name',
+      fields: [
+        { key: 'outletCount', label: 'How many outlets do you have?', type: 'number', placeholder: '1' },
+        { key: 'storeType', label: 'Store Type', type: 'select', options: ['Grocery / Kiryana', 'Garments', 'Electronics', 'Cosmetics', 'Hardware', 'General Store', 'Other'] },
+        { key: 'taxNumber', label: 'NTN / GST Number', placeholder: 'Optional' },
+      ],
+    },
     type: 'Retail / POS',
     title: 'Retail / POS',
     route: '/app/dashboard',
@@ -344,6 +364,17 @@ export const businessWorkspaceCatalog = [
   },
   {
     id: 'medical-store-pos',
+    setup: {
+      nameLabel: 'Pharmacy / Medical Store Name',
+      namePlaceholder: 'Your pharmacy name',
+      fields: [
+        // branchCount is the one field the wizard also acts on at creation time:
+        // it seeds branch documents. See WorkspaceSelection.jsx.
+        { key: 'branchCount', label: 'How many branches do you have?', type: 'number', placeholder: '1' },
+        { key: 'pharmacyType', label: 'Pharmacy Type', type: 'select', options: ['Retail', 'Wholesale', 'Both'] },
+        { key: 'drugLicenceNo', label: 'Drug Licence Number', placeholder: 'Optional' },
+      ],
+    },
     type: 'PharmaFlow',
     title: 'PharmaFlow',
     route: '/app/dashboard',
@@ -366,6 +397,15 @@ export const businessWorkspaceCatalog = [
   },
   {
     id: 'school-erp',
+    setup: {
+      nameLabel: 'School Name',
+      namePlaceholder: 'Your school name',
+      fields: [
+        { key: 'academicYear', label: 'Academic Year', placeholder: '2026-2027' },
+        { key: 'classesRange', label: 'Classes Range', placeholder: 'Nursery to Grade 10' },
+        { key: 'campusCount', label: 'How many campuses do you have?', type: 'number', placeholder: '1' },
+      ],
+    },
     type: 'School ERP',
     title: 'School ERP',
     route: '/app/dashboard',
@@ -395,6 +435,14 @@ export const businessWorkspaceCatalog = [
   },
   {
     id: 'property-erp',
+    setup: {
+      nameLabel: 'Agency / Company Name',
+      namePlaceholder: 'Your agency name',
+      fields: [
+        { key: 'portfolioType', label: 'Portfolio Type', type: 'select', options: ['Rentals', 'Sales', 'Both'] },
+        { key: 'propertyCount', label: 'How many properties do you manage?', type: 'number', placeholder: '10' },
+      ],
+    },
     type: 'Property ERP',
     title: 'Property ERP',
     route: '/app/dashboard',
@@ -423,6 +471,15 @@ export const businessWorkspaceCatalog = [
   },
   {
     id: 'restaurant-pos',
+    setup: {
+      nameLabel: 'Restaurant Name',
+      namePlaceholder: 'Your restaurant name',
+      fields: [
+        { key: 'outletCount', label: 'How many outlets do you have?', type: 'number', placeholder: '1' },
+        { key: 'tableCount', label: 'How many tables?', type: 'number', placeholder: '12' },
+        { key: 'serviceType', label: 'Service Type', type: 'select', options: ['Dine-in', 'Takeaway', 'Delivery', 'All of these'] },
+      ],
+    },
     type: 'Restaurant POS',
     title: 'Restaurant POS',
     route: '/app/dashboard',
@@ -455,6 +512,15 @@ export const businessWorkspaceCatalog = [
   },
   {
     id: 'transport-rental',
+    setup: {
+      nameLabel: 'Company Name',
+      namePlaceholder: 'Your transport company name',
+      fields: [
+        { key: 'fleetSize', label: 'Fleet Size (vehicles)', type: 'number', placeholder: '5' },
+        { key: 'vehicleType', label: 'Vehicle Type', type: 'select', options: ['Cars', 'Vans / Coasters', 'Buses', 'Trucks / Loaders', 'Mixed Fleet'] },
+        { key: 'rentalBasis', label: 'Rental Basis', type: 'select', options: ['Daily', 'Weekly', 'Monthly', 'Per Trip'] },
+      ],
+    },
     type: 'Transport / Rental',
     title: 'Transport / Rental',
     route: '/app/transport-dashboard',
@@ -480,6 +546,14 @@ export const businessWorkspaceCatalog = [
   },
   {
     id: 'whatsapp-crm',
+    setup: {
+      nameLabel: 'Business Name',
+      namePlaceholder: 'Your business name',
+      fields: [
+        { key: 'whatsappNumber', label: 'WhatsApp Business Number', placeholder: '+92 300 0000000' },
+        { key: 'teamSize', label: 'Team Size', type: 'number', placeholder: '3' },
+      ],
+    },
     type: 'WhatsApp CRM',
     title: 'WhatsApp CRM',
     route: '/app/dashboard',
@@ -601,6 +675,29 @@ export function businessWorkspaceForSelection(value) {
 export function teamManagementEnabledForBusinessType(type) {
   return true
 }
+
+/* ── Setup wizard ("Business Details") field spec, per business type ── */
+
+const DEFAULT_SETUP = {
+  nameLabel: 'Workspace / Business Name',
+  namePlaceholder: 'Your business name',
+  fields: [],
+}
+
+export function setupSpecForBusinessType(type) {
+  return businessWorkspaceForType(type).setup || DEFAULT_SETUP
+}
+
+export function setupFieldsForBusinessType(type) {
+  return setupSpecForBusinessType(type).fields || []
+}
+
+// Every setup field key defined by any business type. The wizard seeds one
+// blank form entry per key so switching type mid-wizard never leaves an input
+// uncontrolled.
+export const setupFieldKeys = Array.from(
+  new Set(businessWorkspaceCatalog.flatMap((workspace) => (workspace.setup?.fields || []).map((field) => field.key))),
+)
 
 export function labelForBusinessType(type) {
   return businessWorkspaceForType(type).title
