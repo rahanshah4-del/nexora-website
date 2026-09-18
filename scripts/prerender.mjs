@@ -10,7 +10,7 @@
  *   3. Updated sitemap
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { formatBlogContentHtml } from '../src/lib/blogContentFormatter.js'
@@ -251,8 +251,23 @@ const HOMEPAGE_HREFLANG_LANGS = [
 // disagree on which language a page is in.
 function htmlLangForPath(path) {
   const normalized = path === '/' ? '/' : `/${String(path || '').replace(/^\/+|\/+$/g, '')}`
-  const match = normalized.match(/^\/(ur|hi|ar)(\/.*)?$/)
+  const match = normalized.match(/^\/(ur|hi|ar|bn)(\/.*)?$/)
   return match ? match[1] : 'en'
+}
+
+// Languages this site publishes that are written right-to-left. A page in one
+// of these needs dir="rtl" on <html> as well as the lang code: lang alone
+// only tells a crawler/screen reader which language the text is in, it does
+// not flip the layout direction, so an Arabic or Urdu page without dir
+// renders left-to-right with punctuation in the wrong place.
+const RTL_LANGS = new Set(['ar', 'ur'])
+
+// Single source of truth for the <html> element's language attributes, used
+// by every page builder below so a translated page can never be emitted with
+// the English default (or with a lang code but no matching direction).
+function htmlAttrs(lang) {
+  const code = lang || 'en'
+  return RTL_LANGS.has(code) ? `lang="${code}" dir="rtl"` : `lang="${code}"`
 }
 
 // Single source of truth for every <link rel="canonical"> / og:url emitted by
@@ -654,7 +669,7 @@ function buildFullBlogHtml(article, allArticles = [], options = {}) {
   const seoDesc = translation?.metaDescription || translation?.excerpt || article.metaDescription || article.description || `Read ${display.title || article.title} on Nexora Blog.`
   const hreflangs = buildHreflangBlock(`/blog/${article.slug}`, hreflangLangs)
   return `<!DOCTYPE html>
-<html lang="${htmlLang}">
+<html ${htmlAttrs(htmlLang)}>
 <head>
 ${buildCommonHead()}
 ${buildSeoHead({
@@ -942,7 +957,7 @@ function buildPublicPageHtml(meta, path = '', articles = []) {
   const appHtml = buildStaticShell(meta, path, articles)
 
   return `<!DOCTYPE html>
-<html lang="${htmlLangForPath(meta.path)}">
+<html ${htmlAttrs(htmlLangForPath(meta.path))}>
 <head>
 ${buildCommonHead()}
 ${buildSeoHead(meta)}
@@ -1711,12 +1726,126 @@ function buildStaticShell(meta, path = '', articles = []) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+//  404 PAGE
+// ═══════════════════════════════════════════════════════════════════════════════
+//
+// Written to dist/404.html, which wrangler.jsonc serves (with a real 404
+// status) for every URL that has no matching asset — see the
+// "not_found_handling": "404-page" setting there. Before that, unknown URLs
+// fell through to "single-page-application" handling, which returned HTTP 200
+// with dist/index.html: the homepage, complete with the homepage's own
+// canonical tag, for every typo, dead link and stale URL on the site.
+
+// Recovery links offered on the 404 page. Every target here is a route that
+// PUBLIC_ROUTES actually prerenders, written with the trailing slash the
+// directory-style output is served at, so none of these links can itself
+// 404 or take a redirect hop. ("Solutions" is a header dropdown with no
+// landing page of its own, so it points at the services hub.)
+const NOT_FOUND_LINKS = [
+  ['Home', '/'],
+  ['Solutions', '/business-services/'],
+  ['Pricing', '/pricing/'],
+  ['Blog', '/blog/'],
+  ['Contact', '/contact/'],
+]
+
+// Deliberately emits NO <link rel="canonical"> and a robots noindex. This one
+// document answers every unknown URL on the domain, so a canonical here would
+// declare thousands of distinct URLs to be the same page, and letting it be
+// indexed would put an error page in search results. It reuses
+// buildCommonHead()/SHELL_HEADER/SHELL_FOOTER, so it carries the same shell,
+// styling and asset tags as every other prerendered page.
+function build404Page() {
+  const primary = 'display:inline-flex;min-height:3rem;align-items:center;justify-content:center;border-radius:9999px;padding:.75rem 1.5rem;font-size:.875rem;font-weight:800;text-decoration:none;background:#0f172a;color:#fff'
+  const secondary = 'display:inline-flex;min-height:3rem;align-items:center;justify-content:center;border-radius:9999px;padding:.75rem 1.5rem;font-size:.875rem;font-weight:800;text-decoration:none;border:1px solid #e2e8f0;background:#fff;color:#0f172a'
+  const linksHtml = NOT_FOUND_LINKS
+    .map(([label, to], i) => `<a href="${esc(to)}" style="${i === 0 ? primary : secondary}">${esc(label)}</a>`)
+    .join('\n        ')
+
+  return `<!DOCTYPE html>
+<html ${htmlAttrs('en')}>
+<head>
+${buildCommonHead()}
+  <title>Page not found (404) | Nexora Solution</title>
+  <meta name="description" content="The page you requested could not be found. Head back to the Nexora Solution homepage, solutions, pricing, blog or contact page." />
+  <meta name="robots" content="noindex" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Nexora Solution" />
+  <meta property="og:title" content="Page not found (404) | Nexora Solution" />
+  <meta property="og:description" content="The page you requested could not be found." />
+  <meta property="og:image" content="${esc(LOGO)}" />
+${buildGtm()}
+</head>
+<body>
+  <div id="root">
+${SHELL_HEADER}
+  <main style="max-width:44rem;margin:0 auto;padding:4rem 1.25rem;text-align:center">
+    <p style="font-size:.75rem;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:#1d4ed8;margin:0">Error 404</p>
+    <h1 style="margin:1rem 0 0;font-size:clamp(1.9rem,6vw,2.5rem);font-weight:900;letter-spacing:-.02em;color:#0f172a">Page not found</h1>
+    <p style="margin:1rem auto 0;max-width:34rem;font-size:1rem;line-height:1.7;color:#475569">The page you requested doesn&rsquo;t exist or may have moved. Try one of the links below.</p>
+    <nav aria-label="Go to" style="margin-top:2rem;display:flex;flex-wrap:wrap;gap:.75rem;justify-content:center">
+        ${linksHtml}
+    </nav>
+  </main>
+${SHELL_FOOTER}
+  </div>
+  ${PRODUCTION_ASSETS || '<script type="module" src="/src/main.jsx"></script>'}
+  <noscript>
+    <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PZJV65RW" height="0" width="0" style="display:none;visibility:hidden"></iframe>
+  </noscript>
+</body>
+</html>`
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 //  FILE OUTPUT
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function writePage(outPath, html) {
   mkdirSync(dirname(outPath), { recursive: true })
   writeFileSync(outPath, html)
+}
+
+// Every prerendered route must be written as `<route>/index.html`, never as a
+// flat `<route>.html`. The two are not interchangeable: with
+// "html_handling": "force-trailing-slash" (wrangler.jsonc) a directory-style
+// page has exactly one URL — `/route/` — and `/route` 301s to it, while a
+// flat `/route.html` also answers `/route` itself, so the same page resolves
+// at two URLs and the redirect that should collapse them never happens. This
+// walks the built output and fails the build if a flat route page reappears.
+//
+// Two kinds of flat .html at the output root are not routes and are exempt:
+// 404.html (served by status for unknown URLs, not reachable as a path) and
+// the search-console verification files, which must keep their exact literal
+// filenames.
+const FLAT_HTML_ALLOWLIST = new Set(['404.html'])
+
+// Collects every `<route>/index.html` under `dir`, relative to it — used by
+// the per-language build report below.
+function findIndexHtml(dir, rel = '') {
+  const found = []
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const childRel = rel ? `${rel}/${entry.name}` : entry.name
+    if (entry.isDirectory()) found.push(...findIndexHtml(join(dir, entry.name), childRel))
+    else if (entry.name === 'index.html') found.push(childRel)
+  }
+  return found
+}
+
+function findFlatRouteHtml(dir, rel = '') {
+  const offenders = []
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const childRel = rel ? `${rel}/${entry.name}` : entry.name
+    if (entry.isDirectory()) {
+      offenders.push(...findFlatRouteHtml(join(dir, entry.name), childRel))
+      continue
+    }
+    if (!entry.name.endsWith('.html') || entry.name === 'index.html') continue
+    if (FLAT_HTML_ALLOWLIST.has(childRel)) continue
+    if (/^google[0-9a-f]+\.html$/.test(entry.name)) continue
+    offenders.push(childRel)
+  }
+  return offenders
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -1937,6 +2066,12 @@ async function main() {
   writePage(join(DIST, 'search', 'index.html'), buildSearchPage())
   console.log('[prerender] ✓ Search page')
 
+  // ── Real 404 page at the output root ──
+  // Overwrites nothing else: wrangler.jsonc points not_found_handling at this
+  // exact file, so it is what unknown URLs get instead of the homepage.
+  writePage(join(DIST, '404.html'), build404Page())
+  console.log('[prerender] ✓ 404 page (dist/404.html — noindex, no canonical)')
+
   // 3. Sitemap + Image sitemap
   try {
     const { execSync } = await import('node:child_process')
@@ -1947,7 +2082,28 @@ async function main() {
     console.warn('[prerender] ⚠ Sitemap generation skipped')
   }
 
-  const totalPages2 = pageCount + blogCount + catCount + (totalPages > 1 ? totalPages - 1 : 0) + 2 // +2 for author + search
+  // ── Trailing-slash consistency guard ──
+  // Runs after every writePage() above, over the real built output, so it also
+  // catches a flat route page copied in from public/ rather than generated here.
+  const flatRoutes = findFlatRouteHtml(DIST)
+  if (flatRoutes.length) {
+    console.error('[prerender] ✗ Flat route .html found — every route must be written as <route>/index.html:')
+    for (const f of flatRoutes) console.error(`             dist/${f}`)
+    process.exit(1)
+  }
+  console.log('[prerender] ✓ Trailing slash OK — every prerendered route is <route>/index.html')
+
+  // ── Language-prefixed output report ──
+  // Prints what actually landed under each /<lang>/ prefix, so a translated
+  // page silently not being prerendered (the reason those URLs used to fall
+  // through to the homepage) is visible in the build log.
+  for (const lang of ML_LANGS) {
+    const langDir = join(DIST, lang.prefix)
+    const count = existsSync(langDir) ? findIndexHtml(langDir).length : 0
+    console.log(`[prerender]   /${lang.prefix}/ — ${count} page(s), lang="${lang.htmlLang}"${RTL_LANGS.has(lang.htmlLang) ? ' dir="rtl"' : ''}`)
+  }
+
+  const totalPages2 = pageCount + blogCount + catCount + (totalPages > 1 ? totalPages - 1 : 0) + 3 // +3 for author + search + 404
   console.log(`[prerender] ✓ Done — ${totalPages2} pages generated`)
 
   // ── Multilingual SEO Validation Report ──
@@ -1962,7 +2118,7 @@ async function main() {
   console.log(`  ✓ Sitemap OK        — All ${seoLangCount - 1} additional languages in sitemap.xml`)
   console.log(`  ✓ Structured Data OK — inLanguage set per page`)
   console.log(`  ✓ Robots OK         — sitemap.xml referenced`)
-  console.log(`  ✓ HTML lang OK      — Dynamic <html lang="..."> per language`)
+  console.log(`  ✓ HTML lang OK      — Dynamic <html lang="..."> per language (+ dir="rtl" for ar/ur)`)
   console.log(`  ✓ OG Locale OK      — og:locale + og:locale:alternate per page`)
   console.log(`  ✓ Translation URLs  — ${mlCount} multilingual pages prerendered`)
   console.log('')

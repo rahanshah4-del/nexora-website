@@ -2,7 +2,8 @@
   // Cloudflare Workers config for the main static site (nexorasolution.online).
   // This project builds a prerendered Vite/React SPA into ./dist (see
   // package.json "build"/"postbuild" scripts) and is served as Workers
-  // static assets — there is no server-side Worker script here.
+  // static assets — there is no server-side Worker script here, so there is
+  // deliberately no "binding" field under "assets".
   //
   // This does NOT cover the ./functions directory (Firebase Cloud Functions,
   // deployed separately via `firebase deploy --only functions`) or the
@@ -10,12 +11,21 @@
   // deployed independently via the worker:deploy / whatsapp:deploy /
   // passkeys:deploy / background-jobs:deploy npm scripts).
   "name": "nexora",
-  "compatibility_date": "2026-09-05",
+  "compatibility_date": "2026-09-18",
   "build": {
     "command": "npm run build"
   },
   "assets": {
     "directory": "./dist",
-    "not_found_handling": "single-page-application"
+    // Every route is prerendered as <route>/index.html, so <route>/ is the one
+    // real URL for each page and the no-slash form 301s to it. Without this,
+    // the default auto-trailing-slash also answers the no-slash form directly
+    // for any flat .html, so a page can resolve at two URLs.
+    "html_handling": "force-trailing-slash",
+    // Unknown URLs get dist/404.html with a real 404 status. This replaces
+    // "single-page-application", which returned HTTP 200 with dist/index.html
+    // — the homepage, carrying the homepage's own canonical — for every typo,
+    // dead link and stale URL on the domain (a soft 404).
+    "not_found_handling": "404-page"
   }
 }
