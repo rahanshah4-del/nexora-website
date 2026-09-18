@@ -16,8 +16,13 @@
 // registers no service worker at all (PROD-only) and purges any it finds.
 const CACHE_NAME = 'nexora-pwa-__BUILD_ID__'
 const CACHE_URLS = [
+  // '/' is the shell, and the only HTML entry worth precaching: the navigate
+  // handler's offline fallback reads exactly this key. '/index.html' used to sit
+  // here too, but html_handling "force-trailing-slash" 307s it to '/', so the
+  // entry only ever stored a redirected response that nothing read — and a
+  // stored redirected response is what produces "a redirected response was used
+  // for a request whose redirect mode is not follow" if anything ever did.
   '/',
-  '/index.html',
   '/favicon.ico',
   '/favicon.svg',
   '/favicon-16x16.png',
