@@ -164,4 +164,4 @@ export function normalizeRestaurantReportOrders(orders = [], options = {}) {
   return (Array.isArray(orders) ? orders : []).map((order) => normalizeRestaurantReportOrder(order, options))
 }
 
-export { numberValue as restaurantReportNumber }
+export { numberValue as restaurantReportNumber, textValue, dateValue }

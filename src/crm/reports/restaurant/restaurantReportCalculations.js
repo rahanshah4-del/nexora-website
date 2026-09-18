@@ -1,4 +1,4 @@
-import { normalizeRestaurantReportOrders, restaurantReportNumber } from './restaurantReportNormalizer.js'
+import { dateValue, normalizeRestaurantReportOrders, restaurantReportNumber, textValue } from './restaurantReportNormalizer.js'
 import { computeBusinessIntelligence } from './restaurantBusinessIntelligence.js'
 import { classifyDetailedRestaurantCashVariance } from '../../data/restaurantCashData.js'
 

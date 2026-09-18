@@ -702,6 +702,7 @@ function WorkspaceCard({ workspace, index, emailVerified, selected, saving, onSe
 }
 
 function WorkspaceListRow({ workspace, index, emailVerified, selected, saving, onSelect, activity, onViewActivity }) {
+  const navigate = useNavigate()
   const disabled = !workspace.active
   const businessTypeLabel = labelForBusinessType(workspace.type)
   const hasActivity = activity && activity.hasActivity
