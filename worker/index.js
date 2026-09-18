@@ -108,10 +108,12 @@ function isSpaRoute(pathname) {
 // So the shell gets a noindex on the way out, and the homepage canonical is
 // removed rather than rewritten to the request's own URL: these routes are not
 // pages that should rank, and noindex plus a self-canonical is a contradictory
-// pair of signals. A pre-existing robots meta is dropped first so exactly one
-// survives. Content injected with `html: true` is not re-parsed by the
-// rewriter, so the tag added here cannot be matched and removed by the handler
-// below it.
+// pair of signals. The homepage's hreflang alternates go for the same reason —
+// they name /, /ur/, /hi/ and /ar/, declaring /app/dashboard to be part of the
+// homepage's translation group, which it is not. A pre-existing robots meta is
+// dropped first so exactly one survives. Content injected with `html: true` is
+// not re-parsed by the rewriter, so the tag added here cannot be matched and
+// removed by the handler below it.
 //
 // This is deliberately NOT done with robots.txt Disallow: a blocked URL can
 // still be indexed from an external link, and blocking it guarantees the
@@ -130,6 +132,7 @@ function noindexShellRewriter() {
     })
     .on('meta[name="robots"]', { element(el) { el.remove() } })
     .on('link[rel="canonical"]', { element(el) { el.remove() } })
+    .on('link[rel="alternate"][hreflang]', { element(el) { el.remove() } })
 }
 
 // Serves one specific file from dist under a status of our choosing, keeping

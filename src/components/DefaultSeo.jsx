@@ -175,8 +175,10 @@ export default function DefaultSeo() {
     if (isSelfCanonicalRoute) return currentPageUrl
     return host + canonicalPath(pathname)
   })()
-  const isLangBlog = ['/ur/blog', '/hi/blog', '/ar/blog', '/bn/blog'].some(p => cleanPathname === p || cleanPathname.startsWith(p + '/'))
-  const publicRoute = publicSeoPaths.has(cleanPathname) || cleanPathname.startsWith('/solutions/') || cleanPathname.startsWith('/blog/') || isLangBlog || PILLAR_PAGE_PREFIXES.some((prefix) => cleanPathname.startsWith(prefix))
+  // No isLangBlog case any more: the /<lang>/blog routes were retired and now
+  // 404 at the edge, so nothing renders there to classify. LANGUAGE_HREFLANG
+  // above still covers the language HOMEPAGES (/hi, /ur, /ar), which stay.
+  const publicRoute = publicSeoPaths.has(cleanPathname) || cleanPathname.startsWith('/solutions/') || cleanPathname.startsWith('/blog/') || PILLAR_PAGE_PREFIXES.some((prefix) => cleanPathname.startsWith(prefix))
   const noindex = NOINDEX_PREFIXES.some((prefix) => cleanPathname === prefix || cleanPathname.startsWith(`${prefix}/`))
 
   useEffect(() => {

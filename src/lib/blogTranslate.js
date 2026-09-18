@@ -25,7 +25,6 @@ export const BLOG_LANGUAGES = [
 ]
 
 const VALID_CODES = new Set(BLOG_LANGUAGES.map((l) => l.code))
-const STORAGE_KEY = 'nexora:blog:lang'
 const MAX_CHUNK = 2800
 const MAX_RETRIES = 2
 const FETCH_TIMEOUT_MS = 8000
@@ -51,12 +50,6 @@ function toFirestoreLangKey(displayCode) {
   return displayCode
 }
 
-/** Reverse map: Firestore key → display code (for backward compat) */
-function fromFirestoreLangKey(fsKey) {
-  if (fsKey === 'ur') return 'ur-roman'
-  return fsKey
-}
-
 /* ── Logging ────────────────────────────────────────────────────────────── */
 
 const LOG_PREFIX = '[Blog Translate]'
@@ -76,33 +69,6 @@ function logError(step, message, err) {
 }
 
 /* ── Detection ──────────────────────────────────────────────────────────── */
-
-export function detectPreferredBlogLanguage() {
-  try {
-    const stored = window.localStorage.getItem(STORAGE_KEY)
-    if (stored && VALID_CODES.has(stored)) return { lang: stored, auto: false }
-  } catch { /* quota */ }
-
-  try {
-    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''
-    if (tz === 'Asia/Karachi') return { lang: 'ur-roman', auto: true }
-    if (tz === 'Asia/Kolkata' || tz === 'Asia/Calcutta') return { lang: 'hi', auto: true }
-    if (tz === 'Asia/Dubai' || tz === 'Asia/Riyadh') return { lang: 'ar', auto: true }
-    if (tz === 'Asia/Dhaka') return { lang: 'bn', auto: true }
-  } catch { /* Intl down */ }
-
-  const langs = (navigator.languages || [navigator.language]).filter(Boolean).map((s) => s.toLowerCase())
-  if (langs.some((s) => s.startsWith('ur') || s.endsWith('-pk'))) return { lang: 'ur-roman', auto: true }
-  if (langs.some((s) => s.startsWith('hi') || s.endsWith('-in'))) return { lang: 'hi', auto: true }
-  if (langs.some((s) => s.startsWith('ar') || /-(ae|sa|eg|qa|kw|bh|om)$/.test(s))) return { lang: 'ar', auto: true }
-  if (langs.some((s) => s.startsWith('bn') || s.endsWith('-bd'))) return { lang: 'bn', auto: true }
-  return { lang: 'en', auto: true }
-}
-
-export function rememberBlogLanguage(code) {
-  if (!VALID_CODES.has(code)) return
-  try { localStorage.setItem(STORAGE_KEY, code) } catch { /* quota */ }
-}
 
 /* ── Resolve target language code ──────────────────────────────────────── */
 
@@ -459,111 +425,6 @@ export async function saveBlogTranslationsToFirestore(slug, translationsByDispla
     logError(4, `Firestore save failed [slug: ${slug}] — ${detail}`, err)
     throw new Error(`Firestore save failed: ${detail}`)
   }
-}
-
-/**
- * Load pre-translated content from Firestore (fast, no API cost).
- * Returns null if:
- *   - No cached translation exists
- *   - translationStatus is not 'completed'
- *   - The translation is empty/invalid
- *
- * Backward compat: Checks both 'ur-roman' and 'ur' keys.
- */
-export async function loadBlogTranslationFromFirestore(slug, langCode) {
-  if (!slug || langCode === 'en') return null
-
-  log(6, `Frontend language loader — checking Firestore [slug: ${slug}, lang: ${langCode}]`)
-
-  try {
-    const { firestoreDb } = await import('./firebase.js')
-    if (!firestoreDb) {
-      logError(6, 'Firestore not available', new Error('No firestoreDb'))
-      return null
-    }
-    const { doc, getDoc } = await import('firebase/firestore')
-    const snap = await getDoc(doc(firestoreDb, BLOG_TRANSLATIONS_COLLECTION, slug))
-
-    if (!snap.exists()) {
-      log(6, `No translation document found in Firestore [slug: ${slug}] — will attempt live translation`)
-      return null
-    }
-
-    const data = snap.data()
-    const translations = data?.translations || {}
-
-    // Try exact match first, then Firestore key variant
-    let translation = translations[langCode] || null
-
-    // Backward compat: if requesting 'ur-roman' but not found, try 'ur' key
-    if (!translation && langCode === 'ur-roman') {
-      translation = translations['ur'] || null
-    }
-    // Backward compat: if requesting 'ur' but not found, try 'ur-roman' key
-    if (!translation && langCode === 'ur') {
-      translation = translations['ur-roman'] || null
-    }
-
-    if (!translation) {
-      log(6, `Language '${langCode}' not in Firestore translations [slug: ${slug}] — available: ${Object.keys(translations).join(', ')}`)
-      return null
-    }
-
-    // Check translationStatus: must be 'completed' or missing (backward compat)
-    // Reject only if status is explicitly a failure state like 'failed' or 'pending'
-    const status = translation.translationStatus || ''
-    if (status === 'failed' || status === 'pending') {
-      log(6, `Translation found but status='${status}' [slug: ${slug}, lang: ${langCode}] — attempting live translation instead`)
-      return null
-    }
-    // Missing status on older translations = assume completed (backward compat)
-    if (status && status !== 'completed') {
-      log(6, `Translation found with unknown status='${status}' [slug: ${slug}, lang: ${langCode}] — attempting live translation`)
-      return null
-    }
-
-    // Validate translation has content
-    if (!validateTranslation(translation, langCode)) {
-      logError(6, `Translation exists but failed validation (empty content) [slug: ${slug}, lang: ${langCode}]`, new Error('Empty translation'))
-      return null
-    }
-
-    log(6, `Frontend language loader confirmed — loaded from Firestore [slug: ${slug}, lang: ${langCode}]`)
-    return translation
-  } catch (err) {
-    logError(6, `Firestore load error [slug: ${slug}, lang: ${langCode}]`, err)
-    return null
-  }
-}
-
-/**
- * Which display language codes have a real, validated, completed
- * translation for this slug — English is always included (it's the source).
- * Used to build an accurate hreflang set instead of assuming all 5 languages
- * exist for every article (which produced hreflang tags pointing at pages
- * that were never actually prerendered/translated).
- */
-export async function getAvailableTranslationLangs(slug) {
-  const available = ['en']
-  if (!slug) return available
-  try {
-    const { firestoreDb } = await import('./firebase.js')
-    if (!firestoreDb) return available
-    const { doc, getDoc } = await import('firebase/firestore')
-    const snap = await getDoc(doc(firestoreDb, BLOG_TRANSLATIONS_COLLECTION, slug))
-    if (!snap.exists()) return available
-    const translations = snap.data()?.translations || {}
-    for (const { code } of BLOG_LANGUAGES) {
-      if (code === 'en') continue
-      const fsKey = toFirestoreLangKey(code)
-      const translation = translations[fsKey] || translations[fromFirestoreLangKey(fsKey)] || null
-      const status = translation?.translationStatus || ''
-      if (translation && status !== 'failed' && status !== 'pending' && validateTranslation(translation, code)) {
-        available.push(code)
-      }
-    }
-  } catch { /* best-effort — falls back to English-only hreflang */ }
-  return available
 }
 
 /**

@@ -65,15 +65,6 @@ export function buildLocalizedCanonical(slug, langCode = 'en') {
 }
 
 /**
- * Build a localized blog index path.
- */
-export function buildLocalizedBlogIndex(langCode = 'en') {
-  const cfg = getLangConfig(langCode)
-  const prefix = cfg.urlPrefix ? `/${cfg.urlPrefix}` : ''
-  return `${prefix}/blog`
-}
-
-/**
  * Check if a pathname is a blog page (with or without language prefix).
  */
 export function isBlogPath(pathname) {

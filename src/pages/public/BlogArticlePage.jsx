@@ -1,14 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { Navigate, useParams } from 'react-router-dom'
 import Link from '../../components/AppLink.jsx'
 import {
   HiOutlineArrowLeft,
   HiOutlineArrowRight,
   HiOutlineCalendarDays,
-  HiOutlineChevronDown,
   HiOutlineClock,
   HiOutlineDocumentText,
-  HiOutlineLanguage,
   HiOutlineLink,
   HiOutlineListBullet,
   HiOutlineShare,
@@ -19,14 +17,7 @@ import PageSeo from '../../components/PageSeo.jsx'
 import { getBlogArticle } from '../../lib/blogData.js'
 import usePublishedBlogArticles from '../../hooks/usePublishedBlogArticles.js'
 import { trackBlogView } from '../../lib/blogViews.js'
-import {
-  BLOG_LANGUAGES,
-  detectPreferredBlogLanguage,
-  rememberBlogLanguage,
-  loadBlogTranslationFromFirestore,
-  getAvailableTranslationLangs,
-} from '../../lib/blogTranslate.js'
-import { BLOG_SEO_LANGUAGES, buildLocalizedPath, buildLocalizedCanonical, extractLangFromPath, getHreflangMap } from '../../lib/blogLanguages.js'
+import { buildLocalizedPath, buildLocalizedCanonical } from '../../lib/blogLanguages.js'
 import { absoluteUrl, createArticleSchema } from '../../lib/seoStructuredData.js'
 import PublicPageShell from './PublicPageShell.jsx'
 import BlogComments from '../../components/BlogComments.jsx'
@@ -106,67 +97,23 @@ export default function BlogArticlePage() {
     if (articleSlug) trackBlogView(articleSlug)
   }, [articleSlug])
 
-  /* ── Reader language: URL prefix > saved preference > auto-detect ── */
-  const { langCode: urlLang } = extractLangFromPath(window.location.pathname)
-  const [lang, setLang] = useState(() => {
-    if (urlLang !== 'en') return urlLang
-    return detectPreferredBlogLanguage().lang
-  })
-  // translation: undefined=loading, null=not-found(show English), {...}=found
-  const [translation, setTranslation] = useState(undefined)
-  const [langOpen, setLangOpen] = useState(false)
-  // Which languages have a REAL translation for this slug — drives hreflang
-  // so it never advertises a locale URL with no distinct content. Starts
-  // English-only (always true) and fills in once the Firestore check below
-  // resolves; worst case (check fails) it just stays English-only.
-  const [availableLangs, setAvailableLangs] = useState(['en'])
+  /* ── Articles are English-only ──────────────────────────────────────────
+     The reader-language switcher, the per-article Firestore translation load
+     and the getAvailableTranslationLangs() availability read used to live here.
+     They were removed with the translated blog: the `blogTranslations`
+     documents are keyed to a retired generation of article slugs, so no
+     translated article has ever been prerendered, /<lang>/blog/<slug>/ now
+     returns a real 404 (see SPA_ROUTES in worker/index.js), and the switcher
+     navigated straight into it via window.location.href — a dead end with no
+     route back to the article. There was no correct destination left for it.
 
-  useEffect(() => {
-    if (!articleSlug) return undefined
-    let cancelled = false
-    getAvailableTranslationLangs(articleSlug).then((codes) => {
-      if (!cancelled) setAvailableLangs(codes)
-    })
-    return () => { cancelled = true }
-  }, [articleSlug])
-
-  useEffect(() => {
-    if (!articleSlug || lang === 'en') { setTranslation(lang === 'en' ? null : undefined); return undefined }
-    let cancelled = false
-    setTranslation(undefined) // start loading
-
-    /**
-     * Translation flow (single source of truth = Firestore):
-     *   1. Check Firestore for pre-translated content (saved at publish time).
-     *   2. If found with translationStatus='completed' → use it.
-     *   3. If NOT found → show English (NO live API call from client).
-     */
-    loadBlogTranslationFromFirestore(articleSlug, lang)
-      .then((cached) => {
-        if (cancelled) return
-        if (cached && cached.translationStatus === 'completed') {
-          setTranslation({ ...cached, slug: articleSlug, lang })
-        } else {
-          setTranslation(null) // not found → show English
-        }
-      })
-      .catch(() => {
-        if (cancelled) return
-        setTranslation(null) // Firestore error → show English
-      })
-    return () => { cancelled = true }
-  }, [articleSlug, lang, articles])
-
-  const selectLanguage = (code) => {
-    if (code === lang) { setLangOpen(false); return }
-    rememberBlogLanguage(code)
-    if (article?.slug) {
-      window.location.href = buildLocalizedPath(article.slug, code)
-    } else {
-      setLang(code)
-      setLangOpen(false)
-    }
-  }
+     If translated articles are ever generated, what needs to come back is:
+     the reader-language state and the Firestore load (loadBlogTranslationFromFirestore),
+     the availability read that drives hreflang (so only languages with a real
+     page are advertised), the dropdown UI, and the locale-prefixed entries in
+     SPA_ROUTES. The SEO block below would also need its per-language canonical
+     and hreflang group restored. The Arabic-script vs Roman Urdu question noted
+     in scripts/prerender.mjs has to be settled first. ───────────────────── */
 
   if (!article && loading) {
     return (
@@ -260,13 +207,6 @@ export default function BlogArticlePage() {
   if (!article) return <Navigate to="/blog" replace />
 
   const { readingTime, wordCount } = calculateReadingTime(article)
-  /* Reader-facing copy: translated when a non-English language is active.
-     Slug+lang check prevents stale text flashing on article/language change.
-     SEO (PageSeo, schema, canonical) always uses the English source. */
-  // undefined = Firestore check in progress, null = no translation found
-  const translationLoading = lang !== 'en' && translation === undefined
-  const activeTranslation = lang !== 'en' && translation && translation.slug === article.slug && translation.lang === lang ? translation : null
-  const display = activeTranslation || article
   const articleIndex = articles.findIndex((item) => item.slug === article.slug)
   const adjacent = {
     previous: articleIndex > 0 ? articles[articleIndex - 1] : null,
@@ -295,44 +235,34 @@ export default function BlogArticlePage() {
     wordCount: article.wordCount,
   })
 
-  /* SEO identity (canonical, hreflang, OG/schema path, robots) must always
-     describe the URL actually being served — never `lang`, which also
-     reflects a returning visitor's detected/remembered display-language
-     preference and can differ from `urlLang` while staying on the plain
-     English URL. Using `lang` here previously made the English URL
-     self-canonicalize to /ur/... whenever a visitor's browser or
-     localStorage preferred Urdu, even though most slugs (like this one)
-     have no real Urdu translation in Firestore.
-     For a locale-prefixed URL (urlLang !== 'en') with a confirmed-missing
-     translation, the page is serving duplicate English content under a
-     locale prefix: canonicalize it back to the English original, drop it
-     from hreflang (there's no distinct page to alternate to), and mark it
-     noindex so it doesn't compete with the real English URL in search. */
-  const hasRealTranslation = Boolean(activeTranslation)
-  const translationConfirmedMissing = urlLang !== 'en' && !hasRealTranslation && translation !== undefined
-  const seoLang = urlLang === 'en' || hasRealTranslation ? urlLang : 'en'
-  const seoCanonical = buildLocalizedCanonical(article.slug, seoLang)
-  const seoPath = buildLocalizedPath(article.slug, seoLang)
-  const seoHreflangs = translationConfirmedMissing ? null : getHreflangMap(article.slug, availableLangs)
-  const seoRobots = translationConfirmedMissing ? 'noindex,follow' : 'index,follow'
+  /* SEO identity is always the English article, whatever path this renders at.
+     Hardcoding 'en' is what makes a locale-prefixed URL self-heal: the eight
+     /<lang>/blog/:slug routes are still registered in src/AppRouter.jsx but are
+     unreachable over HTTP (the Worker 404s them) and nothing links to them, and
+     if one ever did render it would canonicalize back to the English original
+     rather than claiming to be a translation.
+     No hreflang props are passed: an article has no translated sibling, so there
+     is no group to advertise. PageSeo clears any static hreflang link when
+     `hreflangs` is absent, which matches buildHreflangBlock() in
+     scripts/prerender.mjs emitting an empty block. Omitting `currentLang` and
+     `ogLocale` likewise lands on PageSeo's en/en_PK defaults. */
+  const seoCanonical = buildLocalizedCanonical(article.slug, 'en')
+  const seoPath = buildLocalizedPath(article.slug, 'en')
 
   return (
     <PublicPageShell>
       <PageSeo
-        title={translation?.title || article.seoTitle}
-        description={translation?.excerpt || translation?.metaDescription || article.metaDescription}
+        title={article.seoTitle}
+        description={article.metaDescription}
         canonical={seoCanonical}
         path={seoPath}
-        robots={seoRobots}
-        ogTitle={translation?.title || article.title}
-        ogDescription={translation?.excerpt || translation?.metaDescription || article.metaDescription}
+        robots="index,follow"
+        ogTitle={article.title}
+        ogDescription={article.metaDescription}
         ogImage={absoluteUrl(article.featuredImage)}
         twitterCard="summary_large_image"
-        faqItems={translation?.faqs || article.faqs}
+        faqItems={article.faqs}
         structuredData={[articleSchema]}
-        hreflangs={seoHreflangs}
-        currentLang={seoLang}
-        ogLocale={BLOG_SEO_LANGUAGES.find(l => l.code === seoLang)?.ogLocale || 'en_PK'}
       />
       <nav aria-label="Breadcrumb" className="sr-only">
         <Link to="/">Home</Link>
@@ -364,55 +294,11 @@ export default function BlogArticlePage() {
               )) : null}
               <span className="text-slate-400">{readingTime}</span>
               <span className="text-slate-400">{wordCount.toLocaleString('en-PK')} words</span>
-              <span className="ml-auto relative">
-                <button
-                  type="button"
-                  onClick={() => setLangOpen((v) => !v)}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-blue-100/60 bg-white/80 px-3 py-1.5 text-[0.7rem] font-medium text-blue-700 shadow-sm backdrop-blur-sm transition hover:bg-blue-50"
-                >
-                  <HiOutlineLanguage className="h-4 w-4" />
-                  {BLOG_LANGUAGES.find((l) => l.code === lang)?.label || 'English'}
-                  <HiOutlineChevronDown className={`h-3 w-3 transition-transform ${langOpen ? 'rotate-180' : ''}`} />
-                </button>
-                {langOpen ? (
-                  <>
-                    <button type="button" className="fixed inset-0 z-10" onClick={() => setLangOpen(false)} aria-label="Close language menu" />
-                    <div className="absolute right-0 top-full z-50 mt-1.5 w-44 overflow-hidden rounded-xl border border-slate-200/60 bg-white/95 shadow-[0_12px_40px_-16px_rgba(15,23,42,0.25)] backdrop-blur-xl">
-                      {BLOG_LANGUAGES.map(({ code, label }) => (
-                        <button
-                          key={code}
-                          type="button"
-                          onClick={() => { selectLanguage(code); setLangOpen(false) }}
-                          className={`flex w-full items-center gap-2.5 px-3.5 py-2.5 text-xs font-medium transition ${
-                            lang === code
-                              ? 'bg-blue-50 text-blue-700'
-                              : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
-                          }`}
-                        >
-                          <span className={`flex h-2 w-2 shrink-0 rounded-full ${lang === code ? 'bg-blue-500' : 'bg-transparent'}`} />
-                          {label}
-                        </button>
-                      ))}
-                    </div>
-                  </>
-                ) : null}
-              </span>
             </div>
-            {translationLoading ? (
-              <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-[0.7rem] font-medium text-blue-700">
-                <span className="h-2 w-2 animate-pulse rounded-full bg-blue-500" />
-                Loading translation…
-              </p>
-            ) : null}
-            {lang !== 'en' && !translationLoading && !activeTranslation ? (
-              <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-slate-50 px-3 py-1 text-[0.7rem] font-medium text-slate-500">
-                Translation not available — showing English
-              </p>
-            ) : null}
             <h1 className="mt-5 max-w-4xl text-[1.9rem] font-semibold leading-[1.12] tracking-[-0.02em] text-slate-900 sm:text-[2.5rem] sm:leading-[1.08] lg:text-[3.1rem] lg:leading-[1.06]">
-              {display.title}
+              {article.title}
             </h1>
-            <p className="mt-6 max-w-3xl text-base leading-8 text-slate-500 sm:text-lg">{display.excerpt}</p>
+            <p className="mt-6 max-w-3xl text-base leading-8 text-slate-500 sm:text-lg">{article.excerpt}</p>
             {/* Nexora AI — Premium badge with custom logo */}
             <div className="mt-6 group relative overflow-hidden rounded-2xl border border-white/30 bg-gradient-to-br from-white/80 via-white/60 to-violet-50/40 p-[1px] shadow-[0_8px_32px_-8px_rgba(139,92,246,0.18)] backdrop-blur-xl transition-all duration-500 hover:shadow-[0_12px_40px_-8px_rgba(139,92,246,0.28)]" style={{ WebkitBackdropFilter: 'saturate(180%) blur(20px)' }}>
               {/* Animated glow orbs */}
@@ -467,7 +353,7 @@ export default function BlogArticlePage() {
                 <p className="text-[0.65rem] font-medium uppercase tracking-[0.16em] text-slate-400">Table of Contents</p>
               </div>
               <div className="mt-4 grid max-h-52 gap-1 overflow-y-auto pr-1 lg:max-h-none lg:overflow-visible lg:pr-0">
-                {display.sections.map((section) => (
+                {article.sections.map((section) => (
                   <a
                     key={section.id}
                     href={`#${section.id}`}
@@ -529,12 +415,12 @@ export default function BlogArticlePage() {
               </div>
 
               <div className="prose prose-slate mt-10 max-w-none">
-                {display.sections.map((section) => (
+                {article.sections.map((section) => (
                   <section key={section.id} id={section.id} className="scroll-mt-28">
                     <h2 className="mt-10 text-3xl font-medium tracking-tight text-slate-900">{section.heading}</h2>
                     {section.paragraphs.map((paragraph) => {
                       const formatted = formatBlogContent(paragraph.replace(/</g, '&lt;').replace(/>/g, '&gt;'), { html: true, autoHighlight: true })
-                      const withHighlights = display.aiHighlights?.length ? injectAiHighlightSpans(formatted, display.aiHighlights) : formatted
+                      const withHighlights = article.aiHighlights?.length ? injectAiHighlightSpans(formatted, article.aiHighlights) : formatted
                       return (
                         <p
                           key={paragraph.slice(0, 40)}
@@ -573,7 +459,7 @@ export default function BlogArticlePage() {
               <section className="mt-14 rounded-[1.8rem] border border-blue-100 bg-[linear-gradient(135deg,#eff6ff_0%,#ffffff_58%,#e0f2fe_100%)] p-6 sm:p-8">
                 <h2 className="text-3xl font-medium tracking-tight text-slate-900">Frequently asked questions</h2>
                 <div className="mt-6 grid gap-4">
-                  {display.faqs.map(([question, answer]) => (
+                  {article.faqs.map(([question, answer]) => (
                     <div key={question} className="rounded-[1.2rem] bg-white p-5 shadow-sm">
                       <h3 className="text-base font-medium text-slate-900">{question}</h3>
                       <p className="mt-2 text-sm leading-7 text-slate-500">{answer}</p>

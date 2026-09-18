@@ -626,15 +626,14 @@ export default function AppRouter() {
         {/* Blog — English (default) */}
         <Route path="/blog" element={<LazyPage><BlogIndexPage /></LazyPage>} />
         <Route path="/blog/:slug" element={<LazyPage><BlogArticlePage /></LazyPage>} />
-        {/* Blog — Multilingual (ur / hi / ar / bn) */}
-        <Route path="/ur/blog" element={<LazyPage><BlogIndexPage /></LazyPage>} />
-        <Route path="/ur/blog/:slug" element={<LazyPage><BlogArticlePage /></LazyPage>} />
-        <Route path="/hi/blog" element={<LazyPage><BlogIndexPage /></LazyPage>} />
-        <Route path="/hi/blog/:slug" element={<LazyPage><BlogArticlePage /></LazyPage>} />
-        <Route path="/ar/blog" element={<LazyPage><BlogIndexPage /></LazyPage>} />
-        <Route path="/ar/blog/:slug" element={<LazyPage><BlogArticlePage /></LazyPage>} />
-        <Route path="/bn/blog" element={<LazyPage><BlogIndexPage /></LazyPage>} />
-        <Route path="/bn/blog/:slug" element={<LazyPage><BlogArticlePage /></LazyPage>} />
+        {/* The /ur, /hi, /ar and /bn blog routes were removed with the translated
+            blog. No translated article was ever prerendered (the blogTranslations
+            documents are keyed to a retired generation of slugs), the Worker now
+            404s those URLs, and nothing links to them — so registering them here
+            only left a client-side way to render an English article under a
+            locale prefix. They fall through to the catch-all NotFoundPage below.
+            The language HOMEPAGES /hi, /ur and /ar are prerendered static pages
+            and never had routes here. */}
         <Route path="/restaurant-pos" element={<LazyPage><SolutionPage solutionSlug="pos" /></LazyPage>} />
         <Route path="/restaurant-pos/" element={<LazyPage><SolutionPage solutionSlug="pos" /></LazyPage>} />
         <Route path="/solutions/pos" element={<Navigate to="/restaurant-pos/" replace />} />
