@@ -5,12 +5,23 @@
  * hreflang values, HTML lang attributes, and OG locale strings.
  */
 
+// `htmlLang` / `hreflang` here MUST match the tags scripts/prerender.mjs bakes
+// into the prerendered HTML (its ML_LANGS list): PageSeo removes every static
+// hreflang link on hydration and re-adds the map built from this table, so any
+// disagreement means the served page and the hydrated page advertise different
+// alternates for the same URL. Two entries were out of step and are fixed here:
+//   - ur-roman is Urdu transliterated into LATIN script, so it is "ur-Latn"
+//     (LTR), not "ur"/"ur-PK" — see the RTL note in scripts/prerender.mjs.
+//     The /ur/ homepage, which really is Arabic-script Urdu, is a separate
+//     hreflang group and keeps plain "ur".
+//   - hi/ar/bn carry no region: the content is not India- or Bangladesh-
+//     specific, and "hi-IN" would exclude Hindi readers everywhere else.
 export const BLOG_SEO_LANGUAGES = [
-  { code: 'en',       urlPrefix: '',   htmlLang: 'en', ogLocale: 'en_PK', hreflang: 'en',    xDefault: true,  label: 'English' },
-  { code: 'ur-roman', urlPrefix: 'ur', htmlLang: 'ur', ogLocale: 'ur_PK', hreflang: 'ur-PK', xDefault: false, label: 'Roman Urdu' },
-  { code: 'hi',       urlPrefix: 'hi', htmlLang: 'hi', ogLocale: 'hi_IN', hreflang: 'hi-IN', xDefault: false, label: 'हिन्दी (Hindi)' },
-  { code: 'ar',       urlPrefix: 'ar', htmlLang: 'ar', ogLocale: 'ar_AE', hreflang: 'ar',    xDefault: false, label: 'العربية (Arabic)' },
-  { code: 'bn',       urlPrefix: 'bn', htmlLang: 'bn', ogLocale: 'bn_BD', hreflang: 'bn',    xDefault: false, label: 'বাংলা (Bengali)' },
+  { code: 'en',       urlPrefix: '',   htmlLang: 'en',      ogLocale: 'en_PK', hreflang: 'en',      xDefault: true,  label: 'English' },
+  { code: 'ur-roman', urlPrefix: 'ur', htmlLang: 'ur-Latn', ogLocale: 'ur_PK', hreflang: 'ur-Latn', xDefault: false, label: 'Roman Urdu' },
+  { code: 'hi',       urlPrefix: 'hi', htmlLang: 'hi',      ogLocale: 'hi_IN', hreflang: 'hi',      xDefault: false, label: 'हिन्दी (Hindi)' },
+  { code: 'ar',       urlPrefix: 'ar', htmlLang: 'ar',      ogLocale: 'ar_AE', hreflang: 'ar',      xDefault: false, label: 'العربية (Arabic)' },
+  { code: 'bn',       urlPrefix: 'bn', htmlLang: 'bn',      ogLocale: 'bn_BD', hreflang: 'bn',      xDefault: false, label: 'বাংলা (Bengali)' },
 ]
 
 const BY_CODE = Object.fromEntries(BLOG_SEO_LANGUAGES.map(l => [l.code, l]))
@@ -89,8 +100,14 @@ export function getHreflangMap(slug, availableCodes = null) {
   const map = {}
   for (const lang of BLOG_SEO_LANGUAGES) {
     if (availableCodes && !availableCodes.includes(lang.code)) continue
-    const key = lang.xDefault ? 'x-default' : lang.hreflang
-    map[key] = buildLocalizedCanonical(slug, lang.code)
+    const href = buildLocalizedCanonical(slug, lang.code)
+    // x-default is an ADDITIONAL tag, not a replacement for the language's own
+    // self-reference. Emitting only x-default for English (as this did) left
+    // the group without an hreflang="en" entry, so the English page was an
+    // alternate nobody named — while prerender.mjs emitted both. Every page in
+    // a reciprocal group must appear under its own language tag.
+    if (lang.xDefault) map['x-default'] = href
+    map[lang.hreflang] = href
   }
   return map
 }

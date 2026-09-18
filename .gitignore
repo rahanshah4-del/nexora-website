@@ -30,3 +30,6 @@ dist-ssr
 # Email preview artifacts (local only)
 welcome-email-preview.html
 upgrade-email-preview.html
+
+# Wrangler local state (wrangler dev / miniflare)
+.wrangler

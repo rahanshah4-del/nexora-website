@@ -255,19 +255,24 @@ function htmlLangForPath(path) {
   return match ? match[1] : 'en'
 }
 
-// Languages this site publishes that are written right-to-left. A page in one
-// of these needs dir="rtl" on <html> as well as the lang code: lang alone
-// only tells a crawler/screen reader which language the text is in, it does
-// not flip the layout direction, so an Arabic or Urdu page without dir
-// renders left-to-right with punctuation in the wrong place.
+// Language tags whose SCRIPT is written right-to-left. Direction follows the
+// script, not the language: Urdu in its native Arabic script ("ur", the /ur/
+// homepage) is RTL, while the same language transliterated into Latin letters
+// ("ur-Latn", what the blog's `ur-roman` translations actually contain) reads
+// left-to-right. Keying this on the bare /ur/ path prefix instead would
+// right-align Latin text on every Roman Urdu article.
 const RTL_LANGS = new Set(['ar', 'ur'])
 
-// Single source of truth for the <html> element's language attributes, used
-// by every page builder below so a translated page can never be emitted with
-// the English default (or with a lang code but no matching direction).
+// Single source of truth for the <html> element's language attributes, used by
+// every page builder below so a translated page can never be emitted with the
+// English default, or with a lang code and the wrong direction. dir is always
+// written out rather than left to default: "ur-Latn" is a case where the
+// correct direction is the opposite of what the base language implies, so
+// stating it explicitly is what stops a `[lang^="ur"]` style rule or a
+// downstream consumer from guessing wrong.
 function htmlAttrs(lang) {
   const code = lang || 'en'
-  return RTL_LANGS.has(code) ? `lang="${code}" dir="rtl"` : `lang="${code}"`
+  return `lang="${code}" dir="${RTL_LANGS.has(code) ? 'rtl' : 'ltr'}"`
 }
 
 // Single source of truth for every <link rel="canonical"> / og:url emitted by
@@ -570,6 +575,10 @@ ${items}
 function buildFullBlogHtml(article, allArticles = [], options = {}) {
   const {
     langCode = 'en', htmlLang = 'en', ogLocale = 'en_PK', translation = null,
+    // The /<prefix>/ directory this page is written under — passed in from the
+    // ML_LANGS entry rather than derived from htmlLang, which is a language
+    // tag and no longer equals the prefix ("ur-Latn" lives under /ur/).
+    prefix = '',
     // The set of languages that actually have a real prerendered page for
     // this article (English plus whichever translations passed the
     // availability check in fetchArticleTranslations()) — see hreflangLangsFor().
@@ -664,7 +673,9 @@ function buildFullBlogHtml(article, allArticles = [], options = {}) {
     </nav>\n`
 
   // ── Build complete page ──
-  const blogPath = langCode !== 'en' ? `/${htmlLang === 'ur' ? 'ur' : htmlLang === 'hi' ? 'hi' : htmlLang === 'ar' ? 'ar' : htmlLang === 'bn' ? 'bn' : 'en'}/blog/${article.slug}` : `/blog/${article.slug}`
+  // Must match the path writePage() actually writes this page to, or the
+  // canonical points at a URL that does not exist.
+  const blogPath = langCode !== 'en' && prefix ? `/${prefix}/blog/${article.slug}` : `/blog/${article.slug}`
   const seoTitle = translation?.seoTitle || translation?.title || article.seoTitle || article.title
   const seoDesc = translation?.metaDescription || translation?.excerpt || article.metaDescription || article.description || `Read ${display.title || article.title} on Nexora Blog.`
   const hreflangs = buildHreflangBlock(`/blog/${article.slug}`, hreflangLangs)
@@ -1897,7 +1908,13 @@ function parseBlogSlugsFromSource() {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const ML_LANGS = [
-  { code: 'ur-roman', prefix: 'ur', htmlLang: 'ur', ogLocale: 'ur_PK' },
+  // `htmlLang` doubles as this language's hreflang key (see hreflangLangsFor()),
+  // so it must describe the translated CONTENT, not the URL prefix it lives
+  // under. The `ur-roman` translations are Urdu transliterated into Latin
+  // script, which is "ur-Latn" — a valid BCP-47 tag with a script subtag, and
+  // LTR. The /ur/ HOMEPAGE is different: that one is native Arabic-script
+  // Urdu, so it stays plain "ur" + RTL via htmlLangForPath() below.
+  { code: 'ur-roman', prefix: 'ur', htmlLang: 'ur-Latn', ogLocale: 'ur_PK' },
   { code: 'hi', prefix: 'hi', htmlLang: 'hi', ogLocale: 'hi_IN' },
   { code: 'ar', prefix: 'ar', htmlLang: 'ar', ogLocale: 'ar_AE' },
   { code: 'bn', prefix: 'bn', htmlLang: 'bn', ogLocale: 'bn_BD' },
@@ -2022,7 +2039,7 @@ async function main() {
     const hreflangLangs = hreflangLangsFor(available)
     for (const lang of available) {
       const html = buildFullBlogHtml(article, articles, {
-        langCode: lang.code, htmlLang: lang.htmlLang,
+        langCode: lang.code, htmlLang: lang.htmlLang, prefix: lang.prefix,
         ogLocale: lang.ogLocale, translation: lang.translated,
         hreflangLangs,
       })
@@ -2100,7 +2117,7 @@ async function main() {
   for (const lang of ML_LANGS) {
     const langDir = join(DIST, lang.prefix)
     const count = existsSync(langDir) ? findIndexHtml(langDir).length : 0
-    console.log(`[prerender]   /${lang.prefix}/ — ${count} page(s), lang="${lang.htmlLang}"${RTL_LANGS.has(lang.htmlLang) ? ' dir="rtl"' : ''}`)
+    console.log(`[prerender]   /${lang.prefix}/ — ${count} page(s); blog translations tagged ${htmlAttrs(lang.htmlLang)}`)
   }
 
   const totalPages2 = pageCount + blogCount + catCount + (totalPages > 1 ? totalPages - 1 : 0) + 3 // +3 for author + search + 404
