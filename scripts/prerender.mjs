@@ -11,6 +11,7 @@
  */
 
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { formatBlogContentHtml } from '../src/lib/blogContentFormatter.js'
@@ -1742,6 +1743,78 @@ function buildStaticShell(meta, path = '', articles = []) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+//  SERVICE WORKER CACHE VERSION
+// ═══════════════════════════════════════════════════════════════════════════════
+//
+// public/service-worker.js ships `const CACHE_NAME = 'nexora-pwa-__BUILD_ID__'`
+// and Vite copies public/ verbatim, so the substitution has to happen here,
+// against dist/, after the bundles exist.
+//
+// The id is a hash of the sorted dist/assets/* filenames. Vite content-hashes
+// those names, so the id changes if and only if a bundle's content changed: two
+// builds of identical source produce the same id and returning visitors keep
+// their cache, while any real change produces a new id and the service worker's
+// activate handler evicts the old one. Keying on the names rather than on a
+// timestamp or the git SHA is what makes that true — a timestamp would evict
+// every visitor's cache on every rebuild, including no-op ones.
+//
+// This replaces a hand-maintained version string that went unbumped from
+// 2026-09-11 through every deploy after it, leaving visitors on a stale
+// precached shell. A missing token is therefore a BUILD FAILURE, not a warning:
+// silently shipping an unsubstituted CACHE_NAME is the exact failure this step
+// exists to prevent.
+const SW_BUILD_ID_TOKEN = '__BUILD_ID__'
+
+// Matched against the CACHE_NAME ASSIGNMENT, not the whole file. An earlier
+// version of this guard tested `src.includes(token)`, which passed while
+// CACHE_NAME held a hardcoded string, because the token also appeared in this
+// file's own header comment — so the substitution rewrote the comment and
+// shipped the hardcoded name. The guard has to look at the value that actually
+// becomes the cache key.
+const SW_CACHE_NAME_PATTERN = /const CACHE_NAME = '([^']*)'/
+
+function computeAssetsBuildId() {
+  const assetsDir = join(DIST, 'assets')
+  if (!existsSync(assetsDir)) return null
+  const names = readdirSync(assetsDir).filter((n) => !n.startsWith('.')).sort()
+  if (!names.length) return null
+  return createHash('sha256').update(names.join('\n')).digest('hex').slice(0, 12)
+}
+
+function stampServiceWorkerBuildId() {
+  const swPath = join(DIST, 'service-worker.js')
+  if (!existsSync(swPath)) {
+    console.error('[prerender] ✗ dist/service-worker.js not found — public/service-worker.js should have been copied by vite build.')
+    process.exit(1)
+  }
+  const src = readFileSync(swPath, 'utf-8')
+  const match = src.match(SW_CACHE_NAME_PATTERN)
+  if (!match) {
+    console.error("[prerender] ✗ No `const CACHE_NAME = '...'` assignment found in dist/service-worker.js.")
+    console.error('             Refusing to build: the cache version cannot be stamped.')
+    process.exit(1)
+  }
+  if (!match[1].includes(SW_BUILD_ID_TOKEN)) {
+    console.error(`[prerender] ✗ CACHE_NAME does not contain ${SW_BUILD_ID_TOKEN} — it reads '${match[1]}'.`)
+    console.error(`             public/service-worker.js must declare it as, e.g.`)
+    console.error(`             const CACHE_NAME = 'nexora-pwa-${SW_BUILD_ID_TOKEN}'`)
+    console.error('             With a hardcoded name the cache key never changes, the activate handler')
+    console.error('             evicts nothing, and every returning visitor keeps the previous shell.')
+    console.error('             Refusing to build.')
+    process.exit(1)
+  }
+  const buildId = computeAssetsBuildId()
+  if (!buildId) {
+    console.error('[prerender] ✗ dist/assets is missing or empty — cannot derive a service worker build id.')
+    process.exit(1)
+  }
+  // Only the assignment is rewritten, so prose elsewhere in the file is left alone.
+  const stamped = src.replace(SW_CACHE_NAME_PATTERN, `const CACHE_NAME = '${match[1].replace(SW_BUILD_ID_TOKEN, buildId)}'`)
+  writeFileSync(swPath, stamped)
+  return buildId
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 //  404 PAGE
 // ═══════════════════════════════════════════════════════════════════════════════
 //
@@ -2115,6 +2188,10 @@ async function main() {
   // exact file, so it is what unknown URLs get instead of the homepage.
   writePage(join(DIST, '404.html'), build404Page())
   console.log('[prerender] ✓ 404 page (dist/404.html — noindex, no canonical)')
+
+  // ── Service worker cache version ──
+  const swBuildId = stampServiceWorkerBuildId()
+  console.log(`[prerender] ✓ Service worker CACHE_NAME = nexora-pwa-${swBuildId}`)
 
   // 3. Sitemap + Image sitemap
   try {
