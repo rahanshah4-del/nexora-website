@@ -1,4 +1,9 @@
-const CACHE_NAME = 'nexora-pwa-v10-install-icon'
+// Bumping this string is what evicts the previous cache: the activate handler
+// below deletes every cache whose name !== CACHE_NAME, so leaving it unchanged
+// across a release keeps the old precached shell and every old hashed asset
+// alive indefinitely. It had not moved since 2026-09-11, which is why returning
+// visitors kept a stale Cache Storage after the 404/trailing-slash deploy.
+const CACHE_NAME = 'nexora-pwa-v11-404-worker'
 const CACHE_URLS = [
   '/',
   '/index.html',
