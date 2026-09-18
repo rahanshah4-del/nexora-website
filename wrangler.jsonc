@@ -11,7 +11,13 @@
   // deployed independently via the worker:deploy / whatsapp:deploy /
   // passkeys:deploy / background-jobs:deploy npm scripts).
   "name": "nexora",
-  "compatibility_date": "2026-09-18",
+  // Lowered from today's date for local dev compatibility: the pinned
+  // wrangler@4.97.0 (package.json devDependencies) bundles a workerd whose
+  // newest supported compatibility date is 2026-06-08, and `wrangler dev`
+  // refuses to start the runtime with anything later ("This Worker requires
+  // compatibility date ..., but the newest date supported by this server
+  // binary is 2026-06-08"). Raise this only together with wrangler itself.
+  "compatibility_date": "2026-06-08",
   "main": "worker/index.js",
   "build": {
     "command": "npm run build"

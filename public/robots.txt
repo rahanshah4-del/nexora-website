@@ -1,3 +1,22 @@
+# Client-only app routes (/app/**, /login, /signup, /workspace, /verify-email,
+# /admin/**, /pos-till/medical, /upgrade-business, /features, /pricing-paddle,
+# the /<lang>/blog indexes) are INTENTIONALLY not disallowed here.
+#
+# They have no prerendered file, so worker/index.js serves them the SPA shell
+# (dist/index.html) and injects <meta name="robots" content="noindex"> while
+# stripping the homepage canonical — see SPA_ROUTES in that file. A noindex is
+# an authoritative removal signal, but only for a crawler that can FETCH the
+# page to read it. Disallowing these paths would guarantee Google never sees
+# the noindex, while still allowing the URLs themselves to be indexed from
+# external links ("Indexed, though blocked by robots.txt"). The two mechanisms
+# work against each other, so the crawl is left open and the noindex does the
+# work. Anything added to SPA_ROUTES is covered automatically — do not add
+# Disallow lines for it here.
+#
+# Note also that a named user-agent group below overrides this group entirely
+# rather than adding to it, so a Disallow here would not apply to GPTBot,
+# ClaudeBot, PerplexityBot or Google-Extended in any case.
+
 User-agent: GPTBot
 Allow: /
 
@@ -11,12 +30,6 @@ User-agent: Google-Extended
 Allow: /
 
 User-agent: *
-Disallow: /app/
-Disallow: /admin/
-Disallow: /login
-Disallow: /signup
-Disallow: /workspace
-Disallow: /verify-email
 Allow: /
 
 Host: https://nexorasolution.online
