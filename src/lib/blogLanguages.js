@@ -97,6 +97,18 @@ export function isBlogPath(pathname) {
  * prerender.mjs, which computes its own real availability separately).
  */
 export function getHreflangMap(slug, availableCodes = null) {
+  // No translated sibling means no hreflang group, so emit nothing — matching
+  // buildHreflangBlock() in scripts/prerender.mjs, which returns an empty block
+  // in the same case. Both generators must agree: PageSeo clears every static
+  // hreflang link on hydration and re-adds whatever this returns, so a lone
+  // self-referencing "en" here would reintroduce a one-page "group" that the
+  // served HTML does not have. Today this is every article — the translated
+  // blog was retired (its Firestore documents are keyed to a previous
+  // generation of slugs), and /<lang>/blog/<slug>/ URLs now 404, so advertising
+  // them as alternates would point crawlers at dead pages.
+  const translated = (availableCodes || []).filter((c) => c !== 'en')
+  if (availableCodes && !translated.length) return {}
+
   const map = {}
   for (const lang of BLOG_SEO_LANGUAGES) {
     if (availableCodes && !availableCodes.includes(lang.code)) continue

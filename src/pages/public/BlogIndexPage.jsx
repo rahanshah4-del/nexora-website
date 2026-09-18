@@ -14,7 +14,7 @@ import PageSeo from '../../components/PageSeo.jsx'
 import usePublishedBlogArticles from '../../hooks/usePublishedBlogArticles.js'
 import { fetchBlogLikes, getUserReaction, toggleBlogReaction } from '../../lib/blogLikes.js'
 import { absoluteUrl } from '../../lib/seoStructuredData.js'
-import { buildLocalizedPath, extractLangFromPath } from '../../lib/blogLanguages.js'
+import { buildLocalizedPath } from '../../lib/blogLanguages.js'
 import PublicPageShell from './PublicPageShell.jsx'
 
 const pageSize = 6
@@ -44,7 +44,12 @@ export default function BlogIndexPage() {
   const [searchValue, setSearchValue] = useState(params.get('q') || '')
   const [filtersOpen, setFiltersOpen] = useState(false)
   const { articles, loading } = usePublishedBlogArticles()
-  const { langCode: currentLang } = extractLangFromPath(window.location.pathname)
+  // Article cards always link to the ENGLISH article. The translated blog was
+  // retired: /<lang>/blog/<slug>/ has no prerendered page and now returns a real
+  // 404 (see SPA_ROUTES in worker/index.js), so deriving the href from the URL's
+  // own language prefix — which this did, via extractLangFromPath() — pointed
+  // every card on /hi/blog at a dead URL.
+  const articleHref = (slug) => buildLocalizedPath(slug, 'en')
 
   // Like / Dislike — Firestore-backed (persists for ALL users) + per-user localStorage
   const [reactions, setReactions] = useState({})
@@ -317,7 +322,7 @@ export default function BlogIndexPage() {
                       >
                         {/* Image */}
                         <Link
-                          to={buildLocalizedPath(article.slug, currentLang)}
+                          to={articleHref(article.slug)}
                           className="relative grid h-[200px] place-items-center overflow-hidden bg-gradient-to-br from-slate-50 to-slate-100 sm:h-[220px]"
                         >
                           <div
@@ -367,7 +372,7 @@ export default function BlogIndexPage() {
                           {/* Title */}
                           <h2 className="mt-3 text-[17px] font-medium leading-[1.35] tracking-[-0.01em] text-slate-900">
                             <Link
-                              to={buildLocalizedPath(article.slug, currentLang)}
+                              to={articleHref(article.slug)}
                               className="transition-colors duration-200 hover:text-slate-500"
                             >
                               {article.title}
@@ -440,7 +445,7 @@ export default function BlogIndexPage() {
                               </button>
                             </div>
                             <Link
-                              to={buildLocalizedPath(article.slug, currentLang)}
+                              to={articleHref(article.slug)}
                               className="inline-flex items-center gap-1.5 text-[13px] font-medium tracking-[-0.01em] text-slate-500 transition-all duration-200 hover:gap-2 hover:text-slate-900"
                             >
                               Read article

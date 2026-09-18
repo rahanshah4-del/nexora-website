@@ -332,9 +332,14 @@ function buildSeoHead(meta) {
 // built through absoluteUrl(), the same helper the canonical tag uses, so
 // hreflang targets are always https + trailing-slash, matching the real URL.
 function buildHreflangBlock(pathSuffix, langs) {
-  const mlLangs = langs && langs.length ? langs : [{ prefix: '', hreflang: 'en', xDefault: true }]
+  // No alternates means no hreflang block at all. This used to fall back to a
+  // lone self-referencing "en" tag, which is meaningless on its own: hreflang
+  // describes a GROUP of equivalent pages, and a group of one is just the page.
+  // Emitting it also made a page look like part of a translation set that does
+  // not exist.
+  if (!langs || !langs.length) return ''
   let block = ''
-  for (const lang of mlLangs) {
+  for (const lang of langs) {
     const prefix = lang.prefix ? `/${lang.prefix}` : ''
     const href = absoluteUrl(`${prefix}${pathSuffix}`)
     if (lang.xDefault) block += `  <link rel="alternate" hreflang="x-default" href="${esc(href)}" />\n`
@@ -1908,6 +1913,17 @@ function parseBlogSlugsFromSource() {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const ML_LANGS = [
+  // UNRESOLVED — "ur-Latn" currently models content that does not exist. A survey
+  // of the `blogTranslations` collection found the `ur` and `ur-roman` entries
+  // hold untranslated ENGLISH passthrough (0-2% non-ASCII; in one document the
+  // `ur` title is byte-identical to the `en` title), present in only 5 of 9
+  // documents — and none of those documents is keyed to a current article slug,
+  // so none of this is prerendered today. Whether Urdu should ship as
+  // Arabic-script Urdu (lang="ur" dir="rtl", as the /ur/ HOMEPAGE genuinely is)
+  // or as Roman Urdu (lang="ur-Latn" dir="ltr", as this entry assumes) is an
+  // open content decision. Decide it before generating translated articles; the
+  // tag below is a placeholder that has never reached a real page.
+  //
   // `htmlLang` doubles as this language's hreflang key (see hreflangLangsFor()),
   // so it must describe the translated CONTENT, not the URL prefix it lives
   // under. The `ur-roman` translations are Urdu transliterated into Latin
@@ -1969,10 +1985,21 @@ async function fetchArticleTranslations(articles) {
   return bySlug
 }
 
-// English always exists, plus whichever translations actually have a page.
+// The hreflang group for one article: English plus whichever translations
+// actually have a page being written this build.
+//
+// With no translations there is no group, so this returns an empty list and
+// buildHreflangBlock() emits nothing — an article with no translated sibling
+// carries no hreflang tags at all. That is the current state of every article:
+// the `blogTranslations` documents are keyed to a retired generation of slugs,
+// so nothing matches and nothing is prerendered. Advertising /<lang>/blog/<slug>/
+// alternates anyway pointed crawlers at URLs that now 404, which is an hreflang
+// error in its own right (and, while they were soft-404ing to the homepage, the
+// source of the "Alternate page with proper canonical tag" reports).
 function hreflangLangsFor(availableTranslations) {
+  if (!availableTranslations || !availableTranslations.length) return []
   const langs = [{ prefix: '', hreflang: 'en', xDefault: true }]
-  for (const t of availableTranslations || []) {
+  for (const t of availableTranslations) {
     langs.push({ prefix: t.prefix, hreflang: t.htmlLang })
   }
   return langs

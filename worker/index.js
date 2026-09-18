@@ -55,12 +55,21 @@ export const SPA_ROUTES = {
     // Marketing routes that are intentionally noindex, so not prerendered
     '/features',
     '/pricing-paddle',
-    // Translated blog INDEX pages. The articles beneath them are prerendered
-    // per language, so these are exact, not prefixes.
-    '/ur/blog',
-    '/hi/blog',
-    '/ar/blog',
-    '/bn/blog',
+    // NOT '/ur/blog', '/hi/blog', '/ar/blog' or '/bn/blog'. The translated blog
+    // was retired: the `blogTranslations` documents in Firestore are keyed to a
+    // previous generation of article slugs (9 documents, none of which matches
+    // any of the 28 current slugs), so no translated article has ever been
+    // prerendered and none of these URLs has ever served real translated HTML —
+    // they only ever returned the homepage under the old SPA fallback, which is
+    // what Search Console reports as "Alternate page with proper canonical tag".
+    // They now 404 honestly. The language HOMEPAGES (/hi/, /ur/, /ar/) are
+    // genuinely prerendered pages with real translated content and are served as
+    // ordinary assets — they never needed an entry here.
+    //
+    // If translated articles are ever generated, scripts/prerender.mjs writes
+    // them as real /<lang>/blog/<slug>/index.html files, which the asset server
+    // serves directly; only the bare /<lang>/blog INDEX pages would need to come
+    // back to this list.
   ],
   prefixes: [
     // The authenticated dashboard app and every nested route under it
