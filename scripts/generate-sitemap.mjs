@@ -211,7 +211,7 @@ function rssXml(articles) {
     `<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">`,
     '  <channel>',
     `    <title>${xmlEscape('Nexora Solution Blog')}</title>`,
-    `    <link>${HOST}/blog</link>`,
+    `    <link>${HOST}/blog/</link>`,
     `    <description>${xmlEscape('POS, ERP, CRM, AI and business software guides from Nexora Solution.')}</description>`,
     `    <language>en-PK</language>`,
     `    <atom:link href="${HOST}/rss.xml" rel="self" type="application/rss+xml" />`,
