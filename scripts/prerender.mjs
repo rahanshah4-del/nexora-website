@@ -426,7 +426,7 @@ function articleSchema(article) {
   "@type": "Article",
   "mainEntityOfPage": {
     "@type": "WebPage",
-    "@id": "${SITE}/blog/${article.slug}"
+    "@id": "${absoluteUrl(`/blog/${article.slug}`)}"
   },
   "headline": "${escJson(article.seoTitle || article.title)}",
   "description": "${escJson(article.metaDescription || article.description || '')}",
@@ -551,8 +551,8 @@ function buildEnhancedRss(articles) {
     )
     return `  <item>
     <title>${esc(a.title)}</title>
-    <link>${SITE}/blog/${esc(a.slug)}</link>
-    <guid isPermaLink="true">${SITE}/blog/${esc(a.slug)}</guid>
+    <link>${esc(absoluteUrl(`/blog/${a.slug}`))}</link>
+    <guid isPermaLink="true">${esc(absoluteUrl(`/blog/${a.slug}`))}</guid>
     <description>${esc(a.metaDescription || a.description || '')}</description>
     <content:encoded><![CDATA[${body}]]></content:encoded>
     <category>${esc(a.category || '')}</category>
@@ -565,7 +565,7 @@ function buildEnhancedRss(articles) {
 <rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom">
 <channel>
   <title>Nexora Solution Blog</title>
-  <link>${SITE}/blog</link>
+  <link>${absoluteUrl('/blog')}</link>
   <description>POS, ERP &amp; CRM insights for Pakistani businesses</description>
   <language>en-pk</language>
   <atom:link href="${SITE}/rss.xml" rel="self" type="application/rss+xml" />
@@ -703,9 +703,9 @@ ${orgSchema()}
 ${articleSchema({ ...article, totalWords, language: ogLocale })}
 ${imageSchema(article.featuredImage || LOGO)}
 ${breadcrumbSchema([
-    { name: 'Home', url: SITE },
-    { name: 'Blog', url: `${SITE}/blog` },
-    { name: article.title, url: `${SITE}/blog/${article.slug}` },
+    { name: 'Home', url: absoluteUrl('/') },
+    { name: 'Blog', url: absoluteUrl('/blog') },
+    { name: article.title, url: absoluteUrl(`/blog/${article.slug}`) },
   ])}
 ${faqSchema(faqs)}
 ${buildGtm()}
@@ -801,7 +801,7 @@ ${orgSchema()}
   "worksFor": { "@type": "Organization", "name": "Nexora Solution", "url": "${SITE}" }
 }
 </script>
-${breadcrumbSchema([{ name: 'Home', url: SITE }, { name: 'Authors', url: `${SITE}/author/nexora` }])}
+${breadcrumbSchema([{ name: 'Home', url: absoluteUrl('/') }, { name: 'Authors', url: absoluteUrl('/author/nexora') }])}
 ${buildGtm()}
 </head>
 <body>
@@ -854,7 +854,7 @@ ${buildCommonHead()}
 ${buildSeoHead({ path: `/blog/category/${category.toLowerCase().replace(/\s+/g, '-')}`, title, description: desc })}
 ${orgSchema()}
 ${websiteSchema()}
-${breadcrumbSchema([{ name: 'Home', url: SITE }, { name: 'Blog', url: `${SITE}/blog` }, { name: category, url: `${SITE}/blog/category/${category.toLowerCase().replace(/\s+/g, '-')}` }])}
+${breadcrumbSchema([{ name: 'Home', url: absoluteUrl('/') }, { name: 'Blog', url: absoluteUrl('/blog') }, { name: category, url: absoluteUrl(`/blog/category/${category.toLowerCase().replace(/\s+/g, '-')}`) }])}
 ${buildGtm()}
 </head>
 <body>
@@ -983,7 +983,7 @@ ${orgSchema()}
 ${websiteSchema()}
 ${meta.path === '/blog'
     ? `  <script type="application/ld+json">
-{ "@context": "https://schema.org", "@type": "Blog", "name": "Nexora Solution Blog", "url": "${SITE}/blog" }
+{ "@context": "https://schema.org", "@type": "Blog", "name": "Nexora Solution Blog", "url": "${absoluteUrl('/blog')}" }
 </script>`
     : ''}
 ${meta.jsonLd || ''}
