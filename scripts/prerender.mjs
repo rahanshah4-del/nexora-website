@@ -353,6 +353,7 @@ function buildCommonHead() {
   return `  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#0ea5e9" />
+  <meta name="google-adsense-account" content="ca-pub-5376631145387413" />
   <meta name="generator" content="Nexora SSG v2" />
   <meta name="prerendered" content="${new Date().toISOString()}" />
   <link rel="alternate" type="application/rss+xml" title="Nexora Solution Blog RSS Feed" href="/rss.xml" />
