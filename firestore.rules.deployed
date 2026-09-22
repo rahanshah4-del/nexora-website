@@ -1,0 +1,2 @@
+pbpaste > firestore.rules.deployed
+wc -l firestore.rules.deployed
