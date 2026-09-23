@@ -22,6 +22,7 @@ import { seoMetadata } from '../src/lib/seoMetadata.js'
 import { COUNTRIES } from '../src/lib/countries.js'
 import { PILLARS, PILLAR_COMPARE_LINKS, featurePages } from '../src/lib/featurePagesData.js'
 import { comparePages } from '../src/lib/comparePagesData.js'
+import { BLOG_TRANSLATIONS_ENABLED, loadBlogArticles } from './lib/loadBlogArticles.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
@@ -87,10 +88,6 @@ function formatDate(iso) {
     if (Number.isNaN(d.getTime())) return iso
     return d.toISOString().slice(0, 10)
   } catch { return iso }
-}
-
-function slugToTitle(slug) {
-  return slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -1952,50 +1949,6 @@ function findFlatRouteHtml(dir, rel = '') {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-//  BLOG DATA LOADER
-// ═══════════════════════════════════════════════════════════════════════════════
-
-async function loadBlogArticles() {
-  try {
-    // Prefer AI-highlighted articles if available
-    let blogModule
-    try {
-      blogModule = await import(join(ROOT, 'src', 'lib', 'blogData.highlighted.js'))
-      console.log('[prerender] Using AI-highlighted blog articles')
-    } catch {
-      blogModule = await import(join(ROOT, 'src', 'lib', 'blogData.js'))
-    }
-    const articles = blogModule.blogArticles || []
-    return articles.filter((a) => a.slug && a.title)
-  } catch (err) {
-    console.warn('[prerender] Could not import blogData.js:', err.message)
-    // Fallback: parse slugs from source
-    return parseBlogSlugsFromSource()
-  }
-}
-
-function parseBlogSlugsFromSource() {
-  try {
-    const source = readFileSync(join(ROOT, 'src', 'lib', 'blogData.js'), 'utf-8')
-    const slugMatches = source.match(/slug:\s*['"]([^'"]+)['"]/g) || []
-    return slugMatches.map((m) => m.replace(/slug:\s*['"]/, '').replace(/['"]$/, '')).filter(Boolean).map((slug) => ({
-      slug,
-      title: slugToTitle(slug),
-      description: `Read ${slugToTitle(slug)} on the Nexora Solution blog.`,
-      category: 'General',
-      tags: [],
-      publishDate: new Date().toISOString().slice(0, 10),
-      sections: [
-        { heading: slugToTitle(slug), level: 2, paragraphs: [`This article covers ${slugToTitle(slug).toLowerCase()} — insights and practical guidance for Pakistani businesses.`] },
-      ],
-      faqs: [],
-    }))
-  } catch {
-    return []
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
 //  BLOG TRANSLATION AVAILABILITY (drives reciprocal hreflang)
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -2031,6 +1984,10 @@ const ML_LANGS = [
 // page that actually gets written to disk (instead of one that 404s/redirects).
 async function fetchArticleTranslations(articles) {
   const bySlug = new Map()
+  if (!BLOG_TRANSLATIONS_ENABLED) {
+    console.log('[prerender] Translated blog pages disabled (BLOG_TRANSLATIONS_ENABLED in scripts/lib/loadBlogArticles.mjs)')
+    return bySlug
+  }
   try {
     const { initializeApp } = await import('firebase/app')
     const { getFirestore, doc, getDoc } = await import('firebase/firestore')
@@ -2119,7 +2076,10 @@ async function main() {
   let blogCount = 0
 
   // Load blog articles up front so the /blog index can bake the post list.
-  const articles = await loadBlogArticles()
+  // Static articles merged with every published CMS post in Firestore — see
+  // scripts/lib/loadBlogArticles.mjs. Throws (failing the build) on CI if the
+  // CMS posts can't be fetched.
+  const articles = await loadBlogArticles({ label: '[prerender]' })
 
   // 1. Public routes
   for (const route of PUBLIC_ROUTES) {
@@ -2164,7 +2124,12 @@ async function main() {
   if (mlCount > 0) console.log(`[prerender] ✓ ${mlCount} multilingual blog pages`)
 
   // ── Search index JSON ──
-  writeFileSync(join(PUBLIC, 'search-index.json'), buildSearchIndex(articles))
+  // Written to dist/ as well: vite has already copied public/ into dist/ by
+  // the time this runs, so a public/-only write would deploy the previous
+  // build's index.
+  const searchIndex = buildSearchIndex(articles)
+  writeFileSync(join(PUBLIC, 'search-index.json'), searchIndex)
+  writeFileSync(join(DIST, 'search-index.json'), searchIndex)
   console.log('[prerender] ✓ Search index generated')
 
   // ── Enhanced RSS ──

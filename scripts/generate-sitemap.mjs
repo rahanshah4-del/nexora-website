@@ -1,6 +1,6 @@
 import fs from 'fs/promises'
 import path from 'path'
-import { blogArticles } from '../src/lib/blogData.js'
+import { BLOG_TRANSLATIONS_ENABLED, loadBlogArticles } from './lib/loadBlogArticles.mjs'
 import { submitIndexNow } from './indexnow.mjs'
 import { initializeApp } from 'firebase/app'
 import { getFirestore, doc, getDoc } from 'firebase/firestore'
@@ -277,6 +277,9 @@ async function getTranslatedLanguagesBySlug(articles) {
     { code: 'bn', prefix: 'bn' },
   ]
   const bySlug = new Map()
+  // Kept in step with prerender.mjs: no translated pages are generated while
+  // this is off, so none may be listed here either.
+  if (!BLOG_TRANSLATIONS_ENABLED) return bySlug
   try {
     const firebaseConfig = {
       apiKey: 'AIzaSyDOdQnY-Vjkwdl-0F7FnuVjVB-tAO-cnWc',
@@ -309,6 +312,10 @@ async function getTranslatedLanguagesBySlug(articles) {
 }
 
 export async function buildSitemap() {
+  // Same list prerender.mjs builds pages from: static articles plus every
+  // published CMS post (scripts/lib/loadBlogArticles.mjs). Throws on CI if the
+  // CMS posts can't be fetched, so a sitemap never silently drops them.
+  const blogArticles = await loadBlogArticles({ label: '[sitemap]' })
   const routes = await readRoutes()
   const htmlFiles = await readPublicHtmlFiles()
 

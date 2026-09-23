@@ -1629,8 +1629,10 @@ export function normalizeBlogArticleDoc(id, data = {}) {
   }
 }
 
-export function mergeBlogArticles(cmsArticles = []) {
-  const bySlug = new Map(blogArticles.map((article) => [article.slug, article]))
+// `staticArticles` lets the build (scripts/lib/loadBlogArticles.mjs) merge onto
+// the AI-highlighted copy of the static list; the browser uses the default.
+export function mergeBlogArticles(cmsArticles = [], staticArticles = blogArticles) {
+  const bySlug = new Map(staticArticles.map((article) => [article.slug, article]))
   cmsArticles.forEach((article) => {
     if (article?.slug) bySlug.set(article.slug, article)
   })

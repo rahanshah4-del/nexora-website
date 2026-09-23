@@ -66,6 +66,16 @@
       <image:caption>Nexora Solution — logo 512</image:caption>
     </image:image>
     <image:image>
+      <image:loc>https://nexorasolution.online/nexora-ai-logo-40.png</image:loc>
+      <image:title>nexora ai logo 40</image:title>
+      <image:caption>Nexora Solution — nexora ai logo 40</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://nexorasolution.online/nexora-ai-logo-80.png</image:loc>
+      <image:title>nexora ai logo 80</image:title>
+      <image:caption>Nexora Solution — nexora ai logo 80</image:caption>
+    </image:image>
+    <image:image>
       <image:loc>https://nexorasolution.online/nexora-ai-logo.png</image:loc>
       <image:title>nexora ai logo</image:title>
       <image:caption>Nexora Solution — nexora ai logo</image:caption>
@@ -94,16 +104,6 @@
       <image:loc>https://nexorasolution.online/nexora-pwa-install-192.png</image:loc>
       <image:title>nexora pwa install 192</image:title>
       <image:caption>Nexora Solution — nexora pwa install 192</image:caption>
-    </image:image>
-    <image:image>
-      <image:loc>https://nexorasolution.online/nexora-pwa-install-512.png</image:loc>
-      <image:title>nexora pwa install 512</image:title>
-      <image:caption>Nexora Solution — nexora pwa install 512</image:caption>
-    </image:image>
-    <image:image>
-      <image:loc>https://nexorasolution.online/nexora_icon_set/icon.ico</image:loc>
-      <image:title>icon</image:title>
-      <image:caption>Nexora Solution — icon</image:caption>
     </image:image>
   </url>
   <url>
@@ -593,6 +593,186 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://nexorasolution.online/blog/pharmacy-pos-software-in-pakistan-complete-guide-to-billing-inventory-expiry-management/</loc>
+    <lastmod>2026-09-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://nexorasolution.online/blog/pharmacy-management-software-in-pakistan-complete-guide/</loc>
+    <lastmod>2026-09-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://nexorasolution.online/blog/pharmacy-pos-software-pakistan-guide/</loc>
+    <lastmod>2026-09-07</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://nexorasolution.online/blog/pharmacy-batch-expiry-management-guide/</loc>
+    <lastmod>2026-09-07</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://nexorasolution.online/blog/what-is-pos-software/</loc>
+    <lastmod>2026-09-07</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://nexorasolution.online/blog/what-is-school-erp-software/</loc>
+    <lastmod>2026-09-07</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://nexorasolution.online/blog/fbr-pos-integration-guide-pakistan/</loc>
+    <lastmod>2026-09-07</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://nexorasolution.online/blog/pos-software-cost-pakistan/</loc>
+    <lastmod>2026-09-07</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://nexorasolution.online/blog/school-erp-implementation-checklist/</loc>
+    <lastmod>2026-09-07</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://nexorasolution.online/blog/fleet-management-cost-pakistan/</loc>
+    <lastmod>2026-09-07</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://nexorasolution.online/blog/restaurant-pos-software-pakistan-multan-lahore-karachi/</loc>
+    <lastmod>2026-09-05</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://nexorasolution.online/blog/ai-powered-pos-software-the-modern-futuristic-way-to-run-your-business-in-pakistan/</loc>
+    <lastmod>2026-09-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://nexorasolution.online/blog/best-school-erp-software-pakistan-2026-jazzcash-biometric-attendance-whatsapp-alerts/</loc>
+    <lastmod>2026-08-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://nexorasolution.online/blog/best-school-erp-software-in-pakistan-2026-complete-guide-for-schools/</loc>
+    <lastmod>2026-08-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://nexorasolution.online/blog/why-every-restaurant-needs-a-smart-pos-system-in-2026-the-complete-guide/</loc>
+    <lastmod>2026-08-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://nexorasolution.online/blog/restaurant-pos-system-guide-2026/</loc>
+    <lastmod>2026-08-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://nexorasolution.online/blog/the-complete-guide-to-school-erp-systems-in-2026/</loc>
+    <lastmod>2026-08-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://nexorasolution.online/blog/whatsapp-business-automation-is-coming-to-nexora/</loc>
+    <lastmod>2026-08-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://nexorasolution.online/blog/nexora-restaurant-pos-backend-frontend-live/</loc>
+    <lastmod>2026-08-18</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://nexorasolution.online/blog/restaurant-point-of-sale-software/</loc>
+    <lastmod>2026-07-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://nexorasolution.online/blog/transport-management-system/</loc>
+    <lastmod>2026-07-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://nexorasolution.online/blog/advanced-restaurant-pos-billing-software/</loc>
+    <lastmod>2026-07-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://nexorasolution.online/blog/restaurant-pos-software-pakistan/</loc>
+    <lastmod>2026-07-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://nexorasolution.online/blog/nexora-ai-restaurant-reports/</loc>
+    <lastmod>2026-07-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://nexorasolution.online/blog/ai-menu-recognition-restaurant-pos-system/</loc>
+    <lastmod>2026-07-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://nexorasolution.online/blog/nexora-ai-menu-management-upload-restaurant-menu-in-1-minute/</loc>
+    <lastmod>2026-07-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://nexorasolution.online/blog/warehouse-management-software-pakistan/</loc>
+    <lastmod>2026-07-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://nexorasolution.online/blog/customer-loyalty-program-software-pakistan/</loc>
+    <lastmod>2026-07-19</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://nexorasolution.online/blog/restaurant-billing-software-pakistan/</loc>
+    <lastmod>2026-07-18</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://nexorasolution.online/blog/blog-inventory-management-software-pakistan/</loc>
+    <lastmod>2026-07-15</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
     <loc>https://nexorasolution.online/blog/restaurant-pos-software-pakistan-guide/</loc>
     <lastmod>2026-07-07</lastmod>
     <changefreq>weekly</changefreq>
@@ -709,60 +889,6 @@
   <url>
     <loc>https://nexorasolution.online/blog/customer-data-management-for-service-businesses/</loc>
     <lastmod>2026-07-07</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://nexorasolution.online/blog/pharmacy-pos-software-pakistan-guide/</loc>
-    <lastmod>2026-09-07</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://nexorasolution.online/blog/pharmacy-batch-expiry-management-guide/</loc>
-    <lastmod>2026-09-07</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://nexorasolution.online/blog/what-is-pos-software/</loc>
-    <lastmod>2026-09-07</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://nexorasolution.online/blog/what-is-school-erp-software/</loc>
-    <lastmod>2026-09-07</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://nexorasolution.online/blog/fbr-pos-integration-guide-pakistan/</loc>
-    <lastmod>2026-09-07</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://nexorasolution.online/blog/pos-software-cost-pakistan/</loc>
-    <lastmod>2026-09-07</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://nexorasolution.online/blog/school-erp-implementation-checklist/</loc>
-    <lastmod>2026-09-07</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://nexorasolution.online/blog/fleet-management-cost-pakistan/</loc>
-    <lastmod>2026-09-07</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://nexorasolution.online/blog/pharmacy-management-software-in-pakistan-complete-guide/</loc>
-    <lastmod>2026-09-15</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
