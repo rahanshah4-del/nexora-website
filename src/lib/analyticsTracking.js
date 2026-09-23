@@ -1,5 +1,20 @@
-import { addDoc, collection, doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore'
-import { firestoreDb as db } from './firebase.js'
+let firestorePromise = null
+
+// Loaded on first call, not at import: AppErrorBoundary imports this module on every
+// public page, and a top-level import would initialize Firebase before first paint.
+// Resolves to { db: null } instead of rejecting, so every caller degrades to a no-op.
+function loadFirestore() {
+  if (!firestorePromise) {
+    firestorePromise = Promise.all([import('./firebase.js'), import('firebase/firestore')])
+      .then(([{ firestoreDb }, fs]) => ({ db: firestoreDb, fs }))
+      .catch((error) => {
+        firestorePromise = null
+        if (import.meta.env.DEV) console.warn('[Nexora Analytics] Firebase failed to load', error)
+        return { db: null, fs: null }
+      })
+  }
+  return firestorePromise
+}
 
 const VISITOR_KEY = 'nexoraVisitorId'
 const SESSION_KEY = 'nexoraSessionId'
@@ -75,7 +90,10 @@ function currentPagePath() {
 }
 
 export async function trackAnalyticsEvent(eventType, data = {}) {
-  if (!db || !eventType) return
+  if (!eventType) return
+  const { db, fs } = await loadFirestore()
+  if (!db) return
+  const { addDoc, collection, doc, serverTimestamp, setDoc } = fs
   const visitorId = getVisitorId()
   const sessionId = getSessionId()
   const payload = {
@@ -138,9 +156,11 @@ export async function trackAnalyticsEvent(eventType, data = {}) {
 }
 
 export async function updateUserSessionActivity(eventType = 'session_active', data = {}) {
-  if (!db) return
   const userId = clean(data.userId || data.uid)
   if (!userId) return
+  const { db, fs } = await loadFirestore()
+  if (!db) return
+  const { doc, serverTimestamp, setDoc } = fs
   const visitorId = getVisitorId()
   const sessionId = getSessionId()
   try {
@@ -170,9 +190,12 @@ export async function updateUserSessionActivity(eventType = 'session_active', da
 }
 
 export async function getUserAnalyticsContext(user) {
-  if (!db || !user?.uid) return { userId: user?.uid || '', email: user?.email || '' }
+  const fallback = { userId: user?.uid || '', email: user?.email || '' }
+  if (!user?.uid) return fallback
+  const { db, fs } = await loadFirestore()
+  if (!db) return fallback
   try {
-    const snap = await getDoc(doc(db, 'users', user.uid))
+    const snap = await fs.getDoc(fs.doc(db, 'users', user.uid))
     const data = snap.exists() ? snap.data() : {}
     return {
       userId: user.uid,

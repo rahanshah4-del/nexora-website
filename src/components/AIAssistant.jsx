@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from './AppLink.jsx'
-import { getAuth, onAuthStateChanged } from 'firebase/auth'
-import { getFirestore, addDoc, collection, serverTimestamp, getDocs, query, where, orderBy, limit, setDoc, doc } from 'firebase/firestore'
 import { HiOutlineChatBubbleLeftRight, HiOutlineChevronRight, HiOutlineCurrencyDollar, HiOutlineMicrophone, HiOutlinePaperAirplane, HiOutlinePlus, HiOutlineSparkles, HiOutlineTicket, HiOutlineXMark } from 'react-icons/hi2'
 
 // Nexora AI Gateway (Cloudflare Worker)
@@ -190,18 +188,46 @@ function QuickLinkButton({ to, icon, children }) {
   )
 }
 
+let firebasePromise = null
+
+// This widget renders on public pages, so Firebase is loaded on demand rather than
+// imported at the top. lib/firebase.js initializes the app; the bare SDK getters this
+// component used before only worked when some other module had already imported it.
+function loadFirebase() {
+  if (!firebasePromise) {
+    firebasePromise = Promise.all([import('../lib/firebase.js'), import('firebase/auth'), import('firebase/firestore')])
+      .then(([{ auth, db }, { onAuthStateChanged }, fs]) => ({ auth, db, onAuthStateChanged, fs }))
+      .catch((error) => { firebasePromise = null; throw error })
+  }
+  return firebasePromise
+}
+
 export default function AIAssistant() {
   const [authUser, setAuthUser] = useState(null)
   const [authReady, setAuthReady] = useState(false)
 
   useEffect(() => {
-    try {
-      const auth = getAuth()
-      return onAuthStateChanged(auth, (fbUser) => {
-        setAuthUser(fbUser)
-        setAuthReady(true)
-      })
-    } catch { setAuthReady(true) }
+    let cancelled = false
+    let unsub = null
+    const initAuth = () => {
+      loadFirebase()
+        .then(({ auth, onAuthStateChanged }) => {
+          if (cancelled) return
+          if (!auth) { setAuthReady(true); return }
+          unsub = onAuthStateChanged(auth, (fbUser) => {
+            if (!cancelled) { setAuthUser(fbUser); setAuthReady(true) }
+          })
+        })
+        .catch(() => { if (!cancelled) setAuthReady(true) })
+    }
+    const idleId = 'requestIdleCallback' in window ? window.requestIdleCallback(initAuth, { timeout: 4000 }) : null
+    const timerId = idleId === null ? window.setTimeout(initAuth, 2000) : null
+    return () => {
+      cancelled = true
+      if (idleId !== null) window.cancelIdleCallback?.(idleId)
+      if (timerId !== null) window.clearTimeout(timerId)
+      if (unsub) unsub()
+    }
   }, [])
 
   const isAuth = authReady && authUser != null
@@ -211,7 +237,9 @@ export default function AIAssistant() {
     if (!isAuth || !authUser) return
     ;(async () => {
       try {
-        const db = getFirestore()
+        const { db, fs } = await loadFirebase()
+        if (!db) return
+        const { collection, getDocs, limit, orderBy, query, where } = fs
         const ctx = { name: authUser.displayName || authUser.email?.split('@')[0] || '', email: authUser.email || '' }
         const wsQ = query(collection(db, 'workspaces'), where('ownerId', '==', authUser.uid), limit(1))
         const wsSnap = await getDocs(wsQ)
@@ -250,6 +278,7 @@ export default function AIAssistant() {
   // Prefill complaint form from auth user
   const [complaintForm, setComplaintForm] = useState({ name: '', email: '', message: '' })
   const [complaintSent, setComplaintSent] = useState(false)
+  const [ticketSubmitting, setTicketSubmitting] = useState(false)
 
   useEffect(() => {
     if (isAuth && authUser) {
@@ -274,18 +303,17 @@ export default function AIAssistant() {
     try { localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify({ messages, extCount: externalCount, lastActive: Date.now() })) } catch {}
     // Also persist to Firestore for logged-in users
     if (isAuth && authUser && messages.length > 1) {
-      try {
-        const db = getFirestore()
-        const summary = messages.slice(-10).map(m => `${m.from === 'user' ? '👤' : '🤖'}: ${m.text.slice(0, 200)}`).join('\n')
-        setDoc(doc(db, 'aiChatHistory', authUser.uid), {
+      const summary = messages.slice(-10).map(m => `${m.from === 'user' ? '👤' : '🤖'}: ${m.text.slice(0, 200)}`).join('\n')
+      loadFirebase()
+        .then(({ db, fs }) => db && fs.setDoc(fs.doc(db, 'aiChatHistory', authUser.uid), {
           userId: authUser.uid,
           email: authUser.email || '',
           lastMessages: messages.slice(-20),
           summary,
           messageCount: messages.length,
-          lastActive: serverTimestamp(),
-        }).catch(() => {})
-      } catch {}
+          lastActive: fs.serverTimestamp(),
+        }))
+        .catch(() => {})
     }
   }, [messages, externalCount, isAuth, authUser])
 
@@ -664,9 +692,15 @@ IMPORTANT: The user may refer to past conversations. If they ask what they asked
                   <textarea value={complaintForm.message} onChange={e => setComplaintForm(f => ({ ...f, message: e.target.value }))} rows={3} placeholder="Describe your issue or complaint..." className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-[12px] outline-none focus:border-violet-300" />
                   <button
                     onClick={async () => {
-                      if (complaintForm.name && complaintForm.message) {
+                      if (complaintForm.name && complaintForm.message && !ticketSubmitting) {
+                        setTicketSubmitting(true)
+                        let submitted = false
                         try {
-                          const db = getFirestore()
+                          // Firebase may still be loading if the visitor opens the widget
+                          // before idle; the ticket waits for it instead of failing.
+                          const { db, fs } = await loadFirebase()
+                          if (!db) throw new Error('support is temporarily unavailable')
+                          const { addDoc, collection, serverTimestamp } = fs
                           await addDoc(collection(db, 'supportTickets'), {
                             name: complaintForm.name,
                             email: complaintForm.email || (authUser?.email || ''),
@@ -678,18 +712,23 @@ IMPORTANT: The user may refer to past conversations. If they ask what they asked
                             userEmail: authUser?.email || complaintForm.email || '',
                             createdAt: serverTimestamp(),
                           })
+                          submitted = true
                           addMsg('ai', `📋 Ticket submitted! We'll review your issue and respond within 24 hours.\n\n**Your issue:** ${complaintForm.message.slice(0, 80)}...`)
                         } catch (err) {
                           addMsg('ai', `⚠️ Could not submit ticket: ${err.message}. Please try again or contact WhatsApp Support at +92 319 432 9754.`)
+                        } finally {
+                          setTicketSubmitting(false)
                         }
-                        setComplaintSent(true)
+                        // Only a saved ticket shows the "sent" view; on failure the form keeps
+                        // its contents so the visitor can retry after reading the error.
+                        if (submitted) setComplaintSent(true)
                         setActiveTab('chat')
                       }
                     }}
-                    disabled={!complaintForm.name || !complaintForm.message}
+                    disabled={!complaintForm.name || !complaintForm.message || ticketSubmitting}
                     className="w-full rounded-full bg-gradient-to-r from-violet-500 to-purple-600 px-4 py-2.5 text-[13px] font-bold text-white shadow-[0_4px_12px_rgba(139,92,246,0.3)] transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.97] disabled:opacity-40 disabled:pointer-events-none"
                   >
-                    Submit Ticket
+                    {ticketSubmitting ? 'Submitting…' : 'Submit Ticket'}
                   </button>
                 </div>
               )}

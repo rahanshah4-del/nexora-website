@@ -111,17 +111,17 @@ function Header() {
   useEffect(() => {
     let unsub = null
     let cancelled = false
-    // Defer Firebase Auth import to idle so it never blocks LCP/TBT on public pages
+    // Defer Firebase to idle so it never blocks LCP/TBT on public pages. lib/firebase.js
+    // is what initializes the app and its auth persistence, so it must be loaded here:
+    // public pages no longer import it anywhere else before this runs.
     const initAuth = () => {
-      import('firebase/auth')
-        .then(({ getAuth, onAuthStateChanged }) => {
+      Promise.all([import('../lib/firebase.js'), import('firebase/auth')])
+        .then(([{ auth }, { onAuthStateChanged }]) => {
           if (cancelled) return
-          try {
-            const auth = getAuth()
-            unsub = onAuthStateChanged(auth, (fbUser) => {
-              if (!cancelled) { setAuthUser(fbUser); setAuthReady(true) }
-            })
-          } catch { if (!cancelled) setAuthReady(true) }
+          if (!auth) { setAuthReady(true); return }
+          unsub = onAuthStateChanged(auth, (fbUser) => {
+            if (!cancelled) { setAuthUser(fbUser); setAuthReady(true) }
+          })
         })
         .catch(() => { if (!cancelled) setAuthReady(true) })
     }
@@ -449,8 +449,10 @@ function Header() {
           })}
         </nav>
 
-        {/* ── Right Actions ── */}
-        <div className="ml-auto hidden items-center gap-2 lg:flex">
+        {/* ── Right Actions ──
+            Fixed width fits both auth states (logged-out ≈233px, logged-in ≈165px), so the
+            centered nav doesn't move when auth resolves after idle. */}
+        <div className="ml-auto hidden w-[248px] shrink-0 items-center justify-end gap-2 whitespace-nowrap lg:flex">
           {isAuth ? (
             <>
               <Link
