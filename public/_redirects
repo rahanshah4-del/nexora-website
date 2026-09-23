@@ -21,3 +21,7 @@
 /solutions/medical-store-pos/ /pharmacy-pos/ 301
 /transport /transport-fleet/ 301
 /transport/ /transport-fleet/ 301
+
+# Blog slug renames in the CMS (old URL was published, so keep it resolving)
+/blog/pharmacy-pos-software-in-pakistan-complete-guide-to-billing-inventory-expiry-management /blog/pharmacy-pos-software-pakistan/ 301
+/blog/pharmacy-pos-software-in-pakistan-complete-guide-to-billing-inventory-expiry-management/ /blog/pharmacy-pos-software-pakistan/ 301
