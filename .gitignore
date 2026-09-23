@@ -33,3 +33,6 @@ upgrade-email-preview.html
 
 # Wrangler local state (wrangler dev / miniflare)
 .wrangler
+
+# Build-time scratch (e.g. the pre-deploy sitemap snapshot for IndexNow)
+.cache

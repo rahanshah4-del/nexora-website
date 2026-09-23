@@ -12,6 +12,9 @@ import {
 
 admin.initializeApp()
 
+// Blog → site rebuild (Cloudflare deploy hook) with debounce; see blogRebuild.js.
+export { blogPostsWritten, blogRedirectsWritten, blogRebuildTask } from './blogRebuild.js'
+
 const db = admin.firestore()
 const FieldValue = admin.firestore.FieldValue
 

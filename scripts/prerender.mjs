@@ -22,7 +22,8 @@ import { seoMetadata } from '../src/lib/seoMetadata.js'
 import { COUNTRIES } from '../src/lib/countries.js'
 import { PILLARS, PILLAR_COMPARE_LINKS, featurePages } from '../src/lib/featurePagesData.js'
 import { comparePages } from '../src/lib/comparePagesData.js'
-import { BLOG_TRANSLATIONS_ENABLED, loadBlogArticles } from './lib/loadBlogArticles.mjs'
+import { BLOG_TRANSLATIONS_ENABLED, loadBlogArticles, loadBlogRedirects } from './lib/loadBlogArticles.mjs'
+import { MAX_DYNAMIC_REDIRECTS, MAX_STATIC_REDIRECTS, mergeRedirectsFile, redirectRules } from './lib/blogRedirects.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
@@ -2168,6 +2169,28 @@ async function main() {
   writePage(join(DIST, '404.html'), build404Page())
   console.log('[prerender] ✓ 404 page (dist/404.html — noindex, no canonical)')
 
+  // ── _redirects: hand-written aliases + CMS slug renames ──
+  // vite copied public/_redirects into dist/; the Firestore `blogRedirects`
+  // pairs are appended after it (static rules win on a clash). The asset
+  // server applies these before worker/index.js ever sees the request.
+  const { redirects: blogRedirects } = await loadBlogRedirects({
+    label: '[prerender]',
+    liveSlugs: articles.map((a) => a.slug),
+  })
+  const mergedRedirects = mergeRedirectsFile(
+    readFileSync(join(PUBLIC, '_redirects'), 'utf-8'),
+    blogRedirects.flatMap(redirectRules),
+  )
+  for (const { rule, existing } of mergedRedirects.conflicts) {
+    console.warn(`[prerender] ⚠ _redirects: kept static ${existing.source} → ${existing.destination}; ignored generated → ${rule.destination}`)
+  }
+  if (mergedRedirects.staticCount > MAX_STATIC_REDIRECTS || mergedRedirects.dynamicCount > MAX_DYNAMIC_REDIRECTS) {
+    console.error(`[prerender] ✗ _redirects over Cloudflare's limit: ${mergedRedirects.staticCount}/${MAX_STATIC_REDIRECTS} static, ${mergedRedirects.dynamicCount}/${MAX_DYNAMIC_REDIRECTS} dynamic`)
+    process.exit(1)
+  }
+  writeFileSync(join(DIST, '_redirects'), mergedRedirects.text)
+  console.log(`[prerender] ✓ _redirects — ${mergedRedirects.added.length} generated rule(s) added, ${mergedRedirects.duplicates.length} already in public/_redirects, ${mergedRedirects.conflicts.length} conflict(s); ${mergedRedirects.staticCount} static rules total`)
+
   // ── Service worker cache version ──
   const swBuildId = stampServiceWorkerBuildId()
   console.log(`[prerender] ✓ Service worker CACHE_NAME = nexora-pwa-${swBuildId}`)
@@ -2231,7 +2254,7 @@ async function main() {
   console.log('  https://www.bing.com/ping?sitemap=https://nexorasolution.online/sitemap.xml')
   console.log('')
   console.log('  IndexNow (automatic):')
-  console.log('  Already submitted via scripts/indexnow.mjs')
+  console.log('  Submitted after deploy by scripts/indexnow-after-deploy.mjs')
   console.log('')
   console.log('═══════════════════════════════════════')
   console.log('  ✅ Ready for Google indexing')
