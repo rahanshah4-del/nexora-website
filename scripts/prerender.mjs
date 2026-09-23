@@ -349,6 +349,8 @@ function buildHreflangBlock(pathSuffix, langs) {
   return block
 }
 
+// .ns-hero-h1 must mirror the hero heading's classes in src/App.jsx exactly: if React's
+// heading renders larger, LCP re-fires after hydration instead of on this static paint.
 function buildCommonHead() {
   return `  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -373,7 +375,8 @@ function buildCommonHead() {
   <!-- Fonts: async load with display=swap -->
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@600;700&family=Poppins:wght@900&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@600;700&family=Poppins:wght@900&display=swap" /></noscript>
-  <style>body{font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}</style>`
+  <style>body{font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}</style>
+  <style>.ns-hero-h1{margin:1.5rem auto 0;max-width:64rem;font-size:clamp(2rem,8vw,2.85rem);font-weight:900;line-height:.98;letter-spacing:-.025em;color:#0f172a;text-wrap:balance}.ns-hero-hl{position:relative;display:inline-block;padding-inline:.08em}@media(min-width:640px){.ns-hero-h1{font-size:clamp(3rem,7vw,4.4rem)}}@media(min-width:1024px){.ns-hero-h1{font-size:5.7rem}}</style>`
 }
 
 function buildGtm() {
@@ -1679,7 +1682,7 @@ function buildStaticShell(meta, path = '', articles = []) {
   <main style="padding-top:3.5rem">
     <section style="text-align:center;padding:3rem 1.25rem 2rem;background:linear-gradient(180deg,#fff 0%,#f8fbff 72%,#fff 100%)">
       <span style="display:inline-flex;border-radius:9999px;border:1px solid #dbeafe;background:#eff6ff;padding:.5rem 1rem;font-size:.75rem;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:#1d4ed8">✨ Powered by Nexora AI</span>
-      <h1 style="margin:1.5rem auto 0;max-width:64rem;font-size:clamp(1.8rem,7.5vw,2.85rem);font-weight:900;line-height:.98;letter-spacing:-.015em;color:#0f172a">Nexora Solution – <span style="position:relative;display:inline-block">AI Business Operating System</span></h1>
+      <h1 class="ns-hero-h1">Nexora Solution – <span class="ns-hero-hl">AI Business Operating System</span></h1>
       <p style="margin:1rem auto 0;max-width:42rem;font-size:.82rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8">Restaurant POS • Retail POS • Pharmacy POS • CRM • ERP • AI Automation</p>
       <p style="margin:1.25rem auto 0;font-size:1.875rem;font-family:Kalam,Sora,ui-rounded,system-ui,sans-serif;letter-spacing:-.01em;color:#0f172a">Simple, efficient, yet powerful.</p>
       <p style="margin:1.25rem auto 0;max-width:48rem;font-size:1rem;line-height:2;color:#64748b">${escapeHtml('Nexora Business Suite helps you manage customers, students, tenants, sales, invoices, reports and team access from one secure dashboard.')}</p>

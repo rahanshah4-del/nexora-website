@@ -4,6 +4,7 @@ import ScrollToTop from './components/ScrollToTop.jsx'
 import { Component, Suspense, lazy, useEffect, useMemo } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import PageLoader from './crm/components/ui/PageLoader.jsx'
+import MarketingRoute from './pages/public/MarketingRoute.jsx'
 import { useUser } from './crm/hooks/useUser.js'
 import { useWorkspaceAccess } from './crm/hooks/useWorkspaceAccess.js'
 import { isDeveloperOwnerAccount, routeAllowedByBusinessType, routeAllowedByPlan } from './crm/data/moduleAccess.js'
@@ -14,7 +15,6 @@ const NewUserOfferPopup = lazy(() => import('./components/NewUserOfferPopup.jsx'
 // auth/onboarding flows themselves).
 const OFFER_POPUP_EXCLUDED_PREFIXES = ['/app', '/admin', '/login', '/signup', '/verify-email', '/workspace']
 
-const MarketingRoute = lazy(() => import('./pages/public/MarketingRoute.jsx'))
 const IndustriesPage = lazy(() => import('./pages/public/IndustriesPage.jsx'))
 const ReviewsPage = lazy(() => import('./pages/public/ReviewsPage.jsx'))
 const UpgradeBusiness = lazy(() => import('./pages/UpgradeBusiness.jsx'))
@@ -579,7 +579,7 @@ export default function AppRouter() {
         <Suspense fallback={null}><NewUserOfferPopup /></Suspense>
       )}
       <Routes location={matchLocation}>
-        <Route path="/" element={<LazyPage><MarketingRoute /></LazyPage>} />
+        <Route path="/" element={<MarketingRoute />} />
         <Route path="/features" element={<LazyPage><NoIndexRoute><MarketingRoute sectionId="services" /></NoIndexRoute></LazyPage>} />
         <Route path="/ai" element={<LazyPage><AIPage /></LazyPage>} />
         <Route path="/services" element={<Navigate to="/business-services/" replace />} />
