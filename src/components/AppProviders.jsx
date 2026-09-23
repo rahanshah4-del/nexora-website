@@ -1,7 +1,6 @@
 import { lazy, Suspense } from 'react'
 import AppErrorBoundary from './AppErrorBoundary.jsx'
-import AppRouter from '../AppRouter.jsx'
-import CrmProviderShell from './CrmProviderShell.jsx'
+import AppRouter, { PageSkeleton } from '../AppRouter.jsx'
 import { useLocation } from 'react-router-dom'
 import { MultiCurrencyProvider } from '../context/MultiCurrencyProvider.jsx'
 
@@ -10,6 +9,7 @@ const WORKSPACE_PROVIDER_PREFIXES = ['/workspace']
 const MULTI_CURRENCY_PREFIXES = ['/pricing', '/upgrade-business']
 const RootAuthProviderShell = lazy(() => import('./RootAuthProviderShell.jsx'))
 const WorkspaceProviderShell = lazy(() => import('./WorkspaceProviderShell.jsx'))
+const CrmProviderShell = lazy(() => import('./CrmProviderShell.jsx'))
 
 function RouteScopedProviders({ children }) {
   const location = useLocation()
@@ -19,9 +19,13 @@ function RouteScopedProviders({ children }) {
   const needsRootAuthProvider = ROOT_AUTH_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))
 
   if (needsCrmProviders) {
-    // CrmProviderShell is inlined to avoid the lazy chunk waterfall.
-    // Auth/User/Theme providers initialize immediately on first render.
-    return <CrmProviderShell>{children}</CrmProviderShell>
+    // Same skeleton the /app pages show while their own chunk loads, so the two
+    // loading states read as one instead of flashing between different layouts.
+    return (
+      <Suspense fallback={<PageSkeleton />}>
+        <CrmProviderShell>{children}</CrmProviderShell>
+      </Suspense>
+    )
   }
 
   if (needsWorkspaceProvider) {
