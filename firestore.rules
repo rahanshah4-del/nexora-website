@@ -1220,6 +1220,20 @@ match /blogLikes/{slug} {
     allow create, update: if backendAdmin();
     allow delete: if backendAdmin();
   }
+  // Old slug -> new slug for renamed published posts, written by the blog CMS.
+  // Public read: the site build reads it to generate 301s.
+  match /blogRedirects/{fromSlug} {
+    allow read: if true;
+    allow create, update: if backendAdmin()
+      && request.resource.data.keys().hasOnly(['from','to','createdAt','createdBy'])
+      && request.resource.data.from == fromSlug
+      && fromSlug.matches('^[a-z0-9-]{3,120}$')
+      && request.resource.data.to is string
+      && request.resource.data.to.matches('^[a-z0-9-]{3,120}$')
+      && request.resource.data.to != fromSlug;
+    allow delete: if backendAdmin();
+  }
+
   match /blogBackups/{backupId} {
     allow read: if backendAdmin();
     allow create, update: if backendAdmin();
@@ -1279,8 +1293,104 @@ match /userSessions/{docId} {
 allow create: if activeSignedIn()&&request.resource.data.userId==request.auth.uid;
 allow read,update,delete: if backendAdmin()||(activeSignedIn()&&resource.data.userId==request.auth.uid);
 }
+
+    match /articles/{articleId} {
+      allow read: if true;
+      allow write: if signedIn();
+    }
+
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if signedIn();
+    }
+
+    match /tags/{tagId} {
+      allow read: if true;
+      allow write: if signedIn();
+    }
+
+
+    match /comments/{commentId} {
+      allow read: if resource.data.approved == true;
+      allow create: if request.resource.data.approved == false
+        && request.resource.data.articleSlug is string
+        && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 100
+        && request.resource.data.message is string && request.resource.data.message.size() > 0 && request.resource.data.message.size() <= 1000;
+      allow update, delete: if signedIn();
+    }
+
+
+    match /media/{mediaId} {
+      allow read, write: if signedIn();
+    }
+
+    match /siteConfig/{docId} {
+      allow read: if true;
+      allow write: if signedIn();
+    }
+
+    match /adminUsers/{userId} {
+      allow read, write: if signedIn();
+    }
+
+  match /submissions/{submissionId} {
+    allow read: if resource.data.status == 'approved' || signedIn();
+    allow create: if request.resource.data.status == 'pending'
+      && request.resource.data.siteName is string
+      && request.resource.data.siteName.size() > 0
+      && request.resource.data.siteName.size() <= 100
+      && request.resource.data.url is string
+      && request.resource.data.url.size() > 0
+      && request.resource.data.url.size() <= 500
+      && request.resource.data.category is string
+      && request.resource.data.category.size() > 0
+      && request.resource.data.description is string
+      && request.resource.data.description.size() <= 200
+      && request.resource.data.submitterEmail is string
+      && request.resource.data.submitterEmail.size() > 0
+      && request.resource.data.submitterEmail.size() <= 254
+      && request.resource.data.slug is string
+      && request.resource.data.slug.size() > 0;
+    allow update, delete: if signedIn();
+  }
+
+  match /analytics/{eventId} {
+    allow read: if signedIn();
+    allow create: if request.resource.data.keys().hasOnly([
+      'ts', 'day', 'hour', 'path', 'slug', 'title', 'vid', 'sid',
+      'isNew', 'visitCount', 'duration', 'referrer', 'device',
+      'country', 'browser'
+    ])
+      && request.resource.data.path is string
+      && request.resource.data.path.size() > 0
+      && request.resource.data.path.size() <= 300
+      && request.resource.data.vid is string
+      && request.resource.data.vid.size() <= 64
+      && request.resource.data.sid is string
+      && request.resource.data.sid.size() <= 64
+      && request.resource.data.isNew is bool
+      && request.resource.data.duration is int
+      && request.resource.data.duration >= 0
+      && request.resource.data.duration <= 3600
+      && request.resource.data.hour is int
+      && request.resource.data.hour >= 0
+      && request.resource.data.hour <= 23;
+    allow update: if false;
+    allow delete: if signedIn();
+  }
+
 match /{document=**} {
 allow read,write: if backendAdmin();
 }
+
+    match /authors/{authorId} {
+      allow read: if true;
+      allow write: if request.auth != null
+        && request.auth.token.email == "rahanshah4@gmail.com"
+        && request.auth.token.email_verified == true;
+    }
 }
 }
+
+
+
