@@ -1,10 +1,10 @@
 // IndexNow build-time submitter (Node / build environment).
 //
 // Notifies IndexNow-compatible search engines (Bing, Yandex, Seznam, Naver…)
-// whenever the generated sitemap changes at build time. This is the reliable,
-// CORS-free integration point for a static Cloudflare Pages / Vite site: the
-// sitemap generator computes which public URLs were added, updated or removed
-// and hands them here for a single batched submission.
+// whenever a deploy changes the sitemap. This is the reliable, CORS-free
+// integration point for the static site: scripts/indexnow-after-deploy.mjs
+// computes which public URLs were added, updated or removed by the deploy and
+// hands them here for a single batched submission.
 //
 // Design goals (see requirements):
 //   - Batch every changed URL into ONE request (chunked at the API limit).
@@ -23,14 +23,17 @@ const MAX_URLS_PER_REQUEST = 10000
 const MAX_RETRIES = 4
 const BASE_BACKOFF_MS = 500
 
-// Actual network submission is enabled on the Cloudflare Pages production build
-// (CF_PAGES is set in that environment) or when explicitly requested locally via
-// INDEXNOW_SUBMIT=true. It can always be turned off with INDEXNOW_DISABLE=true.
-// Everywhere else we run in "dry-run" mode so local dev builds never ping the API.
+// Actual network submission is enabled on Cloudflare's production builds —
+// Workers Builds sets WORKERS_CI=1 (the site's current host), Pages set CF_PAGES
+// — or when explicitly requested locally via INDEXNOW_SUBMIT=true. It can always
+// be turned off with INDEXNOW_DISABLE=true (e.g. as a Workers Builds variable).
+// Everywhere else we run in "dry-run" mode so local builds never ping the API.
+// The only caller is scripts/indexnow-after-deploy.mjs, which the production
+// deploy command runs; preview builds use the preview command and never reach it.
 function submissionEnabled() {
   if (String(process.env.INDEXNOW_DISABLE || '').toLowerCase() === 'true') return false
   if (String(process.env.INDEXNOW_SUBMIT || '').toLowerCase() === 'true') return true
-  return Boolean(process.env.CF_PAGES) || process.env.NODE_ENV === 'production'
+  return Boolean(process.env.WORKERS_CI) || Boolean(process.env.CF_PAGES) || process.env.NODE_ENV === 'production'
 }
 
 function isDev() {

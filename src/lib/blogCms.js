@@ -6,29 +6,22 @@ import {
   limit,
   onSnapshot,
   query,
+  runTransaction,
   serverTimestamp,
-  setDoc,
   where,
 } from 'firebase/firestore'
 import { getDownloadURL, ref, uploadBytesResumable } from 'firebase/storage'
 import { firestoreDb as db, storage } from './firebase.js'
 import { mergeBlogArticles, normalizeBlogArticleDoc } from './blogData.js'
-import { notifyIndexNow } from './indexNow.js'
+import { planPostDates, SERVER_TIME } from './blogPostDates.js'
 
 export const BLOG_POSTS_COLLECTION = 'blogPosts'
+// Old slug → new slug for renamed published posts. The site build turns these
+// into 301s (scripts/lib/blogRedirects.mjs); publishing a post at a slug that
+// has one removes it, since a live page must win over a redirect.
+export const BLOG_REDIRECTS_COLLECTION = 'blogRedirects'
 const BLOG_IMAGE_MAX_BYTES = 5 * 1024 * 1024
 const BLOG_IMAGE_UPLOAD_TIMEOUT_MS = 60000
-
-// Absolute canonical URL for a blog post + the blog index, used to notify
-// IndexNow when a public post is created, updated or removed.
-function blogUrlsForSlug(slug) {
-  const clean = String(slug || '').trim()
-  if (!clean) return []
-  return [
-    `https://nexorasolution.online/blog/${clean}`,
-    'https://nexorasolution.online/blog',
-  ]
-}
 
 export function listenPublishedBlogPosts(onRows, onError) {
   if (!db) {
@@ -68,23 +61,75 @@ export async function getBlogPost(slug) {
   return snap.exists() ? normalizeBlogArticleDoc(snap.id, snap.data()) : null
 }
 
+// Dates come from the document as stored (read inside the transaction), never
+// from the editor: createdAt and publishDate are set once and then kept — see
+// blogPostDates.js. updatedAt moves on every save and is what dateModified and
+// the sitemap lastmod follow.
+function withDates(payload, stored) {
+  const { createdAt, publishDate } = planPostDates(stored, payload.status)
+  const rest = { ...payload }
+  delete rest.createdAt
+  delete rest.publishDate
+  return {
+    ...rest,
+    createdAt: createdAt === SERVER_TIME ? serverTimestamp() : createdAt,
+    publishDate: publishDate === SERVER_TIME ? serverTimestamp() : publishDate,
+    updatedAt: serverTimestamp(),
+  }
+}
+
+async function hasRedirectToClear(redirectRef, status) {
+  if (status !== 'published') return false
+  return (await getDoc(redirectRef)).exists()
+}
+
 export async function saveBlogPost(slug, payload) {
   if (!db) throw new Error('Firebase is not configured.')
-  await setDoc(doc(db, BLOG_POSTS_COLLECTION, slug), {
-    ...payload,
-    slug,
-    updatedAt: serverTimestamp(),
-    createdAt: payload.createdAt || serverTimestamp(),
-  }, { merge: true })
-  // Only public (published) posts belong in search indexes. Fire-and-forget.
-  if (payload?.status === 'published') notifyIndexNow(blogUrlsForSlug(slug))
+  const postRef = doc(db, BLOG_POSTS_COLLECTION, slug)
+  const redirectRef = doc(db, BLOG_REDIRECTS_COLLECTION, slug)
+  // A published page at this slug replaces any redirect away from it. Checked
+  // outside the transaction: a read-only document inside one is re-verified at
+  // commit, which shows up as a (no-op) write event on blogRedirects.
+  const clearRedirect = await hasRedirectToClear(redirectRef, payload.status)
+  await runTransaction(db, async (transaction) => {
+    const stored = await transaction.get(postRef)
+    transaction.set(postRef, { ...withDates(payload, stored.exists() ? stored.data() : null), slug }, { merge: true })
+    if (clearRedirect) transaction.delete(redirectRef)
+  })
+}
+
+// Renames a CMS post in one atomic step: the post moves to newSlug keeping its
+// createdAt/publishDate, the old document is deleted and — if the old URL was
+// public — a redirect old → new is recorded for the site build.
+export async function renameBlogPost(oldSlug, newSlug, payload) {
+  if (!db) throw new Error('Firebase is not configured.')
+  if (!oldSlug || !newSlug || oldSlug === newSlug) throw new Error('Rename needs two different slugs.')
+  const oldRef = doc(db, BLOG_POSTS_COLLECTION, oldSlug)
+  const newRef = doc(db, BLOG_POSTS_COLLECTION, newSlug)
+  const newRedirectRef = doc(db, BLOG_REDIRECTS_COLLECTION, newSlug)
+  const clearRedirect = await hasRedirectToClear(newRedirectRef, payload.status)
+  await runTransaction(db, async (transaction) => {
+    const oldSnap = await transaction.get(oldRef)
+    const newSnap = await transaction.get(newRef)
+    if (newSnap.exists()) throw new Error(`Slug "${newSlug}" is already used by another post.`)
+    const stored = oldSnap.exists() ? oldSnap.data() : null
+    transaction.set(newRef, { ...withDates(payload, stored), slug: newSlug })
+    if (oldSnap.exists()) transaction.delete(oldRef)
+    if (stored?.status === 'published') {
+      transaction.set(doc(db, BLOG_REDIRECTS_COLLECTION, oldSlug), {
+        from: oldSlug,
+        to: newSlug,
+        createdAt: serverTimestamp(),
+        createdBy: payload.createdBy || '',
+      })
+    }
+    if (clearRedirect) transaction.delete(newRedirectRef)
+  })
 }
 
 export async function deleteBlogPost(slug) {
   if (!db) throw new Error('Firebase is not configured.')
   await deleteDoc(doc(db, BLOG_POSTS_COLLECTION, slug))
-  // Notify so engines re-crawl the removed URL and the blog index. Fire-and-forget.
-  notifyIndexNow(blogUrlsForSlug(slug))
 }
 
 export async function uploadBlogImage(slug, file, onProgress) {

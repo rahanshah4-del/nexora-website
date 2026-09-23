@@ -21,6 +21,7 @@
  */
 
 import { blogArticles as sourceArticles, mergeBlogArticles, normalizeBlogArticleDoc } from '../../src/lib/blogData.js'
+import { resolveBlogRedirects } from './blogRedirects.mjs'
 
 // Translated blog pages (/ur|hi|ar|bn/blog/<slug>/), read by prerender.mjs and
 // generate-sitemap.mjs from Firestore `blogTranslations`. Those documents are
@@ -85,7 +86,7 @@ async function postWithRetry(body) {
         signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
       })
       const text = await response.text()
-      if (!response.ok) throw new Error(`Firestore runQuery HTTP ${response.status}: ${text.slice(0, 300)}`)
+      if (!response.ok) throw new Error(`Firestore runQuery HTTP ${response.status}: ${text.replace(/\s+/g, ' ').slice(0, 300)}`)
       return JSON.parse(text)
     } catch (err) {
       lastError = err
@@ -97,16 +98,16 @@ async function postWithRetry(body) {
 
 // runQuery has no pageToken; it pages with a cursor instead: order by document
 // name and start each page after the last document of the previous one.
-export async function fetchPublishedCmsDocs() {
+async function runPagedQuery(collectionId, where) {
   const docs = []
   let cursor = null
   for (let page = 0; page < MAX_PAGES; page++) {
     const structuredQuery = {
-      from: [{ collectionId: 'blogPosts' }],
-      where: { fieldFilter: { field: { fieldPath: 'status' }, op: 'EQUAL', value: { stringValue: 'published' } } },
+      from: [{ collectionId }],
       orderBy: [{ field: { fieldPath: '__name__' }, direction: 'ASCENDING' }],
       limit: PAGE_SIZE,
     }
+    if (where) structuredQuery.where = where
     if (cursor) structuredQuery.startAt = { values: [{ referenceValue: cursor }], before: false }
 
     const rows = await postWithRetry({ structuredQuery })
@@ -120,7 +121,20 @@ export async function fetchPublishedCmsDocs() {
     if (pageDocs.length < PAGE_SIZE) return docs
     cursor = pageDocs[pageDocs.length - 1].name
   }
-  throw new Error(`Firestore runQuery returned more than ${MAX_PAGES * PAGE_SIZE} published posts; raise MAX_PAGES`)
+  throw new Error(`Firestore runQuery on ${collectionId} returned more than ${MAX_PAGES * PAGE_SIZE} documents; raise MAX_PAGES`)
+}
+
+export function fetchPublishedCmsDocs() {
+  return runPagedQuery('blogPosts', {
+    fieldFilter: { field: { fieldPath: 'status' }, op: 'EQUAL', value: { stringValue: 'published' } },
+  })
+}
+
+// Old-slug → new-slug pairs the CMS writes when it renames a published post
+// (src/lib/blogCms.js renameBlogPost). Needs the public-read rule on
+// `blogRedirects` in firestore.rules.
+export function fetchBlogRedirectDocs() {
+  return runPagedQuery('blogRedirects')
 }
 
 // The static list: src/lib/blogData.js decides WHICH static articles exist and
@@ -191,4 +205,31 @@ export async function loadBlogArticles({ label = '[blog]' } = {}) {
     for (const slug of cmsOnly.sort()) console.log(`${label}   /blog/${slug}/`)
   }
   return merged
+}
+
+/**
+ * Returns the CMS slug-rename redirects, resolved against the live article
+ * slugs (chains collapsed, reused/dead/cyclic ones dropped — see
+ * scripts/lib/blogRedirects.mjs). Zero redirects is a normal result; a failed
+ * read fails a CI build, since every renamed post's old URL would 404.
+ * @param {{ label?: string, liveSlugs: Iterable<string> }} options
+ */
+export async function loadBlogRedirects({ label = '[blog]', liveSlugs }) {
+  let docs
+  try {
+    docs = await fetchBlogRedirectDocs()
+  } catch (err) {
+    const failure = `could not read blogRedirects from Firestore: ${err?.cause?.code || err?.message || err}`
+    if (isCiBuild()) {
+      throw new Error(`${label} ✗ ${failure}. Refusing to build: renamed posts' old URLs would 404. (Is the public-read rule for blogRedirects deployed?)`)
+    }
+    console.warn(`${label} ⚠ ${failure} — LOCAL BUILD, continuing without generated redirects.`)
+    return { redirects: [], skipped: [] }
+  }
+  const edges = docs.map(({ id, data }) => ({ from: data.from || id, to: data.to }))
+  const result = resolveBlogRedirects(edges, new Set(liveSlugs))
+  console.log(`${label} Blog redirects — Firestore docs: ${docs.length}, emitted: ${result.redirects.length}, skipped: ${result.skipped.length}`)
+  for (const { from, to } of result.redirects) console.log(`${label}   /blog/${from}/ → /blog/${to}/`)
+  for (const { from, to, reason } of result.skipped) console.warn(`${label}   ⚠ skipped ${from} → ${to}: ${reason}`)
+  return result
 }

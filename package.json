@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
-    "prebuild": "npm run clean && node scripts/generate-sitemap.mjs",
+    "prebuild": "npm run clean && node scripts/snapshot-live-sitemap.mjs && node scripts/generate-sitemap.mjs",
     "build": "vite build",
     "postbuild": "node scripts/prerender.mjs",
     "audit:sales-hub": "node scripts/audit-sales-hub-calculations.mjs",
@@ -21,6 +21,8 @@
     "ai:highlight:force": "node scripts/aiHighlight.js --force",
     "audit:all-modules": "npm run audit:sales-hub && npm run audit:school-erp && npm run audit:retail-pos && npm run audit:restaurant-pos && npm run audit:property-erp && npm run audit:transport-rental && npm run audit:whatsapp-crm && npm run audit:module-integrations",
     "lint": "eslint .",
+    "test": "node --test tests/*.test.mjs",
+    "indexnow:after-deploy": "node scripts/indexnow-after-deploy.mjs",
     "preview": "vite preview --host 0.0.0.0 --port 4173",
     "worker:deploy": "wrangler deploy --config workers/nexora-email-api/wrangler.toml",
     "worker:secret": "wrangler secret put RESEND_API_KEY --config workers/nexora-email-api/wrangler.toml",

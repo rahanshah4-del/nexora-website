@@ -1220,6 +1220,21 @@ match /blogLikes/{slug} {
     allow create, update: if backendAdmin();
     allow delete: if backendAdmin();
   }
+  // Old slug → new slug for renamed published posts, written by the blog CMS
+  // (src/lib/blogCms.js renameBlogPost). Public read: the site build reads it
+  // with the public API key to generate 301s, and it only holds slugs that
+  // were already public URLs.
+  match /blogRedirects/{fromSlug} {
+    allow read: if true;
+    allow create, update: if backendAdmin()
+      && request.resource.data.keys().hasOnly(['from','to','createdAt','createdBy'])
+      && request.resource.data.from == fromSlug
+      && fromSlug.matches('^[a-z0-9-]{3,120}$')
+      && request.resource.data.to is string
+      && request.resource.data.to.matches('^[a-z0-9-]{3,120}$')
+      && request.resource.data.to != fromSlug;
+    allow delete: if backendAdmin();
+  }
   match /blogBackups/{backupId} {
     allow read: if backendAdmin();
     allow create, update: if backendAdmin();

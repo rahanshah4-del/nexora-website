@@ -12,7 +12,7 @@
  *   5. Update SEO metadata
  *   6. Update structured data
  *   7. Save to Firestore
- *   8. IndexNow ping
+ *   8. IndexNow (handled by the site build after deploy)
  *   9. Log complete
  *
  * Invariants preserved: slug, createdAt, URLs, view counts, comments, likes.
@@ -105,15 +105,9 @@ export async function republishSinglePost(post, { onProgress, firestoreDb } = {}
     // STEP 7: Firestore save (already done inside translateAndPublishAllLanguages)
     progress(7, 'Firestore Updated')
 
-    // STEP 8: IndexNow ping
-    progress(8, 'IndexNow Submitted')
-    try {
-      const { notifyIndexNow } = await import('./indexNow.js')
-      const { blogUrlsForSlug } = await import('./blogCms.js')
-      notifyIndexNow(blogUrlsForSlug(slug))
-    } catch (idxErr) {
-      rerr(8, 'IndexNow ping failed (non-blocking)', idxErr)
-    }
+    // STEP 8: IndexNow — no browser ping. Search engines are notified after the
+    // next site deploy (scripts/indexnow-after-deploy.mjs), once the pages exist.
+    progress(8, 'IndexNow: sent after the next site deploy')
 
     // STEP 8.5: Blog Knowledge Ingestion (AI Brain learns from this blog)
     progress(8, 'Blog Knowledge Ingestion')

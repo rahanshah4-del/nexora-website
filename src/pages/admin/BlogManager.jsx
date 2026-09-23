@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
-import { serverTimestamp } from 'firebase/firestore'
 import { HiOutlineLanguage, HiOutlinePhoto, HiOutlinePlus, HiOutlineTrash } from 'react-icons/hi2'
 import { blogCategories, mergeBlogArticles } from '../../lib/blogData.js'
 import {
   deleteBlogPost,
   listenAdminBlogPosts,
+  renameBlogPost,
   saveBlogPost,
   uploadBlogImage,
 } from '../../lib/blogCms.js'
@@ -191,14 +191,17 @@ export default function BlogManager() {
           name: 'Nexora Solution Editorial Team',
           url: 'https://nexorasolution.online',
         },
-        publishDate: draft.status === 'published' ? serverTimestamp() : draft.publishDate || null,
-        createdAt: draft.createdAt || serverTimestamp(),
+        // createdAt / publishDate / updatedAt are decided in blogCms.js from
+        // the stored document, so a save never resets the publish date.
         createdBy: auth?.currentUser?.uid || '',
         createdByEmail: auth?.currentUser?.email || '',
       }
 
-      await saveBlogPost(slug, articleData)
-      if (editingSlug && editingSlug !== slug && draft.source === 'cms') await deleteBlogPost(editingSlug)
+      // Renaming a CMS post moves it atomically and records a redirect from
+      // the old URL. A static (blogData.js) article keeps its page in code, so
+      // saving it under a new slug just creates the CMS copy there.
+      if (editingSlug && editingSlug !== slug && draft.source === 'cms') await renameBlogPost(editingSlug, slug, articleData)
+      else await saveBlogPost(slug, articleData)
       setEditingSlug(slug)
 
       // ── Translate to all languages SYNCHRONOUSLY before showing "published" ──
