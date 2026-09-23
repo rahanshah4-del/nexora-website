@@ -7,7 +7,7 @@ export default defineConfig({
   plugins: [react()],
   build: {
     outDir: 'dist',
-    target: 'es2020',
+    target: 'es2022',
     // ── Smaller, faster chunks ──
     minify: 'esbuild',
     assetsInlineLimit: 8192,
@@ -113,112 +113,6 @@ export default defineConfig({
               name: 'vendor-utils',
               test: /[\\/]node_modules[\\/](date-fns|clsx|dexie)/,
               priority: 30,
-            },
-
-            // ──────────────────────────────────────────────
-            // Public website splits – each lazy route / key
-            // section gets its own chunk.  Test functions are
-            // scoped to src/ so they never capture node_modules.
-            // ──────────────────────────────────────────────
-            {
-              name: 'public-app-shell',
-              test(id) {
-                return id.includes('/src/App.jsx')
-              },
-              priority: 20,
-            },
-            {
-              name: 'public-ai-sections',
-              test(id) {
-                return id.includes('/src/sections/AISections.jsx')
-              },
-              priority: 20,
-            },
-            {
-              name: 'public-testimonials',
-              test(id) {
-                return id.includes('/src/components/PublicTestimonials.jsx')
-              },
-              priority: 20,
-            },
-            {
-              name: 'public-home-utils',
-              test(id) {
-                return id.includes('/src/components/CopyEmailButton.jsx') ||
-                       id.includes('/src/components/LazySection.jsx')
-              },
-              priority: 20,
-            },
-            {
-              name: 'public-home-content',
-              test(id) {
-                return id.includes('/src/sections/HomepageSections.jsx')
-              },
-              priority: 20,
-            },
-            // Catch-all for remaining src/sections/ files
-            {
-              name: 'public-home-other',
-              test(id) {
-                return id.includes('/src/sections/')
-              },
-              priority: 19,
-            },
-            {
-              name: 'public-business-services',
-              test(id) {
-                return id.includes('/src/components/BusinessServicesSection.jsx')
-              },
-              priority: 20,
-            },
-            {
-              name: 'public-solutions',
-              test(id) {
-                return id.includes('/src/pages/public/SolutionPage.jsx')
-              },
-              priority: 20,
-            },
-            {
-              name: 'public-pricing',
-              test(id) {
-                return id.includes('/src/pages/public/PricingPage.jsx')
-              },
-              priority: 20,
-            },
-            // Secondary rule for BusinessServicesPage + BusinessServicesSection
-            // (lower priority than public-business-services so the latter wins
-            //  for the shared component)
-            {
-              name: 'public-services',
-              test(id) {
-                return id.includes('/src/pages/public/BusinessServicesPage.jsx') ||
-                       id.includes('/src/components/BusinessServicesSection.jsx')
-              },
-              priority: 19,
-            },
-            {
-              name: 'public-static',
-              test(id) {
-                return id.includes('/src/pages/public/AboutPage.jsx') ||
-                       id.includes('/src/pages/public/ContactPage.jsx') ||
-                       id.includes('/src/pages/public/ProjectsPage.jsx') ||
-                       id.includes('/src/pages/public/PrivacyPolicyPage.jsx') ||
-                       id.includes('/src/pages/public/TermsPage.jsx') ||
-                       id.includes('/src/pages/public/RefundPolicyPage.jsx') ||
-                       id.includes('/src/pages/public/FaqPage.jsx') ||
-                       id.includes('/src/pages/public/HtmlSitemapPage.jsx')
-              },
-              priority: 20,
-            },
-            // Catch-all for remaining src/pages/public/ files + shared shell
-            {
-              name: 'public-shell',
-              test(id) {
-                return id.includes('/src/pages/public/') ||
-                       id.includes('/src/components/Header.jsx') ||
-                       id.includes('/src/components/DefaultSeo.jsx')
-              },
-              priority: 18,
             },
           ],
         },
