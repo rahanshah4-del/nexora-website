@@ -11,19 +11,12 @@ export default defineConfig({
     // ── Smaller, faster chunks ──
     minify: 'esbuild',
     assetsInlineLimit: 8192,
+    // No resolveDependencies filter: for the HTML entry Vite preloads exactly the chunks
+    // the entry imports statically (from its own bundle graph), never lazy import() chunks.
+    // Those chunks must all load before the entry can run, so filtering them only added
+    // round trips; and a name-based list went stale whenever chunks were renamed.
     modulePreload: {
       polyfill: false,
-      resolveDependencies(filename, deps, { hostType }) {
-        if (hostType !== 'html') return deps
-        // Only preload the absolute minimum needed for LCP:
-        // runtime + entry + react vendor + app shell CSS
-        const isCritical = (dep) =>
-          /(^|\/)rolldown-runtime/.test(dep) ||
-          /(^|\/)index-/.test(dep) ||
-          /(^|\/)vendor-react-/.test(dep) ||
-          /(^|\/)public-app-shell-/.test(dep)
-        return deps.filter((dep) => isCritical(dep))
-      },
     },
     cssCodeSplit: true,
     cssMinify: true,

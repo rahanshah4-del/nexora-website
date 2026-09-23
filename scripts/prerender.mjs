@@ -45,18 +45,10 @@ function captureProductionAssets() {
     tags.push(m[0])
 
   // <link rel="modulepreload" crossorigin href="/assets/...">
-  // Only include critical modulepreloads (react, index, main, runtime, app-shell)
-  // to reduce network contention on slow mobile connections.
-  for (const m of html.matchAll(/<link\s+rel="modulepreload"[^>]*\/assets\/[^"]*"[^>]*>/g)) {
-    const href = (m[0].match(/href="([^"]*)"/) || [])[1] || ''
-    const isCritical =
-      href.includes('vendor-react-') ||
-      href.includes('index-') ||
-      href.includes('main-') ||
-      href.includes('rolldown-runtime') ||
-      href.includes('public-app-shell-')
-    if (isCritical) tags.push(m[0])
-  }
+  // Copied as Vite emitted them: Vite derives this list from the bundle graph (every chunk
+  // the entry imports statically, no lazy chunks), so no name-based filtering here.
+  for (const m of html.matchAll(/<link\s+rel="modulepreload"[^>]*\/assets\/[^"]*"[^>]*>/g))
+    tags.push(m[0])
 
   // <link rel="stylesheet" crossorigin href="/assets/...">
   for (const m of html.matchAll(/<link\s+rel="stylesheet"[^>]*\/assets\/[^"]*"[^>]*>/g))
@@ -64,7 +56,7 @@ function captureProductionAssets() {
 
   if (tags.length > 0) {
     PRODUCTION_ASSETS = tags.join('\n  ')
-    console.log(`[prerender] ✓ Captured ${tags.length} critical production asset tags (filtered for speed)`)
+    console.log(`[prerender] ✓ Captured ${tags.length} production asset tags`)
   }
 }
 
@@ -379,11 +371,29 @@ function buildCommonHead() {
   <style>.ns-hero-h1{margin:1.5rem auto 0;max-width:64rem;font-size:clamp(2rem,8vw,2.85rem);font-weight:900;line-height:.98;letter-spacing:-.025em;color:#0f172a;text-wrap:balance}.ns-hero-hl{position:relative;display:inline-block;padding-inline:.08em}@media(min-width:640px){.ns-hero-h1{font-size:clamp(3rem,7vw,4.4rem)}}@media(min-width:1024px){.ns-hero-h1{font-size:5.7rem}}</style>`
 }
 
+// dataLayer is initialised inline so events pushed before GTM arrives are kept; gtm.js
+// itself waits for window load + idle so it never competes with the page's own JS.
+// Keep in sync with the GTM snippet in index.html.
 function buildGtm() {
   return `  <script>
-    self.requestAnimationFrame(function () {
-      (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-PZJV65RW');
-    });
+    (function (w, d) {
+      w.dataLayer = w.dataLayer || [];
+      w.dataLayer.push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
+      function loadGtm() {
+        if (w.__nexoraGtmLoaded) return;
+        w.__nexoraGtmLoaded = true;
+        var j = d.createElement('script');
+        j.async = true;
+        j.src = 'https://www.googletagmanager.com/gtm.js?id=GTM-PZJV65RW';
+        d.head.appendChild(j);
+      }
+      function whenIdle() {
+        if ('requestIdleCallback' in w) w.requestIdleCallback(loadGtm, { timeout: 2000 });
+        else w.setTimeout(loadGtm, 2000);
+      }
+      if (d.readyState === 'complete') whenIdle();
+      else w.addEventListener('load', whenIdle, { once: true });
+    })(window, document);
   </script>`
 }
 

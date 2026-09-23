@@ -33,20 +33,27 @@
     <meta name="twitter:image:alt" content="Nexora Solution — POS, ERP and CRM software for Pakistan" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <!-- Google Tag Manager — deferred to first idle frame so it does not block render -->
+    <!-- Google Tag Manager — dataLayer starts inline so early events are kept; gtm.js
+         waits for window load + idle. Keep in sync with buildGtm() in scripts/prerender.mjs. -->
     <script>
-      self.requestAnimationFrame(function () {
-        (function (w, d, s, l, i) {
-          w[l] = w[l] || [];
-          w[l].push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
-          var f = d.getElementsByTagName(s)[0],
-            j = d.createElement(s),
-            dl = l != 'dataLayer' ? '&l=' + l : '';
+      (function (w, d) {
+        w.dataLayer = w.dataLayer || [];
+        w.dataLayer.push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
+        function loadGtm() {
+          if (w.__nexoraGtmLoaded) return;
+          w.__nexoraGtmLoaded = true;
+          var j = d.createElement('script');
           j.async = true;
-          j.src = 'https://www.googletagmanager.com/gtm.js?id=' + i + dl;
-          f.parentNode.insertBefore(j, f);
-        })(window, document, 'script', 'dataLayer', 'GTM-PZJV65RW');
-      });
+          j.src = 'https://www.googletagmanager.com/gtm.js?id=GTM-PZJV65RW';
+          d.head.appendChild(j);
+        }
+        function whenIdle() {
+          if ('requestIdleCallback' in w) w.requestIdleCallback(loadGtm, { timeout: 2000 });
+          else w.setTimeout(loadGtm, 2000);
+        }
+        if (d.readyState === 'complete') whenIdle();
+        else w.addEventListener('load', whenIdle, { once: true });
+      })(window, document);
     </script>
     <!-- End Google Tag Manager -->
     <!-- ── Early resource hints (minimal — only origins needed for LCP) ── -->
