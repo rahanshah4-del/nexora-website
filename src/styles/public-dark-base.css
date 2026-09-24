@@ -32,27 +32,36 @@ html.public-dark.public-website select option {
   color: #f1f5f9;
 }
 
-/* Primary dark pills flip to light pills so they stay the strongest CTA */
+/* Primary CTAs — premium blue→violet gradient pill with a soft glow */
 html.public-dark.public-website .premium-button-primary,
 html.public-dark.public-website :is(a, button).text-white:is(.bg-slate-950, .bg-slate-900, .bg-black, .bg-\[\#1d1d1f\]) {
-  background-color: #f5f5f7;
-  color: #0b1019;
-  box-shadow: 0 4px 14px -6px rgba(0, 0, 0, 0.6);
+  background-color: #4f46e5;
+  background-image: linear-gradient(135deg, #3b82f6 0%, #6366f1 48%, #8b5cf6 100%);
+  color: #ffffff;
+  box-shadow: 0 10px 30px -10px rgba(99, 102, 241, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.22);
 }
 html.public-dark.public-website .premium-button-primary:hover,
 html.public-dark.public-website :is(a, button).text-white:is(.bg-slate-950, .bg-slate-900, .bg-black, .bg-\[\#1d1d1f\]):hover {
-  background-color: #ffffff;
-  color: #0b1019;
+  background-color: #6366f1;
+  background-image: linear-gradient(135deg, #60a5fa 0%, #818cf8 48%, #a78bfa 100%);
+  color: #ffffff;
+  box-shadow: 0 14px 36px -10px rgba(129, 140, 248, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.28);
 }
 
+/* Secondary CTAs — frosted glass with a hairline gradient border */
 html.public-dark.public-website .premium-button-secondary {
-  border-color: rgba(255, 255, 255, 0.14);
-  background-color: rgba(255, 255, 255, 0.06);
-  color: #f1f5f9;
+  border-color: transparent;
+  background:
+    linear-gradient(rgba(22, 29, 45, 0.92), rgba(22, 29, 45, 0.92)) padding-box,
+    linear-gradient(135deg, rgba(96, 165, 250, 0.55), rgba(167, 139, 250, 0.35) 50%, rgba(255, 255, 255, 0.12)) border-box;
+  color: #f8fafc;
+  box-shadow: 0 8px 24px -12px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 html.public-dark.public-website .premium-button-secondary:hover {
-  border-color: rgba(255, 255, 255, 0.24);
-  background-color: rgba(255, 255, 255, 0.1);
+  border-color: transparent;
+  background:
+    linear-gradient(rgba(30, 38, 58, 0.95), rgba(30, 38, 58, 0.95)) padding-box,
+    linear-gradient(135deg, rgba(96, 165, 250, 0.8), rgba(167, 139, 250, 0.6) 50%, rgba(255, 255, 255, 0.2)) border-box;
   color: #ffffff;
 }
 

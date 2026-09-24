@@ -42,6 +42,10 @@ function applyThemeClass(theme) {
   root.classList.toggle(DARK_CLASS, theme === 'dark')
   const meta = document.querySelector('meta[name="theme-color"]')
   if (meta) meta.setAttribute('content', THEME_COLORS[theme] || THEME_COLORS.light)
+  // Declaring dark support stops mobile browsers' auto-dark from repainting
+  // our own night palette (light pages keep the "only light" opt-out).
+  const scheme = document.querySelector('meta[name="color-scheme"]')
+  if (scheme) scheme.setAttribute('content', theme === 'dark' ? 'dark' : 'only light')
 }
 
 function notify() {
@@ -75,6 +79,8 @@ export function mountPublicTheme() {
     document.documentElement.classList.remove(DARK_CLASS)
     const meta = document.querySelector('meta[name="theme-color"]')
     if (meta) meta.setAttribute('content', THEME_COLORS.light)
+    const scheme = document.querySelector('meta[name="color-scheme"]')
+    if (scheme) scheme.setAttribute('content', 'only light')
   }
 }
 

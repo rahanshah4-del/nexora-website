@@ -31,6 +31,8 @@
             document.documentElement.classList.add('public-dark', 'public-website');
             var m = document.querySelector('meta[name="theme-color"]');
             if (m) m.setAttribute('content', '#121826');
+            var cs = document.querySelector('meta[name="color-scheme"]');
+            if (cs) cs.setAttribute('content', 'dark');
           }
         } catch (e) {}
       })();
