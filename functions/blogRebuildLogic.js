@@ -92,26 +92,29 @@ export function decideRebuild(state, nowMs, { quietMs = DEBOUNCE_QUIET_MS, maxWa
   return 'wait'
 }
 
-// Two Cloudflare shapes can start a Workers Build, and which one the secret
-// holds decides whether the call needs an API token:
+// The host is the security boundary: whatever the secret holds, we only ever
+// POST to api.cloudflare.com. The path is not a boundary — Cloudflare issues
+// deploy hooks in several shapes (Pages webhooks, Workers Builds hooks, and
+// whatever they add next), and an allowlist of the ones we happened to know
+// about turned a working hook into a hard failure. So the path is consulted for
+// exactly one thing: spotting the Builds API trigger, which is the only shape
+// that needs a Bearer token and a JSON branch body rather than a bare POST.
 //
-//   Deploy Hook — one unauthenticated URL per branch, bare POST, no body:
-//     POST /client/v4/workers/builds/deploy_hooks/<deploy_hook_id>
-//   Builds API trigger — needs a Bearer token and the branch in a JSON body:
+//   Builds API trigger — Bearer token + branch in a JSON body:
 //     POST /client/v4/accounts/<account_id>/builds/triggers/<trigger_uuid>/builds
+//   Anything else on the host — bare POST, no auth header, no body:
+//     e.g. POST /client/v4/pages/webhooks/deploy_hooks/<deploy_hook_id>
 //
-// Both live on api.cloudflare.com, so the host check stays the outer guard and
-// the path picks the rest. The URL embeds the hook id or trigger uuid, so it is
-// itself a credential: nothing here ever puts it in an error message, and the
-// account id and trigger uuid are never hardcoded — they only ever arrive
-// inside CF_DEPLOY_HOOK_URL.
-const DEPLOY_HOOK_PATH = /^\/client\/v4\/workers\/builds\/deploy_hooks\/[^/]+\/?$/
+// The URL embeds the hook id or trigger uuid, so it is itself a credential:
+// nothing here ever puts it in an error message, and the account id and trigger
+// uuid are never hardcoded — they only ever arrive inside CF_DEPLOY_HOOK_URL.
 const BUILDS_TRIGGER_PATH = /^\/client\/v4\/accounts\/[^/]+\/builds\/triggers\/[^/]+\/builds\/?$/
 
 /**
  * Turns the stored hook URL into the exact fetch() call Cloudflare expects.
- * Throws on anything it cannot recognise, so a misconfigured secret fails with
- * a clear message instead of a bare 401 from Cloudflare.
+ * Throws only when the URL is unusable (bad URL, wrong scheme or host) or when a
+ * builds trigger is missing the credentials it needs, so a misconfigured secret
+ * fails with a clear message instead of a bare 401 from Cloudflare.
  * @returns {{ url: string, kind: 'deploy-hook'|'builds-trigger', init: object }}
  */
 export function buildDeployHookRequest(rawUrl, { token, branch = 'main' } = {}) {
@@ -125,8 +128,12 @@ export function buildDeployHookRequest(rawUrl, { token, branch = 'main' } = {}) 
   if (parsed.protocol !== 'https:' || parsed.host !== 'api.cloudflare.com') {
     throw new Error('CF_DEPLOY_HOOK_URL is not a https://api.cloudflare.com/ URL')
   }
-  if (DEPLOY_HOOK_PATH.test(parsed.pathname)) {
-    return { url, kind: 'deploy-hook', init: { method: 'POST' } }
+  // A value pasted more than once still parses: the parser takes the first
+  // scheme and host and swallows every later copy into the path. That reached
+  // Cloudflare as a bare POST to a nonsense path and came back as an opaque 401,
+  // so name the real problem here instead.
+  if ((url.match(/:\/\//g) || []).length > 1) {
+    throw new Error('CF_DEPLOY_HOOK_URL contains more than one URL — the value looks pasted more than once')
   }
   if (BUILDS_TRIGGER_PATH.test(parsed.pathname)) {
     const bearer = String(token || '').trim()
@@ -145,9 +152,7 @@ export function buildDeployHookRequest(rawUrl, { token, branch = 'main' } = {}) 
       },
     }
   }
-  throw new Error(
-    'CF_DEPLOY_HOOK_URL is on api.cloudflare.com but its path is neither ' +
-    '/client/v4/workers/builds/deploy_hooks/<id> nor ' +
-    '/client/v4/accounts/<account_id>/builds/triggers/<trigger_uuid>/builds',
-  )
+  // Every other path on the host: a plain deploy hook, which authenticates by
+  // being unguessable rather than by a header.
+  return { url, kind: 'deploy-hook', init: { method: 'POST' } }
 }

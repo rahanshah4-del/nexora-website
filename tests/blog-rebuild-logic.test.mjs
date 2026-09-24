@@ -72,6 +72,7 @@ test('trailing debounce: max wait stops continuous edits starving the build', ()
 // live inside the CF_DEPLOY_HOOK_URL secret.
 const TRIGGER_URL = 'https://api.cloudflare.com/client/v4/accounts/acc123/builds/triggers/trig-uuid-456/builds'
 const HOOK_URL = 'https://api.cloudflare.com/client/v4/workers/builds/deploy_hooks/hook789'
+const PAGES_HOOK_URL = 'https://api.cloudflare.com/client/v4/pages/webhooks/deploy_hooks/pages-hook-abc'
 
 test('builds trigger URL sends the Bearer token, JSON content type and branch body', () => {
   const req = buildDeployHookRequest(TRIGGER_URL, { token: 'cf-token', branch: 'main' })
@@ -120,30 +121,62 @@ test('only https api.cloudflare.com is accepted', () => {
   assert.throws(() => buildDeployHookRequest('', { token: 't' }), /not a valid URL/)
 })
 
-test('an api.cloudflare.com URL with an unrecognised path is rejected, not guessed at', () => {
-  const wrong = [
-    // The plausible-but-wrong path: Workers Builds triggers are not under /workers/.
+test('every other path on the host falls through to a bare POST', () => {
+  // An earlier allowlist accepted only two guessed path shapes and threw on the
+  // rest. A real Pages deploy hook is one of the shapes it threw on, which took
+  // the rebuild down in production. The host is the boundary; a path only has to
+  // not be a builds trigger to be posted to as-is.
+  const passthrough = [
+    PAGES_HOOK_URL,
+    // Builds-trigger-ish but not the real shape: no token, so no bearer either.
     'https://api.cloudflare.com/client/v4/accounts/acc123/workers/builds/triggers/trig-uuid-456/builds',
     'https://api.cloudflare.com/client/v4/accounts/acc123/builds/triggers/trig-uuid-456',
-    'https://api.cloudflare.com/client/v4/pages/webhooks/deploy_hooks/abc',
     'https://api.cloudflare.com/',
   ]
-  for (const url of wrong) {
-    assert.throws(() => buildDeployHookRequest(url, { token: 't' }), /neither/)
+  for (const url of passthrough) {
+    const req = buildDeployHookRequest(url, { token: 'cf-token' })
+    assert.equal(req.kind, 'deploy-hook', url)
+    assert.equal(req.url, url)
+    assert.equal(req.init.method, 'POST')
+    assert.equal(req.init.headers, undefined, `${url} must not carry an auth header`)
+    assert.equal(req.init.body, undefined, `${url} must not carry a body`)
   }
 })
 
+test('a value pasted more than once is rejected as a config error', () => {
+  // The live secret once held its URL five times over with no separator. That
+  // parses — the extra copies become path segments — so it reached Cloudflare
+  // and came back 401, pointing at auth rather than at the real cause.
+  // Fabricated hook id; the real one only lives in CF_DEPLOY_HOOK_URL.
+  const once = 'https://api.cloudflare.com/client/v4/workers/builds/deploy_hooks/fake-hook-id'
+  for (const n of [2, 3, 5]) {
+    assert.throws(() => buildDeployHookRequest(once.repeat(n), { token: 'cf-token' }), /pasted more than once/)
+  }
+  // Mixed schemes count too, not just a repeat of the same string.
+  assert.throws(
+    () => buildDeployHookRequest(`${once}http://evil.example/x`, { token: 'cf-token' }),
+    /pasted more than once/,
+  )
+  // A single copy is still a perfectly good bare-POST deploy hook.
+  const req = buildDeployHookRequest(once)
+  assert.equal(req.kind, 'deploy-hook')
+  assert.equal(req.init.headers, undefined)
+})
+
 test('failure messages never leak the hook URL or the token', () => {
-  const secrets = ['acc123', 'trig-uuid-456', 'hook789', 'cf-token']
+  const secrets = ['acc123', 'trig-uuid-456', 'hook789', 'pages-hook-abc', 'cf-token']
   const bad = [
-    ['https://api.cloudflare.com/client/v4/accounts/acc123/builds/triggers/trig-uuid-456', 'cf-token'],
-    ['https://evil.example.com/client/v4/workers/builds/deploy_hooks/hook789', 'cf-token'],
-    [TRIGGER_URL, ''],
+    ['https://evil.example.com/client/v4/pages/webhooks/deploy_hooks/pages-hook-abc', 'cf-token', 'main'],
+    [TRIGGER_URL.repeat(2), 'cf-token', 'main'],
+    ['https://api.cloudflare.com.evil.example/client/v4/workers/builds/deploy_hooks/hook789', 'cf-token', 'main'],
+    ['not-a-url-hook789', 'cf-token', 'main'],
+    [TRIGGER_URL, '', 'main'],
+    [TRIGGER_URL, 'cf-token', ''],
   ]
-  for (const [url, token] of bad) {
+  for (const [url, token, branch] of bad) {
     let message = null
     try {
-      buildDeployHookRequest(url, { token })
+      buildDeployHookRequest(url, { token, branch })
     } catch (err) {
       message = err.message
     }
