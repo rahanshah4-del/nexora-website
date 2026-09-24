@@ -2,6 +2,8 @@ import { Component, StrictMode, Suspense } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import './index.css'
+import './styles/public-dark.css'
+import './styles/public-dark-base.css'
 
 /* Root-level error boundary to catch lazy-load failures (stale chunks, SW cache, etc.) */
 class RootErrorBoundary extends Component {

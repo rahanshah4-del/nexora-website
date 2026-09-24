@@ -1,0 +1,113 @@
+/* Night mode for the public website — hand-written part.
+   The utility-class palette is generated into public-dark.css
+   (scripts/generate-public-dark-css.mjs). Everything is scoped to
+   html.public-dark.public-website, which only exists on marketing pages,
+   so the CRM / POS / admin modules are never affected. */
+
+html.public-dark.public-website,
+html.public-dark.public-website body {
+  color-scheme: dark;
+  background-color: #121826;
+  color: #f1f5f9;
+}
+
+html.public-dark.public-website .marketing-page {
+  background-color: #121826;
+  color: #f1f5f9;
+}
+
+/* Header glass + hairline */
+html.public-dark.public-website .site-header {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+  background-color: rgba(18, 24, 38, 0.78);
+}
+
+/* Native selects (styled light in the base layer) */
+html.public-dark.public-website select:not([multiple]) {
+  background-color: #1a2130;
+  color: #f1f5f9;
+}
+html.public-dark.public-website select option {
+  background: #1a2130;
+  color: #f1f5f9;
+}
+
+/* Primary dark pills flip to light pills so they stay the strongest CTA */
+html.public-dark.public-website .premium-button-primary,
+html.public-dark.public-website :is(a, button).text-white:is(.bg-slate-950, .bg-slate-900, .bg-black, .bg-\[\#1d1d1f\]) {
+  background-color: #f5f5f7;
+  color: #0b1019;
+  box-shadow: 0 4px 14px -6px rgba(0, 0, 0, 0.6);
+}
+html.public-dark.public-website .premium-button-primary:hover,
+html.public-dark.public-website :is(a, button).text-white:is(.bg-slate-950, .bg-slate-900, .bg-black, .bg-\[\#1d1d1f\]):hover {
+  background-color: #ffffff;
+  color: #0b1019;
+}
+
+html.public-dark.public-website .premium-button-secondary {
+  border-color: rgba(255, 255, 255, 0.14);
+  background-color: rgba(255, 255, 255, 0.06);
+  color: #f1f5f9;
+}
+html.public-dark.public-website .premium-button-secondary:hover {
+  border-color: rgba(255, 255, 255, 0.24);
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+html.public-dark.public-website .premium-card {
+  border-color: rgba(255, 255, 255, 0.08);
+  background-color: rgba(26, 33, 48, 0.9);
+  box-shadow: 0 8px 30px -12px rgba(0, 0, 0, 0.5);
+}
+html.public-dark.public-website .premium-card:hover {
+  border-color: rgba(96, 165, 250, 0.35);
+  box-shadow: 0 20px 60px -16px rgba(37, 99, 235, 0.25), 0 8px 30px -12px rgba(0, 0, 0, 0.5);
+}
+
+/* Hero arc — blends into the dark section below instead of a pale band */
+html.public-dark.public-website .soft-arc-bg {
+  background: linear-gradient(180deg, rgba(59, 130, 246, 0.06), rgba(59, 130, 246, 0));
+}
+
+html.public-dark.public-website .pos-preview-shell::after {
+  opacity: 0.12;
+}
+
+/* Blog highlights */
+html.public-dark.public-website .blog-highlight {
+  background: linear-gradient(180deg, transparent 55%, rgba(251, 191, 36, 0.3) 55%);
+  color: #fde68a;
+}
+html.public-dark.public-website .blog-highlight:hover {
+  background: linear-gradient(180deg, transparent 50%, rgba(251, 191, 36, 0.42) 50%);
+}
+html.public-dark.public-website .blog-term {
+  background: linear-gradient(180deg, transparent 62%, rgba(56, 189, 248, 0.26) 62%);
+  color: #7dd3fc;
+}
+html.public-dark.public-website .blog-term:hover {
+  background: linear-gradient(180deg, transparent 58%, rgba(56, 189, 248, 0.38) 58%);
+}
+html.public-dark.public-website .blog-tip-badge.bg-amber-50 { background: rgba(245, 158, 11, 0.12); }
+html.public-dark.public-website .blog-tip-badge.text-amber-900 { color: #fde68a; }
+html.public-dark.public-website .blog-tip-badge.bg-emerald-50 { background: rgba(16, 185, 129, 0.12); }
+html.public-dark.public-website .blog-tip-badge.text-emerald-900 { color: #a7f3d0; }
+html.public-dark.public-website .blog-tip-badge.bg-blue-50 { background: rgba(59, 130, 246, 0.12); }
+html.public-dark.public-website .blog-tip-badge.text-blue-900 { color: #bfdbfe; }
+
+/* Theme switch icon */
+html.public-dark.public-website .theme-toggle {
+  color: #fcd34d;
+}
+
+/* Mobile menu (hamburger) bars */
+html.public-dark.public-website .site-header span.bg-\[\#1d1d1f\] {
+  background-color: #f1f5f9;
+}
+
+/* Marker underline behind hero words — softer so white text stays crisp */
+html.public-dark.public-website .marker-highlight::before {
+  opacity: 0.5;
+}

@@ -16,6 +16,25 @@
          browser's auto-dark repaint pages (unreadable gradient headings,
          overlapping hero arcs, invisible icons in inputs). -->
     <meta name="color-scheme" content="only light" />
+    <!-- Public-website night mode: apply the saved (or system) theme before
+         first paint so dark visitors never see a white flash. Mirrors
+         src/lib/publicTheme.js; app/auth/admin routes are always light. -->
+    <script>
+      (function () {
+        try {
+          var p = location.pathname;
+          if (/^\/(app|admin|login|signup|verify-email|workspace|upgrade-business|download)(\/|$)/.test(p)) return;
+          var t = null;
+          try { t = localStorage.getItem('nexora-public-theme'); } catch (e) {}
+          if (t !== 'dark' && t !== 'light') t = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+          if (t === 'dark') {
+            document.documentElement.classList.add('public-dark', 'public-website');
+            var m = document.querySelector('meta[name="theme-color"]');
+            if (m) m.setAttribute('content', '#121826');
+          }
+        } catch (e) {}
+      })();
+    </script>
     <!-- Open Graph (homepage defaults; per-page values are updated client-side by PageSeo/DefaultSeo) -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Nexora Solution" />

@@ -7,6 +7,7 @@ import { MaintenanceBlock } from '../../components/MaintenanceMode.jsx'
 import PublicAnalytics from '../../components/PublicAnalytics.jsx'
 import usePlatformMaintenance from '../../hooks/usePlatformMaintenance.js'
 import { isPromoPopupExcluded } from '../../lib/promoPopupRoutes.js'
+import { mountPublicTheme } from '../../lib/publicTheme.js'
 import PublicFooter from './PublicFooter.jsx'
 
 const TawkChat = lazy(() => import('./TawkChat.jsx'))
@@ -23,6 +24,7 @@ export default function PublicPageShell({ children, backTo, backLabel, badge, ba
   useEffect(() => {
     document.documentElement.classList.add('public-website')
     document.body.classList.add('public-website')
+    const unmountTheme = mountPublicTheme()
 
     /* Scroll-triggered card reveal (Apple-style) */
     let observer = null
@@ -42,6 +44,7 @@ export default function PublicPageShell({ children, backTo, backLabel, badge, ba
     }
 
     return () => {
+      unmountTheme()
       document.documentElement.classList.remove('public-website')
       document.body.classList.remove('public-website')
       if (observer) observer.disconnect()

@@ -6,6 +6,7 @@ import trustBadges from './components/trustBadges'
 import './styles/mobile-ai-animations.css'
 import { initMobileAiAnimations } from './lib/mobileAiAnimations.js'
 import HomepageSections from './sections/HomepageSections.jsx'
+import { mountPublicTheme } from './lib/publicTheme.js'
 
 /* Isolated error boundary for each lazy section so a stale chunk never crashes the whole page.
    On error, logs the issue and shows a visible retry section instead of silent <div className="hidden" />. */
@@ -93,9 +94,10 @@ function App({ initialSectionId = '' }) {
   useEffect(() => {
     document.documentElement.classList.add('public-website')
     document.body.classList.add('public-website')
+    const unmountTheme = mountPublicTheme()
     // Mobile AI animations — self-contained, only activates on <768px
     initMobileAiAnimations()
-    return () => { document.documentElement.classList.remove('public-website'); document.body.classList.remove('public-website') }
+    return () => { unmountTheme(); document.documentElement.classList.remove('public-website'); document.body.classList.remove('public-website') }
   }, [])
 
   useEffect(() => {

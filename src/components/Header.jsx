@@ -31,6 +31,34 @@ import {
   HiOutlineXMark,
 } from 'react-icons/hi2'
 import NexoraLogo from './brand/NexoraLogo'
+import { usePublicTheme } from '../lib/publicTheme.js'
+
+/* Light / night mode switch for the public website (see lib/publicTheme.js). */
+function ThemeToggle({ className = '' }) {
+  const { theme, toggleTheme } = usePublicTheme()
+  const isDark = theme === 'dark'
+  return (
+    <button
+      type="button"
+      onClick={toggleTheme}
+      className={`theme-toggle inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#1d1d1f]/70 transition-colors duration-200 hover:bg-black/5 active:scale-95 ${className}`}
+      aria-label={isDark ? 'Switch to light mode' : 'Switch to night mode'}
+      title={isDark ? 'Light mode' : 'Night mode'}
+      aria-pressed={isDark}
+    >
+      {isDark ? (
+        <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="4" />
+          <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+        </svg>
+      ) : (
+        <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+        </svg>
+      )}
+    </button>
+  )
+}
 
 const mainLinks = [
   { label: 'Home', to: '/' },
@@ -452,7 +480,8 @@ function Header() {
         {/* ── Right Actions ──
             Fixed width fits both auth states (logged-out ≈233px, logged-in ≈165px), so the
             centered nav doesn't move when auth resolves after idle. */}
-        <div className="ml-auto hidden w-[248px] shrink-0 items-center justify-end gap-2 whitespace-nowrap lg:flex">
+        <div className="ml-auto hidden w-[288px] shrink-0 items-center justify-end gap-2 whitespace-nowrap lg:flex">
+          <ThemeToggle />
           {isAuth ? (
             <>
               <Link
@@ -494,6 +523,7 @@ function Header() {
 
         {/* ── Mobile: search + hamburger ── */}
         <div className="ml-auto flex items-center gap-2 lg:hidden">
+          <ThemeToggle className="h-10 w-10" />
           <button
             type="button"
             onClick={() => setSearchOpen(true)}
