@@ -616,7 +616,9 @@ function Header() {
               <div className="mt-8">
                 <button
                   type="button"
-                  onClick={() => setActiveDropdown(activeDropdown === 'mobile-solutions' ? null : 'mobile-solutions')}
+                  data-nav-trigger="mobile-solutions"
+                  aria-expanded={activeDropdown === 'mobile-solutions'}
+                  onClick={() => toggleDropdown('mobile-solutions')}
                   className="flex items-center gap-1.5 py-2 text-[11px] font-medium uppercase tracking-[0.14em] text-[#86868b] transition-colors hover:text-[#1d1d1f]"
                 >
                   Solutions
