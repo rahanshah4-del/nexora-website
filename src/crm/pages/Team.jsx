@@ -131,13 +131,21 @@ function moduleAllowedForPreset(moduleKey, preset) {
   return true
 }
 
-function buildRolePermissions(role, permissionKeys = []) {
+function buildRolePermissions(role, permissionKeys = [], businessType = '') {
   const preset = rolePresets[role] || rolePresets.staff
-  return Object.fromEntries(permissionKeys.map((permission) => {
+  const base = Object.fromEntries(permissionKeys.map((permission) => {
     const allowedModule = moduleAllowedForPreset(permission.moduleKey, preset)
     const allowedAction = preset.allowActions.includes(permission.action)
     return [permission.key, Boolean(allowedModule && allowedAction)]
   }))
+  // Matches the Restaurant POS cashier baseline in useStaffPermissions.js and
+  // resolveTeamStaffAccess: view/create/edit on orders. The orders module is
+  // hidden from the sidebar so it never appears in permissionKeys, hence the
+  // direct assignment. Delete is deliberately left out.
+  if (role === 'cashier' && businessType === 'Restaurant POS') {
+    for (const action of ['view', 'create', 'edit']) base[`module.orders.${action}`] = true
+  }
+  return base
 }
 
 function setModulePermissions(current, group, enabled) {
@@ -378,6 +386,7 @@ function StaffAccessCard({ staff, rowPermissions, permissionKeys, canManage, onS
 
 function AccessControlTab({ staffApi, members, onToast, currentUserEmail, currentUserId, ownerId }) {
   const { usage } = usePreferences()
+  const { businessType } = useUser()
   const [invitePulse, setInvitePulse] = useState(null)
   const [inviteBusy, setInviteBusy] = useState(false)
   const availableRolePresets = useMemo(() => Object.entries(rolePresets).filter(([key]) => key === 'cashier'), [])
@@ -387,7 +396,7 @@ function AccessControlTab({ staffApi, members, onToast, currentUserEmail, curren
     username: '',
     role: 'cashier',
     status: 'active',
-    permissions: buildRolePermissions('cashier', staffApi.permissionKeys),
+    permissions: buildRolePermissions('cashier', staffApi.permissionKeys, businessType),
   })
   const staffLimit = Number(usage?.teamMembersLimit || 0)
   const groups = useMemo(() => permissionGroups(staffApi.permissionKeys), [staffApi.permissionKeys])
@@ -442,16 +451,16 @@ function AccessControlTab({ staffApi, members, onToast, currentUserEmail, curren
     Promise.resolve().then(() => {
       setDraft((current) => ({
         ...current,
-        permissions: Object.keys(current.permissions || {}).length ? current.permissions : buildRolePermissions(current.role, staffApi.permissionKeys),
+        permissions: Object.keys(current.permissions || {}).length ? current.permissions : buildRolePermissions(current.role, staffApi.permissionKeys, businessType),
       }))
     })
-  }, [staffApi.permissionKeys])
+  }, [staffApi.permissionKeys, businessType])
 
   function updateRole(role) {
     setDraft((current) => ({
       ...current,
       role,
-      permissions: buildRolePermissions(role, staffApi.permissionKeys),
+      permissions: buildRolePermissions(role, staffApi.permissionKeys, businessType),
     }))
   }
 
@@ -462,7 +471,7 @@ function AccessControlTab({ staffApi, members, onToast, currentUserEmail, curren
       username: '',
       role: 'cashier',
       status: 'active',
-      permissions: buildRolePermissions('cashier', staffApi.permissionKeys),
+      permissions: buildRolePermissions('cashier', staffApi.permissionKeys, businessType),
     })
   }
 

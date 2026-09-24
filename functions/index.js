@@ -275,6 +275,16 @@ function resolveTeamStaffAccess({ role, businessType, businessKey, selectedWorks
       if ((moduleKey === 'settings' || moduleKey === 'reports' || moduleKey === 'inventory' || moduleKey === 'products' || moduleKey === 'purchases') && !moduleSet.has(moduleKey)) delete resolvedPermissions[key]
     })
   }
+  // Restaurant POS cashiers ring up orders at the till, so create/edit on the
+  // orders module are part of the role baseline, not just view. Applied after
+  // the cashier post-pass above so its blanket zeroing cannot strip them. An
+  // explicit `false` from an admin still wins, and delete stays ungranted.
+  if (cashierRole && normalizedBusinessKey === 'restaurant-pos') {
+    ;['view', 'create', 'edit'].forEach((action) => {
+      const key = `module.orders.${action}`
+      if (cleanPermissions[key] !== false) resolvedPermissions[key] = true
+    })
+  }
   const resolvedEnabledModules = Array.from(new Set([
     ...resolvedModules,
     ...(moduleSet.has('pos') ? ['retail_pos'] : []),

@@ -105,13 +105,27 @@ function accessScopeFromPermissions({ role = '', permissions = {}, permissionKey
         return !moduleKey || cashierAllowed.has(moduleKey)
       }))
     : permissions
+  // Mirrors resolveTeamStaffAccess in functions/index.js: Restaurant POS
+  // cashiers get create/edit on orders as part of the role baseline, not just
+  // view. The orders module is hidden from the sidebar so it never reaches
+  // permissionKeys, which is why these keys are set directly here rather than
+  // through setIfKnown. An explicit `false` still wins; delete is never granted.
+  const cashierOrdersDefaults = cashierRole && businessKey === 'restaurant-pos'
+    ? Object.fromEntries(
+        ['view', 'create', 'edit']
+          .map((action) => `module.orders.${action}`)
+          .filter((key) => permissions[key] !== false)
+          .map((key) => [key, true]),
+      )
+    : {}
+  const nextPermissions = { ...scopedPermissions, ...cashierOrdersDefaults }
   const enabledModules = Array.from(new Set(
     permissionKeys
-      .filter((item) => item.action === 'view' && scopedPermissions[item.key])
+      .filter((item) => item.action === 'view' && nextPermissions[item.key])
       .map((item) => item.moduleKey)
       .filter((moduleKey) => !cashierAllowed || cashierAllowed.has(moduleKey)),
   ))
-  return { businessType: normalizedBusinessType, businessKey, selectedWorkspace, enabledModules, selectedModuleKeys: enabledModules, permissions: scopedPermissions }
+  return { businessType: normalizedBusinessType, businessKey, selectedWorkspace, enabledModules, selectedModuleKeys: enabledModules, permissions: nextPermissions }
 }
 
 function setIfKnown(next, knownKeys, key, value = true) {
