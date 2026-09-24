@@ -3,7 +3,9 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: light;
+  /* "only light" (not just "light") opts out of mobile browsers' forced
+     night mode, which otherwise repaints the light-only design. */
+  color-scheme: only light;
   font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --nexora-language-font: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   /* Fluid base font-size: 15px on 320px screens → 17px on 1920px screens */
@@ -19,6 +21,7 @@ html {
 }
 
 body {
+  color-scheme: only light;
   margin: 0;
   min-height: 100%;
   overflow-x: clip;
