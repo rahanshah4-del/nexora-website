@@ -2,11 +2,16 @@ import { useEffect, useRef, useState } from 'react'
 import Link from './AppLink.jsx'
 
 const MAX_CARDS = 6
-// Cards have a fixed height and the grid reserves room for MAX_CARDS of them at every
-// breakpoint (6 rows / 3 rows / 2 rows), so swapping skeletons for real reviews never
-// changes the section's height.
-const GRID_CLASS = 'mt-12 grid auto-rows-[236px] gap-[16px] min-h-[1496px] sm:grid-cols-2 sm:min-h-[740px] lg:grid-cols-3 lg:min-h-[488px]'
-const CARD_CLASS = 'flex h-[236px] flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm'
+// One fixed-height row at every breakpoint: cards sit side by side, centered when
+// they fit and swipeable when they don't. Skeletons and loaded reviews use the same
+// row, so the section's height never changes when reviews arrive — whether there is
+// one review or six — and a short list no longer leaves an empty block where the
+// grid used to reserve room for six cards.
+// First/last-child auto margins centre a short row without clipping a long one
+// (justify-center would push overflowing cards out of scroll reach).
+const ROW_CLASS = 'mt-12 flex h-[260px] snap-x snap-mandatory gap-4 overflow-x-auto px-1 py-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [&>*:first-child]:ml-auto [&>*:last-child]:mr-auto'
+const CARD_CLASS = 'flex h-[236px] w-[85%] shrink-0 snap-center flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm sm:w-[calc(50%-8px)] lg:w-[calc(33.333%-11px)]'
+const SKELETON_COUNT = 3
 
 function starRating(rating) {
   return (
@@ -111,12 +116,12 @@ export default function PublicTestimonials() {
           </p>
         </div>
 
-        <div className={GRID_CLASS} aria-busy={reviews === null}>
+        <div className={ROW_CLASS} aria-busy={reviews === null}>
           {reviews === null
-            ? Array.from({ length: MAX_CARDS }, (_, i) => <SkeletonCard key={i} />)
+            ? Array.from({ length: SKELETON_COUNT }, (_, i) => <SkeletonCard key={i} />)
             : !reviews.length
               ? (
-                <div className="col-span-full flex items-center justify-center">
+                <div className="flex w-full items-center justify-center">
                   <Link to="/reviews" className="text-sm font-bold text-amber-700 underline-offset-4 hover:underline">Read customer reviews →</Link>
                 </div>
               )
