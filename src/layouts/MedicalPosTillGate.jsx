@@ -2,6 +2,7 @@ import { lazy } from 'react'
 import PageLoader from '../crm/components/ui/PageLoader.jsx'
 import { useUser } from '../crm/hooks/useUser.js'
 import { useWorkspaceAccess } from '../crm/hooks/useWorkspaceAccess.js'
+import { useWorkspaceCurrencyKey } from '../crm/hooks/useWorkspaceCurrencyKey.js'
 import { isDeveloperOwnerAccount, routeAllowedByBusinessType, routeAllowedByPlan } from '../crm/data/moduleAccess.js'
 
 const MedicalPosPage = lazy(() => import('../crm/pages/MedicalPos.jsx'))
@@ -29,6 +30,8 @@ export default function MedicalPosTillGate() {
     firebaseUser,
   } = useUser()
   const workspaceAccess = useWorkspaceAccess()
+  // Re-render the till in the workspace currency (INR, custom symbol, ...).
+  const currencyKey = useWorkspaceCurrencyKey()
 
   if (userLoading || !userDoc) {
     return <PageLoader stage="workspace" />
@@ -72,5 +75,5 @@ export default function MedicalPosTillGate() {
     )
   }
 
-  return <MedicalPosPage />
+  return <MedicalPosPage key={currencyKey} />
 }

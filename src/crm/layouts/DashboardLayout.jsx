@@ -31,7 +31,7 @@ import { useAuth } from '../hooks/useAuth.js'
 import { useUser } from '../hooks/useUser.js'
 import { useWorkspaceAccess } from '../hooks/useWorkspaceAccess.js'
 import useScreenSize from '../hooks/useScreenSize.js'
-import { useWorkspaceCurrencySync } from '../hooks/useWorkspaceCurrency.js'
+import { useWorkspaceCurrencyKey } from '../hooks/useWorkspaceCurrencyKey.js'
 import {
   buildWorkspaceSession,
   isValidWorkspace,
@@ -364,9 +364,9 @@ export default function DashboardLayout() {
   } = useUser()
   const workspaceAccess = useWorkspaceAccess()
   const screen = useScreenSize()
-  // Publishes the workspace currency before any page renders; the key remounts
-  // open pages when the currency or its symbol is changed in Settings.
-  const currencyKey = useWorkspaceCurrencySync()
+  // Remounts open pages when the workspace currency or its symbol changes
+  // (the currency itself is resolved in CRMProviders).
+  const currencyKey = useWorkspaceCurrencyKey()
   const navigate = useNavigate()
   const location = useLocation()
   const persistedKeyRef = useRef('')
