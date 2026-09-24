@@ -1,14 +1,10 @@
 import Link from '../../components/AppLink.jsx'
 import PageSeo from '../../components/PageSeo.jsx'
+import { refundPolicy } from '../../lib/legalContent.js'
 import { getSeoForPath } from '../../lib/seoMetadata.js'
 import PublicPageShell from './PublicPageShell.jsx'
 
-const sections = [
-  ['Software subscriptions', 'Nexora subscriptions are reviewed based on the plan, activation status, billing cycle and support already delivered. If a refund is applicable, Nexora will confirm the approved amount and timeline after review.'],
-  ['Business services', 'Business service payments may include setup, staffing, consultation, managed support or custom work. Refund eligibility depends on whether work has started, scope has been approved or resources have been assigned.'],
-  ['Custom development', 'Custom development, implementation, migration and one-time setup work may be non-refundable once approved work has started. Any exception will be reviewed case by case.'],
-  ['How to request a review', 'Contact Nexora on WhatsApp or email with your business name, payment details, service name and reason for review. Nexora will respond with next steps.'],
-]
+const sections = refundPolicy.sections.map(({ heading, paragraphs }) => [heading, paragraphs.join(' ')])
 
 export default function RefundPolicyPage() {
   const seo = getSeoForPath('/refund-policy')
@@ -26,9 +22,8 @@ export default function RefundPolicyPage() {
           <div className="mx-auto max-w-3xl">
             <p className="text-sm font-medium uppercase tracking-[0.14em] text-slate-400">Refund Policy</p>
             <h1 className="mt-6 text-4xl font-medium tracking-[-0.02em] text-slate-900 sm:text-5xl">Refund and service review policy.</h1>
-            <p className="mt-6 text-base leading-8 text-slate-500 sm:text-lg">
-              This page explains how Nexora Solution reviews refund requests for software subscriptions, business services, setup work and custom development.
-            </p>
+            <p className="mt-4 text-sm text-slate-500">Last updated: {refundPolicy.lastUpdated}</p>
+            <p className="mt-6 text-base leading-8 text-slate-500 sm:text-lg">{refundPolicy.intro}</p>
             <div className="mt-10 space-y-4">
               {sections.map(([title, text]) => (
                 <section key={title} className="rounded-[1.2rem] border border-slate-200/60 bg-white p-6 shadow-[0_4px_20px_-8px_rgba(15,23,42,0.05)]">

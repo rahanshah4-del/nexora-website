@@ -1,10 +1,12 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import Link from '../../components/AppLink.jsx'
 import { HiOutlineArrowLeft, HiOutlineChevronRight } from 'react-icons/hi2'
 import Header from '../../components/Header.jsx'
 import { MaintenanceBlock } from '../../components/MaintenanceMode.jsx'
 import PublicAnalytics from '../../components/PublicAnalytics.jsx'
 import usePlatformMaintenance from '../../hooks/usePlatformMaintenance.js'
+import { isPromoPopupExcluded } from '../../lib/promoPopupRoutes.js'
 import PublicFooter from './PublicFooter.jsx'
 
 const TawkChat = lazy(() => import('./TawkChat.jsx'))
@@ -16,6 +18,7 @@ export default function PublicPageShell({ children, backTo, backLabel, badge, ba
   const maintenanceContext = useMemo(() => ({ surface: 'website' }), [])
   const maintenance = usePlatformMaintenance(maintenanceContext)
   const [chatReady, setChatReady] = useState(false)
+  const { pathname } = useLocation()
 
   useEffect(() => {
     document.documentElement.classList.add('public-website')
@@ -101,7 +104,7 @@ export default function PublicPageShell({ children, backTo, backLabel, badge, ba
           <PublicFooter />
           {chatReady ? <Suspense fallback={null}><TawkChat /></Suspense> : null}
           <Suspense fallback={null}><StickyCTA /></Suspense>
-          <Suspense fallback={null}><ExitIntentPopup /></Suspense>
+          {isPromoPopupExcluded(pathname) ? null : <Suspense fallback={null}><ExitIntentPopup /></Suspense>}
           <Suspense fallback={null}><AIAssistant /></Suspense>
         </>
       )}

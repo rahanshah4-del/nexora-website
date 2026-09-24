@@ -4,12 +4,10 @@ import ScrollToTop from './components/ScrollToTop.jsx'
 import { Component, Suspense, lazy, useEffect, useMemo } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import MarketingRoute from './pages/public/MarketingRoute.jsx'
+import { isPromoPopupExcluded } from './lib/promoPopupRoutes.js'
 
 const NewUserOfferPopup = lazy(() => import('./components/NewUserOfferPopup.jsx'))
 
-// Routes where a promo popup doesn't belong (authed app/admin, and the
-// auth/onboarding flows themselves).
-const OFFER_POPUP_EXCLUDED_PREFIXES = ['/app', '/admin', '/login', '/signup', '/verify-email', '/workspace']
 
 const IndustriesPage = lazy(() => import('./pages/public/IndustriesPage.jsx'))
 const ReviewsPage = lazy(() => import('./pages/public/ReviewsPage.jsx'))
@@ -503,7 +501,7 @@ export default function AppRouter() {
           (which re-mounts on every page navigation) — otherwise the offer's
           delay/scroll trigger re-armed on every route change, effectively
           showing it once per page instead of once per browser. */}
-      {OFFER_POPUP_EXCLUDED_PREFIXES.some((p) => matchLocation.pathname === p || matchLocation.pathname.startsWith(`${p}/`)) ? null : (
+      {isPromoPopupExcluded(matchLocation.pathname) ? null : (
         <Suspense fallback={null}><NewUserOfferPopup /></Suspense>
       )}
       <Routes location={matchLocation}>

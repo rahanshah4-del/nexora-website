@@ -22,6 +22,8 @@ import { seoMetadata } from '../src/lib/seoMetadata.js'
 import { COUNTRIES } from '../src/lib/countries.js'
 import { PILLARS, PILLAR_COMPARE_LINKS, featurePages } from '../src/lib/featurePagesData.js'
 import { comparePages } from '../src/lib/comparePagesData.js'
+import { LEGAL_PAGES } from '../src/lib/legalContent.js'
+import { companyCards as ABOUT_CARDS, team as ABOUT_TEAM, trustSignals as ABOUT_SIGNALS } from '../src/lib/aboutContent.js'
 import { BLOG_TRANSLATIONS_ENABLED, loadBlogArticles, loadBlogRedirects } from './lib/loadBlogArticles.mjs'
 import { MAX_DYNAMIC_REDIRECTS, MAX_STATIC_REDIRECTS, mergeRedirectsFile, redirectRules } from './lib/blogRedirects.mjs'
 
@@ -900,7 +902,9 @@ function buildPaginationPage(pageNum, totalPages, articles, perPage = 6) {
   for (const a of pageArticles) {
     listHtml += `      <li><a href="/blog/${esc(a.slug)}/">${esc(a.title)}</a> — ${readingTime(wordCount(a.title + (a.metaDescription || '')))} min read</li>\n`
   }
-  const prevLink = pageNum > 1 ? `<link rel="prev" href="${esc(absoluteUrl(`/blog/page/${pageNum - 1}`))}" />` : ''
+  // Page 1 of the listing is /blog/ itself — there is no /blog/page/1/ file.
+  const prevPath = pageNum > 2 ? `/blog/page/${pageNum - 1}` : '/blog'
+  const prevLink = pageNum > 1 ? `<link rel="prev" href="${esc(absoluteUrl(prevPath))}" />` : ''
   const nextLink = pageNum < totalPages ? `<link rel="next" href="${esc(absoluteUrl(`/blog/page/${pageNum + 1}`))}" />` : ''
 
   return `<!DOCTYPE html>
@@ -924,7 +928,7 @@ ${buildGtm()}
       <h1>Nexora Blog — Page ${pageNum}</h1>
       <ul>${listHtml}</ul>
       <nav class="pagination">
-        ${pageNum > 1 ? `<a href="/blog/page/${pageNum - 1}/">← Previous</a>` : ''}
+        ${pageNum > 1 ? `<a href="${prevPath}/">← Previous</a>` : ''}
         <span>Page ${pageNum} of ${totalPages}</span>
         ${pageNum < totalPages ? `<a href="/blog/page/${pageNum + 1}/">Next →</a>` : ''}
       </nav>
@@ -1040,8 +1044,8 @@ const FOOTER_CONTACT_BLOCK = `
         <p style="margin-top:.25rem"><a href="${WHATSAPP_URL}" style="color:#60a5fa;text-decoration:none">WhatsApp: ${PHONE_DISPLAY}</a></p>
       </div>
       <div>
-        <p style="font-weight:800;margin-bottom:.5rem">Location</p>
-        <p style="margin-top:.25rem;color:#94a3b8">[City / business address — not yet configured]</p>
+        <p style="font-weight:800;margin-bottom:.5rem">Area served</p>
+        <p style="margin-top:.25rem;color:#94a3b8">Pakistan</p>
       </div>
     </div>`
 
@@ -1622,11 +1626,63 @@ function buildComparePageContent(slug, title, desc) {
   </main>`
 }
 
+// Privacy Policy / Terms / Refund Policy — full text from src/lib/legalContent.js,
+// the same data the React pages render, so the policy (including the AdSense
+// advertising-cookie disclosure) is readable without JS.
+function buildLegalContent(doc) {
+  const sectionsHtml = doc.sections.map((section) => {
+    const paragraphs = (section.paragraphs || []).map((text) => `<p style="margin-top:.75rem;line-height:1.75">${escapeHtml(text)}</p>`).join('')
+    const items = section.items?.length
+      ? `<ul style="margin-top:.75rem;padding-left:1.25rem;line-height:1.75">${section.items.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`
+      : ''
+    const links = section.links?.length
+      ? `<ul style="margin-top:.75rem;padding-left:1.25rem;line-height:1.75">${section.links.map(({ label, href }) => `<li><a href="${escapeHtml(href)}" rel="noopener noreferrer" style="color:#1d4ed8">${escapeHtml(label)}</a></li>`).join('')}</ul>`
+      : ''
+    return `
+      <section style="margin-top:2.25rem">
+        <h2 style="font-size:1.25rem;font-weight:800;color:#0f172a">${escapeHtml(section.heading)}</h2>${paragraphs}${items}${links}
+      </section>`
+  }).join('')
+
+  return `<main style="padding:3rem 1.25rem;max-width:48rem;margin:0 auto;color:#475569">
+    <h1 style="font-size:2rem;font-weight:900;color:#0f172a">${escapeHtml(doc.title)}</h1>
+    <p style="margin-top:.75rem;font-size:.875rem">Last updated: ${escapeHtml(doc.lastUpdated)}</p>
+    <p style="margin-top:1rem;font-size:1rem;line-height:1.75">${escapeHtml(doc.intro)}</p>${sectionsHtml}
+  </main>`
+}
+
+function buildAboutContent(title, desc) {
+  const cards = (list) => list.map(({ title: t, text }) => `
+        <div style="border-radius:1rem;border:1px solid #e2e8f0;background:#fff;padding:1.25rem">
+          <h3 style="font-size:1rem;font-weight:800;color:#0f172a">${escapeHtml(t)}</h3>
+          <p style="margin-top:.5rem;font-size:.9rem;line-height:1.6;color:#475569">${escapeHtml(text)}</p>
+        </div>`).join('')
+  const signals = ABOUT_SIGNALS.map(({ value, label }) => `<li><strong>${escapeHtml(value)}</strong> — ${escapeHtml(label)}</li>`).join('')
+
+  return `<main style="padding:3rem 1.25rem;max-width:64rem;margin:0 auto;color:#475569">
+    <h1 style="font-size:2rem;font-weight:900;color:#0f172a">${title}</h1>
+    <p style="margin-top:1rem;font-size:1rem;line-height:1.7">${desc}</p>
+    <p style="margin-top:1rem;font-size:1rem;line-height:1.7">We build modern business software that helps restaurants, retail stores, schools, transport operations and sales teams move faster with fewer manual tasks.</p>
+    <div style="margin-top:2rem;display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))">${cards(ABOUT_CARDS)}
+    </div>
+    <h2 style="margin-top:2.5rem;font-size:1.5rem;font-weight:900;color:#0f172a">Built around real business operations</h2>
+    <p style="margin-top:.75rem;line-height:1.7">Nexora focuses on practical workflows: billing, inventory, leads, customers, staff permissions, service requests and reporting. Our goal is to help owners run one shared workspace instead of disconnected files and manual updates.</p>
+    <ul style="margin-top:1rem;padding-left:1.25rem;line-height:1.8">${signals}</ul>
+    <h2 style="margin-top:2.5rem;font-size:1.5rem;font-weight:900;color:#0f172a">People behind the platform</h2>
+    <div style="margin-top:1rem;display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))">${cards(ABOUT_TEAM)}
+    </div>
+    <h2 style="margin-top:2.5rem;font-size:1.5rem;font-weight:900;color:#0f172a">Contact Nexora Solution</h2>
+    <p style="margin-top:.75rem;line-height:1.7">Email: <a href="${EMAIL_MAILTO}" style="color:#1d4ed8">${EMAIL_ADDRESS}</a> · WhatsApp: <a href="${WHATSAPP_URL}" style="color:#1d4ed8">${PHONE_DISPLAY}</a> · Area served: Pakistan. See our <a href="/contact/" style="color:#1d4ed8">contact page</a>.</p>
+  </main>`
+}
+
 function buildRouteContent(path, title, desc, articles) {
   if (path === '/pricing') return buildPricingContent()
   if (path === '/blog') return buildBlogContent(articles)
   if (path === '/contact') return buildContactContent()
   if (path === '/download/restaurant-pos') return buildDownloadRestaurantPosContent()
+  if (LEGAL_PAGES[path]) return buildLegalContent(LEGAL_PAGES[path])
+  if (path === '/about') return buildAboutContent(title, desc)
 
   const pillarKey = PILLAR_KEY_BY_PATH[path]
   if (pillarKey) return buildPillarFeaturesContent(pillarKey, title, desc)
@@ -1718,7 +1774,7 @@ function buildStaticShell(meta, path = '', articles = []) {
         </div>
         <div style="border-radius:1rem;border:1px solid #e2e8f0;padding:1.25rem;background:#fff">
           <dt style="font-weight:800;color:#0f172a">What does Nexora cost?</dt>
-          <dd style="margin-top:.5rem;font-size:.875rem;line-height:1.6;color:#475569">Plans start at PKR 1,000/month (50% off for new users). Every plan includes a 7-day free trial, cloud sync, free updates, free data migration, free staff training and a 30-day money-back guarantee.</dd>
+          <dd style="margin-top:.5rem;font-size:.875rem;line-height:1.6;color:#475569">Plans start at PKR 1,000/month (50% off for new users). Every plan includes a 1-month free trial, cloud sync, free updates, free data migration, free staff training and a 30-day money-back guarantee.</dd>
         </div>
         <div style="border-radius:1rem;border:1px solid #e2e8f0;padding:1.25rem;background:#fff">
           <dt style="font-weight:800;color:#0f172a">Does Nexora work offline?</dt>
@@ -1726,7 +1782,7 @@ function buildStaticShell(meta, path = '', articles = []) {
         </div>
         <div style="border-radius:1rem;border:1px solid #e2e8f0;padding:1.25rem;background:#fff">
           <dt style="font-weight:800;color:#0f172a">How do I get started?</dt>
-          <dd style="margin-top:.5rem;font-size:.875rem;line-height:1.6;color:#475569">Sign up for a free 7-day trial at nexorasolution.online/signup — no credit card required. Or book a live demo and our team will walk you through the modules that fit your business.</dd>
+          <dd style="margin-top:.5rem;font-size:.875rem;line-height:1.6;color:#475569">Sign up for a free 1-month trial at nexorasolution.online/signup — no credit card required. Or book a live demo and our team will walk you through the modules that fit your business.</dd>
         </div>
       </dl>
     </section>
